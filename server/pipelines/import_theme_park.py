@@ -740,7 +740,6 @@ def get_curated_catalog() -> list[dict]:
         # --- Tokyo Disney — More Exclusives ---
         ("Tokyo Disney", "snack_case", "Baymax Popcorn Bucket (TDL)", "Tokyo Exclusive", "mid", 50),
         ("Tokyo Disney", "snack_case", "Mike Wazowski Candy Case (TDL)", "Tokyo Exclusive", "mid", 35),
-        ("Tokyo Disney", "plush", "CookieAnn Plush (TDS Exclusive)", "Tokyo Exclusive", "high", 75),
         ("Tokyo Disney", "plush", "TDS Fantasy Springs Peter Pan Plush", "Grand Opening", "high", 90),
         ("Tokyo Disney", "merch", "Tokyo Disney 41st Anniversary Mug Set", "Anniversary LE", "mid", 42),
         ("Tokyo Disney", "pins", "TDS 20th Anniversary Celebration Pin Box", "Anniversary LE", "high", 110),
@@ -808,6 +807,354 @@ def get_curated_catalog() -> list[dict]:
         ("Disneyland Paris", "merch", "DLP 30th Anniversary Castle Snow Globe", "Anniversary LE", "high", 120),
         ("Disneyland Paris", "merch", "DLP Phantom Manor Exclusive Figure Set", "Park Exclusive", "high", 85),
         ("Disneyland Paris", "pins", "DLP Avengers Campus Grand Opening Pin", "Grand Opening", "high", 60),
+
+        # ─── Disney World 50th Anniversary (~15) ──────────────────────
+        ("Disney Parks", "spirit_jersey", "WDW 50th Anniversary EARidescent Spirit Jersey (Purple)", "50th Anniversary", "high", 120),
+        ("Disney Parks", "spirit_jersey", "WDW 50th Anniversary EARidescent Spirit Jersey (Blue)", "50th Anniversary", "high", 115),
+        ("Disney Parks", "spirit_jersey", "WDW 50th Anniversary EARidescent Spirit Jersey (Pink)", "50th Anniversary", "high", 118),
+        ("Disney Parks", "merch", "WDW 50th Anniversary MagicBand+ (Gold)", "50th Anniversary", "high", 85),
+        ("Disney Parks", "pins", "WDW 50th Anniversary Castle LE Pin", "50th LE", "grail", 150),
+        ("Disney Parks", "pins", "WDW 50th Anniversary Fab 50 Pin Set (Complete)", "50th LE", "grail", 200),
+        ("Disney Parks", "figure", "Fab 50 Golden Stitch Statue", "50th Anniversary", "high", 95),
+        ("Disney Parks", "figure", "Fab 50 Golden Dumbo Statue", "50th Anniversary", "high", 90),
+        ("Disney Parks", "figure", "Fab 50 Golden Simba Statue", "50th Anniversary", "high", 85),
+        ("Disney Parks", "figure", "Fab 50 Golden Genie Statue", "50th Anniversary", "high", 95),
+        ("Disney Parks", "popcorn_bucket", "WDW 50th Anniversary Castle Popcorn Bucket", "50th Anniversary", "high", 100),
+        ("Disney Parks", "popcorn_bucket", "WDW 50th Anniversary EARidescent Popcorn Bucket", "50th Anniversary", "high", 90),
+        ("Disney Parks", "merch", "WDW 50th Anniversary Dooney & Bourke Tote", "50th Anniversary", "grail", 250),
+        ("Disney Parks", "merch", "WDW 50th Anniversary Loungefly Mini Backpack", "50th Anniversary", "high", 110),
+        ("Disney Parks", "merch", "WDW 50th Anniversary Celebration Ears (Gold Sequin)", "50th Anniversary", "high", 75),
+
+        # ─── Tokyo DisneySea Expansion (~10) ──────────────────────────
+        ("Tokyo Disney", "merch", "Fantasy Springs Peter Pan Exclusive Plush Set", "Grand Opening", "high", 110),
+        ("Tokyo Disney", "merch", "Fantasy Springs Rapunzel Lantern Popcorn Bucket", "Grand Opening", "high", 130),
+        ("Tokyo Disney", "merch", "Fantasy Springs Frozen Kingdom Snow Globe", "Grand Opening", "high", 95),
+        ("Tokyo Disney", "plush", "Duffy Spring Voyage Costume Plush (2025)", "Seasonal LE", "high", 85),
+        ("Tokyo Disney", "plush", "StellaLou Springtime Costume Plush (2025)", "Seasonal LE", "mid", 60),
+        ("Tokyo Disney", "plush", "LinaBell Fantasy Springs Costume Plush", "Grand Opening", "high", 100),
+        ("Tokyo Disney", "pins", "TDS Fantasy Springs Grand Opening Pin Set", "Grand Opening LE", "high", 80),
+        ("Tokyo Disney", "pins", "TDS Sindbad's Storybook Voyage Retirement Pin", "Retirement LE", "high", 75),
+        ("Tokyo Disney", "merch", "TDS 20th Anniversary Duffy Bear Plush", "Anniversary LE", "high", 140),
+        ("Tokyo Disney", "merch", "TDS 20th Anniversary Crystal Sphere", "Anniversary LE", "grail", 180),
+
+        # ─── Disneyland Paris Expansion (~10) ─────────────────────────
+        ("Disneyland Paris", "spirit_jersey", "DLP 30th Anniversary Spirit Jersey (Blue)", "30th Anniversary", "high", 100),
+        ("Disneyland Paris", "merch", "DLP 30th Anniversary Ears (Sequin)", "30th Anniversary", "mid", 55),
+        ("Disneyland Paris", "merch", "DLP 30th Anniversary MagicBand (LE)", "30th Anniversary LE", "high", 70),
+        ("Disneyland Paris", "merch", "DLP Phantom Manor Stretching Room Figure Set", "Park Exclusive", "high", 95),
+        ("Disneyland Paris", "merch", "DLP Phantom Manor Glow-in-the-Dark Mug", "Park Exclusive", "mid", 40),
+        ("Disneyland Paris", "merch", "DLP Ratatouille Remy Chef Hat & Apron Set", "Park Exclusive", "mid", 55),
+        ("Disneyland Paris", "merch", "DLP Ratatouille Remy Plush (Chef Outfit)", "Park Exclusive", "mid", 45),
+        ("Disneyland Paris", "merch", "DLP Avengers Campus Paris Iron Man Gauntlet", "Park Exclusive", "high", 90),
+        ("Disneyland Paris", "merch", "DLP Avengers Campus Paris Spider-Bot", "Park Exclusive", "mid", 60),
+        ("Disneyland Paris", "pins", "DLP 30th Anniversary Castle LE Pin", "30th LE", "high", 65),
+
+        # ─── Universal Orlando Epic Universe (~10) ────────────────────
+        ("Epic Universe", "merch", "Epic Universe Grand Opening Spirit Jersey", "Grand Opening", "high", 80),
+        ("Epic Universe", "merch", "How to Train Your Dragon Toothless Plush (Exclusive)", "Park Exclusive", "high", 70),
+        ("Epic Universe", "merch", "How to Train Your Dragon Night Fury Popcorn Bucket", "Park Exclusive", "high", 85),
+        ("Epic Universe", "merch", "How to Train Your Dragon Dragon Egg Sipper", "Park Exclusive", "mid", 45),
+        ("Epic Universe", "merch", "Super Nintendo World Orlando Power-Up Band (Star)", "Park Exclusive", "mid", 38),
+        ("Epic Universe", "merch", "Super Nintendo World Orlando Mario Kart Trophy", "Park Exclusive", "high", 65),
+        ("Epic Universe", "merch", "Ministry of Magic Elder Wand (Interactive)", "Park Exclusive", "high", 70),
+        ("Epic Universe", "merch", "Ministry of Magic Dumbledore Office Snow Globe", "Park Exclusive", "high", 90),
+        ("Epic Universe", "merch", "Epic Universe Opening Day Pin Set", "Grand Opening LE", "high", 75),
+        ("Epic Universe", "merch", "Dark Universe Monster Stein Mug (LE)", "Grand Opening LE", "high", 60),
+
+        # ─── Shanghai Disneyland (~8) ─────────────────────────────────
+        ("Shanghai Disney", "merch", "Zootopia Land Opening Day Ears", "Grand Opening", "high", 75),
+        ("Shanghai Disney", "merch", "Zootopia Land Judy Hopps Exclusive Plush", "Grand Opening", "high", 65),
+        ("Shanghai Disney", "merch", "Zootopia Land Nick Wilde Exclusive Plush", "Grand Opening", "high", 65),
+        ("Shanghai Disney", "merch", "Zootopia Land Opening Day Pin Set", "Grand Opening LE", "high", 80),
+        ("Shanghai Disney", "plush", "Shanghai Exclusive Duffy (Chinese New Year)", "Seasonal LE", "high", 90),
+        ("Shanghai Disney", "plush", "LinaBell Shanghai Exclusive Plush (Original)", "Park Exclusive", "high", 110),
+        ("Shanghai Disney", "plush", "LinaBell Shanghai Spring Festival Plush", "Seasonal LE", "high", 95),
+        ("Shanghai Disney", "merch", "Shanghai Disney Castle LE Pin (5th Anniversary)", "Anniversary LE", "high", 70),
+
+        # ─── Disney Cruise Line (~8) ──────────────────────────────────
+        ("Disney Cruise Line", "merch", "Disney Wish Maiden Voyage Spirit Jersey", "Maiden Voyage", "high", 110),
+        ("Disney Cruise Line", "merch", "Disney Wish Exclusive Captain Minnie Plush", "Ship Exclusive", "high", 70),
+        ("Disney Cruise Line", "merch", "Disney Treasure Inaugural Voyage Ears", "Maiden Voyage", "high", 85),
+        ("Disney Cruise Line", "merch", "Disney Treasure Exclusive Muppets Pin Set", "Ship Exclusive", "high", 65),
+        ("Disney Cruise Line", "pins", "DCL Pin Trading Exclusive Set (Captain's Night)", "Ship Exclusive LE", "high", 90),
+        ("Disney Cruise Line", "pins", "DCL Castaway Cay Exclusive Pin (LE)", "Castaway Cay LE", "high", 75),
+        ("Disney Cruise Line", "merch", "Castaway Cay Exclusive Beach Towel Set", "Castaway Cay", "mid", 55),
+        ("Disney Cruise Line", "merch", "Castaway Cay Exclusive Stitch Sand Sculpture Figure", "Castaway Cay", "mid", 60),
+
+        # ─── Popcorn Buckets & Sippers (~10) ─────────────────────────
+        ("Disney Parks", "popcorn_bucket", "Figment Popcorn Bucket (EPCOT Festival of the Arts)", "Festival LE", "grail", 180),
+        ("Disney Parks", "sipper", "Ratatouille Remy Sipper (Epcot France)", "Park Exclusive", "high", 75),
+        ("Disney Parks", "popcorn_bucket", "Mickey Balloon Glow Popcorn Bucket (Disneyland)", "Park Exclusive", "high", 90),
+        ("Disney Parks", "popcorn_bucket", "Baby Groot Popcorn Bucket (Guardians Cosmic Rewind)", "Park Exclusive", "high", 85),
+        ("Disney Parks", "popcorn_bucket", "Cinderella Coach Premium Popcorn Bucket (TDL)", "Tokyo Exclusive", "grail", 150),
+        ("Disney Parks", "sipper", "Alien Pizza Planet Sipper (Toy Story Land)", "Park Exclusive", "mid", 50),
+        ("Disney Parks", "popcorn_bucket", "Stitch Popcorn Bucket (Tomorrowland)", "Park Exclusive", "high", 80),
+        ("Disney Parks", "sipper", "Hatbox Ghost Sipper (Haunted Mansion)", "Park Exclusive LE", "high", 100),
+        ("Disney Parks", "popcorn_bucket", "Tron Lightcycle Popcorn Bucket", "Park Exclusive", "high", 95),
+        ("Disney Parks", "sipper", "Enchanted Rose Sipper (Be Our Guest)", "Park Exclusive", "mid", 60),
+
+        # ─── Seasonal Event Merch (~10) ───────────────────────────────
+        ("Disney Parks", "merch", "Mickey's Not-So-Scary Halloween Party Exclusive Ears (2024)", "Event LE", "high", 80),
+        ("Disney Parks", "merch", "Mickey's Not-So-Scary Halloween Party Spirit Jersey (2024)", "Event LE", "high", 100),
+        ("Disney Parks", "pins", "Mickey's Not-So-Scary Halloween Party LE Pin (2024)", "Event LE", "high", 70),
+        ("Disney Parks", "merch", "Mickey's Very Merry Christmas Party Exclusive Ears (2024)", "Event LE", "high", 80),
+        ("Disney Parks", "merch", "Mickey's Very Merry Christmas Party Spirit Jersey (2024)", "Event LE", "high", 100),
+        ("Disney Parks", "pins", "Mickey's Very Merry Christmas Party LE Pin (2024)", "Event LE", "high", 72),
+        ("Disney Parks", "merch", "Epcot Food & Wine Festival Passholder Magnet (2025)", "Festival AP", "mid", 35),
+        ("Disney Parks", "merch", "Epcot Food & Wine Festival Chef Figment Tee (2025)", "Festival LE", "mid", 45),
+        ("Disney Parks", "merch", "Epcot Flower & Garden Festival Orange Bird Plush (2025)", "Festival LE", "mid", 55),
+        ("Disney Parks", "merch", "Epcot Flower & Garden Festival Spike the Bee Spirit Jersey (2025)", "Festival LE", "high", 85),
+
+        # ─── LEGOLAND Exclusives ─────────────────────────────────────────
+        ("LEGOLAND", "merch", "LEGOLAND Exclusive Dragon Coaster Model Set", "Park Exclusive", "mid", 45),
+        ("LEGOLAND", "merch", "LEGOLAND Opening Day Commemorative Brick (LE)", "Park Exclusive LE", "high", 75),
+        ("LEGOLAND", "merch", "LEGOLAND Minifigure Factory Custom Figure", "Park Exclusive", "standard", 20),
+        ("LEGOLAND", "merch", "LEGOLAND Billund 50th Anniversary Set", "Anniversary LE", "high", 90),
+        ("LEGOLAND", "merch", "LEGOLAND Castle Hotel Exclusive Shield Set", "Park Exclusive", "mid", 35),
+
+        # ─── SeaWorld / Busch Gardens ────────────────────────────────────
+        ("SeaWorld", "merch", "SeaWorld Orca Spirit Jersey (Park Exclusive)", "Park Exclusive", "mid", 55),
+        ("SeaWorld", "merch", "SeaWorld 60th Anniversary Pin Set (LE 1000)", "Anniversary LE", "high", 65),
+        ("Busch Gardens", "merch", "Busch Gardens SheiKra Ride Vehicle Model", "Park Exclusive", "mid", 40),
+        ("Busch Gardens", "merch", "Busch Gardens Williamsburg 50th Tee (LE)", "Anniversary LE", "mid", 35),
+
+        # ─── Six Flags ──────────────────────────────────────────────────
+        ("Six Flags", "merch", "Six Flags Mr. Six Bobblehead (Retro)", "Park Exclusive", "mid", 45),
+        ("Six Flags", "merch", "Six Flags Magic Mountain Twisted Colossus Tee", "Park Exclusive", "standard", 25),
+        ("Six Flags", "merch", "Six Flags Great Adventure Opening Day Pennant (1974)", "Vintage", "high", 80),
+        ("Six Flags", "merch", "Six Flags Holiday in the Park Ornament Set", "Seasonal LE", "mid", 30),
+
+        # ─── Europa-Park ────────────────────────────────────────────────
+        ("Europa-Park", "merch", "Europa-Park Exclusive Ed & Edda Plush Set", "Park Exclusive", "mid", 35),
+        ("Europa-Park", "merch", "Europa-Park Silver Star Ride Model", "Park Exclusive", "mid", 45),
+        ("Europa-Park", "merch", "Europa-Park 50th Anniversary Pin Collection", "Anniversary LE", "high", 70),
+        ("Europa-Park", "merch", "Europa-Park Blue Fire Coaster Tee", "Park Exclusive", "standard", 25),
+        ("Europa-Park", "merch", "Europa-Park Rulantica Snorri Plush", "Park Exclusive", "standard", 22),
+
+        # ─── Efteling ───────────────────────────────────────────────────
+        ("Efteling", "merch", "Efteling Pardoes the Jester Plush (Classic)", "Park Exclusive", "mid", 30),
+        ("Efteling", "merch", "Efteling Baron 1898 Ride Key Replica", "Park Exclusive", "mid", 40),
+        ("Efteling", "merch", "Efteling Fairytale Forest Snow Globe", "Park Exclusive", "mid", 55),
+        ("Efteling", "merch", "Efteling 70th Anniversary Commemorative Plate", "Anniversary LE", "high", 85),
+        ("Efteling", "merch", "Efteling Symbolica Music Box", "Park Exclusive", "mid", 50),
+
+        # ─── Alton Towers ───────────────────────────────────────────────
+        ("Alton Towers", "merch", "Alton Towers Nemesis Reborn Launch Day Tee (LE)", "Launch Day LE", "high", 65),
+        ("Alton Towers", "merch", "Alton Towers The Smiler Ride Model", "Park Exclusive", "mid", 40),
+        ("Alton Towers", "merch", "Alton Towers Oblivion 25th Anniversary Pin", "Anniversary LE", "mid", 30),
+        ("Alton Towers", "merch", "Alton Towers Wicker Man Ride Poster Print", "Park Exclusive", "standard", 20),
+
+        # ─── Cedar Point ────────────────────────────────────────────────
+        ("Cedar Point", "merch", "Cedar Point 150th Anniversary Commemorative Coin", "Anniversary LE", "high", 80),
+        ("Cedar Point", "merch", "Cedar Point Steel Vengeance Ride Model", "Park Exclusive", "mid", 45),
+        ("Cedar Point", "merch", "Cedar Point Top Thrill 2 Launch Day Poster (LE)", "Launch Day LE", "high", 65),
+        ("Cedar Point", "merch", "Cedar Point Vintage Poster Collection (Set of 4)", "Park Exclusive", "mid", 50),
+
+        # ─── Hersheypark ────────────────────────────────────────────────
+        ("Hersheypark", "merch", "Hersheypark Chocolate World Exclusive Tin Set", "Park Exclusive", "standard", 25),
+        ("Hersheypark", "merch", "Hersheypark Candymonium Ride Tee", "Park Exclusive", "standard", 22),
+        ("Hersheypark", "merch", "Hersheypark 115th Anniversary Pin (LE 500)", "Anniversary LE", "high", 60),
+        ("Hersheypark", "merch", "Hersheypark Reese's Cup Plush (Park Exclusive)", "Park Exclusive", "standard", 18),
+
+        # ─── Dollywood ──────────────────────────────────────────────────
+        ("Dollywood", "merch", "Dollywood Butterfly Logo Spirit Jersey", "Park Exclusive", "mid", 55),
+        ("Dollywood", "merch", "Dollywood Wild Eagle Ride Model", "Park Exclusive", "mid", 40),
+        ("Dollywood", "merch", "Dollywood Dolly Parton Signature Ornament", "Park Exclusive", "mid", 30),
+        ("Dollywood", "merch", "Dollywood DreamMore Resort Exclusive Candle", "Park Exclusive", "standard", 22),
+        ("Dollywood", "merch", "Dollywood 40th Anniversary Commemorative Poster", "Anniversary LE", "high", 65),
+
+        # ─── Disney Pin Trading — LE Pins by Year ─────────────────────────
+        ("Disney Parks", "pins", "WDW 50th Anniversary Grand Finale Pin (LE 5000)", "LE", "high", 80),
+        ("Disney Parks", "pins", "Disneyland 2024 Lunar New Year Dragon Pin (LE 3000)", "LE", "high", 70),
+        ("Disney Parks", "pins", "WDW Christmas 2023 Castle LE Pin", "LE", "mid", 45),
+        ("Disney Parks", "pins", "Disneyland 68th Anniversary Pin (LE 2500)", "LE", "high", 65),
+        ("Disney Parks", "pins", "WDW EPCOT Festival of the Arts 2024 Pin", "LE", "mid", 40),
+        ("Disney Parks", "pins", "Disneyland Haunted Mansion 55th Anniversary Pin (LE 2000)", "LE", "high", 80),
+        ("Disney Parks", "pins", "WDW Tower of Terror Final Drop 2024 Pin (LE 1500)", "LE", "grail", 120),
+        ("Disney Parks", "pins", "Disneyland Tiki Room 60th Anniversary Pin (LE 1963)", "LE", "high", 85),
+        ("Disney Parks", "pins", "WDW Animal Kingdom 25th Anniversary Pin (LE 3000)", "LE", "high", 60),
+        ("Disney Parks", "pins", "Disney Parks Halloween 2024 Villain Pin Set (LE)", "LE", "mid", 55),
+
+        # ─── Hidden Mickey Pin Sets ───────────────────────────────────────
+        ("Disney Parks", "pins", "Hidden Mickey 2024 Series — Stitch Set (5 Pins)", "Hidden Mickey", "mid", 35),
+        ("Disney Parks", "pins", "Hidden Mickey 2024 Series — Attraction Posters (5 Pins)", "Hidden Mickey", "mid", 35),
+        ("Disney Parks", "pins", "Hidden Mickey 2023 Series — Food Icons (5 Pins)", "Hidden Mickey", "mid", 30),
+        ("Disney Parks", "pins", "Hidden Mickey 2023 Series — Villains (5 Pins)", "Hidden Mickey", "mid", 35),
+        ("Disney Parks", "pins", "Hidden Mickey 2024 Series — Princesses (5 Pins)", "Hidden Mickey", "mid", 35),
+        ("Disney Parks", "pins", "Hidden Mickey 2024 Chaser — Gold Tinker Bell", "Hidden Mickey", "high", 65),
+        ("Disney Parks", "pins", "Hidden Mickey 2023 Chaser — Gold Figment", "Hidden Mickey", "high", 80),
+        ("Disney Parks", "pins", "Hidden Mickey 2022 Series — Haunted Mansion (5 Pins)", "Hidden Mickey", "mid", 40),
+        ("Disney Parks", "pins", "Hidden Mickey 2022 Chaser — Gold Orange Bird", "Hidden Mickey", "high", 70),
+        ("Disney Parks", "pins", "Hidden Mickey 2024 Series — Baby Animals (5 Pins)", "Hidden Mickey", "mid", 30),
+
+        # ─── Universal CityWalk / Islands of Adventure Merch ──────────────
+        ("Universal Studios", "merch", "Universal CityWalk Exclusive Vintage Logo Tee", "CityWalk Exclusive", "standard", 25),
+        ("Universal Studios", "merch", "Universal CityWalk Neon Sign Mini Replica", "CityWalk Exclusive", "mid", 40),
+        ("Universal Studios", "merch", "Islands of Adventure 25th Anniversary Tee", "Anniversary LE", "mid", 45),
+        ("Universal Studios", "merch", "Jurassic World VelociCoaster Ride Photo Frame", "Park Exclusive", "standard", 22),
+        ("Universal Studios", "merch", "Hagrid's Motorbike Adventure Ride Model", "Park Exclusive", "mid", 50),
+        ("Universal Studios", "merch", "Universal Orlando 2024 Passholder Magnet Set", "Passholder Exclusive", "mid", 30),
+        ("Universal Studios", "merch", "Toothsome Chocolate Emporium Exclusive Box", "CityWalk Exclusive", "standard", 25),
+        ("Universal Studios", "merch", "Volcano Bay Exclusive Water Park Towel", "Park Exclusive", "standard", 22),
+
+        # ─── Ride Vehicle Collectibles ────────────────────────────────────
+        ("Disney Parks", "merch", "Space Mountain Ride Vehicle Die-Cast Replica", "Park Exclusive", "high", 75),
+        ("Disney Parks", "merch", "Haunted Mansion Doom Buggy Replica", "Park Exclusive", "high", 80),
+        ("Disney Parks", "merch", "Pirates of the Caribbean Boat Replica", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "merch", "Big Thunder Mountain Train Replica", "Park Exclusive", "mid", 60),
+        ("Disney Parks", "merch", "Matterhorn Bobsled Die-Cast Replica", "Park Exclusive", "high", 70),
+        ("Disney Parks", "merch", "Jungle Cruise Boat Die-Cast Replica", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "merch", "Monorail Mark VII Die-Cast Replica (Red)", "Park Exclusive", "mid", 50),
+        ("Disney Parks", "merch", "TRON Lightcycle Run Ride Vehicle Replica", "Park Exclusive", "high", 75),
+        ("Universal Studios", "merch", "Hogwarts Express Ride Vehicle Die-Cast", "Park Exclusive", "mid", 55),
+        ("Universal Studios", "merch", "Jurassic World VelociCoaster Ride Vehicle Replica", "Park Exclusive", "mid", 60),
+
+        # ─── Food-Themed Park Merch ───────────────────────────────────────
+        ("Disney Parks", "merch", "Mickey Waffle Maker (Disney Parks Edition)", "Park Exclusive", "high", 75),
+        ("Disney Parks", "merch", "Dole Whip Spirit Jersey", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "merch", "Mickey Ice Cream Bar Loungefly Mini Backpack", "Park Exclusive", "high", 80),
+        ("Disney Parks", "merch", "Churro Spirit Jersey", "Park Exclusive", "mid", 50),
+        ("Disney Parks", "merch", "EPCOT Food & Wine Festival 2024 Passholder Tumbler", "Festival LE", "mid", 35),
+        ("Disney Parks", "merch", "Turkey Leg Plush Keychain", "Park Exclusive", "standard", 15),
+        ("Disney Parks", "merch", "Grey Stuff Mug (Be Our Guest)", "Park Exclusive", "mid", 30),
+        ("Disney Parks", "merch", "Mickey Pretzel Ear Headband", "Park Exclusive", "mid", 40),
+        ("Disney Parks", "merch", "Ronto Roasters Mug (Galaxy's Edge)", "Park Exclusive", "mid", 30),
+        ("Disney Parks", "merch", "Blue Milk Sipper Cup (Galaxy's Edge)", "Park Exclusive", "mid", 35),
+
+        # ─── Retro Disneyland Vintage (1955-1970s) ────────────────────────
+        ("Disneyland Vintage", "merch", "Disneyland Opening Day Map Replica (1955)", "Vintage Replica", "high", 80),
+        ("Disneyland Vintage", "merch", "Disneyland Original E-Ticket Book (1960s)", "Vintage Original", "grail", 200),
+        ("Disneyland Vintage", "merch", "Disneyland Souvenir Guidebook (1958)", "Vintage Original", "grail", 150),
+        ("Disneyland Vintage", "merch", "Disneyland Monorail Tin Toy (1960)", "Vintage Original", "grail", 300),
+        ("Disneyland Vintage", "merch", "Disneyland Castle Ceramic Ashtray (1960s)", "Vintage Original", "high", 100),
+        ("Disneyland Vintage", "merch", "Disneyland Tiki Room Opening Souvenir (1963)", "Vintage Original", "grail", 250),
+        ("Disneyland Vintage", "merch", "Disneyland Skyway Gondola Replica (1970s)", "Vintage Original", "high", 120),
+        ("Disneyland Vintage", "merch", "Walt Disney World Preview Center Brochure (1970)", "Vintage Original", "grail", 180),
+        ("Disneyland Vintage", "merch", "Disneyland Haunted Mansion Grand Opening Poster (1969)", "Vintage Original", "grail", 400),
+        ("Disneyland Vintage", "merch", "Disneyland Pirates of the Caribbean Poster (1967)", "Vintage Original", "grail", 350),
+        ("Disneyland Vintage", "merch", "Disneyland 10th Anniversary Charm Bracelet (1965)", "Vintage Original", "high", 120),
+        ("Disneyland Vintage", "merch", "Disneyland Matterhorn Bobsleds Pennant (1959)", "Vintage Original", "grail", 200),
+        ("Disneyland Vintage", "merch", "Disneyland Glass Plate Set (Castle, 1960s)", "Vintage Original", "high", 80),
+        ("Disneyland Vintage", "merch", "Disneyland Employee Cast Member Pin (1960s)", "Vintage Original", "high", 100),
+        ("Disneyland Vintage", "merch", "Disneyland Submarine Voyage Souvenir (1959)", "Vintage Original", "grail", 180),
+
+        # ─── Epic Universe (Universal, 2025 Opening) ──────────────────────
+        ("Epic Universe", "merch", "Epic Universe Grand Opening Day Tee", "Grand Opening LE", "high", 80),
+        ("Epic Universe", "merch", "Epic Universe Grand Opening Pin (LE 2025)", "Grand Opening LE", "grail", 120),
+        ("Epic Universe", "merch", "How to Train Your Dragon Land Spirit Jersey", "Park Exclusive", "mid", 55),
+        ("Epic Universe", "merch", "Wizarding World Dark Arts Wand (Epic Universe Exclusive)", "Park Exclusive", "high", 65),
+        ("Epic Universe", "merch", "Super Nintendo World Donkey Kong Mine Cart Replica", "Park Exclusive", "high", 75),
+        ("Epic Universe", "merch", "Classic Monsters Land Creature Popcorn Bucket", "Park Exclusive", "high", 80),
+        ("Epic Universe", "merch", "Celestial Park Constellation Map Poster", "Park Exclusive", "mid", 30),
+        ("Epic Universe", "merch", "Epic Universe Preview Center Exclusive Lanyard", "Preview Exclusive", "mid", 40),
+
+        # ─── More Disney Park Exclusives ───────────────────────────────────
+        ("Disney Parks", "merch", "Mickey Mouse Main Street Electrical Parade Glow Ears", "Park Exclusive", "mid", 40),
+        ("Disney Parks", "merch", "50th Anniversary Celebration Ear Headband (Gold)", "Anniversary LE", "high", 65),
+        ("Disney Parks", "merch", "Guardians of the Galaxy Cosmic Rewind Ride Tee", "Park Exclusive", "standard", 25),
+        ("Disney Parks", "merch", "Tiana's Bayou Adventure Grand Opening Ears", "Grand Opening LE", "high", 70),
+        ("Disney Parks", "merch", "EPCOT Flower & Garden 2024 Spike the Bee Figure", "Festival LE", "mid", 35),
+        ("Disney Parks", "merch", "Star Wars Galactic Starcruiser Exclusive Lightsaber Hilt", "Resort Exclusive", "grail", 200),
+        ("Disney Parks", "merch", "Club 33 50th Anniversary Commemorative Plate", "Club 33 Exclusive", "grail", 300),
+        ("Disney Parks", "merch", "Figment Annual Passholder Exclusive Magnet Set", "Passholder Exclusive", "mid", 30),
+        ("Tokyo Disney", "merch", "TDR 40th Anniversary Celebration Spirit Jersey", "Anniversary LE", "high", 75),
+        ("Shanghai Disney", "merch", "Shanghai Disney Zootopia Land Grand Opening Ears", "Grand Opening LE", "high", 65),
+
+        # ─── More Disney Specific Ride Merch ──────────────────────────────
+        ("Disney Parks", "merch", "Haunted Mansion Hitchhiking Ghosts Figure Set", "Park Exclusive", "high", 85),
+        ("Disney Parks", "merch", "Pirates of the Caribbean We Wants the Redhead Figure", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "merch", "Tower of Terror Bellhop Spirit Jersey", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "merch", "Spaceship Earth Figment Purple Wall Tumbler", "Park Exclusive", "mid", 30),
+        ("Disney Parks", "merch", "Indiana Jones Adventure Hat (Disney Parks Ed.)", "Park Exclusive", "mid", 45),
+        ("Disney Parks", "merch", "Jungle Cruise Skipper Canteen Menu Replica", "Park Exclusive", "mid", 30),
+        ("Disney Parks", "merch", "Country Bear Jamboree Retirement Poster (LE)", "LE", "high", 75),
+        ("Disney Parks", "merch", "Splash Mountain Final Splash Poster (LE 2000)", "LE", "grail", 150),
+        ("Disney Parks", "merch", "Mr. Toad's Wild Ride Vintage Art Print", "Park Exclusive", "mid", 40),
+        ("Disney Parks", "merch", "It's a Small World 60th Anniversary Clock Figure", "Anniversary LE", "high", 80),
+
+        # ─── More Universal / Islands of Adventure ────────────────────────
+        ("Universal Studios", "merch", "Butterbeer Mug (Wizarding World)", "Park Exclusive", "mid", 35),
+        ("Universal Studios", "merch", "Olivanders Wand (Interactive, Hermione)", "Park Exclusive", "mid", 55),
+        ("Universal Studios", "merch", "Hogwarts Castle Snow Globe (Large)", "Park Exclusive", "high", 80),
+        ("Universal Studios", "merch", "Jurassic World Raptor Encounter Photo", "Park Exclusive", "standard", 20),
+        ("Universal Studios", "merch", "Simpsons Springfield Donut Box (Empty Prop)", "Park Exclusive", "mid", 30),
+        ("Universal Studios Japan", "merch", "USJ Super Nintendo World Mario Kart Popcorn Bucket", "Park Exclusive", "high", 85),
+        ("Universal Studios Japan", "merch", "USJ Demon Slayer Collaboration Spirit Jersey", "Park Exclusive", "high", 70),
+        ("Universal Studios Japan", "merch", "USJ One Piece Premier Show Towel (2024)", "Park Exclusive", "mid", 40),
+        ("Universal Studios Japan", "merch", "USJ Jujutsu Kaisen Real 4D Souvenir Cup", "Park Exclusive", "mid", 35),
+        ("Universal Studios Japan", "merch", "USJ Cool Japan 2024 Pin Set (LE)", "LE", "high", 65),
+
+        # ─── Disneyland Paris / Shanghai / Hong Kong ──────────────────────
+        ("Disneyland Paris", "merch", "DLP 30th Anniversary Spirit Jersey", "Anniversary LE", "mid", 55),
+        ("Disneyland Paris", "merch", "DLP Phantom Manor Figurine Set", "Park Exclusive", "high", 80),
+        ("Disneyland Paris", "merch", "DLP Ratatouille Kitchen Apron & Chef Hat Set", "Park Exclusive", "mid", 40),
+        ("Disneyland Paris", "pins", "DLP 30th Anniversary Castle Pin (LE 600)", "LE", "grail", 120),
+        ("Disneyland Paris", "merch", "DLP Pirates Bay Exclusive Map Print", "Park Exclusive", "mid", 30),
+        ("Hong Kong Disney", "merch", "HKDL World of Frozen Grand Opening Ears", "Grand Opening LE", "high", 70),
+        ("Hong Kong Disney", "merch", "HKDL World of Frozen Elsa Crystal Ornament", "Park Exclusive", "mid", 45),
+        ("Hong Kong Disney", "merch", "HKDL 18th Anniversary Pin (LE 1800)", "Anniversary LE", "high", 65),
+        ("Shanghai Disney", "merch", "Shanghai Disney Pirates Treasure Cove Ride Model", "Park Exclusive", "mid", 55),
+        ("Shanghai Disney", "merch", "Shanghai Disney 7th Anniversary Music Box", "Anniversary LE", "high", 70),
+
+        # ─── More Themed Park Pins (Year-Specific & Event) ─────────────────
+        ("Disney Parks", "pins", "EPCOT Food & Wine 2024 Complete Pin Set (12)", "Festival LE", "grail", 150),
+        ("Disney Parks", "pins", "Mickey's Not-So-Scary Halloween 2024 Event Pin", "Event LE", "high", 65),
+        ("Disney Parks", "pins", "Mickey's Very Merry Christmas 2024 Event Pin", "Event LE", "high", 65),
+        ("Disney Parks", "pins", "DVC Member Exclusive 2024 Pin (LE 1500)", "DVC Exclusive", "high", 70),
+        ("Disney Parks", "pins", "Disneyland After Dark Villains Nite Pin (LE 1000)", "Event LE", "high", 80),
+        ("Disney Parks", "pins", "WDW Flower & Garden 2024 Figment Pin (LE)", "Festival LE", "mid", 45),
+        ("Disney Parks", "pins", "WDW Marathon Weekend 2024 Finisher Pin", "Event LE", "mid", 40),
+        ("Disney Parks", "pins", "DCA Food & Wine 2024 Completer Pin", "Festival LE", "mid", 50),
+        ("Disney Parks", "pins", "Tokyo Disney 40th Anniversary Final Pin (LE 4000)", "Anniversary LE", "high", 75),
+        ("Disney Parks", "pins", "Disneyland Club 33 Annual Pin 2024", "Club 33 Exclusive", "grail", 200),
+
+        # ─── Six Flags / Busch Gardens / SeaWorld ──────────────────────────
+        ("Six Flags", "merch", "Six Flags Magic Mountain Goliath Ride Model", "Park Exclusive", "mid", 40),
+        ("Six Flags", "merch", "Six Flags Great Adventure Kingda Ka Poster", "Park Exclusive", "standard", 20),
+        ("Six Flags", "merch", "Six Flags Vintage Logo Retro Tee", "Park Exclusive", "standard", 22),
+        ("Busch Gardens", "merch", "Busch Gardens Pantheon Ride Model", "Park Exclusive", "mid", 40),
+        ("Busch Gardens", "merch", "Busch Gardens Verbolten Ride Poster Print", "Park Exclusive", "standard", 22),
+        ("SeaWorld", "merch", "SeaWorld Shamu Vintage Plush (1980s Repro)", "Park Exclusive", "mid", 35),
+        ("SeaWorld", "merch", "SeaWorld Mako Ride Vehicle Replica", "Park Exclusive", "mid", 40),
+        ("LEGOLAND", "merch", "LEGOLAND Exclusive Minifigure Set (6 Pack)", "Park Exclusive", "mid", 45),
+        ("LEGOLAND", "merch", "LEGOLAND Castle Hotel Knight Shield Replica", "Park Exclusive", "mid", 35),
+
+        # ─── More Disney Vintage Reproductions & Park Collectibles ────────
+        ("Disney Parks", "merch", "Disneyland Main Street USA Vintage Sign Replica Set", "Park Exclusive", "high", 75),
+        ("Disney Parks", "merch", "WDW Polynesian Resort Tiki Mug (2024 Edition)", "Resort Exclusive", "mid", 35),
+        ("Disney Parks", "merch", "Disneyland Club 33 Challenge Coin (2024)", "Club 33 Exclusive", "grail", 150),
+        ("Disney Parks", "merch", "WDW Wilderness Lodge Totem Pole Ornament", "Resort Exclusive", "mid", 30),
+        ("Disney Parks", "merch", "Disneyland Railroad Engineer Cap (Authentic)", "Park Exclusive", "mid", 40),
+        ("Disney Parks", "merch", "Disney Skyliner Gondola Replica (Purple)", "Park Exclusive", "mid", 45),
+        ("Disney Parks", "merch", "WDW Contemporary Resort Monorail Mug", "Resort Exclusive", "standard", 25),
+        ("Disney Parks", "merch", "Disneyland Partners Statue Replica (Walt & Mickey)", "Park Exclusive", "high", 100),
+        ("Disney Parks", "merch", "WDW MagicBand+ Collector Edition (Figment)", "Park Exclusive", "mid", 45),
+        ("Disney Parks", "merch", "Disneyland Annual Passholder Exclusive Magnet 2024", "Passholder Exclusive", "mid", 25),
+
+        # ─── More Tokyo Disney Exclusive ───────────────────────────────────
+        ("Tokyo Disney", "merch", "TDR Duffy Spring Voyage Plush Set", "Seasonal LE", "high", 80),
+        ("Tokyo Disney", "merch", "TDR Shellie May Halloween Costume Plush", "Seasonal LE", "mid", 55),
+        ("Tokyo Disney", "merch", "TDR LinaBell Spring Blossom Plush", "Seasonal LE", "high", 70),
+        ("Tokyo Disney", "merch", "TDS 20th Anniversary Grand Finale Pin Box Set", "Anniversary LE", "grail", 130),
+        ("Tokyo Disney", "merch", "TDR 41st Anniversary Spirit Jersey", "Anniversary LE", "mid", 60),
+        ("Tokyo Disney", "merch", "TDR Space Mountain Final Mission Poster (LE)", "LE", "grail", 150),
+        ("Tokyo Disney", "merch", "TDR Pirates of the Caribbean Popcorn Bucket (Ship)", "Park Exclusive", "high", 70),
+        ("Tokyo Disney", "merch", "TDR Baymax Popcorn Bucket (Big Hero 6)", "Park Exclusive", "high", 80),
+        ("Tokyo Disney", "merch", "TDS Journey to the Center of the Earth Ride Model", "Park Exclusive", "mid", 55),
+        ("Tokyo Disney", "pins", "TDR Club 33 Tokyo Pin (Annual 2024)", "Club 33 Exclusive", "grail", 200),
+
+        # ─── Europa-Park / Efteling / Phantasialand ───────────────────────
+        ("Europa-Park", "merch", "Europa-Park Silver Star Ride Model", "Park Exclusive", "mid", 40),
+        ("Europa-Park", "merch", "Europa-Park Blue Fire Coaster Poster", "Park Exclusive", "standard", 22),
+        ("Europa-Park", "merch", "Europa-Park Rulantica Opening Spirit Jersey", "Grand Opening LE", "mid", 55),
+        ("Efteling", "merch", "Efteling Baron 1898 Ride Poster", "Park Exclusive", "mid", 30),
+        ("Efteling", "merch", "Efteling Fairytale Forest Pin Collection (10 Pins)", "Park Exclusive", "mid", 50),
+        ("Efteling", "merch", "Efteling Fata Morgana Souvenir Cup", "Park Exclusive", "standard", 20),
+        ("Phantasialand", "merch", "Phantasialand Taron Ride Model", "Park Exclusive", "mid", 45),
+        ("Phantasialand", "merch", "Phantasialand F.L.Y. Launch Day Tee", "Launch Day LE", "mid", 40),
+        ("Phantasialand", "merch", "Phantasialand Rookburgh Area Spirit Jersey", "Park Exclusive", "mid", 50),
+        ("Gardaland", "merch", "Gardaland Oblivion: The Black Hole Ride Poster", "Park Exclusive", "standard", 22),
+        ("PortAventura", "merch", "PortAventura Shambhala Ride Model", "Park Exclusive", "mid", 40),
     ]
 
     catalog = []
@@ -1062,6 +1409,16 @@ def _expanded_round7_theme_park() -> list[dict]:
         ("Epic Universe", "pins", "Epic Universe Grand Opening 5-Worlds Pin Set (LE 2000)", "LE", "grail", 150),
         ("Epic Universe", "popcorn_bucket", "Dark Universe Frankenstein Popcorn Bucket", "Grand Opening", "high", 90),
         ("Epic Universe", "merch", "Wizarding World of Harry Potter Ministry of Magic Interactive Wand", "Park Exclusive", "high", 75),
+
+        # ── Harry Potter Wizarding World Park Exclusives (+8) ──────────────
+        ("Universal Orlando", "merch", "Wizarding World Opening Day Merch Set (2010)", "Grand Opening", "grail", 200),
+        ("Universal Orlando", "merch", "Diagon Alley Opening Day Pin (2014)", "Grand Opening", "high", 150),
+        ("Universal Orlando", "merch", "Interactive Wand (Ollivanders, Harry Potter's Wand)", "Park Exclusive", "mid", 65),
+        ("Universal Orlando", "merch", "Interactive Wand (Ollivanders, Elder Wand)", "Park Exclusive", "mid", 65),
+        ("Universal Orlando", "merch", "Interactive Wand (Ollivanders, Hermione's Wand)", "Park Exclusive", "mid", 65),
+        ("Universal Orlando", "merch", "Chocolate Frog with Wizard Card (Complete Set of 12)", "Park Exclusive", "mid", 90),
+        ("Universal Orlando", "merch", "Butterbeer Ceramic Mug (Park Exclusive)", "Park Exclusive", "standard", 35),
+        ("Universal Orlando", "merch", "Hogwarts House Robe (Park Exclusive)", "Park Exclusive", "mid", 100),
 
         # ── Tokyo DisneySea Fantasy Springs Phase 2 (+5) ────────────────
         ("Tokyo Disney", "merch", "TDS Fantasy Springs Frozen Kingdom Anna Coronation Music Box", "Grand Opening", "high", 110),

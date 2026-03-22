@@ -1270,6 +1270,289 @@ def _round7_body_variants() -> list[tuple]:
     ]
 
 
+def _round8_expansion() -> list[tuple]:
+    """Round 8 expansion: 115 items — Leica M-system, Leica specials, Hasselblad,
+    medium format, 35mm SLR, rangefinder, instant, lenses."""
+    return [
+        # --- Leica M-System (+15) ---
+        ("M3 Double Stroke (Early Serial < 800000)", "Leica", "rangefinder", "1954-1958", 3500, "Good", False, "Rare", "Very early double-stroke M3, sub-800K serial, collector premium"),
+        ("M3 Single Stroke (Late Production)", "Leica", "rangefinder", "1960-1966", 2500, "Excellent", False, "Limited Edition", "Final M3 production, improved film advance, chrome"),
+        ("M2 Chrome (Self-Timer)", "Leica", "rangefinder", "1957-1967", 2400, "Good", False, "Standard", "M2 with self-timer variant, 35/50/90mm framelines"),
+        ("M4 Chrome (Early Three-Lug)", "Leica", "rangefinder", "1967-1972", 3000, "Good", False, "Limited Edition", "Early M4 with three-lug rewind, self-timer, collector variant"),
+        ("M6 Classic Black Chrome (Wetzlar)", "Leica", "rangefinder", "1984-1988", 4200, "Excellent", False, "Rare", "Early Wetzlar-made M6, pre-Solms, collector premium"),
+        ("M6 Titanium", "Leica", "rangefinder", "1992-1992", 7500, "Excellent", False, "Rare", "Titanium M6, limited 1500 pieces, collector grail"),
+        ("M6 TTL 0.58 Black", "Leica", "rangefinder", "1998-2002", 3500, "Excellent", False, "Limited Edition", "Wide-angle TTL variant, 0.58x magnification"),
+        ("M7 0.85 Silver", "Leica", "rangefinder", "2002-2018", 4400, "Excellent", False, "Limited Edition", "High-magnification M7, silver chrome, tele-optimized"),
+        ("M-A (Typ 127) Titanium Grey", "Leica", "rangefinder", "2014-present", 5500, "Mint", False, "Rare", "Special titanium grey finish, pure mechanical M"),
+        ("MP 0.58 Black Paint", "Leica", "rangefinder", "2003-present", 5800, "Mint", False, "Rare", "Wide-angle MP variant, brass black paint, 0.58x finder"),
+        ("M10-R Silver Chrome", "Leica", "rangefinder", "2020-2022", 7500, "Mint", False, "Limited Edition", "40MP digital M, high-resolution sensor, silver chrome"),
+        ("M11 Black Paint", "Leica", "rangefinder", "2022-present", 9500, "Mint", False, "Limited Edition", "Latest digital M, 60MP, black paint finish, triple resolution"),
+        ("Summilux 50mm f/1.4 ASPH (Silver)", "Leica", "rangefinder", "2004-present", 4500, "Mint", True, "Limited Edition", "Silver chrome ASPH Lux, rarer than black, floating element"),
+        ("Summicron 50mm f/2 V2 Rigid (Chrome)", "Leica", "rangefinder", "1956-1968", 2200, "Good", True, "Rare", "Chrome rigid Summicron, 7-element optical formula"),
+        ("Noctilux 50mm f/0.95 ASPH (Silver)", "Leica", "rangefinder", "2013-present", 13500, "Mint", True, "Rare", "Silver chrome Noctilux, ultra-rare finish, fastest M lens"),
+
+        # --- Leica Special Editions (+10) ---
+        ("M6 A La Carte (Black Paint, Brass Top)", "Leica", "rangefinder", "1998-2002", 8000, "Excellent", False, "Rare", "Factory custom M6, black paint brass top, A La Carte program"),
+        ("M-P (Typ 240) Reporter (Kevlar)", "Leica", "rangefinder", "2015-2018", 6500, "Excellent", False, "Rare", "Kevlar-coated MP, war correspondent edition, scratch-resistant"),
+        ("M Monochrom (Typ 246)", "Leica", "rangefinder", "2015-2020", 7000, "Excellent", False, "Limited Edition", "B&W-only sensor, no Bayer filter, ultimate street camera"),
+        ("M10 x Hermes (Edition Hermes)", "Leica", "rangefinder", "2019-2019", 15000, "Mint", False, "Rare", "Limited 1500 pieces, Hermes leather, special Volubilis color"),
+        ("M-P x Paul Smith", "Leica", "rangefinder", "2015-2015", 8500, "Mint", False, "Rare", "Paul Smith striped grip, limited 20 pieces, art collaboration"),
+        ("M10 Zagato (Edition Zagato)", "Leica", "rangefinder", "2017-2017", 20000, "Mint", False, "Rare", "Italian design collaboration, machined aluminium, 250 pieces"),
+        ("MP LHSA Special Edition", "Leica", "rangefinder", "2008-2008", 9000, "Mint", False, "Rare", "LHSA 40th Anniversary, hammertone paint, 500 pieces"),
+        ("M6 Columbo (Black Paint)", "Leica", "rangefinder", "1998-1998", 10000, "Excellent", False, "Rare", "TV-series homage, limited LHSA edition, black paint"),
+        ("M Edition 60 (Typ 240)", "Leica", "rangefinder", "2014-2014", 18000, "Mint", False, "Rare", "No LCD, no menu, stainless steel body, 600 pieces, purist design"),
+        ("M-A (Typ 127) Safari (Olive Green)", "Leica", "rangefinder", "2015-2015", 6800, "Mint", False, "Rare", "Olive green safari finish, limited production, Elmarit 28mm included"),
+
+        # --- Hasselblad (+10) ---
+        ("500C/M (Late Production Black)", "Hasselblad", "medium format", "1985-1994", 2600, "Excellent", True, "Limited Edition", "Late serial black 500C/M, improved Acute Matte screen"),
+        ("501CM (Final V-System)", "Hasselblad", "medium format", "1994-2005", 2800, "Excellent", True, "Limited Edition", "Last mechanical V-body, Acute Matte D screen"),
+        ("503CW (Millennium Edition)", "Hasselblad", "medium format", "1999-2000", 4000, "Mint", True, "Rare", "Y2K limited gold engravings, 503CW with CFE 80mm"),
+        ("SWC (Original Super Wide)", "Hasselblad", "medium format", "1959-1980", 3500, "Good", True, "Rare", "Original Super Wide, fixed Biogon 38mm f/4.5, no meter"),
+        ("X1D-50C II", "Hasselblad", "medium format", "2019-present", 5000, "Mint", False, "Limited Edition", "Mirrorless digital medium format, 50MP, XCD lenses"),
+        ("907X 50C (CFV II 50C + 907X Body)", "Hasselblad", "medium format", "2020-present", 6000, "Mint", False, "Limited Edition", "Modular digital back + body, V-lens compatible, 50MP"),
+        ("CFV II 50C Digital Back", "Hasselblad", "medium format", "2020-present", 4500, "Mint", False, "Limited Edition", "Digital back for V-system bodies, 50MP, tilt screen"),
+        ("CF Planar 80mm f/2.8 T*", "Hasselblad", "medium format", "1972-1998", 600, "Excellent", True, "Standard", "Standard V-system lens, sharp and reliable, C shutter"),
+        ("CF Distagon 50mm f/4 T*", "Hasselblad", "medium format", "1972-1998", 900, "Excellent", True, "Standard", "Wide-angle V-system lens, landscape favourite"),
+        ("CF Sonnar 150mm f/4 T*", "Hasselblad", "medium format", "1972-1998", 500, "Excellent", True, "Standard", "Portrait tele V-system lens, beautiful rendering"),
+
+        # --- Medium Format (+10) ---
+        ("Mamiya RZ67 Pro II Body", "Mamiya", "medium format", "1995-2004", 1200, "Excellent", False, "Standard", "Electronic studio 6x7, bellows focus, revolving back"),
+        ("Mamiya 7II with 80mm f/4 L", "Mamiya", "rangefinder", "1999-2005", 3800, "Excellent", True, "Rare", "6x7 rangefinder with standard lens, ultra-sharp optics"),
+        ("Pentax 67 Late Model Body", "Pentax", "medium format", "1989-1998", 1300, "Excellent", False, "Standard", "Updated body with grip, metered prism, MLU"),
+        ("Bronica SQ-A Body (Complete)", "Bronica", "medium format", "1982-1995", 450, "Excellent", False, "Standard", "Modular 6x6, leaf shutter lenses, Zenzanon PS"),
+        ("Fuji GW690III (Texas Leica)", "Fuji", "rangefinder", "1992-2000", 950, "Excellent", True, "Standard", "6x9 rangefinder, fixed 90mm f/3.5, massive negatives"),
+        ("Rolleiflex 2.8F Planar (Final)", "Rolleiflex", "TLR", "1970-1981", 3000, "Excellent", True, "Rare", "Late production 2.8F with Planar, metered, collector grade"),
+        ("Yashica Mat 124G (Mint)", "Yashica", "TLR", "1970-1986", 450, "Mint", True, "Standard", "Mint condition 124G, Yashinon 80mm f/3.5, working meter"),
+        ("Mamiya C220 Professional Body", "Mamiya", "TLR", "1968-1982", 300, "Good", False, "Standard", "Interchangeable lens TLR body only"),
+        ("Pentax 645N Body", "Pentax", "medium format", "1997-2001", 500, "Excellent", False, "Standard", "AF 645, matrix metering, fast AF, weather-sealed"),
+        ("Pentax 645NII Body", "Pentax", "medium format", "2001-2005", 700, "Excellent", False, "Standard", "Updated AF 645, improved AF, digital back compatible"),
+
+        # --- 35mm SLR (+15) ---
+        ("Nikon F Black Body (Waist-Level)", "Nikon", "SLR", "1959-1974", 550, "Good", False, "Limited Edition", "Black body F with waist-level finder, rare configuration"),
+        ("Nikon F2 Photomic Black Body", "Nikon", "SLR", "1971-1980", 550, "Good", False, "Standard", "DP-1 finder, black body, professional workhorse"),
+        ("Nikon F3HP Black", "Nikon", "SLR", "1982-2000", 600, "Excellent", False, "Limited Edition", "High eyepoint finder, Giugiaro design, titanium shutter"),
+        ("Nikon FM2n Lapland Limited", "Nikon", "SLR", "1994", 1800, "Excellent", False, "Rare", "Lapland White edition, limited production, collector piece"),
+        ("Nikon FM3A Chrome", "Nikon", "SLR", "2001-2006", 1400, "Excellent", False, "Limited Edition", "Silver chrome FM3A, hybrid shutter, last manual Nikon"),
+        ("Canon AE-1 Black Body (Late)", "Canon", "SLR", "1978-1984", 230, "Excellent", False, "Standard", "Late production black AE-1, improved reliability"),
+        ("Canon A-1 Black Body", "Canon", "SLR", "1978-1985", 380, "Excellent", False, "Standard", "Canon flagship, 5 exposure modes, FD mount"),
+        ("Canon F-1 (Original) Chrome", "Canon", "SLR", "1971-1976", 400, "Good", False, "Standard", "Original Canon pro SLR, modular, mechanical, FD mount"),
+        ("Olympus OM-1 MD Black", "Olympus", "SLR", "1972-1979", 400, "Excellent", False, "Standard", "Black OM-1 with motor drive coupling, compact mechanical SLR"),
+        ("Olympus OM-3Ti Chrome", "Olympus", "SLR", "1994-2002", 850, "Excellent", False, "Rare", "Titanium body OM, multi-spot metering, mechanical shutter"),
+        ("Pentax LX Body (Black)", "Pentax", "SLR", "1980-2001", 650, "Excellent", False, "Limited Edition", "Pro Pentax flagship, weather-sealed, interchangeable screens"),
+        ("Pentax K1000 SE (Special Edition)", "Pentax", "SLR", "1976-1997", 250, "Good", False, "Standard", "Split-image K1000, student classic, fully mechanical"),
+        ("Minolta X-700 with Motor Drive 1", "Minolta", "SLR", "1981-1999", 250, "Excellent", False, "Standard", "X-700 with official motor drive, program AE"),
+        ("Minolta CLE Body", "Minolta", "rangefinder", "1981-1985", 1000, "Excellent", False, "Rare", "M-mount electronic AE rangefinder, compact, CLC metering"),
+        ("Contax RTS III Professional", "Contax", "SLR", "1990-2000", 800, "Excellent", False, "Standard", "Vacuum film plane, ceramic plate, ultimate C/Y SLR body"),
+
+        # --- Rangefinder (+10) ---
+        ("Contax T2 Titanium (CLA'd)", "Contax", "compact", "1990-2002", 2000, "Excellent", True, "Rare", "CLA'd T2, Carl Zeiss Sonnar 38mm f/2.8, titanium body"),
+        ("Contax T3 Double Teeth", "Contax", "compact", "2001-2005", 3500, "Mint", True, "Rare", "Early double-teeth version, Sonnar 35mm f/2.8, premium"),
+        ("Contax TVS II", "Contax", "compact", "1998-2003", 500, "Excellent", True, "Standard", "Vario-Sonnar 28-56mm f/3.5-6.5 zoom, titanium"),
+        ("Ricoh GR1v Black", "Ricoh", "compact", "2001-2005", 1200, "Excellent", True, "Rare", "28mm f/2.8 GR lens, titanium body, snap focus, date back"),
+        ("Ricoh GR21 (21mm f/3.5)", "Ricoh", "compact", "2001-2005", 1500, "Excellent", True, "Rare", "Ultra-wide 21mm f/3.5 GR lens, only 3000 made"),
+        ("Nikon 35Ti Silver", "Nikon", "compact", "1993-1997", 1000, "Excellent", True, "Rare", "Titanium body, Nikkor 35mm f/2.8, analog dial display"),
+        ("Nikon 28Ti Silver", "Nikon", "compact", "1994-1997", 1200, "Excellent", True, "Rare", "Ultra-wide 28mm f/2.8 Nikkor, titanium, companion to 35Ti"),
+        ("Minolta TC-1 Silver", "Minolta", "compact", "1996-2002", 1600, "Excellent", True, "Rare", "G-Rokkor 28mm f/3.5, titanium, luxury compact, silver variant"),
+        ("Konica Hexar AF Silver", "Konica", "rangefinder", "1993-1999", 1100, "Excellent", True, "Rare", "Hexanon 35mm f/2, stealth mode, silent shutter, silver body"),
+        ("Konica Hexar RF Body", "Konica", "rangefinder", "1999-2003", 1000, "Excellent", False, "Rare", "M-mount AF rangefinder, electronic, KM 50mm f/2 compatible"),
+
+        # --- Instant Cameras (+10) ---
+        ("SX-70 Original Chrome/Tan (CLA'd)", "Polaroid", "instant", "1972-1981", 400, "Excellent", True, "Limited Edition", "Professionally CLA'd, new skin, chrome/tan original"),
+        ("SX-70 Sonar OneStep Autofocus", "Polaroid", "instant", "1978-1981", 300, "Excellent", True, "Standard", "Gold stripe sonar AF variant, folding SLR instant"),
+        ("Polaroid 680 SLR", "Polaroid", "instant", "1982-1988", 350, "Good", True, "Standard", "Updated SX-70 with sonar AF and built-in flash"),
+        ("SLR 680 SE (Special Edition)", "Polaroid", "instant", "1982-1988", 500, "Excellent", True, "Limited Edition", "Special Edition SLR 680 with improved optics"),
+        ("Polaroid Spectra System (Minolta AF)", "Polaroid", "instant", "1986-1992", 100, "Good", True, "Standard", "Wide-format instant, Quintic lens, sonar, Minolta co-design"),
+        ("Fujifilm Instax Wide 300", "Fuji", "instant", "2014-present", 110, "Excellent", True, "Standard", "Wide-format Instax, 95mm f/14 Fujinon, party favourite"),
+        ("Leica Sofort (White)", "Leica", "instant", "2016-2019", 250, "Excellent", True, "Standard", "Leica-branded Instax Mini, Automatik-Hektor 60mm f/12.7"),
+        ("Mint InstantFlex TL70 2.0", "Fuji", "instant", "2017-present", 350, "Mint", True, "Limited Edition", "Modern TLR instant camera, manual controls, Instax Mini"),
+        ("Polaroid SX-70 Alpha 1 (All Black)", "Polaroid", "instant", "1977-1979", 500, "Excellent", True, "Rare", "All-black body SX-70, premium model, split-image focus"),
+        ("Polaroid Now+ Gen 2 (Black)", "Polaroid", "instant", "2022-present", 130, "Mint", True, "Standard", "Modern i-Type, Bluetooth, creative lens filters"),
+
+        # --- Lenses (+15) ---
+        ("Carl Zeiss Planar 50mm f/1.4 ZM (M-mount)", "Contax", "rangefinder", "2005-present", 850, "Mint", True, "Standard", "Leica M-mount Zeiss, 6-element, T* coating, manual focus"),
+        ("Voigtlander Nokton 50mm f/1.1 VM (M-mount)", "Voigtlander", "rangefinder", "2009-present", 1100, "Mint", True, "Standard", "Ultra-fast M-mount, 7-element, aspherical, bokeh monster"),
+        ("Canon FD 50mm f/1.2 L Aspherical", "Canon", "SLR", "1980-1989", 900, "Good", True, "Standard", "Fast L-series normal, aspherical, smooth bokeh, FD mount"),
+        ("Nikon AI-S Nikkor 105mm f/2.5", "Nikon", "SLR", "1981-2005", 380, "Excellent", True, "Standard", "Afghan Girl lens, classic portrait, sharp rendering"),
+        ("Olympus Zuiko 50mm f/1.2", "Olympus", "SLR", "1979-2002", 500, "Excellent", True, "Rare", "Ultra-fast OM normal, multicoated, buttery bokeh"),
+        ("Pentax SMC Takumar 50mm f/1.4 (8-element Late)", "Pentax", "SLR", "1971-1975", 170, "Good", True, "Standard", "SMC coated, sharper than Super-Tak, M42 mount"),
+        ("Leica Summicron-R 90mm f/2 (3-cam)", "Leica", "SLR", "1970-2009", 800, "Excellent", True, "Standard", "Portrait tele R-mount, 3-cam bayonet, excellent rendering"),
+        ("Leica Elmarit-R 28mm f/2.8 V2 (3-cam)", "Leica", "SLR", "1979-1997", 600, "Excellent", True, "Standard", "Wide-angle R-mount, improved version, contrasty"),
+        ("Leica Elmarit-R 135mm f/2.8 (3-cam)", "Leica", "SLR", "1964-1998", 400, "Good", True, "Standard", "Tele R-mount, compact, sharp stopped down, 3-cam"),
+        ("Helios 44-2 58mm f/2 (M42)", "Nikon", "SLR", "1960-1992", 60, "Good", True, "Standard", "Soviet Biotar clone, famous swirly bokeh, cult following"),
+        ("Helios 44-2 58mm f/2 (Zebra)", "Nikon", "SLR", "1960-1980", 80, "Good", True, "Standard", "Early zebra barrel variant, sharper optics, collector premium"),
+        ("Jupiter-8 50mm f/2 (LTM/L39)", "Nikon", "rangefinder", "1950-1992", 100, "Good", True, "Standard", "Soviet Sonnar clone, LTM screw mount, warm rendering"),
+        ("Voigtlander Nokton 35mm f/1.2 Aspherical VM III", "Voigtlander", "rangefinder", "2020-present", 1100, "Mint", True, "Standard", "Ultra-fast wide M-mount, aspherical, latest version"),
+        ("Carl Zeiss Distagon 25mm f/2.8 ZF.2 (Nikon)", "Nikon", "SLR", "2009-present", 600, "Excellent", True, "Standard", "Wide-angle Zeiss for Nikon F, T* coated, manual focus"),
+        ("Canon FD 85mm f/1.2 L SSC", "Canon", "SLR", "1976-1989", 2200, "Good", True, "Rare", "Ultra-fast L portrait lens, aspherical, dream rendering"),
+    ]
+
+
+def _round9_expansion() -> list[tuple]:
+    """Round 9 expansion: 145 items — Nikon F variants, Canon FD lenses, Russian cameras,
+    large format, TLR, darkroom equipment, Polaroid film types."""
+    return [
+        # --- Nikon F-Series Variants (+20) ---
+        ("Nikon F Plain Prism (Early)", "Nikon", "SLR", "1959-1962", 800, "Good", False, "Rare", "First Nikon F, plain prism, early serial, Nippon Kogaku"),
+        ("Nikon F Photomic FTn (Black)", "Nikon", "SLR", "1968-1974", 500, "Good", True, "Standard", "Photomic FTn metering head, black body, center-weighted"),
+        ("Nikon F Photomic T (Chrome)", "Nikon", "SLR", "1965-1968", 450, "Good", True, "Standard", "Photomic T through-lens meter, chrome finish"),
+        ("Nikon F2 Photomic (Chrome)", "Nikon", "SLR", "1971-1980", 600, "Excellent", True, "Standard", "Professional F2 with DP-1 Photomic head"),
+        ("Nikon F2 Photomic AS (Black)", "Nikon", "SLR", "1977-1980", 700, "Excellent", True, "Standard", "Final F2 variant, AI-coupled metering"),
+        ("Nikon F2 Titan (No Name)", "Nikon", "SLR", "1978-1980", 3500, "Excellent", False, "Rare", "Titanium F2, 'No Name' military/press variant, very rare"),
+        ("Nikon F3 HP (High Point)", "Nikon", "SLR", "1982-2001", 500, "Excellent", True, "Standard", "Eyepoint corrected viewfinder variant"),
+        ("Nikon F3 T (Titanium Black)", "Nikon", "SLR", "1982-2001", 1200, "Excellent", True, "Rare", "Titanium body F3, black finish, premium build"),
+        ("Nikon F3 T (Titanium Champagne)", "Nikon", "SLR", "1982-2001", 1500, "Excellent", True, "Rare", "Champagne gold titanium finish, collector premium"),
+        ("Nikon F3/T Limited (NASA)", "Nikon", "SLR", "1982-1988", 5000, "Good", False, "Rare", "NASA-spec F3, extremely rare, space heritage"),
+        ("Nikon F4s", "Nikon", "SLR", "1988-1996", 400, "Excellent", True, "Standard", "F4 with MB-21 grip, flagship autofocus SLR"),
+        ("Nikon F5 (Anniversary Edition)", "Nikon", "SLR", "1996-2004", 600, "Excellent", True, "Limited Edition", "50th anniversary special edition, gold trim"),
+        ("Nikon F6", "Nikon", "SLR", "2004-2020", 1800, "Mint", True, "Rare", "Last Nikon film SLR, modern electronics, cult classic"),
+        ("Nikon FM3A (Chrome)", "Nikon", "SLR", "2001-2006", 900, "Excellent", True, "Standard", "Hybrid shutter, manual + auto, last mechanical Nikon"),
+        ("Nikon FM3A (Black)", "Nikon", "SLR", "2001-2006", 1000, "Excellent", True, "Standard", "Black version, slightly higher collector premium"),
+        ("Nikon FE2 (Chrome)", "Nikon", "SLR", "1983-1987", 350, "Excellent", True, "Standard", "1/4000 titanium shutter, aperture-priority, honeycomb metering"),
+        ("Nikon FE2 (Black)", "Nikon", "SLR", "1983-1987", 400, "Excellent", True, "Standard", "Black finish FE2, slightly rarer than chrome"),
+        ("Nikon FA (Gold)", "Nikon", "SLR", "1983-1987", 500, "Good", True, "Limited Edition", "First matrix-metering Nikon, gold commemorative edition"),
+        ("Nikon EM", "Nikon", "SLR", "1979-1982", 120, "Good", True, "Standard", "Compact entry-level, aperture-priority, Giugiaro design"),
+        ("Nikon Nikonos V (Orange)", "Nikon", "rangefinder", "1984-2001", 400, "Excellent", True, "Standard", "Underwater rangefinder, orange finish, iconic dive camera"),
+
+        # --- Canon FD Lenses (+15) ---
+        ("Canon FD 24mm f/1.4 L", "Canon", "SLR", "1979-1989", 1800, "Excellent", True, "Rare", "Ultra-fast wide L lens, aspherical, legendary rendering"),
+        ("Canon FD 35mm f/2 SSC", "Canon", "SLR", "1973-1979", 300, "Good", True, "Standard", "Compact wide-angle, SSC multicoating, classic street lens"),
+        ("Canon FD 50mm f/1.2 L", "Canon", "SLR", "1980-1989", 800, "Excellent", True, "Rare", "Ultra-fast normal L lens, aspherical element, dreamy wide-open"),
+        ("Canon FD 50mm f/1.4 SSC", "Canon", "SLR", "1973-1979", 150, "Good", True, "Standard", "Workhorse normal, SSC coated, classic Canon rendering"),
+        ("Canon FD 50mm f/3.5 Macro", "Canon", "SLR", "1975-1989", 200, "Good", True, "Standard", "True macro, 1:2 native, sharp, excellent close-up"),
+        ("Canon FD 85mm f/1.8 SSC", "Canon", "SLR", "1975-1989", 350, "Good", True, "Standard", "Portrait telephoto, SSC coated, smooth bokeh"),
+        ("Canon FD 100mm f/2.8 SSC", "Canon", "SLR", "1975-1989", 200, "Good", True, "Standard", "Short tele, SSC coated, great for portraits and macro"),
+        ("Canon FD 135mm f/2", "Canon", "SLR", "1976-1989", 600, "Excellent", True, "Rare", "Fast telephoto, rare, excellent bokeh and rendering"),
+        ("Canon FD 200mm f/2.8 IF", "Canon", "SLR", "1979-1989", 400, "Good", True, "Standard", "Internal focus telephoto, sharp, professional quality"),
+        ("Canon FD 300mm f/2.8 L IF", "Canon", "SLR", "1982-1989", 1200, "Good", True, "Rare", "Pro tele L lens, internal focus, superb optics"),
+        ("Canon nFD 28mm f/2", "Canon", "SLR", "1979-1989", 250, "Good", True, "Standard", "New FD mount wide, compact, excellent performer"),
+        ("Canon nFD 20mm f/2.8", "Canon", "SLR", "1979-1989", 300, "Good", True, "Standard", "Ultra-wide new FD, rectilinear, great landscapes"),
+        ("Canon FD 17mm f/4", "Canon", "SLR", "1973-1989", 500, "Good", True, "Rare", "Ultra-wide rectilinear, rare, minimal distortion"),
+        ("Canon Macro Photo Lens 20mm f/3.5", "Canon", "SLR", "1979-1989", 800, "Good", True, "Rare", "Extreme macro bellows lens, 1:1-10:1 magnification"),
+        ("Canon FD 14mm f/2.8 L", "Canon", "SLR", "1982-1989", 2500, "Good", True, "Rare", "Ultra-wide L, aspherical, pro architecture/landscape"),
+
+        # --- Russian Cameras (+20) ---
+        ("Kiev 4A", "Kiev", "rangefinder", "1958-1980", 120, "Good", True, "Standard", "Soviet Contax clone, Jupiter-8M 50/2 lens, Kyiv Arsenal"),
+        ("Kiev 4AM", "Kiev", "rangefinder", "1975-1985", 100, "Good", True, "Standard", "Updated Kiev 4 with CdS meter, M39 mount variant"),
+        ("Kiev 60 TTL", "Kiev", "SLR", "1984-2000", 250, "Good", True, "Standard", "Soviet medium format 6x6 SLR, Pentacon Six mount"),
+        ("Kiev 88", "Kiev", "SLR", "1972-2000", 200, "Good", True, "Standard", "Soviet Hasselblad clone, 6x6 medium format, V-mount lenses"),
+        ("Kiev 88CM", "Kiev", "SLR", "1985-2000", 280, "Good", True, "Standard", "Improved Kiev 88, center-weighted metering"),
+        ("Zorki 1", "Zorki", "rangefinder", "1948-1956", 150, "Good", True, "Standard", "Soviet Leica II clone, first Zorki model, M39 mount"),
+        ("Zorki 4", "Zorki", "rangefinder", "1956-1973", 100, "Good", True, "Standard", "Most popular Zorki, Jupiter-8 50/2, reliable"),
+        ("Zorki 4K", "Zorki", "rangefinder", "1972-1978", 90, "Good", True, "Standard", "Zorki 4 with film advance lever instead of knob"),
+        ("Zorki 6", "Zorki", "rangefinder", "1959-1966", 80, "Good", True, "Standard", "Self-cocking shutter Zorki, compact, reliable"),
+        ("FED 2 (Type D)", "FED", "rangefinder", "1955-1970", 80, "Good", True, "Standard", "Soviet rangefinder, Leica-inspired, combined VF/RF"),
+        ("FED 3 (Type B)", "FED", "rangefinder", "1963-1980", 70, "Good", True, "Standard", "Improved FED with built-in flash sync, slow speeds"),
+        ("FED 5 (Olympic)", "FED", "rangefinder", "1977-1990", 120, "Good", True, "Limited Edition", "FED 5 1980 Moscow Olympics commemorative edition"),
+        ("Zenit E", "Zenit", "SLR", "1965-1986", 60, "Good", True, "Standard", "Soviet workhorse SLR, M42 mount, selenium meter"),
+        ("Zenit 12XP", "Zenit", "SLR", "1983-1994", 50, "Good", True, "Standard", "Updated Zenit with K-mount, CdS metering"),
+        ("Zenit TTL", "Zenit", "SLR", "1977-1985", 55, "Good", True, "Standard", "Through-the-lens metering Zenit, M42 mount"),
+        ("Lubitel 166B", "LOMO", "TLR", "1980-1990", 80, "Good", True, "Standard", "Soviet TLR, 6x6 medium format, plastic lens, lomography"),
+        ("LOMO LC-A", "LOMO", "rangefinder", "1984-2005", 250, "Good", True, "Standard", "Iconic Lomo camera, Minitar 32/2.8, lomography movement founder"),
+        ("LOMO LC-A+ (New)", "LOMO", "rangefinder", "2006-present", 350, "Mint", True, "Standard", "Reissue LC-A, Chinese-made, multiple exposure, lomography"),
+        ("Smena 8M", "LOMO", "rangefinder", "1970-1993", 30, "Good", True, "Standard", "Most produced camera ever (~21 million), scale focus"),
+        ("Horizon 202 Panoramic", "KMZ", "rangefinder", "1989-2005", 200, "Good", True, "Standard", "Soviet swing-lens panoramic, 120-degree FOV, 35mm film"),
+
+        # --- Large Format Cameras (+15) ---
+        ("Crown Graphic 4x5 (Anniversary)", "Graflex", "large format", "1947-1973", 500, "Good", True, "Standard", "Press camera, Graflex back, rangefinder, folding"),
+        ("Speed Graphic 4x5 (Pre-Anniversary)", "Graflex", "large format", "1940-1946", 600, "Good", True, "Rare", "WWII-era press camera, focal plane shutter, iconic"),
+        ("Sinar P2 4x5", "Sinar", "large format", "1985-present", 1200, "Excellent", False, "Standard", "Swiss precision monorail, modular, studio standard"),
+        ("Sinar F2 4x5", "Sinar", "large format", "1987-present", 600, "Good", False, "Standard", "Lighter Sinar, field-capable monorail"),
+        ("Linhof Technika V 4x5", "Linhof", "large format", "1976-present", 2000, "Excellent", True, "Standard", "German precision field camera, rangefinder-coupled"),
+        ("Linhof Technika III 4x5", "Linhof", "large format", "1946-1956", 800, "Good", True, "Standard", "Post-war Technika, still very capable, collector piece"),
+        ("Linhof Master Technika Classic 4x5", "Linhof", "large format", "2000-present", 3500, "Mint", True, "Rare", "Latest Linhof, ultimate field camera, precision movements"),
+        ("Toyo-View 45GII", "Toyo", "large format", "1990-present", 800, "Excellent", False, "Standard", "Japanese monorail, precise movements, studio workhorse"),
+        ("Wista 45DX (Cherry Wood)", "Wista", "large format", "1985-present", 700, "Good", False, "Standard", "Japanese wooden field camera, cherry finish, traditional"),
+        ("Chamonix 045N-2 4x5", "Chamonix", "large format", "2010-present", 900, "Mint", False, "Standard", "Modern Chinese field camera, lightweight, excellent movements"),
+        ("Intrepid 4x5 Mk4", "Intrepid", "large format", "2020-present", 350, "Mint", False, "Standard", "Modern budget field camera, lightweight, wooden construction"),
+        ("Deardorff 8x10", "Deardorff", "large format", "1923-1988", 2500, "Good", False, "Rare", "American classic 8x10, handmade, contact print masterpiece"),
+        ("Sinar P 8x10", "Sinar", "large format", "1970-present", 2000, "Good", False, "Standard", "8x10 monorail, Swiss precision, ultimate studio camera"),
+        ("Calumet C-1 8x10", "Calumet", "large format", "1960-1980", 800, "Good", False, "Standard", "American monorail 8x10, robust, educational and studio use"),
+        ("Wisner Traditional 4x5", "Wisner", "large format", "1985-2010", 1500, "Excellent", False, "Rare", "Handmade American field camera, beautiful wood, precise"),
+
+        # --- TLR Cameras (+15) ---
+        ("Rolleiflex 2.8E Planar", "Rollei", "TLR", "1956-1959", 1200, "Good", True, "Standard", "Zeiss Planar 80/2.8, classic portrait TLR, EV metering"),
+        ("Rolleiflex 2.8F Planar", "Rollei", "TLR", "1960-1981", 2000, "Excellent", True, "Standard", "Final classic Rolleiflex, Planar 80/2.8, built-in meter"),
+        ("Rolleiflex 3.5F Planar", "Rollei", "TLR", "1958-1976", 1500, "Excellent", True, "Standard", "Planar 75/3.5, lighter, excellent street camera"),
+        ("Rolleiflex T (Tessar)", "Rollei", "TLR", "1958-1976", 500, "Good", True, "Standard", "Budget Rolleiflex, Tessar 75/3.5, grey finish"),
+        ("Rolleicord Vb", "Rollei", "TLR", "1962-1977", 350, "Good", True, "Standard", "Final Rolleicord, Xenar 75/3.5, excellent value"),
+        ("Yashica Mat 124G", "Yashica", "TLR", "1970-1986", 350, "Good", True, "Standard", "Yashinon 80/3.5, built-in meter, very popular"),
+        ("Yashica-A", "Yashica", "TLR", "1959-1969", 150, "Good", True, "Standard", "Budget TLR, Yashikor 80/3.5, entry-level 6x6"),
+        ("Minolta Autocord CdS", "Minolta", "TLR", "1965-1966", 400, "Good", True, "Standard", "Rokkor 75/3.5, CdS meter, excellent Japanese TLR"),
+        ("Mamiya C330 Professional f", "Mamiya", "TLR", "1969-1994", 500, "Excellent", True, "Standard", "Interchangeable lens TLR, bellows focusing, 80/2.8"),
+        ("Mamiya C220 Professional", "Mamiya", "TLR", "1968-1982", 350, "Good", True, "Standard", "Lighter C-series, interchangeable lenses, parallax correction"),
+        ("Seagull 4A-1", "Seagull", "TLR", "1966-2015", 80, "Good", True, "Standard", "Chinese Rolleicord copy, budget 6x6, SA-85 lens"),
+        ("Ciroflex Model F", "Ciro", "TLR", "1947-1955", 100, "Good", True, "Standard", "American TLR, Wollensak Anastigmat, art deco styling"),
+        ("Flexaret VII", "Meopta", "TLR", "1966-1971", 150, "Good", True, "Standard", "Czech TLR, Belar 80/3.5, excellent build quality"),
+        ("Ricoh Diacord G", "Ricoh", "TLR", "1958-1963", 120, "Good", True, "Standard", "Japanese TLR, Rikenon 80/3.5, budget alternative"),
+        ("Ikoflex IIa (855/16)", "Zeiss Ikon", "TLR", "1956-1960", 300, "Good", True, "Standard", "German TLR, Tessar 75/3.5, precision build"),
+
+        # --- Darkroom Equipment (+15) ---
+        ("Leitz Focomat V35 Autofocus Enlarger", "Leica", "darkroom", "1979-1998", 1500, "Excellent", False, "Rare", "Autofocus 35mm enlarger, Leitz optics, premium darkroom"),
+        ("Omega D5500 Enlarger (4x5 Condenser)", "Omega", "darkroom", "1975-1990", 400, "Good", False, "Standard", "Professional condenser enlarger, 35mm-4x5, modular"),
+        ("Beseler 23CIII-XL Enlarger", "Beseler", "darkroom", "1982-2000", 300, "Good", False, "Standard", "Classic medium format enlarger, 35mm-6x7, workhorse"),
+        ("Durst M805 Color Enlarger", "Durst", "darkroom", "1985-1995", 500, "Good", False, "Standard", "Italian color enlarger, filtration head, medium format"),
+        ("Jobo CPP-3 Processor", "Jobo", "darkroom", "2010-present", 1200, "Excellent", False, "Standard", "Rotary film/print processor, temperature controlled, C-41/E-6"),
+        ("Jobo CPE-2 Plus Processor", "Jobo", "darkroom", "1990-2010", 400, "Good", False, "Standard", "Entry-level rotary processor, temperature bath, reliable"),
+        ("Paterson Super System 4 Tank", "Paterson", "darkroom", "1970-present", 30, "Good", False, "Standard", "Universal developing tank, 1-2 reels, darkroom essential"),
+        ("Rodenstock APO-Rodagon 50mm f/2.8", "Rodenstock", "darkroom", "1990-present", 200, "Excellent", False, "Standard", "Premium 35mm enlarging lens, apochromatic, razor sharp"),
+        ("Schneider Componon-S 80mm f/4", "Schneider", "darkroom", "1985-present", 150, "Excellent", False, "Standard", "Premium medium format enlarging lens, 6-element design"),
+        ("Nikon EL-Nikkor 50mm f/2.8N", "Nikon", "darkroom", "1981-2006", 100, "Excellent", False, "Standard", "Classic 35mm enlarging lens, sharp, reliable"),
+        ("Ilford Multigrade 500H Head", "Ilford", "darkroom", "1995-2010", 350, "Good", False, "Standard", "Multigrade filtration enlarger head, dichroic, 35mm-6x7"),
+        ("Gralab 300 Darkroom Timer", "Gralab", "darkroom", "1960-present", 80, "Good", False, "Standard", "Classic luminous darkroom timer, audible alarm"),
+        ("RH Designs Analyser Pro", "RH Designs", "darkroom", "2005-present", 250, "Excellent", False, "Standard", "Precision enlarging exposure meter/analyzer"),
+        ("Arkay Print Washer (16x20)", "Arkay", "darkroom", "1970-1990", 150, "Good", False, "Standard", "Archival print washer, slot design, fiber prints"),
+        ("Zone VI Modified Cold Light Head", "Zone VI", "darkroom", "1980-2000", 400, "Good", False, "Rare", "Fred Picker's cold light, variable contrast, legendary"),
+
+        # --- Polaroid Film Types (+10) ---
+        ("Polaroid SX-70 Film (Color, Sealed, Expired 2005)", "Polaroid", "instant", "2000-2005", 80, "Good", False, "Rare", "Original Polaroid SX-70 film, expired but frozen, collector"),
+        ("Polaroid 600 Film (B&W, Sealed, Expired 2008)", "Polaroid", "instant", "2005-2008", 60, "Good", False, "Rare", "Original Polaroid 600 B&W, expired sealed pack"),
+        ("Polaroid Type 55 P/N 4x5 (Expired, Frozen)", "Polaroid", "instant", "1990-2008", 200, "Good", False, "Rare", "Legendary positive/negative 4x5 instant, frozen stock"),
+        ("Polaroid Type 665 P/N Pack (Expired)", "Polaroid", "instant", "1990-2008", 150, "Good", False, "Rare", "Pack film positive/negative, expired, usable if frozen"),
+        ("Polaroid Type 669 Color Pack (Expired)", "Polaroid", "instant", "1990-2008", 100, "Good", False, "Standard", "Peel-apart color pack film, image transfer capable"),
+        ("Polaroid i-Type Color Film (Keith Haring Edition)", "Polaroid", "instant", "2023-present", 22, "Mint", False, "Limited Edition", "Special edition frame design, Keith Haring collaboration"),
+        ("Polaroid i-Type B&W Film (Black Frame Edition)", "Polaroid", "instant", "2020-present", 20, "Mint", False, "Standard", "Black frame B&W instant film, modern Polaroid"),
+        ("Polaroid Go Film Color (Double Pack)", "Polaroid", "instant", "2021-present", 20, "Mint", False, "Standard", "Miniature instant film for Polaroid Go camera"),
+        ("Instax Mini Film (Macaron Color Frames)", "Fujifilm", "instant", "2023-present", 15, "Mint", False, "Standard", "Pastel-colored frame Instax Mini film, 10-pack"),
+        ("Instax Square Film (Star Illuminar)", "Fujifilm", "instant", "2023-present", 18, "Mint", False, "Standard", "Starry border square format instant film"),
+
+        # --- Additional Nikon Lenses (+10) ---
+        ("Nikon AI-S Nikkor 20mm f/2.8", "Nikon", "SLR", "1984-2005", 350, "Good", True, "Standard", "Ultra-wide AI-S, CRC, sharp, compact design"),
+        ("Nikon AI-S Nikkor 24mm f/2", "Nikon", "SLR", "1981-2005", 450, "Good", True, "Standard", "Fast wide-angle AI-S, CRC system, excellent flare control"),
+        ("Nikon AI-S Nikkor 28mm f/2", "Nikon", "SLR", "1981-2005", 400, "Good", True, "Standard", "Wide-angle AI-S, f/2 max aperture, sharp"),
+        ("Nikon AI-S Nikkor 35mm f/1.4", "Nikon", "SLR", "1981-2005", 700, "Excellent", True, "Rare", "Fast 35mm AI-S, legendary rendering, photojournalist favorite"),
+        ("Nikon AI-S Nikkor 85mm f/1.4", "Nikon", "SLR", "1981-2005", 500, "Excellent", True, "Standard", "Portrait king, AI-S with smooth bokeh, manual focus dream"),
+        ("Nikon AI-S Nikkor 135mm f/2", "Nikon", "SLR", "1981-2005", 800, "Good", True, "Rare", "Fast telephoto AI-S, legendary DC defocus control predecessor"),
+        ("Nikon AI-S Nikkor 180mm f/2.8 ED", "Nikon", "SLR", "1981-2005", 400, "Good", True, "Standard", "ED telephoto AI-S, excellent sharpness, lightweight tele"),
+        ("Nikon AI-S Micro-Nikkor 55mm f/2.8", "Nikon", "SLR", "1981-2005", 200, "Good", True, "Standard", "Classic macro AI-S, 1:2 native, extremely sharp"),
+        ("Nikon AI-S Micro-Nikkor 105mm f/2.8", "Nikon", "SLR", "1984-2005", 350, "Excellent", True, "Standard", "True macro AI-S, 1:1 with PN-11, portrait+macro dual use"),
+        ("Nikon AI-S Nikkor 500mm f/4 P ED IF", "Nikon", "SLR", "1988-2005", 2500, "Good", True, "Rare", "Manual focus super-tele, ED glass, built-in CPU contacts"),
+
+        # --- Additional Hasselblad Accessories (+5) ---
+        ("Hasselblad A12 Film Back (Chrome)", "Hasselblad", "medium format", "1965-1995", 250, "Good", False, "Standard", "12-exposure 120 film back for 500-series, chrome finish"),
+        ("Hasselblad A24 Film Back (220 Film)", "Hasselblad", "medium format", "1970-1995", 200, "Good", False, "Standard", "24-exposure 220 film back, increasingly rare film type"),
+        ("Hasselblad Polaroid Film Back", "Hasselblad", "medium format", "1972-2008", 150, "Good", False, "Standard", "Instant film proofing back for V-system"),
+        ("Hasselblad PME3 Metered Prism", "Hasselblad", "medium format", "1985-1995", 300, "Excellent", False, "Standard", "Center-weighted metering prism, LED display"),
+        ("Hasselblad Winder F", "Hasselblad", "medium format", "1981-1995", 200, "Good", False, "Standard", "Motor winder for 500-series, single-frame advance"),
+
+        # --- Misc Rangefinders & Point-and-Shoot (+15) ---
+        ("Konica Hexar AF Silver", "Konica", "rangefinder", "1993-1997", 900, "Excellent", True, "Rare", "Silent stealth camera, 35/2 lens, titanium shutter"),
+        ("Konica Hexar RF", "Konica", "rangefinder", "1999-2003", 1500, "Excellent", False, "Rare", "Last Konica rangefinder, Leica M-compatible, KM 50/2 Hexanon"),
+        ("Ricoh GR1s", "Ricoh", "rangefinder", "1998-2001", 600, "Excellent", True, "Standard", "Compact 28/2.8 GR lens, titanium body, legendary snap shooter"),
+        ("Ricoh GR1v", "Ricoh", "rangefinder", "2001-2005", 700, "Excellent", True, "Standard", "Final GR1, improved AF, 28/2.8 GR lens, LCD display"),
+        ("Minolta TC-1", "Minolta", "rangefinder", "1996-2001", 800, "Excellent", True, "Rare", "Titanium 28/3.5 G-Rokkor, ultra-compact, cult classic"),
+        ("Nikon 35Ti", "Nikon", "rangefinder", "1993-1998", 700, "Excellent", True, "Standard", "Titanium body, 35/2.8 Nikkor, analog dashboard, premium compact"),
+        ("Nikon 28Ti", "Nikon", "rangefinder", "1994-1998", 900, "Excellent", True, "Rare", "Titanium 28/2.8 Nikkor, wider than 35Ti, rarer model"),
+        ("Fujifilm Klasse W (Silver)", "Fujifilm", "rangefinder", "2006-2012", 500, "Excellent", True, "Standard", "Wide 28/2.8 EBC Fujinon, aperture-priority, last Fuji compact"),
+        ("Fujifilm Klasse S (Black)", "Fujifilm", "rangefinder", "2007-2012", 600, "Excellent", True, "Standard", "38/2.8 EBC Fujinon, classic focal length, premium compact"),
+        ("Olympus XA", "Olympus", "rangefinder", "1979-1985", 200, "Good", True, "Standard", "Ultra-compact clamshell, 35/2.8 Zuiko, rangefinder in pocket size"),
+        ("Olympus XA2", "Olympus", "rangefinder", "1980-1985", 100, "Good", True, "Standard", "Zone-focus XA, 35/3.5 D.Zuiko, simpler operation"),
+        ("Yashica T4 (Kyocera T*)", "Yashica", "rangefinder", "1990-2002", 400, "Excellent", True, "Standard", "Carl Zeiss T* Tessar 35/3.5, weatherproof, sharp"),
+        ("Yashica T5 (Kyocera T*)", "Yashica", "rangefinder", "1994-2002", 300, "Good", True, "Standard", "Zeiss T* 35/3.5, panorama mode, budget T4 alternative"),
+        ("Canon Sure Shot AF35M II (Autoboy)", "Canon", "rangefinder", "1986-1990", 60, "Good", True, "Standard", "Early compact AF, 38/2.8, reliable street shooter"),
+        ("Pentax Espio Mini", "Pentax", "rangefinder", "1994-2000", 150, "Good", True, "Standard", "Ultra-compact 32/3.5, sharp smc Pentax lens, weather sealed"),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Assemble full catalog
 # ---------------------------------------------------------------------------
@@ -1328,6 +1611,10 @@ def get_curated_catalog() -> list[dict]:
     # Round 7 — lens variants & body color/material variants
     all_tuples.extend(_round7_lens_variants())
     all_tuples.extend(_round7_body_variants())
+    # Round 8 — Leica M, Hasselblad, medium format, SLR, rangefinder, instant, lenses
+    all_tuples.extend(_round8_expansion())
+    # Round 9 — Nikon F variants, Canon FD, Russian, large format, TLR, darkroom, Polaroid film
+    all_tuples.extend(_round9_expansion())
 
     catalog: list[dict] = []
     for name, brand, cam_type, year_range, price_eur, condition, has_lens, rarity, notes in all_tuples:

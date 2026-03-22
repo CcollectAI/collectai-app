@@ -1,5 +1,5 @@
 """
-Import Gunpla (Gundam plastic model kit) catalog (700+ items).
+Import Gunpla (Gundam plastic model kit) catalog (900+ items).
 
 Layer 1 (Catalog):  Curated Gunpla kits → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
@@ -74,7 +74,7 @@ def _variant_expansion() -> list[tuple]:
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Gunpla catalog — 700+ kits across all major grades, series, and formats."""
+    """Curated Gunpla catalog — 900+ kits across all major grades, series, and formats."""
 
     # (grade, scale, name, series, variant, rarity_tier, price_eur)
     # rarity_tier: grail (>200), high (100-200), mid (40-100), standard (<40)
@@ -378,7 +378,6 @@ def get_curated_catalog() -> list[dict]:
 
         # ── RG New Releases & Popular ────────────────────────────────────
         ("RG", "1/144", "Wing Gundam", "Gundam Wing", "", "standard", 28),
-        ("RG", "1/144", "Crossbone Gundam X1", "Crossbone Gundam", "", "standard", 32),
         ("RG", "1/144", "Gundam Mk-II (Titans)", "Zeta Gundam", "", "standard", 28),
         ("RG", "1/144", "Kampfer (P-Bandai)", "Gundam 0080", "P-Bandai", "mid", 60),
         ("RG", "1/144", "Impulse Gundam", "Gundam SEED Destiny", "", "standard", 30),
@@ -767,13 +766,10 @@ def get_curated_catalog() -> list[dict]:
     # ── Expansion Batch 9 — Ver.Ka, P-Bandai, RG, SEED Freedom, Full Mechanics, MGEX, SD EX ──
     kits += [
         # Master Grade Ver.Ka — Premium Releases
-        ("MG", "1/100", "Full Armor Gundam Ver.Ka (Thunderbolt)", "Gundam Thunderbolt", "Ver.Ka", "high", 100),
         ("MG", "1/100", "Psycho Zaku Ver.Ka (Thunderbolt)", "Gundam Thunderbolt", "Ver.Ka", "high", 110),
         ("MG", "1/100", "Victory Two Gundam Ver.Ka", "Victory Gundam", "Ver.Ka", "mid", 65),
         ("MG", "1/100", "V2 Assault Buster Gundam Ver.Ka", "Victory Gundam", "Ver.Ka", "mid", 80),
         ("MG", "1/100", "Gundam F91 Ver.2.0", "Gundam F91", "Ver.2.0", "mid", 55),
-        ("MG", "1/100", "Crossbone Gundam X1 Ver.Ka", "Crossbone Gundam", "Ver.Ka", "mid", 60),
-        ("MG", "1/100", "Zeta Gundam Ver.Ka", "Zeta Gundam", "Ver.Ka", "mid", 65),
         ("MG", "1/100", "ZZ Gundam Ver.Ka", "Gundam ZZ", "Ver.Ka", "mid", 85),
         ("MG", "1/100", "Gundam Mk-II (AEUG) Ver.2.0", "Zeta Gundam", "Ver.2.0", "mid", 50),
         ("MG", "1/100", "Ball Ver.Ka", "Mobile Suit Gundam", "Ver.Ka", "standard", 35),
@@ -798,7 +794,6 @@ def get_curated_catalog() -> list[dict]:
         ("RG", "1/144", "Hi-Nu Gundam", "Char's Counterattack", "", "mid", 55),
         ("RG", "1/144", "Gundam Epyon", "Gundam Wing", "", "mid", 42),
         ("RG", "1/144", "God Gundam", "G Gundam", "", "mid", 45),
-        ("RG", "1/144", "Char's Zaku II", "Mobile Suit Gundam", "", "standard", 28),
 
         # Gundam SEED Freedom — HG Line
         ("HG", "1/144", "Mighty Strike Freedom Gundam", "Gundam SEED Freedom", "HGSEED", "standard", 22),
@@ -841,7 +836,6 @@ def get_curated_catalog() -> list[dict]:
 
         # MG Ver.Ka — Additional Releases
         ("MG", "1/100", "Sazabi Ver.Ka", "Char's Counterattack", "Ver.Ka", "high", 90),
-        ("MG", "1/100", "Nu Gundam Ver.Ka", "Char's Counterattack", "Ver.Ka", "mid", 75),
         ("MG", "1/100", "Sinanju Ver.Ka", "Gundam Unicorn", "Ver.Ka", "high", 85),
         ("MG", "1/100", "Hi-Nu Gundam Ver.Ka", "Char's Counterattack", "Ver.Ka", "high", 95),
         ("MG", "1/100", "Tallgeese Ver.Ka", "Gundam Wing", "Ver.Ka", "mid", 55),
@@ -856,7 +850,6 @@ def get_curated_catalog() -> list[dict]:
         ("RG", "1/144", "Wing Gundam (TV Version)", "Gundam Wing", "", "standard", 30),
         ("RG", "1/144", "Turn A Gundam", "Turn A Gundam", "", "mid", 42),
         ("RG", "1/144", "Tallgeese", "Gundam Wing", "", "standard", 32),
-        ("RG", "1/144", "Tallgeese II", "Gundam Wing", "", "standard", 32),
         ("RG", "1/144", "Tallgeese III", "Gundam Wing", "", "mid", 38),
 
         # RE/100 Kits
@@ -979,7 +972,6 @@ def get_curated_catalog() -> list[dict]:
         ("MG", "1/100", "Black Knight Squad Shi-ve.A", "Gundam SEED Freedom", "", "mid", 72),
 
         # RG — UC Classics
-        ("RG", "1/144", "Zeong", "Mobile Suit Gundam", "", "mid", 55),
         ("RG", "1/144", "GP01 Zephyranthes", "Gundam 0083", "", "mid", 38),
         ("RG", "1/144", "GP01Fb Full Burnern", "Gundam 0083", "", "mid", 42),
 
@@ -990,7 +982,6 @@ def get_curated_catalog() -> list[dict]:
         ("Full Mechanics", "1/100", "Calamity Gundam (Full Mechanics)", "Gundam SEED", "", "mid", 48),
 
         # Metal Build — Additional Premium
-        ("Metal Build", "N/A", "Destiny Gundam (Metal Build)", "Gundam SEED Destiny", "Metal Build", "grail", 350),
         ("Metal Build", "N/A", "00 Raiser (Metal Build)", "Gundam 00", "Metal Build", "grail", 340),
         ("Metal Build", "N/A", "Strike Noir (Metal Build)", "Gundam SEED Stargazer", "Metal Build", "grail", 320),
         ("Metal Build", "N/A", "Crossbone Gundam X1 (Metal Build)", "Crossbone Gundam", "Metal Build", "grail", 310),
@@ -1005,6 +996,345 @@ def get_curated_catalog() -> list[dict]:
         ("MG", "1/100", "Tallgeese Flugel (P-Bandai)", "Gundam Wing", "P-Bandai", "high", 130),
         ("HG", "1/144", "Moon Gundam (P-Bandai Clear)", "Moon Gundam", "P-Bandai", "mid", 45),
         ("RG", "1/144", "Wing Gundam (TV Ver.) (P-Bandai)", "Gundam Wing", "P-Bandai", "mid", 55),
+
+        # ── Perfect Grade (PG) Expansion ──────────────────────────────────
+        ("PG", "1/60", "Unicorn Gundam (Full Armor Equipment)", "Gundam Unicorn", "", "grail", 350),
+        ("PG", "1/60", "Unicorn Gundam 02 Banshee Norn", "Gundam Unicorn", "", "grail", 300),
+        ("PG", "1/60", "Exia (Lighting Model)", "Gundam 00", "", "grail", 320),
+        ("PG", "1/60", "00 Raiser", "Gundam 00", "", "grail", 290),
+        ("PG", "1/60", "RX-78-2 Gundam (The Origin)", "Mobile Suit Gundam THE ORIGIN", "", "grail", 260),
+        ("PG", "1/60", "Gundam Mk-II (Titans Color)", "Zeta Gundam", "", "grail", 240),
+        ("PG", "1/60", "Gundam Mk-II (A.E.U.G. Color)", "Zeta Gundam", "", "grail", 240),
+        ("PG", "1/60", "Wing Gundam Zero Custom (Pearl Mirror Coating)", "Gundam Wing", "", "grail", 400),
+        ("PG", "1/60", "Gundam Astray Red Frame Kai", "Gundam SEED Astray", "", "grail", 280),
+
+        # ── Master Grade Ver.Ka Expansion ─────────────────────────────────
+        ("MG", "1/100", "Sazabi Ver.Ka", "Char's Counterattack", "Ver.Ka", "high", 120),
+        ("MG", "1/100", "Nu Gundam Ver.Ka", "Char's Counterattack", "Ver.Ka", "high", 110),
+        ("MG", "1/100", "Wing Gundam Zero EW Ver.Ka", "Gundam Wing", "Ver.Ka", "high", 95),
+        ("MG", "1/100", "Sinanju Ver.Ka", "Gundam Unicorn", "Ver.Ka", "high", 100),
+        ("MG", "1/100", "Unicorn Gundam Ver.Ka", "Gundam Unicorn", "Ver.Ka", "high", 90),
+        ("MG", "1/100", "Crossbone Gundam X1 Ver.Ka", "Crossbone Gundam", "Ver.Ka", "mid", 65),
+        ("MG", "1/100", "Gundam Barbatos Ver.Ka", "Iron-Blooded Orphans", "Ver.Ka", "high", 85),
+        ("MG", "1/100", "Providence Gundam (Special Edition)", "Gundam SEED", "", "high", 90),
+        ("MG", "1/100", "Hi-Nu Gundam Ver.Ka", "Char's Counterattack", "Ver.Ka", "high", 130),
+        ("MG", "1/100", "ZZ Gundam Ver.Ka", "ZZ Gundam", "Ver.Ka", "high", 95),
+        ("MG", "1/100", "Full Armor Gundam (Thunderbolt) Ver.Ka", "Gundam Thunderbolt", "Ver.Ka", "high", 110),
+        ("MG", "1/100", "Psycho Zaku Ver.Ka (Thunderbolt)", "Gundam Thunderbolt", "Ver.Ka", "high", 120),
+        ("MG", "1/100", "V2 Assault Buster Gundam Ver.Ka", "Victory Gundam", "Ver.Ka", "high", 100),
+        ("MG", "1/100", "Jesta Ver.Ka", "Gundam Unicorn", "Ver.Ka", "mid", 65),
+        ("MG", "1/100", "Ball Ver.Ka", "Mobile Suit Gundam", "Ver.Ka", "mid", 50),
+
+        # ── Real Grade (RG) Popular Expansion ─────────────────────────────
+        ("RG", "1/144", "Sazabi", "Char's Counterattack", "", "mid", 55),
+        ("RG", "1/144", "Nu Gundam", "Char's Counterattack", "", "mid", 50),
+        ("RG", "1/144", "Hi-Nu Gundam", "Char's Counterattack", "", "mid", 60),
+        ("RG", "1/144", "Wing Gundam Zero EW", "Gundam Wing", "", "standard", 35),
+        ("RG", "1/144", "Tallgeese", "Gundam Wing", "", "standard", 30),
+        ("RG", "1/144", "Evangelion Unit-01", "Neon Genesis Evangelion", "Crossover", "mid", 55),
+        ("RG", "1/144", "Force Impulse Gundam", "Gundam SEED Destiny", "", "standard", 35),
+        ("RG", "1/144", "Zeong", "Mobile Suit Gundam", "", "mid", 65),
+
+        # ── P-Bandai Exclusives Expansion ─────────────────────────────────
+        ("MG", "1/100", "Gundam Deathscythe Hell EW (P-Bandai)", "Gundam Wing", "P-Bandai", "high", 115),
+        ("RG", "1/144", "Banshee Norn (Final Battle Ver.) (P-Bandai)", "Gundam Unicorn", "P-Bandai", "high", 75),
+        ("MG", "1/100", "Eclipse Gundam (P-Bandai)", "Gundam SEED Eclipse", "P-Bandai", "high", 110),
+        ("MGEX", "1/100", "Unicorn Gundam Ver.Ka (Luminous Crystal Body) (P-Bandai)", "Gundam Unicorn", "P-Bandai", "grail", 250),
+        ("HG", "1/144", "Moon Gundam (P-Bandai)", "Moon Gundam", "P-Bandai", "mid", 40),
+        ("MG", "1/100", "Blaze Zaku Phantom (Rey Za Burrel) (P-Bandai)", "Gundam SEED Destiny", "P-Bandai", "high", 100),
+        ("MG", "1/100", "Gundam Heavyarms Custom EW (Igel Equipment) (P-Bandai)", "Gundam Wing", "P-Bandai", "high", 125),
+        ("RG", "1/144", "00 Qan[T] Full Saber (P-Bandai)", "Gundam 00", "P-Bandai", "high", 70),
+        ("MG", "1/100", "Narrative Gundam C-Packs (P-Bandai)", "Gundam Narrative", "P-Bandai", "high", 105),
+        ("HG", "1/144", "Penelope (P-Bandai)", "Hathaway's Flash", "P-Bandai", "high", 80),
+        ("MG", "1/100", "Rick Dias (P-Bandai Red Color)", "Zeta Gundam", "P-Bandai", "high", 95),
+        ("RG", "1/144", "Strike Freedom Gundam (Full Burst Mode) (P-Bandai)", "Gundam SEED Destiny", "P-Bandai", "high", 75),
+        ("MG", "1/100", "Hazel Custom (Titans Color) (P-Bandai)", "Advance of Zeta", "P-Bandai", "high", 110),
+
+        # ── Non-Gundam Mecha Kits ─────────────────────────────────────────
+        ("RG", "1/144", "Evangelion Unit-02", "Neon Genesis Evangelion", "Crossover", "mid", 55),
+        ("RG", "1/144", "Evangelion Unit-00", "Neon Genesis Evangelion", "Crossover", "mid", 50),
+        ("RG", "1/144", "Evangelion Unit-13", "Evangelion 3.0+1.0", "Crossover", "mid", 60),
+        ("RG", "1/144", "Evangelion Mark.06", "Evangelion 2.0", "Crossover", "mid", 55),
+        ("HG", "1/72", "VF-1S Strike Valkyrie (Hikaru)", "Macross", "Crossover", "high", 80),
+        ("HG", "1/72", "VF-1J Armored Valkyrie (Hikaru)", "Macross", "Crossover", "high", 85),
+        ("1/100", "1/100", "Lancelot Albion", "Code Geass", "Crossover", "high", 90),
+        ("1/60", "1/60", "ARX-7 Arbalest (Full Metal Panic)", "Full Metal Panic", "Crossover", "high", 100),
+        ("1/100", "1/100", "Five Star Stories Knight of Gold", "Five Star Stories", "Crossover", "grail", 200),
+        ("HG", "1/144", "Mazinkaiser (Infinitism)", "Mazinger Z", "Crossover", "mid", 45),
+    ]
+
+    # ── Expansion Batch 10 — 160 more kits (to 900+) ──────────────────────
+    kits += [
+        # ── HG Popular Kits (~30) ─────────────────────────────────────────
+        ("HG", "1/144", "Gundam Barbatos", "Iron-Blooded Orphans", "Standard", "standard", 15),
+        ("HG", "1/144", "Gundam Aerial", "Witch from Mercury", "Standard", "standard", 18),
+        ("HG", "1/144", "Gundam Calibarn", "Witch from Mercury", "Standard", "standard", 20),
+        ("HG", "1/144", "Gundam Pharact", "Witch from Mercury", "Standard", "mid", 22),
+        ("HG", "1/144", "Gundam Schwarzette", "Witch from Mercury", "Standard", "standard", 20),
+        ("HG", "1/144", "Moon Gundam", "Moon Gundam", "Standard", "mid", 35),
+        ("HG", "1/144", "Penelope", "Hathaway's Flash", "Standard", "mid", 70),
+        ("HG", "1/144", "Xi Gundam", "Hathaway's Flash", "Standard", "mid", 65),
+        ("HG", "1/144", "Char's Zaku II (The Origin)", "The Origin", "Standard", "standard", 22),
+        ("HG", "1/144", "Gouf Custom", "08th MS Team", "Standard", "mid", 28),
+        ("HG", "1/144", "GM Sniper II", "08th MS Team", "Standard", "standard", 25),
+        ("HG", "1/144", "Kampfer", "Gundam 0080", "Standard", "mid", 30),
+        ("HG", "1/144", "Sinanju", "Gundam Unicorn", "Standard", "mid", 35),
+        ("HG", "1/144", "Unicorn Gundam (Destroy Mode)", "Gundam Unicorn", "Standard", "standard", 22),
+        ("HG", "1/144", "Narrative Gundam (A-Packs)", "Gundam Narrative", "Standard", "mid", 30),
+        ("HG", "1/144", "Reginlaze Julia", "Iron-Blooded Orphans", "Standard", "mid", 28),
+        ("HG", "1/144", "Gundam Vidar", "Iron-Blooded Orphans", "Standard", "standard", 20),
+        ("HG", "1/144", "Gundam Barbatos Lupus Rex", "Iron-Blooded Orphans", "Standard", "standard", 18),
+        ("HG", "1/144", "Gundam Bael", "Iron-Blooded Orphans", "Standard", "standard", 18),
+        ("HG", "1/144", "Messer (Hathaway's Flash)", "Hathaway's Flash", "Standard", "standard", 22),
+        ("HG", "1/144", "Gustav Karl (Unicorn Ver.)", "Gundam Unicorn", "Standard", "standard", 20),
+        ("HG", "1/144", "Dijeh", "Zeta Gundam", "Standard", "mid", 28),
+        ("HG", "1/144", "Byarlant Custom", "Gundam Unicorn", "Standard", "mid", 32),
+        ("HG", "1/144", "Gaplant (A.O.Z. Re-Boot)", "Advance of Zeta", "Standard", "mid", 30),
+        ("HG", "1/144", "Guncannon Detector", "Gundam Unicorn", "Standard", "standard", 25),
+        ("HG", "1/144", "GM III", "Gundam ZZ", "Standard", "standard", 20),
+        ("HG", "1/144", "Dreissen (Unicorn Ver.)", "Gundam Unicorn", "Standard", "standard", 22),
+        ("HG", "1/144", "Pale Rider Cavalry", "Missing Link", "Standard", "mid", 28),
+        ("HG", "1/144", "Atlas Gundam", "Gundam Thunderbolt", "Standard", "mid", 35),
+        ("HG", "1/144", "Psycho Zaku (Thunderbolt)", "Gundam Thunderbolt", "Standard", "mid", 40),
+
+        # ── MG Additional (~20) ───────────────────────────────────────────
+        ("MG", "1/100", "Freedom Gundam Ver.2.0", "Gundam SEED", "Ver.2.0", "mid", 55),
+        ("MG", "1/100", "Justice Gundam", "Gundam SEED", "Standard", "mid", 50),
+        ("MG", "1/100", "Providence Gundam", "Gundam SEED", "Standard", "mid", 55),
+        ("MG", "1/100", "Strike Gundam RM", "Gundam SEED", "RM", "mid", 48),
+        ("MG", "1/100", "Wing Gundam Zero EW", "Gundam Wing", "Standard", "mid", 50),
+        ("MG", "1/100", "Deathscythe Hell EW", "Gundam Wing", "Standard", "mid", 48),
+        ("MG", "1/100", "Heavyarms EW", "Gundam Wing", "Standard", "mid", 45),
+        ("MG", "1/100", "Sandrock EW", "Gundam Wing", "Standard", "mid", 45),
+        ("MG", "1/100", "Altron Gundam EW", "Gundam Wing", "Standard", "mid", 48),
+        ("MG", "1/100", "Turn A Gundam", "Turn A Gundam", "Standard", "mid", 55),
+        ("MG", "1/100", "God Gundam", "G Gundam", "Standard", "mid", 50),
+        ("MG", "1/100", "Shining Gundam", "G Gundam", "Standard", "mid", 45),
+        ("MG", "1/100", "Jesta", "Gundam Unicorn", "Standard", "mid", 48),
+        ("MG", "1/100", "GM Sniper II", "08th MS Team", "Standard", "mid", 50),
+        ("MG", "1/100", "Dynames Gundam", "Gundam 00", "Standard", "mid", 55),
+        ("MG", "1/100", "Virtue Gundam", "Gundam 00", "Standard", "mid", 55),
+        ("MG", "1/100", "00 QAN[T]", "Gundam 00", "Standard", "mid", 55),
+        ("MG", "1/100", "Epyon Gundam", "Gundam Wing", "Standard", "mid", 60),
+        ("MG", "1/100", "Tallgeese III", "Gundam Wing", "Standard", "mid", 55),
+        ("MG", "1/100", "Blitz Gundam", "Gundam SEED", "Standard", "mid", 48),
+
+        # ── Full Mechanics (~10) ──────────────────────────────────────────
+        ("Full Mechanics", "1/100", "Gundam Aerial Rebuild", "Witch from Mercury", "Full Mechanics", "mid", 58),
+        ("Full Mechanics", "1/100", "Gundam Lfrith Ur", "Witch from Mercury", "Full Mechanics", "mid", 55),
+        ("Full Mechanics", "1/100", "Beguir-Beu", "Witch from Mercury", "Full Mechanics", "mid", 50),
+        ("Full Mechanics", "1/100", "Michaelis", "Witch from Mercury", "Full Mechanics", "mid", 50),
+        ("Full Mechanics", "1/100", "Gundam Lfrith Jiu", "Witch from Mercury", "Full Mechanics", "mid", 52),
+        ("Full Mechanics", "1/100", "Aile Strike Gundam (SEED Freedom)", "Gundam SEED Freedom", "Full Mechanics", "mid", 55),
+        ("Full Mechanics", "1/100", "Rising Freedom Gundam", "Gundam SEED Freedom", "Full Mechanics", "mid", 58),
+        ("Full Mechanics", "1/100", "Immortal Justice Gundam", "Gundam SEED Freedom", "Full Mechanics", "mid", 58),
+        ("Full Mechanics", "1/100", "Black Knight Squad Shi-ve.A", "Gundam SEED Freedom", "Full Mechanics", "mid", 55),
+
+        # ── SD / MGSD (~10) ──────────────────────────────────────────────
+        ("MGSD", "SD", "Freedom Gundam (MGSD)", "Gundam SEED", "MGSD", "mid", 35),
+        ("MGSD", "SD", "Strike Freedom Gundam (MGSD)", "Gundam SEED Destiny", "MGSD", "mid", 38),
+        ("MGSD", "SD", "Wing Gundam Zero EW (MGSD)", "Gundam Wing", "MGSD", "mid", 35),
+        ("MGSD", "SD", "Unicorn Gundam (MGSD)", "Gundam Unicorn", "MGSD", "mid", 35),
+        ("MGSD", "SD", "RX-78-2 Gundam (MGSD)", "Mobile Suit Gundam", "MGSD", "mid", 32),
+        ("SD CS", "SD", "Sisquiede (SD Cross Silhouette)", "SD Build", "SD CS", "standard", 18),
+        ("SD CS", "SD", "Nightingale (SD Cross Silhouette)", "Char's Counterattack", "SD CS", "standard", 22),
+        ("SD CS", "SD", "Tornado Gundam (SD Cross Silhouette)", "SD Build", "SD CS", "standard", 18),
+        ("SD EX", "SD", "Strike Freedom (SD EX-Standard)", "Gundam SEED Destiny", "SD EX", "standard", 12),
+        ("SD EX", "SD", "Wing Gundam Zero EW (SD EX-Standard)", "Gundam Wing", "SD EX", "standard", 12),
+
+        # ── Entry Grade (~8) ─────────────────────────────────────────────
+        ("Entry Grade", "1/144", "RX-78-2 Gundam (Entry Grade)", "Mobile Suit Gundam", "Entry Grade", "standard", 8),
+        ("Entry Grade", "1/144", "Strike Gundam (Entry Grade)", "Gundam SEED", "Entry Grade", "standard", 8),
+        ("Entry Grade", "1/144", "Nu Gundam (Entry Grade)", "Char's Counterattack", "Entry Grade", "standard", 10),
+        ("Entry Grade", "1/144", "Lah Gundam (Entry Grade)", "Gundam Build Metaverse", "Entry Grade", "standard", 10),
+        ("Entry Grade", "1/144", "Gundam Aerial (Entry Grade)", "Witch from Mercury", "Entry Grade", "standard", 10),
+        ("Entry Grade", "1/144", "Unicorn Gundam (Entry Grade)", "Gundam Unicorn", "Entry Grade", "standard", 10),
+        ("Entry Grade", "1/144", "Wing Gundam Zero EW (Entry Grade)", "Gundam Wing", "Entry Grade", "standard", 10),
+        ("Entry Grade", "1/144", "Freedom Gundam (Entry Grade)", "Gundam SEED", "Entry Grade", "standard", 10),
+
+        # ── Limited/Event Exclusives (~15) ────────────────────────────────
+        ("MG", "1/100", "Freedom Gundam Ver.2.0 (Gundam Base Limited Gold)", "Gundam SEED", "Gundam Base", "high", 120),
+        ("RG", "1/144", "Unicorn Gundam (Gundam Base Limited Destroy Mode Ver. TWC)", "Gundam Unicorn", "Gundam Base", "high", 80),
+        ("HG", "1/144", "RX-78-2 Gundam (7-Eleven Color)", "Mobile Suit Gundam", "7-Eleven", "high", 65),
+        ("MG", "1/100", "RX-78-2 Gundam Ver.3.0 (Gundam Base Color)", "Mobile Suit Gundam", "Gundam Base", "high", 90),
+        ("HG", "1/144", "Aerial (Gundam Base Limited Coating Ver.)", "Witch from Mercury", "Gundam Base", "mid", 45),
+        ("PG", "1/60", "RX-78-2 Gundam (Chrome Plated)", "Mobile Suit Gundam", "Expo", "grail", 500),
+        ("MG", "1/100", "Strike Freedom (Full Burst Mode Expo)", "Gundam SEED Destiny", "Expo", "grail", 280),
+        ("RG", "1/144", "Sazabi (Special Coating)", "Char's Counterattack", "Special Coating", "high", 100),
+        ("RG", "1/144", "Nu Gundam (Metallic Coating)", "Char's Counterattack", "Special Coating", "high", 95),
+        ("MG", "1/100", "Wing Gundam Zero EW (Gunpla Expo Gold)", "Gundam Wing", "Expo", "high", 140),
+        ("HG", "1/144", "Barbatos Lupus Rex (Iron-Blooded Coating)", "Iron-Blooded Orphans", "Special Coating", "mid", 50),
+        ("RG", "1/144", "Destiny Gundam (Titanium Finish)", "Gundam SEED Destiny", "Titanium Finish", "high", 85),
+        ("MG", "1/100", "RX-78-2 Gundam Ver.Ka (GBWC 2024 Color)", "Mobile Suit Gundam", "Expo", "high", 150),
+        ("HG", "1/144", "Penelope (Clear Color Convention)", "Hathaway's Flash", "Clear Color", "high", 90),
+        ("RG", "1/144", "God Gundam (Gunpla Expo Hyper Mode)", "G Gundam", "Expo", "high", 100),
+
+        # ── Kotobukiya Frame Arms / 30MM (~10) ───────────────────────────
+        ("Frame Arms Girl", "N/A", "Gourai Kai (Ver.2)", "Frame Arms Girl", "Kotobukiya", "mid", 55),
+        ("Frame Arms Girl", "N/A", "Stylet (XF-3 Low Visibility)", "Frame Arms Girl", "Kotobukiya", "mid", 50),
+        ("Frame Arms Girl", "N/A", "Hresvelgr Ater", "Frame Arms Girl", "Kotobukiya", "mid", 60),
+        ("Frame Arms", "1/100", "Baselard", "Frame Arms", "Kotobukiya", "mid", 55),
+        ("Megami Device", "N/A", "Asra Ninja", "Megami Device", "Kotobukiya", "mid", 60),
+        ("Megami Device", "N/A", "Bullet Knights Exorcist", "Megami Device", "Kotobukiya", "mid", 65),
+        ("Hexa Gear", "1/24", "Governor Armor Type: Pawn X1", "Hexa Gear", "Kotobukiya", "mid", 45),
+        ("Hexa Gear", "1/24", "Rayblade Impulse", "Hexa Gear", "Kotobukiya", "mid", 70),
+        ("30MM", "1/144", "Forestieri 01 (30MM)", "30 Minutes Missions", "30MM", "standard", 22),
+        ("30MM", "1/144", "Lielnova (30MM)", "30 Minutes Missions", "30MM", "standard", 20),
+
+        # ── Tools & Accessories (~10) ────────────────────────────────────
+        ("Accessory", "N/A", "Mr. Color Gundam Color UG01-UG20 Complete Set", "Gundam Accessories", "Tools", "mid", 65),
+        ("Accessory", "N/A", "Gundam Marker Set (Basic 6 Color)", "Gundam Accessories", "Tools", "standard", 18),
+        ("Accessory", "N/A", "Gundam Marker Airbrush System", "Gundam Accessories", "Tools", "mid", 45),
+        ("Accessory", "N/A", "Action Base 5 (Black) 10-Pack", "Gundam Accessories", "Tools", "standard", 30),
+        ("Accessory", "N/A", "Action Base 4 (Clear) 5-Pack", "Gundam Accessories", "Tools", "standard", 22),
+        ("Accessory", "N/A", "LED Unit (Green) for PG/MG", "Gundam Accessories", "Tools", "standard", 15),
+        ("Accessory", "N/A", "LED Unit (Blue) for PG/MG", "Gundam Accessories", "Tools", "standard", 15),
+        ("Accessory", "N/A", "RG Nu Gundam Metal Parts & Detail-Up Set", "Gundam Accessories", "Tools", "mid", 35),
+        ("Accessory", "N/A", "MG Sazabi Ver.Ka Waterslide Decal Set (DL)", "Gundam Accessories", "Tools", "standard", 18),
+        ("Accessory", "N/A", "Panel Line Accent Color Set (Brown/Gray/Black)", "Gundam Accessories", "Tools", "standard", 15),
+
+        # ── Additional SEED Freedom & Recent (~17) ───────────────────────
+        ("HG", "1/144", "Rising Freedom Gundam", "Gundam SEED Freedom", "Standard", "standard", 20),
+        ("HG", "1/144", "Immortal Justice Gundam", "Gundam SEED Freedom", "Standard", "standard", 20),
+        ("HG", "1/144", "Black Knight Squad Shi-ve.A", "Gundam SEED Freedom", "Standard", "mid", 25),
+        ("HG", "1/144", "Mighty Strike Freedom Gundam", "Gundam SEED Freedom", "Standard", "mid", 30),
+        ("MG", "1/100", "Rising Freedom Gundam", "Gundam SEED Freedom", "Standard", "mid", 55),
+        ("MG", "1/100", "Mighty Strike Freedom Gundam", "Gundam SEED Freedom", "Standard", "mid", 65),
+        ("HG", "1/144", "Infinite Justice Gundam Type II", "Gundam SEED Freedom", "Standard", "mid", 28),
+        ("HG", "1/144", "Destiny Gundam Spec II", "Gundam SEED Freedom", "Standard", "mid", 25),
+        ("RG", "1/144", "Mighty Strike Freedom Gundam", "Gundam SEED Freedom", "Standard", "mid", 50),
+        ("HG", "1/144", "Duel Blitz Gundam", "Gundam SEED Freedom", "Standard", "standard", 22),
+        ("HG", "1/144", "Gaia Gundam (Andrew Waltfeld)", "Gundam SEED Freedom", "Standard", "standard", 20),
+        ("MG", "1/100", "Gundam Kyrios", "Gundam 00", "Standard", "mid", 52),
+        ("MG", "1/100", "Gundam Exia Repair IV", "Gundam 00", "Standard", "mid", 55),
+        ("RG", "1/144", "Gundam Mk-II (AEUG)", "Zeta Gundam", "Standard", "mid", 40),
+        ("RG", "1/144", "Gundam Mk-II (Titans)", "Zeta Gundam", "Standard", "mid", 40),
+        ("RG", "1/144", "Z'Gok (Char Custom)", "Mobile Suit Gundam", "Standard", "mid", 38),
+        ("RG", "1/144", "Tallgeese EW", "Gundam Wing", "Standard", "mid", 42),
+
+        # ── Additional HG / RG Favorites (~30) ──────────────────────────
+        ("HG", "1/144", "Gundam AGE-1 Normal", "Gundam AGE", "Standard", "standard", 18),
+        ("HG", "1/144", "Gundam AGE-2 Normal", "Gundam AGE", "Standard", "standard", 18),
+        ("HG", "1/144", "Gundam AGE-FX", "Gundam AGE", "Standard", "standard", 20),
+        ("HG", "1/144", "Stargazer Gundam", "Gundam SEED Stargazer", "Standard", "mid", 28),
+        ("HG", "1/144", "Gundam Astray Red Frame (Flight Unit)", "Gundam SEED Astray", "Standard", "mid", 30),
+        ("HG", "1/144", "Gundam Astray Blue Frame Second Revise", "Gundam SEED Astray", "Standard", "mid", 28),
+        ("HG", "1/144", "Gundam Astray Gold Frame Amatsu Mina", "Gundam SEED Astray", "Standard", "mid", 32),
+        ("HG", "1/144", "Gundam G-Self (Perfect Pack)", "Gundam Reconguista in G", "Standard", "mid", 28),
+        ("HG", "1/144", "Grimgerde", "Iron-Blooded Orphans", "Standard", "standard", 18),
+        ("HG", "1/144", "Helmwige Reincar", "Iron-Blooded Orphans", "Standard", "standard", 20),
+        ("HG", "1/144", "Gundam Gusion Rebake Full City", "Iron-Blooded Orphans", "Standard", "standard", 20),
+        ("HG", "1/144", "Graze Ein", "Iron-Blooded Orphans", "Standard", "mid", 25),
+        ("HG", "1/144", "Hashmal (Mobile Armor)", "Iron-Blooded Orphans", "Standard", "mid", 60),
+        ("HG", "1/144", "Kshatriya", "Gundam Unicorn", "Standard", "mid", 45),
+        ("HG", "1/144", "Neo Zeong", "Gundam Unicorn", "Standard", "grail", 200),
+        ("RG", "1/144", "Char's Zaku II", "Mobile Suit Gundam", "Standard", "mid", 35),
+        ("RG", "1/144", "Zeta Gundam", "Zeta Gundam", "Standard", "mid", 40),
+        ("RG", "1/144", "Gundam Astray Red Frame", "Gundam SEED Astray", "Standard", "mid", 38),
+        ("RG", "1/144", "Justice Gundam", "Gundam SEED", "Standard", "mid", 42),
+        ("RG", "1/144", "Force Impulse Gundam", "Gundam SEED Destiny", "Standard", "mid", 38),
+        ("RG", "1/144", "Banshee Norn", "Gundam Unicorn", "Standard", "mid", 45),
+        ("RG", "1/144", "Full Armor Unicorn Gundam", "Gundam Unicorn", "Standard", "mid", 55),
+        ("RG", "1/144", "Gundam Epyon", "Gundam Wing", "Standard", "mid", 45),
+        ("RG", "1/144", "Hi-Nu Gundam", "Char's Counterattack", "Standard", "mid", 55),
+        ("RG", "1/144", "Crossbone Gundam X1", "Crossbone Gundam", "Standard", "mid", 40),
+        ("RG", "1/144", "Gundam 00 Raiser", "Gundam 00", "Standard", "mid", 45),
+        ("RG", "1/144", "Destiny Gundam", "Gundam SEED Destiny", "Standard", "mid", 40),
+        ("RG", "1/144", "Aile Strike Gundam", "Gundam SEED", "Standard", "mid", 35),
+        ("RG", "1/144", "Sinanju", "Gundam Unicorn", "Standard", "mid", 50),
+        ("RG", "1/144", "Wing Gundam EW", "Gundam Wing", "Standard", "mid", 38),
+
+        # ── HG IBO (Iron-Blooded Orphans) Expansion ────────────────────────
+        ("HG", "1/144", "Gundam Barbatos (1st Form)", "Iron-Blooded Orphans", "", "standard", 15),
+        ("HG", "1/144", "Gundam Barbatos (2nd Form)", "Iron-Blooded Orphans", "", "standard", 15),
+        ("HG", "1/144", "Gundam Barbatos (3rd Form)", "Iron-Blooded Orphans", "", "standard", 15),
+        ("HG", "1/144", "Gundam Barbatos (4th Form)", "Iron-Blooded Orphans", "", "standard", 18),
+        ("HG", "1/144", "Gundam Barbatos (5th Form)", "Iron-Blooded Orphans", "", "standard", 18),
+        ("HG", "1/144", "Gundam Barbatos (6th Form)", "Iron-Blooded Orphans", "", "standard", 20),
+        ("HG", "1/144", "Gundam Barbatos Lupus", "Iron-Blooded Orphans", "", "standard", 18),
+        ("HG", "1/144", "Gundam Barbatos Lupus Rex", "Iron-Blooded Orphans", "", "standard", 22),
+        ("HG", "1/144", "Gundam Vidar", "Iron-Blooded Orphans", "", "standard", 20),
+        ("HG", "1/144", "Gundam Bael", "Iron-Blooded Orphans", "", "standard", 20),
+        ("HG", "1/144", "Gundam Gusion", "Iron-Blooded Orphans", "", "standard", 15),
+        ("HG", "1/144", "Gundam Gusion Rebake", "Iron-Blooded Orphans", "", "standard", 18),
+        ("HG", "1/144", "Gundam Gusion Rebake Full City", "Iron-Blooded Orphans", "", "standard", 22),
+        ("HG", "1/144", "Gundam Flauros (Ryusei-Go)", "Iron-Blooded Orphans", "", "standard", 20),
+        ("HG", "1/144", "Gundam Astaroth", "Iron-Blooded Orphans", "", "standard", 18),
+        ("HG", "1/144", "Gundam Astaroth Origin", "Iron-Blooded Orphans", "", "standard", 20),
+        ("HG", "1/144", "Grimgerde", "Iron-Blooded Orphans", "", "standard", 18),
+        ("HG", "1/144", "Helmwige Reincar", "Iron-Blooded Orphans", "", "standard", 22),
+        ("HG", "1/144", "Gundam Kimaris", "Iron-Blooded Orphans", "", "standard", 18),
+        ("HG", "1/144", "Gundam Kimaris Vidar", "Iron-Blooded Orphans", "", "standard", 22),
+
+        # ── RG Expansion ───────────────────────────────────────────────────
+        ("RG", "1/144", "Crossbone Gundam X2", "Crossbone Gundam", "Standard", "mid", 42),
+        ("RG", "1/144", "Tallgeese II", "Gundam Wing", "Standard", "mid", 40),
+        ("RG", "1/144", "Tallgeese III", "Gundam Wing", "Standard", "mid", 42),
+        ("RG", "1/144", "Wing Gundam Zero EW (Ver.Ka)", "Gundam Wing", "Ver.Ka", "mid", 48),
+        ("RG", "1/144", "Char's Z'Gok", "Mobile Suit Gundam", "Standard", "mid", 35),
+        ("RG", "1/144", "Gundam Mk-II (AEUG)", "Zeta Gundam", "Standard", "mid", 38),
+        ("RG", "1/144", "Gundam Mk-II (Titans)", "Zeta Gundam", "Standard", "mid", 38),
+        ("RG", "1/144", "Z'Gok (Char Custom)", "Mobile Suit Gundam", "Standard", "mid", 35),
+        ("RG", "1/144", "MSN-04 Sazabi", "Char's Counterattack", "Standard", "high", 65),
+        ("RG", "1/144", "RX-93 Nu Gundam", "Char's Counterattack", "Standard", "high", 60),
+        ("RG", "1/144", "Gundam Astray Gold Frame Amatsu Mina", "Gundam SEED Astray", "Standard", "mid", 45),
+        ("RG", "1/144", "Gundam Exia Repair III", "Gundam 00", "Standard", "mid", 42),
+
+        # ── 30 Minute Missions ─────────────────────────────────────────────
+        ("30MM", "1/144", "eEXM-17 Alto (White)", "30 Minute Missions", "", "standard", 12),
+        ("30MM", "1/144", "eEXM-17 Alto (Dark Gray)", "30 Minute Missions", "", "standard", 12),
+        ("30MM", "1/144", "eEXM-17 Alto (Green)", "30 Minute Missions", "", "standard", 12),
+        ("30MM", "1/144", "eEXM-21 Rabiot (White)", "30 Minute Missions", "", "standard", 14),
+        ("30MM", "1/144", "eEXM-21 Rabiot (Red)", "30 Minute Missions", "", "standard", 14),
+        ("30MM", "1/144", "eEXM-30 Espossito (Alpha)", "30 Minute Missions", "", "standard", 18),
+        ("30MM", "1/144", "eEXM-30 Espossito (Beta)", "30 Minute Missions", "", "standard", 18),
+        ("30MM", "1/144", "bEXM-14T Cielnova (White)", "30 Minute Missions", "", "standard", 12),
+        ("30MM", "1/144", "bEXM-14T Cielnova (Black)", "30 Minute Missions", "", "standard", 12),
+        ("30MM", "1/144", "bEXM-15 Portanova (Marine)", "30 Minute Missions", "", "standard", 14),
+        ("30MM", "1/144", "bEXM-15 Portanova (Red)", "30 Minute Missions", "", "standard", 14),
+        ("30MM", "1/144", "bEXM-15 Portanova (Dark Purple)", "30 Minute Missions", "", "standard", 14),
+        ("30MM", "1/144", "Option Armor for Commander (Cielnova)", "30 Minute Missions", "", "standard", 6),
+        ("30MM", "1/144", "Option Weapon 1 for Alto", "30 Minute Missions", "", "standard", 5),
+        ("30MM", "1/144", "Customize Weapons (Fantasy Weapon)", "30 Minute Missions", "", "standard", 8),
+        ("30MM", "1/144", "Extended Armament Vehicle (Tank Ver.)", "30 Minute Missions", "", "standard", 18),
+
+        # ── Moderoid (Good Smile Company) ──────────────────────────────────
+        ("Moderoid", "Non-scale", "Mazinkaiser", "Mazinkaiser", "", "mid", 42),
+        ("Moderoid", "Non-scale", "Mazinkaiser SKL", "Mazinkaiser SKL", "", "mid", 42),
+        ("Moderoid", "Non-scale", "Shin Getter 1", "Getter Robo", "", "mid", 48),
+        ("Moderoid", "Non-scale", "Shin Getter 2", "Getter Robo", "", "mid", 42),
+        ("Moderoid", "Non-scale", "Shin Getter 3", "Getter Robo", "", "mid", 42),
+        ("Moderoid", "Non-scale", "Reideen the Brave", "Reideen", "", "mid", 45),
+        ("Moderoid", "Non-scale", "AV-98 Ingram", "Patlabor", "", "mid", 50),
+        ("Moderoid", "Non-scale", "AV-X0 Type Zero", "Patlabor", "", "mid", 55),
+        ("Moderoid", "Non-scale", "Gurren Lagann", "Gurren Lagann", "", "mid", 48),
+        ("Moderoid", "Non-scale", "Dann of Thursday", "Gun x Sword", "", "mid", 45),
+        ("Moderoid", "Non-scale", "Gao Gai Gar", "GaoGaiGar", "", "mid", 55),
+        ("Moderoid", "Non-scale", "Voltron (GoLion)", "Voltron", "", "mid", 60),
+        ("Moderoid", "Non-scale", "Dygenguar", "Super Robot Wars", "", "high", 65),
+        ("Moderoid", "Non-scale", "Hades Project Zeorymer", "Zeorymer", "", "mid", 48),
+
+        # ── Figure-rise Standard ───────────────────────────────────────────
+        ("Figure-rise", "1/12", "Son Goku (Ultra Instinct)", "Dragon Ball Super", "", "mid", 38),
+        ("Figure-rise", "1/12", "Vegeta (Super Saiyan Blue Evolution)", "Dragon Ball Super", "", "mid", 38),
+        ("Figure-rise", "1/12", "Son Gohan (Beast)", "Dragon Ball Super: Super Hero", "", "mid", 42),
+        ("Figure-rise", "1/12", "Broly (Full Power)", "Dragon Ball Super: Broly", "", "mid", 48),
+        ("Figure-rise", "1/12", "Frieza (Final Form)", "Dragon Ball Z", "", "mid", 35),
+        ("Figure-rise", "1/12", "Cell (Perfect Form)", "Dragon Ball Z", "", "mid", 38),
+        ("Figure-rise", "1/12", "Super Saiyan Trunks", "Dragon Ball Z", "", "standard", 30),
+        ("Figure-rise", "1/12", "Piccolo (Special Beam Cannon)", "Dragon Ball Z", "", "mid", 35),
+        ("Figure-rise", "1/12", "Kamen Rider Zero-One Rising Hopper", "Kamen Rider", "", "mid", 38),
+        ("Figure-rise", "1/12", "Kamen Rider W CycloneJoker", "Kamen Rider", "", "mid", 42),
+        ("Figure-rise", "1/12", "Kamen Rider Geats Magnum Boost", "Kamen Rider", "", "mid", 40),
+        ("Figure-rise", "1/12", "Kamen Rider Den-O Sword Form", "Kamen Rider", "", "mid", 38),
+        ("Figure-rise", "1/12", "Kamen Rider Kuuga Mighty Form", "Kamen Rider", "", "mid", 38),
+        ("Figure-rise", "1/12", "Kamen Rider Build RabbitTank Form", "Kamen Rider", "", "mid", 40),
+        ("Figure-rise", "1/12", "Ultraman (Type A)", "Ultraman", "", "mid", 38),
+        ("Figure-rise", "1/12", "Ultraman Suit Ver.7.5", "Ultraman", "", "mid", 42),
+        ("Figure-rise", "1/12", "Amplified Omegamon", "Digimon", "", "mid", 55),
+        ("Figure-rise", "1/12", "Amplified WarGreymon", "Digimon", "", "mid", 48),
+        ("Figure-rise", "1/12", "Amplified MetalGarurumon", "Digimon", "", "mid", 48),
+        ("Figure-rise", "1/12", "Amplified BlackWarGreymon", "Digimon", "", "mid", 50),
     ]
 
     kits = kits + _variant_expansion()

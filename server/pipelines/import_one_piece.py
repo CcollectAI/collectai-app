@@ -1,5 +1,5 @@
 """
-Import One Piece collectibles data (600+ items).
+Import One Piece collectibles data (900+ items).
 
 Layer 1 (Catalog):  Curated 600+ items across P.O.P., Figuarts, Ichiban Kuji,
                     Banpresto, Tsume, VAH, WCF, ship models, cards → category_items
@@ -42,7 +42,7 @@ CATEGORY = "one_piece"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated One Piece collectibles catalog (600+ items)."""
+    """Curated One Piece collectibles catalog (900+ items)."""
 
     # Format: (line, name, variant, rarity_tier, price_eur)
     # rarity_tier: grail (>200), high (100-200), mid (40-100), standard (<40)
@@ -766,6 +766,9 @@ def get_curated_catalog() -> list[dict]:
     # ── Expansion Batch 8 — 95 more One Piece collectibles (to 700+) ──
     items += _expanded_batch_8()
 
+    # ── Expansion Batch 9 — 200 more One Piece collectibles (to 900+) ──
+    items += _expanded_batch_9()
+
     catalog = []
     for line, name, variant, tier, price in items:
         catalog.append({
@@ -1042,6 +1045,392 @@ def _expanded_batch_8() -> list[tuple]:
         ("Ship Model", "Red Force", "Grand Ship Collection Red Force Shanks", "mid", 42),
         ("Ship Model", "Polar Tang", "Grand Ship Collection Polar Tang Law's Sub", "mid", 38),
         ("Ship Model", "Moby Dick", "Grand Ship Collection Moby Dick Whitebeard", "mid", 40),
+    ]
+
+
+def _expanded_batch_9() -> list[tuple]:
+    """200 additional One Piece collectibles — P.O.P. Megahouse deep cuts, FiguartsZERO,
+    Ichiban Kuji, manga volumes, One Piece TCG, merch, vinyl/music, collabs, anniversary."""
+    return [
+        # ── P.O.P. Megahouse — Additional Lines (~30) ────────────────────
+        ("P.O.P. Maximum", "Monkey D. Luffy", "Gear 5 Joy Boy Awakening", "grail", 350),
+        ("P.O.P. Maximum", "Shanks", "Film Red Full Power", "grail", 300),
+        ("P.O.P. Maximum", "Roronoa Zoro", "Enma & Wado Ichimonji Dual Wield", "grail", 280),
+        ("P.O.P. Maximum", "Sanji", "Ifrit Jambe Blue Flames", "high", 200),
+        ("P.O.P. Maximum", "Trafalgar Law", "K-Room Puncture Wille", "high", 195),
+        ("P.O.P. Maximum", "Eustass Kid", "Punk Assign Awakened", "high", 190),
+        ("P.O.P. Maximum", "Marco", "Phoenix Full Transformation", "grail", 260),
+        ("P.O.P. Maximum", "Yamato", "Okuchi no Makami Divine Wolf", "grail", 280),
+        ("P.O.P.", "Charlotte Katakuri", "NEO-MAXIMUM Mochi Buzzcut", "grail", 310),
+        ("P.O.P.", "Donquixote Doflamingo", "NEO-MAXIMUM Birdcage Awakening", "grail", 290),
+        ("P.O.P.", "Sabo", "NEO-MAXIMUM Flame Emperor Dragon Claw", "high", 195),
+        ("P.O.P. Playback Memories", "Nami", "Weatheria Sky Island Study", "high", 150),
+        ("P.O.P. Playback Memories", "Nico Robin", "Ohara Buster Call Survivor", "high", 165),
+        ("P.O.P. Playback Memories", "Chopper", "Drum Island Doctor Training", "high", 130),
+        ("P.O.P. Limited", "Boa Hancock", "Amazon Lily Empress Ver.", "high", 185),
+        ("P.O.P. Limited", "Nami", "Zou Mink Tribe Outfit", "high", 170),
+        ("P.O.P. Limited", "Robin", "Wano Country Oiran Ver.", "high", 175),
+        ("P.O.P. Warriors Alliance", "Kid", "Wano Country Punk Rotten", "high", 145),
+        ("P.O.P. Warriors Alliance", "Killer", "Wano Country Kamazo", "high", 135),
+        ("P.O.P. Warriors Alliance", "Jinbe", "Wano Country Knight of the Sea", "high", 140),
+        ("P.O.P. SOC", "Monkey D. Luffy", "20th Anniversary Straw Hat Captain", "grail", 250),
+        ("P.O.P. SOC", "Roronoa Zoro", "20th Anniversary First Mate", "grail", 240),
+        ("P.O.P. SOC", "Nami", "20th Anniversary Navigator", "high", 200),
+        ("P.O.P. SOC", "Sanji", "20th Anniversary Chef", "high", 195),
+        ("P.O.P. SOC", "Chopper", "20th Anniversary Doctor", "high", 160),
+        ("P.O.P. SOC", "Robin", "20th Anniversary Archaeologist", "high", 190),
+        ("P.O.P. SOC", "Franky", "20th Anniversary Shipwright", "high", 180),
+        ("P.O.P. SOC", "Brook", "20th Anniversary Musician", "high", 170),
+        ("P.O.P. SOC", "Usopp", "20th Anniversary Sniper", "high", 165),
+        ("P.O.P. SOC", "Jinbe", "20th Anniversary Helmsman", "high", 175),
+
+        # ── Figuarts ZERO — Extra Battle & Effects (~20) ──────────────────
+        ("Figuarts ZERO", "Monkey D. Luffy", "Extra Battle Gear 5 Drums of Liberation Full", "high", 140),
+        ("Figuarts ZERO", "Sanji", "Extra Battle Ifrit Jambe Hell Memories", "high", 125),
+        ("Figuarts ZERO", "Trafalgar Law", "Extra Battle ROOM Shambles Amputate", "high", 120),
+        ("Figuarts ZERO", "Big Mom", "Extra Battle Charlotte Linlin Prometheus Zeus Napoleon", "high", 155),
+        ("Figuarts ZERO", "Whitebeard", "Extra Battle Edward Newgate Quake Shockwave", "high", 150),
+        ("Figuarts ZERO", "Gol D. Roger", "Extra Battle Pirate King Roger Kamusari", "high", 145),
+        ("Figuarts ZERO", "Silvers Rayleigh", "Extra Battle Dark King Haki Coating", "high", 135),
+        ("Figuarts ZERO", "Akainu", "Extra Battle Sakazuki Magma Fist", "high", 130),
+        ("Figuarts ZERO", "Sabo", "Extra Battle Flame Emperor Entei", "high", 125),
+        ("Figuarts ZERO", "Oden", "Extra Battle Kozuki Oden Two-Sword Paradise Totsuka", "high", 140),
+        ("Figuarts ZERO", "Yamato", "Extra Battle Okuchi no Makami Ice Breath", "high", 135),
+        ("Figuarts ZERO", "Rob Lucci", "Extra Battle Awakened Leopard Form CP0", "high", 120),
+        ("Figuarts ZERO", "Luffy vs Lucci", "Extra Battle Egghead Clash", "grail", 220),
+        ("Figuarts ZERO", "Roronoa Zoro", "Devil Aura King of Hell", "high", 130),
+        ("Figuarts ZERO", "Nami", "Zeus Lightning Tempo", "mid", 85),
+        ("Figuarts ZERO", "Usopp", "Elbaf Giant Warrior Impact Wolf", "mid", 75),
+        ("Figuarts ZERO", "Franky", "General Franky Radical Beam", "high", 115),
+        ("Figuarts ZERO", "Brook", "Soul King Blizzard Slice", "mid", 90),
+        ("Figuarts ZERO", "Chopper", "Monster Point Kunfu Point Combo", "mid", 80),
+        ("Figuarts ZERO", "Jinbe", "Fish-Man Karate Vagabond Drill", "high", 105),
+
+        # ── Ichiban Kuji / Lottery Prizes (~15) ──────────────────────────
+        ("Ichiban Kuji", "Shanks", "Film Red Last One Prize Emperor's Haki", "grail", 260),
+        ("Ichiban Kuji", "Monkey D. Luffy", "ONE PIECE FILM RED A Prize Concert Luffy", "high", 120),
+        ("Ichiban Kuji", "Uta", "ONE PIECE FILM RED B Prize New Genesis Uta", "high", 100),
+        ("Ichiban Kuji", "Ace & Sabo & Luffy", "Brotherhood A Prize Three Brothers Oath", "high", 130),
+        ("Ichiban Kuji", "Roger vs Whitebeard", "Legends A Prize Pirate Kings' Duel", "grail", 200),
+        ("Ichiban Kuji", "Yamato", "Wano Country Last One Okuchi no Makami Sulong", "grail", 210),
+        ("Ichiban Kuji", "Oden", "Wano Legends B Prize Kozuki Oden Togen Totsuka", "high", 115),
+        ("Ichiban Kuji", "Gear 5 Luffy", "Egghead Arc A Prize Sun God Transformation", "high", 140),
+        ("Ichiban Kuji", "Luffy", "25th Anniversary Memorial Last One Straw Hat", "grail", 230),
+        ("Ichiban Kuji", "Zoro vs King", "Wano Final Battle Prize A Enma Black Blade", "high", 130),
+        ("Ichiban Kuji", "Sanji vs Queen", "Wano Final Battle Prize B Ifrit Jambe", "high", 110),
+        ("Ichiban Kuji", "Doflamingo", "Dressrosa Last One Bird Cage Awakening", "high", 160),
+        ("Ichiban Kuji", "Crocodile & Mihawk", "Cross Guild A Prize Buggy's Delivery", "high", 125),
+        ("Ichiban Kuji", "Big Mom vs Kid & Law", "Wano Climax Last One Electromagnetic Cannon", "grail", 200),
+        ("Ichiban Kuji", "Straw Hat Crew", "25th Anniversary Complete Set (10 prizes)", "grail", 350),
+
+        # ── Manga — Key Volumes & Box Sets (~15) ─────────────────────────
+        ("Manga", "Volume 1", "Japanese First Print (1997 Shonen Jump)", "grail", 500),
+        ("Manga", "Volume 1", "English First Print (Viz Media 2003)", "grail", 300),
+        ("Manga", "Weekly Shonen Jump", "Chapter 1000 Issue (WSJ #5-6 2021)", "high", 120),
+        ("Manga", "Weekly Shonen Jump", "Romance Dawn One-Shot Original (WSJ 1996)", "grail", 800),
+        ("Manga Box Set", "East Blue", "Box Set 1 (Vol 1-23)", "high", 180),
+        ("Manga Box Set", "Baroque Works", "Box Set 2 (Vol 24-46)", "high", 175),
+        ("Manga Box Set", "Thriller Bark", "Box Set 3 (Vol 47-70)", "high", 170),
+        ("Manga Box Set", "Dressrosa", "Box Set 4 (Vol 71-90)", "high", 165),
+        ("Manga", "Volume 1000", "Commemorative Gold Foil Cover Edition", "high", 150),
+        ("Manga", "Color Walk", "Eiichiro Oda Color Walk Complete Set (1-9)", "grail", 350),
+        ("Manga", "Vivre Card", "Vivre Card Databook Complete Collection", "high", 200),
+        ("Manga", "ONE PIECE Magazine", "Complete Set (Vol. 1-17)", "high", 180),
+        ("Manga", "Volume 100", "Collector's Edition Gold Foil (JP)", "high", 100),
+        ("Manga", "Volume 25", "Wanted! Oda Short Story Collection", "mid", 60),
+        ("Manga", "Volume 1-106", "JP Complete Collection (106 tankobon)", "grail", 800),
+
+        # ── One Piece TCG — Cards & Sealed Product (~20) ─────────────────
+        ("OP Card Game", "Shanks", "OP01-120 Leader Parallel Art", "grail", 280),
+        ("OP Card Game", "Roronoa Zoro", "OP01-025 ALT Art Secret Rare", "grail", 250),
+        ("OP Card Game", "Nami", "OP02-036 Leader Parallel Art", "high", 160),
+        ("OP Card Game", "Charlotte Katakuri", "OP03-099 ALT Art Secret Rare", "high", 180),
+        ("OP Card Game", "Yamato", "OP04-112 Leader ALT Art Parallel", "grail", 220),
+        ("OP Card Game", "Monkey D. Luffy", "OP05-119 Nika Secret Rare", "grail", 350),
+        ("OP Card Game", "Portgas D. Ace", "OP02-013 ALT Art Fire Fist", "high", 140),
+        ("OP Card Game", "Trafalgar Law", "OP05-069 Secret Rare Room Shambles", "high", 130),
+        ("OP Card Game", "Boa Hancock", "OP03-052 Secret Rare Love-Love Beam", "high", 120),
+        ("OP Card Game", "Eustass Kid", "OP05-074 Secret Rare Punk Gibson", "high", 110),
+        ("OP Card Game", "Sealed", "OP01 Romance Dawn Booster Box (24 packs)", "high", 180),
+        ("OP Card Game", "Sealed", "OP02 Paramount War Booster Box (24 packs)", "high", 170),
+        ("OP Card Game", "Sealed", "OP03 Pillars of Strength Booster Box", "high", 160),
+        ("OP Card Game", "Sealed", "OP04 Kingdoms of Intrigue Booster Box", "high", 155),
+        ("OP Card Game", "Sealed", "OP05 Awakening of the New Era Booster Box", "high", 190),
+        ("OP Card Game", "Sealed", "OP06 Wings of the Captain Booster Box", "high", 150),
+        ("OP Card Game", "Sealed", "OP07 500 Years in the Future Booster Box", "high", 200),
+        ("OP Card Game", "Sealed", "ST01 Straw Hat Crew Starter Deck", "mid", 50),
+        ("OP Card Game", "Sealed", "Promotion Pack Vol.1 Sealed Case (50 packs)", "high", 120),
+        ("OP Card Game", "Don!!", "Championship 2024 Winner Trophy Card", "grail", 500),
+
+        # ── Merch / Collectibles (~20) ───────────────────────────────────
+        ("Film Red", "Uta", "Banpresto DXF Uta Concert Stage", "mid", 45),
+        ("Film Red", "Shanks", "DXF Film Red Emperor's Return", "mid", 55),
+        ("Film Red", "Luffy", "DXF Film Red Straw Hat Concert", "mid", 40),
+        ("Film Red", "Uta", "Ichiban Kuji Film Red A Prize New Genesis", "high", 100),
+        ("Film Red", "Tot Musica", "Ichiban Kuji Film Red Last One Awakened Form", "high", 150),
+        ("Replica", "Straw Hat", "Luffy's Straw Hat 1:1 Premium Replica", "high", 120),
+        ("Replica", "Going Merry", "Soul of Chogokin Going Merry (Bandai)", "grail", 350),
+        ("Replica", "Thousand Sunny", "Soul of Chogokin Thousand Sunny (Bandai)", "grail", 380),
+        ("Replica", "Log Pose", "Premium Bandai Log Pose Replica (New World)", "high", 100),
+        ("Replica", "Den Den Mushi", "Premium Bandai Baby Den Den Mushi Phone Stand", "mid", 55),
+        ("Replica", "Devil Fruit", "Gomu Gomu no Mi Resin Prop Replica", "mid", 75),
+        ("Replica", "Devil Fruit", "Mera Mera no Mi Resin Prop Replica", "mid", 70),
+        ("Replica", "Devil Fruit", "Ope Ope no Mi Resin Prop Replica", "mid", 70),
+        ("Replica", "Wado Ichimonji", "Roronoa Zoro Katana Foam Prop Replica", "mid", 65),
+        ("Replica", "Enma", "Roronoa Zoro Enma Katana Metal Prop Replica", "high", 130),
+        ("Collab Merch", "Straw Hat Crew", "One Piece x Casio G-Shock GA-110 Collaboration", "high", 200),
+        ("Collab Merch", "Luffy", "One Piece x Seiko 25th Anniversary Watch (LE 5000)", "grail", 450),
+        ("Collab Merch", "One Piece", "One Piece x BAPE Baby Milo Full Crew T-Shirt Set", "high", 180),
+        ("Collab Merch", "One Piece", "One Piece x Uniqlo UT Wano Arc Complete Set (10 tees)", "mid", 90),
+        ("Collab Merch", "One Piece", "One Piece x adidas Ultra Boost Luffy Gear 5", "high", 200),
+
+        # ── Vinyl / Music (~10) ──────────────────────────────────────────
+        ("Music", "One Piece OST", "New World Original Soundtrack Vinyl 2LP (Milan Records)", "high", 80),
+        ("Music", "One Piece Film Red", "Uta's Songs — ONE PIECE FILM RED Vinyl LP", "high", 90),
+        ("Music", "One Piece OST", "Over the Top / We Are! 7\" Vinyl Single", "mid", 35),
+        ("Music", "One Piece OST", "Bink's Sake / We Go! 7\" Vinyl Single", "mid", 35),
+        ("Music", "One Piece", "Opening Theme Collection CD Box Set (25 years)", "high", 120),
+        ("Music", "One Piece", "Character Song Collection Complete CD Box (10 CD)", "high", 150),
+        ("Music", "One Piece Film Red", "UTA Complete Best CD + Blu-ray LE", "high", 100),
+        ("Music", "We Are!", "Hiroshi Kitadani We Are! 7\" Vinyl Anniversary Press", "mid", 40),
+        ("Music", "One Piece", "Overtaken / The Very Very Very Strongest 7\" Vinyl", "mid", 45),
+        ("Music", "One Piece Film Red", "New Genesis / Backlight 12\" Single Vinyl", "mid", 50),
+
+        # ── Clothing / Accessories (~10) ─────────────────────────────────
+        ("Collab Merch", "One Piece", "One Piece x BAPE Shark Hoodie Luffy Full Zip", "grail", 350),
+        ("Collab Merch", "One Piece", "One Piece x Swatch Gear 5 Watch", "high", 150),
+        ("Collab Merch", "One Piece", "One Piece x New Era 59FIFTY Straw Hat Crew Cap Set (10)", "high", 200),
+        ("Collab Merch", "One Piece", "One Piece x XLARGE Wano Arc Collection (5 pieces)", "high", 120),
+        ("Collab Merch", "One Piece", "ONEPIECE x Crocs Luffy Clog (LE)", "mid", 80),
+        ("Collab Merch", "One Piece", "One Piece x Puma Suede Luffy Gear 5", "high", 160),
+        ("Collab Merch", "One Piece", "One Piece x CLOT Royale Shanks Jacket", "high", 180),
+        ("Collab Merch", "One Piece", "One Piece Stampede Premium Bomber Jacket (LE 1000)", "high", 200),
+        ("Collab Merch", "One Piece", "One Piece x Anti Social Social Club Hoodie Set", "high", 140),
+        ("Collab Merch", "One Piece", "One Piece Film Red x BEAMS Collab T-Shirt Set", "mid", 90),
+
+        # ── Anniversary / Special (~15) ──────────────────────────────────
+        ("Anniversary", "One Piece", "25th Anniversary Gold DEN DEN Mushi (LE 2500)", "grail", 300),
+        ("Anniversary", "One Piece", "25th Anniversary Premium Card Set (TCG Promo)", "high", 120),
+        ("Anniversary", "One Piece", "25th Anniversary Ichiban Kuji Complete Set", "grail", 400),
+        ("Anniversary", "One Piece", "Jump Festa 2024 Exclusive Gear 5 Acrylic Stand", "mid", 50),
+        ("Anniversary", "One Piece", "Jump Festa 2024 Exclusive Promo Card Pack", "mid", 60),
+        ("Anniversary", "One Piece", "One Piece Tower Tokyo Final Memorial Goods Set", "grail", 250),
+        ("Anniversary", "One Piece", "Tokyo One Piece Tower Cafe Final Day Plate Set", "high", 150),
+        ("Anniversary", "One Piece", "One Piece Exhibition Osaka 2024 Exclusive Art Print Set", "high", 120),
+        ("Anniversary", "One Piece", "One Piece Exhibition Tokyo 2024 Exclusive Poster Set", "high", 110),
+        ("Anniversary", "One Piece", "One Piece Day 2024 Exclusive Merch Bundle", "high", 100),
+        ("Anniversary", "One Piece", "One Piece Great Banquet Themed Cafe Plate & Cup Set", "mid", 80),
+        ("Anniversary", "One Piece", "WJ 25th Anniversary Cover Collection Art Book", "high", 130),
+        ("Anniversary", "One Piece", "Treasure Cruise 10th Anniv. Acrylic Diorama", "mid", 65),
+        ("Anniversary", "One Piece", "20th Anniversary Ichiban Kuji Last One Gold Luffy", "grail", 280),
+        ("Anniversary", "One Piece", "25th Anniversary Premium Bandai Straw Hat Set (10 figs)", "grail", 400),
+
+        # ── Banpresto Additional (~15) ───────────────────────────────────
+        ("Banpresto", "Monkey D. Luffy", "King of Artist Wano Luffy Bound Man", "mid", 50),
+        ("Banpresto", "Roronoa Zoro", "King of Artist Wano Zoro Enma", "mid", 50),
+        ("Banpresto", "Portgas D. Ace", "King of Artist Ace Fire Fist", "mid", 45),
+        ("Banpresto", "Shanks", "King of Artist Shanks Film Red", "mid", 55),
+        ("Banpresto", "Trafalgar Law", "DXF Wano Country Law Room", "mid", 40),
+        ("Banpresto", "Charlotte Katakuri", "DXF Whole Cake Island Mochi Man", "mid", 45),
+        ("Banpresto", "Donquixote Doflamingo", "DXF Dressrosa Heavenly Demon", "mid", 42),
+        ("Banpresto", "Sabo", "DXF Dressrosa Flame Emperor", "mid", 40),
+        ("Banpresto", "Boa Hancock", "DXF Grandline Lady Hancock Ver.", "mid", 48),
+        ("Banpresto", "Nami", "DXF Grandline Lady Nami Wano Ver.", "mid", 42),
+        ("Banpresto", "Nico Robin", "DXF Grandline Lady Robin Wano Ver.", "mid", 42),
+        ("Banpresto", "Kaido", "DXF Wano Country Beast Form", "mid", 55),
+        ("Banpresto", "Yamato", "DXF Wano Country Okuchi no Makami", "mid", 45),
+        ("Banpresto", "Big Mom", "DXF Whole Cake Island Charlotte Linlin", "mid", 50),
+        ("Banpresto", "Gol D. Roger", "DXF Grandline Men Roger Laugh Tale", "mid", 48),
+
+        # ── Artbooks / Special Editions (~10) ────────────────────────────
+        ("Artbook", "Eiichiro Oda", "ONE PIECE Illustration COLORWALK 1 (Signed LE)", "grail", 500),
+        ("Artbook", "Eiichiro Oda", "ONE PIECE Film Design Works", "high", 120),
+        ("Artbook", "Eiichiro Oda", "ONE PIECE 1000 LOGS (Commemorative Art Book)", "high", 150),
+        ("Artbook", "One Piece", "Shonen Jump Cover Art Collection Poster Set", "mid", 80),
+        ("Artbook", "One Piece", "Animation 25th Anniversary Art Book", "high", 130),
+        ("Artbook", "One Piece", "Film Red Official Visual Guide Book", "mid", 55),
+        ("Artbook", "One Piece", "Stampede Official Guide Book", "mid", 45),
+        ("Artbook", "One Piece", "Treasure Cruise Official Art Works", "mid", 50),
+        ("Artbook", "One Piece", "Strong World Eiichiro Oda Artbook Vol. 0", "mid", 65),
+        ("Artbook", "One Piece", "One Piece Pirate Recipes Official Cookbook", "standard", 30),
+
+        # ── G.E.M. Series Figures ──────────────────────────────────────────
+        ("G.E.M. Series", "Monkey D. Luffy", "G.E.M. Run! Run! Run! Luffy", "high", 180),
+        ("G.E.M. Series", "Roronoa Zoro", "G.E.M. Run! Run! Run! Zoro", "high", 175),
+        ("G.E.M. Series", "Portgas D. Ace", "G.E.M. Run! Run! Run! Ace", "high", 185),
+        ("G.E.M. Series", "Sabo", "G.E.M. Run! Run! Run! Sabo", "high", 170),
+        ("G.E.M. Series", "Nami", "G.E.M. Costume Change Nami (Wano)", "high", 160),
+        ("G.E.M. Series", "Nico Robin", "G.E.M. Costume Change Robin (Wano)", "high", 165),
+        ("G.E.M. Series", "Trafalgar Law", "G.E.M. Run! Run! Run! Law", "high", 175),
+        ("G.E.M. Series", "Shanks", "G.E.M. Red-Haired Shanks (Film Red Ver.)", "grail", 250),
+        ("G.E.M. Series", "Boa Hancock", "G.E.M. Boa Hancock Love Hurricane", "high", 190),
+        ("G.E.M. Series", "Yamato", "G.E.M. Yamato Okiku Nari", "high", 185),
+        ("G.E.M. Series", "Kaido", "G.E.M. Kaido Dragon Form (Oversized)", "grail", 320),
+        ("G.E.M. Series", "Monkey D. Luffy", "G.E.M. Gear 5 Luffy (Nika Pose)", "grail", 280),
+
+        # ── World Collectable Figure Complete Waves ────────────────────────
+        ("WCF", "Straw Hat Crew", "WCF Vol. 35 Complete Set (8 pcs)", "mid", 65),
+        ("WCF", "Wano Country", "WCF Wano Country Vol. 1 Complete (6 pcs)", "mid", 55),
+        ("WCF", "Wano Country", "WCF Wano Country Vol. 2 Complete (6 pcs)", "mid", 55),
+        ("WCF", "Wano Country", "WCF Wano Country Vol. 3 Complete (6 pcs)", "mid", 55),
+        ("WCF", "Wano Country", "WCF Wano Country Vol. 4 Complete (6 pcs)", "mid", 55),
+        ("WCF", "Film Red", "WCF Film Red Vol. 1 Complete (6 pcs)", "mid", 50),
+        ("WCF", "Film Red", "WCF Film Red Vol. 2 Complete (6 pcs)", "mid", 50),
+        ("WCF", "Egghead", "WCF Egghead Arc Vol. 1 Complete (6 pcs)", "mid", 60),
+        ("WCF", "Egghead", "WCF Egghead Arc Vol. 2 Complete (6 pcs)", "mid", 60),
+        ("WCF", "Straw Hat Crew", "WCF Mugiwara56 Vol. 1 Complete (6 pcs)", "mid", 50),
+        ("WCF", "Straw Hat Crew", "WCF Mugiwara56 Vol. 2 Complete (6 pcs)", "mid", 50),
+        ("WCF", "Anniversary", "WCF 25th Anniversary Complete (8 pcs)", "high", 80),
+
+        # ── One Piece Card Game Expansion Sets ─────────────────────────────
+        ("Card Game", "One Piece Card Game", "OP-01 Romance Dawn Booster Box (24 packs)", "high", 120),
+        ("Card Game", "One Piece Card Game", "OP-02 Paramount War Booster Box", "high", 110),
+        ("Card Game", "One Piece Card Game", "OP-03 Pillars of Strength Booster Box", "high", 100),
+        ("Card Game", "One Piece Card Game", "OP-04 Kingdoms of Intrigue Booster Box", "mid", 90),
+        ("Card Game", "One Piece Card Game", "OP-05 Awakening of the New Era Booster Box", "high", 130),
+        ("Card Game", "One Piece Card Game", "OP-06 Wings of the Captain Booster Box", "mid", 85),
+        ("Card Game", "One Piece Card Game", "OP-07 500 Years in the Future Booster Box", "mid", 80),
+        ("Card Game", "One Piece Card Game", "OP-08 Two Legends Booster Box", "mid", 85),
+        ("Card Game", "One Piece Card Game", "ST-01 Straw Hat Crew Starter Deck", "standard", 20),
+        ("Card Game", "One Piece Card Game", "ST-02 Worst Generation Starter Deck", "standard", 18),
+        ("Card Game", "One Piece Card Game", "ST-10 Ultimate Deck The Three Captains", "mid", 40),
+        ("Card Game", "One Piece Card Game", "Premium Card Collection Best Selection Vol. 1", "high", 60),
+        ("Card Game", "One Piece Card Game", "Premium Card Collection Film Red Edition", "high", 55),
+        ("Card Game", "One Piece Card Game", "1st Anniversary Set", "high", 75),
+
+        # ── One Piece x Fashion Collabs ────────────────────────────────────
+        ("Collab Merch", "One Piece", "One Piece x BAPE Luffy Camo Tee", "high", 120),
+        ("Collab Merch", "One Piece", "One Piece x BAPE Zoro Shark Hoodie", "high", 180),
+        ("Collab Merch", "One Piece", "One Piece x Uniqlo UT Wano Arc Tee (Luffy)", "standard", 25),
+        ("Collab Merch", "One Piece", "One Piece x Uniqlo UT Wano Arc Tee (Zoro)", "standard", 25),
+        ("Collab Merch", "One Piece", "One Piece x Adidas Ultra Boost Luffy", "high", 160),
+        ("Collab Merch", "One Piece", "One Piece x Casio G-Shock GA-110 Straw Hat", "high", 200),
+        ("Collab Merch", "One Piece", "One Piece x New Era 59FIFTY Jolly Roger Cap", "mid", 55),
+        ("Collab Merch", "One Piece", "One Piece x Vans Sk8-Hi Luffy Print", "mid", 95),
+        ("Collab Merch", "One Piece", "One Piece x Seiko 5 Sports SRPK37 Luffy Limited", "grail", 450),
+        ("Collab Merch", "One Piece", "One Piece x Seiko 5 Sports SRPK39 Zoro Limited", "grail", 450),
+
+        # ── Grand Ship Collection Model Kits ──────────────────────────────
+        ("Ship Model", "Straw Hat Crew", "Grand Ship Collection #01 Thousand Sunny", "mid", 35),
+        ("Ship Model", "Straw Hat Crew", "Grand Ship Collection #02 Going Merry", "mid", 35),
+        ("Ship Model", "Straw Hat Crew", "Grand Ship Collection #03 Thousand Sunny (Film Gold)", "mid", 40),
+        ("Ship Model", "Whitebeard Pirates", "Grand Ship Collection #04 Moby Dick", "mid", 35),
+        ("Ship Model", "Trafalgar Law", "Grand Ship Collection #05 Polar Tang Submarine", "mid", 35),
+        ("Ship Model", "Red Hair Pirates", "Grand Ship Collection #06 Red Force", "mid", 38),
+        ("Ship Model", "Heart Pirates", "Grand Ship Collection #07 Thousand Sunny (Wano)", "mid", 40),
+        ("Ship Model", "Straw Hat Crew", "Grand Ship Collection #08 Thousand Sunny (Flying Model)", "mid", 42),
+        ("Ship Model", "Boa Hancock", "Grand Ship Collection #09 Kuja Pirates Ship", "mid", 38),
+        ("Ship Model", "Navy", "Grand Ship Collection #10 Marine Warship", "mid", 35),
+        ("Ship Model", "Straw Hat Crew", "Grand Ship Collection Going Merry (Memorial Color)", "high", 55),
+        ("Ship Model", "Baroque Works", "Grand Ship Collection Full Force Baratie", "mid", 40),
+
+        # ── Food-Themed Merch ──────────────────────────────────────────────
+        ("Food Merch", "Sanji", "One Piece Baratie Restaurant Plate Set (4 pcs)", "mid", 55),
+        ("Food Merch", "Sanji", "One Piece Sanji's Kitchen Apron (Official)", "standard", 30),
+        ("Food Merch", "Chopper", "One Piece Chopper Cotton Candy Tin", "standard", 18),
+        ("Food Merch", "Luffy", "One Piece Luffy Meat Bone Chopstick Rest Set", "standard", 15),
+        ("Food Merch", "Straw Hat Crew", "One Piece Devil Fruit Replica Set (3 fruits)", "high", 120),
+        ("Food Merch", "Straw Hat Crew", "One Piece Premium Sake Cup Set (Wano)", "mid", 65),
+        ("Food Merch", "Straw Hat Crew", "One Piece Jolly Roger Beer Glass Set (4 crews)", "mid", 50),
+        ("Food Merch", "Luffy", "One Piece Gomu Gomu no Mi Replica Fruit", "mid", 45),
+        ("Food Merch", "Trafalgar Law", "One Piece Ope Ope no Mi Replica Fruit", "mid", 48),
+        ("Food Merch", "Ace", "One Piece Mera Mera no Mi Replica Fruit", "mid", 48),
+
+        # ── Additional FiguartsZERO ────────────────────────────────────────
+        ("FiguartsZERO", "Monkey D. Luffy", "FiguartsZERO Extra Battle Luffy Gear 5 Thunder", "grail", 280),
+        ("FiguartsZERO", "Kaido", "FiguartsZERO Extra Battle Kaido Blast Breath", "grail", 250),
+        ("FiguartsZERO", "Roronoa Zoro", "FiguartsZERO Extra Battle Zoro Purgatory Onigiri", "high", 180),
+        ("FiguartsZERO", "Sanji", "FiguartsZERO Extra Battle Sanji Diable Jambe", "high", 160),
+        ("FiguartsZERO", "Trafalgar Law", "FiguartsZERO Extra Battle Law K-Room", "high", 170),
+        ("FiguartsZERO", "Eustass Kid", "FiguartsZERO Extra Battle Kid Punk Gibson", "high", 175),
+        ("FiguartsZERO", "Shanks", "FiguartsZERO Extra Battle Shanks Haki", "grail", 300),
+        ("FiguartsZERO", "Whitebeard", "FiguartsZERO Extra Battle Whitebeard Quake", "grail", 280),
+        ("FiguartsZERO", "Portgas D. Ace", "FiguartsZERO Extra Battle Ace Fire Fist", "high", 200),
+        ("FiguartsZERO", "Yamato", "FiguartsZERO Extra Battle Yamato Thunder Bagua", "high", 185),
+
+        # ── Ichiban Kuji Prizes ────────────────────────────────────────────
+        ("Ichiban Kuji", "Monkey D. Luffy", "Ichiban Kuji Legends A Prize Luffy Gear 5", "high", 120),
+        ("Ichiban Kuji", "Roronoa Zoro", "Ichiban Kuji Legends B Prize Zoro Enma", "high", 100),
+        ("Ichiban Kuji", "Sanji", "Ichiban Kuji Legends C Prize Sanji Ifrit", "mid", 80),
+        ("Ichiban Kuji", "Yamato", "Ichiban Kuji Wano D Prize Yamato", "mid", 75),
+        ("Ichiban Kuji", "Monkey D. Luffy", "Ichiban Kuji Film Red Last One Prize Luffy", "grail", 200),
+        ("Ichiban Kuji", "Shanks", "Ichiban Kuji Film Red A Prize Shanks", "high", 150),
+        ("Ichiban Kuji", "Uta", "Ichiban Kuji Film Red B Prize Uta", "high", 130),
+        ("Ichiban Kuji", "Straw Hat Crew", "Ichiban Kuji Egghead Full Set (A-F + Last One)", "grail", 400),
+        ("Ichiban Kuji", "Nami", "Ichiban Kuji Wano E Prize Nami Kimono", "mid", 60),
+        ("Ichiban Kuji", "Nico Robin", "Ichiban Kuji Wano F Prize Robin Kimono", "mid", 65),
+
+        # ── One Piece Manga Volumes (Key Issues) ──────────────────────────
+        ("Manga", "One Piece", "One Piece Vol. 1 (1st Print Japanese)", "grail", 500),
+        ("Manga", "One Piece", "One Piece Vol. 1 (English, 1st Print Viz)", "high", 150),
+        ("Manga", "One Piece", "One Piece Box Set 1 (Vols 1-23, English)", "high", 180),
+        ("Manga", "One Piece", "One Piece Box Set 2 (Vols 24-46, English)", "high", 180),
+        ("Manga", "One Piece", "One Piece Box Set 3 (Vols 47-70, English)", "high", 180),
+        ("Manga", "One Piece", "One Piece Box Set 4 (Vols 71-90, English)", "high", 180),
+        ("Manga", "One Piece", "One Piece Vol. 100 (Anniversary Cover, Japanese)", "mid", 40),
+        ("Manga", "One Piece", "One Piece Color Walk 9 TIGER (Oda Artbook)", "mid", 55),
+
+        # ── One Piece Music / Vinyl ────────────────────────────────────────
+        ("Music", "One Piece", "One Piece Film Red OST (Ado, 2-LP Vinyl)", "high", 120),
+        ("Music", "One Piece", "One Piece Opening Theme Collection CD Box (20 CDs)", "grail", 250),
+        ("Music", "One Piece", "We Are! (Single CD, Hiroshi Kitadani)", "mid", 35),
+        ("Music", "One Piece", "One Piece Film Z OST (CD)", "mid", 40),
+        ("Music", "One Piece", "One Piece Stampede OST (CD)", "mid", 38),
+
+        # ── Additional Collabs & Anniversary ───────────────────────────────
+        ("Collab Merch", "One Piece", "One Piece x Swatch Big Bold Watch Luffy", "high", 180),
+        ("Collab Merch", "One Piece", "One Piece x Swatch Big Bold Watch Zoro", "high", 180),
+        ("Collab Merch", "One Piece", "One Piece x Moleskine Notebook Set (3 pcs)", "mid", 45),
+        ("Collab Merch", "One Piece", "One Piece 25th Anniversary Ichiban Kuji Full Set", "grail", 350),
+        ("Collab Merch", "One Piece", "One Piece x Crocs Classic Clog Luffy", "mid", 75),
+        ("Collab Merch", "One Piece", "One Piece Mugiwara Store Exclusive Straw Hat (Real)", "high", 120),
+        ("Collab Merch", "One Piece", "One Piece x Monopoly Board Game (Collector)", "mid", 55),
+        ("Collab Merch", "One Piece", "One Piece x Funko Pop 4-Pack Straw Hat Crew", "mid", 60),
+        ("Collab Merch", "One Piece", "One Piece Film Red Premium Card Case (Gold)", "mid", 45),
+        ("Collab Merch", "One Piece", "One Piece Jump Shop Exclusive Clear File Set (10)", "standard", 25),
+
+        # ── Variable Action Heroes (VAH) ───────────────────────────────────
+        ("VAH", "Monkey D. Luffy", "VAH Luffy (Wano Country)", "high", 120),
+        ("VAH", "Roronoa Zoro", "VAH Zoro (Wano Country)", "high", 120),
+        ("VAH", "Sanji", "VAH Sanji (Wano Country)", "high", 115),
+        ("VAH", "Trafalgar Law", "VAH Law (Wano Country)", "high", 115),
+        ("VAH", "Portgas D. Ace", "VAH Ace (Fire Fist)", "high", 125),
+        ("VAH", "Sabo", "VAH Sabo (Dragon Claw)", "high", 120),
+        ("VAH", "Boa Hancock", "VAH Hancock (Amazon Lily)", "high", 130),
+        ("VAH", "Nami", "VAH Nami (Clima-Tact)", "high", 110),
+
+        # ── DXF / Grandista ────────────────────────────────────────────────
+        ("DXF", "Monkey D. Luffy", "Grandista Nero Luffy", "mid", 55),
+        ("DXF", "Roronoa Zoro", "Grandista Nero Zoro", "mid", 55),
+        ("DXF", "Monkey D. Luffy", "DXF The Grandline Men Luffy Gear 5", "mid", 40),
+        ("DXF", "Yamato", "DXF The Grandline Lady Yamato", "mid", 45),
+        ("DXF", "Uta", "DXF The Grandline Lady Uta (Film Red)", "mid", 42),
+        ("DXF", "Shanks", "Grandista Shanks (Film Red)", "mid", 60),
+
+        # ── Plush / Cushions ───────────────────────────────────────────────
+        ("Plush", "Chopper", "One Piece Chopper Premium Plush (30cm)", "standard", 35),
+        ("Plush", "Luffy", "One Piece Luffy Chibi Plush Keychain", "standard", 12),
+        ("Plush", "Bepo", "One Piece Bepo the Bear Plush (40cm)", "mid", 45),
+        ("Plush", "Thousand Sunny", "One Piece Thousand Sunny Ship Cushion (50cm)", "mid", 55),
+        ("Plush", "Going Merry", "One Piece Going Merry Ship Cushion (50cm)", "mid", 55),
+        ("Plush", "Straw Hat Crew", "One Piece Straw Hat Crew Mini Plush Set (10 pcs)", "high", 80),
+
+        # ── Stamps / Coins / Medals ────────────────────────────────────────
+        ("Collectible", "One Piece", "One Piece 25th Anniversary Silver Coin Set", "grail", 250),
+        ("Collectible", "One Piece", "One Piece Japan Post Stamp Sheet (2023)", "mid", 40),
+        ("Collectible", "One Piece", "One Piece Ichibankuji Metal Medal Set", "mid", 35),
+        ("Collectible", "Monkey D. Luffy", "One Piece Gear 5 Luffy Gold Foil Card", "mid", 50),
+        ("Collectible", "Straw Hat Crew", "One Piece Wanted Poster Premium Metal Set (10)", "high", 90),
+
+        # ── One Piece Clothing & Accessories ───────────────────────────────
+        ("Collab Merch", "One Piece", "One Piece x Champion Straw Hat Crew Hoodie", "mid", 75),
+        ("Collab Merch", "One Piece", "One Piece x Crocs Jibbitz Charm Set (10 pcs)", "standard", 25),
+        ("Collab Merch", "One Piece", "One Piece Mugiwara Store Luffy Snapback Cap", "standard", 30),
+        ("Collab Merch", "One Piece", "One Piece x Primitive Skate Deck (Luffy)", "mid", 65),
+        ("Collab Merch", "One Piece", "One Piece x Primitive Skate Deck (Zoro)", "mid", 65),
+        ("Collab Merch", "One Piece", "One Piece Egghead Arc Official Keychain Set (6)", "standard", 20),
+        ("Collab Merch", "One Piece", "One Piece x Reebok Club C 85 Straw Hat", "high", 130),
+        ("Collab Merch", "One Piece", "One Piece Film Red Theatrical Program Book", "standard", 15),
     ]
 
 

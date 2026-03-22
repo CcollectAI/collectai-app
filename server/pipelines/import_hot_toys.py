@@ -276,6 +276,35 @@ def get_curated_catalog() -> list[dict]:
         ("Hot Toys", "Harry Potter", "Severus Snape", "1/6 Figure", "mid", 380),
         ("Hot Toys", "Harry Potter", "Albus Dumbledore", "1/6 Figure", "mid", 360),
 
+        # ─── Star Ace — Harry Potter ──────────────────────────────────────
+        ("Star Ace", "Harry Potter", "Rubeus Hagrid 1/6 Deluxe", "1/6 Figure", "high", 340),
+        ("Star Ace", "Harry Potter", "Lord Voldemort (Deathly Hallows)", "1/6 Figure", "mid", 250),
+        ("Star Ace", "Harry Potter", "Albus Dumbledore (Richard Harris) Deluxe", "1/6 Figure", "mid", 240),
+        ("Star Ace", "Harry Potter", "Harry Potter (Tri-Wizard Tournament)", "1/6 Figure", "mid", 220),
+        ("Star Ace", "Harry Potter", "Severus Snape (Half-Blood Prince)", "1/6 Figure", "mid", 220),
+        ("Star Ace", "Harry Potter", "Hermione Granger (Teenage)", "1/6 Figure", "mid", 210),
+        ("Star Ace", "Harry Potter", "Harry Potter (Sorcerer's Stone)", "1/6 Figure", "mid", 185),
+        ("Star Ace", "Harry Potter", "Ron Weasley", "1/6 Figure", "mid", 185),
+        ("Star Ace", "Harry Potter", "Sirius Black", "1/6 Figure", "mid", 200),
+        ("Star Ace", "Harry Potter", "Sirius Black (Prison Garb)", "1/6 Figure", "mid", 200),
+        ("Star Ace", "Harry Potter", "Mad-Eye Moody", "1/6 Figure", "mid", 220),
+        ("Star Ace", "Harry Potter", "Bellatrix Lestrange", "1/6 Figure", "mid", 200),
+        ("Star Ace", "Harry Potter", "Draco Malfoy (Quidditch)", "1/6 Figure", "mid", 180),
+        ("Star Ace", "Harry Potter", "Neville Longbottom", "1/6 Figure", "mid", 180),
+        ("Star Ace", "Harry Potter", "Dobby", "1/6 Figure", "mid", 160),
+        ("Star Ace", "Harry Potter", "Dementor", "1/6 Figure", "mid", 200),
+        ("Star Ace", "Harry Potter", "Newt Scamander (Fantastic Beasts)", "1/6 Figure", "mid", 190),
+        ("Star Ace", "Harry Potter", "Grindelwald (Fantastic Beasts)", "1/6 Figure", "mid", 190),
+        ("Star Ace", "Harry Potter", "Buckbeak (Deluxe)", "1/6 Scale", "high", 400),
+        ("Star Ace", "Harry Potter", "Hedwig (Life-Size)", "Life-Size", "high", 300),
+
+        # ─── Iron Studios — Harry Potter ──────────────────────────────────
+        ("Iron Studios", "Harry Potter", "Harry Potter Art Scale 1/10", "Art Scale Statue", "mid", 120),
+        ("Iron Studios", "Harry Potter", "Voldemort Art Scale 1/10", "Art Scale Statue", "mid", 130),
+        ("Iron Studios", "Harry Potter", "Hermione Art Scale 1/10", "Art Scale Statue", "mid", 110),
+        ("Iron Studios", "Harry Potter", "Dumbledore Art Scale 1/10", "Art Scale Statue", "mid", 130),
+        ("Iron Studios", "Harry Potter", "Hagrid Art Scale 1/10 Deluxe", "Art Scale Statue", "high", 250),
+
         # ─── Kotobukiya ARTFX ─────────────────────────────────────────────
         ("Kotobukiya", "Marvel", "Spider-Man ARTFX+ Statue", "ARTFX+ Statue", "standard", 120),
         ("Kotobukiya", "Marvel", "Wolverine ARTFX+ Statue", "ARTFX+ Statue", "standard", 110),
@@ -659,6 +688,53 @@ def get_curated_catalog() -> list[dict]:
         ("Iron Studios", "DC", "Harley Quinn Art Scale 1/10", "Art Scale Statue", "mid", 240),
         ("Iron Studios", "LOTR", "Gandalf Art Scale 1/10", "Art Scale Statue", "mid", 300),
         ("Iron Studios", "LOTR", "Aragorn Art Scale 1/10", "Art Scale Statue", "mid", 280),
+
+        # ─── Asmus Toys — LOTR ────────────────────────────────────────────
+        ("Asmus Toys", "LOTR", "Morgul Lord Witch-King 1/6", "1/6 Figure", "high", 900),
+        ("Asmus Toys", "LOTR", "Gimli 1/6", "1/6 Figure", "high", 600),
+        ("Asmus Toys", "LOTR", "Gandalf the Grey 2.0 1/6", "1/6 Figure", "high", 350),
+        ("Asmus Toys", "LOTR", "Galadriel 1/6 (LE 1500)", "1/6 Figure", "high", 500),
+        ("Asmus Toys", "LOTR", "Saruman 1/6", "1/6 Figure", "high", 430),
+        ("Asmus Toys", "LOTR", "Eowyn 1/6", "1/6 Figure", "high", 325),
+        ("Asmus Toys", "LOTR", "Arwen 1/6", "1/6 Figure", "high", 335),
+        ("Asmus Toys", "LOTR", "Aragorn at Helm's Deep 1/6", "1/6 Figure", "mid", 300),
+        ("Asmus Toys", "LOTR", "Legolas at Helm's Deep 1/6", "1/6 Figure", "mid", 275),
+        ("Asmus Toys", "LOTR", "Twilight Witch-King 1/6", "1/6 Figure", "mid", 210),
+        ("Asmus Toys", "LOTR", "Faramir 1/6", "1/6 Figure", "mid", 210),
+        ("Asmus Toys", "LOTR", "Elven Archer 1/6", "1/6 Figure", "mid", 210),
+        ("Asmus Toys", "LOTR", "Gollum Luxury Edition 1/6", "1/6 Figure", "mid", 270),
+        ("Asmus Toys", "LOTR", "Boromir 1/6", "1/6 Figure", "mid", 250),
+        ("Asmus Toys", "LOTR", "Frodo 1/6", "1/6 Figure", "mid", 220),
+        ("Asmus Toys", "LOTR", "Samwise Gamgee 1/6", "1/6 Figure", "mid", 220),
+        ("Asmus Toys", "LOTR", "Lurtz 1/6", "1/6 Figure", "mid", 200),
+        ("Asmus Toys", "LOTR", "Eomer 1/6", "1/6 Figure", "mid", 230),
+        ("Asmus Toys", "LOTR", "Theoden 1/6", "1/6 Figure", "mid", 240),
+        ("Asmus Toys", "LOTR", "Mouth of Sauron 1/6", "1/6 Figure", "mid", 250),
+
+        # ─── Sideshow — LOTR ─────────────────────────────────────────────
+        ("Sideshow", "LOTR", "Sauron Premium Format 1/4 (LE 1500)", "1/4 Statue", "grail", 1500),
+        ("Sideshow", "LOTR", "Gandalf Premium Format 1/4", "1/4 Statue", "high", 800),
+        ("Sideshow", "LOTR", "Aragorn Premium Format 1/4", "1/4 Statue", "high", 700),
+        ("Sideshow", "LOTR", "Legolas Premium Format 1/4", "1/4 Statue", "high", 650),
+        ("Sideshow", "LOTR", "Gollum Premium Format 1/4", "1/4 Statue", "high", 500),
+
+        # ─── Weta Workshop — LOTR ────────────────────────────────────────
+        ("Weta Workshop", "LOTR", "Barad-dur Environment Statue", "Environment", "grail", 1500),
+        ("Weta Workshop", "LOTR", "Minas Tirith Environment", "Environment", "grail", 600),
+        ("Weta Workshop", "LOTR", "Orthanc Black Tower Environment", "Environment", "high", 700),
+        ("Weta Workshop", "LOTR", "The Argonath Environment", "Environment", "high", 600),
+        ("Weta Workshop", "LOTR", "Rivendell Environment", "Environment", "high", 500),
+        ("Weta Workshop", "LOTR", "Bag End Environment", "Environment", "high", 450),
+        ("Weta Workshop", "LOTR", "Helm's Deep Environment", "Environment", "high", 500),
+        ("Weta Workshop", "LOTR", "Balrog Demon of Shadow & Flame", "Statue", "grail", 3500),
+        ("Weta Workshop", "LOTR", "Gandalf the White (Classic Series)", "1:6 Statue", "high", 400),
+        ("Weta Workshop", "LOTR", "Aragorn (Classic Series)", "1:6 Statue", "high", 350),
+        ("Weta Workshop", "LOTR", "Legolas (Classic Series)", "1:6 Statue", "mid", 300),
+        ("Weta Workshop", "LOTR", "Gimli (Classic Series)", "1:6 Statue", "mid", 300),
+        ("Weta Workshop", "LOTR", "Boromir (Classic Series)", "1:6 Statue", "high", 400),
+        ("Weta Workshop", "LOTR", "Witch-King of Angmar (Classic Series)", "1:6 Statue", "high", 450),
+        ("Weta Workshop", "LOTR", "Cave Troll (Classic Series)", "1:6 Statue", "high", 500),
+
         ("Iron Studios", "Jurassic Park", "Velociraptor Art Scale 1/10", "Art Scale Statue", "mid", 350),
 
         # ─── threezero Figures ─────────────────────────────────────────
@@ -680,6 +756,23 @@ def get_curated_catalog() -> list[dict]:
         ("Gecco", "Dark Souls", "Artorias the Abysswalker 1/6 Scale", "1/6 Statue", "high", 680),
         ("Gecco", "Bloodborne", "Hunter 1/6 Scale", "1/6 Statue", "high", 650),
         ("Gecco", "Silent Hill", "Pyramid Head 1/6 Scale", "1/6 Statue", "high", 720),
+
+        # ── Star Trek Premium Figures & Ship Replicas (15) ───────────────
+        ("EXO-6", "Star Trek TOS", "Captain Kirk 1/6 Scale", "1/6 Figure", "high", 200),
+        ("EXO-6", "Star Trek TOS", "Mr. Spock 1/6 Scale", "1/6 Figure", "high", 220),
+        ("EXO-6", "Star Trek TOS", "Dr. McCoy 1/6 Scale", "1/6 Figure", "high", 200),
+        ("EXO-6", "Star Trek TOS", "Uhura 1/6 Scale", "1/6 Figure", "high", 200),
+        ("EXO-6", "Star Trek TNG", "Captain Picard 1/6 Scale", "1/6 Figure", "high", 220),
+        ("EXO-6", "Star Trek TNG", "Commander Data 1/6 Scale", "1/6 Figure", "high", 200),
+        ("EXO-6", "Star Trek TNG", "Worf 1/6 Scale", "1/6 Figure", "high", 200),
+        ("EXO-6", "Star Trek TNG", "Locutus of Borg 1/6 Scale", "1/6 Figure", "high", 250),
+        ("QMx", "Star Trek TOS", "Kirk & Spock Q-Fig Set", "Q-Fig", "mid", 50),
+        ("Diamond Select", "Star Trek", "Enterprise NCC-1701 (Refit) Electronic Ship", "Ship Replica", "high", 180),
+        ("Diamond Select", "Star Trek TNG", "Enterprise NCC-1701-D Electronic Ship", "Ship Replica", "high", 200),
+        ("Eaglemoss", "Star Trek", "USS Enterprise NCC-1701 XL Edition", "Die-cast Ship", "high", 120),
+        ("Eaglemoss", "Star Trek", "USS Enterprise NCC-1701-D XL Edition", "Die-cast Ship", "high", 120),
+        ("Eaglemoss", "Star Trek", "Klingon Bird of Prey XL Edition", "Die-cast Ship", "high", 100),
+        ("Eaglemoss", "Star Trek", "USS Defiant NX-74205 XL Edition", "Die-cast Ship", "mid", 90),
     ]
 
     catalog = []
@@ -1111,6 +1204,37 @@ def _batch_variant_editions() -> list[dict]:
         ("Sideshow", "Star Wars", "Boba Fett Premium Format (Sideshow Exclusive)", "Premium Format", "high", 800),
         ("Sideshow", "Predator", "Predator Maquette (Sideshow Exclusive)", "Maquette", "grail", 1100),
         ("Sideshow", "Alien", "Alien Queen Maquette (Sideshow Exclusive)", "Maquette", "grail", 1900),
+
+        # ─── McFarlane DC Multiverse — Additional ───────────────────────
+        ("McFarlane", "DC", "McFarlane Batman (Hush) 7-inch", "7-inch Figure", "standard", 25),
+        ("McFarlane", "DC", "McFarlane Superman (Action Comics #1000) 7-inch", "7-inch Figure", "standard", 25),
+        ("McFarlane", "DC", "McFarlane Nightwing (Better Than Batman) 7-inch", "7-inch Figure", "standard", 25),
+        ("McFarlane", "DC", "McFarlane Deathstroke (Arkham Origins) 7-inch", "7-inch Figure", "standard", 28),
+        ("McFarlane", "DC", "McFarlane Harley Quinn (Classic) 7-inch", "7-inch Figure", "standard", 25),
+        ("McFarlane", "DC", "McFarlane Green Lantern (John Stewart) 7-inch", "7-inch Figure", "standard", 25),
+        ("McFarlane", "DC", "McFarlane Flash (Wally West) 7-inch", "7-inch Figure", "standard", 25),
+
+        # ─── threezero Transformers — Additional ────────────────────────
+        ("threezero", "Transformers", "threezero Optimus Prime DLX (Bumblebee Movie)", "DLX Figure", "mid", 320),
+        ("threezero", "Transformers", "threezero Bumblebee DLX (Bumblebee Movie)", "DLX Figure", "mid", 280),
+        ("threezero", "Transformers", "threezero Megatron DLX (Bumblebee Movie)", "DLX Figure", "mid", 310),
+        ("threezero", "Transformers", "threezero Starscream DLX (Bumblebee Movie)", "DLX Figure", "mid", 300),
+        ("threezero", "Transformers", "threezero Soundwave DLX (Bumblebee Movie)", "DLX Figure", "mid", 290),
+        ("threezero", "Transformers", "threezero Optimus Prime MDLX (G1)", "MDLX Figure", "mid", 200),
+
+        # ─── Kotobukiya Bishoujo — Additional ──────────────────────────
+        ("Kotobukiya", "Marvel", "Kotobukiya Bishoujo Black Cat 1/7", "Bishoujo Statue", "mid", 180),
+        ("Kotobukiya", "Marvel", "Kotobukiya Bishoujo Spider-Gwen 1/7", "Bishoujo Statue", "mid", 190),
+        ("Kotobukiya", "Marvel", "Kotobukiya Bishoujo Jean Grey 1/7", "Bishoujo Statue", "mid", 170),
+        ("Kotobukiya", "DC", "Kotobukiya Bishoujo Catwoman (Returns) 1/7", "Bishoujo Statue", "mid", 180),
+        ("Kotobukiya", "DC", "Kotobukiya Bishoujo Poison Ivy 1/7", "Bishoujo Statue", "mid", 175),
+        ("Kotobukiya", "DC", "Kotobukiya Bishoujo Batgirl 1/7", "Bishoujo Statue", "mid", 170),
+
+        # ─── Good Smile Nendoroids (Marvel/DC) ─────────────────────────
+        ("Good Smile", "Marvel", "Nendoroid Spider-Man (Miles Morales) #1180", "Nendoroid", "standard", 55),
+        ("Good Smile", "Marvel", "Nendoroid Deadpool (Orechan Edition) #662", "Nendoroid", "standard", 60),
+        ("Good Smile", "DC", "Nendoroid Batman (1989 Ver.) #1694", "Nendoroid", "standard", 58),
+        ("Good Smile", "DC", "Nendoroid Wonder Woman (Hero's Edition) #818", "Nendoroid", "standard", 55),
     ]
 
     catalog = []
@@ -1263,7 +1387,6 @@ def _batch_expansion_round2() -> list[dict]:
         ("Sideshow", "Star Wars", "Boba Fett Legendary Scale", "Legendary Scale", "grail", 3800),
 
         # ─── Gentle Giant Mini Busts Expansion ───────────────────────────
-        ("Gentle Giant", "Star Wars", "Ahsoka Tano Mini Bust", "Mini Bust", "mid", 180),
         ("Gentle Giant", "Star Wars", "Grand Admiral Thrawn Mini Bust", "Mini Bust", "mid", 200),
         ("Gentle Giant", "Marvel", "Deadpool & Wolverine Mini Bust Set", "Mini Bust", "mid", 220),
 
@@ -1280,6 +1403,40 @@ def _batch_expansion_round2() -> list[dict]:
         ("Hot Toys", "DC", "Supergirl (The Flash 2023)", "1/6 Figure", "mid", 350),
         ("Hot Toys", "DC", "General Zod (Man of Steel)", "1/6 Figure", "mid", 380),
         ("Hot Toys", "Predator", "Feral Predator (Prey 2022)", "1/6 Figure", "mid", 400),
+
+        # ─── Good Smile Company — Scales ────────────────────────────────
+        ("Good Smile Company", "Demon Slayer", "Rengoku 1/8 Scale (Flame Breathing)", "1/8 Statue", "high", 250),
+        ("Good Smile Company", "Demon Slayer", "Tanjiro Kamado 1/8 Scale (Hinokami Kagura)", "1/8 Statue", "mid", 200),
+        ("Good Smile Company", "Jujutsu Kaisen", "Gojo Satoru 1/7 Scale (Hollow Purple)", "1/7 Statue", "high", 280),
+        ("Good Smile Company", "Jujutsu Kaisen", "Sukuna 1/7 Scale (Domain Expansion)", "1/7 Statue", "high", 300),
+        ("Good Smile Company", "One Piece", "Luffy Gear 5 1/7 Scale", "1/7 Statue", "high", 250),
+        ("Good Smile Company", "Attack on Titan", "Levi Ackerman 1/7 Scale (Final Season)", "1/7 Statue", "high", 280),
+
+        # ─── Alter — Premium Anime Scales ───────────────────────────────
+        ("Alter", "Fate/Grand Order", "Saber Altria Pendragon 1/7", "1/7 Statue", "high", 250),
+        ("Alter", "Re:Zero", "Rem 1/7 Scale (Crystal Dress)", "1/7 Statue", "high", 300),
+        ("Alter", "Re:Zero", "Ram 1/7 Scale (Crystal Dress)", "1/7 Statue", "high", 280),
+        ("Alter", "Evangelion", "Asuka Langley 1/7 Scale", "1/7 Statue", "high", 250),
+
+        # ─── MegaHouse — Premium ────────────────────────────────────────
+        ("MegaHouse", "One Piece", "Portrait of Pirates Kaido (Dragon Form)", "1/8 Statue", "grail", 800),
+        ("MegaHouse", "One Piece", "Portrait of Pirates Luffy (Gear 5) LE", "1/8 Statue", "high", 450),
+        ("MegaHouse", "One Piece", "Portrait of Pirates Zoro (Enma)", "1/8 Statue", "high", 350),
+        ("MegaHouse", "Dragon Ball", "Goku Ultra Instinct Dimension of Dragonball", "1/8 Statue", "high", 300),
+        ("MegaHouse", "Naruto", "Naruto Baryon Mode G.E.M. Series", "1/8 Statue", "high", 280),
+
+        # ─── Tsume Art — HQS/Ikigai ────────────────────────────────────
+        ("Tsume Art", "Naruto", "Naruto vs Sasuke HQS 1/6 Diorama", "1/6 Diorama", "grail", 1500),
+        ("Tsume Art", "Dragon Ball Z", "Goku vs Vegeta HQS 1/6 Diorama", "1/6 Diorama", "grail", 1800),
+        ("Tsume Art", "One Piece", "Luffy vs Kaido HQS 1/6 Diorama", "1/6 Diorama", "grail", 2000),
+        ("Tsume Art", "Demon Slayer", "Rengoku vs Akaza HQS 1/6 Diorama", "1/6 Diorama", "grail", 1600),
+
+        # ─── Bandai Spirits — Figuarts ZERO ────────────────────────────
+        ("Bandai", "One Piece", "Figuarts ZERO Luffy (Gear 5 Extra Battle)", "Figuarts ZERO", "high", 180),
+        ("Bandai", "Dragon Ball Super", "Figuarts ZERO Gogeta (Extra Battle)", "Figuarts ZERO", "mid", 120),
+        ("Bandai", "Demon Slayer", "Figuarts ZERO Rengoku (Flame Breathing)", "Figuarts ZERO", "mid", 100),
+        ("Bandai", "Naruto", "Figuarts ZERO Naruto (Kurama Susanoo Extra Battle)", "Figuarts ZERO", "high", 200),
+        ("Bandai", "Jujutsu Kaisen", "Figuarts ZERO Gojo (Unlimited Void)", "Figuarts ZERO", "high", 150),
     ]
 
     catalog = []
@@ -1341,6 +1498,10 @@ def item_to_price_observation(item: dict) -> PriceObservation:
         "Legendary Scale": 0.92,
         "1/3 Statue": 0.9,
         "1/4 Replica": 0.7,
+        "1/7 Statue": 0.6,
+        "1/8 Statue": 0.55,
+        "1/6 Diorama": 0.85,
+        "Figuarts ZERO": 0.5,
     }
 
     return PriceObservation(

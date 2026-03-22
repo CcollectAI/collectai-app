@@ -542,7 +542,6 @@ def get_curated_catalog() -> list[dict]:
 
         # ── TurboGrafx-16 / PC Engine — More Gems ────────────────────────
         ("TurboGrafx-16", "Soldier Blade", 1992, 60, 140, 400, "Uncommon"),
-        ("TurboGrafx-16", "Air Zonk", 1992, 80, 180, 500, "Uncommon"),
         ("TurboGrafx-16", "Neutopia", 1989, 30, 70, 220, "Common"),
         ("TurboGrafx-16", "Lords of Thunder", 1993, 120, 250, 650, "Rare"),
         ("TurboGrafx-16", "Dungeon Explorer", 1989, 25, 60, 200, "Common"),
@@ -951,7 +950,6 @@ def get_curated_catalog() -> list[dict]:
         ("Saturn", "X-Men vs Street Fighter (4MB Cart, JP)", 1997, 60, 140, 400, "Uncommon"),
         ("Saturn", "Marvel Super Heroes (JP)", 1997, 80, 180, 500, "Uncommon"),
         ("Saturn", "Cotton 2 (JP)", 1997, 120, 280, 700, "Rare"),
-        ("Saturn", "Hyper Duel (JP)", 1996, 300, 600, 1500, "Rare"),
 
         # ── Additional Retro Games (+14) ───────────────────────────────────
         ("SNES", "Hagane: The Final Conflict", 1994, 300, 700, 1800, "Rare"),
@@ -1163,7 +1161,6 @@ def get_curated_catalog() -> list[dict]:
         ("PC", "Backyard Football 2006", 2005, 15, 40, 150, "Common"),
         ("PS2", "Backyard Football 2006", 2005, 10, 30, 100, "Common"),
         ("GameCube", "Backyard Football 2006", 2005, 12, 35, 120, "Common"),
-        ("GBA", "Backyard Football 2006", 2005, 8, 25, 80, "Common"),
         ("PC", "Backyard Basketball 2004", 2003, 15, 40, 150, "Common"),
         ("PC", "Backyard Hockey 2005", 2004, 15, 40, 150, "Common"),
         ("GameCube", "Backyard Baseball 2003", 2002, 15, 40, 130, "Common"),
@@ -1171,9 +1168,7 @@ def get_curated_catalog() -> list[dict]:
         ("GBA", "Backyard Football 2004", 2003, 10, 30, 100, "Common"),
         ("GameCube", "Backyard Football 2004", 2003, 12, 35, 120, "Common"),
         ("PC", "Backyard Skateboarding 2006", 2005, 15, 40, 150, "Common"),
-        ("PC", "Backyard Sports Basketball 2007", 2006, 15, 40, 150, "Common"),
         ("GBA", "Backyard Sports Basketball 2007", 2006, 8, 25, 80, "Common"),
-        ("PC", "Backyard Sports Football 2007", 2006, 15, 40, 150, "Common"),
         ("GBA", "Backyard Sports Football 2007", 2006, 8, 25, 80, "Common"),
         ("Wii", "Backyard Baseball", 2007, 8, 25, 80, "Common"),
         ("Wii", "Backyard Football", 2007, 8, 25, 80, "Common"),
@@ -1251,6 +1246,9 @@ def get_curated_catalog() -> list[dict]:
 
     # ── Wave 2: More sealed, CIB, console variants, handheld, Dreamcast, PS1/PS2 ──
     items += _wave2_retro_expansion()
+
+    # ── Wave 3: Switch rarities, JP exclusives, arcade, GB/GBA, PS2/PS3, PC big box ──
+    items += _wave3_retro_expansion()
 
     # Deduplicate by ('platform', 'name') (keep first occurrence)
     _seen: set = set()
@@ -1405,7 +1403,6 @@ def _wave2_retro_expansion() -> list[dict]:
 
     # ── More Neo Geo AES ───────────────────────────────────────────
     neogeo_extra = [
-        ("Neo Geo AES", "Pulstar", 1995, 600, 1200, 3000, "Grail"),
         ("Neo Geo AES", "Matrimelee", 2003, 800, 1500, 3500, "Grail"),
         ("Neo Geo AES", "Rage of the Dragons", 2002, 400, 800, 2000, "Rare"),
         ("Neo Geo AES", "Shock Troopers 2nd Squad", 1998, 350, 700, 1800, "Rare"),
@@ -1520,6 +1517,136 @@ def _wave2_retro_expansion() -> list[dict]:
             "price_loose": price,
             "price_cib": 0,
             "price_sealed": 0,
+            "rarity": rarity,
+        })
+
+    return items
+
+
+def _wave3_retro_expansion() -> list[dict]:
+    """Wave 3 — ~80 items: Switch rarities, JP exclusives, arcade boards,
+    Dreamcast/Saturn, GB/GBA, PS2/PS3, PC big box."""
+    items = []
+
+    # ── Nintendo Switch Rarities ─────────────────────────────────
+    switch_games = [
+        ("Switch", "Bayonetta 1 Physical (JP Import)", 2018, 80, 150, 350, "Rare"),
+        ("Switch", "Xenoblade Chronicles 2 Special Edition", 2017, 100, 250, 600, "Rare"),
+        ("Switch", "Fire Emblem Three Houses Seasons of Warfare Ed.", 2019, 80, 180, 400, "Uncommon"),
+        ("Switch", "Metroid Dread Special Edition", 2021, 60, 120, 300, "Uncommon"),
+        ("Switch", "Metroid Dread Collector's Edition (EU)", 2021, 100, 220, 500, "Rare"),
+        ("Switch", "Astral Chain Collector's Edition", 2019, 80, 180, 400, "Uncommon"),
+        ("Switch", "Ring Fit Adventure (CIB)", 2019, 40, 70, 150, "Common"),
+        ("Switch", "Pokemon Legends: Arceus (Steelbook)", 2022, 40, 80, 180, "Common"),
+        ("Switch", "Octopath Traveler Wayfarer's Edition", 2018, 60, 130, 300, "Uncommon"),
+        ("Switch", "Xenoblade Chronicles 3 Special Edition", 2022, 80, 180, 400, "Uncommon"),
+        ("Switch", "Bayonetta 3 Trinity Masquerade Edition", 2022, 60, 120, 280, "Uncommon"),
+        ("Switch", "No More Heroes III (Limited Run #136)", 2022, 70, 150, 350, "Rare"),
+        ("Switch", "Celeste (Limited Run Physical)", 2019, 80, 200, 500, "Rare"),
+        ("Switch", "Hollow Knight Physical (Fangamer)", 2019, 50, 120, 300, "Uncommon"),
+        ("Switch", "Return of the Obra Dinn (Limited Run)", 2021, 50, 100, 250, "Uncommon"),
+    ]
+
+    # ── Japanese Exclusives ──────────────────────────────────────
+    jp_exclusives = [
+        ("SNES", "Treasure Hunter G (JP)", 1996, 20, 50, 150, "Uncommon"),
+        ("SNES", "Bahamut Lagoon (JP)", 1996, 15, 40, 120, "Common"),
+        ("SNES", "Seiken Densetsu 3 (JP)", 1995, 25, 60, 200, "Uncommon"),
+        ("SNES", "Star Ocean (JP SFC)", 1996, 20, 50, 150, "Common"),
+        ("SNES", "Rendering Ranger R2 (JP)", 1995, 500, 1000, 2500, "Grail"),
+        ("N64", "Sin & Punishment (JP)", 2000, 30, 70, 200, "Uncommon"),
+        ("N64", "Custom Robo V2 (JP)", 2000, 15, 35, 100, "Common"),
+        ("N64", "Bangai-O (JP N64)", 1999, 40, 100, 300, "Uncommon"),
+        ("PS1", "Vib-Ribbon (JP)", 1999, 30, 60, 180, "Uncommon"),
+        ("PS1", "LSD: Dream Emulator (JP)", 1998, 150, 350, 800, "Grail"),
+        ("PS1", "Harmful Park (JP)", 1997, 120, 250, 600, "Rare"),
+        ("Saturn", "Radiant Silvergun (JP)", 1998, 150, 350, 800, "Rare"),
+        ("Saturn", "Princess Crown (JP)", 1997, 60, 130, 350, "Uncommon"),
+        ("Game Boy", "For the Frog the Bell Tolls (JP)", 1992, 20, 50, 150, "Uncommon"),
+        ("Game Boy", "Kaeru no Tame ni Kane wa Naru (JP CIB)", 1992, 40, 100, 300, "Uncommon"),
+    ]
+
+    # ── Arcade Boards & Cabinets ─────────────────────────────────
+    arcade_extra = [
+        ("Arcade", "CPS2 Marvel vs Capcom PCB", 1998, 600, 0, 0, "Rare"),
+        ("Arcade", "CPS2 X-Men vs Street Fighter PCB", 1996, 400, 0, 0, "Rare"),
+        ("Arcade", "MVS Samurai Shodown II Cart", 1994, 150, 0, 0, "Uncommon"),
+        ("Arcade", "MVS King of Fighters '98 Cart", 1998, 200, 0, 0, "Uncommon"),
+        ("Arcade", "MVS Blazing Star Cart", 1998, 250, 0, 0, "Rare"),
+        ("Arcade", "Sega Naomi Marvel vs Capcom 2 GD-ROM", 2000, 500, 0, 0, "Rare"),
+        ("Arcade", "Sega Naomi Crazy Taxi GD-ROM", 1999, 200, 0, 0, "Uncommon"),
+        ("Arcade", "CPS3 Street Fighter III: 2nd Impact PCB", 1997, 400, 0, 0, "Rare"),
+        ("Arcade", "MVS Last Blade 2 Cart", 1998, 300, 0, 0, "Rare"),
+        ("Arcade", "Taito F3 Darius Gaiden PCB", 1994, 350, 0, 0, "Rare"),
+    ]
+
+    # ── Sega Dreamcast / Saturn (additional) ─────────────────────
+    dc_saturn_extra = [
+        ("Dreamcast", "House of the Dead 2 (CIB)", 1999, 20, 40, 120, "Common"),
+        ("Dreamcast", "Space Channel 5 (CIB)", 2000, 15, 30, 100, "Common"),
+        ("Dreamcast", "Phantasy Star Online (CIB)", 2001, 25, 50, 150, "Common"),
+        ("Dreamcast", "Dynamite Cop (CIB)", 1999, 25, 60, 180, "Uncommon"),
+        ("Dreamcast", "Under Defeat (CIB, JP)", 2006, 80, 200, 500, "Rare"),
+        ("Saturn", "Burning Rangers (CIB)", 1998, 200, 450, 1100, "Rare"),
+        ("Saturn", "Dragon Force (CIB)", 1996, 100, 220, 600, "Uncommon"),
+        ("Saturn", "Panzer Dragoon Saga (CIB)", 1998, 600, 1200, 3200, "Grail"),
+        ("Saturn", "Shining Force III Scenario 2 (JP)", 1998, 80, 180, 450, "Uncommon"),
+        ("Saturn", "Shining Force III Scenario 3 (JP)", 1998, 100, 220, 550, "Rare"),
+    ]
+
+    # ── Game Boy / GBA (additional) ──────────────────────────────
+    gb_gba_extra = [
+        ("Game Boy", "Pokemon Pinball (CIB)", 1999, 20, 50, 150, "Common"),
+        ("Game Boy", "Kirby's Pinball Land (CIB)", 1993, 10, 30, 100, "Common"),
+        ("Game Boy Color", "Pokemon Trading Card Game (CIB)", 2000, 20, 60, 200, "Common"),
+        ("Game Boy Color", "Wario Land 3 (CIB)", 2000, 20, 50, 150, "Common"),
+        ("Game Boy Color", "Survival Kids (CIB)", 1999, 40, 100, 300, "Uncommon"),
+        ("GBA", "Castlevania: Circle of the Moon (CIB)", 2001, 30, 70, 200, "Common"),
+        ("GBA", "Golden Sun (CIB)", 2001, 30, 80, 250, "Common"),
+        ("GBA", "Golden Sun: The Lost Age (CIB)", 2003, 40, 100, 300, "Uncommon"),
+        ("GBA", "Drill Dozer (CIB)", 2005, 60, 150, 400, "Rare"),
+        ("GBA", "Riviera: The Promised Land (CIB)", 2005, 40, 100, 280, "Uncommon"),
+    ]
+
+    # ── PS2/PS3 Rarities (additional) ────────────────────────────
+    ps2_ps3_extra = [
+        ("PS2", "Silent Hill 2 (CIB, Black Label)", 2001, 80, 200, 600, "Rare"),
+        ("PS2", ".hack//Infection (CIB)", 2003, 20, 40, 100, "Common"),
+        ("PS2", ".hack//Outbreak (CIB)", 2003, 40, 80, 200, "Uncommon"),
+        ("PS2", ".hack//Quarantine Complete (CIB w/ DVD)", 2003, 200, 450, 1000, "Grail"),
+        ("PS2", "Michigan: Report from Hell (PAL, CIB)", 2004, 60, 150, 400, "Rare"),
+        ("PS3", "Folklore (CIB)", 2007, 30, 60, 150, "Uncommon"),
+        ("PS3", "Demon's Souls Black Phantom Edition (EU)", 2010, 80, 200, 500, "Rare"),
+        ("PS3", "3D Dot Game Heroes (CIB)", 2010, 25, 50, 120, "Common"),
+        ("PS3", "Puppeteer (CIB)", 2013, 30, 60, 150, "Uncommon"),
+        ("PS3", "Ni no Kuni Wizard's Edition (CIB)", 2013, 80, 180, 400, "Rare"),
+    ]
+
+    # ── PC Big Box Games ─────────────────────────────────────────
+    pc_bigbox = [
+        ("PC", "Baldur's Gate Big Box (CIB)", 1998, 40, 120, 350, "Uncommon"),
+        ("PC", "Baldur's Gate II: Shadows of Amn Big Box", 2000, 30, 100, 300, "Uncommon"),
+        ("PC", "Ultima VII: The Black Gate Big Box", 1992, 80, 200, 600, "Rare"),
+        ("PC", "Ultima Underworld Big Box", 1992, 60, 150, 450, "Rare"),
+        ("PC", "Wing Commander Big Box", 1990, 40, 120, 350, "Uncommon"),
+        ("PC", "Wing Commander III Big Box", 1994, 30, 80, 250, "Uncommon"),
+        ("PC", "System Shock Big Box", 1994, 100, 250, 700, "Rare"),
+        ("PC", "Planescape: Torment Big Box (CIB)", 1999, 60, 180, 500, "Rare"),
+        ("PC", "Diablo Big Box (CIB)", 1997, 40, 120, 350, "Uncommon"),
+        ("PC", "Fallout Big Box (CIB)", 1997, 50, 150, 400, "Rare"),
+    ]
+
+    all_games = (switch_games + jp_exclusives + arcade_extra + dc_saturn_extra
+                 + gb_gba_extra + ps2_ps3_extra + pc_bigbox)
+    for platform, title, year, loose, cib, sealed, rarity in all_games:
+        items.append({
+            "type": "game",
+            "platform": platform,
+            "name": title,
+            "year": year,
+            "price_loose": loose,
+            "price_cib": cib,
+            "price_sealed": sealed,
             "rarity": rarity,
         })
 

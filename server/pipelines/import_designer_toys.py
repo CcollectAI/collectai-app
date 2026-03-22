@@ -574,6 +574,18 @@ def get_curated_catalog() -> list[dict]:
         ("Pop Mart", "Sweet Bean", "Sweet Bean Akihabara Series", "Blind Box Set", "standard", 65),
         ("Pop Mart", "Sweet Bean", "Sweet Bean x Harry Potter Series", "Collab", "mid", 100),
 
+        # ── Harry Potter Designer Toys ──────────────────────────────────────
+        ("Pop Mart", "Harry Potter Collab", "Goblet of Fire Secret Edition", "Limited", "high", 100),
+        ("Pop Mart", "Harry Potter Collab", "Heading to Hogwarts Secret", "Limited", "mid", 70),
+        ("Pop Mart", "Harry Potter Collab", "Chamber of Secrets Secret", "Limited", "mid", 80),
+        ("Beast Kingdom", "D-Stage", "D-Stage HP Dioramas Set", "Standard", "mid", 45),
+        ("Beast Kingdom", "Egg Attack", "Egg Attack HP Harry", "Standard", "mid", 75),
+
+        # ── Lord of the Rings Designer Toys ─────────────────────────────────
+        ("Weta Workshop", "Mini Epics", "Mini Epics Gandalf Vinyl", "Standard", "standard", 30),
+        ("Weta Workshop", "Mini Epics", "Mini Epics Frodo Vinyl", "Standard", "standard", 28),
+        ("Weta Workshop", "Mini Epics", "Mini Epics Aragorn Vinyl", "Standard", "standard", 30),
+
         # ── Pop Mart Zsiga Full Line ─────────────────────────────────────────
         ("Pop Mart", "Zsiga", "Zsiga I'm Not Series", "Blind Box Set", "standard", 65),
         ("Pop Mart", "Zsiga", "Zsiga We Are So Cute Series", "Blind Box Set", "standard", 60),
@@ -1049,6 +1061,132 @@ def _batch_art_toys_2025() -> list[dict]:
         ("Hebru Brantley", "Flyboy", "Flyboy Chrome Gold 12-inch (ComplexCon)", "Collab", "grail", 1500),
         ("Luke Chueh", "Possessed", "Possessed Bear OG Pink 8-inch", "Limited", "mid", 350),
         ("Luke Chueh", "Possessed", "Possessed Bear Black & White 8-inch", "Limited", "mid", 380),
+
+        # ── KAWS — Expanded Colorways (~15) ───────────────────────────────
+        ("KAWS", "Companion", "KAWS Companion Open Edition Grey", "Open Edition", "standard", 220),
+        ("KAWS", "Companion", "KAWS Companion Open Edition Brown", "Open Edition", "standard", 220),
+        ("KAWS", "Companion", "KAWS Companion Open Edition Black", "Open Edition", "standard", 220),
+        ("KAWS", "Companion (Flayed)", "KAWS Companion Flayed Grey", "Open Edition", "standard", 250),
+        ("KAWS", "Companion (Flayed)", "KAWS Companion Flayed Brown", "Open Edition", "standard", 250),
+        ("KAWS", "Companion (Flayed)", "KAWS Companion Flayed Black", "Open Edition", "standard", 250),
+        ("KAWS", "BFF", "KAWS BFF Open Edition Pink", "Open Edition", "standard", 280),
+        ("KAWS", "BFF", "KAWS BFF Open Edition Black", "Open Edition", "standard", 280),
+        ("KAWS", "BFF", "KAWS BFF Open Edition Blue", "Open Edition", "standard", 280),
+        ("KAWS", "What Party", "KAWS What Party White", "Limited", "mid", 450),
+        ("KAWS", "What Party", "KAWS What Party Yellow", "Limited", "mid", 480),
+        ("KAWS", "What Party", "KAWS What Party Black", "Limited", "mid", 500),
+        ("KAWS", "Holiday", "KAWS Holiday Japan (Mt Fuji)", "Limited", "high", 850),
+        ("KAWS", "Holiday", "KAWS Holiday UK (Serpentine)", "Limited", "high", 900),
+        ("KAWS", "Together", "KAWS Together Grey", "Limited", "mid", 400),
+
+        # ── BE@RBRICK — 1000% Grails & IP Collabs (~20) ──────────────────
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Basquiat V2", "Collab", "grail", 4500),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Keith Haring V3", "Collab", "grail", 3800),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Andy Warhol Flowers", "Collab", "grail", 3500),
+        ("Medicom", "Bearbrick 400%+100%", "Bearbrick 400%+100% Banksy Flower Bomber", "Collab", "high", 650),
+        ("Medicom", "Bearbrick 400%+100%", "Bearbrick 400%+100% Banksy Balloon Girl", "Collab", "high", 700),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% BAPE Camo Green", "Collab", "grail", 5000),
+        ("Medicom", "Bearbrick 400%+100%", "Bearbrick 400%+100% Fragment Design", "Collab", "high", 550),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% STUSSY 30th Anniversary", "Collab", "grail", 4000),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Karimoku Wood Carved", "Collab", "grail", 8000),
+        ("Medicom", "Bearbrick 400%+100%", "Bearbrick 400%+100% Marvel Spider-Man", "Collab", "mid", 350),
+        ("Medicom", "Bearbrick 400%+100%", "Bearbrick 400%+100% Star Wars Darth Vader Chrome", "Collab", "high", 500),
+        ("Medicom", "Bearbrick 400%+100%", "Bearbrick 400%+100% DC Batman Hush", "Collab", "mid", 380),
+        ("Medicom", "Bearbrick 400%+100%", "Bearbrick 400%+100% Sesame Street Elmo", "Collab", "mid", 300),
+        ("Medicom", "Bearbrick 400%+100%", "Bearbrick 400%+100% Sesame Street Cookie Monster", "Collab", "mid", 320),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Van Gogh Starry Night", "Collab", "grail", 3200),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Jackson Pollock Splash", "Collab", "grail", 3000),
+        ("Medicom", "Bearbrick 400%+100%", "Bearbrick 400%+100% Grateful Dead Dancing Bears", "Collab", "mid", 380),
+        ("Medicom", "Bearbrick 400%+100%", "Bearbrick 400%+100% Atmos Elephant", "Collab", "mid", 400),
+        ("Medicom", "Bearbrick 400%+100%", "Bearbrick 400%+100% Nike SB Dunk Low", "Collab", "high", 500),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Hajime Sorayama Sexy Robot", "Collab", "grail", 5500),
+
+        # ── Superplastic (~10) ────────────────────────────────────────────
+        ("Superplastic", "Janky", "Janky Series 4 Blind Box", "Blind Box", "standard", 18),
+        ("Superplastic", "Janky", "Janky Series 5 Blind Box", "Blind Box", "standard", 18),
+        ("Superplastic", "Guggimon", "Guggimon Fashion Horror 12-inch", "Limited", "high", 450),
+        ("Superplastic", "SuperGuggimon", "SuperGuggimon Chrome 16-inch", "Limited", "grail", 1200),
+        ("Superplastic", "Kranky", "Kranky OG Blue 6-inch", "Limited", "mid", 200),
+        ("Superplastic", "Kranky", "Kranky Superjanky Chrome 8-inch", "Limited", "high", 450),
+        ("Superplastic", "Dayzee", "Dayzee OG Pink 8-inch", "Limited", "mid", 250),
+        ("Superplastic", "Janky", "Janky x Gucci 8-inch", "Collab", "grail", 900),
+        ("Superplastic", "Janky", "Janky x Louis Vuitton 8-inch", "Collab", "grail", 1100),
+        ("Superplastic", "Superdoodle", "Superdoodle OG 10-inch", "Limited", "mid", 300),
+
+        # ── Coarse (~8) ──────────────────────────────────────────────────
+        ("Coarse", "Omen", "Omen Fade 10-inch", "Limited", "high", 650),
+        ("Coarse", "Omen", "Omen Rise 10-inch", "Limited", "high", 700),
+        ("Coarse", "False Friends", "False Friends Original 8-inch Set", "Limited", "high", 800),
+        ("Coarse", "Pain", "Pain Daily OG 5-inch", "Limited", "mid", 200),
+        ("Coarse", "Appetites", "Appetites (Large) 12-inch", "Limited", "high", 550),
+        ("Coarse", "Noop Noop", "Noop Noop OG White 6-inch", "Limited", "mid", 280),
+        ("Coarse", "Top", "Coarse x Nike SB Collab Figure", "Collab", "high", 750),
+        ("Coarse", "Pain", "Pain Phantom Night 5-inch", "Limited", "mid", 250),
+
+        # ── Ron English (~8) ─────────────────────────────────────────────
+        ("Ron English", "MC Supersized", "MC Supersized OG Yellow 10-inch", "Limited", "high", 500),
+        ("Ron English", "MC Supersized", "MC Supersized Grin Green 10-inch", "Limited", "high", 550),
+        ("Ron English", "Popaganda", "Popaganda Cereal Killer 8-inch", "Limited", "mid", 350),
+        ("Ron English", "Temper Tot", "Temper Tot OG Red 6-inch", "Limited", "mid", 280),
+        ("Ron English", "Delusionville", "Delusionville Grin 8-inch", "Limited", "high", 400),
+        ("Ron English", "Grin", "Astronaut Grin Chrome 12-inch", "Limited", "grail", 900),
+        ("Ron English", "FAT Tony", "FAT Tony OG 10-inch", "Limited", "mid", 320),
+        ("Ron English", "Popaganda", "Popaganda Star Skull 8-inch", "Limited", "mid", 300),
+
+        # ── Daniel Arsham — Expanded (~8) ─────────────────────────────────
+        ("Daniel Arsham", "Eroded", "Eroded Pikachu Blue Crystal", "Limited", "grail", 2500),
+        ("Daniel Arsham", "Eroded", "Eroded Mickey Mouse", "Limited", "grail", 2200),
+        ("Daniel Arsham", "Eroded", "Eroded Snoopy", "Limited", "high", 1800),
+        ("Daniel Arsham", "Fictional Archaeology", "Fictional Archaeology 001 Camera", "Limited", "high", 1500),
+        ("Daniel Arsham", "Fictional Archaeology", "Fictional Archaeology 002 Clock", "Limited", "high", 1400),
+        ("Daniel Arsham", "Fictional Archaeology", "Fictional Archaeology 003 Telephone", "Limited", "high", 1300),
+        ("Daniel Arsham", "Crystal Relic", "Crystal Relic 006 Rubik's Cube", "Limited", "high", 1200),
+        ("Daniel Arsham", "Crystal Relic", "Crystal Relic 007 Gameboy", "Limited", "high", 1350),
+
+        # ── Hebru Brantley (~5) ──────────────────────────────────────────
+        ("Hebru Brantley", "Flyboy", "Flyboy OG Blue 12-inch", "Limited", "high", 750),
+        ("Hebru Brantley", "Flyboy", "Flyboy Fade Edition 8-inch", "Limited", "mid", 450),
+        ("Hebru Brantley", "Lil Mama", "Lil Mama OG Pink 10-inch", "Limited", "high", 600),
+        ("Hebru Brantley", "Lil Mama", "Lil Mama Gold 10-inch (ComplexCon)", "Collab", "grail", 1200),
+        ("Hebru Brantley", "Phibby", "Phibby OG Edition 6-inch", "Limited", "mid", 350),
+
+        # ── Other Artists (~15) ──────────────────────────────────────────
+        ("Takashi Murakami", "Flower", "Flower Cushion 60cm Rainbow", "Limited", "high", 500),
+        ("Takashi Murakami", "Flower", "Flower Cushion 30cm Pink/White", "Standard", "mid", 180),
+        ("Takashi Murakami", "Mr. DOB", "Mr. DOB Figure Gold 10-inch", "Limited", "grail", 1500),
+        ("Yoshitomo Nara", "Doggy", "Doggy Radio White Large", "Limited", "high", 800),
+        ("Yoshitomo Nara", "Doggy", "Doggy Radio Black Large", "Limited", "high", 850),
+        ("Yoshitomo Nara", "Cup Kids", "Cup Kid OG White 6-inch", "Limited", "mid", 400),
+        ("Futura 2000", "Pointman", "Pointman OG Blue 12-inch", "Limited", "high", 700),
+        ("Futura 2000", "Pointman", "Pointman Chrome Silver 12-inch", "Limited", "grail", 1100),
+        ("Cote Escriva", "Creepy", "Creepy OG 8-inch", "Limited", "mid", 250),
+        ("Cote Escriva", "Creepy", "Creepy Radioactive Green 8-inch", "Limited", "mid", 280),
+        ("Jason Freeny", "XXRay", "XXRay Mighty Jaxx Dissected Mickey 10-inch", "Collab", "mid", 200),
+        ("Jason Freeny", "XXRay", "XXRay Mighty Jaxx Dissected Elmo 10-inch", "Collab", "mid", 220),
+        ("James Jean", "Jiang Shan", "Jiang Shan Rider White 12-inch", "Limited", "grail", 2000),
+        ("James Jean", "Jiang Shan", "Jiang Shan Rider Black 12-inch", "Limited", "grail", 2200),
+        ("Fools Paradise", "Astro Boy", "Astro Boy Get Hurt Edition 12-inch", "Limited", "high", 600),
+
+        # ── Pop Mart Mega Space Molly (~10) ───────────────────────────────
+        ("Pop Mart", "Space Molly 1000%", "Space Molly 1000% Warner Bros Bugs Bunny", "Collab", "grail", 1800),
+        ("Pop Mart", "Space Molly 1000%", "Space Molly 1000% Nickelodeon SpongeBob", "Collab", "grail", 1600),
+        ("Pop Mart", "Space Molly 1000%", "Space Molly 1000% Universal Jurassic", "Collab", "grail", 1700),
+        ("Pop Mart", "Space Molly 400%", "Space Molly 400% Coca-Cola Red", "Collab", "high", 500),
+        ("Pop Mart", "Space Molly 400%", "Space Molly 400% Nike Swoosh White", "Collab", "high", 550),
+        ("Pop Mart", "Space Molly 400%", "Space Molly 400% Porsche Racing Green", "Collab", "high", 600),
+        ("Pop Mart", "Space Molly 1000%", "Space Molly 1000% 5th Anniversary Gold", "Limited", "grail", 2500),
+        ("Pop Mart", "Space Molly 400%", "Space Molly 400% Harley-Davidson Black", "Collab", "high", 480),
+        ("Pop Mart", "Space Molly 400%", "Space Molly 400% Disney Steamboat Willie", "Collab", "high", 520),
+        ("Pop Mart", "Space Molly 1000%", "Space Molly 1000% Cherry Blossom Pink", "Limited", "grail", 2000),
+
+        # ── Additional Fools Paradise & Misc Artists (~7) ────────────────
+        ("Fools Paradise", "Pinocchio", "Pinocchio Real Boy 10-inch", "Limited", "high", 500),
+        ("Fools Paradise", "Mad Dog", "Mad Dog OG 8-inch", "Limited", "mid", 350),
+        ("Fools Paradise", "Rocky", "Rocky Underdog Edition 10-inch", "Limited", "high", 550),
+        ("Sticky Monster Lab", "SML", "SML Kibon OG Red 6-inch", "Limited", "mid", 200),
+        ("Sticky Monster Lab", "SML", "SML Kibon Chrome 6-inch (ComplexCon)", "Collab", "high", 450),
+        ("How2Work", "Elfie", "Elfie OG Pink 8-inch", "Limited", "mid", 280),
+        ("How2Work", "Elfie", "Elfie Galaxy Chrome 8-inch", "Limited", "high", 500),
     ]
 
     catalog = []
@@ -1222,6 +1360,162 @@ def _batch_variants_2026() -> list[dict]:
         # ── Superplastic Kranky Colorway Variants ────────────────────────────
         ("Superplastic", "Kranky", "Kranky Chrome Silver 8-inch", "Limited", "mid", 300),
         ("Superplastic", "Kranky", "Kranky Neon Pink 8-inch", "Limited", "mid", 280),
+
+        # ── Medicom VCD (Vinyl Collectible Dolls) ──────────────────────────
+        ("Medicom", "VCD", "VCD Mickey Mouse (Vintage Ver.)", "Standard", "mid", 80),
+        ("Medicom", "VCD", "VCD Snoopy (Vintage Peanuts)", "Standard", "mid", 75),
+        ("Medicom", "VCD", "VCD Astro Boy (Mighty Atom Chrome)", "Limited", "high", 200),
+        ("Medicom", "VCD", "VCD Keith Haring (Dancing Man)", "Standard", "mid", 90),
+        ("Medicom", "VCD", "VCD BAPE Camo Shark", "Limited", "high", 250),
+        ("Medicom", "VCD", "VCD Gizmo (Gremlins)", "Standard", "mid", 85),
+        ("Medicom", "VCD", "VCD Chucky (Child's Play)", "Standard", "mid", 95),
+        ("Medicom", "VCD", "VCD Batman (1966 TV Series)", "Standard", "mid", 100),
+        # ── Medicom UDF (Ultra Detail Figure) ──────────────────────────────
+        ("Medicom", "UDF", "UDF Peanuts Snoopy & Woodstock", "Standard", "standard", 25),
+        ("Medicom", "UDF", "UDF Moomin & Snork Maiden", "Standard", "standard", 28),
+        ("Medicom", "UDF", "UDF Dick Bruna Miffy (Classic)", "Standard", "standard", 22),
+        ("Medicom", "UDF", "UDF Studio Ghibli Totoro (Forest)", "Standard", "standard", 30),
+        ("Medicom", "UDF", "UDF Fujiko F. Fujio Doraemon", "Standard", "standard", 25),
+        ("Medicom", "UDF", "UDF Kubrick Star Wars Boba Fett", "Standard", "mid", 45),
+        ("Medicom", "UDF", "UDF Sesame Street Elmo", "Standard", "standard", 22),
+        ("Medicom", "UDF", "UDF Pixar Toy Story Woody & Buzz", "Standard", "standard", 35),
+
+        # ── Mighty Jaxx (XXRay, Dissectibles) ──────────────────────────────
+        ("Mighty Jaxx", "XXRay", "XXRay Dissected Batman (4-inch)", "Standard", "mid", 50),
+        ("Mighty Jaxx", "XXRay", "XXRay Dissected Superman (4-inch)", "Standard", "mid", 50),
+        ("Mighty Jaxx", "XXRay", "XXRay Dissected Wonder Woman (4-inch)", "Standard", "mid", 50),
+        ("Mighty Jaxx", "XXRay", "XXRay Dissected Spongebob (4-inch)", "Standard", "mid", 45),
+        ("Mighty Jaxx", "XXRay", "XXRay Dissected Mickey Mouse (4-inch)", "Standard", "mid", 55),
+        ("Mighty Jaxx", "XXRay", "XXRay Plus Dissected Darth Vader (10-inch)", "Limited", "high", 180),
+        ("Mighty Jaxx", "XXRay", "XXRay Plus Dissected Pikachu (10-inch)", "Limited", "high", 200),
+        ("Mighty Jaxx", "Dissectibles", "Dissectibles Sesame Street Elmo", "Standard", "mid", 40),
+        ("Mighty Jaxx", "Dissectibles", "Dissectibles Sesame Street Cookie Monster", "Standard", "mid", 40),
+        ("Mighty Jaxx", "Dissectibles", "Dissectibles Care Bears Cheer Bear", "Standard", "mid", 42),
+        ("Mighty Jaxx", "Freeny's Hidden Dissectibles", "Freeny's One Piece Luffy Gear 5", "Limited", "mid", 55),
+        ("Mighty Jaxx", "Freeny's Hidden Dissectibles", "Freeny's Naruto Sasuke Sharingan", "Limited", "mid", 50),
+
+        # ── A Bathing Ape (BAPE) Figures ───────────────────────────────────
+        ("BAPE", "Baby Milo", "Baby Milo 400% Be@rbrick (1st Camo Green)", "Limited", "high", 350),
+        ("BAPE", "Baby Milo", "Baby Milo 100% + 400% Be@rbrick (ABC Camo Pink)", "Limited", "high", 400),
+        ("BAPE", "Baby Milo", "Baby Milo Plush (Classic Brown 30cm)", "Standard", "mid", 80),
+        ("BAPE", "Baby Milo", "Baby Milo x Sesame Street Elmo Figure", "Limited", "mid", 120),
+        ("BAPE", "BAPE", "BAPE Shark Hoodie Bear Figure (Blue Camo)", "Limited", "high", 250),
+        ("BAPE", "BAPE", "BAPE x Star Wars Darth Vader Figure", "Limited", "high", 300),
+        ("BAPE", "BAPE", "BAPE Camo Shark 1000% Be@rbrick", "Limited", "grail", 1200),
+
+        # ── Unbox Industries ───────────────────────────────────────────────
+        ("Unbox Industries", "Elfie", "Elfie (Ice Cream Pink)", "Standard", "mid", 65),
+        ("Unbox Industries", "Elfie", "Elfie (Sunset Orange)", "Standard", "mid", 65),
+        ("Unbox Industries", "Elfie", "Elfie (Midnight Black GID)", "Limited", "high", 120),
+        ("Unbox Industries", "Ziqi Wu", "Little Dino (OG Green)", "Standard", "mid", 55),
+        ("Unbox Industries", "Ziqi Wu", "Little Dino (Sakura Pink)", "Limited", "mid", 80),
+        ("Unbox Industries", "Ziqi Wu", "Little Dino (Galaxy Chrome)", "Limited", "high", 150),
+        ("Unbox Industries", "Fat Tiger", "Fat Tiger (OG White/Orange)", "Standard", "mid", 70),
+        ("Unbox Industries", "Fat Tiger", "Fat Tiger (Tuxedo Black)", "Limited", "mid", 90),
+        ("Unbox Industries", "Sank Toys", "Sank Good Night (Moon)", "Standard", "mid", 85),
+        ("Unbox Industries", "Sank Toys", "Sank Good Night (Stars)", "Standard", "mid", 85),
+        ("Unbox Industries", "Sank Toys", "Sank Good Night (Dawn)", "Limited", "high", 140),
+
+        # ── Clutter Magazine Exclusives ────────────────────────────────────
+        ("Clutter", "Clutter Exclusive", "Canbot 3-inch (Clutter Anniversary Gold)", "Limited", "mid", 60),
+        ("Clutter", "Clutter Exclusive", "Canbot 3-inch (Neon Drip Art)", "Limited", "mid", 55),
+        ("Clutter", "Clutter Exclusive", "Canbot 5-inch (OG Spray Can Silver)", "Limited", "mid", 80),
+        ("Clutter", "Clutter Exclusive", "Canbot 8-inch (Chrome x Czee13)", "Limited", "high", 150),
+        ("Clutter", "Clutter Exclusive", "Canbot 3-inch (Sakura Cherry Blossom)", "Limited", "mid", 65),
+        ("Clutter", "Clutter Magazine", "Clutter x Ron English Grin 8-inch", "Limited", "high", 200),
+
+        # ── Luke Chueh ─────────────────────────────────────────────────────
+        ("Luke Chueh", "Luke Chueh", "Bearing (OG White/Red)", "Standard", "mid", 90),
+        ("Luke Chueh", "Luke Chueh", "Bearing (Blacked Out)", "Limited", "high", 180),
+        ("Luke Chueh", "Luke Chueh", "Bearing (Flocked Pink)", "Limited", "high", 200),
+        ("Luke Chueh", "Luke Chueh", "The Prisoner (OG)", "Standard", "mid", 120),
+        ("Luke Chueh", "Luke Chueh", "Possessed 8-inch (GID Green)", "Limited", "high", 250),
+
+        # ── Pete Fowler ────────────────────────────────────────────────────
+        ("Pete Fowler", "Monsterism", "Monsterism Island Welsh Dragon", "Standard", "mid", 75),
+        ("Pete Fowler", "Monsterism", "Monsterism Island Playset (Complete)", "Limited", "high", 300),
+        ("Pete Fowler", "Monsterism", "Monsterism Mini Series 1 (Full Set 12)", "Standard", "mid", 120),
+        ("Pete Fowler", "Super Furry Animals", "SFA x Pete Fowler Guerilla Figure", "Limited", "high", 200),
+        ("Pete Fowler", "Monsterism", "Monsterism Classic Cornelius 8-inch", "Standard", "mid", 80),
+
+        # ── Gary Baseman ───────────────────────────────────────────────────
+        ("Gary Baseman", "Gary Baseman", "Toby (OG Pink)", "Standard", "mid", 95),
+        ("Gary Baseman", "Gary Baseman", "Toby (Blue Monday)", "Limited", "high", 180),
+        ("Gary Baseman", "Gary Baseman", "Toby (Blackout Edition)", "Limited", "high", 200),
+        ("Gary Baseman", "Gary Baseman", "Dumb Luck (OG White 8-inch)", "Standard", "mid", 110),
+        ("Gary Baseman", "Gary Baseman", "Hot Cha Cha Cha 8-inch (Flocked Red)", "Limited", "high", 220),
+        ("Gary Baseman", "Gary Baseman", "Ahwroo (Night Owl Black)", "Limited", "high", 160),
+
+        # ── Coarse Toys ────────────────────────────────────────────────────
+        ("Coarse", "Omen", "Omen Fade (OG Black/White 8-inch)", "Standard", "high", 200),
+        ("Coarse", "Omen", "Omen Ignite (Red/Orange 8-inch)", "Limited", "high", 250),
+        ("Coarse", "Omen", "Omen Noop (Clear 8-inch)", "Limited", "grail", 400),
+        ("Coarse", "False Friends", "False Friends Set (Paw! & Caw!)", "Standard", "high", 180),
+        ("Coarse", "False Friends", "False Friends Dusk Edition", "Limited", "high", 280),
+        ("Coarse", "Noop", "Noop (OG Grey 5-inch)", "Standard", "mid", 120),
+        ("Coarse", "Noop", "Noop (Midnight Black 5-inch)", "Limited", "high", 180),
+
+        # ── Fools Paradise ─────────────────────────────────────────────────
+        ("Fools Paradise", "Fools Paradise", "The Boy (Lone Wolf, 12-inch)", "Standard", "high", 350),
+        ("Fools Paradise", "Fools Paradise", "The Mad Cat (12-inch)", "Standard", "high", 300),
+        ("Fools Paradise", "Fools Paradise", "Johnny Boy (Scarface, 12-inch)", "Standard", "high", 380),
+        ("Fools Paradise", "Fools Paradise", "The Painter (Basquiat, 12-inch)", "Limited", "grail", 500),
+        ("Fools Paradise", "Fools Paradise", "No Future (12-inch)", "Limited", "grail", 450),
+
+        # ── Sam Flores / Upper Playground ──────────────────────────────────
+        ("Sam Flores", "Sam Flores", "Lil Homies La Muerta (6-inch)", "Standard", "mid", 80),
+        ("Sam Flores", "Sam Flores", "Lil Homies El Diablo (6-inch)", "Limited", "mid", 120),
+        ("Sam Flores", "Upper Playground", "Dero Bear (OG Brown 8-inch)", "Standard", "mid", 90),
+        ("Sam Flores", "Upper Playground", "Dero Bear (Chrome Silver 8-inch)", "Limited", "high", 180),
+
+        # ── Nathan Jurevicius (Scarygirl) ──────────────────────────────────
+        ("Nathan Jurevicius", "Scarygirl", "Scarygirl (OG 8-inch Vinyl)", "Standard", "mid", 70),
+        ("Nathan Jurevicius", "Scarygirl", "Scarygirl (GID Green 8-inch)", "Limited", "high", 150),
+        ("Nathan Jurevicius", "Scarygirl", "Blister (8-inch, Complete Set)", "Standard", "mid", 90),
+        ("Nathan Jurevicius", "Scarygirl", "Scarygirl Mini Series 1 (Full Set 12)", "Standard", "mid", 120),
+
+        # ── Huck Gee ───────────────────────────────────────────────────────
+        ("Huck Gee", "Huck Gee", "Gold Life Dunny (3-inch)", "Standard", "mid", 60),
+        ("Huck", "Huck Gee", "Gold Life Dunny (8-inch Gold)", "Limited", "high", 250),
+        ("Huck Gee", "Huck Gee", "Skullhead Samurai (OG Black 5-inch)", "Standard", "mid", 80),
+        ("Huck Gee", "Huck Gee", "Skullhead Samurai (Chrome 5-inch)", "Limited", "high", 180),
+        ("Huck Gee", "Huck Gee", "Post Apocalypse AP Munny (Custom)", "Limited", "grail", 500),
+
+        # ── Joe Ledbetter ──────────────────────────────────────────────────
+        ("Joe Ledbetter", "Joe Ledbetter", "Chaos Bunny (OG White/Red)", "Standard", "mid", 70),
+        ("Joe Ledbetter", "Joe Ledbetter", "Chaos Bunny (Black Metal)", "Limited", "high", 150),
+        ("Joe Ledbetter", "Joe Ledbetter", "Chinese Zodiac Full Set (12 pcs)", "Standard", "high", 200),
+        ("Joe Ledbetter", "Joe Ledbetter", "Fire Cat (OG 8-inch)", "Standard", "mid", 90),
+
+        # ── Arkiv Vilmansa / Quiccs ────────────────────────────────────────
+        ("Quiccs", "TEQ63", "TEQ63 (OG Red/White 6-inch)", "Standard", "mid", 80),
+        ("Quiccs", "TEQ63", "TEQ63 (Stealth Black 6-inch)", "Limited", "high", 160),
+        ("Quiccs", "TEQ63", "TEQ63 (Chrome Silver 6-inch)", "Limited", "high", 200),
+        ("Quiccs", "TEQ63", "TEQ63 (Graffiti Edition 6-inch)", "Limited", "high", 180),
+        ("Quiccs", "TEQ63", "TEQ63 (12-inch OG Colorway)", "Standard", "high", 250),
+        ("Quiccs", "TEQ63", "TEQ63 (Gold Chrome 12-inch)", "Limited", "grail", 500),
+
+        # ── Additional Ron English ─────────────────────────────────────────
+        ("Ron English", "Popaganda", "MC Supersized (OG Red 12-inch)", "Standard", "mid", 120),
+        ("Ron English", "Popaganda", "MC Supersized (Camo 12-inch)", "Limited", "high", 220),
+        ("Ron English", "Popaganda", "Grin (OG Pink 8-inch)", "Standard", "mid", 90),
+        ("Ron English", "Popaganda", "Grin (Rainbow 8-inch)", "Limited", "high", 180),
+        ("Ron English", "Popaganda", "Temper Tot (OG 6-inch)", "Standard", "mid", 70),
+        ("Ron English", "Popaganda", "Telegrinnies Full Set (4 pcs)", "Standard", "mid", 120),
+
+        # ── ThreeA / 3A Toys ───────────────────────────────────────────────
+        ("ThreeA", "World of Isobelle Pascha", "Isobelle Pascha Night Fright (12-inch)", "Standard", "high", 200),
+        ("ThreeA", "World of Isobelle Pascha", "Isobelle Pascha Jungle Swamp (12-inch)", "Limited", "high", 280),
+        ("ThreeA", "Adventure Kartel", "Tommy Mission Dark Rider (12-inch)", "Standard", "high", 250),
+        ("ThreeA", "WWR", "WWR Bertie MK3 (Nightwatch, 6-inch)", "Standard", "mid", 80),
+        ("ThreeA", "WWR", "WWR Bertie MK3 (Desert Ops, 6-inch)", "Limited", "mid", 120),
+        ("ThreeA", "Popbot", "TK Shogun (12-inch)", "Limited", "grail", 400),
+
+        # ── Instinctoy ────────────────────────────────────────────────────
+        ("Instinctoy", "Liquid", "Liquid (OG Clear Red 8-inch)", "Standard", "mid", 90),
+        ("Instinctoy", "Liquid", "Liquid (UV Purple 8-inch)", "Limited", "high", 160),
+        ("Instinctoy", "Erosion Molly", "Erosion Molly (Crystal Edition)", "Limited", "high", 200),
+        ("Instinctoy", "Mini Liquid", "Mini Liquid Full Set (6 pcs)", "Standard", "mid", 80),
     ]
 
     catalog = []

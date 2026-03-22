@@ -477,12 +477,15 @@ def get_curated_catalog() -> list[dict]:
         ("Harry Potter", "Dobby Sock Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
         ("Harry Potter", "Platform 9 3/4 Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
         ("Harry Potter", "Dumbledore's Army AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 52),
+        ("Harry Potter", "Diagon Alley Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Harry Potter", "Draco Malfoy Mini Backpack", "Mini Backpack", "Exclusive", "high", 138),
+        ("Harry Potter", "Yule Ball Mini Backpack", "Mini Backpack", "Limited", "high", 110),
 
         # Lord of the Rings
-        ("Lord of the Rings", "The One Ring Script AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
-        ("Lord of the Rings", "The Shire Map Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
-        ("Lord of the Rings", "Gandalf Staff Cosplay Mini Backpack", "Mini Backpack", "Standard", "standard", 48),
-        ("Lord of the Rings", "Fellowship Silhouette AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+        ("Lord of the Rings", "The One Ring Script AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
+        ("Lord of the Rings", "The Shire Map Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
+        ("Lord of the Rings", "Gandalf Staff Cosplay Mini Backpack", "Mini Backpack", "Standard", "standard", 45),
+        ("Lord of the Rings", "Fellowship Silhouette AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 52),
 
         # Horror — Full Collection
         ("Horror", "Michael Myers Halloween Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
@@ -656,8 +659,10 @@ def get_curated_catalog() -> list[dict]:
         ("Universal Monsters", "The Mummy Tomb Scene Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 56),
 
         # Lord of the Rings — Expanded
-        ("Lord of the Rings", "Mordor Eye of Sauron Glow Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
-        ("Lord of the Rings", "Rivendell Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Lord of the Rings", "Mordor Eye of Sauron Glow Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
+        ("Lord of the Rings", "Rivendell Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 52),
+        ("Lord of the Rings", "The One Ring Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 48),
+        ("Lord of the Rings", "Arwen Evenstar Zip-Around Wallet", "Wallet", "Standard", "standard", 38),
 
         # Additional Wallets Matching Sets
         ("Disney", "Ariel Underwater Grotto Zip-Around Wallet", "Wallet", "BoxLunch", "standard", 36),
@@ -1012,6 +1017,400 @@ def get_curated_catalog() -> list[dict]:
         ("Pixar", "Onward Barley Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 52),
         ("Pixar", "Elemental Ember & Wade Zip-Around Wallet", "Wallet", "BoxLunch", "standard", 36),
         ("Pixar", "Lightyear Sox the Cat Cosplay Crossbody Bag", "Crossbody Bag", "Standard", "standard", 40),
+    ]
+
+    # === ROUND 8 — Pokémon, Ghibli, Sanrio, Anime, Parks, Horror, Marvel/DC, Wallets, Seasonal (110 items) ===
+
+    # Pokémon Collection (~15)
+    items += [
+        ("Pokemon", "Pikachu Lightning Bolt AOP Mini Backpack", "Mini Backpack", "Standard", "mid", 58),
+        ("Pokemon", "Gengar Purple Glow-in-the-Dark Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Pokemon", "Squirtle Squad Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Pokemon", "Snorlax Cosplay Mini Backpack", "Mini Backpack", "Standard", "mid", 55),
+        ("Pokemon", "Charizard Flame AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Pokemon", "Bulbasaur Floral Mini Backpack", "Mini Backpack", "Standard", "mid", 55),
+        ("Pokemon", "Charmander Embroidered Mini Backpack", "Mini Backpack", "Standard", "standard", 48),
+        ("Pokemon", "Umbreon & Espeon Duo Glow Mini Backpack", "Mini Backpack", "BoxLunch", "high", 105),
+        ("Pokemon", "Pokeball Crossbody Bag", "Crossbody Bag", "Standard", "standard", 42),
+        ("Pokemon", "Pikachu 025 Anniversary Mini Backpack", "Mini Backpack", "Pokemon Center", "high", 110),
+        ("Pokemon", "Mewtwo Glow-in-the-Dark Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 68),
+        ("Pokemon", "Jigglypuff Cosplay Mini Backpack", "Mini Backpack", "Standard", "mid", 55),
+        ("Pokemon", "Eevee Evolutions AOP Zip-Around Wallet", "Wallet", "BoxLunch", "mid", 52),
+        ("Pokemon", "Pikachu Lightning Bolt Crossbody Bag", "Crossbody Bag", "Standard", "standard", 40),
+        ("Pokemon", "Gengar Purple Glow Zip-Around Wallet", "Wallet", "BoxLunch", "standard", 45),
+    ]
+
+    # Studio Ghibli Collection (~10)
+    items += [
+        ("Studio Ghibli", "Totoro Grey Fuzzy Mini Backpack", "Mini Backpack", "BoxLunch", "high", 110),
+        ("Studio Ghibli", "Kiki's Delivery Service Jiji Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 72),
+        ("Studio Ghibli", "Howl's Moving Castle Calcifer Mini Backpack", "Mini Backpack", "BoxLunch", "high", 105),
+        ("Studio Ghibli", "Ponyo on the Ocean AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 68),
+        ("Studio Ghibli", "Princess Mononoke Forest Spirit Mini Backpack", "Mini Backpack", "BoxLunch", "high", 115),
+        ("Studio Ghibli", "Calcifer Flame Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("Studio Ghibli", "Catbus Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "high", 100),
+        ("Studio Ghibli", "Porco Rosso Airplane Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 62),
+        ("Studio Ghibli", "Spirited Away Bathhouse AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 75),
+        ("Studio Ghibli", "Totoro Catbus Zip-Around Wallet", "Wallet", "BoxLunch", "mid", 50),
+    ]
+
+    # Sanrio Collection (~10)
+    items += [
+        ("Sanrio", "Hello Kitty 50th Anniversary Mini Backpack", "Mini Backpack", "Standard", "high", 100),
+        ("Sanrio", "My Melody Pink Lace Mini Backpack", "Mini Backpack", "Standard", "mid", 55),
+        ("Sanrio", "Kuromi Purple Checkered Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Sanrio", "Pompompurin Pudding Cosplay Mini Backpack", "Mini Backpack", "Standard", "mid", 52),
+        ("Sanrio", "Keroppi Lily Pad AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
+        ("Sanrio", "Aggretsuko Rage Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+        ("Sanrio", "Little Twin Stars Cloud AOP Mini Backpack", "Mini Backpack", "Standard", "mid", 52),
+        ("Sanrio", "Badtz-Maru Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
+        ("Sanrio", "Hello Kitty 50th Anniversary Zip-Around Wallet", "Wallet", "Standard", "mid", 50),
+    ]
+
+    # Anime Collection (~10)
+    items += [
+        ("Anime", "Demon Slayer Tanjiro Checkered AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Anime", "One Piece Luffy Straw Hat Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Anime", "Naruto Akatsuki Cloud AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Anime", "Dragon Ball Z Capsule Corp Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+        ("Anime", "Sailor Moon Crystal Transformation Brooch Mini Backpack", "Mini Backpack", "BoxLunch", "high", 105),
+        ("Anime", "My Hero Academia UA Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 58),
+        ("Anime", "Attack on Titan Wings of Freedom Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 62),
+        ("Anime", "Jujutsu Kaisen Gojo Blindfold AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Anime", "Cowboy Bebop Spike Spiegel AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 68),
+        ("Anime", "Naruto Akatsuki Zip-Around Wallet", "Wallet", "Hot Topic", "standard", 42),
+    ]
+
+    # Disney Parks Attractions (~15)
+    items += [
+        ("Disney", "Walt Disney World 50th Anniversary EARidescent Mini Backpack", "Mini Backpack", "Disney Parks", "high", 120),
+        ("Disney", "Enchanted Tiki Room Tropical AOP Mini Backpack", "Mini Backpack", "Disney Parks", "high", 110),
+        ("Disney", "Haunted Mansion Hitchhiking Ghosts Glow Mini Backpack", "Mini Backpack", "Disney Parks", "grail", 220),
+        ("Disney", "Space Mountain Retro Poster AOP Mini Backpack", "Mini Backpack", "Disney Parks", "high", 100),
+        ("Disney", "Jungle Cruise Skipper Cosplay Mini Backpack", "Mini Backpack", "Disney Parks", "mid", 75),
+        ("Disney", "Pirates of the Caribbean Skull Glow Mini Backpack", "Mini Backpack", "Disney Parks", "high", 105),
+        ("Disney", "It's a Small World Clock Face Mini Backpack", "Mini Backpack", "Disney Parks", "high", 110),
+        ("Disney", "Orange Bird Scented Mini Backpack", "Mini Backpack", "Disney Parks", "grail", 240),
+        ("Disney", "Figment Imagination AOP Mini Backpack", "Mini Backpack", "Disney Parks", "high", 130),
+        ("Disney", "Country Bear Jamboree Cosplay Mini Backpack", "Mini Backpack", "Disney Parks", "high", 95),
+        ("Disney", "Carousel of Progress Retro Mini Backpack", "Mini Backpack", "Disney Parks", "high", 100),
+        ("Disney", "Monorail Retro Poster AOP Mini Backpack", "Mini Backpack", "Disney Parks", "mid", 80),
+        ("Disney", "Retro Attraction Poster Series Mini Backpack (LE)", "Mini Backpack", "Disney Parks LE", "grail", 200),
+        ("Disney", "Tomorrowland Astro Orbiter Mini Backpack", "Mini Backpack", "Disney Parks", "mid", 78),
+        ("Disney", "Main Street Electrical Parade Glow Mini Backpack", "Mini Backpack", "Disney Parks", "high", 115),
+    ]
+
+    # Horror / Movies (~10)
+    items += [
+        ("Horror", "Beetlejuice Sandworm Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 62),
+        ("Horror", "Corpse Bride Emily Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Horror", "Coraline Stars Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "high", 105),
+        ("Horror", "Edward Scissorhands Topiary Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 68),
+        ("Horror", "Gremlins Gizmo Cosplay Mini Backpack", "Mini Backpack", "Standard", "mid", 55),
+        ("Horror", "Ghostbusters No Ghost Logo AOP Mini Backpack", "Mini Backpack", "Standard", "mid", 52),
+        ("Horror", "IT Pennywise Red Balloon Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Horror", "Scream Ghostface Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 58),
+        ("Horror", "Stranger Things Hellfire Club Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Horror", "Nightmare Before Christmas Oogie Boogie Glow Mini Backpack", "Mini Backpack", "Disney Parks", "high", 100),
+    ]
+
+    # Additional Marvel / DC (~10)
+    items += [
+        ("Marvel", "Spider-Verse Miles Morales Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Marvel", "Deadpool & Wolverine Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 68),
+        ("Marvel", "Loki Alligator Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Marvel", "WandaVision Scarlet Witch Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Marvel", "Moon Knight Glow-in-the-Dark Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("DC", "Poison Ivy Floral Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 58),
+        ("DC", "Catwoman Cosplay Mini Backpack", "Mini Backpack", "Standard", "mid", 55),
+        ("DC", "Harley Quinn Birds of Prey Sequin Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 62),
+        ("Marvel", "She-Hulk Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
+        ("Marvel", "Ms. Marvel Emblem Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
+    ]
+
+    # Matching Wallets & Crossbodies (~15)
+    items += [
+        ("Disney", "Haunted Mansion Hitchhiking Ghosts Glow Wallet", "Wallet", "Disney Parks", "high", 85),
+        ("Disney", "Figment Imagination AOP Wallet", "Wallet", "Disney Parks", "mid", 55),
+        ("Disney", "Enchanted Tiki Room Tropical Crossbody", "Crossbody Bag", "Disney Parks", "mid", 60),
+        ("Studio Ghibli", "Princess Mononoke Forest Spirit Wallet", "Wallet", "BoxLunch", "mid", 50),
+        ("Horror", "Coraline Stars Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 52),
+        ("Anime", "Sailor Moon Crystal Wallet", "Wallet", "BoxLunch", "mid", 48),
+        ("Sanrio", "Kuromi Purple Checkered Wallet", "Wallet", "Hot Topic", "standard", 38),
+        ("Marvel", "Spider-Verse Miles Morales Wallet", "Wallet", "BoxLunch", "standard", 40),
+        ("Disney", "Orange Bird Card Holder", "Card Holder", "Disney Parks", "mid", 50),
+        ("Pokemon", "Snorlax Cosplay Crossbody Bag", "Crossbody Bag", "Standard", "standard", 42),
+        ("Horror", "Beetlejuice Crossbody Bag", "Crossbody Bag", "Hot Topic", "standard", 42),
+        ("Anime", "Demon Slayer Tanjiro Crossbody Bag", "Crossbody Bag", "BoxLunch", "standard", 45),
+        ("Disney", "Space Mountain Retro Poster Wallet", "Wallet", "Disney Parks", "mid", 50),
+        ("Sanrio", "Cinnamoroll Cloud Card Holder", "Card Holder", "Hot Topic", "standard", 25),
+        ("DC", "Poison Ivy Floral Wallet", "Wallet", "Hot Topic", "standard", 38),
+    ]
+
+    # Seasonal & Limited Editions (~10)
+    items += [
+        ("Disney", "Valentine's Day Mickey & Minnie Heart Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Disney", "Halloween Villains Glow-in-the-Dark Mini Backpack", "Mini Backpack", "Disney Parks", "high", 110),
+        ("Sanrio", "Hello Kitty Pride Rainbow AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Disney", "Mickey & Minnie Holiday Gingerbread Mini Backpack", "Mini Backpack", "Disney Parks", "high", 100),
+        ("Disney", "BoxLunch Earth Day Bambi Recycled Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+        ("Disney", "SDCC Exclusive Sorcerer Mickey Blacklight Mini Backpack", "Mini Backpack", "SDCC Exclusive", "grail", 250),
+        ("Disney", "NYCC Exclusive Maleficent Dragon Glow Mini Backpack", "Mini Backpack", "NYCC Exclusive", "grail", 230),
+        ("Sanrio", "Valentine's Day Cinnamoroll Heart Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Disney", "Halloween Nightmare Before Christmas Mayor Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 68),
+        ("Marvel", "D23 Exclusive Avengers Assemble Mini Backpack", "Mini Backpack", "D23 Exclusive", "grail", 200),
+    ]
+
+    # ── Additional Lines — Star Wars, Universal, Collabs, Pixar, Kids ──
+    items += [
+        # Star Wars — More Characters
+        ("Star Wars", "Grogu (The Child) Cradle Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Star Wars", "Ahsoka Tano Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "high", 90),
+        ("Star Wars", "Darth Vader Lenticular Mini Backpack", "Mini Backpack", "Vaulted", "grail", 180),
+        ("Star Wars", "Boba Fett Jetpack Mini Backpack", "Mini Backpack", "Standard", "mid", 65),
+        ("Star Wars", "Princess Leia Bespin Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 70),
+
+        # Universal Monsters
+        ("Horror", "Bride of Frankenstein Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Horror", "Creature from the Black Lagoon Mini Backpack", "Mini Backpack", "Hot Topic", "high", 90),
+        ("Horror", "Universal Monsters AOP Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("Horror", "Frankenstein Lenticular Wallet", "Wallet", "Hot Topic", "mid", 45),
+
+        # Brand Collabs — Coca-Cola & McDonald's
+        ("Coca-Cola", "Coca-Cola Logo AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 68),
+        ("Coca-Cola", "Coca-Cola Polar Bear Mini Backpack", "Mini Backpack", "Standard", "mid", 62),
+        ("Coca-Cola", "Coca-Cola Vintage Logo Wallet", "Wallet", "Standard", "standard", 35),
+        ("McDonald's", "McDonald's Happy Meal Gang Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("McDonald's", "McDonald's Grimace Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("McDonald's", "McDonald's Fry Kids AOP Mini Backpack", "Mini Backpack", "Standard", "mid", 65),
+
+        # Pixar — Up, WALL-E, Coco
+        ("Pixar", "Up House Balloons Mini Backpack", "Mini Backpack", "BoxLunch", "high", 90),
+        ("Pixar", "Up Adventure is Out There Crossbody Bag", "Crossbody Bag", "Standard", "mid", 50),
+        ("Pixar", "WALL-E & EVE Plant Boot Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Pixar", "WALL-E Earth Day Recycled Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Pixar", "Coco Miguel Guitar Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 70),
+        ("Pixar", "Coco Remember Me Marigold Wallet", "Wallet", "Hot Topic", "standard", 40),
+
+        # Kids — Bluey & Sesame Street
+        ("Bluey", "Bluey House AOP Mini Backpack", "Mini Backpack", "Standard", "standard", 45),
+        ("Bluey", "Bluey & Bingo Dance Mode Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
+        ("Bluey", "Bluey Cosplay Mini Backpack", "Mini Backpack", "Standard", "standard", 42),
+        ("Sesame Street", "Elmo Cosplay Mini Backpack", "Mini Backpack", "Standard", "standard", 42),
+        ("Sesame Street", "Cookie Monster Cosplay Mini Backpack", "Mini Backpack", "Standard", "standard", 42),
+        ("Sesame Street", "Oscar the Grouch Trash Can Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
+
+        # ─── Disney Villain Pieces ─────────────────────────────────────────
+        ("Disney Villains", "Maleficent Dragon Glow Mini Backpack", "Mini Backpack", "BoxLunch", "high", 95),
+        ("Disney Villains", "Ursula Crystal Ball Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Disney Villains", "Cruella De Vil Spots Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 70),
+        ("Disney Villains", "Evil Queen Poison Apple Crossbody Bag", "Crossbody Bag", "Hot Topic", "mid", 60),
+        ("Disney Villains", "Hades Flames Mini Backpack", "Mini Backpack", "Hot Topic", "high", 80),
+        ("Disney Villains", "Jafar Villains Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Disney Villains", "Captain Hook Jolly Roger Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Disney Villains", "Scar Pride Rock Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Disney Villains", "Gaston Tavern Scene Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Disney Villains", "Mother Gothel Tangled Tower Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 70),
+        ("Disney Villains", "Queen of Hearts Card AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Disney Villains", "Oogie Boogie Glow Wallet", "Wallet", "BoxLunch", "mid", 40),
+        ("Disney Villains", "Dr. Facilier Voodoo Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Disney Villains", "Villain Portraits AOP Mini Backpack", "Mini Backpack", "Standard", "mid", 55),
+        ("Disney Villains", "Sleeping Beauty Maleficent Castle Mini Backpack", "Mini Backpack", "SDCC Exclusive", "grail", 150),
+
+        # ─── Harry Potter House-Specific ───────────────────────────────────
+        ("Harry Potter", "Gryffindor Common Room Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Harry Potter", "Slytherin Crest AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Harry Potter", "Ravenclaw Crest AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Harry Potter", "Hufflepuff Crest AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Harry Potter", "Hogwarts Castle Glow Mini Backpack", "Mini Backpack", "BoxLunch", "high", 90),
+        ("Harry Potter", "Diagon Alley Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Harry Potter", "Marauder's Map AOP Wallet", "Wallet", "Standard", "standard", 35),
+        ("Harry Potter", "Hedwig Howler Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("Harry Potter", "Sorting Hat Figural Mini Backpack", "Mini Backpack", "Hot Topic", "high", 85),
+        ("Harry Potter", "Golden Snitch Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 50),
+        ("Harry Potter", "Deathly Hallows Glow Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Harry Potter", "Honeydukes Candy AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+
+        # ─── Lord of the Rings ─────────────────────────────────────────────
+        ("Lord of the Rings", "The One Ring Glow Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Lord of the Rings", "The Shire Map AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Lord of the Rings", "Gandalf vs Balrog Scene Mini Backpack", "Mini Backpack", "Hot Topic", "high", 90),
+        ("Lord of the Rings", "Mordor Eye of Sauron Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("Lord of the Rings", "Evenstar Glow Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Lord of the Rings", "Minas Tirith Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Lord of the Rings", "Precious Ring AOP Wallet", "Wallet", "Standard", "standard", 38),
+        ("Lord of the Rings", "Rivendell Elven Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+
+        # ─── Funko x Loungefly Collabs ─────────────────────────────────────
+        ("Funko x Loungefly", "Funko Pop! Star Wars Boba Fett Mini Backpack", "Mini Backpack", "Funko Shop", "high", 90),
+        ("Funko x Loungefly", "Funko Pop! Disney Stitch Glow Mini Backpack", "Mini Backpack", "Funko Shop", "high", 85),
+        ("Funko x Loungefly", "Funko Pop! Marvel Iron Man Mini Backpack", "Mini Backpack", "Funko Shop", "high", 80),
+        ("Funko x Loungefly", "Funko Pop! Deadpool & Wolverine Mini Backpack", "Mini Backpack", "Funko Shop", "high", 85),
+        ("Funko x Loungefly", "Funko Pop! SpongeBob Pineapple Mini Backpack", "Mini Backpack", "Funko Shop", "mid", 70),
+        ("Funko x Loungefly", "Funko Pop! Ghostbusters Stay Puft Mini Backpack", "Mini Backpack", "Funko Shop", "mid", 65),
+
+        # ─── Fanny Packs ──────────────────────────────────────────────────
+        ("Disney", "Mickey Ears Rainbow Fanny Pack", "Fanny Pack", "Disney Parks", "mid", 50),
+        ("Disney", "Minnie Mouse Polka Dot Fanny Pack", "Fanny Pack", "Standard", "standard", 38),
+        ("Star Wars", "Mandalorian Grogu Fanny Pack", "Fanny Pack", "BoxLunch", "mid", 45),
+        ("Marvel", "Avengers Logo AOP Fanny Pack", "Fanny Pack", "Standard", "standard", 35),
+        ("Sanrio", "Hello Kitty 50th Anniversary Fanny Pack", "Fanny Pack", "Hot Topic", "mid", 48),
+        ("Pokemon", "Pikachu Lightning AOP Fanny Pack", "Fanny Pack", "Standard", "standard", 38),
+        ("Disney", "Alice in Wonderland Tea Party Fanny Pack", "Fanny Pack", "BoxLunch", "mid", 48),
+
+        # ─── Tote Bags ────────────────────────────────────────────────────
+        ("Disney", "Cinderella Castle Tote Bag", "Tote Bag", "Disney Parks", "mid", 55),
+        ("Studio Ghibli", "Totoro Forest Scene Tote Bag", "Tote Bag", "BoxLunch", "mid", 50),
+        ("Sanrio", "Cinnamoroll Cloud AOP Canvas Tote", "Tote Bag", "Hot Topic", "standard", 40),
+        ("Disney", "Haunted Mansion Wallpaper Tote Bag", "Tote Bag", "Disney Parks", "mid", 55),
+        ("Pokemon", "Eevee Evolutions AOP Tote Bag", "Tote Bag", "BoxLunch", "mid", 48),
+        ("Marvel", "Spider-Verse AOP Canvas Tote", "Tote Bag", "Hot Topic", "standard", 42),
+        ("Harry Potter", "Hogwarts Express Canvas Tote", "Tote Bag", "BoxLunch", "standard", 42),
+
+        # ─── Pin Collections ──────────────────────────────────────────────
+        ("Disney", "Disney Villains Blind Box Pin Set (8 Pins)", "Pin Set", "BoxLunch", "high", 80),
+        ("Disney", "Mickey Through the Years 4-Pin Set", "Pin Set", "Disney Parks", "mid", 55),
+        ("Star Wars", "Mandalorian Enamel Pin Set (6 Pins)", "Pin Set", "BoxLunch", "mid", 48),
+        ("Sanrio", "Hello Kitty 50th Anniversary Pin Box", "Pin Set", "Hot Topic", "mid", 50),
+        ("Pokemon", "Kanto Starters Enamel Pin Set (3 Pins)", "Pin Set", "BoxLunch", "standard", 30),
+        ("Disney", "Princess Crown Pin Collection (12 Pins)", "Pin Set", "Disney Parks", "high", 90),
+        ("Studio Ghibli", "Spirited Away Characters Pin Set (4 Pins)", "Pin Set", "BoxLunch", "mid", 45),
+        ("Marvel", "Avengers Infinity Stones Pin Set (6 Pins)", "Pin Set", "BoxLunch", "mid", 50),
+
+        # ─── Backpack Charms & Keychains ──────────────────────────────────
+        ("Disney", "Mickey Mouse Figural Backpack Charm", "Charm", "Standard", "standard", 18),
+        ("Sanrio", "Kuromi Plush Backpack Charm", "Charm", "Hot Topic", "standard", 22),
+        ("Pokemon", "Pikachu 3D Backpack Charm", "Charm", "Standard", "standard", 18),
+        ("Disney", "Stitch Figural Keychain Charm", "Charm", "Standard", "standard", 16),
+        ("Studio Ghibli", "No-Face Figural Backpack Charm", "Charm", "BoxLunch", "standard", 22),
+        ("Star Wars", "Grogu Figural Backpack Charm", "Charm", "BoxLunch", "standard", 20),
+        ("Sanrio", "Pompompurin Plush Keychain Charm", "Charm", "Standard", "standard", 18),
+        ("Disney", "Figment Figural Backpack Charm", "Charm", "Disney Parks", "mid", 30),
+        ("Disney", "Orange Bird Figural Backpack Charm", "Charm", "Disney Parks", "mid", 28),
+
+        # ─── More Disney Specific ──────────────────────────────────────────
+        ("Disney", "Ratatouille Remy Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Disney", "Monsters Inc. Door Vault Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Disney", "Lilo & Stitch Ducklings Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Disney", "Encanto Casita Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Disney", "101 Dalmatians Cruella Spots Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Disney", "Aristocats Marie Floral Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Disney", "Bambi Flower Meadow Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Disney", "Robin Hood Prince John Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Disney", "Fantasia Sorcerer Mickey Glow Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Disney", "Wreck-It Ralph Sugar Rush Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Disney", "Moana Te Fiti Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Disney", "Sleeping Beauty Aurora Castle Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Disney", "Peter Pan Neverland Map Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Disney", "Dumbo Circus Tent Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Disney", "Aladdin Cave of Wonders Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+
+        # ─── More Marvel / DC ──────────────────────────────────────────────
+        ("Marvel", "Spider-Man Miles Morales Graffiti Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Marvel", "Avengers Endgame Final Battle Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Marvel", "Black Panther Wakanda Forever Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Marvel", "Captain America Shield Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Marvel", "Loki TVA Agent Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Marvel", "WandaVision Scarlet Witch Crown Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Marvel", "Venom Glow Mini Backpack", "Mini Backpack", "Hot Topic", "high", 80),
+        ("Marvel", "Iron Man Arc Reactor Glow Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("DC Comics", "Batman 85th Anniversary Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("DC Comics", "Harley Quinn Birds of Prey Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("DC Comics", "Joker Purple Suit Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("DC Comics", "Wonder Woman Golden Eagle Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+
+        # ─── More Star Wars ───────────────────────────────────────────────
+        ("Star Wars", "Grogu Pram Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Star Wars", "Ahsoka Tano Rebels Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Star Wars", "Darth Vader Helmet Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("Star Wars", "R2-D2 Figural Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Star Wars", "Ewok Village Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Star Wars", "Cantina Band AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Star Wars", "Princess Leia Hoth Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+
+        # ─── Nintendo / Anime / Studio Ghibli ─────────────────────────────
+        ("Nintendo", "Pokemon Eevee Evolutions AOP Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Nintendo", "Pokemon Snorlax Bean Bag Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Nintendo", "Zelda Hyrule Crest Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Nintendo", "Animal Crossing Nook Inc. Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
+        ("Nintendo", "Kirby Pink Puff Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
+        ("Studio Ghibli", "Spirited Away No-Face Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Studio Ghibli", "Kiki's Delivery Service Jiji Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Studio Ghibli", "My Neighbor Totoro Bus Stop Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Studio Ghibli", "Howl's Moving Castle Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Studio Ghibli", "Princess Mononoke Forest Spirit Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+
+        # ─── More Sanrio Extended ──────────────────────────────────────────
+        ("Sanrio", "Cinnamoroll AOP Cloud Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
+        ("Sanrio", "Kuromi Baku AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
+        ("Sanrio", "My Melody Strawberry Fields Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
+        ("Sanrio", "Pompompurin Pudding Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
+        ("Sanrio", "Hello Kitty 50th Anniversary Gold Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Sanrio", "Keroppi Lily Pad Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
+        ("Sanrio", "Badtz-Maru Punk Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
+        ("Sanrio", "Little Twin Stars Cloud Castle Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+
+        # ─── More Horror Franchise ─────────────────────────────────────────
+        ("Horror", "Bride of Chucky Tiffany Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Horror", "Ghostface (Scream) Glow Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Horror", "Beetlejuice Sandworm Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Horror", "Gremlins Gizmo Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Horror", "Corpse Bride Emily Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Horror", "Elvira Mistress of the Dark Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Horror", "Coraline Button Eyes Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Horror", "Edward Scissorhands Topiary Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+
+        # ─── More Pokemon ──────────────────────────────────────────────────
+        ("Pokemon", "Pikachu Lightning Bolt Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Pokemon", "Gengar Glow Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Pokemon", "Snorlax Sleeping AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Pokemon", "Charizard Fire Scene Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Pokemon", "Eeveelution Circle AOP Wallet", "Wallet", "Standard", "standard", 35),
+        ("Pokemon", "Mewtwo Glow Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("Pokemon", "Bulbasaur Planter Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+
+        # ─── More Wallets & Crossbody ──────────────────────────────────────
+        ("Disney", "Mickey & Minnie Date Night Wallet", "Wallet", "Standard", "standard", 35),
+        ("Disney", "Cinderella Ball Gown Wallet", "Wallet", "BoxLunch", "standard", 38),
+        ("Star Wars", "Darth Vader Helmet Wallet", "Wallet", "Standard", "standard", 32),
+        ("Marvel", "Spider-Man Web Wallet", "Wallet", "Standard", "standard", 32),
+        ("Sanrio", "Hello Kitty & Friends Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 48),
+        ("Disney", "Tangled Lantern Scene Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("Disney", "Beauty and the Beast Library Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("Harry Potter", "Hogwarts Letter Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 50),
+        ("Studio Ghibli", "Totoro Catbus Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+
+        # ─── Seasonal & Vaulted Disney ─────────────────────────────────────
+        ("Disney", "Halloween 2024 Mickey Pumpkin Mini Backpack", "Mini Backpack", "Disney Parks", "high", 85),
+        ("Disney", "Christmas 2024 Holiday Castle Mini Backpack", "Mini Backpack", "Disney Parks", "high", 80),
+        ("Disney", "Spring 2024 Flower & Garden Figment Mini Backpack", "Mini Backpack", "Disney Parks", "high", 85),
+        ("Disney", "Halloween 2023 Haunted Mansion Glow Mini Backpack (Vaulted)", "Mini Backpack", "Disney Parks", "grail", 130),
+        ("Disney", "50th Anniversary Vault Collection Mini Backpack", "Mini Backpack", "Disney Parks", "grail", 150),
+        ("Disney", "Food & Wine 2023 Remy Mini Backpack (Vaulted)", "Mini Backpack", "Disney Parks", "high", 100),
+        ("Disney", "Stitch Crashes Disney: Lion King Mini Backpack (Vaulted)", "Mini Backpack", "shopDisney", "high", 95),
+        ("Disney", "Stitch Crashes Disney: Beauty & Beast Mini Backpack (Vaulted)", "Mini Backpack", "shopDisney", "high", 90),
+        ("Disney", "Stitch Crashes Disney: Aladdin Mini Backpack (Vaulted)", "Mini Backpack", "shopDisney", "high", 90),
+        ("Disney", "Stitch Crashes Disney: Mulan Mini Backpack (Vaulted)", "Mini Backpack", "shopDisney", "high", 90),
+        ("Disney", "Stitch Crashes Disney: Snow White Mini Backpack (Vaulted)", "Mini Backpack", "shopDisney", "high", 95),
+        ("Disney", "Stitch Crashes Disney: Pinocchio Mini Backpack (Vaulted)", "Mini Backpack", "shopDisney", "high", 90),
+        ("Disney", "Stitch Crashes Disney: Jungle Book Mini Backpack (Vaulted)", "Mini Backpack", "shopDisney", "high", 90),
+
+        # ─── Pre-Funko Era Loungefly (Vintage) ────────────────────────────
+        ("Loungefly Vintage", "Skull & Crossbones Leather Mini Backpack (2010)", "Mini Backpack", "Vintage", "high", 100),
+        ("Loungefly Vintage", "Hello Kitty Original Collaboration Mini Backpack (2008)", "Mini Backpack", "Vintage", "high", 120),
+        ("Loungefly Vintage", "Star Wars Darth Vader Helmet Bag (2012)", "Crossbody Bag", "Vintage", "high", 90),
+        ("Loungefly Vintage", "Sugar Skull Dia de los Muertos Wallet (2011)", "Wallet", "Vintage", "mid", 55),
+        ("Loungefly Vintage", "Tokidoki x Loungefly Cactus Friends (2009)", "Mini Backpack", "Vintage Collab", "grail", 150),
+
+        # ─── Additional Disney Park Exclusives ─────────────────────────────
+        ("Disney", "Figment Epcot Journey Into Imagination Mini Backpack", "Mini Backpack", "Disney Parks", "high", 95),
+        ("Disney", "Orange Bird Flower & Garden Mini Backpack", "Mini Backpack", "Disney Parks", "high", 90),
+        ("Disney", "Tiana's Palace Mini Backpack", "Mini Backpack", "Disney Parks", "high", 80),
+        ("Disney", "Splash Mountain Final Ride Mini Backpack (Vaulted)", "Mini Backpack", "Disney Parks", "grail", 140),
+        ("Disney", "Buzz Lightyear Space Ranger Spin Mini Backpack", "Mini Backpack", "Disney Parks", "mid", 60),
+        ("Disney", "WDW 50th Anniversary Cinderella Castle Iridescent Mini Backpack", "Mini Backpack", "Disney Parks", "grail", 120),
+        ("Disney", "Hocus Pocus Sanderson Sisters Mini Backpack", "Mini Backpack", "Disney Parks", "high", 85),
+        ("Disney", "Haunted Mansion Madame Leota Crystal Ball Mini Backpack", "Mini Backpack", "Disney Parks", "high", 90),
     ]
 
     catalog = []

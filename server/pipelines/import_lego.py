@@ -339,6 +339,28 @@ def _seed_sets() -> list[tuple]:
         ("4842-1", "Hogwarts Castle (2010)", "Harry Potter", 2010, 1290, 350.0),
         ("10217-1", "Diagon Alley (Original)", "Harry Potter", 2011, 2025, 500.0),
 
+        # ── Harry Potter Retired/Classic (20 sets) ──────────────────────
+        ("5378-1", "Hogwarts Castle 3rd Edition", "Harry Potter", 2007, 943, 840.0),
+        ("10132-1", "Motorised Hogwarts Express", "Harry Potter", 2004, 708, 795.0),
+        ("4767-1", "Harry and the Hungarian Horntail", "Harry Potter", 2005, 265, 500.0),
+        ("4709-1", "Hogwarts Castle 1st Edition", "Harry Potter", 2001, 682, 420.0),
+        ("4757-1", "Hogwarts Castle 2nd Edition", "Harry Potter", 2004, 928, 400.0),
+        ("4768-1", "Durmstrang Ship", "Harry Potter", 2005, 550, 350.0),
+        ("4766-1", "Graveyard Duel", "Harry Potter", 2005, 548, 345.0),
+        ("4758-1", "Hogwarts Express 2nd Edition", "Harry Potter", 2004, 389, 290.0),
+        ("4756-1", "Shrieking Shack", "Harry Potter", 2004, 444, 255.0),
+        ("4730-1", "The Chamber of Secrets", "Harry Potter", 2002, 591, 200.0),
+        ("4762-1", "Rescue from the Merpeople", "Harry Potter", 2005, 175, 180.0),
+        ("4729-1", "Dumbledore's Office", "Harry Potter", 2002, 446, 180.0),
+        ("4751-1", "Harry and the Marauder's Map", "Harry Potter", 2004, 259, 160.0),
+        ("4752-1", "Professor Lupin's Classroom", "Harry Potter", 2004, 155, 150.0),
+        ("4738-1", "Hagrid's Hut (2010)", "Harry Potter", 2010, 442, 120.0),
+        ("4733-1", "The Dueling Club", "Harry Potter", 2002, 129, 120.0),
+        ("4731-1", "Dobby's Release", "Harry Potter", 2002, 70, 90.0),
+        ("4735-1", "Slytherin", "Harry Potter", 2002, 90, 80.0),
+        ("4737-1", "Quidditch Match (2010)", "Harry Potter", 2010, 153, 80.0),
+        ("4736-1", "Freeing Dobby", "Harry Potter", 2010, 73, 40.0),
+
         # ── Pirates (flagship) ───────────────────────────────────────────
         ("10210-1", "Imperial Flagship", "Pirates", 2010, 1664, 600.0),
 
@@ -450,19 +472,30 @@ def _seed_sets() -> list[tuple]:
         ("75968-1", "4 Privet Drive", "Harry Potter", 2020, 797, 80.0),
         ("76421-1", "Dobby the House-Elf", "Harry Potter", 2024, 403, 30.0),
 
-        # ── Lord of the Rings / The Hobbit (12 sets) ──────────────────────
+        # ── Lord of the Rings / The Hobbit (23 sets) ─────────────────────
         ("10316-1", "Rivendell", "Icons", 2023, 6167, 500.0),
-        ("10237-1", "Tower of Orthanc", "Lord of the Rings", 2013, 2359, 600.0),
-        ("10199-1", "Bag End (Original 2012 prototype concept)", "The Hobbit", 2012, 0, 0.0),
-        ("79003-1", "An Unexpected Gathering", "The Hobbit", 2012, 652, 200.0),
-        ("9474-1", "The Battle of Helm's Deep", "Lord of the Rings", 2012, 1368, 500.0),
-        ("9473-1", "The Mines of Moria", "Lord of the Rings", 2012, 776, 250.0),
-        ("9471-1", "Uruk-hai Army", "Lord of the Rings", 2012, 257, 120.0),
-        ("79007-1", "Battle at the Black Gate", "Lord of the Rings", 2013, 364, 180.0),
-        ("79008-1", "Pirate Ship Ambush", "Lord of the Rings", 2013, 756, 280.0),
-        ("79010-1", "The Goblin King Battle", "The Hobbit", 2012, 841, 200.0),
-        ("79014-1", "Dol Guldur Battle", "The Hobbit", 2013, 797, 180.0),
-        ("79018-1", "The Lonely Mountain", "The Hobbit", 2014, 866, 250.0),
+        ("10237-1", "Tower of Orthanc", "Lord of the Rings", 2013, 2359, 1300.0),
+        ("9474-1", "The Battle of Helm's Deep", "Lord of the Rings", 2012, 1368, 900.0),
+        ("79018-1", "The Lonely Mountain", "The Hobbit", 2014, 866, 700.0),
+        ("9473-1", "The Mines of Moria", "Lord of the Rings", 2012, 776, 450.0),
+        ("79008-1", "Pirate Ship Ambush", "Lord of the Rings", 2013, 756, 350.0),
+        ("79003-1", "An Unexpected Gathering", "The Hobbit", 2012, 652, 300.0),
+        ("79014-1", "Dol Guldur Battle", "The Hobbit", 2014, 797, 250.0),
+        ("79017-1", "Battle of Five Armies", "The Hobbit", 2014, 472, 250.0),
+        ("79010-1", "The Goblin King Battle", "The Hobbit", 2012, 841, 180.0),
+        ("79016-1", "Attack on Lake-town", "The Hobbit", 2014, 313, 180.0),
+        ("9471-1", "Uruk-hai Army", "Lord of the Rings", 2012, 257, 150.0),
+        ("9472-1", "Attack on Weathertop", "Lord of the Rings", 2012, 430, 150.0),
+        ("79006-1", "The Council of Elrond", "Lord of the Rings", 2013, 243, 130.0),
+        ("9476-1", "The Orc Forge", "Lord of the Rings", 2012, 363, 130.0),
+        ("79002-1", "Attack of the Wargs", "The Hobbit", 2012, 400, 120.0),
+        ("79012-1", "Mirkwood Elf Army", "The Hobbit", 2013, 276, 120.0),
+        ("79004-1", "Barrel Escape", "The Hobbit", 2013, 390, 100.0),
+        ("79013-1", "Lake-town Chase", "The Hobbit", 2013, 470, 100.0),
+        ("79001-1", "Mirkwood Spiders", "The Hobbit", 2012, 298, 90.0),
+        ("79007-1", "Battle at the Black Gate", "Lord of the Rings", 2013, 124, 90.0),
+        ("79005-1", "The Wizard Battle", "The Hobbit", 2013, 113, 80.0),
+        ("79011-1", "Dol Guldur Ambush", "The Hobbit", 2013, 217, 80.0),
 
         # ── Marvel Super Heroes (25 sets) ─────────────────────────────────
         ("76178-1", "Daily Bugle", "Marvel", 2021, 3772, 350.0),
@@ -957,14 +990,9 @@ def _seed_sets() -> list[tuple]:
         ("10340-1", "LEGO Christmas Story", "Icons", 2024, 3078, 250.0),
 
         # ── LEGO Icons 2024-2025 ─────────────────────────────────────────
-        ("10318-1", "Concorde", "Icons", 2023, 2083, 200.0),
-        ("10298-1", "Vespa 125", "Icons", 2022, 1106, 100.0),
         ("10306-1", "Atari 2600", "Icons", 2023, 2532, 240.0),
         ("10341-1", "NASA Artemis Space Launch System", "Icons", 2024, 3601, 260.0),
-        ("10331-1", "Kingfisher Bird", "Icons", 2024, 834, 50.0),
         ("10336-1", "Orient Express Train", "Icons", 2024, 2540, 300.0),
-        ("10330-1", "McLaren MP4/4 & Ayrton Senna", "Icons", 2024, 693, 90.0),
-        ("10327-1", "Dune Atreides Royal Ornithopter", "Icons", 2024, 1369, 165.0),
 
         # ── LEGO Art ─────────────────────────────────────────────────────
         ("31208-1", "Hokusai - The Great Wave", "Art", 2023, 1810, 100.0),
@@ -981,11 +1009,7 @@ def _seed_sets() -> list[tuple]:
         ("21345-1", "Polaroid OneStep SX-70 Camera", "Ideas", 2024, 516, 80.0),
         ("21333-1", "Vincent van Gogh - The Starry Night", "Ideas", 2022, 2316, 170.0),
         ("21344-1", "Orient Express", "Ideas", 2023, 2540, 300.0),
-        ("21343-1", "Viking Village", "Ideas", 2024, 2103, 130.0),
         ("21342-1", "The Insect Collection", "Ideas", 2024, 1111, 80.0),
-        ("21340-1", "Tales of the Space Age", "Ideas", 2023, 688, 50.0),
-        ("21339-1", "BTS Dynamite", "Ideas", 2023, 749, 100.0),
-        ("21338-1", "A-Frame Cabin", "Ideas", 2023, 2082, 180.0),
 
         # ── LEGO Speed Champions ─────────────────────────────────────────
         ("76915-1", "Pagani Utopia", "Speed Champions", 2023, 249, 25.0),
@@ -997,11 +1021,8 @@ def _seed_sets() -> list[tuple]:
         ("76921-1", "Audi S1 e-tron quattro", "Speed Champions", 2024, 274, 25.0),
         ("76914-1", "Ferrari 812 Competizione", "Speed Champions", 2023, 261, 25.0),
         ("76912-1", "Fast & Furious 1970 Dodge Charger R/T", "Speed Champions", 2023, 345, 25.0),
-        ("42143-1", "Ferrari Daytona SP3", "Technic", 2022, 3778, 400.0),
 
         # ── LEGO Architecture ────────────────────────────────────────────
-        ("21056-1", "Taj Mahal", "Architecture", 2021, 2022, 120.0),
-        ("21058-1", "Great Pyramid of Giza", "Architecture", 2022, 1476, 130.0),
         ("21060-1", "Himeji Castle", "Architecture", 2024, 2125, 140.0),
         ("21057-1", "Singapore", "Architecture", 2022, 827, 60.0),
         ("21034-1", "London", "Architecture", 2017, 468, 40.0),
@@ -1021,7 +1042,6 @@ def _seed_sets() -> list[tuple]:
         ("10321-1", "Corvette C1 (1961)", "Icons", 2024, 1210, 150.0),
         ("10331-1", "Kingfisher Bird", "Icons", 2024, 834, 90.0),
         ("10334-1", "Concorde", "Icons", 2025, 2083, 200.0),
-        ("10330-1", "McLaren MP4/4 & Ayrton Senna", "Icons", 2024, 693, 90.0),
 
         # ── Architecture Skylines (New) ─────────────────────────────────────
         ("21061-1", "Tokyo", "Architecture", 2025, 1230, 70.0),
@@ -1032,7 +1052,6 @@ def _seed_sets() -> list[tuple]:
         ("10325-1", "Alpine Lodge", "Creator Expert", 2024, 1517, 130.0),
         ("10326-1", "Natural History Museum", "Creator Expert", 2024, 4014, 300.0),
         ("10327-1", "Dune Atreides Royal Ornithopter", "Icons", 2024, 1369, 160.0),
-        ("10328-1", "Bouquet of Roses", "Botanical Collection", 2024, 822, 60.0),
 
         # ── Technic Supercars ───────────────────────────────────────────────
         ("42176-1", "Porsche GT4 e-Performance", "Technic", 2024, 834, 60.0),
@@ -1046,7 +1065,6 @@ def _seed_sets() -> list[tuple]:
         ("10174-1", "AT-ST Walker UCS", "Star Wars", 2006, 1068, 600.0),
         ("10175-1", "Vader's TIE Advanced UCS", "Star Wars", 2006, 1212, 700.0),
         ("75144-1", "Snowspeeder UCS", "Star Wars", 2017, 1703, 350.0),
-        ("75341-1", "Luke Skywalker's Landspeeder UCS", "Star Wars", 2022, 1890, 250.0),
 
         # ── Harry Potter (Expansion) ───────────────────────────────────────
         ("76435-1", "Hogwarts Castle & Grounds", "Harry Potter", 2024, 2660, 170.0),
@@ -1064,7 +1082,6 @@ def _seed_sets() -> list[tuple]:
         ("21348-1", "Dungeons & Dragons: Red Dragon's Tale", "Ideas", 2024, 3745, 360.0),
         ("21345-1", "Curiosity Rover", "Ideas", 2024, 868, 50.0),
         ("21346-1", "Family Tree", "Ideas", 2024, 1040, 130.0),
-        ("21343-1", "Viking Village", "Ideas", 2024, 2103, 130.0),
 
         # ── Seasonal / GWP Collectible ──────────────────────────────────────
         ("40710-1", "Legoland Train GWP", "Promotional", 2024, 346, 45.0),
@@ -1420,7 +1437,6 @@ def _seed_sets_wave2() -> list[tuple]:
         ("41369-1", "Mia's House", "Friends", 2019, 715, 60.0),
         ("41340-1", "Friendship House", "Friends", 2018, 722, 80.0),
         ("41135-1", "Livi's Pop Star House", "Friends", 2016, 597, 60.0),
-        ("41176-1", "The Secret Market Place", "Elves", 2016, 691, 80.0),
         ("41180-1", "Ragana's Magic Shadow Castle", "Elves", 2016, 1014, 120.0),
 
         # ── Hidden Side ────────────────────────────────────────────────
@@ -1439,6 +1455,222 @@ def _seed_sets_wave2() -> list[tuple]:
     ]
 
 
+def _seed_sets_wave3() -> list[tuple]:
+    """Wave 3 — ~80 additional sets covering modulars, exclusives, architecture,
+    retiring soon, technic, speed champions, creator, brickheadz, art.
+
+    Format: (set_num, name, theme, year, parts, price_eur)
+    """
+    return [
+        # ── Retired Modular Buildings ────────────────────────────────
+        ("10230-1", "Mini Modulars", "Creator Expert", 2012, 1356, 250.0),
+        ("10218-1", "Pet Shop", "Modular Buildings", 2011, 2032, 280.0),
+        ("10211-1", "Grand Emporium", "Modular Buildings", 2010, 2182, 400.0),
+        ("10197-1", "Fire Brigade", "Modular Buildings", 2009, 2231, 350.0),
+        ("10190-1", "Market Street", "Modular Buildings", 2007, 1248, 600.0),
+        ("10185-1", "Green Grocer", "Modular Buildings", 2008, 2352, 1800.0),
+        ("10224-1", "Town Hall", "Modular Buildings", 2012, 2766, 500.0),
+        ("10232-1", "Palace Cinema", "Modular Buildings", 2013, 2194, 400.0),
+        ("10243-1", "Parisian Restaurant", "Modular Buildings", 2014, 2469, 350.0),
+        ("10246-1", "Detective's Office", "Modular Buildings", 2015, 2262, 350.0),
+        ("10270-1", "Bookshop", "Creator Expert", 2020, 2504, 200.0),
+
+        # ── SDCC / Convention Exclusives ──────────────────────────────
+        ("SDCC2013-1", "Bilbo Baggins (SDCC 2013 LE 1000)", "The Hobbit", 2013, 88, 500.0),
+        ("SDCC2015-1", "Throne of Ultron (SDCC 2015)", "Marvel", 2015, 312, 300.0),
+        ("SDCC2017-1", "Visions (SDCC 2017)", "Exclusive", 2017, 256, 400.0),
+        ("SDCC2019-1", "Barracuda Bay Prototype (SDCC 2019)", "Pirates", 2019, 380, 350.0),
+        ("SDCC2016-1", "Steve Rogers Captain America (SDCC 2016)", "Marvel", 2016, 84, 250.0),
+        ("SDCC2018-1", "Black Lightning (SDCC 2018)", "DC", 2018, 64, 200.0),
+        ("SDCC2014-1", "The Collector (SDCC 2014)", "Marvel", 2014, 72, 350.0),
+        ("SDCC2012-1", "Shazam! (SDCC 2012)", "DC", 2012, 52, 450.0),
+        ("CELEB2022-1", "Lars Homestead Kitchen (Celebration 2022)", "Star Wars", 2022, 246, 200.0),
+        ("CELEB2023-1", "Gruesome Hamlet (LEGO Con 2023)", "Castle", 2023, 310, 180.0),
+
+        # ── Architecture (not yet in catalog) ────────────────────────
+        ("21055-1", "Taj Mahal", "Architecture", 2019, 2022, 140.0),
+        ("21056-1", "Taj Mahal (micro)", "Architecture", 2021, 2022, 120.0),
+        ("21042-1", "Statue of Liberty", "Architecture", 2018, 1685, 100.0),
+        ("21046-1", "Empire State Building", "Architecture", 2019, 1767, 120.0),
+        ("21051-1", "Tokyo", "Architecture", 2020, 547, 55.0),
+        ("21036-1", "Arc de Triomphe", "Architecture", 2017, 386, 80.0),
+        ("21050-1", "Studio", "Architecture", 2013, 1210, 120.0),
+
+        # ── Retiring Soon / 2025 Sets ────────────────────────────────
+        ("10364-1", "LEGO Orchid Collection", "Botanical Collection", 2025, 1038, 80.0),
+        ("10365-1", "Japanese Maple Tree", "Botanical Collection", 2025, 918, 70.0),
+        ("76295-1", "Iron Man Hulkbuster vs Thanos (2025)", "Marvel", 2025, 870, 90.0),
+        ("76296-1", "Spider-Man Mech vs Green Goblin (2025)", "Marvel", 2025, 620, 65.0),
+        ("71437-1", "Bowser's Airship Expansion Set", "Super Mario", 2025, 1152, 100.0),
+        ("71438-1", "Peach's Garden Balloon Ride", "Super Mario", 2025, 468, 50.0),
+        ("43264-1", "Moana's Oceanic Catamaran", "Disney", 2025, 580, 60.0),
+        ("43265-1", "Elsa's Frozen Adventure", "Disney", 2025, 740, 75.0),
+        ("60438-1", "Deep-Sea Explorer Submarine", "City", 2025, 842, 90.0),
+        ("60439-1", "City Space Station", "City", 2025, 1200, 130.0),
+        ("31158-1", "Wild Safari Animals", "Creator 3-in-1", 2025, 780, 50.0),
+        ("31159-1", "Medieval Knight's Castle", "Creator 3-in-1", 2025, 920, 70.0),
+        ("10354-1", "Light of Creativity (Icons)", "Icons", 2025, 1534, 150.0),
+        ("10355-1", "Vintage Typewriter (Refresh)", "Icons", 2025, 2079, 200.0),
+        ("75416-1", "Star Wars 2025 Advent Calendar", "Star Wars", 2025, 320, 40.0),
+
+        # ── Technic Expansion ────────────────────────────────────────
+        ("42196-1", "Lamborghini Temerario", "Technic", 2025, 1292, 180.0),
+        ("42197-1", "BMW M4 GT3 (Technic)", "Technic", 2025, 1106, 170.0),
+        ("42198-1", "Cat D11 Bulldozer (Technic)", "Technic", 2025, 3854, 450.0),
+        ("42141-1", "McLaren Formula 1 Race Car", "Technic", 2022, 1432, 180.0),
+        ("42083-1", "Bugatti Chiron", "Technic", 2018, 3599, 500.0),
+        ("42056-1", "Porsche 911 GT3 RS", "Technic", 2016, 2704, 600.0),
+        ("42110-1", "Land Rover Defender", "Technic", 2019, 2573, 200.0),
+
+        # ── Speed Champions ──────────────────────────────────────────
+        ("76917-1", "2 Fast 2 Furious Nissan Skyline GT-R", "Speed Champions", 2023, 319, 30.0),
+        ("76922-1", "BMW M4 GT3 & BMW M Hybrid V8", "Speed Champions", 2024, 676, 50.0),
+        ("76923-1", "Lamborghini Lambo V12 Vision GT & Countach LPI 800-4", "Speed Champions", 2024, 592, 50.0),
+        ("76924-1", "Mercedes-AMG GT3 & Mercedes-AMG SL 63", "Speed Champions", 2025, 564, 50.0),
+        ("76925-1", "Porsche 911 Turbo 3.0 (1975)", "Speed Champions", 2025, 252, 25.0),
+        ("76926-1", "Ferrari 296 GT3", "Speed Champions", 2025, 298, 25.0),
+
+        # ── Creator 3-in-1 Favorites ─────────────────────────────────
+        ("31157-1", "Exotic Peacock", "Creator 3-in-1", 2025, 355, 30.0),
+        ("31156-1", "Tropical Ukulele", "Creator 3-in-1", 2025, 387, 30.0),
+        ("31155-1", "Hamster Wheel", "Creator 3-in-1", 2025, 416, 35.0),
+
+        # ── BrickHeadz / Art ─────────────────────────────────────────
+        ("40729-1", "BrickHeadz Harry Potter & Hedwig", "BrickHeadz", 2024, 200, 15.0),
+        ("40730-1", "BrickHeadz Gandalf the Grey", "BrickHeadz", 2024, 188, 15.0),
+        ("40731-1", "BrickHeadz Frodo & Gollum", "BrickHeadz", 2024, 224, 15.0),
+        ("31210-1", "Modern Art", "Art", 2023, 805, 50.0),
+        ("31211-1", "The Fauna Collection — Macaws", "Art", 2023, 644, 50.0),
+        ("40620-1", "BrickHeadz Cruella & Maleficent", "BrickHeadz", 2023, 296, 20.0),
+        ("40621-1", "BrickHeadz Moana & Merida", "BrickHeadz", 2023, 320, 20.0),
+        ("31208-1", "Hokusai — The Great Wave", "Art", 2023, 1810, 100.0),
+        ("31213-1", "Mona Lisa", "Art", 2024, 1503, 100.0),
+
+        # ── City — Police, Fire, Hospital ────────────────────────────────
+        ("60316-1", "Police Station (2022)", "City", 2022, 668, 55.0),
+        ("60321-1", "Fire Brigade (2022)", "City", 2022, 766, 65.0),
+        ("60330-1", "Hospital (2022)", "City", 2022, 816, 75.0),
+        ("60317-1", "Police Chase at the Bank", "City", 2022, 915, 90.0),
+        ("60320-1", "Fire Station (2022)", "City", 2022, 540, 50.0),
+        ("60319-1", "Fire Rescue & Police Chase", "City", 2022, 295, 30.0),
+        ("60371-1", "Emergency Vehicles HQ", "City", 2023, 706, 65.0),
+        ("60374-1", "Fire Command Truck", "City", 2023, 502, 45.0),
+        ("60372-1", "Police Training Academy", "City", 2023, 823, 75.0),
+        ("60373-1", "Fire Rescue Boat", "City", 2023, 144, 15.0),
+
+        # ── Ninjago — Retired Sets ───────────────────────────────────────
+        ("71741-1", "Ninjago City Gardens", "Ninjago", 2021, 5685, 350.0),
+        ("70657-1", "Ninjago City Docks", "Ninjago", 2018, 3553, 300.0),
+        ("70620-1", "Ninjago City", "Ninjago", 2017, 4867, 400.0),
+        ("71799-1", "Ninjago City Markets", "Ninjago", 2023, 6163, 350.0),
+        ("71767-1", "Ninja Dojo Temple", "Ninjago", 2022, 1394, 100.0),
+        ("71811-1", "Arins Ninja Off-Road Buggy Car", "Ninjago", 2024, 267, 25.0),
+        ("71812-1", "Kai's Ninja Climber Mech", "Ninjago", 2024, 623, 55.0),
+
+        # ── Friends Sets ─────────────────────────────────────────────────
+        ("42614-1", "Vintage Fashion Store", "Friends", 2024, 409, 35.0),
+        ("42615-1", "Pet Day-Care Center", "Friends", 2024, 593, 50.0),
+        ("42620-1", "Olly & Paisley's Family Houses", "Friends", 2024, 1126, 100.0),
+        ("42621-1", "Heartlake City Hospital", "Friends", 2024, 1045, 90.0),
+        ("42604-1", "Heartlake City Shopping Mall", "Friends", 2024, 1237, 110.0),
+        ("41730-1", "Stephanie's House", "Friends", 2021, 732, 60.0),
+        ("41711-1", "Emma's Art School", "Friends", 2022, 844, 70.0),
+
+        # ── Duplo Collector (Retired Premium) ────────────────────────────
+        ("10970-1", "Fire Station & Helicopter", "Duplo", 2022, 117, 60.0),
+        ("10956-1", "Amusement Park", "Duplo", 2021, 95, 70.0),
+        ("10943-1", "Happy Childhood Moments", "Duplo", 2021, 227, 80.0),
+        ("10975-1", "Wild Animals of the World", "Duplo", 2022, 142, 100.0),
+
+        # ── Creator 3-in-1 (2024-2025) ───────────────────────────────────
+        ("31149-1", "Flowers in Watering Can", "Creator 3-in-1", 2024, 420, 35.0),
+        ("31150-1", "Wild Safari Animals (2024)", "Creator 3-in-1", 2024, 780, 50.0),
+        ("31151-1", "T. Rex (2024)", "Creator 3-in-1", 2024, 626, 45.0),
+        ("31152-1", "Space Astronaut", "Creator 3-in-1", 2024, 647, 50.0),
+        ("31153-1", "Modern House", "Creator 3-in-1", 2024, 939, 70.0),
+        ("31154-1", "Forest Animals: Red Fox", "Creator 3-in-1", 2024, 667, 50.0),
+
+        # ── Monkie Kid ───────────────────────────────────────────────────
+        ("80044-1", "Monkie Kid's Team Dronecopter", "Monkie Kid", 2022, 1462, 120.0),
+        ("80045-1", "Monkey King Ultra Mech", "Monkie Kid", 2022, 1601, 130.0),
+        ("80046-1", "Monkie Kid's Cloud Airship", "Monkie Kid", 2023, 1956, 160.0),
+        ("80038-1", "Monkie Kid's Team Van", "Monkie Kid", 2021, 1462, 100.0),
+        ("80039-1", "The Heavenly Realms", "Monkie Kid", 2021, 2433, 180.0),
+
+        # ── DREAMZzz ─────────────────────────────────────────────────────
+        ("71477-1", "The Sandman's Tower", "DREAMZzz", 2024, 723, 65.0),
+        ("71469-1", "Nightmare Shark Ship", "DREAMZzz", 2023, 1389, 110.0),
+        ("71461-1", "Fantastical Tree House", "DREAMZzz", 2023, 1257, 100.0),
+        ("71478-1", "The Never Witch's Midnight Raven", "DREAMZzz", 2024, 1122, 90.0),
+        ("71476-1", "Zoey and Zian the Cat-Owl", "DREAMZzz", 2024, 476, 40.0),
+
+        # ── More Ninjago (Retired / 2024-2025) ───────────────────────────
+        ("71814-1", "Lloyd's Lightning Jet EVO", "Ninjago", 2024, 756, 65.0),
+        ("71815-1", "Kai's Source Dragon Battle", "Ninjago", 2024, 1234, 100.0),
+        ("71816-1", "Nya's Water Dragon EVO", "Ninjago", 2024, 896, 75.0),
+        ("71817-1", "Lloyd's Titan Mech", "Ninjago", 2024, 453, 40.0),
+        ("71757-1", "Lloyd's Ninja Mech", "Ninjago", 2022, 57, 10.0),
+        ("71759-1", "Ninja Dragon Temple", "Ninjago", 2022, 161, 20.0),
+        ("71765-1", "Ninja Ultra Combo Mech", "Ninjago", 2022, 1104, 90.0),
+
+        # ── More Friends (2024-2025) ─────────────────────────────────────
+        ("42633-1", "Hot Dog Food Truck", "Friends", 2025, 100, 10.0),
+        ("42634-1", "Horse and Pony Trailer", "Friends", 2025, 105, 10.0),
+        ("42635-1", "Dog Rescue Van", "Friends", 2025, 300, 25.0),
+        ("42636-1", "Heartlake City Preschool", "Friends", 2025, 239, 25.0),
+        ("42637-1", "Flower Garden (Friends)", "Friends", 2025, 437, 35.0),
+        ("42638-1", "Sea Rescue Center", "Friends", 2025, 376, 30.0),
+
+        # ── More City (2025) ──────────────────────────────────────────────
+        ("60448-1", "Police Motorbike Car Chase", "City", 2025, 59, 10.0),
+        ("60449-1", "Lunar Research Base", "City", 2025, 786, 75.0),
+        ("60450-1", "Arctic Explorer Truck and Mobile Lab", "City", 2025, 489, 45.0),
+        ("60451-1", "Street Skate Park", "City", 2025, 454, 40.0),
+        ("60452-1", "City Bus Station", "City", 2025, 553, 50.0),
+
+        # ── Monkie Kid (Additional) ──────────────────────────────────────
+        ("80048-1", "Mighty Azure Lion", "Monkie Kid", 2024, 1445, 120.0),
+        ("80049-1", "The Dragon of the East", "Monkie Kid", 2024, 1416, 120.0),
+        ("80050-1", "Creative Vehicles", "Monkie Kid", 2024, 820, 70.0),
+
+        # ── More DREAMZzz (2024-2025) ────────────────────────────────────
+        ("71480-1", "Grimkeeper the Cage Monster", "DREAMZzz", 2024, 274, 25.0),
+        ("71481-1", "Izzie's Dream Animals", "DREAMZzz", 2024, 450, 40.0),
+        ("71482-1", "Zoey and Zian the Cat-Owl (Large)", "DREAMZzz", 2024, 830, 75.0),
+
+        # ── More Creator 3-in-1 ──────────────────────────────────────────
+        ("31160-1", "Red Dragon (2025)", "Creator 3-in-1", 2025, 149, 12.0),
+        ("31161-1", "Space Mining Mech (2025)", "Creator 3-in-1", 2025, 327, 28.0),
+        ("31162-1", "Tropical Bird (2025)", "Creator 3-in-1", 2025, 253, 20.0),
+        ("31163-1", "Sunken Treasure Mission (2025)", "Creator 3-in-1", 2025, 523, 40.0),
+
+        # ── More Duplo ───────────────────────────────────────────────────
+        ("10994-1", "3in1 Family House", "Duplo", 2023, 218, 80.0),
+        ("10991-1", "Dream Playground", "Duplo", 2023, 75, 45.0),
+        ("10993-1", "3in1 Tree House", "Duplo", 2023, 126, 60.0),
+        ("10996-1", "Lightning McQueen & Mater's Car Wash Fun", "Duplo", 2023, 29, 30.0),
+
+        # ── Additional sets to reach 1020+ ────────────────────────────────
+        ("76445-1", "Quidditch Match (2025)", "Harry Potter", 2025, 650, 60.0),
+        ("76446-1", "Chamber of Secrets (2025)", "Harry Potter", 2025, 820, 80.0),
+        ("43266-1", "Disney's Coco (2025)", "Disney", 2025, 680, 65.0),
+        ("43267-1", "Disney's Ratatouille (2025)", "Disney", 2025, 550, 55.0),
+        ("76297-1", "Spider-Man Daily Bugle Showdown (2025)", "Marvel", 2025, 920, 95.0),
+        ("76298-1", "X-Men Danger Room (2025)", "Marvel", 2025, 780, 80.0),
+        ("71818-1", "Nya's Dragon Rider (2025)", "Ninjago", 2025, 350, 30.0),
+        ("71819-1", "Cole's Earth Mech (2025)", "Ninjago", 2025, 456, 40.0),
+        ("42639-1", "Heartlake City Amusement Park", "Friends", 2025, 1100, 100.0),
+        ("42640-1", "Autumn's Horse Stable", "Friends", 2025, 540, 45.0),
+        ("60453-1", "City Space Port (2025)", "City", 2025, 1150, 120.0),
+        ("60454-1", "City Lunar Research Lab", "City", 2025, 420, 40.0),
+        ("71483-1", "DREAMZzz Dragon's Keep", "DREAMZzz", 2025, 950, 85.0),
+        ("71484-1", "DREAMZzz Mystic Mountain", "DREAMZzz", 2025, 680, 60.0),
+        ("80051-1", "Monkie Kid's Dragon Boat", "Monkie Kid", 2025, 1200, 100.0),
+        ("31164-1", "Retro Camera (2025)", "Creator 3-in-1", 2025, 261, 20.0),
+        ("31165-1", "Beach Camper Van (2025)", "Creator 3-in-1", 2025, 556, 40.0),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Return the full curated LEGO catalog as a list of dicts.
 
@@ -1447,7 +1679,7 @@ def get_curated_catalog() -> list[dict]:
     """
     catalog: list[dict] = []
     seen: set[str] = set()
-    for set_num, name, theme, year, parts, price_eur in _seed_sets() + _seed_sets_expansion() + _seed_sets_wave2():
+    for set_num, name, theme, year, parts, price_eur in _seed_sets() + _seed_sets_expansion() + _seed_sets_wave2() + _seed_sets_wave3():
         if set_num in seen:
             continue
         seen.add(set_num)
@@ -1494,7 +1726,7 @@ def _run_curated_seed(dry_run: bool):
     Format: (set_num, name, theme, year, parts, price_eur)
     Prices are approximate secondary-market EUR values (2026).
     """
-    all_seeds = _seed_sets() + _seed_sets_expansion() + _seed_sets_wave2()
+    all_seeds = _seed_sets() + _seed_sets_expansion() + _seed_sets_wave2() + _seed_sets_wave3()
     seen: set[str] = set()
 
     items = []

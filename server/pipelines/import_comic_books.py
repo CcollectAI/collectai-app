@@ -1250,7 +1250,6 @@ def _expanded_variant_covers_graded_modern() -> list[dict]:
         ("DC", "Action Comics", "Action Comics #1 (1st Superman) CGC 1.0", "Golden Age Key", "grail", 500000.0),
         ("Timely", "Marvel Comics", "Marvel Comics #1 (1939, 1st Human Torch & Namor)", "Golden Age Key", "grail", 400000.0),
         ("Timely", "Captain America Comics", "Captain America Comics #1 (1941, 1st Cap)", "Golden Age Key", "grail", 300000.0),
-        ("DC", "Sensation Comics", "Sensation Comics #1 (1942, Wonder Woman)", "Golden Age Key", "grail", 80000.0),
         ("Fawcett", "Whiz Comics", "Whiz Comics #2 (1940, 1st Captain Marvel/Shazam)", "Golden Age Key", "grail", 150000.0),
 
         # ── 98. Modern Keys — Additional ───────────────────────────────────
@@ -1340,7 +1339,6 @@ def _expanded_variant_covers_graded_modern() -> list[dict]:
 
         # ── 108. Bronze Age Keys — Additional ─────────────────────────────
         ("Marvel", "Avengers", "Avengers #57 (1st Vision)", "Silver Age Key", "grail", 3000.0),
-        ("Marvel", "Captain America", "Captain America #117 (1st Falcon)", "Silver Age Key", "grail", 2000.0),
         ("DC", "Batman", "Batman #227 (Neal Adams, classic cover)", "Bronze Age Key", "grail", 2000.0),
         ("Marvel", "Hero for Hire", "Hero for Hire #1 (1st Luke Cage)", "Bronze Age Key", "grail", 2500.0),
         ("Marvel", "X-Men", "Uncanny X-Men #94 (New X-Men begin, 1975)", "Bronze Age Key", "grail", 3000.0),
@@ -1396,7 +1394,6 @@ def _expanded_variant_covers_graded_modern() -> list[dict]:
         ("DC", "Batman", "Batman #655 (1st Damian Wayne)", "Modern Key", "high", 200.0),
         ("DC", "Harley Quinn", "Harley Quinn #1 (2000, ongoing series) CGC 9.8", "CGC 9.8", "high", 400.0),
         ("DC", "Flash", "Flash #139 (1st Reverse-Flash, Eobard Thawne)", "Silver Age Key", "grail", 5000.0),
-        ("DC", "New Teen Titans", "New Teen Titans #2 (1st Deathstroke)", "Modern Key", "grail", 800.0),
         ("DC", "Batman", "Batman: No Man's Land #1 (1999, earthquake storyline)", "Modern Key", "mid", 30.0),
         ("DC", "Superman", "Death of Superman TPB (sealed, 1992)", "TPB", "mid", 50.0),
         ("DC", "Superman", "Superman #75 (Death of Superman, poly-bagged) CGC 9.8", "CGC 9.8", "high", 150.0),
@@ -1426,6 +1423,76 @@ def _expanded_variant_covers_graded_modern() -> list[dict]:
         ("AfterShock", "Animosity", "Animosity #1 (2016, 1st print) CGC 9.8", "CGC 9.8", "high", 200.0),
         ("BOOM!", "Once & Future", "Once & Future #1 (2019, Gillen) CGC 9.8", "CGC 9.8", "high", 150.0),
         ("DC", "Nightwing", "Nightwing #1 (2016, Tim Seeley/Javier Fernandez)", "Modern Key", "mid", 30.0),
+
+        # ── 118. European Comics — Franco-Belgian (Bande Dessinée) ────────────
+        ("Casterman", "Tintin", "Tintin au Pays des Soviets (1st Edition, 1930)", "Golden Age Key", "grail", 50000.0),
+        ("Casterman", "Tintin", "Tintin in the Congo (Original 1931, B&W)", "Golden Age Key", "grail", 25000.0),
+        ("Casterman", "Tintin", "The Blue Lotus (1st Color Edition, 1946)", "Golden Age Key", "grail", 8000.0),
+        ("Casterman", "Tintin", "Tintin and the Picaros (1st Edition, 1976)", "First Print", "high", 200.0),
+        ("Casterman", "Tintin", "Tintin in Tibet (1st Edition, 1960)", "First Print", "grail", 3000.0),
+        ("Casterman", "Tintin", "The Shooting Star (1st Edition, 1942)", "Golden Age Key", "grail", 5000.0),
+        ("Casterman", "Tintin", "Destination Moon / Explorers on the Moon (1st, 1953/54)", "First Print", "grail", 4000.0),
+        ("Casterman", "Tintin", "Tintin in America (1st Color, 1945)", "First Print", "grail", 3500.0),
+        ("Dargaud", "Asterix", "Asterix the Gaul (1st Edition, 1961)", "Golden Age Key", "grail", 15000.0),
+        ("Dargaud", "Asterix", "Asterix and Cleopatra (1st Edition, 1965)", "First Print", "grail", 5000.0),
+        ("Dargaud", "Asterix", "Asterix in Britain (1st Edition, 1966)", "First Print", "grail", 2000.0),
+        ("Dargaud", "Asterix", "Asterix and the Banquet (1st Edition, 1965)", "First Print", "high", 1500.0),
+        ("Dargaud", "Asterix", "Asterix the Gladiator (1st Edition, 1964)", "First Print", "high", 1800.0),
+        ("Dupuis", "Spirou", "Spirou #1 (Journal, 1938)", "Golden Age Key", "grail", 20000.0),
+        ("Dupuis", "Spirou", "Spirou et Fantasio - QRN sur Bretzelburg (1st, 1966)", "First Print", "grail", 1500.0),
+        ("Dupuis", "Lucky Luke", "Lucky Luke - Ma Dalton (1st Edition)", "First Print", "high", 300.0),
+        ("Dupuis", "Gaston Lagaffe", "Gaston #1 (1st Edition, 1960)", "Golden Age Key", "grail", 3000.0),
+        ("Dargaud", "Blueberry", "Fort Navajo (1st Edition, 1965)", "First Print", "grail", 2500.0),
+        ("Dargaud", "Blueberry", "Ballade pour un Cercueil (1st Edition, 1974)", "First Print", "high", 800.0),
+        ("Lombard", "Blake and Mortimer", "The Yellow M (1st Edition, 1956)", "Golden Age Key", "grail", 5000.0),
+        ("Lombard", "Blake and Mortimer", "The Mystery of the Great Pyramid (1st, 1954)", "Golden Age Key", "grail", 4000.0),
+        ("Casterman", "Corto Maltese", "The Ballad of the Salt Sea (1st Edition, 1975)", "First Print", "grail", 2000.0),
+        ("Casterman", "Corto Maltese", "Corto Maltese in Siberia (1st Edition, 1979)", "First Print", "high", 800.0),
+        ("Dargaud", "Valerian", "Valerian - Bad Dreams (1st Edition)", "First Print", "high", 400.0),
+        ("Dargaud", "Valerian", "Valerian - The City of Shifting Waters (1st, 1970)", "First Print", "grail", 1500.0),
+
+        # ── 119. European Comics — British ───────────────────────────────────
+        ("IPC/Fleetway", "2000 AD", "2000 AD #2 (1st Judge Dredd, 1977)", "Golden Age Key", "grail", 3000.0),
+        ("IPC/Fleetway", "2000 AD", "2000 AD #1 (1977, with free gift)", "Golden Age Key", "grail", 2000.0),
+        ("DC/Vertigo", "V for Vendetta", "Warrior #1 (1st V for Vendetta, UK, 1982)", "First Print", "grail", 1500.0),
+        ("Quality Comics", "2000 AD", "Judge Dredd: The Complete Case Files Vol 1 (1st Print)", "First Print", "high", 150.0),
+        ("Rebellion", "2000 AD", "ABC Warriors: The Mek-Nificent Seven (1st HC)", "First Print", "high", 200.0),
+        ("Titan Comics", "Tank Girl", "Tank Girl #1 (1st Print, Deadline Magazine)", "First Print", "grail", 800.0),
+        ("Knockabout", "The Adventures of Luther Arkwright", "Luther Arkwright (1st Edition, Bryan Talbot)", "First Print", "high", 300.0),
+
+        # ── 120. European Comics — Italian/Spanish ───────────────────────────
+        ("Sergio Bonelli", "Dylan Dog", "Dylan Dog #1 (L'alba dei morti viventi, 1986)", "First Print", "grail", 2500.0),
+        ("Sergio Bonelli", "Tex Willer", "Tex #1 (Il Totem Misterioso, 1948)", "Golden Age Key", "grail", 15000.0),
+        ("Sergio Bonelli", "Martin Mystere", "Martin Mystere #1 (1982)", "First Print", "high", 500.0),
+        ("Sergio Bonelli", "Nathan Never", "Nathan Never #1 (1991)", "First Print", "high", 300.0),
+        ("Bruguera", "Mortadelo y Filemon", "Mortadelo y Filemon #1 (1st Edition, 1958)", "Golden Age Key", "grail", 5000.0),
+        ("Norma Editorial", "Blacksad", "Blacksad #1 Somewhere Within the Shadows (1st Spanish, 2000)", "First Print", "grail", 1000.0),
+
+        # ── 121. European Comics — Graphic Novels / Modern BD ────────────────
+        ("Casterman", "The Incal", "The Incal (1st French Edition, Moebius, 1981)", "First Print", "grail", 3000.0),
+        ("Humanoids", "The Incal", "The Incal (1st English Deluxe HC)", "First Print", "high", 200.0),
+        ("Les Humanoïdes Associés", "Metabarons", "The Metabarons (1st French, Jodorowsky/Gimenez)", "First Print", "grail", 1500.0),
+        ("Delcourt", "Persepolis", "Persepolis (1st French Edition, 2000)", "First Print", "high", 500.0),
+        ("Dargaud", "XIII", "XIII #1 - The Day of the Black Sun (1st Edition, 1984)", "First Print", "high", 800.0),
+        ("Glenat", "Akira", "Akira (1st French Color Edition, Glenat, 1990)", "First Print", "high", 300.0),
+        ("Kana", "Dragon Ball", "Dragon Ball (1st French Edition, Vol 1, 1993)", "First Print", "high", 250.0),
+        ("Lombard", "Thorgal", "Thorgal #1 - La Magicienne Trahie (1st, 1980)", "First Print", "grail", 1000.0),
+        ("Dargaud", "Largo Winch", "Largo Winch #1 - L'Héritier (1st, 1990)", "First Print", "high", 400.0),
+        ("Aire Libre", "Le Chat du Rabbin", "Le Chat du Rabbin #1 (1st, 2002)", "First Print", "high", 200.0),
+        ("Dupuis", "Marsupilami", "Marsupilami #1 (1st solo album, 1987)", "First Print", "high", 300.0),
+        ("Les Humanoïdes Associés", "The Nikopol Trilogy", "La Foire aux Immortels (1st, Bilal, 1980)", "First Print", "grail", 1500.0),
+
+        # ── Star Trek Comics (10) ───────────────────────────────────────────
+        ("Gold Key", "Star Trek", "Star Trek #1 (1967, Gold Key, 1st Star Trek comic)", "Silver Age Key", "grail", 3000.0),
+        ("Gold Key", "Star Trek", "Star Trek #2 (1968, Gold Key, early issue)", "Silver Age Key", "high", 400.0),
+        ("Marvel", "Star Trek", "Star Trek #1 (1980, Marvel, movie adaptation)", "Bronze Age Key", "high", 150.0),
+        ("DC", "Star Trek TNG", "Star Trek: The Next Generation #1 (1989, DC)", "Modern Key", "high", 80.0),
+        ("DC", "Star Trek", "Star Trek #1 (1984, DC ongoing series)", "Modern Key", "mid", 50.0),
+        ("IDW", "Star Trek", "Star Trek #1 (2011, IDW ongoing, Mike Johnson)", "Modern Key", "mid", 30.0),
+        ("IDW", "Star Trek / Legion", "Star Trek / Legion of Super-Heroes #1 (2011, crossover)", "Modern Key", "mid", 25.0),
+        ("Malibu", "Star Trek DS9", "Star Trek: Deep Space Nine #1 (1993, Malibu)", "Modern Key", "mid", 40.0),
+        ("IDW", "Star Trek", "Star Trek: Countdown #1 (2009, prequel to 2009 film)", "Modern Key", "mid", 35.0),
+        ("Wildstorm", "Star Trek TNG", "Star Trek TNG: The Space Between #1 (2007)", "Modern Key", "mid", 20.0),
     ]
     catalog = []
     for publisher, series, name, issue_type, rarity_tier, price_eur in comics:

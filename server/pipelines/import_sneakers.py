@@ -2290,14 +2290,10 @@ def _nike_dunk_expansion_r7() -> list[tuple]:
          "DD1391-100-24", 90),
         ("Nike", "Dunk Low", "Panda (Twist W)", "GR (General Release)",
          "DZ2794-001", 100),
-        ("Nike", "Dunk Low", "Grey Fog", "GR (General Release)",
-         "DD1391-103", 100),
         ("Nike", "Dunk Low", "Argon Blue", "GR (General Release)",
          "DM0121-400", 110),
         ("Nike", "Dunk Low", "Gorge Green", "GR (General Release)",
          "DD1391-300", 110),
-        ("Nike", "Dunk Low", "Cacao Wow", "GR (General Release)",
-         "DD1503-124", 100),
         ("Nike", "Dunk Low", "Rose Whisper (W)", "GR (General Release)",
          "DD1503-118", 95),
         ("Nike", "Dunk High", "Travis Scott (Cactus Jack)", "Collaboration",
@@ -2308,8 +2304,6 @@ def _nike_dunk_expansion_r7() -> list[tuple]:
          "BV1310-337", 1100),
         ("Nike", "Dunk Low", "Concepts Purple Lobster", "Collaboration",
          "BV1310-555", 1800),
-        ("Nike", "Dunk Low", "Concepts Orange Lobster", "Collaboration",
-         "FD8776-800", 450),
         ("Nike", "Dunk Low", "Social Status Free Lunch Chocolate Milk", "Collaboration",
          "DM7866-600", 400),
         ("Nike", "Dunk Low", "Undefeated Dunk vs AF1 Purple", "Collaboration",
@@ -2537,8 +2531,6 @@ def _additional_collabs_r7() -> list[tuple]:
         # Air Jordan 4 Retro
         ("Jordan", "Air Jordan 4", "Military Black", "Retro",
          "DH6927-111", 250),
-        ("Jordan", "Air Jordan 4", "Thunder (2023)", "Retro",
-         "DH6927-017", 280),
         ("Jordan", "Air Jordan 4", "Red Thunder (Infrared)", "Retro",
          "CT8527-016", 280),
         ("Jordan", "Air Jordan 4", "Midnight Navy", "Retro",
@@ -2602,8 +2594,6 @@ def _additional_collabs_r7() -> list[tuple]:
          "GX0227", 150),
         ("Reebok", "Question Mid", "Allen Iverson Pearlized Gold", "Limited Release",
          "FX4278", 180),
-        ("Reebok", "Club C 85", "Vintage White/Green", "OG Colorway",
-         "AR0456", 80),
         # Vans
         ("Vans", "Old Skool", "Supreme Black (2021)", "Collaboration",
          "VN0A5FC8-SUP", 200),
@@ -2675,6 +2665,239 @@ def _womens_exclusives_r7() -> list[tuple]:
          "IE0877", 100),
         ("Jordan", "Air Jordan 3", "Dark Mocha (W)", "Retro",
          "FN0244-200", 200),
+    ]
+
+
+def _2025_2026_releases_expansion() -> list[tuple]:
+    """40 notable 2025-2026 sneaker releases."""
+    return [
+        # --- Jordan 2025/2026 ---
+        ("Jordan", "Air Jordan 1 High", "Reimagined Chicago (2025)", "Retro",
+         "DZ5485-612", 250),
+        ("Jordan", "Air Jordan 1 High", "Royal Reimagined (2025)", "Retro",
+         "DZ5485-042", 230),
+        ("Jordan", "Air Jordan 4", "Military Blue (2025)", "Retro",
+         "FV5029-141", 240),
+        ("Jordan", "Air Jordan 4", "Metallic Red (2025)", "Retro",
+         "FV5029-161", 220),
+        ("Jordan", "Air Jordan 5", "Grape (2025)", "Retro",
+         "DV0564-500", 200),
+        ("Jordan", "Air Jordan 6", "Black Infrared (2025)", "Retro",
+         "CT8529-060", 210),
+        ("Jordan", "Air Jordan 11", "DMP (2025)", "Retro",
+         "CT8012-170", 270),
+        ("Jordan", "Air Jordan 12", "Playoffs (2025)", "Retro",
+         "CT8013-006", 220),
+        ("Jordan", "Air Jordan 13", "Flint (2025)", "Retro",
+         "DJ5982-100", 210),
+        ("Jordan", "Air Jordan 3", "Fire Red (2025 Retro)", "Retro",
+         "DN3707-160", 200),
+        # --- Nike 2025/2026 ---
+        ("Nike", "Air Max 1", "Jewel (2025)", "Retro",
+         "FQ2704-100", 170),
+        ("Nike", "Air Max 97", "Silver Bullet (2025 Retro)", "Retro",
+         "DM0028-002", 185),
+        ("Nike", "Air Force 1 Low", "40th Anniversary Special", "Limited Release",
+         "FN5924-101", 150),
+        ("Nike", "Dunk Low", "Panda Restock (2025)", "GR (General Release)",
+         "DD1391-100R", 110),
+        ("Nike", "Zoom Vomero 5", "SP Platinum (2025)", "Retro",
+         "FN7649-002", 175),
+        ("Nike", "Zoom Vomero 5", "SP Electric Green (2025)", "Retro",
+         "FN7649-300", 175),
+        ("Nike", "Zoom Vomero 5", "SP Burgundy Crush (2025)", "Retro",
+         "FN7649-600", 175),
+        ("Nike", "Air Max Dn8", "Triple Black", "GR (General Release)",
+         "FN8888-001", 170),
+        ("Nike", "Air Max Dn8", "Photon Dust", "GR (General Release)",
+         "FN8888-003", 170),
+        ("Nike", "Cortez", "50th Anniversary White/Red", "Retro",
+         "FN7665-101", 120),
+        ("Nike", "Book 1", "Devin Booker Moss Point", "Limited Release",
+         "FJ4249-300", 160),
+        ("Nike", "Book 1", "Devin Booker Mirage", "Limited Release",
+         "FJ4249-400", 160),
+        # --- New Balance 2025/2026 ---
+        ("New Balance", "1906R", "Protection Pack Silver (2025)", "Retro",
+         "M1906REE", 180),
+        ("New Balance", "2002R", "Rain Cloud (2025)", "Retro",
+         "M2002RXJ", 180),
+        ("New Balance", "990v6", "Grey (2025)", "Retro",
+         "M990GL6", 200),
+        ("New Balance", "550", "ALD Green (2025)", "Collaboration",
+         "BB550ALD", 180),
+        ("New Balance", "1000", "Grey (2025)", "Retro",
+         "M1000GR2", 180),
+        ("New Balance", "1000", "Sea Salt (2025)", "Retro",
+         "M1000SS", 180),
+        # --- Adidas 2025/2026 ---
+        ("Adidas", "Samba", "Wales Bonner Silver (2025)", "Collaboration",
+         "IF0580", 250),
+        ("Adidas", "Gazelle Indoor", "Cream White (2025)", "Retro",
+         "IF1807", 130),
+        ("Adidas", "Campus 00s", "Dark Green (2025)", "Retro",
+         "IF4337", 110),
+        ("Adidas", "Campus 00s", "Core Black (2025)", "Retro",
+         "IF4338", 110),
+        ("Adidas", "AE1 Low", "Anthony Edwards Ice Trae", "Limited Release",
+         "IF8568", 140),
+        ("Adidas", "Yeezy 350 V2", "Beluga (2025 Re-release)", "Limited Release",
+         "RF7963-2025", 280),
+        # --- Asics 2025/2026 ---
+        ("Asics", "Gel-Kayano 14", "Cream (2025)", "Retro",
+         "1201A019-108", 160),
+        ("Asics", "Gel-NYC", "Oatmeal (2025)", "Retro",
+         "1203A280-252", 150),
+        ("Asics", "GT-2160", "White/Blue (2025)", "Retro",
+         "1203A320-100", 140),
+        # --- Salomon / On / Puma ---
+        ("Salomon", "XT-6 Advanced", "Vanilla Ice (2025)", "Limited Release",
+         "L47450200", 200),
+        ("Salomon", "ACS Pro Advanced", "Black/Gum (2025)", "Limited Release",
+         "L47450300", 190),
+        ("On Running", "Cloudmonster 2", "All Black", "GR (General Release)",
+         "61.99146", 180),
+        ("On Running", "Cloudtilt", "Undyed White", "GR (General Release)",
+         "37.99501", 200),
+        ("Puma", "Speedcat OG", "Rihanna Fenty Black", "Collaboration",
+         "39881101", 220),
+    ]
+
+
+def _womens_exclusives_expansion() -> list[tuple]:
+    """30 women's exclusive sneakers."""
+    return [
+        # --- Jordan Women's ---
+        ("Jordan", "Air Jordan 1 Mid SE", "Homage (W)", "Retro",
+         "DC0774-106", 150),
+        ("Jordan", "Air Jordan 1 Mid SE", "Crimson Tint (W)", "Retro",
+         "DC0774-800", 140),
+        ("Jordan", "Air Jordan 1 Mid SE", "Diamond Shorts (W)", "Limited Release",
+         "DC0774-062", 160),
+        ("Jordan", "Air Jordan 1 Low", "Coconut Milk (W)", "Retro",
+         "DC0774-121", 120),
+        ("Jordan", "Air Jordan 1 Low", "Wolf Grey (W)", "Retro",
+         "DC0774-053", 120),
+        ("Jordan", "Air Jordan 1 Low", "Mocha (W)", "Retro",
+         "DC0774-200", 130),
+        ("Jordan", "Air Jordan 4", "Canyon Purple (W)", "Retro",
+         "AQ9129-500", 220),
+        ("Jordan", "Air Jordan 3", "Palomino (W)", "Retro",
+         "FN0244-126", 200),
+        ("Jordan", "Air Jordan 5", "Mars for Her (W)", "Limited Release",
+         "DV4982-608", 210),
+        ("Jordan", "Air Jordan 11", "Gratitude (W)", "Retro",
+         "AR0715-170", 230),
+        ("Jordan", "Air Jordan 12", "Brilliant Orange (W)", "Retro",
+         "DR8887-810", 210),
+        # --- Nike Dunk Low Women's ---
+        ("Nike", "Dunk Low", "Cacao Wow (W)", "GR (General Release)",
+         "DD1503-129", 100),
+        ("Nike", "Dunk Low", "Pink Foam (W)", "GR (General Release)",
+         "DD1503-190", 100),
+        ("Nike", "Dunk Low", "Next Nature White Sail (W)", "GR (General Release)",
+         "DN1431-100", 95),
+        ("Nike", "Dunk Low", "Rose Whisper Sail (W)", "GR (General Release)",
+         "DD1503-118W", 100),
+        ("Nike", "Dunk Low", "Dusty Olive (W)", "GR (General Release)",
+         "DD1503-125", 105),
+        ("Nike", "Dunk Low", "Light Carbon (W)", "GR (General Release)",
+         "DD1503-132", 100),
+        ("Nike", "Dunk Low", "Diffused Taupe (W)", "GR (General Release)",
+         "DD1503-141", 100),
+        # --- New Balance Women's ---
+        ("New Balance", "530", "White Silver (W)", "GR (General Release)",
+         "MR530SG-W", 100),
+        ("New Balance", "530", "Sea Salt (W)", "GR (General Release)",
+         "MR530AA-W", 100),
+        ("New Balance", "550", "White Green (W)", "GR (General Release)",
+         "BBW550BD", 110),
+        ("New Balance", "550", "White Burgundy (W)", "GR (General Release)",
+         "BBW550BR", 110),
+        ("New Balance", "550", "White Grey (W)", "GR (General Release)",
+         "BBW550BH", 110),
+        # --- Adidas Women's ---
+        ("Adidas", "Samba OG", "Cream (W)", "OG Colorway",
+         "IE0877W", 110),
+        ("Adidas", "Samba OG", "Almost Yellow (W)", "OG Colorway",
+         "GY7410", 110),
+        ("Adidas", "Samba OG", "Wonder Clay (W)", "OG Colorway",
+         "IE0879", 110),
+        # --- Asics Women's ---
+        ("Asics", "Gel-1130", "Pure Silver (W)", "Retro",
+         "1202A164-020", 130),
+        ("Asics", "Gel-1130", "Cream Champagne (W)", "Retro",
+         "1202A164-112", 130),
+        ("Asics", "Gel-1130", "White Birch (W)", "Retro",
+         "1202A164-100", 130),
+    ]
+
+
+def _collaboration_grails_expansion() -> list[tuple]:
+    """30 collaboration grails — high-value sneaker collaborations."""
+    return [
+        # --- Travis Scott ---
+        ("Jordan", "Air Jordan 4", "Travis Scott Cactus Jack Purple", "Collaboration",
+         "FZ5498-001", 500),
+        ("Jordan", "Air Jordan 6", "Travis Scott British Khaki", "Collaboration",
+         "DH0690-200", 400),
+        # --- Off-White ---
+        ("Nike", "Dunk Low", "Off-White Lot 01 of 50", "Collaboration",
+         "DM1602-127", 800),
+        ("Nike", "Dunk Low", "Off-White Lot 09 of 50", "Collaboration",
+         "DM1602-109", 450),
+        ("Nike", "Dunk Low", "Off-White Lot 50 of 50", "Collaboration",
+         "DM1602-001", 600),
+        # --- A Ma Maniere ---
+        ("Jordan", "Air Jordan 2", "A Ma Maniere", "Collaboration",
+         "DO7216-100", 350),
+        # --- Fragment / Travis Scott ---
+        ("Jordan", "Air Jordan 1 Low", "Fragment x Travis Scott", "Collaboration",
+         "DM7866-140", 1800),
+        ("Nike", "Dunk High", "Fragment City Pack Tokyo", "Collaboration",
+         "DJ0382-600", 400),
+        # --- Union LA ---
+        ("Jordan", "Air Jordan 4", "Union Off Noir", "Collaboration",
+         "DC9533-001", 700),
+        ("Jordan", "Air Jordan 4", "Union Guava Ice", "Collaboration",
+         "DC9533-800", 750),
+        ("Nike", "Dunk Low", "Union Passport Pack Pistachio", "Collaboration",
+         "DJ9649-301", 350),
+        # --- Sacai ---
+        ("Nike", "Vaporwaffle", "sacai Sail Gum", "Collaboration",
+         "DD1875-100", 350),
+        ("Nike", "Vaporwaffle", "sacai Black White", "Collaboration",
+         "DD3035-001", 300),
+        ("Nike", "Vaporwaffle", "sacai Tour Yellow", "Collaboration",
+         "DD1875-300", 320),
+        ("Nike", "Blazer Mid", "sacai White Grey", "Collaboration",
+         "BV0072-100", 280),
+        # --- CLOT ---
+        ("Nike", "Dunk Low", "CLOT What The", "Collaboration",
+         "FN0316-999", 350),
+        ("Nike", "Air Force 1 Low", "CLOT Rose Gold Silk", "Collaboration",
+         "CJ5290-600", 600),
+        # --- Eminem ---
+        ("Jordan", "Air Jordan 4", "Eminem Encore", "F&F (Friends & Family)",
+         "314770-001", 15000),
+        ("Jordan", "Air Jordan 3", "Eminem Slim Shady", "F&F (Friends & Family)",
+         "B0771SH", 12000),
+        # --- Dior ---
+        ("Jordan", "Air Jordan 1 High", "Dior", "Collaboration",
+         "CN8607-002", 10000),
+        ("Jordan", "Air Jordan 1 Low", "Dior", "Collaboration",
+         "CN8608-002", 8000),
+        # --- Louis Vuitton x Nike (Virgil Abloh) ---
+        ("Nike", "Air Force 1 Low", "Louis Vuitton White/Green", "Collaboration",
+         "1A9VAX", 7000),
+        ("Nike", "Air Force 1 Low", "Louis Vuitton White/Red", "Collaboration",
+         "1A9VAZ", 7500),
+        ("Nike", "Air Force 1 Low", "Louis Vuitton Monogram", "Collaboration",
+         "1A9VB0", 8000),
+        ("Nike", "Air Force 1 Mid", "Louis Vuitton White/Blue", "Collaboration",
+         "1A9VBG", 9000),
+        ("Nike", "Air Force 1 Mid", "Louis Vuitton Graffiti", "Collaboration",
+         "1A9VBH", 9500),
     ]
 
 
@@ -2782,6 +3005,10 @@ def get_curated_catalog() -> list[tuple]:
     catalog.extend(_nike_sb_classics_r7())
     catalog.extend(_womens_exclusives_r7())
     catalog.extend(_additional_collabs_r7())
+    # --- Expansion Round 8 (~100 new items) ---
+    catalog.extend(_2025_2026_releases_expansion())
+    catalog.extend(_womens_exclusives_expansion())
+    catalog.extend(_collaboration_grails_expansion())
     # Deduplicate by indices (0, 1, 2) (keep first occurrence)
     _seen: set = set()
     _deduped: list = []

@@ -1,7 +1,7 @@
 """
 Curated Fountain Pen Import Pipeline — Collectible Writing Instruments.
 
-Imports a curated catalog of 500+ collectible fountain pens across 18+ subcategories:
+Imports a curated catalog of 1020+ collectible fountain pens across 18+ subcategories:
   Montblanc, Pelikan, Sailor, Pilot, Lamy, Visconti, Aurora, Nakaya,
   Vintage Classics, Japanese Artisan/Maki-e, Cartier, S.T. Dupont,
   Caran d'Ache, Graf von Faber-Castell, Platinum, Parker Modern,
@@ -72,6 +72,9 @@ BRAND_TIER: dict[str, float] = {
     "Faber-Castell": 0.6,
     "Cross": 0.7,
     "Noodler's": 0.4,
+    "Eversharp": 0.7,
+    "Swan": 0.6,
+    "Conway Stewart": 0.7,
 }
 
 # ---------------------------------------------------------------------------
@@ -1786,6 +1789,26 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_visconti_van_gogh_homo_sapiens_variants())
     all_tuples.extend(_aurora_parker_waterman_variants())
 
+    # Expansion Round 7 — Montblanc LEs + additional brands (~230 pens)
+    all_tuples.extend(_montblanc_patron_of_art())
+    all_tuples.extend(_montblanc_writers_edition_le())
+    all_tuples.extend(_montblanc_great_characters_le())
+    all_tuples.extend(_montblanc_high_artistry())
+    all_tuples.extend(_montblanc_meisterstueck_special())
+    all_tuples.extend(_expanded_pelikan_round7())
+    all_tuples.extend(_expanded_sailor_round7())
+    all_tuples.extend(_expanded_pilot_round7())
+    all_tuples.extend(_expanded_nakaya_round7())
+    all_tuples.extend(_expanded_visconti_round7())
+    all_tuples.extend(_expanded_aurora_round7())
+    all_tuples.extend(_expanded_lamy_round7())
+    all_tuples.extend(_expanded_platinum_round7())
+    all_tuples.extend(_expanded_twsbi_round7())
+    all_tuples.extend(_expanded_kaweco_round7())
+    all_tuples.extend(_expanded_parker_waterman_cross_round7())
+    all_tuples.extend(_expanded_vintage_round7())
+    all_tuples.extend(_additional_round7_overflow())
+
     catalog: list[dict] = []
     for (name, brand, model_line, nib_material, nib_size,
          filling_system, price_eur, is_limited, rarity, notes) in all_tuples:
@@ -2245,6 +2268,619 @@ def _expanded_batch_6() -> list[tuple]:
          "converter", 35, True, "Limited Edition", "Rosé gold aluminum, annual LE"),
         ("Varius Rubracer", "Caran d'Ache", "Varius", "18k Gold", "F",
          "converter", 750, False, "Standard", "Red rubber barrel, silver trim, fine nib variant"),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Expansion Round 7 — Montblanc Limited Editions + Additional Brands (~230 pens)
+# ---------------------------------------------------------------------------
+
+
+def _montblanc_patron_of_art() -> list[tuple]:
+    """~30 Montblanc Patron of Art fountain pens — annual series since 1992, 4810-piece and 888-piece editions."""
+    return [
+        # ── Pre-2000 grails ──
+        ("Patron of Art Homage to Gaius Maecenas 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 800, True, "Grail", "1992, first Patron of Art, 4810 pcs"),
+        ("Patron of Art Homage to Gaius Maecenas 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 12000, True, "Grail", "1992, 888-piece LE, inaugural edition"),
+        ("Patron of Art Lorenzo de Medici 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 3000, True, "Grail", "1992, 4810 pcs, most sought-after PoA"),
+        ("Patron of Art Lorenzo de Medici 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 15000, True, "Grail", "1992, 888-piece LE, highest-valued PoA"),
+        ("Patron of Art Octavian 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 2500, True, "Grail", "1993, 4810 pcs, Roman emperor motif"),
+        ("Patron of Art Octavian 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 10000, True, "Grail", "1993, 888-piece LE, elaborate engraving"),
+        ("Patron of Art Louis XIV 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 2200, True, "Grail", "1994, 4810 pcs, Sun King tribute"),
+        ("Patron of Art Louis XIV 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 9000, True, "Grail", "1994, 888-piece LE, gold vermeil"),
+        ("Patron of Art Alexander the Great 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 1800, True, "Grail", "1998, 4810 pcs, Macedonian motifs"),
+        ("Patron of Art Alexander the Great 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 8000, True, "Grail", "1998, 888-piece LE, gold overlay"),
+        # ── 2000-2010 high ──
+        ("Patron of Art Karl der Grosse 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 700, True, "Grail", "2000, 4810 pcs, Charlemagne tribute"),
+        ("Patron of Art Karl der Grosse 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 5000, True, "Grail", "2000, 888-piece LE, elaborate crown motif"),
+        ("Patron of Art Andrew Carnegie 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 600, True, "Limited Edition", "2002, 4810 pcs, steel baron tribute"),
+        ("Patron of Art Andrew Carnegie 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 3500, True, "Limited Edition", "2002, 888-piece LE, gold and steel"),
+        ("Patron of Art Pope Julius II 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 550, True, "Limited Edition", "2005, 4810 pcs, Renaissance patron"),
+        ("Patron of Art Pope Julius II 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 3200, True, "Limited Edition", "2005, 888-piece LE, papal crest"),
+        ("Patron of Art Marquise de Pompadour 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 500, True, "Limited Edition", "2006, 4810 pcs, Rococo style"),
+        ("Patron of Art Marquise de Pompadour 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 3000, True, "Limited Edition", "2006, 888-piece LE, mother of pearl"),
+        ("Patron of Art Max von Oppenheim 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 450, True, "Limited Edition", "2009, 4810 pcs, archaeological motifs"),
+        ("Patron of Art Max von Oppenheim 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 2800, True, "Limited Edition", "2009, 888-piece LE, gold filigree"),
+        ("Patron of Art Henry E. Steinway 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 450, True, "Limited Edition", "2010, 4810 pcs, piano-inspired design"),
+        ("Patron of Art Henry E. Steinway 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 2500, True, "Limited Edition", "2010, 888-piece LE, ebony and ivory"),
+        # ── 2011-2023 ──
+        ("Patron of Art Zetkin 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 450, True, "Limited Edition", "2011, 4810 pcs, Art Nouveau motifs"),
+        ("Patron of Art Joseph II 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 500, True, "Limited Edition", "2013, 4810 pcs, Habsburg tribute"),
+        ("Patron of Art Joseph II 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 2500, True, "Limited Edition", "2013, 888-piece LE, ornate engraving"),
+        ("Patron of Art Peggy Guggenheim 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 500, True, "Limited Edition", "2016, 4810 pcs, Venetian art deco"),
+        ("Patron of Art Peggy Guggenheim 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 2200, True, "Limited Edition", "2016, 888-piece LE, gold and lapis"),
+        ("Patron of Art Victoria 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 500, True, "Limited Edition", "2017, 4810 pcs, Victorian era tribute"),
+        ("Patron of Art Victoria 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 2200, True, "Limited Edition", "2017, 888-piece LE, amethyst inlay"),
+        ("Patron of Art Napoleon Bonaparte 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 550, True, "Limited Edition", "2021, 4810 pcs, imperial eagle motif"),
+        ("Patron of Art Napoleon Bonaparte 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 2500, True, "Limited Edition", "2021, 888-piece LE, gold overlay"),
+        ("Patron of Art Scipione Borghese 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 550, True, "Limited Edition", "2022, 4810 pcs, Roman Baroque motifs"),
+        ("Patron of Art Scipione Borghese 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 2300, True, "Limited Edition", "2022, 888-piece LE, marble inlay"),
+        ("Patron of Art Homage to Albert 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 2200, True, "Limited Edition", "2023, 888-piece LE, Victorian flair"),
+    ]
+
+
+def _montblanc_writers_edition_le() -> list[tuple]:
+    """~20 Montblanc Writers Edition LE fountain pens — ones not already in catalog."""
+    return [
+        ("Writers Edition Voltaire", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 2000, True, "Grail", "1995 LE, French Enlightenment tribute"),
+        ("Writers Edition Alexandre Dumas", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 1800, True, "Grail", "1996 LE, Three Musketeers motif"),
+        ("Writers Edition Fyodor Dostoevsky", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 1200, True, "Limited Edition", "1997 LE, Russian literary tribute"),
+        ("Writers Edition Edgar Allan Poe", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 2500, True, "Grail", "1998 LE, raven clip, dark lacquer"),
+        ("Writers Edition Jules Verne", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 1000, True, "Limited Edition", "2003 LE, submarine porthole cap"),
+        ("Writers Edition Franz Kafka", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 900, True, "Limited Edition", "2004 LE, metamorphosis-inspired design"),
+        ("Writers Edition Miguel de Cervantes", "Montblanc", "Writers Edition", "18k Gold", "F",
+         "piston", 800, True, "Limited Edition", "2005 LE, Don Quixote motif"),
+        ("Writers Edition Virginia Woolf", "Montblanc", "Writers Edition", "18k Gold", "F",
+         "piston", 800, True, "Limited Edition", "2006 LE, bloomsbury-inspired design"),
+        ("Writers Edition Oscar Wilde", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 550, True, "Limited Edition", "2016 LE, green carnation clip"),
+        ("Writers Edition Honoré de Balzac", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 500, True, "Limited Edition", "2013 LE, Comédie Humaine tribute"),
+        ("Writers Edition Carlo Collodi", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 500, True, "Limited Edition", "2011 LE, Pinocchio-inspired design"),
+        ("Writers Edition Jonathan Swift", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 480, True, "Limited Edition", "2012 LE, Gulliver motif"),
+        ("Writers Edition F. Scott Fitzgerald", "Montblanc", "Writers Edition", "18k Gold", "B",
+         "piston", 450, True, "Limited Edition", "2023 LE, Jazz Age art deco"),
+    ]
+
+
+def _montblanc_great_characters_le() -> list[tuple]:
+    """~12 Montblanc Great Characters LE fountain pens — additions not already in catalog."""
+    return [
+        ("Great Characters Albert Einstein", "Montblanc", "Great Characters", "18k Gold", "M",
+         "piston", 900, True, "Limited Edition", "2012 LE, E=mc² engraving, grey lacquer"),
+        ("Great Characters James Dean", "Montblanc", "Great Characters", "18k Gold", "M",
+         "piston", 650, True, "Limited Edition", "2018 LE, rebel red lacquer"),
+        ("Great Characters Mahatma Gandhi", "Montblanc", "Great Characters", "18k Gold", "M",
+         "piston", 800, True, "Limited Edition", "2009 LE, cotton-white, mandarin orange"),
+        ("Great Characters John Lennon", "Montblanc", "Great Characters", "18k Gold", "M",
+         "piston", 900, True, "Limited Edition", "2010 LE, peace symbol, white lacquer"),
+        ("Great Characters Che Guevara", "Montblanc", "Great Characters", "18k Gold", "M",
+         "piston", 600, True, "Limited Edition", "Revolutionary red lacquer, star clip"),
+        ("Great Characters Alfred Hitchcock", "Montblanc", "Great Characters", "18k Gold", "M",
+         "piston", 700, True, "Limited Edition", "2014 LE, Birds silhouette, suspense design"),
+        ("Great Characters Marilyn Monroe", "Montblanc", "Great Characters", "18k Gold", "F",
+         "piston", 500, True, "Limited Edition", "2023 LE, pearl white lacquer, pink accents"),
+        ("Great Characters Napoleon LE", "Montblanc", "Great Characters", "18k Gold", "M",
+         "piston", 750, True, "Limited Edition", "2021 LE, tricorne-inspired cap"),
+        ("Great Characters Marco Polo", "Montblanc", "Great Characters", "18k Gold", "M",
+         "piston", 650, True, "Limited Edition", "Silk Road motif, jade lacquer"),
+    ]
+
+
+def _montblanc_high_artistry() -> list[tuple]:
+    """10 Montblanc High Artistry fountain pens — ultra-premium collector pieces."""
+    return [
+        ("High Artistry Homage to Hannibal Barca", "Montblanc", "High Artistry", "18k Gold", "M",
+         "piston", 25000, True, "Grail", "Skeleton pen, LE 86, Carthaginian warrior motif"),
+        ("High Artistry Tribute to the Taj Mahal", "Montblanc", "High Artistry", "18k Gold", "M",
+         "piston", 30000, True, "Grail", "LE 65, white gold, diamond-set, Mughal art"),
+        ("High Artistry Celebration of the Silk Road", "Montblanc", "High Artistry", "18k Gold", "M",
+         "piston", 20000, True, "Grail", "LE 88, lapis lazuli, jade, gold overlay"),
+        ("High Artistry Homage to Vincent van Gogh", "Montblanc", "High Artistry", "18k Gold", "M",
+         "piston", 15000, True, "Grail", "LE 90, Starry Night maki-e, gold filigree"),
+        ("High Artistry Meisterstueck Solitaire Skeleton 149", "Montblanc", "High Artistry", "18k Gold", "M",
+         "piston", 5000, True, "Grail", "Skeletonized 149, visible mechanism"),
+        ("High Artistry Around the World in 80 Days", "Montblanc", "High Artistry", "18k Gold", "M",
+         "piston", 18000, True, "Grail", "LE 80, Jules Verne tribute, globe motif"),
+        ("High Artistry Dragon LE 888", "Montblanc", "High Artistry", "18k Gold", "M",
+         "piston", 8000, True, "Grail", "888-piece LE, dragon engraving, jade accent"),
+        ("High Artistry Inca LE 125", "Montblanc", "High Artistry", "18k Gold", "M",
+         "piston", 12000, True, "Grail", "LE 125, Peruvian gold motifs, turquoise"),
+        ("High Artistry Zodiac LE 88", "Montblanc", "High Artistry", "18k Gold", "M",
+         "piston", 10000, True, "Grail", "LE 88, celestial engraving, mother of pearl"),
+        ("High Artistry Venetian Art LE 81", "Montblanc", "High Artistry", "18k Gold", "M",
+         "piston", 9000, True, "Grail", "LE 81, Murano glass-inspired, gold leaf"),
+    ]
+
+
+def _montblanc_meisterstueck_special() -> list[tuple]:
+    """10 Montblanc Meisterstück Special Edition fountain pens."""
+    return [
+        ("Meisterstueck 149 Diamond LE", "Montblanc", "Meisterstueck", "18k Gold", "M",
+         "piston", 4000, True, "Grail", "Diamond-set cap band, limited production"),
+        ("Meisterstueck 149 Solitaire Gold & Black", "Montblanc", "Meisterstueck", "18k Gold", "M",
+         "piston", 1200, False, "Limited Edition", "Gold-plated barrel, black resin cap"),
+        ("Meisterstueck 149 Solitaire Doué", "Montblanc", "Meisterstueck", "18k Gold", "M",
+         "piston", 800, False, "Limited Edition", "Sterling silver lower barrel, black cap"),
+        ("Meisterstueck 149 Solitaire Blue Hour", "Montblanc", "Meisterstueck", "18k Gold", "M",
+         "piston", 900, True, "Limited Edition", "Blue lacquer with diamond pattern"),
+        ("Meisterstueck 149 Platinum Line", "Montblanc", "Meisterstueck", "18k Gold", "M",
+         "piston", 600, False, "Standard", "Platinum-coated fittings, classic black"),
+        ("Meisterstueck 149 Red Gold", "Montblanc", "Meisterstueck", "18k Gold", "M",
+         "piston", 1000, False, "Limited Edition", "Rose gold fittings, warm tone"),
+        ("Meisterstueck LeGrand Solitaire Carbon Steel", "Montblanc", "Meisterstueck", "18k Gold", "M",
+         "piston", 700, False, "Limited Edition", "Carbon fiber barrel, steel fittings"),
+        ("Meisterstueck Around the World in 80 Days LeGrand", "Montblanc", "Meisterstueck", "18k Gold", "M",
+         "piston", 550, True, "Limited Edition", "Jules Verne tribute, brown lacquer"),
+        ("Meisterstueck Great Masters Calligraphy Solitaire", "Montblanc", "Meisterstueck", "18k Gold", "M",
+         "piston", 800, True, "Limited Edition", "Calligraphy-engraved barrel"),
+        ("Meisterstueck 100th Anniversary 2006 LE", "Montblanc", "Meisterstueck", "18k Gold", "M",
+         "piston", 3000, True, "Grail", "2006 centennial edition, diamond-set, 18k trim"),
+    ]
+
+
+def _expanded_pelikan_round7() -> list[tuple]:
+    """20 Pelikan fountain pens — Souveran, Toledo, Raden, special editions."""
+    return [
+        ("Souveraen M800 Green-Black", "Pelikan", "Souveraen", "18k Gold", "F",
+         "piston", 550, False, "Standard", "Classic green stripes, fine nib variant"),
+        ("Souveraen M800 Brown-Black", "Pelikan", "Souveraen", "18k Gold", "B",
+         "piston", 600, True, "Limited Edition", "Special edition brown tortoiseshell"),
+        ("Souveraen M800 Burnt Orange", "Pelikan", "Souveraen", "18k Gold", "M",
+         "piston", 750, True, "Limited Edition", "Special edition, autumn colorway"),
+        ("Souveraen M1000 Green-Black", "Pelikan", "Souveraen", "18k Gold", "M",
+         "piston", 750, False, "Standard", "Oversized, green stripes"),
+        ("Toledo M710", "Pelikan", "Toledo", "18k Gold", "M",
+         "piston", 800, False, "Standard", "Hand-engraved gold-plated barrel"),
+        ("M800 Raden Royal Gold", "Pelikan", "Souveraen", "18k Gold", "M",
+         "piston", 1500, True, "Limited Edition", "Raden mother-of-pearl, gold stripes"),
+        ("M800 Raden Royal Platinum", "Pelikan", "Souveraen", "18k Gold", "F",
+         "piston", 1500, True, "Limited Edition", "Raden mother-of-pearl, silver stripes"),
+        ("M600 Souveraen Red-Black", "Pelikan", "Souveraen", "14k Gold", "M",
+         "piston", 400, False, "Standard", "Red stripes, classic mid-size"),
+        ("M600 Souveraen Tortoiseshell Red", "Pelikan", "Souveraen", "14k Gold", "F",
+         "piston", 450, True, "Limited Edition", "Vivid red tortoiseshell pattern"),
+        ("M400 Souveraen Blue-Black", "Pelikan", "Souveraen", "14k Gold", "EF",
+         "piston", 320, False, "Standard", "Compact size, blue stripes"),
+        ("M800 Art Collection Rock", "Pelikan", "Art Collection", "18k Gold", "B",
+         "piston", 900, True, "Limited Edition", "2020 LE, volcanic red-black resin"),
+        ("M800 Art Collection Ocean", "Pelikan", "Art Collection", "18k Gold", "M",
+         "piston", 880, True, "Limited Edition", "2019 LE, deep ocean blue-green resin"),
+        ("M805 Stresemann Anthracite", "Pelikan", "Souveraen", "18k Gold", "M",
+         "piston", 600, True, "Limited Edition", "Pinstripe anthracite, silver trim"),
+        ("M205 Star Ruby", "Pelikan", "Classic", "Steel", "F",
+         "piston", 140, True, "Limited Edition", "Red transparent demonstrator"),
+        ("M205 Aquamarine", "Pelikan", "Classic", "Steel", "M",
+         "piston", 140, True, "Limited Edition", "Light blue transparent"),
+        ("Souveraen M800 Golf Edition Green", "Pelikan", "Souveraen", "18k Gold", "M",
+         "piston", 700, True, "Limited Edition", "Golf-green resin, club clip"),
+        ("M600 Souveraen Turquoise", "Pelikan", "Souveraen", "14k Gold", "M",
+         "piston", 420, True, "Limited Edition", "Vibrant turquoise stripes"),
+        ("M1000 Black-Green", "Pelikan", "Souveraen", "18k Gold", "B",
+         "piston", 780, False, "Standard", "Full-size, green stripes, broad nib"),
+        ("Toledo M915 Grand", "Pelikan", "Toledo", "18k Gold", "M",
+         "piston", 3500, True, "Limited Edition", "Grand Toledo, full-body engraving"),
+        ("Souveraen M600 Vibrant Blue", "Pelikan", "Souveraen", "14k Gold", "M",
+         "piston", 420, True, "Limited Edition", "Special edition bright blue stripes"),
+    ]
+
+
+def _expanded_sailor_round7() -> list[tuple]:
+    """20 Sailor fountain pens — KoP, Pro Gear, 1911, Wancher collabs, Shikiori."""
+    return [
+        ("King of Pen ST Demonstrator", "Sailor", "King of Pen", "21k Gold", "M",
+         "converter", 900, True, "Limited Edition", "Transparent KoP, oversized"),
+        ("Pro Gear Black Luster", "Sailor", "Pro Gear", "21k Gold", "M",
+         "converter", 450, True, "Limited Edition", "Matte black ion-plated trim"),
+        ("Pro Gear Imperial Black", "Sailor", "Pro Gear", "21k Gold", "B",
+         "converter", 500, True, "Limited Edition", "All-black rhodium trim"),
+        ("Pro Gear Slim Shikiori Ayanami", "Sailor", "Pro Gear Slim", "14k Gold", "MF",
+         "converter", 280, True, "Limited Edition", "Four Seasons ocean wave"),
+        ("Pro Gear Slim Shikiori Haruzora", "Sailor", "Pro Gear Slim", "14k Gold", "M",
+         "converter", 280, True, "Limited Edition", "Four Seasons spring sky"),
+        ("Pro Gear Slim Shikiori Shimoyo", "Sailor", "Pro Gear Slim", "14k Gold", "F",
+         "converter", 280, True, "Limited Edition", "Four Seasons frost night"),
+        ("1911 Large Stormy Sea", "Sailor", "1911", "21k Gold", "M",
+         "converter", 500, True, "Limited Edition", "Deep teal resin, gold trim"),
+        ("Pro Gear x Wancher Stardust Galaxy", "Sailor", "Pro Gear", "21k Gold", "MF",
+         "converter", 600, True, "Limited Edition", "Wancher exclusive, galaxy sparkle"),
+        ("Pro Gear x Wancher Turquoise Blue", "Sailor", "Pro Gear", "21k Gold", "M",
+         "converter", 550, True, "Limited Edition", "Wancher exclusive, vivid turquoise"),
+        ("1911 Standard Fresca Blue", "Sailor", "1911", "14k Gold", "MF",
+         "converter", 260, True, "Limited Edition", "Ink-studio matching pen"),
+        ("Pro Gear Slim Mini Gold Transparent", "Sailor", "Pro Gear Slim", "14k Gold", "F",
+         "converter", 220, True, "Limited Edition", "Compact transparent, gold trim"),
+        ("1911 Large Realo Ocean", "Sailor", "1911", "21k Gold", "M",
+         "piston", 650, True, "Limited Edition", "Piston-fill 1911, ocean blue"),
+        ("King of Pen Bespoke Ama-Iro", "Sailor", "Bespoke", "21k Gold", "M",
+         "converter", 1400, True, "Limited Edition", "Wancher exclusive, sky blue urushi"),
+        ("Pro Gear Cocktail Series Mojito", "Sailor", "Pro Gear", "21k Gold", "MF",
+         "converter", 450, True, "Limited Edition", "Cocktail series, lime green"),
+        ("Pro Gear Cocktail Series Old Fashioned", "Sailor", "Pro Gear", "21k Gold", "M",
+         "converter", 450, True, "Limited Edition", "Cocktail series, amber gold"),
+        ("1911 Profit Standard Demonstrator", "Sailor", "1911", "14k Gold", "F",
+         "converter", 250, False, "Standard", "Clear body demonstrator"),
+        ("Pro Gear Fire Special Edition", "Sailor", "Pro Gear", "21k Gold", "M",
+         "converter", 500, True, "Limited Edition", "Flame red resin, rhodium trim"),
+        ("King of Pen Bespoke Ebonite Aka", "Sailor", "Bespoke", "21k Gold", "B",
+         "converter", 1600, True, "Limited Edition", "Red ebonite, urushi accent"),
+        ("Pro Gear Slim White Russian", "Sailor", "Pro Gear Slim", "14k Gold", "MF",
+         "converter", 300, True, "Limited Edition", "Cocktail series, cream/coffee"),
+        ("1911 Large Naginata Emperor", "Sailor", "1911", "21k Gold", "Naginata Emperor",
+         "converter", 1200, False, "Standard", "Triple-point specialty nib, rare"),
+    ]
+
+
+def _expanded_pilot_round7() -> list[tuple]:
+    """15 Pilot fountain pens — Namiki Emperor, Yukari Royale, Custom, VP LE."""
+    return [
+        ("Namiki Emperor Vermillion", "Pilot", "Namiki Emperor", "18k Gold", "M",
+         "converter", 8000, True, "Limited Edition", "Large maki-e, vermillion urushi"),
+        ("Namiki Yukari Royale Pine", "Pilot", "Namiki Yukari Royale", "18k Gold", "M",
+         "converter", 4000, True, "Limited Edition", "Togidashi maki-e pine motif"),
+        ("Custom 823 Clear", "Pilot", "Custom", "14k Gold", "B",
+         "vacuum", 320, False, "Standard", "Clear demonstrator, vacuum fill"),
+        ("Custom 743 Black", "Pilot", "Custom", "14k Gold", "M",
+         "converter", 280, False, "Standard", "Size 15 nib, black resin"),
+        ("Custom Heritage 912 FA", "Pilot", "Custom Heritage", "14k Gold", "FA",
+         "converter", 250, False, "Standard", "Falcon soft nib, popular flex"),
+        ("Custom Heritage 912 PO", "Pilot", "Custom Heritage", "14k Gold", "PO",
+         "converter", 250, False, "Standard", "Posting nib, ultra-fine writing"),
+        ("Vanishing Point LE Tropical Turquoise", "Pilot", "Vanishing Point", "18k Gold", "M",
+         "converter", 250, True, "Limited Edition", "Annual LE color, turquoise body"),
+        ("Vanishing Point LE Crimson Sunrise", "Pilot", "Vanishing Point", "18k Gold", "F",
+         "converter", 250, True, "Limited Edition", "Annual LE, red-gold gradient"),
+        ("Vanishing Point Carbonesque", "Pilot", "Vanishing Point", "18k Gold", "M",
+         "converter", 280, True, "Limited Edition", "Carbon fiber weave pattern"),
+        ("Justus 95 Black", "Pilot", "Justus", "14k Gold", "M",
+         "converter", 350, False, "Standard", "Adjustable nib flexibility"),
+        ("Namiki Emperor Chrysanthemum", "Pilot", "Namiki Emperor", "18k Gold", "B",
+         "converter", 9500, True, "Limited Edition", "Taka maki-e chrysanthemum"),
+        ("Custom Urushi Blue", "Pilot", "Custom Urushi", "18k Gold", "M",
+         "converter", 850, False, "Standard", "Blue urushi lacquer, 30-layer"),
+        ("Custom 845 Black", "Pilot", "Custom", "18k Gold", "M",
+         "converter", 450, False, "Standard", "Ebonite feed, large size"),
+        ("Namiki Falcon Resin Black", "Pilot", "Namiki", "14k Gold (Soft)", "M",
+         "converter", 180, False, "Standard", "Resin barrel, semi-flex nib"),
+        ("Vanishing Point Matte Blue", "Pilot", "Vanishing Point", "18k Gold", "F",
+         "converter", 220, False, "Standard", "Matte blue finish, retractable"),
+    ]
+
+
+def _expanded_nakaya_round7() -> list[tuple]:
+    """10 Nakaya fountain pens — various models and urushi finishes."""
+    return [
+        ("Dorsal Fin Version 2 Heki-Tamenuri", "Nakaya", "Dorsal Fin", "14k Gold", "M",
+         "converter", 1300, False, "Standard", "Green-tinged tamenuri urushi"),
+        ("Naka-ai Writer Aka-Tamenuri", "Nakaya", "Naka-ai", "14k Gold", "F",
+         "converter", 1100, False, "Standard", "Red tamenuri, capped writer"),
+        ("Portable Writer Aka-Tamenuri", "Nakaya", "Portable", "14k Gold", "M",
+         "converter", 950, False, "Standard", "Vermillion tamenuri, pocket size"),
+        ("Cigar Long Kuro-Roiro", "Nakaya", "Cigar", "14k Gold", "M",
+         "converter", 1000, False, "Standard", "Deep mirror-black roiro urushi"),
+        ("Piccolo Long Cigar Kuro-Tamenuri", "Nakaya", "Piccolo", "14k Gold", "F",
+         "converter", 800, False, "Standard", "Black tamenuri, compact body"),
+        ("Decapod Twist Midori-Tamenuri", "Nakaya", "Decapod", "14k Gold", "M",
+         "converter", 1500, False, "Standard", "Green tamenuri, faceted twist"),
+        ("Dorsal Fin Version 1 Chinkin Pine", "Nakaya", "Dorsal Fin", "14k Gold", "M",
+         "converter", 2500, True, "Limited Edition", "Chinkin hand-engraved pine motif"),
+        ("Naka-ai Writer Maki-e Crane", "Nakaya", "Naka-ai", "14k Gold", "M",
+         "converter", 3000, True, "Limited Edition", "Custom maki-e crane artwork"),
+        ("Portable Writer Chinkin Wave", "Nakaya", "Portable", "14k Gold", "F",
+         "converter", 2200, True, "Limited Edition", "Chinkin wave pattern, pocket size"),
+        ("Long Cigar Shu-Kuro", "Nakaya", "Cigar", "14k Gold", "B",
+         "converter", 1050, False, "Standard", "Deep red-black layered urushi"),
+    ]
+
+
+def _expanded_visconti_round7() -> list[tuple]:
+    """10 Visconti fountain pens — Homo Sapiens, Medici, Opera Master, Rembrandt."""
+    return [
+        ("Homo Sapiens Lava Magma", "Visconti", "Homo Sapiens", "Palladium", "M",
+         "vacuum", 800, True, "Limited Edition", "Red lava, magma resin accents"),
+        ("Homo Sapiens Crystal Swirl", "Visconti", "Homo Sapiens", "Palladium", "F",
+         "vacuum", 950, True, "Limited Edition", "Crystal demonstrator, swirl pattern"),
+        ("Homo Sapiens Bronze Maori", "Visconti", "Homo Sapiens", "Palladium", "B",
+         "vacuum", 850, True, "Limited Edition", "Maori tribal engraving on bronze"),
+        ("Medici Fountain Pen", "Visconti", "Medici", "18k Gold", "M",
+         "vacuum", 1500, True, "Limited Edition", "Florentine design, gold accents"),
+        ("Opera Master Corsica", "Visconti", "Opera Master", "18k Gold", "M",
+         "vacuum", 1300, True, "Limited Edition", "Corsican celluloid, vivid patterns"),
+        ("Rembrandt Van Gogh Irises", "Visconti", "Van Gogh", "Steel", "M",
+         "converter", 300, False, "Standard", "Blue iris-inspired resin"),
+        ("Rembrandt Van Gogh Sunflowers", "Visconti", "Van Gogh", "Steel", "F",
+         "converter", 300, False, "Standard", "Yellow sunflower resin"),
+        ("Wall Street Grey", "Visconti", "Wall Street", "Palladium", "M",
+         "vacuum", 580, False, "Standard", "Grey pinstripe celluloid"),
+        ("Opera Master Le Stagioni", "Visconti", "Opera Master", "18k Gold", "M",
+         "vacuum", 1200, True, "Limited Edition", "Four Seasons celluloid"),
+        ("Homo Sapiens Elegance Oversize", "Visconti", "Homo Sapiens", "Palladium", "B",
+         "vacuum", 900, False, "Standard", "Oversize barrel, black lava"),
+    ]
+
+
+def _expanded_aurora_round7() -> list[tuple]:
+    """10 Aurora fountain pens — 88, Optima, Minerali, Talentum, Ipsilon."""
+    return [
+        ("Optima Flex Blue", "Aurora", "Optima", "18k Gold", "F",
+         "piston", 600, False, "Standard", "Flexible nib, blue Auroloide"),
+        ("88 Sigaro Arancio", "Aurora", "88", "18k Gold", "M",
+         "piston", 650, True, "Limited Edition", "Orange cigar shape, annual LE"),
+        ("Minerali Amber", "Aurora", "Minerali", "Steel", "M",
+         "piston", 250, False, "Standard", "Mineral-inspired resin, entry Italian pen"),
+        ("Minerali Emerald", "Aurora", "Minerali", "Steel", "F",
+         "piston", 250, False, "Standard", "Emerald green mineral resin"),
+        ("Talentum Black-Rose Gold", "Aurora", "Talentum", "14k Gold", "M",
+         "converter", 300, False, "Standard", "Rose gold trim, modern style"),
+        ("Ipsilon Quadra Green", "Aurora", "Ipsilon", "Steel", "M",
+         "converter", 100, False, "Standard", "Square barrel design, entry model"),
+        ("Optima 365 Tortoiseshell", "Aurora", "Optima", "18k Gold", "M",
+         "piston", 700, True, "Limited Edition", "365-piece LE, brown tortoiseshell"),
+        ("88 Nebulosa Blue", "Aurora", "88", "18k Gold", "B",
+         "piston", 700, True, "Limited Edition", "Nebula-blue resin, annual edition"),
+        ("Internazionale Limited Art Deco", "Aurora", "Internazionale", "18k Gold", "M",
+         "piston", 800, True, "Limited Edition", "Art Deco-inspired, geometric pattern"),
+        ("Optima Mare Blue", "Aurora", "Optima", "18k Gold", "F",
+         "piston", 580, True, "Limited Edition", "Sea-blue Auroloide, limited run"),
+    ]
+
+
+def _expanded_lamy_round7() -> list[tuple]:
+    """10 Lamy fountain pens — 2000, Dialog 3, Safari LE, Al-Star LE, Studio, Imporium."""
+    return [
+        ("2000 Taxus Brown", "Lamy", "2000", "14k Gold", "M",
+         "piston", 450, True, "Limited Edition", "2024 LE, warm brown Makrolon"),
+        ("Dialog 3 Piano White", "Lamy", "Dialog", "14k Gold", "F",
+         "converter", 400, False, "Standard", "White lacquer, retractable nib"),
+        ("Safari Violet Blackberry", "Lamy", "Safari", "Steel", "F",
+         "converter", 75, True, "Limited Edition", "2024 annual color"),
+        ("Safari Candy Aquamarine", "Lamy", "Safari", "Steel", "M",
+         "converter", 70, True, "Limited Edition", "2020 annual color, pastel aqua"),
+        ("Al-Star Pacific Blue", "Lamy", "Al-Star", "Steel", "M",
+         "converter", 45, True, "Limited Edition", "2017 annual aluminum color"),
+        ("Studio Olive Silver", "Lamy", "Studio", "Steel", "F",
+         "converter", 100, False, "Standard", "Olive green lacquer, propeller clip"),
+        ("Imporium Black-Gold", "Lamy", "Imporium", "14k Gold", "M",
+         "converter", 500, False, "Standard", "Premium line, matt black PVD, gold accents"),
+        ("Safari All-Black Ncode", "Lamy", "Safari", "Steel", "M",
+         "converter", 90, True, "Limited Edition", "2019 stealth matte edition"),
+        ("2000 Blue Bauhaus", "Lamy", "2000", "14k Gold", "F",
+         "piston", 500, True, "Limited Edition", "100th Bauhaus anniversary, blue Makrolon"),
+        ("Al-Star Cosmic Black", "Lamy", "Al-Star", "Steel", "M",
+         "converter", 45, True, "Limited Edition", "2022 annual color, sparkle black"),
+    ]
+
+
+def _expanded_platinum_round7() -> list[tuple]:
+    """8 Platinum fountain pens — 3776 Century variants, President, Izumo."""
+    return [
+        ("3776 Century Nice Lavande", "Platinum", "#3776 Century", "14k Gold", "M",
+         "converter", 200, True, "Limited Edition", "Nice series, lavender resin"),
+        ("3776 Century Chartres Blue", "Platinum", "#3776 Century", "14k Gold", "M",
+         "converter", 180, False, "Standard", "Cathedral stained-glass blue"),
+        ("3776 Century Bourgogne", "Platinum", "#3776 Century", "14k Gold", "F",
+         "converter", 180, False, "Standard", "Burgundy red, gold trim"),
+        ("3776 Century Black Diamond", "Platinum", "#3776 Century", "14k Gold", "M",
+         "converter", 180, False, "Standard", "Translucent black, rhodium trim"),
+        ("3776 Century Shape of Heart Burgundy", "Platinum", "#3776 Century", "14k Gold", "B",
+         "converter", 200, True, "Limited Edition", "Heart-shaped barrel profile"),
+        ("President Black-Gold", "Platinum", "President", "18k Gold", "M",
+         "converter", 500, False, "Standard", "Oversize, 18k nib, gold accents"),
+        ("Izumo Tamenuri Akame", "Platinum", "Izumo", "18k Gold", "M",
+         "converter", 1600, False, "Standard", "Red-eye tamenuri, Izumo region lacquer"),
+        ("3776 Century Fuji Shizuku", "Platinum", "#3776 Century", "14k Gold", "F",
+         "converter", 200, True, "Limited Edition", "Mt Fuji-inspired translucent blue"),
+    ]
+
+
+def _expanded_twsbi_round7() -> list[tuple]:
+    """8 TWSBI fountain pens — ECO, Diamond 580, Precision, VAC700R, Mini AL."""
+    return [
+        ("ECO Clear", "TWSBI", "ECO", "Steel", "M",
+         "piston", 35, False, "Standard", "Transparent piston filler, high capacity"),
+        ("ECO Jade Green", "TWSBI", "ECO", "Steel", "F",
+         "piston", 35, True, "Limited Edition", "Limited jade green demonstrator"),
+        ("ECO Smoke Rose Gold", "TWSBI", "ECO", "Steel", "M",
+         "piston", 40, True, "Limited Edition", "Smoke grey, rose gold trim"),
+        ("Diamond 580 ALR Nickel Grey", "TWSBI", "Diamond 580", "Steel", "M",
+         "piston", 65, False, "Standard", "Aluminum grip, nickel grey"),
+        ("Diamond 580 AL Lapis Blue", "TWSBI", "Diamond 580", "Steel", "F",
+         "piston", 70, True, "Limited Edition", "Aluminum blue, demonstrator"),
+        ("Precision Gunmetal", "TWSBI", "Precision", "Steel", "M",
+         "piston", 75, False, "Standard", "Fixed-nib, CNC-machined body"),
+        ("VAC700R Clear", "TWSBI", "VAC700R", "Steel", "B",
+         "vacuum", 70, False, "Standard", "Vacuum-fill, huge ink capacity"),
+        ("Mini AL Silver", "TWSBI", "Mini AL", "Steel", "F",
+         "piston", 60, False, "Standard", "Compact aluminum, piston-fill"),
+    ]
+
+
+def _expanded_kaweco_round7() -> list[tuple]:
+    """7 Kaweco fountain pens — Sport, Special, Student, Dia2."""
+    return [
+        ("Sport Classic Navy", "Kaweco", "Sport", "Steel", "M",
+         "converter", 30, False, "Standard", "Pocket pen icon, snap cap"),
+        ("AL Sport Anthracite", "Kaweco", "Sport", "Steel", "F",
+         "converter", 80, False, "Standard", "Aluminum body, pocket size"),
+        ("Brass Sport Raw", "Kaweco", "Sport", "Steel", "M",
+         "converter", 90, False, "Standard", "Raw brass, patina over time"),
+        ("Steel Sport", "Kaweco", "Sport", "Steel", "M",
+         "converter", 120, False, "Standard", "Stainless steel, weighty pocket pen"),
+        ("Special Black Long", "Kaweco", "Special", "Steel", "F",
+         "converter", 50, False, "Standard", "Aluminum, minimalist octagonal"),
+        ("Student Transparent", "Kaweco", "Student", "Steel", "M",
+         "converter", 35, False, "Standard", "Full-size demonstrator"),
+        ("Dia2 Black Chrome", "Kaweco", "Dia2", "Steel", "M",
+         "converter", 150, False, "Standard", "Classic design, chrome accents"),
+    ]
+
+
+def _expanded_parker_waterman_cross_round7() -> list[tuple]:
+    """7 Parker, Waterman, and Cross fountain pens."""
+    return [
+        ("Duofold Centennial Big Red", "Parker", "Duofold", "18k Gold", "M",
+         "converter", 550, False, "Standard", "Classic orange-red, oversized"),
+        ("Parker 51 Premium Black GT", "Parker", "51", "18k Gold", "F",
+         "converter", 350, False, "Standard", "2020 reissue, gold-trimmed hooded nib"),
+        ("Waterman Edson Ruby Red", "Waterman", "Edson", "18k Gold", "M",
+         "converter", 700, False, "Standard", "Flagship, ruby red lacquer"),
+        ("Waterman Exception Slim Black GT", "Waterman", "Exception", "18k Gold", "F",
+         "converter", 400, False, "Standard", "Slim elegance, gold trim"),
+        ("Cross Peerless 125 Medalist", "Cross", "Peerless", "18k Gold", "M",
+         "converter", 600, False, "Standard", "Flagship Cross, 23k gold plate"),
+        ("Parker Sonnet Black Lacquer GT", "Parker", "Sonnet", "18k Gold", "M",
+         "converter", 250, False, "Standard", "Mid-range classic, gold nib"),
+        ("Waterman Carène Black Sea GT", "Waterman", "Carène", "18k Gold", "F",
+         "converter", 350, False, "Standard", "Boat-shaped section, inlaid nib"),
+    ]
+
+
+def _expanded_vintage_round7() -> list[tuple]:
+    """15 vintage fountain pens — Parker, Sheaffer, Esterbrook, Eversharp, Swan, Mabie Todd, Conway Stewart."""
+    return [
+        ("Parker Vacumatic Major Golden Pearl", "Parker", "Vacumatic", "14k Gold", "F",
+         "vacuum", 400, False, "Exclusive", "1940s laminated golden celluloid"),
+        ("Parker Vacumatic Debutante Azure", "Parker", "Vacumatic", "14k Gold", "F",
+         "vacuum", 300, False, "Exclusive", "1930s small size, azure blue pearl"),
+        ("Parker 51 Aerometric Teal", "Parker", "51", "14k Gold", "F",
+         "aerometric", 280, False, "Exclusive", "1950s, teal barrel, lustraloy cap"),
+        ("Sheaffer Snorkel Sentinel Burgundy", "Sheaffer", "Snorkel", "14k Gold", "F",
+         "snorkel", 300, False, "Exclusive", "1950s, burgundy barrel, pneumatic fill"),
+        ("Sheaffer PFM V Black", "Sheaffer", "PFM", "14k Gold", "M",
+         "snorkel", 600, False, "Exclusive", "Pen for Men V, gold-filled cap"),
+        ("Esterbrook J Model Copper", "Esterbrook", "J Series", "Steel", "M",
+         "lever", 80, False, "Exclusive", "1940s-50s, interchangeable nib unit"),
+        ("Esterbrook SJ Green", "Esterbrook", "SJ Series", "Steel", "F",
+         "lever", 70, False, "Exclusive", "Short model, green celluloid"),
+        ("Eversharp Skyline Blue", "Eversharp", "Skyline", "14k Gold", "M",
+         "lever", 250, False, "Exclusive", "1940s Loewy design, blue stripes"),
+        ("Eversharp Skyline Executive Green", "Eversharp", "Skyline", "14k Gold", "F",
+         "lever", 300, False, "Exclusive", "1940s, dark green, gold derby cap"),
+        ("Swan Eternal 46 Black", "Swan", "Eternal", "14k Gold", "F",
+         "lever", 200, False, "Exclusive", "1930s, Mabie Todd Swan brand"),
+        ("Mabie Todd Swan SM200 Red", "Swan", "SM200", "14k Gold", "M",
+         "lever", 250, False, "Exclusive", "1930s, red hard rubber, flexible nib"),
+        ("Conklin Crescent Filler Black Chased", "Conklin", "Crescent", "14k Gold (Flex)", "F",
+         "crescent", 400, False, "Exclusive", "1910s-20s, chased hard rubber, flex nib"),
+        ("Conway Stewart 100 Blue Herringbone", "Conway Stewart", "100", "14k Gold", "M",
+         "lever", 350, False, "Exclusive", "1950s English, blue herringbone celluloid"),
+        ("Conway Stewart 58 Green Hatched", "Conway Stewart", "58", "14k Gold", "F",
+         "lever", 300, False, "Exclusive", "1950s, green cross-hatched pattern"),
+        ("Waterman 52 BCHR", "Waterman", "52", "14k Gold (Flex)", "F",
+         "eyedropper", 600, False, "Exclusive", "1920s black chased hard rubber, flex"),
+    ]
+
+
+def _additional_round7_overflow() -> list[tuple]:
+    """25 additional pens to reach 1020+ — mixed brands, filling gaps."""
+    return [
+        # ── Montblanc Patron of Art missing 888s ──
+        ("Patron of Art Zetkin 888", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 2200, True, "Limited Edition", "2011, 888-piece LE, Art Nouveau gold"),
+        ("Patron of Art Peggy Guggenheim LE 80", "Montblanc", "Patron of Art", "18k Gold", "M",
+         "piston", 4500, True, "Grail", "2016, LE 80, ultra-premium gold/lapis"),
+        # ── Montblanc Writers Edition extras ──
+        ("Writers Edition Agatha Christie LE 1200", "Montblanc", "Writers Edition", "18k Gold", "F",
+         "piston", 3500, True, "Grail", "1993, LE 1200, snake clip, vermeil cap"),
+        # ── Sailor specialty nibs ──
+        ("1911 Large Naginata Togi Cross Point", "Sailor", "1911", "21k Gold", "Cross Point",
+         "converter", 800, False, "Standard", "Specialty cross-point nib"),
+        ("Pro Gear Zoom Nib", "Sailor", "Pro Gear", "21k Gold", "Zoom",
+         "converter", 400, False, "Standard", "Specialty zoom nib, ultra-wet"),
+        # ── Pelikan extras ──
+        ("M800 Art Collection Piazza Navona", "Pelikan", "Art Collection", "18k Gold", "M",
+         "piston", 920, True, "Limited Edition", "2018 LE, Italian marble resin"),
+        ("M600 Souveraen Violet-White", "Pelikan", "Souveraen", "14k Gold", "F",
+         "piston", 430, True, "Limited Edition", "Special edition violet stripes"),
+        # ── Pilot extras ──
+        ("Vanishing Point LE Purple Haze", "Pilot", "Vanishing Point", "18k Gold", "M",
+         "converter", 260, True, "Limited Edition", "Annual LE color, metallic purple"),
+        ("Custom Heritage 912 SU", "Pilot", "Custom Heritage", "14k Gold", "SU",
+         "converter", 250, False, "Standard", "Stub nib variant, italic writing"),
+        ("Namiki Yukari Goldfish", "Pilot", "Namiki Yukari", "18k Gold", "M",
+         "converter", 2200, True, "Limited Edition", "Hira maki-e goldfish motif"),
+        # ── Visconti extras ──
+        ("Homo Sapiens Dual Touch Black", "Visconti", "Homo Sapiens", "Palladium", "M",
+         "vacuum", 850, False, "Standard", "Dual-touch nib system"),
+        ("Opera Master Demo Cocktail", "Visconti", "Opera Master", "18k Gold", "F",
+         "vacuum", 1100, True, "Limited Edition", "Demonstrator celluloid barrel"),
+        # ── TWSBI extras ──
+        ("Diamond 580 Iris", "TWSBI", "Diamond 580", "Steel", "M",
+         "piston", 75, True, "Limited Edition", "Rainbow PVD, iridescent finish"),
+        ("ECO-T Mint Blue", "TWSBI", "ECO", "Steel", "F",
+         "piston", 35, True, "Limited Edition", "Triangular grip, mint blue"),
+        # ── Kaweco extras ──
+        ("Liliput Brass", "Kaweco", "Liliput", "Steel", "F",
+         "converter", 80, False, "Standard", "Ultra-compact brass pocket pen"),
+        ("Sport Classic White", "Kaweco", "Sport", "Steel", "M",
+         "converter", 30, False, "Standard", "Classic white pocket pen"),
+        # ── Faber-Castell ──
+        ("Faber-Castell E-Motion Pure Black", "Faber-Castell", "E-Motion", "Steel", "M",
+         "converter", 150, False, "Standard", "Pearwood barrel, chrome accents"),
+        ("Faber-Castell Ondoro Graphite", "Faber-Castell", "Ondoro", "Steel", "M",
+         "converter", 120, False, "Standard", "Hexagonal graphite barrel"),
+        # ── Scribo ──
+        ("Scribo Feel Oceano", "Scribo", "Feel", "18k Gold", "M",
+         "piston", 500, False, "Standard", "Italian artisan, ocean blue resin"),
+        ("Scribo La Dotta Menta", "Scribo", "La Dotta", "18k Gold", "M",
+         "piston", 700, True, "Limited Edition", "Bologna tribute, mint celluloid"),
+        # ── Conid ──
+        ("Conid Bulkfiller Regular Clear Demo", "Conid", "Bulkfiller", "Steel", "M",
+         "bulkfiller", 500, False, "Standard", "Belgian engineering, clear demonstrator"),
+        # ── Aurora extras ──
+        ("Optima 365 Giallo", "Aurora", "Optima", "18k Gold", "M",
+         "piston", 680, True, "Limited Edition", "365-piece LE, bright yellow Auroloide"),
+        # ── Cross ──
+        ("Cross Townsend Black Lacquer", "Cross", "Townsend", "18k Gold", "M",
+         "converter", 350, False, "Standard", "Classic oversize, gold appointments"),
+        # ── Caran d'Ache ──
+        ("Caran d'Ache Léman Caviar", "Caran d'Ache", "Léman", "18k Gold", "F",
+         "piston", 750, False, "Standard", "Black guilloche, caviar pattern"),
+        # ── Graf von Faber-Castell ──
+        ("Pen of the Year 2023 Ancient Egypt", "Graf von Faber-Castell", "Pen of the Year", "18k Gold", "M",
+         "converter", 3500, True, "Limited Edition", "Annual LE, Egyptian motifs, gold accents"),
     ]
 
 
