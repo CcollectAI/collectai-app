@@ -1250,6 +1250,9 @@ def get_curated_catalog() -> list[dict]:
     # ── Wave 3: Switch rarities, JP exclusives, arcade, GB/GBA, PS2/PS3, PC big box ──
     items += _wave3_retro_expansion()
 
+    # ── Wave 4: Most-searched titles, sealed grails, GameCube rarities, SNES CIB ──
+    items += _wave4_retro_expansion()
+
     # Deduplicate by ('platform', 'name') (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
@@ -1649,6 +1652,268 @@ def _wave3_retro_expansion() -> list[dict]:
             "price_sealed": sealed,
             "rarity": rarity,
         })
+
+    return items
+
+
+def _wave4_retro_expansion() -> list[dict]:
+    """Wave 4 — ~190 items: most-searched titles, sealed grails, GameCube
+    rarities, SNES CIB keys, Sega CD, N64, PS1/PS2 RPG grails."""
+    items = []
+
+    # ── SNES — Most Searched CIB/Sealed ────────────────────────────
+    snes_keys = [
+        ("SNES", "EarthBound CIB", 1995, 800, 2000, 5000, "Grail"),
+        ("SNES", "EarthBound Sealed (VGA 85+)", 1995, 0, 0, 15000, "Grail"),
+        ("SNES", "Chrono Trigger CIB", 1995, 200, 500, 1500, "Rare"),
+        ("SNES", "Chrono Trigger Sealed", 1995, 0, 0, 5000, "Grail"),
+        ("SNES", "Super Metroid CIB", 1994, 150, 350, 1000, "Rare"),
+        ("SNES", "Super Metroid Sealed", 1994, 0, 0, 3500, "Grail"),
+        ("SNES", "Mega Man X CIB", 1993, 100, 250, 800, "Uncommon"),
+        ("SNES", "Mega Man X Sealed", 1993, 0, 0, 2500, "Rare"),
+        ("SNES", "Mega Man X2 CIB", 1994, 200, 500, 1500, "Rare"),
+        ("SNES", "Mega Man X3 CIB", 1995, 500, 1200, 3500, "Grail"),
+        ("SNES", "Final Fantasy III (VI) CIB", 1994, 100, 250, 800, "Uncommon"),
+        ("SNES", "Final Fantasy II (IV) CIB", 1991, 80, 200, 600, "Uncommon"),
+        ("SNES", "Secret of Mana CIB", 1993, 80, 200, 600, "Uncommon"),
+        ("SNES", "Secret of Mana Sealed", 1993, 0, 0, 2000, "Rare"),
+        ("SNES", "Secret of Evermore CIB", 1995, 60, 150, 400, "Uncommon"),
+        ("SNES", "Illusion of Gaia CIB", 1994, 40, 100, 300, "Common"),
+        ("SNES", "Terranigma CIB (PAL)", 1996, 250, 600, 1500, "Grail"),
+        ("SNES", "Super Castlevania IV CIB", 1991, 80, 200, 550, "Uncommon"),
+        ("SNES", "Contra III The Alien Wars CIB", 1992, 80, 180, 500, "Uncommon"),
+        ("SNES", "ActRaiser CIB", 1991, 50, 130, 350, "Uncommon"),
+        ("SNES", "Breath of Fire II CIB", 1994, 60, 150, 400, "Uncommon"),
+        ("SNES", "Super Mario RPG CIB", 1996, 100, 250, 700, "Uncommon"),
+        ("SNES", "Harvest Moon CIB", 1996, 150, 400, 1000, "Rare"),
+        ("SNES", "Wild Guns CIB", 1994, 400, 900, 2500, "Grail"),
+        ("SNES", "Pocky & Rocky CIB", 1992, 300, 700, 2000, "Grail"),
+        ("SNES", "Pocky & Rocky 2 CIB", 1994, 600, 1200, 3000, "Grail"),
+        ("SNES", "Hagane The Final Conflict CIB", 1994, 800, 1800, 4000, "Grail"),
+        ("SNES", "Aero Fighters CIB", 1994, 400, 900, 2500, "Grail"),
+    ]
+
+    # ── GameCube — Most Searched Rarities ──────────────────────────
+    gc_games = [
+        ("GameCube", "Gotcha Force", 2003, 300, 600, 1500, "Grail"),
+        ("GameCube", "Cubivore Survival of the Fittest", 2002, 250, 500, 1200, "Grail"),
+        ("GameCube", "Chibi-Robo!", 2005, 100, 200, 500, "Rare"),
+        ("GameCube", "Pokemon Box Ruby & Sapphire", 2003, 200, 400, 1000, "Grail"),
+        ("GameCube", "Fire Emblem Path of Radiance CIB", 2005, 150, 300, 800, "Rare"),
+        ("GameCube", "Skies of Arcadia Legends CIB", 2003, 120, 250, 600, "Rare"),
+        ("GameCube", "Baten Kaitos Origins CIB", 2006, 100, 220, 550, "Rare"),
+        ("GameCube", "Baten Kaitos Eternal Wings CIB", 2003, 60, 130, 350, "Uncommon"),
+        ("GameCube", "Phantasy Star Online Episode I & II Plus CIB", 2002, 80, 170, 400, "Uncommon"),
+        ("GameCube", "Metal Gear Solid The Twin Snakes CIB", 2004, 80, 180, 450, "Uncommon"),
+        ("GameCube", "Eternal Darkness Sanity's Requiem CIB", 2002, 60, 140, 350, "Uncommon"),
+        ("GameCube", "Paper Mario The Thousand-Year Door CIB", 2004, 80, 180, 450, "Uncommon"),
+        ("GameCube", "Mario Kart Double Dash!! CIB", 2003, 50, 100, 250, "Common"),
+        ("GameCube", "F-Zero GX CIB", 2003, 50, 120, 300, "Uncommon"),
+        ("GameCube", "Ikaruga CIB", 2003, 60, 140, 350, "Uncommon"),
+        ("GameCube", "Twilight Princess CIB (GC)", 2006, 80, 180, 400, "Uncommon"),
+        ("GameCube", "Resident Evil 2 CIB (GC)", 2003, 80, 170, 400, "Uncommon"),
+        ("GameCube", "Resident Evil 3 Nemesis CIB (GC)", 2003, 60, 140, 350, "Uncommon"),
+        ("GameCube", "Custom Robo CIB", 2004, 40, 90, 250, "Common"),
+        ("GameCube", "Donkey Konga 2 CIB w/ Bongos", 2004, 30, 80, 200, "Common"),
+    ]
+
+    # ── PS1 — RPG Grails ──────────────────────────────────────────
+    ps1_games = [
+        ("PS1", "Suikoden II CIB", 1999, 200, 400, 1000, "Grail"),
+        ("PS1", "Suikoden II Sealed", 1999, 0, 0, 3000, "Grail"),
+        ("PS1", "Vagrant Story CIB", 2000, 80, 180, 450, "Uncommon"),
+        ("PS1", "Valkyrie Profile CIB", 1999, 150, 350, 900, "Rare"),
+        ("PS1", "Xenogears CIB", 1998, 80, 180, 500, "Uncommon"),
+        ("PS1", "Castlevania SotN CIB (Black Label)", 1997, 80, 200, 500, "Uncommon"),
+        ("PS1", "Castlevania SotN Sealed (Black Label)", 1997, 0, 0, 1500, "Grail"),
+        ("PS1", "Persona 2 Eternal Punishment CIB", 2000, 100, 250, 600, "Rare"),
+        ("PS1", "Lunar Silver Star Story Complete CIB", 1999, 80, 200, 500, "Uncommon"),
+        ("PS1", "Lunar 2 Eternal Blue Complete CIB", 2000, 100, 250, 600, "Rare"),
+        ("PS1", "Brave Fencer Musashi CIB", 1998, 60, 140, 350, "Uncommon"),
+        ("PS1", "Legend of Mana CIB", 2000, 60, 130, 350, "Uncommon"),
+        ("PS1", "Parasite Eve CIB", 1998, 40, 100, 250, "Common"),
+        ("PS1", "Parasite Eve II CIB", 1999, 60, 130, 350, "Uncommon"),
+        ("PS1", "Mega Man Legends CIB", 1997, 50, 120, 300, "Uncommon"),
+        ("PS1", "Mega Man Legends 2 CIB", 2000, 100, 250, 600, "Rare"),
+        ("PS1", "Tomba! CIB", 1997, 150, 350, 800, "Rare"),
+        ("PS1", "Tomba! 2 CIB", 1999, 120, 280, 700, "Rare"),
+        ("PS1", "Einhander CIB", 1998, 80, 180, 450, "Uncommon"),
+        ("PS1", "R-Type Delta CIB", 1998, 80, 180, 450, "Uncommon"),
+    ]
+
+    # ── Sega CD — Rarities ─────────────────────────────────────────
+    scd_games = [
+        ("Sega CD", "Snatcher CIB", 1994, 400, 800, 2000, "Grail"),
+        ("Sega CD", "Lunar The Silver Star CIB", 1993, 80, 200, 500, "Uncommon"),
+        ("Sega CD", "Lunar Eternal Blue CIB", 1994, 100, 250, 600, "Rare"),
+        ("Sega CD", "Keio Flying Squadron CIB", 1994, 500, 1000, 2500, "Grail"),
+        ("Sega CD", "Popful Mail CIB", 1994, 250, 500, 1200, "Grail"),
+        ("Sega CD", "Shining Force CD CIB", 1994, 100, 250, 600, "Rare"),
+        ("Sega CD", "Sonic CD CIB", 1993, 30, 70, 200, "Common"),
+        ("Sega CD", "Night Trap CIB", 1992, 40, 100, 250, "Common"),
+    ]
+
+    # ── N64 — Most Searched ────────────────────────────────────────
+    n64_games = [
+        ("N64", "Conker's Bad Fur Day CIB", 2001, 120, 280, 700, "Rare"),
+        ("N64", "Conker's Bad Fur Day Sealed", 2001, 0, 0, 2500, "Grail"),
+        ("N64", "Ogre Battle 64 CIB", 2000, 80, 200, 500, "Uncommon"),
+        ("N64", "Harvest Moon 64 CIB", 1999, 80, 180, 450, "Uncommon"),
+        ("N64", "Paper Mario CIB", 2000, 60, 140, 350, "Uncommon"),
+        ("N64", "Mario Party CIB", 1998, 40, 90, 250, "Common"),
+        ("N64", "Mario Party 2 CIB", 1999, 50, 120, 300, "Uncommon"),
+        ("N64", "Mario Party 3 CIB", 2000, 60, 150, 400, "Uncommon"),
+        ("N64", "Banjo-Kazooie CIB", 1998, 30, 80, 200, "Common"),
+        ("N64", "Banjo-Tooie CIB", 2000, 40, 100, 250, "Common"),
+        ("N64", "Jet Force Gemini CIB", 1999, 20, 50, 150, "Common"),
+        ("N64", "Snowboard Kids 2 CIB", 1999, 150, 350, 800, "Rare"),
+        ("N64", "Goemon's Great Adventure CIB", 1999, 100, 250, 600, "Rare"),
+        ("N64", "Bomberman 64 The Second Attack CIB", 2000, 120, 280, 700, "Rare"),
+        ("N64", "Doom 64 CIB", 1997, 40, 90, 250, "Common"),
+        ("N64", "Turok Dinosaur Hunter CIB", 1997, 20, 50, 150, "Common"),
+        ("N64", "Turok 2 Seeds of Evil CIB", 1998, 15, 40, 120, "Common"),
+        ("N64", "ClayFighter 63 1/3 Sculptor's Cut CIB", 1998, 300, 700, 2000, "Grail"),
+        ("N64", "Stunt Racer 64 CIB", 2000, 80, 200, 500, "Rare"),
+        ("N64", "Worms Armageddon CIB", 1999, 60, 150, 400, "Uncommon"),
+    ]
+
+    # ── Neo Geo AES — Additional ───────────────────────────────────
+    neogeo_extra = [
+        ("Neo Geo AES", "Matrimelee", 2003, 2000, 3500, 7000, "Grail"),
+        ("Neo Geo AES", "Kizuna Encounter Super Tag Battle", 1996, 400, 800, 2000, "Rare"),
+        ("Neo Geo AES", "Shock Troopers", 1997, 600, 1100, 2800, "Grail"),
+        ("Neo Geo AES", "Pulstar", 1995, 500, 1000, 2500, "Grail"),
+        ("Neo Geo AES", "Twinkle Star Sprites", 1996, 400, 800, 2000, "Rare"),
+    ]
+
+    # ── Sega Saturn — Additional ───────────────────────────────────
+    saturn_extra = [
+        ("Saturn", "Ikaruga (JP)", 2002, 60, 130, 350, "Uncommon"),
+        ("Saturn", "Thunder Force V (JP)", 1997, 40, 100, 250, "Common"),
+        ("Saturn", "Bulk Slash (JP)", 1997, 100, 250, 600, "Rare"),
+        ("Saturn", "Soukyugurentai (Terra Diver) JP", 1996, 80, 180, 450, "Uncommon"),
+        ("Saturn", "Cotton 2 (JP)", 1997, 100, 220, 550, "Rare"),
+        ("Saturn", "Silhouette Mirage (JP)", 1997, 50, 120, 300, "Uncommon"),
+        ("Saturn", "Astal CIB", 1995, 60, 140, 350, "Uncommon"),
+        ("Saturn", "Sonic R CIB", 1997, 40, 100, 250, "Common"),
+    ]
+
+    # ── PS2 — Sought-After RPGs & Rarities ────────────────────────
+    ps2_games = [
+        ("PS2", "Rule of Rose CIB", 2006, 300, 600, 1500, "Grail"),
+        ("PS2", "Haunting Ground CIB", 2005, 200, 400, 1000, "Grail"),
+        ("PS2", "Kuon CIB", 2004, 250, 500, 1200, "Grail"),
+        ("PS2", ".hack Vol 1 Infection CIB", 2002, 30, 60, 150, "Common"),
+        ("PS2", ".hack Vol 4 Quarantine CIB", 2003, 150, 350, 800, "Rare"),
+        ("PS2", ".hack//G.U. Vol 3 Redemption CIB", 2007, 40, 90, 250, "Common"),
+        ("PS2", "Xenosaga Episode III CIB", 2006, 80, 180, 450, "Uncommon"),
+        ("PS2", "Suikoden V CIB", 2006, 60, 140, 350, "Uncommon"),
+        ("PS2", "Persona 3 FES CIB", 2007, 40, 80, 200, "Common"),
+        ("PS2", "Persona 4 CIB", 2008, 30, 60, 150, "Common"),
+        ("PS2", "Shadow Hearts Covenant CIB", 2004, 50, 120, 300, "Uncommon"),
+        ("PS2", "Digital Devil Saga 2 CIB", 2005, 40, 90, 250, "Common"),
+    ]
+
+    # ── Dreamcast — Must-Search ────────────────────────────────────
+    dc_extra = [
+        ("Dreamcast", "Ikaruga CIB (JP)", 2001, 60, 130, 350, "Uncommon"),
+        ("Dreamcast", "Project Justice CIB", 2001, 80, 180, 450, "Uncommon"),
+        ("Dreamcast", "Mars Matrix CIB", 2001, 80, 180, 450, "Uncommon"),
+        ("Dreamcast", "Giga Wing CIB", 2000, 60, 140, 350, "Uncommon"),
+        ("Dreamcast", "Under Defeat (JP)", 2005, 80, 180, 450, "Uncommon"),
+        ("Dreamcast", "Border Down (JP)", 2003, 120, 280, 700, "Rare"),
+        ("Dreamcast", "Last Hope Pink Bullets", 2009, 150, 350, 800, "Rare"),
+        ("Dreamcast", "Sturmwind", 2013, 60, 140, 350, "Uncommon"),
+    ]
+
+    # ── Game Boy / GBA — Most Searched ──────────────────────────
+    gb_gba_games = [
+        ("Game Boy", "Pokemon Red/Blue (Sealed)", 1998, 0, 0, 3000, "Grail"),
+        ("Game Boy", "Pokemon Yellow CIB", 1998, 40, 100, 300, "Uncommon"),
+        ("Game Boy", "Tetris CIB (Original)", 1989, 15, 40, 120, "Common"),
+        ("Game Boy", "Mega Man V CIB", 1994, 200, 500, 1200, "Grail"),
+        ("Game Boy", "Kid Dracula CIB", 1993, 300, 700, 1800, "Grail"),
+        ("GBA", "Pokemon Emerald CIB", 2004, 100, 250, 600, "Rare"),
+        ("GBA", "Pokemon FireRed CIB", 2004, 60, 150, 350, "Uncommon"),
+        ("GBA", "Fire Emblem CIB", 2003, 80, 200, 500, "Uncommon"),
+        ("GBA", "Fire Emblem Sacred Stones CIB", 2004, 50, 130, 300, "Uncommon"),
+        ("GBA", "Castlevania Aria of Sorrow CIB", 2003, 80, 200, 500, "Uncommon"),
+        ("GBA", "Castlevania Circle of the Moon CIB", 2001, 30, 80, 200, "Common"),
+        ("GBA", "Golden Sun CIB", 2001, 30, 80, 200, "Common"),
+        ("GBA", "Golden Sun The Lost Age CIB", 2003, 40, 100, 250, "Common"),
+        ("GBA", "Mega Man Zero CIB", 2002, 30, 80, 200, "Common"),
+        ("GBA", "Mega Man Battle Network 3 Blue CIB", 2003, 25, 60, 150, "Common"),
+        ("GBA", "Final Fantasy Tactics Advance CIB", 2003, 20, 50, 130, "Common"),
+        ("GBA", "Metroid Fusion CIB", 2002, 50, 120, 300, "Uncommon"),
+        ("GBA", "Metroid Zero Mission CIB", 2004, 50, 130, 300, "Uncommon"),
+        ("GBA", "Kirby & The Amazing Mirror CIB", 2004, 30, 80, 200, "Common"),
+        ("GBA", "Advance Wars CIB", 2001, 40, 100, 250, "Uncommon"),
+    ]
+
+    # ── NES — Classic Sealed/CIB ─────────────────────────────────
+    nes_games = [
+        ("NES", "Super Mario Bros CIB", 1985, 20, 80, 300, "Common"),
+        ("NES", "Super Mario Bros 3 CIB", 1988, 25, 80, 250, "Common"),
+        ("NES", "Mega Man 2 CIB", 1988, 30, 80, 250, "Common"),
+        ("NES", "Mega Man 5 CIB", 1992, 100, 250, 600, "Rare"),
+        ("NES", "Mega Man 6 CIB", 1993, 80, 200, 500, "Uncommon"),
+        ("NES", "Castlevania III Dracula's Curse CIB", 1989, 60, 150, 400, "Uncommon"),
+        ("NES", "Ninja Gaiden CIB", 1988, 25, 60, 180, "Common"),
+        ("NES", "Ninja Gaiden II CIB", 1990, 25, 60, 180, "Common"),
+        ("NES", "Contra CIB", 1988, 50, 120, 350, "Uncommon"),
+        ("NES", "Mike Tyson's Punch-Out!! CIB", 1987, 40, 100, 300, "Uncommon"),
+        ("NES", "Metroid CIB", 1986, 30, 80, 250, "Common"),
+        ("NES", "Zelda II The Adventure of Link CIB (Gold)", 1987, 25, 70, 200, "Common"),
+        ("NES", "Little Samson CIB", 1992, 800, 2000, 5000, "Grail"),
+        ("NES", "Snow Brothers CIB", 1991, 300, 700, 1800, "Grail"),
+        ("NES", "Bubble Bobble Part 2 CIB", 1993, 500, 1200, 3000, "Grail"),
+        ("NES", "Power Blade 2 CIB", 1992, 250, 600, 1500, "Grail"),
+        ("NES", "Flintstones Surprise at Dinosaur Peak CIB", 1994, 800, 2000, 5000, "Grail"),
+        ("NES", "Stadium Events CIB", 1987, 20000, 50000, 100000, "Grail"),
+        ("NES", "Dragon Warrior CIB", 1989, 20, 50, 150, "Common"),
+        ("NES", "Final Fantasy CIB", 1990, 30, 80, 250, "Common"),
+    ]
+
+    # ── Wii / Wii U — Sought-After ────────────────────────────────
+    wii_games = [
+        ("Wii", "Metroid Prime Trilogy Steelbook CIB", 2009, 80, 180, 400, "Uncommon"),
+        ("Wii", "Xenoblade Chronicles CIB (NA)", 2012, 50, 100, 250, "Uncommon"),
+        ("Wii", "Fire Emblem Radiant Dawn CIB", 2007, 80, 180, 400, "Uncommon"),
+        ("Wii", "Dokapon Kingdom CIB", 2008, 100, 250, 600, "Rare"),
+        ("Wii", "Super Mario Galaxy CIB", 2007, 15, 30, 80, "Common"),
+        ("Wii U", "Zelda Breath of the Wild CIB (Wii U)", 2017, 25, 50, 120, "Common"),
+        ("Wii U", "Devil's Third CIB", 2015, 80, 180, 400, "Uncommon"),
+        ("Wii U", "Axiom Verge Multiverse Edition CIB", 2017, 60, 130, 300, "Uncommon"),
+    ]
+
+    all_groups = [
+        (snes_keys, "SNES"),
+        (gc_games, "GameCube"),
+        (ps1_games, "PS1"),
+        (scd_games, "Sega CD"),
+        (n64_games, "N64"),
+        (neogeo_extra, "Neo Geo AES"),
+        (saturn_extra, "Saturn"),
+        (ps2_games, "PS2"),
+        (dc_extra, "Dreamcast"),
+        (gb_gba_games, "GBA"),
+        (nes_games, "NES"),
+        (wii_games, "Wii"),
+    ]
+
+    for group, default_platform in all_groups:
+        for platform, title, year, loose, cib, sealed, rarity in group:
+            items.append({
+                "type": "game",
+                "maker": platform.split()[0] if " " not in platform else platform,
+                "platform": platform,
+                "name": title,
+                "year": year,
+                "price_loose": loose,
+                "price_cib": cib,
+                "price_sealed": sealed,
+                "rarity": rarity,
+            })
 
     return items
 

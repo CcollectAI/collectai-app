@@ -1264,9 +1264,7 @@ def get_curated_catalog() -> list[dict]:
         ("Akko", "Keycap Set", "Akko Black & Gold PBT Keycap Set", "Cherry", "standard", 38),
         ("Akko", "Keycap Set", "Akko Clear Translucent PBT Set", "Cherry", "standard", 30),
         ("Akko", "Keycap Set", "Akko Sakura PBT Keycap Set", "Cherry", "standard", 35),
-        ("NicePBT", "Keycap Set", "NicePBT Elderberry Base Kit", "Cherry", "standard", 55),
         ("NicePBT", "Keycap Set", "NicePBT Fuji Base Kit", "Cherry", "standard", 58),
-        ("NicePBT", "Keycap Set", "NicePBT Sugarplum Base Kit", "Cherry", "standard", 55),
         ("NicePBT", "Keycap Set", "NicePBT Retro Cyrillic Base Kit", "Cherry", "standard", 60),
 
         # ── Keyboard PCBs and Plates ─────────────────────────────────────
@@ -1306,7 +1304,6 @@ def get_curated_catalog() -> list[dict]:
         ("GMK", "Keycap Set", "GMK Noel Base Kit", "Cherry", "mid", 180),
         ("GMK", "Keycap Set", "GMK Peach Blossom Base Kit", "Cherry", "mid", 150),
         ("GMK", "Keycap Set", "GMK Civilizations Base Kit", "Cherry", "mid", 170),
-        ("GMK", "Keycap Set", "GMK Modo Light Base Kit", "Cherry", "mid", 140),
         ("GMK", "Keycap Set", "GMK Umbra Base Kit", "Cherry", "mid", 160),
         ("GMK", "Keycap Set", "GMK Yuru Base Kit", "Cherry", "mid", 180),
         ("GMK", "Keycap Set", "GMK Grand Prix Base Kit", "Cherry", "mid", 150),
@@ -1316,7 +1313,6 @@ def get_curated_catalog() -> list[dict]:
         ("GMK", "Keycap Set", "GMK Cafe Base Kit", "Cherry", "mid", 180),
         ("GMK", "Keycap Set", "GMK Taro Base Kit (R2)", "Cherry", "mid", 140),
         ("GMK", "Keycap Set", "GMK Apollo Base Kit", "Cherry", "mid", 150),
-        ("GMK", "Keycap Set", "GMK Terra Base Kit", "Cherry", "mid", 160),
         ("GMK", "Keycap Set", "GMK Pink on Navy Base Kit", "Cherry", "mid", 130),
 
         # ── More ePBT / Cherry Original Sets ─────────────────────────────

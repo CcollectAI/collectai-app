@@ -1341,6 +1341,148 @@ def get_curated_catalog() -> list[dict]:
         ("TWICE", "merch", "TWICE READY TO BE Tour Lightstick Ver. 3", "Tour Exclusive", "mid", 55),
         ("Stray Kids", "merch", "Stray Kids MANIAC Tour Photo Set", "Tour Exclusive", "mid", 60),
         ("ATEEZ", "merch", "ATEEZ THE FELLOWSHIP Tour VIP Lanyard Set", "Tour VIP", "high", 80),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # BTS Solo — Jungkook GOLDEN, Jimin MUSE (~20)
+        # ═══════════════════════════════════════════════════════════════════
+        ("BTS", "album", "Jungkook - GOLDEN (Standard)", "Standard", "standard", 20),
+        ("BTS", "album", "Jungkook - GOLDEN (Weverse Albums Ver.)", "Weverse Exclusive", "mid", 35),
+        ("BTS", "album", "Jungkook - GOLDEN (Solid Ver.)", "Limited Version", "mid", 40),
+        ("BTS", "album", "Jungkook - GOLDEN (Substance Ver.)", "Limited Version", "mid", 40),
+        ("BTS", "album", "Jungkook - GOLDEN (Target Exclusive)", "Target Exclusive", "mid", 38),
+        ("BTS", "photocard", "Jungkook GOLDEN Lucky Draw Photocard", "Lucky Draw", "grail", 400),
+        ("BTS", "photocard", "Jungkook GOLDEN POB Photocard (Weverse)", "Weverse Exclusive", "high", 100),
+        ("BTS", "photocard", "Jungkook GOLDEN Fansign Photocard", "Fansign Event", "grail", 500),
+        ("BTS", "album", "Jimin - MUSE (Standard)", "Standard", "standard", 20),
+        ("BTS", "album", "Jimin - MUSE (Weverse Albums Ver.)", "Weverse Exclusive", "mid", 35),
+        ("BTS", "album", "Jimin - MUSE (Blooming Ver.)", "Limited Version", "mid", 38),
+        ("BTS", "album", "Jimin - MUSE (Serenade Ver.)", "Limited Version", "mid", 38),
+        ("BTS", "photocard", "Jimin MUSE Lucky Draw Photocard", "Lucky Draw", "grail", 380),
+        ("BTS", "photocard", "Jimin MUSE POB Photocard (Weverse)", "Weverse Exclusive", "high", 95),
+        ("BTS", "album", "V - Layover (Pear Ver.)", "Limited Version", "mid", 32),
+        ("BTS", "album", "V - Layover (IRL Ver.)", "Limited Version", "mid", 32),
+        ("BTS", "album", "V - Layover (Target Exclusive)", "Target Exclusive", "mid", 35),
+        ("BTS", "photocard", "V Layover Lucky Draw Photocard", "Lucky Draw", "grail", 450),
+        ("BTS", "photocard", "V Layover POB Photocard (Weverse)", "Weverse Exclusive", "high", 110),
+        ("BTS", "photocard", "Jin The Astronaut Fansign Photocard", "Fansign Event", "grail", 350),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # BLACKPINK — Born Pink, Solo Albums (~15)
+        # ═══════════════════════════════════════════════════════════════════
+        ("Blackpink", "album", "BORN PINK (Box Set, Signed)", "Signed", "grail", 250),
+        ("Blackpink", "album", "BORN PINK (Standard, Black Ver.)", "Standard", "standard", 22),
+        ("Blackpink", "album", "BORN PINK (Standard, Pink Ver.)", "Standard", "standard", 22),
+        ("Blackpink", "photocard", "Jisoo ME Lucky Draw Photocard", "Lucky Draw", "grail", 300),
+        ("Blackpink", "album", "Jisoo - ME (First Single)", "Standard", "standard", 22),
+        ("Blackpink", "album", "Rosé - R (First Single Album)", "Standard", "standard", 25),
+        ("Blackpink", "album", "Rosé - APT. (Signed CD)", "Signed", "high", 120),
+        ("Blackpink", "photocard", "Rosé APT. Lucky Draw Photocard", "Lucky Draw", "grail", 280),
+        ("Blackpink", "album", "Lisa - LALISA (Gold Ver.)", "Limited Version", "mid", 35),
+        ("Blackpink", "album", "Lisa - LALISA (Black Ver.)", "Standard", "standard", 22),
+        ("Blackpink", "album", "Lisa - ROCKSTAR (Signed CD)", "Signed", "high", 130),
+        ("Blackpink", "album", "Jennie - SOLO (Special Edition)", "Limited", "mid", 45),
+        ("Blackpink", "photocard", "Jennie Fansign Photocard", "Fansign Event", "grail", 400),
+        ("Blackpink", "photocard", "Lisa LALISA Fansign Photocard", "Fansign Event", "grail", 350),
+        ("Blackpink", "merch", "BLACKPINK Born Pink World Tour Lightstick Ver. 2", "Tour Exclusive", "high", 120),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # NewJeans — All Versions (~15)
+        # ═══════════════════════════════════════════════════════════════════
+        ("NewJeans", "album", "How Sweet (Weverse Albums Ver.)", "Weverse Exclusive", "mid", 30),
+        ("NewJeans", "album", "How Sweet (Standard)", "Standard", "standard", 20),
+        ("NewJeans", "album", "How Sweet (Signed)", "Signed", "high", 130),
+        ("NewJeans", "album", "Get Up (1st EP, Bunny Beach Bag Ver.)", "Limited Version", "mid", 45),
+        ("NewJeans", "album", "Get Up (Signed, Weverse)", "Signed", "high", 150),
+        ("NewJeans", "photocard", "Minji How Sweet Lucky Draw Photocard", "Lucky Draw", "grail", 280),
+        ("NewJeans", "photocard", "Hanni How Sweet Lucky Draw Photocard", "Lucky Draw", "grail", 300),
+        ("NewJeans", "photocard", "Danielle How Sweet Lucky Draw Photocard", "Lucky Draw", "grail", 260),
+        ("NewJeans", "photocard", "Haerin How Sweet Lucky Draw Photocard", "Lucky Draw", "grail", 320),
+        ("NewJeans", "photocard", "Hyein How Sweet Lucky Draw Photocard", "Lucky Draw", "grail", 240),
+        ("NewJeans", "album", "OMG (Ditto Ver.)", "Limited Version", "mid", 35),
+        ("NewJeans", "album", "OMG (Message Card Ver.)", "Limited Version", "mid", 32),
+        ("NewJeans", "merch", "NewJeans x LINE FRIENDS Tokki Plush", "Collaboration", "mid", 45),
+        ("NewJeans", "merch", "NewJeans Bunnies Official Lightstick", "Official", "mid", 55),
+        ("NewJeans", "album", "Supernatural (Weverse Albums Ver.)", "Weverse Exclusive", "mid", 30),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # 4th Gen — ATEEZ, Stray Kids, Enhypen, TXT (~30)
+        # ═══════════════════════════════════════════════════════════════════
+        ("ATEEZ", "album", "GOLDEN HOUR: Part.2 (Signed, Weverse)", "Signed", "high", 100),
+        ("ATEEZ", "album", "GOLDEN HOUR: Part.1 (Standard)", "Standard", "standard", 22),
+        ("ATEEZ", "album", "THE WORLD EP.FIN (Diary Ver.)", "Limited Version", "mid", 35),
+        ("ATEEZ", "photocard", "Hongjoong Fansign Photocard", "Fansign Event", "grail", 280),
+        ("ATEEZ", "photocard", "San Fansign Photocard", "Fansign Event", "grail", 250),
+        ("ATEEZ", "photocard", "Wooyoung Lucky Draw Photocard", "Lucky Draw", "grail", 220),
+        ("Stray Kids", "album", "ATE (Limited Ver.)", "Limited Version", "mid", 40),
+        ("Stray Kids", "album", "ATE (Standard)", "Standard", "standard", 22),
+        ("Stray Kids", "album", "ATE (Signed, Weverse)", "Signed", "high", 110),
+        ("Stray Kids", "photocard", "Felix ATE Lucky Draw Photocard", "Lucky Draw", "grail", 300),
+        ("Stray Kids", "photocard", "Hyunjin ATE Lucky Draw Photocard", "Lucky Draw", "grail", 280),
+        ("Stray Kids", "photocard", "Lee Know Fansign Photocard", "Fansign Event", "grail", 250),
+        ("Enhypen", "album", "ROMANCE: UNTOLD (Standard)", "Standard", "standard", 22),
+        ("Enhypen", "album", "ROMANCE: UNTOLD (Weverse Ver.)", "Weverse Exclusive", "mid", 30),
+        ("Enhypen", "album", "ROMANCE: UNTOLD (Signed, Weverse)", "Signed", "high", 95),
+        ("Enhypen", "photocard", "Sunghoon ROMANCE Lucky Draw Photocard", "Lucky Draw", "grail", 220),
+        ("Enhypen", "photocard", "Ni-ki ROMANCE Lucky Draw Photocard", "Lucky Draw", "grail", 200),
+        ("Enhypen", "photocard", "Heeseung Fansign Photocard", "Fansign Event", "grail", 250),
+        ("TXT", "album", "The Star Chapter: SANCTUARY (Standard)", "Standard", "standard", 22),
+        ("TXT", "album", "The Star Chapter: SANCTUARY (Weverse Ver.)", "Weverse Exclusive", "mid", 30),
+        ("TXT", "album", "The Star Chapter: SANCTUARY (Signed)", "Signed", "high", 90),
+        ("TXT", "photocard", "Yeonjun SANCTUARY Lucky Draw Photocard", "Lucky Draw", "grail", 200),
+        ("TXT", "photocard", "Soobin SANCTUARY Lucky Draw Photocard", "Lucky Draw", "grail", 180),
+        ("TXT", "photocard", "Taehyun Fansign Photocard", "Fansign Event", "grail", 220),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Signed / Autographed Albums (~15)
+        # ═══════════════════════════════════════════════════════════════════
+        ("SEVENTEEN", "album", "SEVENTEENTH HEAVEN (All Members Signed)", "Signed", "grail", 400),
+        ("aespa", "album", "Armageddon (All Members Signed)", "Signed", "grail", 300),
+        ("IVE", "album", "I've IVE (All Members Signed)", "Signed", "grail", 280),
+        ("Le Sserafim", "album", "EASY (All Members Signed)", "Signed", "grail", 260),
+        ("ITZY", "album", "BORN TO BE (All Members Signed)", "Signed", "grail", 220),
+        ("NMIXX", "album", "Fe3O4: BREAK (All Members Signed)", "Signed", "high", 180),
+        ("TWICE", "album", "With YOU-th (All Members Signed)", "Signed", "grail", 350),
+        ("Red Velvet", "album", "Chill Kill (All Members Signed)", "Signed", "grail", 300),
+        ("EXO", "album", "Exist (All Members Signed)", "Signed", "grail", 500),
+        ("GOT7", "album", "GOT7 (Self-Titled, All Members Signed)", "Signed", "grail", 400),
+        ("SHINee", "album", "SHINee World (1st Album, Signed)", "Signed", "grail", 600),
+        ("BIGBANG", "album", "MADE (Full Album, Signed)", "Signed", "grail", 800),
+        ("2NE1", "album", "Crush (2nd Album, Signed)", "Signed", "grail", 700),
+        ("ZEROBASEONE", "album", "You Had Me At Hello (Signed)", "Signed", "high", 120),
+        ("BOYNEXTDOOR", "album", "WHY.. (Signed, Weverse)", "Signed", "high", 100),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Japanese Versions (~15)
+        # ═══════════════════════════════════════════════════════════════════
+        ("BTS", "album", "BTS - THE BEST (Japanese, Limited Edition A)", "Limited", "high", 85),
+        ("BTS", "album", "BTS - THE BEST (Japanese, Limited Edition B)", "Limited", "high", 80),
+        ("BTS", "album", "BTS - Film Out (Japanese Single)", "Standard", "standard", 25),
+        ("Blackpink", "album", "BLACKPINK IN YOUR AREA (Japanese, Limited)", "Limited", "high", 90),
+        ("TWICE", "album", "TWICE #TWICE (Japanese, Limited Edition A)", "Limited", "mid", 50),
+        ("TWICE", "album", "TWICE - Celebrate (Japanese, Limited Edition)", "Limited", "mid", 55),
+        ("Stray Kids", "album", "Stray Kids - ALL IN (Japanese, Limited)", "Limited", "mid", 45),
+        ("ATEEZ", "album", "ATEEZ - NOT OKAY (Japanese, Limited A)", "Limited", "mid", 40),
+        ("TXT", "album", "TXT - SWEET (Japanese, Limited Edition)", "Limited", "mid", 45),
+        ("SEVENTEEN", "album", "SEVENTEEN - DREAM (Japanese, Limited)", "Limited", "mid", 50),
+        ("EXO", "album", "EXO - COUNTDOWN (Japanese, Limited)", "Limited", "mid", 55),
+        ("aespa", "album", "aespa - Hot Mess (Japanese, Limited)", "Limited", "mid", 40),
+        ("Le Sserafim", "album", "Le Sserafim - FEARLESS (Japanese, Limited)", "Limited", "mid", 42),
+        ("IVE", "album", "IVE - WAVE (Japanese, Limited)", "Limited", "mid", 40),
+        ("NewJeans", "album", "NewJeans - Supernatural (Japanese, Limited)", "Limited", "mid", 45),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # RIIZE & New 4th Gen (~10)
+        # ═══════════════════════════════════════════════════════════════════
+        ("RIIZE", "album", "RIIZE UP (Standard)", "Standard", "standard", 22),
+        ("RIIZE", "album", "RIIZE UP (Weverse Albums Ver.)", "Weverse Exclusive", "mid", 30),
+        ("RIIZE", "album", "Get A Guitar (Signed, Weverse)", "Signed", "high", 100),
+        ("RIIZE", "photocard", "Wonbin Get A Guitar Lucky Draw Photocard", "Lucky Draw", "grail", 250),
+        ("RIIZE", "photocard", "Sungchan Get A Guitar Lucky Draw Photocard", "Lucky Draw", "high", 180),
+        ("RIIZE", "photocard", "Shotaro Fansign Photocard", "Fansign Event", "grail", 200),
+        ("ILLIT", "album", "SUPER REAL ME (Standard)", "Standard", "standard", 20),
+        ("ILLIT", "album", "SUPER REAL ME (Signed, Weverse)", "Signed", "high", 90),
+        ("ILLIT", "photocard", "Wonhee Lucky Draw Photocard", "Lucky Draw", "high", 150),
+        ("ILLIT", "photocard", "Minju Lucky Draw Photocard", "Lucky Draw", "high", 160),
     ]
 
     # ── Variant expansion — album version/format/exclusive variants ──

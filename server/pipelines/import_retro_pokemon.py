@@ -1358,6 +1358,9 @@ def get_curated_catalog() -> list[dict]:
     # Inject graded / variant / language / sealed expansions
     catalog.extend(_variant_expansion())
 
+    # Modern era expansion — chase cards, sealed product, JP exclusives
+    catalog.extend(_modern_era_expansion())
+
     # Deduplicate by ('brand', 'name') (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
@@ -1422,6 +1425,173 @@ def item_to_price_observations(item: dict) -> list[PriceObservation]:
     ))
 
     return observations
+
+
+def _modern_era_expansion() -> list[dict]:
+    """~180 items: modern chase cards, sealed product, JP exclusives, promos."""
+    _raw = [
+        # ── Modern Chase Cards (Sword & Shield Era) ────────────────────
+        ("Pokemon", "Umbreon VMAX Alt Art (Evolving Skies #215)", "Near Mint Raw", "grail", 250, 350),
+        ("Pokemon", "Umbreon VMAX Alt Art (Moonbreon, Evolving Skies #215)", "PSA 10", "grail", 600, 800),
+        ("Pokemon", "Charizard VMAX (Shiny, Shining Fates #SV107)", "Near Mint Raw", "high", 80, 120),
+        ("Pokemon", "Charizard VMAX Rainbow (Champion's Path #74)", "Near Mint Raw", "high", 100, 150),
+        ("Pokemon", "Pikachu VMAX Rainbow Rare (Vivid Voltage #188)", "Near Mint Raw", "high", 120, 180),
+        ("Pokemon", "Pikachu VMAX Rainbow (Vivid Voltage #188)", "PSA 10", "grail", 350, 500),
+        ("Pokemon", "Rayquaza VMAX Alt Art (Evolving Skies #218)", "Near Mint Raw", "grail", 180, 260),
+        ("Pokemon", "Rayquaza VMAX Alt Art (Evolving Skies #218)", "PSA 10", "grail", 450, 600),
+        ("Pokemon", "Glaceon VMAX Alt Art (Evolving Skies #209)", "Near Mint Raw", "high", 80, 120),
+        ("Pokemon", "Leafeon VMAX Alt Art (Evolving Skies #205)", "Near Mint Raw", "high", 60, 90),
+        ("Pokemon", "Espeon VMAX Alt Art (Evolving Skies #203)", "Near Mint Raw", "high", 60, 90),
+        ("Pokemon", "Sylveon VMAX Alt Art (Evolving Skies #212)", "Near Mint Raw", "high", 80, 120),
+        ("Pokemon", "Dragonite V Alt Art (Evolving Skies #192)", "Near Mint Raw", "high", 50, 80),
+        ("Pokemon", "Gengar VMAX Alt Art (Fusion Strike #271)", "Near Mint Raw", "high", 60, 90),
+        ("Pokemon", "Mew VMAX Alt Art (Fusion Strike #269)", "Near Mint Raw", "high", 80, 120),
+        ("Pokemon", "Lugia V Alt Art (Silver Tempest #186)", "Near Mint Raw", "grail", 120, 180),
+        ("Pokemon", "Lugia V Alt Art (Silver Tempest #186)", "PSA 10", "grail", 300, 420),
+        ("Pokemon", "Giratina V Alt Art (Lost Origin #186)", "Near Mint Raw", "high", 80, 120),
+        ("Pokemon", "Giratina VSTAR Alt Art (Lost Origin #195)", "Near Mint Raw", "grail", 120, 180),
+        ("Pokemon", "Charizard VSTAR Rainbow (Brilliant Stars #174)", "Near Mint Raw", "high", 50, 80),
+        ("Pokemon", "Arceus VSTAR Gold (Brilliant Stars #184)", "Near Mint Raw", "high", 50, 80),
+        ("Pokemon", "Aerodactyl V Alt Art (Lost Origin #186)", "Near Mint Raw", "high", 50, 80),
+        ("Pokemon", "Machamp V Alt Art (Evolving Skies #172)", "Near Mint Raw", "mid", 30, 50),
+
+        # ── Scarlet & Violet Era Chase Cards ──────────────────────────
+        ("Pokemon", "Charizard ex SAR (Obsidian Flames #223)", "Near Mint Raw", "grail", 100, 150),
+        ("Pokemon", "Charizard ex SAR (Obsidian Flames #223)", "PSA 10", "grail", 250, 350),
+        ("Pokemon", "Mew ex SAR (151 #205)", "Near Mint Raw", "high", 80, 120),
+        ("Pokemon", "Charizard ex (151 #199)", "Near Mint Raw", "high", 60, 90),
+        ("Pokemon", "Pikachu ex SAR (151 #204)", "Near Mint Raw", "high", 50, 80),
+        ("Pokemon", "Mewtwo ex SAR (151 #193)", "Near Mint Raw", "high", 50, 80),
+        ("Pokemon", "Alakazam ex SAR (151 #200)", "Near Mint Raw", "high", 40, 60),
+        ("Pokemon", "Iono SAR (Paldea Evolved #254)", "Near Mint Raw", "high", 80, 120),
+        ("Pokemon", "Miriam SAR (Scarlet ex JP #098)", "Near Mint Raw", "high", 60, 90),
+        ("Pokemon", "Gardevoir ex SAR (Temporal Forces)", "Near Mint Raw", "high", 50, 80),
+        ("Pokemon", "Umbreon ex SAR (Shrouded Fable #098)", "Near Mint Raw", "grail", 100, 150),
+        ("Pokemon", "Moonlit Hill Umbreon (Twilight Masquerade)", "Near Mint Raw", "high", 60, 90),
+        ("Pokemon", "Terapagos ex Hyper Rare (Stellar Crown)", "Near Mint Raw", "high", 50, 80),
+
+        # ── UPC Promos & Stamped ──────────────────────────────────────
+        ("Pokemon", "Charizard UPC Promo (SWSH262)", "Sealed Promo", "grail", 80, 120),
+        ("Pokemon", "Pikachu UPC Gold Metal Card", "Sealed Promo", "grail", 60, 100),
+        ("Pokemon", "Charizard ex UPC Promo (SVP-056)", "Sealed Promo", "high", 40, 60),
+        ("Pokemon", "Mew ex UPC Promo (SVP-053)", "Sealed Promo", "high", 30, 50),
+        ("Pokemon", "Professor's Research Full Art (Celebrations #24)", "Near Mint Raw", "mid", 20, 35),
+        ("Pokemon", "Birthday Pikachu (Celebrations Classic #24)", "Near Mint Raw", "mid", 25, 40),
+        ("Pokemon", "Shining Magikarp (Celebrations Classic #22)", "Near Mint Raw", "mid", 15, 25),
+        ("Pokemon", "Base Set Charizard Reprint (Celebrations #4)", "Near Mint Raw", "mid", 30, 50),
+
+        # ── Sealed Product — Most Searched ────────────────────────────
+        ("Pokemon", "Evolving Skies Booster Box (Sealed)", "Factory Sealed", "grail", 400, 500),
+        ("Pokemon", "Hidden Fates ETB (Sealed)", "Factory Sealed", "grail", 200, 280),
+        ("Pokemon", "Champion's Path ETB (Sealed)", "Factory Sealed", "high", 100, 140),
+        ("Pokemon", "Shining Fates ETB (Sealed)", "Factory Sealed", "high", 80, 110),
+        ("Pokemon", "Vivid Voltage Booster Box (Sealed)", "Factory Sealed", "high", 180, 250),
+        ("Pokemon", "Fusion Strike Booster Box (Sealed)", "Factory Sealed", "mid", 120, 160),
+        ("Pokemon", "Brilliant Stars Booster Box (Sealed)", "Factory Sealed", "high", 160, 220),
+        ("Pokemon", "Lost Origin Booster Box (Sealed)", "Factory Sealed", "mid", 130, 180),
+        ("Pokemon", "Silver Tempest Booster Box (Sealed)", "Factory Sealed", "mid", 130, 180),
+        ("Pokemon", "Obsidian Flames Booster Box (Sealed)", "Factory Sealed", "mid", 120, 160),
+        ("Pokemon", "151 Booster Bundle (Sealed)", "Factory Sealed", "high", 80, 110),
+        ("Pokemon", "151 ETB (Sealed)", "Factory Sealed", "high", 60, 85),
+        ("Pokemon", "151 UPC (Sealed)", "Factory Sealed", "grail", 200, 280),
+        ("Pokemon", "Paldea Evolved Booster Box (Sealed)", "Factory Sealed", "mid", 110, 150),
+        ("Pokemon", "Scarlet & Violet Base Booster Box (Sealed)", "Factory Sealed", "mid", 120, 160),
+        ("Pokemon", "Temporal Forces Booster Box (Sealed)", "Factory Sealed", "mid", 120, 160),
+        ("Pokemon", "Shrouded Fable Booster Bundle (Sealed)", "Factory Sealed", "mid", 40, 55),
+        ("Pokemon", "Crown Zenith ETB (Sealed)", "Factory Sealed", "high", 60, 85),
+        ("Pokemon", "Crown Zenith Morpeko V-UNION Box (Sealed)", "Factory Sealed", "mid", 30, 45),
+        ("Pokemon", "Celebrations UPC (Sealed)", "Factory Sealed", "grail", 300, 420),
+        ("Pokemon", "Celebrations ETB (Sealed)", "Factory Sealed", "high", 100, 140),
+        ("Pokemon", "Sword & Shield Base Booster Box (Sealed)", "Factory Sealed", "high", 200, 280),
+        ("Pokemon", "Team Up Booster Box (Sealed)", "Factory Sealed", "high", 300, 400),
+        ("Pokemon", "Unified Minds Booster Box (Sealed)", "Factory Sealed", "high", 250, 350),
+        ("Pokemon", "Cosmic Eclipse Booster Box (Sealed)", "Factory Sealed", "grail", 350, 480),
+
+        # ── Japanese Exclusives — Art Museum, Pokemon Center, Stamp Box ─
+        ("Pokemon JP", "Munch Pikachu (Art Museum Promo, 288/SM-P)", "Near Mint Raw", "grail", 300, 500),
+        ("Pokemon JP", "Munch Eevee (Art Museum Promo, 287/SM-P)", "Near Mint Raw", "grail", 200, 350),
+        ("Pokemon JP", "Munch Psyduck (Art Museum Promo, 286/SM-P)", "Near Mint Raw", "grail", 200, 350),
+        ("Pokemon JP", "Munch Rowlet (Art Museum Promo, 290/SM-P)", "Near Mint Raw", "high", 150, 250),
+        ("Pokemon JP", "Munch Mimikyu (Art Museum Promo, 289/SM-P)", "Near Mint Raw", "grail", 250, 400),
+        ("Pokemon JP", "Van Gogh Pikachu w/ Grey Felt Hat (SVP-085)", "Near Mint Raw", "grail", 200, 300),
+        ("Pokemon JP", "Pokemon Stamp Box Collection Beauty (2021, Sealed)", "Factory Sealed JP", "grail", 600, 900),
+        ("Pokemon JP", "Pokemon Stamp Box (2024, Sealed)", "Factory Sealed JP", "grail", 300, 450),
+        ("Pokemon JP", "Pokemon Center Kanazawa Pikachu Promo (144/S-P)", "Near Mint Raw", "grail", 200, 350),
+        ("Pokemon JP", "Pokemon Center Kanazawa Opening Box (Sealed)", "Factory Sealed JP", "grail", 400, 600),
+        ("Pokemon JP", "Pikachu Poncho Charizard X (2016 Center Promo)", "Near Mint Raw", "grail", 300, 500),
+        ("Pokemon JP", "Pikachu Poncho Charizard Y (2016 Center Promo)", "Near Mint Raw", "grail", 300, 500),
+        ("Pokemon JP", "Pikachu Poncho Rayquaza (Center Promo)", "Near Mint Raw", "grail", 200, 350),
+        ("Pokemon JP", "Pikachu Poncho Magikarp (Center Promo)", "Near Mint Raw", "high", 100, 180),
+        ("Pokemon JP", "Mario Pikachu Full Art (Center Promo, 294/XY-P)", "Near Mint Raw", "grail", 250, 400),
+        ("Pokemon JP", "Luigi Pikachu Full Art (Center Promo, 296/XY-P)", "Near Mint Raw", "grail", 250, 400),
+        ("Pokemon JP", "Nessa SR (JP Exclusive Trainer, Shiny Star V)", "Near Mint Raw", "high", 60, 100),
+        ("Pokemon JP", "Marnie SR (JP Exclusive Trainer, Shiny Star V)", "Near Mint Raw", "high", 60, 100),
+        ("Pokemon JP", "Eevee Heroes Booster Box (JP, Sealed)", "Factory Sealed JP", "grail", 200, 280),
+        ("Pokemon JP", "Eevee Heroes Eeveelution Gym Box (JP, Sealed)", "Factory Sealed JP", "grail", 500, 700),
+        ("Pokemon JP", "VMAX Climax Booster Box (JP, Sealed)", "Factory Sealed JP", "high", 80, 110),
+        ("Pokemon JP", "Shiny Star V Booster Box (JP, Sealed)", "Factory Sealed JP", "high", 120, 170),
+        ("Pokemon JP", "Dark Phantasma Booster Box (JP, Sealed)", "Factory Sealed JP", "high", 80, 110),
+        ("Pokemon JP", "VSTAR Universe Booster Box (JP, Sealed)", "Factory Sealed JP", "high", 80, 110),
+        ("Pokemon JP", "Scarlet ex Booster Box (JP, Sealed)", "Factory Sealed JP", "mid", 60, 85),
+        ("Pokemon JP", "Violet ex Booster Box (JP, Sealed)", "Factory Sealed JP", "mid", 60, 85),
+        ("Pokemon JP", "151 Booster Box (JP, Sealed)", "Factory Sealed JP", "high", 120, 170),
+        ("Pokemon JP", "Raging Surf Booster Box (JP, Sealed)", "Factory Sealed JP", "mid", 60, 85),
+        ("Pokemon JP", "Wild Force Booster Box (JP, Sealed)", "Factory Sealed JP", "mid", 50, 75),
+        ("Pokemon JP", "Cyber Judge Booster Box (JP, Sealed)", "Factory Sealed JP", "mid", 50, 75),
+
+        # ── Vintage Sealed — English ─────────────────────────────────
+        ("Pokemon", "Base Set Booster Pack (Sealed, Heavy)", "Factory Sealed", "grail", 2000, 3500),
+        ("Pokemon", "Base Set Booster Pack (Sealed, Light)", "Factory Sealed", "grail", 600, 900),
+        ("Pokemon", "Jungle Booster Pack (Sealed)", "Factory Sealed", "grail", 400, 600),
+        ("Pokemon", "Fossil Booster Pack (Sealed)", "Factory Sealed", "grail", 300, 450),
+        ("Pokemon", "Team Rocket Booster Pack (Sealed, 1st Ed)", "Factory Sealed", "grail", 500, 800),
+        ("Pokemon", "Gym Heroes Booster Pack (Sealed, 1st Ed)", "Factory Sealed", "grail", 400, 600),
+        ("Pokemon", "Gym Challenge Booster Pack (Sealed, 1st Ed)", "Factory Sealed", "grail", 400, 600),
+        ("Pokemon", "Neo Genesis Booster Pack (Sealed, 1st Ed)", "Factory Sealed", "grail", 300, 500),
+        ("Pokemon", "Neo Discovery Booster Pack (Sealed, 1st Ed)", "Factory Sealed", "grail", 250, 400),
+        ("Pokemon", "Neo Revelation Booster Pack (Sealed, 1st Ed)", "Factory Sealed", "grail", 250, 400),
+        ("Pokemon", "Neo Destiny Booster Pack (Sealed, 1st Ed)", "Factory Sealed", "grail", 300, 500),
+        ("Pokemon", "Skyridge Booster Pack (Sealed)", "Factory Sealed", "grail", 800, 1200),
+        ("Pokemon", "Aquapolis Booster Pack (Sealed)", "Factory Sealed", "grail", 600, 900),
+        ("Pokemon", "Expedition Booster Pack (Sealed)", "Factory Sealed", "grail", 400, 600),
+        ("Pokemon", "EX Ruby & Sapphire Booster Pack (Sealed)", "Factory Sealed", "grail", 200, 350),
+        ("Pokemon", "EX Dragon Booster Pack (Sealed)", "Factory Sealed", "grail", 200, 350),
+        ("Pokemon", "EX FireRed LeafGreen Booster Pack (Sealed)", "Factory Sealed", "grail", 200, 350),
+        ("Pokemon", "EX Deoxys Booster Pack (Sealed)", "Factory Sealed", "grail", 250, 400),
+
+        # ── XY & Sun & Moon Era Sealed ───────────────────────────────
+        ("Pokemon", "XY Evolutions Booster Box (Sealed)", "Factory Sealed", "grail", 500, 700),
+        ("Pokemon", "XY Evolutions Booster Pack (Sealed)", "Factory Sealed", "high", 30, 45),
+        ("Pokemon", "Burning Shadows Booster Box (Sealed)", "Factory Sealed", "high", 250, 350),
+        ("Pokemon", "Ultra Prism Booster Box (Sealed)", "Factory Sealed", "high", 300, 420),
+        ("Pokemon", "Unbroken Bonds Booster Box (Sealed)", "Factory Sealed", "grail", 350, 480),
+        ("Pokemon", "Hidden Fates Booster Pack (Sealed)", "Factory Sealed", "high", 25, 35),
+        ("Pokemon", "Shining Legends Booster Pack (Sealed)", "Factory Sealed", "high", 20, 30),
+
+        # ── Graded Modern — Popular PSA Submissions ──────────────────
+        ("PSA", "PSA 10 Charizard VMAX Shiny (Shining Fates SV107)", "PSA 10 Gem Mint", "grail", 200, 300),
+        ("PSA", "PSA 10 Pikachu VMAX Rainbow (Vivid Voltage #188)", "PSA 10 Gem Mint", "grail", 350, 500),
+        ("PSA", "PSA 10 Charizard V Alt Art (Brilliant Stars TG13)", "PSA 10 Gem Mint", "grail", 250, 350),
+        ("PSA", "PSA 10 Charizard ex SAR (Obsidian Flames #223)", "PSA 10 Gem Mint", "grail", 250, 350),
+        ("PSA", "PSA 10 Lugia V Alt Art (Silver Tempest #186)", "PSA 10 Gem Mint", "grail", 300, 420),
+        ("PSA", "PSA 10 Mew VMAX Alt Art (Fusion Strike #269)", "PSA 10 Gem Mint", "grail", 200, 300),
+        ("PSA", "PSA 10 Gengar VMAX Alt Art (Fusion Strike #271)", "PSA 10 Gem Mint", "high", 150, 220),
+        ("PSA", "PSA 10 Rayquaza VMAX Alt Art (Evolving Skies #218)", "PSA 10 Gem Mint", "grail", 450, 600),
+        ("PSA", "PSA 10 Espeon VMAX Alt Art (Evolving Skies #203)", "PSA 10 Gem Mint", "high", 150, 220),
+        ("PSA", "PSA 10 Sylveon VMAX Alt Art (Evolving Skies #212)", "PSA 10 Gem Mint", "grail", 200, 300),
+    ]
+
+    catalog: list[dict] = []
+    for brand, name, condition_note, tier, price_loose, price_boxed in _raw:
+        catalog.append({
+            "brand": brand,
+            "name": name,
+            "condition_note": condition_note,
+            "rarity_tier": tier,
+            "price_loose": price_loose,
+            "price_boxed": price_boxed,
+        })
+    return catalog
 
 
 def main():

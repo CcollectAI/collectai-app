@@ -1315,7 +1315,6 @@ def get_curated_catalog() -> list[dict]:
         ("Comic Beam", "Nausicaa", "Magazine Issue", "Comic Beam Miyazaki Hayao Special Feature Issue", "2000s", "high", 75),
         ("Young Magazine", "Kodansha", "Magazine Issue", "Young Magazine Inaugural Issue 1980", "1980s", "grail", 150),
         ("Young Magazine", "Akira", "Magazine Issue", "Young Magazine Akira Otomo Katsuhiro Cover Feature 1983", "1980s", "grail", 200),
-        ("Young Magazine", "Initial D", "Magazine Issue", "Young Magazine Initial D Final Chapter Issue 2013", "2010s", "high", 50),
         ("Morning", "Vagabond", "Magazine Issue", "Morning Vagabond Inoue Takehiko Cover Feature 2000", "2000s", "high", 65),
         ("Morning", "Space Brothers", "Magazine Issue", "Morning Space Brothers 400th Chapter Feature Issue", "2020s", "mid", 28),
 

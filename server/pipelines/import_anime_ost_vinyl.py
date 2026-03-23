@@ -1214,7 +1214,6 @@ def get_curated_catalog() -> list[dict]:
         ("Tiger Lab Vinyl", "Samurai Champloo: Music Record: Playlist", "Samurai Champloo", "US Pressing", "Green Translucent", "high", 75),
         ("Milan Records", "Tales From Earthsea Soundtrack", "Tales From Earthsea", "EU/US Pressing", "Black", "mid", 30),
         ("Milan Records", "The Boy and the Heron Soundtrack", "The Boy and the Heron", "EU/US Pressing", "Black", "mid", 32),
-        ("Milan Records", "When Marnie Was There Soundtrack", "When Marnie Was There", "EU/US Pressing", "Black", "mid", 28),
         ("Aniplex", "Demon Slayer OST Vol. 1 (2LP)", "Demon Slayer", "Japanese Pressing", "Black", "high", 70),
         ("Aniplex", "Demon Slayer OST Vol. 2 (2LP)", "Demon Slayer", "Japanese Pressing", "Flame Orange", "high", 80),
         ("Aniplex", "Sword Art Online OST (2LP)", "Sword Art Online", "Japanese Pressing", "Blue", "high", 70),

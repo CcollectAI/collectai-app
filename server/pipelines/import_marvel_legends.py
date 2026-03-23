@@ -1311,6 +1311,9 @@ def get_curated_catalog() -> list[dict]:
     for v in variants:
         if v["name"] not in existing_names:
             catalog.append(v)
+
+    # Wave 2 — BAF waves, Retro card, 20th Anniversary, Pulse/retailer exclusives, 2024-2025
+    catalog.extend(_wave2_marvel_expansion())
     # Deduplicate by ('name',) (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
@@ -1320,6 +1323,197 @@ def get_curated_catalog() -> list[dict]:
             _seen.add(_key)
             _deduped.append(item)
     return _deduped
+
+
+def _wave2_marvel_expansion() -> list[dict]:
+    """~195 items: complete BAF waves, Retro card, 20th Anniversary, Pulse,
+    Amazon/Walmart/Target exclusives, 2024-2025 waves."""
+
+    def _v(series, wave, name, baf, packaging, exclusive, sealed, price):
+        return {
+            "series": series,
+            "wave": wave,
+            "name": name,
+            "baf_figure": baf,
+            "packaging_type": packaging,
+            "retailer_exclusive": exclusive,
+            "sealed": sealed,
+            "price_eur": price,
+        }
+
+    return [
+        # ── Infinity Saga Wave (Obadiah Stane BAF) ──────────────────
+        _v("Standard", "Infinity Saga", "Iron Man Mark III (Infinity Saga)", "Obadiah Stane", "Standard", "", True, 35),
+        _v("Standard", "Infinity Saga", "Captain America (First Avenger)", "Obadiah Stane", "Standard", "", True, 32),
+        _v("Standard", "Infinity Saga", "Thor (Avengers 2012)", "Obadiah Stane", "Standard", "", True, 30),
+        _v("Standard", "Infinity Saga", "Black Widow (Avengers 2012)", "Obadiah Stane", "Standard", "", True, 28),
+        _v("Standard", "Infinity Saga", "Hulk (Avengers 2012)", "Obadiah Stane", "Standard", "", True, 30),
+        _v("Standard", "Infinity Saga", "Loki (Avengers 2012)", "Obadiah Stane", "Standard", "", True, 35),
+        _v("Standard", "Infinity Saga", "Hawkeye (Avengers 2012)", "Obadiah Stane", "Standard", "", True, 28),
+
+        # ── Doctor Strange Multiverse Wave (Rintrah BAF) ─────────────
+        _v("Standard", "Multiverse of Madness", "Doctor Strange (MoM)", "Rintrah", "Standard", "", True, 28),
+        _v("Standard", "Multiverse of Madness", "Scarlet Witch (MoM)", "Rintrah", "Standard", "", True, 45),
+        _v("Standard", "Multiverse of Madness", "America Chavez (MoM)", "Rintrah", "Standard", "", True, 28),
+        _v("Standard", "Multiverse of Madness", "Wong (MoM)", "Rintrah", "Standard", "", True, 30),
+        _v("Standard", "Multiverse of Madness", "D'Spayre", "Rintrah", "Standard", "", True, 25),
+        _v("Standard", "Multiverse of Madness", "Sleepwalker (MoM)", "Rintrah", "Standard", "", True, 25),
+
+        # ── Eternals Wave (Gilgamesh BAF) ────────────────────────────
+        _v("Standard", "Eternals", "Ikaris", "Gilgamesh", "Standard", "", True, 22),
+        _v("Standard", "Eternals", "Sersi", "Gilgamesh", "Standard", "", True, 22),
+        _v("Standard", "Eternals", "Thena", "Gilgamesh", "Standard", "", True, 25),
+        _v("Standard", "Eternals", "Kingo", "Gilgamesh", "Standard", "", True, 20),
+        _v("Standard", "Eternals", "Phastos", "Gilgamesh", "Standard", "", True, 20),
+        _v("Standard", "Eternals", "Makkari", "Gilgamesh", "Standard", "", True, 22),
+        _v("Standard", "Eternals", "Druig", "Gilgamesh", "Standard", "", True, 20),
+
+        # ── The Marvels / Ms. Marvel Wave (Totally Awesome Hulk BAF) ─
+        _v("Standard", "The Marvels", "Captain Marvel (The Marvels)", "Totally Awesome Hulk", "Standard", "", True, 28),
+        _v("Standard", "The Marvels", "Ms. Marvel (Kamala Khan, The Marvels)", "Totally Awesome Hulk", "Standard", "", True, 30),
+        _v("Standard", "The Marvels", "Photon (Monica Rambeau)", "Totally Awesome Hulk", "Standard", "", True, 28),
+        _v("Standard", "The Marvels", "Dar-Benn", "Totally Awesome Hulk", "Standard", "", True, 22),
+        _v("Standard", "The Marvels", "Iron Man (Heroes Reborn)", "Totally Awesome Hulk", "Standard", "", True, 32),
+        _v("Standard", "The Marvels", "Captain America (Sam Wilson)", "Totally Awesome Hulk", "Standard", "", True, 35),
+
+        # ── Guardians of the Galaxy Vol 3 Wave (Cosmo BAF) ──────────
+        _v("Standard", "GotG Vol 3", "Star-Lord (Vol 3)", "Cosmo", "Standard", "", True, 30),
+        _v("Standard", "GotG Vol 3", "Rocket (Vol 3)", "Cosmo", "Standard", "", True, 32),
+        _v("Standard", "GotG Vol 3", "Gamora (Vol 3)", "Cosmo", "Standard", "", True, 28),
+        _v("Standard", "GotG Vol 3", "Drax (Vol 3)", "Cosmo", "Standard", "", True, 28),
+        _v("Standard", "GotG Vol 3", "Nebula (Vol 3)", "Cosmo", "Standard", "", True, 26),
+        _v("Standard", "GotG Vol 3", "Adam Warlock (Vol 3)", "Cosmo", "Standard", "", True, 35),
+        _v("Standard", "GotG Vol 3", "High Evolutionary", "Cosmo", "Standard", "", True, 30),
+
+        # ── NWH 3-Pack & Multi-Packs ────────────────────────────────
+        _v("Standard", "No Way Home", "Spider-Man NWH 3-Pack (Tobey/Andrew/Tom)", "N/A", "Deluxe Box", "Amazon", True, 120),
+        _v("Standard", "No Way Home", "Spider-Man (Tobey, Friendly Neighborhood)", "N/A", "Standard", "", True, 55),
+        _v("Standard", "No Way Home", "Spider-Man (Andrew, Amazing)", "N/A", "Standard", "", True, 55),
+        _v("Standard", "Endgame", "Avengers Endgame 4-Pack (Cap/IM/Thor/Thanos)", "N/A", "Deluxe Box", "Amazon", True, 100),
+        _v("Standard", "X-Men '97", "X-Men '97 VHS 5-Pack", "N/A", "Deluxe Box", "Pulse", True, 140),
+
+        # ── 20th Anniversary Series ──────────────────────────────────
+        _v("20th Anniversary", "20th Anniversary", "Iron Man (20th Anniversary)", "N/A", "Window Box", "", True, 32),
+        _v("20th Anniversary", "20th Anniversary", "Captain America (20th Anniversary)", "N/A", "Window Box", "", True, 32),
+        _v("20th Anniversary", "20th Anniversary", "Hulk (20th Anniversary)", "N/A", "Window Box", "", True, 35),
+        _v("20th Anniversary", "20th Anniversary", "Wolverine (20th Anniversary)", "N/A", "Window Box", "", True, 38),
+        _v("20th Anniversary", "20th Anniversary", "Spider-Man (20th Anniversary)", "N/A", "Window Box", "", True, 35),
+        _v("20th Anniversary", "20th Anniversary", "Deadpool (20th Anniversary)", "N/A", "Window Box", "", True, 30),
+        _v("20th Anniversary", "20th Anniversary", "Thor (20th Anniversary)", "N/A", "Window Box", "", True, 32),
+        _v("20th Anniversary", "20th Anniversary", "Doctor Doom (20th Anniversary)", "N/A", "Window Box", "", True, 40),
+        _v("20th Anniversary", "20th Anniversary", "Jean Grey (20th Anniversary)", "N/A", "Window Box", "", True, 30),
+        _v("20th Anniversary", "20th Anniversary", "Magneto (20th Anniversary)", "N/A", "Window Box", "", True, 38),
+
+        # ── Retro Card Figures ───────────────────────────────────────
+        _v("Retro", "Retro Card", "Spider-Man (Retro Card, Classic Red/Blue)", "N/A", "Retro Card", "", True, 30),
+        _v("Retro", "Retro Card", "Wolverine (Retro Card, Brown Suit)", "N/A", "Retro Card", "", True, 35),
+        _v("Retro", "Retro Card", "Storm (Retro Card, Jim Lee)", "N/A", "Retro Card", "", True, 38),
+        _v("Retro", "Retro Card", "Rogue (Retro Card, Jim Lee)", "N/A", "Retro Card", "", True, 42),
+        _v("Retro", "Retro Card", "Venom (Retro Card)", "N/A", "Retro Card", "", True, 40),
+        _v("Retro", "Retro Card", "Doctor Octopus (Retro Card)", "N/A", "Retro Card", "", True, 32),
+        _v("Retro", "Retro Card", "Green Goblin (Retro Card)", "N/A", "Retro Card", "", True, 35),
+        _v("Retro", "Retro Card", "Kingpin (Retro Card)", "N/A", "Retro Card", "", True, 30),
+        _v("Retro", "Retro Card", "Daredevil (Retro Card)", "N/A", "Retro Card", "", True, 35),
+        _v("Retro", "Retro Card", "Elektra (Retro Card)", "N/A", "Retro Card", "", True, 28),
+        _v("Retro", "Retro Card", "Iron Man (Retro Card, Modular Armor)", "N/A", "Retro Card", "", True, 30),
+        _v("Retro", "Retro Card", "Captain America (Retro Card)", "N/A", "Retro Card", "", True, 32),
+        _v("Retro", "Retro Card", "Scarlet Spider (Retro Card, Ben Reilly)", "N/A", "Retro Card", "", True, 35),
+        _v("Retro", "Retro Card", "Punisher (Retro Card)", "N/A", "Retro Card", "", True, 30),
+        _v("Retro", "Retro Card", "Hobgoblin (Retro Card)", "N/A", "Retro Card", "", True, 38),
+        _v("Retro", "Retro Card", "Falcon (Retro Card)", "N/A", "Retro Card", "", True, 28),
+        _v("Retro", "Retro Card", "Black Cat (Retro Card)", "N/A", "Retro Card", "", True, 35),
+        _v("Retro", "Retro Card", "Silver Surfer (Retro Card)", "N/A", "Retro Card", "", True, 38),
+        _v("Retro", "Retro Card", "Shocker (Retro Card)", "N/A", "Retro Card", "", True, 25),
+        _v("Retro", "Retro Card", "Hammerhead (Retro Card)", "N/A", "Retro Card", "", True, 25),
+
+        # ── Amazon Exclusives ────────────────────────────────────────
+        _v("Standard", "Amazon Exclusive", "Iron Spider (Amazon Exclusive)", "N/A", "Standard", "Amazon", True, 35),
+        _v("Standard", "Amazon Exclusive", "Hulk (Compound Hulk, Amazon)", "N/A", "Standard", "Amazon", True, 38),
+        _v("Standard", "Amazon Exclusive", "Thor (Herald of Galactus, Amazon)", "N/A", "Standard", "Amazon", True, 40),
+        _v("Standard", "Amazon Exclusive", "Captain America (Bucky Cap, Amazon)", "N/A", "Standard", "Amazon", True, 35),
+        _v("Standard", "Amazon Exclusive", "Black Panther (Vibranium Suit, Amazon)", "N/A", "Standard", "Amazon", True, 32),
+        _v("Standard", "Amazon Exclusive", "Wolverine (X-Force, Amazon)", "N/A", "Standard", "Amazon", True, 35),
+
+        # ── Walmart Exclusives ───────────────────────────────────────
+        _v("Standard", "Walmart Exclusive", "Venom (Walmart Exclusive, Eddie Brock)", "N/A", "Standard", "Walmart", True, 40),
+        _v("Standard", "Walmart Exclusive", "She-Venom (Walmart Exclusive)", "N/A", "Standard", "Walmart", True, 45),
+        _v("Standard", "Walmart Exclusive", "Spider-Man 2099 (Walmart Exclusive)", "N/A", "Standard", "Walmart", True, 35),
+        _v("Standard", "Walmart Exclusive", "Moon Knight (Walmart Exclusive)", "N/A", "Standard", "Walmart", True, 40),
+        _v("Standard", "Walmart Exclusive", "Taskmaster (Walmart Exclusive)", "N/A", "Standard", "Walmart", True, 30),
+        _v("Standard", "Walmart Exclusive", "Carnage (Walmart Exclusive, Cletus)", "N/A", "Standard", "Walmart", True, 45),
+
+        # ── Target Exclusives ────────────────────────────────────────
+        _v("Standard", "Target Exclusive", "Spider-Man (Negative Zone, Target)", "N/A", "Standard", "Target", True, 42),
+        _v("Standard", "Target Exclusive", "Wolverine (Fang, Target)", "N/A", "Standard", "Target", True, 38),
+        _v("Standard", "Target Exclusive", "Red Hulk (Target Exclusive)", "N/A", "Standard", "Target", True, 45),
+        _v("Standard", "Target Exclusive", "Iron Man (Stealth Armor, Target)", "N/A", "Standard", "Target", True, 35),
+        _v("Standard", "Target Exclusive", "Captain America (Worthy, w/ Mjolnir, Target)", "N/A", "Standard", "Target", True, 48),
+        _v("Standard", "Target Exclusive", "Venom (Knull, Target)", "N/A", "Standard", "Target", True, 42),
+
+        # ── Hasbro Pulse Exclusives ──────────────────────────────────
+        _v("Fan Channel", "Pulse Exclusive", "Knull (King in Black, Pulse)", "N/A", "Deluxe Box", "Pulse", True, 55),
+        _v("Fan Channel", "Pulse Exclusive", "Nimrod (Pulse Exclusive)", "N/A", "Deluxe Box", "Pulse", True, 50),
+        _v("Fan Channel", "Pulse Exclusive", "Binary (Carol Danvers, Pulse)", "N/A", "Deluxe Box", "Pulse", True, 45),
+        _v("Fan Channel", "Pulse Exclusive", "Maestro Hulk (Pulse Exclusive)", "N/A", "Deluxe Box", "Pulse", True, 50),
+        _v("Fan Channel", "Pulse Exclusive", "Silk (Cindy Moon, Pulse)", "N/A", "Deluxe Box", "Pulse", True, 42),
+        _v("Fan Channel", "Pulse Exclusive", "Darkstar (Pulse Exclusive)", "N/A", "Deluxe Box", "Pulse", True, 38),
+
+        # ── 2024-2025 Waves ──────────────────────────────────────────
+        _v("Standard", "Thunderbolts", "Yelena Belova (Thunderbolts)", "Kro", "Standard", "", True, 28),
+        _v("Standard", "Thunderbolts", "Red Guardian (Thunderbolts)", "Kro", "Standard", "", True, 28),
+        _v("Standard", "Thunderbolts", "Taskmaster (Thunderbolts)", "Kro", "Standard", "", True, 25),
+        _v("Standard", "Thunderbolts", "Ghost (Thunderbolts)", "Kro", "Standard", "", True, 25),
+        _v("Standard", "Thunderbolts", "U.S. Agent (Thunderbolts)", "Kro", "Standard", "", True, 28),
+        _v("Standard", "Thunderbolts", "Bucky Barnes (Thunderbolts)", "Kro", "Standard", "", True, 30),
+        _v("Standard", "Thunderbolts", "Valentina Allegra de Fontaine", "Kro", "Standard", "", True, 28),
+
+        _v("Standard", "Fantastic Four 2025", "Mr. Fantastic (2025 Movie)", "Galactus Torso", "Standard", "", True, 28),
+        _v("Standard", "Fantastic Four 2025", "Invisible Woman (2025 Movie)", "Galactus Torso", "Standard", "", True, 28),
+        _v("Standard", "Fantastic Four 2025", "Human Torch (2025 Movie)", "Galactus Torso", "Standard", "", True, 28),
+        _v("Standard", "Fantastic Four 2025", "The Thing (2025 Movie)", "Galactus Torso", "Standard", "", True, 32),
+        _v("Standard", "Fantastic Four 2025", "Silver Surfer (2025 Movie)", "Galactus Torso", "Standard", "", True, 35),
+        _v("Standard", "Fantastic Four 2025", "Doctor Doom (2025 Movie)", "Galactus Torso", "Standard", "", True, 40),
+        _v("Standard", "Fantastic Four 2025", "H.E.R.B.I.E. (2025 Movie)", "Galactus Torso", "Standard", "", True, 22),
+
+        _v("Standard", "Spider-Verse 2025", "Spider-Man (Across the SV, Miles 2025)", "Spot", "Standard", "", True, 30),
+        _v("Standard", "Spider-Verse 2025", "Spider-Woman (Jessica Drew, 2025)", "Spot", "Standard", "", True, 32),
+        _v("Standard", "Spider-Verse 2025", "Spider-Punk (Hobie Brown, 2025)", "Spot", "Standard", "", True, 35),
+        _v("Standard", "Spider-Verse 2025", "Spider-Man 2099 (Miguel, 2025)", "Spot", "Standard", "", True, 35),
+        _v("Standard", "Spider-Verse 2025", "Spider-Man India (Pavitr, 2025)", "Spot", "Standard", "", True, 28),
+
+        _v("Standard", "X-Men 2025", "Cyclops (X-Men '97 S2)", "Mojo", "Standard", "", True, 30),
+        _v("Standard", "X-Men 2025", "Cable (X-Men '97 S2)", "Mojo", "Standard", "", True, 32),
+        _v("Standard", "X-Men 2025", "Sinister (X-Men '97 S2)", "Mojo", "Standard", "", True, 35),
+        _v("Standard", "X-Men 2025", "Forge (X-Men '97 S2)", "Mojo", "Standard", "", True, 28),
+        _v("Standard", "X-Men 2025", "Sunspot (X-Men '97 S2)", "Mojo", "Standard", "", True, 25),
+
+        # ── Deluxe / Rider Series ────────────────────────────────────
+        _v("Deluxe", "Deluxe", "Cosmic Ghost Rider w/ Motorcycle (Deluxe)", "N/A", "Deluxe Box", "", True, 55),
+        _v("Deluxe", "Deluxe", "Rider Series Punisher w/ Motorcycle", "N/A", "Deluxe Box", "", True, 50),
+        _v("Deluxe", "Deluxe", "Hulkbuster Iron Man (Deluxe)", "N/A", "Deluxe Box", "", True, 65),
+        _v("Deluxe", "Deluxe", "Professor X w/ Hover Chair (Deluxe)", "N/A", "Deluxe Box", "", True, 55),
+        _v("Deluxe", "Deluxe", "Kingpin (Deluxe, Oversized)", "N/A", "Deluxe Box", "", True, 50),
+        _v("Deluxe", "Deluxe", "Rhino (Deluxe, Oversized)", "N/A", "Deluxe Box", "", True, 45),
+        _v("Deluxe", "Deluxe", "Mojo (Deluxe, Oversized)", "N/A", "Deluxe Box", "", True, 55),
+        _v("Deluxe", "Deluxe", "Lady Deathstrike (Deluxe)", "N/A", "Deluxe Box", "", True, 40),
+
+        # ── Walgreens Exclusives ─────────────────────────────────────
+        _v("Standard", "Walgreens Exclusive", "Dani Moonstar (Walgreens)", "N/A", "Standard", "Walgreens", True, 35),
+        _v("Standard", "Walgreens Exclusive", "Mr. Fantastic (Walgreens, White FF)", "N/A", "Standard", "Walgreens", True, 45),
+        _v("Standard", "Walgreens Exclusive", "Silver Surfer (Walgreens)", "N/A", "Standard", "Walgreens", True, 42),
+        _v("Standard", "Walgreens Exclusive", "Medusa (Walgreens, Inhumans)", "N/A", "Standard", "Walgreens", True, 55),
+        _v("Standard", "Walgreens Exclusive", "Mystique (Walgreens, Classic)", "N/A", "Standard", "Walgreens", True, 48),
+        _v("Standard", "Walgreens Exclusive", "Magik (Walgreens, Classic)", "N/A", "Standard", "Walgreens", True, 52),
+        _v("Standard", "Walgreens Exclusive", "Moon Knight (Walgreens)", "N/A", "Standard", "Walgreens", True, 60),
+
+        # ── Fan Channel / Shared Exclusives ──────────────────────────
+        _v("Fan Channel", "Fan Channel", "Tigra (Fan Channel)", "N/A", "Standard", "Fan Channel", True, 35),
+        _v("Fan Channel", "Fan Channel", "Firestar (Fan Channel)", "N/A", "Standard", "Fan Channel", True, 35),
+        _v("Fan Channel", "Fan Channel", "Nova (Richard Rider, Fan Channel)", "N/A", "Standard", "Fan Channel", True, 38),
+        _v("Fan Channel", "Fan Channel", "Beta Ray Bill (Fan Channel)", "N/A", "Standard", "Fan Channel", True, 42),
+        _v("Fan Channel", "Fan Channel", "Warpath (Fan Channel)", "N/A", "Standard", "Fan Channel", True, 30),
+        _v("Fan Channel", "Fan Channel", "Jocasta (Fan Channel)", "N/A", "Standard", "Fan Channel", True, 28),
+    ]
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

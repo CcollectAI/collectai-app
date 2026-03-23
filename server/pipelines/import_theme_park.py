@@ -1506,7 +1506,6 @@ def _variant_expansion() -> list[dict]:
         # Disneyland Paris exclusives of WDW items
         ("Disneyland Paris", "popcorn_bucket", "Ratatouille Remy Popcorn Bucket", "DLP Exclusive", "high", 85),
         ("Disneyland Paris", "popcorn_bucket", "DLP Castle Popcorn Bucket 30th Anniversary", "Anniversary LE", "high", 100),
-        ("Disneyland Paris", "merch", "DLP 30th Anniversary Spirit Jersey", "Anniversary LE", "mid", 55),
         # Epic Universe (Universal Orlando) Grand Opening
         ("Epic Universe", "merch", "Epic Universe Grand Opening Spirit Jersey", "Grand Opening", "high", 75),
         ("Epic Universe", "merch", "Epic Universe Grand Opening Pin Set", "Grand Opening", "high", 85),

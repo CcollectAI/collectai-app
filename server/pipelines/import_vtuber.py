@@ -975,7 +975,6 @@ def get_curated_catalog() -> list[dict]:
 
         # ── Phase Connect — Additional (+10) ─────────────────────────────
         ("Phase Connect", "Tenma Maemi", "Birthday Set", "Tenma Maemi Birthday 2025 Complete Set", "Birthday", "mid", 42),
-        ("Phase Connect", "Tenma Maemi", "Acrylic Stand", "Tenma Maemi 3rd Anniversary Acrylic Stand", "Anniversary", "mid", 22),
         ("Phase Connect", "Pipkin Pippa", "Birthday Set", "Pipkin Pippa Birthday 2025 Merch Set", "Birthday", "mid", 45),
         ("Phase Connect", "Pipkin Pippa", "Tapestry", "Pipkin Pippa 3rd Anniversary B2 Tapestry", "Anniversary", "mid", 28),
         ("Phase Connect", "Jelly Hoshiumi", "Birthday Set", "Jelly Hoshiumi Birthday 2025 Full Set", "Birthday", "mid", 38),

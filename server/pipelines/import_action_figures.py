@@ -1221,7 +1221,6 @@ def get_curated_catalog() -> list[dict]:
         ("McFarlane", "DC Multiverse", "Bane (DC Rebirth)", '7"', "DC Comics", "Deluxe", "", 42),
         ("McFarlane", "DC Multiverse", "Constantine (DC Rebirth)", '7"', "DC Comics", "Standard", "", 28),
         ("McFarlane", "DC Multiverse", "Swamp Thing (DC Rebirth)", '7"', "DC Comics", "Deluxe", "", 40),
-        ("McFarlane", "DC Multiverse", "Deathstroke (Arkham Origins)", '7"', "DC Comics", "Standard", "", 28),
 
         # ─── More NECA Figures ─────────────────────────────────────────────
         ("NECA", "Ultimate", "Godzilla (2019 King of the Monsters)", '7"', "Godzilla", "Window Box", "", 42),
@@ -1238,8 +1237,6 @@ def get_curated_catalog() -> list[dict]:
         ("NECA", "Ultimate", "TMNT (Cartoon) Krang's Android Body", '7"', "TMNT", "Deluxe", "", 55),
 
         # ─── More Super7 Ultimates! ───────────────────────────────────────
-        ("Super7", "Ultimates!", "TMNT Bebop", '7"', "TMNT", "Standard", "", 55),
-        ("Super7", "Ultimates!", "TMNT Rocksteady", '7"', "TMNT", "Standard", "", 55),
         ("Super7", "Ultimates!", "Thundercats Lion-O", '7"', "Thundercats", "Standard", "", 55),
         ("Super7", "Ultimates!", "Thundercats Mumm-Ra", '7"', "Thundercats", "Standard", "", 55),
         ("Super7", "Ultimates!", "MOTU He-Man", '7"', "MOTU", "Standard", "", 50),

@@ -973,6 +973,9 @@ def get_curated_catalog() -> list[dict]:
     # Variant expansion — ~115 color/edition variants across major handhelds
     catalog.extend(_variant_expansion())
 
+    # Round 9 expansion — 200 items: LE consoles, modern retro handhelds, trending 2024-2025
+    catalog.extend(_round9_handheld_expansion())
+
     # Deduplicate by ('name',) (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
@@ -1707,6 +1710,239 @@ def _variant_expansion() -> list[dict]:
     catalog = []
     for brand, name, platform, variant_note, condition, rarity_tier, price_loose, price_cib in items:
         if "Japan" in variant_note or condition == "Japan Exclusive":
+            region = "JPN"
+        elif "NA" in variant_note:
+            region = "NA"
+        else:
+            region = "EU"
+        is_limited = condition in ("Limited Color", "Special Edition", "Japan Exclusive", "Anniversary")
+        year = _platform_year(platform, name)
+        catalog.append({
+            "brand": brand,
+            "name": name,
+            "platform": platform,
+            "variant_note": variant_note,
+            "condition": condition,
+            "rarity_tier": rarity_tier,
+            "price_loose_eur": price_loose,
+            "price_cib_eur": price_cib,
+            "region": region,
+            "is_limited_edition": is_limited,
+            "year": year,
+        })
+    return catalog
+
+
+def _round9_handheld_expansion() -> list[dict]:
+    """~200 items: Game Boy Color Pokemon eds, GBA SP NES/Famicom, DS Lite LE,
+    3DS XL LE, PSP LE, PS Vita LE, Switch OLED LE, Anbernic/Miyoo/Retroid 2024-2025."""
+    raw = [
+        # ── Game Boy Color — Pokemon & LE ────────────────────────────────
+        ("Nintendo", "Game Boy Color Pokemon Pikachu Yellow JP", "Game Boy Color", "Pokemon Pikachu Yellow CGB-001 (Japan)", "Japan Exclusive", "grail", 150, 350),
+        ("Nintendo", "Game Boy Color Pokemon 3rd Anniversary JP", "Game Boy Color", "Pokemon 3rd Anniversary Orange (Japan)", "Japan Exclusive", "grail", 300, 650),
+        ("Nintendo", "Game Boy Color Cardcaptor Sakura Pink JP", "Game Boy Color", "Cardcaptor Sakura Pink (Japan)", "Japan Exclusive", "grail", 200, 420),
+        ("Nintendo", "Game Boy Color Sakura Taisen White JP", "Game Boy Color", "Sakura Taisen White (Japan)", "Japan Exclusive", "grail", 180, 380),
+        ("Nintendo", "Game Boy Color Tommy Hilfiger", "Game Boy Color", "Tommy Hilfiger Yellow (USA)", "Special Edition", "grail", 250, 500),
+        ("Nintendo", "Game Boy Color Ozzy Osbourne Purple", "Game Boy Color", "Ozzy Osbourne Purple Promo (USA)", "Special Edition", "grail", 500, 1000),
+        ("Nintendo", "Game Boy Color Toys R Us Gold", "Game Boy Color", "Toys R Us Gold Limited (USA)", "Special Edition", "grail", 200, 420),
+        ("Nintendo", "Game Boy Color Manchester United Red", "Game Boy Color", "Manchester United Red (UK)", "Special Edition", "high", 120, 260),
+        ("Nintendo", "Game Boy Color Hello Kitty Pink JP", "Game Boy Color", "Hello Kitty Pink (Japan)", "Japan Exclusive", "high", 140, 300),
+        ("Nintendo", "Game Boy Color Daiei Hawks Orange JP", "Game Boy Color", "Daiei Hawks Orange (Japan)", "Japan Exclusive", "high", 130, 280),
+
+        # ── GBA SP — NES/Famicom & Special ───────────────────────────────
+        ("Nintendo", "GBA SP AGS-101 Graphite", "Game Boy Advance SP", "Graphite AGS-101 Backlit (NA)", "Standard", "high", 110, 230),
+        ("Nintendo", "GBA SP Surf Blue AGS-101", "Game Boy Advance SP", "Surf Blue AGS-101 Backlit", "Standard", "high", 100, 220),
+        ("Nintendo", "GBA SP Pearl Green AGS-101", "Game Boy Advance SP", "Pearl Green AGS-101 Backlit", "Limited Color", "high", 120, 250),
+        ("Nintendo", "GBA SP Final Fantasy Tactics JP", "Game Boy Advance SP", "Final Fantasy Tactics Advance (Japan)", "Japan Exclusive", "grail", 280, 560),
+        ("Nintendo", "GBA SP Naruto Orange JP", "Game Boy Advance SP", "Naruto Orange (Japan)", "Japan Exclusive", "high", 180, 370),
+        ("Nintendo", "GBA SP Dragon Ball Z Gold JP", "Game Boy Advance SP", "Dragon Ball Z Gold (Japan)", "Japan Exclusive", "high", 190, 400),
+
+        # ── Nintendo DS Lite — Limited Editions ──────────────────────────
+        ("Nintendo", "DS Lite Zelda Phantom Hourglass Gold", "Nintendo DS Lite", "Zelda Phantom Hourglass Gold (NA)", "Special Edition", "grail", 220, 450),
+        ("Nintendo", "DS Lite Pokemon Diamond Pearl Palkia/Dialga", "Nintendo DS Lite", "Pokemon Diamond Pearl Palkia/Dialga (JP)", "Japan Exclusive", "high", 120, 260),
+        ("Nintendo", "DS Lite Crimson/Black", "Nintendo DS Lite", "Crimson/Black Mario Kart Bundle", "Special Edition", "high", 80, 170),
+        ("Nintendo", "DS Lite Final Fantasy III Crystal", "Nintendo DS Lite", "Final Fantasy III Crystal Edition (JP)", "Japan Exclusive", "grail", 200, 420),
+        ("Nintendo", "DS Lite Giratina Edition JP", "Nintendo DS Lite", "Pokemon Platinum Giratina (JP)", "Japan Exclusive", "high", 130, 280),
+        ("Nintendo", "DS Lite Love Plus+ Nene Deluxe", "Nintendo DS Lite", "Love Plus+ Nene Pink (JP)", "Japan Exclusive", "high", 150, 320),
+        ("Nintendo", "DS Lite Dragon Quest IX Metallic Blue JP", "Nintendo DS Lite", "Dragon Quest IX Metallic Blue (JP)", "Japan Exclusive", "high", 140, 290),
+
+        # ── Nintendo 3DS / 3DS XL — Limited Editions ─────────────────────
+        ("Nintendo", "3DS XL Zelda A Link Between Worlds Gold", "Nintendo 3DS XL", "Zelda ALBW Gold (NA)", "Special Edition", "grail", 250, 500),
+        ("Nintendo", "3DS XL Monster Hunter 4 Ultimate Silver", "Nintendo 3DS XL", "Monster Hunter 4 Ultimate Silver (NA)", "Special Edition", "high", 180, 370),
+        ("Nintendo", "3DS XL Pikachu Yellow", "Nintendo 3DS XL", "Pikachu Yellow (NA)", "Special Edition", "high", 160, 340),
+        ("Nintendo", "3DS XL Fire Emblem Fates Blue", "Nintendo 3DS XL", "Fire Emblem Fates Blue (NA)", "Special Edition", "high", 170, 360),
+        ("Nintendo", "New 3DS XL Majora's Mask Gold", "New Nintendo 3DS XL", "Majora's Mask Gold Edition (NA)", "Special Edition", "grail", 300, 600),
+        ("Nintendo", "New 3DS XL SNES Edition", "New Nintendo 3DS XL", "SNES Super Famicom Edition (NA)", "Special Edition", "grail", 280, 550),
+        ("Nintendo", "New 3DS XL Hyrule Gold Edition", "New Nintendo 3DS XL", "Hyrule Gold Edition (NA)", "Special Edition", "grail", 260, 520),
+        ("Nintendo", "New 3DS XL Solgaleo Lunala Black", "New Nintendo 3DS XL", "Pokemon Sun Moon Solgaleo Lunala (NA)", "Special Edition", "high", 180, 380),
+        ("Nintendo", "New 3DS XL Monster Hunter XX JP", "New Nintendo 3DS XL", "Monster Hunter XX Hunter Edition (JP)", "Japan Exclusive", "high", 170, 350),
+        ("Nintendo", "New 3DS XL Dragon Quest VIII JP", "New Nintendo 3DS XL", "Dragon Quest VIII Metallic Blue (JP)", "Japan Exclusive", "high", 190, 400),
+        ("Nintendo", "3DS Cobalt Blue", "Nintendo 3DS", "Cobalt Blue (NA Launch)", "Standard", "mid", 60, 140),
+        ("Nintendo", "3DS Flame Red", "Nintendo 3DS", "Flame Red (NA)", "Standard", "mid", 55, 130),
+        ("Nintendo", "3DS Pure White JP", "Nintendo 3DS", "Pure White (JP)", "Japan Exclusive", "mid", 70, 160),
+        ("Nintendo", "New 3DS Cover Plates Kyary Pamyu JP", "New Nintendo 3DS", "Kyary Pamyu Pamyu Cover Plates (JP)", "Japan Exclusive", "high", 120, 250),
+        ("Nintendo", "New 2DS XL Pikachu Edition", "New Nintendo 2DS XL", "Pikachu Yellow Edition (NA)", "Special Edition", "high", 140, 300),
+        ("Nintendo", "New 2DS XL Pokeball Edition", "New Nintendo 2DS XL", "Pokeball Red/White (NA)", "Special Edition", "high", 130, 280),
+        ("Nintendo", "New 2DS XL Hylian Shield Edition", "New Nintendo 2DS XL", "Hylian Shield Edition (NA)", "Special Edition", "high", 150, 320),
+        ("Nintendo", "New 2DS XL Mario Kart 7 White/Orange", "New Nintendo 2DS XL", "Mario Kart 7 White/Orange (NA)", "Special Edition", "high", 100, 220),
+
+        # ── Sony PSP — Limited Editions ──────────────────────────────────
+        ("Sony", "PSP-3000 God of War Red/Black", "PSP-3000", "God of War Ghost of Sparta Red/Black (NA)", "Special Edition", "high", 120, 260),
+        ("Sony", "PSP-3000 Crisis Core Silver", "PSP-3000", "Crisis Core FF VII Silver (NA)", "Special Edition", "high", 130, 280),
+        ("Sony", "PSP-2000 Star Wars White", "PSP-2000", "Star Wars Battlefront White (NA)", "Special Edition", "high", 110, 240),
+        ("Sony", "PSP-3000 Monster Hunter 3rd JP", "PSP-3000", "Monster Hunter Portable 3rd Hunter (JP)", "Japan Exclusive", "high", 140, 300),
+        ("Sony", "PSP-3000 Kingdom Hearts BbS Silver", "PSP-3000", "Kingdom Hearts Birth by Sleep Silver (NA)", "Special Edition", "high", 130, 280),
+        ("Sony", "PSP-2000 Felicia Blue JP", "PSP-2000", "Felicia Blue (JP)", "Japan Exclusive", "high", 100, 220),
+        ("Sony", "PSP-1000 Metal Gear Solid Peace Walker JP", "PSP-1000", "MGS Peace Walker Camo (JP)", "Japan Exclusive", "high", 150, 320),
+        ("Sony", "PSP-3000 Dissidia Final Fantasy Silver", "PSP-3000", "Dissidia FF 20th Anniversary Silver (JP)", "Japan Exclusive", "high", 120, 260),
+        ("Sony", "PSP Go Pearl White", "PSP Go", "Pearl White N-1000", "Standard", "high", 130, 270),
+        ("Sony", "PSP Go Piano Black", "PSP Go", "Piano Black N-1000", "Standard", "high", 110, 240),
+
+        # ── Sony PS Vita — Limited Editions ──────────────────────────────
+        ("Sony", "PS Vita Hatsune Miku Crystal White LE", "PS Vita 1000", "Hatsune Miku Limited Edition Crystal White (JP)", "Japan Exclusive", "grail", 350, 700),
+        ("Sony", "PS Vita Hatsune Miku Project Diva f Ice Silver", "PS Vita 1000", "Project Diva f Ice Silver (JP)", "Japan Exclusive", "grail", 300, 600),
+        ("Sony", "PS Vita Slim God Eater 2 Red/Black JP", "PS Vita 2000", "God Eater 2 Fenrir Red/Black (JP)", "Japan Exclusive", "high", 180, 380),
+        ("Sony", "PS Vita Slim Persona 4 DAN White JP", "PS Vita 2000", "Persona 4 Dancing All Night White (JP)", "Japan Exclusive", "high", 200, 420),
+        ("Sony", "PS Vita Slim Gundam Breaker White/Blue JP", "PS Vita 2000", "Gundam Breaker Starter White/Blue (JP)", "Japan Exclusive", "high", 160, 340),
+        ("Sony", "PS Vita Soul Sacrifice Red/Black JP", "PS Vita 1000", "Soul Sacrifice Red/Black (JP)", "Japan Exclusive", "high", 170, 360),
+        ("Sony", "PS Vita Slim Final Fantasy X/X-2 Blue JP", "PS Vita 2000", "Final Fantasy X/X-2 HD Resolution Blue (JP)", "Japan Exclusive", "high", 190, 400),
+        ("Sony", "PS Vita Slim Minecraft White/Lime Green JP", "PS Vita 2000", "Minecraft Special Edition White/Lime (JP)", "Japan Exclusive", "high", 140, 300),
+        ("Sony", "PS Vita Slim Caligula White/Blue JP", "PS Vita 2000", "The Caligula Effect White/Blue (JP)", "Japan Exclusive", "high", 150, 320),
+        ("Sony", "PS Vita OLED 3G Crystal Black Launch", "PS Vita 1000", "3G Crystal Black Launch Edition (NA)", "Special Edition", "high", 120, 260),
+
+        # ── Nintendo Switch — Limited OLED & Standard ────────────────────
+        ("Nintendo", "Switch OLED Zelda TotK Edition", "Nintendo Switch OLED", "Zelda Tears of the Kingdom Green/Gold", "Special Edition", "high", 180, 380),
+        ("Nintendo", "Switch OLED Splatoon 3 Edition", "Nintendo Switch OLED", "Splatoon 3 Gradient Purple/Green/Yellow", "Special Edition", "high", 150, 320),
+        ("Nintendo", "Switch OLED Pokemon Scarlet Violet Edition", "Nintendo Switch OLED", "Pokemon SV Red/Purple Koraidon/Miraidon", "Special Edition", "high", 160, 340),
+        ("Nintendo", "Switch OLED Super Smash Bros Ultimate Edition", "Nintendo Switch OLED", "Super Smash Bros Ultimate Gray (JP)", "Japan Exclusive", "high", 170, 360),
+        ("Nintendo", "Switch Animal Crossing New Horizons", "Nintendo Switch", "Animal Crossing NH Pastel Blue/Green", "Special Edition", "high", 160, 340),
+        ("Nintendo", "Switch Let's Go Pikachu/Eevee", "Nintendo Switch", "Let's Go Pikachu/Eevee Yellow/Brown", "Special Edition", "high", 180, 380),
+        ("Nintendo", "Switch Monster Hunter Rise Deluxe", "Nintendo Switch", "Monster Hunter Rise Grey/Magnamalo", "Special Edition", "high", 140, 300),
+        ("Nintendo", "Switch Fortnite Wildcat Yellow/Blue", "Nintendo Switch", "Fortnite Wildcat Bundle Yellow/Blue", "Special Edition", "high", 130, 280),
+        ("Nintendo", "Switch Diablo III Eternal Collection", "Nintendo Switch", "Diablo III Black/Red", "Special Edition", "high", 150, 320),
+        ("Nintendo", "Switch Dragon Quest XI S Loto Edition JP", "Nintendo Switch", "Dragon Quest XI S Loto Edition (JP)", "Japan Exclusive", "grail", 350, 700),
+        ("Nintendo", "Switch Lite Zacian/Zamazenta", "Nintendo Switch Lite", "Pokemon Sword/Shield Cyan/Magenta", "Special Edition", "high", 120, 260),
+        ("Nintendo", "Switch Lite Dialga/Palkia", "Nintendo Switch Lite", "Pokemon BDSP Dialga/Palkia Grey", "Special Edition", "high", 130, 280),
+        ("Nintendo", "Switch Lite Hyrule Edition Gold", "Nintendo Switch Lite", "Hyrule Gold Edition", "Special Edition", "high", 140, 300),
+        ("Nintendo", "Switch Lite Isabelle Aloha Edition", "Nintendo Switch Lite", "Animal Crossing Isabelle Aloha", "Special Edition", "high", 120, 260),
+
+        # ── Modern Retro Handhelds — Anbernic 2024-2025 ─────────────────
+        ("Anbernic", "Anbernic RG556", "RG556", "Black 5.48in AMOLED", "Modded/Custom", "mid", 80, 100),
+        ("Anbernic", "Anbernic RG556 Transparent Purple", "RG556", "Transparent Purple AMOLED", "Modded/Custom", "mid", 85, 105),
+        ("Anbernic", "Anbernic RG406V", "RG406V", "Black Vertical", "Modded/Custom", "mid", 55, 70),
+        ("Anbernic", "Anbernic RG406H", "RG406H", "Transparent Blue Horizontal", "Modded/Custom", "mid", 55, 70),
+        ("Anbernic", "Anbernic RG405V", "RG405V", "Transparent Purple Vertical", "Modded/Custom", "mid", 60, 75),
+        ("Anbernic", "Anbernic RG405M", "RG405M", "Metal Shell Silver CNC", "Modded/Custom", "mid", 70, 90),
+        ("Anbernic", "Anbernic RG35XX Plus", "RG35XX Plus", "Transparent White", "Modded/Custom", "mid", 40, 55),
+        ("Anbernic", "Anbernic RG35XX H", "RG35XX H", "Transparent Orange Horizontal", "Modded/Custom", "mid", 42, 58),
+        ("Anbernic", "Anbernic RG35XX SP", "RG35XX SP", "Transparent Blue Clamshell", "Modded/Custom", "mid", 50, 65),
+        ("Anbernic", "Anbernic RG28XX", "RG28XX", "Transparent Purple Nano", "Modded/Custom", "standard", 25, 35),
+        ("Anbernic", "Anbernic RG CubeXX", "RG CubeXX", "Black Cube Docking", "Modded/Custom", "mid", 70, 90),
+        ("Anbernic", "Anbernic RG556 Gray", "RG556", "Space Gray AMOLED", "Modded/Custom", "mid", 80, 100),
+        ("Anbernic", "Anbernic RG353M", "RG353M", "Metal Shell Anodized", "Modded/Custom", "mid", 65, 85),
+
+        # ── Modern Retro Handhelds — Miyoo 2024-2025 ────────────────────
+        ("Miyoo", "Miyoo Mini Plus", "Miyoo Mini Plus", "Transparent Black", "Modded/Custom", "mid", 45, 60),
+        ("Miyoo", "Miyoo Mini Plus Retro Grey", "Miyoo Mini Plus", "Retro DMG Grey", "Modded/Custom", "mid", 48, 63),
+        ("Miyoo", "Miyoo Mini V4", "Miyoo Mini V4", "White V4", "Modded/Custom", "mid", 35, 50),
+        ("Miyoo", "Miyoo A30", "Miyoo A30", "Transparent Blue 2.8in", "Modded/Custom", "mid", 30, 42),
+        ("Miyoo", "Miyoo Flip", "Miyoo Flip", "Black Clamshell", "Modded/Custom", "mid", 55, 70),
+
+        # ── Modern Retro Handhelds — Retroid 2024-2025 ──────────────────
+        ("Retroid", "Retroid Pocket 4 Pro", "Retroid Pocket 4 Pro", "Black 4GB/128GB", "Modded/Custom", "mid", 100, 125),
+        ("Retroid", "Retroid Pocket 4 Pro Retro", "Retroid Pocket 4 Pro", "Retro SNES Color", "Modded/Custom", "mid", 105, 130),
+        ("Retroid", "Retroid Pocket Mini", "Retroid Pocket Mini", "Gray Mini Clamshell", "Modded/Custom", "mid", 70, 90),
+        ("Retroid", "Retroid Pocket 3 Plus", "Retroid Pocket 3+", "Black 3.5in Touchscreen", "Modded/Custom", "mid", 80, 100),
+        ("Retroid", "Retroid Pocket Flip", "Retroid Pocket Flip", "Black Clamshell", "Modded/Custom", "mid", 90, 115),
+
+        # ── Modern Retro Handhelds — Trimui / Others 2024-2025 ──────────
+        ("Trimui", "Trimui Smart Pro", "Trimui Smart Pro", "Gray PSP-Style", "Modded/Custom", "mid", 45, 60),
+        ("Trimui", "Trimui Brick", "Trimui Brick", "Transparent Green NES-Style", "Modded/Custom", "standard", 22, 30),
+        ("Trimui", "Trimui Model S", "Trimui Model S", "White Ultra-Thin", "Modded/Custom", "standard", 20, 28),
+        ("AYN", "AYN Odin 2 Portal", "Odin 2 Portal", "Transparent Black 7in", "Modded/Custom", "high", 180, 220),
+        ("AYN", "AYN Odin 2 Mini", "Odin 2 Mini", "White Mini", "Modded/Custom", "high", 150, 185),
+        ("AYN", "AYN Odin 2", "Odin 2", "Black Pro 6in", "Modded/Custom", "high", 200, 250),
+        ("Powkiddy", "Powkiddy V10", "Powkiddy V10", "Black Vertical", "Modded/Custom", "standard", 25, 35),
+        ("Powkiddy", "Powkiddy RGB30", "Powkiddy RGB30", "Transparent Purple 4in", "Modded/Custom", "mid", 40, 55),
+        ("Powkiddy", "Powkiddy X55", "Powkiddy X55", "Black 5.5in", "Modded/Custom", "mid", 50, 65),
+        ("Ayaneo", "AYANEO Pocket S", "AYANEO Pocket S", "Black Android Handheld", "Modded/Custom", "high", 200, 250),
+        ("Ayaneo", "AYANEO Pocket EVO", "AYANEO Pocket EVO", "White Android Premium", "Modded/Custom", "high", 250, 310),
+
+        # ── Game Boy Micro — All Colors ──────────────────────────────────
+        ("Nintendo", "Game Boy Micro Blue", "Game Boy Micro", "Blue (NA)", "Standard", "high", 160, 320),
+        ("Nintendo", "Game Boy Micro Green", "Game Boy Micro", "Green (NA)", "Standard", "high", 170, 340),
+        ("Nintendo", "Game Boy Micro Pink", "Game Boy Micro", "Pink (JP)", "Japan Exclusive", "high", 180, 360),
+        ("Nintendo", "Game Boy Micro Famicom Anniversary", "Game Boy Micro", "Famicom 20th Anniversary (JP)", "Japan Exclusive", "grail", 350, 700),
+        ("Nintendo", "Game Boy Micro Mother 3 Deluxe", "Game Boy Micro", "Mother 3 Red/Blue (JP)", "Japan Exclusive", "grail", 500, 1000),
+        ("Nintendo", "Game Boy Micro Final Fantasy IV JP", "Game Boy Micro", "Final Fantasy IV Advance (JP)", "Japan Exclusive", "grail", 400, 800),
+
+        # ── Rare Tamagotchi Editions ─────────────────────────────────────
+        ("Bandai", "Tamagotchi P1 Transparent Red 1997", "Tamagotchi P1", "Transparent Red Original (1997)", "Standard", "high", 60, 150),
+        ("Bandai", "Tamagotchi P1 White 1996 JP", "Tamagotchi P1", "White Japanese Original (1996)", "Japan Exclusive", "high", 80, 200),
+        ("Bandai", "Tamagotchi Angel (Angelgotchi)", "Tamagotchi Angel", "Silver Angel Edition", "Standard", "high", 60, 140),
+        ("Bandai", "Tamagotchi Devilgotchi JP", "Tamagotchi Devil", "Devil Edition (JP Only)", "Japan Exclusive", "grail", 200, 500),
+        ("Bandai", "Tamagotchi Ocean (Umino)", "Tamagotchi Ocean", "Blue Ocean Tamagotchi", "Standard", "high", 100, 250),
+        ("Bandai", "Tamagotchi Yasashii Blue JP", "Tamagotchi Yasashii", "Yasashii Blue (JP Only)", "Japan Exclusive", "grail", 250, 600),
+        ("Bandai", "Tamagotchi iD L 15th Anniversary", "Tamagotchi iD L", "15th Anniversary LE (JP)", "Japan Exclusive", "high", 130, 280),
+        ("Bandai", "Tamagotchi Uni Purple", "Tamagotchi Uni", "Tamagotchi Uni Purple 2023", "Standard", "mid", 50, 65),
+        ("Bandai", "Tamagotchi Pix Party Confetti", "Tamagotchi Pix Party", "Confetti Camera 2022", "Standard", "mid", 40, 55),
+
+        # ── Game & Watch — Collectible Reissues ──────────────────────────
+        ("Nintendo", "Game & Watch Super Mario Bros 2020", "Game & Watch", "Super Mario Bros 35th Anniversary (2020)", "Anniversary", "high", 80, 150),
+        ("Nintendo", "Game & Watch Zelda 2021", "Game & Watch", "Legend of Zelda 35th Anniversary (2021)", "Anniversary", "high", 80, 150),
+        ("Nintendo", "Game & Watch Mario Bros 1983 Original", "Game & Watch", "Original Multi Screen Mario Bros MW-56 (1983)", "Standard", "grail", 200, 500),
+        ("Nintendo", "Game & Watch Donkey Kong 1982 Original", "Game & Watch", "Original Multi Screen Donkey Kong DK-52 (1982)", "Standard", "grail", 180, 450),
+        ("Nintendo", "Game & Watch Octopus 1981 Original", "Game & Watch", "Original Wide Screen Octopus OC-22 (1981)", "Standard", "high", 120, 300),
+        ("Nintendo", "Game & Watch Fire 1980 Original", "Game & Watch", "Original Silver Series Fire RC-04 (1980)", "Standard", "grail", 250, 600),
+        ("Nintendo", "Game & Watch Oil Panic 1982 Original", "Game & Watch", "Original Multi Screen Oil Panic OP-51 (1982)", "Standard", "high", 150, 380),
+        ("Nintendo", "Game & Watch Ball 1980 Original", "Game & Watch", "Original Silver Series Ball AC-01 (1980)", "Standard", "grail", 350, 800),
+
+        # ── DSi / DSi XL — Limited Editions ──────────────────────────────
+        ("Nintendo", "DSi Mario 25th Anniversary Red", "Nintendo DSi", "Mario 25th Anniversary Red (JP)", "Japan Exclusive", "high", 100, 220),
+        ("Nintendo", "DSi White", "Nintendo DSi", "Matte White (NA)", "Standard", "mid", 40, 100),
+        ("Nintendo", "DSi XL Mario 25th Anniversary Red", "Nintendo DSi XL", "Mario 25th Anniversary Red (JP)", "Japan Exclusive", "high", 120, 260),
+        ("Nintendo", "DSi XL Burgundy", "Nintendo DSi XL", "Burgundy Wine Red (NA)", "Standard", "mid", 50, 120),
+        ("Nintendo", "DSi XL Zelda 25th Anniversary Gold JP", "Nintendo DSi XL", "Zelda 25th Anniversary Gold (JP)", "Japan Exclusive", "grail", 250, 500),
+
+        # ── Analogue Premium Handhelds ───────────────────────────────────
+        ("Analogue", "Analogue Pocket White", "Analogue Pocket", "White Launch Edition", "Standard", "high", 200, 250),
+        ("Analogue", "Analogue Pocket Black", "Analogue Pocket", "Black Edition", "Standard", "high", 200, 250),
+        ("Analogue", "Analogue Pocket Classic Limited", "Analogue Pocket", "Classic Limited GLOW Edition", "Special Edition", "grail", 350, 450),
+        ("Analogue", "Analogue Pocket Transparent", "Analogue Pocket", "Transparent Clear Edition", "Special Edition", "grail", 300, 400),
+        ("Analogue", "Analogue Pocket Dock", "Analogue Pocket", "Dock Accessory HDMI Output", "Standard", "high", 80, 100),
+
+        # ── PC Engine / TurboExpress ─────────────────────────────────────
+        ("NEC", "PC Engine GT / TurboExpress", "TurboExpress", "TurboExpress PI-TG6 Handheld", "Standard", "grail", 250, 500),
+        ("NEC", "PC Engine GT AC Adapter", "TurboExpress", "Official AC Adapter PAD-124", "Standard", "high", 60, 120),
+        ("NEC", "PC Engine GT TV Tuner", "TurboExpress", "TV Tuner Accessory PI-AD12", "Standard", "high", 80, 160),
+        ("NEC", "PC Engine LT", "PC Engine LT", "PC Engine LT Portable (JP)", "Japan Exclusive", "grail", 400, 800),
+
+        # ── Sega Game Gear — Colors & Bundles ────────────────────────────
+        ("Sega", "Game Gear Blue Sports Edition", "Sega Game Gear", "Blue Sports Edition (NA)", "Special Edition", "high", 80, 170),
+        ("Sega", "Game Gear Yellow", "Sega Game Gear", "Yellow (JP)", "Japan Exclusive", "high", 100, 220),
+        ("Sega", "Game Gear White", "Sega Game Gear", "White (JP)", "Japan Exclusive", "high", 90, 200),
+        ("Sega", "Game Gear Red", "Sega Game Gear", "Red Coca-Cola Edition (JP)", "Japan Exclusive", "grail", 200, 420),
+        ("Sega", "Game Gear Micro Black", "Sega Game Gear Micro", "Game Gear Micro Black (JP 2020)", "Japan Exclusive", "high", 60, 130),
+        ("Sega", "Game Gear Micro Blue", "Sega Game Gear Micro", "Game Gear Micro Blue (JP 2020)", "Japan Exclusive", "high", 60, 130),
+        ("Sega", "Game Gear Micro Yellow", "Sega Game Gear Micro", "Game Gear Micro Yellow (JP 2020)", "Japan Exclusive", "high", 60, 130),
+        ("Sega", "Game Gear Micro Complete Set", "Sega Game Gear Micro", "Complete 4-Color Set + Big Window Micro (JP)", "Japan Exclusive", "grail", 350, 600),
+
+        # ── Steam Deck & PC Handhelds ────────────────────────────────────
+        ("Valve", "Steam Deck OLED 1TB Limited Edition", "Steam Deck OLED", "1TB OLED Translucent LE", "Special Edition", "high", 600, 700),
+        ("Valve", "Steam Deck LCD 512GB", "Steam Deck", "512GB Anti-Glare LCD", "Standard", "mid", 300, 380),
+        ("ASUS", "ROG Ally X", "ROG Ally X", "Black 2024 Refresh", "Standard", "high", 600, 700),
+        ("Lenovo", "Legion Go S", "Legion Go S", "2025 Model Stealth Gray", "Standard", "high", 400, 480),
+        ("MSI", "MSI Claw A1M", "MSI Claw", "Intel Core Ultra 7in", "Standard", "high", 500, 600),
+
+        # ── Panic Playdate ───────────────────────────────────────────────
+        ("Panic", "Playdate Yellow", "Playdate", "Yellow Crank Handheld 2022", "Standard", "high", 170, 200),
+        ("Panic", "Playdate Stereo Dock", "Playdate", "Stereo Dock Speaker/Pen Holder", "Standard", "mid", 60, 80),
+        ("Panic", "Playdate Cover Orange", "Playdate", "Protective Cover Orange", "Standard", "standard", 25, 30),
+    ]
+
+    catalog: list[dict] = []
+    for brand, name, platform, variant_note, condition, rarity_tier, price_loose, price_cib in raw:
+        if "Japan" in variant_note or "JP" in variant_note or condition == "Japan Exclusive":
             region = "JPN"
         elif "NA" in variant_note:
             region = "NA"
