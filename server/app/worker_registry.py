@@ -43,6 +43,7 @@ SCHEDULES = {
     "model_retrain_worker": 7 * 24 * 3600,  # weekly
     "auto_delist_worker": 900,               # every 15 minutes
     "auction_alert_worker": 300,              # every 5 minutes
+    "event_scraper_worker": 6 * 3600,       # every 6 hours
 }
 
 

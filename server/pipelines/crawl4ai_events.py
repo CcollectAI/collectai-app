@@ -1,5 +1,5 @@
 """
-Crawl4AI Event Page Crawler for CollectAI.
+Crawl4AI Event Page Crawler for Atlantis.
 
 Supplements the email newsletter scraper by directly crawling event/news pages
 from collectible publishers using Crawl4AI (local Playwright crawler).
@@ -62,6 +62,7 @@ from pipelines.newsletter_scraper import (
 # ---------------------------------------------------------------------------
 
 EVENT_PAGE_TARGETS: list[dict[str, Any]] = [
+    # ── Existing targets (kept as-is) ─────────────────────────────────
     {
         "url": "https://www.pokemon.com/us/pokemon-news",
         "category_id": "pokemon",
@@ -98,7 +99,6 @@ EVENT_PAGE_TARGETS: list[dict[str, Any]] = [
         "kind_default": "release",
         "description": "Good Smile Company news",
     },
-    # BTS / K-pop events
     {
         "url": "https://weverse.io/bts/feed",
         "category_id": "kpop_merch",
@@ -113,7 +113,6 @@ EVENT_PAGE_TARGETS: list[dict[str, Any]] = [
         "description": "K-pop events on Eventbrite",
         "wait_for": "[data-testid='search-results']",
     },
-    # Taylor Swift events
     {
         "url": "https://www.taylorswift.com/events/",
         "category_id": "taylor_swift",
@@ -127,7 +126,6 @@ EVENT_PAGE_TARGETS: list[dict[str, Any]] = [
         "description": "Taylor Swift fan events on Eventbrite",
         "wait_for": "[data-testid='search-results']",
     },
-    # General collectible events
     {
         "url": "https://www.eventbrite.com/d/online/collectibles-show/",
         "category_id": None,
@@ -141,6 +139,196 @@ EVENT_PAGE_TARGETS: list[dict[str, Any]] = [
         "kind_default": "convention",
         "description": "Comic Con events on Eventbrite",
         "wait_for": "[data-testid='search-results']",
+    },
+
+    # ── Major Conventions & Expos ─────────────────────────────────────
+    {
+        "url": "https://www.comic-con.org/cci/",
+        "category_id": None,
+        "kind_default": "convention",
+        "description": "San Diego Comic-Con (SDCC)",
+    },
+    {
+        "url": "https://www.newyorkcomiccon.com/",
+        "category_id": None,
+        "kind_default": "convention",
+        "description": "New York Comic Con (NYCC)",
+    },
+    {
+        "url": "https://www.paxsite.com/",
+        "category_id": None,
+        "kind_default": "convention",
+        "description": "PAX gaming conventions",
+    },
+    {
+        "url": "https://www.gencon.com/",
+        "category_id": "oop_board_games",
+        "kind_default": "convention",
+        "description": "Gen Con tabletop gaming convention",
+    },
+    {
+        "url": "https://www.mcmcomiccon.com/",
+        "category_id": None,
+        "kind_default": "convention",
+        "description": "MCM Comic Con (London, Birmingham, etc.)",
+    },
+    {
+        "url": "https://www.spiel-messe.com/en/",
+        "category_id": "oop_board_games",
+        "kind_default": "convention",
+        "description": "Essen Spiel — world's largest board game fair",
+    },
+    {
+        "url": "https://www.anime-expo.org/",
+        "category_id": "anime_figures",
+        "kind_default": "convention",
+        "description": "Anime Expo (Los Angeles)",
+    },
+    {
+        "url": "https://www.comiket.co.jp/info-a/LATEST/index.html",
+        "category_id": "manga",
+        "kind_default": "convention",
+        "description": "Comiket (Tokyo Big Sight)",
+    },
+    {
+        "url": "https://www.anime-japan.jp/en/",
+        "category_id": "anime_figures",
+        "kind_default": "convention",
+        "description": "AnimeJapan (Tokyo)",
+    },
+    {
+        "url": "https://www.toypusher.com/toy-shows/",
+        "category_id": "vintage_toys",
+        "kind_default": "convention",
+        "description": "Toy shows & collectible conventions calendar",
+    },
+    {
+        "url": "https://www.eventbrite.com/d/online/sneaker-convention/",
+        "category_id": "sneakers",
+        "kind_default": "convention",
+        "description": "Sneaker conventions on Eventbrite",
+        "wait_for": "[data-testid='search-results']",
+    },
+    {
+        "url": "https://www.eventbrite.com/d/online/card-show-trading-cards/",
+        "category_id": "sportscards",
+        "kind_default": "convention",
+        "description": "Trading card shows on Eventbrite",
+        "wait_for": "[data-testid='search-results']",
+    },
+
+    # ── Brand / Publisher Event Pages ─────────────────────────────────
+    {
+        "url": "https://www.sideshow.com/whats-new",
+        "category_id": "hot_toys",
+        "kind_default": "collection_drop",
+        "description": "Sideshow Collectibles new arrivals",
+    },
+    {
+        "url": "https://www.hottoyscollectibles.com/news",
+        "category_id": "hot_toys",
+        "kind_default": "release",
+        "description": "Hot Toys news & announcements",
+    },
+    {
+        "url": "https://hasbropulse.com/blogs/hasbro-pulse-blog",
+        "category_id": "action_figures",
+        "kind_default": "collection_drop",
+        "description": "Hasbro Pulse blog (Marvel Legends, Star Wars, etc.)",
+    },
+    {
+        "url": "https://news.bandainamco.com/en/",
+        "category_id": "gunpla",
+        "kind_default": "release",
+        "description": "Bandai Namco news (Gunpla, figures)",
+    },
+    {
+        "url": "https://www.topps.com/blog",
+        "category_id": "sportscards",
+        "kind_default": "collection_drop",
+        "description": "Topps blog (sports cards, releases)",
+    },
+    {
+        "url": "https://www.pokemoncenter.com/whats-new",
+        "category_id": "pokemon",
+        "kind_default": "collection_drop",
+        "description": "Pokemon Center new arrivals",
+        "wait_for": "[class*='product']",
+    },
+    {
+        "url": "https://tcgplayer.com/blog",
+        "category_id": "pokemon",
+        "kind_default": "release",
+        "description": "TCGPlayer blog (set releases, events)",
+    },
+    {
+        "url": "https://stockx.com/news",
+        "category_id": "sneakers",
+        "kind_default": "collection_drop",
+        "description": "StockX news (sneaker drops, collabs)",
+        "wait_for": "[class*='article']",
+    },
+    {
+        "url": "https://sneakernews.com/release-dates/",
+        "category_id": "sneakers",
+        "kind_default": "collection_drop",
+        "description": "Sneaker News release calendar",
+    },
+    {
+        "url": "https://www.discogs.com/blog",
+        "category_id": "vinyl",
+        "kind_default": "release",
+        "description": "Discogs blog (vinyl releases, RSD)",
+    },
+    {
+        "url": "https://recordstoreday.com/",
+        "category_id": "vinyl",
+        "kind_default": "collection_drop",
+        "description": "Record Store Day releases",
+    },
+    {
+        "url": "https://www.catawiki.com/en/stories",
+        "category_id": None,
+        "kind_default": "convention",
+        "description": "Catawiki auction events & stories",
+    },
+
+    # ── Watch Events ──────────────────────────────────────────────────
+    {
+        "url": "https://www.hodinkee.com/articles",
+        "category_id": "watches",
+        "kind_default": "release",
+        "description": "Hodinkee watch news",
+    },
+    {
+        "url": "https://www.watchesandwonders.com/en/news/",
+        "category_id": "watches",
+        "kind_default": "convention",
+        "description": "Watches & Wonders (Geneva watch fair)",
+    },
+
+    # ── Disney / Theme Parks ──────────────────────────────────────────
+    {
+        "url": "https://disneyparks.disney.go.com/blog/",
+        "category_id": "disney",
+        "kind_default": "collection_drop",
+        "description": "Disney Parks Blog (merch drops, events)",
+    },
+
+    # ── Fragrance Events ──────────────────────────────────────────────
+    {
+        "url": "https://www.fragrantica.com/news/",
+        "category_id": "fragrances",
+        "kind_default": "release",
+        "description": "Fragrantica news (new fragrance releases)",
+    },
+
+    # ── Pen Events ────────────────────────────────────────────────────
+    {
+        "url": "https://www.penworld.eu/blog/",
+        "category_id": "pens",
+        "kind_default": "release",
+        "description": "Penworld blog (new pen releases)",
     },
 ]
 

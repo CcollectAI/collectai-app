@@ -80,6 +80,7 @@ Apply all SQL migrations in order. Use Supabase SQL Editor or psql:
 [ ] 20260222_build_paint_improvements.sql (build & paint projects)
 [ ] 20260223_add_performance_indexes.sql  (performance indexes)
 [ ] 20260322_build_paint_status_pipeline.sql (category-specific status pipelines)
+[ ] 20260323_events_enrich.sql              (franchise_id + lat/lon on events)
 [ ] 20260224_user_privacy_settings.sql    (privacy settings + RLS)
 [ ] 20260224_add_indexes_v2.sql           (category_follows + events indexes)
 

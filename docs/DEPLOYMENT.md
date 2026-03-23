@@ -244,6 +244,18 @@ psql $DATABASE_URL -f supabase/migrations/20260322_build_paint_status_pipeline.s
 
 **Catalog expansion** — Run `cd server && python -m pipelines.import_all` on EC2 to populate 46,500+ curated items across 45 pipelines.
 
+### Round 36b Migration Notes (2026-03-23)
+
+**`20260323_events_enrich.sql`** — Adds `franchise_id`, `latitude`, `longitude` columns to `events` table with partial indexes for franchise and geo queries.
+
+**New automated workers (both run as long-lived scheduler processes):**
+- `python -m workers.event_scraper_scheduler` — Runs every 6 hours. Crawls 41 brand/convention web targets, runs newsletter scraper, deduplicates cross-source, enriches with franchise tags + geocoding.
+- `python -m workers.auction_alert_worker` — Runs every 5 minutes. Alerts users when watched auctions are ending soon.
+
+**New pipelines:**
+- `pipelines/event_dedup.py` — Cross-source event deduplication (title similarity + date matching)
+- `pipelines/event_enrich.py` — Franchise tagging (13 franchises) + Nominatim geocoding
+
 ## Beta Landing Page
 
 The landing page at `web/index.html` (with `web/icon.png`) collects beta signups

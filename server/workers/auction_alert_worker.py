@@ -166,14 +166,69 @@ async def run_once():
         record_run("auction_alert_worker", "ok")
 
 
-async def main():
-    try:
-        await run_once()
-    except Exception as e:
-        record_run("auction_alert_worker", "error")
-        log_dead_letter("auction_alert_worker", {}, e)
-        logger.exception("auction_alert_worker crashed: %r", e)
+# ---------------------------------------------------------------------------
+# Scheduler loop (runs automatically every 5 minutes)
+# ---------------------------------------------------------------------------
+
+INTERVAL_SECS = int(os.getenv("AUCTION_ALERT_INTERVAL", "300"))  # 5 minutes
+
+_shutdown = False
+_shutdown_event = asyncio.Event()
+
+
+def _handle_signal(signum, frame):
+    global _shutdown
+    logger.info("Received signal %d, shutting down after current cycle", signum)
+    _shutdown = True
+    _shutdown_event.set()
+
+
+_running = False
+
+
+async def scheduler_loop():
+    """Run the auction alert worker in a loop."""
+    global _running
+    logger.info(
+        "Auction alert scheduler started (interval=%ds)",
+        INTERVAL_SECS,
+    )
+
+    while not _shutdown:
+        if _running:
+            logger.warning("Previous cycle still running, skipping")
+        else:
+            _running = True
+            try:
+                await run_once()
+            except Exception as e:
+                log_dead_letter("auction_alert_worker", {}, e)
+                logger.exception("Auction alert cycle failed: %r", e)
+                record_run("auction_alert_worker", "error")
+            finally:
+                _running = False
+
+        try:
+            await asyncio.wait_for(_shutdown_event.wait(), timeout=INTERVAL_SECS)
+            break
+        except asyncio.TimeoutError:
+            pass
+
+    logger.info("Auction alert scheduler stopped")
+
+
+def main():
+    import signal as _signal
+    _signal.signal(_signal.SIGINT, _handle_signal)
+    _signal.signal(_signal.SIGTERM, _handle_signal)
+
+    if not DSN:
+        logger.error("DB_DSN not set — cannot start auction alert scheduler")
+        import sys
+        sys.exit(1)
+
+    asyncio.run(scheduler_loop())
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

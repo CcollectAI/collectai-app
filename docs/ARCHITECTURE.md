@@ -93,6 +93,7 @@ server/
     catalog_learning_worker.py    # Auto-map + candidate pipeline
     vision_ingest_worker.py       # Vision classification queue
     alerts_worker.py              # Low-value item alerts
+    event_scraper_scheduler.py    # Event ingestion (6hr cycle: crawl 41 targets + dedup + enrich)
     retry.py                      # Retry + dead letter infrastructure
   pipelines/             # Data ingestion and training pipelines
   tests/                 # pytest test suite (1486+ tests)
@@ -157,6 +158,18 @@ All workers route through the shared `notify_user()` helper which handles:
 - **Preference-aware routing**: checks user's notification_preferences before sending
 - **Frequency capping**: tier-based daily limits to prevent notification fatigue
 - **Graceful fallback**: never crashes the worker if push fails
+
+### Event Ingestion Pipeline
+```
+event_scraper_scheduler.py (every 6 hours, fully automated)
+├── Firecrawl crawler (41 web targets: brands, conventions, retailers)
+├── Crawl4AI crawler (same 41 targets, JS rendering for dynamic sites)
+├── Newsletter scraper (35+ email-to-category mappings, if IMAP configured)
+├── Cross-source deduplication (title similarity + date matching)
+└── Enrichment (franchise tagging via 13 keyword patterns + Nominatim geocoding)
+```
+
+**41 web targets** covering: Pokemon, MTG, Warhammer, LEGO, Funko, Good Smile, K-pop, Taylor Swift, SDCC, NYCC, PAX, Gen Con, MCM, Essen Spiel, Anime Expo, Comiket, AnimeJapan, Sideshow, Hot Toys, Hasbro Pulse, Bandai, Topps, Pokemon Center, TCGPlayer, StockX, Sneaker News, Discogs, Record Store Day, Hodinkee, Watches & Wonders, Disney Parks, Fragrantica, Penworld, Catawiki, Eventbrite (5 search verticals)
 
 ### Build & Paint Status Pipelines
 
