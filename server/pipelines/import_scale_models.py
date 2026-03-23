@@ -1385,6 +1385,171 @@ def get_curated_catalog() -> list[dict]:
         ("AMT", "Spacecraft", "Star Trek USS Enterprise NCC-1701 (1/350)", "1/350", "mid", 55),
         ("AMT", "Spacecraft", "Star Trek USS Enterprise NCC-1701-D (1/1400)", "1/1400", "standard", 30),
         ("Moebius", "Spacecraft", "Battlestar Galactica (New Series, 1/4105)", "1/4105", "mid", 50),
+
+        # ── Round 35b: More Armor, Jets, Starter Kits, Ships, JDM Cars, Busts, Weathering — 133 items ──
+
+        # Tamiya 1:35 Armor — Latest Releases (+10)
+        ("Tamiya", "Armor", "Panzer IV Ausf.H (Late Production)", "1/35", "mid", 48),
+        ("Tamiya", "Armor", "StuG III Ausf.G (Early Production)", "1/35", "mid", 45),
+        ("Tamiya", "Armor", "IS-2 Model 1944 ChKZ", "1/35", "mid", 52),
+        ("Tamiya", "Armor", "T-55A", "1/35", "mid", 50),
+        ("Tamiya", "Armor", "Merkava Mk.I", "1/35", "mid", 55),
+        ("Tamiya", "Armor", "Panzer III Ausf.L", "1/35", "mid", 45),
+        ("Tamiya", "Armor", "M26 Pershing", "1/35", "mid", 48),
+        ("Tamiya", "Armor", "Churchill Mk.VII", "1/35", "mid", 50),
+        ("Tamiya", "Armor", "Centurion Mk.III", "1/35", "mid", 52),
+        ("Tamiya", "Armor", "Type 10 MBT (JGSDF)", "1/35", "mid", 65),
+
+        # 1:48 Jets — Modern Fighters (+12)
+        ("Tamiya", "Aircraft", "F-14D Tomcat", "1/48", "high", 98),
+        ("Tamiya", "Aircraft", "F-14A Tomcat (Late Model)", "1/48", "high", 95),
+        ("Tamiya", "Aircraft", "F-15E Strike Eagle (w/ Bunker Buster)", "1/48", "high", 100),
+        ("Tamiya", "Aircraft", "F-15J Eagle (JASDF)", "1/48", "high", 90),
+        ("GWH (Great Wall Hobby)", "Aircraft", "Su-35S Flanker-E", "1/48", "high", 95),
+        ("Dassault", "Aircraft", "Rafale C (Revell)", "1/48", "high", 85),
+        ("Revell", "Aircraft", "Rafale M (Marine)", "1/48", "mid", 55),
+        ("Tamiya", "Aircraft", "F-22 Raptor", "1/48", "high", 90),
+        ("Hasegawa", "Aircraft", "F-2A Viper Zero (JASDF)", "1/48", "high", 80),
+        ("Academy", "Aircraft", "F/A-18F Super Hornet", "1/48", "mid", 60),
+        ("GWH (Great Wall Hobby)", "Aircraft", "MiG-29 Fulcrum 9-13", "1/48", "high", 82),
+        ("Kinetic", "Aircraft", "Eurofighter Typhoon", "1/48", "high", 85),
+
+        # Airfix/Revell Starter Kits (+10)
+        ("Airfix", "Aircraft", "Spitfire Mk.Ia Starter Set", "1/72", "standard", 22),
+        ("Airfix", "Aircraft", "Hurricane Mk.I Starter Set", "1/72", "standard", 20),
+        ("Airfix", "Aircraft", "P-51D Mustang Starter Set", "1/72", "standard", 22),
+        ("Airfix", "Aircraft", "Typhoon Mk.Ib Starter Set", "1/72", "standard", 20),
+        ("Airfix", "Aircraft", "Messerschmitt Bf109E-3 Starter Set", "1/72", "standard", 20),
+        ("Revell", "Aircraft", "Spitfire Mk.II Starter Set", "1/72", "standard", 22),
+        ("Revell", "Aircraft", "P-51D Mustang Easy-Click", "1/72", "standard", 18),
+        ("Airfix", "Aircraft", "F-35B Lightning II Starter Set", "1/72", "standard", 25),
+        ("Airfix", "Armor", "Tiger I Starter Set", "1/72", "standard", 22),
+        ("Revell", "Armor", "Leopard 2A6/A6NL Easy-Click", "1/72", "standard", 20),
+
+        # Ship Models — Modern Destroyers & Carriers (+12)
+        ("Tamiya", "Ship", "USS Arleigh Burke DDG-51", "1/350", "high", 90),
+        ("Tamiya", "Ship", "JMSDF Shimakaze DDG-172", "1/350", "high", 85),
+        ("Trumpeter", "Ship", "USS Gerald R. Ford CVN-78", "1/350", "grail", 220),
+        ("Trumpeter", "Ship", "HMS Queen Elizabeth R08", "1/350", "grail", 200),
+        ("Trumpeter", "Ship", "Chinese Aircraft Carrier Fujian (Type 003)", "1/350", "grail", 180),
+        ("Tamiya", "Ship", "USS Missouri BB-63", "1/350", "high", 130),
+        ("Pit-Road", "Ship", "JMSDF Mogami FFM-1", "1/700", "mid", 42),
+        ("Pit-Road", "Ship", "JMSDF Izumo DDH-183", "1/700", "mid", 45),
+        ("Trumpeter", "Ship", "USS Zumwalt DDG-1000", "1/350", "high", 140),
+        ("Academy", "Ship", "USS Kitty Hawk CV-63", "1/350", "grail", 190),
+        ("Fujimi", "Ship", "IJN Kaga (1942 Midway)", "1/350", "high", 150),
+        ("Tamiya", "Ship", "German Battleship Tirpitz", "1/350", "high", 140),
+
+        # 1:24 JDM Cars — Tamiya (+10)
+        ("Tamiya", "Car", "Toyota Supra A80 (1993)", "1/24", "mid", 40),
+        ("Tamiya", "Car", "Nissan Skyline GT-R (R32)", "1/24", "mid", 42),
+        ("Tamiya", "Car", "Nissan Skyline GT-R (R34 V-Spec II)", "1/24", "mid", 45),
+        ("Tamiya", "Car", "Mazda RX-7 (FD3S)", "1/24", "mid", 40),
+        ("Tamiya", "Car", "Honda S2000 (AP1)", "1/24", "mid", 38),
+        ("Tamiya", "Car", "Mitsubishi Lancer Evolution VI (Tommi Makinen)", "1/24", "mid", 42),
+        ("Tamiya", "Car", "Subaru Impreza WRC '99", "1/24", "mid", 40),
+        ("Tamiya", "Car", "Toyota AE86 Sprinter Trueno", "1/24", "mid", 45),
+        ("Tamiya", "Car", "Nissan 240Z (S30 Fairlady Z)", "1/24", "mid", 42),
+
+        # More 1:24 Cars — European/American (+8)
+        ("Tamiya", "Car", "Porsche 911 GT1", "1/24", "mid", 48),
+        ("Tamiya", "Car", "Lamborghini Countach LP500S", "1/24", "mid", 42),
+        ("Tamiya", "Car", "Mercedes-Benz 300 SL", "1/24", "mid", 45),
+        ("Tamiya", "Car", "Ford Mustang GT4", "1/24", "mid", 40),
+        ("Revell", "Car", "Shelby GT500 (2020)", "1/24", "standard", 28),
+        ("Revell", "Car", "Dodge Challenger SRT Demon", "1/24", "standard", 30),
+        ("Hasegawa", "Car", "Lancia Stratos HF (Rally)", "1/24", "mid", 55),
+
+        # Bust Kits — 75mm/90mm Fantasy & Historical (+12)
+        ("FeR Miniatures", "Bust", "Roman Centurion 1st Century AD (75mm)", "75mm", "high", 85),
+        ("FeR Miniatures", "Bust", "Viking Raider (75mm)", "75mm", "high", 80),
+        ("FeR Miniatures", "Bust", "Samurai Warrior Sengoku Period (75mm)", "75mm", "high", 85),
+        ("FeR Miniatures", "Bust", "Knight Templar Crusades (75mm)", "75mm", "high", 82),
+        ("Nutsplanet", "Bust", "Orc Warchief (90mm Fantasy)", "90mm", "high", 90),
+        ("Nutsplanet", "Bust", "Dark Elf Sorceress (90mm Fantasy)", "90mm", "high", 88),
+        ("Nutsplanet", "Bust", "Dwarf King (75mm Fantasy)", "75mm", "high", 82),
+        ("Young Miniatures", "Bust", "German Panzer Commander (90mm WWII)", "90mm", "high", 95),
+        ("Young Miniatures", "Bust", "US Marine Iwo Jima (90mm WWII)", "90mm", "high", 90),
+        ("Young Miniatures", "Bust", "British SAS Desert Patrol (90mm WWII)", "90mm", "high", 88),
+        ("Nuts Planet", "Bust", "Steampunk Engineer (75mm)", "75mm", "high", 80),
+        ("Life Miniatures", "Bust", "WWII Soviet Female Sniper (90mm)", "90mm", "high", 92),
+
+        # Weathering Products — AK Interactive (+8)
+        ("AK Interactive", "Supplies", "AK Streaking Grime Set (3x35ml)", "N/A", "standard", 18),
+        ("AK Interactive", "Supplies", "AK Enamel Wash Set for NATO Vehicles (3x35ml)", "N/A", "standard", 18),
+        ("AK Interactive", "Supplies", "AK Rust & Chipping Set (6 bottles)", "N/A", "standard", 28),
+        ("AK Interactive", "Supplies", "AK True Metal Wax Set (4 colors)", "N/A", "standard", 22),
+        ("AK Interactive", "Supplies", "AK Weathering Pencils Deluxe Set (37 pencils)", "N/A", "mid", 52),
+        ("AK Interactive", "Supplies", "AK Real Colors WWII German AFV Set (6x17ml)", "N/A", "standard", 25),
+        ("AK Interactive", "Supplies", "AK Real Colors IJN Aircraft Set (8x17ml)", "N/A", "standard", 30),
+        ("AK Interactive", "Supplies", "AK Interactive Worn Effects Acrylic Fluid 100ml", "N/A", "standard", 12),
+
+        # Weathering Products — Ammo by Mig Jimenez (+8)
+        ("AMMO", "Supplies", "AMMO Oilbrusher Complete Set (20 colors)", "N/A", "mid", 65),
+        ("AMMO", "Supplies", "AMMO Chipping Set (3 products)", "N/A", "standard", 22),
+        ("AMMO", "Supplies", "AMMO Filter Set for Winter Vehicles", "N/A", "standard", 18),
+        ("AMMO", "Supplies", "AMMO Rust Effects Set (Rust Tracks/Standard/Light)", "N/A", "standard", 20),
+        ("AMMO", "Supplies", "AMMO Pigment Set (Mud & Earth, 6 jars)", "N/A", "standard", 25),
+        ("AMMO", "Supplies", "AMMO Encyclopedia of Armour Modelling Vol.1-6 Set", "N/A", "high", 120),
+        ("AMMO", "Supplies", "AMMO How to Paint WWII German Late Set", "N/A", "standard", 35),
+        ("AMMO", "Supplies", "AMMO Panel Line Wash Set (5 colors)", "N/A", "standard", 22),
+
+        # Weathering Products — Vallejo (+8)
+        ("Vallejo", "Supplies", "Vallejo Pigment Set (Mud & Sand, 4 jars)", "N/A", "standard", 20),
+        ("Vallejo", "Supplies", "Vallejo Weathering Effects Set (8 bottles)", "N/A", "standard", 30),
+        ("Vallejo", "Supplies", "Vallejo Metal Color Set (8x32ml Airbrush)", "N/A", "standard", 35),
+        ("Vallejo", "Supplies", "Vallejo Game Color Complete Set (72 colors)", "N/A", "high", 150),
+        ("Vallejo", "Supplies", "Vallejo Model Air WWII Allied Set (16 colors)", "N/A", "mid", 45),
+        ("Vallejo", "Supplies", "Vallejo Model Air WWII Axis Set (16 colors)", "N/A", "mid", 45),
+        ("Vallejo", "Supplies", "Vallejo Mecha Color Complete Set (36 colors)", "N/A", "high", 85),
+        ("Vallejo", "Supplies", "Vallejo Wash Set (8 washes)", "N/A", "standard", 28),
+
+        # More Tamiya 1:35 Modern Vehicles (+8)
+        ("Tamiya", "Armor", "M1A2 SEP V3 Abrams (2024 Release)", "1/35", "high", 80),
+        ("Tamiya", "Armor", "Leopard 2A7V", "1/35", "high", 85),
+        ("Tamiya", "Armor", "K2 Black Panther (ROK Army)", "1/35", "high", 82),
+        ("Meng Model", "Armor", "T-90MS", "1/35", "mid", 65),
+        ("Meng Model", "Armor", "PLA ZTQ-15 Light Tank", "1/35", "mid", 60),
+        ("RFM (Rye Field Model)", "Armor", "Leopard 2A6 w/ Full Interior", "1/35", "high", 95),
+        ("Takom", "Armor", "Panther Ausf.A Late w/ Full Interior", "1/35", "high", 90),
+        ("Trumpeter", "Armor", "Russian T-14 Armata MBT", "1/35", "mid", 65),
+
+        # More Large Scale Aircraft (+7)
+        ("Tamiya", "Aircraft", "F-14A Tomcat (Black Knights)", "1/32", "grail", 180),
+        ("Tamiya", "Aircraft", "F-16CJ Falcon (w/ Full Equipment)", "1/32", "high", 130),
+        ("Revell", "Aircraft", "F/A-18E Super Hornet", "1/32", "high", 110),
+        ("Trumpeter", "Aircraft", "Su-27UB Flanker-C", "1/32", "high", 120),
+        ("Trumpeter", "Aircraft", "F-14B Tomcat (Bombcat)", "1/32", "grail", 160),
+        ("Kitty Hawk", "Aircraft", "AH-1Z Viper Attack Helicopter", "1/48", "high", 80),
+        ("Tamiya", "Aircraft", "AH-64D Apache Longbow", "1/48", "high", 85),
+
+        # More Tool/Supply Sets (+6)
+        ("Tamiya", "Supplies", "Tamiya Spray-Work Airbrush System HG (0.3mm)", "N/A", "high", 95),
+        ("Tamiya", "Supplies", "Tamiya Weathering Master Set (A+B+C)", "N/A", "standard", 22),
+        ("Tamiya", "Supplies", "Tamiya Panel Line Accent Color Set (3 colors)", "N/A", "standard", 15),
+        ("Tamiya", "Supplies", "Tamiya Finishing Abrasives Set (P600-P2000)", "N/A", "standard", 12),
+        ("Mr. Hobby", "Supplies", "Mr. Color WWII IJN Aircraft Set (8 colors)", "N/A", "standard", 28),
+        ("Mr. Hobby", "Supplies", "Mr. Surfacer Set (500/1000/1500)", "N/A", "standard", 18),
+
+        # Diorama Bases & Accessories (+6)
+        ("Vallejo", "Diorama", "Vallejo Scenics European City Ruin Base (1/35)", "1/35", "mid", 42),
+        ("MiniArt", "Diorama", "Factory Diorama Base w/ Rubble (1/35)", "1/35", "mid", 38),
+        ("Tamiya", "Diorama", "Brick Wall Diorama Set (1/35)", "1/35", "standard", 18),
+        ("AK Interactive", "Diorama", "AK Terrains Snow 250ml", "N/A", "standard", 15),
+        ("AK Interactive", "Diorama", "AK Terrains Muddy Ground 250ml", "N/A", "standard", 15),
+        ("Woodland Scenics", "Diorama", "Static Grass Complete System Kit", "N/A", "mid", 55),
+
+        # More Motorcycle Kits (+4)
+        ("Tamiya", "Motorcycle", "Ducati Panigale V4 S", "1/12", "mid", 42),
+        ("Tamiya", "Motorcycle", "Kawasaki Ninja H2R", "1/12", "mid", 40),
+        ("Tamiya", "Motorcycle", "Honda RC213V '14", "1/12", "mid", 45),
+        ("Tamiya", "Motorcycle", "Yamaha YZF-R1M", "1/12", "mid", 42),
+
+        # More Figure Sets (+4)
+        ("Tamiya", "Figures", "Modern US Infantry (Afghanistan, 1/35, 5 figs)", "1/35", "standard", 16),
+        ("Tamiya", "Figures", "WWII German Tank Crew (Winter, 1/35, 5 figs)", "1/35", "standard", 16),
+        ("Master Box", "Figures", "Modern IDF Female Soldiers (1/35, 4 figs)", "1/35", "standard", 20),
+        ("Master Box", "Figures", "WWII Soviet Marines (1/35, 5 figs)", "1/35", "standard", 18),
     ]
 
     kits = kits + _variant_expansion()

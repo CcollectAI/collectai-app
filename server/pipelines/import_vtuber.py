@@ -1102,6 +1102,8 @@ def get_curated_catalog() -> list[dict]:
     items += _expanded_batch_2()
     # Expansion Batch 3 — Hololive EN/JP deep, Nijisanji, indies, collabs, concerts, figures, music
     items += _expanded_batch_3()
+    # Expansion Batch 4 — Birthday merch, concert goods, Nendoroids, graduated members, acrylic stands
+    items += _expanded_batch_4()
 
     catalog = []
     for agency, talent, item_type, name, exclusive_type, tier, price in items:
@@ -1468,6 +1470,128 @@ def _variant_expansion() -> list[dict]:
             "price_eur": price,
         })
     return catalog
+
+
+def _expanded_batch_4() -> list[tuple]:
+    """150 additional VTuber merch — birthday merch, concert goods, Nendoroids,
+    graduated members, acrylic stands, tapestries, fan meeting goods."""
+    return [
+        # ── Hololive Birthday Merch (specific members + years) ──
+        ("Hololive", "Usada Pekora", "Birthday Set", "Usada Pekora Birthday 2025 Premium Merch Set", "Birthday", "high", 85),
+        ("Hololive", "Usada Pekora", "Voice Pack", "Usada Pekora Birthday 2025 Special Voice Pack", "Birthday", "mid", 25),
+        ("Hololive", "Usada Pekora", "Acrylic Stand", "Usada Pekora Birthday 2025 Acrylic Stand (Idol Ver.)", "Birthday", "mid", 28),
+        ("Hololive", "Gawr Gura", "Birthday Set", "Gawr Gura Birthday 2024 Premium Merch Set", "Birthday", "high", 90),
+        ("Hololive", "Gawr Gura", "Voice Pack", "Gawr Gura Birthday 2024 Special Voice Pack", "Birthday", "mid", 30),
+        ("Hololive", "Houshou Marine", "Birthday Set", "Houshou Marine Birthday 2025 Premium Merch Set", "Birthday", "high", 85),
+        ("Hololive", "Houshou Marine", "Voice Pack", "Houshou Marine Birthday 2025 Special Voice Pack", "Birthday", "mid", 28),
+        ("Hololive", "Hoshimachi Suisei", "Birthday Set", "Hoshimachi Suisei Birthday 2025 Premium Merch Set", "Birthday", "high", 88),
+        ("Hololive", "Hoshimachi Suisei", "Voice Pack", "Hoshimachi Suisei Birthday 2025 Special Voice Pack", "Birthday", "mid", 28),
+        ("Hololive", "Tokoyami Towa", "Birthday Set", "Tokoyami Towa Birthday 2025 Premium Merch Set", "Birthday", "high", 72),
+        ("Hololive", "Shiranui Flare", "Birthday Set", "Shiranui Flare Birthday 2025 Premium Merch Set", "Birthday", "high", 65),
+        ("Hololive", "Oozora Subaru", "Birthday Set", "Oozora Subaru Birthday 2025 Premium Merch Set", "Birthday", "high", 70),
+        ("Hololive", "Shirakami Fubuki", "Birthday Set", "Shirakami Fubuki Birthday 2025 Premium Merch Set", "Birthday", "high", 75),
+        ("Hololive", "Nakiri Ayame", "Birthday Set", "Nakiri Ayame Birthday 2025 Premium Merch Set", "Birthday", "high", 80),
+        ("Hololive", "Minato Aqua", "Birthday Set", "Minato Aqua Birthday 2024 Premium Merch Set", "Birthday", "high", 90),
+        ("Hololive", "Sakura Miko", "Birthday Set", "Sakura Miko Birthday 2025 Premium Merch Set", "Birthday", "high", 82),
+
+        # ── Hololive Concert Goods (Holofes, Connect the World, etc.) ──
+        ("Hololive", "Hololive", "Concert Goods", "Holofes 5 (Beyond the Stage) Official T-Shirt", "Concert", "mid", 45),
+        ("Hololive", "Hololive", "Concert Goods", "Holofes 5 Official Light-Up Penlight", "Concert", "mid", 35),
+        ("Hololive", "Hololive", "Concert Goods", "Holofes 5 Complete Acrylic Stand Set (All Performers)", "Concert", "high", 120),
+        ("Hololive", "Hololive", "Concert Goods", "Holofes 5 Official Towel Set", "Concert", "mid", 30),
+        ("Hololive", "Hololive", "Concert Goods", "Hololive Connect the World Official Goods Set", "Concert", "high", 95),
+        ("Hololive", "Hololive", "Concert Goods", "Hololive Connect the World Official Penlight", "Concert", "mid", 35),
+        ("Hololive", "Hololive", "Concert Goods", "Hololive 3rd Fes Link Your Wish Goods Complete Set", "Concert", "high", 110),
+        ("Hololive", "Hololive", "Concert Goods", "Hololive 4th Fes Our Bright Parade Goods Complete Set", "Concert", "high", 100),
+        ("Hololive", "Hololive EN", "Concert Goods", "Hololive EN Connect the World LA Live Exclusive Set", "Concert", "high", 85),
+        ("Hololive", "Hololive EN", "Concert Goods", "HoloENgagement US Tour 2024 Complete Goods Set", "Concert", "high", 90),
+
+        # ── Nijisanji Specific Items ──
+        ("Nijisanji", "Vox Akuma", "Birthday Set", "Vox Akuma Birthday 2024 Premium Merch Set", "Birthday", "high", 80),
+        ("Nijisanji", "Vox Akuma", "Acrylic Stand", "Vox Akuma Voice Pack + Acrylic Stand Bundle", "Birthday", "mid", 35),
+        ("Nijisanji", "Luca Kaneshiro", "Birthday Set", "Luca Kaneshiro Birthday 2024 Premium Merch Set", "Birthday", "high", 75),
+        ("Nijisanji", "Ike Eveland", "Birthday Set", "Ike Eveland Birthday 2024 Premium Merch Set", "Birthday", "high", 70),
+        ("Nijisanji", "Enna Alouette", "Birthday Set", "Enna Alouette Birthday 2024 Premium Set", "Birthday", "high", 68),
+        ("Nijisanji", "Sonny Brisko", "Birthday Set", "Sonny Brisko Birthday 2024 Premium Merch Set", "Birthday", "high", 72),
+        ("Nijisanji", "Nijisanji", "Concert Goods", "Nijisanji Fantasia Complete Concert Goods Set", "Concert", "high", 100),
+        ("Nijisanji", "Nijisanji", "Concert Goods", "Nijisanji EN Offkai Expo 2024 Exclusive Goods Set", "Concert", "high", 85),
+        ("Nijisanji", "ChroNoiR", "Concert Goods", "ChroNoiR 6th Anniversary Concert Exclusive Set", "Concert", "high", 90),
+        ("Nijisanji", "ROF-MAO", "Concert Goods", "ROF-MAO 1st Live Goods Complete Set", "Concert", "high", 75),
+
+        # ── VTuber Nendoroids (Sell Out Instantly) ──
+        ("Hololive", "Usada Pekora", "Nendoroid", "Usada Pekora Nendoroid #1866", "Standard", "high", 60),
+        ("Hololive", "Houshou Marine", "Nendoroid", "Houshou Marine Nendoroid #1957", "Standard", "high", 58),
+        ("Hololive", "Hoshimachi Suisei", "Nendoroid", "Hoshimachi Suisei Nendoroid #2044", "Standard", "high", 65),
+        ("Hololive", "Sakura Miko", "Nendoroid", "Sakura Miko Nendoroid #2105", "Standard", "high", 55),
+        ("Hololive", "Tokoyami Towa", "Nendoroid", "Tokoyami Towa Nendoroid #2200", "Standard", "high", 52),
+        ("Hololive", "Shirakami Fubuki", "Nendoroid", "Shirakami Fubuki Nendoroid #1844", "Standard", "high", 50),
+        ("Hololive", "Mori Calliope", "Nendoroid", "Mori Calliope Nendoroid #1769", "Standard", "high", 55),
+        ("Hololive", "Takanashi Kiara", "Nendoroid", "Takanashi Kiara Nendoroid #1839", "Standard", "high", 48),
+        ("Hololive", "Ninomae Ina'nis", "Nendoroid", "Ninomae Ina'nis Nendoroid #1851", "Standard", "high", 52),
+        ("Hololive", "Ouro Kronii", "Nendoroid", "Ouro Kronii Nendoroid #2150", "Standard", "high", 55),
+        ("Hololive", "Hakos Baelz", "Nendoroid", "Hakos Baelz Nendoroid #2170", "Standard", "high", 50),
+        ("Hololive", "IRyS", "Nendoroid", "IRyS Nendoroid #2130", "Standard", "high", 52),
+        ("Nijisanji", "Vox Akuma", "Nendoroid", "Vox Akuma Nendoroid #2250", "Standard", "high", 60),
+        ("Nijisanji", "Kuzuha", "Nendoroid", "Kuzuha Nendoroid #1987", "Standard", "high", 65),
+
+        # ── Graduated Member Merch (Prices spike after graduation) ──
+        ("Hololive", "Kiryu Coco", "Graduation Set", "Kiryu Coco Graduation Memorial Complete Set", "Anniversary", "grail", 250),
+        ("Hololive", "Kiryu Coco", "Tapestry", "Kiryu Coco Graduation Memorial B2 Tapestry", "Anniversary", "high", 80),
+        ("Hololive", "Kiryu Coco", "Acrylic Stand", "Kiryu Coco Graduation Memorial Acrylic Stand", "Anniversary", "high", 60),
+        ("Hololive", "Kiryu Coco", "Badge Set", "Kiryu Coco Graduation Memorial Badge Set (5pc)", "Anniversary", "mid", 40),
+        ("Hololive", "Uruha Rushia", "Tapestry", "Uruha Rushia Birthday 2021 B2 Tapestry", "Birthday", "grail", 150),
+        ("Hololive", "Uruha Rushia", "Acrylic Stand", "Uruha Rushia 3rd Anniversary Acrylic Stand", "Anniversary", "high", 80),
+        ("Hololive", "Uruha Rushia", "Badge Set", "Uruha Rushia Complete Badge Collection (12pc)", "Standard", "high", 65),
+        ("Hololive", "Tsukumo Sana", "Graduation Set", "Tsukumo Sana Graduation Memorial Complete Set", "Anniversary", "high", 120),
+        ("Hololive", "Tsukumo Sana", "Tapestry", "Tsukumo Sana Graduation B2 Tapestry", "Anniversary", "high", 55),
+        ("Hololive", "Yukihana Lamy", "Graduation Set", "Yukihana Lamy Final Stream Memorial Goods Set", "Anniversary", "high", 100),
+        ("Nijisanji", "Selen Tatsuki", "Nendoroid", "Selen Tatsuki Nendoroid (Cancelled/Prototype — Ultra Rare)", "Anniversary", "grail", 300),
+        ("Nijisanji", "Pomu Rainpuff", "Graduation Set", "Pomu Rainpuff Graduation Memorial Complete Set", "Anniversary", "grail", 200),
+
+        # ── Acrylic Stands & Tapestries (Bread and Butter) ──
+        ("Hololive", "Gawr Gura", "Acrylic Stand", "Gawr Gura 3rd Anniversary Acrylic Stand (Shark Ver.)", "Anniversary", "mid", 30),
+        ("Hololive", "Gawr Gura", "Acrylic Stand", "Gawr Gura x Smol Ame Acrylic Stand Set", "Collab", "mid", 35),
+        ("Hololive", "Usada Pekora", "Acrylic Stand", "Usada Pekora 4th Anniversary Acrylic Stand Set (3pc)", "Anniversary", "mid", 42),
+        ("Hololive", "Houshou Marine", "Acrylic Stand", "Houshou Marine 4th Anniversary Acrylic Stand", "Anniversary", "mid", 30),
+        ("Hololive", "Hoshimachi Suisei", "Acrylic Stand", "Hoshimachi Suisei 5th Anniversary Acrylic Stand Set", "Anniversary", "mid", 38),
+        ("Hololive", "Mori Calliope", "Acrylic Stand", "Mori Calliope 3rd Anniversary Acrylic Stand", "Anniversary", "mid", 28),
+        ("Hololive", "Takanashi Kiara", "Acrylic Stand", "Takanashi Kiara 3rd Anniversary Acrylic Stand", "Anniversary", "mid", 26),
+        ("Hololive", "Ouro Kronii", "Acrylic Stand", "Ouro Kronii Birthday 2024 Acrylic Stand (Time Lord Ver.)", "Birthday", "mid", 32),
+        ("Hololive", "Sakura Miko", "Tapestry", "Sakura Miko 5th Anniversary B2 Tapestry (Elite Ver.)", "Anniversary", "mid", 45),
+        ("Hololive", "Sakura Miko", "Acrylic Stand", "Sakura Miko 5th Anniversary Acrylic Stand", "Anniversary", "mid", 32),
+        ("Hololive", "Shirakami Fubuki", "Tapestry", "Shirakami Fubuki 5th Anniversary B2 Tapestry", "Anniversary", "mid", 40),
+        ("Hololive", "Shirakami Fubuki", "Acrylic Stand", "Shirakami Fubuki 5th Anniversary Acrylic Stand Set", "Anniversary", "mid", 35),
+        ("Hololive", "Nakiri Ayame", "Tapestry", "Nakiri Ayame Birthday 2024 B2 Tapestry (Oni Ver.)", "Birthday", "mid", 48),
+        ("Hololive", "Minato Aqua", "Tapestry", "Minato Aqua 5th Anniversary B2 Tapestry (Maid Ver.)", "Anniversary", "mid", 45),
+        ("Hololive", "Minato Aqua", "Acrylic Stand", "Minato Aqua 5th Anniversary Acrylic Stand", "Anniversary", "mid", 32),
+
+        # ── Scale Figures & Figma ──
+        ("Hololive", "Gawr Gura", "Scale Figure", "Gawr Gura 1/7 Scale Figure (Pop Up Parade)", "Standard", "high", 70),
+        ("Hololive", "Usada Pekora", "Scale Figure", "Usada Pekora 1/7 Scale Figure (Pop Up Parade)", "Standard", "high", 65),
+        ("Hololive", "Houshou Marine", "Scale Figure", "Houshou Marine 1/7 Scale Figure (Pop Up Parade)", "Standard", "high", 68),
+        ("Hololive", "Hoshimachi Suisei", "Figma", "Hoshimachi Suisei Figma (Stage Ver.)", "Standard", "high", 72),
+        ("Hololive", "Mori Calliope", "Scale Figure", "Mori Calliope 1/7 Scale Figure (Reaper Ver.)", "Standard", "high", 80),
+        ("Hololive", "Sakura Miko", "Scale Figure", "Sakura Miko 1/7 Scale Figure (Elite Shrine Maiden)", "Standard", "high", 75),
+        ("Nijisanji", "Kuzuha", "Scale Figure", "Kuzuha 1/7 Scale Figure (Vampire Ver.)", "Standard", "high", 78),
+        ("Nijisanji", "Kanae", "Scale Figure", "Kanae 1/7 Scale Figure (ChroNoiR)", "Standard", "high", 72),
+
+        # ── Fan Meeting / EXPO Goods ──
+        ("Hololive", "Hololive", "Fan Meeting", "Hololive Super EXPO 2024 Complete Goods Set", "Concert", "high", 130),
+        ("Hololive", "Hololive", "Fan Meeting", "Hololive Super EXPO 2024 Trading Card Complete Set", "Concert", "high", 80),
+        ("Hololive", "Hololive", "Fan Meeting", "Hololive Super EXPO 2024 Official T-Shirt", "Concert", "mid", 40),
+        ("Hololive", "Hololive EN", "Fan Meeting", "Hololive EN 1st Fan Meeting 2024 Complete Goods Set", "Concert", "high", 95),
+        ("Hololive", "Hololive ID", "Fan Meeting", "Hololive ID 3rd Anniversary Fan Meeting Goods Set", "Concert", "high", 70),
+        ("Nijisanji", "Nijisanji", "Fan Meeting", "Nijisanji Fes 2024 Complete Goods Set", "Concert", "high", 110),
+        ("Nijisanji", "Nijisanji", "Fan Meeting", "Nijisanji EN Fan Fest 2024 Exclusive Goods Set", "Concert", "high", 80),
+
+        # ── Hololive Music / Album Merch ──
+        ("Hololive", "Hoshimachi Suisei", "Music Merch", "Suisei 1st Album Specter Merch Set", "Standard", "high", 65),
+        ("Hololive", "Mori Calliope", "Music Merch", "Calliope Sinderella Vinyl + Merch Set", "Standard", "high", 80),
+        ("Hololive", "Gawr Gura", "Music Merch", "Gura Reflect EP Merch Set", "Standard", "high", 70),
+        ("Hololive", "IRyS", "Music Merch", "IRyS Journey Album Merch Set", "Standard", "mid", 45),
+        ("Hololive", "Tokoyami Towa", "Music Merch", "Towa Aster Album Merch Set", "Standard", "mid", 42),
+        ("Hololive", "Hololive IDOL PROJECT", "Music Merch", "Holo IDOL PROJECT Bouquet Complete Merch Set", "Concert", "high", 75),
+    ]
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

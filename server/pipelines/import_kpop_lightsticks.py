@@ -676,6 +676,8 @@ def get_curated_catalog() -> list[dict]:
     items += _expanded_batch_9()
     # ── Expansion Batch 10 — 195 items: concert goods, fan meeting, collabs, PCs, albums, misc ──
     items += _expanded_batch_10()
+    # ── Expansion Batch 11 — 133 items: lightstick versions, tour goods, collabs, season's greetings ──
+    items += _expanded_batch_11()
     # ── Variant expansion — version/color/BT/concert variants ──
     items += _variant_expansion()
 
@@ -1324,6 +1326,162 @@ def _expanded_batch_10() -> list[tuple]:
         ("CLASS:y", "CLASS:y Official Lightstick (Sealed, Disbanded)", "v1-sealed", "Discontinued", "high", 85),
         ("tripleS", "tripleS Official Lightstick (ASSEMBLE)", "v1", "Standard", "mid", 52),
         ("tripleS", "tripleS LoVelution Tour Lightstick", "v1-tour", "Tour Exclusive", "high", 72),
+    ]
+
+
+def _expanded_batch_11() -> list[tuple]:
+    """133 additional K-pop items: new lightstick versions, 2024-2025 tour goods,
+    birthday goods, Season's Greetings, brand collabs, fanclub kits."""
+    return [
+        # ── New Lightstick Versions (+14) ──
+        ("ATEEZ", "ATEEZ Lightiny Ver. 2 (2025 Upgrade)", "v2-2025", "Standard", "mid", 45),
+        ("ENHYPEN", "ENHYPEN EN-CONNECT Ver. 2 Lightstick", "v2-enconnect", "Standard", "mid", 48),
+        ("TXT", "TXT MOA Bong Ver. 2 (2025)", "v2-2025", "Standard", "mid", 50),
+        ("aespa", "aespa Official Lightstick Ver. 2 (MY Ver.)", "v2-my", "Standard", "mid", 52),
+        ("NMIXX", "NMIXX Official Lightstick Ver. 2 (DASH Ver.)", "v2-dash", "Standard", "mid", 45),
+        ("IVE", "IVE Official Lightstick Ver. 2 (SWITCH Ver.)", "v2-switch", "Standard", "mid", 50),
+        ("LE SSERAFIM", "LE SSERAFIM Official Lightstick Ver. 2 (CRAZY Ver.)", "v2-crazy", "Standard", "mid", 52),
+        ("ILLIT", "ILLIT Official Lightstick (Magnetic)", "v1-magnetic", "Standard", "mid", 42),
+        ("BABYMONSTER", "BABYMONSTER Official Lightstick (SHEESH Ver.)", "v1-sheesh", "Standard", "mid", 45),
+        ("KATSEYE", "KATSEYE Official Lightstick Ver. 1 (SOS Ver.)", "v1-sos", "Standard", "mid", 42),
+        ("FIFTY FIFTY", "FIFTY FIFTY Official Lightstick", "v1", "Standard", "mid", 40),
+        ("KISS OF LIFE", "KISS OF LIFE Lightstick Ver. 2 (Sticky Ver.)", "v2-sticky", "Standard", "mid", 48),
+        ("Billlie", "Billlie Official Lightstick Ver. 2", "v2", "Standard", "mid", 45),
+        ("VIVIZ", "VIVIZ Official Lightstick Ver. 2 (Pull Up Ver.)", "v2-pullup", "Standard", "mid", 42),
+
+        # ── 2024-2025 Concert Tour Goods (+20) ──
+        ("BTS", "BTS Proof World Tour T-Shirt (2024)", "tour-proof-tee", "Tour Exclusive", "high", 75),
+        ("BTS", "BTS Proof Tour Hoodie (2024)", "tour-proof-hoodie", "Tour Exclusive", "high", 95),
+        ("Blackpink", "Blackpink Born Pink World Tour Banner (2024)", "tour-bp-banner", "Tour Exclusive", "high", 65),
+        ("Blackpink", "Blackpink Born Pink Tour Photo Set (2024)", "tour-bp-photo", "Tour Exclusive", "mid", 45),
+        ("Stray Kids", "Stray Kids dominATE Tour Slogan (2025)", "tour-skz-slogan", "Tour Exclusive", "mid", 40),
+        ("Stray Kids", "Stray Kids dominATE Tour Hoodie (2025)", "tour-skz-hoodie", "Tour Exclusive", "high", 90),
+        ("ATEEZ", "ATEEZ TOWARDS THE LIGHT Tour T-Shirt (2025)", "tour-atz-tee", "Tour Exclusive", "high", 70),
+        ("ATEEZ", "ATEEZ TOWARDS THE LIGHT Tour Keyring (2025)", "tour-atz-keyring", "Tour Exclusive", "mid", 35),
+        ("Seventeen", "Seventeen RIGHT HERE Tour Lightstick Strap (2025)", "tour-svt-strap", "Tour Exclusive", "mid", 38),
+        ("Seventeen", "Seventeen RIGHT HERE Tour Bucket Hat (2025)", "tour-svt-hat", "Tour Exclusive", "high", 60),
+        ("TWICE", "TWICE READY TO BE Encore Tour Photo Card Set (2025)", "tour-twice-pc", "Tour Exclusive", "mid", 55),
+        ("TWICE", "TWICE READY TO BE Tour Candy Bong Strap", "tour-twice-strap", "Tour Exclusive", "mid", 35),
+        ("NewJeans", "NewJeans Bunnies Camp Tour T-Shirt (2025)", "tour-nj-tee", "Tour Exclusive", "high", 75),
+        ("NewJeans", "NewJeans Bunnies Camp Tour Tote Bag (2025)", "tour-nj-tote", "Tour Exclusive", "mid", 50),
+        ("aespa", "aespa SYNK: PARALLEL LIVE Tour Slogan (2025)", "tour-aespa-slogan", "Tour Exclusive", "mid", 42),
+        ("IVE", "IVE SHOW WHAT I HAVE Tour Photo Set (2025)", "tour-ive-photo", "Tour Exclusive", "mid", 48),
+        ("TXT", "TXT ACT: PROMISE Tour Hoodie (2025)", "tour-txt-hoodie", "Tour Exclusive", "high", 88),
+        ("LE SSERAFIM", "LE SSERAFIM FLAME RISES Tour Banner (2025)", "tour-lsfm-banner", "Tour Exclusive", "mid", 42),
+        ("ENHYPEN", "ENHYPEN FATE PLUS Tour Lightstick Topper (2025)", "tour-enha-topper", "Tour Exclusive", "mid", 38),
+        ("NCT Dream", "NCT Dream THE DREAM SHOW 3 Tour Slogan (2025)", "tour-nctd-slogan", "Tour Exclusive", "mid", 40),
+
+        # ── Birthday Goods Per Member (+16) ──
+        ("BTS", "BTS Jungkook Birthday Cupsleeve Event Set 2025", "bday-jk-2025", "Fan Event", "mid", 35),
+        ("BTS", "BTS V Birthday Photo Card Set 2025", "bday-v-2025", "Fan Event", "mid", 38),
+        ("BTS", "BTS Jimin Birthday Premium Photo Set 2025", "bday-jimin-2025", "Fan Event", "mid", 40),
+        ("Blackpink", "Blackpink Lisa Birthday Cupsleeve Set 2025", "bday-lisa-2025", "Fan Event", "mid", 38),
+        ("Blackpink", "Blackpink Jennie Birthday Photo Set 2025", "bday-jennie-2025", "Fan Event", "mid", 40),
+        ("Stray Kids", "Stray Kids Hyunjin Birthday Set 2025", "bday-hyunjin-2025", "Fan Event", "mid", 42),
+        ("Stray Kids", "Stray Kids Felix Birthday Cupsleeve Set 2025", "bday-felix-2025", "Fan Event", "mid", 45),
+        ("ATEEZ", "ATEEZ Hongjoong Birthday Premium Set 2025", "bday-hj-2025", "Fan Event", "mid", 35),
+        ("Seventeen", "Seventeen Mingyu Birthday Set 2025", "bday-mingyu-2025", "Fan Event", "mid", 38),
+        ("Seventeen", "Seventeen Wonwoo Birthday Set 2025", "bday-wonwoo-2025", "Fan Event", "mid", 35),
+        ("TWICE", "TWICE Momo Birthday Cupsleeve Set 2025", "bday-momo-2025", "Fan Event", "mid", 35),
+        ("NewJeans", "NewJeans Minji Birthday Premium Set 2025", "bday-minji-2025", "Fan Event", "mid", 42),
+        ("NewJeans", "NewJeans Hanni Birthday Set 2025", "bday-hanni-2025", "Fan Event", "mid", 45),
+        ("aespa", "aespa Karina Birthday Cupsleeve Set 2025", "bday-karina-2025", "Fan Event", "mid", 42),
+        ("IVE", "IVE Wonyoung Birthday Premium Set 2025", "bday-wonyoung-2025", "Fan Event", "mid", 48),
+        ("IVE", "IVE Yujin Birthday Cupsleeve Set 2025", "bday-yujin-2025", "Fan Event", "mid", 38),
+
+        # ── Season's Greetings 2025-2026 (+16) ──
+        ("BTS", "BTS Season's Greetings 2026", "sg-2026", "Standard", "high", 65),
+        ("Blackpink", "Blackpink Season's Greetings 2026", "sg-2026", "Standard", "high", 62),
+        ("Stray Kids", "Stray Kids Season's Greetings 2026", "sg-2026", "Standard", "mid", 55),
+        ("ATEEZ", "ATEEZ Season's Greetings 2026", "sg-2026", "Standard", "mid", 52),
+        ("Seventeen", "Seventeen Season's Greetings 2026", "sg-2026", "Standard", "mid", 55),
+        ("TWICE", "TWICE Season's Greetings 2026", "sg-2026", "Standard", "mid", 52),
+        ("NewJeans", "NewJeans Season's Greetings 2026", "sg-2026", "Standard", "high", 60),
+        ("aespa", "aespa Season's Greetings 2026", "sg-2026", "Standard", "mid", 50),
+        ("IVE", "IVE Season's Greetings 2026", "sg-2026", "Standard", "mid", 50),
+        ("TXT", "TXT Season's Greetings 2026", "sg-2026", "Standard", "mid", 50),
+        ("LE SSERAFIM", "LE SSERAFIM Season's Greetings 2026", "sg-2026", "Standard", "mid", 52),
+        ("ENHYPEN", "ENHYPEN Season's Greetings 2026", "sg-2026", "Standard", "mid", 48),
+        ("NCT Dream", "NCT Dream Season's Greetings 2026", "sg-2026", "Standard", "mid", 50),
+        ("NMIXX", "NMIXX Season's Greetings 2026", "sg-2026", "Standard", "mid", 45),
+        ("RIIZE", "RIIZE Season's Greetings 2026", "sg-2026", "Standard", "mid", 48),
+        ("ZEROBASEONE", "ZEROBASEONE Season's Greetings 2026", "sg-2026", "Standard", "mid", 50),
+
+        # ── K-pop x Brand Collabs (+15) ──
+        ("BTS", "BTS x Samsung Galaxy S25 Ultra (BTS Edition)", "collab-samsung", "Brand Collab", "grail", 200),
+        ("BTS", "BTS x Samsung Galaxy Buds (BTS Purple Edition)", "collab-samsung-buds", "Brand Collab", "high", 95),
+        ("Blackpink", "Blackpink x Starbucks Tumbler Set (Korea)", "collab-starbucks", "Brand Collab", "high", 85),
+        ("Blackpink", "Blackpink x Starbucks Card Set (Korea)", "collab-starbucks-card", "Brand Collab", "mid", 55),
+        ("NewJeans", "NewJeans x Apple AirPods Case (Bunny)", "collab-apple-case", "Brand Collab", "high", 75),
+        ("NewJeans", "NewJeans x Apple Music Photo Card Set", "collab-apple-pc", "Brand Collab", "high", 65),
+        ("NewJeans", "NewJeans x Coca-Cola Can Set (Korea)", "collab-coke", "Brand Collab", "high", 70),
+        ("BTS", "BTS x Casetify Phone Case Set", "collab-casetify", "Brand Collab", "high", 68),
+        ("Seventeen", "Seventeen x Lotte Duty Free Photo Card Set", "collab-lotte", "Brand Collab", "mid", 45),
+        ("TWICE", "TWICE x Baskin Robbins Photo Card Set", "collab-br", "Brand Collab", "mid", 40),
+        ("Stray Kids", "Stray Kids x SKZOO x LINE FRIENDS Plush Set", "collab-line", "Brand Collab", "high", 80),
+        ("aespa", "aespa x Givenchy Mini Pouch Set", "collab-givenchy", "Brand Collab", "high", 90),
+        ("IVE", "IVE x Olive Young Beauty Set", "collab-oliveyoung", "Brand Collab", "mid", 55),
+        ("LE SSERAFIM", "LE SSERAFIM x Dior Mini Photo Set", "collab-dior", "Brand Collab", "high", 85),
+        ("TXT", "TXT x Loewe Photo Card Set (2025)", "collab-loewe", "Brand Collab", "high", 72),
+
+        # ── Fanclub Membership Kits (+16) ──
+        ("BTS", "BTS ARMY Membership Kit 2025 (10th Gen)", "fc-army-10", "Fanclub Kit", "high", 85),
+        ("BTS", "BTS ARMY Membership Kit 2024 (9th Gen)", "fc-army-9", "Fanclub Kit", "high", 90),
+        ("Blackpink", "Blackpink BLINK Membership Kit 2025 (4th Gen)", "fc-blink-4", "Fanclub Kit", "high", 80),
+        ("Stray Kids", "Stray Kids STAY Membership Kit 2025 (5th Gen)", "fc-stay-5", "Fanclub Kit", "high", 75),
+        ("ATEEZ", "ATEEZ ATINY Membership Kit 2025 (5th Gen)", "fc-atiny-5", "Fanclub Kit", "mid", 60),
+        ("Seventeen", "Seventeen CARAT Membership Kit 2025 (9th Gen)", "fc-carat-9", "Fanclub Kit", "high", 75),
+        ("TWICE", "TWICE ONCE Membership Kit 2025 (7th Gen)", "fc-once-7", "Fanclub Kit", "high", 72),
+        ("NewJeans", "NewJeans Bunnies Membership Kit 2025 (2nd Gen)", "fc-bunnies-2", "Fanclub Kit", "high", 85),
+        ("aespa", "aespa MY Membership Kit 2025 (3rd Gen)", "fc-my-3", "Fanclub Kit", "mid", 65),
+        ("IVE", "IVE DIVE Membership Kit 2025 (3rd Gen)", "fc-dive-3", "Fanclub Kit", "mid", 62),
+        ("TXT", "TXT MOA Membership Kit 2025 (5th Gen)", "fc-moa-5", "Fanclub Kit", "mid", 65),
+        ("LE SSERAFIM", "LE SSERAFIM FEARNOT Membership Kit 2025 (3rd Gen)", "fc-fearnot-3", "Fanclub Kit", "mid", 65),
+        ("ENHYPEN", "ENHYPEN ENGENE Membership Kit 2025 (4th Gen)", "fc-engene-4", "Fanclub Kit", "mid", 60),
+        ("NCT Dream", "NCT Dream NCTzen Membership Kit 2025 (5th Gen)", "fc-nctzen-5", "Fanclub Kit", "mid", 62),
+        ("NMIXX", "NMIXX NSWER Membership Kit 2025 (2nd Gen)", "fc-nswer-2", "Fanclub Kit", "mid", 55),
+        ("RIIZE", "RIIZE BRIIZE Membership Kit 2025 (2nd Gen)", "fc-briize-2", "Fanclub Kit", "mid", 58),
+
+        # ── More Lightstick Tour Editions (+10) ──
+        ("BTS", "ARMY Bomb Ver. 4 (2025 Reunion Tour Edition)", "v4-reunion", "Tour Exclusive", "grail", 130),
+        ("Blackpink", "Blackpink Lightstick (2025 Encore World Tour)", "v2-encore", "Tour Exclusive", "high", 90),
+        ("TWICE", "Candy Bong Infinity (READY TO BE World Tour Encore)", "infinity-rtb", "Tour Exclusive", "high", 85),
+        ("Stray Kids", "Nachimbong (dominATE Tour Special Edition)", "v2-dominate", "Tour Exclusive", "high", 88),
+        ("ATEEZ", "Lightiny (TOWARDS THE LIGHT Tour Crystal)", "v2-crystal", "Tour Exclusive", "high", 82),
+        ("Seventeen", "Carat Bong (RIGHT HERE Tour Diamond Edition)", "v3-diamond", "Tour Exclusive", "high", 92),
+        ("NewJeans", "NewJeans Lightstick (Bunnies Camp Tour Glow)", "v1-glow", "Tour Exclusive", "grail", 110),
+        ("aespa", "aespa Lightstick (SYNK: PARALLEL LIVE Neon)", "v2-neon", "Tour Exclusive", "high", 85),
+        ("TXT", "MOA Bong (ACT: PROMISE World Tour Crystal)", "v2-crystal", "Tour Exclusive", "high", 82),
+        ("LE SSERAFIM", "LE SSERAFIM Lightstick (FLAME RISES Tour Fire)", "v2-fire", "Tour Exclusive", "high", 88),
+
+        # ── More Album POBs & Special PCs (+12) ──
+        ("BTS", "BTS Proof Collector's Edition Photo Card Set", "proof-ce-pc", "Collector's Edition", "high", 80),
+        ("Blackpink", "Blackpink THE ALBUM JP Ver. Photo Card Full Set", "album-jp-pc", "Japan Exclusive", "high", 70),
+        ("Stray Kids", "Stray Kids ATE POB Photo Card Full Set", "ate-pob-pc", "POB", "mid", 55),
+        ("ATEEZ", "ATEEZ GOLDEN HOUR Part.2 POB Photo Card Set", "gh2-pob-pc", "POB", "mid", 50),
+        ("Seventeen", "Seventeen 17 IS RIGHT HERE POB Set", "17rh-pob-pc", "POB", "mid", 52),
+        ("NewJeans", "NewJeans How Sweet POB Photo Card Full Set", "hs-pob-pc", "POB", "high", 65),
+        ("aespa", "aespa Armageddon POB Photo Card Full Set", "arma-pob-pc", "POB", "mid", 48),
+        ("IVE", "IVE IVE SWITCH POB Photo Card Full Set", "switch-pob-pc", "POB", "mid", 50),
+        ("TXT", "TXT minisode 3: TOMORROW POB Set", "mini3-pob-pc", "POB", "mid", 48),
+        ("LE SSERAFIM", "LE SSERAFIM CRAZY POB Photo Card Full Set", "crazy-pob-pc", "POB", "mid", 52),
+        ("ENHYPEN", "ENHYPEN ROMANCE: UNTOLD POB Set", "ru-pob-pc", "POB", "mid", 48),
+        ("NCT Dream", "NCT Dream DREAM( )SCAPE POB Photo Card Set", "ds-pob-pc", "POB", "mid", 45),
+
+        # ── Discontinued/Rare Lightsticks (+14) ──
+        ("GFRIEND", "GFRIEND Official Lightstick (Sealed, Disbanded)", "v1-sealed", "Discontinued", "grail", 130),
+        ("PRISTIN", "PRISTIN Official Lightstick (Sealed, Disbanded)", "v1-sealed", "Discontinued", "grail", 150),
+        ("fromis_9", "fromis_9 Official Lightstick Ver. 1 (Original)", "v1", "Discontinued", "high", 85),
+        ("I.O.I", "I.O.I Official Lightstick (Sealed, Disbanded)", "v1-sealed", "Discontinued", "grail", 180),
+        ("X1", "X1 Official Lightstick (Sealed, Disbanded)", "v1-sealed", "Discontinued", "grail", 200),
+        ("IZ*ONE", "IZ*ONE Official Lightstick Ver. 2 (Sealed, Disbanded)", "v2-sealed", "Discontinued", "grail", 160),
+        ("2NE1", "2NE1 Official Lightstick (Reunion)", "v1-reunion", "Standard", "grail", 140),
+        ("BIGBANG", "BIGBANG Official Lightstick Crown (2024 Reunion)", "v3-crown", "Standard", "grail", 110),
+        ("SHINee", "SHINee Official Lightstick (25th Anniversary Edition)", "v2-25th", "Anniversary Edition", "high", 85),
+        ("WINNER", "WINNER Official Lightstick (Sealed)", "v1-sealed", "Discontinued", "high", 95),
+        ("iKON", "iKON Official Lightstick (Konbat Ver. 2 Sealed)", "v2-sealed", "Discontinued", "high", 90),
+        ("GOT7", "GOT7 Official Lightstick (2025 Reunion Tour)", "v3-reunion", "Tour Exclusive", "high", 80),
+        ("MONSTA X", "MONSTA X Official Lightstick (Final Tour Edition)", "v3-final", "Tour Exclusive", "high", 88),
     ]
 
 

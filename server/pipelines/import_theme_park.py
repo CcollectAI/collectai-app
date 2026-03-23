@@ -1171,6 +1171,7 @@ def get_curated_catalog() -> list[dict]:
     # Round 7 expansion — 50 items
     catalog.extend(_expanded_round7_theme_park())
     catalog.extend(_variant_expansion())
+    catalog.extend(_expansion_1150_most_searched())
 
     # Deduplicate by ('park', 'name', 'edition') (keep first occurrence)
     _seen: set = set()
@@ -1519,6 +1520,152 @@ def _variant_expansion() -> list[dict]:
     ]
     catalog = []
     for park, subcategory, name, edition, tier, price in variants:
+        catalog.append({
+            "park": park,
+            "subcategory": subcategory,
+            "name": name,
+            "edition": edition,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
+
+
+def _expansion_1150_most_searched() -> list[dict]:
+    """~140 most-searched theme park items: Disneyland/WDW specifics, Universal,
+    regional parks, food/drink merch, MagicBand+, spirit jerseys."""
+    items = [
+        # ── Disneyland / WDW Specific ───────────────────────────────────────
+        ("Disney Parks", "merch", "Dapper Dans Barbershop Quartet Figurine Set", "Park Exclusive", "high", 75),
+        ("Disney Parks", "merch", "Main Street Vehicles Die-Cast Set (Fire Engine, Omnibus, Jitney)", "Park Exclusive", "high", 85),
+        ("Disney Parks", "poster", "Retro Attraction Poster — Space Mountain (Silk Screen)", "Limited Release", "high", 95),
+        ("Disney Parks", "poster", "Retro Attraction Poster — Haunted Mansion (Silk Screen)", "Limited Release", "high", 110),
+        ("Disney Parks", "poster", "Retro Attraction Poster — Pirates of the Caribbean (Silk Screen)", "Limited Release", "high", 100),
+        ("Disney Parks", "poster", "Retro Attraction Poster — Matterhorn Bobsleds (Silk Screen)", "Limited Release", "high", 90),
+        ("Disney Parks", "poster", "Retro Attraction Poster — It's a Small World (Silk Screen)", "Limited Release", "high", 85),
+        ("Disney Parks", "poster", "Retro Attraction Poster — Jungle Cruise (Silk Screen)", "Limited Release", "mid", 70),
+        ("Disney Parks", "poster", "Retro Attraction Poster — Enchanted Tiki Room (Silk Screen)", "Limited Release", "mid", 75),
+        ("Disney Parks", "merch", "Disneyland Railroad Conductor Hat & Whistle Set", "Park Exclusive", "mid", 45),
+        ("Disney Parks", "merch", "WDW Monorail Toy Playset (Contemporary Resort)", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "merch", "Disneyland Club 33 Member Exclusive Pin Set 2025", "LE 300", "grail", 250),
+        ("Disney Parks", "merch", "WDW Tomorrowland Speedway Die-Cast Car", "Park Exclusive", "standard", 22),
+        ("Disney Parks", "merch", "Disneyland Sleeping Beauty Castle Light-Up Figurine", "Park Exclusive", "high", 85),
+        ("Disney Parks", "merch", "WDW Spaceship Earth Model (EPCOT 40th Anniversary)", "Anniversary LE", "high", 95),
+        # ── Universal Studios (Super Nintendo World) ────────────────────────
+        ("Universal Studios", "merch", "Super Nintendo World Power-Up Band — Mario (Red)", "Park Exclusive", "mid", 40),
+        ("Universal Studios", "merch", "Super Nintendo World Power-Up Band — Luigi (Green)", "Park Exclusive", "mid", 40),
+        ("Universal Studios", "merch", "Super Nintendo World Power-Up Band — Peach (Pink)", "Park Exclusive", "mid", 40),
+        ("Universal Studios", "merch", "Super Nintendo World Power-Up Band — Toad (Blue)", "Park Exclusive", "mid", 40),
+        ("Universal Studios", "merch", "Super Nintendo World Power-Up Band — Yoshi (Yellow)", "Park Exclusive", "mid", 45),
+        ("Universal Studios", "merch", "Super Nintendo World Power-Up Band — Daisy (Orange)", "Park Exclusive", "mid", 45),
+        ("Universal Studios", "merch", "Super Nintendo World Mario Kart Bowser's Challenge Ride Poster", "Park Exclusive", "mid", 35),
+        ("Universal Studios", "merch", "Super Nintendo World ? Block Popcorn Bucket", "Park Exclusive", "high", 65),
+        ("Universal Studios", "merch", "Super Nintendo World Fire Flower Tumbler", "Park Exclusive", "mid", 28),
+        ("Universal Studios", "merch", "Super Nintendo World Piranha Plant Sipper Cup", "Park Exclusive", "mid", 30),
+        ("Universal Studios", "merch", "Super Nintendo World Gold Coin Collector Medallion Set", "Park Exclusive", "high", 60),
+        ("Universal Studios", "merch", "Super Nintendo World 1-Up Mushroom Light-Up Keychain", "Park Exclusive", "standard", 18),
+        ("Universal Studios", "merch", "Super Nintendo World Bowser Shell Backpack", "Park Exclusive", "mid", 48),
+        ("Universal Studios", "merch", "Super Nintendo World Interactive Star Figure", "Park Exclusive", "mid", 35),
+        # ── Universal Studios (Jurassic World / Other) ──────────────────────
+        ("Universal Studios", "merch", "Jurassic World VelociCoaster Ride Poster", "Park Exclusive", "mid", 30),
+        ("Universal Studios", "merch", "Jurassic World Raptor Encounter Claw Replica", "Park Exclusive", "mid", 55),
+        ("Universal Studios", "merch", "Jurassic World Amber Mosquito Desk Prop", "Park Exclusive", "high", 65),
+        ("Universal Studios", "merch", "Minion Land Banana Split Popcorn Bucket", "Park Exclusive", "mid", 35),
+        ("Universal Studios", "merch", "Minion Land Fluffy Unicorn Plush (XL)", "Park Exclusive", "mid", 42),
+        ("Universal Studios", "merch", "Epic Universe Grand Opening Commemorative Pin Set", "Grand Opening", "grail", 150),
+        ("Universal Studios", "merch", "Epic Universe How to Train Your Dragon Land Toothless Figure", "Park Exclusive", "high", 70),
+        ("Universal Studios", "merch", "Epic Universe Celestial Park Opening Day Spirit Jersey", "Grand Opening", "high", 80),
+        ("Universal Studios", "merch", "Epic Universe Dark Universe Monster Sipper Cup", "Park Exclusive", "mid", 32),
+        # ── Regional Parks ──────────────────────────────────────────────────
+        ("Cedar Point", "merch", "Cedar Point Steel Vengeance Ride Blueprint Poster", "Park Exclusive", "mid", 35),
+        ("Cedar Point", "merch", "Cedar Point Millennium Force 25th Anniversary Tee", "Anniversary LE", "mid", 40),
+        ("Cedar Point", "merch", "Cedar Point Top Thrill 2 Grand Re-Opening Pin", "Grand Opening", "high", 60),
+        ("Cedar Point", "merch", "Cedar Point Maverick Ride Model Kit", "Park Exclusive", "mid", 45),
+        ("Cedar Point", "merch", "Cedar Point Raptor Night Ride Spirit Jersey", "Park Exclusive", "mid", 50),
+        ("Dollywood", "merch", "Dollywood Lightning Rod Ride Poster", "Park Exclusive", "mid", 30),
+        ("Dollywood", "merch", "Dollywood Wild Eagle Ornament", "Park Exclusive", "standard", 18),
+        ("Dollywood", "merch", "Dollywood Dolly Parton Signature Butterfly Pin", "Park Exclusive", "mid", 25),
+        ("Dollywood", "merch", "Dollywood DreamMore Resort Exclusive Throw Blanket", "Park Exclusive", "mid", 40),
+        ("Hersheypark", "merch", "Hersheypark Candymonium Ride Poster", "Park Exclusive", "mid", 28),
+        ("Hersheypark", "merch", "Hersheypark Hershey Bar Shaped Popcorn Bucket", "Park Exclusive", "mid", 35),
+        ("Hersheypark", "merch", "Hersheypark Reese's Peanut Butter Cup Sipper", "Park Exclusive", "standard", 22),
+        ("Six Flags", "merch", "Six Flags Great Adventure El Toro Ride Blueprint Poster", "Park Exclusive", "mid", 30),
+        ("Six Flags", "merch", "Six Flags Magic Mountain Twisted Colossus Ride Tee", "Park Exclusive", "standard", 25),
+        ("Six Flags", "merch", "Six Flags Over Texas New Texas Giant Poster", "Park Exclusive", "mid", 28),
+        ("Six Flags", "merch", "Six Flags Great America Goliath Ride Model", "Park Exclusive", "mid", 38),
+        ("Busch Gardens", "merch", "Busch Gardens Williamsburg Pantheon Ride Poster", "Park Exclusive", "mid", 30),
+        ("Busch Gardens", "merch", "Busch Gardens Tampa Iron Gwazi Night Ride Tee", "Park Exclusive", "mid", 28),
+        ("Alton Towers", "merch", "Alton Towers The Smiler Ride Blueprint Print", "Park Exclusive", "mid", 32),
+        ("Alton Towers", "merch", "Alton Towers Nemesis Reborn Grand Re-Opening Pin", "Grand Opening", "high", 55),
+        # ── Food & Drink Merchandise ────────────────────────────────────────
+        ("Disney Parks", "food_merch", "Dole Whip Spirit Jersey", "Park Exclusive", "high", 75),
+        ("Disney Parks", "food_merch", "Dole Whip Loungefly Mini Backpack", "Park Exclusive", "high", 80),
+        ("Disney Parks", "food_merch", "Dole Whip Ears Headband", "Park Exclusive", "mid", 35),
+        ("Disney Parks", "food_merch", "Dole Whip Scented Candle", "Park Exclusive", "mid", 28),
+        ("Disney Parks", "food_merch", "Churro Mickey Crossbody Bag", "Park Exclusive", "mid", 40),
+        ("Disney Parks", "food_merch", "Churro Spirit Jersey (Cinnamon & Sugar)", "Park Exclusive", "high", 70),
+        ("Disney Parks", "food_merch", "Mickey Premium Bar Tumbler (Stainless Steel)", "Park Exclusive", "mid", 32),
+        ("Disney Parks", "food_merch", "EPCOT Food & Wine Festival 2025 Passholder Tumbler", "Festival LE", "mid", 38),
+        ("Disney Parks", "food_merch", "EPCOT Flower & Garden Festival Figment Orange Bird Mug", "Festival LE", "mid", 35),
+        ("Disney Parks", "food_merch", "Disney Villains After Hours Poison Apple Stein", "AP Exclusive", "high", 65),
+        ("Disney Parks", "food_merch", "Mickey Waffle Maker (Disney Parks Home Collection)", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "food_merch", "Disney Snack Icons Stainless Steel Water Bottle", "Park Exclusive", "standard", 22),
+        ("Disney Parks", "food_merch", "Grey Stuff Recipe Mug (Be Our Guest)", "Park Exclusive", "mid", 30),
+        ("Disney Parks", "food_merch", "Ronto Roasters Thermal Tumbler (Galaxy's Edge)", "Park Exclusive", "mid", 35),
+        ("Disney Parks", "food_merch", "Blue Milk / Green Milk Tasting Flight Set", "Park Exclusive", "mid", 42),
+        # ── MagicBand+ Designs ──────────────────────────────────────────────
+        ("Disney Parks", "magicband", "MagicBand+ Haunted Mansion Hitchhiking Ghosts (LE 3000)", "LE", "high", 65),
+        ("Disney Parks", "magicband", "MagicBand+ Figment (EPCOT Exclusive)", "Park Exclusive", "high", 60),
+        ("Disney Parks", "magicband", "MagicBand+ Tron Lightcycle Run (Grand Opening LE)", "Grand Opening", "high", 75),
+        ("Disney Parks", "magicband", "MagicBand+ Mandalorian Beskar (Galaxy's Edge)", "Park Exclusive", "mid", 45),
+        ("Disney Parks", "magicband", "MagicBand+ 50th Anniversary Gold (WDW)", "Anniversary LE", "high", 70),
+        ("Disney Parks", "magicband", "MagicBand+ Enchanted Tiki Room (Retro)", "Park Exclusive", "mid", 42),
+        ("Disney Parks", "magicband", "MagicBand+ Orange Bird (Flower & Garden)", "Festival LE", "mid", 48),
+        ("Disney Parks", "magicband", "MagicBand+ Villains (Maleficent Dragon)", "Park Exclusive", "mid", 45),
+        ("Disney Parks", "magicband", "MagicBand+ Country Bear Jamboree (Retro)", "Park Exclusive", "mid", 40),
+        ("Disney Parks", "magicband", "MagicBand+ Star Wars Millennium Falcon", "Park Exclusive", "mid", 42),
+        ("Disney Parks", "magicband", "MagicBand+ Guardians of the Galaxy Cosmic Rewind", "Park Exclusive", "mid", 45),
+        ("Disney Parks", "magicband", "MagicBand+ Pirates Skull & Crossbones (Interactive)", "Park Exclusive", "mid", 38),
+        # ── Spirit Jerseys ──────────────────────────────────────────────────
+        ("Disney Parks", "spirit_jersey", "Disneyland Spirit Jersey — Classic Castle (Navy)", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "spirit_jersey", "WDW Spirit Jersey — Spaceship Earth (Purple)", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "spirit_jersey", "Tokyo Disneyland Spirit Jersey — Cherry Blossom", "Tokyo Exclusive", "high", 80),
+        ("Disney Parks", "spirit_jersey", "Disneyland Paris Spirit Jersey — 30th Anniversary (Blue)", "Anniversary LE", "high", 75),
+        ("Disney Parks", "spirit_jersey", "Galaxy's Edge Spirit Jersey — Batuu (Olive)", "Park Exclusive", "mid", 60),
+        ("Disney Parks", "spirit_jersey", "EPCOT Spirit Jersey — World Showcase (Rainbow)", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "spirit_jersey", "Haunted Mansion Spirit Jersey — Glow in the Dark (Black)", "Park Exclusive", "high", 70),
+        ("Disney Parks", "spirit_jersey", "Disney Cruise Line Spirit Jersey — Lighthouse Point", "Park Exclusive", "high", 68),
+        ("Disney Parks", "spirit_jersey", "Mickey Halloween Spirit Jersey — Orange/Black", "Limited Release", "mid", 60),
+        ("Disney Parks", "spirit_jersey", "Mickey Christmas Spirit Jersey — Red/Green Plaid", "Limited Release", "mid", 60),
+        ("Disney Parks", "spirit_jersey", "Aulani Resort Spirit Jersey — Stitch (Teal)", "Park Exclusive", "high", 72),
+        ("Disney Parks", "spirit_jersey", "Disneyland 69th Anniversary Spirit Jersey (Retro)", "Anniversary LE", "mid", 58),
+        ("Disney Parks", "spirit_jersey", "Animal Kingdom Spirit Jersey — Tree of Life (Green)", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "spirit_jersey", "Pandora World of Avatar Spirit Jersey (Bioluminescent)", "Park Exclusive", "high", 65),
+        ("Disney Parks", "spirit_jersey", "Tron Spirit Jersey — Lightcycle Blue Glow", "Park Exclusive", "high", 68),
+        ("Disney Parks", "spirit_jersey", "Figment Spirit Jersey — Imagination (Purple/Orange)", "Park Exclusive", "high", 70),
+        ("Disney Parks", "spirit_jersey", "Toy Story Land Spirit Jersey — Pastel Alien", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "spirit_jersey", "Star Wars May the 4th Spirit Jersey 2025", "Limited Release", "high", 72),
+        # ── More Disneyland / WDW Specific Items ────────────────────────────
+        ("Disney Parks", "ornament", "Disneyland Sleeping Beauty Castle Glass Ornament", "Park Exclusive", "mid", 38),
+        ("Disney Parks", "ornament", "WDW Cinderella Castle Light-Up Ornament", "Park Exclusive", "mid", 40),
+        ("Disney Parks", "ornament", "EPCOT Spaceship Earth Ornament (Silver)", "Park Exclusive", "mid", 32),
+        ("Disney Parks", "merch", "Main Street Electrical Parade Funko Pop Set (3-Pack)", "Park Exclusive", "high", 85),
+        ("Disney Parks", "merch", "Haunted Mansion Doom Buggy Ride Vehicle Replica", "Park Exclusive", "high", 110),
+        ("Disney Parks", "merch", "Pirates of the Caribbean Ship in a Bottle", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "merch", "Disneyland Tiki Mug — Enchanted Tiki Room (Barista)", "Park Exclusive", "high", 65),
+        ("Disney Parks", "merch", "WDW Polynesian Resort Tiki Mug (Trader Sam's)", "Park Exclusive", "high", 75),
+        ("Disney Parks", "merch", "Disneyland Matterhorn Abominable Snowman Tiki Mug", "Park Exclusive", "high", 70),
+        ("Disney Parks", "merch", "Oga's Cantina Rancor Tooth Tiki Mug (Galaxy's Edge)", "Park Exclusive", "high", 80),
+        ("Disney Parks", "pin", "WDW Annual Passholder 2025 Quarterly Pin Set (4 Pins)", "AP Exclusive", "high", 65),
+        ("Disney Parks", "pin", "Disneyland Resort Diamond Pin Trading Starter Set", "Park Exclusive", "mid", 30),
+        # ── More Food/Drink ─────────────────────────────────────────────────
+        ("Universal Studios", "food_merch", "Butterbeer Stein (Wizarding World)", "Park Exclusive", "mid", 35),
+        ("Universal Studios", "food_merch", "Butterbeer Fudge Box (Honeydukes Exclusive)", "Park Exclusive", "standard", 18),
+        ("Universal Studios", "food_merch", "Super Nintendo World ? Block Cookie Jar", "Park Exclusive", "mid", 42),
+        ("Universal Studios", "food_merch", "Jurassic World Dino Egg Sipper", "Park Exclusive", "mid", 28),
+    ]
+    catalog = []
+    for park, subcategory, name, edition, tier, price in items:
         catalog.append({
             "park": park,
             "subcategory": subcategory,

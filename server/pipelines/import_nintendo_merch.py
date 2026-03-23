@@ -1354,6 +1354,137 @@ def get_curated_catalog() -> list[dict]:
         ("Nintendo", "Merch", "Good Smile Nendoroid Splatoon 3 Inkling Girl", "", "mid", 45),
         ("Nintendo", "Merch", "Good Smile figma Samus Aran (Metroid Prime 4)", "", "high", 75),
         ("Nintendo", "Merch", "First4Figures Kirby (Warp Star) Statue", "", "grail", 350),
+
+
+        # ── Round 35b: Smash amiibo roster, Pokemon Center 2024-2025, TOTK, Mario Movie, SNW, AC Sanrio, Retro — 132 items ──
+
+        # Smash Bros Amiibo — Complete Roster Additions (+40)
+        ("Mario", "Amiibo", "Peach (Super Smash Bros.)", "", "standard", 14),
+        ("Mario", "Amiibo", "Yoshi (Super Smash Bros.)", "", "standard", 14),
+        ("Zelda", "Amiibo", "Zelda (Super Smash Bros.)", "", "standard", 16),
+        ("Zelda", "Amiibo", "Sheik (Super Smash Bros.)", "", "mid", 35),
+        ("Zelda", "Amiibo", "Ganondorf (Super Smash Bros.)", "", "mid", 40),
+        ("Zelda", "Amiibo", "Young Link (Super Smash Bros.)", "", "mid", 32),
+        ("Zelda", "Amiibo", "Toon Link (Super Smash Bros.)", "", "standard", 22),
+        ("Metroid", "Amiibo", "Samus (Super Smash Bros.)", "", "standard", 18),
+        ("Metroid", "Amiibo", "Dark Samus (Super Smash Bros.)", "", "mid", 38),
+        ("Metroid", "Amiibo", "Ridley (Super Smash Bros.)", "", "mid", 42),
+        ("Fire Emblem", "Amiibo", "Marth (Super Smash Bros.)", "", "mid", 45),
+        ("Fire Emblem", "Amiibo", "Ike (Super Smash Bros.)", "", "mid", 50),
+        ("Fire Emblem", "Amiibo", "Roy (Super Smash Bros.)", "", "mid", 40),
+        ("Fire Emblem", "Amiibo", "Lucina (Super Smash Bros.)", "", "mid", 42),
+        ("Fire Emblem", "Amiibo", "Robin (Super Smash Bros.)", "", "mid", 40),
+        ("Fire Emblem", "Amiibo", "Corrin (Super Smash Bros.)", "", "mid", 38),
+        ("Fire Emblem", "Amiibo", "Byleth (Super Smash Bros.)", "", "mid", 35),
+        ("Kirby", "Amiibo", "Meta Knight (Super Smash Bros.)", "", "mid", 45),
+        ("Kirby", "Amiibo", "King Dedede (Super Smash Bros.)", "", "mid", 38),
+        ("Nintendo", "Amiibo", "Captain Falcon (Super Smash Bros.)", "", "mid", 42),
+        ("Nintendo", "Amiibo", "Ness (Super Smash Bros.)", "", "mid", 40),
+        ("Nintendo", "Amiibo", "Pit (Super Smash Bros.)", "", "mid", 35),
+        ("Nintendo", "Amiibo", "Palutena (Super Smash Bros.)", "", "mid", 38),
+        ("Nintendo", "Amiibo", "Little Mac (Super Smash Bros.)", "", "high", 60),
+        ("Nintendo", "Amiibo", "Villager (Super Smash Bros. 1st Print)", "", "high", 80),
+        ("Nintendo", "Amiibo", "Wii Fit Trainer (Super Smash Bros. 1st Print)", "", "high", 65),
+        ("Nintendo", "Amiibo", "Shulk (Super Smash Bros.)", "GameStop Exclusive", "mid", 45),
+        ("Nintendo", "Amiibo", "Cloud (Super Smash Bros. P1)", "", "mid", 35),
+        ("Nintendo", "Amiibo", "Cloud (Super Smash Bros. P2 Advent)", "", "mid", 42),
+        ("Nintendo", "Amiibo", "Bayonetta (Super Smash Bros. P1)", "", "mid", 38),
+        ("Nintendo", "Amiibo", "Bayonetta (Super Smash Bros. P2)", "", "mid", 40),
+        ("Nintendo", "Amiibo", "Snake (Super Smash Bros.)", "", "mid", 35),
+        ("Nintendo", "Amiibo", "Simon Belmont (Super Smash Bros.)", "", "mid", 32),
+        ("Nintendo", "Amiibo", "Joker (Super Smash Bros.)", "", "mid", 38),
+        ("Nintendo", "Amiibo", "Kazuya (Super Smash Bros.)", "", "mid", 35),
+        ("Nintendo", "Amiibo", "Sora (Super Smash Bros.)", "", "mid", 40),
+        ("Nintendo", "Amiibo", "Steve (Minecraft) (Super Smash Bros.)", "", "mid", 38),
+
+        # Pokemon Center 2024-2025 — Scarlet/Violet (+12)
+        ("Pokemon", "Plush", "Terapagos Plush (Terastal Form)", "Pokemon Center", "mid", 45),
+        ("Pokemon", "Plush", "Ogerpon Plush (Teal Mask)", "Pokemon Center", "mid", 42),
+        ("Pokemon", "Plush", "Pecharunt Plush", "Pokemon Center", "mid", 38),
+        ("Pokemon", "Plush", "Koraidon Plush 12in", "Pokemon Center", "high", 65),
+        ("Pokemon", "Plush", "Miraidon Plush 12in", "Pokemon Center", "high", 65),
+        ("Pokemon", "Figure", "Meowscarada Premium Figure", "Pokemon Center", "mid", 55),
+        ("Pokemon", "Figure", "Skeledirge Premium Figure", "Pokemon Center", "mid", 52),
+        ("Pokemon", "Figure", "Quaquaval Premium Figure", "Pokemon Center", "mid", 50),
+        ("Pokemon", "Plush", "Fidough Sitting Cuties Plush", "Pokemon Center", "standard", 18),
+        ("Pokemon", "Plush", "Sprigatito Sitting Plush 8in", "Pokemon Center", "standard", 20),
+        ("Pokemon", "Plush", "Fuecoco Sitting Plush 8in", "Pokemon Center", "standard", 20),
+        ("Pokemon", "Plush", "Quaxly Sitting Plush 8in", "Pokemon Center", "standard", 20),
+
+        # Pokemon Center Seasonal Plush (+6)
+        ("Pokemon", "Plush", "Pikachu Cherry Blossom Plush (Spring 2025)", "Pokemon Center", "mid", 38),
+        ("Pokemon", "Plush", "Eevee Summer Festival Plush (2025)", "Pokemon Center", "mid", 40),
+        ("Pokemon", "Plush", "Gengar Halloween Costume Plush (2024)", "Pokemon Center", "mid", 45),
+        ("Pokemon", "Plush", "Snorlax Christmas Plush (Holiday 2024)", "Pokemon Center", "mid", 48),
+        ("Pokemon", "Plush", "Pikachu New Year Kadomatsu Plush (2025)", "Pokemon Center JP", "mid", 42),
+        ("Pokemon", "Plush", "Ditto Valentine's Day Transform Plush (2025)", "Pokemon Center", "mid", 35),
+
+        # Zelda TOTK Items (+10)
+        ("Zelda", "Amiibo", "Link (Tears of the Kingdom)", "", "standard", 18),
+        ("Zelda", "Amiibo", "Zelda (Tears of the Kingdom)", "", "standard", 18),
+        ("Zelda", "Art Book", "Zelda TOTK Creating a Champion + Vol.2", "", "mid", 65),
+        ("Zelda", "Art Book", "Zelda TOTK Master Works Art Book", "", "mid", 55),
+        ("Zelda", "Figure", "Master Sword TOTK Light-Up Replica 1:1", "Nintendo Store", "grail", 280),
+        ("Zelda", "Figure", "TOTK Link with Paraglider Figure", "Nintendo Store", "high", 85),
+        ("Zelda", "Merch", "TOTK Hylian Shield Metal Replica", "Nintendo Store", "high", 120),
+        ("Zelda", "Merch", "TOTK Purah Pad Carrying Case (Switch OLED)", "", "mid", 45),
+        ("Zelda", "Merch", "Zelda 40th Anniversary Pin Set (2026)", "Nintendo Store", "high", 80),
+
+        # Mario Movie Merch (+8)
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Peach 10in Plush", "", "mid", 32),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Bowser 12in Plush", "", "mid", 38),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie DK 10in Figure", "", "mid", 35),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Toad Plush", "", "standard", 25),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Kamek Staff Replica", "", "mid", 45),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie 2 Poster Set (Theatrical)", "", "mid", 40),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Kart Playset Deluxe", "", "mid", 55),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Luigi's Mansion Playset", "", "mid", 48),
+
+        # Super Nintendo World Items (+8)
+        ("Mario", "Theme Park", "Super Nintendo World Mario Hat (USJ Osaka)", "USJ Exclusive", "mid", 42),
+        ("Mario", "Theme Park", "Super Nintendo World Power-Up Band (Mario)", "USJ Exclusive", "mid", 38),
+        ("Mario", "Theme Park", "Super Nintendo World Power-Up Band (Luigi)", "USJ Exclusive", "mid", 38),
+        ("Mario", "Theme Park", "Super Nintendo World Power-Up Band (Peach)", "USJ Exclusive", "mid", 38),
+        ("Mario", "Theme Park", "Super Nintendo World Star Cup Popcorn Bucket", "USJ Exclusive", "high", 65),
+        ("Mario", "Theme Park", "Super Nintendo World ? Block Popcorn Bucket", "USJ Exclusive", "high", 60),
+        ("Mario", "Theme Park", "Super Nintendo World Yoshi's Snack Island Cup", "USJ Exclusive", "mid", 35),
+        ("Zelda", "Theme Park", "Super Nintendo World Donkey Kong Country Land Opening Pin", "USJ Exclusive", "high", 75),
+
+        # Animal Crossing Sanrio Collaboration Cards (+8)
+        ("Animal Crossing", "Card", "Animal Crossing Sanrio Amiibo Card Pack (6 cards)", "", "high", 60),
+        ("Animal Crossing", "Card", "Sanrio Amiibo Card #1 Rilla (Hello Kitty)", "", "mid", 30),
+        ("Animal Crossing", "Card", "Sanrio Amiibo Card #2 Marty (Pompompurin)", "", "mid", 28),
+        ("Animal Crossing", "Card", "Sanrio Amiibo Card #3 Etoile (Kiki & Lala)", "", "mid", 35),
+        ("Animal Crossing", "Card", "Sanrio Amiibo Card #4 Chai (Cinnamoroll)", "", "mid", 32),
+        ("Animal Crossing", "Card", "Sanrio Amiibo Card #5 Chelsea (My Melody)", "", "mid", 30),
+        ("Animal Crossing", "Card", "Sanrio Amiibo Card #6 Toby (Kerokerokeroppi)", "", "mid", 28),
+        ("Animal Crossing", "Card", "Animal Crossing Sanrio Complete Set (Sealed Pack, Target)", "Target Exclusive", "high", 90),
+
+        # Retro Nintendo — Game & Watch Complete (+8)
+        ("Nintendo", "Merch", "Game & Watch Ball (AC-01, CIB)", "", "grail", 350),
+        ("Nintendo", "Merch", "Game & Watch Fire (RC-04, CIB)", "", "grail", 250),
+        ("Nintendo", "Merch", "Game & Watch Manhole (MN-06, CIB)", "", "grail", 200),
+        ("Nintendo", "Merch", "Game & Watch Mario Bros. (MW-56, CIB)", "", "grail", 280),
+        ("Nintendo", "Merch", "Game & Watch Parachute (PR-21, CIB)", "", "grail", 180),
+        ("Nintendo", "Merch", "Game & Watch Super Mario Bros. (35th Anniversary)", "", "high", 80),
+        ("Nintendo", "Merch", "Game & Watch Zelda (35th Anniversary)", "", "high", 85),
+        ("Nintendo", "Merch", "Game & Watch Collection (DS, Club Nintendo)", "Club Nintendo", "high", 120),
+
+        # Retro Nintendo — N64 Controller Colors (+6)
+        ("Nintendo", "Merch", "N64 Controller (Atomic Purple, CIB)", "", "high", 75),
+        ("Nintendo", "Merch", "N64 Controller (Ice Blue, CIB)", "", "high", 80),
+        ("Nintendo", "Merch", "N64 Controller (Jungle Green, CIB)", "", "high", 70),
+        ("Nintendo", "Merch", "N64 Controller (Fire Orange, CIB)", "", "high", 72),
+        ("Nintendo", "Merch", "N64 Controller (Grape Purple, CIB)", "", "high", 78),
+        ("Nintendo", "Merch", "N64 Controller (Gold, CIB Toys R Us)", "Toys R Us Exclusive", "high", 120),
+
+        # Retro Nintendo — SNES/NES Accessories (+6)
+        ("Nintendo", "Merch", "SNES Super Game Boy (CIB)", "", "high", 65),
+        ("Nintendo", "Merch", "SNES Super Multitap (CIB)", "", "mid", 45),
+        ("Nintendo", "Merch", "NES Zapper Gun (Orange, CIB)", "", "mid", 40),
+        ("Nintendo", "Merch", "NES Four Score (4-Player Adapter, CIB)", "", "mid", 50),
+        ("Nintendo", "Merch", "SNES Mouse + Mario Paint (CIB)", "", "mid", 55),
+        ("Nintendo", "Merch", "NES Advantage Arcade Stick (CIB)", "", "mid", 48),
     ]
 
     # ── Batch 12: Store Exclusives, Movie Merch, OLED Editions (55 items) ──

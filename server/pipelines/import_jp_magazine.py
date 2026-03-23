@@ -1427,6 +1427,189 @@ def get_curated_catalog() -> list[dict]:
         ("Model Graphix", "Votoms", "Magazine Issue", "Model Graphix Armored Trooper Votoms 40th Feature", "2020s", "mid", 22),
         ("V Jump", "Yu-Gi-Oh!", "Promo Card Issue", "V Jump Yu-Gi-Oh! 25th Anniversary Promo Card 2024", "2020s", "mid", 25),
         ("CoroCoro Comic", "Yokai Watch", "Magazine Issue", "CoroCoro Yokai Watch Complete Guide Feature", "2010s", "mid", 18),
+
+        # ── Round 35b: Artbooks, Settei, Vintage, Seiyuu/Idol — 140 items ──
+
+        # Chainsaw Man Artbooks (+5)
+        ("Artbook", "Chainsaw Man", "Artbook", "Chainsaw Man Anime Art Works (MAPPA)", "2020s", "high", 55),
+        ("Artbook", "Chainsaw Man", "Artbook", "Chainsaw Man Key Animation Note Vol.1", "2020s", "high", 60),
+        ("Artbook", "Chainsaw Man", "Artbook", "Chainsaw Man Design Works (Kazutaka Sugiyama)", "2020s", "mid", 45),
+        ("Artbook", "Chainsaw Man", "Settei Collection", "Chainsaw Man MAPPA Settei Collection Vol.1", "2020s", "high", 65),
+        ("Artbook", "Chainsaw Man", "Settei Collection", "Chainsaw Man MAPPA Settei Collection Vol.2", "2020s", "high", 65),
+
+        # Jujutsu Kaisen Artbooks (+5)
+        ("Artbook", "Jujutsu Kaisen", "Artbook", "Jujutsu Kaisen Anime Complete Art Book Season 1", "2020s", "high", 55),
+        ("Artbook", "Jujutsu Kaisen", "Artbook", "Jujutsu Kaisen Season 2 Shibuya Incident Art Book", "2020s", "high", 60),
+        ("Artbook", "Jujutsu Kaisen", "Settei Collection", "Jujutsu Kaisen MAPPA Settei Complete (Season 1+2)", "2020s", "high", 70),
+        ("Artbook", "Jujutsu Kaisen", "Artbook", "Jujutsu Kaisen 0 Movie Art Works", "2020s", "mid", 48),
+        ("Artbook", "Jujutsu Kaisen", "Key Animation Note", "Jujutsu Kaisen Key Animation Note (Yuji vs Mahito)", "2020s", "high", 55),
+
+        # Demon Slayer Artbooks (+5)
+        ("Artbook", "Demon Slayer", "Artbook", "Demon Slayer Ufotable Art Book Vol.1 Tanjiro", "2020s", "high", 55),
+        ("Artbook", "Demon Slayer", "Artbook", "Demon Slayer Ufotable Art Book Vol.2 Mugen Train", "2020s", "high", 58),
+        ("Artbook", "Demon Slayer", "Artbook", "Demon Slayer Ufotable Art Book Vol.3 Entertainment District", "2020s", "high", 60),
+        ("Artbook", "Demon Slayer", "Settei Collection", "Demon Slayer Ufotable Complete Settei Book (S1-S4)", "2020s", "grail", 120),
+        ("Artbook", "Demon Slayer", "Artbook", "Demon Slayer Swordsmith Village Arc Genga Collection", "2020s", "high", 65),
+
+        # Made in Abyss Artbooks (+3)
+        ("Artbook", "Made in Abyss", "Artbook", "Made in Abyss Anime Art Works (Kinema Citrus)", "2020s", "mid", 48),
+        ("Artbook", "Made in Abyss", "Settei Collection", "Made in Abyss Dawn of the Deep Soul Settei Book", "2020s", "high", 55),
+        ("Artbook", "Made in Abyss", "Artbook", "Made in Abyss Season 2 The Golden City Art Book", "2020s", "mid", 50),
+
+        # Violet Evergarden Artbooks (+3)
+        ("Artbook", "Violet Evergarden", "Artbook", "Violet Evergarden KyoAni Art Collection", "2020s", "high", 65),
+        ("Artbook", "Violet Evergarden", "Settei Collection", "Violet Evergarden Complete Settei Book (KyoAni)", "2020s", "grail", 110),
+        ("Artbook", "Violet Evergarden", "Artbook", "Violet Evergarden Movie Art Works (KyoAni Shop)", "2020s", "high", 70),
+
+        # Ufotable Settei Collections (+5)
+        ("Artbook", "Fate/stay night", "Settei Collection", "Fate/stay night HF Ufotable Settei Collection Vol.1-3", "2020s", "grail", 130),
+        ("Artbook", "Fate/Zero", "Settei Collection", "Fate/Zero Ufotable Complete Settei Book", "2010s", "high", 80),
+        ("Artbook", "Tales of Zestiria", "Settei Collection", "Tales of Zestiria the X Ufotable Settei Book", "2010s", "mid", 45),
+        ("Artbook", "God Eater", "Settei Collection", "God Eater Ufotable Settei & Design Works", "2010s", "mid", 40),
+        ("Artbook", "Demon Slayer", "Settei Collection", "Demon Slayer Hashira Training Arc Ufotable Settei", "2020s", "high", 60),
+
+        # KyoAni Settei Collections (+5)
+        ("Artbook", "K-ON!", "Settei Collection", "K-ON! KyoAni Complete Settei Collection", "2010s", "high", 75),
+        ("Artbook", "Clannad", "Settei Collection", "Clannad After Story KyoAni Settei Book", "2000s", "high", 80),
+        ("Artbook", "Hyouka", "Settei Collection", "Hyouka KyoAni Character Design & Settei Book", "2010s", "high", 65),
+        ("Artbook", "Liz and the Blue Bird", "Settei Collection", "Liz and the Blue Bird KyoAni Settei Book", "2010s", "high", 70),
+        ("Artbook", "Free!", "Settei Collection", "Free! KyoAni Animation Design Works", "2010s", "mid", 50),
+
+        # MAPPA Settei Collections (+5)
+        ("Artbook", "Attack on Titan", "Settei Collection", "Attack on Titan Final Season MAPPA Settei Complete", "2020s", "high", 75),
+        ("Artbook", "Jujutsu Kaisen", "Settei Collection", "Jujutsu Kaisen MAPPA Key Animator Interview Book", "2020s", "mid", 45),
+        ("Artbook", "Yuri on Ice", "Settei Collection", "Yuri!!! on ICE MAPPA Settei & Costume Design", "2010s", "high", 60),
+        ("Artbook", "Banana Fish", "Settei Collection", "Banana Fish MAPPA Settei Collection", "2010s", "mid", 48),
+        ("Artbook", "Dororo", "Settei Collection", "Dororo MAPPA/Tezuka Settei Book", "2010s", "mid", 45),
+
+        # Trigger Settei Collections (+4)
+        ("Artbook", "Promare", "Settei Collection", "Promare Trigger Complete Settei & Art Book", "2010s", "high", 65),
+        ("Artbook", "Kill la Kill", "Settei Collection", "Kill la Kill Trigger Settei Collection", "2010s", "high", 70),
+        ("Artbook", "SSSS.Gridman", "Settei Collection", "SSSS.GRIDMAN Trigger Design & Settei Book", "2010s", "mid", 50),
+        ("Artbook", "Cyberpunk Edgerunners", "Settei Collection", "Cyberpunk Edgerunners Trigger Settei Book", "2020s", "high", 60),
+
+        # WIT Studio Settei Collections (+3)
+        ("Artbook", "Attack on Titan", "Settei Collection", "Attack on Titan S1-S3 WIT Studio Settei Complete", "2010s", "high", 85),
+        ("Artbook", "Vinland Saga", "Settei Collection", "Vinland Saga S1 WIT Studio Settei Book", "2010s", "high", 55),
+        ("Artbook", "The Ancient Magus' Bride", "Settei Collection", "The Ancient Magus' Bride WIT Settei Book", "2010s", "mid", 45),
+
+        # Newtype Eva/Gundam/Code Geass Special Covers (+8)
+        ("Newtype", "Evangelion", "Magazine Issue", "Newtype Eva Rebuild Final Issue 2021 (Asuka Cover)", "2020s", "mid", 30),
+        ("Newtype", "Evangelion", "Magazine Issue", "Newtype Eva Rebuild Final Issue 2021 (Rei Cover)", "2020s", "mid", 30),
+        ("Newtype", "Evangelion", "Magazine Issue", "Newtype Eva Rebuild Final Issue 2021 (Mari Cover)", "2020s", "mid", 28),
+        ("Newtype", "Gundam SEED", "Magazine Issue", "Newtype Gundam SEED Freedom Movie Feature Cover 2024", "2020s", "mid", 25),
+        ("Newtype", "Gundam SEED", "B2 Poster", "Newtype Gundam SEED Freedom Key Visual B2 Poster", "2020s", "mid", 28),
+        ("Newtype", "Code Geass", "Magazine Issue", "Newtype Code Geass 20th Anniversary Special Feature", "2020s", "mid", 35),
+        ("Newtype", "Code Geass", "Insert Poster Set", "Newtype Code Geass 20th Anniv. Lelouch & Suzaku Poster Set", "2020s", "high", 50),
+        ("Newtype", "Evangelion", "B2 Poster", "Newtype Evangelion 30th Anniversary Key Visual B2 Poster", "2020s", "high", 55),
+
+        # Visual Novel Artbooks — Fate (+4)
+        ("Artbook", "Fate/Grand Order", "Artbook", "Fate/Grand Order Material Vol.1-12 Complete", "2020s", "grail", 200),
+        ("Artbook", "Fate/stay night", "Artbook", "Fate/stay night [Realta Nua] Art Works (Complete)", "2010s", "high", 75),
+        ("Artbook", "Fate/Grand Order", "Artbook", "FGO Concept Art Works (Takeuchi Takashi)", "2020s", "high", 65),
+        ("Artbook", "Fate/hollow ataraxia", "Artbook", "Fate/hollow ataraxia Art Works", "2000s", "high", 60),
+
+        # Visual Novel Artbooks — Steins;Gate (+3)
+        ("Artbook", "Steins;Gate", "Artbook", "Steins;Gate Complete Art Works (huke)", "2010s", "high", 70),
+        ("Artbook", "Steins;Gate", "Artbook", "Steins;Gate 0 Official Design Works", "2010s", "mid", 48),
+        ("Artbook", "Steins;Gate", "Settei Collection", "Steins;Gate Anime Settei Collection (White Fox)", "2010s", "high", 55),
+
+        # Light Novel First Editions (+10)
+        ("Light Novel", "Sword Art Online", "First Edition", "SAO Vol.1 First Print (Dengeki Bunko 2009)", "2000s", "grail", 150),
+        ("Light Novel", "Re:Zero", "First Edition", "Re:Zero Vol.1 First Print (MF Bunko J 2014)", "2010s", "high", 80),
+        ("Light Novel", "Konosuba", "First Edition", "Konosuba Vol.1 First Print (Sneaker Bunko 2013)", "2010s", "high", 65),
+        ("Light Novel", "Overlord", "First Edition", "Overlord Vol.1 First Print (Enterbrain 2012)", "2010s", "high", 75),
+        ("Light Novel", "The Rising of the Shield Hero", "First Edition", "Shield Hero Vol.1 First Print (MF Books 2013)", "2010s", "mid", 50),
+        ("Light Novel", "Mushoku Tensei", "First Edition", "Mushoku Tensei Vol.1 First Print (MF Books 2014)", "2010s", "high", 70),
+        ("Light Novel", "86 Eighty-Six", "First Edition", "86 Vol.1 First Print (Dengeki Bunko 2017)", "2010s", "mid", 45),
+        ("Light Novel", "Oshi no Ko", "First Edition", "Oshi no Ko (Novel) First Print (Shueisha 2021)", "2020s", "mid", 40),
+        ("Light Novel", "Spice and Wolf", "First Edition", "Spice and Wolf Vol.1 First Print (Dengeki Bunko 2006)", "2000s", "grail", 120),
+        ("Light Novel", "Haruhi Suzumiya", "First Edition", "Haruhi Vol.1 First Print (Sneaker Bunko 2003)", "2000s", "grail", 180),
+
+        # Idol/Seiyuu Magazines (+12)
+        ("Seiyuu Grand Prix", "Seiyuu", "Magazine Issue", "Seiyuu Grand Prix Hanazawa Kana Cover Special 2024", "2020s", "mid", 18),
+        ("Seiyuu Grand Prix", "Seiyuu", "Magazine Issue", "Seiyuu Grand Prix Hayami Saori Cover Feature 2024", "2020s", "mid", 18),
+        ("Seiyuu Grand Prix", "Seiyuu", "Magazine Issue", "Seiyuu Grand Prix Uchida Maaya Cover Special 2023", "2020s", "mid", 16),
+        ("Voice Newtype", "Seiyuu", "Magazine Issue", "Voice Newtype No.90 Matsuoka Yoshitsugu Feature 2024", "2020s", "mid", 18),
+        ("Voice Newtype", "Seiyuu", "Magazine Issue", "Voice Newtype No.89 Uesaka Sumire Feature 2024", "2020s", "mid", 16),
+        ("LisAni!", "Anime Music", "Magazine Issue", "LisAni! Vol.55 YOASOBI Idol Feature 2024", "2020s", "mid", 20),
+        ("LisAni!", "Anime Music", "Magazine Issue", "LisAni! Vol.54 Ado Feature 2024", "2020s", "mid", 20),
+        ("Seiyuu Animedia", "Seiyuu", "Magazine Issue", "Seiyuu Animedia Kaji Yuki Cover Feature 2024", "2020s", "mid", 16),
+        ("Seiyuu Animedia", "Seiyuu", "Magazine Issue", "Seiyuu Animedia Sugita Tomokazu Cover Special 2024", "2020s", "mid", 16),
+        ("B.L.T. Voice Girls", "Seiyuu", "Magazine Issue", "B.L.T. Voice Girls Vol.55 Taneda Risa Feature", "2020s", "mid", 18),
+        ("B.L.T. Voice Girls", "Seiyuu", "Magazine Issue", "B.L.T. Voice Girls Vol.56 Minase Inori Cover 2024", "2020s", "mid", 18),
+        ("声優パラダイス", "Seiyuu", "Magazine Issue", "Seiyuu Paradise R Vol.52 Horie Yui Retrospective", "2020s", "mid", 20),
+
+        # Vintage Anime Magazines — OUT (+6)
+        ("OUT", "Gundam", "Magazine Issue", "OUT Magazine Mobile Suit Gundam Special Feature 1980", "1980s", "grail", 120),
+        ("OUT", "Macross", "Magazine Issue", "OUT Magazine Macross DYRL Special Issue 1984", "1980s", "grail", 110),
+        ("OUT", "Yamato", "Magazine Issue", "OUT Magazine Space Battleship Yamato Feature 1978", "1970s", "grail", 150),
+        ("OUT", "Ideon", "Magazine Issue", "OUT Magazine Space Runaway Ideon Feature 1981", "1980s", "high", 85),
+        ("OUT", "Gundam", "Insert Poster", "OUT Magazine Gundam Char's Counterattack Poster 1988", "1980s", "high", 90),
+        ("OUT", "Lupin III", "Magazine Issue", "OUT Magazine Lupin III Castle of Cagliostro Feature 1980", "1980s", "high", 80),
+
+        # Vintage Anime Magazines — Fanroad (+5)
+        ("Fanroad", "Gundam", "Magazine Issue", "Fanroad Magazine Zeta Gundam Launch Feature 1985", "1980s", "high", 75),
+        ("Fanroad", "Dragon Ball", "Magazine Issue", "Fanroad Magazine Dragon Ball Z TV Series Feature 1989", "1980s", "high", 70),
+        ("Fanroad", "Urusei Yatsura", "Magazine Issue", "Fanroad Magazine Urusei Yatsura Beautiful Dreamer Feature", "1980s", "high", 80),
+        ("Fanroad", "Captain Tsubasa", "Magazine Issue", "Fanroad Magazine Captain Tsubasa Feature 1983", "1980s", "mid", 50),
+        ("Fanroad", "Saint Seiya", "Magazine Issue", "Fanroad Magazine Saint Seiya Complete Feature 1987", "1980s", "high", 65),
+
+        # Vintage Anime Magazines — Animec (+5)
+        ("Animec", "Gundam", "Magazine Issue", "Animec Magazine Gundam 0080 War in the Pocket Feature 1989", "1980s", "high", 75),
+        ("Animec", "Votoms", "Magazine Issue", "Animec Magazine Armored Trooper Votoms Feature 1983", "1980s", "high", 70),
+        ("Animec", "Macross", "Magazine Issue", "Animec Magazine Super Dimension Fortress Macross Feature 1982", "1980s", "grail", 100),
+        ("Animec", "Nausicaa", "Magazine Issue", "Animec Magazine Nausicaa Feature with Miyazaki Interview 1984", "1980s", "grail", 130),
+        ("Animec", "Dunbine", "Magazine Issue", "Animec Magazine Aura Battler Dunbine Feature 1983", "1980s", "high", 60),
+
+        # More Vintage Animage/Newtype (+8)
+        ("Animage", "Laputa", "B2 Poster", "Animage Laputa: Castle in the Sky Theatrical B2 1986", "1980s", "grail", 200),
+        ("Animage", "Totoro", "Insert Poster", "Animage My Neighbor Totoro Theatrical Insert Poster 1988", "1980s", "grail", 180),
+        ("Animage", "Kiki's Delivery Service", "Insert Poster", "Animage Kiki's Delivery Service Theatrical Poster 1989", "1980s", "grail", 170),
+        ("Newtype", "Char's Counterattack", "B2 Poster", "Newtype Char's Counterattack B2 Poster Insert 1988", "1980s", "grail", 160),
+        ("Newtype", "Patlabor", "Insert Poster", "Newtype Patlabor Movie A3 Insert Poster 1989", "1980s", "high", 80),
+        ("Animage", "Porco Rosso", "Insert Poster", "Animage Porco Rosso Theatrical Insert Poster 1992", "1990s", "high", 90),
+        ("Newtype", "Evangelion", "Insert Poster Set", "Newtype EVA TV Series Complete Insert Poster Set (6pc)", "1990s", "grail", 120),
+        ("Animage", "Princess Mononoke", "B2 Poster", "Animage Princess Mononoke Theatrical B2 Poster 1997", "1990s", "grail", 150),
+
+        # More Classic Animedia/Animage 90s (+6)
+        ("Animedia", "Yu Yu Hakusho", "Pin-up Set", "Animedia Yu Yu Hakusho Team Pin-up Set 1993", "1990s", "high", 60),
+        ("Animedia", "Slam Dunk", "Pin-up Poster", "Animedia Slam Dunk Shohoku A3 Poster 1994", "1990s", "high", 55),
+        ("Animage", "Escaflowne", "Insert Poster", "Animage Vision of Escaflowne A3 Poster Insert 1996", "1990s", "high", 65),
+        ("Animedia", "Rurouni Kenshin", "Pin-up Set", "Animedia Rurouni Kenshin Battousai Pin-up Set 1997", "1990s", "mid", 45),
+        ("Animage", "Card Captor Sakura", "Insert Poster", "Animage CCS Sakura A3 Poster Insert 1998", "1990s", "high", 60),
+        ("Animedia", "Cowboy Bebop", "Pin-up Poster", "Animedia Cowboy Bebop Spike A3 Pin-up 1998", "1990s", "high", 70),
+
+        # Additional Newtype 2000s/2010s (+8)
+        ("Newtype", "Haruhi Suzumiya", "B2 Poster", "Newtype Haruhi Suzumiya SOS Brigade B2 Poster 2006", "2000s", "high", 55),
+        ("Newtype", "Lucky Star", "Insert Poster", "Newtype Lucky Star KyoAni Insert Poster 2007", "2000s", "mid", 30),
+        ("Newtype", "Madoka Magica", "B2 Poster", "Newtype Puella Magi Madoka Magica B2 Poster Insert 2011", "2010s", "high", 55),
+        ("Newtype", "Sword Art Online", "Insert Poster", "Newtype SAO Kirito & Asuna A2 Insert Poster 2012", "2010s", "mid", 28),
+        ("Newtype", "Kill la Kill", "B2 Poster", "Newtype Kill la Kill Ryuko B2 Poster 2013", "2010s", "mid", 35),
+        ("Newtype", "Your Name", "Insert Poster", "Newtype Your Name (Kimi no Na wa) A2 Poster 2016", "2010s", "high", 50),
+        ("Newtype", "Violet Evergarden", "B2 Poster", "Newtype Violet Evergarden KyoAni B2 Poster 2018", "2010s", "high", 55),
+        ("Newtype", "Demon Slayer", "B2 Poster", "Newtype Demon Slayer Mugen Train B2 Poster 2020", "2020s", "mid", 35),
+
+        # Hobby/Model Magazines — Gundam (+6)
+        ("Hobby Japan", "Gundam", "Magazine Issue", "Hobby Japan Gundam SEED Freedom Model Feature 2024", "2020s", "mid", 22),
+        ("Hobby Japan", "Gundam", "Magazine Issue", "Hobby Japan MG Ver.Ka Complete Guide 2024", "2020s", "mid", 20),
+        ("Model Graphix", "Gundam", "Magazine Issue", "Model Graphix Gundam The Witch from Mercury Build Guide", "2020s", "mid", 18),
+        ("Gundam Ace", "Gundam", "Magazine Issue", "Gundam Ace SEED Freedom Movie Special Issue 2024", "2020s", "mid", 22),
+        ("Gundam Ace", "Gundam", "Clear File", "Gundam Ace SEED Freedom Clear File Set Insert", "2020s", "standard", 14),
+        ("Gundam Ace", "Gundam", "Magazine Issue", "Gundam Ace 25th Anniversary Special Issue 2026", "2020s", "mid", 28),
+
+        # More Dengeki G's Magazine (+5)
+        ("Dengeki G's Magazine", "Love Live! Superstar!!", "Insert Poster", "Dengeki G's Liella! 3rd Live A2 Poster 2024", "2020s", "mid", 22),
+        ("Dengeki G's Magazine", "Love Live! Nijigasaki", "Insert Card", "Dengeki G's Nijigasaki Insert Bromide Set 2023", "2020s", "standard", 14),
+        ("Dengeki G's Magazine", "Blue Archive", "Acrylic Stand", "Dengeki G's Blue Archive Sensei Acrylic Stand Insert", "2020s", "standard", 14),
+        ("Dengeki G's Magazine", "Hololive", "Clear File", "Dengeki G's Hololive 5th Gen Clear File Insert 2024", "2020s", "mid", 16),
+        ("Dengeki G's Magazine", "The Idolmaster", "Shikishi Board", "Dengeki G's iM@S Million Live! Shikishi Board 2024", "2020s", "mid", 20),
+
+        # V Jump / Jump + Promo Cards (+4)
+        ("V Jump", "Dragon Ball Super", "Promo Card Issue", "V Jump Dragon Ball Super Hero Promo Card Set 2024", "2020s", "mid", 25),
+        ("V Jump", "One Piece", "Promo Card Issue", "V Jump One Piece Card Game Promo Shanks 2025", "2020s", "mid", 30),
+        ("Weekly Shonen Jump", "One Piece", "Magazine Issue", "Shonen Jump One Piece 1100th Chapter Special Issue", "2020s", "grail", 100),
+        ("Weekly Shonen Jump", "Hunter x Hunter", "Magazine Issue", "Shonen Jump Hunter x Hunter Return Special Cover 2024", "2020s", "high", 60),
     ]
 
     catalog = []

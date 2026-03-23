@@ -1561,6 +1561,120 @@ def _expanded_round9_jp_events() -> list[dict]:
         ("Toho Animation Store", "Spy x Family", "Store Exclusive", "Toho Store Spy x Family Season 2 Exclusive Goods Set", "mid", 45),
         ("Toho Animation Store", "Haikyuu!!", "Store Exclusive", "Toho Store Haikyuu Final Movie Exclusive Goods Set", "mid", 50),
         ("Ichiban Kuji", "Frieren", "Prize Figure", "Frieren Ichiban Kuji Last One Prize Exclusive Figure", "high", 100),
+
+        # ── Wonder Festival Deep Catalog (Winter + Summer specifics) ──────
+        ("WonFes", "Evangelion", "Garage Kit", "EVA Unit-01 Berserk Mode 1/6 GK (WonFes 2024W)", "grail", 500),
+        ("WonFes", "Fate/Grand Order", "Garage Kit", "Jeanne d'Arc Alter 1/7 GK (WonFes 2023S)", "grail", 380),
+        ("WonFes", "Chainsaw Man", "Garage Kit", "Power 1/7 GK Painted Prototype (WonFes 2024S)", "grail", 420),
+        ("WonFes", "Jujutsu Kaisen", "Garage Kit", "Gojo Satoru Domain Expansion 1/8 GK (WonFes 2024W)", "grail", 450),
+        ("WonFes", "One Piece", "Garage Kit", "Luffy Gear 5 Joy Boy 1/6 GK (WonFes 2023W)", "grail", 480),
+        ("WonFes", "Demon Slayer", "Exclusive Figure", "Muzan Kibutsuji WonFes 2024 Exclusive Nendoroid", "high", 130),
+        ("WonFes", "Bocchi the Rock!", "Garage Kit", "Bocchi 1/7 GK Painted (WonFes 2024S Dealer)", "high", 250),
+        ("WonFes", "Hololive", "Garage Kit", "Gawr Gura 1/7 GK Shark Hoodie (WonFes 2024W Dealer)", "high", 280),
+        ("WonFes", "My Hero Academia", "Garage Kit", "All Might United States of Smash 1/8 GK", "grail", 400),
+        ("WonFes", "Made in Abyss", "Garage Kit", "Nanachi 1/7 GK (WonFes 2023S Dealer)", "high", 220),
+        ("WonFes", "Spy x Family", "Exclusive Figure", "Anya WonFes 2024 Exclusive Prize Figure", "high", 100),
+        ("WonFes", "Attack on Titan", "Garage Kit", "Levi vs Beast Titan Diorama GK (WonFes 2023W)", "grail", 550),
+        ("WonFes", "Dragon Ball", "Garage Kit", "Vegito Blue 1/6 GK (WonFes 2024S Painted)", "grail", 480),
+        ("WonFes", "Frieren", "Garage Kit", "Frieren 1/7 GK Staff of Zoltraak (WonFes 2025W)", "grail", 350),
+        ("WonFes", "Oshi no Ko", "Garage Kit", "Ai Hoshino Stage 1/7 GK (WonFes 2024S)", "high", 280),
+
+        # ── Jump Festa Expanded ──────────────────────────────────────────
+        ("Jump Festa", "One Piece", "Exclusive Figure", "Luffy Nika Form Jump Festa 2024 Exclusive Figure", "high", 180),
+        ("Jump Festa", "One Piece", "Exclusive Goods", "One Piece Film Red Uta Jump Festa Clear File Set", "mid", 35),
+        ("Jump Festa", "Demon Slayer", "Exclusive Figure", "Tanjiro Kamado Jump Festa 2024 Exclusive Nendoroid", "high", 120),
+        ("Jump Festa", "Demon Slayer", "Exclusive Goods", "Hashira Complete Acrylic Stand Set (JF2024)", "high", 150),
+        ("Jump Festa", "Jujutsu Kaisen", "Exclusive Figure", "Sukuna Domain Jump Festa 2025 Exclusive Figure", "high", 200),
+        ("Jump Festa", "Jujutsu Kaisen", "Exclusive Goods", "JJK Shibuya Incident Clear File Complete Set (JF2024)", "mid", 45),
+        ("Jump Festa", "My Hero Academia", "Exclusive Figure", "Deku Final War Jump Festa 2025 Exclusive Figure", "high", 160),
+        ("Jump Festa", "Chainsaw Man", "Exclusive Goods", "Chainsaw Man Part 2 Jump Festa 2025 Exclusive Poster Set", "mid", 40),
+        ("Jump Festa", "Dragon Ball Super", "Exclusive Figure", "Beast Gohan Jump Festa 2024 Exclusive Figure", "high", 180),
+        ("Jump Festa", "Bleach TYBW", "Exclusive Goods", "Bleach TYBW Gotei 13 Jump Festa 2024 Complete Badge Set", "high", 100),
+        ("Jump Festa", "Sakamoto Days", "Exclusive Goods", "Sakamoto Days Jump Festa 2025 Exclusive Goods Set", "mid", 50),
+        ("Jump Festa", "Undead Unluck", "Exclusive Goods", "Undead Unluck Jump Festa 2024 Exclusive Shikishi Set", "mid", 35),
+
+        # ── Tamashii Nations Event Items ─────────────────────────────────
+        ("Tamashii Nations", "Dragon Ball", "Event Figure", "S.H.Figuarts Goku Ultra Instinct Event Exclusive", "high", 180),
+        ("Tamashii Nations", "One Piece", "Event Figure", "Figuarts ZERO Kaido Dragon Form Event Exclusive", "grail", 350),
+        ("Tamashii Nations", "Kamen Rider", "Event Figure", "S.H.Figuarts Kamen Rider Geats IX Event Color", "high", 150),
+        ("Tamashii Nations", "Gundam", "Event Figure", "Metal Build Freedom Gundam Concept 2 Event Exclusive", "grail", 400),
+        ("Tamashii Nations", "Evangelion", "Event Figure", "Robot Spirits EVA Unit-13 Event Exclusive", "high", 200),
+        ("Tamashii Nations", "Naruto", "Event Figure", "S.H.Figuarts Naruto Baryon Mode Event Exclusive", "high", 160),
+        ("Tamashii Nations", "Sailor Moon", "Event Figure", "Proplica Moon Stick Event Exclusive Gold Ver.", "high", 250),
+        ("Tamashii Nations", "Ultraman", "Event Figure", "Ultra-Act Ultraman Tiga Event Metallic", "high", 140),
+
+        # ── Tokyo Game Show Expanded ─────────────────────────────────────
+        ("TGS", "Final Fantasy XVI", "Exclusive Goods", "TGS 2023 FFXVI Clive Rosfield Exclusive Figure", "high", 150),
+        ("TGS", "Final Fantasy VII Rebirth", "Exclusive Goods", "TGS 2023 FF7 Rebirth Exclusive Art Print Set", "mid", 60),
+        ("TGS", "Persona 5 Royal", "Exclusive Goods", "TGS Persona 5 Royal Exclusive Joker Acrylic Stand", "mid", 40),
+        ("TGS", "Elden Ring", "Exclusive Goods", "TGS 2024 Elden Ring Shadow of Erdtree Exclusive Poster", "mid", 50),
+        ("TGS", "Monster Hunter Wilds", "Exclusive Goods", "TGS 2024 MH Wilds Exclusive Keychain Set", "mid", 35),
+        ("TGS", "Dragon Quest XII", "Exclusive Goods", "TGS 2025 DQXII Exclusive Slime Plush", "mid", 45),
+        ("TGS", "Kingdom Hearts IV", "Exclusive Goods", "TGS 2024 KH4 Exclusive Clear File & Pin Set", "mid", 55),
+        ("TGS", "Metaphor ReFantazio", "Exclusive Goods", "TGS 2024 Metaphor Exclusive Protagonist Figure", "high", 120),
+
+        # ── AnimeJapan Booth Merch ───────────────────────────────────────
+        ("AnimeJapan", "Spy x Family", "Booth Exclusive", "AnimeJapan 2024 Spy x Family Anya Booth Exclusive Set", "mid", 55),
+        ("AnimeJapan", "Frieren", "Booth Exclusive", "AnimeJapan 2024 Frieren Booth Exclusive Tapestry", "mid", 40),
+        ("AnimeJapan", "Oshi no Ko", "Booth Exclusive", "AnimeJapan 2024 Oshi no Ko Booth Exclusive Badge Set", "mid", 35),
+        ("AnimeJapan", "Blue Lock", "Booth Exclusive", "AnimeJapan 2024 Blue Lock Isagi Booth Exclusive Stand", "mid", 30),
+        ("AnimeJapan", "Chainsaw Man", "Booth Exclusive", "AnimeJapan 2025 Chainsaw Man Booth Exclusive Poster Set", "mid", 45),
+        ("AnimeJapan", "Jujutsu Kaisen", "Booth Exclusive", "AnimeJapan 2025 JJK Booth Exclusive Complete Goods Set", "high", 100),
+        ("AnimeJapan", "Mobile Suit Gundam", "Booth Exclusive", "AnimeJapan 2024 Gundam Seed Freedom Booth Exclusive Set", "mid", 65),
+        ("AnimeJapan", "My Hero Academia", "Booth Exclusive", "AnimeJapan 2025 MHA Final Season Booth Exclusive Set", "mid", 55),
+
+        # ── Themed Cafe Goods Expanded ───────────────────────────────────
+        ("Animate Cafe", "Haikyuu!!", "Cafe Exclusive", "Animate Cafe Haikyuu!! Final Collab Complete Coaster Set", "mid", 50),
+        ("Animate Cafe", "Tokyo Revengers", "Cafe Exclusive", "Animate Cafe Tokyo Rev Collab Acrylic Stand Set", "mid", 40),
+        ("Animate Cafe", "Blue Lock", "Cafe Exclusive", "Animate Cafe Blue Lock Collab Clear File Set (8pc)", "mid", 35),
+        ("Animate Cafe", "Oshi no Ko", "Cafe Exclusive", "Animate Cafe Oshi no Ko Collab Plate Set", "mid", 45),
+        ("Tower Records Cafe", "Chainsaw Man", "Cafe Exclusive", "Tower Records Cafe Chainsaw Man Collab Goods Set", "mid", 55),
+        ("Tower Records Cafe", "Spy x Family", "Cafe Exclusive", "Tower Records Cafe Spy x Family Anya Menu Set", "mid", 40),
+        ("Tower Records Cafe", "Bocchi the Rock!", "Cafe Exclusive", "Tower Records Cafe Bocchi Complete Merch Set", "mid", 50),
+        ("Sweets Paradise", "Frieren", "Cafe Exclusive", "Sweets Paradise Frieren Collab Complete Set", "mid", 45),
+        ("Sweets Paradise", "Oshi no Ko", "Cafe Exclusive", "Sweets Paradise Oshi no Ko Collab Dessert Plate Set", "mid", 40),
+        ("Kirby Cafe", "Kirby", "Cafe Exclusive", "Kirby Cafe Tokyo Exclusive Plate & Mug Set 2024", "mid", 60),
+        ("Pokemon Cafe", "Pokemon", "Cafe Exclusive", "Pokemon Cafe Tokyo Exclusive Pikachu Chef Plush", "mid", 50),
+        ("Gundam Cafe", "Gundam", "Cafe Exclusive", "Gundam Cafe Final Season Exclusive Glass Set", "mid", 45),
+
+        # ── Museum Exhibition Items ──────────────────────────────────────
+        ("Ghibli Museum", "Studio Ghibli", "Museum Exclusive", "Ghibli Museum Exclusive Totoro Zoetrope Replica", "grail", 350),
+        ("Ghibli Museum", "Studio Ghibli", "Museum Exclusive", "Ghibli Museum Exclusive Catbus Plush (Museum Only)", "high", 120),
+        ("Ghibli Museum", "Studio Ghibli", "Museum Exclusive", "Ghibli Museum 2024 Annual Exclusive Cel Art Print", "high", 180),
+        ("Evangelion Exhibition", "Evangelion", "Museum Exclusive", "Evangelion Exhibition NERV Exclusive Art Print Set", "high", 150),
+        ("Evangelion Exhibition", "Evangelion", "Museum Exclusive", "Eva Exhibition 3.0+1.0 Exclusive Figure Set", "high", 200),
+        ("One Piece Tower", "One Piece", "Museum Exclusive", "One Piece Tower Exclusive Straw Hat Crew Figure Set", "high", 180),
+        ("Dragon Ball Exhibition", "Dragon Ball", "Museum Exclusive", "DB Exhibition Akira Toriyama Memorial Art Print", "grail", 300),
+        ("Gundam Factory", "Gundam", "Museum Exclusive", "Gundam Factory Yokohama Exclusive RX-78 Moving Model", "grail", 400),
+        ("Gundam Factory", "Gundam", "Museum Exclusive", "Gundam Factory Yokohama Final Season Exclusive Kit", "high", 250),
+        ("Kyoto Animation", "Violet Evergarden", "Museum Exclusive", "KyoAni Exhibition Violet Evergarden Art Print Set", "high", 200),
+        ("Kyoto Animation", "K-On!", "Museum Exclusive", "KyoAni Exhibition K-On! 15th Anniversary Goods Set", "high", 150),
+        ("Berserk Exhibition", "Berserk", "Museum Exclusive", "Berserk Exhibition Exclusive Signed Art Print", "grail", 400),
+        ("Berserk Exhibition", "Berserk", "Museum Exclusive", "Berserk Exhibition Exclusive Guts Berserker Armor Figure", "grail", 350),
+
+        # ── Comiket Deep Cuts ────────────────────────────────────────────
+        ("Comiket", "Touhou", "Doujinshi Set", "Comiket C103 Touhou Circle Complete Doujinshi Set (10 books)", "high", 120),
+        ("Comiket", "Fate/Grand Order", "Tapestry", "Comiket C104 FGO Exclusive B2 Tapestry (Castoria Summer)", "mid", 45),
+        ("Comiket", "Hololive", "Exclusive Goods", "Comiket C103 Hololive Booth Exclusive Acrylic Stand Set", "mid", 55),
+        ("Comiket", "Vocaloid", "Music Album", "Comiket C104 Hatsune Miku 16th Anniversary Album Box Set", "mid", 50),
+        ("Comiket", "Original", "Art Book", "Comiket C103 Popular Circle Art Book Set (Top 5)", "high", 100),
+        ("Comiket", "Blue Archive", "Tapestry", "Comiket C104 Blue Archive B2 Tapestry Set (3pc)", "mid", 60),
+
+        # ── Gundam Base / Hobby Show ─────────────────────────────────────
+        ("Gundam Base", "Gundam", "Exclusive Kit", "Gundam Base Tokyo RG Wing Gundam Zero EW Pearl Gloss", "high", 100),
+        ("Gundam Base", "Gundam", "Exclusive Kit", "Gundam Base Fukuoka PG Unicorn Gundam Final Battle Ver.", "grail", 350),
+        ("Gundam Base", "Gundam", "Exclusive Kit", "Gundam Base MG Freedom Gundam Ver.2.0 Clear Color", "high", 120),
+        ("Shizuoka Hobby Show", "Gundam", "Exclusive Kit", "Hobby Show 2024 MG Gouf Custom Clear", "high", 110),
+        ("Shizuoka Hobby Show", "Zoids", "Exclusive Kit", "Hobby Show 2024 HMM Liger Zero Exclusive Color", "high", 150),
+        ("All Japan Model Show", "Evangelion", "Exclusive Kit", "Model Show 2024 RG EVA Unit-01 Metallic Ver.", "high", 130),
+
+        # ── D23 Japan / Pokemon Center Events ───────────────────────────
+        ("D23 Japan", "Disney", "Exclusive Goods", "D23 Japan 2024 Exclusive Mickey 100th Pin Set", "high", 100),
+        ("D23 Japan", "Disney/Pixar", "Exclusive Goods", "D23 Japan 2024 Exclusive Pixar Complete Art Card Set", "mid", 65),
+        ("Pokemon Center", "Pokemon", "Event Exclusive", "Pokemon Center Birthday Pikachu 2025 Plush", "mid", 45),
+        ("Pokemon Center", "Pokemon", "Event Exclusive", "Pokemon Center Mega Tokyo Exclusive Mega Charizard Figure", "high", 120),
+        ("Pokemon Center", "Pokemon", "Event Exclusive", "Pokemon Center Kyoto Exclusive Geisha Pikachu Plush", "high", 80),
+        ("Pokemon Center", "Pokemon", "Event Exclusive", "Pokemon Center Okinawa Exclusive Pikachu Shisa Plush", "mid", 65),
     ]
     catalog = []
     for event, franchise, item_type, name, tier, price in items:

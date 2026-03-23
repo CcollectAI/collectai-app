@@ -362,6 +362,132 @@ def _variant_expansion() -> list[dict]:
     return variants
 
 
+def _expansion_1150_most_searched() -> list[dict]:
+    """~140 most-searched plush: Squishmallows 2024-2025, Jellycat retirements,
+    Build-A-Bear collabs, Steiff annual, Sanrio large, TY Beanie Boos rare."""
+    items = [
+        # ── Squishmallows 2024-2025 New Characters ─────────────────────────
+        ("Caedyn the Pink Cow 16-inch", "Squishmallows", "Exclusive", "16-inch", 85, "Rare HTF", False, "2024, pink cow hugely popular"),
+        ("Brina the Bigfoot (Purple) 12-inch", "Squishmallows", "Exclusive", "12-inch", 65, "Rare HTF", False, "2024, purple Bigfoot variant"),
+        ("Ronnie the Cow (Brown) 8-inch", "Squishmallows", "Standard", "8-inch", 25, "Common", False, "2024, brown cow new design"),
+        ("Belana the Teal Cow 24-inch HugMee", "Squishmallows", "HugMee", "24-inch", 95, "Rare HTF", False, "2024, 24-inch HugMee teal cow"),
+        ("Patty the Cow 24-inch HugMee", "Squishmallows", "HugMee", "24-inch", 90, "Rare HTF", False, "2024, pink/teal cow 24-inch"),
+        ("Connor the Cow 24-inch HugMee", "Squishmallows", "HugMee", "24-inch", 80, "Uncommon", False, "2024, spotted cow HugMee"),
+        ("Joelle the Bigfoot Valentine's Day 12-inch", "Squishmallows", "Seasonal", "12-inch", 55, "Uncommon", False, "2025 Valentine exclusive"),
+        ("Adabelle the Strawberry Frog 8-inch", "Squishmallows", "Standard", "8-inch", 30, "Common", False, "2024, strawberry frog design"),
+        ("Nixie the Butterfly (Tie-Dye) 12-inch", "Squishmallows", "Exclusive", "12-inch", 45, "Uncommon", False, "2024, tie-dye butterfly"),
+        ("Relinda the Axolotl (Lavender) 16-inch", "Squishmallows", "Exclusive", "16-inch", 60, "Uncommon", False, "2025, lavender axolotl"),
+        # ── Squishmallows Retailer Exclusives ───────────────────────────────
+        ("Evangelica the Fox 12-inch (Walmart Exclusive)", "Squishmallows", "Walmart Exclusive", "12-inch", 55, "Uncommon", False, "2024, Walmart exclusive fox"),
+        ("Benny the Bigfoot 16-inch (Target Exclusive)", "Squishmallows", "Target Exclusive", "16-inch", 65, "Rare HTF", False, "2024, Target exclusive blue bigfoot"),
+        ("Len the Lime Green Frog (Costco Exclusive 20-inch)", "Squishmallows", "Costco Exclusive", "20-inch", 40, "Common", False, "2024, Costco jumbo frog"),
+        ("Archie the Axolotl (Costco Bundle 24-inch)", "Squishmallows", "Costco Exclusive", "24-inch", 55, "Uncommon", False, "2025, Costco mega bundle"),
+        ("Malcolm the Mushroom (Target Exclusive 5-inch Clip)", "Squishmallows", "Target Exclusive", "5-inch Clip", 22, "Uncommon", False, "2024, clip-on Malcolm"),
+        ("Emily the Bat (Walmart Halloween Exclusive 16-inch)", "Squishmallows", "Walmart Exclusive", "16-inch", 70, "Rare HTF", False, "2024, Halloween exclusive"),
+        ("Stump the Stingray (Five Below Exclusive)", "Squishmallows", "Five Below Exclusive", "8-inch", 18, "Common", False, "2024, Five Below navy stingray"),
+        ("Sunny the Bee (Costco Exclusive 20-inch)", "Squishmallows", "Costco Exclusive", "20-inch", 38, "Common", False, "2025, jumbo bee"),
+        ("Gio the Rainbow Cat (Hot Topic Exclusive)", "Squishmallows", "Hot Topic Exclusive", "12-inch", 42, "Uncommon", False, "2024, Hot Topic rainbow cat"),
+        ("Fifi the Fox (Walgreens Exclusive Halloween)", "Squishmallows", "Walgreens Exclusive", "12-inch", 48, "Uncommon", False, "2024, skeleton fox"),
+        # ── Jellycat Retirement Alerts (prices spike) ───────────────────────
+        ("Bashful Bunny Beige (Huge, Retired)", "Jellycat", "Bashful", "Huge 51cm", 120, "Retired LE", True, "Discontinued 2024, price spiking"),
+        ("Amuseable Avocado (Small, Retired)", "Jellycat", "Amuseable", "Small 20cm", 55, "Retired LE", True, "Retired 2023, cult favorite"),
+        ("Bartholomew Bear (Large, Retired)", "Jellycat", "Classic", "Large 36cm", 90, "Retired LE", True, "Retired 2024, iconic bear"),
+        ("Amuseable Lemon (Medium, Retired)", "Jellycat", "Amuseable", "Medium 28cm", 65, "Retired LE", True, "Retired 2023, rare food plush"),
+        ("Fuddlewuddle Elephant (Medium, Retired)", "Jellycat", "Fuddlewuddle", "Medium 23cm", 70, "Retired LE", True, "Retired 2024, super soft"),
+        ("Bashful Dragon (Medium, Retired)", "Jellycat", "Bashful", "Medium 31cm", 80, "Retired LE", True, "Retired 2023, green dragon"),
+        ("Amuseable Pineapple (Large, Retired)", "Jellycat", "Amuseable", "Large 47cm", 95, "Retired LE", True, "Retired 2024, tropical favorite"),
+        ("Blossom Bunny Blush (Huge, Retired)", "Jellycat", "Blossom", "Huge 51cm", 110, "Retired LE", True, "Retired 2023, floral ears"),
+        ("Bashful Fox Cub (Medium, Retired)", "Jellycat", "Bashful", "Medium 31cm", 75, "Retired LE", True, "Retired 2024, orange fox"),
+        ("Amuseable Croissant (Medium, Retired)", "Jellycat", "Amuseable", "Medium 20cm", 60, "Retired LE", True, "Retired 2024, bakery collection"),
+        ("Odyssey Octopus (Large, Retired)", "Jellycat", "Odyssey", "Large 49cm", 100, "Retired LE", True, "Retired 2023, inky blue"),
+        ("Amuseable Cloud (Medium, Retired)", "Jellycat", "Amuseable", "Medium 29cm", 65, "Retired LE", True, "Retired 2024, fluffy cloud"),
+        ("Amuseable Cactus (Medium, Retired)", "Jellycat", "Amuseable", "Medium 24cm", 58, "Retired LE", True, "Retired 2023, desert cutie"),
+        ("Vivacious Vegetable Aubergine (Retired)", "Jellycat", "Vivacious Vegetable", "Medium 22cm", 55, "Retired LE", True, "Retired 2024, garden collection"),
+        # ── Build-A-Bear Collabs ────────────────────────────────────────────
+        ("Build-A-Bear x Sanrio Hello Kitty (2025 Plush)", "Build-A-Bear", "Sanrio Collab", "Standard 40cm", 55, "Uncommon", False, "2025, BaB x Hello Kitty"),
+        ("Build-A-Bear x Sanrio Cinnamoroll (2025 Plush)", "Build-A-Bear", "Sanrio Collab", "Standard 40cm", 60, "Uncommon", False, "2025, BaB x Cinnamoroll"),
+        ("Build-A-Bear x Sanrio Kuromi (2025 Plush)", "Build-A-Bear", "Sanrio Collab", "Standard 40cm", 65, "Uncommon", False, "2025, BaB x Kuromi"),
+        ("Build-A-Bear x Sanrio My Melody (2025 Plush)", "Build-A-Bear", "Sanrio Collab", "Standard 40cm", 58, "Uncommon", False, "2025, BaB x My Melody"),
+        ("Build-A-Bear x Disney Stitch (Aloha Outfit)", "Build-A-Bear", "Disney Collab", "Standard 40cm", 50, "Common", False, "2024, Hawaiian Stitch"),
+        ("Build-A-Bear x Pokemon Pikachu (2025 Edition)", "Build-A-Bear", "Pokemon Collab", "Standard 40cm", 45, "Common", False, "2025, electric cheeks"),
+        ("Build-A-Bear x Pokemon Eevee (2025 Edition)", "Build-A-Bear", "Pokemon Collab", "Standard 40cm", 48, "Uncommon", False, "2025, fluffy Eevee"),
+        ("Build-A-Bear x Pokemon Gengar (2025 Web Exclusive)", "Build-A-Bear", "Pokemon Collab", "Standard 40cm", 65, "Uncommon", False, "2025, online exclusive ghost"),
+        ("Build-A-Bear x Pokemon Charizard (Online Exclusive)", "Build-A-Bear", "Pokemon Collab", "Standard 40cm", 70, "Rare HTF", False, "2025, fire dragon online only"),
+        ("Build-A-Bear x Pokemon Snorlax (Jumbo)", "Build-A-Bear", "Pokemon Collab", "Jumbo 60cm", 85, "Rare HTF", False, "2025, oversized sleeping Snorlax"),
+        # ── Steiff Annual Bears & Limited Editions ──────────────────────────
+        ("Steiff Annual Club Bear 2025 (Mohair)", "Steiff", "Club Edition", "28cm", 280, "Limited Edition", True, "Annual club bear, numbered"),
+        ("Steiff Annual Club Bear 2024 (Mohair)", "Steiff", "Club Edition", "28cm", 300, "Limited Edition", True, "2024 annual, appreciating"),
+        ("Steiff Christmas Bear 2025", "Steiff", "Seasonal", "28cm", 180, "Limited Edition", True, "2025, holiday outfit"),
+        ("Steiff Christmas Bear 2024", "Steiff", "Seasonal", "28cm", 200, "Limited Edition", True, "2024, sold out"),
+        ("Steiff Museum Bear Giengen 2025", "Steiff", "Museum Exclusive", "25cm", 350, "Grail", True, "Museum exclusive, Giengen only"),
+        ("Steiff Teddy Bear 1908 Replica (LE 1908)", "Steiff", "Replica", "35cm", 450, "Grail", True, "Numbered, 1908-piece LE"),
+        ("Steiff Margarete Steiff Jubilee Bear (150th)", "Steiff", "Anniversary", "30cm", 320, "Limited Edition", True, "150th anniversary founder tribute"),
+        ("Steiff x Disney Mickey Mouse (Mohair, LE)", "Steiff", "Disney Collab", "30cm", 250, "Limited Edition", True, "Licensed Disney, mohair"),
+        ("Steiff x Paddington Bear (Mohair, LE)", "Steiff", "Licensed Collab", "28cm", 220, "Limited Edition", True, "Blue coat, red hat, mohair"),
+        ("Steiff Petsy Bear Caramel (Classic)", "Steiff", "Classic", "35cm", 120, "Common", False, "Classic Petsy line, caramel"),
+        # ── Sanrio Large Plush ──────────────────────────────────────────────
+        ("Cinnamoroll Large Plush (Jumbo, 50cm)", "Sanrio", "Large Collection", "Jumbo 50cm", 85, "Uncommon", False, "Giant Cinnamoroll"),
+        ("Kuromi Large Plush (Jumbo, 50cm)", "Sanrio", "Large Collection", "Jumbo 50cm", 90, "Uncommon", False, "Giant Kuromi, purple"),
+        ("My Melody Large Plush (Jumbo, 50cm)", "Sanrio", "Large Collection", "Jumbo 50cm", 85, "Uncommon", False, "Giant My Melody, pink hood"),
+        ("Pompompurin Large Plush (Jumbo, 50cm)", "Sanrio", "Large Collection", "Jumbo 50cm", 80, "Uncommon", False, "Giant golden retriever"),
+        ("Hello Kitty Large Plush (50th Anniversary, 50cm)", "Sanrio", "50th Anniversary", "Jumbo 50cm", 110, "Limited Edition", True, "50th anniversary jumbo"),
+        ("Cinnamoroll x Cafe Latte Plush (Collaboration)", "Sanrio", "Collaboration", "Medium 30cm", 55, "Uncommon", False, "Cafe collab, barista outfit"),
+        ("Kuromi x Devil Horns Plush (Halloween)", "Sanrio", "Seasonal", "Medium 30cm", 60, "Uncommon", False, "Halloween exclusive devil ears"),
+        ("My Melody x Strawberry Dress Plush", "Sanrio", "Seasonal", "Medium 30cm", 55, "Uncommon", False, "Spring seasonal, strawberry"),
+        ("Pochacco Large Plush (Retro Revival, 40cm)", "Sanrio", "Large Collection", "Large 40cm", 70, "Uncommon", False, "Retro 90s revival"),
+        ("Tuxedo Sam Large Plush (40cm)", "Sanrio", "Large Collection", "Large 40cm", 65, "Uncommon", False, "Penguin in bowtie"),
+        # ── TY Beanie Boos Rare Variants ────────────────────────────────────
+        ("Ty Beanie Boo Coconut the Monkey (1st Gen, Solid Eyes)", "TY", "Beanie Boos 1st Gen", "Regular 15cm", 45, "Rare HTF", True, "1st gen solid eyes, discontinued"),
+        ("Ty Beanie Boo Leona the Leopard (1st Gen, Solid Eyes)", "TY", "Beanie Boos 1st Gen", "Regular 15cm", 50, "Rare HTF", True, "1st gen, rare early release"),
+        ("Ty Beanie Boo Fantasia the Unicorn (Claire's Exclusive)", "TY", "Beanie Boos Exclusive", "Medium 23cm", 35, "Uncommon", False, "Claire's exclusive rainbow"),
+        ("Ty Beanie Boo Kiki the Grey Cat (Jumbo 40cm)", "TY", "Beanie Boos", "Jumbo 40cm", 40, "Common", False, "Oversized grey cat"),
+        ("Ty Beanie Boo Dotty the Leopard (Justice Exclusive)", "TY", "Beanie Boos Exclusive", "Regular 15cm", 38, "Uncommon", True, "Justice stores, retired"),
+        ("Ty Beanie Boo Slush the Husky (2nd Gen, Tag Errors)", "TY", "Beanie Boos Error", "Regular 15cm", 55, "Rare HTF", True, "Tag error variant, collector item"),
+        ("Ty Beanie Boo Peanut the Elephant (Royal Blue Error)", "TY", "Beanie Boos Error", "Regular 15cm", 120, "Grail", True, "Royal blue color error, extreme rare"),
+        ("Ty Beanie Boo Lucy the Dog (UK Exclusive)", "TY", "Beanie Boos Exclusive", "Regular 15cm", 42, "Uncommon", True, "UK exclusive Labrador"),
+        # ── Squishmallows Seasonal 2025 ─────────────────────────────────────
+        ("Easter Bunny Bop 12-inch (2025 Easter)", "Squishmallows", "Seasonal Easter", "12-inch", 28, "Common", False, "2025 Easter collection"),
+        ("Holly the Owl (2024 Christmas Exclusive 16-inch)", "Squishmallows", "Seasonal Christmas", "16-inch", 55, "Uncommon", False, "2024 holiday owl"),
+        ("Nightmare Jack the Cat (2024 Halloween 12-inch)", "Squishmallows", "Seasonal Halloween", "12-inch", 48, "Uncommon", False, "2024 spooky cat"),
+        ("Dante the Devil (2024 Halloween 16-inch)", "Squishmallows", "Seasonal Halloween", "16-inch", 60, "Uncommon", False, "2024 devil with horns"),
+        ("Otto the Orange Octopus (Day of the Dead 12-inch)", "Squishmallows", "Seasonal DOTD", "12-inch", 52, "Uncommon", False, "Day of the Dead sugar skull"),
+        ("Cam the Cat (Valentine Hearts 16-inch)", "Squishmallows", "Seasonal Valentine", "16-inch", 42, "Uncommon", False, "2025 Valentine hearts pattern"),
+        # ── Additional Jellycat (Current Popular) ───────────────────────────
+        ("Jellycat Amuseable Toast (Medium)", "Jellycat", "Amuseable", "Medium 26cm", 28, "Common", False, "Breakfast collection, viral"),
+        ("Jellycat Amuseable Sushi (Small)", "Jellycat", "Amuseable", "Small 15cm", 22, "Common", False, "Japanese food, social media hit"),
+        ("Jellycat Amuseable Baguette (Large)", "Jellycat", "Amuseable", "Large 47cm", 35, "Common", False, "French bread, TikTok famous"),
+        ("Jellycat Bashful Highland Cow (Medium)", "Jellycat", "Bashful", "Medium 31cm", 30, "Common", False, "Scottish highland cow, new release"),
+        ("Jellycat Bashful Blush Bunny (Huge, 51cm)", "Jellycat", "Bashful", "Huge 51cm", 60, "Common", False, "Iconic pink bunny, largest size"),
+        ("Jellycat Vivacious Vegetable Beetroot", "Jellycat", "Vivacious Vegetable", "Small 17cm", 20, "Common", False, "Garden collection addition"),
+        ("Jellycat Festive Folly Christmas Tree", "Jellycat", "Festive Folly", "Small 12cm", 18, "Uncommon", False, "Christmas ornament plush"),
+        ("Jellycat London Collection Bus", "Jellycat", "London Collection", "Medium 17cm", 45, "Uncommon", False, "London store exclusive"),
+        # ── Pokemon Center Plush (Regional) ─────────────────────────────────
+        ("Pokemon Center Pikachu (Tokyo Exclusive, Kimono)", "Pokemon Center", "Regional Exclusive", "Medium 25cm", 55, "Uncommon", False, "Tokyo DX, kimono outfit"),
+        ("Pokemon Center Eevee (Kyoto Maiko)", "Pokemon Center", "Regional Exclusive", "Medium 25cm", 60, "Uncommon", False, "Kyoto exclusive, maiko outfit"),
+        ("Pokemon Center Snorlax (Yokohama Sailor)", "Pokemon Center", "Regional Exclusive", "Large 35cm", 65, "Uncommon", False, "Yokohama exclusive, sailor hat"),
+        ("Pokemon Center Gengar (Halloween 2024, Large)", "Pokemon Center", "Seasonal", "Large 40cm", 70, "Rare HTF", False, "2024 Halloween, glow mouth"),
+        ("Pokemon Center Sylveon (Valentine's 2025)", "Pokemon Center", "Seasonal", "Medium 25cm", 45, "Uncommon", False, "2025 Valentine bows"),
+        ("Pokemon Center Mimikyu (Pikachu Costume, Large)", "Pokemon Center", "Special Edition", "Large 35cm", 55, "Uncommon", False, "Mimikyu in Pikachu disguise"),
+        # ── KAWS / Art Toy Plush ────────────────────────────────────────────
+        ("KAWS BFF Plush (Black, 50cm)", "KAWS", "BFF", "Large 50cm", 450, "Grail", True, "MoMA release, black companion"),
+        ("KAWS BFF Plush (Pink, 50cm)", "KAWS", "BFF", "Large 50cm", 500, "Grail", True, "MoMA release, pink variant"),
+        ("KAWS Holiday Plush (Seoul, 45cm)", "KAWS", "Holiday", "Large 45cm", 350, "Limited Edition", True, "Seoul exhibition exclusive"),
+    ]
+    catalog = []
+    for name, brand, series, size, price, rarity, is_retired, notes in items:
+        catalog.append({
+            "name": name,
+            "brand": brand,
+            "series": series,
+            "size": size,
+            "price_eur": price,
+            "rarity": rarity,
+            "is_retired": is_retired,
+            "notes": notes,
+        })
+    return catalog
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated plush collectibles catalog: 700+ items across 18 sub-categories."""
 
@@ -1460,6 +1586,7 @@ def get_curated_catalog() -> list[dict]:
 
     # ── Variant expansion: size variants, retailer exclusives, seasonal ──
     catalog.extend(_variant_expansion())
+    catalog.extend(_expansion_1150_most_searched())
 
     # Deduplicate by ('name', 'brand', 'size') (keep first occurrence)
     _seen: set = set()

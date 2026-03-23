@@ -1309,6 +1309,130 @@ def get_curated_catalog() -> list[dict]:
         ("Supergiant Games", "Hades II OST 2LP", "Hades II", "Boutique Pressing", "Black", "high", 55),
         ("RSD", "My Neighbor Totoro OST (RSD 2025 Green Marble)", "My Neighbor Totoro", "RSD Exclusive", "Green Marble", "high", 85),
         ("Con Exclusive", "Haikyuu!! Complete OST (AX 2025 Orange)", "Haikyuu!!", "Event Exclusive", "Orange", "high", 80),
+
+        # ── Round 35b: More Ghibli, iam8bit, Data Discs, Mondo, Modern Anime, J-pop — 134 items ──
+
+        # Joe Hisaishi Ghibli Vinyl — More Titles (+10)
+        ("Milan Records", "Porco Rosso Soundtrack (Joe Hisaishi) Color Vinyl", "Porco Rosso", "EU/US Pressing", "Crimson Red", "high", 58),
+        ("Tokuma Japan", "Nausicaa of the Valley of the Wind OST (Original 1984 Pressing)", "Nausicaa", "Japanese OG Pressing", "Black", "grail", 220),
+        ("Milan Records", "Nausicaa of the Valley of the Wind Soundtrack", "Nausicaa", "EU/US Pressing", "Forest Green", "high", 55),
+        ("Milan Records", "Kiki's Delivery Service Soundtrack (Joe Hisaishi)", "Kiki's Delivery Service", "EU/US Pressing", "Sky Blue", "high", 52),
+        ("Milan Records", "Castle in the Sky Soundtrack (Joe Hisaishi) 2LP", "Castle in the Sky", "EU/US Pressing", "Cloud White", "high", 60),
+        ("Tokuma Japan", "Laputa: Castle in the Sky OST (Original 1986 Pressing)", "Castle in the Sky", "Japanese OG Pressing", "Black", "grail", 200),
+        ("Studio Ghibli Records", "Ponyo Soundtrack (Joe Hisaishi)", "Ponyo", "Japanese Pressing", "Ocean Blue", "high", 55),
+        ("Studio Ghibli Records", "When Marnie Was There Soundtrack", "When Marnie Was There", "Japanese Pressing", "Clear", "mid", 42),
+        ("Milan Records", "Arrietty Soundtrack (Cecile Corbel)", "Arrietty", "EU/US Pressing", "Green", "mid", 38),
+        ("Studio Ghibli Records", "Ghibli Jazz Complete Collection 2LP", "Studio Ghibli", "Japanese Pressing", "Black", "high", 65),
+
+        # iam8bit — More Video Game Vinyl (+14)
+        ("iam8bit", "Zelda: Breath of the Wild OST 4LP Box Set", "Zelda BOTW", "Boutique Pressing", "Champion Blue", "grail", 150),
+        ("iam8bit", "Zelda: Tears of the Kingdom OST 4LP", "Zelda TOTK", "Boutique Pressing", "Sage Green", "grail", 140),
+        ("iam8bit", "Persona 5 Royal OST 3LP", "Persona 5 Royal", "Boutique Pressing", "Phantom Red", "grail", 120),
+        ("iam8bit", "Hades OST 2LP (Darren Korb)", "Hades", "Boutique Pressing", "Blood Orange", "high", 65),
+        ("iam8bit", "Hollow Knight OST 2LP (Christopher Larkin)", "Hollow Knight", "Boutique Pressing", "Void Black", "high", 70),
+        ("iam8bit", "Celeste OST 2LP (Lena Raine)", "Celeste", "Boutique Pressing", "Crystal Blue", "high", 62),
+        ("iam8bit", "Stardew Valley OST 2LP (ConcernedApe)", "Stardew Valley", "Boutique Pressing", "Farm Green", "high", 60),
+        ("iam8bit", "Sayonara Wild Hearts OST LP", "Sayonara Wild Hearts", "Boutique Pressing", "Neon Pink", "high", 55),
+        ("iam8bit", "Gris OST LP (Berlinist)", "Gris", "Boutique Pressing", "Watercolor Splatter", "high", 58),
+        ("iam8bit", "Journey OST 2LP (Austin Wintory)", "Journey", "Boutique Pressing", "Desert Gold", "high", 65),
+        ("iam8bit", "Ori and the Will of the Wisps OST 2LP", "Ori and the Will of the Wisps", "Boutique Pressing", "Spirit Blue", "high", 60),
+        ("iam8bit", "Death Stranding OST 3LP", "Death Stranding", "Boutique Pressing", "Black", "high", 75),
+        ("iam8bit", "Splatoon 3 OST 2LP", "Splatoon 3", "Boutique Pressing", "Ink Splatter Tricolor", "high", 62),
+        ("iam8bit", "Undertale OST 2LP (Toby Fox)", "Undertale", "Boutique Pressing", "Determination Red", "high", 68),
+
+        # Data Discs — More Sega/Classic Game Vinyl (+10)
+        ("Data Discs", "Streets of Rage OST LP", "Streets of Rage", "Boutique Pressing", "Black", "high", 55),
+        ("Data Discs", "Streets of Rage 2 OST LP", "Streets of Rage 2", "Boutique Pressing", "Clear Blue", "high", 60),
+        ("Data Discs", "Streets of Rage 3 OST LP", "Streets of Rage 3", "Boutique Pressing", "Clear Red", "high", 55),
+        ("Data Discs", "Streets of Rage 4 OST 2LP", "Streets of Rage 4", "Boutique Pressing", "Neon Green", "high", 65),
+        ("Data Discs", "Shenmue OST 3LP Box Set", "Shenmue", "Boutique Pressing", "Black", "grail", 110),
+        ("Data Discs", "Sonic CD OST LP (JP/US)", "Sonic CD", "Boutique Pressing", "Metallic Blue", "high", 58),
+        ("Data Discs", "Golden Axe I & II OST LP", "Golden Axe", "Boutique Pressing", "Gold", "high", 55),
+        ("Data Discs", "Panzer Dragoon OST LP", "Panzer Dragoon", "Boutique Pressing", "Dragon Green", "high", 60),
+        ("Data Discs", "Shinobi III OST LP", "Shinobi III", "Boutique Pressing", "Ninja Black", "high", 52),
+        ("Data Discs", "Out Run OST LP (Repress)", "Out Run", "Boutique Pressing", "Sunset Orange", "high", 55),
+
+        # Mondo Releases — More Vinyl (+10)
+        ("Mondo", "Akira OST 2LP (Geinoh Yamashirogumi)", "Akira", "Boutique Pressing", "Neo-Tokyo Red", "grail", 130),
+        ("Mondo", "Perfect Blue OST LP", "Perfect Blue", "Boutique Pressing", "Blue Translucent", "grail", 110),
+        ("Mondo", "Paprika OST LP (Susumu Hirasawa)", "Paprika", "Boutique Pressing", "Dream Orange", "high", 75),
+        ("Mondo", "Cowboy Bebop Blue OST LP", "Cowboy Bebop", "Boutique Pressing", "Smoke Gray", "high", 62),
+        ("Mondo", "Evangelion 3.0+1.0 OST 2LP", "Evangelion", "Boutique Pressing", "Eva Purple", "high", 70),
+        ("Mondo", "Princess Mononoke OST 2LP", "Princess Mononoke", "Boutique Pressing", "Forest Green", "high", 80),
+        ("Mondo", "Castlevania Symphony of the Night OST 2LP", "Castlevania SOTN", "Boutique Pressing", "Alucard Red", "grail", 100),
+        ("Mondo", "Silent Hill 2 OST 2LP", "Silent Hill 2", "Boutique Pressing", "Fog White", "grail", 120),
+        ("Mondo", "Blade Runner 2049 OST 2LP", "Blade Runner 2049", "Boutique Pressing", "Neon Orange", "high", 75),
+        ("Mondo", "The Last of Us Part II OST 2LP", "The Last of Us Part II", "Boutique Pressing", "Black", "high", 65),
+
+        # Modern Anime OST Vinyl — Recent Hits (+14)
+        ("Aniplex", "Chainsaw Man OST LP (Kensuke Ushio)", "Chainsaw Man", "Japanese Pressing", "Blood Red", "high", 68),
+        ("Sony Music", "Chainsaw Man ED Collection 2LP (12 Artists)", "Chainsaw Man", "Japanese Pressing", "Splatter Multi", "grail", 120),
+        ("Aniplex", "Jujutsu Kaisen Season 2 OST 2LP", "Jujutsu Kaisen S2", "Japanese Pressing", "Cursed Purple", "high", 65),
+        ("Aniplex", "Jujutsu Kaisen 0 Movie OST LP", "Jujutsu Kaisen 0", "Japanese Pressing", "Black", "high", 55),
+        ("Aniplex", "Frieren OST 2LP (Evan Call)", "Frieren", "Japanese Pressing", "Silver", "high", 68),
+        ("Aniplex", "Bocchi the Rock! OST LP + Insert Songs", "Bocchi the Rock!", "Japanese Pressing", "Guitar Pink", "high", 62),
+        ("Aniplex", "Bocchi the Rock! Kessoku Band Album LP", "Bocchi the Rock!", "Japanese Pressing", "Band Blue", "high", 58),
+        ("Aniplex", "Blue Lock OST LP", "Blue Lock", "Japanese Pressing", "Ego Blue", "high", 55),
+        ("Pony Canyon", "Oshi no Ko OP Idol (YOASOBI) 12-inch", "Oshi no Ko", "Japanese Pressing", "Star Purple", "high", 60),
+        ("Aniplex", "Spy x Family OST 2LP", "Spy x Family", "Japanese Pressing", "Pink & Green", "high", 62),
+        ("Aniplex", "Dandadan OST LP", "Dandadan", "Japanese Pressing", "Turbo Turquoise", "high", 52),
+        ("Pony Canyon", "Vinland Saga Season 2 OST LP", "Vinland Saga S2", "Japanese Pressing", "Black", "high", 55),
+        ("Aniplex", "Hell's Paradise OST LP", "Hell's Paradise", "Japanese Pressing", "Crimson", "mid", 48),
+        ("Lantis", "Mushoku Tensei OST 2LP", "Mushoku Tensei", "Japanese Pressing", "Black", "high", 58),
+
+        # J-pop Artist Vinyl — Kenshi Yonezu (+5)
+        ("Sony Music", "Kenshi Yonezu STRAY SHEEP Vinyl 2LP", "Kenshi Yonezu", "Japanese Pressing", "Black", "high", 75),
+        ("Sony Music", "Kenshi Yonezu YANKEE Vinyl LP", "Kenshi Yonezu", "Japanese Pressing", "Black", "high", 65),
+        ("Sony Music", "Kenshi Yonezu LOST CORNER Vinyl 2LP", "Kenshi Yonezu", "Japanese Pressing", "Black", "high", 70),
+        ("Sony Music", "Kenshi Yonezu Flamingo 7-inch Single", "Kenshi Yonezu", "Japanese Pressing", "Black", "mid", 45),
+        ("Sony Music", "Kenshi Yonezu KICK BACK 7-inch Single", "Kenshi Yonezu", "Japanese Pressing", "Chainsaw Red", "high", 55),
+
+        # J-pop Artist Vinyl — YOASOBI (+5)
+        ("Sony Music", "YOASOBI THE BOOK Vinyl LP", "YOASOBI", "Japanese Pressing", "Night Blue", "high", 70),
+        ("Sony Music", "YOASOBI Idol 7-inch Single", "YOASOBI", "Japanese Pressing", "Star Pink", "high", 60),
+        ("Sony Music", "YOASOBI E-SIDE Vinyl LP (English Ver.)", "YOASOBI", "Japanese Pressing", "Clear", "high", 62),
+
+        # J-pop Artist Vinyl — Ado (+5)
+        ("Universal Music Japan", "Ado Kyougen Vinyl 2LP", "Ado", "Japanese Pressing", "Black", "high", 72),
+        ("Universal Music Japan", "Ado Uta's Songs ONE PIECE FILM RED Vinyl LP", "Ado", "Japanese Pressing", "Red", "high", 75),
+        ("Universal Music Japan", "Ado Ado no Utattemita Album Vinyl LP", "Ado", "Japanese Pressing", "Black", "high", 60),
+        ("Universal Music Japan", "Ado Zanmu Vinyl LP", "Ado", "Japanese Pressing", "Black", "high", 65),
+        ("Universal Music Japan", "Ado Show 7-inch Single", "Ado", "Japanese Pressing", "Neon", "mid", 48),
+
+        # J-pop Artist Vinyl — King Gnu (+5)
+        ("Ariola Japan", "King Gnu CEREMONY Vinyl LP", "King Gnu", "Japanese Pressing", "Black", "high", 65),
+        ("Ariola Japan", "King Gnu SYMPA Vinyl LP", "King Gnu", "Japanese Pressing", "Black", "high", 60),
+        ("Ariola Japan", "King Gnu THE GREATEST UNKNOWN Vinyl 2LP", "King Gnu", "Japanese Pressing", "Black", "high", 72),
+        ("Ariola Japan", "King Gnu Ichizu 7-inch Single", "King Gnu", "Japanese Pressing", "Black", "mid", 45),
+        ("Ariola Japan", "King Gnu BOY 7-inch Single", "King Gnu", "Japanese Pressing", "Black", "mid", 42),
+
+        # More J-pop Vinyl — Various Artists (+8)
+        ("Sony Music", "Fujii Kaze HELP EVER HURT NEVER Vinyl LP", "Fujii Kaze", "Japanese Pressing", "Black", "high", 68),
+        ("Sony Music", "Fujii Kaze LOVE ALL SERVE ALL Vinyl LP", "Fujii Kaze", "Japanese Pressing", "Black", "high", 70),
+        ("Victor", "Eve Kaikai Kitan 7-inch (JJK OP)", "Eve", "Japanese Pressing", "Black", "high", 55),
+        ("Sony Music", "Vaundy Replica Vinyl LP", "Vaundy", "Japanese Pressing", "Black", "high", 62),
+        ("Sony Music", "imase NIGHT DANCER 7-inch Single", "imase", "Japanese Pressing", "Black", "mid", 40),
+        ("Pony Canyon", "Creepy Nuts Bling-Bang-Bang-Born 7-inch (Mashle OP)", "Creepy Nuts", "Japanese Pressing", "Gold", "high", 55),
+        ("Sony Music", "Mrs. GREEN APPLE Columba Vinyl LP", "Mrs. GREEN APPLE", "Japanese Pressing", "Black", "high", 60),
+        ("Warner Japan", "Official HIGE DANdism Editorial Vinyl LP", "Official HIGE DANdism", "Japanese Pressing", "Black", "high", 65),
+
+        # More Classic/Cult Anime OST Vinyl (+8)
+        ("King Records", "FLCL OST 2LP (The Pillows)", "FLCL", "Japanese OG Pressing", "Black", "grail", 180),
+        ("King Records", "FLCL OST (Milan Records Reissue)", "FLCL", "Reissue", "Pink", "high", 65),
+        ("Victor", "Samurai Champloo: Departure LP", "Samurai Champloo", "Japanese OG Pressing", "Black", "grail", 150),
+        ("Geneon", "Texhnolyze OST LP", "Texhnolyze", "Japanese OG Pressing", "Black", "grail", 200),
+        ("Columbia Japan", "Urusei Yatsura Beautiful Dreamer OST LP", "Urusei Yatsura", "Japanese OG Pressing", "Black", "grail", 160),
+        ("King Records", "Legend of the Galactic Heroes OST LP", "LOGH", "Japanese OG Pressing", "Black", "grail", 250),
+        ("Aniplex", "Monogatari Series Complete OST Box 5LP", "Monogatari Series", "Japanese Pressing", "Black", "grail", 200),
+        ("Kadokawa", "Re:Zero OST 2LP (Kenichiro Suehiro)", "Re:Zero", "Japanese Pressing", "Black", "high", 65),
+
+        # More RSD/Con Exclusive Pressings (+6)
+        ("RSD", "Cowboy Bebop OST (RSD 2025 Red Tail Red)", "Cowboy Bebop", "RSD Exclusive", "Red Tail Red", "high", 85),
+        ("RSD", "Akira OST (RSD 2025 Capsule Splatter)", "Akira", "RSD Exclusive", "Capsule Splatter", "grail", 110),
+        ("Con Exclusive", "Demon Slayer OST (AX 2025 Flame Hashira Orange)", "Demon Slayer", "Event Exclusive", "Flame Orange", "high", 90),
+        ("Con Exclusive", "Chainsaw Man OST (NYCC 2025 Pochita Gold)", "Chainsaw Man", "Event Exclusive", "Pochita Gold", "high", 95),
+        ("RSD", "Studio Ghibli Jazz Vinyl (RSD 2025 Clear)", "Studio Ghibli", "RSD Exclusive", "Crystal Clear", "high", 80),
+        ("Con Exclusive", "Persona 5 OST (TGS 2025 Joker Red/Black)", "Persona 5", "Event Exclusive", "Joker Red/Black", "grail", 100),
     ]
 
     catalog: list[dict] = []

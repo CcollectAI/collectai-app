@@ -1427,6 +1427,100 @@ def get_curated_catalog() -> list[dict]:
         ("Box Set", "Star Trek TOS Complete Series Blu-ray", "Blu-ray", "CBS Box Set", "high", 100),
         ("Box Set", "Star Trek Voyager Complete Series DVD", "DVD", "CBS Box Set", "mid", 80),
         ("Steelbook", "Star Trek: First Contact", "4K UHD", "Zavvi Steelbook", "high", 55),
+
+        # ── Criterion 4K UHD (additional) ─────────────────────────────────
+        ("Criterion", "2001: A Space Odyssey", "4K UHD", "Criterion 4K", "mid", 40),
+        ("Criterion", "The Shining", "4K UHD", "Criterion 4K", "mid", 42),
+        ("Criterion", "Blue Velvet", "4K UHD", "Criterion 4K", "mid", 40),
+        ("Criterion", "Barry Lyndon", "4K UHD", "Criterion 4K", "mid", 42),
+        ("Criterion", "Eyes Wide Shut", "4K UHD", "Criterion 4K", "mid", 42),
+        ("Criterion", "Memories of Murder", "4K UHD", "Criterion 4K", "mid", 40),
+        ("Criterion", "Uncut Gems", "4K UHD", "Criterion 4K", "standard", 38),
+        ("Criterion", "The Piano", "4K UHD", "Criterion 4K", "standard", 38),
+        ("Criterion", "Yi Yi", "4K UHD", "Criterion 4K", "mid", 40),
+        ("Criterion", "Days of Heaven", "4K UHD", "Criterion 4K", "mid", 42),
+
+        # ── Studio Ghibli Steelbooks ──────────────────────────────────────
+        ("GKIDS", "Spirited Away (Steelbook)", "Blu-ray", "GKIDS Steelbook", "mid", 48),
+        ("GKIDS", "Princess Mononoke (Steelbook)", "Blu-ray", "GKIDS Steelbook", "mid", 48),
+        ("GKIDS", "My Neighbor Totoro (Steelbook)", "Blu-ray", "GKIDS Steelbook", "mid", 48),
+        ("GKIDS", "Kiki's Delivery Service (Steelbook)", "Blu-ray", "GKIDS Steelbook", "mid", 45),
+        ("GKIDS", "Ponyo (Steelbook)", "Blu-ray", "GKIDS Steelbook", "mid", 42),
+        ("GKIDS", "The Wind Rises (Steelbook)", "Blu-ray", "GKIDS Steelbook", "mid", 42),
+        ("GKIDS", "Porco Rosso (Steelbook)", "Blu-ray", "GKIDS Steelbook", "mid", 45),
+        ("GKIDS", "Grave of the Fireflies (Steelbook)", "Blu-ray", "GKIDS Steelbook", "high", 60),
+
+        # ── MCU Phase 5-6 Steelbooks ─────────────────────────────────────
+        ("Steelbook", "Guardians of the Galaxy Vol. 3 (4K)", "4K UHD", "Disney Steelbook", "mid", 40),
+        ("Steelbook", "The Marvels (4K)", "4K UHD", "Disney Steelbook", "standard", 35),
+        ("Steelbook", "Deadpool & Wolverine (4K)", "4K UHD", "Disney Steelbook", "mid", 42),
+        ("Steelbook", "Captain America: Brave New World (4K)", "4K UHD", "Disney Steelbook", "mid", 40),
+        ("Steelbook", "Thunderbolts* (4K)", "4K UHD", "Disney Steelbook", "mid", 42),
+        ("Steelbook", "Ant-Man and the Wasp: Quantumania (4K)", "4K UHD", "Disney Steelbook", "standard", 35),
+        ("Steelbook", "Loki Season 2 (Steelbook)", "Blu-ray Box", "Disney Steelbook", "mid", 50),
+
+        # ── Nolan Filmography 4K ─────────────────────────────────────────
+        ("Warner Bros", "Memento (4K UHD)", "4K UHD", "WB 4K", "mid", 40),
+        ("Warner Bros", "The Prestige (4K UHD)", "4K UHD", "WB 4K", "mid", 42),
+        ("Warner Bros", "Interstellar (4K UHD)", "4K UHD", "WB 4K", "mid", 42),
+        ("Warner Bros", "Inception (4K UHD)", "4K UHD", "WB 4K", "mid", 40),
+        ("Warner Bros", "Tenet (4K UHD)", "4K UHD", "WB 4K", "mid", 40),
+        ("Warner Bros", "Dunkirk (4K UHD)", "4K UHD", "WB 4K", "mid", 40),
+        ("Warner Bros", "Batman Begins (4K UHD)", "4K UHD", "WB 4K", "mid", 40),
+        ("Warner Bros", "The Dark Knight (4K UHD Steelbook)", "4K UHD", "WB Steelbook", "high", 55),
+        ("Warner Bros", "The Dark Knight Rises (4K UHD Steelbook)", "4K UHD", "WB Steelbook", "mid", 48),
+
+        # ── Horror Boutique (Shout/Scream Factory, Vinegar Syndrome) ──────
+        ("Shout Factory", "The Texas Chain Saw Massacre (4K Steelbook)", "4K UHD", "Shout LE Steelbook", "high", 55),
+        ("Shout Factory", "Creepshow (4K Collector's Edition)", "4K UHD", "Shout Collector's", "high", 60),
+        ("Shout Factory", "Halloween III: Season of the Witch (4K)", "4K UHD", "Shout 4K", "mid", 42),
+        ("Shout Factory", "Phantasm Sphere Collection (4K)", "4K UHD Box", "Shout Box Set", "high", 100),
+        ("Shout Factory", "They Live (4K Collector's)", "4K UHD", "Shout Collector's", "high", 55),
+        ("Vinegar Syndrome", "Slumber Party Massacre Collection", "Blu-ray Box", "VS LE Slipcover", "mid", 50),
+        ("Vinegar Syndrome", "Blood Rage (4K UHD)", "4K UHD", "VS 4K", "mid", 45),
+        ("Vinegar Syndrome", "Tammy and the T-Rex (4K UHD)", "4K UHD", "VS 4K", "mid", 42),
+        ("Vinegar Syndrome", "Pieces (4K UHD)", "4K UHD", "VS 4K", "mid", 42),
+        ("Vinegar Syndrome", "Nightmare Weekend (Blu-ray)", "Blu-ray", "VS LE Slipcover", "standard", 35),
+        ("Vinegar Syndrome", "Maniac (1980, 4K UHD)", "4K UHD", "VS 4K", "high", 55),
+        ("88 Films", "Demons (Italian Collection 4K)", "4K UHD", "88 Films LE", "mid", 42),
+        ("88 Films", "Cannibal Holocaust (4K UHD)", "4K UHD", "88 Films LE", "mid", 45),
+
+        # ── TV Series Box Sets ───────────────────────────────────────────
+        ("Paramount", "Yellowstone Seasons 1-5 Complete Blu-ray", "Blu-ray Box", "Paramount Box Set", "high", 90),
+        ("HBO", "House of the Dragon Season 1 (4K Steelbook)", "4K UHD", "HBO Steelbook", "mid", 50),
+        ("HBO", "House of the Dragon Season 2 (4K Steelbook)", "4K UHD", "HBO Steelbook", "mid", 50),
+        ("HBO", "Succession Complete Series Blu-ray Box", "Blu-ray Box", "HBO Box Set", "high", 80),
+        ("HBO", "The Last of Us Season 1 (4K Steelbook)", "4K UHD", "HBO Steelbook", "mid", 50),
+        ("HBO", "The Last of Us Season 2 (4K Steelbook)", "4K UHD", "HBO Steelbook", "mid", 50),
+        ("HBO", "The Penguin Complete Season 1 (Blu-ray)", "Blu-ray", "HBO Standard", "standard", 30),
+        ("AMC", "Breaking Bad Complete Series (Steelbook)", "Blu-ray Box", "LE Steelbook", "high", 120),
+        ("AMC", "Better Call Saul Complete Series Blu-ray", "Blu-ray Box", "Standard Box", "high", 80),
+        ("FX", "Shogun Limited Series (4K Steelbook)", "4K UHD", "FX/Disney Steelbook", "mid", 48),
+        ("Apple TV+", "Severance Season 1 (Steelbook)", "Blu-ray", "Apple Steelbook", "mid", 45),
+
+        # ── Anime 4K / Premium ───────────────────────────────────────────
+        ("Funimation", "Your Name (4K UHD Steelbook)", "4K UHD", "LE Steelbook", "high", 60),
+        ("GKIDS", "Weathering with You (4K UHD)", "4K UHD", "GKIDS 4K", "mid", 45),
+        ("Funimation", "Demon Slayer: Mugen Train (4K Steelbook)", "4K UHD", "LE Steelbook", "mid", 50),
+        ("Manga Entertainment", "Akira (4K UHD LE)", "4K UHD", "Manga LE", "high", 60),
+        ("GKIDS", "The Boy and the Heron (4K UHD Steelbook)", "4K UHD", "GKIDS Steelbook", "mid", 48),
+        ("Funimation", "Dragon Ball Super: Broly (4K Steelbook)", "4K UHD", "LE Steelbook", "mid", 45),
+        ("Funimation", "Attack on Titan Final Season Part 4 (LE)", "Blu-ray", "LE Box", "high", 60),
+        ("Aniplex", "Demon Slayer Hashira Training Arc (LE)", "Blu-ray Box", "Aniplex LE", "high", 65),
+        ("Aniplex", "Jujutsu Kaisen Season 2 (LE Box)", "Blu-ray Box", "Aniplex LE", "high", 80),
+        ("Crunchyroll", "Solo Leveling Season 1 (Steelbook)", "Blu-ray", "CR Steelbook", "mid", 45),
+
+        # ── Premium Full-Slip Editions ───────────────────────────────────
+        ("KimchiDVD", "Oldboy (Full Slip Steelbook)", "Blu-ray", "KimchiDVD LE", "grail", 150),
+        ("KimchiDVD", "Parasite (Full Slip Steelbook)", "Blu-ray", "KimchiDVD LE", "grail", 160),
+        ("Plain Archive", "Memories of Murder (Full Slip)", "Blu-ray", "Plain Archive LE", "high", 120),
+        ("WeET Collection", "Spider-Man: No Way Home (Full Slip)", "4K UHD", "WeET LE", "high", 110),
+        ("WeET Collection", "The Batman (Full Slip)", "4K UHD", "WeET LE", "high", 100),
+        ("FilmArena", "Blade Runner 2049 (Full Slip Steelbook)", "4K UHD", "FilmArena LE", "grail", 140),
+        ("FilmArena", "Dune Part One (Full Slip Steelbook)", "4K UHD", "FilmArena LE", "high", 120),
+        ("HDZeta", "Inception (Triple Steelbook)", "4K UHD", "HDZeta LE", "grail", 180),
+        ("Manta Lab", "Spider-Man: Across the Spider-Verse (Full Slip)", "4K UHD", "Manta Lab LE", "high", 110),
+        ("Manta Lab", "Oppenheimer (Full Slip)", "4K UHD", "Manta Lab LE", "high", 120),
     ]
 
     catalog = []

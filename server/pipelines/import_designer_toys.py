@@ -777,6 +777,149 @@ def get_curated_catalog() -> list[dict]:
         ("Takashi Murakami", "Flower", "Flower Plush Cushion Rainbow 30cm", "Standard", "standard", 95),
         ("Takashi Murakami", "Flower", "Flower Plush Cushion Black 60cm", "Standard", "mid", 200),
         ("Takashi Murakami", "Mr. DOB", "Mr. DOB Figure Pink/Blue 25cm", "Limited", "high", 950),
+
+        # ── KAWS Deep Catalog Expansion ────────────────────────────────────
+        ("KAWS", "Companion", "Companion Open Edition Blush", "Open Edition", "mid", 310),
+        ("KAWS", "Along the Way", "Along the Way Grey", "Open Edition", "mid", 420),
+        ("KAWS", "Along the Way", "Along the Way Black", "Open Edition", "mid", 440),
+        ("KAWS", "Along the Way", "Along the Way Brown", "Open Edition", "mid", 460),
+        ("KAWS", "Share", "Share Grey", "Open Edition", "mid", 400),
+        ("KAWS", "Share", "Share Black", "Open Edition", "mid", 420),
+        ("KAWS", "Separated", "Separated Grey", "Open Edition", "mid", 380),
+        ("KAWS", "Separated", "Separated Black", "Open Edition", "mid", 400),
+        ("KAWS", "Separated", "Separated Brown", "Open Edition", "mid", 410),
+        ("KAWS", "Take", "Take Grey", "Open Edition", "mid", 350),
+        ("KAWS", "Take", "Take Black", "Open Edition", "mid", 370),
+        ("KAWS", "Passing Through", "Passing Through Grey", "Open Edition", "mid", 380),
+        ("KAWS", "Passing Through", "Passing Through Black", "Open Edition", "mid", 400),
+        ("KAWS", "Chum", "Chum White 2002", "Limited", "grail", 3500),
+        ("KAWS", "Chum", "Chum Pink 2002", "Limited", "grail", 3200),
+        ("KAWS", "Family", "Family Figures Set Black", "Limited", "high", 950),
+        ("KAWS", "Family", "Family Figures Set Brown", "Limited", "high", 1000),
+        ("KAWS", "Accomplice", "Accomplice Pink", "Limited", "high", 800),
+        ("KAWS", "Bendy", "Bendy Black 2004", "Limited", "grail", 2200),
+        ("KAWS", "Holiday", "Holiday UK (Serpentine)", "Limited", "high", 850),
+        ("KAWS", "Holiday", "Holiday Hong Kong", "Limited", "high", 750),
+        ("KAWS", "Holiday", "Holiday Space Chrome", "Limited", "grail", 1800),
+
+        # ── BE@RBRICK Fashion Grails ───────────────────────────────────────
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 1000% Sorayama Sexy Robot Chrome", "Collab", "grail", 4500),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 400% Sorayama Sexy Robot Silver", "Collab", "high", 600),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 1000% BAPE ABC Camo Green", "Collab", "grail", 3800),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 400% BAPE ABC Camo Pink", "Collab", "high", 700),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 1000% fragment design Black", "Collab", "grail", 5000),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 400% fragment design Navy", "Collab", "high", 800),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 1000% Chanel Black/White", "Collab", "grail", 8000),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 400% Chanel No.5 Gold", "Collab", "grail", 2500),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 1000% Dior Oblique Navy", "Collab", "grail", 6000),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 400% Dior Gray", "Collab", "grail", 2000),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 1000% Mastermind Japan Silver Stripe", "Collab", "grail", 3500),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 400% Kith 10th Anniversary", "Collab", "high", 650),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 1000% Jean-Michel Basquiat #8", "Collab", "grail", 2800),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 400% Andy Warhol Flowers", "Collab", "high", 550),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 1000% Keith Haring #9", "Collab", "grail", 2500),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 400% Banksy Flower Bomber", "Collab", "high", 700),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 1000% Grateful Dead Steal Your Face", "Collab", "grail", 1800),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 400% CLOT Silk Royale", "Collab", "high", 600),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 1000% Karimoku x fragment Black Walnut", "Collab", "grail", 12000),
+        ("Medicom", "BE@RBRICK", "BE@RBRICK 400% Chrome Hearts Silver Cross", "Collab", "grail", 1500),
+
+        # ── Superplastic Supreme / BAPE Collabs ───────────────────────────
+        ("Superplastic", "Guggimon", "Guggimon x Supreme 8-inch Red", "Collab", "high", 550),
+        ("Superplastic", "Guggimon", "Guggimon x Supreme 8-inch Black", "Collab", "high", 500),
+        ("Superplastic", "Janky", "Janky x A Bathing Ape Camo 8-inch", "Collab", "high", 480),
+        ("Superplastic", "Janky", "Janky x A Bathing Ape Baby Milo 8-inch", "Collab", "high", 450),
+        ("Superplastic", "Guggimon", "Guggimon x Gucci Flora 8-inch", "Collab", "grail", 1200),
+        ("Superplastic", "Dayzee", "Dayzee Mutant Edition 8-inch GID", "Limited", "high", 350),
+        ("Superplastic", "Kranky", "Kranky ComplexCon 2024 Exclusive", "ComplexCon Exclusive", "high", 400),
+        ("Superplastic", "Guggimon", "Guggimon Fashion Week Paris 12-inch", "Limited", "high", 600),
+
+        # ── Ron English Expanded ──────────────────────────────────────────
+        ("Ron English", "MC Supersized", "MC Supersized Obama (Red/White/Blue)", "Limited", "high", 800),
+        ("Ron English", "MC Supersized", "MC Supersized Cereal Killer", "Limited", "high", 700),
+        ("Ron English", "Popaganda", "Popaganda Grin 12-inch Orange", "Limited", "high", 500),
+        ("Ron English", "Popaganda", "Popaganda Grin 12-inch Green", "Limited", "high", 500),
+        ("Ron English", "Popaganda", "Popaganda Charlie Grin 8-inch", "Limited", "mid", 350),
+        ("Ron English", "Temper Tot", "Temper Tot Sketracer Edition", "Limited", "mid", 300),
+        ("Ron English", "MC Supersized", "MC Supersized Hulk Grin", "Collab", "high", 650),
+        ("Ron English", "MC Supersized", "MC Supersized Iron Man Grin", "Collab", "high", 650),
+
+        # ── Daniel Arsham Eroded Series ───────────────────────────────────
+        ("Daniel Arsham", "Eroded", "Eroded Pikachu (Crystalized Relic)", "Limited", "grail", 3000),
+        ("Daniel Arsham", "Eroded", "Eroded Basketball", "Limited", "high", 800),
+        ("Daniel Arsham", "Eroded", "Eroded Rubik's Cube Blue", "Limited", "high", 600),
+        ("Daniel Arsham", "Eroded", "Eroded Gameboy Crystal", "Limited", "high", 750),
+        ("Daniel Arsham", "Future Relic", "Future Relic 01 Camera", "Limited", "high", 900),
+        ("Daniel Arsham", "Future Relic", "Future Relic 03 Cassette", "Limited", "high", 800),
+        ("Daniel Arsham", "Future Relic", "Future Relic 06 Keyboard", "Limited", "high", 850),
+        ("Daniel Arsham", "Crystal Relic", "Crystal Relic 002 Newspaper", "Limited", "high", 700),
+        ("Daniel Arsham", "Snarkitecture", "Snarkitecture x Arsham Falling Clock", "Limited", "high", 950),
+
+        # ── BAIT Exclusives Expanded ──────────────────────────────────────
+        ("BAIT", "Astro Boy", "Astro Boy x BAIT Exclusive Chrome 6-inch", "Exclusive", "high", 500),
+        ("BAIT", "Street Fighter", "Akuma x BAIT Exclusive 8-inch", "Exclusive", "high", 450),
+        ("BAIT", "Ultraman", "Ultraman x BAIT Exclusive Glow 8-inch", "Exclusive", "high", 400),
+        ("BAIT", "Naruto", "Naruto Sage Mode x BAIT 8-inch", "Exclusive", "high", 480),
+        ("BAIT", "One Piece", "Luffy Gear 5 x BAIT Exclusive 6-inch", "Exclusive", "high", 520),
+        ("BAIT", "Dragon Ball Z", "Vegeta x BAIT SDCC Exclusive 8-inch", "Exclusive", "high", 550),
+
+        # ── ComplexCon Exclusives Expanded ────────────────────────────────
+        ("ComplexCon", "Takashi Murakami", "Murakami Flower Plush ComplexCon 2024 Rainbow", "ComplexCon Exclusive", "high", 500),
+        ("ComplexCon", "KAWS", "KAWS Holiday ComplexCon Space Figure", "ComplexCon Exclusive", "grail", 1800),
+        ("ComplexCon", "Hebru Brantley", "Flyboy 12-inch ComplexCon Gold", "ComplexCon Exclusive", "high", 700),
+        ("ComplexCon", "Hebru Brantley", "Flyboy 8-inch ComplexCon Blue", "ComplexCon Exclusive", "high", 500),
+        ("ComplexCon", "Verdy", "Verdy x Girls Don't Cry 12-inch", "ComplexCon Exclusive", "high", 600),
+        ("ComplexCon", "Cactus Jack", "Cactus Jack x KAWS Figure ComplexCon", "ComplexCon Exclusive", "grail", 2500),
+        ("ComplexCon", "NIGO", "NIGO x Medicom Human Made Bear 400%", "ComplexCon Exclusive", "high", 800),
+
+        # ── Pop Mart Mega Collection Expansion ────────────────────────────
+        ("Pop Mart", "Space Molly", "Space Molly 1000% Mega Kaws Collab", "Limited", "grail", 2500),
+        ("Pop Mart", "Space Molly", "Space Molly 400% Jelly", "Limited", "high", 800),
+        ("Pop Mart", "LABUBU", "LABUBU The Monsters Pool Party Mega 400%", "Limited", "high", 600),
+        ("Pop Mart", "LABUBU", "LABUBU x Lisa (Blackpink) Special Edition", "Collab", "grail", 1500),
+        ("Pop Mart", "Hirono", "Hirono The Other One Mega 1000%", "Limited", "grail", 2000),
+        ("Pop Mart", "CRYBABY", "CRYBABY Crying Parade Mega 400%", "Limited", "high", 550),
+        ("Pop Mart", "Skullpanda", "Skullpanda Night City Mega 400%", "Limited", "high", 700),
+        ("Pop Mart", "Dimoo", "Dimoo Aquarium World 400%", "Limited", "high", 500),
+        ("Pop Mart", "Zsiga", "Zsiga We're So Good Together 400%", "Limited", "high", 450),
+        ("Pop Mart", "Sweet Bean", "Sweet Bean Supermarket Series Full Case (12)", "Blind Box Set", "mid", 120),
+
+        # ── Coarse Expanded ───────────────────────────────────────────────
+        ("Coarse", "Omen", "Omen Cerberus Edition", "Limited", "grail", 1800),
+        ("Coarse", "Noop", "Noop Fade Edition (Black to White)", "Limited", "high", 600),
+        ("Coarse", "Pain", "Pain & Gain Full Set (4 figures)", "Limited", "grail", 1500),
+        ("Coarse", "Top", "Top (Ignited) GID Edition", "Limited", "high", 700),
+        ("Coarse", "False Friends", "False Friends 2nd Edition Vinyl Set", "Limited", "high", 550),
+
+        # ── Luke Chueh / Clutter Gallery ──────────────────────────────────
+        ("Luke Chueh", "Possessed", "Possessed Bear 8-inch OG White", "Limited", "high", 500),
+        ("Luke Chueh", "Possessed", "Possessed Bear 8-inch Blood Red", "Limited", "high", 550),
+        ("Luke Chueh", "Headspace", "Headspace Bear 10-inch Black", "Limited", "high", 600),
+        ("Clutter Gallery", "Quiccs TEQ63", "TEQ63 OG Colorway 6-inch", "Limited", "high", 450),
+        ("Clutter Gallery", "Quiccs TEQ63", "TEQ63 Gold Chrome 6-inch", "Limited", "high", 500),
+        ("Clutter Gallery", "Quiccs TEQ63", "TEQ63 Martian Red 12-inch", "Limited", "high", 650),
+
+        # ── Fools Paradise Deep Cuts ──────────────────────────────────────
+        ("Fools Paradise", "Astro Boy", "Astro Boy OG Edition 12-inch", "Limited", "high", 800),
+        ("Fools Paradise", "Jack Torrance", "Jack Here's Johnny 12-inch", "Limited", "high", 750),
+        ("Fools Paradise", "El Chapo", "El Chapo 12-inch", "Limited", "high", 700),
+        ("Fools Paradise", "Walter White", "Walter White Heisenberg 12-inch", "Limited", "high", 650),
+
+        # ── INSTINCTOY / T9G ─────────────────────────────────────────────
+        ("INSTINCTOY", "Liquid Series", "Liquid Erosion 1st Color Clear Blue", "Limited", "high", 500),
+        ("INSTINCTOY", "Liquid Series", "Liquid Erosion Chrome Silver", "Limited", "high", 600),
+        ("T9G", "Rangeas", "Rangeas Standard Size Pink", "Limited", "mid", 350),
+        ("T9G", "Rangeas", "Rangeas Jumbo 14-inch Clear Green", "Limited", "high", 800),
+
+        # ── Sticky Monster Lab ────────────────────────────────────────────
+        ("Sticky Monster Lab", "SML", "Kibon 10-inch OG Blue", "Limited", "mid", 300),
+        ("Sticky Monster Lab", "SML", "Kibon 10-inch Black", "Limited", "mid", 320),
+        ("Sticky Monster Lab", "SML", "SML Family Set (6 figures)", "Limited", "high", 550),
+
+        # ── How2Work ──────────────────────────────────────────────────────
+        ("How2Work", "Backyard Salmon", "Backyard Salmon OG 12-inch", "Limited", "high", 500),
+        ("How2Work", "Backyard Salmon", "Backyard Salmon x Fragment 12-inch", "Collab", "high", 700),
+        ("How2Work", "Elfie", "Elfie 8-inch White", "Limited", "mid", 280),
     ]
 
     catalog = []

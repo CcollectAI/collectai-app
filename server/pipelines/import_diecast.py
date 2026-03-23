@@ -1515,6 +1515,148 @@ def _variant_expansion() -> list[dict]:
         ("Hot Wheels", "Star Trek USS Enterprise NCC-1701 (2009 Film)", "1:64", "SDCC 2009 Exclusive", "high", 150),
         ("Corgi", "Star Trek USS Enterprise NCC-1701 (Vintage)", "1:600", "Corgi Classics", "high", 180),
         ("Johnny Lightning", "Star Trek Enterprise NCC-1701 (White Lightning Chase)", "1:64", "Johnny Lightning Legends", "high", 100),
+
+        # ── Hot Wheels RLC (additional) ───────────────────────────────────
+        ("Hot Wheels RLC", "Custom '69 Volkswagen Squareback", "1:64", "RLC Exclusive 2024", "high", 130),
+        ("Hot Wheels RLC", "'70 Dodge Hemi Challenger", "1:64", "RLC Exclusive 2024", "high", 140),
+        ("Hot Wheels RLC", "Datsun 240Z (Street Tuner)", "1:64", "RLC Exclusive 2024", "high", 160),
+        ("Hot Wheels RLC", "Nissan Laurel SGX (C130)", "1:64", "RLC Exclusive 2023", "high", 145),
+        ("Hot Wheels RLC", "'73 BMW 3.0 CSL Race Car", "1:64", "RLC Exclusive 2023", "grail", 180),
+        ("Hot Wheels RLC", "Porsche 964 Singer", "1:64", "RLC Exclusive 2024", "grail", 200),
+        ("Hot Wheels RLC", "Toyota Land Cruiser FJ40", "1:64", "RLC Exclusive 2024", "high", 120),
+        ("Hot Wheels RLC", "Mazda REPU Pickup", "1:64", "RLC Exclusive 2023", "high", 130),
+        ("Hot Wheels RLC", "'82 Lamborghini Countach LP500 S", "1:64", "RLC Exclusive 2024", "grail", 200),
+        ("Hot Wheels RLC", "'55 Chevy Bel Air Gasser (Chrome)", "1:64", "RLC Exclusive 2024", "grail", 180),
+
+        # ── Tomica Limited Vintage Neo (JDM) ─────────────────────────────
+        ("Tomica", "Nissan Skyline GT-R (KPGC10) Green", "1:64", "TLV Neo LV-N214a", "mid", 35),
+        ("Tomica", "Nissan Skyline GT-R (BNR32) White", "1:64", "TLV Neo LV-N213b", "mid", 32),
+        ("Tomica", "Nissan Skyline GT-R (BCNR33) Purple", "1:64", "TLV Neo LV-N217c", "mid", 30),
+        ("Tomica", "Nissan Skyline GT-R (BNR34) V-Spec II Bayside Blue", "1:64", "TLV Neo LV-N217a", "mid", 45),
+        ("Tomica", "Toyota Supra RZ (A80) White", "1:64", "TLV Neo LV-N232a", "mid", 38),
+        ("Tomica", "Toyota Supra RZ (A80) Black", "1:64", "TLV Neo LV-N232b", "mid", 38),
+        ("Tomica", "Mazda RX-7 (FD3S) Type RS Red", "1:64", "TLV Neo LV-N267a", "mid", 35),
+        ("Tomica", "Mazda RX-7 (FC3S) Savanna Silver", "1:64", "TLV Neo LV-N192a", "mid", 30),
+        ("Tomica", "Toyota Sprinter Trueno AE86 (Initial D)", "1:64", "TLV Neo LV-N235", "mid", 50),
+        ("Tomica", "Nissan Silvia (S13) K's White", "1:64", "TLV Neo LV-N235c", "mid", 30),
+        ("Tomica", "Nissan 180SX Type II (RPS13)", "1:64", "TLV Neo LV-N235d", "mid", 28),
+        ("Tomica", "Honda NSX (NA1) Type R Red", "1:64", "TLV Neo LV-N228a", "mid", 42),
+        ("Tomica", "Honda Civic Type R (EK9) White", "1:64", "TLV Neo LV-N256a", "mid", 35),
+        ("Tomica", "Mitsubishi Lancer Evo VI GSR (Tommi Makinen)", "1:64", "TLV Neo LV-N190a", "mid", 40),
+        ("Tomica", "Subaru Impreza WRX STi (GC8) Blue", "1:64", "TLV Neo LV-N218b", "mid", 38),
+        ("Tomica", "Nissan Fairlady Z (S30) Orange", "1:64", "TLV Neo LV-N41d", "mid", 32),
+
+        # ── 1:18 Premium (additional) ────────────────────────────────────
+        ("AUTOart", "Lexus LFA (Nurburgring Package)", "1:18", "Composite", "grail", 400),
+        ("AUTOart", "Nissan Skyline GT-R (KPGC10) Hakosuka", "1:18", "Composite", "grail", 350),
+        ("AUTOart", "Porsche 911 (991.2) GT2 RS Weissach", "1:18", "Composite", "grail", 380),
+        ("AUTOart", "Honda NSX (NA1) Type R Red", "1:18", "Composite", "high", 250),
+        ("AUTOart", "DeLorean DMC-12 (Back to the Future)", "1:18", "Composite", "high", 200),
+        ("CMC", "Ferrari 250 GTO (1962) Red", "1:18", "CMC Premium", "grail", 600),
+        ("CMC", "Mercedes-Benz W196 Streamliner", "1:18", "CMC Premium", "grail", 550),
+        ("CMC", "Bugatti Type 57 SC Atlantic", "1:18", "CMC Premium", "grail", 700),
+        ("CMC", "Maserati Tipo 61 Birdcage #66", "1:18", "CMC Premium", "grail", 500),
+        ("Amalgam", "Ferrari F40 (1:18 Resin)", "1:18", "Amalgam Resin", "grail", 900),
+        ("Amalgam", "McLaren F1 (1:18 Resin)", "1:18", "Amalgam Resin", "grail", 1000),
+        ("BBR", "Ferrari 296 GTB Rosso Corsa", "1:18", "BBR Premium", "grail", 400),
+        ("BBR", "Ferrari SF90 Stradale Rosso Corsa", "1:18", "BBR Premium", "grail", 380),
+
+        # ── Matchbox 70th Anniversary & Special ──────────────────────────
+        ("Matchbox", "1962 Volkswagen Beetle (70th Anniversary)", "1:64", "70th Anniversary LE", "mid", 25),
+        ("Matchbox", "1971 MGB GT Coupe (70th Anniversary)", "1:64", "70th Anniversary LE", "mid", 22),
+        ("Matchbox", "1964 Austin Mini Cooper S (70th Anniversary)", "1:64", "70th Anniversary LE", "mid", 22),
+        ("Matchbox", "Land Rover Defender 110 (70th Anniversary)", "1:64", "70th Anniversary LE", "mid", 25),
+        ("Matchbox", "Tesla Roadster 2020 (Moving Parts)", "1:64", "Matchbox Moving Parts", "standard", 8),
+        ("Matchbox", "Ford Bronco (2021, Moving Parts)", "1:64", "Matchbox Moving Parts", "standard", 8),
+
+        # ── Hot Wheels Convention Exclusives ──────────────────────────────
+        ("Hot Wheels", "Japan Convention '67 Camaro (2024)", "1:64", "HW Japan Convention Exclusive", "grail", 200),
+        ("Hot Wheels", "Mexico Convention Datsun 620 (2024)", "1:64", "HW Mexico Convention Exclusive", "grail", 180),
+        ("Hot Wheels", "Indonesia Convention VW Drag Bus (2024)", "1:64", "HW Indonesia Convention Exclusive", "grail", 250),
+        ("Hot Wheels", "Nationals Convention '69 Mustang Boss 302 (2024)", "1:64", "HW Nationals Exclusive", "grail", 300),
+        ("Hot Wheels", "Collectors Convention Volkswagen T1 Panel (2024)", "1:64", "HW Convention Exclusive", "grail", 220),
+        ("Hot Wheels", "Brazil Convention VW Kombi (2024)", "1:64", "HW Brazil Convention Exclusive", "grail", 200),
+
+        # ── Tarmac Works & INNO64 (JDM Racing, additional) ───────────────
+        ("Tarmac Works", "Toyota AE86 Corolla Levin Initial D", "1:64", "Tarmac Works Hobby64", "mid", 25),
+        ("Tarmac Works", "Nissan Skyline GT-R R34 Nismo S-tune", "1:64", "Tarmac Works LE", "mid", 25),
+        ("Tarmac Works", "Mitsubishi Lancer Evo VI TME Rally", "1:64", "Tarmac Works Rally", "mid", 22),
+        ("Tarmac Works", "Toyota Supra A80 JZA80 TRD (Tarmac)", "1:64", "Tarmac Works Hobby64", "mid", 22),
+        ("Tarmac Works", "Honda Civic Type R FK8 Time Attack", "1:64", "Tarmac Works LE", "mid", 20),
+        ("Inno64", "Honda S2000 AP1 Mugen GP", "1:64", "Inno64 LE", "mid", 20),
+        ("Inno64", "Nissan Silvia S15 Rocket Bunny", "1:64", "Inno64 LE", "mid", 20),
+        ("Inno64", "Mazda MX-5 (NA) Eunos Roadster", "1:64", "Inno64 LE", "mid", 18),
+        ("Inno64", "Toyota AE86 Sprinter Trueno (Drift King)", "1:64", "Inno64 LE", "mid", 18),
+
+        # ── Kyosho 1:64 (additional) ─────────────────────────────────────
+        ("Kyosho", "Toyota AE86 Sprinter Trueno White/Black", "1:64", "Kyosho JDM Series 3", "standard", 15),
+        ("Kyosho", "Nissan Skyline GT-R R32 Gunmetal Grey", "1:64", "Kyosho JDM Series 3", "standard", 15),
+        ("Kyosho", "Nissan Fairlady Z (RZ34) Seiran Blue", "1:64", "Kyosho JDM Series 3", "standard", 15),
+        ("Kyosho", "Subaru Impreza 22B STi Blue", "1:64", "Kyosho JDM Series 3", "mid", 20),
+        ("Kyosho", "Porsche 911 GT3 (992) Racing Yellow", "1:64", "Kyosho MiniCar Collection", "standard", 15),
+        ("Kyosho", "Ferrari 488 GTB Rosso Corsa", "1:64", "Kyosho MiniCar Collection", "standard", 14),
+
+        # ── More Hot Wheels Super Treasure Hunts ($TH) ────────────────────
+        ("Hot Wheels $TH", "Ford GT (2024 $TH)", "1:64", "Super Treasure Hunt 2024", "high", 80),
+        ("Hot Wheels $TH", "Pagani Huayra (2024 $TH)", "1:64", "Super Treasure Hunt 2024", "mid", 65),
+        ("Hot Wheels $TH", "Nissan 300ZX (Z32) (2024 $TH)", "1:64", "Super Treasure Hunt 2024", "mid", 60),
+        ("Hot Wheels $TH", "Toyota Supra A80 (2025 $TH)", "1:64", "Super Treasure Hunt 2025", "high", 90),
+        ("Hot Wheels $TH", "Lamborghini Countach LPI 800-4 (2025 $TH)", "1:64", "Super Treasure Hunt 2025", "high", 85),
+        ("Hot Wheels $TH", "Corvette C8 Z06 (2025 $TH)", "1:64", "Super Treasure Hunt 2025", "mid", 60),
+        ("Hot Wheels $TH", "BMW M4 CSL (2025 $TH)", "1:64", "Super Treasure Hunt 2025", "mid", 55),
+
+        # ── Hot Wheels RLC (Red Line Club — additional) ─────────────────
+        ("Hot Wheels RLC", "'70 Dodge Challenger (Spectraflame Green)", "1:64", "RLC Exclusive 2024 Spectraflame", "grail", 220),
+        ("Hot Wheels RLC", "BMW 507 (Spectraflame Light Blue)", "1:64", "RLC Exclusive 2024 Spectraflame", "high", 150),
+        ("Hot Wheels RLC", "'67 Camaro (Spectraflame Red)", "1:64", "RLC Exclusive Membership Car 2024", "high", 130),
+        ("Hot Wheels RLC", "McLaren F1 GTR (Spectraflame Orange)", "1:64", "RLC Exclusive 2024", "grail", 250),
+        ("Hot Wheels RLC", "Nissan Skyline GT-R (R33) (Spectraflame Purple)", "1:64", "RLC Exclusive 2024", "grail", 200),
+        ("Hot Wheels RLC", "'55 Bel Air Gasser (Convention Exclusive 2024)", "1:64", "Convention Exclusive", "grail", 300),
+        ("Hot Wheels RLC", "Porsche 911 GT3 RS (RLC Membership 2025)", "1:64", "RLC Membership Car 2025", "high", 120),
+        ("Hot Wheels RLC", "Ford GT40 (Spectraflame Gold)", "1:64", "RLC Exclusive 2025", "grail", 230),
+        ("Hot Wheels RLC", "'71 Plymouth GTX (Convention Exclusive 2025)", "1:64", "Convention Exclusive", "grail", 280),
+
+        # ── Tomica Limited Vintage Neo (additional) ─────────────────────
+        ("Tomica LV-N", "Nissan Skyline GT-R R32 V-Spec (White)", "1:64", "Tomica LV-N234a", "mid", 45),
+        ("Tomica LV-N", "Nissan Skyline GT-R R32 V-Spec II (Gun Grey)", "1:64", "Tomica LV-N234b", "mid", 50),
+        ("Tomica LV-N", "Nissan Skyline GT-R R33 V-Spec (Midnight Purple)", "1:64", "Tomica LV-N235a", "high", 65),
+        ("Tomica LV-N", "Nissan Skyline GT-R R33 V-Spec (Sonic Silver)", "1:64", "Tomica LV-N235b", "mid", 50),
+        ("Tomica LV-N", "Nissan Skyline GT-R R34 V-Spec II Nür (Millenium Jade)", "1:64", "Tomica LV-N236a", "high", 80),
+        ("Tomica LV-N", "Toyota Supra RZ (A70) White", "1:64", "Tomica LV-N237a", "mid", 45),
+        ("Tomica LV-N", "Toyota Supra RZ (A80) Silver", "1:64", "Tomica LV-N237b", "high", 60),
+        ("Tomica LV-N", "Toyota GR Supra (A90) Prominence Red", "1:64", "Tomica LV-N237c", "mid", 40),
+        ("Tomica LV-N", "Mazda RX-7 FC3S Infini (Crystal White)", "1:64", "Tomica LV-N238a", "mid", 50),
+        ("Tomica LV-N", "Mazda RX-7 FD3S Type RS (Brilliant Black)", "1:64", "Tomica LV-N238b", "high", 65),
+        ("Tomica LV-N", "Mazda RX-7 FD3S Spirit R Type A (Titanium Grey)", "1:64", "Tomica LV-N238c", "high", 75),
+        ("Tomica LV-N", "Honda NSX (NA1) Type R (Championship White)", "1:64", "Tomica LV-N239a", "high", 70),
+        ("Tomica LV-N", "Honda NSX (NA2) Type S (New Formula Red)", "1:64", "Tomica LV-N239b", "high", 65),
+
+        # ── AUTOart 1:18 (latest releases) ─────────────────────────────
+        ("AUTOart", "Nissan Skyline GT-R R34 V-Spec II Nür (Millenium Jade)", "1:18", "AUTOart 77408", "grail", 350),
+        ("AUTOart", "Toyota 2000GT (White)", "1:18", "AUTOart 78754", "high", 280),
+        ("AUTOart", "Lamborghini Countach LPI 800-4 (Bianco Siderale)", "1:18", "AUTOart 79244", "high", 250),
+        ("AUTOart", "Porsche 911 (992) GT3 RS (Weissach Package)", "1:18", "AUTOart 78165", "high", 280),
+        ("AUTOart", "McLaren 720S (Glacier White)", "1:18", "AUTOart 76074", "high", 240),
+        ("AUTOart", "Ford GT (2017) (Liquid Blue)", "1:18", "AUTOart 72944", "high", 260),
+        ("AUTOart", "Koenigsegg Agera RS (Naraya)", "1:18", "AUTOart 79024", "grail", 400),
+
+        # ── Mini GT Chase / Raw Cars ────────────────────────────────────
+        ("Mini GT", "Nissan Skyline GT-R R34 V-Spec (Chase)", "1:64", "Mini GT #589 Chase", "mid", 45),
+        ("Mini GT", "Porsche 911 (992) GT3 (Chase)", "1:64", "Mini GT #630 Chase", "mid", 40),
+        ("Mini GT", "Lamborghini Huracán STO (Chase)", "1:64", "Mini GT #523 Chase", "mid", 35),
+        ("Mini GT", "Toyota Supra GR A90 (Raw)", "1:64", "Mini GT Raw Zamac", "mid", 50),
+        ("Mini GT", "Bugatti Chiron Pur Sport (Chase)", "1:64", "Mini GT #428 Chase", "mid", 45),
+        ("Mini GT", "McLaren Senna (Raw)", "1:64", "Mini GT Raw Zamac", "mid", 55),
+        ("Mini GT", "Ford GT MkII (Chase)", "1:64", "Mini GT #297 Chase", "mid", 40),
+
+        # ── Tarmac Works Racing Liveries ────────────────────────────────
+        ("Tarmac Works", "Mercedes-AMG GT3 Evo Craft-Bamboo #77", "1:64", "Tarmac Works GT Cup", "mid", 30),
+        ("Tarmac Works", "Porsche 911 GT3 R (992) Martini Racing", "1:64", "Tarmac Works Hobby64", "mid", 35),
+        ("Tarmac Works", "Nissan GT-R Nismo GT3 KONDO Racing", "1:64", "Tarmac Works Super GT", "mid", 30),
+        ("Tarmac Works", "BMW M4 GT3 Turner Motorsport", "1:64", "Tarmac Works Hobby64", "mid", 28),
+        ("Tarmac Works", "Toyota GR Supra GT4 Rookie Racing", "1:64", "Tarmac Works Super GT", "standard", 25),
+        ("Tarmac Works", "Audi R8 LMS GT3 Evo II Audi Sport", "1:64", "Tarmac Works GT Cup", "mid", 30),
+        ("Tarmac Works", "Honda Civic Type R FK8 BTCC Champion", "1:64", "Tarmac Works Hobby64", "mid", 28),
     ]
     catalog = []
     for brand, name, scale, variant, tier, price in variants:

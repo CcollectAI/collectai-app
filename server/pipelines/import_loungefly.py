@@ -1424,6 +1424,7 @@ def get_curated_catalog() -> list[dict]:
             "price_eur": price,
         })
     catalog.extend(_variant_expansion())
+    catalog.extend(_expansion_1150_most_searched())
     # Deduplicate by ('franchise', 'name', 'item_type') (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
@@ -1514,6 +1515,146 @@ def _variant_expansion() -> list[dict]:
     ]
     catalog = []
     for franchise, name, item_type, exclusive, tier, price in variants:
+        catalog.append({
+            "franchise": franchise,
+            "name": name,
+            "item_type": item_type,
+            "exclusive": exclusive,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
+
+
+def _expansion_1150_most_searched() -> list[dict]:
+    """~140 most-searched Loungefly items: Disney villains, Pixar, NBC, sequin,
+    wallets/crossbody, parks exclusive, Pride, pet collections."""
+    items = [
+        # ── Disney Villains ─────────────────────────────────────────────────
+        ("Disney", "Maleficent Dragon Scene Mini Backpack", "Mini Backpack", "Hot Topic", "grail", 130),
+        ("Disney", "Maleficent Flames Glow-in-the-Dark Mini Backpack", "Mini Backpack", "BoxLunch", "high", 95),
+        ("Disney", "Evil Queen Poison Apple Sequin Mini Backpack", "Mini Backpack", "Hot Topic", "high", 90),
+        ("Disney", "Evil Queen Transformation Scene Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "high", 85),
+        ("Disney", "Ursula Tentacles Iridescent Mini Backpack", "Mini Backpack", "Hot Topic", "high", 88),
+        ("Disney", "Ursula Poor Unfortunate Souls Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 92),
+        ("Disney", "Scar Be Prepared Mini Backpack", "Mini Backpack", "Hot Topic", "high", 85),
+        ("Disney", "Scar Green Flames Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Disney", "Cruella De Vil Spots Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "mid", 65),
+        ("Disney", "Jafar Snake Staff Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Disney", "Hades Ember Glow Mini Backpack", "Mini Backpack", "BoxLunch", "high", 78),
+        ("Disney", "Captain Hook Jolly Roger Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "mid", 58),
+        ("Disney", "Gaston Tavern Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Disney", "Villains Book Crossbody (All Villains Portraits)", "Crossbody", "BoxLunch", "high", 75),
+        ("Disney", "Villains Scenes Wallet (All-Over Print)", "Wallet", "Hot Topic", "mid", 45),
+        # ── Pixar ───────────────────────────────────────────────────────────
+        ("Pixar", "Inside Out 2 Anxiety Mini Backpack", "Mini Backpack", "BoxLunch", "high", 78),
+        ("Pixar", "Inside Out 2 All Emotions Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "high", 80),
+        ("Pixar", "Inside Out 2 Joy & Sadness Wallet", "Wallet", "Standard", "mid", 38),
+        ("Pixar", "Inside Out 2 Ennui Crossbody", "Crossbody", "BoxLunch", "mid", 52),
+        ("Pixar", "Ratatouille Remy Cooking Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Pixar", "Ratatouille Anyone Can Cook Crossbody", "Crossbody", "Standard", "mid", 48),
+        ("Pixar", "Coco Marigold Bridge Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 82),
+        ("Pixar", "Coco Remember Me Guitar Crossbody", "Crossbody", "Loungefly Exclusive", "mid", 55),
+        ("Pixar", "Coco Pepita & Dante Mini Backpack", "Mini Backpack", "Hot Topic", "high", 78),
+        ("Pixar", "Up Adventure Book Mini Backpack", "Mini Backpack", "BoxLunch", "grail", 110),
+        ("Pixar", "Up Carl & Ellie Balloon House Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "high", 90),
+        ("Pixar", "Up Grape Soda Pin Wallet", "Wallet", "Standard", "mid", 35),
+        ("Pixar", "Turning Red Mei Lee Panda Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Pixar", "Luca Sea Monster Scene Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 58),
+        ("Pixar", "Wall-E & Eve Boot Plant Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("Pixar", "Monsters Inc Boo's Door Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "high", 80),
+        # ── Nightmare Before Christmas (NBC) ────────────────────────────────
+        ("NBC", "Oogie Boogie Burlap Textured Mini Backpack", "Mini Backpack", "Hot Topic", "high", 88),
+        ("NBC", "Oogie Boogie Blacklight Mini Backpack", "Mini Backpack", "BoxLunch", "high", 85),
+        ("NBC", "Oogie Boogie Casino Scene Crossbody", "Crossbody", "Hot Topic", "mid", 55),
+        ("NBC", "Lock Shock & Barrel Bathtub Mini Backpack", "Mini Backpack", "BoxLunch", "high", 82),
+        ("NBC", "Lock Shock & Barrel Trick-or-Treat Mini Backpack", "Mini Backpack", "Hot Topic", "high", 78),
+        ("NBC", "Lock Shock & Barrel Wallet", "Wallet", "Standard", "mid", 38),
+        ("NBC", "Zero Ghost Dog Glow Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("NBC", "Spiral Hill Jack & Sally Scene Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "high", 85),
+        ("NBC", "Jack Skellington Pumpkin King Sequin Mini Backpack", "Mini Backpack", "Hot Topic", "high", 90),
+        ("NBC", "Sally Patchwork Mini Backpack (Glow Stitches)", "Mini Backpack", "BoxLunch", "high", 82),
+        # ── Sequin Editions ─────────────────────────────────────────────────
+        ("Disney", "Minnie Mouse Rose Gold Sequin Mini Backpack", "Mini Backpack", "Disney Parks", "high", 85),
+        ("Disney", "Minnie Mouse Pastel Rainbow Sequin Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "high", 80),
+        ("Disney", "Mickey Mouse Silver Sequin Mini Backpack", "Mini Backpack", "Standard", "mid", 65),
+        ("Disney", "Ariel Green/Purple Sequin Flip Mini Backpack", "Mini Backpack", "Hot Topic", "high", 78),
+        ("Disney", "Rapunzel Purple/Gold Sequin Mini Backpack", "Mini Backpack", "BoxLunch", "high", 75),
+        ("Disney", "Stitch Blue Sequin Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "high", 80),
+        ("Disney", "Tinker Bell Green Sequin Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 68),
+        ("Disney", "Cinderella Blue Sequin Mini Backpack", "Mini Backpack", "Hot Topic", "high", 75),
+        ("Disney", "Belle Gold Sequin Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "mid", 70),
+        ("Disney", "Elsa Ice Blue Sequin Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "mid", 72),
+        # ── Wallet / Crossbody for Popular Backpacks ────────────────────────
+        ("Disney", "Haunted Mansion Hitchhiking Ghosts Wallet", "Wallet", "BoxLunch", "mid", 42),
+        ("Disney", "Haunted Mansion Madame Leota Crossbody", "Crossbody", "Disney Parks", "high", 68),
+        ("Disney", "Stitch Pineapple Crossbody", "Crossbody", "BoxLunch", "mid", 50),
+        ("Disney", "Stitch Hibiscus Wallet", "Wallet", "Standard", "mid", 35),
+        ("Disney", "Alice in Wonderland Cheshire Cat Crossbody", "Crossbody", "Hot Topic", "mid", 55),
+        ("Disney", "Alice in Wonderland Tea Party Wallet", "Wallet", "BoxLunch", "mid", 38),
+        ("Disney", "Bambi & Thumper Scene Crossbody", "Crossbody", "Loungefly Exclusive", "mid", 52),
+        ("Disney", "Dumbo Circus Crossbody", "Crossbody", "BoxLunch", "mid", 48),
+        ("Disney", "Lady and the Tramp Spaghetti Scene Crossbody", "Crossbody", "Loungefly Exclusive", "mid", 55),
+        ("Disney", "Aristocats Everybody Wants to Be a Cat Wallet", "Wallet", "Standard", "mid", 35),
+        ("Disney", "101 Dalmatians Cruella Book Crossbody", "Crossbody", "Hot Topic", "mid", 52),
+        ("Disney", "Princess & the Frog Tiana Wallet", "Wallet", "BoxLunch", "mid", 38),
+        # ── Disney Parks Exclusive Loungefly ────────────────────────────────
+        ("Disney", "Disneyland 70th Anniversary Mini Backpack (Parks Exclusive)", "Mini Backpack", "Disney Parks", "grail", 120),
+        ("Disney", "EPCOT Flower & Garden Festival 2025 Mini Backpack", "Mini Backpack", "Disney Parks", "high", 85),
+        ("Disney", "Figment Rainbow One Little Spark Mini Backpack (Parks)", "Mini Backpack", "Disney Parks", "high", 90),
+        ("Disney", "Orange Bird EPCOT Parks Exclusive Mini Backpack", "Mini Backpack", "Disney Parks", "high", 88),
+        ("Disney", "Polynesian Resort Tiki Mini Backpack (Parks)", "Mini Backpack", "Disney Parks", "high", 85),
+        ("Disney", "Main Street Confectionery Mini Backpack (Parks)", "Mini Backpack", "Disney Parks", "high", 80),
+        ("Disney", "Galaxy's Edge Millennium Falcon Mini Backpack (Parks)", "Mini Backpack", "Disney Parks", "high", 82),
+        ("Disney", "Tron Lightcycle Run Light-Up Mini Backpack (Parks)", "Mini Backpack", "Disney Parks", "grail", 110),
+        ("Disney", "WDW 50th EARidescent Mini Backpack (Parks Exclusive)", "Mini Backpack", "Disney Parks", "grail", 125),
+        ("Disney", "Animal Kingdom Tree of Life Mini Backpack (Parks)", "Mini Backpack", "Disney Parks", "high", 78),
+        # ── Pride Collection ────────────────────────────────────────────────
+        ("Disney", "Mickey Mouse Pride Rainbow Flag Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "mid", 65),
+        ("Disney", "Mickey Mouse Pride Rainbow Heart Crossbody", "Crossbody", "BoxLunch", "mid", 48),
+        ("Disney", "Mickey Mouse Pride Rainbow Wallet", "Wallet", "Standard", "mid", 35),
+        ("Sanrio", "Hello Kitty Pride Rainbow Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "mid", 62),
+        ("Lisa Frank", "Lisa Frank x Loungefly Pride Rainbow Tiger Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "mid", 60),
+        ("Care Bears", "Care Bears Pride Rainbow Heart Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+        ("My Little Pony", "My Little Pony Pride Rainbow Dash Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "mid", 55),
+        # ── Pet Collections ─────────────────────────────────────────────────
+        ("Disney", "Mickey Mouse Pet Harness & Leash Set", "Pet Accessory", "Loungefly Exclusive", "mid", 45),
+        ("Disney", "Stitch Pet Harness & Leash Set", "Pet Accessory", "Loungefly Exclusive", "mid", 45),
+        ("Disney", "Minnie Mouse Pet Carrier (Mini Backpack Style)", "Pet Accessory", "Loungefly Exclusive", "high", 75),
+        ("Disney", "Mickey Mouse Pet Carrier (Mini Backpack Style)", "Pet Accessory", "Loungefly Exclusive", "high", 75),
+        ("Star Wars", "Darth Vader Pet Harness & Leash Set", "Pet Accessory", "Loungefly Exclusive", "mid", 48),
+        ("Star Wars", "Grogu Pet Carrier (Mini Backpack Style)", "Pet Accessory", "Loungefly Exclusive", "high", 78),
+        ("Disney", "Lady and the Tramp Pet Bandana Set", "Pet Accessory", "Loungefly Exclusive", "mid", 28),
+        ("Disney", "101 Dalmatians Pet Harness & Leash Set", "Pet Accessory", "Loungefly Exclusive", "mid", 45),
+        # ── Additional High-Demand Lines ────────────────────────────────────
+        ("Sanrio", "Kuromi & My Melody Contrast Mini Backpack", "Mini Backpack", "Hot Topic", "high", 78),
+        ("Sanrio", "Cinnamoroll Cloud Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Sanrio", "Pompompurin Pudding Cup Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "mid", 60),
+        ("Sanrio", "Hello Kitty 50th Anniversary Gold Mini Backpack", "Mini Backpack", "Loungefly Exclusive", "high", 85),
+        ("Pokemon", "Pikachu Pokeball Mini Backpack", "Mini Backpack", "BoxLunch", "high", 78),
+        ("Pokemon", "Eevee Evolutions Mini Backpack", "Mini Backpack", "Hot Topic", "high", 82),
+        ("Pokemon", "Gengar Ghost Glow Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Marvel", "Scarlet Witch Crown Mini Backpack", "Mini Backpack", "BoxLunch", "high", 78),
+        ("Marvel", "Loki Helmet Sequin Mini Backpack", "Mini Backpack", "Hot Topic", "high", 82),
+        ("Harry Potter", "Deathly Hallows Sequin Mini Backpack", "Mini Backpack", "BoxLunch", "high", 80),
+        ("Harry Potter", "Hogwarts Book Crossbody (All Houses)", "Crossbody", "Loungefly Exclusive", "mid", 55),
+        ("Studio Ghibli", "Totoro Catbus Mini Backpack", "Mini Backpack", "BoxLunch", "grail", 110),
+        ("Studio Ghibli", "Spirited Away No-Face Mini Backpack", "Mini Backpack", "BoxLunch", "high", 90),
+        ("Studio Ghibli", "Kiki's Delivery Service Jiji Mini Backpack", "Mini Backpack", "Hot Topic", "high", 85),
+        ("Pixar", "Toy Story Claw Machine Crossbody", "Crossbody", "BoxLunch", "mid", 55),
+        ("Pixar", "Finding Nemo Submarine Voyage Mini Backpack", "Mini Backpack", "Disney Parks", "high", 80),
+        ("Disney", "Moana Kakamora Coconut Crossbody", "Crossbody", "Loungefly Exclusive", "mid", 52),
+        ("Disney", "Encanto Casita Mirabel Mini Backpack", "Mini Backpack", "BoxLunch", "high", 78),
+        ("Disney", "Wish Star Mini Backpack (Glow)", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Disney", "Sleeping Beauty Fairies Mini Backpack (Flora/Fauna/Merryweather)", "Mini Backpack", "Loungefly Exclusive", "high", 80),
+        ("Disney", "Pocahontas Meeko Crossbody", "Crossbody", "BoxLunch", "mid", 50),
+        ("Disney", "Mulan Mushu Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Disney", "Lilo & Stitch Scrump Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Disney", "Winnie the Pooh Honey Pot Crossbody", "Crossbody", "Loungefly Exclusive", "mid", 52),
+        ("Disney", "Robin Hood Prince John Crown Jewels Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+    ]
+    catalog = []
+    for franchise, name, item_type, exclusive, tier, price in items:
         catalog.append({
             "franchise": franchise,
             "name": name,

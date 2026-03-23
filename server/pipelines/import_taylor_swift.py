@@ -1325,6 +1325,133 @@ def get_curated_catalog() -> list[dict]:
         ("Taylor Swift", "merch", "Snow Globe Shake It Off (2022 Holiday)", "Holiday Collection", "high", 80),
         ("Taylor Swift", "merch", "Midnights Holiday Gift Box Set", "Holiday Collection", "mid", 65),
         ("Taylor Swift", "merch", "Christmas Tree Farm Scented Candle (Official)", "Holiday Collection", "mid", 40),
+
+        # ── Round 35b: City Posters, Cassettes, Signed Items, Pop-up, International, Reputation — 129 items ──
+
+        # Eras Tour City Posters (+16)
+        ("Eras Tour", "poster", "Eras Tour City Poster — London Wembley Night 1", "Tour Exclusive", "high", 120),
+        ("Eras Tour", "poster", "Eras Tour City Poster — London Wembley Night 5", "Tour Exclusive", "high", 130),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Paris La Defense Arena", "Tour Exclusive", "high", 100),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Tokyo Dome Night 1", "Tour Exclusive", "grail", 180),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Tokyo Dome Night 4", "Tour Exclusive", "grail", 200),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Sydney Accor Stadium", "Tour Exclusive", "high", 90),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Singapore National Stadium", "Tour Exclusive", "high", 110),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Amsterdam Johan Cruyff Arena", "Tour Exclusive", "high", 95),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Vienna Ernst Happel Stadion", "Tour Exclusive", "high", 85),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Zurich Letzigrund", "Tour Exclusive", "high", 80),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Munich Olympiastadion", "Tour Exclusive", "high", 85),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Edinburgh Murrayfield", "Tour Exclusive", "high", 90),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Cardiff Principality Stadium", "Tour Exclusive", "high", 80),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Liverpool Anfield", "Tour Exclusive", "high", 85),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Hamburg Volksparkstadion", "Tour Exclusive", "high", 80),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Stockholm Friends Arena", "Tour Exclusive", "high", 85),
+
+        # More Eras Tour City Posters (+6)
+        ("Eras Tour", "poster", "Eras Tour City Poster — Milan San Siro", "Tour Exclusive", "high", 90),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Warsaw PGE Narodowy", "Tour Exclusive", "high", 75),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Lisbon Estadio da Luz", "Tour Exclusive", "high", 75),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Dublin Aviva Stadium", "Tour Exclusive", "high", 85),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Toronto Rogers Centre", "Tour Exclusive", "high", 80),
+        ("Eras Tour", "poster", "Eras Tour City Poster — Buenos Aires River Plate", "Tour Exclusive", "high", 95),
+
+        # Cassette Tapes — All Albums (+14)
+        ("Midnights", "cassette", "Midnights Lavender Cassette (Target)", "Lavender (Target)", "mid", 32),
+        ("Folklore", "cassette", "Folklore Running Like Water Cassette", "Running Like Water Cassette", "mid", 35),
+        ("Folklore", "cassette", "Folklore In the Trees Cassette", "In the Trees Cassette", "mid", 35),
+        ("Evermore", "cassette", "Evermore Green Cassette (Target)", "Green Cassette (Target)", "mid", 35),
+        ("Lover", "cassette", "Lover Cassette", "Standard Cassette", "mid", 30),
+        ("Reputation", "cassette", "Reputation Cassette (FYE Exclusive)", "FYE Cassette", "mid", 40),
+        ("1989 TV", "cassette", "1989 TV Rose Garden Pink Cassette", "Rose Garden Cassette", "mid", 30),
+        ("1989 TV", "cassette", "1989 TV Aquamarine Green Cassette", "Aquamarine Cassette", "mid", 30),
+        ("1989 TV", "cassette", "1989 TV Tangerine Cassette (Target)", "Tangerine Cassette (Target)", "mid", 35),
+        ("Speak Now TV", "cassette", "Speak Now TV Orchid Cassette", "Orchid Cassette", "mid", 30),
+        ("Speak Now TV", "cassette", "Speak Now TV Lilac Cassette", "Lilac Cassette", "mid", 30),
+        ("Red TV", "cassette", "Red TV Cassette", "Standard Cassette", "mid", 28),
+        ("Fearless TV", "cassette", "Fearless TV Cassette", "Standard Cassette", "mid", 28),
+        ("TTPD", "cassette", "TTPD The Bolter Cassette", "The Bolter Cassette", "standard", 25),
+
+        # Signed Items (+10)
+        ("Midnights", "cd", "Midnights Signed CD Insert (Heart Drawing)", "Signed CD Heart", "grail", 150),
+        ("Midnights", "cd", "Midnights Signed CD Insert (Standard)", "Signed CD", "high", 120),
+        ("TTPD", "cd", "TTPD Signed CD Insert (w/ Heart)", "Signed CD Heart", "grail", 160),
+        ("TTPD", "cd", "TTPD Signed CD Insert (Standard)", "Signed CD", "high", 130),
+        ("Folklore", "cd", "Folklore Signed CD Insert", "Signed CD", "high", 140),
+        ("Evermore", "cd", "Evermore Signed CD Insert", "Signed CD", "grail", 180),
+        ("1989 TV", "cd", "1989 TV Signed CD Insert", "Signed CD", "high", 110),
+        ("Speak Now TV", "cd", "Speak Now TV Signed CD Insert", "Signed CD", "high", 120),
+        ("Red TV", "cd", "Red TV Signed Photo Insert", "Signed Photo", "high", 130),
+        ("Fearless TV", "cd", "Fearless TV Signed CD Insert", "Signed CD", "grail", 200),
+
+        # Pop-up Shop Exclusives (+10)
+        ("Midnights", "merch", "Midnights Pop-up Shop Lavender Tote Bag", "Pop-up Exclusive", "mid", 55),
+        ("Midnights", "merch", "Midnights Pop-up Shop Clock Enamel Pin Set", "Pop-up Exclusive", "mid", 45),
+        ("TTPD", "merch", "TTPD Pop-up Shop Quill Pen & Ink Set", "Pop-up Exclusive", "high", 75),
+        ("TTPD", "merch", "TTPD Pop-up Shop Manuscript Tote Bag", "Pop-up Exclusive", "mid", 55),
+        ("TTPD", "merch", "TTPD Pop-up Shop Typewriter Keychain", "Pop-up Exclusive", "mid", 35),
+        ("1989 TV", "merch", "1989 TV Pop-up Shop Polaroid Camera Ornament", "Pop-up Exclusive", "mid", 50),
+        ("1989 TV", "merch", "1989 TV Pop-up Shop Seagull Tote Bag", "Pop-up Exclusive", "mid", 48),
+        ("Folklore", "merch", "Folklore Pop-up Shop Cardigan Mini Replica", "Pop-up Exclusive", "high", 65),
+        ("Lover", "merch", "Lover Pop-up Shop Heart-Shaped Sunglasses", "Pop-up Exclusive", "mid", 45),
+        ("Speak Now TV", "merch", "Speak Now TV Pop-up Shop Enchanted Snow Globe", "Pop-up Exclusive", "high", 80),
+
+        # International Store Variants (+12)
+        ("Midnights", "vinyl", "Midnights Japan Exclusive OBI Strip LP (w/ Bonus)", "Japan OBI", "high", 85),
+        ("TTPD", "vinyl", "TTPD Japan Exclusive OBI Strip LP (w/ Bonus)", "Japan OBI", "high", 90),
+        ("Folklore", "vinyl", "Folklore UK Exclusive Green Vinyl (HMV)", "HMV Exclusive", "high", 70),
+        ("Evermore", "vinyl", "Evermore UK Exclusive Translucent Green (HMV)", "HMV Exclusive", "high", 75),
+        ("1989 TV", "vinyl", "1989 TV Australia Exclusive Vinyl", "Australia Exclusive", "high", 68),
+        ("Speak Now TV", "vinyl", "Speak Now TV Germany Exclusive Violet Vinyl", "Germany Exclusive", "high", 72),
+        ("Red TV", "vinyl", "Red TV France Exclusive Vinyl (FNAC)", "FNAC Exclusive", "high", 75),
+        ("Midnights", "vinyl", "Midnights Korea Exclusive Vinyl (w/ Photo Card)", "Korea Exclusive", "high", 90),
+        ("TTPD", "vinyl", "TTPD India Exclusive CD (w/ Bonus Track)", "India Exclusive", "mid", 45),
+        ("Lover", "vinyl", "Lover Germany Exclusive Vinyl (w/ Poster)", "Germany Exclusive", "high", 65),
+        ("Folklore", "vinyl", "Folklore Australia Exclusive Betty's Garden Vinyl", "Australia Exclusive", "high", 72),
+        ("1989 TV", "vinyl", "1989 TV Korea Exclusive Vinyl (w/ Photo Card)", "Korea Exclusive", "high", 80),
+
+        # Reputation Era Items (+12)
+        ("Reputation", "merch", "Reputation Snake Ring (Official Store)", "Limited", "high", 85),
+        ("Reputation", "merch", "Reputation Tour Jacket (Bomber Style)", "Tour Exclusive", "grail", 200),
+        ("Reputation", "merch", "Reputation Magazine Vol. 1", "Magazine", "high", 65),
+        ("Reputation", "merch", "Reputation Magazine Vol. 2", "Magazine", "high", 65),
+        ("Reputation", "merch", "Reputation Magazine Vol. 3", "Magazine", "high", 70),
+        ("Reputation", "merch", "Reputation Magazine Vol. 4", "Magazine", "high", 75),
+        ("Reputation", "merch", "Reputation Tour VIP Merch Box", "VIP Exclusive", "grail", 250),
+        ("Reputation", "merch", "Reputation Tour Snake Enamel Pin Set", "Tour Exclusive", "mid", 55),
+        ("Reputation", "merch", "Reputation Stadium Tour Poster (Set of 3)", "Tour Exclusive", "high", 90),
+        ("Reputation", "vinyl", "Reputation Standard Black 2LP Vinyl", "Standard Black", "mid", 40),
+        ("Reputation", "cd", "Reputation Target Exclusive Magazine+CD Vol.1", "Target Magazine", "mid", 55),
+        ("Reputation", "cd", "Reputation Target Exclusive Magazine+CD Vol.2", "Target Magazine", "mid", 55),
+
+        # More Eras Tour Merch (+10)
+        ("Eras Tour", "merch", "Eras Tour VIP Package Tote Bag", "VIP Exclusive", "high", 80),
+        ("Eras Tour", "merch", "Eras Tour VIP Laminate + Lanyard Set", "VIP Exclusive", "high", 65),
+        ("Eras Tour", "merch", "Eras Tour Blue Crewneck Sweatshirt", "Tour Exclusive", "high", 85),
+        ("Eras Tour", "merch", "Eras Tour Eras Collage T-Shirt", "Tour Exclusive", "mid", 55),
+        ("Eras Tour", "merch", "Eras Tour Guitar Pick Set (10 picks)", "Tour Exclusive", "mid", 40),
+        ("Eras Tour", "merch", "Eras Tour International Leg Enamel Pin Set", "Tour Exclusive", "mid", 50),
+        ("Eras Tour", "merch", "Eras Tour Concert Film Blu-ray (2024)", "Limited", "mid", 40),
+        ("Eras Tour", "merch", "Eras Tour Concert Film 4K UHD Collector's Edition", "Collectors Edition", "high", 65),
+
+        # More Vinyl Variants & Box Sets (+10)
+        ("Speak Now TV", "vinyl", "Speak Now TV Orchid Marbled Vinyl", "Orchid Marbled", "mid", 38),
+        ("Speak Now TV", "vinyl", "Speak Now TV Lilac Vinyl", "Lilac", "mid", 35),
+        ("Red TV", "vinyl", "Red TV Red Vinyl (Target)", "Red (Target)", "mid", 45),
+        ("Red TV", "vinyl", "Red TV Standard Black 4LP", "Standard Black", "mid", 38),
+        ("Fearless TV", "vinyl", "Fearless TV Gold Vinyl", "Gold", "mid", 38),
+        ("Fearless TV", "vinyl", "Fearless TV Standard Black 3LP", "Standard Black", "mid", 35),
+        ("Taylor Swift", "vinyl", "The Taylor Swift Holiday Collection Vinyl (RSD)", "RSD Exclusive", "grail", 250),
+        ("Taylor Swift", "vinyl", "Beautiful Eyes EP Vinyl (Original 2008)", "First Pressing", "grail", 300),
+        ("Taylor Swift", "vinyl", "Live From Clear Channel Lounge Vinyl (Promo)", "Promo", "grail", 400),
+        ("Taylor Swift", "vinyl", "Taylor Swift (Debut) Big Machine Records OG Pressing", "First Pressing", "grail", 180),
+
+        # Miscellaneous Collectibles (+7)
+        ("Taylor Swift", "merch", "Taylor Swift x Stella McCartney Bomber Jacket (Lover)", "Brand Collab", "grail", 350),
+        ("Taylor Swift", "merch", "Taylor Swift Cat Collection (Meredith Plush)", "Limited", "mid", 45),
+        ("Taylor Swift", "merch", "Taylor Swift Cat Collection (Olivia Plush)", "Limited", "mid", 45),
+        ("Taylor Swift", "merch", "Taylor Swift Cat Collection (Benjamin Plush)", "Limited", "mid", 45),
+        ("Taylor Swift", "merch", "Taylor Swift Eras Tour Book (Coffee Table Edition)", "Limited", "mid", 55),
+        ("Taylor Swift", "merch", "Taylor Swift Guitar Pick Necklace (Official Store)", "Limited", "mid", 40),
+        ("Taylor Swift", "merch", "Taylor Swift Eras Tour Snow Globe (All 10 Eras)", "Limited", "high", 95),
     ]
 
     # ── Variant expansion — vinyl colors, signed CDs, exclusives ──

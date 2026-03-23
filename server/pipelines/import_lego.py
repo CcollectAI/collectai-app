@@ -1809,6 +1809,183 @@ def _seed_sets_wave4() -> list[tuple]:
         ("21257-1", "Showdown at the End Portal", "Minecraft", 2024, 794, 70.0),
         ("21260-1", "The Cherry Blossom Garden", "Minecraft", 2025, 390, 35.0),
         ("21261-1", "The Wolf Stronghold", "Minecraft", 2025, 905, 90.0),
+
+        # ── UCS Star Wars (additional) ────────────────────────────────
+        ("75313-1", "AT-AT (UCS)", "Star Wars", 2021, 6785, 800.0),
+        ("75309-1", "Republic Gunship (UCS)", "Star Wars", 2021, 3292, 400.0),
+        ("75331-1", "The Razor Crest (UCS)", "Star Wars", 2022, 6187, 550.0),
+        ("75341-1", "Luke Skywalker's Landspeeder (UCS)", "Star Wars", 2022, 1890, 240.0),
+        ("75355-1", "X-Wing Starfighter (UCS 2023)", "Star Wars", 2023, 1949, 240.0),
+        ("75375-1", "Millennium Falcon (UCS 2025)", "Star Wars", 2025, 6150, 850.0),
+        ("75404-1", "AT-TE Walker (UCS 2025)", "Star Wars", 2025, 3800, 500.0),
+
+        # ── Icons / Creator Expert (additional) ──────────────────────
+        ("10306-1", "Atari 2600", "Icons", 2023, 2532, 250.0),
+        ("10284-1", "Camp Nou — FC Barcelona", "Icons", 2021, 5509, 350.0),
+        ("10316-1", "The Lord of the Rings: Rivendell", "Icons", 2023, 6167, 500.0),
+        ("10331-1", "Kingfisher Bird", "Icons", 2024, 834, 80.0),
+        ("10334-1", "Jazz Club (Modular)", "Icons", 2024, 2899, 260.0),
+        ("10326-1", "Natural History Museum", "Icons", 2024, 4095, 300.0),
+        ("10340-1", "Tales of the Space Age", "Icons", 2024, 688, 50.0),
+
+        # ── City 2025 ─────────────────────────────────────────────────
+        ("60428-1", "Space Construction Mech", "City", 2025, 140, 15.0),
+        ("60429-1", "Spaceship & Asteroid Discovery", "City", 2025, 126, 12.0),
+        ("60430-1", "Interstellar Spaceship", "City", 2025, 240, 25.0),
+        ("60431-1", "Space Explorer Rover", "City", 2025, 311, 30.0),
+        ("60432-1", "Command Rover & Crane Loader", "City", 2025, 758, 80.0),
+        ("60433-1", "Modular Space Station", "City", 2025, 1097, 100.0),
+        ("60434-1", "Space Base and Rocket Launchpad", "City", 2025, 1422, 130.0),
+        ("60435-1", "Police Station (2025)", "City", 2025, 668, 65.0),
+        ("60436-1", "Fire Station with Fire Engine (2025)", "City", 2025, 843, 80.0),
+        ("60437-1", "Jungle Explorer Base Camp (2025)", "City", 2025, 881, 85.0),
+
+        # ── Ninjago Legacy / Retiring ─────────────────────────────────
+        ("71819-1", "Ninjago Dragon Stone Shrine", "Ninjago", 2025, 816, 80.0),
+        ("71820-1", "Ninjago Ninja Team Combo Vehicle", "Ninjago", 2025, 1148, 100.0),
+        ("71821-1", "Cole's Titan Dragon Mech", "Ninjago", 2025, 840, 80.0),
+        ("71822-1", "Source Dragon of Motion", "Ninjago", 2025, 1279, 110.0),
+        ("71796-1", "Elemental Dragon vs. The Empress Mech", "Ninjago", 2023, 1038, 100.0),
+        ("71795-1", "Lloyd's Golden Ultra Dragon", "Ninjago", 2023, 612, 60.0),
+
+        # ── Super Mario (additional) ──────────────────────────────────
+        ("71426-1", "Piranha Plant", "Super Mario", 2023, 540, 60.0),
+        ("71431-1", "Bowser's Muscle Car Expansion", "Super Mario", 2024, 458, 40.0),
+        ("71432-1", "Dorrie's Sunken Shipwreck Adventure", "Super Mario", 2024, 500, 45.0),
+        ("71423-1", "Dry Bowser Castle Battle Expansion", "Super Mario", 2023, 1321, 120.0),
+        ("71418-1", "Creativity Toolbox Maker Set", "Super Mario", 2023, 588, 60.0),
+
+        # ── Speed Champions 2025 ─────────────────────────────────────
+        ("76924-1", "Mercedes-AMG GT3 & Mercedes-AMG SL 63", "Speed Champions", 2025, 564, 45.0),
+        ("76925-1", "Aston Martin Valkyrie AMR Pro", "Speed Champions", 2025, 291, 25.0),
+        ("76926-1", "BMW M4 GT3 & BMW M Hybrid V8", "Speed Champions", 2025, 676, 55.0),
+        ("76927-1", "Pagani Utopia", "Speed Champions", 2025, 262, 25.0),
+        ("76928-1", "Porsche 963 LMDh & 911 GT3 RS", "Speed Champions", 2025, 734, 55.0),
+        ("76923-1", "Lamborghini Lambo V12 Vision GT & Huracan STO", "Speed Champions", 2025, 521, 45.0),
+        ("76922-1", "BMW M Motorsport Garage", "Speed Champions", 2025, 855, 80.0),
+
+        # ── GWP / Promotional / Polybags ──────────────────────────────
+        ("40686-1", "Triceratops (GWP 2025)", "Jurassic World", 2025, 252, 30.0),
+        ("40688-1", "Flower Store (GWP 2025)", "Icons", 2025, 220, 25.0),
+        ("30680-1", "AAT Polybag", "Star Wars", 2025, 75, 10.0),
+        ("30681-1", "TIE Interceptor Polybag", "Star Wars", 2025, 78, 10.0),
+        ("40684-1", "Fruit Stand (GWP 2024)", "Creator", 2024, 256, 28.0),
+        ("40685-1", "Flower Wagon (GWP 2024)", "Creator", 2024, 247, 28.0),
+        ("30682-1", "Batmobile Polybag", "DC Super Heroes", 2025, 82, 10.0),
+        ("40566-1", "Ray the Castaway (GWP)", "Ideas", 2022, 316, 40.0),
+        ("40583-1", "Houses of the World 1 (GWP)", "Creator", 2023, 252, 25.0),
+        ("40590-1", "Houses of the World 2 (GWP)", "Creator", 2023, 310, 28.0),
+        ("40594-1", "Houses of the World 3 (GWP)", "Creator", 2023, 296, 28.0),
+
+        # ── Duplo Collectible (Retired) ───────────────────────────────
+        ("10840-1", "Big Fair (Duplo)", "Duplo", 2018, 106, 100.0),
+        ("10869-1", "Farm Adventures (Duplo)", "Duplo", 2018, 104, 70.0),
+        ("10889-1", "Frozen Ice Castle (Duplo)", "Duplo", 2019, 59, 55.0),
+        ("10914-1", "Deluxe Brick Box (Duplo)", "Duplo", 2020, 85, 50.0),
+        ("10979-1", "Wild Animals of Europe (Duplo)", "Duplo", 2022, 85, 40.0),
+        ("10975-1", "Wild Animals of the World (Duplo)", "Duplo", 2022, 142, 100.0),
+
+        # ── Ideas 2024-2025 ───────────────────────────────────────────
+        ("21344-1", "Orient Express Train", "Ideas", 2024, 2540, 300.0),
+        ("21347-1", "Red London Telephone Box", "Ideas", 2024, 1460, 120.0),
+
+        # ── Jurassic World 2025 ───────────────────────────────────────
+        ("76968-1", "T. Rex & Triceratops Dinosaur Breakout", "Jurassic World", 2025, 520, 50.0),
+        ("76969-1", "Brachiosaurus Discovery", "Jurassic World", 2025, 512, 50.0),
+        ("76971-1", "Indominus Rex vs. Ankylosaurus", "Jurassic World", 2025, 895, 90.0),
+
+        # ── Retiring 2025 (high demand) ──────────────────────────────
+        ("10305-1", "Lion Knights' Castle", "Castle", 2022, 4514, 400.0),
+        ("10303-1", "Loop Coaster", "Icons", 2022, 3756, 350.0),
+        ("10497-1", "Galaxy Explorer (90th Anniversary)", "Space", 2022, 1254, 100.0),
+        ("42156-1", "PEUGEOT 9X8 Le Mans Hybrid", "Technic", 2023, 1775, 200.0),
+    ]
+
+
+def _seed_sets_wave5() -> list[tuple]:
+    """Wave 5 — 88 additional sets: UCS Star Wars, Icons, Disney, Super Mario,
+    Botanical, Speed Champions 2025, GWP promos, retiring soon 2025.
+
+    Format: (set_num, name, theme, year, parts, price_eur)
+    """
+    return [
+        # ── UCS Star Wars (additional) ──────────────────────────────────
+        ("75309-1", "Republic Gunship (UCS)", "Star Wars UCS", 2021, 3292, 400.0),
+        ("75331-1", "Razor Crest (UCS)", "Star Wars UCS", 2022, 6187, 600.0),
+        ("75367-1", "Venator-Class Republic Attack Cruiser (UCS)", "Star Wars UCS", 2023, 5374, 650.0),
+        ("75341-1", "Luke Skywalker's Landspeeder (UCS)", "Star Wars UCS", 2022, 1890, 240.0),
+        ("75380-1", "Mos Espa Podrace Diorama", "Star Wars", 2024, 718, 85.0),
+        ("75381-1", "Droideka", "Star Wars", 2024, 583, 70.0),
+        ("75382-1", "TIE Interceptor (UCS)", "Star Wars UCS", 2024, 1931, 240.0),
+        ("75404-1", "AT-AT (UCS) 2025 Re-release", "Star Wars UCS", 2025, 6785, 850.0),
+
+        # ── Icons (additional) ──────────────────────────────────────────
+        ("10331-1", "The Lord of the Rings: Barad-dûr", "Icons", 2024, 5471, 460.0),
+        ("10332-1", "Medieval Town Square", "Icons", 2024, 3304, 220.0),
+        ("10333-1", "Natural History Museum", "Icons", 2025, 4032, 300.0),
+        ("10335-1", "LEGO Store", "Icons", 2025, 1545, 120.0),
+
+        # ── Disney (additional) ─────────────────────────────────────────
+        ("71040-1", "The Disney Castle", "Disney", 2016, 4080, 400.0),
+        ("43232-1", "Peter Pan & Wendy's Flight over London", "Disney", 2023, 466, 45.0),
+        ("43225-1", "The Little Mermaid Royal Clamshell", "Disney", 2023, 1808, 180.0),
+        ("43224-1", "King Magnifico's Castle", "Disney", 2023, 613, 100.0),
+        ("43242-1", "Moana's Wayfinding Boat", "Disney", 2025, 620, 60.0),
+        ("43248-1", "Disney Villain Icons", "Disney", 2025, 960, 90.0),
+        ("43249-1", "Stitch", "Disney", 2025, 730, 65.0),
+        ("43250-1", "Elsa's Ice Palace", "Disney", 2025, 1200, 110.0),
+        ("43251-1", "Disney 100 Years Mosaic Art", "Disney", 2025, 1024, 90.0),
+
+        # ── Super Mario (additional) ────────────────────────────────────
+        ("71419-1", "Peach's Garden Balloon Ride", "Super Mario", 2023, 453, 35.0),
+        ("71432-1", "Dorrie's Beachfront", "Super Mario", 2024, 229, 30.0),
+        ("71433-1", "Bowser Jr.'s Clown Car", "Super Mario", 2024, 170, 15.0),
+        ("71437-1", "Diddy Kong's Mine Cart Ride", "Super Mario", 2024, 1157, 90.0),
+        ("71431-1", "Dry Bowser Castle Battle", "Super Mario", 2024, 1321, 130.0),
+        ("71438-1", "Thwomp Drop", "Super Mario", 2024, 508, 50.0),
+
+        # ── Botanical Collection (additional) ───────────────────────────
+        ("10329-1", "Tiny Plants", "Botanical", 2024, 758, 50.0),
+        ("10328-1", "Bouquet of Roses", "Botanical", 2024, 822, 60.0),
+        ("10351-1", "Dried Flower Centerpiece", "Botanical", 2025, 812, 55.0),
+        ("10352-1", "Spring Bouquet 2025", "Botanical", 2025, 756, 50.0),
+        ("10353-1", "Succulent Garden", "Botanical", 2025, 910, 65.0),
+        ("10354-1", "Cherry Blossom (Botanical 2025)", "Botanical", 2025, 430, 35.0),
+        ("10355-1", "Tropical Orchid", "Botanical", 2025, 550, 45.0),
+
+        # ── Speed Champions 2025 ────────────────────────────────────────
+        ("76924-1", "Mercedes-AMG GT3", "Speed Champions", 2025, 303, 25.0),
+        ("76925-1", "Ferrari 296 GT3", "Speed Champions", 2025, 299, 25.0),
+        ("76926-1", "BMW M4 GT3 & BMW M Hybrid V8", "Speed Champions", 2025, 676, 50.0),
+        ("76927-1", "Aston Martin Safety Car & AMR23", "Speed Champions", 2025, 645, 50.0),
+        ("76928-1", "Porsche 963 LMDh", "Speed Champions", 2025, 280, 25.0),
+        ("76929-1", "Lamborghini SC63 & Huracán Super Trofeo EVO2", "Speed Champions", 2025, 702, 50.0),
+        ("76930-1", "Toyota GR Supra & GR86", "Speed Champions", 2025, 680, 50.0),
+        ("76931-1", "Koenigsegg Jesko Absolut", "Speed Champions", 2025, 300, 25.0),
+        ("76932-1", "Ford Mustang Dark Horse & Ford GT MkIV", "Speed Champions", 2025, 695, 50.0),
+
+        # ── GWP / Promo Sets ────────────────────────────────────────────
+        ("40686-1", "Trade Federation Troop Carrier (May 4th GWP)", "Star Wars GWP", 2024, 262, 35.0),
+        ("40685-1", "Flower Bouquet (Mother's Day GWP)", "Promotional", 2024, 212, 25.0),
+        ("40687-1", "Alien Space Diner (Black Friday GWP)", "Promotional", 2024, 285, 40.0),
+        ("40688-1", "Christmas High Street (Holiday GWP)", "Promotional", 2024, 318, 35.0),
+        ("40689-1", "Insiders Reward: Vintage Delivery Van", "Promotional", 2024, 225, 30.0),
+        ("40700-1", "May the 4th GWP 2025 (Tantive IV Micro)", "Star Wars GWP", 2025, 245, 35.0),
+        ("40701-1", "Insiders 2025 Reward: Classic Spaceman", "Promotional", 2025, 190, 30.0),
+        ("40702-1", "Black Friday 2025 GWP: Retro Arcade Machine", "Promotional", 2025, 310, 40.0),
+        ("30683-1", "Star Wars Mini TIE Bomber (Polybag)", "Star Wars GWP", 2025, 72, 8.0),
+        ("30684-1", "Marvel Mini Quinjet (Polybag)", "Promotional", 2025, 65, 8.0),
+        ("5008956-1", "Majisto's Magical Workshop (Insiders LE)", "Castle GWP", 2024, 365, 50.0),
+        ("5008957-1", "Benny's Spaceship Pod (Insiders LE)", "Space GWP", 2024, 180, 35.0),
+
+        # ── More Retiring Soon 2025 (high demand) ──────────────────────
+        ("10312-1", "Jazz Club", "Icons", 2023, 2899, 230.0),
+        ("10311-1", "Orchid", "Botanical", 2022, 608, 50.0),
+        ("71413-1", "Character Packs — Series 6", "Super Mario", 2023, 52, 5.0),
+        ("42161-1", "Lamborghini Huracán Tecnica", "Technic", 2023, 806, 50.0),
+        ("42160-1", "Audi RS Q e-tron", "Technic", 2023, 914, 160.0),
+        ("76243-1", "Rocket Mech Armor", "Marvel", 2023, 98, 15.0),
+        ("21335-1", "Motorised Lighthouse", "Ideas", 2022, 2065, 300.0),
     ]
 
 
@@ -1820,7 +1997,7 @@ def get_curated_catalog() -> list[dict]:
     """
     catalog: list[dict] = []
     seen: set[str] = set()
-    for set_num, name, theme, year, parts, price_eur in _seed_sets() + _seed_sets_expansion() + _seed_sets_wave2() + _seed_sets_wave3() + _seed_sets_wave4():
+    for set_num, name, theme, year, parts, price_eur in _seed_sets() + _seed_sets_expansion() + _seed_sets_wave2() + _seed_sets_wave3() + _seed_sets_wave4() + _seed_sets_wave5():
         if set_num in seen:
             continue
         seen.add(set_num)

@@ -1353,6 +1353,106 @@ def get_curated_catalog() -> list[dict]:
         ("Special Edition", "Attack on Titan Final Season (Crimson 2LP)", "Attack on Titan", "Limited", "Crimson Marble", "high", 90),
         ("Special Edition", "My Hero Academia OST (Plus Ultra Green/White 2LP)", "My Hero Academia", "Limited", "Green/White Split", "high", 80),
         ("Special Edition", "Spy x Family OST (Secret Agent Clear 2LP)", "Spy x Family", "Limited", "Crystal Clear", "high", 75),
+
+        # ── Tiger Lab Vinyl (additional) ──────────────────────────────────
+        ("Tiger Lab Vinyl", "FLCL OST Vol. 1 (The Pillows)", "FLCL", "US Pressing", "Black", "mid", 38),
+        ("Tiger Lab Vinyl", "FLCL OST Vol. 1 (The Pillows)", "FLCL", "US Pressing", "Orange Translucent", "high", 70),
+        ("Tiger Lab Vinyl", "FLCL OST Vol. 2 (The Pillows)", "FLCL", "US Pressing", "Black", "mid", 38),
+        ("Tiger Lab Vinyl", "FLCL OST Vol. 3 (The Pillows)", "FLCL", "US Pressing", "Black", "mid", 38),
+        ("Tiger Lab Vinyl", "Samurai Champloo: Fat Jon", "Samurai Champloo", "US Pressing", "Black", "mid", 38),
+        ("Tiger Lab Vinyl", "Cowboy Bebop No Disc (Music Box)", "Cowboy Bebop", "US Pressing", "Green", "high", 65),
+        ("Tiger Lab Vinyl", "Ghost in the Shell: Stand Alone Complex OST", "Ghost in the Shell SAC", "US Pressing", "Black", "mid", 40),
+        ("Tiger Lab Vinyl", "Ghost in the Shell: SAC OST", "Ghost in the Shell SAC", "US Pressing", "Clear Teal", "high", 75),
+        ("Tiger Lab Vinyl", "Akira Symphonic Suite (2LP)", "Akira", "US Pressing", "Black", "mid", 40),
+        ("Tiger Lab Vinyl", "Akira Symphonic Suite (2LP)", "Akira", "US Pressing", "Red Translucent", "high", 80),
+
+        # ── iam8bit Game Vinyl ────────────────────────────────────────────
+        ("iam8bit", "The Legend of Zelda: Ocarina of Time OST (2LP)", "Zelda", "Boutique Pressing", "Gold", "grail", 140),
+        ("iam8bit", "The Legend of Zelda: Majora's Mask OST (2LP)", "Zelda", "Boutique Pressing", "Purple", "grail", 130),
+        ("iam8bit", "The Legend of Zelda: Breath of the Wild OST (4LP)", "Zelda", "Boutique Pressing", "Green/Blue", "grail", 180),
+        ("iam8bit", "The Legend of Zelda: Tears of the Kingdom OST (4LP)", "Zelda", "Boutique Pressing", "Gold/Green", "grail", 160),
+        ("iam8bit", "Persona 5 Vinyl Soundtrack (4LP)", "Persona 5", "Boutique Pressing", "Red/Black", "grail", 200),
+        ("iam8bit", "Persona 5 Royal OST (3LP)", "Persona 5", "Boutique Pressing", "Blue/Gold", "grail", 180),
+        ("iam8bit", "Hades Original Soundtrack (4LP)", "Hades", "Boutique Pressing", "Red/Orange Splatter", "grail", 150),
+        ("iam8bit", "Hollow Knight OST (2LP)", "Hollow Knight", "Boutique Pressing", "Clear Blue", "high", 90),
+        ("iam8bit", "Hollow Knight OST (2LP)", "Hollow Knight", "Boutique Pressing", "Black", "mid", 50),
+        ("iam8bit", "Celeste OST (2LP)", "Celeste", "Boutique Pressing", "Clear Pink", "high", 80),
+        ("iam8bit", "Celeste OST (2LP)", "Celeste", "Boutique Pressing", "Black", "mid", 45),
+        ("iam8bit", "Journey OST (2LP)", "Journey", "Boutique Pressing", "Clear", "high", 75),
+        ("iam8bit", "Undertale OST (2LP)", "Undertale", "Boutique Pressing", "Blue/Orange", "high", 80),
+        ("iam8bit", "Stardew Valley OST (4LP)", "Stardew Valley", "Boutique Pressing", "Green", "high", 90),
+        ("iam8bit", "Cuphead OST (2LP)", "Cuphead", "Boutique Pressing", "Clear Smoke", "high", 70),
+        ("iam8bit", "Death Stranding OST (3LP)", "Death Stranding", "Boutique Pressing", "Clear", "high", 85),
+
+        # ── Data Discs (additional) ───────────────────────────────────────
+        ("Data Discs", "Streets of Rage 2 OST (2LP)", "Streets of Rage", "Boutique Pressing", "Red/Yellow Splatter", "high", 70),
+        ("Data Discs", "Streets of Rage 3 OST (2LP)", "Streets of Rage", "Boutique Pressing", "Blue", "high", 65),
+        ("Data Discs", "Shenmue OST (3LP)", "Shenmue", "Boutique Pressing", "Clear Blue", "high", 90),
+        ("Data Discs", "Shenmue II OST (4LP)", "Shenmue", "Boutique Pressing", "Orange", "high", 95),
+        ("Data Discs", "Sonic the Hedgehog OST (LP)", "Sonic", "Boutique Pressing", "Blue", "mid", 40),
+        ("Data Discs", "Sonic the Hedgehog 2 OST (LP)", "Sonic", "Boutique Pressing", "Gold", "mid", 42),
+        ("Data Discs", "Sonic CD OST (2LP)", "Sonic", "Boutique Pressing", "Clear Blue", "high", 55),
+        ("Data Discs", "Out Run OST (LP)", "Out Run", "Boutique Pressing", "Sunset Orange", "high", 60),
+        ("Data Discs", "After Burner II OST (LP)", "After Burner", "Boutique Pressing", "Red", "mid", 45),
+        ("Data Discs", "Panzer Dragoon OST (LP)", "Panzer Dragoon", "Boutique Pressing", "Clear", "high", 65),
+        ("Data Discs", "ToeJam & Earl OST (LP)", "ToeJam & Earl", "Boutique Pressing", "Splatter", "high", 55),
+
+        # ── Mondo Anime/Game Vinyl ────────────────────────────────────────
+        ("Mondo", "Dragon Ball Z OST (3LP)", "Dragon Ball Z", "Boutique Pressing", "Orange/Blue", "high", 85),
+        ("Mondo", "My Neighbor Totoro (Image Album)", "My Neighbor Totoro", "Boutique Pressing", "Forest Green", "high", 80),
+        ("Mondo", "Princess Mononoke OST (2LP)", "Princess Mononoke", "Boutique Pressing", "Clear", "high", 85),
+        ("Mondo", "Demon Slayer OST (2LP)", "Demon Slayer", "Boutique Pressing", "Water Blue", "high", 80),
+        ("Mondo", "Castlevania: SOTN OST (2LP)", "Castlevania", "Boutique Pressing", "Black", "high", 70),
+        ("Mondo", "Mega Man 2 OST (LP)", "Mega Man", "Boutique Pressing", "Blue", "mid", 45),
+        ("Mondo", "Mega Man X OST (2LP)", "Mega Man", "Boutique Pressing", "Blue/Silver", "high", 60),
+        ("Mondo", "The Last of Us Part II OST (2LP)", "The Last of Us", "Boutique Pressing", "Clear", "high", 80),
+        ("Mondo", "Resident Evil 2 OST (2LP)", "Resident Evil", "Boutique Pressing", "Red/Black", "high", 70),
+
+        # ── Ship to Shore PhonoCo ─────────────────────────────────────────
+        ("Ship to Shore", "Mega Man 3 OST (LP)", "Mega Man", "Boutique Pressing", "Blue", "mid", 35),
+        ("Ship to Shore", "Mega Man 4 OST (LP)", "Mega Man", "Boutique Pressing", "Green", "mid", 35),
+        ("Ship to Shore", "Castlevania III: Dracula's Curse OST (2LP)", "Castlevania", "Boutique Pressing", "Red", "high", 55),
+        ("Ship to Shore", "Castlevania: Rondo of Blood OST (LP)", "Castlevania", "Boutique Pressing", "Clear Red", "high", 50),
+        ("Ship to Shore", "Contra OST (LP)", "Contra", "Boutique Pressing", "Red", "mid", 40),
+        ("Ship to Shore", "Double Dragon OST (LP)", "Double Dragon", "Boutique Pressing", "Orange", "mid", 38),
+        ("Ship to Shore", "River City Ransom OST (LP)", "Kunio-kun", "Boutique Pressing", "Blue", "mid", 35),
+        ("Ship to Shore", "Ninja Gaiden Trilogy OST (3LP)", "Ninja Gaiden", "Boutique Pressing", "Purple", "high", 75),
+
+        # ── Japanese Pressing Vinyl (additional) ──────────────────────────
+        ("King Records", "Fist of the North Star OST (2LP)", "Fist of the North Star", "Japanese Pressing", "Black", "high", 70),
+        ("King Records", "Captain Tsubasa OST (LP)", "Captain Tsubasa", "Japanese Pressing", "Black", "high", 55),
+        ("King Records", "Saint Seiya OST (2LP)", "Saint Seiya", "Japanese Pressing", "Black", "high", 65),
+        ("Columbia Japan", "City Hunter OST (LP)", "City Hunter", "Japanese OG Pressing", "Black", "high", 75),
+        ("Victor", "Urusei Yatsura OST (LP)", "Urusei Yatsura", "Japanese OG Pressing", "Black", "high", 70),
+        ("King Records", "Touch (Adachi) OST (LP)", "Touch", "Japanese OG Pressing", "Black", "high", 60),
+        ("Pony Canyon", "Slam Dunk OST (LP)", "Slam Dunk", "Japanese Pressing", "Black", "high", 65),
+        ("Flying Dog", "Yuri on Ice OST (LP)", "Yuri on Ice", "Japanese Pressing", "Black", "high", 55),
+        ("Aniplex", "Sword Art Online OST (2LP)", "Sword Art Online", "Japanese Pressing", "Black", "high", 65),
+        ("Lantis", "Code Geass Complete Best (2LP)", "Code Geass", "Japanese Pressing", "Black", "high", 70),
+
+        # ── RSD Anime Releases ────────────────────────────────────────────
+        ("RSD Exclusive", "Dragon Ball Z OST (RSD 2024 Gold)", "Dragon Ball Z", "RSD 2024", "Saiyan Gold", "high", 85),
+        ("RSD Exclusive", "Akira OST (RSD 2025)", "Akira", "RSD 2025", "Neon Red", "high", 90),
+        ("RSD Exclusive", "My Neighbor Totoro Image Album (RSD 2025)", "My Neighbor Totoro", "RSD 2025", "Catbus Orange", "high", 85),
+        ("RSD Exclusive", "Evangelion Finally (RSD 2025)", "Evangelion", "RSD 2025", "Eva-02 Red", "high", 90),
+        ("RSD Exclusive", "Ghost in the Shell OST (RSD 2025)", "Ghost in the Shell", "RSD 2025", "Cyber Teal", "high", 85),
+        ("RSD Exclusive", "Sailor Moon OST (RSD 2025)", "Sailor Moon", "RSD 2025", "Moon Pink", "high", 80),
+
+        # ── Square Enix / Atlus Game Vinyl ────────────────────────────────
+        ("Square Enix", "Final Fantasy VII Remake OST (4LP)", "Final Fantasy VII", "Japanese Pressing", "Black", "grail", 150),
+        ("Square Enix", "Final Fantasy X Piano Collections (LP)", "Final Fantasy X", "Japanese Pressing", "Black", "high", 65),
+        ("Square Enix", "NieR:Automata Vinyl Soundtrack (4LP)", "NieR Automata", "Japanese Pressing", "White", "grail", 140),
+        ("Square Enix", "NieR Replicant ver.1.22 OST (4LP)", "NieR Replicant", "Japanese Pressing", "Black", "grail", 130),
+        ("Atlus", "Persona 3 Reload OST (3LP)", "Persona 3", "Japanese Pressing", "Blue", "grail", 120),
+        ("Atlus", "Persona 4 Golden OST (2LP)", "Persona 4", "Japanese Pressing", "Yellow", "high", 90),
+        ("Atlus", "Catherine Full Body OST (2LP)", "Catherine", "Japanese Pressing", "Pink/Blue", "high", 75),
+
+        # ── Wayo Records ─────────────────────────────────────────────────
+        ("Wayo Records", "NieR Gestalt & Replicant OST (4LP)", "NieR", "EU Pressing", "Black", "grail", 120),
+        ("Wayo Records", "Gravity Rush OST (2LP)", "Gravity Rush", "EU Pressing", "Clear", "high", 70),
+        ("Wayo Records", "Gravity Rush 2 OST (3LP)", "Gravity Rush", "EU Pressing", "Blue", "high", 80),
+        ("Wayo Records", "Okami OST (4LP)", "Okami", "EU Pressing", "White", "grail", 130),
+        ("Wayo Records", "Shadow of the Colossus OST (2LP)", "Shadow of the Colossus", "EU Pressing", "Clear", "high", 90),
     ]
 
     catalog = []
