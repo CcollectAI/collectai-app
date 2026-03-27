@@ -167,6 +167,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Add a new photo"
+                  accessibilityHint="Double tap to open photo picker"
                 >
                   <View style={[s.galleryAddCard, { backgroundColor: theme.card, borderColor: theme.accent }]}>
                     {imageUploading || photoUploading ? (
@@ -188,7 +189,8 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                 <Pressable
                   onPress={() => onZoomImage(item.image_url)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Photo ${index + 1} of ${imageCount}${item.label ? ` (${LABEL_DISPLAY[item.label] || item.label})` : ""}. Tap to zoom`}
+                  accessibilityLabel={`Photo ${index + 1} of ${imageCount}${item.label ? ` (${LABEL_DISPLAY[item.label] || item.label})` : ""}`}
+                  accessibilityHint="Double tap to zoom in on this photo"
                 >
                   {failedImageIds.has(item.id) ? (
                     <View style={[s.galleryFallback, { width: GALLERY_WIDTH, height: GALLERY_HEIGHT, backgroundColor: theme.background }]}>
@@ -244,6 +246,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                     style={[s.galleryDeleteBtn, { backgroundColor: theme.card + "D9" }]}
                     accessibilityRole="button"
                     accessibilityLabel="Delete this photo"
+                    accessibilityHint="Double tap to remove this photo from the gallery"
                   >
                     <Ionicons name="close-circle" size={26} color={theme.danger ?? "#EF4444"} />
                   </Pressable>
@@ -290,7 +293,8 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
           }
         }}
         accessibilityRole="button"
-        accessibilityLabel="Tap to zoom image"
+        accessibilityLabel="Item photo"
+        accessibilityHint="Double tap to zoom in on this photo"
       >
         {displayImageUri && !failedImageIds.has("__single__") ? (
           <Image
@@ -325,6 +329,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
         ]}
         accessibilityRole="button"
         accessibilityLabel={displayImageUri ? "Change photo" : "Add your photo"}
+        accessibilityHint="Double tap to open photo picker"
       >
         {photoUploading ? (
           <ActivityIndicator size="small" color={theme.accentText} />

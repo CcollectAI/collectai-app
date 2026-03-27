@@ -13,7 +13,7 @@ function ScreenFallback({ screenName, fallbackMessage, onRetry }: { screenName?:
   const { colors } = useAppTheme();
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.iconWrap}>
+      <View style={[styles.iconWrap, { backgroundColor: colors.dangerBg }]}>
         <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
       </View>
       <Text style={[styles.title, { color: colors.text }]}>
@@ -22,7 +22,7 @@ function ScreenFallback({ screenName, fallbackMessage, onRetry }: { screenName?:
       <Text style={[styles.subtitle, { color: colors.muted }]}>
         {fallbackMessage || 'An error occurred. Please try again.'}
       </Text>
-      <Pressable style={styles.retry} onPress={onRetry} accessibilityRole="button">
+      <Pressable style={[styles.retry, { backgroundColor: colors.accent }]} onPress={onRetry} accessibilityRole="button">
         <Ionicons name="refresh-outline" size={18} color="#fff" />
         <Text style={styles.retryText}>Retry</Text>
       </Pressable>
@@ -66,7 +66,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#FEE2E2',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -85,7 +84,6 @@ const styles = StyleSheet.create({
   retry: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#81D8D0',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,

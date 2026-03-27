@@ -223,7 +223,7 @@ function ScanResultCardInner({
           <View
             style={[
               styles.heroBadge,
-              { backgroundColor: '#FFFFFFEE', borderColor: confBadgeColor + '60' },
+              { backgroundColor: colors.card + 'EE', borderColor: confBadgeColor + '60' },
             ]}
             accessibilityLabel={`${confLabel}: ${overallConf} percent`}
             accessibilityRole="text"
@@ -398,7 +398,7 @@ function ScanResultCardInner({
                   {!!alt.imageUrl ? (
                     <Image source={{ uri: alt.imageUrl }} style={styles.altImage} resizeMode="cover" accessibilityLabel={`Image of ${alt.title ?? 'alternative'}`} />
                   ) : (
-                    <View style={[styles.altImage, { backgroundColor: colors.border }]}>
+                    <View style={[styles.altImage, { backgroundColor: colors.skeleton }]}>
                       <Ionicons name="image-outline" size={20} color={colors.muted} />
                     </View>
                   )}
@@ -693,7 +693,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 10,
-    backgroundColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
   },

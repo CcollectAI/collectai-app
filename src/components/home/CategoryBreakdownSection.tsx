@@ -82,7 +82,7 @@ function CategoryBreakdownSectionInner({
                 <Text style={[s.breakdownBarLabel, { color: theme.text }]} numberOfLines={1}>
                   {displayName(cat.category)}
                 </Text>
-                <View style={s.breakdownBarTrack}>
+                <View style={[s.breakdownBarTrack, { backgroundColor: theme.border + '20' }]}>
                   <View
                     style={[
                       s.breakdownBarFill,
@@ -177,7 +177,6 @@ const s = StyleSheet.create({
     flex: 1,
     height: 10,
     borderRadius: radius.xs,
-    backgroundColor: "#E2E8F020",
     overflow: "hidden",
     marginRight: 8,
   },

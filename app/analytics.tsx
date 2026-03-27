@@ -315,8 +315,12 @@ function AnalyticsScreen() {
           </View>
         )}
 
-        {/* H1: Category Statistics Dashboard */}
-        <CategoryPerformanceSection categoryStats={categoryStats} categoryHealth={categoryHealth} />
+        {/* H1: Category Statistics Dashboard (Pro+) */}
+        {limits.advanced_analytics ? (
+          <CategoryPerformanceSection categoryStats={categoryStats} categoryHealth={categoryHealth} />
+        ) : (
+          <UpgradePrompt feature="Category Performance" requiredPlan="Pro" />
+        )}
 
         {/* Winners & Losers (Pro+) */}
         {limits.advanced_analytics && (
@@ -326,8 +330,11 @@ function AnalyticsScreen() {
           />
         )}
 
-        {/* Items Summary */}
-        {items.length > 0 && (
+        {/* Items Summary (Pro+) */}
+        {!limits.advanced_analytics && items.length > 0 && (
+          <UpgradePrompt feature="Holdings Breakdown" requiredPlan="Pro" />
+        )}
+        {limits.advanced_analytics && items.length > 0 && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Holdings</Text>
@@ -363,8 +370,11 @@ function AnalyticsScreen() {
           </View>
         )}
 
-        {/* Collection Completeness */}
-        {activeCategories.length > 0 && (
+        {/* Collection Completeness (Pro+) */}
+        {!limits.advanced_analytics && activeCategories.length > 0 && (
+          <UpgradePrompt feature="Collection Completeness" requiredPlan="Pro" />
+        )}
+        {limits.advanced_analytics && activeCategories.length > 0 && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Collection Completeness</Text>

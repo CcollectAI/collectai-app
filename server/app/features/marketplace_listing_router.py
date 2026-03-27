@@ -2,7 +2,7 @@
 Marketplace Listing Router — Multi-marketplace selling system.
 
 Allows users to list collectibles for sale on external marketplaces
-(eBay, Mercari, Cardmarket, StockX, BrickLink) from within CollectAI,
+(eBay, Mercari, Cardmarket, StockX, BrickLink) from within Atlantis,
 manage connected marketplace accounts, track listings, record sales,
 and calculate estimated fees.
 
@@ -63,6 +63,11 @@ VALID_LISTING_FORMATS = {"fixed_price", "auction", "best_offer"}
 VALID_SHIPPING_METHODS = {"standard", "express", "local_pickup", "free"}
 VALID_CONDITION_LABELS = {"New", "Like New", "Very Good", "Good", "Acceptable"}
 VALID_SALE_STATUSES = {"pending", "paid", "shipped", "delivered", "completed", "disputed", "refunded"}
+
+
+def _build_where(conditions: list[str]) -> str:
+    """Join conditions into a WHERE clause, or return empty string if none."""
+    return (" WHERE " + " AND ".join(conditions)) if conditions else ""
 
 
 # ---------------------------------------------------------------------------
@@ -529,7 +534,7 @@ async def list_listings(
                 params.append(marketplace_id)
                 idx += 1
 
-            where_clause = " AND ".join(conditions)
+            where_clause = _build_where(conditions)
 
             # Total count (cached 30s to reduce repeated DB hits on refresh)
             _LISTING_COUNT_TTL = 30
@@ -539,7 +544,7 @@ async def list_listings(
                 total_count = cached_count
             else:
                 count_row = await conn.fetchrow(
-                    f"SELECT count(*) AS cnt FROM marketplace_listings WHERE {where_clause}",
+                    f"SELECT count(*) AS cnt FROM marketplace_listings{where_clause}",
                     *params,
                 )
                 total_count = count_row["cnt"] if count_row else 0
@@ -561,8 +566,7 @@ async def list_listings(
                        estimated_fees, estimated_net, fee_percentage,
                        listed_at, expires_at, sold_at, synced_at,
                        created_at, updated_at
-                FROM marketplace_listings
-                WHERE {where_clause}
+                FROM marketplace_listings{where_clause}
                 ORDER BY created_at DESC
                 LIMIT ${idx} OFFSET ${idx + 1}
                 """,

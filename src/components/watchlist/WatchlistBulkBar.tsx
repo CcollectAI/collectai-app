@@ -12,6 +12,7 @@ type ThemeColors = {
   card: string;
   border: string;
   accent: string;
+  danger: string;
 };
 
 type Props = {
@@ -32,7 +33,7 @@ export const WatchlistBulkBar = React.memo(function WatchlistBulkBar({
   return (
     <View style={[styles.bulkBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
       <AnimatedPressable
-        style={[styles.bulkBtn, styles.bulkBtnDelete]}
+        style={[styles.bulkBtn, styles.bulkBtnDelete, { backgroundColor: colors.danger }]}
         onPress={() => { fireHaptic(HapticIntent.ALERT_TRIGGERED); onBulkDelete(); }}
         disabled={selectedCount === 0}
         accessibilityRole="button"
@@ -85,9 +86,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
   },
-  bulkBtnDelete: {
-    backgroundColor: "#DC2626",
-  },
+  bulkBtnDelete: {},
   bulkBtnText: {
     color: "#FFFFFF",
     fontSize: 13,

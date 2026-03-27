@@ -11,7 +11,7 @@ import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 
-const LAST_UPDATED = 'March 11, 2026';
+const LAST_UPDATED = 'March 27, 2026';
 
 function TermsOfServiceScreenInner() {
   const router = useRouter();
@@ -77,14 +77,14 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>5. Price Estimates & Valuations</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          Price estimates provided by CollectAI are for informational purposes only. They are generated using machine learning models (Ridge regression with q10/q50/q90 quantile predictions) and aggregated marketplace data from 30 sources across 51 collectible categories. These estimates should not be relied upon as financial advice, appraisals, or insurance valuations. Actual market prices may differ significantly. We make no guarantees about the accuracy of any valuation.{'\n\n'}
+          Price estimates provided by CollectAI are for informational purposes only. They are generated using machine learning models (Ridge regression with q10/q50/q90 quantile predictions) and aggregated marketplace data from 37 sources across 54 collectible categories. These estimates should not be relied upon as financial advice, appraisals, or insurance valuations. Actual market prices may differ significantly. We make no guarantees about the accuracy of any valuation.{'\n\n'}
           Scarcity scores, demand heat signals, and social proof indicators (collector counts, trending status) are derived from aggregated data and are for informational purposes only. They should not be the sole basis for purchasing or selling decisions.{'\n\n'}
           Currency conversions are approximate and based on exchange rates refreshed every 8 hours. Shipping cost estimates are approximations and may differ from actual shipping costs.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>6. Marketplace Integration & Affiliate Links</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          CollectAI aggregates data from 30 third-party marketplace sources for reference and price comparison, including but not limited to: eBay, TCGPlayer, Cardmarket, Discogs, StockX, BrickLink, BrickEconomy, Mercari, PriceCharting, Yahoo Auctions JP, AmiAmi, WhatNot, Vinted, Catawiki, Mandarake, Bezel, Chrono24, WhiskyAuctioneer, MasterOfMalt, KEH, MPB, PopMart, Booth.pm, ScaleMates, Drop, GouletPens, KTown4U, ComicBookRealm, Firecrawl, Crawl4AI, and Mavin.io. We are not responsible for:{'\n'}
+          CollectAI aggregates data from 37 third-party marketplace sources for reference and price comparison, including but not limited to: eBay, TCGPlayer, Cardmarket, Discogs, StockX, BrickLink, BrickEconomy, Mercari, PriceCharting, Yahoo Auctions JP, AmiAmi, WhatNot, Vinted, Catawiki, Mandarake, Bezel, Chrono24, WhiskyAuctioneer, MasterOfMalt, KEH, MPB, PopMart, Booth.pm, ScaleMates, Drop, GouletPens, KTown4U, ComicBookRealm, Firecrawl, Crawl4AI, Mavin.io, Scrape.do, Google Shopping, and Etsy. We are not responsible for:{'\n'}
           {'\u2022'} Transactions conducted on these platforms{'\n'}
           {'\u2022'} The accuracy of third-party listing information{'\n'}
           {'\u2022'} Disputes between buyers and sellers{'\n'}

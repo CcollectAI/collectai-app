@@ -34,6 +34,8 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { useAsync } from '@/hooks/useAsync';
 import { timeAgo } from '@/lib/timeAgo';
 import { MS_PER_WEEK } from '@/constants/time';
+import { useBillingLimits } from '@/hooks/useBillingLimits';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -100,6 +102,7 @@ function AlertsScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
+  const { plan } = useBillingLimits();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('triggers');
   const [refreshing, setRefreshing] = useState(false);
@@ -488,7 +491,16 @@ function AlertsScreen() {
           removeClippedSubviews={true}
           maxToRenderPerBatch={10}
           windowSize={5}
-          ListHeaderComponent={scarcityItems.length > 0 ? (
+          ListHeaderComponent={<>
+            {plan === 'free' && (
+              <View style={{ marginBottom: 12 }}>
+                <UpgradePrompt
+                  feature="Unlimited Alerts (3/day on Free)"
+                  requiredPlan="Pro"
+                />
+              </View>
+            )}
+            {scarcityItems.length > 0 ? (
             <View style={[styles.scarcityCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.scarcityHeader}>
                 <Ionicons name="diamond-outline" size={16} color={colors.warning} />
@@ -511,6 +523,7 @@ function AlertsScreen() {
               ))}
             </View>
           ) : null}
+          </>}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

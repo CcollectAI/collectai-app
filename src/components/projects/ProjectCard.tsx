@@ -12,6 +12,7 @@ import { AnimatedPressable } from '@/motion';
 import { CATEGORIES } from '@/data/categories';
 import { timeAgo } from '@/lib/timeAgo';
 import { MS_PER_DAY } from '@/constants/time';
+import { getStatusDef } from '@/constants/buildStepTemplates';
 import type { BuildPaintProject } from '@/data';
 
 const MS_PER_MONTH = 30 * MS_PER_DAY;
@@ -36,7 +37,6 @@ function statusColor(
 ) {
   if (isCompleted) return { bg: themeColors.success + '20', text: themeColors.success };
 
-  const { getStatusDef } = require('@/constants/buildStepTemplates');
   const def = getStatusDef(categoryId, status || '');
   if (def) {
     const colorMap: Record<string, { bg: string; text: string }> = {
@@ -115,7 +115,6 @@ export const ProjectCard = React.memo(function ProjectCard({
             <Text style={[styles.statusPillText, { color: statusColors.text }]}>
               {(() => {
                 if (project.isCompleted) return 'Finished';
-                const { getStatusDef } = require('@/constants/buildStepTemplates');
                 const def = getStatusDef(project.categoryId, project.status || '');
                 return def?.label ?? project.status ?? 'Wishlist';
               })()}

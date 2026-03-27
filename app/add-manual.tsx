@@ -1,6 +1,6 @@
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { track } from '@/analytics/track';
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -8,6 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  Alert,
+  Pressable,
+  Text,
 } from "react-native";
 // TextInput, ActivityIndicator, TouchableOpacity, Keyboard, Ionicons moved to extracted components
 import { useRouter, Stack } from "expo-router";
@@ -20,9 +23,14 @@ import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
 import CatalogSuggestionModal from "@/components/CatalogSuggestionModal";
+import { checkDuplicate } from "@/lib/duplicateCheck";
+import { dataProvider } from "@/data";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 import { showActionSheet } from "@/hooks/useActionSheetPicker";
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { useToast } from '@/components/Toast';
+import { useFormDraft, FormDraftState } from '@/hooks/useFormDraft';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import {
   PhotoUploadSection,
   CategorySpecificFields,
@@ -63,6 +71,80 @@ const ManualAddScreen: React.FC = () => {
   const [catalogModalVisible, setCatalogModalVisible] = useState(false);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
 
+  const { showToast } = useToast();
+
+  // --- Draft auto-save ---
+  const formState = useMemo<FormDraftState>(() => ({
+    name: nameField.value,
+    category,
+    gameOrSeries,
+    conditionGrade,
+    purchasePrice: purchasePriceField.value,
+    estimatedValue: estimatedValueField.value,
+    source,
+    notes,
+    categoryAttrs,
+  }), [nameField.value, category, gameOrSeries, conditionGrade, purchasePriceField.value, estimatedValueField.value, source, notes, categoryAttrs]);
+
+  const handleRestoreDraft = useCallback((draft: FormDraftState) => {
+    if (typeof draft.name === 'string' && draft.name) nameField.setValue(draft.name);
+    if (typeof draft.category === 'string') setCategory(draft.category);
+    if (typeof draft.gameOrSeries === 'string') setGameOrSeries(draft.gameOrSeries);
+    if (typeof draft.conditionGrade === 'string') setConditionGrade(draft.conditionGrade);
+    if (typeof draft.purchasePrice === 'string' && draft.purchasePrice) purchasePriceField.setValue(draft.purchasePrice);
+    if (typeof draft.estimatedValue === 'string' && draft.estimatedValue) estimatedValueField.setValue(draft.estimatedValue);
+    if (typeof draft.source === 'string') setSource(draft.source);
+    if (typeof draft.notes === 'string') setNotes(draft.notes);
+    if (typeof draft.categoryAttrs === 'object' && draft.categoryAttrs !== null && !Array.isArray(draft.categoryAttrs)) {
+      setCategoryAttrs(draft.categoryAttrs as Record<string, string | boolean>);
+    }
+  }, [nameField, purchasePriceField, estimatedValueField]);
+
+  const { hasDraft, draftRestored, clearDraft } = useFormDraft({
+    draftKey: 'add-manual',
+    formState,
+    onRestore: handleRestoreDraft,
+  });
+
+  // Show toast when draft is restored
+  useEffect(() => {
+    if (draftRestored) {
+      showToast({ message: 'Draft restored', type: 'info' });
+    }
+  }, [draftRestored]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDiscardDraft = useCallback(async () => {
+    nameField.reset();
+    setCategory('');
+    setGameOrSeries('');
+    setConditionGrade('');
+    purchasePriceField.reset();
+    estimatedValueField.reset();
+    setSource('');
+    setNotes('');
+    setCategoryAttrs({});
+    await clearDraft();
+    showToast({ message: 'Draft discarded', type: 'info' });
+  }, [nameField, purchasePriceField, estimatedValueField, clearDraft, showToast]);
+
+  // --- Unsaved changes warning ---
+  const isDirty = useMemo(() => {
+    return nameField.value.length > 0 ||
+      category.length > 0 ||
+      gameOrSeries.length > 0 ||
+      conditionGrade.length > 0 ||
+      purchasePriceField.value.length > 0 ||
+      estimatedValueField.value.length > 0 ||
+      source.length > 0 ||
+      notes.length > 0 ||
+      Object.keys(categoryAttrs).length > 0;
+  }, [nameField.value, category, gameOrSeries, conditionGrade, purchasePriceField.value, estimatedValueField.value, source, notes, categoryAttrs]);
+
+  useUnsavedChanges({
+    isDirty,
+    onDiscard: () => { clearDraft(); },
+  });
+
   const categorySlug = useMemo(() => CATEGORY_NAME_TO_SLUG[category] ?? '', [category]);
   const categoryFields = useMemo(() => getCategoryFields(categorySlug), [categorySlug]);
 
@@ -93,17 +175,7 @@ const ManualAddScreen: React.FC = () => {
     setCategoryAttrs((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const handleSubmit = async () => {
-    if (!validateAll(nameField, purchasePriceField, estimatedValueField)) return;
-    if (!canSubmit) return;
-
-    if (!supabase || typeof supabase.from !== "function") {
-      setSaveState("error");
-      setErrorText("Supabase client not configured. Manual entries are in demo mode only.");
-      fireHaptic(HapticIntent.ALERT_TRIGGERED);
-      return;
-    }
-
+  const doSave = async () => {
     setSaveState("saving");
     setErrorText(null);
 
@@ -143,6 +215,7 @@ const ManualAddScreen: React.FC = () => {
       track({ name: 'item_added', properties: { source: 'manual', category: categorySlug || category } });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       setSaveState("success");
+      await clearDraft();
       nameField.reset();
       setCategory("");
       setCategoryAttrs({});
@@ -160,6 +233,41 @@ const ManualAddScreen: React.FC = () => {
     } finally {
       setTimeout(() => { setSaveState("idle"); }, 2000);
     }
+  };
+
+  const handleSubmit = async () => {
+    if (!validateAll(nameField, purchasePriceField, estimatedValueField)) return;
+    if (!canSubmit) return;
+
+    if (!supabase || typeof supabase.from !== "function") {
+      setSaveState("error");
+      setErrorText("Supabase client not configured. Manual entries are in demo mode only.");
+      fireHaptic(HapticIntent.ALERT_TRIGGERED);
+      return;
+    }
+
+    // Duplicate check before saving
+    const effectiveCategory = categorySlug || category.trim() || null;
+    const { isDuplicate, existingName } = await checkDuplicate(
+      nameField.value,
+      effectiveCategory,
+      dataProvider,
+    );
+
+    if (isDuplicate) {
+      fireHaptic(HapticIntent.ALERT_TRIGGERED);
+      Alert.alert(
+        'Similar Item Found',
+        `'${existingName}' is already in your collection. Add anyway?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Add Anyway', onPress: () => doSave() },
+        ],
+      );
+      return;
+    }
+
+    await doSave();
   };
 
   const bannerContent = (() => {
@@ -187,6 +295,19 @@ const ManualAddScreen: React.FC = () => {
           <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
             {/* Intro Card */}
             <AddManualIntroCard />
+
+            {hasDraft && (
+              <Pressable
+                onPress={handleDiscardDraft}
+                style={styles.discardDraftButton}
+                accessibilityRole="button"
+                accessibilityLabel="Discard draft"
+              >
+                <Text style={[styles.discardDraftText, { color: colors.error ?? '#E53935' }]}>
+                  Discard Draft
+                </Text>
+              </Pressable>
+            )}
 
             <PhotoUploadSection
               photoUrl={photoUrl}
@@ -269,6 +390,8 @@ const styles = StyleSheet.create({
   keyboardView: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 16 },
+  discardDraftButton: { alignSelf: 'flex-end', paddingVertical: 6, paddingHorizontal: 4, marginBottom: 4 },
+  discardDraftText: { fontSize: 13, fontWeight: '600' },
   // introCard, introIconWrap, introText, introTitle, introSubtitle moved to AddManualIntroCard
   // banner, bannerIconBox, bannerText moved to AddManualStatusBanner
   // section, sectionHeader, sectionTitle, card, fieldBlock, fieldLabel, inputWrap, inputIcon, input, fieldError, dropdownTrigger, dropdownText moved to AddManualBasicInfoSection

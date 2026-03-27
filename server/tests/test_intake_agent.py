@@ -154,9 +154,9 @@ class TestProcessIntakeBarcode:
             "identification_method": "barcode_catalog",
         })
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._barcode_lookup_internal", mock_barcode), \
-             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._barcode_lookup_internal", mock_barcode), \
+             patch("app.agents.intake.orchestrator._lookup_taxonomy_corrections", AsyncMock(return_value=[])):
             result = await process_intake(barcode="1234567890123", barcode_type="ean13")
 
         assert result.name == "Charizard Base Set Holo"
@@ -173,8 +173,8 @@ class TestProcessIntakeBarcode:
 
         mock_barcode = AsyncMock(return_value=None)
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._barcode_lookup_internal", mock_barcode):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._barcode_lookup_internal", mock_barcode):
             result = await process_intake(barcode="0000000000000")
 
         assert result.name is None
@@ -204,10 +204,10 @@ class TestProcessIntakeVision:
             "identification_method": "vision_clip",
         })
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
-             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
-             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(25.0, "market_hits", {"q10": 15, "q50": 25, "q90": 40}))):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake.orchestrator._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake.orchestrator._estimate_price", AsyncMock(return_value=(25.0, "market_hits", {"q10": 15, "q50": 25, "q90": 40}))):
             result = await process_intake(image_bytes=b"\x89PNG\r\n\x1a\n")
 
         assert result.category_id == "funko"
@@ -223,8 +223,8 @@ class TestProcessIntakeVision:
 
         mock_vision = AsyncMock(return_value=None)
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._vision_classify_internal", mock_vision):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._vision_classify_internal", mock_vision):
             result = await process_intake(image_bytes=b"\x89PNG")
 
         assert result.category_id is None
@@ -264,11 +264,11 @@ class TestProcessIntakeBarcodePartialVision:
             "identification_method": "vision_openai",
         })
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._barcode_lookup_internal", mock_barcode), \
-             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
-             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
-             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._barcode_lookup_internal", mock_barcode), \
+             patch("app.agents.intake.orchestrator._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake.orchestrator._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake.orchestrator._estimate_price", AsyncMock(return_value=(None, None, None))):
             result = await process_intake(
                 barcode="9876543210987",
                 image_bytes=b"\x89PNG",
@@ -293,7 +293,7 @@ class TestProcessIntakeManual:
     async def test_no_barcode_no_image(self):
         from app.agents.intake_agent import process_intake
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None):
             result = await process_intake()
 
         assert result.identification_method == "manual"
@@ -322,10 +322,10 @@ class TestProcessIntakeUserHints:
             "identification_method": "vision_heuristic",
         })
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
-             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
-             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake.orchestrator._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake.orchestrator._estimate_price", AsyncMock(return_value=(None, None, None))):
             result = await process_intake(
                 image_bytes=b"\x89PNG",
                 user_hints={"category": "designer_toys", "name": "KAWS Figure", "condition": "Mint"},
@@ -364,10 +364,10 @@ class TestProcessIntakeTaxonomyCorrections:
             {"from_category": "pokemon", "to_category": "pokemon_jp", "frequency": 10, "user_count": 3},
         ])
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
-             patch("app.agents.intake_agent._lookup_taxonomy_corrections", mock_corrections), \
-             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake.orchestrator._lookup_taxonomy_corrections", mock_corrections), \
+             patch("app.agents.intake.orchestrator._estimate_price", AsyncMock(return_value=(None, None, None))):
             result = await process_intake(image_bytes=b"\x89PNG")
 
         assert len(result.suggested_corrections) == 1
@@ -389,8 +389,8 @@ class TestProcessIntakeErrorResilience:
 
         mock_barcode = AsyncMock(side_effect=RuntimeError("DB gone"))
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._barcode_lookup_internal", mock_barcode):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._barcode_lookup_internal", mock_barcode):
             result = await process_intake(barcode="1234567890123")
 
         # Should not raise, should return partial result
@@ -401,7 +401,7 @@ class TestProcessIntakeErrorResilience:
     async def test_intake_timestamp_always_set(self):
         from app.agents.intake_agent import process_intake
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None):
             result = await process_intake()
 
         assert "intake_timestamp" in result.attributes
@@ -457,12 +457,12 @@ class TestRepromptValidation:
             "reasoning": "Art matches candidate 2",
         })
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
-             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
-             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))), \
-             patch("app.agents.intake_agent._match_catalog_items", AsyncMock(return_value=catalog)), \
-             patch("app.agents.intake_agent._validate_with_reprompt", mock_reprompt):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake.orchestrator._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake.orchestrator._estimate_price", AsyncMock(return_value=(None, None, None))), \
+             patch("app.agents.intake.orchestrator._match_catalog_items", AsyncMock(return_value=catalog)), \
+             patch("app.agents.intake.orchestrator._validate_with_reprompt", mock_reprompt):
             result = await process_intake(image_bytes=b"\x89PNG\r\n\x1a\n")
 
         # Should have adopted candidate #2 (index 1 in zero-based list)
@@ -494,12 +494,12 @@ class TestRepromptValidation:
             "reasoning": "Original matches best",
         })
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
-             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
-             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))), \
-             patch("app.agents.intake_agent._match_catalog_items", AsyncMock(return_value=catalog)), \
-             patch("app.agents.intake_agent._validate_with_reprompt", mock_reprompt):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake.orchestrator._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake.orchestrator._estimate_price", AsyncMock(return_value=(None, None, None))), \
+             patch("app.agents.intake.orchestrator._match_catalog_items", AsyncMock(return_value=catalog)), \
+             patch("app.agents.intake.orchestrator._validate_with_reprompt", mock_reprompt):
             result = await process_intake(image_bytes=b"\x89PNG\r\n\x1a\n")
 
         # Name should still be the catalog-adopted one (score=0.80 >= 0.75)
@@ -528,12 +528,12 @@ class TestRepromptValidation:
 
         mock_reprompt = AsyncMock(return_value=None)
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
-             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
-             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))), \
-             patch("app.agents.intake_agent._match_catalog_items", AsyncMock(return_value=catalog)), \
-             patch("app.agents.intake_agent._validate_with_reprompt", mock_reprompt):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake.orchestrator._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake.orchestrator._estimate_price", AsyncMock(return_value=(None, None, None))), \
+             patch("app.agents.intake.orchestrator._match_catalog_items", AsyncMock(return_value=catalog)), \
+             patch("app.agents.intake.orchestrator._validate_with_reprompt", mock_reprompt):
             result = await process_intake(image_bytes=b"\x89PNG\r\n\x1a\n")
 
         mock_reprompt.assert_not_called()
@@ -558,12 +558,12 @@ class TestRepromptValidation:
 
         mock_reprompt = AsyncMock(return_value=None)
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
-             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
-             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))), \
-             patch("app.agents.intake_agent._match_catalog_items", AsyncMock(return_value=catalog)), \
-             patch("app.agents.intake_agent._validate_with_reprompt", mock_reprompt):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake.orchestrator._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake.orchestrator._estimate_price", AsyncMock(return_value=(None, None, None))), \
+             patch("app.agents.intake.orchestrator._match_catalog_items", AsyncMock(return_value=catalog)), \
+             patch("app.agents.intake.orchestrator._validate_with_reprompt", mock_reprompt):
             result = await process_intake(image_bytes=b"\x89PNG\r\n\x1a\n")
 
         mock_reprompt.assert_not_called()
@@ -588,12 +588,12 @@ class TestRepromptValidation:
         # Reprompt returns None (as if an error happened internally)
         mock_reprompt = AsyncMock(return_value=None)
 
-        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
-             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
-             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
-             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))), \
-             patch("app.agents.intake_agent._match_catalog_items", AsyncMock(return_value=catalog)), \
-             patch("app.agents.intake_agent._validate_with_reprompt", mock_reprompt):
+        with patch("app.agents.intake.orchestrator.get_db_pool", return_value=None), \
+             patch("app.agents.intake.orchestrator._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake.orchestrator._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake.orchestrator._estimate_price", AsyncMock(return_value=(None, None, None))), \
+             patch("app.agents.intake.orchestrator._match_catalog_items", AsyncMock(return_value=catalog)), \
+             patch("app.agents.intake.orchestrator._validate_with_reprompt", mock_reprompt):
             result = await process_intake(image_bytes=b"\x89PNG\r\n\x1a\n")
 
         # Should not crash; catalog adoption still happened

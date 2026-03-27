@@ -853,7 +853,8 @@ class TestGetLeaderboardMockedDB:
         ])
 
         with patch("app.features.gamification_router.db_configured", return_value=True), \
-             patch("app.features.gamification_router.get_conn", return_value=ctx):
+             patch("app.features.gamification_router.get_conn", return_value=ctx), \
+             patch("app.features.gamification_router.cache_get", return_value=None):
             resp = client.get("/gamification/leaderboard?period=weekly")
 
         assert resp.status_code == 200
@@ -877,7 +878,8 @@ class TestGetLeaderboardMockedDB:
         ])
 
         with patch("app.features.gamification_router.db_configured", return_value=True), \
-             patch("app.features.gamification_router.get_conn", return_value=ctx):
+             patch("app.features.gamification_router.get_conn", return_value=ctx), \
+             patch("app.features.gamification_router.cache_get", return_value=None):
             resp = client.get("/gamification/leaderboard?period=alltime")
 
         assert resp.status_code == 200
@@ -894,7 +896,8 @@ class TestGetLeaderboardMockedDB:
         ])
 
         with patch("app.features.gamification_router.db_configured", return_value=True), \
-             patch("app.features.gamification_router.get_conn", return_value=ctx):
+             patch("app.features.gamification_router.get_conn", return_value=ctx), \
+             patch("app.features.gamification_router.cache_get", return_value=None):
             resp = client.get("/gamification/leaderboard?offset=10&limit=5")
 
         assert resp.status_code == 200
@@ -924,7 +927,8 @@ class TestGetLeaderboardMockedDB:
         conn.fetch = AsyncMock(side_effect=asyncpg.PostgresError("timeout"))
 
         with patch("app.features.gamification_router.db_configured", return_value=True), \
-             patch("app.features.gamification_router.get_conn", return_value=ctx):
+             patch("app.features.gamification_router.get_conn", return_value=ctx), \
+             patch("app.features.gamification_router.cache_get", return_value=None):
             resp = client.get("/gamification/leaderboard")
 
         assert resp.status_code == 500
@@ -940,7 +944,8 @@ class TestGetLeaderboardMockedDB:
         ])
 
         with patch("app.features.gamification_router.db_configured", return_value=True), \
-             patch("app.features.gamification_router.get_conn", return_value=ctx):
+             patch("app.features.gamification_router.get_conn", return_value=ctx), \
+             patch("app.features.gamification_router.cache_get", return_value=None):
             resp = client.get("/gamification/leaderboard")
 
         entry = resp.json()["leaderboard"][0]

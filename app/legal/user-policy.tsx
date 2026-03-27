@@ -12,7 +12,7 @@ import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 
-const LAST_UPDATED = 'March 11, 2026';
+const LAST_UPDATED = 'March 27, 2026';
 
 function UserPolicyScreenInner() {
   const router = useRouter();

@@ -21,11 +21,11 @@ export const ItemsLoadingState = React.memo(function ItemsLoadingState({
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.skeletonContainer}>
         <View style={styles.skeletonHeader}>
-          <View style={{ width: 100, height: 24, backgroundColor: '#e2e8f0', borderRadius: 6 }} />
-          <View style={{ width: 150, height: 16, backgroundColor: '#e2e8f0', borderRadius: 4, marginTop: 8 }} />
+          <View style={{ width: 100, height: 24, backgroundColor: colors.skeleton, borderRadius: 6 }} />
+          <View style={{ width: 150, height: 16, backgroundColor: colors.skeleton, borderRadius: 4, marginTop: 8 }} />
         </View>
         <View style={styles.skeletonSearch}>
-          <View style={{ width: '100%', height: 44, backgroundColor: '#e2e8f0', borderRadius: 10 }} />
+          <View style={{ width: '100%', height: 44, backgroundColor: colors.skeleton, borderRadius: 10 }} />
         </View>
         <SkeletonCategoryPills />
         {viewMode === 'gallery' ? (

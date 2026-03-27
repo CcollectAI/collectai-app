@@ -17,12 +17,15 @@ import {
 import logger from '@/utils/logger';
 import { formatPrice } from '@/lib/format';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useBillingLimits } from '@/hooks/useBillingLimits';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 const MIN_COMPLETENESS = 0.4;
 const MAX_COMPLETENESS = 0.95;
 
 const SetsToCompleteScreen: React.FC = () => {
   const { colors } = useAppTheme();
+  const { limits } = useBillingLimits();
   const [items, setItems] = useState<CollectionStatusInput[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +112,11 @@ const SetsToCompleteScreen: React.FC = () => {
           </View>
         )}
 
-        {!loading && !error && candidates.length === 0 && (
+        {!loading && !error && !limits.set_completion && (
+          <UpgradePrompt feature="Set Completion Tracking" requiredPlan="Pro" />
+        )}
+
+        {!loading && !error && limits.set_completion && candidates.length === 0 && (
           <View style={styles.center}>
             <Text style={styles.empty}>
               No sets are near completion yet. Add more items or scan your
@@ -120,6 +127,7 @@ const SetsToCompleteScreen: React.FC = () => {
 
         {!loading &&
           !error &&
+          limits.set_completion &&
           candidates.map((s) => {
             const missing = Math.max(
               0,

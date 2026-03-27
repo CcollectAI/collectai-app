@@ -67,6 +67,9 @@ jest.mock('../../src/data/categories', () => ({
 jest.mock('../../src/constants/buildStepTemplates', () => ({
   BUILDABLE_CATEGORIES: ['lego', 'warhammer', 'gunpla'],
   getStepTemplateForCategory: () => null,
+  getStatusDef: () => undefined,
+  getStatusPipeline: () => [],
+  isFinishedStatus: () => false,
 }));
 
 jest.mock('../../src/data', () => ({
@@ -170,7 +173,7 @@ describe('ProjectCard', () => {
         onPress={jest.fn()}
       />,
     );
-    expect(screen.getByText('Completed')).toBeTruthy();
+    expect(screen.getByText('Finished')).toBeTruthy();
     expect(screen.getByText('100%')).toBeTruthy();
   });
 
@@ -255,7 +258,7 @@ describe('CreateProjectModal', () => {
 // ---------------------------------------------------------------------------
 
 describe('ProjectFilters', () => {
-  const defaultCounts = { all: 10, active: 6, completed: 4 };
+  const defaultCounts = { all: 10, in_progress: 4, finished: 3, wishlist: 2 };
 
   it('renders with counts and matches snapshot', () => {
     const tree = render(
@@ -277,27 +280,29 @@ describe('ProjectFilters', () => {
       />,
     );
     expect(screen.getByText('All')).toBeTruthy();
-    expect(screen.getByText('Current')).toBeTruthy();
-    expect(screen.getByText('Completed')).toBeTruthy();
+    expect(screen.getByText('In Progress')).toBeTruthy();
+    expect(screen.getByText('Finished')).toBeTruthy();
+    expect(screen.getByText('Wishlist')).toBeTruthy();
   });
 
   it('renders count values', () => {
     render(
       <ProjectFilters
-        selected="active"
+        selected="in_progress"
         onSelect={jest.fn()}
         counts={defaultCounts}
       />,
     );
     expect(screen.getByText('10')).toBeTruthy();
-    expect(screen.getByText('6')).toBeTruthy();
     expect(screen.getByText('4')).toBeTruthy();
+    expect(screen.getByText('3')).toBeTruthy();
+    expect(screen.getByText('2')).toBeTruthy();
   });
 
-  it('matches snapshot with completed selected', () => {
+  it('matches snapshot with finished selected', () => {
     const tree = render(
       <ProjectFilters
-        selected="completed"
+        selected="finished"
         onSelect={jest.fn()}
         counts={defaultCounts}
       />,

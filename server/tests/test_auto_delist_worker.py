@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -18,21 +18,24 @@ def _no_dsn(monkeypatch):
     monkeypatch.setattr("workers.auto_delist_worker.DSN", None)
 
 
+class _DictRow(dict):
+    """Minimal dict subclass that behaves like an asyncpg Record for tests."""
+    pass
+
+
 def _make_sale_row(sale_id="s1", listing_id="l1", item_id="i1", user_id="u1", marketplace_id="ebay"):
-    row = {
-        "sale_id": sale_id,
-        "listing_id": listing_id,
-        "item_id": item_id,
-        "user_id": user_id,
-        "sold_marketplace_id": marketplace_id,
-        "sold_at": datetime.now(timezone.utc),
-    }
-    return MagicMock(**{"__getitem__": row.__getitem__, "get": row.get})
+    return _DictRow(
+        sale_id=sale_id,
+        listing_id=listing_id,
+        item_id=item_id,
+        user_id=user_id,
+        sold_marketplace_id=marketplace_id,
+        sold_at=datetime.now(timezone.utc),
+    )
 
 
 def _make_listing_row(listing_id="l2", marketplace_id="mercari", status="active"):
-    row = {"id": listing_id, "marketplace_id": marketplace_id, "status": status}
-    return MagicMock(**{"__getitem__": row.__getitem__, "get": row.get})
+    return _DictRow(id=listing_id, marketplace_id=marketplace_id, status=status)
 
 
 @pytest.mark.asyncio

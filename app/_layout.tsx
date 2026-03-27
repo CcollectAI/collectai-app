@@ -280,6 +280,7 @@ function RootStack() {
         <Stack.Screen name="legal/privacy-policy" options={{ headerShown: false }} />
         <Stack.Screen name="legal/terms" options={{ headerShown: false }} />
         <Stack.Screen name="legal/user-policy" options={{ headerShown: false }} />
+        <Stack.Screen name="legal/data-processing" options={{ headerShown: false }} />
       </Stack>
 
       {/* Branded splash overlay — covers content while auth is resolving, fades out */}

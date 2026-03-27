@@ -523,7 +523,7 @@ exports[`ProjectCard matches snapshot for completed project 1`] = `
             ]
           }
         >
-          Completed
+          Finished
         </Text>
       </View>
     </View>
@@ -946,7 +946,7 @@ exports[`ProjectCard renders with minimal props and matches snapshot 1`] = `
 </View>
 `;
 
-exports[`ProjectFilters matches snapshot with completed selected 1`] = `
+exports[`ProjectFilters matches snapshot with finished selected 1`] = `
 <View
   style={
     {
@@ -1038,7 +1038,7 @@ exports[`ProjectFilters matches snapshot with completed selected 1`] = `
     </Text>
   </View>
   <View
-    accessibilityLabel="Current (6)"
+    accessibilityLabel="In Progress (4)"
     accessibilityRole="button"
     accessibilityState={
       {
@@ -1100,7 +1100,7 @@ exports[`ProjectFilters matches snapshot with completed selected 1`] = `
         ]
       }
     >
-      Current
+      In Progress
     </Text>
     <Text
       style={
@@ -1115,11 +1115,11 @@ exports[`ProjectFilters matches snapshot with completed selected 1`] = `
         ]
       }
     >
-      6
+      4
     </Text>
   </View>
   <View
-    accessibilityLabel="Completed (4)"
+    accessibilityLabel="Finished (3)"
     accessibilityRole="button"
     accessibilityState={
       {
@@ -1181,7 +1181,7 @@ exports[`ProjectFilters matches snapshot with completed selected 1`] = `
         ]
       }
     >
-      Completed
+      Finished
     </Text>
     <Text
       style={
@@ -1196,7 +1196,88 @@ exports[`ProjectFilters matches snapshot with completed selected 1`] = `
         ]
       }
     >
-      4
+      3
+    </Text>
+  </View>
+  <View
+    accessibilityLabel="Wishlist (2)"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": false,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 20,
+          "borderWidth": 1,
+          "flexDirection": "row",
+          "gap": 6,
+          "paddingHorizontal": 14,
+          "paddingVertical": 8,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 13,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Wishlist
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "500",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      2
     </Text>
   </View>
 </View>
@@ -1294,7 +1375,7 @@ exports[`ProjectFilters renders with counts and matches snapshot 1`] = `
     </Text>
   </View>
   <View
-    accessibilityLabel="Current (6)"
+    accessibilityLabel="In Progress (4)"
     accessibilityRole="button"
     accessibilityState={
       {
@@ -1356,88 +1437,7 @@ exports[`ProjectFilters renders with counts and matches snapshot 1`] = `
         ]
       }
     >
-      Current
-    </Text>
-    <Text
-      style={
-        [
-          {
-            "fontSize": 12,
-            "fontWeight": "500",
-          },
-          {
-            "color": "#64748B",
-          },
-        ]
-      }
-    >
-      6
-    </Text>
-  </View>
-  <View
-    accessibilityLabel="Completed (4)"
-    accessibilityRole="button"
-    accessibilityState={
-      {
-        "busy": undefined,
-        "checked": undefined,
-        "disabled": undefined,
-        "expanded": undefined,
-        "selected": false,
-      }
-    }
-    accessibilityValue={
-      {
-        "max": undefined,
-        "min": undefined,
-        "now": undefined,
-        "text": undefined,
-      }
-    }
-    accessible={true}
-    collapsable={false}
-    focusable={true}
-    onBlur={[Function]}
-    onClick={[Function]}
-    onFocus={[Function]}
-    onResponderGrant={[Function]}
-    onResponderMove={[Function]}
-    onResponderRelease={[Function]}
-    onResponderTerminate={[Function]}
-    onResponderTerminationRequest={[Function]}
-    onStartShouldSetResponder={[Function]}
-    style={
-      [
-        {
-          "alignItems": "center",
-          "borderRadius": 20,
-          "borderWidth": 1,
-          "flexDirection": "row",
-          "gap": 6,
-          "paddingHorizontal": 14,
-          "paddingVertical": 8,
-        },
-        {
-          "backgroundColor": "#FFFFFF",
-          "borderColor": "#E2E8F0",
-        },
-      ]
-    }
-  >
-    <Text
-      style={
-        [
-          {
-            "fontSize": 13,
-            "fontWeight": "600",
-          },
-          {
-            "color": "#64748B",
-          },
-        ]
-      }
-    >
-      Completed
+      In Progress
     </Text>
     <Text
       style={
@@ -1453,6 +1453,168 @@ exports[`ProjectFilters renders with counts and matches snapshot 1`] = `
       }
     >
       4
+    </Text>
+  </View>
+  <View
+    accessibilityLabel="Finished (3)"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": false,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 20,
+          "borderWidth": 1,
+          "flexDirection": "row",
+          "gap": 6,
+          "paddingHorizontal": 14,
+          "paddingVertical": 8,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 13,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Finished
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "500",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      3
+    </Text>
+  </View>
+  <View
+    accessibilityLabel="Wishlist (2)"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": false,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 20,
+          "borderWidth": 1,
+          "flexDirection": "row",
+          "gap": 6,
+          "paddingHorizontal": 14,
+          "paddingVertical": 8,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 13,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Wishlist
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "500",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      2
     </Text>
   </View>
 </View>

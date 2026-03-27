@@ -63,6 +63,8 @@ import type { MarketHit } from '@/components/MarketplacePricesSection';
 import { BuildProjectSection } from '@/components/BuildProjectSection';
 import { ProvenanceHistorySection } from '@/components/ProvenanceHistorySection';
 import { track } from '@/analytics/track';
+import { useBillingLimits } from '@/hooks/useBillingLimits';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { ItemDetailsCard } from '@/components/item/ItemDetailsCard';
 import { ItemQuickActionsRow } from '@/components/item/ItemQuickActionsRow';
 import { ItemShopSection } from '@/components/item/ItemShopSection';
@@ -112,6 +114,7 @@ function ItemDetailScreen() {
   const { colors: theme } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
+  const { limits } = useBillingLimits();
   const params = useLocalSearchParams<{
     id?: string;
     draft?: string;
@@ -741,8 +744,11 @@ function ItemDetailScreen() {
               />
             )}
 
-            {/* Grading Section — for eligible categories */}
-            {!isDraft && id && isGradingEligible && (
+            {/* Grading Section — for eligible categories (Pro+) */}
+            {!isDraft && id && isGradingEligible && !limits.condition_grading && (
+              <UpgradePrompt feature="Condition Grading" requiredPlan="Pro" />
+            )}
+            {!isDraft && id && isGradingEligible && limits.condition_grading && (
               <GradingSection
                 theme={theme}
                 hapticsEnabled={settings.hapticsEnabled}

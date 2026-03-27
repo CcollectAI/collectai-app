@@ -11,7 +11,6 @@ import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import type { QuickScanResult, CurrencyCode } from '@/data/types';
 
-const TIFFANY = '#81D8D0';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HALF_WIDTH = (SCREEN_WIDTH - 48) / 2;
 
@@ -44,7 +43,7 @@ function ComparisonRow({
       <Text
         style={[
           styles.compValue,
-          { color: highlightHigher === 'a' ? '#22C55E' : colors.text },
+          { color: highlightHigher === 'a' ? colors.success : colors.text },
         ]}
         numberOfLines={2}
       >
@@ -56,7 +55,7 @@ function ComparisonRow({
       <Text
         style={[
           styles.compValue,
-          { color: highlightHigher === 'b' ? '#22C55E' : colors.text, textAlign: 'right' },
+          { color: highlightHigher === 'b' ? colors.success : colors.text, textAlign: 'right' },
         ]}
         numberOfLines={2}
       >
@@ -96,7 +95,7 @@ function ComparisonCardInner({
         <View style={styles.imagesRow}>
           <View style={styles.imageWrapper}>
             <Image source={{ uri: imageUriA }} style={styles.compImage} resizeMode="cover" />
-            <View style={[styles.imageBadge, { backgroundColor: TIFFANY }]}>
+            <View style={[styles.imageBadge, { backgroundColor: colors.brand.base }]}>
               <Text style={styles.imageBadgeText}>A</Text>
             </View>
           </View>
@@ -113,16 +112,16 @@ function ComparisonCardInner({
           <View
             style={[
               styles.deltaBanner,
-              { backgroundColor: priceDelta > 0 ? '#22C55E15' : colors.danger + '15' },
+              { backgroundColor: priceDelta > 0 ? colors.success + '15' : colors.danger + '15' },
             ]}
           >
             <Ionicons
               name={priceDelta > 0 ? 'arrow-up' : 'arrow-down'}
               size={16}
-              color={priceDelta > 0 ? '#22C55E' : colors.danger}
+              color={priceDelta > 0 ? colors.success : colors.danger}
             />
             <Text
-              style={[styles.deltaText, { color: priceDelta > 0 ? '#22C55E' : colors.danger }]}
+              style={[styles.deltaText, { color: priceDelta > 0 ? colors.success : colors.danger }]}
             >
               {priceDelta > 0 ? '+' : ''}
               {formatPrice(Math.abs(priceDelta), currency)} ({priceDeltaPct > 0 ? '+' : ''}
@@ -176,7 +175,7 @@ function ComparisonCardInner({
       >
         <View style={styles.btnRow}>
           <AnimatedPressable
-            style={[styles.actionBtn, { backgroundColor: TIFFANY }]}
+            style={[styles.actionBtn, { backgroundColor: colors.brand.base }]}
             onPress={onKeepA}
             accessibilityRole="button"
             accessibilityLabel="Keep item A"

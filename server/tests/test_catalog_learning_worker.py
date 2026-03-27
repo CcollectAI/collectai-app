@@ -122,6 +122,7 @@ class TestCandidatePromotion:
             # promoted_rows (from UPDATE RETURNING)
             [{"id": candidate_id, "proposed_name": "Board Games"}],
         ])
+        pool.fetchrow = AsyncMock(return_value=None)  # existing_candidate check
         pool.execute = AsyncMock()
         mock_get_pool.return_value = pool
 

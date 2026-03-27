@@ -114,6 +114,8 @@ export interface BillingStatus {
     deal_discovery: boolean;
     dossier_pdf: boolean;
     advanced_analytics: boolean;
+    condition_grading: boolean;
+    set_completion: boolean;
   };
 }
 

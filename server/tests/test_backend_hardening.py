@@ -51,11 +51,11 @@ async def test_reprompt_skips_when_circuit_open():
     from workers.circuit_breaker import CircuitOpenError
 
     with patch("app.config.OPENAI_API_KEY", "sk-test"), \
-         patch("app.agents.intake_agent.OPENAI_API_KEY", "sk-test"), \
+         patch("app.agents.intake.catalog_matching.OPENAI_API_KEY", "sk-test"), \
          patch("workers.circuit_breaker.openai_circuit") as mock_circuit:
         mock_circuit.check.side_effect = CircuitOpenError("openai", 60)
 
-        from app.agents.intake_agent import _validate_with_reprompt
+        from app.agents.intake.catalog_matching import _validate_with_reprompt
 
         result = await _validate_with_reprompt(
             image_bytes=b"\x89PNG\r\n\x1a\nfake",
@@ -74,7 +74,7 @@ async def test_reprompt_skips_when_circuit_open():
 async def test_reprompt_records_failure_on_error():
     """Reprompt validation should record_failure on the circuit breaker on errors."""
     with patch("app.config.OPENAI_API_KEY", "sk-test"), \
-         patch("app.agents.intake_agent.OPENAI_API_KEY", "sk-test"), \
+         patch("app.agents.intake.catalog_matching.OPENAI_API_KEY", "sk-test"), \
          patch("workers.circuit_breaker.openai_circuit") as mock_circuit:
         mock_circuit.check.return_value = None
 
@@ -86,7 +86,7 @@ async def test_reprompt_records_failure_on_error():
             mock_client.__aexit__ = AsyncMock(return_value=False)
             mock_client_cls.return_value = mock_client
 
-            from app.agents.intake_agent import _validate_with_reprompt
+            from app.agents.intake.catalog_matching import _validate_with_reprompt
 
             result = await _validate_with_reprompt(
                 image_bytes=b"\x89PNG\r\n\x1a\nfake",

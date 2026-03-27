@@ -165,6 +165,7 @@ async def run_once():
         record_run("insights_digest_worker", "error")
         return
 
+    status = "ok"
     conn = await asyncpg.connect(DSN)
     try:
         # Get all users with items
@@ -327,16 +328,18 @@ async def run_once():
             )
 
         logger.info("Insights digest worker complete: %d digests sent", digests_sent)
+    except Exception:
+        status = "error"
+        raise
     finally:
         await conn.close()
-        record_run("insights_digest_worker", "ok")
+        record_run("insights_digest_worker", status)
 
 
 async def main():
     try:
         await run_once()
     except Exception as e:
-        record_run("insights_digest_worker", "error")
         log_dead_letter("insights_digest_worker", {}, e)
         logger.exception("insights_digest_worker crashed: %r", e)
 

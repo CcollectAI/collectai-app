@@ -403,6 +403,8 @@ exports[`ItemPriceSection matches snapshot with scarcity and comps 1`] = `
     </View>
   </View>,
   <View
+    accessibilityLabel="Scarcity: Rare, 1 listings, supply declining"
+    accessibilityRole="summary"
     style={
       [
         {
@@ -538,6 +540,7 @@ exports[`ItemPriceSection matches snapshot with scarcity and comps 1`] = `
        Comparable Sales
     </Text>
     <View
+      accessibilityLabel="Recent Sale from eBay, EUR 130"
       style={
         [
           {

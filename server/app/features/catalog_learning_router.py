@@ -108,6 +108,11 @@ class CandidateActionRequest(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _build_where(conditions: list[str]) -> str:
+    """Join conditions into a WHERE clause, or return empty string if none."""
+    return (" WHERE " + " AND ".join(conditions)) if conditions else ""
+
+
 def _slugify(name: str) -> str:
     """Convert a proposed category name to a slug."""
     slug = name.lower().strip()
@@ -285,7 +290,7 @@ async def list_catalog_suggestions(
     if pool is None:
         return {"suggestions": [], "total": 0}
 
-    conditions = []
+    conditions: list[str] = []
     params: list[Any] = []
     idx = 1
 
@@ -302,12 +307,10 @@ async def list_catalog_suggestions(
         params.append(category)
         idx += 1
 
-    where = " AND ".join(conditions)
-    if where:
-        where = "WHERE " + where
+    where = _build_where(conditions)
 
     total = await pool.fetchval(
-        f"SELECT count(*) FROM catalog_suggestions {where}",
+        f"SELECT count(*) FROM catalog_suggestions{where}",
         *params,
     ) or 0
 
@@ -316,7 +319,7 @@ async def list_catalog_suggestions(
         f"""
         SELECT id, user_id, source, suggested_name, suggested_category,
                matched_category, confidence, status, created_at
-        FROM catalog_suggestions {where}
+        FROM catalog_suggestions{where}
         ORDER BY created_at DESC
         LIMIT ${idx} OFFSET ${idx + 1}
         """,
@@ -445,17 +448,19 @@ async def list_category_candidates(
     if pool is None:
         return {"candidates": [], "total": 0}
 
-    where = ""
+    conditions: list[str] = []
     params: list[Any] = []
     idx = 1
 
     if status:
-        where = f"WHERE status = ${idx}"
+        conditions.append(f"status = ${idx}")
         params.append(status)
         idx += 1
 
+    where = _build_where(conditions)
+
     total = await pool.fetchval(
-        f"SELECT count(*) FROM category_candidates {where}",
+        f"SELECT count(*) FROM category_candidates{where}",
         *params,
     ) or 0
 
@@ -465,7 +470,7 @@ async def list_category_candidates(
         SELECT id, proposed_name, proposed_slug, description,
                signal_count, unique_users, first_seen, last_seen,
                status, admin_notes
-        FROM category_candidates {where}
+        FROM category_candidates{where}
         ORDER BY unique_users DESC, signal_count DESC
         LIMIT ${idx} OFFSET ${idx + 1}
         """,

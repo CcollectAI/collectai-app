@@ -208,11 +208,14 @@ class TestProcessUrlImport:
         from app.agents.intake_agent import process_url_import
 
         with patch("app.agents.intake_agent.get_db_pool", return_value=None):
-            with patch("app.lib.firecrawl_client.FIRECRAWL_API_KEY", ""):
+            with patch("app.lib.smart_scrape.crawl4ai_client") as mock_c4a, \
+                 patch("app.lib.smart_scrape.firecrawl_client") as mock_fc:
+                mock_c4a.configured.return_value = False
+                mock_fc.configured.return_value = False
                 result = await process_url_import("https://ebay.com/itm/123")
 
         assert result.identification_method == "url_import_failed"
-        assert any("not configured" in r for r in result.rationale)
+        assert any("no scraper" in r.lower() or "not configured" in r.lower() for r in result.rationale)
 
     @pytest.mark.asyncio
     async def test_successful_extraction(self):
@@ -274,15 +277,14 @@ class TestProcessUrlImport:
     async def test_scrape_returns_none(self):
         from app.agents.intake_agent import process_url_import
 
-        mock_scrape = AsyncMock(return_value=None)
+        mock_smart_scrape = AsyncMock(return_value=None)
 
         with patch("app.agents.intake_agent.get_db_pool", return_value=None):
-            with patch("app.lib.firecrawl_client.scrape_url", mock_scrape):
-                with patch("app.lib.firecrawl_client.configured", return_value=True):
-                    result = await process_url_import("https://ebay.com/itm/123")
+            with patch("app.lib.smart_scrape.smart_scrape", mock_smart_scrape):
+                result = await process_url_import("https://ebay.com/itm/123")
 
         assert result.identification_method == "url_import_failed"
-        assert any("no data" in r for r in result.rationale)
+        assert any("no scraper" in r.lower() or "no data" in r.lower() for r in result.rationale)
 
     @pytest.mark.asyncio
     async def test_user_hints_override(self):
@@ -378,6 +380,7 @@ class TestIntakeUrlEndpoint:
         mock_result.catalog_miss = False
         mock_result.alternatives = []
         mock_result.field_confidence = {}
+        mock_result.scan_session_id = None
 
         with patch(
             "app.agents.intake_router.process_url_import",
@@ -417,6 +420,7 @@ class TestIntakeUrlEndpoint:
         mock_result.catalog_miss = False
         mock_result.alternatives = []
         mock_result.field_confidence = {}
+        mock_result.scan_session_id = None
 
         with patch(
             "app.agents.intake_router.process_url_import",

@@ -16,6 +16,7 @@ import {
   replayQueue,
   loadQueue,
   getQueueLength,
+  setOnPermanentFailure,
   type MutationType,
 } from '@/lib/mutationQueue';
 import { onReconnect, isDeviceOnline } from '@/hooks/useNetworkStatus';
@@ -40,6 +41,22 @@ export async function initOfflineQueue(): Promise<void> {
   // Load persisted queue
   await loadQueue();
 
+  // Register permanent-failure callback so the UI layer can be notified
+  setOnPermanentFailure((failed) => {
+    const types = failed.map((f) => f.type).join(', ');
+    logger.error(
+      `[OfflineQueue] ${failed.length} mutation(s) permanently failed: ${types}`,
+    );
+    // Notify registered listeners (e.g. Toast provider)
+    for (const listener of _failureListeners) {
+      try {
+        listener(failed);
+      } catch {
+        // swallow listener errors
+      }
+    }
+  });
+
   // Auto-replay on reconnection
   onReconnect(async (connected) => {
     if (connected && getQueueLength() > 0) {
@@ -61,6 +78,34 @@ export async function initOfflineQueue(): Promise<void> {
   }
 }
 
+// ── Failure notification ─────────────────────────────────────────────────────
+
+type FailureListener = (
+  failed: Array<{ type: MutationType; id: string; createdAt: string }>,
+) => void;
+const _failureListeners: FailureListener[] = [];
+
+/**
+ * Register a listener that fires when queued mutations permanently fail.
+ * Returns an unsubscribe function.
+ *
+ * Usage (e.g. in a React component or root layout):
+ * ```ts
+ * useEffect(() => {
+ *   return onOfflineMutationFailure((failed) => {
+ *     showToast(`${failed.length} offline change(s) could not be synced`);
+ *   });
+ * }, []);
+ * ```
+ */
+export function onOfflineMutationFailure(listener: FailureListener): () => void {
+  _failureListeners.push(listener);
+  return () => {
+    const idx = _failureListeners.indexOf(listener);
+    if (idx >= 0) _failureListeners.splice(idx, 1);
+  };
+}
+
 // ── Mutation executor ───────────────────────────────────────────────────────
 
 /**
@@ -69,6 +114,7 @@ export async function initOfflineQueue(): Promise<void> {
  */
 async function executeMutation(type: MutationType, args: unknown[]): Promise<void> {
   switch (type) {
+    // ── Item CRUD ──────────────────────────────────────────────────────────
     case 'createItem':
       await dataProvider.createItem(args[0] as Parameters<typeof dataProvider.createItem>[0]);
       break;
@@ -81,49 +127,11 @@ async function executeMutation(type: MutationType, args: unknown[]): Promise<voi
     case 'deleteItem':
       await dataProvider.deleteItem(args[0] as string);
       break;
-    case 'rsvpEvent':
-      await dataProvider.rsvpEvent(args[0] as string, args[1] as string);
+    case 'archiveItem':
+      await dataProvider.archiveItem(args[0] as string);
       break;
-    case 'sendMessage':
-      await dataProvider.sendMessage(args[0] as string, args[1] as string);
-      break;
-    case 'addWatchlistItem':
-      await dataProvider.addWatchlistItem(
-        args[0] as Parameters<typeof dataProvider.addWatchlistItem>[0],
-      );
-      break;
-    case 'removeWatchlistItem':
-      await dataProvider.removeWatchlistItem(args[0] as string);
-      break;
-    case 'createEvent':
-      await dataProvider.createEvent(args[0] as Parameters<typeof dataProvider.createEvent>[0]);
-      break;
-    case 'updateWatchlistItem':
-      await dataProvider.updateWatchlistItem(
-        args[0] as string,
-        args[1] as Parameters<typeof dataProvider.updateWatchlistItem>[1],
-      );
-      break;
-    case 'createBuildPaintProject':
-      await dataProvider.createBuildPaintProject(
-        args[0] as Parameters<typeof dataProvider.createBuildPaintProject>[0],
-      );
-      break;
-    case 'deleteEvent':
-      await collectorsApi.deleteEvent(args[0] as string);
-      break;
-    case 'updateEvent':
-      await dataProvider.updateEvent(
-        args[0] as string,
-        args[1] as Parameters<typeof dataProvider.updateEvent>[1],
-      );
-      break;
-    case 'submitFeedback':
-      await dataProvider.submitFeedback(
-        args[0] as string,
-        args[1] as 'sale_price' | 'disagree' | 'accurate',
-        args[2] as string | undefined,
-      );
+    case 'unarchiveItem':
+      await dataProvider.unarchiveItem(args[0] as string);
       break;
     case 'toggleForSale':
       await dataProvider.toggleForSale(
@@ -132,12 +140,187 @@ async function executeMutation(type: MutationType, args: unknown[]): Promise<voi
         args[2] as number | undefined,
       );
       break;
-    case 'archiveItem':
-      await dataProvider.archiveItem(args[0] as string);
+
+    // ── Events ─────────────────────────────────────────────────────────────
+    case 'rsvpEvent':
+      await dataProvider.rsvpEvent(args[0] as string, args[1] as string);
       break;
-    case 'unarchiveItem':
-      await dataProvider.unarchiveItem(args[0] as string);
+    case 'unrsvpEvent':
+      await dataProvider.unrsvpEvent(args[0] as string);
       break;
+    case 'createEvent':
+      await dataProvider.createEvent(args[0] as Parameters<typeof dataProvider.createEvent>[0]);
+      break;
+    case 'updateEvent':
+      await dataProvider.updateEvent(
+        args[0] as string,
+        args[1] as Parameters<typeof dataProvider.updateEvent>[1],
+      );
+      break;
+    case 'deleteEvent':
+      await collectorsApi.deleteEvent(args[0] as string);
+      break;
+    case 'cancelEvent':
+      await dataProvider.cancelEvent(args[0] as string);
+      break;
+
+    // ── Watchlist ──────────────────────────────────────────────────────────
+    case 'addWatchlistItem':
+      await dataProvider.addWatchlistItem(
+        args[0] as Parameters<typeof dataProvider.addWatchlistItem>[0],
+      );
+      break;
+    case 'removeWatchlistItem':
+      await dataProvider.removeWatchlistItem(args[0] as string);
+      break;
+    case 'removeWatchlistItems':
+      await dataProvider.removeWatchlistItems(args[0] as string[]);
+      break;
+    case 'updateWatchlistItem':
+      await dataProvider.updateWatchlistItem(
+        args[0] as string,
+        args[1] as Parameters<typeof dataProvider.updateWatchlistItem>[1],
+      );
+      break;
+    case 'convertWatchlistToItem':
+      await dataProvider.convertWatchlistToItem(
+        args[0] as string,
+        args[1] as number | undefined,
+        args[2] as string | undefined,
+      );
+      break;
+
+    // ── Build & Paint ──────────────────────────────────────────────────────
+    case 'createBuildPaintProject':
+      await dataProvider.createBuildPaintProject(
+        args[0] as Parameters<typeof dataProvider.createBuildPaintProject>[0],
+      );
+      break;
+    case 'updateBuildPaintProject':
+      await dataProvider.updateBuildPaintProject(
+        args[0] as string,
+        args[1] as Parameters<typeof dataProvider.updateBuildPaintProject>[1],
+      );
+      break;
+    case 'setBuildPaintProgress':
+      await dataProvider.setBuildPaintProgress(
+        args[0] as string,
+        args[1] as number,
+        args[2] as string | undefined,
+      );
+      break;
+    case 'markBuildPaintProjectComplete':
+      await dataProvider.markBuildPaintProjectComplete(
+        args[0] as string,
+        args[1] as boolean,
+      );
+      break;
+    case 'addBuildPaintStep':
+      await dataProvider.addBuildPaintStep(args[0] as string, args[1] as string);
+      break;
+    case 'toggleBuildPaintStep':
+      await dataProvider.toggleBuildPaintStep(args[0] as string, args[1] as boolean);
+      break;
+    case 'addBuildPaintNote':
+      await dataProvider.addBuildPaintNote(args[0] as string, args[1] as string);
+      break;
+
+    // ── Feedback & Corrections ─────────────────────────────────────────────
+    case 'submitFeedback':
+      await dataProvider.submitFeedback(
+        args[0] as string,
+        args[1] as 'sale_price' | 'disagree' | 'accurate',
+        args[2] as string | undefined,
+      );
+      break;
+    case 'submitCorrection':
+      await dataProvider.submitCorrection(
+        args[0] as string,
+        args[1] as Parameters<typeof dataProvider.submitCorrection>[1],
+      );
+      break;
+
+    // ── Category Ownership & Following ─────────────────────────────────────
+    case 'markCategoryItemOwned':
+      await dataProvider.markCategoryItemOwned(
+        args[0] as string,
+        args[1] as number | undefined,
+        args[2] as string | undefined,
+      );
+      break;
+    case 'followCategory':
+      await dataProvider.followCategory(args[0] as string);
+      break;
+    case 'unfollowCategory':
+      await dataProvider.unfollowCategory(args[0] as string);
+      break;
+
+    // ── User Blocking ──────────────────────────────────────────────────────
+    case 'blockUser':
+      await dataProvider.blockUser(args[0] as string);
+      break;
+    case 'unblockUser':
+      await dataProvider.unblockUser(args[0] as string);
+      break;
+
+    // ── Chat / DM ──────────────────────────────────────────────────────────
+    case 'sendMessage':
+      await dataProvider.sendMessage(args[0] as string, args[1] as string);
+      break;
+    case 'requestDm':
+      await dataProvider.requestDm(args[0] as string, args[1] as string | undefined);
+      break;
+    case 'decideDmRequest':
+      await dataProvider.decideDmRequest(args[0] as string, args[1] as boolean);
+      break;
+
+    // ── Deal Desk ──────────────────────────────────────────────────────────
+    case 'proposeOffer':
+      await dataProvider.proposeOffer(
+        args[0] as string,
+        args[1] as number,
+        args[2] as string | undefined,
+      );
+      break;
+    case 'counterOffer':
+      await dataProvider.counterOffer(
+        args[0] as string,
+        args[1] as number,
+        args[2] as string | undefined,
+      );
+      break;
+    case 'respondToOffer':
+      await dataProvider.respondToOffer(
+        args[0] as string,
+        args[1] as boolean,
+        args[2] as string | undefined,
+      );
+      break;
+    case 'cancelOffer':
+      await dataProvider.cancelOffer(args[0] as string);
+      break;
+    case 'markShipped':
+      await dataProvider.markShipped(args[0] as string, args[1] as string | undefined);
+      break;
+    case 'completeDeal':
+      await dataProvider.completeDeal(
+        args[0] as string,
+        args[1] as number,
+        args[2] as string | undefined,
+      );
+      break;
+
+    // ── Activity ───────────────────────────────────────────────────────────
+    case 'logActivity':
+      await dataProvider.logActivity(
+        args[0] as string,
+        args[1] as string,
+        args[2] as string | undefined,
+        args[3] as Record<string, unknown> | undefined,
+        args[4] as boolean | undefined,
+      );
+      break;
+
     default:
       logger.warn(`[OfflineQueue] Unknown mutation type: ${type}`);
   }

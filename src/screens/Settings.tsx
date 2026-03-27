@@ -204,6 +204,20 @@ export default function Settings() {
 
         <AnimatedPressable
           style={styles.settingRow}
+          onPress={() => router.push('/legal/data-processing' as any)}
+          accessibilityRole="link"
+          accessibilityLabel="Data Processing"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Data Processing</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
           onPress={() => router.push('/condition-guide')}
           accessibilityRole="link"
           accessibilityLabel="Condition Guide"

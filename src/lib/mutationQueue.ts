@@ -21,18 +21,43 @@ export type MutationType =
   | 'updateItem'
   | 'deleteItem'
   | 'rsvpEvent'
+  | 'unrsvpEvent'
   | 'sendMessage'
   | 'addWatchlistItem'
   | 'removeWatchlistItem'
+  | 'removeWatchlistItems'
   | 'createEvent'
   | 'updateEvent'
   | 'deleteEvent'
+  | 'cancelEvent'
   | 'updateWatchlistItem'
+  | 'convertWatchlistToItem'
   | 'createBuildPaintProject'
+  | 'updateBuildPaintProject'
+  | 'setBuildPaintProgress'
+  | 'markBuildPaintProjectComplete'
+  | 'addBuildPaintStep'
+  | 'toggleBuildPaintStep'
+  | 'addBuildPaintNote'
   | 'submitFeedback'
+  | 'submitCorrection'
   | 'toggleForSale'
   | 'archiveItem'
-  | 'unarchiveItem';
+  | 'unarchiveItem'
+  | 'markCategoryItemOwned'
+  | 'followCategory'
+  | 'unfollowCategory'
+  | 'blockUser'
+  | 'unblockUser'
+  | 'requestDm'
+  | 'decideDmRequest'
+  | 'proposeOffer'
+  | 'counterOffer'
+  | 'respondToOffer'
+  | 'cancelOffer'
+  | 'markShipped'
+  | 'completeDeal'
+  | 'logActivity';
 
 export type QueuedMutation = {
   id: string;
@@ -42,10 +67,24 @@ export type QueuedMutation = {
   retries: number;
 };
 
+/** Callback invoked when mutations permanently fail after all retries. */
+export type OnPermanentFailureCallback = (
+  failed: Array<{ type: MutationType; id: string; createdAt: string }>,
+) => void;
+
 // ── Internal state ──────────────────────────────────────────────────────────
 
 let _queue: QueuedMutation[] = [];
 let _isReplaying = false;
+let _onPermanentFailure: OnPermanentFailureCallback | null = null;
+
+/**
+ * Register a callback that fires when mutations permanently fail (after MAX_RETRIES).
+ * Use this to show a toast or alert in the UI layer.
+ */
+export function setOnPermanentFailure(cb: OnPermanentFailureCallback | null): void {
+  _onPermanentFailure = cb;
+}
 
 // ── Persistence ─────────────────────────────────────────────────────────────
 
@@ -154,6 +193,7 @@ export async function replayQueue(
   let succeeded = 0;
   let failed = 0;
   const retryLater: QueuedMutation[] = [];
+  const permanentlyFailed: Array<{ type: MutationType; id: string; createdAt: string }> = [];
 
   logger.info(`[MutationQueue] Replaying ${_queue.length} mutations`);
 
@@ -171,6 +211,11 @@ export async function replayQueue(
         );
       } else {
         failed++;
+        permanentlyFailed.push({
+          type: mutation.type,
+          id: mutation.id,
+          createdAt: mutation.createdAt,
+        });
         logger.error(
           `[MutationQueue] Permanently failed ${mutation.type} after ${MAX_RETRIES} retries`,
         );
@@ -181,6 +226,15 @@ export async function replayQueue(
   _queue = retryLater;
   await persistQueue();
   _isReplaying = false;
+
+  // Notify UI layer about permanent failures
+  if (permanentlyFailed.length > 0 && _onPermanentFailure) {
+    try {
+      _onPermanentFailure(permanentlyFailed);
+    } catch {
+      logger.warn('[MutationQueue] onPermanentFailure callback threw');
+    }
+  }
 
   logger.info(
     `[MutationQueue] Replay complete: ${succeeded} succeeded, ${failed} permanently failed, ${retryLater.length} will retry`,

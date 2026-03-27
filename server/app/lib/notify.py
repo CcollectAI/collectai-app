@@ -22,7 +22,7 @@ from typing import Any, Optional
 logger = logging.getLogger(__name__)
 
 # Frequency caps per 24h window
-FREE_DAILY_CAP = 5
+FREE_DAILY_CAP = 3
 PRO_DAILY_CAP = 15
 PREMIUM_DAILY_CAP = 30
 

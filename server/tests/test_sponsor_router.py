@@ -40,6 +40,20 @@ def _with_dev_auth(headers=None) -> dict:
     return h
 
 
+def _auth_override(app):
+    """Override the auth dependency so requests reach the endpoint logic."""
+    from app.auth import get_current_user_id
+
+    async def _fake_user():
+        return "test-user-id"
+
+    app.dependency_overrides[get_current_user_id] = _fake_user
+
+
+def _clear_overrides(app):
+    app.dependency_overrides.clear()
+
+
 # ---------------------------------------------------------------------------
 # Tests — Sponsor Checkout
 # ---------------------------------------------------------------------------
@@ -58,40 +72,52 @@ async def test_sponsor_checkout_requires_auth(client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_sponsor_checkout_invalid_tier(client: AsyncClient):
+async def test_sponsor_checkout_invalid_tier(app, client: AsyncClient):
     """Invalid tier should return 422 (or 500 if auth fails first in test env)."""
-    resp = await client.post(
-        "/events/sponsor-checkout",
-        json={
-            "event_id": "test-id",
-            "tier": "mega_ultra",
-            "sponsor_name": "Test Sponsor",
-        },
-        headers=_with_dev_auth(),
-    )
-    assert resp.status_code in (422, 500)
+    _auth_override(app)
+    try:
+        resp = await client.post(
+            "/events/sponsor-checkout",
+            json={
+                "event_id": "test-id",
+                "tier": "mega_ultra",
+                "sponsor_name": "Test Sponsor",
+            },
+            headers=_with_dev_auth(),
+        )
+        assert resp.status_code in (422, 500)
+    finally:
+        _clear_overrides(app)
 
 
 @pytest.mark.anyio
-async def test_sponsor_checkout_missing_event_id(client: AsyncClient):
+async def test_sponsor_checkout_missing_event_id(app, client: AsyncClient):
     """Missing event_id should return 422 (or 500 if auth fails first)."""
-    resp = await client.post(
-        "/events/sponsor-checkout",
-        json={"tier": "featured", "sponsor_name": "Test"},
-        headers=_with_dev_auth(),
-    )
-    assert resp.status_code in (422, 500)
+    _auth_override(app)
+    try:
+        resp = await client.post(
+            "/events/sponsor-checkout",
+            json={"tier": "featured", "sponsor_name": "Test"},
+            headers=_with_dev_auth(),
+        )
+        assert resp.status_code in (422, 500)
+    finally:
+        _clear_overrides(app)
 
 
 @pytest.mark.anyio
-async def test_sponsor_checkout_missing_sponsor_name(client: AsyncClient):
+async def test_sponsor_checkout_missing_sponsor_name(app, client: AsyncClient):
     """Missing sponsor_name should return 422 (or 500 if auth fails first)."""
-    resp = await client.post(
-        "/events/sponsor-checkout",
-        json={"event_id": "test-id", "tier": "featured"},
-        headers=_with_dev_auth(),
-    )
-    assert resp.status_code in (422, 500)
+    _auth_override(app)
+    try:
+        resp = await client.post(
+            "/events/sponsor-checkout",
+            json={"event_id": "test-id", "tier": "featured"},
+            headers=_with_dev_auth(),
+        )
+        assert resp.status_code in (422, 500)
+    finally:
+        _clear_overrides(app)
 
 
 # ---------------------------------------------------------------------------

@@ -79,6 +79,7 @@ interface GradingSectionProps {
     border: string;
     background: string;
     card: string;
+    success: string;
   };
   hapticsEnabled: boolean;
 
@@ -145,15 +146,16 @@ function GradingSectionInner({
           style={s.sectionHeaderRow}
           accessibilityRole="button"
           accessibilityLabel={`Grading information, ${gradingExpanded ? 'expanded' : 'collapsed'}`}
+          accessibilityHint="Double tap to toggle grading details"
         >
           <View style={s.sectionHeaderLeft}>
             <Ionicons name="shield-checkmark-outline" size={20} color={theme.accent} />
             <Text style={[s.sectionTitle, { color: theme.text }]}>Grading</Text>
           </View>
           {!!gradingLookupResult?.cert_verified && (
-            <View style={[s.gradingBadge, { backgroundColor: '#22C55E' + '20' }]}>
-              <Ionicons name="checkmark-circle" size={14} color="#22C55E" />
-              <Text style={s.gradingBadgeText}>
+            <View style={[s.gradingBadge, { backgroundColor: theme.success + '20' }]}>
+              <Ionicons name="checkmark-circle" size={14} color={theme.success} />
+              <Text style={[s.gradingBadgeText, { color: theme.success }]}>
                 {gradingLookupResult.service_name} {gradingLookupResult.grade}
               </Text>
             </View>
@@ -170,7 +172,7 @@ function GradingSectionInner({
             {/* Verified grade badge (if lookup was performed) */}
             {!!gradingLookupResult?.cert_verified && (
               <Pressable
-                style={[s.gradingVerifiedCard, { backgroundColor: theme.card, borderColor: '#22C55E' + '40' }]}
+                style={[s.gradingVerifiedCard, { backgroundColor: theme.card, borderColor: theme.success + '40' }]}
                 onPress={() => {
                   if (gradingLookupResult.cert_url) {
                     Linking.openURL(gradingLookupResult.cert_url);
@@ -178,9 +180,10 @@ function GradingSectionInner({
                 }}
                 accessibilityRole="link"
                 accessibilityLabel={`View ${gradingLookupResult.service_name} certificate`}
+                accessibilityHint="Double tap to open certificate in browser"
               >
                 <View style={s.gradingVerifiedHeader}>
-                  <Ionicons name="shield-checkmark" size={24} color="#22C55E" />
+                  <Ionicons name="shield-checkmark" size={24} color={theme.success} />
                   <View style={{ flex: 1 }}>
                     <Text style={[s.gradingVerifiedGrade, { color: theme.text }]}>
                       {gradingLookupResult.service_name} {gradingLookupResult.grade}
@@ -234,6 +237,7 @@ function GradingSectionInner({
               }}
               accessibilityRole="button"
               accessibilityLabel="Look up grading certificate"
+              accessibilityHint="Double tap to open certificate lookup form"
             >
               <Ionicons name="search-outline" size={16} color={theme.accent} />
               <Text style={[s.gradingActionBtnText, { color: theme.accent }]}>Look Up Certificate</Text>
@@ -291,6 +295,7 @@ function GradingSectionInner({
                       }}
                       accessibilityRole="link"
                       accessibilityLabel={`Submit to ${svc.short_name}`}
+                      accessibilityHint="Double tap to open submission page in browser"
                     >
                       <Text style={[s.gradingSubmitBtnName, { color: theme.text }]}>{svc.short_name}</Text>
                       <Text style={[s.gradingSubmitBtnMeta, { color: theme.muted }]}>{svc.price_range}</Text>
@@ -314,6 +319,8 @@ function GradingSectionInner({
         <Pressable
           style={s.modalOverlay}
           onPress={() => onSetGradingModalVisible(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close modal"
         >
           <Pressable
             style={[s.modalSheet, { backgroundColor: theme.card }]}
@@ -321,7 +328,11 @@ function GradingSectionInner({
           >
             <View style={s.modalHeader}>
               <Text style={[s.modalTitle, { color: theme.text }]}>Look Up Certificate</Text>
-              <Pressable onPress={() => onSetGradingModalVisible(false)}>
+              <Pressable
+                onPress={() => onSetGradingModalVisible(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Close certificate lookup"
+              >
                 <Ionicons name="close" size={24} color={theme.muted} />
               </Pressable>
             </View>
@@ -340,6 +351,9 @@ function GradingSectionInner({
                     },
                   ]}
                   onPress={() => onSetGradingServicePick(svc)}
+                  accessibilityRole="radio"
+                  accessibilityLabel={`${svc.toUpperCase()} grading service`}
+                  accessibilityState={{ selected: gradingServicePick === svc }}
                 >
                   <Text
                     style={[
@@ -374,6 +388,9 @@ function GradingSectionInner({
               style={[s.modalConfirmBtn, { backgroundColor: theme.accent, opacity: gradingLookupLoading ? 0.6 : 1 }]}
               onPress={onGradingLookup}
               disabled={gradingLookupLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Look up certificate"
+              accessibilityState={{ busy: gradingLookupLoading }}
             >
               {gradingLookupLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -419,7 +436,7 @@ const s = StyleSheet.create({
   gradingBadgeText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#22C55E',
+    color: '#059669',
   },
 
   // Verified card

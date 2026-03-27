@@ -10,6 +10,8 @@ If a watchlist item's target price is met (market price ≤ target),
 an alert is fired to alert_trigger_history.
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import logging

@@ -7,6 +7,8 @@ const DEFAULT_LIMITS: BillingStatus['limits'] = {
   deal_discovery: false,
   dossier_pdf: false,
   advanced_analytics: false,
+  condition_grading: false,
+  set_completion: false,
 };
 
 /**

@@ -225,10 +225,12 @@ class TestTCGPlayerHelpers:
 
     def test_convert_usd_to_eur_fallback(self):
         from app.agents.adapters.tcgplayer_caller import _convert_usd_to_eur
-        from app.config import USD_TO_EUR
+        import app.agents.adapters.tcgplayer_caller as _mod
 
+        # Use the module-level USD_TO_EUR that the function actually references,
+        # not app.config.USD_TO_EUR which may diverge if config is reloaded.
         result = _convert_usd_to_eur(100.0)
-        assert result == round(100.0 * USD_TO_EUR, 2)
+        assert result == round(100.0 * _mod.USD_TO_EUR, 2)
 
     def test_resolve_category_id(self):
         from app.agents.adapters.tcgplayer_caller import TCGPlayerCaller

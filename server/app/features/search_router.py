@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from app.auth import get_current_user_id
 from app.lib.db_helpers import get_db_pool
@@ -17,6 +18,14 @@ from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/search", tags=["Search"])
 logger = logging.getLogger(__name__)
+
+
+class UnifiedSearchResponse(BaseModel):
+    items: list[dict] = []
+    catalog: list[dict] = []
+    users: list[dict] = []
+    events: list[dict] = []
+    categories: list[dict] = []
 
 # Per-user: 60 unified search requests per minute (runs 4 DB queries per call)
 _search_user_limit = per_user_rate_limit(60, window_seconds=60, scope="unified_search")
@@ -62,7 +71,7 @@ CATEGORY_LIST = [
 ]
 
 
-@router.get("/unified")
+@router.get("/unified", response_model=UnifiedSearchResponse)
 async def unified_search(
     q: str = "",
     limit: int = 5,

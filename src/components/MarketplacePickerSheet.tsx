@@ -66,7 +66,7 @@ export default function MarketplacePickerSheet({ visible, onClose, itemTitle, ca
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <AnimatedPressable style={styles.backdrop} onPress={onClose}>
+      <AnimatedPressable style={styles.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close marketplace picker">
         <View />
       </AnimatedPressable>
       <View style={[styles.sheet, { backgroundColor: colors.card }]}>
@@ -74,7 +74,7 @@ export default function MarketplacePickerSheet({ visible, onClose, itemTitle, ca
           <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
             Shop: {itemTitle}
           </Text>
-          <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+          <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close marketplace picker" accessibilityHint="Double tap to dismiss">
             <Ionicons name="close" size={22} color={colors.muted} />
           </AnimatedPressable>
         </View>
@@ -89,6 +89,7 @@ export default function MarketplacePickerSheet({ visible, onClose, itemTitle, ca
               onPress={() => handleOpenLink(link.affiliate_url || link.url)}
               accessibilityRole="link"
               accessibilityLabel={`Open ${link.label}`}
+              accessibilityHint="Double tap to open in browser"
             >
               <Text style={[styles.linkLabel, { color: colors.text }]}>{link.label}</Text>
               <Ionicons name="open-outline" size={18} color={colors.accent} />

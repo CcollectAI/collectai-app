@@ -589,7 +589,7 @@ class TestPriceFeedbackLoop:
 
     def test_complete_deal_wires_ground_truth(self):
         src = inspect.getsource(
-            __import__("app.agents.deal_desk_router", fromlist=["complete_deal"]).complete_deal
+            __import__("app.agents.deal_completion", fromlist=["execute_complete"]).execute_complete
         )
         assert "record_price_ground_truth" in src
         assert "actual_price" in src

@@ -5,7 +5,11 @@ import type { QuickScanResult } from '@/data/types';
 
 jest.mock('@/hooks/useAppTheme', () => ({
   useAppTheme: () => ({
-    colors: { background: '#fff', card: '#fff', text: '#000', muted: '#888', border: '#ddd' },
+    colors: {
+      background: '#fff', card: '#fff', text: '#000', muted: '#888', border: '#ddd',
+      accent: '#40C9C6', success: '#059669', danger: '#EF4444',
+      brand: { base: '#81D8D0', dark: '#5FBFB6', darker: '#44A9A1', light: '#AEE6E1', lighter: '#E6F7F5' },
+    },
   }),
 }));
 

@@ -13,7 +13,7 @@ import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 
-const LAST_UPDATED = 'March 11, 2026';
+const LAST_UPDATED = 'March 27, 2026';
 
 function PrivacyPolicyScreenInner() {
   const router = useRouter();
@@ -47,7 +47,7 @@ function PrivacyPolicyScreenInner() {
           {'\n\n'}
           <Text style={styles.bold}>Profile Data:</Text> You may optionally provide a bio, avatar photo, and collecting interests. Your display name and handle are visible to other users.
           {'\n\n'}
-          <Text style={styles.bold}>Collection Data:</Text> Items you add to your collection, including titles, descriptions, photos, categories (across 51 collectible categories), valuations, condition, and category-specific attributes. This data is stored securely in your private account.
+          <Text style={styles.bold}>Collection Data:</Text> Items you add to your collection, including titles, descriptions, photos, categories (across 54 collectible categories), valuations, condition, and category-specific attributes. This data is stored securely in your private account.
           {'\n\n'}
           <Text style={styles.bold}>Build & Paint Projects:</Text> Project titles, steps, progress, notes, and photos you create to track builds of collectible items (model kits, miniatures, etc.).
           {'\n\n'}
@@ -89,7 +89,7 @@ function PrivacyPolicyScreenInner() {
         <Text style={[styles.body, { color: colors.text }]}>
           <Text style={styles.bold}>Vision Classification:</Text> We use OpenAI Vision API and on-device classifiers to identify collectible items from photos. Classification results include item name, category, and confidence scores. Per-field confidence levels are provided so you can assess accuracy.
           {'\n\n'}
-          <Text style={styles.bold}>CLIP Embeddings:</Text> We generate CLIP embeddings from your item images to match against our catalog of 35,000+ curated items across 51 categories. Embeddings are numerical representations of visual features and cannot be used to reconstruct the original image. Cached embeddings may be retained to improve matching speed.
+          <Text style={styles.bold}>CLIP Embeddings:</Text> We generate CLIP embeddings from your item images to match against our catalog of 46,500+ curated items across 54 categories. Embeddings are numerical representations of visual features and cannot be used to reconstruct the original image. Cached embeddings may be retained to improve matching speed.
           {'\n\n'}
           <Text style={styles.bold}>Price Prediction Models:</Text> We use Ridge regression machine learning models to predict item values with q10/q50/q90 quantile estimates (low/median/high). Models are trained on aggregated, anonymized marketplace data and are periodically retrained to reflect current market conditions.
           {'\n\n'}
@@ -161,9 +161,9 @@ function PrivacyPolicyScreenInner() {
           <Text style={styles.bold}>AI & Image Processing:</Text>{'\n'}
           {'\u2022'} OpenAI — Vision API for item identification and condition grading{'\n'}
           {'\u2022'} fal.ai — CLIP text embedding generation for catalog matching{'\n\n'}
-          <Text style={styles.bold}>Marketplace Data (30 sources across 51 categories):</Text>{'\n'}
+          <Text style={styles.bold}>Marketplace Data (37 sources across 54 categories):</Text>{'\n'}
           <Text style={styles.bold}>General (all categories):</Text>{'\n'}
-          {'\u2022'} eBay, Firecrawl, Crawl4AI, Mercari US, Vinted, Mavin.io{'\n\n'}
+          {'\u2022'} eBay, Firecrawl, Crawl4AI, Mercari US, Vinted, Mavin.io, Scrape.do, Google Shopping, Etsy{'\n\n'}
           <Text style={styles.bold}>Trading cards & TCGs:</Text>{'\n'}
           {'\u2022'} TCGPlayer, Cardmarket{'\n\n'}
           <Text style={styles.bold}>Music & media:</Text>{'\n'}
@@ -273,7 +273,7 @@ function PrivacyPolicyScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>17. Push Notifications</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          We may send push notifications for price alerts, deal discoveries, watchlist updates, event updates, direct messages, and announcements. You can manage notification preferences in your device settings and within the app. Push notification tokens are stored securely and deleted when you log out or uninstall the app.
+          We may send push notifications for price alerts, deal discoveries, watchlist updates, event updates, direct messages, and announcements. Notification frequency is subject to tier-based caps: free accounts receive up to 5 notifications per 24-hour period, Pro accounts up to 15 per 24-hour period, and Premium accounts up to 30 per 24-hour period. You can manage notification preferences in your device settings and within the app. Push notification tokens are stored securely and deleted when you log out or uninstall the app.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>18. Children's Privacy</Text>

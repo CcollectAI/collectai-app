@@ -153,6 +153,7 @@ class TestListThreads:
         assert resp.status_code == 200
         assert resp.json() == {"threads": [], "total_count": 0}
 
+    @patch("app.auth.DEV_MODE", False)
     def test_list_threads_unauthenticated(self):
         _clear_overrides()
         resp = client.get("/chat/threads")
@@ -404,7 +405,18 @@ class TestEditMessage:
             "deleted_at": None,
             "created_at": now,
         }[key]
-        conn.fetchrow = AsyncMock(return_value=msg_row)
+
+        # Second fetchrow is the UPDATE RETURNING with full columns
+        updated_row = MagicMock()
+        updated_row.__getitem__ = lambda self, key: {
+            "id": MESSAGE_UUID,
+            "thread_id": THREAD_UUID,
+            "sender_id": TEST_USER_ID,
+            "body": "Edited content",
+            "created_at": now,
+            "edited_at": now,
+        }[key]
+        conn.fetchrow = AsyncMock(side_effect=[msg_row, updated_row])
 
         resp = client.patch(
             f"/chat/messages/{MESSAGE_UUID}",
@@ -450,7 +462,7 @@ class TestEditMessage:
             f"/chat/messages/{MESSAGE_UUID}",
             json={"content": "Too late!"},
         )
-        assert resp.status_code == 403
+        assert resp.status_code == 400
 
     def test_edit_message_invalid_uuid(self):
         resp = client.patch(

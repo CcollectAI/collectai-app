@@ -76,7 +76,7 @@ async def _proxy_signals(path: str) -> dict:
     summary="Get portfolio value timeseries",
 )
 async def portfolio_timeseries(
-    range: str = Query("30d", regex="^(1d|7d|30d|90d|1y|all)$"),
+    range: str = Query("30d", pattern="^(1d|7d|30d|90d|1y|all)$"),
     user_id: str = Depends(get_current_user_id),
 ) -> dict:
     """

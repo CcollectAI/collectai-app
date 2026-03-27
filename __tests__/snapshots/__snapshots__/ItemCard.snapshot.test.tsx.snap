@@ -24,7 +24,7 @@ exports[`ItemCard snapshots matches snapshot with condition badge (grading-eligi
 >
   <View
     accessibilityLabel="Photo of Charizard Base Set"
-    cachePolicy="disk"
+    cachePolicy="memory-disk"
     contentFit="cover"
     source={
       {
@@ -156,7 +156,7 @@ exports[`ItemCard snapshots matches snapshot with image and value 1`] = `
 >
   <View
     accessibilityLabel="Photo of Charizard Base Set"
-    cachePolicy="disk"
+    cachePolicy="memory-disk"
     contentFit="cover"
     source={
       {
@@ -262,7 +262,7 @@ exports[`ItemCard snapshots matches snapshot with no category 1`] = `
 >
   <View
     accessibilityLabel="Photo of Charizard Base Set"
-    cachePolicy="disk"
+    cachePolicy="memory-disk"
     contentFit="cover"
     source={
       {
@@ -368,7 +368,7 @@ exports[`ItemCard snapshots matches snapshot without image (placeholder) 1`] = `
 >
   <View
     accessibilityLabel="Photo of Charizard Base Set"
-    cachePolicy="disk"
+    cachePolicy="memory-disk"
     contentFit="cover"
     source={1}
     style={
@@ -470,7 +470,7 @@ exports[`ItemCard snapshots matches snapshot without value 1`] = `
 >
   <View
     accessibilityLabel="Photo of Charizard Base Set"
-    cachePolicy="disk"
+    cachePolicy="memory-disk"
     contentFit="cover"
     source={
       {
