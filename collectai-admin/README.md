@@ -1,73 +1,115 @@
-# React + TypeScript + Vite
+# CollectAI Admin Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Internal admin dashboard for CollectAI — the collectibles tracking & valuation platform.
 
-Currently, two official plugins are available:
+Built with **Next.js 16**, **React 19**, **Tailwind CSS 4**, **Recharts 3**, and **TypeScript 5**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Quick Start
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Default PIN: `2026` (override with `NEXT_PUBLIC_ADMIN_PIN` env var).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Features
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **Dark mode** — system preference detection + manual toggle (light/dark/system)
+- **Responsive** — mobile hamburger sidebar, desktop collapsible sidebar
+- **Auto-refresh** — configurable per-tab with LIVE/PAUSED indicator
+- **Animated counters** — numbers tick up on load with ease-out timing
+- **Skeleton loaders** — shimmer placeholders during data fetches
+- **Toast notifications** — slide-in alerts for anomalies and actions
+- **Recharts visualizations** — pie charts, bar charts, area charts, sparklines, heatmaps
+- **Forecast lines** — moving average predictions on revenue/views charts
+- **Cohort heatmaps** — creator performance over weeks
+- **Posting time analysis** — best hour/day heatmap for content scheduling
+- **Automation** — auto-brief generation, pipeline rules, digest scheduling
+
+## Architecture (48 source files)
+
 ```
+admin.config.ts                  <- All settings (branding, colors, funnel, pods, modules)
+src/
+  app/
+    providers.tsx                <- ThemeProvider + ToastProvider
+    admin/
+      AdminShell.tsx             <- PIN gate + sticky header + ThemeToggle
+      AdminTabs.tsx              <- Responsive sidebar + 22 tab routing
+  components/
+    CollectAIOverview.tsx        <- Overview with Recharts, auto-refresh, MetricCards
+    AdminMLModels.tsx            <- ML model monitor (train, activate, MAE)
+    AdminWorkerHealth.tsx        <- Worker health (auto-refresh 60s)
+    AdminDemandSignals.tsx       <- Demand signals with Recharts bar chart
+    AdminUserManager.tsx         <- Paginated user management
+    AdminSponsorAnalytics.tsx    <- Sponsored events analytics
+    IntelligenceTab.tsx          <- Forecast + cohort + posting time + sparklines
+    AutoBriefScheduler.tsx       <- Auto-generate weekly briefs per pod
+    PipelineAutomation.tsx       <- Pipeline auto-advance rules
+    DigestScheduler.tsx          <- Scheduled digest exports
+    Admin*.tsx                   <- Template components (KPI, UGC, pipeline, pods, etc.)
+    ui/
+      MetricCard.tsx             <- Pro-grade card with counter + trend + sparkline
+      AnimatedCounter.tsx        <- requestAnimationFrame counter animation
+      Skeleton.tsx               <- Shimmer loading placeholders
+      Sparkline.tsx              <- Inline Recharts sparkline
+      Toast.tsx                  <- Toast notification system
+      ThemeToggle.tsx            <- Light/dark/system toggle
+    charts/
+      ForecastChart.tsx          <- Area chart with forecast dashed line
+      CohortHeatmap.tsx          <- Creator performance heatmap
+      PostingTimeHeatmap.tsx     <- 7x24 hour/day posting analysis
+  hooks/
+    useTheme.tsx                 <- Dark mode with localStorage + system preference
+    useAutoRefresh.tsx           <- Configurable auto-refresh intervals
+    useAnomalyDetection.tsx      <- Threshold-based metric anomaly alerts
+  lib/
+    collectai-api.ts             <- FastAPI backend client (9 endpoints)
+    supabase.ts                  <- Supabase client (reads from config)
+    kpi.ts, pod-planner.ts       <- KPI + Pod types + demo data
+    briefs.ts, commissions.ts    <- Brief generator + commission calculator
+    weekly-report.ts             <- Weekly report generator
+```
+
+## Navigation (22 Tabs)
+
+**Platform:** Overview, Users, KPI Funnel, Sponsors
+**Intelligence:** ML Models, Worker Health, Demand Signals
+**Content Marketing:** UGC Analytics, Social Accounts, Spark Ads, Swipe File, Pipeline, Category Pods, Creators, Brief Generator, Commissions, Weekly Reports
+**Automation:** Intelligence, Auto Briefs, Pipeline Rules, Digest Scheduler
+
+## Backend API Endpoints
+
+| Endpoint | Dashboard Tab |
+|----------|--------------|
+| `GET /ops/dashboard/stats` | Overview |
+| `GET /ops/dashboard/users` | User Manager |
+| `GET /ops/dashboard/sponsor-analytics` | Sponsor Analytics |
+| `GET /admin/worker-health` | Worker Health |
+| `GET /admin/demand-summary` | Demand Signals |
+| `GET /admin/models` | ML Models |
+| `GET /admin/metrics` | ML Models |
+| `POST /admin/train_now` | ML Models (retrain) |
+| `POST /admin/activate_best` | ML Models (activate) |
+| `POST /admin/reload` | ML Models (reload cache) |
+
+## Environment Variables
+
+```env
+NEXT_PUBLIC_ADMIN_PIN=2026
+NEXT_PUBLIC_API_BASE=http://3.75.182.41:8000
+NEXT_PUBLIC_OPS_KEY=your-ops-key
+NEXT_PUBLIC_ADMIN_SECRET=your-admin-secret
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+## Deploy
+
+```bash
+npm run build
+npx vercel         # or deploy to any Node.js hosting
+```
+
+Recommended domain: `admin.collectai.app`

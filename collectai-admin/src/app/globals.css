@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #81D8D0;
+  --color-primary-dark: #5FBFB6;
+  --color-secondary: #1E3A8A;
+  --color-navy: #0D1B2A;
+  --color-text: #333333;
+  --color-bg: #F9FAFB;
+  --color-card: #FFFFFF;
+  --color-border: #E5E7EB;
+}
+
+.dark {
+  --color-primary: #81D8D0;
+  --color-primary-dark: #5FBFB6;
+  --color-secondary: #93C5FD;
+  --color-navy: #E2E8F0;
+  --color-text: #E2E8F0;
+  --color-bg: #0F172A;
+  --color-card: #1E293B;
+  --color-border: #334155;
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-navy: var(--color-navy);
+  --font-sans: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.3) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Toast slide in */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* Counter tick */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.4s ease-out;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+/* Print styles */
+@media print {
+  .no-print { display: none !important; }
+}
