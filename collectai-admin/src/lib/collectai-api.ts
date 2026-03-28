@@ -69,19 +69,21 @@ export interface DashboardStats {
   db_error?: string;
 }
 
-const DEMO_STATS: DashboardStats = {
-  version: "2.4.1", dev_mode: false, db_enabled: true, db_status: "connected",
-  timestamp: new Date().toISOString(),
-  total_users: 2847, recent_signups: 156,
-  subscriptions: { free: 2103, pro: 584, premium: 160 },
-  active_mandates: 744, total_items: 187432, total_events: 342,
-  beta_signups: 89,
-  catalog_suggestions_pending: 47, catalog_suggestions_mapped_week: 23,
-  category_candidates_watching: 8, category_candidates_candidate: 3,
-};
+function getDemoStats(): DashboardStats {
+  return {
+    version: "2.4.1", dev_mode: false, db_enabled: true, db_status: "connected",
+    timestamp: new Date().toISOString(),
+    total_users: 2847, recent_signups: 156,
+    subscriptions: { free: 2103, pro: 584, premium: 160 },
+    active_mandates: 744, total_items: 187432, total_events: 342,
+    beta_signups: 89,
+    catalog_suggestions_pending: 47, catalog_suggestions_mapped_week: 23,
+    category_candidates_watching: 8, category_candidates_candidate: 3,
+  };
+}
 
 export function fetchDashboardStats(): Promise<DashboardStats> {
-  return tryFetchJSON("/ops/dashboard/stats", DEMO_STATS);
+  return tryFetchJSON("/ops/dashboard/stats", getDemoStats());
 }
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -104,19 +106,21 @@ export interface UsersResponse {
   error?: string;
 }
 
-const DEMO_USERS: UsersResponse = {
-  users: Array.from({ length: 12 }, (_, i) => ({
-    id: `demo-${i}`, email: `user${i + 1}@example.com`,
-    created_at: new Date(Date.now() - (i * 3 * 86400000)).toISOString(),
-    plan: ["free","free","free","pro","pro","premium","free","pro","free","free","pro","premium"][i],
-    sub_status: ["active","active","active","active","active","active","canceled","active","active","past_due","active","active"][i],
-    mandate_count: Math.floor(Math.random() * 5), item_count: Math.floor(Math.random() * 200) + 5,
-  })),
-  total: 12, page: 1,
-};
+function getDemoUsers(): UsersResponse {
+  return {
+    users: Array.from({ length: 12 }, (_, i) => ({
+      id: `demo-${i}`, email: `user${i + 1}@example.com`,
+      created_at: new Date(Date.now() - (i * 3 * 86400000)).toISOString(),
+      plan: ["free","free","free","pro","pro","premium","free","pro","free","free","pro","premium"][i],
+      sub_status: ["active","active","active","active","active","active","canceled","active","active","past_due","active","active"][i],
+      mandate_count: i % 3, item_count: 20 + i * 15,
+    })),
+    total: 12, page: 1,
+  };
+}
 
 export function fetchUsers(page = 1, perPage = 50): Promise<UsersResponse> {
-  return tryFetchJSON(`/ops/dashboard/users?page=${page}&per_page=${perPage}`, DEMO_USERS);
+  return tryFetchJSON(`/ops/dashboard/users?page=${page}&per_page=${perPage}`, getDemoUsers());
 }
 
 // ─── Worker Health ───────────────────────────────────────────────────────────
@@ -132,30 +136,32 @@ export interface WorkerStatus {
   expected_interval_minutes: number;
 }
 
-const DEMO_WORKERS: WorkerStatus[] = [
-  { name: "price_prediction_worker", last_run_at: minutesAgo(3), last_status: "ok", run_count: 14820, average_duration_s: 2.1, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 5 },
-  { name: "catalog_crawler_worker", last_run_at: minutesAgo(45), last_status: "ok", run_count: 892, average_duration_s: 38.4, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 60 },
-  { name: "marketplace_refresh_worker", last_run_at: minutesAgo(12), last_status: "ok", run_count: 4210, average_duration_s: 5.7, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 15 },
-  { name: "auction_alert_worker", last_run_at: minutesAgo(2), last_status: "ok", run_count: 28440, average_duration_s: 1.3, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 5 },
-  { name: "watchlist_calibration_worker", last_run_at: minutesAgo(118), last_status: "ok", run_count: 720, average_duration_s: 12.5, status: "overdue" as const, minutes_overdue: 58, expected_interval_minutes: 60 },
-  { name: "event_scraper_scheduler", last_run_at: hoursAgo(5), last_status: "ok", run_count: 124, average_duration_s: 142.0, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 360 },
-  { name: "notification_digest_worker", last_run_at: hoursAgo(1), last_status: "ok", run_count: 1680, average_duration_s: 3.8, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 60 },
-  { name: "model_retrain_worker", last_run_at: hoursAgo(23), last_status: "ok", run_count: 52, average_duration_s: 320.0, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 1440 },
-  { name: "adapter_health_worker", last_run_at: minutesAgo(28), last_status: "ok", run_count: 2880, average_duration_s: 8.2, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 30 },
-  { name: "deal_completion_worker", last_run_at: minutesAgo(8), last_status: "ok", run_count: 8640, average_duration_s: 1.9, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 10 },
-  { name: "scarcity_score_worker", last_run_at: hoursAgo(3), last_status: "ok", run_count: 480, average_duration_s: 45.2, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 360 },
-  { name: "leaderboard_refresh_worker", last_run_at: minutesAgo(14), last_status: "ok", run_count: 4320, average_duration_s: 2.4, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 15 },
-  { name: "push_token_cleanup_worker", last_run_at: hoursAgo(23), last_status: "ok", run_count: 365, average_duration_s: 0.5, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 1440 },
-  { name: "stale_listing_worker", last_run_at: hoursAgo(6), last_status: "ok", run_count: 240, average_duration_s: 18.7, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 720 },
-  { name: "currency_fx_worker", last_run_at: hoursAgo(2), last_status: "ok", run_count: 1440, average_duration_s: 1.1, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 180 },
-  { name: "data_moat_export_worker", last_run_at: null, last_status: "never", run_count: 0, average_duration_s: 0, status: "on_demand" as const, minutes_overdue: 0, expected_interval_minutes: 0 },
-  { name: "catalog_candidate_worker", last_run_at: hoursAgo(12), last_status: "ok", run_count: 60, average_duration_s: 85.0, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 720 },
-  { name: "miss_capture_worker", last_run_at: minutesAgo(55), last_status: "ok", run_count: 1440, average_duration_s: 4.2, status: "ok" as const, minutes_overdue: 0, expected_interval_minutes: 60 },
-  { name: "demand_signal_worker", last_run_at: null, last_status: "never", run_count: 0, average_duration_s: 0, status: "never_run" as const, minutes_overdue: 0, expected_interval_minutes: 360 },
-];
+function getDemoWorkers(): WorkerStatus[] {
+  return [
+    { name: "price_prediction_worker", last_run_at: minutesAgo(3), last_status: "ok", run_count: 14820, average_duration_s: 2.1, status: "ok", minutes_overdue: 0, expected_interval_minutes: 5 },
+    { name: "catalog_crawler_worker", last_run_at: minutesAgo(45), last_status: "ok", run_count: 892, average_duration_s: 38.4, status: "ok", minutes_overdue: 0, expected_interval_minutes: 60 },
+    { name: "marketplace_refresh_worker", last_run_at: minutesAgo(12), last_status: "ok", run_count: 4210, average_duration_s: 5.7, status: "ok", minutes_overdue: 0, expected_interval_minutes: 15 },
+    { name: "auction_alert_worker", last_run_at: minutesAgo(2), last_status: "ok", run_count: 28440, average_duration_s: 1.3, status: "ok", minutes_overdue: 0, expected_interval_minutes: 5 },
+    { name: "watchlist_calibration_worker", last_run_at: minutesAgo(118), last_status: "ok", run_count: 720, average_duration_s: 12.5, status: "overdue", minutes_overdue: 58, expected_interval_minutes: 60 },
+    { name: "event_scraper_scheduler", last_run_at: hoursAgo(5), last_status: "ok", run_count: 124, average_duration_s: 142.0, status: "ok", minutes_overdue: 0, expected_interval_minutes: 360 },
+    { name: "notification_digest_worker", last_run_at: hoursAgo(1), last_status: "ok", run_count: 1680, average_duration_s: 3.8, status: "ok", minutes_overdue: 0, expected_interval_minutes: 60 },
+    { name: "model_retrain_worker", last_run_at: hoursAgo(23), last_status: "ok", run_count: 52, average_duration_s: 320.0, status: "ok", minutes_overdue: 0, expected_interval_minutes: 1440 },
+    { name: "adapter_health_worker", last_run_at: minutesAgo(28), last_status: "ok", run_count: 2880, average_duration_s: 8.2, status: "ok", minutes_overdue: 0, expected_interval_minutes: 30 },
+    { name: "deal_completion_worker", last_run_at: minutesAgo(8), last_status: "ok", run_count: 8640, average_duration_s: 1.9, status: "ok", minutes_overdue: 0, expected_interval_minutes: 10 },
+    { name: "scarcity_score_worker", last_run_at: hoursAgo(3), last_status: "ok", run_count: 480, average_duration_s: 45.2, status: "ok", minutes_overdue: 0, expected_interval_minutes: 360 },
+    { name: "leaderboard_refresh_worker", last_run_at: minutesAgo(14), last_status: "ok", run_count: 4320, average_duration_s: 2.4, status: "ok", minutes_overdue: 0, expected_interval_minutes: 15 },
+    { name: "push_token_cleanup_worker", last_run_at: hoursAgo(23), last_status: "ok", run_count: 365, average_duration_s: 0.5, status: "ok", minutes_overdue: 0, expected_interval_minutes: 1440 },
+    { name: "stale_listing_worker", last_run_at: hoursAgo(6), last_status: "ok", run_count: 240, average_duration_s: 18.7, status: "ok", minutes_overdue: 0, expected_interval_minutes: 720 },
+    { name: "currency_fx_worker", last_run_at: hoursAgo(2), last_status: "ok", run_count: 1440, average_duration_s: 1.1, status: "ok", minutes_overdue: 0, expected_interval_minutes: 180 },
+    { name: "data_moat_export_worker", last_run_at: null, last_status: "never", run_count: 0, average_duration_s: 0, status: "on_demand", minutes_overdue: 0, expected_interval_minutes: 0 },
+    { name: "catalog_candidate_worker", last_run_at: hoursAgo(12), last_status: "ok", run_count: 60, average_duration_s: 85.0, status: "ok", minutes_overdue: 0, expected_interval_minutes: 720 },
+    { name: "miss_capture_worker", last_run_at: minutesAgo(55), last_status: "ok", run_count: 1440, average_duration_s: 4.2, status: "ok", minutes_overdue: 0, expected_interval_minutes: 60 },
+    { name: "demand_signal_worker", last_run_at: null, last_status: "never", run_count: 0, average_duration_s: 0, status: "never_run", minutes_overdue: 0, expected_interval_minutes: 360 },
+  ];
+}
 
 export function fetchWorkerHealth(): Promise<WorkerStatus[]> {
-  return tryFetchJSON("/admin/worker-health", DEMO_WORKERS);
+  return tryFetchJSON("/admin/worker-health", getDemoWorkers());
 }
 
 // ─── Demand Signals ──────────────────────────────────────────────────────────
@@ -192,31 +198,33 @@ export interface DemandSummary {
   daily_request_counts: DemandDailyCount[];
 }
 
-const DEMO_DEMAND: DemandSummary = {
-  pending_suggestions: 47, new_categories_watching: 8,
-  top_requested_items: [
-    { name: "Charizard VMAX Alt Art", suggested_category: "pokemon_tcg", total_requests: 89, unique_users: 67, last_requested: daysAgo(0) },
-    { name: "Air Jordan 1 Retro High OG", suggested_category: "sneakers", total_requests: 72, unique_users: 54, last_requested: daysAgo(1) },
-    { name: "Black Lotus (Beta)", suggested_category: "mtg", total_requests: 45, unique_users: 38, last_requested: daysAgo(0) },
-    { name: "Funko Pop! Freddy Funko", suggested_category: "funko", total_requests: 41, unique_users: 33, last_requested: daysAgo(2) },
-    { name: "Rolex Submariner 126610LN", suggested_category: "watches", total_requests: 38, unique_users: 29, last_requested: daysAgo(1) },
-  ],
-  top_requested_categories: [
-    { name: "Board Games", slug: "board_games", signal_count: 234, unique_users: 142, status: "watching", first_seen: daysAgo(45), last_seen: daysAgo(0) },
-    { name: "Sports Memorabilia", slug: "sports_memorabilia", signal_count: 189, unique_users: 118, status: "candidate", first_seen: daysAgo(30), last_seen: daysAgo(1) },
-    { name: "Coins & Banknotes", slug: "numismatics", signal_count: 156, unique_users: 95, status: "watching", first_seen: daysAgo(60), last_seen: daysAgo(2) },
-    { name: "Art Prints", slug: "art_prints", signal_count: 98, unique_users: 72, status: "watching", first_seen: daysAgo(20), last_seen: daysAgo(3) },
-    { name: "Model Trains", slug: "model_trains", signal_count: 67, unique_users: 41, status: "rejected", first_seen: daysAgo(90), last_seen: daysAgo(15) },
-  ],
-  daily_request_counts: Array.from({ length: 7 }, (_, i) => ({
-    day: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10),
-    requests: Math.floor(Math.random() * 40) + 20,
-    unique_users: Math.floor(Math.random() * 25) + 10,
-  })),
-};
+function getDemoDemand(): DemandSummary {
+  return {
+    pending_suggestions: 47, new_categories_watching: 8,
+    top_requested_items: [
+      { name: "Charizard VMAX Alt Art", suggested_category: "pokemon_tcg", total_requests: 89, unique_users: 67, last_requested: daysAgo(0) },
+      { name: "Air Jordan 1 Retro High OG", suggested_category: "sneakers", total_requests: 72, unique_users: 54, last_requested: daysAgo(1) },
+      { name: "Black Lotus (Beta)", suggested_category: "mtg", total_requests: 45, unique_users: 38, last_requested: daysAgo(0) },
+      { name: "Funko Pop! Freddy Funko", suggested_category: "funko", total_requests: 41, unique_users: 33, last_requested: daysAgo(2) },
+      { name: "Rolex Submariner 126610LN", suggested_category: "watches", total_requests: 38, unique_users: 29, last_requested: daysAgo(1) },
+    ],
+    top_requested_categories: [
+      { name: "Board Games", slug: "board_games", signal_count: 234, unique_users: 142, status: "watching", first_seen: daysAgo(45), last_seen: daysAgo(0) },
+      { name: "Sports Memorabilia", slug: "sports_memorabilia", signal_count: 189, unique_users: 118, status: "candidate", first_seen: daysAgo(30), last_seen: daysAgo(1) },
+      { name: "Coins & Banknotes", slug: "numismatics", signal_count: 156, unique_users: 95, status: "watching", first_seen: daysAgo(60), last_seen: daysAgo(2) },
+      { name: "Art Prints", slug: "art_prints", signal_count: 98, unique_users: 72, status: "watching", first_seen: daysAgo(20), last_seen: daysAgo(3) },
+      { name: "Model Trains", slug: "model_trains", signal_count: 67, unique_users: 41, status: "rejected", first_seen: daysAgo(90), last_seen: daysAgo(15) },
+    ],
+    daily_request_counts: Array.from({ length: 7 }, (_, i) => ({
+      day: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10),
+      requests: 20 + ((i * 7 + 13) % 40),
+      unique_users: 10 + ((i * 5 + 7) % 25),
+    })),
+  };
+}
 
 export function fetchDemandSummary(): Promise<DemandSummary> {
-  return tryFetchJSON("/admin/demand-summary", DEMO_DEMAND);
+  return tryFetchJSON("/admin/demand-summary", getDemoDemand());
 }
 
 // ─── Sponsor Analytics ───────────────────────────────────────────────────────
@@ -239,19 +247,21 @@ export interface SponsorAnalyticsResponse {
   total: number;
 }
 
-const DEMO_SPONSORS: SponsorAnalyticsResponse = {
-  sponsored_events: [
-    { id: "sp-1", title: "Pokemon TCG Championship Series", sponsor_name: "PokeCollect Pro", sponsor_tier: "gold", category_id: "pokemon_tcg", sponsor_paid_at: daysAgo(30), sponsor_expires_at: new Date(Date.now() + 60 * 86400000).toISOString(), impressions: 24500, clicks: 1840, rsvps: 312 },
-    { id: "sp-2", title: "Sneaker Drop Preview Night", sponsor_name: "KickCheck", sponsor_tier: "silver", category_id: "sneakers", sponsor_paid_at: daysAgo(15), sponsor_expires_at: new Date(Date.now() + 45 * 86400000).toISOString(), impressions: 18200, clicks: 1250, rsvps: 189 },
-    { id: "sp-3", title: "Vintage Watch Fair 2026", sponsor_name: "ChronoVault", sponsor_tier: "gold", category_id: "watches", sponsor_paid_at: daysAgo(7), sponsor_expires_at: new Date(Date.now() + 90 * 86400000).toISOString(), impressions: 31200, clicks: 2100, rsvps: 445 },
-    { id: "sp-4", title: "Funko Swap Meet", sponsor_name: "PopKing", sponsor_tier: "bronze", category_id: "funko", sponsor_paid_at: daysAgo(20), sponsor_expires_at: new Date(Date.now() + 10 * 86400000).toISOString(), impressions: 8900, clicks: 620, rsvps: 87 },
-    { id: "sp-5", title: "MTG Draft Night Series", sponsor_name: "CardVault", sponsor_tier: "silver", category_id: "mtg", sponsor_paid_at: daysAgo(5), sponsor_expires_at: new Date(Date.now() + 55 * 86400000).toISOString(), impressions: 15400, clicks: 980, rsvps: 156 },
-  ],
-  total: 5,
-};
+function getDemoSponsors(): SponsorAnalyticsResponse {
+  return {
+    sponsored_events: [
+      { id: "sp-1", title: "Pokemon TCG Championship Series", sponsor_name: "PokeCollect Pro", sponsor_tier: "gold", category_id: "pokemon_tcg", sponsor_paid_at: daysAgo(30), sponsor_expires_at: daysAgo(-60), impressions: 24500, clicks: 1840, rsvps: 312 },
+      { id: "sp-2", title: "Sneaker Drop Preview Night", sponsor_name: "KickCheck", sponsor_tier: "silver", category_id: "sneakers", sponsor_paid_at: daysAgo(15), sponsor_expires_at: daysAgo(-45), impressions: 18200, clicks: 1250, rsvps: 189 },
+      { id: "sp-3", title: "Vintage Watch Fair 2026", sponsor_name: "ChronoVault", sponsor_tier: "gold", category_id: "watches", sponsor_paid_at: daysAgo(7), sponsor_expires_at: daysAgo(-90), impressions: 31200, clicks: 2100, rsvps: 445 },
+      { id: "sp-4", title: "Funko Swap Meet", sponsor_name: "PopKing", sponsor_tier: "bronze", category_id: "funko", sponsor_paid_at: daysAgo(20), sponsor_expires_at: daysAgo(-10), impressions: 8900, clicks: 620, rsvps: 87 },
+      { id: "sp-5", title: "MTG Draft Night Series", sponsor_name: "CardVault", sponsor_tier: "silver", category_id: "mtg", sponsor_paid_at: daysAgo(5), sponsor_expires_at: daysAgo(-55), impressions: 15400, clicks: 980, rsvps: 156 },
+    ],
+    total: 5,
+  };
+}
 
 export function fetchSponsorAnalytics(): Promise<SponsorAnalyticsResponse> {
-  return tryFetchJSON("/ops/dashboard/sponsor-analytics", DEMO_SPONSORS);
+  return tryFetchJSON("/ops/dashboard/sponsor-analytics", getDemoSponsors());
 }
 
 // ─── ML Models ───────────────────────────────────────────────────────────────
@@ -282,7 +292,7 @@ export interface MetricsResponse {
   mae: MaeRow[];
 }
 
-const DEMO_MODELS: ModelRow[] = [
+const DEMO_MODELS: readonly ModelRow[] = [
   { category: "pokemon_tcg", version: "v2.3", status: "active" },
   { category: "mtg", version: "v2.1", status: "active" },
   { category: "funko", version: "v2.2", status: "active" },
@@ -297,43 +307,47 @@ const DEMO_MODELS: ModelRow[] = [
   { category: "anime_figures", version: "v1.4", status: "active" },
 ];
 
-const DEMO_METRICS: MetricsResponse = {
-  counts_7d: [
-    { category: "pokemon_tcg", model_version: "v2.3", day: daysAgo(0).slice(0,10), n: 342 },
-    { category: "pokemon_tcg", model_version: "v2.3", day: daysAgo(1).slice(0,10), n: 318 },
-    { category: "mtg", model_version: "v2.1", day: daysAgo(0).slice(0,10), n: 215 },
-    { category: "funko", model_version: "v2.2", day: daysAgo(0).slice(0,10), n: 187 },
-    { category: "sneakers", model_version: "v2.0", day: daysAgo(0).slice(0,10), n: 156 },
-    { category: "watches", model_version: "v1.8", day: daysAgo(0).slice(0,10), n: 134 },
-    { category: "lego", model_version: "v2.1", day: daysAgo(0).slice(0,10), n: 112 },
-    { category: "vinyl", model_version: "v1.9", day: daysAgo(0).slice(0,10), n: 98 },
-    { category: "hot_toys", model_version: "v1.7", day: daysAgo(0).slice(0,10), n: 67 },
-    { category: "warhammer", model_version: "v2.0", day: daysAgo(0).slice(0,10), n: 89 },
-    { category: "yugioh", model_version: "v1.6", day: daysAgo(0).slice(0,10), n: 145 },
-    { category: "kpop", model_version: "v1.5", day: daysAgo(0).slice(0,10), n: 76 },
-  ],
-  mae: [
-    { category: "pokemon_tcg", model_version: "v2.3", mae: 12.4, n: 1850 },
-    { category: "mtg", model_version: "v2.1", mae: 18.7, n: 1200 },
-    { category: "funko", model_version: "v2.2", mae: 8.2, n: 980 },
-    { category: "sneakers", model_version: "v2.0", mae: 22.1, n: 870 },
-    { category: "watches", model_version: "v1.8", mae: 145.3, n: 620 },
-    { category: "lego", model_version: "v2.1", mae: 11.8, n: 750 },
-    { category: "vinyl", model_version: "v1.9", mae: 6.3, n: 540 },
-    { category: "hot_toys", model_version: "v1.7", mae: 35.6, n: 380 },
-    { category: "warhammer", model_version: "v2.0", mae: 14.9, n: 450 },
-    { category: "yugioh", model_version: "v1.6", mae: 9.1, n: 680 },
-    { category: "kpop", model_version: "v1.5", mae: 7.8, n: 420 },
-    { category: "anime_figures", model_version: "v1.4", mae: 19.5, n: 310 },
-  ],
-};
+function getDemoMetrics(): MetricsResponse {
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  return {
+    counts_7d: [
+      { category: "pokemon_tcg", model_version: "v2.3", day: today, n: 342 },
+      { category: "pokemon_tcg", model_version: "v2.3", day: yesterday, n: 318 },
+      { category: "mtg", model_version: "v2.1", day: today, n: 215 },
+      { category: "funko", model_version: "v2.2", day: today, n: 187 },
+      { category: "sneakers", model_version: "v2.0", day: today, n: 156 },
+      { category: "watches", model_version: "v1.8", day: today, n: 134 },
+      { category: "lego", model_version: "v2.1", day: today, n: 112 },
+      { category: "vinyl", model_version: "v1.9", day: today, n: 98 },
+      { category: "hot_toys", model_version: "v1.7", day: today, n: 67 },
+      { category: "warhammer", model_version: "v2.0", day: today, n: 89 },
+      { category: "yugioh", model_version: "v1.6", day: today, n: 145 },
+      { category: "kpop", model_version: "v1.5", day: today, n: 76 },
+    ],
+    mae: [
+      { category: "pokemon_tcg", model_version: "v2.3", mae: 12.4, n: 1850 },
+      { category: "mtg", model_version: "v2.1", mae: 18.7, n: 1200 },
+      { category: "funko", model_version: "v2.2", mae: 8.2, n: 980 },
+      { category: "sneakers", model_version: "v2.0", mae: 22.1, n: 870 },
+      { category: "watches", model_version: "v1.8", mae: 145.3, n: 620 },
+      { category: "lego", model_version: "v2.1", mae: 11.8, n: 750 },
+      { category: "vinyl", model_version: "v1.9", mae: 6.3, n: 540 },
+      { category: "hot_toys", model_version: "v1.7", mae: 35.6, n: 380 },
+      { category: "warhammer", model_version: "v2.0", mae: 14.9, n: 450 },
+      { category: "yugioh", model_version: "v1.6", mae: 9.1, n: 680 },
+      { category: "kpop", model_version: "v1.5", mae: 7.8, n: 420 },
+      { category: "anime_figures", model_version: "v1.4", mae: 19.5, n: 310 },
+    ],
+  };
+}
 
 export function fetchModels(): Promise<ModelRow[]> {
-  return tryFetchJSON("/admin/models", DEMO_MODELS);
+  return tryFetchJSON("/admin/models", [...DEMO_MODELS]);
 }
 
 export function fetchMetrics(): Promise<MetricsResponse> {
-  return tryFetchJSON("/admin/metrics", DEMO_METRICS);
+  return tryFetchJSON("/admin/metrics", getDemoMetrics());
 }
 
 export function activateBest(category: string) {
