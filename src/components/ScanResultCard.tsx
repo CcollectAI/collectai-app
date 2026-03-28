@@ -142,6 +142,7 @@ function ScanResultCardInner({
   const { colors } = useAppTheme();
   const shareCardRef = useRef<ViewShot>(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [showCorrection, setShowCorrection] = useState(false);
 
   const handleShare = useCallback(async () => {
     if (isSharing) return;
@@ -252,14 +253,112 @@ function ScanResultCardInner({
           </View>
         </View>
 
-        {/* Item identification card with inline feedback */}
-        <ScanFeedbackPanel
-          name={scanResult.prediction.name || ''}
-          category={scanResult.attributes.category}
-          conditionGuess={scanResult.attributes.conditionGuess}
-          scanSessionId={scanResult.scanSessionId}
-          feedbackEnabled={!!featureFlags.FEATURE_SCAN_FEEDBACK}
-        />
+        {/* "Is this correct?" confirmation card */}
+        {featureFlags.FEATURE_SCAN_FEEDBACK && !showCorrection && (
+          <View
+            style={{
+              backgroundColor: '#F0FFFE',
+              borderRadius: 16,
+              padding: 16,
+              marginBottom: 12,
+              borderWidth: 1,
+              borderColor: '#81D8D0',
+              marginTop: 12,
+              marginHorizontal: 16,
+            }}
+          >
+            <Text
+              style={{ fontSize: 15, fontWeight: '600', color: colors.muted, marginBottom: 8 }}
+            >
+              Is this correct?
+            </Text>
+            <Text
+              style={{ fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 6 }}
+              numberOfLines={2}
+            >
+              {scanResult.prediction.name || 'Unknown Item'}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <View
+                style={{
+                  backgroundColor: colors.brand.base + '18',
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 8,
+                }}
+              >
+                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.brand.dark }}>
+                  {formatKey(scanResult.attributes.category)}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: colors.muted }}>
+                {overallConf}% confidence
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <AnimatedPressable
+                style={{
+                  flex: 1,
+                  backgroundColor: TIFFANY,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                  gap: 6,
+                }}
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                  track({ name: 'quickscan_result_accepted', properties: { category: scanResult.attributes.category, confidence: overallConf } });
+                  setShowCorrection(false);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Confirm identification is correct"
+              >
+                <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+                <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700' }}>
+                  Yes, this is correct
+                </Text>
+              </AnimatedPressable>
+              <AnimatedPressable
+                style={{
+                  flex: 1,
+                  backgroundColor: 'transparent',
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  borderWidth: 1.5,
+                  borderColor: colors.border,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                  gap: 6,
+                }}
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                  setShowCorrection(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Open correction form"
+              >
+                <Ionicons name="create-outline" size={16} color={colors.muted} />
+                <Text style={{ color: colors.muted, fontSize: 14, fontWeight: '600' }}>
+                  No, let me correct
+                </Text>
+              </AnimatedPressable>
+            </View>
+          </View>
+        )}
+
+        {/* Item identification card with inline feedback (shown when user taps "No, let me correct") */}
+        {showCorrection && (
+          <ScanFeedbackPanel
+            name={scanResult.prediction.name || ''}
+            category={scanResult.attributes.category}
+            conditionGuess={scanResult.attributes.conditionGuess}
+            scanSessionId={scanResult.scanSessionId}
+            feedbackEnabled={!!featureFlags.FEATURE_SCAN_FEEDBACK}
+          />
+        )}
 
         {/* Price band section */}
         {priceBandMid > 0 && (
