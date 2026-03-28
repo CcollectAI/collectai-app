@@ -25,10 +25,10 @@ function formatEur(n: number): string {
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{label}</p>
-      <p className="mt-1 text-2xl font-bold tabular-nums text-[#0D1B2A]">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-gray-400">{sub}</p>}
+    <div className="rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{label}</p>
+      <p className="mt-1 text-2xl font-bold tabular-nums text-[#0D1B2A] dark:text-white">{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{sub}</p>}
     </div>
   );
 }
@@ -85,7 +85,7 @@ export function AdminCommissionTracker() {
   if (loading || !data || !summary) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#FF6B6B]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 dark:border-slate-700 border-t-[#FF6B6B]" />
       </div>
     );
   }
@@ -95,7 +95,7 @@ export function AdminCommissionTracker() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-[#0D1B2A]">Commission &amp; Payout Tracker</h2>
+          <h2 className="text-lg font-bold text-[#0D1B2A] dark:text-white">Commission &amp; Payout Tracker</h2>
           <AdminDemoBanner />
         </div>
         <div className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export function AdminCommissionTracker() {
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                 days === p.days
                   ? "bg-[#0D1B2A] text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600"
               }`}
             >
               {p.label}
@@ -116,7 +116,7 @@ export function AdminCommissionTracker() {
           <button
             onClick={handleExport}
             aria-label="Export as CSV"
-            className="ml-2 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-200"
+            className="ml-2 rounded-lg bg-gray-100 dark:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 transition hover:bg-gray-200 dark:hover:bg-slate-600"
           >
             Export CSV
           </button>
@@ -124,19 +124,21 @@ export function AdminCommissionTracker() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
         <StatCard label="Total Revenue" value={formatEur(summary.totalRevenue)} />
         <StatCard label="Total Commissions" value={formatEur(summary.totalCommissions)} />
         <StatCard label="Total COGS" value={formatEur(summary.totalCOGS)} />
         <StatCard label="Net Profit" value={formatEur(summary.totalNetProfit)} />
         <StatCard label="Avg Commission Rate" value={`${summary.avgCommissionRate}%`} />
         <StatCard label="Avg ROI" value={`${summary.avgROI}x`} />
+        <StatCard label="Blended ROAS" value={`${summary.totalCommissions > 0 ? (summary.totalRevenue / summary.totalCommissions).toFixed(1) : "0.0"}x`} sub="return per commission dollar" />
+        <StatCard label="ACOS" value={`${summary.totalRevenue > 0 ? ((summary.totalCommissions / summary.totalRevenue) * 100).toFixed(1) : "0.0"}%`} sub="affiliate cost of sale" />
       </div>
 
       {/* Creator table */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700">
         <table className="w-full text-left text-xs">
-          <thead className="bg-gray-50 text-gray-500">
+          <thead className="bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-400">
             <tr>
               <th className="px-3 py-2">Creator</th>
               <th className="px-3 py-2">Handle</th>
@@ -154,15 +156,15 @@ export function AdminCommissionTracker() {
           </thead>
           <tbody>
             {summary.entries.map((e) => (
-              <tr key={e.handle} className="border-t border-gray-100 hover:bg-gray-50">
-                <td className="px-3 py-2.5 font-medium text-[#0D1B2A]">{e.creatorName}</td>
-                <td className="px-3 py-2.5 text-gray-500">{e.handle}</td>
+              <tr key={e.handle} className="border-t border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700">
+                <td className="px-3 py-2.5 font-medium text-[#0D1B2A] dark:text-white">{e.creatorName}</td>
+                <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{e.handle}</td>
                 <td className="px-3 py-2.5">
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                  <span className="rounded-full bg-gray-100 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-gray-600 dark:text-gray-300">
                     {e.language}
                   </span>
                 </td>
-                <td className="px-3 py-2.5 font-mono text-gray-500">{e.affiliateCode}</td>
+                <td className="px-3 py-2.5 font-mono text-gray-500 dark:text-gray-400">{e.affiliateCode}</td>
                 <td className="px-3 py-2.5 text-right tabular-nums">{e.orders}</td>
                 <td className="px-3 py-2.5 text-right tabular-nums font-semibold">{formatEur(e.grossRevenue)}</td>
                 <td className="px-3 py-2.5 text-right tabular-nums">{e.commissionRate}%</td>
@@ -183,7 +185,7 @@ export function AdminCommissionTracker() {
             ))}
             {summary.entries.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-3 py-8 text-center text-gray-400">
+                <td colSpan={12} className="px-3 py-8 text-center text-gray-400 dark:text-gray-500">
                   No creator data for this period.
                 </td>
               </tr>

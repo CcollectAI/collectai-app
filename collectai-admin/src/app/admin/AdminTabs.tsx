@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { APP_CONFIG } from "../../../admin.config";
 
 // Template components
-import { AdminKPIDashboard } from "@/components/AdminKPIDashboard";
+import { CollectAIKPIDashboard } from "@/components/CollectAIKPIDashboard";
 import { AdminUGCDashboard } from "@/components/AdminUGCDashboard";
 import { AdminContentPipeline } from "@/components/AdminContentPipeline";
 import { AdminPodManager } from "@/components/AdminPodManager";
@@ -335,7 +335,7 @@ export function AdminTabs({ kits: _kits }: AdminTabsProps) {
       <main className="flex-1 overflow-y-auto p-4 md:p-6 print:p-0 transition-colors">
         {activeTab === "overview" && <CollectAIOverview />}
         {activeTab === "users" && <AdminUserManager />}
-        {activeTab === "kpi" && <AdminKPIDashboard />}
+        {activeTab === "kpi" && <CollectAIKPIDashboard />}
         {activeTab === "sponsors" && <AdminSponsorAnalytics />}
         {activeTab === "ml-models" && <AdminMLModels />}
         {activeTab === "workers" && <AdminWorkerHealth />}
