@@ -10,6 +10,7 @@ import { AdminContentPipeline } from "@/components/AdminContentPipeline";
 import { AdminPodManager } from "@/components/AdminPodManager";
 import { AdminCreatorManager } from "@/components/AdminCreatorManager";
 import { AdminBriefGenerator } from "@/components/AdminBriefGenerator";
+import { AdminVideoGenerator } from "@/components/AdminVideoGenerator";
 import { AdminCommissionTracker } from "@/components/AdminCommissionTracker";
 import { AdminWeeklyReport } from "@/components/AdminWeeklyReport";
 import { AdminSwipeFile } from "@/components/AdminSwipeFile";
@@ -127,6 +128,10 @@ const NAV: NavGroup[] = [
       {
         id: "briefs", label: "Brief Generator", moduleKey: "briefGenerator",
         icon: <svg className={IC} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+      },
+      {
+        id: "video-gen", label: "Video Generator", moduleKey: "videoGenerator",
+        icon: <svg className={IC} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
       },
       {
         id: "commissions", label: "Commissions", moduleKey: "commissions",
@@ -356,6 +361,7 @@ export function AdminTabs({ kits: _kits }: AdminTabsProps) {
         {activeTab === "pods" && <AdminPodManager />}
         {activeTab === "creators" && <AdminCreatorManager />}
         {activeTab === "briefs" && <AdminBriefGenerator />}
+        {activeTab === "video-gen" && <AdminVideoGenerator />}
         {activeTab === "commissions" && <AdminCommissionTracker />}
         {activeTab === "reports" && <AdminWeeklyReport />}
         {activeTab === "intelligence" && <IntelligenceTab />}

@@ -16,21 +16,28 @@ const DEFAULT_RULES: Rule[] = [
   { id: "auto-tracking", description: "Auto-advance to Tracking 24h after posting", enabled: false, triggeredCount: 0 },
   { id: "flag-overdue", description: "Flag overdue items (>2 days past due date)", enabled: false, triggeredCount: 0 },
   { id: "auto-assign", description: "Auto-assign to pod lead when unassigned >24h", enabled: false, triggeredCount: 0 },
+  // Video Generator automation rules
+  { id: "video-hit-replicate", description: "Auto-replicate video to all pods when classified as HIT (>50K views, >40% retention)", enabled: false, triggeredCount: 3 },
+  { id: "video-gap-fill", description: "Auto-generate template videos when pod falls below weekly target by Thursday", enabled: false, triggeredCount: 7 },
+  { id: "video-new-release", description: "Auto-generate Market Alert video when demand signals detect vault, discontinuation, or new drop", enabled: false, triggeredCount: 12 },
+  { id: "video-hook-swap", description: "Retire underperforming hooks (3+ consecutive fails) and A/B test next-best alternative", enabled: false, triggeredCount: 2 },
 ];
 
 interface LogEntry { timestamp: string; rule: string; item: string; action: string }
 
 const MOCK_LOG: LogEntry[] = [
+  { timestamp: "2026-03-29 10:00", rule: "video-hit-replicate", item: "[Video] Pokemon Pull Reveal → HIT", action: "Auto-generated 5 hook variants + replicated to MTG, Funko pods" },
+  { timestamp: "2026-03-29 09:30", rule: "video-new-release", item: "[Video] Yu-Gi-Oh QCSR discontinuation", action: "Auto-generated MarketAlert video for Yu-Gi-Oh pod" },
   { timestamp: "2026-03-28 09:12", rule: "auto-posted", item: "Pokemon Unboxing #42", action: "Advanced to Posted" },
   { timestamp: "2026-03-28 08:45", rule: "flag-overdue", item: "MTG Market Analysis", action: "Flagged as overdue" },
   { timestamp: "2026-03-27 22:30", rule: "auto-tracking", item: "Funko Haul Review", action: "Advanced to Tracking" },
-  { timestamp: "2026-03-27 18:15", rule: "auto-assign", item: "Sneaker Comparison", action: "Assigned to pod lead" },
+  { timestamp: "2026-03-27 18:15", rule: "video-gap-fill", item: "[Video] Watches Pod below target", action: "Auto-generated 2 template videos (WhatsItWorth, CollectionFlex)" },
   { timestamp: "2026-03-27 14:00", rule: "auto-posted", item: "Vinyl Top 10", action: "Advanced to Posted" },
-  { timestamp: "2026-03-27 11:20", rule: "flag-overdue", item: "Watch Grading Guide", action: "Flagged as overdue" },
+  { timestamp: "2026-03-27 11:20", rule: "video-hook-swap", item: "[Video] Hook dyk-3 retired for Sneakers", action: "Swapped to hook dyk-5 (higher retention estimate)" },
   { timestamp: "2026-03-26 20:45", rule: "auto-tracking", item: "Warhammer Unboxing", action: "Advanced to Tracking" },
   { timestamp: "2026-03-26 16:10", rule: "auto-assign", item: "K-pop Collection Tour", action: "Assigned to pod lead" },
   { timestamp: "2026-03-26 09:30", rule: "auto-posted", item: "LEGO Deal Hunt", action: "Advanced to Posted" },
-  { timestamp: "2026-03-25 23:00", rule: "flag-overdue", item: "Yu-Gi-Oh Price Check", action: "Flagged as overdue" },
+  { timestamp: "2026-03-25 23:00", rule: "flag-overdue", item: "Yu-Gi-Oh What's It Worth", action: "Flagged as overdue" },
 ];
 
 function load(): Rule[] {

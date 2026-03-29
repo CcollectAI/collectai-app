@@ -137,9 +137,9 @@ function getDemoPodData(): PodPlannerData {
   ];
 
   const hooks = [
-    "POV: your first amigurumi", "I made this in one evening", "Why nobody talks about this hack",
-    "Wait for the result...", "3 reasons to start crocheting", "This kit changed my routine",
-    "Beginner crochet in 10 min", "Gift idea under €20",
+    "This $3 pack had a $2,000 card inside", "How much is this ACTUALLY worth?", "I found this at a garage sale for $5",
+    "This just got VAULTED", "My collection in 15 seconds", "The AI says my collection is worth HOW MUCH?",
+    "PSA just graded my childhood card...", "The seller had NO idea what they had",
   ];
   const formats = ["tutorial", "POV", "transition", "unboxing", "timelapse", "GRWM"];
   const clusters = ["beginner-journey", "evening-routine", "gift-idea", "stress-relief"];
@@ -160,13 +160,13 @@ function getDemoPodData(): PodPlannerData {
       creatorId: member.creatorId,
       creatorName: member.name,
       creatorHandle: member.handle,
-      accountId: `@sammysam.${pod.language.toLowerCase()}`,
+      accountId: `@collectai.${pod.language.toLowerCase()}`,
       hookText: hooks[i % hooks.length],
       hookType: ["question", "POV", "statement", "suspense", "list"][i % 5],
       format: formats[i % formats.length],
       conceptCluster: clusters[i % clusters.length],
       kitSlug: kits[i % kits.length],
-      niche: "crochet",
+      niche: "collectibles",
       country: pod.language,
       status,
       dueDate: dueDate.toISOString().slice(0, 10),
@@ -268,7 +268,7 @@ export async function fetchPodPlannerData(): Promise<PodPlannerData> {
     format: (r.format as string) ?? "",
     conceptCluster: (r.concept_cluster as string) ?? "",
     kitSlug: (r.kit_slug as string) ?? "",
-    niche: (r.niche as string) ?? "crochet",
+    niche: (r.niche as string) ?? "collectibles",
     country: (r.country as string) ?? "",
     status: (r.status as PipelineStatus) ?? "idea",
     dueDate: (r.due_date as string) ?? "",

@@ -120,6 +120,7 @@ export const APP_CONFIG = {
     pods: true,
     creators: true,
     briefGenerator: true,
+    videoGenerator: true,
     commissions: true,
     weeklyReports: true,
     // CollectAI-specific modules

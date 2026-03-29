@@ -280,7 +280,7 @@ function getDemoData(days: number): KPIDashboardData {
     { name: "Haak Mee", handle: "@haakmee.nl", language: "NL", affiliateCode: "HAAK10", scans: 598, activations: 267, completions: 98, purchases: 24, revenue: 432, conversionRate: 4.0, kitsSent: 2, cogsPerKit: 6, affiliatePayoutPct: 15, netROI: 0 },
     { name: "Stitch Witch", handle: "@stitchwitch_en", language: "EN", affiliateCode: "STITCH10", scans: 534, activations: 231, completions: 89, purchases: 21, revenue: 378, conversionRate: 3.9, kitsSent: 2, cogsPerKit: 6, affiliatePayoutPct: 15, netROI: 0 },
     { name: "Wolke Wolle", handle: "@wolkewolle", language: "DE", affiliateCode: "WOLKE10", scans: 489, activations: 198, completions: 76, purchases: 18, revenue: 324, conversionRate: 3.7, kitsSent: 2, cogsPerKit: 6, affiliatePayoutPct: 15, netROI: 0 },
-    { name: "Crochet Carmen", handle: "@crochet.carmen", language: "ES", affiliateCode: "CARMEN10", scans: 412, activations: 167, completions: 61, purchases: 14, revenue: 252, conversionRate: 3.4, kitsSent: 2, cogsPerKit: 6, affiliatePayoutPct: 15, netROI: 0 },
+    { name: "Collector Carmen", handle: "@collector.carmen", language: "ES", affiliateCode: "CARMEN10", scans: 412, activations: 167, completions: 61, purchases: 14, revenue: 252, conversionRate: 3.4, kitsSent: 2, cogsPerKit: 6, affiliatePayoutPct: 15, netROI: 0 },
     { name: "Garn Lisa", handle: "@garnlisa", language: "DE", affiliateCode: "GARN10", scans: 356, activations: 142, completions: 48, purchases: 11, revenue: 198, conversionRate: 3.1, kitsSent: 2, cogsPerKit: 6, affiliatePayoutPct: 15, netROI: 0 },
     { name: "Fil et Aiguille", handle: "@fil.aiguille", language: "FR", affiliateCode: "FIL10", scans: 287, activations: 108, completions: 37, purchases: 8, revenue: 144, conversionRate: 2.8, kitsSent: 2, cogsPerKit: 6, affiliatePayoutPct: 15, netROI: 0 },
     { name: "Filo Magico", handle: "@filomagico_it", language: "IT", affiliateCode: "FILO10", scans: 234, activations: 89, completions: 29, purchases: 6, revenue: 108, conversionRate: 2.6, kitsSent: 2, cogsPerKit: 6, affiliatePayoutPct: 15, netROI: 0 },
@@ -728,16 +728,16 @@ function getUGCDemoData(days: number): UGCDashboardData {
   const from = new Date(now.getTime() - days * 86400000);
 
   const hooks = [
-    { text: "POV: your first amigurumi took 2 hours", type: "POV" },
+    { text: "POV: your first grail pull from a random pack", type: "POV" },
     { text: "I made this in one evening", type: "statement" },
-    { text: "Why is nobody talking about this crochet hack?", type: "question" },
+    { text: "Why is nobody talking about this collecting hack?", type: "question" },
     { text: "Wait for the finished result...", type: "suspense" },
-    { text: "3 reasons to start crocheting today", type: "list" },
+    { text: "3 reasons to start tracking your collection today", type: "list" },
     { text: "This kit changed my evening routine", type: "testimonial" },
   ];
   const formats = ["tutorial", "POV", "transition", "unboxing", "timelapse", "GRWM"];
   const clusters = ["beginner-journey", "evening-routine", "gift-idea", "stress-relief", "mindful-making"];
-  const accounts = ["@sammysam.eu", "@sammysam.de", "@sammysam.fr", "@sammysam.nl"];
+  const accounts = ["@collectai.eu", "@collectai.de", "@collectai.fr", "@collectai.nl"];
   const creators = [
     { name: "Luna Craft", handle: "@lunacraft_de" },
     { name: "Maille Douce", handle: "@maille.douce" },
@@ -758,7 +758,7 @@ function getUGCDemoData(days: number): UGCDashboardData {
       creatorName: creator.name,
       creatorHandle: creator.handle,
       datePosted: new Date(now.getTime() - (i * 2 + 1) * 86400000).toISOString().slice(0, 10),
-      niche: "crochet",
+      niche: "collectibles",
       format: formats[i % formats.length],
       hookText: hook.text,
       hookType: hook.type,
@@ -1059,11 +1059,11 @@ function computeUGCAggregates(videos: UGCVideo[], days: number): UGCDashboardDat
 
 function getDemoSwipeData(): SwipeFileData {
   const entries: SwipeFileEntry[] = [
-    { id: "sw-1", url: "https://tiktok.com/@competitor/video/1", platform: "tiktok", hookText: "I replaced Netflix with this hobby", hookType: "statement", format: "timelapse", niche: "crochet", whyItWorks: "Relatable screen-time guilt + satisfying transformation", tags: ["transformation", "evening-routine"], estimatedViews: 450000, savedBy: "Merle", isCompetitor: true, sourceAccount: "@cozystitches", createdAt: "2026-03-20" },
-    { id: "sw-2", url: "https://tiktok.com/@competitor/video/2", platform: "tiktok", hookText: "POV: you made your first amigurumi", hookType: "POV", format: "POV", niche: "crochet", whyItWorks: "Strong emotional payoff, beginner-friendly", tags: ["beginner", "emotional"], estimatedViews: 280000, savedBy: "Merle", isCompetitor: true, sourceAccount: "@yarnlover99", createdAt: "2026-03-18" },
-    { id: "sw-3", url: "https://tiktok.com/@competitor/video/3", platform: "tiktok", hookText: "This €18 kit has everything you need", hookType: "statement", format: "unboxing", niche: "crochet", whyItWorks: "Price anchor + unboxing satisfaction + complete kit messaging", tags: ["unboxing", "price", "gift"], estimatedViews: 190000, savedBy: "Merle", isCompetitor: false, sourceAccount: "@craftymom", createdAt: "2026-03-15" },
-    { id: "sw-4", url: "https://tiktok.com/@competitor/video/4", platform: "instagram", hookText: "3 reasons crochet is better than doomscrolling", hookType: "list", format: "talking-head", niche: "wellness", whyItWorks: "Combines anti-scrolling trend with craft benefit", tags: ["wellness", "anti-scroll", "list"], estimatedViews: 320000, savedBy: "Merle", isCompetitor: true, sourceAccount: "@mindfulmaking", createdAt: "2026-03-12" },
-    { id: "sw-5", url: "https://tiktok.com/@competitor/video/5", platform: "tiktok", hookText: "Wait for the finished result...", hookType: "suspense", format: "timelapse", niche: "crochet", whyItWorks: "Curiosity gap + ASMR yarn sounds + satisfying reveal", tags: ["suspense", "ASMR", "reveal"], estimatedViews: 670000, savedBy: "Merle", isCompetitor: true, sourceAccount: "@stitchqueen", createdAt: "2026-03-10" },
+    { id: "sw-1", url: "https://tiktok.com/@competitor/video/1", platform: "tiktok", hookText: "This $3 pack had a $2,000 card inside", hookType: "reveal", format: "unboxing", niche: "pokemon_tcg", whyItWorks: "Suspense + dopamine hit on reveal, relatable low investment", tags: ["pack-opening", "reveal", "value"], estimatedViews: 450000, savedBy: "Merle", isCompetitor: true, sourceAccount: "@pokepulls", createdAt: "2026-03-20" },
+    { id: "sw-2", url: "https://tiktok.com/@competitor/video/2", platform: "tiktok", hookText: "I found this at a garage sale for $5", hookType: "suspense", format: "POV", niche: "lego", whyItWorks: "Aspiration + FOMO, every collector dreams of cheap grails", tags: ["thrift-find", "hidden-gem", "value"], estimatedViews: 280000, savedBy: "Merle", isCompetitor: true, sourceAccount: "@brickfinds", createdAt: "2026-03-18" },
+    { id: "sw-3", url: "https://tiktok.com/@competitor/video/3", platform: "tiktok", hookText: "How much is this ACTUALLY worth?", hookType: "question", format: "comparison", niche: "funko", whyItWorks: "Universal curiosity gap + price revelation drives engagement", tags: ["price-check", "valuation", "curiosity"], estimatedViews: 190000, savedBy: "Merle", isCompetitor: false, sourceAccount: "@funkovalues", createdAt: "2026-03-15" },
+    { id: "sw-4", url: "https://tiktok.com/@competitor/video/4", platform: "instagram", hookText: "My $50K watch collection in 15 seconds", hookType: "list", format: "collection-tour", niche: "watches", whyItWorks: "Social proof + aspiration, rapid-fire visual content", tags: ["collection-flex", "portfolio", "luxury"], estimatedViews: 320000, savedBy: "Merle", isCompetitor: true, sourceAccount: "@watchflex", createdAt: "2026-03-12" },
+    { id: "sw-5", url: "https://tiktok.com/@competitor/video/5", platform: "tiktok", hookText: "This just got VAULTED. Prices already moving.", hookType: "suspense", format: "market-analysis", niche: "funko", whyItWorks: "FOMO + urgency, collectors panic-buy on vault announcements", tags: ["market-alert", "vaulted", "urgency"], estimatedViews: 670000, savedBy: "Merle", isCompetitor: true, sourceAccount: "@popmarkets", createdAt: "2026-03-10" },
     { id: "sw-6", url: "https://tiktok.com/@competitor/video/6", platform: "tiktok", hookText: "Gift idea under €20 that doesn't suck", hookType: "statement", format: "unboxing", niche: "gift", whyItWorks: "Universal pain point + price anchor + personality", tags: ["gift", "price", "personality"], estimatedViews: 510000, savedBy: "Merle", isCompetitor: false, sourceAccount: "@giftfinds", createdAt: "2026-03-08" },
   ];
 
@@ -1122,12 +1122,12 @@ function getDemoAccountData(videos: UGCVideo[]): AccountAnalytics {
   }
 
   const langMap: Record<string, string> = {
-    "@sammysam.eu": "EN", "@sammysam.de": "DE", "@sammysam.fr": "FR",
-    "@sammysam.nl": "NL", "@sammysam.es": "ES", "@sammysam.it": "IT",
+    "@collectai.eu": "EN", "@collectai.de": "DE", "@collectai.fr": "FR",
+    "@collectai.nl": "NL", "@collectai.es": "ES", "@collectai.it": "IT",
   };
   const followerMap: Record<string, number> = {
-    "@sammysam.eu": 12400, "@sammysam.de": 8900, "@sammysam.fr": 7200,
-    "@sammysam.nl": 4500, "@sammysam.es": 3100, "@sammysam.it": 2800,
+    "@collectai.eu": 12400, "@collectai.de": 8900, "@collectai.fr": 7200,
+    "@collectai.nl": 4500, "@collectai.es": 3100, "@collectai.it": 2800,
   };
 
   const accounts: TikTokAccount[] = Object.entries(accountMap).map(([handle, vids]) => {
