@@ -74,16 +74,17 @@ export function generateBrief(opts: {
   const dos = [
     "Hook in first 1.5 seconds — our best videos have 40%+ 3s retention",
     `Use ${bestFormat} format — highest avg watch time in our data`,
-    "Show the finished product within first 3 seconds",
-    "Include the kit name naturally in voiceover or text",
-    "Film in natural lighting, vertical 9:16",
+    "Show the app scanning or revealing a price within first 3 seconds",
+    "Include a specific number or stat — vague claims kill credibility",
+    "Film in natural lighting, vertical 9:16, use real collectibles",
   ];
 
   const donts = [
-    "Don't start with a brand intro or logo",
-    "Don't use generic stock music — trending sounds only",
-    "Don't hard-sell — let the product speak through the making process",
-    "Don't exceed 60 seconds unless it's a full tutorial",
+    "Don't start with a brand intro or logo — start with the hook",
+    "Don't use generic stock music — trending or original sounds only",
+    "Don't hard-sell — let the scan result or price reveal speak for itself",
+    "Don't exceed 60 seconds unless it's a deep-dive tutorial",
+    "Don't mock or belittle any collection, no matter how small",
     avgRetention < 0.3 ? "Avoid slow intros — data shows we lose 70% of viewers in first 3s" : "",
   ].filter(Boolean);
 
@@ -100,29 +101,29 @@ export function generateBrief(opts: {
     dueDate: dueDate.toISOString().slice(0, 10),
     priority: "normal",
     status: "draft",
-    objective: `Create a ${bestFormat}-style video featuring the ${kitSlug} kit that drives QR scans and kit purchases.`,
+    objective: `Create a ${bestFormat}-style video in the ${kitSlug} niche that drives app installs via scan demo or price reveal.`,
     hookOptions,
     format: bestFormat,
     conceptCluster: conceptCluster ?? topVideos[0]?.conceptCluster ?? "",
     moodBoard: [
-      "Cozy evening setting, warm lighting",
-      "Close-up of collectible details and packaging",
-      "Satisfying progress reveal",
-      "Finished character next to the kit box",
+      "Close-up of collectible item being scanned by phone",
+      "Price reveal moment with genuine reaction",
+      "Collection shelf or display — visually satisfying arrangement",
+      "App screen showing portfolio value or price comparison",
     ],
     dosAndDonts: { dos, donts },
     duration: "15-45 seconds",
     aspectRatio: "9:16",
     platform: "TikTok + Instagram Reels",
-    cta: "Link in bio / QR code on screen",
+    cta: "Scan yours free — link in bio / QR code on screen",
     inspiration,
-    productDetails: `CollectAI ${kitSlug} — track, value, and trade collectibles with AI-powered price intelligence across 37 marketplaces.`,
+    productDetails: `CollectAI — the AI-powered app that scans, identifies, and prices any collectible in 3 seconds across 37 marketplaces. 54 categories, 46,500+ catalog items.`,
     keyMessages: [
-      "Less scrolling. More making.",
-      "Everything you need in one box",
-      "Follow along at your own pace",
+      "Point your phone at any collectible and know its value in seconds",
+      "Search 37 marketplaces at once — never overpay again",
+      "Track your collection's value over time — like a Bloomberg for your shelf",
     ],
-    notes: "Tip: Use Video Generator tab to create a Remotion template video alongside this creator brief for 80/20 automated+human content split.",
+    notes: "Tip: Use Video Generator tab to create a Remotion template video alongside this creator brief for 80/20 automated+human content split. Refer to brand.ts for voice guidelines and playbooks.ts for niche-specific cultural context.",
   };
 }
 

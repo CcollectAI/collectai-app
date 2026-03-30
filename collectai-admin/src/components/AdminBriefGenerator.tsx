@@ -14,14 +14,18 @@ import {
 import type { BriefTemplate } from "@/lib/briefs";
 
 const KIT_OPTIONS = [
-  "momo-frog",
-  "luna-bunny",
-  "kiki-cat",
-  "sakura-bear",
-  "otto-octopus",
-  "pip-penguin",
-  "mika-mushroom",
-  "yuki-dragon",
+  "pokemon",
+  "mtg",
+  "funko",
+  "sneakers",
+  "watches",
+  "vinyl",
+  "lego",
+  "yugioh",
+  "kpop",
+  "manga",
+  "hot_toys",
+  "warhammer",
 ];
 
 const LANGUAGE_OPTIONS = ["DE", "FR", "NL", "EN", "ES", "IT"];

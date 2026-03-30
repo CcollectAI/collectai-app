@@ -18,6 +18,9 @@ import {
   bootstrapFromCodebase,
   type LearningStore,
 } from "../src/data/learning";
+import { BRAND_IDENTITY, BRAND_VOICE, PRODUCT_CONTEXT, CTA_SYSTEM, CONTENT_ANGLES } from "../src/data/brand";
+import { getPlaybook } from "../src/data/playbooks";
+import { COLLECTOR_PERSONAS } from "../src/data/personas";
 
 const args = process.argv.slice(2);
 function getArg(name: string): string | undefined {
@@ -159,6 +162,64 @@ function generateCollectionFlex(niche: NicheInfo, hook: Hook) {
   };
 }
 
+/**
+ * Enrich a generated script with brand context, playbook data,
+ * persona-matched CTA, and voice guidelines.
+ * This metadata travels with the script so renderers and creators
+ * have full context without needing to reference separate docs.
+ */
+function enrichWithBrandContext(
+  props: Record<string, unknown>,
+  niche: NicheInfo,
+  templateFormat: string,
+): Record<string, unknown> {
+  const playbook = getPlaybook(niche.id);
+  const matchedAngle = CONTENT_ANGLES.find((a) =>
+    (a.bestTemplates as readonly string[]).includes(templateFormat),
+  );
+  const matchedCTA = CTA_SYSTEM.primaryCTAs.find((c) =>
+    (c.bestFor as readonly string[]).includes(templateFormat),
+  );
+
+  return {
+    ...props,
+    // Brand metadata for the renderer / creator brief
+    _brand: {
+      appName: BRAND_IDENTITY.name,
+      tagline: BRAND_IDENTITY.tagline,
+      pitch: BRAND_IDENTITY.oneLinePitch,
+      stats: PRODUCT_CONTEXT.stats,
+    },
+    // CTA — persona-matched
+    _cta: matchedCTA
+      ? { text: matchedCTA.text, subtext: matchedCTA.subtext, conversionPath: matchedCTA.conversionPath }
+      : { text: "Scan yours free", subtext: "Link in bio" },
+    // Content angle for learning loop evaluation
+    _contentAngle: matchedAngle
+      ? { id: matchedAngle.id, name: matchedAngle.name, emotionalTrigger: matchedAngle.emotionalTrigger }
+      : null,
+    // Niche playbook excerpt — cultural context for creator
+    _playbook: playbook
+      ? {
+          communityName: playbook.communityName,
+          coreDesire: playbook.coreDesire,
+          emotionalDriver: playbook.emotionalDriver,
+          topSlang: Object.entries(playbook.slang).slice(0, 5).map(([k, v]) => `${k}: ${v}`),
+          credibilityKillers: playbook.credibilityKillers,
+          bestFeatures: playbook.bestFeatures,
+        }
+      : null,
+    // Voice rules — hard constraints for the creator
+    _voiceRules: BRAND_VOICE.rules,
+    // Target personas for this content type
+    _targetPersonas: COLLECTOR_PERSONAS
+      .filter((p) => p.contentTriggers.some((t) =>
+        matchedAngle ? t.bestAngle === matchedAngle.id : false,
+      ))
+      .map((p) => ({ id: p.id, name: p.name, sharesTrigger: p.platformBehavior.sharesTrigger })),
+  };
+}
+
 const GENERATORS: Record<string, (niche: NicheInfo, hook: Hook) => Record<string, unknown>> = {
   pull_reveal: generatePullReveal,
   whats_it_worth: generateWhatsItWorth,
@@ -217,7 +278,8 @@ function main() {
     if (!hook) { console.error(`No hooks for format: ${template.format}`); continue; }
 
     const generator = GENERATORS[template.format];
-    const props = generator(niche, hook);
+    const rawProps = generator(niche, hook);
+    const props = enrichWithBrandContext(rawProps, niche, template.format);
     const filename = `${templateArg}_${niche.id}_${langArg.toLowerCase()}.json`;
     const outPath = path.join(OUT_DIR, filename);
     fs.writeFileSync(outPath, JSON.stringify(props, null, 2));

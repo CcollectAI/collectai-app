@@ -10,6 +10,9 @@
 
 import { HOOKS, type Hook, getHooksForFormat } from "./hooks";
 import { NICHES, type NicheInfo } from "./niches";
+import { BRAND_IDENTITY, PRODUCT_CONTEXT, CONTENT_ANGLES, BRAND_VOICE, CTA_SYSTEM, PLATFORM_CONTEXT } from "./brand";
+import { NICHE_PLAYBOOKS, getPlaybook } from "./playbooks";
+import { COLLECTOR_PERSONAS, getPersonasForAngle } from "./personas";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -359,44 +362,31 @@ export function bootstrapFromCodebase(store: LearningStore): LearningStore {
     }
   }
 
-  // CollectAI-specific context for smarter generation
-  const CODEBASE_CONTEXT = {
-    totalCategories: 54,
-    totalCatalogItems: 46500,
-    totalMarketplaces: 37,
-    totalAdapters: 37,
-    franchises: 13,
-    currencies: 7,
-    features: [
-      "AI price prediction (Ridge regression, q10/q50/q90)",
-      "QuickScan vision AI (photo → identify + value)",
-      "Condition grading (AI-powered)",
-      "37 marketplace price comparison",
-      "Portfolio analytics & ROI tracking",
-      "Price alerts & watchlist",
-      "Deal Desk (P2P offers)",
-      "Build & Paint project tracking",
-      "Events calendar with map",
-      "Gamification (30 achievements, XP, leaderboard)",
-    ],
-    contentAngles: [
-      "price-shock",       // Expensive items people don't expect
-      "deal-hunting",      // Finding undervalued items
-      "collection-growth", // Before/after portfolio tracking
-      "ai-intelligence",   // Smart features demo
-      "fomo-alerts",       // Deadline/scarcity urgency
-      "grading-reveal",    // Condition grading surprises
-      "market-analysis",   // Trend data and predictions
-    ],
-  };
+  // ── Brand context integration ──
+  // The brand guide, niche playbooks, and personas are now imported as
+  // structured data rather than hardcoded strings. The learning loop uses
+  // these to:
+  //  1. Score hooks against niche-specific cultural context (playbooks)
+  //  2. Match content angles to target personas
+  //  3. Enforce brand voice rules when evaluating scripts
+  //  4. Select CTAs matched to persona conversion paths
 
-  // Store context (not in VideoRecord, just metadata for future generation)
-  console.log("[bootstrap] CollectAI context loaded:");
-  console.log(`  Categories: ${CODEBASE_CONTEXT.totalCategories}`);
-  console.log(`  Catalog items: ${CODEBASE_CONTEXT.totalCatalogItems}`);
-  console.log(`  Marketplaces: ${CODEBASE_CONTEXT.totalMarketplaces}`);
-  console.log(`  Features: ${CODEBASE_CONTEXT.features.length}`);
-  console.log(`  Content angles: ${CODEBASE_CONTEXT.contentAngles.length}`);
+  const playbookCount = NICHE_PLAYBOOKS.length;
+  const personaCount = COLLECTOR_PERSONAS.length;
+  const angleCount = CONTENT_ANGLES.length;
+  const featureCount = PRODUCT_CONTEXT.features.length;
+  const ctaCount = CTA_SYSTEM.primaryCTAs.length;
+  const winningPatternCount = PLATFORM_CONTEXT.tiktok.winningPatterns.length;
+  const voiceRuleCount = BRAND_VOICE.rules.length;
+
+  console.log("[bootstrap] CollectAI brand context loaded:");
+  console.log(`  Brand: ${BRAND_IDENTITY.name} — "${BRAND_IDENTITY.tagline}"`);
+  console.log(`  Product stats: ${PRODUCT_CONTEXT.stats.categories} categories, ${PRODUCT_CONTEXT.stats.catalogItems} items, ${PRODUCT_CONTEXT.stats.marketplaces} marketplaces`);
+  console.log(`  Features: ${featureCount} (best for content: ${PRODUCT_CONTEXT.features.slice(0, 3).map(f => f.id).join(", ")})`);
+  console.log(`  Niche playbooks: ${playbookCount} (${NICHE_PLAYBOOKS.map(p => p.nicheId).join(", ")})`);
+  console.log(`  Audience personas: ${personaCount} (${COLLECTOR_PERSONAS.map(p => p.id).join(", ")})`);
+  console.log(`  Content angles: ${angleCount} (${CONTENT_ANGLES.map(a => a.id).join(", ")})`);
+  console.log(`  CTAs: ${ctaCount}, Winning patterns: ${winningPatternCount}, Voice rules: ${voiceRuleCount}`);
 
   return store;
 }
