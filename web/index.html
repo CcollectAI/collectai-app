@@ -26,15 +26,63 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
 
+    <!-- JSON-LD: BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "CollectAI", "item": "https://collectai.app"}
+        ]
+    }
+    </script>
+
+    <!-- JSON-LD: Organization -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "CollectAI",
+        "url": "https://collectai.app",
+        "logo": "https://collectai.app/icon.png",
+        "email": "support@collectai.app",
+        "sameAs": [
+            "https://www.tiktok.com/@collectai",
+            "https://www.instagram.com/collectai",
+            "https://x.com/collectai"
+        ],
+        "description": "CollectAI builds AI-powered tools for collectors. Its flagship mobile app scans, identifies, and values collectibles across 54 categories using 37 marketplace data sources."
+    }
+    </script>
+
+    <!-- JSON-LD: WebSite -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "CollectAI",
+        "url": "https://collectai.app",
+        "description": "Official website for CollectAI, the AI-powered collectibles scanner, price guide, and collection tracker app.",
+        "publisher": {
+            "@type": "Organization",
+            "name": "CollectAI",
+            "url": "https://collectai.app"
+        }
+    }
+    </script>
+
     <!-- JSON-LD: SoftwareApplication -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "CollectAI",
-        "description": "CollectAI is an AI-powered mobile app that scans, identifies, and values collectibles across 54 categories. It pulls real-time pricing from 37 marketplace sources including eBay, TCGPlayer, StockX, Cardmarket, and Discogs. Users can track their collection portfolio value, compare prices, set watchlist alerts, and chat with other collectors.",
+        "alternateName": "CollectAI: Collection Tracker",
+        "description": "CollectAI is an AI-powered mobile app that scans, identifies, and values collectibles across 54 categories. It pulls real-time pricing from 37 marketplace sources including eBay, TCGPlayer, StockX, Cardmarket, and Discogs. Users can track their collection portfolio value, compare prices, set watchlist alerts, and chat with other collectors. It is the one app for all types of collectors — trading cards, figures, vinyl, watches, LEGO, and more.",
         "applicationCategory": "LifestyleApplication",
         "operatingSystem": "iOS, Android",
+        "datePublished": "2026-01-01",
+        "dateModified": "2026-03-31",
         "offers": {
             "@type": "Offer",
             "price": "0",
@@ -60,8 +108,47 @@
         "url": "https://collectai.app",
         "author": {
             "@type": "Organization",
-            "name": "CollectAI"
-        }
+            "name": "CollectAI",
+            "url": "https://collectai.app"
+        },
+        "about": [
+            {"@type": "Thing", "name": "Collectibles"},
+            {"@type": "Thing", "name": "Price Guide"},
+            {"@type": "Thing", "name": "Collection Management"},
+            {"@type": "Thing", "name": "AI Image Recognition"},
+            {"@type": "Thing", "name": "Market Valuation"}
+        ]
+    }
+    </script>
+
+    <!-- JSON-LD: HowTo -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to scan and value a collectible with CollectAI",
+        "description": "Use the CollectAI app to scan any collectible with your phone camera and get an instant AI-powered identification and real-time market valuation from 37 marketplace sources.",
+        "totalTime": "PT30S",
+        "step": [
+            {
+                "@type": "HowToStep",
+                "position": 1,
+                "name": "Snap a Photo",
+                "text": "Open CollectAI and point your phone camera at any collectible. The AI identifies the exact item, edition, and variant in seconds. Barcode and ISBN scanning is also supported."
+            },
+            {
+                "@type": "HowToStep",
+                "position": 2,
+                "name": "Get Instant Value",
+                "text": "CollectAI shows the real-time market value based on actual sold listings from 37 marketplace sources. You see a low, mid, and high price range with a confidence score."
+            },
+            {
+                "@type": "HowToStep",
+                "position": 3,
+                "name": "Track Your Portfolio",
+                "text": "Add the item to your collection portfolio. Monitor daily value changes, set price alerts, compare across marketplaces, and export your collection for insurance documentation."
+            }
+        ]
     }
     </script>
 
@@ -70,6 +157,7 @@
     {
         "@context": "https://schema.org",
         "@type": "FAQPage",
+        "dateModified": "2026-03-31",
         "mainEntity": [
             {
                 "@type": "Question",
@@ -173,6 +261,46 @@
                 "acceptedAnswer": {
                     "@type": "Answer",
                     "text": "CollectAI differs in three key ways: (1) it uses AI vision to identify collectibles from a photo rather than requiring manual search, (2) it aggregates pricing from 37 marketplace sources instead of relying on a single marketplace, and (3) it provides probabilistic price ranges (low, mid, high) based on machine learning rather than a single estimated value. It also covers 54 categories in one app, whereas most alternatives focus on a single category like cards or figures."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What is the best app to track and value a collectibles collection?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "CollectAI is a top-rated collectibles tracker app that covers 54 categories in a single app — trading cards, Funko Pop, LEGO, vinyl records, watches, anime figures, sneakers, and more. It uses AI to scan and identify items from a photo, then pulls real-time pricing from 37 marketplace sources. Most competing apps focus on one category (e.g., cards only or Funko only), while CollectAI is designed as a one-stop shop for all types of collectors."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Can I use one app for all my collectibles instead of separate apps?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. CollectAI is built as a single app for all types of collectors. It supports 54 categories — from trading cards and Funko Pops to watches, vinyl records, LEGO, anime figures, K-pop, comics, and more. Instead of using separate apps for each hobby, you can track, scan, and value everything in one place with one portfolio dashboard."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is there an app that scans collectibles and tells you the value?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. CollectAI lets you point your phone camera at any collectible and instantly get AI-powered identification plus a real-time market valuation. It works across 54 categories including trading cards, figures, LEGO, vinyl records, watches, and more. Prices are based on actual sold listings from 37 marketplace sources like eBay, TCGPlayer, StockX, and Cardmarket."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How do I insure my collectibles collection?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "To insure a collectibles collection, you need a detailed inventory with current market values. CollectAI lets you scan all your items with AI, tracks their market value daily across 37 sources, and exports your full collection as a CSV file. This export includes item names, categories, conditions, and valuations — exactly what insurers need for a scheduled personal property policy or valuable articles floater."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Does CollectAI support barcode scanning?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. CollectAI supports barcode and ISBN scanning for instant item lookup. This works well for sealed products, books, LEGO sets, Blu-ray discs, and other items with barcodes. You can also use the AI camera scanner for items without barcodes."
                 }
             }
         ]
@@ -752,7 +880,7 @@
         </div>
         <div class="nav-links">
             <a href="#features" class="nav-link">Features</a>
-            <a href="#categories" class="nav-link">Categories</a>
+            <a href="categories.html" class="nav-link">Categories</a>
             <a href="#faq" class="nav-link">FAQ</a>
             <a href="#download" class="nav-cta">Download</a>
         </div>
@@ -942,6 +1070,7 @@
                 <span class="category-pill extra-cat"><span class="pill-dot"></span>And more</span>
                 <button class="category-pill category-expand" id="collapse-cats" type="button" style="display:none"><span class="pill-dot"></span> Show less</button>
             </div>
+            <p style="margin-top:20px;font-size:14px;color:#64748b"><a href="categories.html" style="color:#2a8c84;font-weight:600;text-decoration:underline;text-underline-offset:3px">See all 54 categories with details &rarr;</a></p>
         </div>
     </section>
 
@@ -1042,7 +1171,7 @@
                     <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="faq-answer">
-                    <p>CollectAI uses a machine learning model that analyzes actual sold listings from 37 marketplace sources. Each item receives three price points: a low estimate (10th percentile), median estimate (50th percentile), and high estimate (90th percentile), along with a confidence score. The model continuously improves through user feedback and new market data.</p>
+                    <p>CollectAI calculates valuations using a machine learning model that analyzes actual sold listings from 37 marketplace sources. Each item receives three price points: a low estimate (10th percentile), median estimate (50th percentile), and high estimate (90th percentile), along with a confidence score. The model continuously improves through user feedback and new market data.</p>
                 </div>
             </div>
 
@@ -1103,6 +1232,56 @@
                 </button>
                 <div class="faq-answer">
                     <p>Yes. CollectAI supports offline access so you can browse and manage your collection without an internet connection. Changes made offline sync automatically when you reconnect.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">
+                    <span>What is the best app to track and value a collectibles collection?</span>
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <p>CollectAI is a top-rated collectibles tracker app that covers 54 categories in a single app — trading cards, Funko Pop, LEGO, vinyl records, watches, anime figures, sneakers, and more. It uses AI to scan and identify items from a photo, then pulls real-time pricing from 37 marketplace sources. Most competing apps focus on one category (e.g., cards only or Funko only), while CollectAI is designed as a one-stop shop for all types of collectors.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">
+                    <span>Can I use one app for all my collectibles instead of separate apps?</span>
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <p>Yes. CollectAI is built as a single app for all types of collectors. It supports 54 categories — from trading cards and Funko Pops to watches, vinyl records, LEGO, anime figures, K-pop, comics, and more. Instead of using separate apps for each hobby, you can track, scan, and value everything in one place with one portfolio dashboard.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">
+                    <span>Is there an app that scans collectibles and tells you the value?</span>
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <p>Yes. CollectAI lets you point your phone camera at any collectible and instantly get AI-powered identification plus a real-time market valuation. It works across 54 categories including trading cards, figures, LEGO, vinyl records, watches, and more. Prices are based on actual sold listings from 37 marketplace sources like eBay, TCGPlayer, StockX, and Cardmarket.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">
+                    <span>How do I insure my collectibles collection?</span>
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <p>To insure a collectibles collection, you need a detailed inventory with current market values. CollectAI lets you scan all your items with AI, tracks their market value daily across 37 sources, and exports your full collection as a CSV file. This export includes item names, categories, conditions, and valuations — exactly what insurers need for a scheduled personal property policy or valuable articles floater.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">
+                    <span>Does CollectAI support barcode scanning?</span>
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <p>Yes. CollectAI supports barcode and ISBN scanning for instant item lookup. This works well for sealed products, books, LEGO sets, Blu-ray discs, and other items with barcodes. You can also use the AI camera scanner for items without barcodes.</p>
                 </div>
             </div>
         </div>
