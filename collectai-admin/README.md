@@ -27,7 +27,7 @@ Default PIN: `2026` (override with `NEXT_PUBLIC_ADMIN_PIN` env var).
 - **Posting time analysis** — best hour/day heatmap for content scheduling
 - **Automation** — auto-brief generation, pipeline rules, digest scheduling
 
-## Architecture (48 source files)
+## Architecture (58 source files)
 
 ```
 admin.config.ts                  <- All settings (branding, colors, funnel, pods, modules)
@@ -70,14 +70,49 @@ src/
     kpi.ts, pod-planner.ts       <- KPI + Pod types + demo data
     briefs.ts, commissions.ts    <- Brief generator + commission calculator
     weekly-report.ts             <- Weekly report generator
+    content-machine/
+      types.ts                   <- All content machine type definitions
+      seed-data.ts               <- Accounts, pillars, niches, products, mappings
+      idea-generator.ts          <- 30-idea generator with hook templates + success fields
+      calendar-generator.ts      <- Weekly calendar with pillar mix enforcement
+      caption-generator.ts       <- 6-language caption packs (organic + commerce)
+      batch-planner.ts           <- Batch filming planner with shot-by-shot checklists
+      persistence.ts             <- Supabase + localStorage save/load/update
+      index.ts                   <- Public API re-exports
 ```
 
-## Navigation (22 Tabs)
+## Navigation (23 Tabs)
 
-**Platform:** Overview, Users, KPI Funnel, Sponsors
+**Platform:** Overview, Users, KPI Funnel, Sponsors, Developer Hub
 **Intelligence:** ML Models, Worker Health, Demand Signals
-**Content Marketing:** UGC Analytics, Social Accounts, Spark Ads, Swipe File, Pipeline, Category Pods, Creators, Brief Generator, Commissions, Weekly Reports
+**Content Marketing:** Content Machine, UGC Analytics, Social Accounts, Spark Ads, Swipe File, Pipeline, Category Pods, Creators, Brief Generator, Video Generator, Commissions, Weekly Reports
 **Automation:** Intelligence, Auto Briefs, Pipeline Rules, Digest Scheduler
+
+## Content Machine
+
+One-click weekly content generation engine with 4 tabs:
+
+- **Ideas** — 30 structured ideas with hooks (15+ templates/pillar), shot lists, voiceover scripts, success-pattern fields, TikTok SEO. Filter by pillar, account, status, or search. Status workflow (draft/approved/scheduled/filmed/posted/archived) and priority editing per idea. Visual pillar distribution bar.
+- **Calendar** — Weekly calendar with pillar mix enforcement, account balance, batch film day. Distribution table with target vs actual. Responsive 2-col mobile / 7-col desktop grid. Markdown export.
+- **Captions** — Full 6-language caption packs (all 9 pillars have dedicated templates, not generic fallback). Language switcher with ARIA tabs. 15 packs x 6 languages = 90 captions. Pillar-specific hashtag boosts.
+- **Batch Plan** — Filming planner sorted by setup type. Pre/post checklists persisted to localStorage. Collapsible shot lists with `<details>`. Filmed count tracker.
+
+Additional features:
+- **Series generation** — Modal to create 5-part content series by pillar + niche
+- **Persistence** — Auto-saves to localStorage (survives refresh). Supabase read/write when configured.
+- **Accessibility** — ARIA roles (tab/tablist/tabpanel/aria-expanded), aria-labels, title tooltips, role=alert on warnings
+
+### Content Machine Architecture
+
+- **3 accounts**: @collectai.app (brand), @collectai.finds (deals/unboxing), @collectai.grail (grails/showcase)
+- **9 pillars**: Market Alert (20%), Deal Hunting (15%), Collection Showcase (15%), Grading Guide (10%), Unboxing & Reveal (10%), Price Prediction (10%), Beginner Guide (10%), Collector Lifestyle (5%), App Feature (5%)
+- **12 niches**: Pokemon TCG, MTG, Funko, LEGO, Sneakers, Watches, Vinyl, Warhammer, Yu-Gi-Oh!, K-pop, Hot Toys, Manga
+- **7 products**: CollectAI Free/Pro, QuickScan, Portfolio Analytics, Deal Desk, Price Alerts, AI Condition Grading
+- **Success fields**: objective_type, commerce_mode, presence_mode, paid_candidate, affiliate_ready, boostable_reason, target_completion_rate, target_save_rate
+- **Hooks**: 15+ templates per pillar (140+ total), niche-aware price interpolation, 8-attempt deduplication
+- **Captions**: All 9 pillars have dedicated templates in 6 languages (162 unique templates). Pillar-specific + niche-specific + localized hashtags
+- **Persistence**: localStorage auto-save + Supabase upsert when configured
+- **Database**: `006_content_machine.sql` (10 tables, 13 indexes, RLS), `007_content_machine_seeds.sql` (seed data)
 
 ## Backend API Endpoints
 

@@ -123,6 +123,7 @@ export const APP_CONFIG = {
     videoGenerator: true,
     commissions: true,
     weeklyReports: true,
+    contentMachine: true,
     // CollectAI-specific modules
     mlModels: true,
     workerHealth: true,
