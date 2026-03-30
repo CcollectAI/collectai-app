@@ -62,7 +62,7 @@ function CategorySpecificSectionInner({
   onSizeValueChange,
 }: CategorySpecificSectionProps) {
   const id = itemId;
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
   const { settings } = useSettings();
   const hapticsEnabled = settings.hapticsEnabled;
   const theme = colors;
@@ -385,9 +385,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {itemAttributes?.color_vinyl === true && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#F3E8FF" }]}>
-              <Ionicons name="color-palette" size={16} color="#7C3AED" />
-              <Text style={[s.vaultedBadgeText, { color: "#5B21B6" }]}>Color Vinyl</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: isDark ? '#3B1F6E' : '#F3E8FF' }]}>
+              <Ionicons name="color-palette" size={16} color={isDark ? '#C4B5FD' : '#7C3AED'} />
+              <Text style={[s.vaultedBadgeText, { color: isDark ? '#C4B5FD' : '#5B21B6' }]}>Color Vinyl</Text>
             </View>
           )}
           <Pressable

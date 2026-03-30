@@ -21,6 +21,9 @@ jest.mock('../../src/hooks/useAppTheme', () => ({
       border: '#E2E8F0',
       skeleton: '#E2E8F0',
       success: '#10B981',
+      warning: '#F59E0B',
+      error: '#EF4444',
+      info: '#3B82F6',
       brand: { base: '#81D8D0', dark: '#5FBFB6' },
     },
   }),
@@ -32,6 +35,15 @@ jest.mock('react-native-svg', () => {
     __esModule: true,
     default: (props: any) => <View testID="svg" {...props} />,
     Circle: (props: any) => <View testID="svg-circle" {...props} />,
+  };
+});
+
+jest.mock('react-native-view-shot', () => {
+  const { View } = require('react-native');
+  const React = require('react');
+  return {
+    __esModule: true,
+    default: React.forwardRef((props: any, ref: any) => <View {...props} ref={ref} />),
   };
 });
 
@@ -48,18 +60,47 @@ jest.mock('../../src/lib/format', () => ({
 
 jest.mock('../../src/config/featureFlags', () => ({
   featureFlags: {
-    scan_feedback_loop: true,
-    social_proof: false,
-    condition_grading: false,
+    FEATURE_SCAN_FEEDBACK: true,
+    FEATURE_SOCIAL_PROOF: false,
+    FEATURE_CONDITION_GRADING: false,
+    FEATURE_DUPLICATE_DETECTION: false,
   },
 }));
 
-jest.mock('../../src/components/SocialProofSection', () => ({
-  SocialProofSection: () => null,
+jest.mock('../../src/haptics', () => ({
+  fireHaptic: jest.fn(),
+  HapticIntent: {
+    CONFIRMATION_LIGHT: 'CONFIRMATION_LIGHT',
+  },
 }));
 
-jest.mock('../../src/components/ConditionGradeSection', () => ({
-  ConditionGradeSection: () => null,
+jest.mock('../../src/analytics/track', () => ({
+  track: jest.fn(),
+}));
+
+jest.mock('../../src/utils/logger', () => ({
+  __esModule: true,
+  default: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
+}));
+
+jest.mock('../../src/constants/colors', () => ({
+  BRAND_COLORS: { tiffany: '#81D8D0' },
+}));
+
+jest.mock('../../src/components/quickscan/ScanSocialProof', () => ({
+  ScanSocialProof: () => null,
+}));
+
+jest.mock('../../src/components/quickscan/ConditionGradeSelector', () => ({
+  ConditionGradeSelector: () => null,
+}));
+
+jest.mock('../../src/components/quickscan/ScanFeedbackPanel', () => ({
+  ScanFeedbackPanel: () => null,
+}));
+
+jest.mock('../../src/components/quickscan/ShareCard', () => ({
+  ShareCard: () => null,
 }));
 
 jest.mock('../../src/api/collectorsApi', () => ({

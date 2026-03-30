@@ -12,7 +12,7 @@ Covers 600+ items across:
 - GMK sets: Olivia, Laser, Botanical, Mizu, Bento, Dracula, Darling,
   Demon Sword, Frost Witch, Hennessey, Red Samurai, Dots, WoB, BoW, etc.
 - SA profile sets: Bliss, Dreameater, Godspeed, Mizu
-- KAT profile sets: Milkshake, Atlantis, Refined, Arctic
+- KAT profile sets: Milkshake, CollectAI, Refined, Arctic
 - ePBT sets: Kavala, Origami, Grand Tour, Less But Better
 - Cherry Original sets: Hyperion, Sagittarius, Leviathan
 - Full custom keyboard builds (reference items)
@@ -345,7 +345,7 @@ def get_curated_catalog() -> list[dict]:
 
         # ── KAT Profile Sets ──────────────────────────────────────────
         ("Keyreative", "Keycap Set", "KAT Milkshake Alpha Kit", "KAT", "mid", 120),
-        ("Keyreative", "Keycap Set", "KAT Atlantis Alpha Kit", "KAT", "mid", 100),
+        ("Keyreative", "Keycap Set", "KAT CollectAI Alpha Kit", "KAT", "mid", 100),
         ("Keyreative", "Keycap Set", "KAT Refined Alpha Kit", "KAT", "standard", 80),
         ("Keyreative", "Keycap Set", "KAT Arctic Alpha Kit", "KAT", "mid", 110),
 
@@ -1044,7 +1044,7 @@ def get_curated_catalog() -> list[dict]:
 
         # ── KAT/KAM Profiles (+8) ─────────────────────────────────────
         ("Keyreative", "Keycap Set", "KAT Milkshake Base Kit", "KAT", "mid", 130),
-        ("Keyreative", "Keycap Set", "KAT Atlantis Base Kit", "KAT", "mid", 140),
+        ("Keyreative", "Keycap Set", "KAT CollectAI Base Kit", "KAT", "mid", 140),
         ("Keyreative", "Keycap Set", "KAT Refined Base Kit", "KAT", "mid", 120),
         ("Keyreative", "Keycap Set", "KAT Arctic Base Kit", "KAT", "mid", 125),
         ("Keyreative", "Keycap Set", "KAT Space Dust Base Kit", "KAT", "mid", 135),
@@ -1178,7 +1178,7 @@ def get_curated_catalog() -> list[dict]:
         ("ePBT", "Keycap Set", "ePBT Kavala Base Kit", "Cherry", "mid", 95),
         ("ePBT", "Keycap Set", "ePBT Grand Tour Base Kit", "Cherry", "mid", 100),
         ("ePBT", "Keycap Set", "ePBT Less But Better Base Kit", "Cherry", "mid", 90),
-        ("Keyreative", "Keycap Set", "KAT Atlantis Base Kit", "KAT", "mid", 115),
+        ("Keyreative", "Keycap Set", "KAT CollectAI Base Kit", "KAT", "mid", 115),
         ("Keyreative", "Keycap Set", "KAT Refined Base Kit", "KAT", "mid", 110),
         ("Drop", "Keycap Set", "MT3 Susuwatari Base Kit", "MT3", "mid", 100),
         ("Drop", "Keycap Set", "MT3 Cyber Muted Base Kit", "MT3", "mid", 95),
@@ -1236,7 +1236,7 @@ def get_curated_catalog() -> list[dict]:
         # ── KAT Profile Sets — Group Buy ─────────────────────────────────
         ("Keyreative", "Keycap Set", "KAT Milkshake Base Kit", "KAT", "mid", 120),
         ("Keyreative", "Keycap Set", "KAT Milkshake Fruits Kit", "KAT", "mid", 80),
-        ("Keyreative", "Keycap Set", "KAT Atlantis Base Kit", "KAT", "mid", 110),
+        ("Keyreative", "Keycap Set", "KAT CollectAI Base Kit", "KAT", "mid", 110),
         ("Keyreative", "Keycap Set", "KAT Refined Base Kit", "KAT", "mid", 100),
         ("Keyreative", "Keycap Set", "KAT Arctic Base Kit", "KAT", "mid", 105),
         ("Keyreative", "Keycap Set", "KAT Space Dust Base Kit", "KAT", "mid", 95),

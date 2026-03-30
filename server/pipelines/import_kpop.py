@@ -680,7 +680,7 @@ def get_curated_catalog() -> list[dict]:
         # ═══════════════════════════════════════════════════════════════════
         ("SHINee", "album", "Don't Call Me Standard", "Standard", "standard", 22),
         ("SHINee", "album", "Don't Call Me Jewel Case", "Jewel Case", "standard", 14),
-        ("SHINee", "album", "Atlantis Standard", "Standard", "standard", 22),
+        ("SHINee", "album", "CollectAI Standard", "Standard", "standard", 22),
         ("SHINee", "album", "HARD Standard", "Standard", "standard", 20),
         ("SHINee", "album", "HARD Photobook Ver.", "Limited", "mid", 40),
         ("SHINee", "album", "1 of 1 Limited", "Limited", "high", 90),

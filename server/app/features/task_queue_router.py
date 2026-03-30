@@ -7,6 +7,7 @@ Endpoints:
 """
 from __future__ import annotations
 
+import json
 import logging
 import uuid
 from typing import Optional
@@ -73,7 +74,7 @@ async def enqueue_task(
                 RETURNING id
                 """,
                 body.task_type,
-                __import__("json").dumps(body.payload),
+                json.dumps(body.payload),
                 body.priority,
                 user_id,
             )

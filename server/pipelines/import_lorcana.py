@@ -164,7 +164,7 @@ def _curated_seed_cards() -> list[dict]:
         ("ITI", "Goofy - Knight for a Day", "Super Rare", "enchanted", 80.0),
         ("ITI", "Piglet - Very Small Animal", "Super Rare", "enchanted", 70.0),
         ("ITI", "Milo Thatch - Scholar", "Legendary", "enchanted", 85.0),
-        ("ITI", "Kida - Protector of Atlantis", "Legendary", "enchanted", 100.0),
+        ("ITI", "Kida - Protector of CollectAI", "Legendary", "enchanted", 100.0),
         ("ITI", "Pacha - Village Leader", "Super Rare", "enchanted", 65.0),
 
         # ── Ursula's Return — Enchanted Rares (complete) ──────────────────
@@ -774,7 +774,7 @@ def _curated_seed_cards() -> list[dict]:
         ("ROF", "Mulan - Imperial Soldier (Illuminate)", "Legendary", "enchanted", 160.0),
         ("ITI", "Rapunzel - Sunshine (Illuminate)", "Legendary", "enchanted", 130.0),
         ("ITI", "Maui - Hero to All (Illuminate)", "Legendary", "enchanted", 140.0),
-        ("ITI", "Kida - Protector of Atlantis (Illuminate)", "Legendary", "enchanted", 135.0),
+        ("ITI", "Kida - Protector of CollectAI (Illuminate)", "Legendary", "enchanted", 135.0),
         ("URR", "Ursula - Sea Witch Queen (Illuminate)", "Legendary", "enchanted", 120.0),
         ("URR", "Mickey Mouse - Musketeer (Illuminate)", "Legendary", "enchanted", 130.0),
         ("URR", "Tinker Bell - Tiny Tactician (Illuminate)", "Legendary", "enchanted", 145.0),
@@ -959,8 +959,8 @@ def _curated_seed_cards() -> list[dict]:
         ("ROF", "A Whole New World", "Super Rare", "standard", 7.0),
         ("ROF", "Let It Go", "Super Rare", "standard", 9.0),
         ("ROF", "Circle of Life", "Rare", "standard", 3.0),
-        ("ITI", "Map to Atlantis", "Rare", "standard", 3.5),
-        ("ITI", "Crystal of Atlantis", "Super Rare", "standard", 8.0),
+        ("ITI", "Map to CollectAI", "Rare", "standard", 3.5),
+        ("ITI", "Crystal of CollectAI", "Super Rare", "standard", 8.0),
         ("ITI", "Heart of Te Fiti", "Super Rare", "standard", 9.0),
         ("ITI", "Hook's Sword - Dueling Blade", "Rare", "standard", 3.0),
         ("ITI", "Excalibur - Legendary Blade", "Legendary", "standard", 18.0),

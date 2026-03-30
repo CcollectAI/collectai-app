@@ -113,9 +113,9 @@ const SponsorProfileCardInner: React.FC<SponsorProfileCardProps> = ({
                     {company.name}
                   </Text>
                   {!!company.isVerified && (
-                    <View style={[styles.verifiedPill, { backgroundColor: '#10B981' + '18' }]}>
-                      <Ionicons name="checkmark-circle" size={11} color="#10B981" />
-                      <Text style={[styles.verifiedPillText, { color: '#10B981' }]}>Verified</Text>
+                    <View style={[styles.verifiedPill, { backgroundColor: colors.success + '18' }]}>
+                      <Ionicons name="checkmark-circle" size={11} color={colors.success} />
+                      <Text style={[styles.verifiedPillText, { color: colors.success }]}>Verified</Text>
                     </View>
                   )}
                 </View>

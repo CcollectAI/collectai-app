@@ -42,7 +42,7 @@ export function PresenceIndicator({ userId, size = 10, showLabel = false }: Prop
             width: size,
             height: size,
             borderRadius: size / 2,
-            backgroundColor: isOnline ? '#22C55E' : colors.muted,
+            backgroundColor: isOnline ? colors.success : colors.muted,
           },
         ]}
       />

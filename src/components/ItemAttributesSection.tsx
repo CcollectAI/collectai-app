@@ -56,7 +56,7 @@ const KNOWN_LABELS: Record<string, string> = {
   pressing: 'Pressing',
   format: 'Format',
   obi: 'OBI Strip',
-  // Niche Perfumery
+  // Fragrances
   house: 'House',
   fragrance_name: 'Fragrance Name',
   concentration: 'Concentration',

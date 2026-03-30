@@ -10,12 +10,10 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import type { DefectAnnotation, SuggestedGrade } from '@/data/types';
 
-const TIFFANY_DARK = '#5FBFB6';
-
-function getSeverityColors(dangerColor: string): Record<string, string> {
+function getSeverityColors(successColor: string, warningColor: string, dangerColor: string): Record<string, string> {
   return {
-    minor: '#22C55E',
-    moderate: '#F59E0B',
+    minor: successColor,
+    moderate: warningColor,
     major: dangerColor,
     severe: '#991B1B',
   };
@@ -28,7 +26,7 @@ type Props = {
 
 export function ConditionGradeSection({ defects, grade }: Props) {
   const { colors } = useAppTheme();
-  const SEVERITY_COLORS = getSeverityColors(colors.danger);
+  const SEVERITY_COLORS = getSeverityColors(colors.success, colors.warning, colors.danger);
   const [expanded, setExpanded] = useState(false);
 
   if (!grade && defects.length === 0) {
@@ -40,14 +38,14 @@ export function ConditionGradeSection({ defects, grade }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
-        <Ionicons name="shield-checkmark-outline" size={18} color={TIFFANY_DARK} />
+        <Ionicons name="shield-checkmark-outline" size={18} color={colors.brand.dark} />
         <Text style={[styles.title, { color: colors.text }]}>Condition Assessment</Text>
       </View>
 
       {/* Grade badge */}
       {grade && (
         <View style={styles.gradeRow}>
-          <View style={[styles.gradeBadge, { borderColor: TIFFANY_DARK }]}>
+          <View style={[styles.gradeBadge, { borderColor: colors.brand.dark }]}>
             <Text style={[styles.gradeScale, { color: colors.muted }]}>{scaleLabel}</Text>
             <Text style={[styles.gradeValue, { color: colors.text }]}>{grade.gradeValue ?? 'N/A'}</Text>
           </View>

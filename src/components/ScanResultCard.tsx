@@ -257,12 +257,12 @@ function ScanResultCardInner({
         {featureFlags.FEATURE_SCAN_FEEDBACK && !showCorrection && (
           <View
             style={{
-              backgroundColor: '#F0FFFE',
+              backgroundColor: colors.brand.base + '10',
               borderRadius: 16,
               padding: 16,
               marginBottom: 12,
               borderWidth: 1,
-              borderColor: '#81D8D0',
+              borderColor: colors.brand.base,
               marginTop: 12,
               marginHorizontal: 16,
             }}

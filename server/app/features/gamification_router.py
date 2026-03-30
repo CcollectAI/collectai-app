@@ -647,18 +647,22 @@ async def get_leaderboard(
     if not db_configured():
         return {"leaderboard": [], "user_rank": None, "total_count": 0}
 
-    # SAFETY: xp_column is always one of 3 hardcoded literals from the dict
-    # lookup above. The dict key is validated by FastAPI's regex pattern
-    # (^(weekly|monthly|alltime)$), the dict maps to a fixed set, and the
-    # assert below provides runtime defense-in-depth. This is NOT user input.
+    # SAFETY: Column names cannot be parameterized in SQL ($1, $2, etc.) —
+    # PostgreSQL only allows parameter placeholders for values, not identifiers.
+    # We use an explicit whitelist of allowed column names and raise ValueError
+    # if the resolved name is not in the whitelist. The dict key is already
+    # validated by FastAPI's regex pattern (^(weekly|monthly|alltime)$).
     _XP_COLUMNS = {
         "weekly": "weekly_xp",
         "monthly": "monthly_xp",
         "alltime": "total_xp",
     }
+    _ALLOWED_XP_COLUMNS = frozenset(_XP_COLUMNS.values())
+
     xp_column = _XP_COLUMNS[period]
 
-    assert xp_column in _XP_COLUMNS.values(), f"Invalid xp_column: {xp_column}"
+    if xp_column not in _ALLOWED_XP_COLUMNS:
+        raise ValueError(f"Invalid xp_column: {xp_column!r}. Allowed: {_ALLOWED_XP_COLUMNS}")
 
     # Cache leaderboard page (60s TTL) — keyed by period+limit+offset
     _LEADERBOARD_CACHE_TTL = 60

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, LayoutChangeEvent } from 'react-native';
 import Svg, { Path, Rect, Line as SvgLine, Defs, ClipPath } from 'react-native-svg';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 export type Point = { t: number; y: number };
 
@@ -11,7 +12,9 @@ type Props = {
   stroke?: string;
 };
 
-export default function LineChart({ data, height=180, padding=16, stroke='#0B3D91' }: Props) {
+export default function LineChart({ data, height=180, padding=16, stroke }: Props) {
+  const { colors } = useAppTheme();
+  const lineColor = stroke ?? colors.chartLine;
   const [w, setW] = useState(0);
   const onLayout = (e: LayoutChangeEvent) => setW(Math.floor(e.nativeEvent.layout.width));
   const plotW = Math.max(0, w - padding*2);
@@ -43,13 +46,13 @@ export default function LineChart({ data, height=180, padding=16, stroke='#0B3D9
       {w>0 && (
         <Svg width={w} height={height}>
           {/* Background plot rect */}
-          <Rect x={padding} y={padding} width={plotW} height={plotH} fill="#FFFFFF" stroke="#E5E7EB" strokeWidth={1} />
+          <Rect x={padding} y={padding} width={plotW} height={plotH} fill={colors.card} stroke={colors.border} strokeWidth={1} />
           {/* Grid */}
-          {hLines.map((y,i)=> <SvgLine key={'h'+i} x1={padding} y1={y} x2={padding+plotW} y2={y} stroke="#E5E7EB" strokeWidth={1} />)}
-          {vLines.map((x,i)=> <SvgLine key={'v'+i} x1={x} y1={padding} x2={x} y2={padding+plotH} stroke="#F1F5F9" strokeWidth={1} />)}
+          {hLines.map((y,i)=> <SvgLine key={'h'+i} x1={padding} y1={y} x2={padding+plotW} y2={y} stroke={colors.border} strokeWidth={1} />)}
+          {vLines.map((x,i)=> <SvgLine key={'v'+i} x1={x} y1={padding} x2={x} y2={padding+plotH} stroke={colors.border + '60'} strokeWidth={1} />)}
           {/* Clip so the line never exceeds the box */}
           <Defs><ClipPath id="clip"><Rect x={padding} y={padding} width={plotW} height={plotH} /></ClipPath></Defs>
-          {path ? <Path d={path} clipPath="url(#clip)" stroke={stroke} strokeWidth={1.5} fill="none" strokeLinejoin="round" strokeLinecap="round" /> : null}
+          {path ? <Path d={path} clipPath="url(#clip)" stroke={lineColor} strokeWidth={1.5} fill="none" strokeLinejoin="round" strokeLinecap="round" /> : null}
         </Svg>
       )}
     </View>

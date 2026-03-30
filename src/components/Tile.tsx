@@ -9,7 +9,7 @@ export default function Tile({ title, subtitle, href, onPress, left, right, styl
   const router = useRouter();
   const inner = (
     <View style={[{
-      borderWidth:1, borderColor:color.border, borderRadius:radius.lg, backgroundColor: disabled ? "#f9fafb" : color.bg,
+      borderWidth:1, borderColor:color.border, borderRadius:radius.lg, backgroundColor: disabled ? color.border + '30' : color.bg,
       padding: space.lg, gap: space.sm,
     }, shadow.card, style]}>
       <View style={{ flexDirection:"row", alignItems:"center", justifyContent:"space-between" }}>

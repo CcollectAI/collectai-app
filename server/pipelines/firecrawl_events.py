@@ -1,5 +1,5 @@
 """
-Firecrawl Event Page Crawler for Atlantis.
+Firecrawl Event Page Crawler for CollectAI.
 
 Supplements the email newsletter scraper by directly crawling event/news pages
 from collectible publishers. Extracts event data and upserts to the events table.

@@ -1,6 +1,13 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import type { Tier, CollectionStatusScore } from '@/utils/statusScoring';
+
+const TIER_COLORS: Record<string, string> = {
+  Diamond: '#00bcd4',
+  Gold: '#c9a800',
+  Silver: '#9e9e9e',
+};
 
 interface StatusBadgeProps {
   tier: Tier;
@@ -12,6 +19,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   compact = false,
 }) => {
   const label = tier.toUpperCase();
+  const tierColor = TIER_COLORS[tier] ?? '#9e9e9e';
   let borderWidth = 1;
   let fontWeight: '400' | '600' | '700' = '600';
 
@@ -27,24 +35,14 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
         borderRadius: 999,
         paddingHorizontal: compact ? 8 : 10,
         paddingVertical: compact ? 2 : 4,
-        borderColor:
-          tier === 'Diamond'
-            ? '#00bcd4'
-            : tier === 'Gold'
-            ? '#c9a800'
-            : '#9e9e9e',
+        borderColor: tierColor,
       }}
     >
       <Text
         style={{
           fontSize: compact ? 10 : 12,
           fontWeight,
-          color:
-            tier === 'Diamond'
-              ? '#00bcd4'
-              : tier === 'Gold'
-              ? '#c9a800'
-              : '#616161',
+          color: tierColor,
         }}
       >
         {label}
@@ -62,6 +60,8 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
   rank,
   score,
 }) => {
+  const { colors } = useAppTheme();
+
   return (
     <View
       style={{
@@ -75,7 +75,7 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
           width: 20,
           fontSize: 12,
           fontWeight: '600',
-          color: '#424242',
+          color: colors.muted,
         }}
       >
         {rank}.
@@ -86,7 +86,7 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
           style={{
             fontSize: 13,
             fontWeight: '600',
-            color: '#212121',
+            color: colors.text,
           }}
         >
           {score.key}
@@ -94,7 +94,7 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
         <Text
           style={{
             fontSize: 11,
-            color: '#757575',
+            color: colors.muted,
           }}
         >
           {score.category} · {score.ownedCount}/{score.expectedCount} items
@@ -108,7 +108,7 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
           style={{
             fontSize: 11,
             fontWeight: '600',
-            color: '#424242',
+            color: colors.muted,
           }}
         >
           {score.points.toFixed(0)} pts
@@ -116,7 +116,7 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
         <Text
           style={{
             fontSize: 10,
-            color: '#9e9e9e',
+            color: colors.muted,
           }}
         >
           R {Math.round(score.rarityScore * 100)} · C{' '}

@@ -11,13 +11,13 @@ import type { CollectorsEvent, EventKind } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 
-/** Color mapping for event kinds. */
-function getKindDotColor(dangerColor: string): Record<EventKind, string> {
+/** Color mapping for event kinds — uses theme info/success/warning/danger colors. */
+function getKindDotColor(themeColors: { info: string; success: string; warning: string; danger: string }): Record<EventKind, string> {
   return {
-    meetup: '#3B82F6',
-    collection_drop: '#22C55E',
-    release: '#F97316',
-    stream: dangerColor,
+    meetup: themeColors.info,
+    collection_drop: themeColors.success,
+    release: themeColors.warning,
+    stream: themeColors.danger,
     convention: '#A855F7',
   };
 }
@@ -85,7 +85,7 @@ function buildMonthGrid(year: number, month: number) {
 
 function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridProps) {
   const { colors } = useAppTheme();
-  const KIND_DOT_COLOR = getKindDotColor(colors.danger);
+  const KIND_DOT_COLOR = getKindDotColor(colors);
   const today = todayISO();
 
   const now = new Date();

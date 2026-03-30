@@ -2,7 +2,7 @@
 Marketplace Listing Router — Multi-marketplace selling system.
 
 Allows users to list collectibles for sale on external marketplaces
-(eBay, Mercari, Cardmarket, StockX, BrickLink) from within Atlantis,
+(eBay, Mercari, Cardmarket, StockX, BrickLink) from within CollectAI,
 manage connected marketplace accounts, track listings, record sales,
 and calculate estimated fees.
 

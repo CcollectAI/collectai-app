@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   message: {
-    color: '#0F172A',
+    color: '#1E293B',
     fontSize: 14,
     lineHeight: 20,
     fontFamily: 'Roboto_400Regular',
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   dismissText: {
-    color: '#0F172A',
+    color: '#1E293B',
     fontSize: 13,
     fontWeight: '600',
     fontFamily: 'Roboto_500Medium',

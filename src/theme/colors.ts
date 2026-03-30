@@ -42,10 +42,12 @@ export function useColorMode() {
 }
 
 /**
- * App theme tokens for light & dark modes.
+ * Legacy color theme (deprecated).
+ * Use `useAppTheme()` from `@/hooks/useAppTheme` instead — it provides the
+ * full color palette with dark mode support and design tokens.
  */
 
-export type AppTheme = {
+type LegacyTheme = {
   background: string;
   card: string;
   border: string;
@@ -57,8 +59,8 @@ export type AppTheme = {
   inputBorder: string;
 };
 
-const lightTheme: AppTheme = {
-  background: "#e6f7fb",      // light Tiffany-ish blue
+const lightTheme: LegacyTheme = {
+  background: "#e6f7fb",
   card: "#ffffff",
   border: "#d0e7f3",
   text: "#102a43",
@@ -69,8 +71,8 @@ const lightTheme: AppTheme = {
   inputBorder: "#c4d7e3",
 };
 
-const darkTheme: AppTheme = {
-  background: "#06111a",      // soft navy, not harsh black
+const darkTheme: LegacyTheme = {
+  background: "#06111a",
   card: "#0f2433",
   border: "#17354a",
   text: "#e3f3ff",
@@ -81,7 +83,7 @@ const darkTheme: AppTheme = {
   inputBorder: "#1e3a4c",
 };
 
-export function useColorTheme(): AppTheme {
+export function useColorTheme(): LegacyTheme {
   const { mode } = useColorMode();
   return mode === "dark" ? darkTheme : lightTheme;
 }

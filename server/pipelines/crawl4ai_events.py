@@ -1,5 +1,5 @@
 """
-Crawl4AI Event Page Crawler for Atlantis.
+Crawl4AI Event Page Crawler for CollectAI.
 
 Supplements the email newsletter scraper by directly crawling event/news pages
 from collectible publishers using Crawl4AI (local Playwright crawler).

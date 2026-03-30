@@ -1333,7 +1333,7 @@ def _expanded_batch_3() -> list[tuple]:
         ("Hololive", "Hoshimachi Suisei", "Pop Up Parade", "Hoshimachi Suisei Pop Up Parade Figure", "Standard", "mid", 38),
         ("Hololive", "Houshou Marine", "Pop Up Parade", "Houshou Marine Pop Up Parade Figure", "Standard", "mid", 40),
         ("Hololive", "Sakura Miko", "Pop Up Parade", "Sakura Miko Pop Up Parade Figure", "Standard", "mid", 38),
-        ("Hololive", "Gawr Gura", "Scale Figure", "Gawr Gura 1/7 Scale Figure (Atlantis Ver.)", "Standard", "grail", 180),
+        ("Hololive", "Gawr Gura", "Scale Figure", "Gawr Gura 1/7 Scale Figure (CollectAI Ver.)", "Standard", "grail", 180),
         ("Hololive", "Houshou Marine", "Scale Figure", "Houshou Marine 1/7 Scale Figure (Pirate Ver.)", "Standard", "grail", 195),
         ("Nijisanji", "Kuzuha", "Nendoroid", "Kuzuha Nendoroid #2100", "Standard", "high", 55),
         ("Nijisanji", "Kuzuha", "Pop Up Parade", "Kuzuha Pop Up Parade Figure", "Standard", "mid", 38),
@@ -1450,7 +1450,7 @@ def _variant_expansion() -> list[dict]:
         ("Hololive", "Houshou Marine", "Lawson Collab", "Houshou Marine x Lawson Rubber Strap (JP Only)", "Collab", "standard", 20),
         ("Hololive", "Hoshimachi Suisei", "Lawson Collab", "Hoshimachi Suisei x Lawson Clear File Set (JP Only)", "Collab", "mid", 35),
         # Acrylic diorama sets (premium tier)
-        ("Hololive", "Gawr Gura", "Acrylic Diorama", "Gawr Gura Atlantis Acrylic Diorama Set", "Birthday", "high", 85),
+        ("Hololive", "Gawr Gura", "Acrylic Diorama", "Gawr Gura CollectAI Acrylic Diorama Set", "Birthday", "high", 85),
         ("Hololive", "Mori Calliope", "Acrylic Diorama", "Mori Calliope Underworld Acrylic Diorama Set", "Birthday", "high", 80),
         ("Hololive", "Hoshimachi Suisei", "Acrylic Diorama", "Hoshimachi Suisei Starry Night Acrylic Diorama Set", "Birthday", "high", 82),
         # VShojo signed variants

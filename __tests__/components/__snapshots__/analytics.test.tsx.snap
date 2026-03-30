@@ -3,22 +3,26 @@
 exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#FFFFFF",
-      "borderColor": "#E2E8F0",
-      "borderRadius": 12,
-      "borderWidth": 1,
-      "elevation": 2,
-      "marginBottom": 16,
-      "padding": 16,
-      "shadowColor": "#000",
-      "shadowOffset": {
-        "height": 4,
-        "width": 0,
+    [
+      {
+        "borderRadius": 12,
+        "borderWidth": 1,
+        "elevation": 2,
+        "marginBottom": 16,
+        "padding": 16,
+        "shadowColor": "#000",
+        "shadowOffset": {
+          "height": 4,
+          "width": 0,
+        },
+        "shadowOpacity": 0.06,
+        "shadowRadius": 8,
       },
-      "shadowOpacity": 0.06,
-      "shadowRadius": 8,
-    }
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+      },
+    ]
   }
 >
   <View
@@ -33,11 +37,15 @@ exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
   >
     <Text
       style={
-        {
-          "color": "#0F172A",
-          "fontSize": 16,
-          "fontWeight": "700",
-        }
+        [
+          {
+            "fontSize": 16,
+            "fontWeight": "700",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
       }
     >
       Portfolio Tier
@@ -161,11 +169,15 @@ exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
     </View>
     <Text
       style={
-        {
-          "color": "#64748B",
-          "fontSize": 12,
-          "marginTop": 6,
-        }
+        [
+          {
+            "fontSize": 12,
+            "marginTop": 6,
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
       }
     >
       Tap to view leaderboard
@@ -190,22 +202,30 @@ exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
     >
       <Text
         style={
-          {
-            "color": "#0F172A",
-            "fontSize": 24,
-            "fontWeight": "800",
-          }
+          [
+            {
+              "fontSize": 24,
+              "fontWeight": "800",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
         }
       >
         85
       </Text>
       <Text
         style={
-          {
-            "color": "#64748B",
-            "fontSize": 12,
-            "marginTop": 2,
-          }
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
         }
       >
         Rarity
@@ -213,11 +233,15 @@ exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
     </View>
     <View
       style={
-        {
-          "backgroundColor": "#E2E8F0",
-          "height": 32,
-          "width": 1,
-        }
+        [
+          {
+            "height": 32,
+            "width": 1,
+          },
+          {
+            "backgroundColor": "#E2E8F0",
+          },
+        ]
       }
     />
     <View
@@ -230,22 +254,30 @@ exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
     >
       <Text
         style={
-          {
-            "color": "#0F172A",
-            "fontSize": 24,
-            "fontWeight": "800",
-          }
+          [
+            {
+              "fontSize": 24,
+              "fontWeight": "800",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
         }
       >
         72
       </Text>
       <Text
         style={
-          {
-            "color": "#64748B",
-            "fontSize": 12,
-            "marginTop": 2,
-          }
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
         }
       >
         Completeness
@@ -253,11 +285,15 @@ exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
     </View>
     <View
       style={
-        {
-          "backgroundColor": "#E2E8F0",
-          "height": 32,
-          "width": 1,
-        }
+        [
+          {
+            "height": 32,
+            "width": 1,
+          },
+          {
+            "backgroundColor": "#E2E8F0",
+          },
+        ]
       }
     />
     <View
@@ -270,22 +306,30 @@ exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
     >
       <Text
         style={
-          {
-            "color": "#0F172A",
-            "fontSize": 24,
-            "fontWeight": "800",
-          }
+          [
+            {
+              "fontSize": 24,
+              "fontWeight": "800",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
         }
       >
         60
       </Text>
       <Text
         style={
-          {
-            "color": "#64748B",
-            "fontSize": 12,
-            "marginTop": 2,
-          }
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
         }
       >
         Diversity
@@ -325,16 +369,20 @@ exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "borderTopColor": "#E2E8F0",
-        "borderTopWidth": 1,
-        "flexDirection": "row",
-        "gap": 6,
-        "justifyContent": "center",
-        "marginTop": 16,
-        "paddingTop": 12,
-      }
+      [
+        {
+          "alignItems": "center",
+          "borderTopWidth": 1,
+          "flexDirection": "row",
+          "gap": 6,
+          "justifyContent": "center",
+          "marginTop": 16,
+          "paddingTop": 12,
+        },
+        {
+          "borderTopColor": "#E2E8F0",
+        },
+      ]
     }
   >
     <Text
@@ -360,11 +408,15 @@ exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
     </Text>
     <Text
       style={
-        {
-          "color": "#5FBFB6",
-          "fontSize": 14,
-          "fontWeight": "600",
-        }
+        [
+          {
+            "fontSize": 14,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#5FBFB6",
+          },
+        ]
       }
     >
       How are these scores calculated?

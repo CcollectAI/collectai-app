@@ -436,7 +436,7 @@ const s = StyleSheet.create({
   gradingBadgeText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#059669',
+    color: '#059669', // Grading badge — intentionally branded green
   },
 
   // Verified card

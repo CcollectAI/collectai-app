@@ -798,7 +798,7 @@ def get_curated_catalog() -> list[dict]:
         ("2600", "Pac-Man", 1982, 3, 10, 60, "Common"),
         ("2600", "Space Invaders", 1980, 3, 10, 60, "Common"),
         ("2600", "Frogger", 1982, 3, 12, 70, "Common"),
-        ("2600", "Atlantis", 1982, 3, 10, 60, "Common"),
+        ("2600", "CollectAI", 1982, 3, 10, 60, "Common"),
         ("2600", "Missile Command", 1981, 3, 10, 60, "Common"),
         ("2600", "Demon Attack", 1982, 5, 15, 80, "Common"),
         ("2600", "Starmaster", 1982, 5, 15, 80, "Common"),

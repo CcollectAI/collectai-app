@@ -69,9 +69,9 @@ const SCORE_SECTIONS = [
   },
 ];
 
-function getScoreColor(score: number): string {
-  if (score >= 0.75) return '#10B981';
-  if (score >= 0.50) return '#F59E0B';
+function getScoreColor(score: number, successColor: string, warningColor: string): string {
+  if (score >= 0.75) return successColor;
+  if (score >= 0.50) return warningColor;
   return TIFFANY;
 }
 
@@ -133,7 +133,7 @@ export function ScoreExplanationSheet({
           {SCORE_SECTIONS.map((sec) => {
             const score = scores[sec.key] ?? 0;
             const displayScore = Math.round(score * 100);
-            const scoreColor = getScoreColor(score);
+            const scoreColor = getScoreColor(score, colors.success, colors.warning);
             const scoreLabel = getScoreLabel(score);
 
             return (

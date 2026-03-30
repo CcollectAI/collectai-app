@@ -26,7 +26,7 @@ import type {
 const EBAY_BROWSE_BASE = 'https://api.ebay.com/buy/browse/v1';
 const EBAY_FINDING_BASE = 'https://svcs.ebay.com/services/search/FindingService/v1';
 
-/** All 36 CollectAI categories */
+/** All 54 CollectAI categories */
 const ALL_CATEGORIES = [
   'pokemon', 'mtg', 'yugioh', 'lorcana',
   'funko', 'designer_toys', 'anime_figures', 'hot_toys',

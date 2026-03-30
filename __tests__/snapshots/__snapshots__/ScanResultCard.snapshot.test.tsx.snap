@@ -261,93 +261,98 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
       </View>
       <View
         style={
-          [
-            {
-              "borderRadius": 20,
-              "borderWidth": 1,
-              "elevation": 6,
-              "marginHorizontal": 16,
-              "marginTop": 12,
-              "padding": 20,
-              "shadowColor": "#000",
-              "shadowOffset": {
-                "height": 4,
-                "width": 0,
-              },
-              "shadowOpacity": 0.08,
-              "shadowRadius": 12,
-            },
-            {
-              "backgroundColor": "#FFFFFF",
-              "borderColor": "#E2E8F0",
-            },
-          ]
+          {
+            "backgroundColor": "#81D8D010",
+            "borderColor": "#81D8D0",
+            "borderRadius": 16,
+            "borderWidth": 1,
+            "marginBottom": 12,
+            "marginHorizontal": 16,
+            "marginTop": 12,
+            "padding": 16,
+          }
         }
       >
-        <View
-          accessibilityLabel="Item name: Charizard Base Set Holo. "
-          accessibilityRole="button"
-          accessibilityState={
+        <Text
+          style={
             {
-              "busy": undefined,
-              "checked": undefined,
-              "disabled": undefined,
-              "expanded": undefined,
-              "selected": undefined,
+              "color": "#64748B",
+              "fontSize": 15,
+              "fontWeight": "600",
+              "marginBottom": 8,
             }
           }
-          accessibilityValue={
-            {
-              "max": undefined,
-              "min": undefined,
-              "now": undefined,
-              "text": undefined,
-            }
-          }
-          accessible={true}
-          collapsable={false}
-          focusable={true}
-          onBlur={[Function]}
-          onClick={[Function]}
-          onFocus={[Function]}
-          onResponderGrant={[Function]}
-          onResponderMove={[Function]}
-          onResponderRelease={[Function]}
-          onResponderTerminate={[Function]}
-          onResponderTerminationRequest={[Function]}
-          onStartShouldSetResponder={[Function]}
         >
-          <Text
-            numberOfLines={3}
+          Is this correct?
+        </Text>
+        <Text
+          numberOfLines={2}
+          style={
+            {
+              "color": "#0F172A",
+              "fontSize": 18,
+              "fontWeight": "700",
+              "marginBottom": 6,
+            }
+          }
+        >
+          Charizard Base Set Holo
+        </Text>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "gap": 8,
+              "marginBottom": 14,
+            }
+          }
+        >
+          <View
             style={
-              [
-                {
-                  "fontSize": 22,
-                  "fontWeight": "800",
-                  "letterSpacing": -0.3,
-                  "lineHeight": 28,
-                },
-                {
-                  "color": "#0F172A",
-                },
-              ]
+              {
+                "backgroundColor": "#81D8D018",
+                "borderRadius": 8,
+                "paddingHorizontal": 10,
+                "paddingVertical": 4,
+              }
             }
           >
-            Charizard Base Set Holo
+            <Text
+              style={
+                {
+                  "color": "#5FBFB6",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                }
+              }
+            >
+              Pokemon
+            </Text>
+          </View>
+          <Text
+            style={
+              {
+                "color": "#64748B",
+                "fontSize": 13,
+                "fontWeight": "600",
+              }
+            }
+          >
+            87
+            % confidence
           </Text>
         </View>
         <View
           style={
             {
               "flexDirection": "row",
-              "flexWrap": "wrap",
-              "gap": 8,
-              "marginTop": 12,
+              "gap": 10,
             }
           }
         >
           <View
-            accessibilityLabel="Category: Pokemon"
+            accessibilityLabel="Confirm identification is correct"
             accessibilityRole="button"
             accessibilityState={
               {
@@ -379,19 +384,16 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
             onResponderTerminationRequest={[Function]}
             onStartShouldSetResponder={[Function]}
             style={
-              [
-                {
-                  "alignItems": "center",
-                  "borderRadius": 8,
-                  "flexDirection": "row",
-                  "gap": 5,
-                  "paddingHorizontal": 10,
-                  "paddingVertical": 5,
-                },
-                {
-                  "backgroundColor": "#81D8D018",
-                },
-              ]
+              {
+                "alignItems": "center",
+                "backgroundColor": "#81D8D0",
+                "borderRadius": 12,
+                "flex": 1,
+                "flexDirection": "row",
+                "gap": 6,
+                "justifyContent": "center",
+                "paddingVertical": 12,
+              }
             }
           >
             <Text
@@ -400,8 +402,8 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
               style={
                 [
                   {
-                    "color": "#5FBFB6",
-                    "fontSize": 12,
+                    "color": "#FFFFFF",
+                    "fontSize": 18,
                   },
                   undefined,
                   {
@@ -413,26 +415,22 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
                 ]
               }
             >
-              
+              
             </Text>
             <Text
               style={
-                [
-                  {
-                    "fontSize": 12,
-                    "fontWeight": "600",
-                  },
-                  {
-                    "color": "#5FBFB6",
-                  },
-                ]
+                {
+                  "color": "#FFFFFF",
+                  "fontSize": 14,
+                  "fontWeight": "700",
+                }
               }
             >
-              Pokemon
+              Yes, this is correct
             </Text>
           </View>
           <View
-            accessibilityLabel="Condition: Near Mint"
+            accessibilityLabel="Open correction form"
             accessibilityRole="button"
             accessibilityState={
               {
@@ -464,19 +462,18 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
             onResponderTerminationRequest={[Function]}
             onStartShouldSetResponder={[Function]}
             style={
-              [
-                {
-                  "alignItems": "center",
-                  "borderRadius": 8,
-                  "flexDirection": "row",
-                  "gap": 5,
-                  "paddingHorizontal": 10,
-                  "paddingVertical": 5,
-                },
-                {
-                  "backgroundColor": "#E2E8F080",
-                },
-              ]
+              {
+                "alignItems": "center",
+                "backgroundColor": "transparent",
+                "borderColor": "#E2E8F0",
+                "borderRadius": 12,
+                "borderWidth": 1.5,
+                "flex": 1,
+                "flexDirection": "row",
+                "gap": 6,
+                "justifyContent": "center",
+                "paddingVertical": 12,
+              }
             }
           >
             <Text
@@ -486,7 +483,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
                 [
                   {
                     "color": "#64748B",
-                    "fontSize": 12,
+                    "fontSize": 16,
                   },
                   undefined,
                   {
@@ -498,22 +495,18 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
                 ]
               }
             >
-              
+              
             </Text>
             <Text
               style={
-                [
-                  {
-                    "fontSize": 12,
-                    "fontWeight": "600",
-                  },
-                  {
-                    "color": "#0F172A",
-                  },
-                ]
+                {
+                  "color": "#64748B",
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                }
               }
             >
-              Near Mint
+              No, let me correct
             </Text>
           </View>
         </View>
@@ -1157,464 +1150,13 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
     }
   >
     <View
-      collapsable={false}
-      onLayout={[Function]}
-    >
-      <View
-        style={
-          {
-            "backgroundColor": "#FFFFFF",
-            "borderRadius": 24,
-            "overflow": "hidden",
-            "width": 702,
-          }
+      options={
+        {
+          "format": "png",
+          "quality": 1,
         }
-      >
-        <View
-          style={
-            {
-              "alignItems": "center",
-              "backgroundColor": "#81D8D0",
-              "flexDirection": "row",
-              "justifyContent": "space-between",
-              "paddingHorizontal": 18,
-              "paddingVertical": 12,
-            }
-          }
-        >
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "gap": 8,
-              }
-            }
-          >
-            <View
-              style={
-                {
-                  "alignItems": "center",
-                  "backgroundColor": "rgba(255,255,255,0.3)",
-                  "borderRadius": 14,
-                  "height": 28,
-                  "justifyContent": "center",
-                  "width": 28,
-                }
-              }
-            >
-              <Text
-                style={
-                  {
-                    "color": "#FFFFFF",
-                    "fontFamily": "Roboto_900Black",
-                    "fontSize": 16,
-                    "fontWeight": "900",
-                  }
-                }
-              >
-                C
-              </Text>
-            </View>
-            <Text
-              style={
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 18,
-                  "fontWeight": "800",
-                  "letterSpacing": 0.3,
-                }
-              }
-            >
-              CollectAI
-            </Text>
-          </View>
-          <View
-            style={
-              [
-                {
-                  "alignItems": "center",
-                  "backgroundColor": "rgba(255,255,255,0.9)",
-                  "borderRadius": 12,
-                  "borderWidth": 1.5,
-                  "flexDirection": "row",
-                  "gap": 5,
-                  "paddingHorizontal": 10,
-                  "paddingVertical": 4,
-                },
-                {
-                  "borderColor": "#10B98150",
-                },
-              ]
-            }
-          >
-            <View
-              style={
-                [
-                  {
-                    "borderRadius": 4,
-                    "height": 7,
-                    "width": 7,
-                  },
-                  {
-                    "backgroundColor": "#10B981",
-                  },
-                ]
-              }
-            />
-            <Text
-              style={
-                [
-                  {
-                    "fontFamily": "Roboto_700Bold",
-                    "fontSize": 13,
-                    "fontWeight": "800",
-                  },
-                  {
-                    "color": "#10B981",
-                  },
-                ]
-              }
-            >
-              87
-              %
-            </Text>
-          </View>
-        </View>
-        <View
-          style={
-            {
-              "backgroundColor": "#F1F5F9",
-              "height": 456.3,
-              "position": "relative",
-              "width": "100%",
-            }
-          }
-        >
-          <Image
-            resizeMode="cover"
-            source={
-              {
-                "uri": "file:///photo.jpg",
-              }
-            }
-            style={
-              {
-                "height": "100%",
-                "width": "100%",
-              }
-            }
-          />
-          <View
-            style={
-              {
-                "backgroundColor": "rgba(0,0,0,0.08)",
-                "bottom": 0,
-                "left": 0,
-                "position": "absolute",
-                "right": 0,
-                "top": 0,
-              }
-            }
-          />
-          <View
-            style={
-              {
-                "backgroundColor": "rgba(0,0,0,0.55)",
-                "borderRadius": 14,
-                "bottom": 12,
-                "left": 12,
-                "paddingHorizontal": 12,
-                "paddingVertical": 5,
-                "position": "absolute",
-              }
-            }
-          >
-            <Text
-              style={
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 12,
-                  "fontWeight": "700",
-                  "letterSpacing": 0.3,
-                }
-              }
-            >
-              Pokemon
-            </Text>
-          </View>
-          <View
-            style={
-              {
-                "backgroundColor": "rgba(255,255,255,0.92)",
-                "borderRadius": 10,
-                "bottom": 12,
-                "paddingHorizontal": 10,
-                "paddingVertical": 4,
-                "position": "absolute",
-                "right": 12,
-              }
-            }
-          >
-            <Text
-              style={
-                {
-                  "color": "#334155",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 11,
-                  "fontWeight": "700",
-                  "letterSpacing": 0.2,
-                }
-              }
-            >
-              Near Mint
-            </Text>
-          </View>
-        </View>
-        <View
-          style={
-            {
-              "paddingBottom": 4,
-              "paddingHorizontal": 20,
-              "paddingTop": 18,
-            }
-          }
-        >
-          <Text
-            numberOfLines={2}
-            style={
-              {
-                "color": "#0F172A",
-                "fontFamily": "Roboto_700Bold",
-                "fontSize": 21,
-                "fontWeight": "800",
-                "letterSpacing": -0.4,
-                "lineHeight": 27,
-              }
-            }
-          >
-            Charizard Base Set Holo
-          </Text>
-          <View
-            style={
-              {
-                "alignItems": "stretch",
-                "flexDirection": "row",
-                "gap": 14,
-                "marginTop": 16,
-              }
-            }
-          >
-            <View
-              style={
-                {
-                  "backgroundColor": "#81D8D0",
-                  "borderRadius": 2,
-                  "width": 3,
-                }
-              }
-            />
-            <View
-              style={
-                {
-                  "flex": 1,
-                }
-              }
-            >
-              <Text
-                style={
-                  {
-                    "color": "#94A3B8",
-                    "fontFamily": "Roboto_700Bold",
-                    "fontSize": 10,
-                    "fontWeight": "700",
-                    "letterSpacing": 1.2,
-                  }
-                }
-              >
-                ESTIMATED VALUE
-              </Text>
-              <Text
-                style={
-                  {
-                    "color": "#5FBFB6",
-                    "fontFamily": "Roboto_900Black",
-                    "fontSize": 34,
-                    "fontWeight": "900",
-                    "letterSpacing": -1,
-                    "marginTop": 2,
-                  }
-                }
-              >
-                $350
-              </Text>
-            </View>
-          </View>
-          <View
-            style={
-              {
-                "gap": 5,
-                "marginTop": 14,
-              }
-            }
-          >
-            <View
-              style={
-                {
-                  "backgroundColor": "#E2E8F0",
-                  "borderRadius": 3,
-                  "height": 5,
-                  "overflow": "hidden",
-                  "position": "relative",
-                }
-              }
-            >
-              <View
-                style={
-                  [
-                    {
-                      "backgroundColor": "#81D8D0",
-                      "borderRadius": 3,
-                      "bottom": 0,
-                      "opacity": 0.45,
-                      "position": "absolute",
-                      "top": 0,
-                    },
-                    {
-                      "left": "40%",
-                      "width": "30%",
-                    },
-                  ]
-                }
-              />
-              <View
-                style={
-                  [
-                    {
-                      "backgroundColor": "#5FBFB6",
-                      "borderColor": "#FFFFFF",
-                      "borderRadius": 6,
-                      "borderWidth": 2,
-                      "height": 11,
-                      "marginLeft": -5,
-                      "position": "absolute",
-                      "top": -3,
-                      "width": 11,
-                    },
-                    {
-                      "left": "70%",
-                    },
-                  ]
-                }
-              />
-            </View>
-            <View
-              style={
-                {
-                  "flexDirection": "row",
-                  "justifyContent": "space-between",
-                }
-              }
-            >
-              <Text
-                style={
-                  {
-                    "color": "#94A3B8",
-                    "fontFamily": "Roboto_500Medium",
-                    "fontSize": 11,
-                    "fontWeight": "500",
-                  }
-                }
-              >
-                $200
-              </Text>
-              <Text
-                style={
-                  {
-                    "color": "#94A3B8",
-                    "fontFamily": "Roboto_500Medium",
-                    "fontSize": 11,
-                    "fontWeight": "500",
-                  }
-                }
-              >
-                $500
-              </Text>
-            </View>
-          </View>
-        </View>
-        <View
-          style={
-            {
-              "marginTop": 8,
-              "paddingBottom": 16,
-              "paddingHorizontal": 20,
-              "paddingTop": 12,
-            }
-          }
-        >
-          <View
-            style={
-              {
-                "backgroundColor": "#F1F5F9",
-                "height": 1,
-                "marginBottom": 12,
-              }
-            }
-          />
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "gap": 6,
-                "justifyContent": "center",
-              }
-            }
-          >
-            <Text
-              style={
-                {
-                  "color": "#5FBFB6",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 12,
-                  "fontWeight": "800",
-                  "letterSpacing": 0.2,
-                }
-              }
-            >
-              CollectAI
-            </Text>
-            <Text
-              style={
-                {
-                  "color": "#CBD5E1",
-                  "fontFamily": "Roboto_400Regular",
-                  "fontSize": 12,
-                }
-              }
-            >
-              ·
-            </Text>
-            <Text
-              style={
-                {
-                  "color": "#94A3B8",
-                  "fontFamily": "Roboto_500Medium",
-                  "fontSize": 11,
-                  "fontWeight": "500",
-                  "letterSpacing": 0.2,
-                }
-              }
-            >
-              Scan any collectible
-            </Text>
-          </View>
-        </View>
-      </View>
-    </View>
+      }
+    />
   </View>
 </View>
 `;
@@ -1840,93 +1382,98 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
       </View>
       <View
         style={
-          [
-            {
-              "borderRadius": 20,
-              "borderWidth": 1,
-              "elevation": 6,
-              "marginHorizontal": 16,
-              "marginTop": 12,
-              "padding": 20,
-              "shadowColor": "#000",
-              "shadowOffset": {
-                "height": 4,
-                "width": 0,
-              },
-              "shadowOpacity": 0.08,
-              "shadowRadius": 12,
-            },
-            {
-              "backgroundColor": "#FFFFFF",
-              "borderColor": "#E2E8F0",
-            },
-          ]
+          {
+            "backgroundColor": "#81D8D010",
+            "borderColor": "#81D8D0",
+            "borderRadius": 16,
+            "borderWidth": 1,
+            "marginBottom": 12,
+            "marginHorizontal": 16,
+            "marginTop": 12,
+            "padding": 16,
+          }
         }
       >
-        <View
-          accessibilityLabel="Item name: Charizard Base Set Holo. "
-          accessibilityRole="button"
-          accessibilityState={
+        <Text
+          style={
             {
-              "busy": undefined,
-              "checked": undefined,
-              "disabled": undefined,
-              "expanded": undefined,
-              "selected": undefined,
+              "color": "#64748B",
+              "fontSize": 15,
+              "fontWeight": "600",
+              "marginBottom": 8,
             }
           }
-          accessibilityValue={
-            {
-              "max": undefined,
-              "min": undefined,
-              "now": undefined,
-              "text": undefined,
-            }
-          }
-          accessible={true}
-          collapsable={false}
-          focusable={true}
-          onBlur={[Function]}
-          onClick={[Function]}
-          onFocus={[Function]}
-          onResponderGrant={[Function]}
-          onResponderMove={[Function]}
-          onResponderRelease={[Function]}
-          onResponderTerminate={[Function]}
-          onResponderTerminationRequest={[Function]}
-          onStartShouldSetResponder={[Function]}
         >
-          <Text
-            numberOfLines={3}
+          Is this correct?
+        </Text>
+        <Text
+          numberOfLines={2}
+          style={
+            {
+              "color": "#0F172A",
+              "fontSize": 18,
+              "fontWeight": "700",
+              "marginBottom": 6,
+            }
+          }
+        >
+          Charizard Base Set Holo
+        </Text>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "gap": 8,
+              "marginBottom": 14,
+            }
+          }
+        >
+          <View
             style={
-              [
-                {
-                  "fontSize": 22,
-                  "fontWeight": "800",
-                  "letterSpacing": -0.3,
-                  "lineHeight": 28,
-                },
-                {
-                  "color": "#0F172A",
-                },
-              ]
+              {
+                "backgroundColor": "#81D8D018",
+                "borderRadius": 8,
+                "paddingHorizontal": 10,
+                "paddingVertical": 4,
+              }
             }
           >
-            Charizard Base Set Holo
+            <Text
+              style={
+                {
+                  "color": "#5FBFB6",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                }
+              }
+            >
+              Pokemon
+            </Text>
+          </View>
+          <Text
+            style={
+              {
+                "color": "#64748B",
+                "fontSize": 13,
+                "fontWeight": "600",
+              }
+            }
+          >
+            87
+            % confidence
           </Text>
         </View>
         <View
           style={
             {
               "flexDirection": "row",
-              "flexWrap": "wrap",
-              "gap": 8,
-              "marginTop": 12,
+              "gap": 10,
             }
           }
         >
           <View
-            accessibilityLabel="Category: Pokemon"
+            accessibilityLabel="Confirm identification is correct"
             accessibilityRole="button"
             accessibilityState={
               {
@@ -1958,40 +1505,33 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
             onResponderTerminationRequest={[Function]}
             onStartShouldSetResponder={[Function]}
             style={
-              [
-                {
-                  "alignItems": "center",
-                  "borderRadius": 8,
-                  "flexDirection": "row",
-                  "gap": 5,
-                  "paddingHorizontal": 10,
-                  "paddingVertical": 5,
-                },
-                {
-                  "backgroundColor": "#81D8D018",
-                },
-              ]
+              {
+                "alignItems": "center",
+                "backgroundColor": "#81D8D0",
+                "borderRadius": 12,
+                "flex": 1,
+                "flexDirection": "row",
+                "gap": 6,
+                "justifyContent": "center",
+                "paddingVertical": 12,
+              }
             }
           >
             <Text />
             <Text
               style={
-                [
-                  {
-                    "fontSize": 12,
-                    "fontWeight": "600",
-                  },
-                  {
-                    "color": "#5FBFB6",
-                  },
-                ]
+                {
+                  "color": "#FFFFFF",
+                  "fontSize": 14,
+                  "fontWeight": "700",
+                }
               }
             >
-              Pokemon
+              Yes, this is correct
             </Text>
           </View>
           <View
-            accessibilityLabel="Condition: Near Mint"
+            accessibilityLabel="Open correction form"
             accessibilityRole="button"
             accessibilityState={
               {
@@ -2023,36 +1563,31 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
             onResponderTerminationRequest={[Function]}
             onStartShouldSetResponder={[Function]}
             style={
-              [
-                {
-                  "alignItems": "center",
-                  "borderRadius": 8,
-                  "flexDirection": "row",
-                  "gap": 5,
-                  "paddingHorizontal": 10,
-                  "paddingVertical": 5,
-                },
-                {
-                  "backgroundColor": "#E2E8F080",
-                },
-              ]
+              {
+                "alignItems": "center",
+                "backgroundColor": "transparent",
+                "borderColor": "#E2E8F0",
+                "borderRadius": 12,
+                "borderWidth": 1.5,
+                "flex": 1,
+                "flexDirection": "row",
+                "gap": 6,
+                "justifyContent": "center",
+                "paddingVertical": 12,
+              }
             }
           >
             <Text />
             <Text
               style={
-                [
-                  {
-                    "fontSize": 12,
-                    "fontWeight": "600",
-                  },
-                  {
-                    "color": "#0F172A",
-                  },
-                ]
+                {
+                  "color": "#64748B",
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                }
               }
             >
-              Near Mint
+              No, let me correct
             </Text>
           </View>
         </View>
@@ -2394,464 +1929,13 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
     }
   >
     <View
-      collapsable={false}
-      onLayout={[Function]}
-    >
-      <View
-        style={
-          {
-            "backgroundColor": "#FFFFFF",
-            "borderRadius": 24,
-            "overflow": "hidden",
-            "width": 702,
-          }
+      options={
+        {
+          "format": "png",
+          "quality": 1,
         }
-      >
-        <View
-          style={
-            {
-              "alignItems": "center",
-              "backgroundColor": "#81D8D0",
-              "flexDirection": "row",
-              "justifyContent": "space-between",
-              "paddingHorizontal": 18,
-              "paddingVertical": 12,
-            }
-          }
-        >
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "gap": 8,
-              }
-            }
-          >
-            <View
-              style={
-                {
-                  "alignItems": "center",
-                  "backgroundColor": "rgba(255,255,255,0.3)",
-                  "borderRadius": 14,
-                  "height": 28,
-                  "justifyContent": "center",
-                  "width": 28,
-                }
-              }
-            >
-              <Text
-                style={
-                  {
-                    "color": "#FFFFFF",
-                    "fontFamily": "Roboto_900Black",
-                    "fontSize": 16,
-                    "fontWeight": "900",
-                  }
-                }
-              >
-                C
-              </Text>
-            </View>
-            <Text
-              style={
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 18,
-                  "fontWeight": "800",
-                  "letterSpacing": 0.3,
-                }
-              }
-            >
-              CollectAI
-            </Text>
-          </View>
-          <View
-            style={
-              [
-                {
-                  "alignItems": "center",
-                  "backgroundColor": "rgba(255,255,255,0.9)",
-                  "borderRadius": 12,
-                  "borderWidth": 1.5,
-                  "flexDirection": "row",
-                  "gap": 5,
-                  "paddingHorizontal": 10,
-                  "paddingVertical": 4,
-                },
-                {
-                  "borderColor": "#10B98150",
-                },
-              ]
-            }
-          >
-            <View
-              style={
-                [
-                  {
-                    "borderRadius": 4,
-                    "height": 7,
-                    "width": 7,
-                  },
-                  {
-                    "backgroundColor": "#10B981",
-                  },
-                ]
-              }
-            />
-            <Text
-              style={
-                [
-                  {
-                    "fontFamily": "Roboto_700Bold",
-                    "fontSize": 13,
-                    "fontWeight": "800",
-                  },
-                  {
-                    "color": "#10B981",
-                  },
-                ]
-              }
-            >
-              87
-              %
-            </Text>
-          </View>
-        </View>
-        <View
-          style={
-            {
-              "backgroundColor": "#F1F5F9",
-              "height": 456.3,
-              "position": "relative",
-              "width": "100%",
-            }
-          }
-        >
-          <Image
-            resizeMode="cover"
-            source={
-              {
-                "uri": "file:///photo.jpg",
-              }
-            }
-            style={
-              {
-                "height": "100%",
-                "width": "100%",
-              }
-            }
-          />
-          <View
-            style={
-              {
-                "backgroundColor": "rgba(0,0,0,0.08)",
-                "bottom": 0,
-                "left": 0,
-                "position": "absolute",
-                "right": 0,
-                "top": 0,
-              }
-            }
-          />
-          <View
-            style={
-              {
-                "backgroundColor": "rgba(0,0,0,0.55)",
-                "borderRadius": 14,
-                "bottom": 12,
-                "left": 12,
-                "paddingHorizontal": 12,
-                "paddingVertical": 5,
-                "position": "absolute",
-              }
-            }
-          >
-            <Text
-              style={
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 12,
-                  "fontWeight": "700",
-                  "letterSpacing": 0.3,
-                }
-              }
-            >
-              Pokemon
-            </Text>
-          </View>
-          <View
-            style={
-              {
-                "backgroundColor": "rgba(255,255,255,0.92)",
-                "borderRadius": 10,
-                "bottom": 12,
-                "paddingHorizontal": 10,
-                "paddingVertical": 4,
-                "position": "absolute",
-                "right": 12,
-              }
-            }
-          >
-            <Text
-              style={
-                {
-                  "color": "#334155",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 11,
-                  "fontWeight": "700",
-                  "letterSpacing": 0.2,
-                }
-              }
-            >
-              Near Mint
-            </Text>
-          </View>
-        </View>
-        <View
-          style={
-            {
-              "paddingBottom": 4,
-              "paddingHorizontal": 20,
-              "paddingTop": 18,
-            }
-          }
-        >
-          <Text
-            numberOfLines={2}
-            style={
-              {
-                "color": "#0F172A",
-                "fontFamily": "Roboto_700Bold",
-                "fontSize": 21,
-                "fontWeight": "800",
-                "letterSpacing": -0.4,
-                "lineHeight": 27,
-              }
-            }
-          >
-            Charizard Base Set Holo
-          </Text>
-          <View
-            style={
-              {
-                "alignItems": "stretch",
-                "flexDirection": "row",
-                "gap": 14,
-                "marginTop": 16,
-              }
-            }
-          >
-            <View
-              style={
-                {
-                  "backgroundColor": "#81D8D0",
-                  "borderRadius": 2,
-                  "width": 3,
-                }
-              }
-            />
-            <View
-              style={
-                {
-                  "flex": 1,
-                }
-              }
-            >
-              <Text
-                style={
-                  {
-                    "color": "#94A3B8",
-                    "fontFamily": "Roboto_700Bold",
-                    "fontSize": 10,
-                    "fontWeight": "700",
-                    "letterSpacing": 1.2,
-                  }
-                }
-              >
-                ESTIMATED VALUE
-              </Text>
-              <Text
-                style={
-                  {
-                    "color": "#5FBFB6",
-                    "fontFamily": "Roboto_900Black",
-                    "fontSize": 34,
-                    "fontWeight": "900",
-                    "letterSpacing": -1,
-                    "marginTop": 2,
-                  }
-                }
-              >
-                $350
-              </Text>
-            </View>
-          </View>
-          <View
-            style={
-              {
-                "gap": 5,
-                "marginTop": 14,
-              }
-            }
-          >
-            <View
-              style={
-                {
-                  "backgroundColor": "#E2E8F0",
-                  "borderRadius": 3,
-                  "height": 5,
-                  "overflow": "hidden",
-                  "position": "relative",
-                }
-              }
-            >
-              <View
-                style={
-                  [
-                    {
-                      "backgroundColor": "#81D8D0",
-                      "borderRadius": 3,
-                      "bottom": 0,
-                      "opacity": 0.45,
-                      "position": "absolute",
-                      "top": 0,
-                    },
-                    {
-                      "left": "40%",
-                      "width": "30%",
-                    },
-                  ]
-                }
-              />
-              <View
-                style={
-                  [
-                    {
-                      "backgroundColor": "#5FBFB6",
-                      "borderColor": "#FFFFFF",
-                      "borderRadius": 6,
-                      "borderWidth": 2,
-                      "height": 11,
-                      "marginLeft": -5,
-                      "position": "absolute",
-                      "top": -3,
-                      "width": 11,
-                    },
-                    {
-                      "left": "70%",
-                    },
-                  ]
-                }
-              />
-            </View>
-            <View
-              style={
-                {
-                  "flexDirection": "row",
-                  "justifyContent": "space-between",
-                }
-              }
-            >
-              <Text
-                style={
-                  {
-                    "color": "#94A3B8",
-                    "fontFamily": "Roboto_500Medium",
-                    "fontSize": 11,
-                    "fontWeight": "500",
-                  }
-                }
-              >
-                $200
-              </Text>
-              <Text
-                style={
-                  {
-                    "color": "#94A3B8",
-                    "fontFamily": "Roboto_500Medium",
-                    "fontSize": 11,
-                    "fontWeight": "500",
-                  }
-                }
-              >
-                $500
-              </Text>
-            </View>
-          </View>
-        </View>
-        <View
-          style={
-            {
-              "marginTop": 8,
-              "paddingBottom": 16,
-              "paddingHorizontal": 20,
-              "paddingTop": 12,
-            }
-          }
-        >
-          <View
-            style={
-              {
-                "backgroundColor": "#F1F5F9",
-                "height": 1,
-                "marginBottom": 12,
-              }
-            }
-          />
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "gap": 6,
-                "justifyContent": "center",
-              }
-            }
-          >
-            <Text
-              style={
-                {
-                  "color": "#5FBFB6",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 12,
-                  "fontWeight": "800",
-                  "letterSpacing": 0.2,
-                }
-              }
-            >
-              CollectAI
-            </Text>
-            <Text
-              style={
-                {
-                  "color": "#CBD5E1",
-                  "fontFamily": "Roboto_400Regular",
-                  "fontSize": 12,
-                }
-              }
-            >
-              ·
-            </Text>
-            <Text
-              style={
-                {
-                  "color": "#94A3B8",
-                  "fontFamily": "Roboto_500Medium",
-                  "fontSize": 11,
-                  "fontWeight": "500",
-                  "letterSpacing": 0.2,
-                }
-              }
-            >
-              Scan any collectible
-            </Text>
-          </View>
-        </View>
-      </View>
-    </View>
+      }
+    />
   </View>
 </View>
 `;
@@ -2933,7 +2017,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
               },
               {
                 "backgroundColor": "#FFFFFFEE",
-                "borderColor": "undefined60",
+                "borderColor": "#EF444460",
               },
             ]
           }
@@ -2947,7 +2031,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                   "width": 7,
                 },
                 {
-                  "backgroundColor": undefined,
+                  "backgroundColor": "#EF4444",
                 },
               ]
             }
@@ -2961,7 +2045,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                   "letterSpacing": 0.3,
                 },
                 {
-                  "color": undefined,
+                  "color": "#EF4444",
                 },
               ]
             }
@@ -3117,93 +2201,98 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
       </View>
       <View
         style={
-          [
-            {
-              "borderRadius": 20,
-              "borderWidth": 1,
-              "elevation": 6,
-              "marginHorizontal": 16,
-              "marginTop": 12,
-              "padding": 20,
-              "shadowColor": "#000",
-              "shadowOffset": {
-                "height": 4,
-                "width": 0,
-              },
-              "shadowOpacity": 0.08,
-              "shadowRadius": 12,
-            },
-            {
-              "backgroundColor": "#FFFFFF",
-              "borderColor": "#E2E8F0",
-            },
-          ]
+          {
+            "backgroundColor": "#81D8D010",
+            "borderColor": "#81D8D0",
+            "borderRadius": 16,
+            "borderWidth": 1,
+            "marginBottom": 12,
+            "marginHorizontal": 16,
+            "marginTop": 12,
+            "padding": 16,
+          }
         }
       >
-        <View
-          accessibilityLabel="Item name: Unknown Card. "
-          accessibilityRole="button"
-          accessibilityState={
+        <Text
+          style={
             {
-              "busy": undefined,
-              "checked": undefined,
-              "disabled": undefined,
-              "expanded": undefined,
-              "selected": undefined,
+              "color": "#64748B",
+              "fontSize": 15,
+              "fontWeight": "600",
+              "marginBottom": 8,
             }
           }
-          accessibilityValue={
-            {
-              "max": undefined,
-              "min": undefined,
-              "now": undefined,
-              "text": undefined,
-            }
-          }
-          accessible={true}
-          collapsable={false}
-          focusable={true}
-          onBlur={[Function]}
-          onClick={[Function]}
-          onFocus={[Function]}
-          onResponderGrant={[Function]}
-          onResponderMove={[Function]}
-          onResponderRelease={[Function]}
-          onResponderTerminate={[Function]}
-          onResponderTerminationRequest={[Function]}
-          onStartShouldSetResponder={[Function]}
         >
-          <Text
-            numberOfLines={3}
+          Is this correct?
+        </Text>
+        <Text
+          numberOfLines={2}
+          style={
+            {
+              "color": "#0F172A",
+              "fontSize": 18,
+              "fontWeight": "700",
+              "marginBottom": 6,
+            }
+          }
+        >
+          Unknown Card
+        </Text>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "gap": 8,
+              "marginBottom": 14,
+            }
+          }
+        >
+          <View
             style={
-              [
-                {
-                  "fontSize": 22,
-                  "fontWeight": "800",
-                  "letterSpacing": -0.3,
-                  "lineHeight": 28,
-                },
-                {
-                  "color": "#0F172A",
-                },
-              ]
+              {
+                "backgroundColor": "#81D8D018",
+                "borderRadius": 8,
+                "paddingHorizontal": 10,
+                "paddingVertical": 4,
+              }
             }
           >
-            Unknown Card
+            <Text
+              style={
+                {
+                  "color": "#5FBFB6",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                }
+              }
+            >
+              Pokemon
+            </Text>
+          </View>
+          <Text
+            style={
+              {
+                "color": "#64748B",
+                "fontSize": 13,
+                "fontWeight": "600",
+              }
+            }
+          >
+            30
+            % confidence
           </Text>
         </View>
         <View
           style={
             {
               "flexDirection": "row",
-              "flexWrap": "wrap",
-              "gap": 8,
-              "marginTop": 12,
+              "gap": 10,
             }
           }
         >
           <View
-            accessibilityLabel="Category: Pokemon"
+            accessibilityLabel="Confirm identification is correct"
             accessibilityRole="button"
             accessibilityState={
               {
@@ -3235,19 +2324,16 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
             onResponderTerminationRequest={[Function]}
             onStartShouldSetResponder={[Function]}
             style={
-              [
-                {
-                  "alignItems": "center",
-                  "borderRadius": 8,
-                  "flexDirection": "row",
-                  "gap": 5,
-                  "paddingHorizontal": 10,
-                  "paddingVertical": 5,
-                },
-                {
-                  "backgroundColor": "#81D8D018",
-                },
-              ]
+              {
+                "alignItems": "center",
+                "backgroundColor": "#81D8D0",
+                "borderRadius": 12,
+                "flex": 1,
+                "flexDirection": "row",
+                "gap": 6,
+                "justifyContent": "center",
+                "paddingVertical": 12,
+              }
             }
           >
             <Text
@@ -3256,8 +2342,8 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
               style={
                 [
                   {
-                    "color": "#5FBFB6",
-                    "fontSize": 12,
+                    "color": "#FFFFFF",
+                    "fontSize": 18,
                   },
                   undefined,
                   {
@@ -3269,26 +2355,22 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                 ]
               }
             >
-              
+              
             </Text>
             <Text
               style={
-                [
-                  {
-                    "fontSize": 12,
-                    "fontWeight": "600",
-                  },
-                  {
-                    "color": "#5FBFB6",
-                  },
-                ]
+                {
+                  "color": "#FFFFFF",
+                  "fontSize": 14,
+                  "fontWeight": "700",
+                }
               }
             >
-              Pokemon
+              Yes, this is correct
             </Text>
           </View>
           <View
-            accessibilityLabel="Condition: Near Mint"
+            accessibilityLabel="Open correction form"
             accessibilityRole="button"
             accessibilityState={
               {
@@ -3320,19 +2402,18 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
             onResponderTerminationRequest={[Function]}
             onStartShouldSetResponder={[Function]}
             style={
-              [
-                {
-                  "alignItems": "center",
-                  "borderRadius": 8,
-                  "flexDirection": "row",
-                  "gap": 5,
-                  "paddingHorizontal": 10,
-                  "paddingVertical": 5,
-                },
-                {
-                  "backgroundColor": "#E2E8F080",
-                },
-              ]
+              {
+                "alignItems": "center",
+                "backgroundColor": "transparent",
+                "borderColor": "#E2E8F0",
+                "borderRadius": 12,
+                "borderWidth": 1.5,
+                "flex": 1,
+                "flexDirection": "row",
+                "gap": 6,
+                "justifyContent": "center",
+                "paddingVertical": 12,
+              }
             }
           >
             <Text
@@ -3342,7 +2423,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                 [
                   {
                     "color": "#64748B",
-                    "fontSize": 12,
+                    "fontSize": 16,
                   },
                   undefined,
                   {
@@ -3354,22 +2435,18 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                 ]
               }
             >
-              
+              
             </Text>
             <Text
               style={
-                [
-                  {
-                    "fontSize": 12,
-                    "fontWeight": "600",
-                  },
-                  {
-                    "color": "#0F172A",
-                  },
-                ]
+                {
+                  "color": "#64748B",
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                }
               }
             >
-              Near Mint
+              No, let me correct
             </Text>
           </View>
         </View>
@@ -3771,464 +2848,13 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
     }
   >
     <View
-      collapsable={false}
-      onLayout={[Function]}
-    >
-      <View
-        style={
-          {
-            "backgroundColor": "#FFFFFF",
-            "borderRadius": 24,
-            "overflow": "hidden",
-            "width": 702,
-          }
+      options={
+        {
+          "format": "png",
+          "quality": 1,
         }
-      >
-        <View
-          style={
-            {
-              "alignItems": "center",
-              "backgroundColor": "#81D8D0",
-              "flexDirection": "row",
-              "justifyContent": "space-between",
-              "paddingHorizontal": 18,
-              "paddingVertical": 12,
-            }
-          }
-        >
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "gap": 8,
-              }
-            }
-          >
-            <View
-              style={
-                {
-                  "alignItems": "center",
-                  "backgroundColor": "rgba(255,255,255,0.3)",
-                  "borderRadius": 14,
-                  "height": 28,
-                  "justifyContent": "center",
-                  "width": 28,
-                }
-              }
-            >
-              <Text
-                style={
-                  {
-                    "color": "#FFFFFF",
-                    "fontFamily": "Roboto_900Black",
-                    "fontSize": 16,
-                    "fontWeight": "900",
-                  }
-                }
-              >
-                C
-              </Text>
-            </View>
-            <Text
-              style={
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 18,
-                  "fontWeight": "800",
-                  "letterSpacing": 0.3,
-                }
-              }
-            >
-              CollectAI
-            </Text>
-          </View>
-          <View
-            style={
-              [
-                {
-                  "alignItems": "center",
-                  "backgroundColor": "rgba(255,255,255,0.9)",
-                  "borderRadius": 12,
-                  "borderWidth": 1.5,
-                  "flexDirection": "row",
-                  "gap": 5,
-                  "paddingHorizontal": 10,
-                  "paddingVertical": 4,
-                },
-                {
-                  "borderColor": "#EF444450",
-                },
-              ]
-            }
-          >
-            <View
-              style={
-                [
-                  {
-                    "borderRadius": 4,
-                    "height": 7,
-                    "width": 7,
-                  },
-                  {
-                    "backgroundColor": "#EF4444",
-                  },
-                ]
-              }
-            />
-            <Text
-              style={
-                [
-                  {
-                    "fontFamily": "Roboto_700Bold",
-                    "fontSize": 13,
-                    "fontWeight": "800",
-                  },
-                  {
-                    "color": "#EF4444",
-                  },
-                ]
-              }
-            >
-              30
-              %
-            </Text>
-          </View>
-        </View>
-        <View
-          style={
-            {
-              "backgroundColor": "#F1F5F9",
-              "height": 456.3,
-              "position": "relative",
-              "width": "100%",
-            }
-          }
-        >
-          <Image
-            resizeMode="cover"
-            source={
-              {
-                "uri": "file:///photo.jpg",
-              }
-            }
-            style={
-              {
-                "height": "100%",
-                "width": "100%",
-              }
-            }
-          />
-          <View
-            style={
-              {
-                "backgroundColor": "rgba(0,0,0,0.08)",
-                "bottom": 0,
-                "left": 0,
-                "position": "absolute",
-                "right": 0,
-                "top": 0,
-              }
-            }
-          />
-          <View
-            style={
-              {
-                "backgroundColor": "rgba(0,0,0,0.55)",
-                "borderRadius": 14,
-                "bottom": 12,
-                "left": 12,
-                "paddingHorizontal": 12,
-                "paddingVertical": 5,
-                "position": "absolute",
-              }
-            }
-          >
-            <Text
-              style={
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 12,
-                  "fontWeight": "700",
-                  "letterSpacing": 0.3,
-                }
-              }
-            >
-              Pokemon
-            </Text>
-          </View>
-          <View
-            style={
-              {
-                "backgroundColor": "rgba(255,255,255,0.92)",
-                "borderRadius": 10,
-                "bottom": 12,
-                "paddingHorizontal": 10,
-                "paddingVertical": 4,
-                "position": "absolute",
-                "right": 12,
-              }
-            }
-          >
-            <Text
-              style={
-                {
-                  "color": "#334155",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 11,
-                  "fontWeight": "700",
-                  "letterSpacing": 0.2,
-                }
-              }
-            >
-              Near Mint
-            </Text>
-          </View>
-        </View>
-        <View
-          style={
-            {
-              "paddingBottom": 4,
-              "paddingHorizontal": 20,
-              "paddingTop": 18,
-            }
-          }
-        >
-          <Text
-            numberOfLines={2}
-            style={
-              {
-                "color": "#0F172A",
-                "fontFamily": "Roboto_700Bold",
-                "fontSize": 21,
-                "fontWeight": "800",
-                "letterSpacing": -0.4,
-                "lineHeight": 27,
-              }
-            }
-          >
-            Unknown Card
-          </Text>
-          <View
-            style={
-              {
-                "alignItems": "stretch",
-                "flexDirection": "row",
-                "gap": 14,
-                "marginTop": 16,
-              }
-            }
-          >
-            <View
-              style={
-                {
-                  "backgroundColor": "#81D8D0",
-                  "borderRadius": 2,
-                  "width": 3,
-                }
-              }
-            />
-            <View
-              style={
-                {
-                  "flex": 1,
-                }
-              }
-            >
-              <Text
-                style={
-                  {
-                    "color": "#94A3B8",
-                    "fontFamily": "Roboto_700Bold",
-                    "fontSize": 10,
-                    "fontWeight": "700",
-                    "letterSpacing": 1.2,
-                  }
-                }
-              >
-                ESTIMATED VALUE
-              </Text>
-              <Text
-                style={
-                  {
-                    "color": "#5FBFB6",
-                    "fontFamily": "Roboto_900Black",
-                    "fontSize": 34,
-                    "fontWeight": "900",
-                    "letterSpacing": -1,
-                    "marginTop": 2,
-                  }
-                }
-              >
-                $10
-              </Text>
-            </View>
-          </View>
-          <View
-            style={
-              {
-                "gap": 5,
-                "marginTop": 14,
-              }
-            }
-          >
-            <View
-              style={
-                {
-                  "backgroundColor": "#E2E8F0",
-                  "borderRadius": 3,
-                  "height": 5,
-                  "overflow": "hidden",
-                  "position": "relative",
-                }
-              }
-            >
-              <View
-                style={
-                  [
-                    {
-                      "backgroundColor": "#81D8D0",
-                      "borderRadius": 3,
-                      "bottom": 0,
-                      "opacity": 0.45,
-                      "position": "absolute",
-                      "top": 0,
-                    },
-                    {
-                      "left": "25%",
-                      "width": "25%",
-                    },
-                  ]
-                }
-              />
-              <View
-                style={
-                  [
-                    {
-                      "backgroundColor": "#5FBFB6",
-                      "borderColor": "#FFFFFF",
-                      "borderRadius": 6,
-                      "borderWidth": 2,
-                      "height": 11,
-                      "marginLeft": -5,
-                      "position": "absolute",
-                      "top": -3,
-                      "width": 11,
-                    },
-                    {
-                      "left": "50%",
-                    },
-                  ]
-                }
-              />
-            </View>
-            <View
-              style={
-                {
-                  "flexDirection": "row",
-                  "justifyContent": "space-between",
-                }
-              }
-            >
-              <Text
-                style={
-                  {
-                    "color": "#94A3B8",
-                    "fontFamily": "Roboto_500Medium",
-                    "fontSize": 11,
-                    "fontWeight": "500",
-                  }
-                }
-              >
-                $5
-              </Text>
-              <Text
-                style={
-                  {
-                    "color": "#94A3B8",
-                    "fontFamily": "Roboto_500Medium",
-                    "fontSize": 11,
-                    "fontWeight": "500",
-                  }
-                }
-              >
-                $20
-              </Text>
-            </View>
-          </View>
-        </View>
-        <View
-          style={
-            {
-              "marginTop": 8,
-              "paddingBottom": 16,
-              "paddingHorizontal": 20,
-              "paddingTop": 12,
-            }
-          }
-        >
-          <View
-            style={
-              {
-                "backgroundColor": "#F1F5F9",
-                "height": 1,
-                "marginBottom": 12,
-              }
-            }
-          />
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "gap": 6,
-                "justifyContent": "center",
-              }
-            }
-          >
-            <Text
-              style={
-                {
-                  "color": "#5FBFB6",
-                  "fontFamily": "Roboto_700Bold",
-                  "fontSize": 12,
-                  "fontWeight": "800",
-                  "letterSpacing": 0.2,
-                }
-              }
-            >
-              CollectAI
-            </Text>
-            <Text
-              style={
-                {
-                  "color": "#CBD5E1",
-                  "fontFamily": "Roboto_400Regular",
-                  "fontSize": 12,
-                }
-              }
-            >
-              ·
-            </Text>
-            <Text
-              style={
-                {
-                  "color": "#94A3B8",
-                  "fontFamily": "Roboto_500Medium",
-                  "fontSize": 11,
-                  "fontWeight": "500",
-                  "letterSpacing": 0.2,
-                }
-              }
-            >
-              Scan any collectible
-            </Text>
-          </View>
-        </View>
-      </View>
-    </View>
+      }
+    />
   </View>
 </View>
 `;

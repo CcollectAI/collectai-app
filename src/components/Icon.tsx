@@ -9,7 +9,7 @@ type Name =
   | 'settings-outline' | 'share-outline' | 'chevron-down' | 'close'
   | 'checkmark' | 'image-outline' | 'search-outline' | 'shield-outline';
 
-export default function Icon({ name, size = 20, color = '#0B3D91' }:{name:Name; size?:number; color?:string}) {
+export default function Icon({ name, size = 20, color = '#64748B' }:{name:Name; size?:number; color?:string}) {
   const p = { size, color };
   switch (name) {
     case 'stats-chart-outline': return <LineChart {...p} />;

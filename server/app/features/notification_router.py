@@ -323,10 +323,10 @@ async def get_notification_history(
                 user_id,
             )
 
-            # Build base WHERE clause
-            base_where = "user_id = $1"
-            if unread_only:
-                base_where += " AND read_at IS NULL"
+            # Two separate query variants instead of dynamic string concatenation
+            _WHERE_ALL = "user_id = $1"
+            _WHERE_UNREAD = "user_id = $1 AND read_at IS NULL"
+            where_clause = _WHERE_UNREAD if unread_only else _WHERE_ALL
 
             # Cursor-based pagination (preferred for large datasets)
             if cursor:
@@ -341,7 +341,7 @@ async def get_notification_history(
                     f"""
                     SELECT id, type, title, body, data, deep_link, read_at, created_at
                     FROM notification_history
-                    WHERE {base_where}
+                    WHERE {where_clause}
                       AND (created_at, id) < ($2::timestamptz, $3::uuid)
                     ORDER BY created_at DESC, id DESC
                     LIMIT $4
@@ -354,7 +354,7 @@ async def get_notification_history(
                     f"""
                     SELECT id, type, title, body, data, deep_link, read_at, created_at
                     FROM notification_history
-                    WHERE {base_where}
+                    WHERE {where_clause}
                     ORDER BY created_at DESC, id DESC
                     LIMIT $2 OFFSET $3
                     """,
@@ -365,7 +365,7 @@ async def get_notification_history(
 
             # Total count for the selected filter
             total_count = await conn.fetchval(
-                f"SELECT COUNT(*) FROM notification_history WHERE {base_where}",
+                f"SELECT COUNT(*) FROM notification_history WHERE {where_clause}",
                 user_id,
             )
 

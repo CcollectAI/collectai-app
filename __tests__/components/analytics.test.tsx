@@ -23,6 +23,9 @@ const mockColors = {
   danger: '#EF4444',
   error: '#EF4444',
   info: '#3B82F6',
+  brand: { base: '#81D8D0', dark: '#5FBFB6', darker: '#44A9A1', light: '#AEE6E1', lighter: '#E6F7F5' },
+  skeleton: '#E2E8F0',
+  chartLine: '#40C9C6',
 };
 
 jest.mock('../../src/hooks/useAppTheme', () => ({

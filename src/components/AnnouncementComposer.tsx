@@ -21,13 +21,16 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 /*  Helper                                                                     */
 /* -------------------------------------------------------------------------- */
 
-function getEventStatusColor(event: CollectorsEvent, dangerColor: string): string {
-  if (event.status === 'cancelled') return dangerColor;
-  if (event.status === 'draft') return '#F59E0B';
+function getEventStatusColor(
+  event: CollectorsEvent,
+  themeColors: { danger: string; warning: string; muted: string; success: string },
+): string {
+  if (event.status === 'cancelled') return themeColors.danger;
+  if (event.status === 'draft') return themeColors.warning;
   const eventDate = new Date(event.date);
   const now = new Date();
-  if (eventDate < now) return '#94A3B8';
-  return '#10B981';
+  if (eventDate < now) return themeColors.muted;
+  return themeColors.success;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -107,7 +110,7 @@ const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
                     isSelected && { backgroundColor: colors.accent + '08' },
                   ]}
                 >
-                  <View style={[styles.statusDot, { backgroundColor: getEventStatusColor(ev, colors.danger) }]} />
+                  <View style={[styles.statusDot, { backgroundColor: getEventStatusColor(ev, colors) }]} />
                   <Text
                     style={[styles.composeChipText, { color: isSelected ? colors.accent : colors.text }]}
                     numberOfLines={1}

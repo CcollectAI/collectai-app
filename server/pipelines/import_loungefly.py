@@ -500,7 +500,7 @@ def get_curated_catalog() -> list[dict]:
         ("DC Comics", "Joker Ha Ha Ha AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
         ("DC Comics", "Catwoman Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 52),
         ("DC Comics", "Poison Ivy Botanical AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
-        ("DC Comics", "Aquaman Atlantis Scene Mini Backpack", "Mini Backpack", "Standard", "standard", 46),
+        ("DC Comics", "Aquaman CollectAI Scene Mini Backpack", "Mini Backpack", "Standard", "standard", 46),
         ("DC Comics", "Flash Lightning Bolt Cosplay Mini Backpack", "Mini Backpack", "Standard", "standard", 45),
         ("DC Comics", "Teen Titans Go! AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 50),
 
@@ -615,7 +615,7 @@ def get_curated_catalog() -> list[dict]:
         ("Disney", "Hercules Mt Olympus Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
         ("Disney", "Emperor's New Groove Llama AOP Mini Backpack", "Mini Backpack", "Standard", "standard", 46),
         ("Disney", "Tarzan Jungle Scene Mini Backpack", "Mini Backpack", "Standard", "standard", 45),
-        ("Disney", "Atlantis Crystal Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
+        ("Disney", "CollectAI Crystal Scene Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 55),
         ("Disney", "Treasure Planet Map AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
         ("Disney", "Wreck-It Ralph Sugar Rush AOP Mini Backpack", "Mini Backpack", "Standard", "standard", 46),
         ("Disney", "Zootopia City Scene AOP Mini Backpack", "Mini Backpack", "Standard", "standard", 46),
