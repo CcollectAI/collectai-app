@@ -264,9 +264,9 @@ const SponsorDashboardScreen: React.FC = () => {
 
   const kpiMetrics = [
     { label: 'Campaigns', value: stats.total, icon: 'layers-outline' as const, color: colors.accent },
-    { label: 'Total Reach', value: stats.attendees, icon: 'people-outline' as const, color: '#6366F1' },
-    { label: 'Active', value: stats.active, icon: 'pulse-outline' as const, color: '#10B981' },
-    { label: 'Sent', value: stats.sent, icon: 'paper-plane-outline' as const, color: '#F59E0B' },
+    { label: 'Total Reach', value: stats.attendees, icon: 'people-outline' as const, color: colors.info },
+    { label: 'Active', value: stats.active, icon: 'pulse-outline' as const, color: colors.success },
+    { label: 'Sent', value: stats.sent, icon: 'paper-plane-outline' as const, color: colors.warning },
   ];
 
   return (

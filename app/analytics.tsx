@@ -190,7 +190,7 @@ function AnalyticsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.safe}>
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <Stack.Screen options={{ headerTitle: 'Analytics' }} />
         <View style={styles.loadingContainer}>
           <SkeletonList count={3} type="analytics" />
@@ -200,7 +200,7 @@ function AnalyticsScreen() {
   }
 
   return (
-    <View style={styles.safe}>
+    <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerTitle: 'Analytics' }} />
       <ScrollView
         contentContainerStyle={styles.container}
@@ -233,11 +233,11 @@ function AnalyticsScreen() {
 
         {/* P/L Summary Card */}
         {pl && (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Performance</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Performance</Text>
               <View style={[styles.badge, { backgroundColor: isPositive ? colors.successBg : colors.dangerBg }]}>
-                <Text style={[styles.badgeText, isPositive ? styles.badgeTextSuccess : [styles.badgeTextDanger, { color: colors.danger }]]}>
+                <Text style={[styles.badgeText, { color: isPositive ? colors.success : colors.danger }]}>
                   {formatPct(pl.deltaPct)}
                 </Text>
               </View>
@@ -245,22 +245,22 @@ function AnalyticsScreen() {
 
             <View style={styles.metricsGrid}>
               <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Current Value</Text>
-                <Text style={styles.metricValue}>{formatPrice(pl.currentValue, settings.currency ?? 'EUR')}</Text>
+                <Text style={[styles.metricLabel, { color: colors.muted }]}>Current Value</Text>
+                <Text style={[styles.metricValue, { color: colors.text }]}>{formatPrice(pl.currentValue, settings.currency ?? 'EUR')}</Text>
               </View>
               <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Starting Value</Text>
-                <Text style={styles.metricValueMuted}>{formatPrice(pl.startValue, settings.currency ?? 'EUR')}</Text>
+                <Text style={[styles.metricLabel, { color: colors.muted }]}>Starting Value</Text>
+                <Text style={[styles.metricValueMuted, { color: colors.muted }]}>{formatPrice(pl.startValue, settings.currency ?? 'EUR')}</Text>
               </View>
               <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Total Gain/Loss</Text>
-                <Text style={[styles.metricValue, isPositive ? styles.textSuccess : [styles.textDanger, { color: colors.danger }]]}>
+                <Text style={[styles.metricLabel, { color: colors.muted }]}>Total Gain/Loss</Text>
+                <Text style={[styles.metricValue, { color: isPositive ? colors.success : colors.danger }]}>
                   {pl.deltaAbs >= 0 ? "+" : ""}{formatPrice(pl.deltaAbs, settings.currency ?? 'EUR')}
                 </Text>
               </View>
               <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Max Drawdown</Text>
-                <Text style={[styles.metricValue, styles.textDanger, { color: colors.danger }]}>
+                <Text style={[styles.metricLabel, { color: colors.muted }]}>Max Drawdown</Text>
+                <Text style={[styles.metricValue, { color: colors.danger }]}>
                   {formatPct(pl.maxDrawdownPct, false)}
                 </Text>
               </View>
@@ -275,10 +275,10 @@ function AnalyticsScreen() {
 
         {/* Category Allocations */}
         {allocations.length > 0 && (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Allocations</Text>
-              <Text style={styles.cardSubtitle}>{allocations.length} categories</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Allocations</Text>
+              <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{allocations.length} categories</Text>
             </View>
 
             {/* Allocation Bar */}
@@ -303,11 +303,11 @@ function AnalyticsScreen() {
                 <View key={a.category} style={styles.allocationRow}>
                   <View style={styles.allocationLeft}>
                     <View style={[styles.allocationDot, { backgroundColor: categoryColors[a.category] }]} />
-                    <Text style={styles.allocationName}>{a.category}</Text>
+                    <Text style={[styles.allocationName, { color: colors.text }]}>{a.category}</Text>
                   </View>
                   <View style={styles.allocationRight}>
-                    <Text style={styles.allocationValue}>{formatPrice(a.totalValue, settings.currency ?? 'EUR')}</Text>
-                    <Text style={styles.allocationPct}>{formatPct(a.weight, false)}</Text>
+                    <Text style={[styles.allocationValue, { color: colors.text }]}>{formatPrice(a.totalValue, settings.currency ?? 'EUR')}</Text>
+                    <Text style={[styles.allocationPct, { color: colors.muted }]}>{formatPct(a.weight, false)}</Text>
                   </View>
                 </View>
               ))}
@@ -335,30 +335,30 @@ function AnalyticsScreen() {
           <UpgradePrompt feature="Holdings Breakdown" requiredPlan="Pro" />
         )}
         {limits.advanced_analytics && items.length > 0 && (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Holdings</Text>
-              <Text style={styles.cardSubtitle}>{items.length} items</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Holdings</Text>
+              <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{items.length} items</Text>
             </View>
 
             {items.slice(0, 8).map((item, idx) => (
               <View
                 key={item.id}
-                style={[styles.itemRow, idx === 0 && styles.itemRowFirst]}
+                style={[styles.itemRow, { borderTopColor: colors.border }, idx === 0 && styles.itemRowFirst]}
               >
                 <View style={styles.itemLeft}>
-                  <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                  <Text style={styles.itemCategory}>{item.category}</Text>
+                  <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+                  <Text style={[styles.itemCategory, { color: colors.muted }]}>{item.category}</Text>
                 </View>
                 <View style={styles.itemRight}>
-                  <Text style={styles.itemValue}>{formatPrice(item.currentValue, settings.currency ?? 'EUR')}</Text>
+                  <Text style={[styles.itemValue, { color: colors.text }]}>{formatPrice(item.currentValue, settings.currency ?? 'EUR')}</Text>
                   {item.change1dPct !== undefined && (
                     <Text
                       style={[
                         styles.itemPct,
                         (item.change1dPct ?? 0) >= 0
-                          ? styles.textSuccess
-                          : [styles.textDanger, { color: colors.danger }],
+                          ? { color: colors.success }
+                          : { color: colors.danger },
                       ]}
                     >
                       {formatPct(item.change1dPct)}
@@ -375,10 +375,10 @@ function AnalyticsScreen() {
           <UpgradePrompt feature="Collection Completeness" requiredPlan="Pro" />
         )}
         {limits.advanced_analytics && activeCategories.length > 0 && (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Collection Completeness</Text>
-              <Text style={styles.cardSubtitle}>{activeCategories.length} categories</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Collection Completeness</Text>
+              <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{activeCategories.length} categories</Text>
             </View>
 
             {activeCategories.slice(0, 8).map((cat) => {
@@ -391,21 +391,21 @@ function AnalyticsScreen() {
               return (
                 <View key={cat.id} style={styles.completenessRow}>
                   <View style={styles.completenessInfo}>
-                    <Text style={styles.completenessName} numberOfLines={1}>{cat.name}</Text>
+                    <Text style={[styles.completenessName, { color: colors.text }]} numberOfLines={1}>{cat.name}</Text>
                     <View style={styles.completenessCountRow}>
                       {hasDuplicates && (
-                        <View style={styles.dupBadge}>
+                        <View style={[styles.dupBadge, { backgroundColor: colors.border }]}>
                           <Ionicons name="copy-outline" size={10} color={colors.muted} />
-                          <Text style={styles.dupBadgeText}>dupes</Text>
+                          <Text style={[styles.dupBadgeText, { color: colors.muted }]}>dupes</Text>
                         </View>
                       )}
-                      <Text style={styles.completenessCount}>
+                      <Text style={[styles.completenessCount, { color: colors.muted }]}>
                         {cat.ownedCount}/{cat.totalCount}
                       </Text>
                     </View>
                   </View>
                   <View style={styles.completenessBarWrap}>
-                    <View style={styles.completenessBarBg}>
+                    <View style={[styles.completenessBarBg, { backgroundColor: colors.border }]}>
                       <View
                         style={[
                           styles.completenessBarFill,
@@ -416,7 +416,7 @@ function AnalyticsScreen() {
                         ]}
                       />
                     </View>
-                    <Text style={styles.completenessPct}>
+                    <Text style={[styles.completenessPct, { color: colors.text }]}>
                       {displayPct}%
                     </Text>
                   </View>
@@ -426,7 +426,7 @@ function AnalyticsScreen() {
 
             {activeCategories.length > 8 && (
               <AnimatedPressable
-                style={styles.viewAllBtn}
+                style={[styles.viewAllBtn, { borderTopColor: colors.border }]}
                 onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push("/categories"); }}
                 accessibilityRole="link"
                 accessibilityLabel="View all categories"
@@ -512,7 +512,7 @@ export default function AnalyticsScreenWithBoundary() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // backgroundColor set inline via colors.background
   },
   container: {
     paddingHorizontal: 16,
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: COLORS.muted,
+    // color set inline via colors.muted
     fontSize: text.md,
   },
 
@@ -549,13 +549,13 @@ const styles = StyleSheet.create({
   headerLabel: {
     fontSize: text.sm,
     fontWeight: fontWeight.semibold,
-    color: COLORS.muted,
+    // color set inline via colors.muted
     letterSpacing: 0.5,
   },
   headerTitle: {
     fontSize: text['2xl'],
     fontWeight: fontWeight.extrabold,
-    color: COLORS.navy,
+    // color set inline via colors.text
   },
   refreshBtn: {
     width: 40,
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   errorText: {
-    color: COLORS.danger,
+    // color set inline via colors.danger
     fontSize: text.md,
     flex: 1,
   },
@@ -595,10 +595,10 @@ const styles = StyleSheet.create({
 
   // Cards
   card: {
-    backgroundColor: COLORS.card,
+    // backgroundColor set inline via colors.card
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    // borderColor set inline via colors.border
     padding: 16,
     marginBottom: 16,
     ...shadow.card,
@@ -612,11 +612,11 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: text.lg,
     fontWeight: fontWeight.bold,
-    color: COLORS.navy,
+    // color set inline via colors.text
   },
   cardSubtitle: {
     fontSize: text.md,
-    color: COLORS.muted,
+    // color set inline via colors.muted
   },
 
   // Badge
@@ -632,10 +632,10 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
   badgeTextSuccess: {
-    color: COLORS.success,
+    // color set inline via colors.success
   },
   badgeTextDanger: {
-    color: COLORS.danger,
+    // color set inline via colors.danger
   },
 
   // Metrics Grid
@@ -649,26 +649,26 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     fontSize: text.sm,
-    color: COLORS.muted,
+    // color set inline via colors.muted
     marginBottom: 4,
   },
   metricValue: {
     fontSize: text.xl,
     fontWeight: fontWeight.bold,
-    color: COLORS.navy,
+    // color set inline via colors.text
   },
   metricValueMuted: {
     fontSize: text.xl,
     fontWeight: fontWeight.bold,
-    color: COLORS.muted,
+    // color set inline via colors.muted
   },
 
   // Text colors
   textSuccess: {
-    color: COLORS.success,
+    // color set inline via colors.success
   },
   textDanger: {
-    color: COLORS.danger,
+    // color set inline via colors.danger
   },
 
   // Allocations
@@ -704,7 +704,7 @@ const styles = StyleSheet.create({
   allocationName: {
     fontSize: text.md,
     fontWeight: fontWeight.semibold,
-    color: COLORS.navy,
+    // color set inline via colors.text
   },
   allocationRight: {
     alignItems: "flex-end",
@@ -712,11 +712,11 @@ const styles = StyleSheet.create({
   allocationValue: {
     fontSize: text.md,
     fontWeight: fontWeight.bold,
-    color: COLORS.navy,
+    // color set inline via colors.text
   },
   allocationPct: {
     fontSize: text.sm,
-    color: COLORS.muted,
+    // color set inline via colors.muted
   },
 
   // Items
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    // borderTopColor set inline via colors.border
   },
   itemRowFirst: {
     borderTopWidth: 0,
@@ -737,11 +737,11 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: text.md,
     fontWeight: fontWeight.semibold,
-    color: COLORS.navy,
+    // color set inline via colors.text
   },
   itemCategory: {
     fontSize: text.sm,
-    color: COLORS.muted,
+    // color set inline via colors.muted
     marginTop: 2,
   },
   itemRight: {
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
   itemValue: {
     fontSize: text.md,
     fontWeight: fontWeight.bold,
-    color: COLORS.navy,
+    // color set inline via colors.text
   },
   itemPct: {
     fontSize: text.sm,
@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
   completenessName: {
     fontSize: text.md,
     fontWeight: fontWeight.semibold,
-    color: COLORS.navy,
+    // color set inline via colors.text
     flex: 1,
     marginRight: 8,
   },
@@ -782,13 +782,13 @@ const styles = StyleSheet.create({
   },
   completenessCount: {
     fontSize: text.sm,
-    color: COLORS.muted,
+    // color set inline via colors.muted
   },
   dupBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 2,
-    backgroundColor: COLORS.border,
+    // backgroundColor set inline via colors.border
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: radius.xs,
@@ -796,7 +796,7 @@ const styles = StyleSheet.create({
   dupBadgeText: {
     fontSize: 9,
     fontWeight: fontWeight.semibold,
-    color: COLORS.muted,
+    // color set inline via colors.muted
   },
   completenessBarWrap: {
     flexDirection: "row",
@@ -807,7 +807,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 6,
     borderRadius: 3,
-    backgroundColor: COLORS.border,
+    // backgroundColor set inline via colors.border
     overflow: "hidden",
   },
   completenessBarFill: {
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
   completenessPct: {
     fontSize: text.sm,
     fontWeight: fontWeight.bold,
-    color: COLORS.navy,
+    // color set inline via colors.text
     minWidth: 36,
     textAlign: "right",
   },
@@ -828,7 +828,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    // borderTopColor set inline via colors.border
   },
   viewAllText: {
     fontSize: text.md,

@@ -261,7 +261,7 @@ const s = StyleSheet.create({
     // backgroundColor set inline
   },
   quickViewBtnPrimaryText: {
-    color: "#FFFFFF",
+    color: "#FFFFFF", // Button text on brand background
     fontSize: 16,
     fontWeight: "700",
   },

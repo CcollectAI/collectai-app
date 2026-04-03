@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#FFFFFF', // Button text on brand background
   },
   outlineBtn: {
     alignItems: 'center',

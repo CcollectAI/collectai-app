@@ -29,8 +29,7 @@ import {
 import { useToast } from '@/components/Toast';
 import { track } from '@/analytics/track';
 
-const SUCCESS = '#10B981';
-const WARNING = '#F59E0B';
+// Removed static SUCCESS/WARNING — use colors.success / colors.warning from theme
 
 interface PlanCardProps {
   name: string;
@@ -72,8 +71,8 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
         ))}
       </View>
       {current ? (
-        <View style={[styles.currentBadge, { backgroundColor: SUCCESS + '15' }]}>
-          <Text style={[styles.currentBadgeText, { color: SUCCESS }]}>Current Plan</Text>
+        <View style={[styles.currentBadge, { backgroundColor: colors.success + '15' }]}>
+          <Text style={[styles.currentBadgeText, { color: colors.success }]}>Current Plan</Text>
         </View>
       ) : (
         <AnimatedPressable
@@ -190,14 +189,14 @@ function SubscriptionScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Subscription</Text>
 
         {billing?.status === 'past_due' && (
-          <View style={[styles.warningBanner, { backgroundColor: WARNING + '15' }]}>
-            <Ionicons name="warning" size={18} color={WARNING} />
+          <View style={[styles.warningBanner, { backgroundColor: colors.warning + '15' }]}>
+            <Ionicons name="warning" size={18} color={colors.warning} />
             <Text style={[styles.warningText, { color: colors.text }]}>Payment past due. Update your payment method to avoid interruption.</Text>
           </View>
         )}
 
         {billing?.cancel_at_period_end && (
-          <View style={[styles.warningBanner, { backgroundColor: WARNING + '15' }]}>
+          <View style={[styles.warningBanner, { backgroundColor: colors.warning + '15' }]}>
             <Ionicons name="information-circle" size={18} color={colors.muted} />
             <Text style={[styles.warningText, { color: colors.text }]}>Your plan will be downgraded at the end of the current period.</Text>
           </View>

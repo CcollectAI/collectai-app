@@ -833,9 +833,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {!!(itemAttributes?.member) && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#F3E8FF" }]}>
-              <Ionicons name="person" size={16} color="#7C3AED" />
-              <Text style={[s.vaultedBadgeText, { color: "#5B21B6" }]}>{String(itemAttributes.member)}</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: isDark ? "#3B1F6E" : "#F3E8FF" }]}>
+              <Ionicons name="person" size={16} color={isDark ? "#C4B5FD" : "#7C3AED"} />
+              <Text style={[s.vaultedBadgeText, { color: isDark ? "#C4B5FD" : "#5B21B6" }]}>{String(itemAttributes.member)}</Text>
             </View>
           )}
         </View>

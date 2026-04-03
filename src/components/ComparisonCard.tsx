@@ -101,7 +101,7 @@ function ComparisonCardInner({
           </View>
           <View style={styles.imageWrapper}>
             <Image source={{ uri: imageUriB }} style={styles.compImage} resizeMode="cover" />
-            <View style={[styles.imageBadge, { backgroundColor: '#8B5CF6' }]}>
+            <View style={[styles.imageBadge, { backgroundColor: '#8B5CF6' }]}>{/* Purple for B-item distinction */}
               <Text style={styles.imageBadgeText}>B</Text>
             </View>
           </View>
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   imageBadgeText: {
-    color: '#FFFFFF',
+    color: '#FFFFFF', // Badge text on colored circle — always white
     fontSize: 14,
     fontWeight: '800',
   },
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   actionBtnText: {
-    color: '#FFFFFF',
+    color: '#FFFFFF', // Button text on brand/accent background — always white
     fontSize: 16,
     fontWeight: '700',
   },

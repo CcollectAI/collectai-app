@@ -8,7 +8,6 @@
 
 import type { DataProvider } from './DataProvider';
 import type {
-  CurrencyCode,
   PaginationParams,
   PortfolioSummary,
   Item,
@@ -26,12 +25,10 @@ import type {
   DmThread,
   DmRequest,
   DmMessage,
-  DmThreadStatus,
   AnalyticsMetrics,
   BuildPaintProject,
   BuildPaintStep,
   BuildPaintNote,
-  PaintRecipe,
   CreateBuildPaintProjectInput,
   BarcodeLookupResult,
   MarketSearchOptions,

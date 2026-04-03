@@ -37,9 +37,11 @@ function PrivacySettingsSectionInner() {
   const [savingPrivacy, setSavingPrivacy] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const loadPrivacySettings = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
+        if (cancelled) return;
         if (!user) {
           setLoadingPrivacy(false);
           return;
@@ -51,6 +53,7 @@ function PrivacySettingsSectionInner() {
           .eq('user_id', user.id)
           .single();
 
+        if (cancelled) return;
         if (data && !error) {
           setPrivacy({
             showCollectionValue: data.show_collection_value ?? true,
@@ -62,11 +65,12 @@ function PrivacySettingsSectionInner() {
       } catch (err) {
         logger.warn('[Settings] Failed to load privacy settings:', err);
       } finally {
-        setLoadingPrivacy(false);
+        if (!cancelled) setLoadingPrivacy(false);
       }
     };
 
     loadPrivacySettings();
+    return () => { cancelled = true; };
   }, []);
 
   const updatePrivacy = async (key: keyof PrivacySettings, value: boolean) => {

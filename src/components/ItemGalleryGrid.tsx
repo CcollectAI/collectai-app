@@ -34,6 +34,8 @@ interface Props {
     muted: string;
     border: string;
     accent: string;
+    accentText: string;
+    brand: { base: string; dark: string; darker: string; light: string; lighter: string };
   };
 }
 
@@ -82,7 +84,7 @@ export function ItemGalleryGrid({
         <Pressable style={styles.lightboxOverlay} onPress={closeLightbox} accessibilityRole="button" accessibilityLabel="Close lightbox">
           <View style={styles.lightboxContent}>
             <Pressable style={styles.closeButton} onPress={closeLightbox} accessibilityRole="button" accessibilityLabel="Close image viewer">
-              <Ionicons name="close" size={28} color="#fff" />
+              <Ionicons name="close" size={28} color={colors.accentText} />
             </Pressable>
 
             {selectedItem.imageUrl ? (
@@ -101,9 +103,9 @@ export function ItemGalleryGrid({
             )}
 
             <View style={styles.lightboxInfo}>
-              <Text style={styles.lightboxName}>{selectedItem.name}</Text>
-              <Text style={styles.lightboxCategory}>{selectedItem.category}</Text>
-              <Text style={styles.lightboxPrice}>
+              <Text style={[styles.lightboxName, { color: colors.accentText }]}>{selectedItem.name}</Text>
+              <Text style={[styles.lightboxCategory, { color: colors.muted }]}>{selectedItem.category}</Text>
+              <Text style={[styles.lightboxPrice, { color: colors.brand.base }]}>
                 {formatPrice(selectedItem.value)}
               </Text>
             </View>
@@ -232,13 +234,13 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   itemName: {
-    color: '#fff',
+    color: '#FFFFFF', // Overlay text on dark gradient — always white
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 2,
   },
   itemPrice: {
-    color: '#fff',
+    color: '#FFFFFF', // Overlay text on dark gradient — always white
     fontSize: 14,
     fontWeight: '700',
   },
@@ -251,7 +253,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   categoryText: {
-    color: '#fff',
+    color: '#FFFFFF', // Badge text on colored background — always white
     fontSize: 10,
     fontWeight: '600',
   },
@@ -301,18 +303,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   lightboxName: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',
   },
   lightboxCategory: {
-    color: '#9ca3af',
     fontSize: 14,
     marginTop: 4,
   },
   lightboxPrice: {
-    color: '#81D8D0',
     fontSize: 22,
     fontWeight: '700',
     marginTop: 8,

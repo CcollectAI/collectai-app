@@ -23,7 +23,7 @@ export const APP_CONFIG = {
   },
 
   // ─── Auth ──────────────────────────────────────────────────────────────
-  adminPin: "2026",          // Override with NEXT_PUBLIC_ADMIN_PIN env var
+  adminPin: process.env.NEXT_PUBLIC_ADMIN_PIN || "CHANGE_ME",  // Must be set via env var
 
   // ─── Backend API ───────────────────────────────────────────────────────
   api: {

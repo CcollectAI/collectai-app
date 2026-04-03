@@ -359,7 +359,7 @@ const s = StyleSheet.create({
     alignItems: "center",
   },
   filterApplyText: {
-    color: "#FFFFFF",
+    color: "#FFFFFF", // Button text on brand background
     fontSize: 15,
     fontWeight: "700",
   },

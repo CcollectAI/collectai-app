@@ -183,6 +183,7 @@ from app.features import storage_router
 from app.features import taxonomy_router
 from app.features import notification_router
 from app.features import collections_router
+from app.features import value_summary_router
 from app.features.predict_router import router as predict_router
 
 from app.agents.marketplace_router import router as marketplace_agg_router
@@ -284,6 +285,7 @@ app.include_router(export_router)
 app.include_router(marketplace_listing_router)
 app.include_router(chat_router)
 app.include_router(admin_health_router)
+app.include_router(value_summary_router.router)
 
 # Twitch (optional)
 try:

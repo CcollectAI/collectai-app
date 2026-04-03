@@ -108,7 +108,7 @@ const SetsToCompleteScreen: React.FC = () => {
 
         {!loading && error && (
           <View style={styles.center}>
-            <Text style={styles.error}>{error}</Text>
+            <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>
           </View>
         )}
 
@@ -118,7 +118,7 @@ const SetsToCompleteScreen: React.FC = () => {
 
         {!loading && !error && limits.set_completion && candidates.length === 0 && (
           <View style={styles.center}>
-            <Text style={styles.empty}>
+            <Text style={[styles.empty, { color: colors.muted }]}>
               No sets are near completion yet. Add more items or scan your
               existing cards, figures, and sets.
             </Text>
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: 13,
-    color: '#b91c1c',
+    // color set inline via colors.danger
   },
   empty: {
     fontSize: 12,

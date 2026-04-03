@@ -52,6 +52,8 @@ import { useStoreReview } from "@/hooks/useStoreReview";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AddMenuModal } from "@/components/home/AddMenuModal";
 import { DemandHeatSection } from "@/components/home/DemandHeatSection";
+import { ValueSavedBanner } from "@/components/ValueSavedBanner";
+import { useValueSummary } from "@/hooks/useValueSummary";
 import { radius, spacing, text, fontWeight, gap, shadow } from '@/theme/tokens';
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
@@ -158,6 +160,7 @@ function PortfolioScreen() {
   const { limits } = useBillingLimits();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
+  const valueSummary = useValueSummary();
   const [range, setRange] = useState<RangeKey>("7D");
   const [series, setSeries] = useState<TimeSeriesPoint[]>([]);
   const [items, setItems] = useState<ItemRow[]>([]);
@@ -455,6 +458,14 @@ function PortfolioScreen() {
   }, [router, settings.hapticsEnabled]);
 
   return (
+    <>
+    {valueSummary.data && (
+      <ValueSavedBanner
+        data={valueSummary.data}
+        visible={valueSummary.visible}
+        onDismiss={valueSummary.dismiss}
+      />
+    )}
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
       <ScrollView
         contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}
@@ -749,6 +760,7 @@ function PortfolioScreen() {
 
       <AddMenuModal visible={addMenuOpen} onClose={() => setAddMenuOpen(false)} />
     </SafeAreaView>
+    </>
   );
 }
 

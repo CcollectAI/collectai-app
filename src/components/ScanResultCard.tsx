@@ -315,8 +315,8 @@ function ScanResultCardInner({
                 accessibilityRole="button"
                 accessibilityLabel="Confirm identification is correct"
               >
-                <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
-                <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700' }}>
+                <Ionicons name="checkmark-circle" size={18} color={colors.accentText} />
+                <Text style={{ color: colors.accentText, fontSize: 14, fontWeight: '700' }}>
                   Yes, this is correct
                 </Text>
               </AnimatedPressable>
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
     backgroundColor: TIFFANY,
     marginLeft: -6,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: '#FFFFFF', // Marker on colored band — always white
     shadowColor: TIFFANY,
     shadowOpacity: 0.4,
     shadowRadius: 4,
@@ -786,7 +786,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 1,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: '#FFFFFF', // Badge border on image — always white
   },
   altImage: {
     width: 52,
@@ -875,7 +875,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   addBtnText: {
-    color: '#FFFFFF',
+    color: '#FFFFFF', // CTA button text on brand background — always white
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.3,

@@ -776,6 +776,8 @@ const ItemsScreen: React.FC = () => {
                 muted: colors.muted,
                 border: colors.border,
                 accent: colors.accent,
+                accentText: colors.accentText,
+                brand: colors.brand,
               }}
             />
           )}

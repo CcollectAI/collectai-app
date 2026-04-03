@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   message: {
     flex: 1,
-    color: '#fff',
+    color: '#fff', // Button text on brand background (dark toast)
     fontSize: 14,
     fontWeight: '500',
     marginLeft: 10,

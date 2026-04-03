@@ -222,3 +222,32 @@ export async function multiDetect(
     totalDetected: resp.total_detected || 0,
   };
 }
+
+// Value Summary (retention notification)
+export type ValueSummaryData = {
+  total_scans: number;
+  total_items_tracked: number;
+  total_alerts_triggered: number;
+  hours_saved: number;
+  deal_savings: number;
+  deal_count: number;
+  smart_buy_savings: number;
+  smart_buy_count: number;
+  total_money_saved: number;
+  best_find_name: string | null;
+  best_find_category: string | null;
+  best_find_value: number;
+  best_find_saved: number;
+  member_since: string | null;
+  days_as_member: number;
+  currency: string;
+  top_smart_buys: Array<{
+    item_name: string;
+    category: string;
+    purchase_price: number;
+    market_value: number;
+    saved: number;
+  }>;
+};
+
+export const getValueSummary = () => get<ValueSummaryData>("/value-summary");

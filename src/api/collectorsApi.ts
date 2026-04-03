@@ -23,7 +23,9 @@ export {
   searchEvents,
   submitScanFeedback,
   multiDetect,
+  getValueSummary,
 } from "./miscApi";
+export type { ValueSummaryData } from "./miscApi";
 
 export {
   getNotificationHistory,

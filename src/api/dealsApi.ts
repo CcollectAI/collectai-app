@@ -1,7 +1,7 @@
 /**
  * Deal Desk (P2P offers), mandates, deals, and risk flags API methods.
  */
-import { get, post, del, patch, put } from "./httpClient";
+import { get, post, del, patch } from "./httpClient";
 
 // Mandates
 export const createMandate = (payload: {

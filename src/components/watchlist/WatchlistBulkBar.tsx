@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   bulkBtnDelete: {},
   bulkBtnText: {
-    color: "#FFFFFF",
+    color: "#FFFFFF", // Button text on brand background
     fontSize: 13,
     fontWeight: "700",
   },

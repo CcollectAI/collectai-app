@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   modalConfirmBtnText: {
-    color: '#fff',
+    color: '#fff', // Button text on brand background
     fontSize: text.lg,
     fontWeight: fontWeight.semibold,
   },

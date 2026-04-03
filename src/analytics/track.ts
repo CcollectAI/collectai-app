@@ -70,6 +70,10 @@ type ProfileEvent =
 type FilterEvent =
   | { name: 'marketplace_filter_applied'; properties: { filterType: string } };
 
+type ValueSummaryEvent =
+  | { name: 'value_summary_shown'; properties: { money: number; hours: number } }
+  | { name: 'value_summary_dismissed' };
+
 export type AnalyticsEvent =
   | AuthEvent
   | ItemEvent
@@ -82,7 +86,8 @@ export type AnalyticsEvent =
   | SponsorEvent
   | QuickScanEnhancementEvent
   | ProfileEvent
-  | FilterEvent;
+  | FilterEvent
+  | ValueSummaryEvent;
 
 /* ---------- PostHog handle ---------- */
 

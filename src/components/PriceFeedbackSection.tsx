@@ -87,7 +87,7 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
             accessibilityRole="button"
             accessibilityLabel="Submit sale price"
           >
-            <Text style={[s.feedbackBtnText, { color: "#FFFFFF" }]}>
+            <Text style={[s.feedbackBtnText, { color: "#FFFFFF" }]}>{/* Button text on brand background */}
               {submittingFeedback ? "..." : "Submit"}
             </Text>
           </Pressable>
@@ -168,7 +168,7 @@ const s = StyleSheet.create({
   feedbackBtnTextWhite: {
     fontSize: 13,
     fontWeight: "500",
-    color: "#FFFFFF",
+    color: "#FFFFFF", // Button text on brand background
   },
   salePriceInputRow: {
     flexDirection: "row",

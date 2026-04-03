@@ -211,7 +211,7 @@ PERSONAS: list[Persona] = [
     ),
 ]
 
-DEFAULT_PASSWORD = "BetaCollect2026!"
+DEFAULT_PASSWORD = os.environ.get("SEED_USER_PASSWORD", "ChangeMeBeforeSeed!")
 
 
 # ---------------------------------------------------------------------------

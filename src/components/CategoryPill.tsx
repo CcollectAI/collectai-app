@@ -58,7 +58,7 @@ const CategoryPillInner: React.FC<CategoryPillProps> = ({
           {
             fontSize: 11,
             fontWeight: '600',
-            color: '#ffffff',
+            color: '#ffffff', // Button text on brand background
           },
           textStyle,
         ]}

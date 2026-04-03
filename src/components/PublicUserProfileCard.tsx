@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   },
   avatarInitials: {
     fontWeight: '700',
-    color: '#ffffff',
+    color: '#ffffff', // Button text on brand background
   },
   infoSection: {
     flex: 1,
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   connectBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#ffffff',
+    color: '#ffffff', // Button text on brand background
   },
 });
 
