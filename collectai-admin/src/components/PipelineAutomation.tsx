@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getSupabase } from "@/lib/supabase";
 
 const LS_KEY = "pipeline-rules";
 
@@ -40,7 +41,7 @@ const MOCK_LOG: LogEntry[] = [
   { timestamp: "2026-03-25 23:00", rule: "flag-overdue", item: "Yu-Gi-Oh What's It Worth", action: "Flagged as overdue" },
 ];
 
-function load(): Rule[] {
+function loadFromLocalStorage(): Rule[] {
   if (typeof window === "undefined") return DEFAULT_RULES;
   try {
     const raw = localStorage.getItem(LS_KEY);
@@ -48,17 +49,95 @@ function load(): Rule[] {
   } catch { return DEFAULT_RULES; }
 }
 
-function save(r: Rule[]) { localStorage.setItem(LS_KEY, JSON.stringify(r)); }
+function saveToLocalStorage(r: Rule[]) {
+  localStorage.setItem(LS_KEY, JSON.stringify(r));
+}
+
+async function loadRulesFromSupabase(): Promise<Rule[] | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  try {
+    const { data, error } = await sb
+      .from("admin_content_config")
+      .select("*")
+      .eq("config_type", "rule");
+    if (error || !data || data.length === 0) return null;
+    return data.map((row) => row.data as Rule);
+  } catch {
+    return null;
+  }
+}
+
+async function saveRuleToSupabase(rule: Rule): Promise<boolean> {
+  const sb = getSupabase();
+  if (!sb) return false;
+  try {
+    const { error } = await sb
+      .from("admin_content_config")
+      .upsert({
+        id: `rule:${rule.id}`,
+        config_type: "rule",
+        data: rule,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "id" });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+async function loadLogFromSupabase(): Promise<LogEntry[] | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  try {
+    const { data, error } = await sb
+      .from("admin_content_config")
+      .select("*")
+      .eq("config_type", "rule_log")
+      .order("updated_at", { ascending: false })
+      .limit(20);
+    if (error || !data || data.length === 0) return null;
+    return data.map((row) => row.data as LogEntry);
+  } catch {
+    return null;
+  }
+}
 
 export function PipelineAutomation() {
   const [rules, setRules] = useState<Rule[]>(DEFAULT_RULES);
+  const [log, setLog] = useState<LogEntry[]>(MOCK_LOG);
 
-  useEffect(() => { setRules(load()); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [sbRules, sbLog] = await Promise.all([
+        loadRulesFromSupabase(),
+        loadLogFromSupabase(),
+      ]);
+      if (!cancelled) {
+        if (sbRules !== null) {
+          setRules(sbRules);
+        } else {
+          setRules(loadFromLocalStorage());
+        }
+        if (sbLog !== null) {
+          setLog(sbLog);
+        }
+        // If sbLog is null, keep MOCK_LOG as default
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const toggle = (id: string) => {
     setRules((prev) => {
       const next = prev.map((r) => r.id === id ? { ...r, enabled: !r.enabled, triggeredCount: r.triggeredCount + (r.enabled ? 0 : Math.floor(Math.random() * 5)) } : r);
-      save(next);
+      const updated = next.find((r) => r.id === id);
+      if (updated) {
+        saveRuleToSupabase(updated).then((ok) => {
+          if (!ok) saveToLocalStorage(next);
+        });
+      }
       return next;
     });
   };
@@ -99,7 +178,7 @@ export function PipelineAutomation() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_LOG.map((entry, i) => (
+              {log.map((entry, i) => (
                 <tr key={i} className="border-b border-gray-100 dark:border-slate-700/50 last:border-0">
                   <td className="py-2 text-gray-500 dark:text-gray-400 whitespace-nowrap">{entry.timestamp}</td>
                   <td className="py-2 text-gray-900 dark:text-white">{entry.item}</td>

@@ -2,29 +2,90 @@
 
 import { useState, useEffect } from "react";
 import { APP_CONFIG } from "../../admin.config";
+import { getSupabase } from "@/lib/supabase";
 
 type BriefState = Record<string, { enabled: boolean; lastGenerated: string | null }>;
 
 const LS_KEY = "auto-briefs";
 
-function load(): BriefState {
+function loadFromLocalStorage(): BriefState {
   if (typeof window === "undefined") return {};
   try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; }
 }
 
-function save(s: BriefState) { localStorage.setItem(LS_KEY, JSON.stringify(s)); }
+function saveToLocalStorage(s: BriefState) {
+  localStorage.setItem(LS_KEY, JSON.stringify(s));
+}
+
+async function loadFromSupabase(): Promise<BriefState | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  try {
+    const { data, error } = await sb
+      .from("admin_content_config")
+      .select("*")
+      .eq("config_type", "brief");
+    if (error || !data) return null;
+    const state: BriefState = {};
+    for (const row of data) {
+      const podId = (row.id as string).replace(/^brief:/, "");
+      state[podId] = row.data as { enabled: boolean; lastGenerated: string | null };
+    }
+    return state;
+  } catch {
+    return null;
+  }
+}
+
+async function saveToSupabase(state: BriefState): Promise<boolean> {
+  const sb = getSupabase();
+  if (!sb) return false;
+  try {
+    const rows = Object.entries(state).map(([podId, data]) => ({
+      id: `brief:${podId}`,
+      config_type: "brief",
+      data,
+      updated_at: new Date().toISOString(),
+    }));
+    if (rows.length === 0) return true;
+    const { error } = await sb
+      .from("admin_content_config")
+      .upsert(rows, { onConflict: "id" });
+    return !error;
+  } catch {
+    return false;
+  }
+}
 
 export function AutoBriefScheduler() {
   const [state, setState] = useState<BriefState>({});
   const [generating, setGenerating] = useState(false);
 
-  useEffect(() => { setState(load()); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const sbState = await loadFromSupabase();
+      if (!cancelled) {
+        if (sbState !== null && Object.keys(sbState).length > 0) {
+          setState(sbState);
+        } else {
+          setState(loadFromLocalStorage());
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const persist = async (next: BriefState) => {
+    const ok = await saveToSupabase(next);
+    if (!ok) saveToLocalStorage(next);
+  };
 
   const toggle = (id: string) => {
     setState((prev) => {
       const cur = prev[id] || { enabled: false, lastGenerated: null };
       const next = { ...prev, [id]: { ...cur, enabled: !cur.enabled } };
-      save(next);
+      persist(next);
       return next;
     });
   };
@@ -32,7 +93,7 @@ export function AutoBriefScheduler() {
   const generate = (id: string) => {
     setState((prev) => {
       const next = { ...prev, [id]: { ...prev[id], enabled: prev[id]?.enabled ?? true, lastGenerated: new Date().toISOString() } };
-      save(next);
+      persist(next);
       return next;
     });
   };
@@ -43,7 +104,7 @@ export function AutoBriefScheduler() {
     const next = { ...state };
     const now = new Date().toISOString();
     active.forEach((p) => { next[p.id] = { ...next[p.id], lastGenerated: now }; });
-    save(next);
+    await persist(next);
     setState(next);
     setTimeout(() => setGenerating(false), 800);
   };

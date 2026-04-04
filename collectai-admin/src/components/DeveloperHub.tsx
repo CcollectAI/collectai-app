@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell,
 } from "recharts";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { getSupabase } from "@/lib/supabase";
+import { APP_CONFIG } from "../../admin.config";
 
 /* ───────────────────────── Types ───────────────────────── */
 
@@ -33,11 +35,30 @@ interface Feedback {
   notes: string;
 }
 
+interface Deploy {
+  version: string;
+  date: string;
+  status: string;
+  duration: string;
+  changes: string;
+}
+
+interface ErrorRatePoint {
+  day: string;
+  rate: number;
+}
+
 /* ───────────────────────── Constants ───────────────────── */
 
 const TIFFANY = "#81D8D0";
 const LS_ISSUES = "dev-issues";
 const LS_FEEDBACK = "dev-feedback";
+
+const API = APP_CONFIG.api.baseUrl;
+const API_HEADERS: Record<string, string> = {
+  "X-Ops-Key": APP_CONFIG.api.opsKey,
+  "Content-Type": "application/json",
+};
 
 const PRIORITY_COLOR: Record<Issue["priority"], string> = {
   critical: "bg-red-500", high: "bg-amber-500", medium: "bg-blue-500", low: "bg-gray-400",
@@ -84,12 +105,12 @@ const SEED_FEEDBACK: Feedback[] = [
   { id: uid(), user_email: "numis.collector@yahoo.com", subject: "Can you add support for coin grading (NGC/PCGS)?", message: "I collect graded coins and would love to input NGC/PCGS grades and have the app factor that into valuations. Slab photos would be great too.", category: "feature_request", status: "new", created_at: "2026-03-24T12:45:00Z", notes: "" },
 ];
 
-const ERROR_RATE_DATA = Array.from({ length: 14 }, (_, i) => ({
+const FALLBACK_ERROR_RATE_DATA: ErrorRatePoint[] = Array.from({ length: 14 }, (_, i) => ({
   day: `Mar ${15 + i}`,
   rate: +(0.05 + Math.random() * 0.2).toFixed(3),
 }));
 
-const DEPLOYS = [
+const FALLBACK_DEPLOYS: Deploy[] = [
   { version: "v2.4.1", date: "Today", status: "Success", duration: "3m 42s", changes: "Fix push notification iOS 17.4" },
   { version: "v2.4.0", date: "Yesterday", status: "Success", duration: "4m 15s", changes: "Pro-grade admin dashboard" },
   { version: "v2.3.9", date: "3 days ago", status: "Success", duration: "3m 58s", changes: "Notification overhaul" },
@@ -110,23 +131,206 @@ const inputCls = "rounded-lg border border-gray-200 dark:border-slate-600 bg-whi
 const cardCls = "bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 transition-colors";
 const headCls = "text-lg font-semibold text-gray-900 dark:text-white";
 
-function usePersisted<T>(key: string, seed: T): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const [data, setData] = useState<T>(seed);
+/* ─────────────── Supabase-backed persistence hook ─────────────── */
+
+/**
+ * useSupabasePersisted — tries Supabase `admin_dev_hub` table first,
+ * falls back to localStorage. Every write goes to both (Supabase primary,
+ * localStorage backup). Seeds are only used when both stores are empty.
+ */
+function useSupabasePersisted<T extends { id: string }>(
+  itemType: "issue" | "feedback",
+  lsKey: string,
+  seed: T[],
+): [T[], React.Dispatch<React.SetStateAction<T[]>>] {
+  const [data, setDataRaw] = useState<T[]>(seed);
+  const initialized = useRef(false);
+  const supabaseOk = useRef(false);
+
+  // ── Initial load ──
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) setData(JSON.parse(raw));
-    } catch { /* use seed */ }
-  }, [key]);
-  useEffect(() => { localStorage.setItem(key, JSON.stringify(data)); }, [key, data]);
+    let cancelled = false;
+
+    async function load() {
+      const sb = getSupabase();
+
+      // 1) Try Supabase
+      if (sb) {
+        try {
+          const { data: rows, error } = await sb
+            .from("admin_dev_hub")
+            .select("id, data")
+            .eq("item_type", itemType)
+            .order("created_at", { ascending: false });
+
+          if (!error && rows && rows.length > 0) {
+            if (!cancelled) {
+              const items = rows.map((r: { id: string; data: T }) => r.data);
+              setDataRaw(items);
+              supabaseOk.current = true;
+              initialized.current = true;
+              // Sync to localStorage as backup
+              try { localStorage.setItem(lsKey, JSON.stringify(items)); } catch { /* noop */ }
+              return;
+            }
+          }
+
+          // Supabase is reachable but table is empty — we'll check localStorage next
+          if (!error) {
+            supabaseOk.current = true;
+          }
+        } catch {
+          // Supabase unavailable, fall through to localStorage
+        }
+      }
+
+      // 2) Try localStorage
+      if (!cancelled) {
+        try {
+          const raw = localStorage.getItem(lsKey);
+          if (raw) {
+            const parsed = JSON.parse(raw) as T[];
+            if (parsed.length > 0) {
+              setDataRaw(parsed);
+              initialized.current = true;
+              // Back-fill Supabase if it was reachable but empty
+              if (supabaseOk.current && sb) {
+                _syncAllToSupabase(sb, itemType, parsed).catch(() => {});
+              }
+              return;
+            }
+          }
+        } catch { /* use seed */ }
+
+        // 3) Both empty — use seed and persist
+        setDataRaw(seed);
+        initialized.current = true;
+        try { localStorage.setItem(lsKey, JSON.stringify(seed)); } catch { /* noop */ }
+        if (supabaseOk.current && sb) {
+          _syncAllToSupabase(sb, itemType, seed).catch(() => {});
+        }
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemType, lsKey]);
+
+  // ── Wrapped setter: writes to both stores ──
+  const setData: React.Dispatch<React.SetStateAction<T[]>> = useCallback(
+    (action) => {
+      setDataRaw((prev) => {
+        const next = typeof action === "function" ? (action as (p: T[]) => T[])(prev) : action;
+
+        // localStorage backup (always)
+        try { localStorage.setItem(lsKey, JSON.stringify(next)); } catch { /* noop */ }
+
+        // Supabase primary (async, fire-and-forget)
+        const sb = getSupabase();
+        if (sb) {
+          _diffAndSync(sb, itemType, prev, next).catch(() => {});
+        }
+
+        return next;
+      });
+    },
+    [lsKey, itemType],
+  );
+
   return [data, setData];
+}
+
+/* ── Supabase sync helpers ── */
+
+async function _syncAllToSupabase<T extends { id: string }>(
+  sb: NonNullable<ReturnType<typeof getSupabase>>,
+  itemType: string,
+  items: T[],
+) {
+  const rows = items.map((item) => ({
+    id: `${itemType}_${item.id}`,
+    item_type: itemType,
+    data: item,
+    created_at: (item as Record<string, unknown>).created_at ?? new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }));
+  if (rows.length > 0) {
+    await sb.from("admin_dev_hub").upsert(rows, { onConflict: "id" });
+  }
+}
+
+async function _diffAndSync<T extends { id: string }>(
+  sb: NonNullable<ReturnType<typeof getSupabase>>,
+  itemType: string,
+  prev: T[],
+  next: T[],
+) {
+  const prevIds = new Set(prev.map((i) => i.id));
+  const nextIds = new Set(next.map((i) => i.id));
+
+  // Deletions
+  const deleted = prev.filter((i) => !nextIds.has(i.id));
+  if (deleted.length > 0) {
+    const ids = deleted.map((i) => `${itemType}_${i.id}`);
+    await sb.from("admin_dev_hub").delete().in("id", ids);
+  }
+
+  // Upserts (new + updated — just upsert everything in `next` for simplicity)
+  const upserts = next.map((item) => ({
+    id: `${itemType}_${item.id}`,
+    item_type: itemType,
+    data: item,
+    created_at: (item as Record<string, unknown>).created_at ?? new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }));
+  if (upserts.length > 0) {
+    await sb.from("admin_dev_hub").upsert(upserts, { onConflict: "id" });
+  }
 }
 
 /* ═══════════════════════ COMPONENT ══════════════════════ */
 
 export function DeveloperHub() {
-  const [issues, setIssues] = usePersisted<Issue[]>(LS_ISSUES, SEED_ISSUES);
-  const [feedback, setFeedback] = usePersisted<Feedback[]>(LS_FEEDBACK, SEED_FEEDBACK);
+  const [issues, setIssues] = useSupabasePersisted<Issue>("issue", LS_ISSUES, SEED_ISSUES);
+  const [feedback, setFeedback] = useSupabasePersisted<Feedback>("feedback", LS_FEEDBACK, SEED_FEEDBACK);
+
+  /* ---- Backend-fetched data with fallback ---- */
+  const [errorRateData, setErrorRateData] = useState<ErrorRatePoint[]>(FALLBACK_ERROR_RATE_DATA);
+  const [deploys, setDeploys] = useState<Deploy[]>(FALLBACK_DEPLOYS);
+
+  useEffect(() => {
+    async function fetchErrorRate() {
+      try {
+        const res = await fetch(`${API}/admin/error-rate`, { headers: API_HEADERS });
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json) && json.length > 0) {
+            setErrorRateData(json);
+          }
+        }
+      } catch {
+        // Fallback already set
+      }
+    }
+
+    async function fetchDeploys() {
+      try {
+        const res = await fetch(`${API}/admin/deploy-history`, { headers: API_HEADERS });
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json) && json.length > 0) {
+            setDeploys(json);
+          }
+        }
+      } catch {
+        // Fallback already set
+      }
+    }
+
+    fetchErrorRate();
+    fetchDeploys();
+  }, []);
 
   /* ---- Issue state ---- */
   const [showIssueForm, setShowIssueForm] = useState(false);
@@ -233,7 +437,7 @@ export function DeveloperHub() {
         <h2 className={headCls}>Error Rate Trend (14d)</h2>
         <div className="h-48 mt-3">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={ERROR_RATE_DATA}>
+            <AreaChart data={errorRateData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="#94a3b8" />
               <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" unit="%" />
@@ -407,7 +611,7 @@ export function DeveloperHub() {
               <th className="py-2 pr-3">Version</th><th className="py-2 pr-3">Date</th><th className="py-2 pr-3">Status</th><th className="py-2 pr-3">Duration</th><th className="py-2">Changes</th>
             </tr></thead>
             <tbody>
-              {DEPLOYS.map(d => (
+              {deploys.map(d => (
                 <tr key={d.version} className="border-b border-gray-100 dark:border-slate-700/50">
                   <td className="py-2 pr-3 font-mono text-gray-900 dark:text-white">{d.version}</td>
                   <td className="py-2 pr-3 text-gray-500 dark:text-gray-400">{d.date}</td>

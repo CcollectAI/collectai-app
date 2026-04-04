@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getSupabase } from "@/lib/supabase";
 
 const LS_KEY = "digest-schedules";
 const DIGEST_TYPES = ["Weekly Pod Report", "Commission Summary", "KPI Snapshot", "UGC Performance"] as const;
@@ -18,12 +19,61 @@ interface Schedule {
   createdAt: string;
 }
 
-function load(): Schedule[] {
+function loadFromLocalStorage(): Schedule[] {
   if (typeof window === "undefined") return [];
   try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch { return []; }
 }
 
-function save(s: Schedule[]) { localStorage.setItem(LS_KEY, JSON.stringify(s)); }
+function saveToLocalStorage(s: Schedule[]) {
+  localStorage.setItem(LS_KEY, JSON.stringify(s));
+}
+
+async function loadFromSupabase(): Promise<Schedule[] | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  try {
+    const { data, error } = await sb
+      .from("admin_content_config")
+      .select("*")
+      .eq("config_type", "digest");
+    if (error || !data) return null;
+    return data.map((row) => row.data as Schedule);
+  } catch {
+    return null;
+  }
+}
+
+async function saveScheduleToSupabase(schedule: Schedule): Promise<boolean> {
+  const sb = getSupabase();
+  if (!sb) return false;
+  try {
+    const { error } = await sb
+      .from("admin_content_config")
+      .upsert({
+        id: `digest:${schedule.id}`,
+        config_type: "digest",
+        data: schedule,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "id" });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+async function removeFromSupabase(id: string): Promise<boolean> {
+  const sb = getSupabase();
+  if (!sb) return false;
+  try {
+    const { error } = await sb
+      .from("admin_content_config")
+      .delete()
+      .eq("id", `digest:${id}`);
+    return !error;
+  } catch {
+    return false;
+  }
+}
 
 const selectClass = "w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#81D8D0]";
 
@@ -35,21 +85,36 @@ export function DigestScheduler() {
   const [format, setFormat] = useState<string>(FORMATS[0]);
   const [recipients, setRecipients] = useState("");
 
-  useEffect(() => { setSchedules(load()); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const sbData = await loadFromSupabase();
+      if (!cancelled) {
+        if (sbData !== null && sbData.length > 0) {
+          setSchedules(sbData);
+        } else {
+          setSchedules(loadFromLocalStorage());
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-  const addSchedule = () => {
+  const addSchedule = async () => {
     if (!recipients.trim()) return;
     const s: Schedule = { id: Date.now().toString(), type, frequency, day, format, recipients: recipients.trim(), createdAt: new Date().toISOString() };
     const next = [s, ...schedules];
-    save(next);
     setSchedules(next);
     setRecipients("");
+    const ok = await saveScheduleToSupabase(s);
+    if (!ok) saveToLocalStorage(next);
   };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     const next = schedules.filter((s) => s.id !== id);
-    save(next);
     setSchedules(next);
+    const ok = await removeFromSupabase(id);
+    if (!ok) saveToLocalStorage(next);
   };
 
   return (

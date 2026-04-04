@@ -57,9 +57,7 @@ export function AdminShell({ kits }: { kits: unknown[] }) {
             <form onSubmit={handleSubmit} className="mt-6">
               <input
                 type="password"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={8}
+                maxLength={16}
                 value={pin}
                 onChange={(e) => { setPin(e.target.value); setError(false); }}
                 placeholder="PIN"
