@@ -319,6 +319,19 @@ HIGH_RISK_THRESHOLD: float = float(os.environ.get("HIGH_RISK_THRESHOLD", "0.50")
 
 
 # ---------------------------------------------------------------------------
+# Spend budget (monthly cap for paid API calls)
+# ---------------------------------------------------------------------------
+
+MONTHLY_BUDGET_EUR: float = float(os.getenv("MONTHLY_BUDGET_EUR", "150.0"))
+
+# ---------------------------------------------------------------------------
+# Telegram Ops Alerts
+# ---------------------------------------------------------------------------
+
+TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID: str = os.getenv("TELEGRAM_CHAT_ID", "")
+
+# ---------------------------------------------------------------------------
 # Startup validation
 # ---------------------------------------------------------------------------
 

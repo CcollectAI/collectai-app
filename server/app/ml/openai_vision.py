@@ -15,6 +15,7 @@ from typing import Any
 import httpx
 
 from app.config import OPENAI_API_KEY, OPENAI_VISION_MODEL
+from app.lib.spend_tracker import spend_tracker, BudgetExceededError
 from app.ml.vision_helpers import (
     ALL_CATEGORIES,
     CATEGORY_PROMPTS,
@@ -138,6 +139,12 @@ async def classify_openai_vision(
     if not OPENAI_API_KEY:
         return None
 
+    try:
+        spend_tracker.check("openai")
+    except BudgetExceededError:
+        logger.warning("OpenAI Vision call blocked by spend budget")
+        return None
+
     logger.info(
         "vision_classifier: attempting OpenAI Vision classification (hint=%s)",
         category_hint,
@@ -188,6 +195,14 @@ async def classify_openai_vision(
             )
             resp.raise_for_status()
             data = resp.json()
+
+        # Record spend (estimate cost from token usage if available)
+        usage = data.get("usage", {})
+        input_tokens = usage.get("prompt_tokens", 500)
+        output_tokens = usage.get("completion_tokens", 200)
+        # gpt-4o-mini: $0.15/1M input, $0.60/1M output (convert to EUR ~0.92)
+        cost_usd = (input_tokens * 0.15 + output_tokens * 0.60) / 1_000_000
+        spend_tracker.record("openai", cost_eur=cost_usd * 0.92)
 
         # Parse the structured response
         content = data.get("choices", [{}])[0].get("message", {}).get("content", "")

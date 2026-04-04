@@ -61,8 +61,12 @@ if SENTRY_DSN and sentry_sdk is not None:
 async def lifespan(app: FastAPI):
     """Async context manager for app startup and shutdown."""
     # ---- Startup ----
-    from app.config import validate_config
+    from app.config import validate_config, MONTHLY_BUDGET_EUR
     validate_config()
+
+    # Initialize spend tracker with configured budget
+    from app.lib.spend_tracker import spend_tracker
+    spend_tracker.set_budget(MONTHLY_BUDGET_EUR)
 
     if not DB_ENABLED:
         logging.getLogger("uvicorn").info("[startup] DB disabled; skipping pool connect.")

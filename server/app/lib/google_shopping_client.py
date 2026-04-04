@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from app.config import SERPAPI_API_KEY
+from app.lib.spend_tracker import spend_tracker, BudgetExceededError
 from workers.circuit_breaker import google_shopping_circuit, CircuitOpenError
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,12 @@ async def search(
         return []
 
     try:
+        spend_tracker.check("serpapi")
+    except BudgetExceededError:
+        logger.warning("[GoogleShopping] call blocked by spend budget")
+        return []
+
+    try:
         google_shopping_circuit.check()
     except CircuitOpenError:
         logger.warning("[GoogleShopping] circuit open — skipping search")
@@ -101,6 +108,7 @@ async def search(
             return []
         resp.raise_for_status()
         google_shopping_circuit.record_success()
+        spend_tracker.record("serpapi")
         data = resp.json()
         return data.get("shopping_results", [])
     except httpx.HTTPStatusError as e:

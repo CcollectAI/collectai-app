@@ -131,6 +131,7 @@ export const APP_CONFIG = {
     demandSignals: true,
     userManager: true,
     sponsorAnalytics: true,
+    spendMonitor: true,
   },
 };
 

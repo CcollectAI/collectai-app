@@ -19,6 +19,7 @@ from typing import Any, Optional
 import httpx
 
 from app.config import FIRECRAWL_API_KEY, FIRECRAWL_BASE_URL
+from app.lib.spend_tracker import spend_tracker, BudgetExceededError
 
 logger = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 30.0
@@ -74,6 +75,12 @@ async def _raw_scrape_url(
         logger.debug("Firecrawl not configured (no API key)")
         return None
 
+    try:
+        spend_tracker.check("firecrawl")
+    except BudgetExceededError:
+        logger.warning("[Firecrawl] call blocked by spend budget")
+        return None
+
     body: dict[str, Any] = {"url": url}
     if formats:
         body["formats"] = formats
@@ -94,6 +101,7 @@ async def _raw_scrape_url(
             logger.warning("[Firecrawl] Rate limited on /scrape for %s", url)
             return None
         resp.raise_for_status()
+        spend_tracker.record("firecrawl")
         data = resp.json()
         return data.get("data")
     except httpx.HTTPStatusError as e:
@@ -145,6 +153,12 @@ async def _raw_search_web(
         logger.debug("Firecrawl not configured (no API key)")
         return []
 
+    try:
+        spend_tracker.check("firecrawl")
+    except BudgetExceededError:
+        logger.warning("[Firecrawl] search blocked by spend budget")
+        return []
+
     body: dict[str, Any] = {
         "query": query,
         "limit": min(limit, 20),
@@ -162,6 +176,7 @@ async def _raw_search_web(
             logger.warning("[Firecrawl] Rate limited on /search for '%s'", query)
             return []
         resp.raise_for_status()
+        spend_tracker.record("firecrawl")
         data = resp.json()
         return data.get("data", [])
     except httpx.HTTPStatusError as e:

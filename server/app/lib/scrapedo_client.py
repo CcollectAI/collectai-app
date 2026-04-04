@@ -20,6 +20,7 @@ from typing import Any, Optional
 import httpx
 
 from app.config import SCRAPEDO_API_KEY
+from app.lib.spend_tracker import spend_tracker, BudgetExceededError
 from workers.circuit_breaker import scrapedo_circuit, CircuitOpenError
 
 logger = logging.getLogger(__name__)
@@ -79,6 +80,12 @@ async def scrape_url(
         return None
 
     try:
+        spend_tracker.check("scrapedo")
+    except BudgetExceededError:
+        logger.warning("[Scrape.do] call blocked by spend budget")
+        return None
+
+    try:
         scrapedo_circuit.check()
     except CircuitOpenError:
         logger.warning("[Scrape.do] circuit open — skipping scrape")
@@ -105,6 +112,7 @@ async def scrape_url(
             return None
         resp.raise_for_status()
         scrapedo_circuit.record_success()
+        spend_tracker.record("scrapedo")
         return resp.text
     except httpx.HTTPStatusError as e:
         logger.error("[Scrape.do] HTTP %d for %s", e.response.status_code, url)

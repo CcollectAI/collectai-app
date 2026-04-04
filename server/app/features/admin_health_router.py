@@ -1,9 +1,13 @@
 """
-Admin Worker Health & Demand Summary endpoints.
+Admin Worker Health, Demand Summary & Spend Monitor endpoints.
 
 Provides:
   ``GET /admin/worker-health``   — runtime health of every registered worker
   ``GET /admin/demand-summary``  — catalog demand signals for the owner
+  ``GET /admin/spend-summary``   — current month API spend vs budget
+  ``POST /admin/spend-budget``   — update monthly budget cap
+  ``POST /admin/spend-pause``    — pause/resume a provider
+  ``POST /admin/spend-reset``    — reset spend counters
 
 Protected by the ``OPS_API_KEY`` environment variable — callers must send
 the key in the ``X-Ops-Key`` header.  Returns 403 when the key is missing
@@ -184,3 +188,63 @@ async def demand_summary(request: Request) -> JSONResponse:
             status_code=500,
             content={"detail": "Failed to fetch demand summary"},
         )
+
+
+# ---------------------------------------------------------------------------
+# Spend Monitor endpoints
+# ---------------------------------------------------------------------------
+
+from app.lib.spend_tracker import spend_tracker  # noqa: E402
+
+
+@router.get("/admin/spend-summary", summary="Monthly API spend summary")
+async def spend_summary(request: Request) -> JSONResponse:
+    """Return current month spend vs budget, per-provider breakdown."""
+    err = _check_ops_key(request)
+    if err is not None:
+        return err
+    return JSONResponse(spend_tracker.summary())
+
+
+@router.post("/admin/spend-budget", summary="Update monthly budget")
+async def spend_budget(request: Request) -> JSONResponse:
+    """Set the monthly budget cap (EUR). Body: {"budget_eur": 150.0}"""
+    err = _check_ops_key(request)
+    if err is not None:
+        return err
+    try:
+        body = await request.json()
+        budget = float(body.get("budget_eur", 150.0))
+        spend_tracker.set_budget(budget)
+        return JSONResponse({"ok": True, "budget_eur": budget})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
+@router.post("/admin/spend-pause", summary="Pause or resume a provider")
+async def spend_pause(request: Request) -> JSONResponse:
+    """Pause/resume a provider. Body: {"provider": "openai", "paused": true}"""
+    err = _check_ops_key(request)
+    if err is not None:
+        return err
+    try:
+        body = await request.json()
+        provider = body["provider"]
+        paused = body.get("paused", True)
+        if paused:
+            spend_tracker.pause_provider(provider)
+        else:
+            spend_tracker.resume_provider(provider)
+        return JSONResponse({"ok": True, "provider": provider, "paused": paused})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
+@router.post("/admin/spend-reset", summary="Reset spend counters")
+async def spend_reset(request: Request) -> JSONResponse:
+    """Reset all spend counters for current month."""
+    err = _check_ops_key(request)
+    if err is not None:
+        return err
+    spend_tracker.reset()
+    return JSONResponse({"ok": True, "message": "Spend counters reset"})
