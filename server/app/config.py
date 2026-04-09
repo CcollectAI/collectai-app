@@ -429,6 +429,8 @@ def validate_config() -> None:
         "TCGPLAYER_PRIVATE_KEY": TCGPLAYER_PRIVATE_KEY,
         "SUPABASE_SERVICE_KEY": SUPABASE_SERVICE_KEY,
         "SENTRY_DSN": SENTRY_DSN or "",
+        "STRIPE_SECRET_KEY": STRIPE_SECRET_KEY,
+        "TELEGRAM_BOT_TOKEN": TELEGRAM_BOT_TOKEN,
     }
     empty = [k for k, v in warn_keys.items() if not v]
     if empty:

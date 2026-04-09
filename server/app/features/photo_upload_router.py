@@ -252,6 +252,16 @@ async def upload_photo(
     if original_size == 0:
         raise error_response(400, "Empty file", code="VALIDATION_ERROR")
 
+    # Magic-byte verification (defence-in-depth — content-type header is client-controlled)
+    import imghdr
+    detected = imghdr.what(None, h=raw_bytes)
+    if detected not in {"jpeg", "png", "webp"}:
+        raise error_response(
+            400,
+            f"File content does not match a supported image format (detected={detected!r})",
+            code="VALIDATION_ERROR",
+        )
+
     # Optimize image
     try:
         optimized_bytes, width, height = optimize_image(raw_bytes, max_edge=_MAX_IMAGE_EDGE)

@@ -45,6 +45,44 @@ SUPPORTED_CATEGORIES = frozenset([
     "yugioh",
 ])
 
+# Stop-words that shouldn't count as "significant" for relevance filtering
+_STOP_WORDS = frozenset([
+    "the", "and", "for", "with", "card", "cards", "set", "edition",
+    "vmax", "vstar", "ex", "gx", "v", "tg", "promo",  # generic TCG suffixes
+])
+
+
+def _filter_by_query_relevance(hits: List[Dict[str, Any]], query: str) -> List[Dict[str, Any]]:
+    """Drop hits whose title doesn't contain at least one significant word from the query.
+
+    R47 — defensive filter for COMC. The scraper can return irrelevant results
+    when JS rendering fails or the site falls back to a default page. We keep
+    a hit only if its title contains at least one ≥3-char non-stop-word from
+    the original query.
+    """
+    significant = {
+        w.lower()
+        for w in query.split()
+        if len(w) >= 3 and w.lower() not in _STOP_WORDS
+    }
+    if not significant:
+        return hits  # query was all stop-words — don't filter
+
+    filtered = []
+    dropped = 0
+    for hit in hits:
+        title = (hit.get("title") or "").lower()
+        if any(w in title for w in significant):
+            filtered.append(hit)
+        else:
+            dropped += 1
+    if dropped:
+        logger.debug(
+            "[COMCCaller] relevance filter dropped %d/%d hits (query=%s)",
+            dropped, len(hits), query,
+        )
+    return filtered
+
 
 class COMCCaller:
     """Async COMC adapter using smart_scrape for the marketplace aggregation agent."""
@@ -71,6 +109,14 @@ class COMCCaller:
             logger.debug("[COMCCaller] Not configured")
             return []
 
+        # R47 — Category gate. COMC only carries trading cards (sportscards,
+        # pokemon, mtg, yugioh). Without this check, the previous version
+        # silently accepted any category and returned irrelevant results
+        # (e.g. NHL hockey cards for a Pokemon query).
+        if category and category not in SUPPORTED_CATEGORIES:
+            logger.debug("[COMCCaller] category %s not supported — skipping", category)
+            return []
+
         try:
             comc_circuit.check()
         except CircuitOpenError:
@@ -85,7 +131,12 @@ class COMCCaller:
         except Exception:
             rates = None
 
-        url = COMC_SEARCH_URL.replace("{query}", quote_plus(query))
+        # R47 — Bias the text search by prefixing the category name.
+        # COMC's text= param is fuzzy and doesn't reliably narrow results
+        # without an explicit term. "Pokemon Charizard VMAX" beats just
+        # "Charizard VMAX" for relevance.
+        biased_query = f"{category} {query}" if category else query
+        url = COMC_SEARCH_URL.replace("{query}", quote_plus(biased_query))
 
         try:
             result = await smart_scrape(url)
@@ -94,9 +145,14 @@ class COMCCaller:
                 return []
 
             comc_circuit.record_success()
-            return self._parse_listings(
+            hits = self._parse_listings(
                 result["markdown"], url, rates, limit, is_sold=False,
             )
+            # R47 — Post-parse relevance filter. Drop listings whose title
+            # doesn't contain any significant word (≥3 chars) from the
+            # original query. Catches the case where COMC's scraper falls
+            # back to a default page on cache/JS issues.
+            return _filter_by_query_relevance(hits, query)
 
         except Exception:
             comc_circuit.record_failure()
@@ -113,6 +169,11 @@ class COMCCaller:
         if not self.configured:
             return []
 
+        # R47 — same category gate as search()
+        if category and category not in SUPPORTED_CATEGORIES:
+            logger.debug("[COMCCaller] category %s not supported — skipping sold_comps", category)
+            return []
+
         try:
             comc_circuit.check()
         except CircuitOpenError:
@@ -127,7 +188,8 @@ class COMCCaller:
         except Exception:
             rates = None
 
-        url = COMC_SOLD_URL.replace("{query}", quote_plus(query))
+        biased_query = f"{category} {query}" if category else query
+        url = COMC_SOLD_URL.replace("{query}", quote_plus(biased_query))
 
         try:
             result = await smart_scrape(url)
@@ -136,9 +198,10 @@ class COMCCaller:
                 return []
 
             comc_circuit.record_success()
-            return self._parse_listings(
+            hits = self._parse_listings(
                 result["markdown"], url, rates, limit, is_sold=True,
             )
+            return _filter_by_query_relevance(hits, query)
 
         except Exception:
             comc_circuit.record_failure()

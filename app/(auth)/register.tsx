@@ -129,28 +129,39 @@ function RegisterScreen() {
       if (error) throw error;
 
       const user = data.user;
-      if (!user || !user.email_confirmed_at) {
+      if (!user) {
+        showToast({ message: 'Sign up failed — no user returned.', type: 'error' });
+        return;
+      }
+
+      // Create profile immediately so the row exists regardless of email-verify path.
+      // upsert (id PK) makes this idempotent if a Supabase trigger also creates it.
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({ id: user.id, username: trimmedUsername }, { onConflict: 'id' });
+      if (profileError) {
+        const code = (profileError as { code?: string }).code;
+        if (code === '23505') {
+          // Username unique violation — auth account exists but profile doesn't.
+          // Surface to user and let them retry with a different username.
+          showToast({ message: 'Username taken. Please choose another.', type: 'warning' });
+          return;
+        }
+        // Don't strand the user with an auth account but no profile — log and continue.
+        // The post-verify flow will retry profile creation on first sign-in.
+        // eslint-disable-next-line no-console
+        console.warn('[register] profile upsert failed', code, profileError);
+      }
+
+      track({ name: 'user_signed_up', properties: { method: 'email' } });
+
+      if (!user.email_confirmed_at) {
         router.replace({
           pathname: '/(auth)/verify-email',
           params: { email: trimmedEmail },
         });
         return;
       }
-
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: user.id,
-        username: trimmedUsername,
-      });
-      if (profileError) {
-        const code = (profileError as { code?: string }).code;
-        if (code === '23505') {
-          showToast({ message: 'Username taken. Please choose another.', type: 'warning' });
-          return;
-        }
-        throw profileError;
-      }
-
-      track({ name: 'user_signed_up', properties: { method: 'email' } });
       router.replace('/(auth)/onboarding');
     } catch (e: unknown) {
       showToast({ message: e instanceof Error ? e.message : 'Sign up failed. Unknown error.', type: 'error' });

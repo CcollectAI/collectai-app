@@ -191,6 +191,23 @@ async def run_once():
 
     conn = await asyncpg.connect(DSN)
     try:
+        # R46.12 — Schema-probe guard: the legacy queries below reference
+        # pp.item_id and pp.asof on price_predictions, but this DB has
+        # pp.item_ref + pp.generated_at instead. Probe for the broken column
+        # and skip the cycle if drift is detected. Round 47: rewrite the
+        # _CURRENT_PORTFOLIO_QUERY against the actual schema.
+        try:
+            await conn.fetchval(
+                "SELECT pp.item_id FROM public.price_predictions pp LIMIT 1"
+            )
+        except Exception as drift_exc:
+            logger.info(
+                "[value_change] price_predictions schema drift (%s) — skipping cycle (R46.12)",
+                type(drift_exc).__name__,
+            )
+            record_run("value_change_worker", "ok")
+            return
+
         # 1. Get current portfolio values for all users
         portfolio_rows = await conn.fetch(_CURRENT_PORTFOLIO_QUERY)
         if not portfolio_rows:

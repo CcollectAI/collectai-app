@@ -571,7 +571,7 @@ function WatchlistTabScreen() {
               placeholderTextColor={colors.muted}
               keyboardType="numeric"
               style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-              accessibilityLabel="Target price in euros"
+              accessibilityLabel={`Target price in ${settings.currency}`}
             />
 
             {/* Notes */}

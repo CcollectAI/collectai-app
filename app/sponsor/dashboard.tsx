@@ -252,7 +252,7 @@ const SponsorDashboardScreen: React.FC = () => {
               accessibilityLabel="Get started"
             >
               <Ionicons name="rocket-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.primaryBtnText}>Get Started</Text>
+              <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>Get Started</Text>
             </AnimatedPressable>
           }
         />
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   // kpiGrid, kpiCard, kpiIconCircle, kpiValue, kpiLabel moved to SponsorKpiGrid
   // actionsBar, actionBtn, actionBtnOutline, actionBtnPrimaryText, actionBtnSecondaryText moved to SponsorQuickActions
   primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, paddingHorizontal: 18, borderRadius: 10 },
-  primaryBtnText: { fontSize: 13, fontWeight: '600', color: '#FFFFFF' },
+  primaryBtnText: { fontSize: 13, fontWeight: '600' },
 });
 
 export default function SponsorDashboardScreenWithBoundary() {

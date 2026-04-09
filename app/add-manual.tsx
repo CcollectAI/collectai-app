@@ -207,7 +207,7 @@ const ManualAddScreen: React.FC = () => {
       if (error) {
         logger.warn("[ManualAdd] insert error:", error.message);
         setSaveState("error");
-        setErrorText(error.message || "Failed to save item.");
+        setErrorText(error.message || "Couldn't save item — check your connection and try again.");
         fireHaptic(HapticIntent.ALERT_TRIGGERED);
         return;
       }
@@ -215,6 +215,7 @@ const ManualAddScreen: React.FC = () => {
       track({ name: 'item_added', properties: { source: 'manual', category: categorySlug || category } });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       setSaveState("success");
+      showToast({ message: 'Item tracked — ~5 min of manual inventory saved', type: 'success' });
       await clearDraft();
       nameField.reset();
       setCategory("");
@@ -228,7 +229,7 @@ const ManualAddScreen: React.FC = () => {
     } catch (err: any) {
       logger.warn("[ManualAdd] unexpected error:", err);
       setSaveState("error");
-      setErrorText(err?.message || "Unexpected error while saving item.");
+      setErrorText(err?.message || "Something unexpected happened — try saving again.");
       fireHaptic(HapticIntent.ALERT_TRIGGERED);
     } finally {
       setTimeout(() => { setSaveState("idle"); }, 2000);
@@ -256,11 +257,18 @@ const ManualAddScreen: React.FC = () => {
 
     if (isDuplicate) {
       fireHaptic(HapticIntent.ALERT_TRIGGERED);
+      track({ name: 'duplicate_detected', properties: { category: effectiveCategory ?? undefined } });
       Alert.alert(
         'Similar Item Found',
-        `'${existingName}' is already in your collection. Add anyway?`,
+        `You already own '${existingName}'. Add another copy?`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => {
+              showToast({ message: 'Duplicate caught — avoided a wasted purchase', type: 'info' });
+            },
+          },
           { text: 'Add Anyway', onPress: () => doSave() },
         ],
       );
@@ -273,7 +281,7 @@ const ManualAddScreen: React.FC = () => {
   const bannerContent = (() => {
     if (saveState === "saving") return { type: "info" as const, text: "Saving item…" };
     if (saveState === "success") return { type: "success" as const, text: "Item saved successfully!" };
-    if (saveState === "error") return { type: "error" as const, text: errorText || "Something went wrong while saving." };
+    if (saveState === "error") return { type: "error" as const, text: errorText || "Couldn't save item — try again." };
     return null;
   })();
 

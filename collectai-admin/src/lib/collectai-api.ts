@@ -24,8 +24,12 @@ async function tryFetchJSON<T>(path: string, fallback: T): Promise<T> {
     if (!res.ok) throw new Error(`${res.status}`);
     _apiAvailable = true;
     return res.json();
-  } catch {
+  } catch (err) {
     _apiAvailable = false;
+    // Surface the fallback so admin users can tell when they're looking at demo data
+    // (consumed via isUsingDemoData() in components — wire a banner where useful).
+    // eslint-disable-next-line no-console
+    console.warn(`[collectai-api] using demo fallback for ${path}:`, err);
     return fallback;
   }
 }

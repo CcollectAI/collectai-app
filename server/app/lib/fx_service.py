@@ -37,20 +37,23 @@ _FALLBACK_TO_EUR: Dict[str, float] = {
     "EUR": 1.0,
 }
 
-_API_URL = "https://api.exchangerate.host/latest"
+# Frankfurter is a free, no-auth FX API maintained by the ECB.
+# https://www.frankfurter.app/  — replaces exchangerate.host which went paid in 2024.
+_API_URL = "https://api.frankfurter.dev/v1/latest"
 
 
 async def _fetch_live_rates() -> Dict[str, float] | None:
-    """Fetch live rates from exchangerate.host.  Returns foreign→EUR dict or None."""
+    """Fetch live rates from Frankfurter (free, ECB-backed). Returns foreign→EUR dict or None."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(_API_URL, params={"base": "EUR", "symbols": "USD,GBP,JPY,KRW,AUD,CAD"})
+            # Frankfurter doesn't support KRW (ECB doesn't publish KRW rates)
+            # — KRW falls back to the hardcoded value in config.py.
+            resp = await client.get(
+                _API_URL,
+                params={"from": "EUR", "to": "USD,GBP,JPY,AUD,CAD"},
+            )
             resp.raise_for_status()
             data = resp.json()
-
-            if not data.get("success", True):
-                logger.warning("[fx_service] API returned success=false: %s", data)
-                return None
 
             eur_based = data.get("rates", {})
             if not eur_based:
@@ -62,7 +65,7 @@ async def _fetch_live_rates() -> Dict[str, float] | None:
                 if rate and float(rate) > 0:
                     to_eur[cur] = round(1.0 / float(rate), 6)
 
-            logger.info("[fx_service] Fetched live rates: %s", to_eur)
+            logger.info("[fx_service] Fetched live rates from Frankfurter: %s", to_eur)
             return to_eur
     except Exception:
         logger.warning("[fx_service] Failed to fetch live rates, using fallback", exc_info=True)

@@ -5,12 +5,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../theme";
 import { ItemRow } from "../hooks/useItems";
 import { GRADING_ELIGIBLE_CATEGORIES } from "@/constants/categories";
+import { useSettings } from "@/lib/settings";
+import { fmtCurrency } from "@/lib/format";
 
 type ItemCardProps = {
   item: ItemRow & { condition?: string };
 };
 
 function ItemCard({ item }: ItemCardProps) {
+  const { settings } = useSettings();
   const showGradeBadge =
     item.condition && item.category && GRADING_ELIGIBLE_CATEGORIES.has(item.category);
 
@@ -55,7 +58,7 @@ function ItemCard({ item }: ItemCardProps) {
               }}
             >
               <Text style={{ color: theme.colors.success, fontWeight: "800" }}>
-                ${item.value.toFixed(0)}
+                {fmtCurrency(item.value, settings)}
               </Text>
             </View>
           ) : null}

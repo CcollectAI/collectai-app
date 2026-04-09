@@ -1,5 +1,5 @@
 -- Auto-generated catalog seed for ghibli
--- Generated: 2026-03-08T23:06:21.563529+00:00
+-- Generated: 2026-04-08T22:19:55.936374+00:00
 -- Items: 1132
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES

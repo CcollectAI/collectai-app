@@ -61,21 +61,6 @@ async def _already_fired(conn, user_id, item_id, trigger_type):
     return row is not None
 
 
-async def _already_fired_by_alert(conn, alert_id):
-    """Check if a specific alert_id already fired in the dedup window."""
-    row = await conn.fetchrow(
-        """
-        SELECT 1 FROM public.alert_trigger_history
-        WHERE alert_id = $1
-          AND created_at > now() - ($2 || ' hours')::interval
-        LIMIT 1
-        """,
-        alert_id,
-        str(DEDUP_HOURS),
-    )
-    return row is not None
-
-
 # ── 1. Threshold Alerts ─────────────────────────────────────────────────────
 
 

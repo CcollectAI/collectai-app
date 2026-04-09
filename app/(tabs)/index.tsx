@@ -463,6 +463,7 @@ function PortfolioScreen() {
       <ValueSavedBanner
         data={valueSummary.data}
         visible={valueSummary.visible}
+        trigger={valueSummary.trigger}
         onDismiss={valueSummary.dismiss}
       />
     )}

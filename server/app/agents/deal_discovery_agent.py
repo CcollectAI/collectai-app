@@ -242,7 +242,9 @@ class DealDiscoveryAgent:
             """
             SELECT pm.*
             FROM public.purchase_mandates pm
-            JOIN public.subscriptions s ON s.user_id = pm.user_id::text
+            -- Both subscriptions.user_id and purchase_mandates.user_id are uuid;
+            -- the previous ::text cast caused "operator does not exist: uuid = text" (R46.11)
+            JOIN public.subscriptions s ON s.user_id = pm.user_id
             WHERE pm.status = 'active'
               AND (pm.expires_at IS NULL OR pm.expires_at > now())
               AND s.plan IN ('pro', 'premium')

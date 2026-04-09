@@ -1,6 +1,6 @@
 -- Auto-generated catalog seed for bandai_premium
--- Generated: 2026-03-08T23:02:40.240929+00:00
--- Items: 888
+-- Generated: 2026-04-08T22:19:56.816360+00:00
+-- Items: 1132
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('bandai_premium', 'shfiguarts', 'shfiguarts-super-saiyan-god-vegeta', 'S.H.Figuarts Super Saiyan God Vegeta', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super | P-Bandai'),
@@ -30,7 +30,6 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'robot-spirits', 'robot-spirits-full-armor-unicorn-gundam', 'Robot Spirits Full Armor Unicorn Gundam', 'Bandai', 'Mid', 'Robot Spirits | Gundam Unicorn | TNE'),
   ('bandai_premium', 'metal-build', 'metal-build-strike-freedom-gundam', 'Metal Build Strike Freedom Gundam', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Destiny | Standard'),
   ('bandai_premium', 'metal-build', 'metal-build-00-raiser', 'Metal Build 00 Raiser', 'Bandai', 'High', 'Metal Build | Gundam 00 | Standard'),
-  ('bandai_premium', 'metal-build', 'metal-build-destiny-gundam-full-package', 'Metal Build Destiny Gundam (Full Package)', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Destiny | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-astray-red-frame-kai', 'Metal Build Astray Red Frame Kai', 'Bandai', 'High', 'Metal Build | Gundam SEED Astray | Standard'),
   ('bandai_premium', 'metal-build', 'metal-build-hi-nu-gundam', 'Metal Build Hi-Nu Gundam', 'Bandai', 'Grail', 'Metal Build | Gundam CCA | Standard'),
   ('bandai_premium', 'metal-build', 'metal-build-crossbone-gundam-x1', 'Metal Build Crossbone Gundam X1', 'Bandai', 'High', 'Metal Build | Crossbone Gundam | P-Bandai'),
@@ -52,11 +51,11 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'metal-build', 'metal-build-strike-freedom-gundam-soul-blue-ver', 'Metal Build Strike Freedom Gundam Soul Blue Ver.', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Destiny | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-00-raiser-designers-blue-ver', 'Metal Build 00 Raiser Designer''s Blue Ver.', 'Bandai', 'Grail', 'Metal Build | Gundam 00 | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-destiny-gundam-heine-custom', 'Metal Build Destiny Gundam Heine Custom', 'Bandai', 'High', 'Metal Build | Gundam SEED Destiny | P-Bandai'),
-  ('bandai_premium', 'metal-build', 'metal-build-crossbone-gundam-x1-full-cloth', 'Metal Build Crossbone Gundam X1 Full Cloth', 'Bandai', 'Grail', 'Metal Build | Crossbone Gundam | P-Bandai')
+  ('bandai_premium', 'metal-build', 'metal-build-crossbone-gundam-x1-full-cloth', 'Metal Build Crossbone Gundam X1 Full Cloth', 'Bandai', 'Grail', 'Metal Build | Crossbone Gundam | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-hi-nu-gundam-marking-plus-ver', 'Metal Build Hi-Nu Gundam Marking Plus Ver.', 'Bandai', 'Grail', 'Metal Build | Gundam CCA | P-Bandai')
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('bandai_premium', 'metal-build', 'metal-build-hi-nu-gundam-marking-plus-ver', 'Metal Build Hi-Nu Gundam Marking Plus Ver.', 'Bandai', 'Grail', 'Metal Build | Gundam CCA | P-Bandai'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-70-mazinger-z-dc', 'Soul of Chogokin GX-70 Mazinger Z D.C.', 'Bandai', 'High', 'Soul of Chogokin | Mazinger Z | Standard'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-73-great-mazinger-dc', 'Soul of Chogokin GX-73 Great Mazinger D.C.', 'Bandai', 'High', 'Soul of Chogokin | Great Mazinger | Standard'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-76-grendizer-dc', 'Soul of Chogokin GX-76 Grendizer D.C.', 'Bandai', 'High', 'Soul of Chogokin | UFO Robot Grendizer | Standard'),
@@ -72,7 +71,6 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'dx-chogokin', 'dx-chogokin-yf-29-durandal-valkyrie-alto', 'DX Chogokin YF-29 Durandal Valkyrie (Alto)', 'Bandai', 'High', 'DX Chogokin | Macross Frontier | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-monkey-d-luffy-gomu-gomu-no-red-roc', 'Figuarts ZERO Monkey D. Luffy -Gomu Gomu no Red Roc-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-kaido-king-of-the-beasts-twin-dragons', 'Figuarts ZERO Kaido King of the Beasts -Twin Dragons-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
-  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-portgas-d-ace-fire-fist', 'Figuarts ZERO Portgas D. Ace -Fire Fist-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-super-saiyan-son-goku-the-burning-battles', 'Figuarts ZERO Super Saiyan Son Goku -The Burning Battles-', 'Bandai', 'Mid', 'Figuarts ZERO | Dragon Ball Z | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-vegeta-galick-gun', 'Figuarts ZERO Vegeta Galick Gun', 'Bandai', 'Mid', 'Figuarts ZERO | Dragon Ball Z | Standard'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-vegeta-saiyan-saga-galick-gun-pose', 'S.H.Figuarts Vegeta (Saiyan Saga) Galick Gun Pose', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
@@ -105,12 +103,12 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'robot-spirits', 'robot-spirits-strike-freedom-gundam-tne-2025-pearl-coating', 'Robot Spirits Strike Freedom Gundam (TNE 2025 Pearl Coating)', 'Bandai', 'High', 'Robot Spirits | Gundam SEED Destiny | TNE'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-roronoa-zoro-king-of-hell-tne-2025', 'Figuarts ZERO Roronoa Zoro -King of Hell- (TNE 2025)', 'Bandai', 'High', 'Figuarts ZERO | One Piece | TNE'),
   ('bandai_premium', 'metal-build', 'metal-build-wing-gundam-zero-ew-snow-white-sdcc-2024', 'Metal Build Wing Gundam Zero (EW) Snow White (SDCC 2024)', 'Bandai', 'Grail', 'Metal Build | Gundam Wing | Event Exclusive'),
-  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-kamen-rider-geats-magnum-boost-clear', 'Figure-rise Standard Kamen Rider Geats Magnum Boost (Clear)', 'Bandai', 'Mid', 'Figure-rise Standard | Kamen Rider Geats | P-Bandai')
+  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-kamen-rider-geats-magnum-boost-clear', 'Figure-rise Standard Kamen Rider Geats Magnum Boost (Clear)', 'Bandai', 'Mid', 'Figure-rise Standard | Kamen Rider Geats | P-Bandai'),
+  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-amplified-omnimon-x-antibody', 'Figure-rise Standard Amplified Omnimon X-Antibody', 'Bandai', 'Mid', 'Figure-rise Standard | Digimon | P-Bandai'),
+  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-son-goku-ssj4-gt', 'Figure-rise Standard Son Goku SSJ4 (GT)', 'Bandai', 'Mid', 'Figure-rise Standard | Dragon Ball GT | P-Bandai')
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-amplified-omnimon-x-antibody', 'Figure-rise Standard Amplified Omnimon X-Antibody', 'Bandai', 'Mid', 'Figure-rise Standard | Digimon | P-Bandai'),
-  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-son-goku-ssj4-gt', 'Figure-rise Standard Son Goku SSJ4 (GT)', 'Bandai', 'Mid', 'Figure-rise Standard | Dragon Ball GT | P-Bandai'),
   ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-ultraman-suit-zero-action-ver', 'Figure-rise Standard Ultraman Suit Zero Action Ver.', 'Bandai', 'Mid', 'Figure-rise Standard | Ultraman | P-Bandai'),
   ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-amplified-gallantmon-crimson-mode', 'Figure-rise Standard Amplified Gallantmon Crimson Mode', 'Bandai', 'Mid', 'Figure-rise Standard | Digimon | P-Bandai'),
   ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-2023-minus-one-thermae-form', 'S.H.MonsterArts Godzilla (2023 Minus One) Thermae Form', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla Minus One | P-Bandai'),
@@ -158,12 +156,12 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'shfiguarts', 'shfiguarts-giorno-giovanna', 'S.H.Figuarts Giorno Giovanna', 'Bandai', 'Mid', 'S.H.Figuarts | JoJo''s Bizarre Adventure | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-bruno-bucciarati', 'S.H.Figuarts Bruno Bucciarati', 'Bandai', 'Mid', 'S.H.Figuarts | JoJo''s Bizarre Adventure | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-jolyne-cujoh', 'S.H.Figuarts Jolyne Cujoh', 'Bandai', 'Mid', 'S.H.Figuarts | JoJo''s Bizarre Adventure | P-Bandai'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-son-goku-super-hero', 'S.H.Figuarts Son Goku Super Hero', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super: Super Hero | Standard')
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-son-goku-super-hero', 'S.H.Figuarts Son Goku Super Hero', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super: Super Hero | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-piccolo-power-awakening', 'S.H.Figuarts Piccolo Power Awakening', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super: Super Hero | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-black-frieza', 'S.H.Figuarts Black Frieza', 'Bandai', 'High', 'S.H.Figuarts | Dragon Ball Super | P-Bandai')
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-piccolo-power-awakening', 'S.H.Figuarts Piccolo Power Awakening', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super: Super Hero | P-Bandai'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-black-frieza', 'S.H.Figuarts Black Frieza', 'Bandai', 'High', 'S.H.Figuarts | Dragon Ball Super | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-lancelot-albion-ver-anime', 'Robot Spirits Lancelot Albion ver. A.N.I.M.E.', 'Bandai', 'Mid', 'Robot Spirits | Code Geass | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-guren-type-08-elements-ver-anime', 'Robot Spirits Guren Type-08 Elements ver. A.N.I.M.E.', 'Bandai', 'Mid', 'Robot Spirits | Code Geass | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-strike-freedom-gundam-ver-anime', 'Robot Spirits Strike Freedom Gundam ver. A.N.I.M.E.', 'Bandai', 'High', 'Robot Spirits | Gundam SEED Destiny | P-Bandai'),
@@ -211,18 +209,17 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-roronoa-zoro-three-sword-style', 'Figuarts ZERO Roronoa Zoro -Three Sword Style-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-nico-robin-devil-child', 'Figuarts ZERO Nico Robin -Devil Child-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | P-Bandai'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-gear-5-luffy-drums-of-liberation', 'Figuarts ZERO Gear 5 Luffy -Drums of Liberation-', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
-  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-tanjiro-kamado-water-breathing', 'Figuarts ZERO Tanjiro Kamado -Water Breathing-', 'Bandai', 'Mid', 'Figuarts ZERO | Demon Slayer | Standard')
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-tanjiro-kamado-water-breathing', 'Figuarts ZERO Tanjiro Kamado -Water Breathing-', 'Bandai', 'Mid', 'Figuarts ZERO | Demon Slayer | Standard'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-rengoku-kyojuro-flame-hashira', 'Figuarts ZERO Rengoku Kyojuro -Flame Hashira-', 'Bandai', 'Mid', 'Figuarts ZERO | Demon Slayer | Standard'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-vegeta-final-flash', 'Figuarts ZERO Vegeta Final Flash', 'Bandai', 'Mid', 'Figuarts ZERO | Dragon Ball Z | Standard')
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-rengoku-kyojuro-flame-hashira', 'Figuarts ZERO Rengoku Kyojuro -Flame Hashira-', 'Bandai', 'Mid', 'Figuarts ZERO | Demon Slayer | Standard'),
-  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-vegeta-final-flash', 'Figuarts ZERO Vegeta Final Flash', 'Bandai', 'Mid', 'Figuarts ZERO | Dragon Ball Z | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-trafalgar-law-gamma-knife', 'Figuarts ZERO Trafalgar Law -Gamma Knife-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-sanji-diable-jambe', 'Figuarts ZERO Sanji -Diable Jambe-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | P-Bandai'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-zenitsu-agatsuma-thunderclap-and-flash', 'Figuarts ZERO Zenitsu Agatsuma -Thunderclap and Flash-', 'Bandai', 'Mid', 'Figuarts ZERO | Demon Slayer | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-inosuke-hashibira-beast-breathing', 'Figuarts ZERO Inosuke Hashibira -Beast Breathing-', 'Bandai', 'Mid', 'Figuarts ZERO | Demon Slayer | Standard'),
   ('bandai_premium', 'metal-build', 'metal-build-freedom-gundam-20', 'Metal Build Freedom Gundam 2.0', 'Bandai', 'Grail', 'Metal Build | Gundam SEED | P-Bandai'),
-  ('bandai_premium', 'metal-build', 'metal-build-strike-freedom-gundam-soul-blue-ver', 'Metal Build Strike Freedom Gundam Soul Blue Ver.', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Destiny | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-crossbone-gundam-x-2-kai', 'Metal Build Crossbone Gundam X-2 Kai', 'Bandai', 'High', 'Metal Build | Crossbone Gundam | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-destiny-gundam-heine-westenfluss-custom', 'Metal Build Destiny Gundam Heine Westenfluss Custom', 'Bandai', 'High', 'Metal Build | Gundam SEED Destiny | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-laevatein-full-metal-panic-iv', 'Metal Build Laevatein (Full Metal Panic! IV)', 'Bandai', 'High', 'Metal Build | Full Metal Panic! | P-Bandai'),
@@ -264,13 +261,13 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'shfiguarts', 'shfiguarts-hinata-hyuga', 'S.H.Figuarts Hinata Hyuga', 'Bandai', 'Mid', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-rock-lee', 'S.H.Figuarts Rock Lee', 'Bandai', 'Mid', 'S.H.Figuarts | Naruto | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-sanji-wano-kuni', 'S.H.Figuarts Sanji -Wano Kuni-', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-nico-robin-wano-kuni', 'S.H.Figuarts Nico Robin -Wano Kuni-', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai')
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-nico-robin-wano-kuni', 'S.H.Figuarts Nico Robin -Wano Kuni-', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-trafalgar-law-wano-kuni', 'S.H.Figuarts Trafalgar Law -Wano Kuni-', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-yamato', 'S.H.Figuarts Yamato', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-nami-wano-kuni', 'S.H.Figuarts Nami -Wano Kuni-', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai')
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-trafalgar-law-wano-kuni', 'S.H.Figuarts Trafalgar Law -Wano Kuni-', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-yamato', 'S.H.Figuarts Yamato', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-nami-wano-kuni', 'S.H.Figuarts Nami -Wano Kuni-', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-shanks', 'S.H.Figuarts Shanks', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | Standard'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-franky-wano-kuni', 'S.H.Figuarts Franky -Wano Kuni-', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-frieza-final-form-resurrection-f', 'S.H.Figuarts Frieza Final Form (Resurrection F)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
@@ -317,13 +314,13 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'shfiguarts', 'shfiguarts-gokai-red', 'S.H.Figuarts Gokai Red', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai Gokaiger | Standard'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-gokai-silver', 'S.H.Figuarts Gokai Silver', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai Gokaiger | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-red-buster', 'S.H.Figuarts Red Buster', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai Go-Busters | P-Bandai'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-zyuoh-eagle', 'S.H.Figuarts Zyuoh Eagle', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai Zyuohger | Standard')
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-zyuoh-eagle', 'S.H.Figuarts Zyuoh Eagle', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai Zyuohger | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-don-momotaro', 'S.H.Figuarts Don Momotaro', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai DonBrothers | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-king-ohger-kuwagata-ohger', 'S.H.Figuarts King-Ohger Kuwagata Ohger', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai King-Ohger | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-jack', 'S.H.Figuarts Ultraman Jack', 'Bandai', 'Mid', 'S.H.Figuarts | Return of Ultraman | P-Bandai')
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-don-momotaro', 'S.H.Figuarts Don Momotaro', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai DonBrothers | Standard'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-king-ohger-kuwagata-ohger', 'S.H.Figuarts King-Ohger Kuwagata Ohger', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai King-Ohger | Standard'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-jack', 'S.H.Figuarts Ultraman Jack', 'Bandai', 'Mid', 'S.H.Figuarts | Return of Ultraman | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-leo', 'S.H.Figuarts Ultraman Leo', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Leo | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-80', 'S.H.Figuarts Ultraman 80', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman 80 | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-geed-primitive', 'S.H.Figuarts Ultraman Geed Primitive', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Geed | Standard'),
@@ -370,13 +367,13 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-ultraman-suit-ver-75', 'Figure-rise Standard Ultraman Suit Ver. 7.5', 'Bandai', 'Mid', 'Figure-rise Standard | Ultraman | Standard'),
   ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-amplified-imperialdramon', 'Figure-rise Standard Amplified Imperialdramon', 'Bandai', 'Mid', 'Figure-rise Standard | Digimon | Standard'),
   ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-amplified-wargreymon', 'Figure-rise Standard Amplified WarGreymon', 'Bandai', 'Mid', 'Figure-rise Standard | Digimon | Standard'),
-  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-amplified-metalgarurumon', 'Figure-rise Standard Amplified MetalGarurumon', 'Bandai', 'Mid', 'Figure-rise Standard | Digimon | Standard')
+  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-amplified-metalgarurumon', 'Figure-rise Standard Amplified MetalGarurumon', 'Bandai', 'Mid', 'Figure-rise Standard | Digimon | Standard'),
+  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-amplified-blackwargreymon', 'Figure-rise Standard Amplified BlackWarGreymon', 'Bandai', 'Mid', 'Figure-rise Standard | Digimon | P-Bandai'),
+  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-liger-zero', 'Figure-rise Standard Liger Zero', 'Bandai', 'Mid', 'Figure-rise Standard | Zoids | Standard'),
+  ('bandai_premium', 'hg-1144', 'hg-1144-moon-gundam', 'HG 1/144 Moon Gundam', 'Bandai', 'Mid', 'HG 1/144 | Gundam Moon | P-Bandai')
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-amplified-blackwargreymon', 'Figure-rise Standard Amplified BlackWarGreymon', 'Bandai', 'Mid', 'Figure-rise Standard | Digimon | P-Bandai'),
-  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-liger-zero', 'Figure-rise Standard Liger Zero', 'Bandai', 'Mid', 'Figure-rise Standard | Zoids | Standard'),
-  ('bandai_premium', 'hg-1144', 'hg-1144-moon-gundam', 'HG 1/144 Moon Gundam', 'Bandai', 'Mid', 'HG 1/144 | Gundam Moon | P-Bandai'),
   ('bandai_premium', 'hg-1144', 'hg-1144-gundam-g-self-perfect-pack', 'HG 1/144 Gundam G-Self Perfect Pack', 'Bandai', 'Mid', 'HG 1/144 | Gundam Reconguista | P-Bandai'),
   ('bandai_premium', 'hg-1144', 'hg-1144-barzam', 'HG 1/144 Barzam', 'Bandai', 'Mid', 'HG 1/144 | Zeta Gundam | P-Bandai'),
   ('bandai_premium', 'hg-1144', 'hg-1144-byarlant-custom', 'HG 1/144 Byarlant Custom', 'Bandai', 'Mid', 'HG 1/144 | Gundam Unicorn | P-Bandai'),
@@ -423,13 +420,13 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-88-dairugger-xv', 'Soul of Chogokin GX-88 Dairugger XV', 'Bandai', 'High', 'Soul of Chogokin | Armored Fleet Dairugger XV | Standard'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-68-gaogaigar', 'Soul of Chogokin GX-68 GaoGaiGar', 'Bandai', 'High', 'Soul of Chogokin | GaoGaiGar | Standard'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-69-goldion-hammer', 'Soul of Chogokin GX-69 Goldion Hammer', 'Bandai', 'High', 'Soul of Chogokin | GaoGaiGar | Standard'),
-  ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-82-muteki-shogun', 'Soul of Chogokin GX-82 Muteki Shogun', 'Bandai', 'High', 'Soul of Chogokin | Super Sentai Kakuranger | Standard')
+  ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-82-muteki-shogun', 'Soul of Chogokin GX-82 Muteki Shogun', 'Bandai', 'High', 'Soul of Chogokin | Super Sentai Kakuranger | Standard'),
+  ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-86-king-of-braves-gaogaigar', 'Soul of Chogokin GX-86 King of Braves GaoGaiGar', 'Bandai', 'Grail', 'Soul of Chogokin | GaoGaiGar | Standard'),
+  ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-75-mazinkaiser', 'Soul of Chogokin GX-75 Mazinkaiser', 'Bandai', 'High', 'Soul of Chogokin | Mazinkaiser | Standard'),
+  ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-99-getter-arc', 'Soul of Chogokin GX-99 Getter Arc', 'Bandai', 'High', 'Soul of Chogokin | Getter Robo Arc | Standard')
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-86-king-of-braves-gaogaigar', 'Soul of Chogokin GX-86 King of Braves GaoGaiGar', 'Bandai', 'Grail', 'Soul of Chogokin | GaoGaiGar | Standard'),
-  ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-75-mazinkaiser', 'Soul of Chogokin GX-75 Mazinkaiser', 'Bandai', 'High', 'Soul of Chogokin | Mazinkaiser | Standard'),
-  ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-99-getter-arc', 'Soul of Chogokin GX-99 Getter Arc', 'Bandai', 'High', 'Soul of Chogokin | Getter Robo Arc | Standard'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-04s-ufo-robot-grendizer-spazer', 'Soul of Chogokin GX-04S UFO Robot Grendizer & Spazer', 'Bandai', 'Grail', 'Soul of Chogokin | UFO Robot Grendizer | P-Bandai'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-91-getter-23-dc', 'Soul of Chogokin GX-91 Getter 2&3 D.C.', 'Bandai', 'High', 'Soul of Chogokin | Getter Robo | Standard'),
   ('bandai_premium', 'metal-robot-spirits', 'metal-robot-spirits-freedom-gundam', 'Metal Robot Spirits Freedom Gundam', 'Bandai', 'High', 'Metal Robot Spirits | Gundam SEED | Standard'),
@@ -476,13 +473,13 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'shfiguarts', 'shfiguarts-zamasu-fused', 'S.H.Figuarts Zamasu (Fused)', 'Bandai', 'High', 'S.H.Figuarts | Dragon Ball Super | P-Bandai'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-jinbe-knight-of-the-sea', 'Figuarts ZERO Jinbe -Knight of the Sea-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-sabo-fire-fist-inheritance', 'Figuarts ZERO Sabo -Fire Fist Inheritance-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
-  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-marco-the-phoenix', 'Figuarts ZERO Marco The Phoenix', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | P-Bandai')
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-marco-the-phoenix', 'Figuarts ZERO Marco The Phoenix', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | P-Bandai'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-donquixote-doflamingo-overheat', 'Figuarts ZERO Donquixote Doflamingo -Overheat-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-eustass-kid-punk-gibson', 'Figuarts ZERO Eustass Kid -Punk Gibson-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | P-Bandai'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-kozuki-oden-paradise-totsuka', 'Figuarts ZERO Kozuki Oden -Paradise Totsuka-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard')
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-donquixote-doflamingo-overheat', 'Figuarts ZERO Donquixote Doflamingo -Overheat-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
-  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-eustass-kid-punk-gibson', 'Figuarts ZERO Eustass Kid -Punk Gibson-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | P-Bandai'),
-  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-kozuki-oden-paradise-totsuka', 'Figuarts ZERO Kozuki Oden -Paradise Totsuka-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-whitebeard-last-captain', 'Figuarts ZERO Whitebeard -Last Captain-', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-monkey-d-luffy-bound-man-king-cobra', 'Figuarts ZERO Monkey D. Luffy -Bound Man- King Cobra', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-katakuri-mochi-tsuki', 'Figuarts ZERO Katakuri -Mochi Tsuki-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
@@ -529,13 +526,13 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'metal-build', 'metal-build-eva-unit-02-metal-build', 'Metal Build EVA Unit-02 (Metal Build)', 'Bandai', 'Grail', 'Metal Build | Evangelion | P-Bandai'),
   ('bandai_premium', 'proplica', 'proplica-tanjiro-nichirin-blade-11', 'Proplica Tanjiro Nichirin Blade (1/1)', 'Bandai', 'High', 'Proplica | Demon Slayer | Standard'),
   ('bandai_premium', 'proplica', 'proplica-rengoku-nichirin-blade-11', 'Proplica Rengoku Nichirin Blade (1/1)', 'Bandai', 'High', 'Proplica | Demon Slayer | P-Bandai'),
-  ('bandai_premium', 'proplica', 'proplica-moon-stick-sailor-moon', 'Proplica Moon Stick (Sailor Moon)', 'Bandai', 'Mid', 'Proplica | Sailor Moon | Standard')
+  ('bandai_premium', 'proplica', 'proplica-moon-stick-sailor-moon', 'Proplica Moon Stick (Sailor Moon)', 'Bandai', 'Mid', 'Proplica | Sailor Moon | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-crisis-moon-compact-sailor-moon', 'Proplica Crisis Moon Compact (Sailor Moon)', 'Bandai', 'Mid', 'Proplica | Sailor Moon | P-Bandai'),
+  ('bandai_premium', 'proplica', 'proplica-zanpakuto-tensa-zangetsu', 'Proplica Zanpakuto Tensa Zangetsu', 'Bandai', 'High', 'Proplica | Bleach | P-Bandai'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-2023-minus-one', 'S.H.MonsterArts Godzilla (2023 Minus One)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla Minus One | Standard')
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('bandai_premium', 'proplica', 'proplica-crisis-moon-compact-sailor-moon', 'Proplica Crisis Moon Compact (Sailor Moon)', 'Bandai', 'Mid', 'Proplica | Sailor Moon | P-Bandai'),
-  ('bandai_premium', 'proplica', 'proplica-zanpakuto-tensa-zangetsu', 'Proplica Zanpakuto Tensa Zangetsu', 'Bandai', 'High', 'Proplica | Bleach | P-Bandai'),
-  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-2023-minus-one', 'S.H.MonsterArts Godzilla (2023 Minus One)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla Minus One | Standard'),
   ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-2019-king-of-the-monsters', 'S.H.MonsterArts Godzilla (2019 King of the Monsters)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla | Standard'),
   ('bandai_premium', 'shmonsterarts', 'shmonsterarts-king-ghidorah-2019', 'S.H.MonsterArts King Ghidorah (2019)', 'Bandai', 'Grail', 'S.H.MonsterArts | Godzilla | Standard'),
   ('bandai_premium', 'shmonsterarts', 'shmonsterarts-mechagodzilla-2021', 'S.H.MonsterArts Mechagodzilla (2021)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla vs Kong | Standard'),
@@ -582,13 +579,13 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'sd-gundam-ex-standard', 'sd-gundam-ex-standard-wing-gundam-zero-ew', 'SD Gundam EX-Standard Wing Gundam Zero (EW)', 'Bandai', 'Standard', 'SD Gundam EX-Standard | Gundam Wing EW | Standard'),
   ('bandai_premium', 'sd-gundam-cross-silhouette', 'sd-gundam-cross-silhouette-rx-78-2-gundam-cross-silhouette', 'SD Gundam Cross Silhouette RX-78-2 Gundam (Cross Silhouette)', 'Bandai', 'Standard', 'SD Gundam Cross Silhouette | Mobile Suit Gundam | Standard'),
   ('bandai_premium', 'sd-gundam-cross-silhouette', 'sd-gundam-cross-silhouette-zeta-gundam-cross-silhouette', 'SD Gundam Cross Silhouette Zeta Gundam (Cross Silhouette)', 'Bandai', 'Mid', 'SD Gundam Cross Silhouette | Zeta Gundam | P-Bandai'),
-  ('bandai_premium', 'entry-grade', 'entry-grade-rx-78-2-gundam-entry-grade', 'Entry Grade RX-78-2 Gundam (Entry Grade)', 'Bandai', 'Standard', 'Entry Grade | Mobile Suit Gundam | Standard')
+  ('bandai_premium', 'entry-grade', 'entry-grade-rx-78-2-gundam-entry-grade', 'Entry Grade RX-78-2 Gundam (Entry Grade)', 'Bandai', 'Standard', 'Entry Grade | Mobile Suit Gundam | Standard'),
+  ('bandai_premium', 'entry-grade', 'entry-grade-strike-gundam-entry-grade', 'Entry Grade Strike Gundam (Entry Grade)', 'Bandai', 'Standard', 'Entry Grade | Gundam SEED | Standard'),
+  ('bandai_premium', 'entry-grade', 'entry-grade-lah-gundam-entry-grade', 'Entry Grade Lah Gundam (Entry Grade)', 'Bandai', 'Standard', 'Entry Grade | Gundam Build Metaverse | Standard'),
+  ('bandai_premium', '30mm', '30mm-eexm-17-alto-green', '30MM eEXM-17 Alto Green', 'Bandai', 'Standard', '30MM | 30 Minutes Missions | Standard')
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('bandai_premium', 'entry-grade', 'entry-grade-strike-gundam-entry-grade', 'Entry Grade Strike Gundam (Entry Grade)', 'Bandai', 'Standard', 'Entry Grade | Gundam SEED | Standard'),
-  ('bandai_premium', 'entry-grade', 'entry-grade-lah-gundam-entry-grade', 'Entry Grade Lah Gundam (Entry Grade)', 'Bandai', 'Standard', 'Entry Grade | Gundam Build Metaverse | Standard'),
-  ('bandai_premium', '30mm', '30mm-eexm-17-alto-green', '30MM eEXM-17 Alto Green', 'Bandai', 'Standard', '30MM | 30 Minutes Missions | Standard'),
   ('bandai_premium', '30mm', '30mm-eexm-21-rabiot-white', '30MM eEXM-21 Rabiot White', 'Bandai', 'Standard', '30MM | 30 Minutes Missions | Standard'),
   ('bandai_premium', '30mm', '30mm-option-armor-commander-type-portanova', '30MM Option Armor Commander Type (Portanova)', 'Bandai', 'Standard', '30MM | 30 Minutes Missions | P-Bandai'),
   ('bandai_premium', 'hg-1144', 'hg-1144-gundam-calibarn', 'HG 1/144 Gundam Calibarn', 'Bandai', 'Mid', 'HG 1/144 | Gundam: Witch from Mercury | Standard'),
@@ -616,29 +613,19 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'shfiguarts', 'shfiguarts-monkey-d-luffy-film-red', 'S.H.Figuarts Monkey D. Luffy (Film Red)', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece Film Red | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-uta-concert-ver-extra-battle', 'Figuarts ZERO Uta -Concert Ver.- Extra Battle', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece Film Red | Standard'),
   ('bandai_premium', 'csm', 'csm-decadriver-ver-2', 'CSM Decadriver (Ver. 2)', 'Bandai', 'Grail', 'CSM | Kamen Rider Decade | P-Bandai'),
-  ('bandai_premium', 'csm', 'csm-fourze-driver', 'CSM Fourze Driver', 'Bandai', 'Grail', 'CSM | Kamen Rider Fourze | P-Bandai'),
-  ('bandai_premium', 'csm', 'csm-build-driver', 'CSM Build Driver', 'Bandai', 'Grail', 'CSM | Kamen Rider Build | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-sengoku-driver-gaim', 'CSM Sengoku Driver (Gaim)', 'Bandai', 'Grail', 'CSM | Kamen Rider Gaim | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-faiz-gear-ver-2', 'CSM Faiz Gear (Ver. 2)', 'Bandai', 'Grail', 'CSM | Kamen Rider 555 | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-kaixa-gear', 'CSM Kaixa Gear', 'Bandai', 'Grail', 'CSM | Kamen Rider 555 | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-gatack-zecter', 'CSM Gatack Zecter', 'Bandai', 'High', 'CSM | Kamen Rider Kabuto | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-lost-driver', 'CSM Lost Driver', 'Bandai', 'High', 'CSM | Kamen Rider W | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-buggle-driver-ii-god-maximum-gamer', 'CSM Buggle Driver II (God Maximum Gamer)', 'Bandai', 'High', 'CSM | Kamen Rider Ex-Aid | P-Bandai'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-tiga-multi-type', 'S.H.Figuarts Ultraman Tiga Multi Type', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Tiga | Standard'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-tiga-sky-type', 'S.H.Figuarts Ultraman Tiga Sky Type', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Tiga | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-zero-beyond', 'S.H.Figuarts Ultraman Zero Beyond', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Zero | P-Bandai'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-geed-primitive', 'S.H.Figuarts Ultraman Geed Primitive', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Geed | Standard'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-geed-royal-mega-master', 'S.H.Figuarts Ultraman Geed Royal Mega Master', 'Bandai', 'High', 'S.H.Figuarts | Ultraman Geed | P-Bandai'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-blazar', 'S.H.Figuarts Ultraman Blazar', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Blazar | Standard'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-arc', 'S.H.Figuarts Ultraman Arc', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Arc | Standard'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-decker-flash-type', 'S.H.Figuarts Ultraman Decker Flash Type', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Decker | Standard'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-evangelion-unit-01-awakened-ver', 'Robot Spirits Evangelion Unit-01 (Awakened Ver.)', 'Bandai', 'High', 'Robot Spirits | Evangelion: 3.0 | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-evangelion-unit-02-production-model-type-s', 'Robot Spirits Evangelion Unit-02 (Production Model) Type S', 'Bandai', 'High', 'Robot Spirits | Evangelion: 3.0+1.0 | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-evangelion-unit-08-gamma', 'Robot Spirits Evangelion Unit-08 Gamma', 'Bandai', 'High', 'Robot Spirits | Evangelion: 3.0+1.0 | P-Bandai'),
-  ('bandai_premium', 'robot-spirits', 'robot-spirits-evangelion-unit-13', 'Robot Spirits Evangelion Unit-13', 'Bandai', 'High', 'Robot Spirits | Evangelion: 3.0+1.0 | P-Bandai')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-evangelion-unit-13', 'Robot Spirits Evangelion Unit-13', 'Bandai', 'High', 'Robot Spirits | Evangelion: 3.0+1.0 | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-evangelion-mark06', 'Robot Spirits Evangelion Mark.06', 'Bandai', 'High', 'Robot Spirits | Evangelion: 2.0 | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-lancelot-sin-ver-anime', 'Robot Spirits Lancelot siN ver. A.N.I.M.E.', 'Bandai', 'Mid', 'Robot Spirits | Code Geass: Rozé | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-guren-seiten-eight-elements-ver-anime', 'Robot Spirits Guren S.E.I.T.E.N. Eight Elements ver. A.N.I.M.E.', 'Bandai', 'Mid', 'Robot Spirits | Code Geass R2 | P-Bandai'),
@@ -648,7 +635,10 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'proplica', 'proplica-tanjiro-kamado-earrings-hanafuda', 'Proplica Tanjiro Kamado Earrings (Hanafuda)', 'Bandai', 'Mid', 'Proplica | Demon Slayer | Standard'),
   ('bandai_premium', 'proplica', 'proplica-nichirin-sword-tanjiro-kamado', 'Proplica Nichirin Sword (Tanjiro Kamado)', 'Bandai', 'High', 'Proplica | Demon Slayer | Standard'),
   ('bandai_premium', 'proplica', 'proplica-jujutsu-kaisen-playback-ryomen-sukuna-finger', 'Proplica Jujutsu Kaisen Playback -Ryomen Sukuna Finger-', 'Bandai', 'Mid', 'Proplica | Jujutsu Kaisen | Standard'),
-  ('bandai_premium', 'proplica', 'proplica-sailor-moon-eternal-moon-article', 'Proplica Sailor Moon Eternal Moon Article', 'Bandai', 'High', 'Proplica | Sailor Moon Eternal | P-Bandai'),
+  ('bandai_premium', 'proplica', 'proplica-sailor-moon-eternal-moon-article', 'Proplica Sailor Moon Eternal Moon Article', 'Bandai', 'High', 'Proplica | Sailor Moon Eternal | P-Bandai')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('bandai_premium', 'proplica', 'proplica-holy-grail-brilliant-color-edition', 'Proplica Holy Grail -Brilliant Color Edition-', 'Bandai', 'High', 'Proplica | Sailor Moon S | P-Bandai'),
   ('bandai_premium', 'proplica', 'proplica-zanpakuto-zangetsu-tensa-final-form', 'Proplica Zanpakuto Zangetsu (Tensa) -Final Form-', 'Bandai', 'High', 'Proplica | Bleach TYBW | Standard'),
   ('bandai_premium', 'metal-build', 'metal-build-gundam-astray-red-frame-kai', 'Metal Build Gundam Astray Red Frame Kai', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Astray | P-Bandai'),
@@ -658,10 +648,8 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'metal-build', 'metal-build-strike-freedom-gundam-full-burst-mode', 'Metal Build Strike Freedom Gundam (Full Burst Mode)', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Destiny | Standard'),
   ('bandai_premium', 'metal-build', 'metal-build-strike-gundam-iwsp', 'Metal Build Strike Gundam + IWSP', 'Bandai', 'Grail', 'Metal Build | Gundam SEED | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-destiny-gundam-full-package', 'Metal Build Destiny Gundam (Full Package)', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Destiny | P-Bandai'),
-  ('bandai_premium', 'metal-build', 'metal-build-infinite-justice-gundam', 'Metal Build Infinite Justice Gundam', 'Bandai', 'High', 'Metal Build | Gundam SEED Destiny | Standard'),
   ('bandai_premium', 'metal-build', 'metal-build-00-raiser-designers-blue', 'Metal Build 00 Raiser (Designer''s Blue)', 'Bandai', 'Grail', 'Metal Build | Gundam 00 | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-00-qant-full-saber', 'Metal Build 00 Qan[T] Full Saber', 'Bandai', 'Grail', 'Metal Build | Gundam 00: Trailblazer | P-Bandai'),
-  ('bandai_premium', 'metal-build', 'metal-build-hi-nu-gundam', 'Metal Build Hi-Nu Gundam', 'Bandai', 'Grail', 'Metal Build | Char''s Counterattack | Standard'),
   ('bandai_premium', 'metal-build', 'metal-build-gundam-f91-harrison-maddin', 'Metal Build Gundam F91 (Harrison Maddin)', 'Bandai', 'High', 'Metal Build | Gundam F91 | P-Bandai'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-105-daitarn-3-fa', 'Soul of Chogokin GX-105 Daitarn 3 F.A.', 'Bandai', 'High', 'Soul of Chogokin | Daitarn 3 | Standard'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-100-gaiking', 'Soul of Chogokin GX-100 Gaiking', 'Bandai', 'High', 'Soul of Chogokin | Gaiking | Standard'),
@@ -673,11 +661,9 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'chogokin', 'chogokin-voltron-30th-anniversary', 'Chogokin Voltron (30th Anniversary)', 'Bandai', 'High', 'Chogokin | Voltron | Standard'),
   ('bandai_premium', 'chogokin', 'chogokin-grendizer-dynamic-classics', 'Chogokin Grendizer (Dynamic Classics)', 'Bandai', 'High', 'Chogokin | UFO Robot Grendizer | Standard'),
   ('bandai_premium', 'chogokin', 'chogokin-mazinger-z-dynamic-classics', 'Chogokin Mazinger Z (Dynamic Classics)', 'Bandai', 'High', 'Chogokin | Mazinger Z | Standard'),
-  ('bandai_premium', 'csm', 'csm-ooo-driver-complete-set', 'CSM OOO Driver Complete Set', 'Bandai', 'Grail', 'CSM | Kamen Rider OOO | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-w-driver-ver-15', 'CSM W Driver (ver. 1.5)', 'Bandai', 'Grail', 'CSM | Kamen Rider W | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-faiz-gear-ver-2', 'CSM Faiz Gear (ver. 2)', 'Bandai', 'Grail', 'CSM | Kamen Rider 555 | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-delta-gear', 'CSM Delta Gear', 'Bandai', 'High', 'CSM | Kamen Rider 555 | P-Bandai'),
-  ('bandai_premium', 'csm', 'csm-kaixa-gear', 'CSM Kaixa Gear', 'Bandai', 'High', 'CSM | Kamen Rider 555 | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-decadriver-ver-2', 'CSM Decadriver (ver. 2)', 'Bandai', 'Grail', 'CSM | Kamen Rider Decade | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-diend-driver', 'CSM DiEnd Driver', 'Bandai', 'High', 'CSM | Kamen Rider Decade | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-arcle', 'CSM Arcle', 'Bandai', 'Grail', 'CSM | Kamen Rider Kuuga | P-Bandai'),
@@ -686,12 +672,8 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'csm', 'csm-buggle-driver-ii', 'CSM Buggle Driver II', 'Bandai', 'High', 'CSM | Kamen Rider Ex-Aid | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-v-buckle-dragvisor', 'CSM V Buckle & Dragvisor', 'Bandai', 'Grail', 'CSM | Kamen Rider Ryuki | P-Bandai'),
   ('bandai_premium', 'proplica', 'proplica-moon-stick-brilliant-color-edition', 'Proplica Moon Stick -Brilliant Color Edition-', 'Bandai', 'High', 'Proplica | Sailor Moon | P-Bandai'),
-  ('bandai_premium', 'proplica', 'proplica-spiral-heart-moon-rod', 'Proplica Spiral Heart Moon Rod', 'Bandai', 'Mid', 'Proplica | Sailor Moon S | Standard'),
   ('bandai_premium', 'proplica', 'proplica-kaleidomoon-scope', 'Proplica Kaleidomoon Scope', 'Bandai', 'Mid', 'Proplica | Sailor Moon SuperS | Standard'),
-  ('bandai_premium', 'proplica', 'proplica-tanjiro-kamado-earrings-demon-slayer', 'Proplica Tanjiro Kamado Earrings (Demon Slayer)', 'Bandai', 'Mid', 'Proplica | Demon Slayer | P-Bandai')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('bandai_premium', 'proplica', 'proplica-tanjiro-kamado-earrings-demon-slayer', 'Proplica Tanjiro Kamado Earrings (Demon Slayer)', 'Bandai', 'Mid', 'Proplica | Demon Slayer | P-Bandai'),
   ('bandai_premium', 'proplica', 'proplica-nezuko-bamboo-mouthpiece', 'Proplica Nezuko Bamboo Mouthpiece', 'Bandai', 'Mid', 'Proplica | Demon Slayer | Standard'),
   ('bandai_premium', 'proplica', 'proplica-nichirin-blade-rengoku-kyojuro', 'Proplica Nichirin Blade (Rengoku Kyojuro)', 'Bandai', 'High', 'Proplica | Demon Slayer | P-Bandai'),
   ('bandai_premium', 'proplica', 'proplica-communicator-mercury', 'Proplica Communicator -Mercury-', 'Bandai', 'Mid', 'Proplica | Sailor Moon | P-Bandai'),
@@ -706,19 +688,19 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'sic', 'sic-kamen-rider-den-o-sword-form', 'S.I.C. Kamen Rider Den-O Sword Form', 'Bandai', 'Mid', 'S.I.C. | Kamen Rider Den-O | Standard'),
   ('bandai_premium', 'sic', 'sic-kamen-rider-w-cyclonejoker', 'S.I.C. Kamen Rider W CycloneJoker', 'Bandai', 'Mid', 'S.I.C. | Kamen Rider W | Standard'),
   ('bandai_premium', 'sic', 'sic-kamen-rider-ooo-tatoba-combo', 'S.I.C. Kamen Rider OOO Tatoba Combo', 'Bandai', 'Mid', 'S.I.C. | Kamen Rider OOO | Standard'),
-  ('bandai_premium', 'sic', 'sic-kamen-rider-gaim-orange-arms', 'S.I.C. Kamen Rider Gaim Orange Arms', 'Bandai', 'Mid', 'S.I.C. | Kamen Rider Gaim | Standard'),
+  ('bandai_premium', 'sic', 'sic-kamen-rider-gaim-orange-arms', 'S.I.C. Kamen Rider Gaim Orange Arms', 'Bandai', 'Mid', 'S.I.C. | Kamen Rider Gaim | Standard')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('bandai_premium', 'sic', 'sic-kamen-rider-build-rabbittank', 'S.I.C. Kamen Rider Build RabbitTank', 'Bandai', 'Mid', 'S.I.C. | Kamen Rider Build | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-portgas-d-ace-fire-fist', 'Figuarts ZERO Portgas D. Ace -Fire Fist-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-monkey-d-luffy-gear-5-gigant', 'Figuarts ZERO Monkey D. Luffy -Gear 5- Gigant', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-sanji-diable-jambe', 'Figuarts ZERO Sanji -Diable Jambe-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
-  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-trafalgar-law-gamma-knife', 'Figuarts ZERO Trafalgar Law -Gamma Knife-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
-  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-kaido-king-of-the-beasts-twin-dragons', 'Figuarts ZERO Kaido King of the Beasts -Twin Dragons-', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-shanks-conquerors-haki', 'Figuarts ZERO Shanks -Conqueror''s Haki-', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-son-goku-ssj-burning-battles', 'Figuarts ZERO Son Goku -SSJ- Burning Battles', 'Bandai', 'Mid', 'Figuarts ZERO | Dragon Ball Z | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-vegeta-galick-gun', 'Figuarts ZERO Vegeta -Galick Gun-', 'Bandai', 'Mid', 'Figuarts ZERO | Dragon Ball Z | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-gogeta-ssb-burning-battles', 'Figuarts ZERO Gogeta SSB -Burning Battles-', 'Bandai', 'Mid', 'Figuarts ZERO | Dragon Ball Super: Broly | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-boa-hancock-love-hurricane', 'Figuarts ZERO Boa Hancock -Love Hurricane-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
-  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-yamato-thunder-bagua', 'Figuarts ZERO Yamato -Thunder Bagua-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'figuarts-zero', 'figuarts-zero-nico-robin-demonio-fleur', 'Figuarts ZERO Nico Robin -Demonio Fleur-', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-vegito-super-saiyan-blue', 'S.H.Figuarts Vegito Super Saiyan Blue', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-piccolo-power-awakening', 'S.H.Figuarts Piccolo (Power Awakening)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super: Super Hero | P-Bandai'),
@@ -726,10 +708,8 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-zero-one-rising-hopper', 'S.H.Figuarts Kamen Rider Zero-One Rising Hopper', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Zero-One | Standard'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-saber-brave-dragon', 'S.H.Figuarts Kamen Rider Saber Brave Dragon', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Saber | Standard'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-revice-rex-genome', 'S.H.Figuarts Kamen Rider Revice Rex Genome', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Revice | Standard'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-geats-magnum-boost', 'S.H.Figuarts Kamen Rider Geats Magnum Boost', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Geats | Standard'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-gotchard', 'S.H.Figuarts Kamen Rider Gotchard', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Gotchard | Standard'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-trigger-multi-type', 'S.H.Figuarts Ultraman Trigger Multi Type', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Trigger | Standard'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-decker-flash-type', 'S.H.Figuarts Ultraman Decker Flash Type', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Decker | Standard'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-gundam-aerial-permet-score-5', 'Robot Spirits Gundam Aerial (Permet Score 5)', 'Bandai', 'High', 'Robot Spirits | Gundam: Witch from Mercury | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-gundam-lfrith-jiu', 'Robot Spirits Gundam Lfrith Jiu', 'Bandai', 'Mid', 'Robot Spirits | Gundam: Witch from Mercury | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-gundam-schwarzette', 'Robot Spirits Gundam Schwarzette', 'Bandai', 'Mid', 'Robot Spirits | Gundam: Witch from Mercury | Standard'),
@@ -738,13 +718,8 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'robot-spirits', 'robot-spirits-gundam-calibarn', 'Robot Spirits Gundam Calibarn', 'Bandai', 'High', 'Robot Spirits | Gundam: Witch from Mercury | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-xi-gundam-ver-anime', 'Robot Spirits Xi Gundam ver. A.N.I.M.E.', 'Bandai', 'High', 'Robot Spirits | Gundam Hathaway | Standard'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-penelope-ver-anime', 'Robot Spirits Penelope ver. A.N.I.M.E.', 'Bandai', 'High', 'Robot Spirits | Gundam Hathaway | Standard'),
-  ('bandai_premium', 'robot-spirits', 'robot-spirits-hyaku-shiki-ver-anime', 'Robot Spirits Hyaku Shiki ver. A.N.I.M.E.', 'Bandai', 'Mid', 'Robot Spirits | Zeta Gundam | Standard'),
-  ('bandai_premium', 'robot-spirits', 'robot-spirits-rick-dias-ver-anime', 'Robot Spirits Rick Dias ver. A.N.I.M.E.', 'Bandai', 'Mid', 'Robot Spirits | Zeta Gundam | P-Bandai'),
   ('bandai_premium', 'robot-spirits', 'robot-spirits-full-armor-zz-gundam-ver-anime', 'Robot Spirits Full Armor ZZ Gundam ver. A.N.I.M.E.', 'Bandai', 'High', 'Robot Spirits | Gundam ZZ | P-Bandai'),
-  ('bandai_premium', 'robot-spirits', 'robot-spirits-kshatriya-ver-anime', 'Robot Spirits Kshatriya ver. A.N.I.M.E.', 'Bandai', 'High', 'Robot Spirits | Gundam Unicorn | Standard')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-kshatriya-ver-anime', 'Robot Spirits Kshatriya ver. A.N.I.M.E.', 'Bandai', 'High', 'Robot Spirits | Gundam Unicorn | Standard'),
   ('bandai_premium', 'mg-1100', 'mg-1100-wing-gundam-zero-ew-verka-special-coating', 'MG 1/100 Wing Gundam Zero EW Ver.Ka (Special Coating)', 'Bandai', 'High', 'MG 1/100 | Gundam Wing EW | P-Bandai'),
   ('bandai_premium', 'mg-1100', 'mg-1100-sazabi-verka-special-coating', 'MG 1/100 Sazabi Ver.Ka (Special Coating)', 'Bandai', 'High', 'MG 1/100 | Gundam CCA | P-Bandai'),
   ('bandai_premium', 'mg-1100', 'mg-1100-nu-gundam-verka-titanium-finish', 'MG 1/100 Nu Gundam Ver.Ka (Titanium Finish)', 'Bandai', 'High', 'MG 1/100 | Gundam CCA | P-Bandai'),
@@ -766,7 +741,10 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'mg-1100', 'mg-1100-buster-gundam', 'MG 1/100 Buster Gundam', 'Bandai', 'Mid', 'MG 1/100 | Gundam SEED | P-Bandai'),
   ('bandai_premium', 'mg-1100', 'mg-1100-blitz-gundam', 'MG 1/100 Blitz Gundam', 'Bandai', 'Mid', 'MG 1/100 | Gundam SEED | P-Bandai'),
   ('bandai_premium', 'rg-1144', 'rg-1144-strike-freedom-gundam-titanium-finish', 'RG 1/144 Strike Freedom Gundam (Titanium Finish)', 'Bandai', 'Mid', 'RG 1/144 | Gundam SEED Destiny | P-Bandai'),
-  ('bandai_premium', 'rg-1144', 'rg-1144-destiny-gundam-titanium-finish', 'RG 1/144 Destiny Gundam (Titanium Finish)', 'Bandai', 'Mid', 'RG 1/144 | Gundam SEED Destiny | P-Bandai'),
+  ('bandai_premium', 'rg-1144', 'rg-1144-destiny-gundam-titanium-finish', 'RG 1/144 Destiny Gundam (Titanium Finish)', 'Bandai', 'Mid', 'RG 1/144 | Gundam SEED Destiny | P-Bandai')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('bandai_premium', 'rg-1144', 'rg-1144-00-raiser-trans-am-clear', 'RG 1/144 00 Raiser (Trans-Am Clear)', 'Bandai', 'Mid', 'RG 1/144 | Gundam 00 | P-Bandai'),
   ('bandai_premium', 'rg-1144', 'rg-1144-unicorn-gundam-luminous-crystal', 'RG 1/144 Unicorn Gundam (Luminous Crystal)', 'Bandai', 'Mid', 'RG 1/144 | Gundam Unicorn | P-Bandai'),
   ('bandai_premium', 'rg-1144', 'rg-1144-banshee-norn-final-battle-ver', 'RG 1/144 Banshee Norn (Final Battle Ver.)', 'Bandai', 'Mid', 'RG 1/144 | Gundam Unicorn | P-Bandai'),
@@ -794,10 +772,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'super-robot-chogokin', 'super-robot-chogokin-gaofighgar', 'Super Robot Chogokin GaoFighGar', 'Bandai', 'High', 'Super Robot Chogokin | GaoGaiGar FINAL | P-Bandai'),
   ('bandai_premium', 'super-robot-chogokin', 'super-robot-chogokin-gravion-zwei-sol-gravion', 'Super Robot Chogokin Gravion Zwei Sol Gravion', 'Bandai', 'High', 'Super Robot Chogokin | Gravion Zwei | P-Bandai'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-93-space-pirate-captain-harlock', 'Soul of Chogokin GX-93 Space Pirate Captain Harlock', 'Bandai', 'High', 'Soul of Chogokin | Captain Harlock | Standard'),
-  ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-92-ideon', 'Soul of Chogokin GX-92 Ideon', 'Bandai', 'Grail', 'Soul of Chogokin | Space Runaway Ideon | Standard')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-92-ideon', 'Soul of Chogokin GX-92 Ideon', 'Bandai', 'Grail', 'Soul of Chogokin | Space Runaway Ideon | Standard'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-79-voltes-v-fa', 'Soul of Chogokin GX-79 Voltes V F.A.', 'Bandai', 'High', 'Soul of Chogokin | Voltes V | Standard'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-95-gordian-warrior', 'Soul of Chogokin GX-95 Gordian Warrior', 'Bandai', 'High', 'Soul of Chogokin | Gordian Warrior | Standard'),
   ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-81-zamboacezambullking-bial-set', 'Soul of Chogokin GX-81 Zamboace/Zambull/King Bial Set', 'Bandai', 'Grail', 'Soul of Chogokin | Zambot 3 | P-Bandai'),
@@ -819,7 +794,10 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'shfiguarts', 'shfiguarts-obi-wan-kenobi-revenge-of-the-sith', 'S.H.Figuarts Obi-Wan Kenobi (Revenge of the Sith)', 'Bandai', 'Mid', 'S.H.Figuarts | Star Wars | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-clone-trooper-phase-ii', 'S.H.Figuarts Clone Trooper (Phase II)', 'Bandai', 'Mid', 'S.H.Figuarts | Star Wars | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-stormtrooper-a-new-hope', 'S.H.Figuarts Stormtrooper (A New Hope)', 'Bandai', 'Mid', 'S.H.Figuarts | Star Wars | Standard'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-kylo-ren-the-rise-of-skywalker', 'S.H.Figuarts Kylo Ren (The Rise of Skywalker)', 'Bandai', 'Mid', 'S.H.Figuarts | Star Wars | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kylo-ren-the-rise-of-skywalker', 'S.H.Figuarts Kylo Ren (The Rise of Skywalker)', 'Bandai', 'Mid', 'S.H.Figuarts | Star Wars | P-Bandai')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('bandai_premium', 'shfiguarts', 'shfiguarts-ahsoka-tano-the-mandalorian', 'S.H.Figuarts Ahsoka Tano (The Mandalorian)', 'Bandai', 'Mid', 'S.H.Figuarts | Star Wars: The Mandalorian | P-Bandai'),
   ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-1954-first-generation', 'S.H.MonsterArts Godzilla (1954) First Generation', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla | Standard'),
   ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-1995-burning', 'S.H.MonsterArts Godzilla (1995 Burning)', 'Bandai', 'Grail', 'S.H.MonsterArts | Godzilla vs. Destoroyah | P-Bandai'),
@@ -847,10 +825,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-31e-siegfried-chuck-mustang', 'DX Chogokin VF-31E Siegfried (Chuck Mustang)', 'Bandai', 'High', 'DX Chogokin | Macross Delta | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-strike-freedom-gundam-type-ii', 'Metal Build Strike Freedom Gundam Type II', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Freedom | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-mighty-strike-freedom-gundam', 'Metal Build Mighty Strike Freedom Gundam', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Freedom | P-Bandai'),
-  ('bandai_premium', 'metal-build', 'metal-build-immortal-justice-gundam', 'Metal Build Immortal Justice Gundam', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Freedom | P-Bandai')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('bandai_premium', 'metal-build', 'metal-build-immortal-justice-gundam', 'Metal Build Immortal Justice Gundam', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Freedom | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-rising-freedom-gundam', 'Metal Build Rising Freedom Gundam', 'Bandai', 'High', 'Metal Build | Gundam SEED Freedom | Standard'),
   ('bandai_premium', 'metal-build', 'metal-build-destiny-gundam-spec-ii', 'Metal Build Destiny Gundam Spec II', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Freedom | P-Bandai'),
   ('bandai_premium', 'metal-build', 'metal-build-gundam-aerial-full-weapons', 'Metal Build Gundam Aerial (Full Weapons)', 'Bandai', 'Grail', 'Metal Build | Gundam: Witch from Mercury | P-Bandai'),
@@ -872,7 +847,10 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'csm', 'csm-amazon-driver', 'CSM Amazon Driver', 'Bandai', 'Grail', 'CSM | Kamen Rider Amazon | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-typhoon-belt-kamen-rider-v3', 'CSM Typhoon Belt (Kamen Rider V3)', 'Bandai', 'Grail', 'CSM | Kamen Rider V3 | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-accel-driver', 'CSM Accel Driver', 'Bandai', 'High', 'CSM | Kamen Rider W | P-Bandai'),
-  ('bandai_premium', 'csm', 'csm-wizard-driver', 'CSM Wizard Driver', 'Bandai', 'Grail', 'CSM | Kamen Rider Wizard | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-wizard-driver', 'CSM Wizard Driver', 'Bandai', 'Grail', 'CSM | Kamen Rider Wizard | P-Bandai')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('bandai_premium', 'csm', 'csm-ghost-driver', 'CSM Ghost Driver', 'Bandai', 'High', 'CSM | Kamen Rider Ghost | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-drive-driver', 'CSM Drive Driver', 'Bandai', 'Grail', 'CSM | Kamen Rider Drive | P-Bandai'),
   ('bandai_premium', 'csm', 'csm-sclashjelly-sclash-driver', 'CSM Sclashjelly & Sclash Driver', 'Bandai', 'High', 'CSM | Kamen Rider Build | P-Bandai'),
@@ -900,10 +878,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'gashapon', 'gashapon-hg-gacha-evangelion-set-complete', 'Gashapon HG Gacha Evangelion Set (Complete)', 'Bandai', 'Standard', 'Gashapon | Evangelion | Standard'),
   ('bandai_premium', 'gashapon', 'gashapon-hg-gacha-godzilla-2024-set', 'Gashapon HG Gacha Godzilla 2024 Set', 'Bandai', 'Standard', 'Gashapon | Godzilla | Standard'),
   ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-kamen-rider-kuuga-mighty-form', 'Figure-rise Standard Kamen Rider Kuuga Mighty Form', 'Bandai', 'Mid', 'Figure-rise Standard | Kamen Rider Kuuga | Standard'),
-  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-kamen-rider-faiz', 'Figure-rise Standard Kamen Rider Faiz', 'Bandai', 'Mid', 'Figure-rise Standard | Kamen Rider 555 | Standard')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-kamen-rider-faiz', 'Figure-rise Standard Kamen Rider Faiz', 'Bandai', 'Mid', 'Figure-rise Standard | Kamen Rider 555 | Standard'),
   ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-kamen-rider-den-o-sword-form', 'Figure-rise Standard Kamen Rider Den-O Sword Form', 'Bandai', 'Mid', 'Figure-rise Standard | Kamen Rider Den-O | Standard'),
   ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-kamen-rider-ooo-tatoba-combo', 'Figure-rise Standard Kamen Rider OOO TaToBa Combo', 'Bandai', 'Mid', 'Figure-rise Standard | Kamen Rider OOO | Standard'),
   ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-kamen-rider-double-cyclonejoker-gold-frame', 'Figure-rise Standard Kamen Rider Double CycloneJoker (Gold Frame)', 'Bandai', 'Mid', 'Figure-rise Standard | Kamen Rider W | P-Bandai'),
@@ -925,7 +900,10 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'shfiguarts', 'shfiguarts-ichigo-kurosaki-tybw-bankai', 'S.H.Figuarts Ichigo Kurosaki (TYBW Bankai)', 'Bandai', 'Mid', 'S.H.Figuarts | Bleach TYBW | Standard'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-byakuya-kuchiki-tybw', 'S.H.Figuarts Byakuya Kuchiki (TYBW)', 'Bandai', 'Mid', 'S.H.Figuarts | Bleach TYBW | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-kenpachi-zaraki-tybw', 'S.H.Figuarts Kenpachi Zaraki (TYBW)', 'Bandai', 'Mid', 'S.H.Figuarts | Bleach TYBW | P-Bandai'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-sosuke-aizen-tybw', 'S.H.Figuarts Sosuke Aizen (TYBW)', 'Bandai', 'Mid', 'S.H.Figuarts | Bleach TYBW | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-sosuke-aizen-tybw', 'S.H.Figuarts Sosuke Aizen (TYBW)', 'Bandai', 'Mid', 'S.H.Figuarts | Bleach TYBW | P-Bandai')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('bandai_premium', 'shfiguarts', 'shfiguarts-uryu-ishida-tybw', 'S.H.Figuarts Uryu Ishida (TYBW)', 'Bandai', 'Mid', 'S.H.Figuarts | Bleach TYBW | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-renji-abarai-tybw', 'S.H.Figuarts Renji Abarai (TYBW)', 'Bandai', 'Mid', 'S.H.Figuarts | Bleach TYBW | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-izuku-midoriya-full-cowling', 'S.H.Figuarts Izuku Midoriya (Full Cowling)', 'Bandai', 'Mid', 'S.H.Figuarts | My Hero Academia | Standard'),
@@ -941,6 +919,287 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-gavv-gummy-form', 'S.H.Figuarts Kamen Rider Gavv Gummy Form', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Gavv | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-gavv-chocolate-form', 'S.H.Figuarts Kamen Rider Gavv Chocolate Form', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Gavv | P-Bandai'),
   ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-gotchard-platinum-chemistry', 'S.H.Figuarts Kamen Rider Gotchard (Platinum Chemistry)', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Gotchard | P-Bandai'),
-  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-gotchard-tornado-hawk', 'S.H.Figuarts Kamen Rider Gotchard (Tornado Hawk)', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Gotchard | P-Bandai')
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-gotchard-tornado-hawk', 'S.H.Figuarts Kamen Rider Gotchard (Tornado Hawk)', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Gotchard | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-iron-man-mk-50-nano-weapon-set', 'S.H.Figuarts Iron Man Mk 50 (Nano Weapon Set)', 'Bandai', 'Mid', 'S.H.Figuarts | Avengers: Infinity War | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-iron-man-mk-85-final-battle', 'S.H.Figuarts Iron Man Mk 85 (Final Battle)', 'Bandai', 'Mid', 'S.H.Figuarts | Avengers: Endgame | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-spider-man-no-way-home-final-swing', 'S.H.Figuarts Spider-Man (No Way Home) Final Swing', 'Bandai', 'Mid', 'S.H.Figuarts | Spider-Man: No Way Home | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-captain-america-endgame-final-battle', 'S.H.Figuarts Captain America (Endgame) Final Battle', 'Bandai', 'Mid', 'S.H.Figuarts | Avengers: Endgame | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-thor-love-and-thunder', 'S.H.Figuarts Thor (Love and Thunder)', 'Bandai', 'Mid', 'S.H.Figuarts | Thor: Love and Thunder | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-thanos-endgame-final-battle', 'S.H.Figuarts Thanos (Endgame) Final Battle', 'Bandai', 'High', 'S.H.Figuarts | Avengers: Endgame | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-doctor-strange-multiverse-of-madness', 'S.H.Figuarts Doctor Strange (Multiverse of Madness)', 'Bandai', 'Mid', 'S.H.Figuarts | Doctor Strange MoM | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-black-panther-wakanda-forever', 'S.H.Figuarts Black Panther (Wakanda Forever)', 'Bandai', 'Mid', 'S.H.Figuarts | Black Panther 2 | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-deadpool-movie', 'S.H.Figuarts Deadpool (Movie)', 'Bandai', 'Mid', 'S.H.Figuarts | Deadpool | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-wolverine-deadpool-wolverine', 'S.H.Figuarts Wolverine (Deadpool & Wolverine)', 'Bandai', 'Mid', 'S.H.Figuarts | Deadpool & Wolverine | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-scarlet-witch-wandavision', 'S.H.Figuarts Scarlet Witch (WandaVision)', 'Bandai', 'High', 'S.H.Figuarts | WandaVision | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-loki-tva-variant', 'S.H.Figuarts Loki (TVA Variant)', 'Bandai', 'Mid', 'S.H.Figuarts | Loki | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-darth-vader-rotj-ver', 'S.H.Figuarts Darth Vader (ROTJ) Ver.', 'Bandai', 'High', 'S.H.Figuarts | Star Wars: ROTJ | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-luke-skywalker-rotj-jedi-knight', 'S.H.Figuarts Luke Skywalker (ROTJ) Jedi Knight', 'Bandai', 'Mid', 'S.H.Figuarts | Star Wars: ROTJ | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-boba-fett-the-book-of-boba-fett', 'S.H.Figuarts Boba Fett (The Book of Boba Fett)', 'Bandai', 'Mid', 'S.H.Figuarts | The Book of Boba Fett | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-ahsoka-tano-ahsoka-series', 'S.H.Figuarts Ahsoka Tano (Ahsoka Series)', 'Bandai', 'Mid', 'S.H.Figuarts | Ahsoka | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-obi-wan-kenobi-anh', 'S.H.Figuarts Obi-Wan Kenobi (ANH)', 'Bandai', 'High', 'S.H.Figuarts | Star Wars: ANH | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-clone-trooper-phase-ii', 'S.H.Figuarts Clone Trooper Phase II', 'Bandai', 'Mid', 'S.H.Figuarts | Star Wars: ROTS | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-general-grievous', 'S.H.Figuarts General Grievous', 'Bandai', 'High', 'S.H.Figuarts | Star Wars: ROTS | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-mace-windu-rots', 'S.H.Figuarts Mace Windu (ROTS)', 'Bandai', 'High', 'S.H.Figuarts | Star Wars: ROTS | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-count-dooku', 'S.H.Figuarts Count Dooku', 'Bandai', 'High', 'S.H.Figuarts | Star Wars: AOTC | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-emperor-palpatine-throne-room', 'S.H.Figuarts Emperor Palpatine (Throne Room)', 'Bandai', 'High', 'S.H.Figuarts | Star Wars: ROTJ | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-w-fangjoker', 'S.H.Figuarts Kamen Rider W FangJoker', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider W | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-w-cyclonejoker-gold-xtreme', 'S.H.Figuarts Kamen Rider W CycloneJoker Gold Xtreme', 'Bandai', 'High', 'S.H.Figuarts | Kamen Rider W | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-ooo-tajador-combo-eternity', 'S.H.Figuarts Kamen Rider OOO TaJaDor Combo (Eternity)', 'Bandai', 'High', 'S.H.Figuarts | Kamen Rider OOO | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-fourze-base-states', 'S.H.Figuarts Kamen Rider Fourze Base States', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Fourze | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-wizard-flame-style', 'S.H.Figuarts Kamen Rider Wizard Flame Style', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Wizard | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-ghost-ore-damashii', 'S.H.Figuarts Kamen Rider Ghost Ore Damashii', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Ghost | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-ex-aid-action-gamer-lv-2', 'S.H.Figuarts Kamen Rider Ex-Aid Action Gamer Lv. 2', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Ex-Aid | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-zi-o-grand-zi-o', 'S.H.Figuarts Kamen Rider Zi-O (Grand Zi-O)', 'Bandai', 'High', 'S.H.Figuarts | Kamen Rider Zi-O | P-Bandai'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-1s-strike-valkyrie-ichijo', 'DX Chogokin VF-1S Strike Valkyrie (Ichijo)', 'Bandai', 'Grail', 'DX Chogokin | Macross | Standard'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-1a-valkyrie-hikaru', 'DX Chogokin VF-1A Valkyrie (Hikaru)', 'Bandai', 'High', 'DX Chogokin | Macross | Standard'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-yf-29-durandal-alto-custom', 'DX Chogokin YF-29 Durandal (Alto Custom)', 'Bandai', 'High', 'DX Chogokin | Macross Frontier | Standard'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-31j-siegfried-hayate-custom', 'DX Chogokin VF-31J Siegfried (Hayate Custom)', 'Bandai', 'High', 'DX Chogokin | Macross Delta | Standard')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-31ax-kairos-plus-hayate', 'DX Chogokin VF-31AX Kairos Plus (Hayate)', 'Bandai', 'High', 'DX Chogokin | Macross Delta Movie | Standard'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-sv-262hs-draken-iii-keith', 'DX Chogokin SV-262Hs Draken III (Keith)', 'Bandai', 'High', 'DX Chogokin | Macross Delta | P-Bandai'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-25f-messiah-alto-renewal', 'DX Chogokin VF-25F Messiah (Alto) Renewal', 'Bandai', 'High', 'DX Chogokin | Macross Frontier | Standard'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-25s-messiah-ozma-armored-pack', 'DX Chogokin VF-25S Messiah (Ozma) Armored Pack', 'Bandai', 'Grail', 'DX Chogokin | Macross Frontier | P-Bandai'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-171ex-nightmare-plus-luca', 'DX Chogokin VF-171EX Nightmare Plus (Luca)', 'Bandai', 'High', 'DX Chogokin | Macross Frontier | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-strike-freedom-gundam-soul-blue-ver', 'Metal Build Strike Freedom Gundam (Soul Blue Ver.)', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Destiny | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-astray-blue-frame-second-revise', 'Metal Build Astray Blue Frame Second Revise', 'Bandai', 'High', 'Metal Build | Gundam SEED Astray | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-00-qant-full-saber-trans-am', 'Metal Build 00 QAN[T] Full Saber (Trans-Am)', 'Bandai', 'Grail', 'Metal Build | Gundam 00 Movie | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-dragon-gundam-real-type', 'Metal Build Dragon Gundam (Real Type)', 'Bandai', 'High', 'Metal Build | G Gundam | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-eva-unit-01', 'Metal Build Eva Unit-01', 'Bandai', 'Grail', 'Metal Build | Evangelion | Standard'),
+  ('bandai_premium', 'csm', 'csm-ooo-driver-complete-set', 'CSM OOO Driver (Complete Set)', 'Bandai', 'Grail', 'CSM | Kamen Rider OOO | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-gamer-driver-ex-aid', 'CSM Gamer Driver (Ex-Aid)', 'Bandai', 'Grail', 'CSM | Kamen Rider Ex-Aid | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-ziku-driver-zi-o', 'CSM Ziku Driver (Zi-O)', 'Bandai', 'Grail', 'CSM | Kamen Rider Zi-O | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-den-o-belt-ver-2', 'CSM Den-O Belt (Ver. 2)', 'Bandai', 'Grail', 'CSM | Kamen Rider Den-O | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-henshin-belt-typhoon-kamen-rider-1', 'CSM Henshin Belt Typhoon (Kamen Rider 1)', 'Bandai', 'Grail', 'CSM | Kamen Rider | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-v-buckle-kamen-rider-ryuki', 'CSM V Buckle (Kamen Rider Ryuki)', 'Bandai', 'Grail', 'CSM | Kamen Rider Ryuki | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-buggle-driver-ii-gashat-set', 'CSM Buggle Driver II + Gashat Set', 'Bandai', 'High', 'CSM | Kamen Rider Ex-Aid | P-Bandai'),
+  ('bandai_premium', 'proplica', 'proplica-moon-stick-brilliant-color-edition', 'Proplica Moon Stick (Brilliant Color Edition)', 'Bandai', 'High', 'Proplica | Sailor Moon | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-kaleidoscope', 'Proplica Kaleidoscope', 'Bandai', 'High', 'Proplica | Sailor Moon SuperS | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-moon-gorgeous-meditation', 'Proplica Moon Gorgeous Meditation', 'Bandai', 'High', 'Proplica | Sailor Moon SuperS | P-Bandai'),
+  ('bandai_premium', 'proplica', 'proplica-cutie-moon-rod-brilliant-color', 'Proplica Cutie Moon Rod (Brilliant Color)', 'Bandai', 'High', 'Proplica | Sailor Moon R | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-crisis-moon-compact', 'Proplica Crisis Moon Compact', 'Bandai', 'High', 'Proplica | Sailor Moon Stars | P-Bandai'),
+  ('bandai_premium', 'proplica', 'proplica-nichirin-sword-rengoku-kyojuro', 'Proplica Nichirin Sword (Rengoku Kyojuro)', 'Bandai', 'High', 'Proplica | Demon Slayer | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-nichirin-sword-zenitsu-agatsuma', 'Proplica Nichirin Sword (Zenitsu Agatsuma)', 'Bandai', 'High', 'Proplica | Demon Slayer | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-nichirin-sword-inosuke-hashibira', 'Proplica Nichirin Sword (Inosuke Hashibira)', 'Bandai', 'High', 'Proplica | Demon Slayer | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-nichirin-sword-giyu-tomioka', 'Proplica Nichirin Sword (Giyu Tomioka)', 'Bandai', 'High', 'Proplica | Demon Slayer | P-Bandai'),
+  ('bandai_premium', 'proplica', 'proplica-dragon-radar', 'Proplica Dragon Radar', 'Bandai', 'Mid', 'Proplica | Dragon Ball | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-zangetsu-tensa-zangetsu', 'Proplica Zangetsu (Tensa Zangetsu)', 'Bandai', 'High', 'Proplica | Bleach TYBW | P-Bandai'),
+  ('bandai_premium', 'proplica', 'proplica-jujutsu-kaisen-slaughter-demon', 'Proplica Jujutsu Kaisen Slaughter Demon', 'Bandai', 'High', 'Proplica | Jujutsu Kaisen | P-Bandai'),
+  ('bandai_premium', 'proplica', 'proplica-power-pole-dragon-ball', 'Proplica Power Pole (Dragon Ball)', 'Bandai', 'Mid', 'Proplica | Dragon Ball | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-2019-king-of-monsters', 'S.H.MonsterArts Godzilla (2019 King of Monsters)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla: KotM | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-mothra-2019', 'S.H.MonsterArts Mothra (2019)', 'Bandai', 'Mid', 'S.H.MonsterArts | Godzilla: KotM | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-rodan-2019', 'S.H.MonsterArts Rodan (2019)', 'Bandai', 'Mid', 'S.H.MonsterArts | Godzilla: KotM | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-mechagodzilla-godzilla-vs-kong', 'S.H.MonsterArts Mechagodzilla (Godzilla vs Kong)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla vs Kong | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-kong-godzilla-x-kong', 'S.H.MonsterArts Kong (Godzilla x Kong)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla x Kong | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-ultima-singular-point', 'S.H.MonsterArts Godzilla Ultima (Singular Point)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla Singular Point | P-Bandai'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-biollante-special-color-ver', 'S.H.MonsterArts Biollante Special Color Ver.', 'Bandai', 'Grail', 'S.H.MonsterArts | Godzilla vs Biollante | P-Bandai'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-destoroyah-complete-form', 'S.H.MonsterArts Destoroyah (Complete Form)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla vs Destoroyah | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-spacegodzilla', 'S.H.MonsterArts SpaceGodzilla', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla vs SpaceGodzilla | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-android-18-universe-survival-saga', 'S.H.Figuarts Android 18 (Universe Survival Saga)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-krillin-earths-strongest', 'S.H.Figuarts Krillin (Earth''s Strongest)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-tien-shinhan-chiaotzu', 'S.H.Figuarts Tien Shinhan & Chiaotzu', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-vegeta-namek-saga-scouter', 'S.H.Figuarts Vegeta (Namek Saga) Scouter', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-goku-black-rose', 'S.H.Figuarts Goku Black (Rose)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-zamasu-merged', 'S.H.Figuarts Zamasu (Merged)', 'Bandai', 'High', 'S.H.Figuarts | Dragon Ball Super | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-jiren-full-power', 'S.H.Figuarts Jiren (Full Power)', 'Bandai', 'High', 'S.H.Figuarts | Dragon Ball Super | P-Bandai'),
+  ('bandai_premium', 'hg-1144', 'hg-1144-nightingale-p-bandai', 'HG 1/144 Nightingale (P-Bandai)', 'Bandai', 'Mid', 'HG 1/144 | Gundam CCA | P-Bandai'),
+  ('bandai_premium', 'hg-1144', 'hg-1144-moon-gundam', 'HG 1/144 Moon Gundam', 'Bandai', 'Mid', 'HG 1/144 | Moon Gundam | Standard'),
+  ('bandai_premium', 'hg-1144', 'hg-1144-kshatriya', 'HG 1/144 Kshatriya', 'Bandai', 'Mid', 'HG 1/144 | Gundam Unicorn | Standard'),
+  ('bandai_premium', 'hg-1144', 'hg-1144-penelope', 'HG 1/144 Penelope', 'Bandai', 'Mid', 'HG 1/144 | Gundam Hathaway | Standard')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('bandai_premium', 'mg-1100', 'mg-1100-hyaku-shiki-20', 'MG 1/100 Hyaku-Shiki 2.0', 'Bandai', 'Mid', 'MG 1/100 | Zeta Gundam | Standard'),
+  ('bandai_premium', 'mg-1100', 'mg-1100-geara-doga', 'MG 1/100 Geara Doga', 'Bandai', 'Mid', 'MG 1/100 | Gundam CCA | Standard'),
+  ('bandai_premium', 'mg-1100', 'mg-1100-turn-a-gundam', 'MG 1/100 Turn A Gundam', 'Bandai', 'Mid', 'MG 1/100 | Turn A Gundam | Standard'),
+  ('bandai_premium', 'mg-1100', 'mg-1100-crossbone-gundam-x1-verka', 'MG 1/100 Crossbone Gundam X1 Ver.Ka', 'Bandai', 'Mid', 'MG 1/100 | Crossbone Gundam | Standard'),
+  ('bandai_premium', 'mg-1100', 'mg-1100-gundam-heavyarms-ew-igel-unit', 'MG 1/100 Gundam Heavyarms EW (Igel Unit)', 'Bandai', 'Mid', 'MG 1/100 | Gundam Wing EW | P-Bandai'),
+  ('bandai_premium', 'mg-1100', 'mg-1100-rick-dom-p-bandai', 'MG 1/100 Rick Dom (P-Bandai)', 'Bandai', 'Mid', 'MG 1/100 | Mobile Suit Gundam | P-Bandai'),
+  ('bandai_premium', 'mg-1100', 'mg-1100-gundam-f91-ver-20', 'MG 1/100 Gundam F91 Ver. 2.0', 'Bandai', 'Mid', 'MG 1/100 | Gundam F91 | Standard'),
+  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-son-goku-ultra-instinct', 'Figure-rise Standard Son Goku (Ultra Instinct)', 'Bandai', 'Standard', 'Figure-rise Standard | Dragon Ball Super | Standard'),
+  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-vegeta-ssbe', 'Figure-rise Standard Vegeta (SSBE)', 'Bandai', 'Standard', 'Figure-rise Standard | Dragon Ball Super | Standard'),
+  ('bandai_premium', 'figure-rise-standard', 'figure-rise-standard-amplified-omegamon', 'Figure-rise Standard Amplified Omegamon', 'Bandai', 'Mid', 'Figure-rise Standard | Digimon | Standard'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-kaido-of-the-beasts-extra-battle', 'Figuarts ZERO Kaido of the Beasts (Extra Battle)', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-big-mom-charlotte-linlin-extra-battle', 'Figuarts ZERO Big Mom (Charlotte Linlin) Extra Battle', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-sanji-diable-jambe-extra-battle', 'Figuarts ZERO Sanji Diable Jambe (Extra Battle)', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-trafalgar-law-extra-battle', 'Figuarts ZERO Trafalgar Law (Extra Battle)', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-sabo-fire-fist-extra-battle', 'Figuarts ZERO Sabo Fire Fist (Extra Battle)', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-zoro-three-sword-style-extra-battle', 'Figuarts ZERO Zoro Three Sword Style (Extra Battle)', 'Bandai', 'High', 'Figuarts ZERO | One Piece | Standard'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-nami-cat-burglar-extra-battle', 'Figuarts ZERO Nami Cat Burglar (Extra Battle)', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
+  ('bandai_premium', 'figuarts-zero', 'figuarts-zero-nico-robin-devil-child-extra-battle', 'Figuarts ZERO Nico Robin (Devil Child Extra Battle)', 'Bandai', 'Mid', 'Figuarts ZERO | One Piece | Standard'),
+  ('bandai_premium', 'smp', 'smp-king-brachion-zyuranger', 'SMP King Brachion (Zyuranger)', 'Bandai', 'Mid', 'SMP | Super Sentai | P-Bandai'),
+  ('bandai_premium', 'smp', 'smp-gaogaigar-super-minipla', 'SMP Gaogaigar (Super MiniPla)', 'Bandai', 'Mid', 'SMP | GaoGaiGar | Standard'),
+  ('bandai_premium', 'smp', 'smp-dancouga-super-minipla', 'SMP Dancouga (Super MiniPla)', 'Bandai', 'Mid', 'SMP | Dancouga | P-Bandai'),
+  ('bandai_premium', 'smp', 'smp-combattler-v-super-minipla', 'SMP Combattler V (Super MiniPla)', 'Bandai', 'Mid', 'SMP | Combattler V | P-Bandai'),
+  ('bandai_premium', 'ichiban-kuji', 'ichiban-kuji-goku-ultra-instinct-last-one-prize', 'Ichiban Kuji Goku Ultra Instinct Last One Prize', 'Bandai', 'High', 'Ichiban Kuji | Dragon Ball Super | Prize'),
+  ('bandai_premium', 'ichiban-kuji', 'ichiban-kuji-luffy-gear-5-last-one-prize', 'Ichiban Kuji Luffy Gear 5 Last One Prize', 'Bandai', 'High', 'Ichiban Kuji | One Piece | Prize'),
+  ('bandai_premium', 'ichiban-kuji', 'ichiban-kuji-gojo-satoru-last-one-prize', 'Ichiban Kuji Gojo Satoru Last One Prize', 'Bandai', 'High', 'Ichiban Kuji | Jujutsu Kaisen | Prize'),
+  ('bandai_premium', 'ichiban-kuji', 'ichiban-kuji-tanjiro-hinokami-last-one-prize', 'Ichiban Kuji Tanjiro Hinokami Last One Prize', 'Bandai', 'High', 'Ichiban Kuji | Demon Slayer | Prize'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-tanjiro-kamado-hinokami-kagura', 'S.H.Figuarts Tanjiro Kamado (Hinokami Kagura)', 'Bandai', 'Mid', 'S.H.Figuarts | Demon Slayer | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-zenitsu-agatsuma-thunder-breathing', 'S.H.Figuarts Zenitsu Agatsuma (Thunder Breathing)', 'Bandai', 'Mid', 'S.H.Figuarts | Demon Slayer | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-nezuko-kamado-awakened', 'S.H.Figuarts Nezuko Kamado (Awakened)', 'Bandai', 'Mid', 'S.H.Figuarts | Demon Slayer | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-naruto-uzumaki-baryon-mode', 'S.H.Figuarts Naruto Uzumaki (Baryon Mode)', 'Bandai', 'High', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-sasuke-uchiha-eternal-mangekyou', 'S.H.Figuarts Sasuke Uchiha (Eternal Mangekyou)', 'Bandai', 'High', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-itachi-uchiha-susanoo-ver', 'S.H.Figuarts Itachi Uchiha (Susano''o Ver.)', 'Bandai', 'High', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kakashi-hatake-anbu', 'S.H.Figuarts Kakashi Hatake (Anbu)', 'Bandai', 'High', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-monkey-d-luffy-gear-5-nika', 'S.H.Figuarts Monkey D. Luffy (Gear 5 Nika)', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-roronoa-zoro-wano-country', 'S.H.Figuarts Roronoa Zoro (Wano Country)', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-sanji-wano-country', 'S.H.Figuarts Sanji (Wano Country)', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-trafalgar-law-wano-country', 'S.H.Figuarts Trafalgar Law (Wano Country)', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-chainsaw-man-denji', 'S.H.Figuarts Chainsaw Man (Denji)', 'Bandai', 'Mid', 'S.H.Figuarts | Chainsaw Man | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-makima', 'S.H.Figuarts Makima', 'Bandai', 'Mid', 'S.H.Figuarts | Chainsaw Man | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-power', 'S.H.Figuarts Power', 'Bandai', 'Mid', 'S.H.Figuarts | Chainsaw Man | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-gojo-satoru-jujutsu-kaisen-s2', 'S.H.Figuarts Gojo Satoru (Jujutsu Kaisen S2)', 'Bandai', 'Mid', 'S.H.Figuarts | Jujutsu Kaisen | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-sukuna-incarnated', 'S.H.Figuarts Sukuna (Incarnated)', 'Bandai', 'High', 'S.H.Figuarts | Jujutsu Kaisen | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-geto-suguru', 'S.H.Figuarts Geto Suguru', 'Bandai', 'Mid', 'S.H.Figuarts | Jujutsu Kaisen | P-Bandai'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-aerial-gundam-allows-score-five', 'Robot Spirits Aerial (Gundam Allows Score Five)', 'Bandai', 'Mid', 'Robot Spirits | Gundam: Witch from Mercury | P-Bandai'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-pharact', 'Robot Spirits Pharact', 'Bandai', 'Mid', 'Robot Spirits | Gundam: Witch from Mercury | Standard'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-calibarn', 'Robot Spirits Calibarn', 'Bandai', 'Mid', 'Robot Spirits | Gundam: Witch from Mercury | Standard'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-lfrith', 'Robot Spirits Lfrith', 'Bandai', 'Mid', 'Robot Spirits | Gundam: Witch from Mercury | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-justice-gundam', 'Metal Build Justice Gundam', 'Bandai', 'High', 'Metal Build | Gundam SEED | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-strike-noir-gundam', 'Metal Build Strike Noir Gundam', 'Bandai', 'High', 'Metal Build | Gundam SEED Stargazer | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-aile-strike-gundam-metal-build', 'Metal Build Aile Strike Gundam (Metal Build)', 'Bandai', 'High', 'Metal Build | Gundam SEED | Standard')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('bandai_premium', 'proplica', 'proplica-millennium-rod-marik', 'Proplica Millennium Rod (Marik)', 'Bandai', 'High', 'Proplica | Yu-Gi-Oh! | P-Bandai'),
+  ('bandai_premium', 'proplica', 'proplica-duel-disk-kaiba-corp', 'Proplica Duel Disk (Kaiba Corp)', 'Bandai', 'High', 'Proplica | Yu-Gi-Oh! | Standard'),
+  ('bandai_premium', 'csm', 'csm-blade-buckle', 'CSM Blade Buckle', 'Bandai', 'Grail', 'CSM | Kamen Rider Blade | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-faiz-gear-complete-set', 'CSM Faiz Gear (Complete Set)', 'Bandai', 'Grail', 'CSM | Kamen Rider 555 | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-kivat-belt', 'CSM Kivat Belt', 'Bandai', 'Grail', 'CSM | Kamen Rider Kiva | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-birth-driver', 'CSM Birth Driver', 'Bandai', 'High', 'CSM | Kamen Rider OOO | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-frieza-first-form', 'S.H.Figuarts Frieza (First Form)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-piccolo-proud-namekian', 'S.H.Figuarts Piccolo (Proud Namekian)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-yamcha', 'S.H.Figuarts Yamcha', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-captain-ginyu', 'S.H.Figuarts Captain Ginyu', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-recoome', 'S.H.Figuarts Recoome', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-ginyu-force-set-5-figures', 'S.H.Figuarts Ginyu Force Set (5 Figures)', 'Bandai', 'Grail', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-rx-93ff-nu-gundam-fukuoka-ver', 'Robot Spirits RX-93ff Nu Gundam (Fukuoka Ver.)', 'Bandai', 'High', 'Robot Spirits | Gundam CCA | Event Exclusive'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-rx-78gp01-gundam-zephyranthes', 'Robot Spirits RX-78GP01 Gundam Zephyranthes', 'Bandai', 'Mid', 'Robot Spirits | Gundam 0083 | Standard'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-rx-78gp02a-gundam-physalis', 'Robot Spirits RX-78GP02A Gundam Physalis', 'Bandai', 'Mid', 'Robot Spirits | Gundam 0083 | Standard'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-sazabi-chars-counterattack', 'Robot Spirits Sazabi (Char''s Counterattack)', 'Bandai', 'Mid', 'Robot Spirits | Gundam CCA | Standard'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-sinanju-full-frontal-custom', 'Robot Spirits Sinanju (Full Frontal Custom)', 'Bandai', 'Mid', 'Robot Spirits | Gundam Unicorn | P-Bandai'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-xi-gundam', 'Robot Spirits Xi Gundam', 'Bandai', 'High', 'Robot Spirits | Gundam Hathaway | Standard'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-penelope-gundam-hathaway', 'Robot Spirits Penelope (Gundam Hathaway)', 'Bandai', 'High', 'Robot Spirits | Gundam Hathaway | Standard'),
+  ('bandai_premium', 'robot-spirits', 'robot-spirits-turn-a-gundam', 'Robot Spirits Turn A Gundam', 'Bandai', 'Mid', 'Robot Spirits | Turn A Gundam | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-black-sun', 'S.H.Figuarts Kamen Rider Black Sun', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Black Sun | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultra-instinct-goku-mastered', 'S.H.Figuarts Ultra Instinct Goku (Mastered)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultra-instinct-goku-sign-silver-hair', 'S.H.Figuarts Ultra Instinct Goku -Sign- (Silver Hair)', 'Bandai', 'High', 'S.H.Figuarts | Dragon Ball Super | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-super-saiyan-blue-vegito', 'S.H.Figuarts Super Saiyan Blue Vegito', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-broly-full-power-movie', 'S.H.Figuarts Broly Full Power (Movie)', 'Bandai', 'High', 'S.H.Figuarts | Dragon Ball Super: Broly | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-cell-perfect-form-premium-color', 'S.H.Figuarts Cell Perfect Form (Premium Color)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-super-buu-gotenks-absorbed', 'S.H.Figuarts Super Buu (Gotenks Absorbed)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-super-buu-gohan-absorbed', 'S.H.Figuarts Super Buu (Gohan Absorbed)', 'Bandai', 'High', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kid-buu', 'S.H.Figuarts Kid Buu', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-burter-ginyu-force', 'S.H.Figuarts Burter (Ginyu Force)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-jeice-ginyu-force', 'S.H.Figuarts Jeice (Ginyu Force)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-guldo-ginyu-force', 'S.H.Figuarts Guldo (Ginyu Force)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Z | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-super-saiyan-4-goku-gt', 'S.H.Figuarts Super Saiyan 4 Goku (GT)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball GT | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-super-saiyan-4-gogeta', 'S.H.Figuarts Super Saiyan 4 Gogeta', 'Bandai', 'High', 'S.H.Figuarts | Dragon Ball GT | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-orange-piccolo-super-hero-movie', 'S.H.Figuarts Orange Piccolo (Super Hero Movie)', 'Bandai', 'Mid', 'S.H.Figuarts | Dragon Ball Super: Super Hero | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-naruto-uzumaki-baryon-mode', 'S.H.Figuarts Naruto Uzumaki Baryon Mode', 'Bandai', 'High', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-sasuke-uchiha-rinnegan-susanoo', 'S.H.Figuarts Sasuke Uchiha (Rinnegan / Susanoo)', 'Bandai', 'High', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-itachi-uchiha-anbu-ver', 'S.H.Figuarts Itachi Uchiha (Anbu Ver.)', 'Bandai', 'Mid', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-madara-uchiha-reanimation', 'S.H.Figuarts Madara Uchiha (Reanimation)', 'Bandai', 'High', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-pain-tendo-deva-path', 'S.H.Figuarts Pain (Tendo / Deva Path)', 'Bandai', 'Mid', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kakashi-hatake-dms-susanoo', 'S.H.Figuarts Kakashi Hatake (DMS / Susanoo)', 'Bandai', 'High', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-rock-lee-8-gates', 'S.H.Figuarts Rock Lee (8 Gates)', 'Bandai', 'Mid', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-jiraiya-sage-mode', 'S.H.Figuarts Jiraiya (Sage Mode)', 'Bandai', 'Mid', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-obito-uchiha-masked-man', 'S.H.Figuarts Obito Uchiha (Masked Man)', 'Bandai', 'Mid', 'S.H.Figuarts | Naruto Shippuden | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-saber-emotional-dragon', 'S.H.Figuarts Kamen Rider Saber Emotional Dragon', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Saber | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-saber-xross-saber', 'S.H.Figuarts Kamen Rider Saber Xross Saber', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Saber | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-vice-barid-rex', 'S.H.Figuarts Kamen Rider Vice Barid Rex', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Revice | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-geats-mk-ix', 'S.H.Figuarts Kamen Rider Geats Mk IX', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Geats | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-gotchard-platinum-gotchard', 'S.H.Figuarts Kamen Rider Gotchard Platinum Gotchard', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Gotchard | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kamen-rider-gavv-final-form', 'S.H.Figuarts Kamen Rider Gavv (Final Form)', 'Bandai', 'Mid', 'S.H.Figuarts | Kamen Rider Gavv | P-Bandai')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-1s-strike-valkyrie-roy-focker-special', 'DX Chogokin VF-1S Strike Valkyrie (Roy Focker Special)', 'Bandai', 'Grail', 'DX Chogokin | Macross | Standard'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-1j-armored-valkyrie-hikaru-ichijo', 'DX Chogokin VF-1J Armored Valkyrie (Hikaru Ichijo)', 'Bandai', 'Grail', 'DX Chogokin | Macross | P-Bandai'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-yf-29-durandal-alto-saotome-full-set', 'DX Chogokin YF-29 Durandal (Alto Saotome Full Set)', 'Bandai', 'Grail', 'DX Chogokin | Macross Frontier | P-Bandai'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-25f-messiah-alto-custom-super-parts', 'DX Chogokin VF-25F Messiah (Alto Custom Super Parts)', 'Bandai', 'High', 'DX Chogokin | Macross Frontier | P-Bandai'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-25s-messiah-ozma-lee-custom', 'DX Chogokin VF-25S Messiah (Ozma Lee Custom)', 'Bandai', 'High', 'DX Chogokin | Macross Frontier | P-Bandai'),
+  ('bandai_premium', 'dx-chogokin', 'dx-chogokin-vf-31ax-kairos-plus-hayate-immelman', 'DX Chogokin VF-31AX Kairos Plus (Hayate Immelman)', 'Bandai', 'High', 'DX Chogokin | Macross Delta | Standard'),
+  ('bandai_premium', 'metal-build', 'metal-build-freedom-gundam-concept-20', 'Metal Build Freedom Gundam Concept 2.0', 'Bandai', 'Grail', 'Metal Build | Gundam SEED | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-00-raiser-designers-blue-ver', 'Metal Build 00 Raiser (Designer''s Blue Ver.)', 'Bandai', 'Grail', 'Metal Build | Gundam 00 | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-destiny-gundam-full-package', 'Metal Build Destiny Gundam (Full Package)', 'Bandai', 'Grail', 'Metal Build | Gundam SEED Destiny | Standard'),
+  ('bandai_premium', 'metal-build', 'metal-build-strike-rouge-ootori', 'Metal Build Strike Rouge Ootori', 'Bandai', 'High', 'Metal Build | Gundam SEED | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-justice-gundam', 'Metal Build Justice Gundam', 'Bandai', 'High', 'Metal Build | Gundam SEED | Standard'),
+  ('bandai_premium', 'metal-build', 'metal-build-crossbone-gundam-x-1-full-cloth', 'Metal Build Crossbone Gundam X-1 Full Cloth', 'Bandai', 'Grail', 'Metal Build | Crossbone Gundam | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-hi-nu-gundam', 'Metal Build Hi-Nu Gundam', 'Bandai', 'Grail', 'Metal Build | Gundam CCA Beltorchika''s Children | P-Bandai'),
+  ('bandai_premium', 'metal-build', 'metal-build-laevatein-full-metal-panic', 'Metal Build Laevatein (Full Metal Panic)', 'Bandai', 'High', 'Metal Build | Full Metal Panic | Standard'),
+  ('bandai_premium', 'metal-build', 'metal-build-eva-01-evangelion-test-type', 'Metal Build EVA-01 (Evangelion Test Type)', 'Bandai', 'Grail', 'Metal Build | Evangelion | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-decadriver-kamen-rider-decade', 'CSM DecaDriver (Kamen Rider Decade)', 'Bandai', 'Grail', 'CSM | Kamen Rider Decade | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-w-driver-kamen-rider-w', 'CSM W Driver (Kamen Rider W)', 'Bandai', 'Grail', 'CSM | Kamen Rider W | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-ooo-driver-kamen-rider-ooo', 'CSM OOO Driver (Kamen Rider OOO)', 'Bandai', 'Grail', 'CSM | Kamen Rider OOO | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-ooo-driver-complete-set-w-all-core-medals', 'CSM OOO Driver Complete Set (w/ All Core Medals)', 'Bandai', 'Grail', 'CSM | Kamen Rider OOO | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-ziku-driver-kamen-rider-zi-o', 'CSM Ziku Driver (Kamen Rider Zi-O)', 'Bandai', 'Grail', 'CSM | Kamen Rider Zi-O | P-Bandai'),
+  ('bandai_premium', 'proplica', 'proplica-moon-kaleidoscope-sailor-moon-supers', 'Proplica Moon Kaleidoscope (Sailor Moon SuperS)', 'Bandai', 'High', 'Proplica | Sailor Moon | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-nichirin-blade-tanjiro-kamado', 'Proplica Nichirin Blade (Tanjiro Kamado)', 'Bandai', 'High', 'Proplica | Demon Slayer | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-nichirin-blade-rengoku-kyojuro', 'Proplica Nichirin Blade (Rengoku Kyojuro)', 'Bandai', 'High', 'Proplica | Demon Slayer | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-nichirin-blade-zenitsu-agatsuma', 'Proplica Nichirin Blade (Zenitsu Agatsuma)', 'Bandai', 'High', 'Proplica | Demon Slayer | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-licht-schwert-attack-on-titan', 'Proplica Licht Schwert (Attack on Titan)', 'Bandai', 'Mid', 'Proplica | Attack on Titan | Standard'),
+  ('bandai_premium', 'proplica', 'proplica-night-sky-star-globe-necklace-frieren', 'Proplica Night Sky Star Globe Necklace (Frieren)', 'Bandai', 'High', 'Proplica | Frieren | P-Bandai'),
+  ('bandai_premium', 'proplica', 'proplica-zangetsu-ichigo-kurosaki-bankai', 'Proplica Zangetsu (Ichigo Kurosaki Bankai)', 'Bandai', 'High', 'Proplica | Bleach TYBW | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-shin-godzilla-2016-4th-form', 'S.H.MonsterArts Shin Godzilla (2016 4th Form)', 'Bandai', 'High', 'S.H.MonsterArts | Shin Godzilla | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-shin-godzilla-2nd-3rd-form', 'S.H.MonsterArts Shin Godzilla (2nd & 3rd Form)', 'Bandai', 'High', 'S.H.MonsterArts | Shin Godzilla | P-Bandai'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-minus-one', 'S.H.MonsterArts Godzilla Minus One', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla Minus One | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-minus-one-thermae-ver', 'S.H.MonsterArts Godzilla Minus One (Thermae Ver.)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla Minus One | P-Bandai'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-godzilla-x-kong-the-new-empire', 'S.H.MonsterArts Godzilla (Godzilla x Kong: The New Empire)', 'Bandai', 'High', 'S.H.MonsterArts | GxK: The New Empire | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-skar-king', 'S.H.MonsterArts Skar King', 'Bandai', 'Mid', 'S.H.MonsterArts | GxK: The New Empire | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-mothra-godzilla-king-of-the-monsters', 'S.H.MonsterArts Mothra (Godzilla: King of the Monsters)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla KOTM | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-king-ghidorah-godzilla-kotm-special-color', 'S.H.MonsterArts King Ghidorah (Godzilla: KOTM) Special Color', 'Bandai', 'Grail', 'S.H.MonsterArts | Godzilla KOTM | P-Bandai'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-mechagodzilla-gvk', 'S.H.MonsterArts Mechagodzilla (GvK)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla vs. Kong | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-godzilla-2014', 'S.H.MonsterArts Godzilla (2014)', 'Bandai', 'High', 'S.H.MonsterArts | Godzilla 2014 | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-rodan-godzilla-kotm', 'S.H.MonsterArts Rodan (Godzilla: KOTM)', 'Bandai', 'Mid', 'S.H.MonsterArts | Godzilla KOTM | Standard'),
+  ('bandai_premium', 'shmonsterarts', 'shmonsterarts-biollante-special-color', 'S.H.MonsterArts Biollante (Special Color)', 'Bandai', 'Grail', 'S.H.MonsterArts | Godzilla vs. Biollante | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-roronoa-zoro-wano-kuni', 'S.H.Figuarts Roronoa Zoro (Wano Kuni)', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-trafalgar-law-wano-kuni', 'S.H.Figuarts Trafalgar Law (Wano Kuni)', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-sanji-wano-kuni', 'S.H.Figuarts Sanji (Wano Kuni)', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-nico-robin-wano-kuni', 'S.H.Figuarts Nico Robin (Wano Kuni)', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kaido-dragon-form-set', 'S.H.Figuarts Kaido (Dragon Form Set)', 'Bandai', 'Grail', 'S.H.Figuarts | One Piece | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-shanks-film-red-ver', 'S.H.Figuarts Shanks (Film Red Ver.)', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece Film Red | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-uta-film-red-ver', 'S.H.Figuarts Uta (Film Red Ver.)', 'Bandai', 'Mid', 'S.H.Figuarts | One Piece Film Red | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-denji-chainsaw-man', 'S.H.Figuarts Denji (Chainsaw Man)', 'Bandai', 'Mid', 'S.H.Figuarts | Chainsaw Man | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-makima', 'S.H.Figuarts Makima', 'Bandai', 'Mid', 'S.H.Figuarts | Chainsaw Man | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-yuji-itadori-jujutsu-kaisen', 'S.H.Figuarts Yuji Itadori (Jujutsu Kaisen)', 'Bandai', 'Mid', 'S.H.Figuarts | Jujutsu Kaisen | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-satoru-gojo-hollow-purple', 'S.H.Figuarts Satoru Gojo (Hollow Purple)', 'Bandai', 'High', 'S.H.Figuarts | Jujutsu Kaisen | P-Bandai')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-levi-ackerman-attack-on-titan-final-season', 'S.H.Figuarts Levi Ackerman (Attack on Titan Final Season)', 'Bandai', 'Mid', 'S.H.Figuarts | Attack on Titan | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-rengoku-kyojuro-flame-hashira', 'S.H.Figuarts Rengoku Kyojuro (Flame Hashira)', 'Bandai', 'Mid', 'S.H.Figuarts | Demon Slayer | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-giyu-tomioka-water-hashira', 'S.H.Figuarts Giyu Tomioka (Water Hashira)', 'Bandai', 'Mid', 'S.H.Figuarts | Demon Slayer | P-Bandai'),
+  ('bandai_premium', 'metal-robot-spirits', 'metal-robot-spirits-destiny-gundam-heine-custom', 'Metal Robot Spirits Destiny Gundam (Heine Custom)', 'Bandai', 'High', 'Metal Robot Spirits | Gundam SEED Destiny | P-Bandai'),
+  ('bandai_premium', 'metal-robot-spirits', 'metal-robot-spirits-wing-gundam-zero-custom', 'Metal Robot Spirits Wing Gundam Zero Custom', 'Bandai', 'High', 'Metal Robot Spirits | Gundam Wing EW | Standard'),
+  ('bandai_premium', 'metal-robot-spirits', 'metal-robot-spirits-full-armor-zz-gundam', 'Metal Robot Spirits Full Armor ZZ Gundam', 'Bandai', 'High', 'Metal Robot Spirits | Gundam ZZ | P-Bandai'),
+  ('bandai_premium', 'mgex', 'mgex-unicorn-gundam-verka', 'MGEX Unicorn Gundam Ver.Ka', 'Bandai', 'High', 'MGEX | Gundam Unicorn | Standard'),
+  ('bandai_premium', 'mgex', 'mgex-strike-freedom-gundam', 'MGEX Strike Freedom Gundam', 'Bandai', 'High', 'MGEX | Gundam SEED Destiny | Standard'),
+  ('bandai_premium', 'pg-unleashed', 'pg-unleashed-rx-78-2-gundam', 'PG Unleashed RX-78-2 Gundam', 'Bandai', 'Grail', 'PG Unleashed | Mobile Suit Gundam | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-shin-ultraman-movie', 'S.H.Figuarts Ultraman (Shin Ultraman Movie)', 'Bandai', 'Mid', 'S.H.Figuarts | Shin Ultraman | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-ultraman-zero-beyond', 'S.H.Figuarts Ultraman Zero Beyond', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman Zero | Standard'),
+  ('bandai_premium', 'ultra-act', 'ultra-act-ultraman-decker-flash-type', 'Ultra-Act Ultraman Decker Flash Type', 'Bandai', 'Mid', 'Ultra-Act | Ultraman Decker | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-zetton-ultraman', 'S.H.Figuarts Zetton (Ultraman)', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-baltan-seijin', 'S.H.Figuarts Baltan Seijin', 'Bandai', 'Mid', 'S.H.Figuarts | Ultraman | P-Bandai'),
+  ('bandai_premium', 'figuartszero', 'figuartszero-tanjiro-kamado-water-surface-slash', 'FiguartsZERO Tanjiro Kamado (Water Surface Slash)', 'Bandai', 'Mid', 'FiguartsZERO | Demon Slayer | Standard'),
+  ('bandai_premium', 'figuartszero', 'figuartszero-kyojuro-rengoku-flame-breathing', 'FiguartsZERO Kyojuro Rengoku (Flame Breathing)', 'Bandai', 'Mid', 'FiguartsZERO | Demon Slayer | Standard'),
+  ('bandai_premium', 'figuartszero', 'figuartszero-zenitsu-agatsuma-thunder-breathing', 'FiguartsZERO Zenitsu Agatsuma (Thunder Breathing)', 'Bandai', 'Mid', 'FiguartsZERO | Demon Slayer | Standard'),
+  ('bandai_premium', 'figuartszero', 'figuartszero-inosuke-hashibira-beast-breathing', 'FiguartsZERO Inosuke Hashibira (Beast Breathing)', 'Bandai', 'Mid', 'FiguartsZERO | Demon Slayer | Standard'),
+  ('bandai_premium', 'figuartszero', 'figuartszero-tengen-uzui-sound-breathing', 'FiguartsZERO Tengen Uzui (Sound Breathing)', 'Bandai', 'Mid', 'FiguartsZERO | Demon Slayer | Standard'),
+  ('bandai_premium', 'figuartszero', 'figuartszero-gyomei-himejima-stone-breathing', 'FiguartsZERO Gyomei Himejima (Stone Breathing)', 'Bandai', 'Mid', 'FiguartsZERO | Demon Slayer | Standard'),
+  ('bandai_premium', 'figuartszero', 'figuartszero-muzan-kibutsuji-final-battle', 'FiguartsZERO Muzan Kibutsuji (Final Battle)', 'Bandai', 'High', 'FiguartsZERO | Demon Slayer | P-Bandai'),
+  ('bandai_premium', 'figuartszero', 'figuartszero-akaza-upper-three', 'FiguartsZERO Akaza (Upper Three)', 'Bandai', 'Mid', 'FiguartsZERO | Demon Slayer | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-akared-super-sentai-anniversary', 'S.H.Figuarts AkaRed (Super Sentai Anniversary)', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai | P-Bandai'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-kiramai-red-kiramager', 'S.H.Figuarts Kiramai Red (Kiramager)', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-zenkaizer', 'S.H.Figuarts Zenkaizer', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai (Zenkaiger) | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-don-momotaro-donbrothers', 'S.H.Figuarts Don Momotaro (DonBrothers)', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai | Standard'),
+  ('bandai_premium', 'shfiguarts', 'shfiguarts-king-ohger', 'S.H.Figuarts King-Ohger', 'Bandai', 'Mid', 'S.H.Figuarts | Super Sentai | Standard'),
+  ('bandai_premium', 'soul-of-chogokin', 'soul-of-chogokin-gx-100-gaogaigar-king-of-braves', 'Soul of Chogokin GX-100 GaoGaiGar (King of Braves)', 'Bandai', 'Grail', 'Soul of Chogokin | GaoGaiGar | Standard'),
+  ('bandai_premium', 'csm', 'csm-rider-card-set-kamen-rider-decade', 'CSM Rider Card Set (Kamen Rider Decade)', 'Bandai', 'High', 'CSM | Kamen Rider Decade | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-core-medal-set-kamen-rider-ooo-complete', 'CSM Core Medal Set (Kamen Rider OOO Complete)', 'Bandai', 'High', 'CSM | Kamen Rider OOO | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-gaia-memory-set-kamen-rider-w', 'CSM Gaia Memory Set (Kamen Rider W)', 'Bandai', 'High', 'CSM | Kamen Rider W | P-Bandai'),
+  ('bandai_premium', 'csm', 'csm-astro-switch-set-kamen-rider-fourze', 'CSM Astro Switch Set (Kamen Rider Fourze)', 'Bandai', 'High', 'CSM | Kamen Rider Fourze | P-Bandai')
 ON CONFLICT (category, item_key) DO NOTHING;
 

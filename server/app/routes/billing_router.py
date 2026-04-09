@@ -145,22 +145,21 @@ async def _event_already_processed(event_id: str, event_type: str, pool: Any | N
 
     if pool is not None:
         try:
-            row = await pool.fetchrow(
-                "SELECT 1 FROM processed_webhook_events WHERE event_id = $1",
-                event_id,
-            )
-            if row:
-                _SEEN_EVENTS[event_id] = time.monotonic()
-                return True
-            # Insert to claim this event
-            await pool.execute(
+            # Atomic claim: INSERT returns a row only when the event_id was new.
+            # If another worker raced and won, the ON CONFLICT swallows our insert
+            # and `claimed` is None — meaning the event was already processed.
+            claimed = await pool.fetchrow(
                 "INSERT INTO processed_webhook_events (event_id, event_type) "
-                "VALUES ($1, $2) ON CONFLICT (event_id) DO NOTHING",
+                "VALUES ($1, $2) ON CONFLICT (event_id) DO NOTHING RETURNING event_id",
                 event_id,
                 event_type,
             )
+            if claimed is None:
+                _SEEN_EVENTS[event_id] = time.monotonic()
+                return True
+            return False
         except Exception as e:
-            # Table may not exist yet — fall through to in-memory
+            # Table may not exist yet — fall through to in-memory (single-worker only)
             _log.debug("DB webhook dedup unavailable, using in-memory: %s", e)
 
     return _event_already_processed_mem(event_id)

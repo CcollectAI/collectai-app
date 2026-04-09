@@ -29,6 +29,9 @@ router = APIRouter(prefix="/purchase", tags=["Purchase"])
 # Per-user: 10 deal confirm requests per minute
 _deal_confirm_limit = per_user_rate_limit(10, window_seconds=60, scope="deal_confirm")
 
+# Per-user: 10 mandate write (create/update/delete) requests per minute
+_mandate_write_limit = per_user_rate_limit(10, window_seconds=60, scope="mandate_write")
+
 
 # ---------------------------------------------------------------------------
 # Pydantic Models
@@ -153,6 +156,23 @@ _VALID_DEAL_STATUSES = frozenset({
     "discovered", "notified", "clicked", "purchased", "declined", "expired",
 })
 
+# Explicit column lists for SELECT (avoid SELECT *) — keep in sync with migrations
+_MANDATE_COLUMNS = (
+    "id, user_id, name, status, search_query, category, condition_filter, "
+    "min_trust_score, max_price, max_total_budget, spent_total, cooldown_hours, "
+    "allowed_sources, exclude_keywords, region, expires_at, last_scan_at, "
+    "last_deal_at, deals_found, deals_purchased, created_at, updated_at"
+)
+_DEAL_COLUMNS = (
+    "id, mandate_id, user_id, status, listing_source, listing_url, affiliate_url, "
+    "listing_title, listing_price, listing_currency, listing_condition, "
+    "listing_image_url, listing_seller, listing_ended, provenance_score, deal_score, "
+    "price_vs_q50_pct, predicted_q50, predicted_q10, predicted_q90, policy_passed, "
+    "policy_reasons, affiliate_source, affiliate_click, estimated_commission, "
+    "confirmed_price, added_item_id, discovered_at, notified_at, clicked_at, "
+    "purchased_at, created_at"
+)
+
 
 class StatsResponse(BaseModel):
     active_mandates: int = 0
@@ -267,6 +287,7 @@ def _parse_uuid(value: str, label: str = "ID") -> uuid.UUID:
 async def create_mandate(
     body: MandateCreate,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_mandate_write_limit),
 ):
     """Create a new purchase mandate."""
     _require_db()
@@ -298,7 +319,7 @@ async def create_mandate(
                 max_price, max_total_budget, cooldown_hours,
                 allowed_sources, exclude_keywords, region, expires_at
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-            RETURNING *
+            RETURNING """ + _MANDATE_COLUMNS + """
             """,
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
             body.name,
@@ -349,8 +370,8 @@ async def list_mandates(
             uid,
         )
         rows = await conn.fetch(
-            """
-            SELECT * FROM public.purchase_mandates
+            f"""
+            SELECT {_MANDATE_COLUMNS} FROM public.purchase_mandates
             WHERE user_id = $1
             ORDER BY created_at DESC
             LIMIT $2 OFFSET $3
@@ -374,7 +395,7 @@ async def get_mandate(
 
     async with get_conn() as conn:
         row = await conn.fetchrow(
-            "SELECT * FROM public.purchase_mandates WHERE id = $1 AND user_id = $2",
+            f"SELECT {_MANDATE_COLUMNS} FROM public.purchase_mandates WHERE id = $1 AND user_id = $2",
             _parse_uuid(mandate_id, "mandate_id"),
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
         )
@@ -389,6 +410,7 @@ async def update_mandate(
     mandate_id: str,
     body: MandateUpdate,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_mandate_write_limit),
 ):
     """Update a mandate (pause/resume/edit criteria)."""
     _require_db()
@@ -417,7 +439,8 @@ async def update_mandate(
     idx = 3  # $1=mandate_id, $2=user_id
 
     for key, val in updates.items():
-        assert key in _UPDATABLE_MANDATE_COLUMNS, f"Unexpected column: {key}"
+        if key not in _UPDATABLE_MANDATE_COLUMNS:
+            raise error_response(400, f"Unexpected column: {key}")
         set_parts.append(f"{key} = ${idx}")
         params.append(val)
         idx += 1
@@ -429,7 +452,7 @@ async def update_mandate(
         UPDATE public.purchase_mandates
         SET {', '.join(set_parts)}
         WHERE id = $1 AND user_id = $2
-        RETURNING *
+        RETURNING {_MANDATE_COLUMNS}
     """
 
     async with get_conn() as conn:
@@ -449,6 +472,7 @@ async def update_mandate(
 async def delete_mandate(
     mandate_id: str,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_mandate_write_limit),
 ):
     """Deactivate (soft-delete) a mandate by setting status='paused'."""
     _require_db()
@@ -493,8 +517,8 @@ async def list_deals(
                 uid, status,
             )
             rows = await conn.fetch(
-                """
-                SELECT * FROM public.mandate_deals
+                f"""
+                SELECT {_DEAL_COLUMNS} FROM public.mandate_deals
                 WHERE user_id = $1 AND status = $2
                 ORDER BY discovered_at DESC
                 LIMIT $3 OFFSET $4
@@ -507,8 +531,8 @@ async def list_deals(
                 uid,
             )
             rows = await conn.fetch(
-                """
-                SELECT * FROM public.mandate_deals
+                f"""
+                SELECT {_DEAL_COLUMNS} FROM public.mandate_deals
                 WHERE user_id = $1
                 ORDER BY discovered_at DESC
                 LIMIT $2 OFFSET $3
@@ -532,7 +556,7 @@ async def get_deal(
 
     async with get_conn() as conn:
         row = await conn.fetchrow(
-            "SELECT * FROM public.mandate_deals WHERE id = $1 AND user_id = $2",
+            f"SELECT {_DEAL_COLUMNS} FROM public.mandate_deals WHERE id = $1 AND user_id = $2",
             _parse_uuid(deal_id, "deal_id"),
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
         )
@@ -589,8 +613,8 @@ async def confirm_deal(
     async with get_conn() as conn:
         # Status gate + idempotency: only confirm deals in confirmable states
         row = await conn.fetchrow(
-            """
-            SELECT * FROM public.mandate_deals
+            f"""
+            SELECT {_DEAL_COLUMNS} FROM public.mandate_deals
             WHERE id = $1 AND user_id = $2 AND status = ANY($3::text[])
             """,
             _parse_uuid(deal_id, "deal_id"),
@@ -749,7 +773,7 @@ async def forecast_mandate(
 
     async with get_conn() as conn:
         mandate = await conn.fetchrow(
-            "SELECT * FROM public.purchase_mandates WHERE id = $1 AND user_id = $2",
+            f"SELECT {_MANDATE_COLUMNS} FROM public.purchase_mandates WHERE id = $1 AND user_id = $2",
             _parse_uuid(mandate_id, "mandate_id"), uid,
         )
         if not mandate:

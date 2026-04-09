@@ -162,19 +162,6 @@ function VerifyEmailScreen() {
             </LinearGradient>
           </AnimatedPressable>
 
-          {/* Skip verification */}
-          <AnimatedPressable
-            style={styles.skipBtn}
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              router.replace('/(tabs)/add');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Skip email verification and continue to the app"
-          >
-            <Text style={[styles.skipBtnText, { color: colors.muted }]}>Skip for now</Text>
-          </AnimatedPressable>
-
           <Text style={[styles.spamHint, { color: colors.muted }]}>
             Didn't receive the email? Check your spam folder.
           </Text>

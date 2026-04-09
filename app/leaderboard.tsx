@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { View, Text, ScrollView, StyleSheet, Animated, RefreshControl, ActivityIndicator } from 'react-native';
@@ -54,20 +54,32 @@ const LeaderboardScreen: React.FC = () => {
     avatar_url: string | null;
   }> | null>(null);
 
+  const loadLeaderboardRef = useRef<{ cancelled: boolean }>({ cancelled: false });
+
   const loadLeaderboard = useCallback(async () => {
+    const guard = loadLeaderboardRef.current;
     try {
       const data = await collectorsApi.getLeaderboard();
+      if (guard.cancelled) return;
       if (data?.entries?.length) {
         setApiEntries(data.entries);
       }
     } catch (err) {
+      if (guard.cancelled) return;
       logger.warn('[Leaderboard] API fetch failed, using local fallback:', err);
     } finally {
-      setLoading(false);
+      if (!guard.cancelled) setLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadLeaderboard(); }, [loadLeaderboard]);
+  useEffect(() => {
+    const guard = { cancelled: false };
+    loadLeaderboardRef.current = guard;
+    loadLeaderboard();
+    return () => {
+      guard.cancelled = true;
+    };
+  }, [loadLeaderboard]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -143,7 +155,7 @@ const LeaderboardScreen: React.FC = () => {
                 { borderColor: colors.border, backgroundColor: colors.card },
               ]}
               accessibilityRole="button"
-              accessibilityLabel={`Rank ${index + 1}, ${user.displayName}, ${formatPrice(user.stats.totalEstimatedValueEur)}, ${user.stats.totalItems} items`}
+              accessibilityLabel={`Rank ${index + 1}, ${user.displayName}, ${formatPrice(user.stats.totalEstimatedValueEur)}, ${user.stats.totalItems} ${user.stats.totalItems === 1 ? 'item' : 'items'}`}
               accessibilityHint="Double tap to view collector profile"
             >
               {/* Rank */}
@@ -166,7 +178,7 @@ const LeaderboardScreen: React.FC = () => {
                   @{user.handle}
                 </Text>
                 <Text style={[styles.userMeta, { color: colors.muted }]} numberOfLines={1}>
-                  {user.stats.totalItems} items · {user.stats.totalCategories} categories
+                  {user.stats.totalItems} {user.stats.totalItems === 1 ? 'item' : 'items'} · {user.stats.totalCategories} {user.stats.totalCategories === 1 ? 'category' : 'categories'}
                 </Text>
               </View>
 

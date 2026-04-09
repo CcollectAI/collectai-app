@@ -521,9 +521,9 @@ function CategoryStoreScreen() {
                 category: categoryId || cItem.category,
                 target_price: cItem.estimated_price,
               });
-              showToast({ message: `${cItem.title} added to want list`, type: 'success' });
+              showToast({ message: `${cItem.title} added to watchlist`, type: 'success' });
             } catch {
-              showToast({ message: 'Failed to add to want list', type: 'error' });
+              showToast({ message: "Couldn't add to watchlist — try again", type: 'error' });
             }
           }}
           accentColor={accentColor}

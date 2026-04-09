@@ -223,6 +223,26 @@ def main():
         if (i + 1) % 5000 == 0:
             log_progress(CATEGORY, "processing", i + 1, len(cards))
 
+    # R47 — In-memory dedup on item_key. Scryfall occasionally returns the
+    # same card under multiple set entries (basic lands, art variants), and
+    # the DB unique constraint catches dupes only after wasting a network
+    # roundtrip per duplicate batch row. Same pattern as import_pokemon.py.
+    seen_keys: set[str] = set()
+    deduped_items: list[CatalogItem] = []
+    dropped_dupe_count = 0
+    for item in all_items:
+        if item.item_key in seen_keys:
+            dropped_dupe_count += 1
+            continue
+        seen_keys.add(item.item_key)
+        deduped_items.append(item)
+    if dropped_dupe_count:
+        logger.info(
+            "[%s] in-memory dedup: dropped %d duplicate item_keys (kept %d)",
+            CATEGORY, dropped_dupe_count, len(deduped_items),
+        )
+    all_items = deduped_items
+
     # Write local files
     sql_path = write_catalog_sql(CATEGORY, all_items)
     log_progress(CATEGORY, "catalog SQL written", len(all_items))

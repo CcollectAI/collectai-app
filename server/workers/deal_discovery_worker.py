@@ -27,17 +27,27 @@ logger = logging.getLogger(__name__)
 DSN = os.getenv("DB_DSN")
 
 
+def _record_run(status: str) -> None:
+    try:
+        from app.worker_registry import record_run
+        record_run("deal_discovery", status)
+    except ImportError:
+        pass
+
+
 @with_async_retry(max_retries=3, base_delay=2.0, max_delay=60.0)
 async def run_once():
     """Execute a single deal discovery cycle."""
     if not DSN:
         logger.error("DB_DSN not set in environment")
+        _record_run("error")
         return
 
     # Use a connection pool instead of a single raw connection
     pool = await asyncpg.create_pool(DSN, min_size=2, max_size=5)
     logger.info("Connected to DB pool — starting deal discovery cycle")
 
+    status = "ok"
     try:
         from app.agents.deal_discovery_agent import DealDiscoveryAgent
         from app.push import send_push_to_user
@@ -103,15 +113,12 @@ async def run_once():
             len(new_deals), notified,
         )
 
-        # Record run in worker registry
-        try:
-            from app.worker_registry import record_run
-            record_run("deal_discovery", "ok")
-        except ImportError:
-            pass
-
+    except Exception:
+        status = "error"
+        raise
     finally:
         await pool.close()
+        _record_run(status)
 
 
 async def main():

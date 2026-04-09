@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 MINUTES_PER_SCAN = 15        # Manual price lookup + comparison shopping
 MINUTES_PER_ITEM_TRACKED = 5  # Spreadsheet / manual inventory management
 MINUTES_PER_ALERT = 10       # Checking prices manually across marketplaces
+MINUTES_PER_DUPLICATE = 20   # Time wasted on a duplicate purchase (return/resell)
 
 
 # ---------------------------------------------------------------------------
@@ -46,6 +47,7 @@ class ValueSummaryResponse(BaseModel):
     total_scans: int = 0
     total_items_tracked: int = 0
     total_alerts_triggered: int = 0
+    duplicates_prevented: int = 0
     hours_saved: float = 0.0
 
     # Money saved
@@ -74,10 +76,13 @@ class ValueSummaryResponse(BaseModel):
 # Endpoint
 # ---------------------------------------------------------------------------
 
+_value_summary_limit = per_user_rate_limit(5, 60)
+
+
 @router.get("", response_model=ValueSummaryResponse)
-@per_user_rate_limit(5, 60)
 async def get_value_summary(
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_value_summary_limit),
 ):
     """
     Calculate what CollectAI has saved this user in time and money.
@@ -124,6 +129,13 @@ async def get_value_summary(
             user_id,
         )
         total_alerts = alerts_row["cnt"] if alerts_row else 0
+
+        # -- Duplicates prevented (tracked via analytics events) --
+        dupes_row = await conn.fetchrow(
+            "SELECT COUNT(*) AS cnt FROM notification_history WHERE user_id = $1 AND category = 'duplicate_detected'",
+            user_id,
+        )
+        duplicates_prevented = dupes_row["cnt"] if dupes_row else 0
 
         # -- Deal Desk savings --
         deals_row = await conn.fetchrow(
@@ -207,6 +219,7 @@ async def get_value_summary(
             total_scans * MINUTES_PER_SCAN
             + total_items * MINUTES_PER_ITEM_TRACKED
             + total_alerts * MINUTES_PER_ALERT
+            + duplicates_prevented * MINUTES_PER_DUPLICATE
         )
         hours_saved = round(total_minutes / 60, 1)
 
@@ -216,6 +229,7 @@ async def get_value_summary(
             total_scans=total_scans,
             total_items_tracked=total_items,
             total_alerts_triggered=total_alerts,
+            duplicates_prevented=duplicates_prevented,
             hours_saved=hours_saved,
             deal_savings=round(deal_savings, 2),
             deal_count=deal_count,

@@ -12,21 +12,86 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, Pressable, Animated, StyleSheet, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/useAppTheme';
-import { fonts } from '@/theme/tokens';
+import { fonts, colors as tokenColors } from '@/theme/tokens';
 import { formatPrice } from '@/lib/format';
 import { track } from '@/analytics/track';
+import { fireHaptic, HapticIntent } from '@/haptics';
 import type { ValueSummaryData } from '@/api/collectorsApi';
+import type { SavingsTrigger } from '@/hooks/useValueSummary';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const AUTO_DISMISS_MS = 8000;
 
 type Props = {
   data: ValueSummaryData;
   visible: boolean;
+  trigger?: SavingsTrigger | null;
   onDismiss: () => void;
 };
 
-export function ValueSavedBanner({ data, visible, onDismiss }: Props) {
+type CurrencyCode = 'EUR' | 'USD' | 'GBP' | 'JPY' | 'KRW' | 'AUD' | 'CAD';
+
+function getSavingsMessage(
+  data: ValueSummaryData,
+  trigger: SavingsTrigger,
+  currency: CurrencyCode,
+  hasMoney: boolean,
+  hasTime: boolean,
+): { headline: string; subline: string } {
+  switch (trigger) {
+    case 'first_scan':
+      return {
+        headline: 'First scan complete!',
+        subline: `That just saved you ~15 min of manual research`,
+      };
+    case 'scan_milestone':
+      return {
+        headline: `${data.total_scans} scans — ${data.hours_saved}h saved`,
+        subline: hasMoney
+          ? `plus ${formatPrice(data.total_money_saved, currency)} in smart decisions`
+          : `across ${data.total_items_tracked} tracked items`,
+      };
+    case 'deal_complete':
+      return {
+        headline: hasMoney ? `You've saved ${formatPrice(data.total_money_saved, currency)}` : 'Deal closed!',
+        subline: `${data.deal_count} deal${data.deal_count !== 1 ? 's' : ''} negotiated below asking price`,
+      };
+    case 'item_milestone':
+      return {
+        headline: `${data.total_items_tracked} items tracked`,
+        subline: hasTime
+          ? `${data.hours_saved}h of inventory management — handled`
+          : `Your collection is growing fast`,
+      };
+    case 'duplicate_prevented':
+      return {
+        headline: 'Duplicate caught!',
+        subline: hasMoney
+          ? `CollectAI has saved you ${formatPrice(data.total_money_saved, currency)} overall`
+          : `${data.total_items_tracked} items tracked, no doubles`,
+      };
+    default: {
+      // Periodic / generic fallback
+      if (hasMoney && hasTime) {
+        return {
+          headline: `You've saved ${formatPrice(data.total_money_saved, currency)}`,
+          subline: `and ${data.hours_saved}+ hours of research`,
+        };
+      }
+      if (hasMoney) {
+        return {
+          headline: `You've saved ${formatPrice(data.total_money_saved, currency)}`,
+          subline: `on ${data.smart_buy_count + data.deal_count} smart decisions`,
+        };
+      }
+      return {
+        headline: `${data.hours_saved}+ hours saved`,
+        subline: `across ${data.total_scans} scans and ${data.total_items_tracked} items tracked`,
+      };
+    }
+  }
+}
+
+export function ValueSavedBanner({ data, visible, trigger, onDismiss }: Props) {
   const { colors } = useAppTheme();
   const slideAnim = useRef(new Animated.Value(-200)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -34,6 +99,7 @@ export function ValueSavedBanner({ data, visible, onDismiss }: Props) {
   useEffect(() => {
     if (visible) {
       track({ name: 'value_summary_shown', properties: { money: data.total_money_saved, hours: data.hours_saved } });
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
 
       Animated.spring(slideAnim, {
         toValue: 0,
@@ -66,20 +132,8 @@ export function ValueSavedBanner({ data, visible, onDismiss }: Props) {
   const hasTime = data.hours_saved >= 0.5;
   const currency = (data.currency || 'EUR') as 'EUR' | 'USD' | 'GBP' | 'JPY' | 'KRW' | 'AUD' | 'CAD';
 
-  // Pick the strongest message based on what data we have
-  let headline = '';
-  let subline = '';
-
-  if (hasMoney && hasTime) {
-    headline = `You've saved ${formatPrice(data.total_money_saved, currency)}`;
-    subline = `and ${data.hours_saved}+ hours of research`;
-  } else if (hasMoney) {
-    headline = `You've saved ${formatPrice(data.total_money_saved, currency)}`;
-    subline = `on ${data.smart_buy_count + data.deal_count} smart decisions`;
-  } else if (hasTime) {
-    headline = `${data.hours_saved}+ hours saved`;
-    subline = `across ${data.total_scans} scans and ${data.total_items_tracked} items tracked`;
-  }
+  // Contextual messaging based on what triggered the notification
+  const { headline, subline } = getSavingsMessage(data, trigger ?? 'periodic', currency, hasMoney, hasTime);
 
   // Best find callout
   const hasBestFind = data.best_find_name && data.best_find_saved > 0;
@@ -108,7 +162,7 @@ export function ValueSavedBanner({ data, visible, onDismiss }: Props) {
         <View style={styles.content}>
           {/* Icon */}
           <View style={styles.iconCircle}>
-            <Ionicons name="trending-up" size={20} color="#FFFFFF" />
+            <Ionicons name="trending-up" size={20} color={colors.card} />
           </View>
 
           {/* Text */}
@@ -170,9 +224,6 @@ function AutoDismissBar({ durationMs }: { durationMs: number }) {
   );
 }
 
-const TIFFANY = '#81D8D0';
-const TIFFANY_DARK = '#5FBFB6';
-
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
@@ -195,7 +246,7 @@ const styles = StyleSheet.create({
   },
   accentBar: {
     height: 3,
-    backgroundColor: TIFFANY,
+    backgroundColor: tokenColors.brand.base,
   },
   content: {
     flexDirection: 'row',
@@ -208,7 +259,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: TIFFANY_DARK,
+    backgroundColor: tokenColors.brand.dark,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -240,7 +291,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: 2,
-    backgroundColor: TIFFANY,
+    backgroundColor: tokenColors.brand.base,
     borderRadius: 1,
   },
 });

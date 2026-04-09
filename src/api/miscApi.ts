@@ -228,6 +228,7 @@ export type ValueSummaryData = {
   total_scans: number;
   total_items_tracked: number;
   total_alerts_triggered: number;
+  duplicates_prevented: number;
   hours_saved: number;
   deal_savings: number;
   deal_count: number;

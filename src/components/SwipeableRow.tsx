@@ -123,7 +123,7 @@ function SwipeableRowInner({
             friction: 10,
           }).start();
           isOpen.current = 'right';
-          if (enableHaptics) fireHaptic(HapticIntent.JUDGMENT_LOCKED);
+          if (enableHaptics) fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
         } else if (shouldOpenLeft && isOpen.current !== 'left') {
           Animated.spring(translateX, {
             toValue: leftActionsWidth,
@@ -132,7 +132,7 @@ function SwipeableRowInner({
             friction: 10,
           }).start();
           isOpen.current = 'left';
-          if (enableHaptics) fireHaptic(HapticIntent.JUDGMENT_LOCKED);
+          if (enableHaptics) fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
         } else {
           Animated.spring(translateX, {
             toValue: 0,

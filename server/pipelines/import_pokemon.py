@@ -16,6 +16,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -33,6 +34,8 @@ from pipelines.import_common import (
 
 API_BASE = "https://api.pokemontcg.io/v2"
 CATEGORY = "pokemon"
+API_KEY = os.getenv("POKEMONTCG_API_KEY", "")
+_HEADERS = {"X-Api-Key": API_KEY} if API_KEY else {}
 
 
 def fetch_sets(limit: int | None = None) -> list[dict]:
@@ -41,7 +44,7 @@ def fetch_sets(limit: int | None = None) -> list[dict]:
     page = 1
     max_pages = 100  # safety guard against infinite pagination
     while page <= max_pages:
-        data = fetch_json(f"{API_BASE}/sets", params={
+        data = fetch_json(f"{API_BASE}/sets", headers=_HEADERS, params={
             "page": page,
             "pageSize": 250,
             "orderBy": "-releaseDate",
@@ -66,7 +69,7 @@ def fetch_cards_for_set(set_id: str) -> list[dict]:
     page = 1
     max_pages = 200  # safety guard against infinite pagination
     while page <= max_pages:
-        data = fetch_json(f"{API_BASE}/cards", params={
+        data = fetch_json(f"{API_BASE}/cards", headers=_HEADERS, params={
             "q": f"set.id:{set_id}",
             "page": page,
             "pageSize": 250,
@@ -271,6 +274,27 @@ def main():
 
     if failed_sets:
         logger.warning(f"Failed sets ({len(failed_sets)}): {', '.join(failed_sets)}")
+
+    # In-memory dedup on item_key (the DB unique constraint catches dupes too,
+    # but only after wasting a network roundtrip per duplicate batch row).
+    # The pokemontcg.io API occasionally returns the same card under two
+    # set entries (e.g. ex10/ex10 promo). This collapses them in O(n).
+    # See R47 task #65 / catalog_dedup_check.py limitation note.
+    seen_keys: set[str] = set()
+    deduped_items: list[CatalogItem] = []
+    dropped_dupe_count = 0
+    for item in all_items:
+        if item.item_key in seen_keys:
+            dropped_dupe_count += 1
+            continue
+        seen_keys.add(item.item_key)
+        deduped_items.append(item)
+    if dropped_dupe_count:
+        logger.info(
+            "[%s] in-memory dedup: dropped %d duplicate item_keys (kept %d)",
+            CATEGORY, dropped_dupe_count, len(deduped_items),
+        )
+    all_items = deduped_items
 
     # Write local files
     sql_path = write_catalog_sql(CATEGORY, all_items)

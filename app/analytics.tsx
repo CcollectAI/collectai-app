@@ -52,23 +52,6 @@ import { PredictionAccuracySection } from '@/components/analytics/PredictionAccu
 // Tier-specific tokens (not theme-dependent)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Static fallback for StyleSheet only — React hooks cannot be used in static context.
-// All runtime rendering code must use useAppTheme() colors instead of these values.
-// These exist solely because StyleSheet.create() requires literal values at module scope.
-const COLORS = {
-  tiffany: "#81D8D0",
-  tiffanyDark: "#5FBFB6",
-  tiffanyLight: "#E6F7F5",
-  background: "#F7FAF9",
-  card: "#FFFFFF",
-  navy: "#0F172A",
-  muted: "#64748B",
-  border: "#E2E8F0",
-  success: "#10B981",
-  warning: "#F59E0B",
-  danger: "#EF4444",
-};
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Formatting helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -338,7 +321,7 @@ function AnalyticsScreen() {
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
               <Text style={[styles.cardTitle, { color: colors.text }]}>Holdings</Text>
-              <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{items.length} items</Text>
+              <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{items.length} {items.length === 1 ? 'item' : 'items'}</Text>
             </View>
 
             {items.slice(0, 8).map((item, idx) => (

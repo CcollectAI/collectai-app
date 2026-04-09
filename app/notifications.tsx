@@ -18,6 +18,7 @@ import { FlashList } from "@shopify/flash-list";
 import { useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { SkeletonList } from "@/components/Skeleton";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import {
@@ -48,14 +49,21 @@ const MOCK_NOTIFICATIONS: NotificationItem[] = [
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   price_alert: "trending-up",
+  price_drop: "trending-down",
   value_change: "analytics-outline",
   deal: "pricetags-outline",
+  deal_alert: "pricetags-outline",
   chat: "chatbubble-outline",
+  new_message: "chatbubble-outline",
   event: "calendar-outline",
+  event_invite: "calendar-outline",
   connection: "people-outline",
   achievement: "trophy-outline",
+  set_complete: "trophy-outline",
   scarcity: "flame-outline",
   insight: "bulb-outline",
+  catalog_mapped: "checkmark-done-outline",
+  sponsor_message: "megaphone-outline",
   system: "information-circle-outline",
 };
 
@@ -297,7 +305,7 @@ function NotificationsScreen() {
 
       {loading ? (
         <View style={s.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.accent} />
+          <SkeletonList count={6} type="row" />
         </View>
       ) : (
         <FlashList

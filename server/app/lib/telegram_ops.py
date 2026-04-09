@@ -22,25 +22,21 @@ from app.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 logger = logging.getLogger(__name__)
 
-_http_client: Optional[httpx.AsyncClient] = None
-
-
 def configured() -> bool:
     """Return True if Telegram bot credentials are set."""
     return bool(TELEGRAM_BOT_TOKEN) and bool(TELEGRAM_CHAT_ID)
-
-
-def _get_client() -> httpx.AsyncClient:
-    global _http_client
-    if _http_client is None or _http_client.is_closed:
-        _http_client = httpx.AsyncClient(timeout=10.0)
-    return _http_client
 
 
 async def send_ops_alert(message: str) -> bool:
     """Send a message to the configured Telegram ops chat.
 
     Returns True on success, False on failure (never raises).
+
+    Note: a fresh httpx.AsyncClient is created per call. Caching the client
+    globally caused "Event loop is closed" errors when called from short-lived
+    asyncio.run() contexts (e.g. spend_tracker._fire_telegram_alert from a
+    background worker thread). We send ~3 alerts per month — the per-call
+    client cost is negligible.
     """
     if not configured():
         logger.debug("Telegram ops not configured — skipping alert")
@@ -54,13 +50,13 @@ async def send_ops_alert(message: str) -> bool:
     }
 
     try:
-        client = _get_client()
-        resp = await client.post(url, json=payload)
-        if resp.status_code == 200:
-            logger.info("Telegram ops alert sent")
-            return True
-        logger.warning("Telegram API returned %d: %s", resp.status_code, resp.text[:200])
-        return False
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(url, json=payload)
+            if resp.status_code == 200:
+                logger.info("Telegram ops alert sent")
+                return True
+            logger.warning("Telegram API returned %d: %s", resp.status_code, resp.text[:200])
+            return False
     except Exception as exc:
         logger.warning("Telegram ops alert failed: %s", exc)
         return False

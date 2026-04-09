@@ -200,9 +200,10 @@ async def classify_openai_vision(
         usage = data.get("usage", {})
         input_tokens = usage.get("prompt_tokens", 500)
         output_tokens = usage.get("completion_tokens", 200)
-        # gpt-4o-mini: $0.15/1M input, $0.60/1M output (convert to EUR ~0.92)
+        # gpt-4o-mini: $0.15/1M input, $0.60/1M output (USD→EUR via config)
+        from app.config import USD_TO_EUR
         cost_usd = (input_tokens * 0.15 + output_tokens * 0.60) / 1_000_000
-        spend_tracker.record("openai", cost_eur=cost_usd * 0.92)
+        spend_tracker.record("openai", cost_eur=cost_usd * USD_TO_EUR)
 
         # Parse the structured response
         content = data.get("choices", [{}])[0].get("message", {}).get("content", "")

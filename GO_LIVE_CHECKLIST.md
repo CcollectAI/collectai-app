@@ -1,16 +1,17 @@
 ================================================================================
   COLLECTAI — GO-LIVE CHECKLIST
-  Generated: 2026-02-18
+  Generated: 2026-02-18 · Status update: 2026-04-07 (Round 42 audit)
 ================================================================================
 
 Use this file as a step-by-step checklist. Work through each section in order.
 Mark items [x] as you complete them.
 
-Current state: All code is written and tested (1653 backend + 104 frontend tests
-passing, 0 TypeScript errors). Age verification (COPPA/GDPR), expo-store-review,
-and OTA updates (expo-updates) are code-complete. Everything below is
-configuration, credentials, assets, and manual setup needed to take the app from
-dev to production.
+Status (2026-04-07): All app code, tests, admin dashboard (24 tabs, real data),
+AEO content (103 Q&A pairs), spend monitor, dark mode, and the Atlantis→CollectAI
+rebrand are DONE (3194 backend tests, 476 frontend tests, 0 TS errors). What's
+left here is external/manual setup: domain DNS, Supabase project apply, EAS
+submit creds (Apple Team ID + ASC App ID), DB migration apply on prod, and the
+data bake. See memory3.md → "Pending — Pre-Launch" for the short list.
 
 
 ================================================================================

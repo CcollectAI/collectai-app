@@ -390,7 +390,7 @@ function SellerDashboardScreen() {
   // Show toast on error
   useEffect(() => {
     if (dashboardError) {
-      showToast({ message: 'Failed to load seller data', type: 'error' });
+      showToast({ message: "Couldn't load your seller data — pull to refresh", type: 'error' });
     }
   }, [dashboardError, showToast]);
 
@@ -417,7 +417,7 @@ function SellerDashboardScreen() {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
             showToast({ message: 'Listing removed', type: 'success' });
             loadData();
-          } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: 'Failed to delist', type: 'error' }); }
+          } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: "Couldn't delist — marketplace may be down", type: 'error' }); }
         },
       },
     ]);
@@ -448,7 +448,7 @@ function SellerDashboardScreen() {
       createTitleField.reset();
       createPriceField.reset();
       loadData();
-    } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: 'Failed to create listing', type: 'error' }); }
+    } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: "Couldn't create listing — try again", type: 'error' }); }
     finally { setCreating(false); }
   }, [createTitleField, createPriceField, createMarketplace, settings.currency, loadData, showToast]);
 
@@ -462,7 +462,7 @@ function SellerDashboardScreen() {
           fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
           showToast({ message: 'Account disconnected', type: 'success' });
           loadData();
-        } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: 'Failed to disconnect', type: 'error' }); }
+        } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: "Couldn't disconnect — try again", type: 'error' }); }
       }},
     ]);
   }, [loadData, showToast]);
@@ -474,11 +474,11 @@ function SellerDashboardScreen() {
     try {
       await collectorsApi.connectMarketplaceAccount({ marketplace_id: connectMp, seller_name: connectName.trim() || undefined });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED);
-      showToast({ message: 'Account connected!', type: 'success' });
+      showToast({ message: 'Account connected — ready to list!', type: 'success' });
       closeConnectModal();
       setConnectName('');
       loadData();
-    } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: 'Failed to connect account', type: 'error' }); }
+    } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: "Couldn't connect account — check the marketplace login", type: 'error' }); }
     finally { setConnecting(false); }
   }, [connectMp, connectName, connecting, loadData, showToast]);
 

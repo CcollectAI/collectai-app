@@ -99,16 +99,18 @@ async def _export_market_hits_to_jsonl(conn, category: str, cutoff: datetime) ->
 
     Returns number of observations written.
     """
-    # Fetch sold comps with prices for this category
+    # R46.14 — column rename to match this DB's market_hits schema:
+    #   features_json → attrs   (jsonb column added by an older migration)
+    #   created_at    → seen_at (legacy timestamp on market_hits)
     rows = await conn.fetch(
         """
-        SELECT price, condition, features_json
+        SELECT price, condition, attrs
         FROM public.market_hits
         WHERE normalized_key LIKE $1
           AND price IS NOT NULL
           AND price > 0
-          AND created_at >= $2
-        ORDER BY created_at DESC
+          AND seen_at >= $2
+        ORDER BY seen_at DESC
         LIMIT 5000
         """,
         f"{category}:%",
@@ -131,14 +133,14 @@ async def _export_market_hits_to_jsonl(conn, category: str, cutoff: datetime) ->
             price = float(row["price"])
             condition = row["condition"]
 
-            # Extract is_sold from features_json if available
-            features_json = row["features_json"]
+            # Extract is_sold from attrs jsonb if available
+            attrs = row["attrs"]
             is_sold = False
-            if isinstance(features_json, dict):
-                is_sold = features_json.get("is_sold", False)
-            elif isinstance(features_json, str):
+            if isinstance(attrs, dict):
+                is_sold = attrs.get("is_sold", False)
+            elif isinstance(attrs, str):
                 try:
-                    fj = json.loads(features_json)
+                    fj = json.loads(attrs)
                     is_sold = fj.get("is_sold", False)
                 except (json.JSONDecodeError, TypeError):
                     pass
@@ -359,12 +361,49 @@ async def run_once():
     cutoff = datetime.now(timezone.utc) - timedelta(days=LOOKBACK_DAYS)
 
     try:
+        # R46.14 — pre-flight check tables ONCE so we don't log a warning
+        # per-category for missing dependent tables. Also wrap each export
+        # in try/except for safety against per-row issues.
+        async def _table_exists(name: str) -> bool:
+            try:
+                return bool(await conn.fetchval(
+                    "SELECT to_regclass($1) IS NOT NULL", f"public.{name}"
+                ))
+            except Exception:
+                return False
+
+        has_verified_sales = await _table_exists("verified_sales")
+        has_price_ground_truths = await _table_exists("price_ground_truths")
+        has_scan_corrections = await _table_exists("scan_corrections")
+        if not has_scan_corrections:
+            logger.info("[model_retrain] scan_corrections table missing — skipping that export type")
+        if not has_verified_sales:
+            logger.info("[model_retrain] verified_sales table missing — skipping that export type")
+        if not has_price_ground_truths:
+            logger.info("[model_retrain] price_ground_truths table missing — skipping that export type")
+
+        async def _safe_export(fn, name, *args):
+            try:
+                return await fn(*args)
+            except Exception as exc:
+                logger.debug(
+                    "[model_retrain] %s export error: %s: %s",
+                    name, type(exc).__name__, str(exc)[:80],
+                )
+                return 0
+
         # Phase 1: Export market_hits + ground truths per category
         export_stats = {}
         for category in ALL_CATEGORIES:
-            hits_count = await _export_market_hits_to_jsonl(conn, category, cutoff)
-            gt_count = await _export_ground_truths(conn, category, cutoff)
-            corr_count = await _export_scan_corrections(conn, category, cutoff)
+            hits_count = await _safe_export(_export_market_hits_to_jsonl, "market_hits", conn, category, cutoff)
+            gt_count = (
+                await _safe_export(_export_ground_truths, "ground_truths", conn, category, cutoff)
+                if has_price_ground_truths or has_verified_sales else 0
+            )
+            corr_count = (
+                await _safe_export(_export_scan_corrections, "scan_corrections", conn, category, cutoff)
+                if has_scan_corrections else 0
+            )
             export_stats[category] = {
                 "market_hits": hits_count,
                 "ground_truths": gt_count,

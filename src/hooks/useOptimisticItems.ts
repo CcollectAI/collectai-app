@@ -17,6 +17,9 @@ import logger from '@/utils/logger';
 
 type ItemListSetter = React.Dispatch<React.SetStateAction<Array<{ id: string; name?: string; category?: string; _isTemp?: boolean; [key: string]: unknown }>>>;
 
+// Generic id-keyed setter for bulk ops — works with any item shape that has an `id`.
+type IdSetter<T extends { id: string }> = React.Dispatch<React.SetStateAction<T[]>>;
+
 /**
  * Hook for optimistically archiving items.
  *
@@ -71,8 +74,8 @@ export function useOptimisticDelete(
  * @param setItems - State setter for the items array
  * @param reloadItems - Function to reload items from server (used as rollback)
  */
-export function useOptimisticBulkArchive(
-  setItems: ItemListSetter,
+export function useOptimisticBulkArchive<T extends { id: string }>(
+  setItems: IdSetter<T>,
   reloadItems: () => void,
 ) {
   return useOptimisticMutation<string[]>({
@@ -101,8 +104,8 @@ export function useOptimisticBulkArchive(
  * @param setItems - State setter for the items array
  * @param reloadItems - Function to reload items from server (used as rollback)
  */
-export function useOptimisticBulkDelete(
-  setItems: ItemListSetter,
+export function useOptimisticBulkDelete<T extends { id: string }>(
+  setItems: IdSetter<T>,
   reloadItems: () => void,
 ) {
   return useOptimisticMutation<string[]>({

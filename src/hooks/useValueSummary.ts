@@ -2,15 +2,17 @@
  * useValueSummary — manages when to show the Instacart-style value notification.
  *
  * Trigger conditions (max 1x per 7 days):
- * - After every 10th scan
+ * - After first scan (milestone)
+ * - After every 5th scan
  * - After completing a deal
- * - After adding 25th / 50th / 100th / 250th item
+ * - After adding 10th / 25th / 50th / 100th / 250th / 500th item
+ * - After a duplicate is prevented
  * - On app open if 7+ days since last shown
  *
  * Stores last-shown timestamp in AsyncStorage.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getValueSummary } from '@/api/collectorsApi';
 import type { ValueSummaryData } from '@/api/collectorsApi';
@@ -18,17 +20,27 @@ import { logger } from '@/lib/logger';
 
 const STORAGE_KEY = 'collectai_value_summary_last_shown';
 const MIN_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const SCAN_MILESTONE_INTERVAL = 10; // Every 10 scans
-const ITEM_MILESTONES = [25, 50, 100, 250, 500];
+const SCAN_MILESTONE_INTERVAL = 5; // Every 5 scans
+const ITEM_MILESTONES = [10, 25, 50, 100, 250, 500];
+
+export type SavingsTrigger =
+  | 'periodic'
+  | 'scan_milestone'
+  | 'first_scan'
+  | 'deal_complete'
+  | 'item_milestone'
+  | 'duplicate_prevented';
 
 export function useValueSummary() {
   const [data, setData] = useState<ValueSummaryData | null>(null);
   const [visible, setVisible] = useState(false);
+  const [trigger, setTrigger] = useState<SavingsTrigger | null>(null);
   const [loading, setLoading] = useState(false);
-  const fetchedRef = useRef(false);
+  const inflightRef = useRef(false);
 
   const dismiss = useCallback(async () => {
     setVisible(false);
+    setTrigger(null);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, Date.now().toString());
     } catch {
@@ -46,14 +58,14 @@ export function useValueSummary() {
     }
   }, []);
 
-  const checkAndShow = useCallback(async (trigger: 'periodic' | 'scan_milestone' | 'deal_complete' | 'item_milestone') => {
-    if (fetchedRef.current || loading) return;
+  const checkAndShow = useCallback(async (trig: SavingsTrigger) => {
+    if (inflightRef.current || loading || visible) return;
 
     const allowed = await canShow();
     if (!allowed) return;
 
+    inflightRef.current = true;
     setLoading(true);
-    fetchedRef.current = true;
 
     try {
       const summary = await getValueSummary();
@@ -64,26 +76,25 @@ export function useValueSummary() {
       if (!hasSavings && !hasTime) return;
 
       setData(summary);
+      setTrigger(trig);
       setVisible(true);
 
-      logger.info('[ValueSummary] Shown', { trigger, money: summary.total_money_saved, hours: summary.hours_saved });
+      logger.info('[ValueSummary] Shown', { trigger: trig, money: summary.total_money_saved, hours: summary.hours_saved });
     } catch (err) {
       logger.warn('[ValueSummary] Failed to fetch:', err);
     } finally {
       setLoading(false);
+      inflightRef.current = false;
     }
-  }, [canShow, loading]);
-
-  // Check on mount (periodic trigger)
-  useEffect(() => {
-    checkAndShow('periodic');
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [canShow, loading, visible]);
 
   /**
    * Call after scan completion with total scan count.
    */
   const onScanComplete = useCallback((totalScans: number) => {
-    if (totalScans > 0 && totalScans % SCAN_MILESTONE_INTERVAL === 0) {
+    if (totalScans === 1) {
+      checkAndShow('first_scan');
+    } else if (totalScans > 0 && totalScans % SCAN_MILESTONE_INTERVAL === 0) {
       checkAndShow('scan_milestone');
     }
   }, [checkAndShow]);
@@ -104,12 +115,21 @@ export function useValueSummary() {
     }
   }, [checkAndShow]);
 
+  /**
+   * Call after a duplicate is prevented (user chose not to add).
+   */
+  const onDuplicatePrevented = useCallback(() => {
+    checkAndShow('duplicate_prevented');
+  }, [checkAndShow]);
+
   return {
     data,
     visible,
+    trigger,
     dismiss,
     onScanComplete,
     onDealComplete,
     onItemAdded,
+    onDuplicatePrevented,
   };
 }

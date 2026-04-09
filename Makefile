@@ -15,4 +15,5 @@ test:
 	$(PY) -m pytest -q
 
 lint:
-	@echo "(add ruff/flake8 here later)"
+	@command -v ruff >/dev/null 2>&1 && ruff check server/ || echo "[lint] ruff not installed — skipping python lint"
+	@npx --yes tsc --noEmit

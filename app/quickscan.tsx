@@ -100,6 +100,9 @@ function QuickScanScreen() {
   // Result screen state (intermediate screen with alternatives)
   const [scanResult, setScanResult] = useState<QuickScanResult | null>(null);
 
+  // Session scan counter for savings toast
+  const sessionScanCount = useRef(0);
+
   // Slide-up animation for batch result overlay
   const batchOverlayAnim = useRef(new Animated.Value(0)).current;
 
@@ -385,6 +388,16 @@ function QuickScanScreen() {
       // Fire haptic based on confidence (always fire success on scan result)
       const intent = confidenceToIntent(sr.prediction.confidence);
       fireHaptic(intent, { enabled: settings.hapticsEnabled });
+
+      // Track scan count and show savings toast on milestones
+      sessionScanCount.current += 1;
+      const count = sessionScanCount.current;
+      if (count === 1) {
+        showToast({ message: 'Saved ~15 min of manual research', type: 'success', duration: 3000 });
+      } else if (count % 5 === 0) {
+        const minsSaved = count * 15;
+        showToast({ message: `${count} scans — ~${minsSaved} min saved so far`, type: 'success', duration: 3000 });
+      }
 
       if (batchMode) {
         // In batch mode: show compact overlay result card (no intermediate screen)

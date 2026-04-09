@@ -21,7 +21,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { dataProvider, type Item as DataItem } from "@/data";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -188,10 +188,17 @@ const ItemsScreen: React.FC = () => {
   refreshRef.current = paginatedRefresh;
   const stableReload = useCallback(() => { refreshRef.current(); }, []);
 
-  // Optimistic mutation hooks for bulk operations
-  // ItemListSetter uses index signature; Item type is structurally compatible at runtime
-  const optimisticBulkArchive = useOptimisticBulkArchive(setProviderItems as any, stableReload);
-  const optimisticBulkDelete = useOptimisticBulkDelete(setProviderItems as any, stableReload);
+  // Auto-refresh on tab focus so items saved from QuickScan / Add appear immediately
+  // without the user having to pull-to-refresh.
+  useFocusEffect(
+    useCallback(() => {
+      refreshRef.current();
+    }, []),
+  );
+
+  // Optimistic mutation hooks for bulk operations (generic over item shape)
+  const optimisticBulkArchive = useOptimisticBulkArchive(setProviderItems, stableReload);
+  const optimisticBulkDelete = useOptimisticBulkDelete(setProviderItems, stableReload);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -786,7 +793,7 @@ const ItemsScreen: React.FC = () => {
       ) : (
         <SectionList
           sections={sections}
-          keyExtractor={(item, index) => `${item.id}-${index}`}
+          keyExtractor={(item) => item.id}
           renderSectionHeader={({ section }) => (
             <View style={[styles.categoryBlock, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
               <Text style={[styles.categoryTitle, { color: colors.text }]}>

@@ -122,6 +122,24 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logging.getLogger("uvicorn").warning("[startup] Failed to start task queue worker: %s", e)
 
+    # Optional schedulers — opt-in via env vars so deployments can pick which ones run.
+    _optional_schedulers = [
+        ("AUTO_DELIST_ENABLED", "workers.auto_delist_scheduler", "auto-delist"),
+        ("CALIBRATION_ENABLED", "workers.calibration_scheduler", "calibration"),
+        ("MODEL_RETRAIN_ENABLED", "workers.model_retrain_scheduler", "model retrain"),
+        ("EVENT_SCRAPER_ENABLED", "workers.event_scraper_scheduler", "event scraper"),
+    ]
+    for env_var, mod_path, label in _optional_schedulers:
+        if os.getenv(env_var, "false").lower() in ("true", "1"):
+            try:
+                mod = __import__(mod_path, fromlist=["scheduler_loop"])
+                asyncio.create_task(mod.scheduler_loop())
+                logging.getLogger("uvicorn").info("[startup] %s scheduler started", label)
+            except Exception as e:
+                logging.getLogger("uvicorn").warning(
+                    "[startup] Failed to start %s scheduler: %s", label, e,
+                )
+
     yield
 
     # ---- Shutdown ----

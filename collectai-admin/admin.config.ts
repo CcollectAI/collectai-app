@@ -23,7 +23,9 @@ export const APP_CONFIG = {
   },
 
   // ─── Auth ──────────────────────────────────────────────────────────────
-  adminPin: process.env.NEXT_PUBLIC_ADMIN_PIN || "CHANGE_ME",  // Must be set via env var
+  // No fallback: if NEXT_PUBLIC_ADMIN_PIN is unset the PIN check below fails closed.
+  // In production builds a missing PIN also throws at module load (see check further down).
+  adminPin: process.env.NEXT_PUBLIC_ADMIN_PIN || "",
 
   // ─── Backend API ───────────────────────────────────────────────────────
   api: {
@@ -134,5 +136,12 @@ export const APP_CONFIG = {
     spendMonitor: true,
   },
 };
+
+// Fail-fast in production if the admin PIN was not provided at build time.
+if (process.env.NODE_ENV === "production" && !APP_CONFIG.adminPin) {
+  throw new Error(
+    "NEXT_PUBLIC_ADMIN_PIN must be set for production builds of collectai-admin"
+  );
+}
 
 export type AppConfig = typeof APP_CONFIG;

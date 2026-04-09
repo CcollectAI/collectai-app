@@ -168,6 +168,21 @@ async def run_once():
     status = "ok"
     conn = await asyncpg.connect(DSN)
     try:
+        # R46.13 — Schema-probe guard: the digest body queries
+        # public.user_settings which doesn't exist on this DB (one of the 18
+        # deferred user-feature tables). Probe for it and skip cleanly if
+        # missing. Round 47: apply the user_settings migration or refactor
+        # to use user_alert_preferences instead.
+        try:
+            await conn.fetchval("SELECT 1 FROM public.user_settings LIMIT 1")
+        except Exception as drift_exc:
+            logger.info(
+                "[insights_digest] user_settings missing (%s) — skipping cycle (R46.13)",
+                type(drift_exc).__name__,
+            )
+            record_run("insights_digest_worker", "ok")
+            return
+
         # Get all users with items
         user_rows = await conn.fetch(_USERS_WITH_ITEMS_QUERY)
         if not user_rows:

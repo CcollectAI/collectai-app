@@ -248,3 +248,104 @@ async def spend_reset(request: Request) -> JSONResponse:
         return err
     spend_tracker.reset()
     return JSONResponse({"ok": True, "message": "Spend counters reset"})
+
+
+@router.get("/admin/bake-summary", summary="Data-bake aggregate health snapshot")
+async def bake_summary(request: Request) -> JSONResponse:
+    """Single-call health snapshot for the data-bake operator.
+
+    Aggregates everything an operator wants to know during the pre-launch
+    bake into one JSON payload — used by ``scripts/bake_status.sh`` and the
+    daily Telegram digest.
+    """
+    err = _check_ops_key(request)
+    if err is not None:
+        return err
+
+    out: dict[str, Any] = {
+        "ok": True,
+        "workers": {},
+        "rows": {},
+        "spend": {},
+        "data_sources": {},
+        "warnings": [],
+    }
+
+    # 1. Worker health (reuse the same internal function /admin/worker-health calls)
+    try:
+        health = get_worker_health()
+        out["workers"] = health
+        # Count overdue / errored workers as warnings
+        overdue = [w["name"] for w in health.get("workers", []) if w.get("overdue")]
+        errored = [w["name"] for w in health.get("workers", []) if w.get("last_status") == "error"]
+        if overdue:
+            out["warnings"].append(f"overdue workers: {', '.join(overdue)}")
+        if errored:
+            out["warnings"].append(f"errored workers: {', '.join(errored)}")
+    except Exception as exc:
+        out["warnings"].append(f"worker health unavailable: {exc}")
+
+    # 2. Row counts that prove the bake is actually accumulating
+    pool = get_pool()
+    if pool is not None:
+        try:
+            row_queries = {
+                "category_items_total": "SELECT count(*) FROM public.category_items",
+                "market_hits_total": "SELECT count(*) FROM public.market_hits",
+                # market_hits has `seen_at` (legacy) instead of created_at on this prod DB
+                "market_hits_24h": "SELECT count(*) FROM public.market_hits WHERE seen_at > now() - interval '24 hours'",
+                "price_predictions_total": "SELECT count(*) FROM public.price_predictions",
+                "price_predictions_24h": "SELECT count(*) FROM public.price_predictions WHERE created_at > now() - interval '24 hours'",
+                "mandate_deals_total": "SELECT count(*) FROM public.mandate_deals",
+                "alert_history_24h": "SELECT count(*) FROM public.alert_trigger_history WHERE created_at > now() - interval '24 hours'",
+            }
+            for key, sql in row_queries.items():
+                try:
+                    out["rows"][key] = await pool.fetchval(sql) or 0
+                except Exception as exc:
+                    out["rows"][key] = None
+                    _log.debug("[bake-summary] %s failed: %s", key, exc)
+        except Exception as exc:
+            out["warnings"].append(f"row counts unavailable: {exc}")
+    else:
+        out["warnings"].append("DB pool unavailable")
+
+    # 3. Spend snapshot (already exposed via spend_tracker.summary())
+    try:
+        out["spend"] = spend_tracker.summary()
+    except Exception as exc:
+        out["warnings"].append(f"spend summary unavailable: {exc}")
+
+    # 4. Which data sources are actually configured (no secret values, just bools)
+    out["data_sources"] = {
+        "openai": bool(os.getenv("OPENAI_API_KEY")),
+        "firecrawl": bool(os.getenv("FIRECRAWL_API_KEY")),
+        "scrapedo": bool(os.getenv("SCRAPEDO_API_KEY")),
+        "serpapi": bool(os.getenv("SERPAPI_API_KEY")),
+        "ebay": bool(os.getenv("EBAY_APP_ID") or os.getenv("EBAY_CLIENT_ID")),
+        "tcgplayer": bool(os.getenv("TCGPLAYER_PUBLIC_KEY") or os.getenv("TCGPLAYER_BEARER_TOKEN")),
+        "discogs": bool(os.getenv("DISCOGS_PERSONAL_TOKEN")),
+        "etsy": bool(os.getenv("ETSY_API_KEY")),
+        "rebrickable": bool(os.getenv("REBRICKABLE_API_KEY")),
+        "pokemontcg": bool(os.getenv("POKEMONTCG_API_KEY")),
+        "cardmarket": bool(os.getenv("CARDMARKET_APP_TOKEN")),
+        "stockx": bool(os.getenv("STOCKX_API_KEY")),
+        "pricecharting": bool(os.getenv("PRICECHARTING_API_KEY")),
+        "bricklink": bool(os.getenv("BRICKLINK_CONSUMER_KEY")),
+        "fal": bool(os.getenv("FAL_KEY")),
+        "telegram": bool(os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID")),
+    }
+    active_sources = [k for k, v in out["data_sources"].items() if v]
+    out["data_sources"]["_active_count"] = len(active_sources)
+
+    # Operator-friendly warnings
+    if out["rows"].get("category_items_total", 0) == 0:
+        out["warnings"].append("category_items is empty — run pipelines/import_all")
+    if out["rows"].get("market_hits_24h", 0) == 0 and out["rows"].get("market_hits_total", 0) == 0:
+        out["warnings"].append("no market_hits ever — workers may not be running")
+    pct = out["spend"].get("pct_used", 0) or 0
+    if pct >= 75:
+        out["warnings"].append(f"spend at {pct:.0f}% of budget")
+
+    out["ok"] = len(out["warnings"]) == 0
+    return JSONResponse(out)

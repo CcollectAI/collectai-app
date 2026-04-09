@@ -1,5 +1,5 @@
 -- Auto-generated catalog seed for lorcana
--- Generated: 2026-03-14T11:37:04.424800+00:00
+-- Generated: 2026-04-08T22:18:03.158543+00:00
 -- Items: 795
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
@@ -71,7 +71,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('lorcana', 'ROF', 'rof-hercules-divine-hero', 'Hercules - Divine Hero', 'Disney Lorcana', 'Legendary', 'Rise of the Floodborn'),
   ('lorcana', 'ROF', 'rof-diablo-devoted-herald', 'Diablo - Devoted Herald', 'Disney Lorcana', 'Super Rare', 'Rise of the Floodborn'),
   ('lorcana', 'ITI', 'iti-milo-thatch-scholar', 'Milo Thatch - Scholar', 'Disney Lorcana', 'Legendary', 'Into the Inklands'),
-  ('lorcana', 'ITI', 'iti-kida-protector-of-atlantis', 'Kida - Protector of Atlantis', 'Disney Lorcana', 'Legendary', 'Into the Inklands'),
+  ('lorcana', 'ITI', 'iti-kida-protector-of-collectai', 'Kida - Protector of CollectAI', 'Disney Lorcana', 'Legendary', 'Into the Inklands'),
   ('lorcana', 'ITI', 'iti-pacha-village-leader', 'Pacha - Village Leader', 'Disney Lorcana', 'Super Rare', 'Into the Inklands'),
   ('lorcana', 'URR', 'urr-gaston-scheming-suitor', 'Gaston - Scheming Suitor', 'Disney Lorcana', 'Legendary', 'Ursula''s Return'),
   ('lorcana', 'URR', 'urr-cogsworth-reliable-timepiece', 'Cogsworth - Reliable Timepiece', 'Disney Lorcana', 'Super Rare', 'Ursula''s Return'),
@@ -509,7 +509,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('lorcana', 'ROF', 'rof-mulan-imperial-soldier-illuminate', 'Mulan - Imperial Soldier (Illuminate)', 'Disney Lorcana', 'Legendary', 'Rise of the Floodborn'),
   ('lorcana', 'ITI', 'iti-rapunzel-sunshine-illuminate', 'Rapunzel - Sunshine (Illuminate)', 'Disney Lorcana', 'Legendary', 'Into the Inklands'),
   ('lorcana', 'ITI', 'iti-maui-hero-to-all-illuminate', 'Maui - Hero to All (Illuminate)', 'Disney Lorcana', 'Legendary', 'Into the Inklands'),
-  ('lorcana', 'ITI', 'iti-kida-protector-of-atlantis-illuminate', 'Kida - Protector of Atlantis (Illuminate)', 'Disney Lorcana', 'Legendary', 'Into the Inklands'),
+  ('lorcana', 'ITI', 'iti-kida-protector-of-collectai-illuminate', 'Kida - Protector of CollectAI (Illuminate)', 'Disney Lorcana', 'Legendary', 'Into the Inklands'),
   ('lorcana', 'URR', 'urr-ursula-sea-witch-queen-illuminate', 'Ursula - Sea Witch Queen (Illuminate)', 'Disney Lorcana', 'Legendary', 'Ursula''s Return'),
   ('lorcana', 'URR', 'urr-mickey-mouse-musketeer-illuminate', 'Mickey Mouse - Musketeer (Illuminate)', 'Disney Lorcana', 'Legendary', 'Ursula''s Return'),
   ('lorcana', 'URR', 'urr-tinker-bell-tiny-tactician-illuminate', 'Tinker Bell - Tiny Tactician (Illuminate)', 'Disney Lorcana', 'Legendary', 'Ursula''s Return'),
@@ -671,8 +671,8 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('lorcana', 'ROF', 'rof-a-whole-new-world', 'A Whole New World', 'Disney Lorcana', 'Super Rare', 'Rise of the Floodborn'),
   ('lorcana', 'ROF', 'rof-let-it-go', 'Let It Go', 'Disney Lorcana', 'Super Rare', 'Rise of the Floodborn'),
   ('lorcana', 'ROF', 'rof-circle-of-life', 'Circle of Life', 'Disney Lorcana', 'Rare', 'Rise of the Floodborn'),
-  ('lorcana', 'ITI', 'iti-map-to-atlantis', 'Map to Atlantis', 'Disney Lorcana', 'Rare', 'Into the Inklands'),
-  ('lorcana', 'ITI', 'iti-crystal-of-atlantis', 'Crystal of Atlantis', 'Disney Lorcana', 'Super Rare', 'Into the Inklands'),
+  ('lorcana', 'ITI', 'iti-map-to-collectai', 'Map to CollectAI', 'Disney Lorcana', 'Rare', 'Into the Inklands'),
+  ('lorcana', 'ITI', 'iti-crystal-of-collectai', 'Crystal of CollectAI', 'Disney Lorcana', 'Super Rare', 'Into the Inklands'),
   ('lorcana', 'ITI', 'iti-heart-of-te-fiti', 'Heart of Te Fiti', 'Disney Lorcana', 'Super Rare', 'Into the Inklands'),
   ('lorcana', 'ITI', 'iti-hooks-sword-dueling-blade', 'Hook''s Sword - Dueling Blade', 'Disney Lorcana', 'Rare', 'Into the Inklands'),
   ('lorcana', 'ITI', 'iti-excalibur-legendary-blade', 'Excalibur - Legendary Blade', 'Disney Lorcana', 'Legendary', 'Into the Inklands'),

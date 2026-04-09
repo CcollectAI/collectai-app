@@ -246,9 +246,10 @@ async def update_item_progress(
     sets.append(f"updated_at = now()")
 
     await pool.execute(
-        f"UPDATE items SET {', '.join(sets)} WHERE id = ${idx}::uuid",
+        f"UPDATE items SET {', '.join(sets)} WHERE id = ${idx}::uuid AND user_id = ${idx + 1}::uuid",
         *params,
         item_id,
+        user_id,
     )
 
     # Fetch updated values
