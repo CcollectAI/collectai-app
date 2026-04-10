@@ -46,13 +46,13 @@ WHERE user_id IS NOT NULL
 _CURRENT_VALUE_QUERY = """
 SELECT COALESCE(SUM(lp.q50), 0)::numeric AS total_value
 FROM (
-    SELECT DISTINCT ON (pp.item_id)
+    SELECT DISTINCT ON (pp.item_ref)
         pp.q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.id = pp.item_id
+    JOIN public.items i ON i.canonical_key = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
-    ORDER BY pp.item_id, pp.asof DESC
+    ORDER BY pp.item_ref, pp.generated_at DESC
 ) lp
 """
 
@@ -60,40 +60,40 @@ FROM (
 _HISTORICAL_VALUE_QUERY = """
 SELECT COALESCE(SUM(hp.q50), 0)::numeric AS total_value
 FROM (
-    SELECT DISTINCT ON (pp.item_id)
+    SELECT DISTINCT ON (pp.item_ref)
         pp.q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.id = pp.item_id
+    JOIN public.items i ON i.canonical_key = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
-      AND pp.asof <= $2
-    ORDER BY pp.item_id, pp.asof DESC
+      AND pp.generated_at <= $2
+    ORDER BY pp.item_ref, pp.generated_at DESC
 ) hp
 """
 
 # Top gainer and loser for a user this week
 _TOP_MOVERS_QUERY = """
 WITH current_vals AS (
-    SELECT DISTINCT ON (pp.item_id)
-        pp.item_id,
+    SELECT DISTINCT ON (pp.item_ref)
+        pp.item_ref,
         pp.q50 AS current_q50,
-        i.name AS item_name
+        i.title AS item_name
     FROM public.price_predictions pp
-    JOIN public.items i ON i.id = pp.item_id
+    JOIN public.items i ON i.canonical_key = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
-    ORDER BY pp.item_id, pp.asof DESC
+    ORDER BY pp.item_ref, pp.generated_at DESC
 ),
 historical_vals AS (
-    SELECT DISTINCT ON (pp.item_id)
-        pp.item_id,
+    SELECT DISTINCT ON (pp.item_ref)
+        pp.item_ref,
         pp.q50 AS old_q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.id = pp.item_id
+    JOIN public.items i ON i.canonical_key = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
-      AND pp.asof <= $2
-    ORDER BY pp.item_id, pp.asof DESC
+      AND pp.generated_at <= $2
+    ORDER BY pp.item_ref, pp.generated_at DESC
 )
 SELECT
     c.item_id,
@@ -168,20 +168,9 @@ async def run_once():
     status = "ok"
     conn = await asyncpg.connect(DSN)
     try:
-        # R46.13 — Schema-probe guard: the digest body queries
-        # public.user_settings which doesn't exist on this DB (one of the 18
-        # deferred user-feature tables). Probe for it and skip cleanly if
-        # missing. Round 47: apply the user_settings migration or refactor
-        # to use user_alert_preferences instead.
-        try:
-            await conn.fetchval("SELECT 1 FROM public.user_settings LIMIT 1")
-        except Exception as drift_exc:
-            logger.info(
-                "[insights_digest] user_settings missing (%s) — skipping cycle (R46.13)",
-                type(drift_exc).__name__,
-            )
-            record_run("insights_digest_worker", "ok")
-            return
+        # R46.13 guard removed — user_settings table now exists (R49 schema cleanup).
+        # Queries rewritten against actual schema (R49): pp.item_ref, pp.generated_at,
+        # i.canonical_key, i.title.
 
         # Get all users with items
         user_rows = await conn.fetch(_USERS_WITH_ITEMS_QUERY)

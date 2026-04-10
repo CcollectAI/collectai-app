@@ -42,19 +42,26 @@ ITEM_DEDUP_HOURS = 72
 
 # -- Queries --
 
+# R49 — All 3 queries rewritten against actual prod schema:
+#   pp.item_id  → pp.item_ref (text)
+#   pp.asof     → pp.generated_at
+#   i.id = pp.X → i.canonical_key = pp.item_ref (text = text)
+#   i.name      → i.title
+
 # Get all users with at least 1 item and their current portfolio value
 _CURRENT_PORTFOLIO_QUERY = """
 WITH latest_predictions AS (
-    SELECT DISTINCT ON (pp.item_id)
-        pp.item_id,
+    SELECT DISTINCT ON (pp.item_ref)
+        pp.item_ref,
         pp.q50,
         i.user_id,
-        i.name AS item_name
+        i.title AS item_name
     FROM public.price_predictions pp
-    JOIN public.items i ON i.id = pp.item_id
+    JOIN public.items i ON i.canonical_key = pp.item_ref
     WHERE pp.q50 IS NOT NULL
+      AND pp.item_ref IS NOT NULL
       AND i.user_id IS NOT NULL
-    ORDER BY pp.item_id, pp.asof DESC
+    ORDER BY pp.item_ref, pp.generated_at DESC
 )
 SELECT
     user_id,
@@ -68,15 +75,16 @@ HAVING COUNT(*) >= 1
 # Get portfolio value from N days ago for a specific user
 _HISTORICAL_PORTFOLIO_QUERY = """
 WITH historical_predictions AS (
-    SELECT DISTINCT ON (pp.item_id)
-        pp.item_id,
+    SELECT DISTINCT ON (pp.item_ref)
+        pp.item_ref,
         pp.q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.id = pp.item_id
+    JOIN public.items i ON i.canonical_key = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
-      AND pp.asof <= $2
-    ORDER BY pp.item_id, pp.asof DESC
+      AND pp.item_ref IS NOT NULL
+      AND pp.generated_at <= $2
+    ORDER BY pp.item_ref, pp.generated_at DESC
 )
 SELECT COALESCE(SUM(q50), 0)::numeric AS total_value
 FROM historical_predictions
@@ -85,26 +93,28 @@ FROM historical_predictions
 # Get individual item value changes for a user
 _ITEM_CHANGES_QUERY = """
 WITH current_vals AS (
-    SELECT DISTINCT ON (pp.item_id)
-        pp.item_id,
+    SELECT DISTINCT ON (pp.item_ref)
+        pp.item_ref AS item_id,
         pp.q50 AS current_q50,
-        i.name AS item_name
+        i.title AS item_name
     FROM public.price_predictions pp
-    JOIN public.items i ON i.id = pp.item_id
+    JOIN public.items i ON i.canonical_key = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
-    ORDER BY pp.item_id, pp.asof DESC
+      AND pp.item_ref IS NOT NULL
+    ORDER BY pp.item_ref, pp.generated_at DESC
 ),
 historical_vals AS (
-    SELECT DISTINCT ON (pp.item_id)
-        pp.item_id,
+    SELECT DISTINCT ON (pp.item_ref)
+        pp.item_ref AS item_id,
         pp.q50 AS old_q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.id = pp.item_id
+    JOIN public.items i ON i.canonical_key = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
-      AND pp.asof <= $2
-    ORDER BY pp.item_id, pp.asof DESC
+      AND pp.item_ref IS NOT NULL
+      AND pp.generated_at <= $2
+    ORDER BY pp.item_ref, pp.generated_at DESC
 )
 SELECT
     c.item_id,
@@ -191,22 +201,8 @@ async def run_once():
 
     conn = await asyncpg.connect(DSN)
     try:
-        # R46.12 — Schema-probe guard: the legacy queries below reference
-        # pp.item_id and pp.asof on price_predictions, but this DB has
-        # pp.item_ref + pp.generated_at instead. Probe for the broken column
-        # and skip the cycle if drift is detected. Round 47: rewrite the
-        # _CURRENT_PORTFOLIO_QUERY against the actual schema.
-        try:
-            await conn.fetchval(
-                "SELECT pp.item_id FROM public.price_predictions pp LIMIT 1"
-            )
-        except Exception as drift_exc:
-            logger.info(
-                "[value_change] price_predictions schema drift (%s) — skipping cycle (R46.12)",
-                type(drift_exc).__name__,
-            )
-            record_run("value_change_worker", "ok")
-            return
+        # R46.12 guard removed — queries rewritten against actual schema (R49):
+        # pp.item_ref, pp.generated_at, i.canonical_key, i.title.
 
         # 1. Get current portfolio values for all users
         portfolio_rows = await conn.fetch(_CURRENT_PORTFOLIO_QUERY)

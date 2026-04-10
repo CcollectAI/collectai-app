@@ -106,18 +106,8 @@ async def run_once():
     conn = await asyncpg.connect(DSN)
     logger.info("Connected to DB — starting watchlist monitor cycle")
 
-    # R46.15 — Pre-flight: skip if no watchlist items.
-    # The query below references last_market_price + last_checked_at columns
-    # that don't exist on this DB's watchlist_items (added later or never
-    # migrated). During the bake there are no watchlist entries yet so the
-    # worker has no work. Round 47: ALTER TABLE to add the columns OR rewrite
-    # the query to compute last_market_price from market_hits at query time.
-    wl_count = await conn.fetchval("SELECT count(*) FROM public.watchlist_items")
-    if not wl_count:
-        logger.info("[watchlist_monitor] no watchlist items yet — skipping cycle")
-        await conn.close()
-        record_run("watchlist_monitor_worker", "ok")
-        return
+    # R46.15 guard removed — last_market_price + last_checked_at columns
+    # now exist on watchlist_items (added in R49).
 
     agent = MarketplaceAgent()
     scanned = 0
