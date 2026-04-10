@@ -1,17 +1,32 @@
-import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Keyboard } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Keyboard, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+
+interface CustomField {
+  key: string;
+  value: string;
+}
 
 interface Props {
   source: string;
   onSourceChange: (text: string) => void;
   notes: string;
   onNotesChange: (text: string) => void;
+  quantity: string;
+  onQuantityChange: (text: string) => void;
+  acquisitionDate: string;
+  onAcquisitionDateChange: (text: string) => void;
+  /** When true, show the "add custom fields" UI for non-standard categories. */
+  showCustomFields?: boolean;
+  customFields: CustomField[];
+  onCustomFieldsChange: (fields: CustomField[]) => void;
 }
 
 export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSection({
   source, onSourceChange, notes, onNotesChange,
+  quantity, onQuantityChange, acquisitionDate, onAcquisitionDateChange,
+  showCustomFields, customFields, onCustomFieldsChange,
 }: Props) {
   const { colors } = useAppTheme();
 
@@ -23,6 +38,44 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {/* Quantity */}
+        <View style={styles.fieldBlock}>
+          <Text style={[styles.fieldLabel, { color: colors.text }]}>Quantity</Text>
+          <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+            <Ionicons name="layers-outline" size={16} color={colors.muted} style={styles.inputIcon} />
+            <TextInput
+              value={quantity}
+              onChangeText={onQuantityChange}
+              placeholder="1"
+              placeholderTextColor={colors.muted}
+              keyboardType="number-pad"
+              style={[styles.input, { color: colors.text }]}
+              accessibilityLabel="Quantity"
+              returnKeyType="next"
+            />
+          </View>
+        </View>
+
+        {/* Acquisition date */}
+        <View style={styles.fieldBlock}>
+          <Text style={[styles.fieldLabel, { color: colors.text }]}>Date acquired</Text>
+          <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+            <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
+            <TextInput
+              value={acquisitionDate}
+              onChangeText={onAcquisitionDateChange}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.muted}
+              keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
+              maxLength={10}
+              style={[styles.input, { color: colors.text }]}
+              accessibilityLabel="Date acquired"
+              returnKeyType="next"
+            />
+          </View>
+        </View>
+
+        {/* Source */}
         <View style={styles.fieldBlock}>
           <Text style={[styles.fieldLabel, { color: colors.text }]}>Source</Text>
           <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
@@ -65,6 +118,64 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
             )}
           </View>
         </View>
+
+        {/* Custom key/value fields — shown for custom categories */}
+        {showCustomFields && (
+          <View style={styles.fieldBlock}>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>Custom details</Text>
+            <Text style={[styles.customHint, { color: colors.muted }]}>
+              Add any details specific to your item (e.g. Vintage, Region, Size)
+            </Text>
+            {customFields.map((field, idx) => (
+              <View key={idx} style={styles.customFieldRow}>
+                <View style={[styles.customFieldInput, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                  <TextInput
+                    value={field.key}
+                    onChangeText={(text) => {
+                      const updated = [...customFields];
+                      updated[idx] = { ...updated[idx], key: text };
+                      onCustomFieldsChange(updated);
+                    }}
+                    placeholder="Field name"
+                    placeholderTextColor={colors.muted}
+                    style={[styles.input, { color: colors.text }]}
+                    accessibilityLabel={`Custom field ${idx + 1} name`}
+                  />
+                </View>
+                <View style={[styles.customFieldInput, { flex: 1.5, borderColor: colors.border, backgroundColor: colors.background }]}>
+                  <TextInput
+                    value={field.value}
+                    onChangeText={(text) => {
+                      const updated = [...customFields];
+                      updated[idx] = { ...updated[idx], value: text };
+                      onCustomFieldsChange(updated);
+                    }}
+                    placeholder="Value"
+                    placeholderTextColor={colors.muted}
+                    style={[styles.input, { color: colors.text }]}
+                    accessibilityLabel={`Custom field ${idx + 1} value`}
+                  />
+                </View>
+                <TouchableOpacity
+                  onPress={() => onCustomFieldsChange(customFields.filter((_, i) => i !== idx))}
+                  hitSlop={8}
+                  accessibilityLabel="Remove field"
+                >
+                  <Ionicons name="close-circle" size={20} color={colors.muted} />
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity
+              onPress={() => onCustomFieldsChange([...customFields, { key: '', value: '' }])}
+              style={[styles.addFieldBtn, { borderColor: colors.accent }]}
+              accessibilityRole="button"
+              accessibilityLabel="Add custom field"
+            >
+              <Ionicons name="add" size={16} color={colors.accent} />
+              <Text style={[styles.addFieldText, { color: colors.accent }]}>Add field</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -88,4 +199,17 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 8, right: 8, width: 32, height: 32,
     borderRadius: 16, alignItems: 'center', justifyContent: 'center',
   },
+  customHint: { fontSize: 12, marginBottom: 10, fontStyle: 'italic' },
+  customFieldRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8,
+  },
+  customFieldInput: {
+    flex: 1, flexDirection: 'row', alignItems: 'center',
+    borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, height: 40,
+  },
+  addFieldBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingVertical: 10, borderWidth: 1, borderRadius: 10, borderStyle: 'dashed',
+  },
+  addFieldText: { fontSize: 13, fontWeight: '600' },
 });

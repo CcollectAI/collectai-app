@@ -1,0 +1,53 @@
+{
+  "model_type": "ridge_v2",
+  "category": "bandai_premium",
+  "version": "20260410_085420",
+  "features": [
+    "condition_score",
+    "rarity_score",
+    "edition_score"
+  ],
+  "standardizer": {
+    "mean": [
+      0.8500000000000975,
+      0.29999999999999316,
+      0.6788307493540513
+    ],
+    "std": [
+      9.747758156208874e-14,
+      6.827871601444713e-15,
+      0.19382886184716736
+    ]
+  },
+  "ridge": {
+    "coef": [
+      0.0,
+      0.0,
+      13.053459421198776
+    ],
+    "intercept": 151.60322997416324
+  },
+  "ridge_q10": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 65.0
+  },
+  "ridge_q90": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 350.0
+  },
+  "best_alpha": 100.0,
+  "cv_mae": 88.84,
+  "train_mae": 88.82,
+  "uncertainty_scale": 1.0,
+  "train_size": 7740,
+  "mae": 88.84,
+  "created_at": "2026-04-10T08:54:22.089201+00:00"
+}

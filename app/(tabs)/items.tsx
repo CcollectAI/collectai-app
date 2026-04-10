@@ -60,12 +60,14 @@ import {
 type Item = {
   id: string;
   name: string;
-  category: string;        // e.g. Pokémon, LEGO
+  category: string;        // e.g. Pokémon, LEGO, or custom like "vintage_lamps"
   collectionName: string;  // e.g. "151 Base Set"
   value: number;
   condition?: string;
   notes?: string;
   imageUrl?: string;
+  source?: string;         // 'ai' | 'scan' | 'manual' — R48
+  isManual?: boolean;      // derived: true when source='manual' and no AI predictions
 };
 
 const VIEW_MODE_KEY = '@collectai/items_view_mode';
@@ -92,13 +94,15 @@ const ItemsScreen: React.FC = () => {
       const items = await dataProvider.listItems({ limit, offset });
       return items.map((it: DataItem) => ({
         id: it.id,
-        name: it.name,
+        name: it.name || '(Untitled)',
         category: it.category,
         collectionName: "",
         value: it.price,
         condition: undefined,
         notes: undefined,
         imageUrl: it.imageUrl,
+        source: (it as Record<string, unknown>).source as string | undefined,
+        isManual: (it as Record<string, unknown>).source === 'manual' && !it.priceBand,
       }));
     },
     [],

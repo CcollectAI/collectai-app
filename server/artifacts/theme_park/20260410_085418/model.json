@@ -1,0 +1,53 @@
+{
+  "model_type": "ridge_v2",
+  "category": "theme_park",
+  "version": "20260410_085418",
+  "features": [
+    "condition_score",
+    "rarity_score",
+    "edition_score"
+  ],
+  "standardizer": {
+    "mean": [
+      0.8499999999999688,
+      0.29999999999999677,
+      0.6899999999999907
+    ],
+    "std": [
+      3.11972669919669e-14,
+      3.219646771412954e-15,
+      0.13491080729847507
+    ]
+  },
+  "ridge": {
+    "coef": [
+      0.0,
+      0.0,
+      12.17505582436828
+    ],
+    "intercept": 75.57453703703624
+  },
+  "ridge_q10": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 35.0
+  },
+  "ridge_q90": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 120.0
+  },
+  "best_alpha": 100.0,
+  "cv_mae": 30.53,
+  "train_mae": 30.44,
+  "uncertainty_scale": 1.0,
+  "train_size": 2160,
+  "mae": 30.53,
+  "created_at": "2026-04-10T08:54:19.004890+00:00"
+}

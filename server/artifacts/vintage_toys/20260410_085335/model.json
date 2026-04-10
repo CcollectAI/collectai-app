@@ -1,0 +1,53 @@
+{
+  "model_type": "ridge_v2",
+  "category": "vintage_toys",
+  "version": "20260410_085335",
+  "features": [
+    "condition_score",
+    "rarity_score",
+    "edition_score"
+  ],
+  "standardizer": {
+    "mean": [
+      0.6823863636363648,
+      0.17439935064935005,
+      0.4837662337662321
+    ],
+    "std": [
+      0.13820740135056322,
+      0.2013532858283271,
+      0.1345848736318124
+    ]
+  },
+  "ridge": {
+    "coef": [
+      -0.6296039414974064,
+      110.74603030600008,
+      1.1473401517782815
+    ],
+    "intercept": 98.49837662337609
+  },
+  "ridge_q10": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 22.0
+  },
+  "ridge_q90": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 200.0
+  },
+  "best_alpha": 100.0,
+  "cv_mae": 22.44,
+  "train_mae": 21.22,
+  "uncertainty_scale": 1.0,
+  "train_size": 616,
+  "mae": 22.44,
+  "created_at": "2026-04-10T08:53:36.168681+00:00"
+}

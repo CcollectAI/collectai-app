@@ -9,6 +9,9 @@ import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 
 const CATEGORY_OPTIONS = ALL_CATS.map((c) => ({ label: c.name, slug: c.slug }));
 
+/** Sentinel value passed to onSelect when user taps "Other (custom)". */
+export const CUSTOM_CATEGORY_SENTINEL = '__custom__';
+
 interface Props {
   visible: boolean;
   selectedCategory: string;
@@ -95,14 +98,26 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
               </View>
             }
             ListFooterComponent={
-              <TouchableOpacity
-                activeOpacity={0.6}
-                onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleClose(); onSuggestNew(); }}
-                style={[styles.row, { borderBottomColor: colors.border }]}
-              >
-                <Ionicons name="add-circle-outline" size={18} color={colors.accent} style={{ marginRight: 12 }} />
-                <Text style={[styles.rowText, { color: colors.accent, fontWeight: '600' }]}>Suggest a new category</Text>
-              </TouchableOpacity>
+              <View>
+                {/* Custom category — lets the user type any category name */}
+                <TouchableOpacity
+                  activeOpacity={0.6}
+                  onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onSelect(CUSTOM_CATEGORY_SENTINEL); handleClose(); }}
+                  style={[styles.row, { borderBottomColor: colors.border }]}
+                >
+                  <Ionicons name="create-outline" size={18} color={colors.accent} style={{ marginRight: 12 }} />
+                  <Text style={[styles.rowText, { color: colors.accent, fontWeight: '600' }]}>Other (custom category)</Text>
+                </TouchableOpacity>
+                {/* Suggest new category for us to add official support */}
+                <TouchableOpacity
+                  activeOpacity={0.6}
+                  onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleClose(); onSuggestNew(); }}
+                  style={[styles.row, { borderBottomColor: colors.border }]}
+                >
+                  <Ionicons name="add-circle-outline" size={18} color={colors.muted} style={{ marginRight: 12 }} />
+                  <Text style={[styles.rowText, { color: colors.muted }]}>Suggest a new category</Text>
+                </TouchableOpacity>
+              </View>
             }
           />
         </View>

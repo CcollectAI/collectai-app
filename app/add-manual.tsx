@@ -45,6 +45,7 @@ import {
 type SaveState = "idle" | "saving" | "success" | "error";
 
 import { CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
+import { CUSTOM_CATEGORY_SENTINEL } from '@/components/add-manual/CategoryPickerModal';
 import { getCategoryFields } from '@/constants/categoryFields';
 
 const ManualAddScreen: React.FC = () => {
@@ -59,12 +60,17 @@ const ManualAddScreen: React.FC = () => {
 
   const nameField = useFormField(compose(required("Item name"), maxLength("Item name", 255)));
   const [category, setCategory] = useState("");
+  const [customCategoryText, setCustomCategoryText] = useState("");
+  const isCustomCategory = category === CUSTOM_CATEGORY_SENTINEL;
   const [gameOrSeries, setGameOrSeries] = useState("");
   const [conditionGrade, setConditionGrade] = useState("");
   const purchasePriceField = useFormField(numeric("Purchase price"));
   const estimatedValueField = useFormField(numeric("Estimated value"));
   const [source, setSource] = useState("");
   const [notes, setNotes] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [acquisitionDate, setAcquisitionDate] = useState("");
+  const [customFields, setCustomFields] = useState<Array<{key: string; value: string}>>([]);
   const [categoryAttrs, setCategoryAttrs] = useState<Record<string, string | boolean>>({});
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -122,6 +128,9 @@ const ManualAddScreen: React.FC = () => {
     estimatedValueField.reset();
     setSource('');
     setNotes('');
+    setQuantity('1');
+    setAcquisitionDate('');
+    setCustomFields([]);
     setCategoryAttrs({});
     await clearDraft();
     showToast({ message: 'Draft discarded', type: 'info' });
@@ -145,7 +154,14 @@ const ManualAddScreen: React.FC = () => {
     onDiscard: () => { clearDraft(); },
   });
 
-  const categorySlug = useMemo(() => CATEGORY_NAME_TO_SLUG[category] ?? '', [category]);
+  // For custom categories, slugify the user's free-text input.
+  // For known categories, use the standard slug lookup.
+  const categorySlug = useMemo(() => {
+    if (isCustomCategory && customCategoryText.trim()) {
+      return customCategoryText.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 64);
+    }
+    return CATEGORY_NAME_TO_SLUG[category] ?? '';
+  }, [category, isCustomCategory, customCategoryText]);
   const categoryFields = useMemo(() => getCategoryFields(categorySlug), [categorySlug]);
 
   const canSubmit = nameField.value.trim().length > 0 && saveState !== "saving" && !photoUploading && !nameField.error && !purchasePriceField.error && !estimatedValueField.error;
@@ -188,19 +204,36 @@ const ManualAddScreen: React.FC = () => {
         if (v !== '' && v !== false && v !== undefined) attrs[k] = v;
       }
 
-      const { error } = await supabase.from("portfolio_items").insert([
+      // R48 — write to `items` table (not the legacy `portfolio_items` which
+      // has an incompatible schema on this DB). Column mapping matches the
+      // actual items table: title (not name), attrs (not attributes_json),
+      // purchase_price_eur (not purchase_price), image_url (not user_photo_url).
+      // Merge category-specific attrs with user-defined custom fields
+      const mergedAttrs: Record<string, unknown> = { ...attrs };
+      for (const cf of customFields) {
+        const k = cf.key.trim();
+        const v = cf.value.trim();
+        if (k && v) mergedAttrs[k] = v;
+      }
+
+      const qty = parseInt(quantity, 10);
+
+      const { error } = await supabase.from("items").insert([
         {
-          name: nameField.value.trim(),
+          user_id: (await supabase.auth.getUser()).data.user?.id ?? null,
+          title: nameField.value.trim(),
           category: categorySlug || category.trim() || null,
-          game_or_series: gameOrSeries.trim() || null,
           condition_grade: conditionGrade.trim() || null,
-          purchase_price: Number.isNaN(purchase as number) ? null : purchase,
-          estimated_value: Number.isNaN(estimated as number) ? null : estimated,
-          currency: settings.currency,
-          source: source.trim() || null,
+          condition: conditionGrade.trim() || null,
+          purchase_price_eur: Number.isNaN(purchase as number) ? null : purchase,
+          predicted_price_eur: Number.isNaN(estimated as number) ? null : estimated,
+          purchase_currency: settings.currency,
+          purchased_at: acquisitionDate.trim() || null,
+          quantity: Number.isNaN(qty) || qty < 1 ? 1 : qty,
+          source: 'manual',
           notes: notes.trim() || null,
-          attributes_json: Object.keys(attrs).length > 0 ? attrs : null,
-          user_photo_url: photoUrl || null,
+          attrs: Object.keys(mergedAttrs).length > 0 ? mergedAttrs : null,
+          image_url: photoUrl || null,
         },
       ]);
 
@@ -337,6 +370,8 @@ const ManualAddScreen: React.FC = () => {
             <AddManualBasicInfoSection
               nameField={nameField}
               category={category}
+              customCategoryText={customCategoryText}
+              onCustomCategoryTextChange={setCustomCategoryText}
               gameOrSeries={gameOrSeries}
               onGameOrSeriesChange={setGameOrSeries}
               categoryPickerOpen={categoryPickerOpen}
@@ -367,6 +402,13 @@ const ManualAddScreen: React.FC = () => {
               onSourceChange={setSource}
               notes={notes}
               onNotesChange={setNotes}
+              quantity={quantity}
+              onQuantityChange={setQuantity}
+              acquisitionDate={acquisitionDate}
+              onAcquisitionDateChange={setAcquisitionDate}
+              showCustomFields={isCustomCategory}
+              customFields={customFields}
+              onCustomFieldsChange={setCustomFields}
             />
 
             {/* Submit Button */}

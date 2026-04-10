@@ -1,0 +1,53 @@
+{
+  "model_type": "ridge_v2",
+  "category": "hot_toys",
+  "version": "20260410_085335",
+  "features": [
+    "condition_score",
+    "rarity_score",
+    "edition_score"
+  ],
+  "standardizer": {
+    "mean": [
+      0.8499999999999558,
+      0.2999999999999876,
+      0.6267077145961434
+    ],
+    "std": [
+      4.418687638008123e-14,
+      1.2378986724570495e-14,
+      0.1166606055808354
+    ]
+  },
+  "ridge": {
+    "coef": [
+      0.0,
+      0.0,
+      516.5876872284047
+    ],
+    "intercept": 606.9521912349838
+  },
+  "ridge_q10": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 180.0
+  },
+  "ridge_q90": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 1500.0
+  },
+  "best_alpha": 100.0,
+  "cv_mae": 239.41,
+  "train_mae": 238.71,
+  "uncertainty_scale": 1.0,
+  "train_size": 2761,
+  "mae": 239.41,
+  "created_at": "2026-04-10T08:53:35.864576+00:00"
+}

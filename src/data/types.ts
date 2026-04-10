@@ -65,10 +65,13 @@ export type PortfolioSummary = {
   itemCount: number;
 };
 
+export type ItemSource = 'ai' | 'scan' | 'manual';
+
 export type Item = {
   id: string;
   name: string;
   category: string;
+  source?: ItemSource;          // 'ai' = QuickScan+catalog match, 'scan' = low-conf scan, 'manual' = user-added
   subtypeId?: string;           // Finer granularity (e.g., 'warhammer_books')
   taxonomyVersion?: string;     // Version of taxonomy used for classification
   collections?: string[];       // Collection tags (e.g., ['taylor_swift', 'eras_tour'])

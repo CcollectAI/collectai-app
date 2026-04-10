@@ -310,8 +310,10 @@ async def supply_trends_endpoint(
     _rl: None = Depends(_data_moat_limit),
 ):
     """Supply trend for an item over the last N days."""
-    if not is_valid_category(category):
-        raise error_response(400, f"Unknown category: {category}", code=ErrorCode.VALIDATION_ERROR)
+    # R48.5 — accept custom categories (no validation gate). Demand/supply
+    # signals should accumulate for ANY category including user-created ones.
+    # This powers the flywheel: popular custom categories surface in the admin
+    # demand dashboard and become candidates for official support.
     data = await get_supply_trend(category, item_key, days)
     return {"category": category, "item_key": item_key, "days": days, "trends": data}
 
@@ -324,8 +326,7 @@ async def demand_heat_endpoint(
     _rl: None = Depends(_data_moat_limit),
 ):
     """Top trending items by demand signal volume."""
-    if not is_valid_category(category):
-        raise error_response(400, f"Unknown category: {category}", code=ErrorCode.VALIDATION_ERROR)
+    # R48.5 — same as above, accept any category
     data = await get_demand_heat(category, limit)
     return {"category": category, "limit": limit, "items": data}
 

@@ -7,7 +7,7 @@ import { View, Text, TextInput, TouchableOpacity, Keyboard, StyleSheet } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { fireHaptic, HapticIntent } from '@/haptics';
-import { CategoryPickerModal } from './CategoryPickerModal';
+import { CategoryPickerModal, CUSTOM_CATEGORY_SENTINEL } from './CategoryPickerModal';
 
 interface FormField {
   value: string;
@@ -20,6 +20,8 @@ interface FormField {
 interface AddManualBasicInfoSectionProps {
   nameField: FormField;
   category: string;
+  customCategoryText: string;
+  onCustomCategoryTextChange: (text: string) => void;
   gameOrSeries: string;
   onGameOrSeriesChange: (text: string) => void;
   categoryPickerOpen: boolean;
@@ -33,6 +35,8 @@ interface AddManualBasicInfoSectionProps {
 export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoSection({
   nameField,
   category,
+  customCategoryText,
+  onCustomCategoryTextChange,
   gameOrSeries,
   onGameOrSeriesChange,
   categoryPickerOpen,
@@ -84,14 +88,38 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
             onPress={() => { Keyboard.dismiss(); fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onOpenCategoryPicker(); }}
             style={[styles.dropdownTrigger, { borderColor: category ? colors.accent : colors.border, backgroundColor: colors.background }]}
             accessibilityRole="button"
-            accessibilityLabel={category ? `Category: ${category}` : "Select a category"}
+            accessibilityLabel={category === CUSTOM_CATEGORY_SENTINEL ? 'Custom category selected' : category ? `Category: ${category}` : "Select a category"}
           >
             <Text style={[styles.dropdownText, { color: category ? colors.text : colors.muted }]} numberOfLines={1}>
-              {category || "Select a category"}
+              {category === CUSTOM_CATEGORY_SENTINEL ? 'Other (custom)' : category || "Select a category"}
             </Text>
             <Ionicons name="chevron-down" size={16} color={colors.muted} />
           </TouchableOpacity>
         </View>
+
+        {/* Custom category free-text input — visible only when "Other" is selected */}
+        {category === CUSTOM_CATEGORY_SENTINEL && (
+          <View style={styles.fieldBlock}>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>Custom category name</Text>
+            <View style={[styles.inputWrap, { borderColor: colors.accent, backgroundColor: colors.background }]}>
+              <Ionicons name="create-outline" size={16} color={colors.accent} style={styles.inputIcon} />
+              <TextInput
+                value={customCategoryText}
+                onChangeText={onCustomCategoryTextChange}
+                placeholder="e.g. Vintage Lamps, Wine, Coins"
+                placeholderTextColor={colors.muted}
+                style={[styles.input, { color: colors.text }]}
+                autoFocus
+                maxLength={64}
+                accessibilityLabel="Custom category name"
+                returnKeyType="next"
+              />
+            </View>
+            <Text style={[styles.customHint, { color: colors.muted }]}>
+              Custom categories won't have AI pricing — you set the value yourself
+            </Text>
+          </View>
+        )}
 
         <CategoryPickerModal
           visible={categoryPickerOpen}
@@ -140,4 +168,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, height: 44,
   },
   dropdownText: { flex: 1, fontSize: 14 },
+  customHint: { fontSize: 12, marginTop: 4, marginLeft: 4, fontStyle: 'italic' },
 });

@@ -1,0 +1,53 @@
+{
+  "model_type": "ridge_v2",
+  "category": "kpop_lightsticks",
+  "version": "20260410_085417",
+  "features": [
+    "condition_score",
+    "rarity_score",
+    "edition_score"
+  ],
+  "standardizer": {
+    "mean": [
+      0.8499999999999517,
+      0.2999999999999846,
+      0.5629782321899525
+    ],
+    "std": [
+      4.829470157119431e-14,
+      1.5376588891058418e-14,
+      0.2577760365400315
+    ]
+  },
+  "ridge": {
+    "coef": [
+      0.0,
+      0.0,
+      19.81078631930088
+    ],
+    "intercept": 65.01517150395615
+  },
+  "ridge_q10": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 28.0
+  },
+  "ridge_q90": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 110.0
+  },
+  "best_alpha": 100.0,
+  "cv_mae": 18.81,
+  "train_mae": 18.8,
+  "uncertainty_scale": 1.0,
+  "train_size": 3032,
+  "mae": 18.81,
+  "created_at": "2026-04-10T08:54:18.089822+00:00"
+}

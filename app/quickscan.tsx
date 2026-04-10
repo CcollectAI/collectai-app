@@ -385,6 +385,26 @@ function QuickScanScreen() {
       // Run AI analysis
       const sr = await dataProvider.quickscanSingle(photo.uri);
 
+      // R48.4 — Low-confidence fallback: if the AI can't identify the item,
+      // offer "Add Manually" instead of showing a garbage guess.
+      const LOW_CONFIDENCE_THRESHOLD = 0.3;
+      if (sr.prediction.confidence < LOW_CONFIDENCE_THRESHOLD) {
+        fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+        showToast({
+          message: "Couldn't identify this item",
+          type: 'info',
+          duration: 4000,
+        });
+        // Navigate to manual-add with the captured photo pre-attached
+        router.push({
+          pathname: '/add-manual',
+          params: { imageUri: photo.uri },
+        });
+        setPhase('camera');
+        setCapturedUri(null);
+        return;
+      }
+
       // Fire haptic based on confidence (always fire success on scan result)
       const intent = confidenceToIntent(sr.prediction.confidence);
       fireHaptic(intent, { enabled: settings.hapticsEnabled });

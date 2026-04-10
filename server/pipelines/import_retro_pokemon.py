@@ -1131,7 +1131,7 @@ def get_curated_catalog() -> list[dict]:
         ("Pokemon USA", "Gyarados Gold Star (EX Holon Phantoms #102)", "Near Mint", "grail", 500, 15000),
 
         # ── Japanese Exclusives (Ultra Premium) ─────────────────────────────
-        ("WOTC JP", "Illustrator Pikachu (1998 CoroCoro, ~$5.2M card)", "Mint", "grail", 50000, 5200000),
+        ("WOTC JP", "Illustrator Pikachu (1998 CoroCoro, ~$5.2M card)", "Mint", "grail", 50000, 999999),
         ("WOTC JP", "Tropical Mega Battle Tropical Wind Promo (TMB 1999)", "Near Mint", "grail", 5000, 60000),
         ("WOTC JP", "No. 1 Trainer Promo (1999 Secret Super Battle)", "Near Mint", "grail", 10000, 300000),
         ("WOTC JP", "Lucky Stadium Magikarp (Promo)", "Near Mint", "grail", 300, 3000),

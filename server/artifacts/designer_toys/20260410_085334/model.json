@@ -1,0 +1,53 @@
+{
+  "model_type": "ridge_v2",
+  "category": "designer_toys",
+  "version": "20260410_085334",
+  "features": [
+    "condition_score",
+    "rarity_score",
+    "edition_score"
+  ],
+  "standardizer": {
+    "mean": [
+      0.8499999999999551,
+      0.2999999999999871,
+      0.6380578364869588
+    ],
+    "std": [
+      4.4853010194856324e-14,
+      1.2878587085651816e-14,
+      0.27026771779584474
+    ]
+  },
+  "ridge": {
+    "coef": [
+      0.0,
+      0.0,
+      358.70682966316406
+    ],
+    "intercept": 785.3116744019857
+  },
+  "ridge_q10": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 65.0
+  },
+  "ridge_q90": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 2000.0
+  },
+  "best_alpha": 100.0,
+  "cv_mae": 605.61,
+  "train_mae": 605.4,
+  "uncertainty_scale": 1.0,
+  "train_size": 2801,
+  "mae": 605.61,
+  "created_at": "2026-04-10T08:53:34.909987+00:00"
+}
