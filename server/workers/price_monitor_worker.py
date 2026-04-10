@@ -202,7 +202,13 @@ async def check_threshold_alerts(conn):
 
 
 async def detect_anomalies(conn):
-    """Compute rolling z-scores on price_history and alert item owners on anomalies."""
+    """Compute rolling z-scores on price_history and alert item owners on anomalies.
+
+    R46.10 / R49 — rewritten against actual prod schema:
+      - price_history: item_ref (text), snapshot_at, price_q50  (added R46.16)
+      - items: canonical_key (text), not normalized_key
+      - watchlist_items (not watchlist): has title/category, no item_ref
+    """
 
     # Only check items that are actively relevant: owned by users (updated in
     # last 7 days) or on active watchlists.  This avoids scanning every item
@@ -211,16 +217,17 @@ async def detect_anomalies(conn):
         """
         SELECT ph.item_ref, count(*) AS cnt
         FROM public.price_history ph
-        WHERE ph.snapshot_at > now() - ($1 || ' days')::interval
+        WHERE ph.item_ref IS NOT NULL
+          AND ph.snapshot_at > now() - ($1 || ' days')::interval
           AND (
             EXISTS (
               SELECT 1 FROM public.items i
-              WHERE i.normalized_key = ph.item_ref
+              WHERE i.canonical_key = ph.item_ref
                 AND i.updated_at > now() - interval '7 days'
             )
             OR EXISTS (
-              SELECT 1 FROM public.watchlist w
-              WHERE w.item_ref = ph.item_ref
+              SELECT 1 FROM public.watchlist_items w
+              WHERE w.category = split_part(ph.item_ref, '-', 1)
             )
           )
         GROUP BY ph.item_ref
