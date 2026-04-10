@@ -92,7 +92,7 @@ def card_to_catalog_item(card: dict) -> CatalogItem:
     collector_no = card.get("collector_number", "")
     name = card.get("name", "")
     set_name = card.get("set_name", "")
-    rarity = shared_rarity_score(card.get("rarity"), card.get("rarity", ""))
+    rarity = card.get("rarity", "") or ""
 
     image_url = ""
     image_uris = card.get("image_uris", {})
