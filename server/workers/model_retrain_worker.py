@@ -303,7 +303,13 @@ def _retrain_category(category: str) -> dict:
     # Use train_price module for actual training
     try:
         from pipelines.train_price import train_category
-        result = train_category(category, all_features, all_prices)
+        # R46.21 — train_category(category) reads training data from disk
+        # (train.jsonl + train_live.jsonl), NOT from function args. The old
+        # call passed all_features as `version` and all_prices as `register`
+        # due to a signature mismatch → version string was the entire features
+        # array → "File name too long" on every save. The Phase 1 export
+        # above writes train_live.jsonl which train_category reads.
+        result = train_category(category)
         logger.info(
             "Retrained %s: samples=%d cv_mae=%.2f",
             category, len(all_prices), result.get("cv_mae", -1),

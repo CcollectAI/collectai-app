@@ -239,17 +239,20 @@ log "free unrestricted sources: eBay-html, Crawl4AI, Mercari-US, Vinted, Mavin.i
 section "starting uvicorn + workers"
 cd "$SERVER_DIR"
 
-if ! command -v uvicorn >/dev/null 2>&1; then
-  if [ -x "$REPO_ROOT/.venv/bin/uvicorn" ]; then
-    UVICORN="$REPO_ROOT/.venv/bin/uvicorn"
-  else
-    die "uvicorn not in PATH and no .venv/bin/uvicorn found"
-  fi
+if command -v uvicorn >/dev/null 2>&1; then
+  UVICORN_CMD=("$(command -v uvicorn)")
+elif [ -x "$REPO_ROOT/.venv/bin/uvicorn" ]; then
+  UVICORN_CMD=("$REPO_ROOT/.venv/bin/uvicorn")
+elif python3 -c "import uvicorn" >/dev/null 2>&1; then
+  # Fall back to "python3 -m uvicorn" — works when uvicorn is installed as
+  # a Python package without a shell entrypoint (common on macOS with pip --user).
+  UVICORN_CMD=(python3 -m uvicorn)
+  log "uvicorn binary not in PATH — falling back to 'python3 -m uvicorn'"
 else
-  UVICORN=$(command -v uvicorn)
+  die "uvicorn not available (no binary, no .venv, not importable as a Python module)"
 fi
 
-nohup "$UVICORN" main:app \
+nohup "${UVICORN_CMD[@]}" main:app \
   --host 0.0.0.0 \
   --port "${PORT:-8000}" \
   --workers "${UVICORN_WORKERS:-2}" \
