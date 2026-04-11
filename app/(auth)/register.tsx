@@ -25,6 +25,7 @@ import { AnimatedPressable } from '@/motion';
 import { useStaggerReveal } from '@/motion/useStaggerReveal';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
@@ -35,6 +36,7 @@ import { fonts } from '@/theme/tokens';
 
 function RegisterScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { colors, isDark } = useAppTheme();
   const { showToast } = useToast();
@@ -74,11 +76,11 @@ function RegisterScreen() {
     if (/[0-9]/.test(pw)) score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
 
-    if (score <= 1) return { label: 'Weak', percent: 20, color: colors.danger };
-    if (score === 2) return { label: 'Fair', percent: 40, color: '#F59E0B' };
-    if (score === 3) return { label: 'Good', percent: 60, color: '#F59E0B' };
-    if (score === 4) return { label: 'Strong', percent: 80, color: '#22C55E' };
-    return { label: 'Excellent', percent: 100, color: '#22C55E' };
+    if (score <= 1) return { label: t('auth.password_strength.weak'), percent: 20, color: colors.danger };
+    if (score === 2) return { label: t('auth.password_strength.fair'), percent: 40, color: '#F59E0B' };
+    if (score === 3) return { label: t('auth.password_strength.good'), percent: 60, color: '#F59E0B' };
+    if (score === 4) return { label: t('auth.password_strength.strong'), percent: 80, color: '#22C55E' };
+    return { label: t('auth.password_strength.excellent'), percent: 100, color: '#22C55E' };
   };
 
   const handlePasswordChange = (pw: string) => {
@@ -102,7 +104,7 @@ function RegisterScreen() {
 
   async function handleSignUp() {
     if (!termsAccepted) {
-      showToast({ message: 'Please accept the Terms of Service and Privacy Policy.', type: 'warning' });
+      showToast({ message: t('auth.errors.accept_terms'), type: 'warning' });
       return;
     }
 
@@ -110,12 +112,12 @@ function RegisterScreen() {
     const trimmedEmail = email.trim();
 
     if (!trimmedUsername || !trimmedEmail || !password) {
-      showToast({ message: 'Please fill in all fields.', type: 'warning' });
+      showToast({ message: t('auth.errors.fill_all_fields'), type: 'warning' });
       return;
     }
 
     if (password.length < 8) {
-      showToast({ message: 'Password must be at least 8 characters.', type: 'warning' });
+      showToast({ message: t('auth.errors.password_min_length'), type: 'warning' });
       return;
     }
 
@@ -130,7 +132,7 @@ function RegisterScreen() {
 
       const user = data.user;
       if (!user) {
-        showToast({ message: 'Sign up failed — no user returned.', type: 'error' });
+        showToast({ message: t('auth.errors.sign_up_no_user'), type: 'error' });
         return;
       }
 
@@ -144,7 +146,7 @@ function RegisterScreen() {
         if (code === '23505') {
           // Username unique violation — auth account exists but profile doesn't.
           // Surface to user and let them retry with a different username.
-          showToast({ message: 'Username taken. Please choose another.', type: 'warning' });
+          showToast({ message: t('auth.errors.username_taken'), type: 'warning' });
           return;
         }
         // Don't strand the user with an auth account but no profile — log and continue.
@@ -164,7 +166,7 @@ function RegisterScreen() {
       }
       router.replace('/(auth)/onboarding');
     } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : 'Sign up failed. Unknown error.', type: 'error' });
+      showToast({ message: e instanceof Error ? e.message : t('auth.errors.sign_up_failed'), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -197,10 +199,10 @@ function RegisterScreen() {
                 )}
               </View>
               <Text style={[styles.brandTitle, { color: colors.text, fontFamily: fonts.bold }]}>
-                Create Account
+                {t('auth.register.title')}
               </Text>
               <Text style={[styles.brandSubtitle, { color: colors.muted }]}>
-                Join the collector community
+                {t('auth.register.subtitle')}
               </Text>
             </Animated.View>
 
@@ -278,7 +280,7 @@ function RegisterScreen() {
                   onPress={handleSignUp}
                   disabled={loading}
                   accessibilityRole="button"
-                  accessibilityLabel="Create account"
+                  accessibilityLabel={t('auth.register.create_button')}
                 >
                   <LinearGradient
                     colors={[colors.brand.dark, colors.brand.base]}
@@ -289,7 +291,7 @@ function RegisterScreen() {
                     {loading ? (
                       <ActivityIndicator color="#FFFFFF" />
                     ) : (
-                      <Text style={styles.gradientBtnText}>Create Account</Text>
+                      <Text style={styles.gradientBtnText}>{t('auth.register.create_button')}</Text>
                     )}
                   </LinearGradient>
                 </AnimatedPressable>
@@ -300,7 +302,7 @@ function RegisterScreen() {
                   onPress={toggleTerms}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: termsAccepted }}
-                  accessibilityLabel="Accept Terms of Service and Privacy Policy"
+                  accessibilityLabel={t('auth.errors.accept_terms')}
                 >
                   <View
                     style={[
@@ -316,21 +318,21 @@ function RegisterScreen() {
                     </Animated.View>
                   </View>
                   <Text style={[styles.termsText, { color: colors.muted }]}>
-                    I agree to the{' '}
+                    {t('auth.register.i_agree_to')}{' '}
                     <Text
                       style={[styles.legalLink, { color: colors.brand.dark }]}
                       onPress={() => router.push('/legal/terms')}
                       accessibilityRole="link"
                     >
-                      Terms of Service
+                      {t('auth.register.terms_of_service')}
                     </Text>
-                    {' '}and{' '}
+                    {' '}{t('auth.register.and')}{' '}
                     <Text
                       style={[styles.legalLink, { color: colors.brand.dark }]}
                       onPress={() => router.push('/legal/privacy-policy')}
                       accessibilityRole="link"
                     >
-                      Privacy Policy
+                      {t('auth.register.privacy_policy')}
                     </Text>
                   </Text>
                 </AnimatedPressable>
@@ -346,11 +348,11 @@ function RegisterScreen() {
                   router.push('/(auth)/login');
                 }}
                 accessibilityRole="link"
-                accessibilityLabel="Sign in instead"
+                accessibilityLabel={t('auth.register.sign_in_instead')}
               >
                 <Text style={[styles.footerText, { color: colors.muted }]}>
-                  Already have an account?{' '}
-                  <Text style={{ color: colors.brand.dark, fontWeight: '600' }}>Sign in</Text>
+                  {t('auth.already_have_account')}{' '}
+                  <Text style={{ color: colors.brand.dark, fontWeight: '600' }}>{t('auth.sign_in')}</Text>
                 </Text>
               </AnimatedPressable>
             </Animated.View>

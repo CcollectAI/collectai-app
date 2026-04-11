@@ -20,6 +20,7 @@ import { AnimatedPressable } from '@/motion';
 import { useEnterReveal } from '@/motion/useEnterReveal';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { GradientBackground } from '@/components/auth/GradientBackground';
@@ -27,6 +28,7 @@ import { fonts } from '@/theme/tokens';
 
 function VerifyEmailScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { colors } = useAppTheme();
   const { email } = useLocalSearchParams<{ email: string }>();
@@ -101,16 +103,16 @@ function VerifyEmailScreen() {
           </Animated.View>
 
           <Text style={[styles.title, { color: colors.text, fontFamily: fonts.bold }]}>
-            Check your email
+            {t('auth.verify.title')}
           </Text>
 
           <Text style={[styles.description, { color: colors.muted }]}>
-            We sent a confirmation link to{'\n'}
-            <Text style={[styles.emailText, { color: colors.text }]}>{email || 'your email'}</Text>
+            {t('auth.verify.description')}{'\n'}
+            <Text style={[styles.emailText, { color: colors.text }]}>{email || t('auth.verify.email_fallback')}</Text>
           </Text>
 
           <Text style={[styles.hint, { color: colors.muted }]}>
-            Click the link in the email to verify your account, then come back here to sign in.
+            {t('auth.verify.hint')}
           </Text>
 
           {/* Resend */}
@@ -119,7 +121,7 @@ function VerifyEmailScreen() {
           ) : cooldown > 0 ? (
             <View style={styles.cooldownBadge}>
               <Text style={[styles.cooldownText, { color: colors.muted }]}>
-                Resend available in {cooldown}s
+                {t('auth.verify.resend_cooldown', { seconds: cooldown })}
               </Text>
             </View>
           ) : resent ? (
@@ -127,11 +129,11 @@ function VerifyEmailScreen() {
               style={styles.resendBtn}
               onPress={handleResend}
               accessibilityRole="button"
-              accessibilityLabel="Resend verification email"
+              accessibilityLabel={t('auth.verify.resend_email')}
             >
               <Ionicons name="checkmark-circle" size={18} color={colors.brand.dark} />
               <Text style={[styles.resendText, { color: colors.brand.dark }]}>
-                Email sent — tap to resend
+                {t('auth.verify.resent_tap_again')}
               </Text>
             </AnimatedPressable>
           ) : (
@@ -139,9 +141,9 @@ function VerifyEmailScreen() {
               style={styles.resendBtn}
               onPress={handleResend}
               accessibilityRole="button"
-              accessibilityLabel="Resend verification email"
+              accessibilityLabel={t('auth.verify.resend_email')}
             >
-              <Text style={[styles.resendText, { color: colors.brand.dark }]}>Resend email</Text>
+              <Text style={[styles.resendText, { color: colors.brand.dark }]}>{t('auth.verify.resend_email')}</Text>
             </AnimatedPressable>
           )}
 
@@ -150,7 +152,7 @@ function VerifyEmailScreen() {
             style={styles.gradientBtnWrap}
             onPress={() => router.replace('/(auth)/login')}
             accessibilityRole="button"
-            accessibilityLabel="Go to sign in"
+            accessibilityLabel={t('auth.verify.go_to_sign_in')}
           >
             <LinearGradient
               colors={[colors.brand.dark, colors.brand.base]}
@@ -158,12 +160,12 @@ function VerifyEmailScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.gradientBtn}
             >
-              <Text style={styles.gradientBtnText}>Go to Sign In</Text>
+              <Text style={styles.gradientBtnText}>{t('auth.verify.go_to_sign_in')}</Text>
             </LinearGradient>
           </AnimatedPressable>
 
           <Text style={[styles.spamHint, { color: colors.muted }]}>
-            Didn't receive the email? Check your spam folder.
+            {t('auth.verify.spam_hint')}
           </Text>
         </Animated.View>
       </SafeAreaView>

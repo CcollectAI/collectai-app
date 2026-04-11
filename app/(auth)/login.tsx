@@ -31,6 +31,7 @@ import { AnimatedPressable } from '@/motion';
 import { useStaggerReveal } from '@/motion/useStaggerReveal';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
@@ -47,6 +48,7 @@ const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_I
 
 function LoginScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { colors, isDark } = useAppTheme();
   const { showToast } = useToast();
@@ -89,7 +91,7 @@ function LoginScreen() {
             router.replace('/(tabs)');
           })
           .catch((e: unknown) => {
-            showToast({ message: e instanceof Error ? e.message : 'Google sign in failed', type: 'error' });
+            showToast({ message: e instanceof Error ? e.message : t('auth.errors.google_sign_in_failed'), type: 'error' });
           })
           .finally(() => setLoading(false));
       }
@@ -106,7 +108,7 @@ function LoginScreen() {
         ],
       });
       if (!credential.identityToken) {
-        showToast({ message: 'No identity token received.', type: 'error' });
+        showToast({ message: t('auth.errors.no_identity_token'), type: 'error' });
         return;
       }
       setLoading(true);
@@ -120,7 +122,7 @@ function LoginScreen() {
     } catch (e: unknown) {
       const code = (e as { code?: string })?.code;
       if (code === 'ERR_REQUEST_CANCELED') return;
-      showToast({ message: e instanceof Error ? e.message : 'Apple sign in failed', type: 'error' });
+      showToast({ message: e instanceof Error ? e.message : t('auth.errors.apple_sign_in_failed'), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -137,7 +139,7 @@ function LoginScreen() {
   async function handleSignIn() {
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
-      showToast({ message: 'Please enter your email and password.', type: 'warning' });
+      showToast({ message: t('auth.errors.email_password_required'), type: 'warning' });
       return;
     }
 
@@ -152,7 +154,7 @@ function LoginScreen() {
       track({ name: 'user_logged_in', properties: { method: 'email' } });
       router.replace('/(tabs)');
     } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : 'Sign in failed', type: 'error' });
+      showToast({ message: e instanceof Error ? e.message : t('auth.errors.sign_in_failed'), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -161,7 +163,7 @@ function LoginScreen() {
   async function handleMagicLink() {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      showToast({ message: 'Enter your email to receive a magic link.', type: 'warning' });
+      showToast({ message: t('auth.errors.magic_link_email_required'), type: 'warning' });
       return;
     }
 
@@ -175,7 +177,7 @@ function LoginScreen() {
       if (error) throw error;
       showToast({ message: 'We sent you a magic sign-in link. Check your email.', type: 'success' });
     } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : 'Magic link failed', type: 'error' });
+      showToast({ message: e instanceof Error ? e.message : t('auth.errors.magic_link_failed'), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -208,7 +210,7 @@ function LoginScreen() {
               <Text style={[styles.brandTitle, { color: colors.text, fontFamily: fonts.bold }]}>
                 CollectAI
               </Text>
-              <Text style={[styles.brandSubtitle, { color: colors.muted }]}>Welcome back</Text>
+              <Text style={[styles.brandSubtitle, { color: colors.muted }]}>{t('auth.welcome_back')}</Text>
             </Animated.View>
 
             {/* Form */}
@@ -250,7 +252,7 @@ function LoginScreen() {
                   onPress={handleSignIn}
                   disabled={loading}
                   accessibilityRole="button"
-                  accessibilityLabel="Sign in"
+                  accessibilityLabel={t('auth.sign_in')}
                 >
                   <LinearGradient
                     colors={[colors.brand.dark, colors.brand.base]}
@@ -261,7 +263,7 @@ function LoginScreen() {
                     {loading ? (
                       <ActivityIndicator color="#FFFFFF" />
                     ) : (
-                      <Text style={styles.gradientBtnText}>Sign In</Text>
+                      <Text style={styles.gradientBtnText}>{t('auth.login.sign_in_button')}</Text>
                     )}
                   </LinearGradient>
                 </AnimatedPressable>
@@ -270,19 +272,19 @@ function LoginScreen() {
                   <AnimatedPressable
                     onPress={() => router.push('/(auth)/forgot-password')}
                     accessibilityRole="link"
-                    accessibilityLabel="Forgot password"
+                    accessibilityLabel={t('auth.forgot_password')}
                   >
-                    <Text style={[styles.linkText, { color: colors.brand.dark }]}>Forgot password?</Text>
+                    <Text style={[styles.linkText, { color: colors.brand.dark }]}>{t('auth.forgot_password')}</Text>
                   </AnimatedPressable>
 
                   <AnimatedPressable
                     onPress={handleMagicLink}
                     accessibilityRole="button"
-                    accessibilityLabel="Send magic link"
+                    accessibilityLabel={t('auth.magic_link')}
                   >
                     <View style={styles.magicLinkRow}>
                       <Ionicons name="mail-outline" size={15} color={colors.brand.dark} />
-                      <Text style={[styles.linkText, { color: colors.brand.dark }]}>Magic link</Text>
+                      <Text style={[styles.linkText, { color: colors.brand.dark }]}>{t('auth.magic_link')}</Text>
                     </View>
                   </AnimatedPressable>
                 </View>
@@ -313,11 +315,11 @@ function LoginScreen() {
                   style={[styles.socialBtn, { backgroundColor: isDark ? '#FFFFFF' : '#000000' }]}
                   onPress={handleAppleSignIn}
                   accessibilityRole="button"
-                  accessibilityLabel="Sign in with Apple"
+                  accessibilityLabel={t('auth.continue_with_apple')}
                 >
                   <Ionicons name="logo-apple" size={20} color={isDark ? '#000000' : '#FFFFFF'} />
                   <Text style={[styles.socialBtnText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
-                    Continue with Apple
+                    {t('auth.continue_with_apple')}
                   </Text>
                 </AnimatedPressable>
               )}
@@ -339,11 +341,11 @@ function LoginScreen() {
                   }}
                   disabled={!googleRequest}
                   accessibilityRole="button"
-                  accessibilityLabel="Sign in with Google"
+                  accessibilityLabel={t('auth.continue_with_google')}
                 >
                   <Text style={{ fontSize: 18, fontWeight: '700', color: '#4285F4' }}>G</Text>
                   <Text style={[styles.socialBtnText, { color: colors.text }]}>
-                    Continue with Google
+                    {t('auth.continue_with_google')}
                   </Text>
                 </AnimatedPressable>
               )}
@@ -360,10 +362,10 @@ function LoginScreen() {
                 ]}
                 onPress={handleDemoLogin}
                 accessibilityRole="button"
-                accessibilityLabel="Try demo mode"
+                accessibilityLabel={t('auth.try_demo_mode')}
               >
                 <Ionicons name="play-circle-outline" size={20} color={colors.brand.dark} />
-                <Text style={[styles.demoBtnText, { color: colors.brand.dark }]}>Try Demo Mode</Text>
+                <Text style={[styles.demoBtnText, { color: colors.brand.dark }]}>{t('auth.try_demo_mode')}</Text>
               </AnimatedPressable>
             </Animated.View>
 
@@ -376,11 +378,11 @@ function LoginScreen() {
                   router.push('/(auth)/register');
                 }}
                 accessibilityRole="link"
-                accessibilityLabel="Create an account"
+                accessibilityLabel={t('auth.create_account')}
               >
                 <Text style={[styles.footerText, { color: colors.muted }]}>
-                  Don't have an account?{' '}
-                  <Text style={{ color: colors.brand.dark, fontWeight: '600' }}>Sign up</Text>
+                  {t('auth.no_account')}{' '}
+                  <Text style={{ color: colors.brand.dark, fontWeight: '600' }}>{t('auth.sign_up')}</Text>
                 </Text>
               </AnimatedPressable>
             </Animated.View>

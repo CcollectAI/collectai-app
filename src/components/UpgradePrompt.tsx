@@ -11,6 +11,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   feature: string;
@@ -20,22 +21,25 @@ type Props = {
 export const UpgradePrompt = React.memo(function UpgradePrompt({ feature, requiredPlan = 'Pro' }: Props) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
+  const { t } = useTranslation();
   return (
     <View style={[styles.container, { backgroundColor: colors.warningBg, borderColor: colors.warning + '40' }]}>
       <View style={styles.row}>
         <Ionicons name="lock-closed-outline" size={18} color={colors.warning} />
         <View style={styles.text}>
-          <Text style={[styles.title, { color: colors.text }]}>{feature} requires {requiredPlan}</Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>Upgrade to unlock this feature</Text>
+          <Text style={[styles.title, { color: colors.text }]}>
+            {t('billing.feature_requires_plan', { feature, plan: requiredPlan })}
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>{t('billing.unlock_feature')}</Text>
         </View>
       </View>
       <AnimatedPressable
         onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push('/settings' as Href); }}
         style={[styles.btn, { backgroundColor: colors.accent }]}
         accessibilityRole="button"
-        accessibilityLabel={`Upgrade to ${requiredPlan}`}
+        accessibilityLabel={t('billing.upgrade_to_plan', { plan: requiredPlan })}
       >
-        <Text style={[styles.btnText, { color: colors.accentText }]}>Upgrade</Text>
+        <Text style={[styles.btnText, { color: colors.accentText }]}>{t('billing.upgrade')}</Text>
       </AnimatedPressable>
     </View>
   );

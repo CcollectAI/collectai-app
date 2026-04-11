@@ -12,6 +12,8 @@
     "precheck": "node scripts/precheck.mjs",
     "dev": "bash scripts/dev.sh",
     "test": "jest",
+    "i18n:check": "node scripts/check-i18n-strings.mjs",
+    "i18n:check:quiet": "node scripts/check-i18n-strings.mjs --quiet",
     "bundle-size": "node scripts/bundle-size.mjs",
     "bundle-size:update": "node scripts/bundle-size.mjs --update",
     "postinstall": "node scripts/postinstall-fixes.js"

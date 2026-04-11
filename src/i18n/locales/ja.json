@@ -33,6 +33,7 @@
     "sign_out": "サインアウト",
     "email": "メールアドレス",
     "password": "パスワード",
+    "username": "ユーザー名",
     "forgot_password": "パスワードをお忘れですか？",
     "create_account": "アカウント作成",
     "continue_with_google": "Googleで続ける",
@@ -41,7 +42,72 @@
     "no_account": "アカウントをお持ちではありませんか？",
     "verify_email": "メールを確認",
     "welcome_back": "お帰りなさい",
-    "welcome": "CollectAIへようこそ"
+    "welcome": "CollectAIへようこそ",
+    "or": "または",
+    "magic_link": "マジックリンク",
+    "magic_link_sent": "マジックサインインリンクを送信しました。メールをご確認ください。",
+    "try_demo_mode": "デモモードを試す",
+    "login": {
+      "title": "お帰りなさい",
+      "sign_in_button": "サインイン"
+    },
+    "register": {
+      "title": "アカウント作成",
+      "subtitle": "コレクターコミュニティに参加",
+      "create_button": "アカウント作成",
+      "i_agree_to": "同意します：",
+      "terms_of_service": "利用規約",
+      "and": "および",
+      "privacy_policy": "プライバシーポリシー",
+      "sign_in_instead": "代わりにサインイン"
+    },
+    "forgot": {
+      "title": "パスワードリセット",
+      "subtitle": "メールアドレスを入力すると、リセットリンクをお送りします",
+      "subtitle_sent": "受信トレイでリセットリンクをご確認ください",
+      "success_text": "パスワードリセットリンクを送信しました：",
+      "success_hint": "届いていませんか？迷惑メールフォルダを確認するか、再試行してください。",
+      "send_reset_link": "リセットリンクを送信",
+      "try_again": "再試行",
+      "try_again_cooldown": "再試行 ({{seconds}}秒)",
+      "back_to_sign_in": "サインインに戻る",
+      "remember_password": "パスワードを思い出しましたか？"
+    },
+    "verify": {
+      "title": "メールを確認してください",
+      "description": "確認リンクを送信しました：",
+      "email_fallback": "メールアドレス",
+      "hint": "メール内のリンクをクリックしてアカウントを確認し、ここに戻ってサインインしてください。",
+      "resend_cooldown": "{{seconds}}秒後に再送信できます",
+      "resend_email": "メールを再送信",
+      "resent_tap_again": "メール送信済み — タップして再送信",
+      "go_to_sign_in": "サインインへ",
+      "spam_hint": "メールが届きませんか？迷惑メールフォルダを確認してください。"
+    },
+    "password_strength": {
+      "weak": "弱い",
+      "fair": "普通",
+      "good": "良い",
+      "strong": "強い",
+      "excellent": "非常に強い"
+    },
+    "errors": {
+      "google_sign_in_failed": "Googleサインインに失敗しました",
+      "apple_sign_in_failed": "Appleサインインに失敗しました",
+      "no_identity_token": "IDトークンを受信できませんでした。",
+      "email_password_required": "メールアドレスとパスワードを入力してください。",
+      "sign_in_failed": "サインインに失敗しました",
+      "magic_link_email_required": "マジックリンクを受け取るにはメールアドレスを入力してください。",
+      "magic_link_failed": "マジックリンクに失敗しました",
+      "accept_terms": "利用規約とプライバシーポリシーに同意してください。",
+      "fill_all_fields": "すべての項目を入力してください。",
+      "password_min_length": "パスワードは8文字以上必要です。",
+      "sign_up_no_user": "サインアップ失敗 — ユーザーが返されませんでした。",
+      "username_taken": "このユーザー名は使用できません。別のものを選択してください。",
+      "sign_up_failed": "サインアップに失敗しました。不明なエラー。",
+      "reset_email_required": "パスワードをリセットするにはメールアドレスを入力してください。",
+      "reset_failed": "リセットに失敗しました。不明なエラー。"
+    }
   },
 
   "nav": {
@@ -81,7 +147,13 @@
     "bulk_move": "移動",
     "bulk_archive": "アーカイブ",
     "bulk_delete": "削除",
-    "bulk_export": "エクスポート"
+    "bulk_export": "エクスポート",
+    "selected_count": "{{count}} 件選択済み",
+    "exit_multi_select": "複数選択モードを終了",
+    "move_a11y": "選択したアイテムをカテゴリーに移動",
+    "export_a11y": "選択したアイテムをエクスポート",
+    "archive_a11y": "選択したアイテムをアーカイブ",
+    "delete_a11y": "選択したアイテムを削除"
   },
 
   "scan": {
@@ -96,7 +168,51 @@
     "detected_details": "検出された詳細",
     "confidence": "信頼度",
     "low_confidence_warning": "信頼度が低い — 保存前に確認してください",
-    "scan_another": "もう一度スキャン"
+    "scan_another": "もう一度スキャン",
+    "unknown": "不明",
+    "unknown_item": "不明なアイテム",
+    "na": "N/A",
+    "is_this_correct": "これで合っていますか？",
+    "confidence_label": "{{pct}}% 信頼度",
+    "yes_correct": "はい、合っています",
+    "no_correct": "いいえ、修正します",
+    "confirm_correct_a11y": "識別が正しいことを確認",
+    "open_correction_a11y": "修正フォームを開く",
+    "estimated_value": "推定価値",
+    "ai_confidence": "AI信頼度",
+    "did_you_mean": "もしかして？",
+    "you_already_have": "すでに持っています！",
+    "owned_count": "コレクションに一致するアイテムが {{count}} 点あります。",
+    "set_completion_line": "セット完成度: {{pct}}% ({{owned}}/{{total}})",
+    "variant_of": "{{name}} のバリエーション",
+    "high_confidence": "高信頼度",
+    "moderate": "中程度",
+    "low_confidence_label": "低信頼度",
+    "share_a11y": "スキャン結果を共有",
+    "share_dialog_title": "スキャン結果を共有",
+    "retake_photo_a11y": "写真を撮り直す",
+    "scanned_item_photo": "スキャンしたアイテムの写真",
+    "select_alternative_a11y": "{{title}} を選択",
+    "image_of_a11y": "{{title}} の画像",
+    "ring_confidence_a11y": "{{label}} 信頼度: {{pct}} パーセント",
+    "valued_at": " — 推定価格 {{price}}",
+    "share_message": "{{name}}{{suffix}}\n\nCollectAIでスキャン",
+    "ring_label_name": "名前",
+    "ring_label_category": "カテゴリー",
+    "ring_label_condition": "状態",
+    "comparison": {
+      "name": "名前",
+      "value": "価値",
+      "category": "カテゴリー",
+      "condition": "状態",
+      "confidence": "信頼度",
+      "rarity": "レアリティ",
+      "keep_a": "Aを保持",
+      "keep_b": "Bを保持",
+      "keep_both": "両方を保持",
+      "keep_a_a11y": "アイテムAを保持",
+      "keep_b_a11y": "アイテムBを保持"
+    }
   },
 
   "settings": {
@@ -128,7 +244,10 @@
     "manage_subscription": "サブスクリプションを管理",
     "current_plan": "現在のプラン",
     "feature_requires_pro": "{{feature}}はProが必要です",
-    "feature_requires_premium": "{{feature}}はPremiumが必要です"
+    "feature_requires_premium": "{{feature}}はPremiumが必要です",
+    "feature_requires_plan": "{{feature}}は{{plan}}が必要です",
+    "upgrade_to_plan": "{{plan}}にアップグレード",
+    "unlock_feature": "アップグレードしてこの機能をアンロック"
   },
 
   "set_completion": {

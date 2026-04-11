@@ -33,6 +33,7 @@
     "sign_out": "Abmelden",
     "email": "E-Mail",
     "password": "Passwort",
+    "username": "Benutzername",
     "forgot_password": "Passwort vergessen?",
     "create_account": "Konto erstellen",
     "continue_with_google": "Mit Google fortfahren",
@@ -41,7 +42,72 @@
     "no_account": "Noch kein Konto?",
     "verify_email": "E-Mail verifizieren",
     "welcome_back": "Willkommen zurück",
-    "welcome": "Willkommen bei CollectAI"
+    "welcome": "Willkommen bei CollectAI",
+    "or": "oder",
+    "magic_link": "Magic Link",
+    "magic_link_sent": "Wir haben dir einen Magic-Sign-In-Link gesendet. Prüfe deine E-Mails.",
+    "try_demo_mode": "Demo-Modus testen",
+    "login": {
+      "title": "Willkommen zurück",
+      "sign_in_button": "Anmelden"
+    },
+    "register": {
+      "title": "Konto erstellen",
+      "subtitle": "Tritt der Sammler-Community bei",
+      "create_button": "Konto erstellen",
+      "i_agree_to": "Ich akzeptiere die",
+      "terms_of_service": "Nutzungsbedingungen",
+      "and": "und",
+      "privacy_policy": "Datenschutzerklärung",
+      "sign_in_instead": "Stattdessen anmelden"
+    },
+    "forgot": {
+      "title": "Passwort zurücksetzen",
+      "subtitle": "Gib deine E-Mail ein und wir senden dir einen Reset-Link",
+      "subtitle_sent": "Überprüfe deinen Posteingang auf einen Reset-Link",
+      "success_text": "Wir haben einen Passwort-Reset-Link gesendet an",
+      "success_hint": "Nicht erhalten? Überprüfe den Spam-Ordner oder versuche es erneut.",
+      "send_reset_link": "Reset-Link senden",
+      "try_again": "Erneut versuchen",
+      "try_again_cooldown": "Erneut versuchen ({{seconds}}s)",
+      "back_to_sign_in": "Zurück zur Anmeldung",
+      "remember_password": "Du erinnerst dich an dein Passwort?"
+    },
+    "verify": {
+      "title": "Überprüfe deine E-Mails",
+      "description": "Wir haben einen Bestätigungslink gesendet an",
+      "email_fallback": "deine E-Mail",
+      "hint": "Klicke auf den Link in der E-Mail, um dein Konto zu verifizieren, und komm dann zur Anmeldung zurück.",
+      "resend_cooldown": "Erneut senden in {{seconds}}s",
+      "resend_email": "E-Mail erneut senden",
+      "resent_tap_again": "E-Mail gesendet — tippe zum erneuten Senden",
+      "go_to_sign_in": "Zur Anmeldung",
+      "spam_hint": "E-Mail nicht erhalten? Überprüfe den Spam-Ordner."
+    },
+    "password_strength": {
+      "weak": "Schwach",
+      "fair": "Mittel",
+      "good": "Gut",
+      "strong": "Stark",
+      "excellent": "Ausgezeichnet"
+    },
+    "errors": {
+      "google_sign_in_failed": "Anmeldung mit Google fehlgeschlagen",
+      "apple_sign_in_failed": "Anmeldung mit Apple fehlgeschlagen",
+      "no_identity_token": "Kein Identitätstoken erhalten.",
+      "email_password_required": "Bitte gib deine E-Mail und dein Passwort ein.",
+      "sign_in_failed": "Anmeldung fehlgeschlagen",
+      "magic_link_email_required": "Gib deine E-Mail ein, um einen Magic Link zu erhalten.",
+      "magic_link_failed": "Magic Link fehlgeschlagen",
+      "accept_terms": "Bitte akzeptiere die Nutzungsbedingungen und die Datenschutzerklärung.",
+      "fill_all_fields": "Bitte fülle alle Felder aus.",
+      "password_min_length": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+      "sign_up_no_user": "Registrierung fehlgeschlagen — kein Benutzer zurückgegeben.",
+      "username_taken": "Benutzername bereits vergeben. Bitte wähle einen anderen.",
+      "sign_up_failed": "Registrierung fehlgeschlagen. Unbekannter Fehler.",
+      "reset_email_required": "Gib deine E-Mail-Adresse ein, um dein Passwort zurückzusetzen.",
+      "reset_failed": "Zurücksetzen fehlgeschlagen. Unbekannter Fehler."
+    }
   },
 
   "nav": {
@@ -81,7 +147,13 @@
     "bulk_move": "Verschieben",
     "bulk_archive": "Archivieren",
     "bulk_delete": "Löschen",
-    "bulk_export": "Exportieren"
+    "bulk_export": "Exportieren",
+    "selected_count": "{{count}} ausgewählt",
+    "exit_multi_select": "Mehrfachauswahl beenden",
+    "move_a11y": "Ausgewählte Objekte in Kategorie verschieben",
+    "export_a11y": "Ausgewählte Objekte exportieren",
+    "archive_a11y": "Ausgewählte Objekte archivieren",
+    "delete_a11y": "Ausgewählte Objekte löschen"
   },
 
   "scan": {
@@ -96,7 +168,51 @@
     "detected_details": "Erkannte Details",
     "confidence": "Vertrauen",
     "low_confidence_warning": "Geringes Vertrauen — bitte vor dem Speichern prüfen",
-    "scan_another": "Weiteres scannen"
+    "scan_another": "Weiteres scannen",
+    "unknown": "Unbekannt",
+    "unknown_item": "Unbekanntes Objekt",
+    "na": "k. A.",
+    "is_this_correct": "Ist das richtig?",
+    "confidence_label": "{{pct}}% Vertrauen",
+    "yes_correct": "Ja, das stimmt",
+    "no_correct": "Nein, lass mich korrigieren",
+    "confirm_correct_a11y": "Identifikation als korrekt bestätigen",
+    "open_correction_a11y": "Korrekturformular öffnen",
+    "estimated_value": "Geschätzter Wert",
+    "ai_confidence": "KI-Vertrauen",
+    "did_you_mean": "Meintest du?",
+    "you_already_have": "Das hast du schon!",
+    "owned_count": "Du besitzt {{count}} übereinstimmende(s) Objekt(e) in deiner Sammlung.",
+    "set_completion_line": "Set-Fortschritt: {{pct}}% ({{owned}}/{{total}})",
+    "variant_of": "Variante von {{name}}",
+    "high_confidence": "Hohes Vertrauen",
+    "moderate": "Moderat",
+    "low_confidence_label": "Geringes Vertrauen",
+    "share_a11y": "Scanergebnis teilen",
+    "share_dialog_title": "Scanergebnis teilen",
+    "retake_photo_a11y": "Foto erneut aufnehmen",
+    "scanned_item_photo": "Foto des gescannten Objekts",
+    "select_alternative_a11y": "{{title}} auswählen",
+    "image_of_a11y": "Bild von {{title}}",
+    "ring_confidence_a11y": "{{label}} Vertrauen: {{pct}} Prozent",
+    "valued_at": " — geschätzt auf {{price}}",
+    "share_message": "{{name}}{{suffix}}\n\nGescannt mit CollectAI",
+    "ring_label_name": "Name",
+    "ring_label_category": "Kategorie",
+    "ring_label_condition": "Zustand",
+    "comparison": {
+      "name": "Name",
+      "value": "Wert",
+      "category": "Kategorie",
+      "condition": "Zustand",
+      "confidence": "Vertrauen",
+      "rarity": "Seltenheit",
+      "keep_a": "A behalten",
+      "keep_b": "B behalten",
+      "keep_both": "Beide behalten",
+      "keep_a_a11y": "Objekt A behalten",
+      "keep_b_a11y": "Objekt B behalten"
+    }
   },
 
   "settings": {
@@ -128,7 +244,10 @@
     "manage_subscription": "Abonnement verwalten",
     "current_plan": "Aktueller Plan",
     "feature_requires_pro": "{{feature}} erfordert Pro",
-    "feature_requires_premium": "{{feature}} erfordert Premium"
+    "feature_requires_premium": "{{feature}} erfordert Premium",
+    "feature_requires_plan": "{{feature}} erfordert {{plan}}",
+    "upgrade_to_plan": "Auf {{plan}} upgraden",
+    "unlock_feature": "Upgrade, um diese Funktion freizuschalten"
   },
 
   "set_completion": {

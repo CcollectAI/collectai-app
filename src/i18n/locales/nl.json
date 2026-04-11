@@ -33,6 +33,7 @@
     "sign_out": "Uitloggen",
     "email": "E-mail",
     "password": "Wachtwoord",
+    "username": "Gebruikersnaam",
     "forgot_password": "Wachtwoord vergeten?",
     "create_account": "Account aanmaken",
     "continue_with_google": "Doorgaan met Google",
@@ -41,7 +42,72 @@
     "no_account": "Nog geen account?",
     "verify_email": "Verifieer je e-mail",
     "welcome_back": "Welkom terug",
-    "welcome": "Welkom bij CollectAI"
+    "welcome": "Welkom bij CollectAI",
+    "or": "of",
+    "magic_link": "Magic link",
+    "magic_link_sent": "We hebben je een magic sign-in link gestuurd. Controleer je e-mail.",
+    "try_demo_mode": "Demomodus proberen",
+    "login": {
+      "title": "Welkom terug",
+      "sign_in_button": "Inloggen"
+    },
+    "register": {
+      "title": "Account aanmaken",
+      "subtitle": "Sluit je aan bij de verzamelaarsgemeenschap",
+      "create_button": "Account aanmaken",
+      "i_agree_to": "Ik ga akkoord met de",
+      "terms_of_service": "Servicevoorwaarden",
+      "and": "en",
+      "privacy_policy": "het Privacybeleid",
+      "sign_in_instead": "Toch inloggen"
+    },
+    "forgot": {
+      "title": "Wachtwoord resetten",
+      "subtitle": "Vul je e-mail in en we sturen je een resetlink",
+      "subtitle_sent": "Controleer je inbox voor een resetlink",
+      "success_text": "We hebben een wachtwoord-resetlink gestuurd naar",
+      "success_hint": "Niet ontvangen? Controleer je spammap of probeer opnieuw.",
+      "send_reset_link": "Resetlink versturen",
+      "try_again": "Opnieuw proberen",
+      "try_again_cooldown": "Opnieuw proberen ({{seconds}}s)",
+      "back_to_sign_in": "Terug naar inloggen",
+      "remember_password": "Weet je je wachtwoord weer?"
+    },
+    "verify": {
+      "title": "Controleer je e-mail",
+      "description": "We hebben een bevestigingslink gestuurd naar",
+      "email_fallback": "je e-mailadres",
+      "hint": "Klik op de link in de e-mail om je account te verifiëren en kom dan terug om in te loggen.",
+      "resend_cooldown": "Opnieuw versturen over {{seconds}}s",
+      "resend_email": "E-mail opnieuw versturen",
+      "resent_tap_again": "E-mail verstuurd — tik om opnieuw te versturen",
+      "go_to_sign_in": "Naar inloggen",
+      "spam_hint": "E-mail niet ontvangen? Controleer je spammap."
+    },
+    "password_strength": {
+      "weak": "Zwak",
+      "fair": "Matig",
+      "good": "Goed",
+      "strong": "Sterk",
+      "excellent": "Uitstekend"
+    },
+    "errors": {
+      "google_sign_in_failed": "Inloggen met Google mislukt",
+      "apple_sign_in_failed": "Inloggen met Apple mislukt",
+      "no_identity_token": "Geen identiteitstoken ontvangen.",
+      "email_password_required": "Vul je e-mail en wachtwoord in.",
+      "sign_in_failed": "Inloggen mislukt",
+      "magic_link_email_required": "Vul je e-mail in om een magic link te ontvangen.",
+      "magic_link_failed": "Magic link mislukt",
+      "accept_terms": "Accepteer de Servicevoorwaarden en het Privacybeleid.",
+      "fill_all_fields": "Vul alle velden in.",
+      "password_min_length": "Wachtwoord moet minstens 8 tekens lang zijn.",
+      "sign_up_no_user": "Registratie mislukt — geen gebruiker ontvangen.",
+      "username_taken": "Gebruikersnaam bestaat al. Kies een andere.",
+      "sign_up_failed": "Registratie mislukt. Onbekende fout.",
+      "reset_email_required": "Vul je e-mailadres in om je wachtwoord te resetten.",
+      "reset_failed": "Reset mislukt. Onbekende fout."
+    }
   },
 
   "nav": {
@@ -81,7 +147,13 @@
     "bulk_move": "Verplaatsen",
     "bulk_archive": "Archiveren",
     "bulk_delete": "Verwijderen",
-    "bulk_export": "Exporteren"
+    "bulk_export": "Exporteren",
+    "selected_count": "{{count}} geselecteerd",
+    "exit_multi_select": "Multi-selectie verlaten",
+    "move_a11y": "Geselecteerde items naar categorie verplaatsen",
+    "export_a11y": "Geselecteerde items exporteren",
+    "archive_a11y": "Geselecteerde items archiveren",
+    "delete_a11y": "Geselecteerde items verwijderen"
   },
 
   "scan": {
@@ -89,14 +161,58 @@
     "capture": "Tik om te fotograferen",
     "analyzing": "Analyseren…",
     "identified": "Geïdentificeerd",
-    "add_to_collection": "Aan collectie toevoegen",
+    "add_to_collection": "Toevoegen aan collectie",
     "retake": "Opnieuw",
     "cant_identify": "Kan dit item niet identificeren",
     "add_manually": "Handmatig toevoegen",
     "detected_details": "Gedetecteerde details",
     "confidence": "Zekerheid",
     "low_confidence_warning": "Lage zekerheid — controleer voor opslaan",
-    "scan_another": "Nog een scannen"
+    "scan_another": "Nog een scannen",
+    "unknown": "Onbekend",
+    "unknown_item": "Onbekend item",
+    "na": "N.v.t.",
+    "is_this_correct": "Klopt dit?",
+    "confidence_label": "{{pct}}% zekerheid",
+    "yes_correct": "Ja, dit klopt",
+    "no_correct": "Nee, laat me corrigeren",
+    "confirm_correct_a11y": "Bevestig dat de identificatie klopt",
+    "open_correction_a11y": "Correctieformulier openen",
+    "estimated_value": "Geschatte waarde",
+    "ai_confidence": "AI-zekerheid",
+    "did_you_mean": "Bedoelde je?",
+    "you_already_have": "Dit heb je al!",
+    "owned_count": "Je hebt {{count}} overeenkomend(e) item(s) in je collectie.",
+    "set_completion_line": "Set voltooid: {{pct}}% ({{owned}}/{{total}})",
+    "variant_of": "Variant van {{name}}",
+    "high_confidence": "Hoge zekerheid",
+    "moderate": "Gemiddeld",
+    "low_confidence_label": "Lage zekerheid",
+    "share_a11y": "Scanresultaat delen",
+    "share_dialog_title": "Scanresultaat delen",
+    "retake_photo_a11y": "Foto opnieuw maken",
+    "scanned_item_photo": "Foto van gescand item",
+    "select_alternative_a11y": "{{title}} selecteren",
+    "image_of_a11y": "Afbeelding van {{title}}",
+    "ring_confidence_a11y": "{{label}} zekerheid: {{pct}} procent",
+    "valued_at": " — gewaardeerd op {{price}}",
+    "share_message": "{{name}}{{suffix}}\n\nGescand met CollectAI",
+    "ring_label_name": "Naam",
+    "ring_label_category": "Categorie",
+    "ring_label_condition": "Conditie",
+    "comparison": {
+      "name": "Naam",
+      "value": "Waarde",
+      "category": "Categorie",
+      "condition": "Conditie",
+      "confidence": "Zekerheid",
+      "rarity": "Zeldzaamheid",
+      "keep_a": "Behoud A",
+      "keep_b": "Behoud B",
+      "keep_both": "Beide behouden",
+      "keep_a_a11y": "Item A behouden",
+      "keep_b_a11y": "Item B behouden"
+    }
   },
 
   "settings": {
@@ -128,7 +244,10 @@
     "manage_subscription": "Abonnement beheren",
     "current_plan": "Huidig abonnement",
     "feature_requires_pro": "{{feature}} vereist Pro",
-    "feature_requires_premium": "{{feature}} vereist Premium"
+    "feature_requires_premium": "{{feature}} vereist Premium",
+    "feature_requires_plan": "{{feature}} vereist {{plan}}",
+    "upgrade_to_plan": "Upgraden naar {{plan}}",
+    "unlock_feature": "Upgrade om deze functie te ontgrendelen"
   },
 
   "set_completion": {

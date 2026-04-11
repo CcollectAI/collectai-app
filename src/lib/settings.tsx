@@ -4,12 +4,15 @@ import { collectorsApi } from '@/api/collectorsApi';
 import { updateFxCache } from '@/lib/fx';
 import type { CurrencyCode } from '@/data/types';
 import logger from '@/utils/logger';
+import i18n, { SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n';
 
 export type ChartRange = '1D'|'7D'|'30D';
 /** @deprecated Use CurrencyCode from '@/data/types' for new code */
 export type Currency = CurrencyCode;
 export type NumberLocale = 'en-US'|'de-DE'|'ja-JP'|'nl-NL'|'ko-KR'|'en-AU';
 export type Region = 'americas'|'europe'|'japan'|'korea'|'oceania'|'other';
+/** UI language override. 'auto' = use device locale (detected at app boot). */
+export type LanguagePreference = 'auto' | SupportedLocale;
 
 export type Settings = {
   currency: Currency;
@@ -26,6 +29,8 @@ export type Settings = {
   hapticsEnabled: boolean;
   /** Micro-animations toggle */
   animationsEnabled: boolean;
+  /** UI language override (auto = device locale) */
+  language: LanguagePreference;
 };
 
 /** Map region to default currency + locale */
@@ -48,6 +53,7 @@ const DEFAULTS: Settings = {
   isDark: false,
   hapticsEnabled: true,
   animationsEnabled: true,
+  language: 'auto',
 };
 
 type Ctx = {
@@ -90,7 +96,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const s = await AsyncStorage.getItem('@settings');
-        if (s) setSettings({ ...DEFAULTS, ...(JSON.parse(s) as Settings) });
+        if (s) {
+          const parsed = { ...DEFAULTS, ...(JSON.parse(s) as Settings) };
+          setSettings(parsed);
+          // Apply persisted language override to i18n so subsequent renders use it.
+          if (parsed.language && parsed.language !== 'auto') {
+            i18n.changeLanguage(parsed.language).catch((e) =>
+              logger.warn('[settings] i18n.changeLanguage failed:', e),
+            );
+          }
+        }
       } catch (e) {
         logger.warn('[settings] Failed to load settings from AsyncStorage:', e);
       }
@@ -112,6 +127,19 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       AsyncStorage.setItem('@settings', JSON.stringify(next)).catch((e) => {
         logger.warn('[settings] Failed to persist settings:', e);
       });
+      // Apply language change to i18n (auto = revert to device detection = fallback)
+      if (patch.language !== undefined) {
+        const target =
+          patch.language === 'auto'
+            ? 'en' // fallback when auto is chosen after an override; device detection ran at boot
+            : patch.language;
+        // Only switch if supported (safety — type already enforces this)
+        if (SUPPORTED_LOCALES.includes(target as SupportedLocale)) {
+          i18n.changeLanguage(target).catch((e) =>
+            logger.warn('[settings] i18n.changeLanguage failed:', e),
+          );
+        }
+      }
       return next;
     });
   }, []);

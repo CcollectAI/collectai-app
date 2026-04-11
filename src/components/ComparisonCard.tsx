@@ -11,6 +11,7 @@ import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useTranslation } from 'react-i18next';
 import type { QuickScanResult, CurrencyCode } from '@/data/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -80,6 +81,7 @@ function ComparisonCardInner({
 }: Props) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const haptic = (intent: HapticIntent) => fireHaptic(intent, { enabled: settings.hapticsEnabled });
 
   const priceA = itemA.prediction.estimatedMid;
@@ -137,37 +139,37 @@ function ComparisonCardInner({
         {/* Comparison table */}
         <View style={[styles.table, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ComparisonRow
-            label="Name"
-            valueA={itemA.prediction.name || 'Unknown'}
-            valueB={itemB.prediction.name || 'Unknown'}
+            label={t('scan.comparison.name')}
+            valueA={itemA.prediction.name || t('scan.unknown')}
+            valueB={itemB.prediction.name || t('scan.unknown')}
           />
           <ComparisonRow
-            label="Value"
+            label={t('scan.comparison.value')}
             valueA={formatPrice(priceA, currency)}
             valueB={formatPrice(priceB, currency)}
             highlightHigher={priceHigher}
           />
           <ComparisonRow
-            label="Category"
+            label={t('scan.comparison.category')}
             valueA={(itemA.attributes.category || '').replace(/_/g, ' ')}
             valueB={(itemB.attributes.category || '').replace(/_/g, ' ')}
           />
           <ComparisonRow
-            label="Condition"
-            valueA={itemA.attributes.conditionGuess ?? 'N/A'}
-            valueB={itemB.attributes.conditionGuess ?? 'N/A'}
+            label={t('scan.comparison.condition')}
+            valueA={itemA.attributes.conditionGuess ?? t('scan.na')}
+            valueB={itemB.attributes.conditionGuess ?? t('scan.na')}
           />
           <ComparisonRow
-            label="Confidence"
+            label={t('scan.comparison.confidence')}
             valueA={`${confA}%`}
             valueB={`${confB}%`}
             highlightHigher={confHigher}
           />
           {(itemA.attributes.editionGuess || itemB.attributes.editionGuess) && (
             <ComparisonRow
-              label="Rarity"
-              valueA={itemA.attributes.editionGuess ?? 'N/A'}
-              valueB={itemB.attributes.editionGuess ?? 'N/A'}
+              label={t('scan.comparison.rarity')}
+              valueA={itemA.attributes.editionGuess ?? t('scan.na')}
+              valueB={itemB.attributes.editionGuess ?? t('scan.na')}
             />
           )}
         </View>
@@ -182,17 +184,17 @@ function ComparisonCardInner({
             style={[styles.actionBtn, { backgroundColor: colors.brand.base }]}
             onPress={() => { haptic(HapticIntent.JUDGMENT_LOCKED); onKeepA(); }}
             accessibilityRole="button"
-            accessibilityLabel="Keep item A"
+            accessibilityLabel={t('scan.comparison.keep_a_a11y')}
           >
-            <Text style={styles.actionBtnText}>Keep A</Text>
+            <Text style={styles.actionBtnText}>{t('scan.comparison.keep_a')}</Text>
           </AnimatedPressable>
           <AnimatedPressable
             style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]}
             onPress={() => { haptic(HapticIntent.JUDGMENT_LOCKED); onKeepB(); }}
             accessibilityRole="button"
-            accessibilityLabel="Keep item B"
+            accessibilityLabel={t('scan.comparison.keep_b_a11y')}
           >
-            <Text style={styles.actionBtnText}>Keep B</Text>
+            <Text style={styles.actionBtnText}>{t('scan.comparison.keep_b')}</Text>
           </AnimatedPressable>
         </View>
         <View style={styles.btnRow}>
@@ -201,14 +203,14 @@ function ComparisonCardInner({
             onPress={() => { haptic(HapticIntent.JUDGMENT_LOCKED); onKeepBoth(); }}
             accessibilityRole="button"
           >
-            <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Keep Both</Text>
+            <Text style={[styles.secondaryBtnText, { color: colors.text }]}>{t('scan.comparison.keep_both')}</Text>
           </AnimatedPressable>
           <AnimatedPressable
             style={[styles.secondaryBtn, { borderColor: colors.border }]}
             onPress={() => { haptic(HapticIntent.CONFIRMATION_LIGHT); onRetake(); }}
             accessibilityRole="button"
           >
-            <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Retake</Text>
+            <Text style={[styles.secondaryBtnText, { color: colors.text }]}>{t('scan.retake')}</Text>
           </AnimatedPressable>
         </View>
       </View>

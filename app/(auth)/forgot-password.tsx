@@ -23,6 +23,7 @@ import { AnimatedPressable } from '@/motion';
 import { useEnterReveal } from '@/motion/useEnterReveal';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
@@ -32,6 +33,7 @@ import { fonts } from '@/theme/tokens';
 
 function ForgotPasswordScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { colors } = useAppTheme();
   const { showToast } = useToast();
@@ -66,7 +68,7 @@ function ForgotPasswordScreen() {
   async function handleReset() {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      showToast({ message: 'Enter your email address to reset your password.', type: 'warning' });
+      showToast({ message: t('auth.errors.reset_email_required'), type: 'warning' });
       return;
     }
 
@@ -80,7 +82,7 @@ function ForgotPasswordScreen() {
       setSent(true);
       setCooldown(60);
     } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : 'Reset failed. Unknown error.', type: 'error' });
+      showToast({ message: e instanceof Error ? e.message : t('auth.errors.reset_failed'), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -102,7 +104,7 @@ function ForgotPasswordScreen() {
               style={styles.backBtn}
               onPress={() => router.back()}
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel={t('common.back')}
             >
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </AnimatedPressable>
@@ -113,12 +115,10 @@ function ForgotPasswordScreen() {
                 <Ionicons name="key-outline" size={32} color={colors.brand.dark} />
               </View>
               <Text style={[styles.brandTitle, { color: colors.text, fontFamily: fonts.bold }]}>
-                Reset Password
+                {t('auth.forgot.title')}
               </Text>
               <Text style={[styles.brandSubtitle, { color: colors.muted }]}>
-                {sent
-                  ? 'Check your inbox for a reset link'
-                  : "Enter your email and we'll send you a reset link"}
+                {sent ? t('auth.forgot.subtitle_sent') : t('auth.forgot.subtitle')}
               </Text>
             </Animated.View>
 
@@ -128,11 +128,11 @@ function ForgotPasswordScreen() {
                   <Ionicons name="checkmark-circle" size={56} color={colors.success} />
                 </Animated.View>
                 <Text style={[styles.successText, { color: colors.text }]}>
-                  We sent a password reset link to{'\n'}
+                  {t('auth.forgot.success_text')}{'\n'}
                   <Text style={{ fontWeight: '700' }}>{email.trim()}</Text>
                 </Text>
                 <Text style={[styles.successHint, { color: colors.muted }]}>
-                  Didn't receive it? Check your spam folder or try again.
+                  {t('auth.forgot.success_hint')}
                 </Text>
 
                 <AnimatedPressable
@@ -144,7 +144,9 @@ function ForgotPasswordScreen() {
                   }}
                   disabled={cooldown > 0}
                   accessibilityRole="button"
-                  accessibilityLabel={cooldown > 0 ? `Try again in ${cooldown} seconds` : 'Try again'}
+                  accessibilityLabel={
+                    cooldown > 0 ? t('auth.forgot.try_again_cooldown', { seconds: cooldown }) : t('auth.forgot.try_again')
+                  }
                 >
                   <LinearGradient
                     colors={[colors.brand.dark, colors.brand.base]}
@@ -153,7 +155,9 @@ function ForgotPasswordScreen() {
                     style={styles.gradientBtn}
                   >
                     <Text style={styles.gradientBtnText}>
-                      {cooldown > 0 ? `Try Again (${cooldown}s)` : 'Try Again'}
+                      {cooldown > 0
+                        ? t('auth.forgot.try_again_cooldown', { seconds: cooldown })
+                        : t('auth.forgot.try_again')}
                     </Text>
                   </LinearGradient>
                 </AnimatedPressable>
@@ -162,17 +166,17 @@ function ForgotPasswordScreen() {
                   style={[styles.secondaryBtn, { borderColor: colors.border }]}
                   onPress={() => router.replace('/(auth)/login')}
                   accessibilityRole="button"
-                  accessibilityLabel="Back to sign in"
+                  accessibilityLabel={t('auth.forgot.back_to_sign_in')}
                 >
                   <Text style={[styles.secondaryBtnText, { color: colors.brand.dark }]}>
-                    Back to Sign In
+                    {t('auth.forgot.back_to_sign_in')}
                   </Text>
                 </AnimatedPressable>
               </View>
             ) : (
               <View style={styles.form}>
                 <AuthTextInput
-                  label="Email"
+                  label={t('auth.email')}
                   icon="mail-outline"
                   value={email}
                   onChangeText={setEmail}
@@ -189,7 +193,7 @@ function ForgotPasswordScreen() {
                   onPress={handleReset}
                   disabled={loading}
                   accessibilityRole="button"
-                  accessibilityLabel="Send reset link"
+                  accessibilityLabel={t('auth.forgot.send_reset_link')}
                 >
                   <LinearGradient
                     colors={[colors.brand.dark, colors.brand.base]}
@@ -200,7 +204,7 @@ function ForgotPasswordScreen() {
                     {loading ? (
                       <ActivityIndicator color="#FFFFFF" />
                     ) : (
-                      <Text style={styles.gradientBtnText}>Send Reset Link</Text>
+                      <Text style={styles.gradientBtnText}>{t('auth.forgot.send_reset_link')}</Text>
                     )}
                   </LinearGradient>
                 </AnimatedPressable>
@@ -209,11 +213,11 @@ function ForgotPasswordScreen() {
                   style={styles.footer}
                   onPress={() => router.back()}
                   accessibilityRole="link"
-                  accessibilityLabel="Back to sign in"
+                  accessibilityLabel={t('auth.forgot.back_to_sign_in')}
                 >
                   <Text style={[styles.footerText, { color: colors.muted }]}>
-                    Remember your password?{' '}
-                    <Text style={{ color: colors.brand.dark, fontWeight: '600' }}>Sign in</Text>
+                    {t('auth.forgot.remember_password')}{' '}
+                    <Text style={{ color: colors.brand.dark, fontWeight: '600' }}>{t('auth.sign_in')}</Text>
                   </Text>
                 </AnimatedPressable>
               </View>

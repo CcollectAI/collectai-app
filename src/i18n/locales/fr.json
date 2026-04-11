@@ -33,6 +33,7 @@
     "sign_out": "Se déconnecter",
     "email": "E-mail",
     "password": "Mot de passe",
+    "username": "Nom d'utilisateur",
     "forgot_password": "Mot de passe oublié ?",
     "create_account": "Créer un compte",
     "continue_with_google": "Continuer avec Google",
@@ -41,7 +42,72 @@
     "no_account": "Pas encore de compte ?",
     "verify_email": "Vérifiez votre e-mail",
     "welcome_back": "Bon retour",
-    "welcome": "Bienvenue sur CollectAI"
+    "welcome": "Bienvenue sur CollectAI",
+    "or": "ou",
+    "magic_link": "Lien magique",
+    "magic_link_sent": "Nous vous avons envoyé un lien de connexion magique. Vérifiez votre e-mail.",
+    "try_demo_mode": "Essayer le mode démo",
+    "login": {
+      "title": "Bon retour",
+      "sign_in_button": "Se connecter"
+    },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Rejoignez la communauté des collectionneurs",
+      "create_button": "Créer un compte",
+      "i_agree_to": "J'accepte les",
+      "terms_of_service": "Conditions d'utilisation",
+      "and": "et",
+      "privacy_policy": "la Politique de confidentialité",
+      "sign_in_instead": "Se connecter à la place"
+    },
+    "forgot": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Saisissez votre e-mail et nous vous enverrons un lien de réinitialisation",
+      "subtitle_sent": "Vérifiez votre boîte de réception pour le lien de réinitialisation",
+      "success_text": "Nous avons envoyé un lien de réinitialisation à",
+      "success_hint": "Pas reçu ? Vérifiez votre dossier spam ou réessayez.",
+      "send_reset_link": "Envoyer le lien",
+      "try_again": "Réessayer",
+      "try_again_cooldown": "Réessayer ({{seconds}}s)",
+      "back_to_sign_in": "Retour à la connexion",
+      "remember_password": "Vous vous souvenez de votre mot de passe ?"
+    },
+    "verify": {
+      "title": "Vérifiez votre e-mail",
+      "description": "Nous avons envoyé un lien de confirmation à",
+      "email_fallback": "votre e-mail",
+      "hint": "Cliquez sur le lien dans l'e-mail pour vérifier votre compte, puis revenez ici pour vous connecter.",
+      "resend_cooldown": "Renvoyer dans {{seconds}}s",
+      "resend_email": "Renvoyer l'e-mail",
+      "resent_tap_again": "E-mail envoyé — touchez pour renvoyer",
+      "go_to_sign_in": "Aller à la connexion",
+      "spam_hint": "E-mail non reçu ? Vérifiez votre dossier spam."
+    },
+    "password_strength": {
+      "weak": "Faible",
+      "fair": "Moyen",
+      "good": "Bon",
+      "strong": "Fort",
+      "excellent": "Excellent"
+    },
+    "errors": {
+      "google_sign_in_failed": "Échec de la connexion Google",
+      "apple_sign_in_failed": "Échec de la connexion Apple",
+      "no_identity_token": "Aucun jeton d'identité reçu.",
+      "email_password_required": "Veuillez saisir votre e-mail et votre mot de passe.",
+      "sign_in_failed": "Échec de la connexion",
+      "magic_link_email_required": "Saisissez votre e-mail pour recevoir un lien magique.",
+      "magic_link_failed": "Échec du lien magique",
+      "accept_terms": "Veuillez accepter les Conditions d'utilisation et la Politique de confidentialité.",
+      "fill_all_fields": "Veuillez remplir tous les champs.",
+      "password_min_length": "Le mot de passe doit contenir au moins 8 caractères.",
+      "sign_up_no_user": "Inscription échouée — aucun utilisateur retourné.",
+      "username_taken": "Nom d'utilisateur déjà pris. Choisissez-en un autre.",
+      "sign_up_failed": "Inscription échouée. Erreur inconnue.",
+      "reset_email_required": "Saisissez votre adresse e-mail pour réinitialiser votre mot de passe.",
+      "reset_failed": "Échec de la réinitialisation. Erreur inconnue."
+    }
   },
 
   "nav": {
@@ -81,7 +147,13 @@
     "bulk_move": "Déplacer",
     "bulk_archive": "Archiver",
     "bulk_delete": "Supprimer",
-    "bulk_export": "Exporter"
+    "bulk_export": "Exporter",
+    "selected_count": "{{count}} sélectionné(s)",
+    "exit_multi_select": "Quitter la sélection multiple",
+    "move_a11y": "Déplacer les objets sélectionnés vers une catégorie",
+    "export_a11y": "Exporter les objets sélectionnés",
+    "archive_a11y": "Archiver les objets sélectionnés",
+    "delete_a11y": "Supprimer les objets sélectionnés"
   },
 
   "scan": {
@@ -96,7 +168,51 @@
     "detected_details": "Détails détectés",
     "confidence": "Confiance",
     "low_confidence_warning": "Faible confiance — vérifiez avant d'enregistrer",
-    "scan_another": "Scanner un autre"
+    "scan_another": "Scanner un autre",
+    "unknown": "Inconnu",
+    "unknown_item": "Objet inconnu",
+    "na": "N/A",
+    "is_this_correct": "Est-ce correct ?",
+    "confidence_label": "{{pct}}% de confiance",
+    "yes_correct": "Oui, c'est correct",
+    "no_correct": "Non, laissez-moi corriger",
+    "confirm_correct_a11y": "Confirmer que l'identification est correcte",
+    "open_correction_a11y": "Ouvrir le formulaire de correction",
+    "estimated_value": "Valeur estimée",
+    "ai_confidence": "Confiance de l'IA",
+    "did_you_mean": "Vouliez-vous dire ?",
+    "you_already_have": "Vous l'avez déjà !",
+    "owned_count": "Vous possédez {{count}} objet(s) correspondant(s) dans votre collection.",
+    "set_completion_line": "Série complétée : {{pct}}% ({{owned}}/{{total}})",
+    "variant_of": "Variante de {{name}}",
+    "high_confidence": "Haute confiance",
+    "moderate": "Modérée",
+    "low_confidence_label": "Faible confiance",
+    "share_a11y": "Partager le résultat",
+    "share_dialog_title": "Partager le résultat",
+    "retake_photo_a11y": "Reprendre la photo",
+    "scanned_item_photo": "Photo de l'objet scanné",
+    "select_alternative_a11y": "Sélectionner {{title}}",
+    "image_of_a11y": "Image de {{title}}",
+    "ring_confidence_a11y": "{{label}} confiance : {{pct}} pour cent",
+    "valued_at": " — estimé à {{price}}",
+    "share_message": "{{name}}{{suffix}}\n\nScanné avec CollectAI",
+    "ring_label_name": "Nom",
+    "ring_label_category": "Catégorie",
+    "ring_label_condition": "État",
+    "comparison": {
+      "name": "Nom",
+      "value": "Valeur",
+      "category": "Catégorie",
+      "condition": "État",
+      "confidence": "Confiance",
+      "rarity": "Rareté",
+      "keep_a": "Garder A",
+      "keep_b": "Garder B",
+      "keep_both": "Garder les deux",
+      "keep_a_a11y": "Garder l'objet A",
+      "keep_b_a11y": "Garder l'objet B"
+    }
   },
 
   "settings": {
@@ -128,7 +244,10 @@
     "manage_subscription": "Gérer l'abonnement",
     "current_plan": "Abonnement actuel",
     "feature_requires_pro": "{{feature}} nécessite Pro",
-    "feature_requires_premium": "{{feature}} nécessite Premium"
+    "feature_requires_premium": "{{feature}} nécessite Premium",
+    "feature_requires_plan": "{{feature}} nécessite {{plan}}",
+    "upgrade_to_plan": "Passer à {{plan}}",
+    "unlock_feature": "Mettez à niveau pour débloquer cette fonctionnalité"
   },
 
   "set_completion": {

@@ -339,8 +339,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
               }
             }
           >
-            87
-            % confidence
+            87% confidence
           </Text>
         </View>
         <View
@@ -1072,7 +1071,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
         </Text>
       </View>
       <View
-        accessibilityLabel="Add to collection"
+        accessibilityLabel="Add to Collection"
         accessibilityRole="button"
         accessibilityState={
           {
@@ -1485,8 +1484,7 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
               }
             }
           >
-            87
-            % confidence
+            87% confidence
           </Text>
         </View>
         <View
@@ -1871,7 +1869,7 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
         <Text />
       </View>
       <View
-        accessibilityLabel="Add to collection"
+        accessibilityLabel="Add to Collection"
         accessibilityRole="button"
         accessibilityState={
           {
@@ -2304,8 +2302,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
               }
             }
           >
-            30
-            % confidence
+            30% confidence
           </Text>
         </View>
         <View
@@ -2770,7 +2767,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
         </Text>
       </View>
       <View
-        accessibilityLabel="Add to collection"
+        accessibilityLabel="Add to Collection"
         accessibilityRole="button"
         accessibilityState={
           {

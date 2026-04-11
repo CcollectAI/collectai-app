@@ -27,6 +27,7 @@ import { formatPrice } from '@/lib/format';
 import { featureFlags } from '@/config/featureFlags';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { track } from '@/analytics/track';
+import { useTranslation } from 'react-i18next';
 import { CatalogImage } from '@/components/CatalogImage';
 import { ScanFeedbackPanel } from '@/components/quickscan/ScanFeedbackPanel';
 import { ScanSocialProof } from '@/components/quickscan/ScanSocialProof';
@@ -78,6 +79,7 @@ function ConfidenceRing({
   borderColor: string;
 }) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const pct = Math.round(value * 100);
   const strokeDash = RING_CIRCUMFERENCE * value;
   const ringColor = value >= 0.75 ? colors.success : value >= 0.5 ? colors.warning : colors.error;
@@ -85,7 +87,7 @@ function ConfidenceRing({
   return (
     <View
       style={styles.ringItem}
-      accessibilityLabel={`${label} confidence: ${pct} percent`}
+      accessibilityLabel={t('scan.ring_confidence_a11y', { label, pct })}
       accessibilityRole="text"
     >
       <View style={styles.ringContainer}>
@@ -141,6 +143,7 @@ function ScanResultCardInner({
   onConfirm,
 }: ScanResultCardProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const shareCardRef = useRef<ViewShot>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [showCorrection, setShowCorrection] = useState(false);
@@ -158,7 +161,7 @@ function ScanResultCardInner({
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(uri, {
             mimeType: 'image/png',
-            dialogTitle: 'Share scan result',
+            dialogTitle: t('scan.share_dialog_title'),
             UTI: 'public.png',
           });
           track({ name: 'scan_result_shared', properties: { method: 'image', category: scanResult.attributes.category } });
@@ -167,11 +170,11 @@ function ScanResultCardInner({
         }
       }
       // Fallback: text share
-      const name = scanResult.prediction.name || 'Unknown Item';
+      const name = scanResult.prediction.name || t('scan.unknown_item');
       const price = scanResult.prediction.estimatedMid;
-      const priceStr = price > 0 ? ` — valued at ${formatPrice(price, currency)}` : '';
+      const suffix = price > 0 ? t('scan.valued_at', { price: formatPrice(price, currency) }) : '';
       await Share.share({
-        message: `${name}${priceStr}\n\nScanned with CollectAI`,
+        message: t('scan.share_message', { name, suffix }),
       });
       track({ name: 'scan_result_shared', properties: { method: 'text', category: scanResult.attributes.category } });
     } catch (e) {
@@ -179,7 +182,7 @@ function ScanResultCardInner({
     } finally {
       setIsSharing(false);
     }
-  }, [isSharing, scanResult, currency]);
+  }, [isSharing, scanResult, currency, t]);
 
   const fc = scanResult.fieldConfidence;
   const alts = scanResult.alternatives ?? [];
@@ -205,7 +208,11 @@ function ScanResultCardInner({
     ? Math.round(((fc.name + fc.category + fc.condition) / 3) * 100)
     : Math.round(scanResult.prediction.confidence * 100);
   const confLabel =
-    overallConf >= 75 ? 'High Confidence' : overallConf >= 50 ? 'Moderate' : 'Low Confidence';
+    overallConf >= 75
+      ? t('scan.high_confidence')
+      : overallConf >= 50
+      ? t('scan.moderate')
+      : t('scan.low_confidence_label');
   const confBadgeColor = overallConf >= 75 ? colors.success : overallConf >= 50 ? colors.warning : colors.error;
 
   return (
@@ -218,7 +225,7 @@ function ScanResultCardInner({
             source={{ uri: capturedUri }}
             style={styles.heroImage}
             resizeMode="cover"
-            accessibilityLabel="Scanned item photo"
+            accessibilityLabel={t('scan.scanned_item_photo')}
           />
           <View style={styles.heroOverlay} />
           {/* Confidence badge on hero */}
@@ -239,7 +246,7 @@ function ScanResultCardInner({
               style={styles.heroActionBtn}
               onPress={handleShare}
               accessibilityRole="button"
-              accessibilityLabel="Share scan result"
+              accessibilityLabel={t('scan.share_a11y')}
             >
               <Ionicons name="share-outline" size={20} color="#FFFFFF" />
             </AnimatedPressable>
@@ -247,7 +254,7 @@ function ScanResultCardInner({
               style={styles.heroActionBtn}
               onPress={onRetake}
               accessibilityRole="button"
-              accessibilityLabel="Retake photo"
+              accessibilityLabel={t('scan.retake_photo_a11y')}
             >
               <Ionicons name="camera-reverse-outline" size={22} color="#FFFFFF" />
             </AnimatedPressable>
@@ -271,13 +278,13 @@ function ScanResultCardInner({
             <Text
               style={{ fontSize: 15, fontWeight: '600', color: colors.muted, marginBottom: 8 }}
             >
-              Is this correct?
+              {t('scan.is_this_correct')}
             </Text>
             <Text
               style={{ fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 6 }}
               numberOfLines={2}
             >
-              {scanResult.prediction.name || 'Unknown Item'}
+              {scanResult.prediction.name || t('scan.unknown_item')}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
               <View
@@ -293,7 +300,7 @@ function ScanResultCardInner({
                 </Text>
               </View>
               <Text style={{ fontSize: 13, fontWeight: '600', color: colors.muted }}>
-                {overallConf}% confidence
+                {t('scan.confidence_label', { pct: overallConf })}
               </Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -314,11 +321,11 @@ function ScanResultCardInner({
                   setShowCorrection(false);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Confirm identification is correct"
+                accessibilityLabel={t('scan.confirm_correct_a11y')}
               >
                 <Ionicons name="checkmark-circle" size={18} color={colors.accentText} />
                 <Text style={{ color: colors.accentText, fontSize: 14, fontWeight: '700' }}>
-                  Yes, this is correct
+                  {t('scan.yes_correct')}
                 </Text>
               </AnimatedPressable>
               <AnimatedPressable
@@ -339,11 +346,11 @@ function ScanResultCardInner({
                   setShowCorrection(true);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Open correction form"
+                accessibilityLabel={t('scan.open_correction_a11y')}
               >
                 <Ionicons name="create-outline" size={16} color={colors.muted} />
                 <Text style={{ color: colors.muted, fontSize: 14, fontWeight: '600' }}>
-                  No, let me correct
+                  {t('scan.no_correct')}
                 </Text>
               </AnimatedPressable>
             </View>
@@ -366,7 +373,7 @@ function ScanResultCardInner({
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.sectionHeader}>
               <Ionicons name="analytics-outline" size={18} color={colors.brand.dark} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Estimated Value</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('scan.estimated_value')}</Text>
             </View>
             <Text style={[styles.priceHero, { color: colors.text }]}>
               {formatPrice(priceBandMid, currency)}
@@ -399,15 +406,19 @@ function ScanResultCardInner({
             <View style={styles.sectionHeader}>
               <Ionicons name="warning-outline" size={18} color={colors.warning} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                You already have this!
+                {t('scan.you_already_have')}
               </Text>
             </View>
             <Text style={{ color: colors.text, fontSize: 13 }}>
-              You own {scanResult.duplicateInfo.ownedCount} matching item(s) in your collection.
+              {t('scan.owned_count', { count: scanResult.duplicateInfo.ownedCount })}
             </Text>
             {scanResult.duplicateInfo.setCompletion && (
               <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>
-                Set completion: {scanResult.duplicateInfo.setCompletion.pct}% ({scanResult.duplicateInfo.setCompletion.owned}/{scanResult.duplicateInfo.setCompletion.total})
+                {t('scan.set_completion_line', {
+                  pct: scanResult.duplicateInfo.setCompletion.pct,
+                  owned: scanResult.duplicateInfo.setCompletion.owned,
+                  total: scanResult.duplicateInfo.setCompletion.total,
+                })}
               </Text>
             )}
           </View>
@@ -416,7 +427,7 @@ function ScanResultCardInner({
             <View style={styles.sectionHeader}>
               <Ionicons name="git-branch-outline" size={18} color={colors.info} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Variant of {scanResult.duplicateInfo.variantOf}
+                {t('scan.variant_of', { name: scanResult.duplicateInfo.variantOf })}
               </Text>
             </View>
           </View>
@@ -436,12 +447,12 @@ function ScanResultCardInner({
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.sectionHeader}>
               <Ionicons name="checkmark-done-circle-outline" size={18} color={colors.brand.dark} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>AI Confidence</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('scan.ai_confidence')}</Text>
             </View>
             <View style={styles.ringsRow}>
-              <ConfidenceRing value={fc.name} label="Name" borderColor={colors.border} />
-              <ConfidenceRing value={fc.category} label="Category" borderColor={colors.border} />
-              <ConfidenceRing value={fc.condition} label="Condition" borderColor={colors.border} />
+              <ConfidenceRing value={fc.name} label={t('scan.ring_label_name')} borderColor={colors.border} />
+              <ConfidenceRing value={fc.category} label={t('scan.ring_label_category')} borderColor={colors.border} />
+              <ConfidenceRing value={fc.condition} label={t('scan.ring_label_condition')} borderColor={colors.border} />
             </View>
           </View>
         )}
@@ -451,14 +462,14 @@ function ScanResultCardInner({
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.sectionHeader}>
               <Ionicons name="list-outline" size={18} color={colors.brand.dark} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Detected Details</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('scan.detected_details')}</Text>
             </View>
             <View style={styles.detailsGrid}>
               {detailEntries.map(([key, val]) => (
                 <View key={key} style={styles.detailRow}>
                   <Text style={[styles.detailKey, { color: colors.muted }]}>{formatKey(key)}</Text>
                   <Text style={[styles.detailVal, { color: colors.text }]} numberOfLines={1}>
-                    {typeof val === 'boolean' ? (val ? 'Yes' : 'No') : String(val)}
+                    {typeof val === 'boolean' ? (val ? t('common.yes') : t('common.no')) : String(val)}
                   </Text>
                 </View>
               ))}
@@ -471,7 +482,7 @@ function ScanResultCardInner({
           <View style={styles.altSection}>
             <View style={styles.sectionHeader}>
               <Ionicons name="swap-horizontal-outline" size={18} color={colors.brand.dark} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Did you mean?</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('scan.did_you_mean')}</Text>
             </View>
             {alts.map((alt, idx) => {
               const isSelected = alt.catalogItemId === scanResult.catalogMatchId;
@@ -488,7 +499,7 @@ function ScanResultCardInner({
                   ]}
                   onPress={() => onSelectAlternative(alt)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Select ${alt.title ?? 'alternative'}`}
+                  accessibilityLabel={t('scan.select_alternative_a11y', { title: alt.title ?? t('scan.unknown') })}
                 >
                   {!!isSelected && (
                     <View style={[styles.altSelectedBadge, { backgroundColor: colors.brand.base }]}>
@@ -499,11 +510,11 @@ function ScanResultCardInner({
                     uri={alt.imageUrl}
                     style={styles.altImage}
                     fallbackIcon="image-outline"
-                    accessibilityLabel={`Image of ${alt.title ?? 'alternative'}`}
+                    accessibilityLabel={t('scan.image_of_a11y', { title: alt.title ?? t('scan.unknown') })}
                   />
                   <View style={styles.altInfo}>
                     <Text style={[styles.altTitle, { color: colors.text }]} numberOfLines={2}>
-                      {alt.title ?? 'Unknown'}
+                      {alt.title ?? t('scan.unknown')}
                     </Text>
                     <View style={styles.altMeta}>
                       {!!alt.brand && (
@@ -546,7 +557,7 @@ function ScanResultCardInner({
             style={[styles.shareBtn, { borderColor: colors.border }]}
             onPress={handleShare}
             accessibilityRole="button"
-            accessibilityLabel="Share scan result"
+            accessibilityLabel={t('scan.share_a11y')}
           >
             <Ionicons name="share-outline" size={20} color={colors.brand.dark} />
           </AnimatedPressable>
@@ -554,10 +565,10 @@ function ScanResultCardInner({
             style={[styles.addBtn, { backgroundColor: colors.brand.base }]}
             onPress={onConfirm}
             accessibilityRole="button"
-            accessibilityLabel="Add to collection"
+            accessibilityLabel={t('scan.add_to_collection')}
           >
             <Ionicons name="add-circle" size={22} color="#FFFFFF" />
-            <Text style={styles.addBtnText}>Add to Collection</Text>
+            <Text style={styles.addBtnText}>{t('scan.add_to_collection')}</Text>
           </AnimatedPressable>
         </View>
       </View>
@@ -566,7 +577,7 @@ function ScanResultCardInner({
       <View style={styles.offScreen} pointerEvents="none">
         <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 1 }}>
           <ShareCard
-            itemName={scanResult.prediction.name || 'Unknown Item'}
+            itemName={scanResult.prediction.name || t('scan.unknown_item')}
             category={scanResult.attributes.category}
             condition={scanResult.attributes.conditionGuess ?? ''}
             priceMid={priceBandMid}
