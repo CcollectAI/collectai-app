@@ -125,7 +125,44 @@
   },
 
   "add_manual": {
-    "discard_draft_a11y": "Descartar borrador"
+    "discard_draft_a11y": "Descartar borrador",
+    "condition_value_title": "Condición y valor",
+    "condition_grade": "Condición / Grado",
+    "select_condition": "Seleccionar condición",
+    "none_clear": "Ninguna (limpiar selección)",
+    "custom_condition_placeholder": "Introduce condición personalizada...",
+    "custom_condition_a11y": "Condición personalizada",
+    "purchase_price": "Precio de compra",
+    "purchase_price_a11y": "Precio de compra",
+    "estimated_value_label": "Valor estimado",
+    "estimated_value_a11y": "Valor estimado"
+  },
+
+  "filters": {
+    "close_a11y": "Cerrar filtros",
+    "sort_by": "Ordenar por",
+    "price_range": "Rango de precio",
+    "reset_a11y": "Restablecer todos los filtros",
+    "save_preset_a11y": "Guardar filtros actuales como preajuste",
+    "apply_a11y": "Aplicar filtros",
+    "apply": "Aplicar filtros",
+    "preset_name_placeholder": "Nombre del preajuste",
+    "preset_name_a11y": "Nombre del preajuste",
+    "save_preset_btn_a11y": "Guardar preajuste"
+  },
+
+  "grading": {
+    "lookup_a11y": "Buscar certificado de grading",
+    "look_up_certificate": "Buscar certificado",
+    "loading_population": "Cargando datos de población...",
+    "population_report": "Informe de población",
+    "submit_for_grading": "Enviar a grading",
+    "close_modal_a11y": "Cerrar modal",
+    "close_lookup_a11y": "Cerrar búsqueda de certificado",
+    "grading_service": "Servicio de grading",
+    "cert_number": "Número de certificado",
+    "lookup_cert_a11y": "Buscar certificado",
+    "look_up": "Buscar"
   },
 
   "auth": {
@@ -350,9 +387,18 @@
     "currency": "Moneda",
     "language": "Idioma",
     "haptics": "Retroalimentación háptica",
+    "haptics_desc": "Retroalimentación por vibración en interacciones",
     "animations": "Animaciones",
+    "animations_desc": "Activar microanimaciones en toda la app",
     "notifications": "Notificaciones",
     "dark_mode": "Modo oscuro",
+    "dark_mode_desc": "Cambiar entre tema claro y oscuro",
+    "region_currency": "Región y moneda",
+    "region": "Región",
+    "change_region_a11y": "Cambiar región",
+    "change_currency_a11y": "Cambiar moneda",
+    "select_region": "Seleccionar región",
+    "select_currency": "Seleccionar moneda",
     "privacy": "Política de privacidad",
     "terms": "Términos del servicio",
     "help": "Ayuda y comentarios",
@@ -360,6 +406,42 @@
     "version": "Versión",
     "delete_account": "Eliminar cuenta",
     "delete_account_confirm": "Esto eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer."
+  },
+
+  "account": {
+    "edit_profile": "Editar perfil",
+    "edit_profile_desc": "Cambia tu nombre de usuario y bio",
+    "edit_profile_a11y": "Editar perfil",
+    "change_password": "Cambiar contraseña",
+    "change_password_desc": "Actualiza la contraseña de tu cuenta",
+    "change_password_a11y": "Cambiar contraseña",
+    "sign_out": "Cerrar sesión",
+    "sign_out_a11y": "Cerrar sesión",
+    "manage_subscription": "Gestionar suscripción",
+    "manage_subscription_desc": "Gestiona tu plan",
+    "manage_subscription_a11y": "Gestionar suscripción",
+    "billing_portal": "Portal de facturación",
+    "billing_portal_desc": "Métodos de pago, facturas, cancelar",
+    "billing_portal_a11y": "Abrir portal de facturación",
+    "two_factor": "Autenticación 2FA",
+    "two_factor_desc": "Protege tu cuenta con 2FA",
+    "two_factor_a11y": "Autenticación de dos factores",
+    "my_listings": "Mis anuncios y ofertas",
+    "my_listings_desc": "Gestiona artículos en venta y ofertas P2P",
+    "my_listings_a11y": "Mis anuncios y ofertas",
+    "blocked_users": "Usuarios bloqueados",
+    "blocked_users_desc": "Gestiona usuarios bloqueados",
+    "blocked_users_a11y": "Usuarios bloqueados",
+    "export_insurance": "Exportar informe de seguro",
+    "export_insurance_desc": "Genera un informe de valoración PDF para seguro",
+    "export_insurance_a11y": "Exportar informe de valoración para seguro",
+    "delete_account": "Eliminar cuenta",
+    "delete_account_a11y": "Eliminar cuenta",
+    "bio_placeholder": "Cuenta a otros coleccionistas sobre ti",
+    "new_password": "Nueva contraseña",
+    "new_password_placeholder": "Al menos 8 caracteres",
+    "confirm_new_password": "Confirmar nueva contraseña",
+    "confirm_new_password_placeholder": "Confirmar nueva contraseña"
   },
 
   "billing": {

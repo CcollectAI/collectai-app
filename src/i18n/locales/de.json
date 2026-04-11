@@ -125,7 +125,44 @@
   },
 
   "add_manual": {
-    "discard_draft_a11y": "Entwurf verwerfen"
+    "discard_draft_a11y": "Entwurf verwerfen",
+    "condition_value_title": "Zustand & Wert",
+    "condition_grade": "Zustand / Grade",
+    "select_condition": "Zustand auswählen",
+    "none_clear": "Keine (Auswahl leeren)",
+    "custom_condition_placeholder": "Benutzerdefinierten Zustand eingeben...",
+    "custom_condition_a11y": "Benutzerdefinierter Zustand",
+    "purchase_price": "Kaufpreis",
+    "purchase_price_a11y": "Kaufpreis",
+    "estimated_value_label": "Geschätzter Wert",
+    "estimated_value_a11y": "Geschätzter Wert"
+  },
+
+  "filters": {
+    "close_a11y": "Filter schließen",
+    "sort_by": "Sortieren nach",
+    "price_range": "Preisspanne",
+    "reset_a11y": "Alle Filter zurücksetzen",
+    "save_preset_a11y": "Aktuelle Filter als Preset speichern",
+    "apply_a11y": "Filter anwenden",
+    "apply": "Filter anwenden",
+    "preset_name_placeholder": "Preset-Name",
+    "preset_name_a11y": "Preset-Name",
+    "save_preset_btn_a11y": "Preset speichern"
+  },
+
+  "grading": {
+    "lookup_a11y": "Grading-Zertifikat nachschlagen",
+    "look_up_certificate": "Zertifikat nachschlagen",
+    "loading_population": "Populationsdaten werden geladen...",
+    "population_report": "Populationsbericht",
+    "submit_for_grading": "Zum Grading einsenden",
+    "close_modal_a11y": "Modal schließen",
+    "close_lookup_a11y": "Zertifikat-Suche schließen",
+    "grading_service": "Grading-Service",
+    "cert_number": "Zertifikatsnummer",
+    "lookup_cert_a11y": "Zertifikat nachschlagen",
+    "look_up": "Nachschlagen"
   },
 
   "auth": {
@@ -350,9 +387,18 @@
     "currency": "Währung",
     "language": "Sprache",
     "haptics": "Haptisches Feedback",
+    "haptics_desc": "Vibrationsfeedback für Interaktionen",
     "animations": "Animationen",
+    "animations_desc": "Mikro-Animationen in der gesamten App aktivieren",
     "notifications": "Benachrichtigungen",
     "dark_mode": "Dunkler Modus",
+    "dark_mode_desc": "Zwischen hellem und dunklem Thema wechseln",
+    "region_currency": "Region & Währung",
+    "region": "Region",
+    "change_region_a11y": "Region ändern",
+    "change_currency_a11y": "Währung ändern",
+    "select_region": "Region auswählen",
+    "select_currency": "Währung auswählen",
     "privacy": "Datenschutzerklärung",
     "terms": "Nutzungsbedingungen",
     "help": "Hilfe & Feedback",
@@ -360,6 +406,42 @@
     "version": "Version",
     "delete_account": "Konto löschen",
     "delete_account_confirm": "Dies löscht dein Konto und alle Daten dauerhaft. Diese Aktion kann nicht rückgängig gemacht werden."
+  },
+
+  "account": {
+    "edit_profile": "Profil bearbeiten",
+    "edit_profile_desc": "Ändere deinen Benutzernamen und deine Bio",
+    "edit_profile_a11y": "Profil bearbeiten",
+    "change_password": "Passwort ändern",
+    "change_password_desc": "Aktualisiere dein Kontopasswort",
+    "change_password_a11y": "Passwort ändern",
+    "sign_out": "Abmelden",
+    "sign_out_a11y": "Abmelden",
+    "manage_subscription": "Abonnement verwalten",
+    "manage_subscription_desc": "Verwalte deinen Plan",
+    "manage_subscription_a11y": "Abonnement verwalten",
+    "billing_portal": "Abrechnungsportal",
+    "billing_portal_desc": "Zahlungsmethoden, Rechnungen, Kündigung",
+    "billing_portal_a11y": "Abrechnungsportal öffnen",
+    "two_factor": "Zwei-Faktor-Auth",
+    "two_factor_desc": "Sichere dein Konto mit 2FA",
+    "two_factor_a11y": "Zwei-Faktor-Authentifizierung",
+    "my_listings": "Meine Angebote & P2P",
+    "my_listings_desc": "Verwalte zum Verkauf stehende Objekte und P2P-Angebote",
+    "my_listings_a11y": "Meine Angebote und P2P-Angebote",
+    "blocked_users": "Blockierte Nutzer",
+    "blocked_users_desc": "Verwalte blockierte Nutzer",
+    "blocked_users_a11y": "Blockierte Nutzer",
+    "export_insurance": "Versicherungsbericht exportieren",
+    "export_insurance_desc": "PDF-Bewertungsbericht für die Versicherung erstellen",
+    "export_insurance_a11y": "Versicherungs-Bewertungsbericht exportieren",
+    "delete_account": "Konto löschen",
+    "delete_account_a11y": "Konto löschen",
+    "bio_placeholder": "Erzähle anderen Sammlern von dir",
+    "new_password": "Neues Passwort",
+    "new_password_placeholder": "Mindestens 8 Zeichen",
+    "confirm_new_password": "Neues Passwort bestätigen",
+    "confirm_new_password_placeholder": "Neues Passwort bestätigen"
   },
 
   "billing": {

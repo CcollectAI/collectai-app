@@ -185,7 +185,7 @@ describe('ProfileEditSection', () => {
 
   it('renders Subscription row', () => {
     render(<ProfileEditSection />);
-    expect(screen.getByText('Subscription')).toBeTruthy();
+    expect(screen.getByText('Manage Subscription')).toBeTruthy();
   });
 
   it('renders Two-Factor Auth row', () => {

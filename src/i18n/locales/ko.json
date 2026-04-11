@@ -125,7 +125,44 @@
   },
 
   "add_manual": {
-    "discard_draft_a11y": "초안 버리기"
+    "discard_draft_a11y": "초안 버리기",
+    "condition_value_title": "상태 및 가치",
+    "condition_grade": "상태 / 등급",
+    "select_condition": "상태 선택",
+    "none_clear": "없음 (선택 해제)",
+    "custom_condition_placeholder": "사용자 지정 상태 입력...",
+    "custom_condition_a11y": "사용자 지정 상태",
+    "purchase_price": "구매 가격",
+    "purchase_price_a11y": "구매 가격",
+    "estimated_value_label": "예상 가치",
+    "estimated_value_a11y": "예상 가치"
+  },
+
+  "filters": {
+    "close_a11y": "필터 닫기",
+    "sort_by": "정렬 기준",
+    "price_range": "가격 범위",
+    "reset_a11y": "모든 필터 초기화",
+    "save_preset_a11y": "현재 필터를 프리셋으로 저장",
+    "apply_a11y": "필터 적용",
+    "apply": "필터 적용",
+    "preset_name_placeholder": "프리셋 이름",
+    "preset_name_a11y": "프리셋 이름",
+    "save_preset_btn_a11y": "프리셋 저장"
+  },
+
+  "grading": {
+    "lookup_a11y": "그레이딩 인증서 조회",
+    "look_up_certificate": "인증서 조회",
+    "loading_population": "인구 데이터 로딩 중...",
+    "population_report": "인구 보고서",
+    "submit_for_grading": "그레이딩 제출",
+    "close_modal_a11y": "모달 닫기",
+    "close_lookup_a11y": "인증서 조회 닫기",
+    "grading_service": "그레이딩 서비스",
+    "cert_number": "인증서 번호",
+    "lookup_cert_a11y": "인증서 조회",
+    "look_up": "조회"
   },
 
   "auth": {
@@ -350,9 +387,18 @@
     "currency": "통화",
     "language": "언어",
     "haptics": "햅틱 피드백",
+    "haptics_desc": "상호작용 시 진동 피드백",
     "animations": "애니메이션",
+    "animations_desc": "앱 전체에서 마이크로 애니메이션 활성화",
     "notifications": "알림",
     "dark_mode": "다크 모드",
+    "dark_mode_desc": "라이트와 다크 테마 전환",
+    "region_currency": "지역 및 통화",
+    "region": "지역",
+    "change_region_a11y": "지역 변경",
+    "change_currency_a11y": "통화 변경",
+    "select_region": "지역 선택",
+    "select_currency": "통화 선택",
     "privacy": "개인정보 처리방침",
     "terms": "서비스 약관",
     "help": "도움말 및 피드백",
@@ -360,6 +406,42 @@
     "version": "버전",
     "delete_account": "계정 삭제",
     "delete_account_confirm": "계정과 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
+  },
+
+  "account": {
+    "edit_profile": "프로필 편집",
+    "edit_profile_desc": "사용자 이름과 소개 변경",
+    "edit_profile_a11y": "프로필 편집",
+    "change_password": "비밀번호 변경",
+    "change_password_desc": "계정 비밀번호 업데이트",
+    "change_password_a11y": "비밀번호 변경",
+    "sign_out": "로그아웃",
+    "sign_out_a11y": "로그아웃",
+    "manage_subscription": "구독 관리",
+    "manage_subscription_desc": "플랜 관리",
+    "manage_subscription_a11y": "구독 관리",
+    "billing_portal": "결제 포털",
+    "billing_portal_desc": "결제 수단, 청구서, 취소",
+    "billing_portal_a11y": "결제 포털 열기",
+    "two_factor": "2단계 인증",
+    "two_factor_desc": "2FA로 계정 보호",
+    "two_factor_a11y": "2단계 인증",
+    "my_listings": "내 판매 및 제안",
+    "my_listings_desc": "판매 아이템 및 P2P 제안 관리",
+    "my_listings_a11y": "내 판매 및 P2P 제안",
+    "blocked_users": "차단된 사용자",
+    "blocked_users_desc": "차단된 사용자 관리",
+    "blocked_users_a11y": "차단된 사용자",
+    "export_insurance": "보험 보고서 내보내기",
+    "export_insurance_desc": "보험용 PDF 감정 보고서 생성",
+    "export_insurance_a11y": "보험 감정 보고서 내보내기",
+    "delete_account": "계정 삭제",
+    "delete_account_a11y": "계정 삭제",
+    "bio_placeholder": "다른 컬렉터에게 자신을 소개하세요",
+    "new_password": "새 비밀번호",
+    "new_password_placeholder": "최소 8자",
+    "confirm_new_password": "새 비밀번호 확인",
+    "confirm_new_password_placeholder": "새 비밀번호 확인"
   },
 
   "billing": {

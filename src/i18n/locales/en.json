@@ -125,7 +125,44 @@
   },
 
   "add_manual": {
-    "discard_draft_a11y": "Discard draft"
+    "discard_draft_a11y": "Discard draft",
+    "condition_value_title": "Condition & Value",
+    "condition_grade": "Condition / Grade",
+    "select_condition": "Select Condition",
+    "none_clear": "None (clear selection)",
+    "custom_condition_placeholder": "Enter custom condition...",
+    "custom_condition_a11y": "Custom condition",
+    "purchase_price": "Purchase Price",
+    "purchase_price_a11y": "Purchase price",
+    "estimated_value_label": "Estimated Value",
+    "estimated_value_a11y": "Estimated value"
+  },
+
+  "filters": {
+    "close_a11y": "Close filters",
+    "sort_by": "Sort By",
+    "price_range": "Price Range",
+    "reset_a11y": "Reset all filters",
+    "save_preset_a11y": "Save current filters as preset",
+    "apply_a11y": "Apply filters",
+    "apply": "Apply Filters",
+    "preset_name_placeholder": "Preset name",
+    "preset_name_a11y": "Preset name",
+    "save_preset_btn_a11y": "Save preset"
+  },
+
+  "grading": {
+    "lookup_a11y": "Look up grading certificate",
+    "look_up_certificate": "Look Up Certificate",
+    "loading_population": "Loading population data...",
+    "population_report": "Population Report",
+    "submit_for_grading": "Submit for Grading",
+    "close_modal_a11y": "Close modal",
+    "close_lookup_a11y": "Close certificate lookup",
+    "grading_service": "Grading Service",
+    "cert_number": "Certification Number",
+    "lookup_cert_a11y": "Look up certificate",
+    "look_up": "Look Up"
   },
 
   "auth": {
@@ -350,9 +387,18 @@
     "currency": "Currency",
     "language": "Language",
     "haptics": "Haptic feedback",
+    "haptics_desc": "Vibration feedback for interactions",
     "animations": "Animations",
+    "animations_desc": "Enable micro-animations throughout the app",
     "notifications": "Notifications",
     "dark_mode": "Dark mode",
+    "dark_mode_desc": "Switch between light and dark theme",
+    "region_currency": "Region & Currency",
+    "region": "Region",
+    "change_region_a11y": "Change region",
+    "change_currency_a11y": "Change currency",
+    "select_region": "Select Region",
+    "select_currency": "Select Currency",
     "privacy": "Privacy policy",
     "terms": "Terms of service",
     "help": "Help & feedback",
@@ -360,6 +406,42 @@
     "version": "Version",
     "delete_account": "Delete account",
     "delete_account_confirm": "This will permanently delete your account and all data. This action cannot be undone."
+  },
+
+  "account": {
+    "edit_profile": "Edit Profile",
+    "edit_profile_desc": "Change your username and bio",
+    "edit_profile_a11y": "Edit profile",
+    "change_password": "Change Password",
+    "change_password_desc": "Update your account password",
+    "change_password_a11y": "Change password",
+    "sign_out": "Sign Out",
+    "sign_out_a11y": "Sign out",
+    "manage_subscription": "Manage Subscription",
+    "manage_subscription_desc": "Manage your plan",
+    "manage_subscription_a11y": "Manage subscription",
+    "billing_portal": "Billing Portal",
+    "billing_portal_desc": "Payment methods, invoices, cancel",
+    "billing_portal_a11y": "Open billing portal",
+    "two_factor": "Two-Factor Auth",
+    "two_factor_desc": "Secure your account with 2FA",
+    "two_factor_a11y": "Two-factor authentication",
+    "my_listings": "My Listings & Offers",
+    "my_listings_desc": "Manage items for sale and P2P offers",
+    "my_listings_a11y": "My Listings and Offers",
+    "blocked_users": "Blocked Users",
+    "blocked_users_desc": "Manage users you've blocked",
+    "blocked_users_a11y": "Blocked Users",
+    "export_insurance": "Export Insurance Report",
+    "export_insurance_desc": "Generate a PDF-ready valuation report for insurance",
+    "export_insurance_a11y": "Export insurance valuation report",
+    "delete_account": "Delete Account",
+    "delete_account_a11y": "Delete account",
+    "bio_placeholder": "Tell other collectors about yourself",
+    "new_password": "New Password",
+    "new_password_placeholder": "At least 8 characters",
+    "confirm_new_password": "Confirm New Password",
+    "confirm_new_password_placeholder": "Confirm new password"
   },
 
   "billing": {

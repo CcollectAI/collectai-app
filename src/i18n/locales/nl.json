@@ -125,7 +125,44 @@
   },
 
   "add_manual": {
-    "discard_draft_a11y": "Concept verwerpen"
+    "discard_draft_a11y": "Concept verwerpen",
+    "condition_value_title": "Conditie & waarde",
+    "condition_grade": "Conditie / kwaliteit",
+    "select_condition": "Conditie selecteren",
+    "none_clear": "Geen (selectie wissen)",
+    "custom_condition_placeholder": "Vul eigen conditie in...",
+    "custom_condition_a11y": "Eigen conditie",
+    "purchase_price": "Aankoopprijs",
+    "purchase_price_a11y": "Aankoopprijs",
+    "estimated_value_label": "Geschatte waarde",
+    "estimated_value_a11y": "Geschatte waarde"
+  },
+
+  "filters": {
+    "close_a11y": "Filters sluiten",
+    "sort_by": "Sorteer op",
+    "price_range": "Prijsbereik",
+    "reset_a11y": "Alle filters resetten",
+    "save_preset_a11y": "Huidige filters opslaan als preset",
+    "apply_a11y": "Filters toepassen",
+    "apply": "Filters toepassen",
+    "preset_name_placeholder": "Presetnaam",
+    "preset_name_a11y": "Presetnaam",
+    "save_preset_btn_a11y": "Preset opslaan"
+  },
+
+  "grading": {
+    "lookup_a11y": "Certificaat opzoeken",
+    "look_up_certificate": "Certificaat opzoeken",
+    "loading_population": "Populatiegegevens laden...",
+    "population_report": "Populatierapport",
+    "submit_for_grading": "Instellen voor grading",
+    "close_modal_a11y": "Modal sluiten",
+    "close_lookup_a11y": "Certificaat opzoeken sluiten",
+    "grading_service": "Gradingservice",
+    "cert_number": "Certificaatnummer",
+    "lookup_cert_a11y": "Certificaat opzoeken",
+    "look_up": "Opzoeken"
   },
 
   "auth": {
@@ -350,9 +387,18 @@
     "currency": "Valuta",
     "language": "Taal",
     "haptics": "Haptische feedback",
+    "haptics_desc": "Trillingsfeedback voor interacties",
     "animations": "Animaties",
+    "animations_desc": "Micro-animaties in de hele app inschakelen",
     "notifications": "Meldingen",
     "dark_mode": "Donkere modus",
+    "dark_mode_desc": "Wissel tussen licht en donker thema",
+    "region_currency": "Regio & Valuta",
+    "region": "Regio",
+    "change_region_a11y": "Regio wijzigen",
+    "change_currency_a11y": "Valuta wijzigen",
+    "select_region": "Regio selecteren",
+    "select_currency": "Valuta selecteren",
     "privacy": "Privacybeleid",
     "terms": "Servicevoorwaarden",
     "help": "Help & feedback",
@@ -360,6 +406,42 @@
     "version": "Versie",
     "delete_account": "Account verwijderen",
     "delete_account_confirm": "Dit verwijdert je account en alle gegevens permanent. Deze actie kan niet ongedaan worden gemaakt."
+  },
+
+  "account": {
+    "edit_profile": "Profiel bewerken",
+    "edit_profile_desc": "Wijzig je gebruikersnaam en bio",
+    "edit_profile_a11y": "Profiel bewerken",
+    "change_password": "Wachtwoord wijzigen",
+    "change_password_desc": "Werk je accountwachtwoord bij",
+    "change_password_a11y": "Wachtwoord wijzigen",
+    "sign_out": "Uitloggen",
+    "sign_out_a11y": "Uitloggen",
+    "manage_subscription": "Abonnement beheren",
+    "manage_subscription_desc": "Beheer je abonnement",
+    "manage_subscription_a11y": "Abonnement beheren",
+    "billing_portal": "Facturatieportaal",
+    "billing_portal_desc": "Betaalmethoden, facturen, opzeggen",
+    "billing_portal_a11y": "Facturatieportaal openen",
+    "two_factor": "Twee-factor-auth",
+    "two_factor_desc": "Beveilig je account met 2FA",
+    "two_factor_a11y": "Twee-factor-authenticatie",
+    "my_listings": "Mijn aanbiedingen & biedingen",
+    "my_listings_desc": "Beheer te koop aangeboden items en P2P-biedingen",
+    "my_listings_a11y": "Mijn aanbiedingen en biedingen",
+    "blocked_users": "Geblokkeerde gebruikers",
+    "blocked_users_desc": "Beheer gebruikers die je hebt geblokkeerd",
+    "blocked_users_a11y": "Geblokkeerde gebruikers",
+    "export_insurance": "Verzekeringsrapport exporteren",
+    "export_insurance_desc": "Genereer een PDF-taxatierapport voor verzekering",
+    "export_insurance_a11y": "Verzekeringstaxatierapport exporteren",
+    "delete_account": "Account verwijderen",
+    "delete_account_a11y": "Account verwijderen",
+    "bio_placeholder": "Vertel andere verzamelaars over jezelf",
+    "new_password": "Nieuw wachtwoord",
+    "new_password_placeholder": "Minimaal 8 tekens",
+    "confirm_new_password": "Bevestig nieuw wachtwoord",
+    "confirm_new_password_placeholder": "Bevestig nieuw wachtwoord"
   },
 
   "billing": {

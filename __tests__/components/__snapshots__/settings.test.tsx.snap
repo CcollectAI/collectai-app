@@ -1565,7 +1565,7 @@ exports[`ProfileEditSection matches snapshot 1`] = `
           ]
         }
       >
-        Subscription
+        Manage Subscription
       </Text>
       <Text
         style={

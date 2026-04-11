@@ -125,7 +125,44 @@
   },
 
   "add_manual": {
-    "discard_draft_a11y": "下書きを破棄"
+    "discard_draft_a11y": "下書きを破棄",
+    "condition_value_title": "状態と価値",
+    "condition_grade": "状態 / グレード",
+    "select_condition": "状態を選択",
+    "none_clear": "なし（選択をクリア）",
+    "custom_condition_placeholder": "カスタム状態を入力...",
+    "custom_condition_a11y": "カスタム状態",
+    "purchase_price": "購入価格",
+    "purchase_price_a11y": "購入価格",
+    "estimated_value_label": "推定価値",
+    "estimated_value_a11y": "推定価値"
+  },
+
+  "filters": {
+    "close_a11y": "フィルターを閉じる",
+    "sort_by": "並び替え",
+    "price_range": "価格帯",
+    "reset_a11y": "すべてのフィルターをリセット",
+    "save_preset_a11y": "現在のフィルターをプリセットとして保存",
+    "apply_a11y": "フィルターを適用",
+    "apply": "フィルターを適用",
+    "preset_name_placeholder": "プリセット名",
+    "preset_name_a11y": "プリセット名",
+    "save_preset_btn_a11y": "プリセットを保存"
+  },
+
+  "grading": {
+    "lookup_a11y": "グレーディング証明書を検索",
+    "look_up_certificate": "証明書を検索",
+    "loading_population": "ポピュレーションデータを読み込み中...",
+    "population_report": "ポピュレーションレポート",
+    "submit_for_grading": "グレーディングに提出",
+    "close_modal_a11y": "モーダルを閉じる",
+    "close_lookup_a11y": "証明書検索を閉じる",
+    "grading_service": "グレーディングサービス",
+    "cert_number": "証明書番号",
+    "lookup_cert_a11y": "証明書を検索",
+    "look_up": "検索"
   },
 
   "auth": {
@@ -350,9 +387,18 @@
     "currency": "通貨",
     "language": "言語",
     "haptics": "ハプティックフィードバック",
+    "haptics_desc": "インタラクションの振動フィードバック",
     "animations": "アニメーション",
+    "animations_desc": "アプリ全体のマイクロアニメーションを有効化",
     "notifications": "通知",
     "dark_mode": "ダークモード",
+    "dark_mode_desc": "ライトとダークテーマを切り替え",
+    "region_currency": "地域と通貨",
+    "region": "地域",
+    "change_region_a11y": "地域を変更",
+    "change_currency_a11y": "通貨を変更",
+    "select_region": "地域を選択",
+    "select_currency": "通貨を選択",
     "privacy": "プライバシーポリシー",
     "terms": "利用規約",
     "help": "ヘルプ＆フィードバック",
@@ -360,6 +406,42 @@
     "version": "バージョン",
     "delete_account": "アカウントを削除",
     "delete_account_confirm": "アカウントとすべてのデータが完全に削除されます。この操作は取り消せません。"
+  },
+
+  "account": {
+    "edit_profile": "プロフィールを編集",
+    "edit_profile_desc": "ユーザー名と自己紹介を変更",
+    "edit_profile_a11y": "プロフィールを編集",
+    "change_password": "パスワードを変更",
+    "change_password_desc": "アカウントパスワードを更新",
+    "change_password_a11y": "パスワードを変更",
+    "sign_out": "ログアウト",
+    "sign_out_a11y": "ログアウト",
+    "manage_subscription": "サブスクリプションを管理",
+    "manage_subscription_desc": "プランを管理",
+    "manage_subscription_a11y": "サブスクリプションを管理",
+    "billing_portal": "請求ポータル",
+    "billing_portal_desc": "支払い方法、請求書、キャンセル",
+    "billing_portal_a11y": "請求ポータルを開く",
+    "two_factor": "二要素認証",
+    "two_factor_desc": "2FAでアカウントを保護",
+    "two_factor_a11y": "二要素認証",
+    "my_listings": "出品・オファー",
+    "my_listings_desc": "出品アイテムとP2Pオファーを管理",
+    "my_listings_a11y": "出品とオファー",
+    "blocked_users": "ブロックしたユーザー",
+    "blocked_users_desc": "ブロックしたユーザーを管理",
+    "blocked_users_a11y": "ブロックしたユーザー",
+    "export_insurance": "保険用レポートをエクスポート",
+    "export_insurance_desc": "保険用PDF査定レポートを生成",
+    "export_insurance_a11y": "保険用査定レポートをエクスポート",
+    "delete_account": "アカウントを削除",
+    "delete_account_a11y": "アカウントを削除",
+    "bio_placeholder": "他のコレクターにあなたのことを伝えましょう",
+    "new_password": "新しいパスワード",
+    "new_password_placeholder": "8文字以上",
+    "confirm_new_password": "新しいパスワードを確認",
+    "confirm_new_password_placeholder": "新しいパスワードを確認"
   },
 
   "billing": {

@@ -111,17 +111,17 @@ function AppearanceSectionInner() {
       <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.sectionHeader}>
           <Ionicons name="globe-outline" size={18} color={colors.accent} />
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Region & Currency</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.region_currency')}</Text>
         </View>
 
         <AnimatedPressable
           style={styles.settingRow}
           onPress={() => setRegionPickerVisible(true)}
           accessibilityRole="button"
-          accessibilityLabel="Change region"
+          accessibilityLabel={t('settings.change_region_a11y')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Region</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.region')}</Text>
             <Text style={[styles.settingHint, { color: colors.muted }]}>
               {REGION_OPTIONS.find((r) => r.value === settings.region)?.label ?? 'Europe'}
             </Text>
@@ -135,10 +135,10 @@ function AppearanceSectionInner() {
           style={styles.settingRow}
           onPress={() => setCurrencyPickerVisible(true)}
           accessibilityRole="button"
-          accessibilityLabel="Change currency"
+          accessibilityLabel={t('settings.change_currency_a11y')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Currency</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.currency')}</Text>
             <Text style={[styles.settingHint, { color: colors.muted }]}>{settings.currency}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
@@ -166,13 +166,13 @@ function AppearanceSectionInner() {
       <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.sectionHeader}>
           <Ionicons name="settings-outline" size={18} color={colors.accent} />
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Preferences</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.preferences')}</Text>
         </View>
 
         <View style={styles.settingRow}>
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Dark mode</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Switch between light and dark theme</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.dark_mode')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('settings.dark_mode_desc')}</Text>
           </View>
           <Switch
             value={settings.isDark}
@@ -182,7 +182,7 @@ function AppearanceSectionInner() {
             }}
             trackColor={{ false: colors.border, true: colors.accent }}
             thumbColor={colors.accentText}
-            accessibilityLabel="Dark mode"
+            accessibilityLabel={t('settings.dark_mode')}
           />
         </View>
 
@@ -190,8 +190,8 @@ function AppearanceSectionInner() {
 
         <View style={styles.settingRow}>
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Haptic feedback</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Vibration feedback for interactions</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.haptics')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('settings.haptics_desc')}</Text>
           </View>
           <Switch
             value={settings.hapticsEnabled}
@@ -201,7 +201,7 @@ function AppearanceSectionInner() {
             }}
             trackColor={{ false: colors.border, true: colors.accent }}
             thumbColor={colors.accentText}
-            accessibilityLabel="Haptic feedback"
+            accessibilityLabel={t('settings.haptics')}
           />
         </View>
 
@@ -209,8 +209,8 @@ function AppearanceSectionInner() {
 
         <View style={styles.settingRow}>
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Animations</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Enable micro-animations throughout the app</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.animations')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('settings.animations_desc')}</Text>
           </View>
           <Switch
             value={settings.animationsEnabled}
@@ -237,7 +237,7 @@ function AppearanceSectionInner() {
             <TouchableOpacity onPress={() => setRegionPickerVisible(false)} accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Region</Text>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('settings.select_region')}</Text>
             <View style={{ width: 24 }} />
           </View>
           {REGION_OPTIONS.map((opt) => (
@@ -274,7 +274,7 @@ function AppearanceSectionInner() {
             <TouchableOpacity onPress={() => setCurrencyPickerVisible(false)} accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Currency</Text>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('settings.select_currency')}</Text>
             <View style={{ width: 24 }} />
           </View>
           {CURRENCY_OPTIONS.map((cur) => (

@@ -29,6 +29,7 @@ import { deleteAccount, collectorsApi } from '@/api/collectorsApi';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import { BETA_MODE } from '@/config/featureFlags';
+import { useTranslation } from 'react-i18next';
 
 function ProfileEditSectionInner() {
   const { colors } = useAppTheme();
@@ -36,6 +37,7 @@ function ProfileEditSectionInner() {
   const { user, profile, signOut } = useAuthContext();
   const { showToast } = useToast();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [editProfileVisible, setEditProfileVisible] = useState(false);
   const [editUsername, setEditUsername] = useState(profile?.username ?? '');
@@ -126,11 +128,11 @@ function ProfileEditSectionInner() {
             setEditProfileVisible(true);
           }}
           accessibilityRole="button"
-          accessibilityLabel="Edit profile"
+          accessibilityLabel={t('account.edit_profile_a11y')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Edit Profile</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Change your username and bio</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('account.edit_profile')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('account.edit_profile_desc')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -141,11 +143,11 @@ function ProfileEditSectionInner() {
           style={styles.settingRow}
           onPress={() => setChangePasswordVisible(true)}
           accessibilityRole="button"
-          accessibilityLabel="Change password"
+          accessibilityLabel={t('account.change_password_a11y')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Change Password</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Update your account password</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('account.change_password')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('account.change_password_desc')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -157,19 +159,19 @@ function ProfileEditSectionInner() {
           onPress={() => {
             fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
             Alert.alert(
-              'Sign Out',
+              t('account.sign_out'),
               'Are you sure you want to sign out?',
               [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'Sign Out', style: 'destructive', onPress: signOut },
+                { text: t('account.sign_out'), style: 'destructive', onPress: signOut },
               ],
             );
           }}
           accessibilityRole="button"
-          accessibilityLabel="Sign out"
+          accessibilityLabel={t('account.sign_out_a11y')}
         >
           <Ionicons name="log-out-outline" size={18} color={colors.danger} />
-          <Text style={[styles.signOutText, { color: colors.danger }]}>Sign Out</Text>
+          <Text style={[styles.signOutText, { color: colors.danger }]}>{t('account.sign_out')}</Text>
         </AnimatedPressable>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -178,11 +180,11 @@ function ProfileEditSectionInner() {
           style={styles.settingRow}
           onPress={() => router.push('/subscription')}
           accessibilityRole="link"
-          accessibilityLabel="Manage subscription"
+          accessibilityLabel={t('account.manage_subscription_a11y')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Subscription</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Manage your plan</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('account.manage_subscription')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('account.manage_subscription_desc')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -201,11 +203,11 @@ function ProfileEditSectionInner() {
             }
           }}
           accessibilityRole="link"
-          accessibilityLabel="Open billing portal"
+          accessibilityLabel={t('account.billing_portal_a11y')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Billing Portal</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Payment methods, invoices, cancel</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('account.billing_portal')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('account.billing_portal_desc')}</Text>
           </View>
           <Ionicons name="open-outline" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -216,11 +218,11 @@ function ProfileEditSectionInner() {
           style={styles.settingRow}
           onPress={() => router.push('/mfa-setup')}
           accessibilityRole="link"
-          accessibilityLabel="Two-factor authentication"
+          accessibilityLabel={t('account.two_factor_a11y')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Two-Factor Auth</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Secure your account with 2FA</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('account.two_factor')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('account.two_factor_desc')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -233,11 +235,11 @@ function ProfileEditSectionInner() {
               style={styles.settingRow}
               onPress={() => router.push('/sell/offers')}
               accessibilityRole="link"
-              accessibilityLabel="My Listings and Offers"
+              accessibilityLabel={t('account.my_listings_a11y')}
             >
               <View style={styles.settingInfo}>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>My Listings & Offers</Text>
-                <Text style={[styles.settingHint, { color: colors.muted }]}>Manage items for sale and P2P offers</Text>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('account.my_listings')}</Text>
+                <Text style={[styles.settingHint, { color: colors.muted }]}>{t('account.my_listings_desc')}</Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </AnimatedPressable>
@@ -250,11 +252,11 @@ function ProfileEditSectionInner() {
           style={styles.settingRow}
           onPress={() => router.push('/settings/blocked-users')}
           accessibilityRole="link"
-          accessibilityLabel="Blocked Users"
+          accessibilityLabel={t('account.blocked_users_a11y')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Blocked Users</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Manage users you've blocked</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('account.blocked_users')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('account.blocked_users_desc')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -269,11 +271,11 @@ function ProfileEditSectionInner() {
             Linking.openURL(url);
           }}
           accessibilityRole="link"
-          accessibilityLabel="Export insurance valuation report"
+          accessibilityLabel={t('account.export_insurance_a11y')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Export Insurance Report</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Generate a PDF-ready valuation report for insurance</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('account.export_insurance')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('account.export_insurance_desc')}</Text>
           </View>
           <Ionicons name="document-text-outline" size={16} color={colors.accent} />
         </AnimatedPressable>
@@ -285,12 +287,12 @@ function ProfileEditSectionInner() {
           onPress={() => {
             fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
             Alert.alert(
-              'Delete Account',
+              t('account.delete_account'),
               'This will permanently delete your account and all your data. This action cannot be undone.',
               [
                 { text: 'Cancel', style: 'cancel' },
                 {
-                  text: 'Delete Account',
+                  text: t('account.delete_account'),
                   style: 'destructive',
                   onPress: async () => {
                     try {
@@ -309,10 +311,10 @@ function ProfileEditSectionInner() {
             );
           }}
           accessibilityRole="button"
-          accessibilityLabel="Delete account"
+          accessibilityLabel={t('account.delete_account_a11y')}
         >
           <Ionicons name="trash-outline" size={18} color={colors.danger} />
-          <Text style={[styles.signOutText, { color: colors.danger }]}>Delete Account</Text>
+          <Text style={[styles.signOutText, { color: colors.danger }]}>{t('account.delete_account')}</Text>
         </AnimatedPressable>
       </View>
 
@@ -328,7 +330,7 @@ function ProfileEditSectionInner() {
             <TouchableOpacity onPress={() => setEditProfileVisible(false)} accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[styles.pickerTitle, { color: colors.text }]}>Edit Profile</Text>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('account.edit_profile')}</Text>
             <TouchableOpacity onPress={handleSaveProfile} disabled={savingProfile} accessibilityLabel="Save">
               {savingProfile ? (
                 <ActivityIndicator size="small" color={colors.accent} />
@@ -357,7 +359,7 @@ function ProfileEditSectionInner() {
                 style={[styles.profileInput, styles.profileBioInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
                 value={editBio}
                 onChangeText={setEditBio}
-                placeholder="Tell other collectors about yourself"
+                placeholder={t('account.bio_placeholder')}
                 placeholderTextColor={colors.muted}
                 multiline
                 maxLength={200}
@@ -380,7 +382,7 @@ function ProfileEditSectionInner() {
             <TouchableOpacity onPress={() => setChangePasswordVisible(false)} accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[styles.pickerTitle, { color: colors.text }]}>Change Password</Text>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('account.change_password')}</Text>
             <TouchableOpacity onPress={handleChangePassword} disabled={savingPassword} accessibilityLabel="Save">
               {savingPassword ? (
                 <ActivityIndicator size="small" color={colors.accent} />
@@ -391,12 +393,12 @@ function ProfileEditSectionInner() {
           </View>
           <View style={{ padding: 16, gap: 16 }}>
             <View>
-              <Text style={[styles.settingLabel, { color: colors.text, marginBottom: 6 }]}>New Password</Text>
+              <Text style={[styles.settingLabel, { color: colors.text, marginBottom: 6 }]}>{t('account.new_password')}</Text>
               <TextInput
                 style={[styles.profileInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
                 value={newPassword}
                 onChangeText={setNewPassword}
-                placeholder="At least 8 characters"
+                placeholder={t('account.new_password_placeholder')}
                 placeholderTextColor={colors.muted}
                 secureTextEntry
                 autoFocus
@@ -404,12 +406,12 @@ function ProfileEditSectionInner() {
               />
             </View>
             <View>
-              <Text style={[styles.settingLabel, { color: colors.text, marginBottom: 6 }]}>Confirm New Password</Text>
+              <Text style={[styles.settingLabel, { color: colors.text, marginBottom: 6 }]}>{t('account.confirm_new_password')}</Text>
               <TextInput
                 style={[styles.profileInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
-                placeholder="Confirm new password"
+                placeholder={t('account.confirm_new_password_placeholder')}
                 placeholderTextColor={colors.muted}
                 secureTextEntry
                 returnKeyType="done"

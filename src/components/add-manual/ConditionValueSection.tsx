@@ -5,6 +5,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { useTranslation } from 'react-i18next';
 
 const CONDITION_CHIPS = [
   { label: 'Mint', short: 'M' },
@@ -36,6 +37,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
   conditionGrade, onConditionChange, purchasePriceField, estimatedValueField, currencySymbol,
 }: Props) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [customCondition, setCustomCondition] = useState('');
 
@@ -43,22 +45,22 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Ionicons name="diamond-outline" size={16} color={colors.accent} />
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Condition & Value</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('add_manual.condition_value_title')}</Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {/* Condition Dropdown */}
         <View style={styles.fieldBlock}>
-          <Text style={[styles.fieldLabel, { color: colors.text }]}>Condition / Grade</Text>
+          <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('add_manual.condition_grade')}</Text>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => { Keyboard.dismiss(); fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setPickerOpen(true); }}
             style={[styles.dropdownTrigger, { borderColor: conditionGrade ? colors.accent : colors.border, backgroundColor: colors.background }]}
             accessibilityRole="button"
-            accessibilityLabel={conditionGrade ? `Condition: ${conditionGrade}` : 'Select condition'}
+            accessibilityLabel={conditionGrade ? `Condition: ${conditionGrade}` : t('add_manual.select_condition')}
           >
             <Text style={[styles.dropdownText, { color: conditionGrade ? colors.text : colors.muted }]} numberOfLines={1}>
-              {conditionGrade || 'Select condition'}
+              {conditionGrade || t('add_manual.select_condition')}
             </Text>
             <Ionicons name="chevron-down" size={16} color={colors.muted} />
           </TouchableOpacity>
@@ -69,7 +71,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
           <View style={styles.overlay}>
             <View style={[styles.sheet, { backgroundColor: colors.card }]}>
               <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                <Text style={[styles.title, { color: colors.text }]}>Select Condition</Text>
+                <Text style={[styles.title, { color: colors.text }]}>{t('add_manual.select_condition')}</Text>
                 <TouchableOpacity onPress={() => setPickerOpen(false)} hitSlop={12}>
                   <Ionicons name="close" size={22} color={colors.muted} />
                 </TouchableOpacity>
@@ -87,7 +89,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
                         onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onConditionChange(''); setPickerOpen(false); }}
                         style={[styles.row, { borderBottomColor: colors.border }]}
                       >
-                        <Text style={[styles.rowText, { color: colors.muted, fontStyle: 'italic' }]}>None (clear selection)</Text>
+                        <Text style={[styles.rowText, { color: colors.muted, fontStyle: 'italic' }]}>{t('add_manual.none_clear')}</Text>
                       </TouchableOpacity>
                     ) : null
                   )
@@ -117,10 +119,10 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
                       <TextInput
                         value={customCondition}
                         onChangeText={setCustomCondition}
-                        placeholder="Enter custom condition..."
+                        placeholder={t('add_manual.custom_condition_placeholder')}
                         placeholderTextColor={colors.muted}
                         style={[styles.input, { color: colors.text }]}
-                        accessibilityLabel="Custom condition"
+                        accessibilityLabel={t('add_manual.custom_condition_a11y')}
                         returnKeyType="done"
                         onSubmitEditing={() => {
                           if (customCondition.trim()) {
@@ -142,7 +144,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
         {/* Prices */}
         <View style={styles.fieldRow}>
           <View style={[styles.fieldBlock, { flex: 1, marginRight: 8 }]}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>Purchase Price</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('add_manual.purchase_price')}</Text>
             <View style={[styles.inputWrap, { borderColor: purchasePriceField.touched && purchasePriceField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
               <Text style={[styles.currencyPrefix, { color: colors.muted }]}>{currencySymbol}</Text>
               <TextInput
@@ -153,7 +155,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
                 placeholder="0.00"
                 placeholderTextColor={colors.muted}
                 style={[styles.input, { color: colors.text }]}
-                accessibilityLabel="Purchase price"
+                accessibilityLabel={t('add_manual.purchase_price_a11y')}
                 returnKeyType="next"
               />
             </View>
@@ -162,7 +164,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
             )}
           </View>
           <View style={[styles.fieldBlock, { flex: 1 }]}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>Estimated Value</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('add_manual.estimated_value_label')}</Text>
             <View style={[styles.inputWrap, { borderColor: estimatedValueField.touched && estimatedValueField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
               <Text style={[styles.currencyPrefix, { color: colors.muted }]}>{currencySymbol}</Text>
               <TextInput
@@ -173,7 +175,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
                 placeholder="0.00"
                 placeholderTextColor={colors.muted}
                 style={[styles.input, { color: colors.text }]}
-                accessibilityLabel="Estimated value"
+                accessibilityLabel={t('add_manual.estimated_value_a11y')}
                 returnKeyType="done"
               />
             </View>

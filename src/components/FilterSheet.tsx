@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
 import { PriceRangeFilter } from '@/components/PriceRangeFilter';
+import { useTranslation } from 'react-i18next';
 
 export type SortOption = 'value_desc' | 'value_asc' | 'name_asc' | 'name_desc' | 'date_desc' | 'date_asc';
 
@@ -80,6 +81,7 @@ function FilterSheetInner({
   availableConditions,
   colors,
 }: Props) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<FilterConfig>(currentConfig);
   const [presets, setPresets] = useState<FilterPreset[]>([]);
   const [showPresetModal, setShowPresetModal] = useState(false);
@@ -224,7 +226,7 @@ function FilterSheetInner({
                 </View>
               )}
             </View>
-            <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Close filters">
+            <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel={t('filters.close_a11y')}>
               <Ionicons name="close" size={24} color={colors.text} />
             </Pressable>
           </View>
@@ -269,7 +271,7 @@ function FilterSheetInner({
             >
               <View style={styles.sectionHeaderLeft}>
                 <Ionicons name="swap-vertical" size={20} color={colors.accent} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Sort By</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('filters.sort_by')}</Text>
               </View>
               <Ionicons
                 name={expandedSection === 'sort' ? 'chevron-up' : 'chevron-down'}
@@ -377,7 +379,7 @@ function FilterSheetInner({
             >
               <View style={styles.sectionHeaderLeft}>
                 <Ionicons name="pricetag-outline" size={20} color={colors.accent} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Price Range</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('filters.price_range')}</Text>
                 {(config.priceMin !== null || config.priceMax !== null) && (
                   <View style={[styles.countBadge, { backgroundColor: colors.accent }]}>
                     <Ionicons name="checkmark" size={12} color="#fff" />
@@ -466,7 +468,7 @@ function FilterSheetInner({
 
           {/* Footer Actions */}
           <View style={[styles.footer, { borderColor: colors.border }]}>
-            <Pressable style={styles.footerBtnSecondary} onPress={handleReset} accessibilityRole="button" accessibilityLabel="Reset all filters">
+            <Pressable style={styles.footerBtnSecondary} onPress={handleReset} accessibilityRole="button" accessibilityLabel={t('filters.reset_a11y')}>
               <Text style={[styles.footerBtnSecondaryText, { color: colors.muted }]}>
                 Reset
               </Text>
@@ -476,7 +478,7 @@ function FilterSheetInner({
               style={styles.footerBtnSecondary}
               onPress={() => setShowPresetModal(true)}
               accessibilityRole="button"
-              accessibilityLabel="Save current filters as preset"
+              accessibilityLabel={t('filters.save_preset_a11y')}
             >
               <Ionicons name="bookmark-outline" size={16} color={colors.accent} />
               <Text style={[styles.footerBtnSecondaryText, { color: colors.accent }]}>
@@ -488,9 +490,9 @@ function FilterSheetInner({
               style={[styles.footerBtnPrimary, { backgroundColor: colors.accent }]}
               onPress={handleApply}
               accessibilityRole="button"
-              accessibilityLabel="Apply filters"
+              accessibilityLabel={t('filters.apply_a11y')}
             >
-              <Text style={styles.footerBtnPrimaryText}>Apply Filters</Text>
+              <Text style={styles.footerBtnPrimaryText}>{t('filters.apply')}</Text>
             </Pressable>
           </View>
         </View>
@@ -519,12 +521,12 @@ function FilterSheetInner({
                 styles.presetInput,
                 { borderColor: colors.border, color: colors.text },
               ]}
-              placeholder="Preset name"
+              placeholder={t('filters.preset_name_placeholder')}
               placeholderTextColor={colors.muted}
               value={presetName}
               onChangeText={setPresetName}
               autoFocus
-              accessibilityLabel="Preset name"
+              accessibilityLabel={t('filters.preset_name_a11y')}
             />
             <View style={styles.presetModalActions}>
               <Pressable
@@ -541,7 +543,7 @@ function FilterSheetInner({
                 style={[styles.presetModalSave, { backgroundColor: colors.accent }]}
                 onPress={handleSavePreset}
                 accessibilityRole="button"
-                accessibilityLabel="Save preset"
+                accessibilityLabel={t('filters.save_preset_btn_a11y')}
               >
                 <Text style={styles.presetModalSaveText}>Save</Text>
               </Pressable>

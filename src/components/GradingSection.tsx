@@ -21,6 +21,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { formatNumber } from "@/lib/format";
+import { useTranslation } from "react-i18next";
 
 // ── Exported types ──────────────────────────────────────────────────────
 
@@ -134,6 +135,7 @@ function GradingSectionInner({
   gradingLookupLoading,
   onGradingLookup,
 }: GradingSectionProps) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Grading Section — collapsible panel */}
@@ -236,24 +238,24 @@ function GradingSectionInner({
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
               }}
               accessibilityRole="button"
-              accessibilityLabel="Look up grading certificate"
+              accessibilityLabel={t('grading.lookup_a11y')}
               accessibilityHint="Double tap to open certificate lookup form"
             >
               <Ionicons name="search-outline" size={16} color={theme.accent} />
-              <Text style={[s.gradingActionBtnText, { color: theme.accent }]}>Look Up Certificate</Text>
+              <Text style={[s.gradingActionBtnText, { color: theme.accent }]}>{t('grading.look_up_certificate')}</Text>
             </Pressable>
 
             {/* Population Report mini-table */}
             {!!gradingPopLoading && (
               <View style={{ paddingVertical: 16, alignItems: 'center' }}>
                 <ActivityIndicator size="small" color={theme.accent} />
-                <Text style={[{ fontSize: 12, marginTop: 6 }, { color: theme.muted }]}>Loading population data...</Text>
+                <Text style={[{ fontSize: 12, marginTop: 6 }, { color: theme.muted }]}>{t('grading.loading_population')}</Text>
               </View>
             )}
             {!gradingPopLoading && !!gradingPopulation && (
               <View style={[s.gradingPopTable, { borderColor: theme.border }]}>
                 <View style={s.gradingPopTableHeader}>
-                  <Text style={[s.gradingPopTableTitle, { color: theme.text }]}>Population Report</Text>
+                  <Text style={[s.gradingPopTableTitle, { color: theme.text }]}>{t('grading.population_report')}</Text>
                   <Text style={[s.gradingPopTableSub, { color: theme.muted }]}>
                     {formatNumber(gradingPopulation.total_graded)} total graded
                     {gradingPopulation.avg_grade != null ? ` \u00b7 Avg: ${gradingPopulation.avg_grade.toFixed(1)}` : ''}
@@ -283,7 +285,7 @@ function GradingSectionInner({
             {/* Submit for Grading buttons */}
             {gradingServices.length > 0 && (
               <View style={s.gradingSubmitSection}>
-                <Text style={[s.gradingSubmitTitle, { color: theme.text }]}>Submit for Grading</Text>
+                <Text style={[s.gradingSubmitTitle, { color: theme.text }]}>{t('grading.submit_for_grading')}</Text>
                 <View style={s.gradingSubmitRow}>
                   {gradingServices.slice(0, 4).map((svc) => (
                     <Pressable
@@ -320,25 +322,25 @@ function GradingSectionInner({
           style={s.modalOverlay}
           onPress={() => onSetGradingModalVisible(false)}
           accessibilityRole="button"
-          accessibilityLabel="Close modal"
+          accessibilityLabel={t('grading.close_modal_a11y')}
         >
           <Pressable
             style={[s.modalSheet, { backgroundColor: theme.card }]}
             onPress={() => {}}
           >
             <View style={s.modalHeader}>
-              <Text style={[s.modalTitle, { color: theme.text }]}>Look Up Certificate</Text>
+              <Text style={[s.modalTitle, { color: theme.text }]}>{t('grading.look_up_certificate')}</Text>
               <Pressable
                 onPress={() => onSetGradingModalVisible(false)}
                 accessibilityRole="button"
-                accessibilityLabel="Close certificate lookup"
+                accessibilityLabel={t('grading.close_lookup_a11y')}
               >
                 <Ionicons name="close" size={24} color={theme.muted} />
               </Pressable>
             </View>
 
             {/* Service picker */}
-            <Text style={[s.modalLabel, { color: theme.text }]}>Grading Service</Text>
+            <Text style={[s.modalLabel, { color: theme.text }]}>{t('grading.grading_service')}</Text>
             <View style={s.gradingServicePickerRow}>
               {(['psa', 'cgc', 'bgs', 'beckett'] as const).map((svc) => (
                 <Pressable
@@ -368,7 +370,7 @@ function GradingSectionInner({
             </View>
 
             {/* Cert number input */}
-            <Text style={[s.modalLabel, { color: theme.text, marginTop: 16 }]}>Certification Number</Text>
+            <Text style={[s.modalLabel, { color: theme.text, marginTop: 16 }]}>{t('grading.cert_number')}</Text>
             <TextInput
               style={[s.modalInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.background }]}
               value={gradingCertInput}
@@ -389,7 +391,7 @@ function GradingSectionInner({
               onPress={onGradingLookup}
               disabled={gradingLookupLoading}
               accessibilityRole="button"
-              accessibilityLabel="Look up certificate"
+              accessibilityLabel={t('grading.lookup_cert_a11y')}
               accessibilityState={{ busy: gradingLookupLoading }}
             >
               {gradingLookupLoading ? (
@@ -397,7 +399,7 @@ function GradingSectionInner({
               ) : (
                 <>
                   <Ionicons name="search" size={18} color="#fff" />
-                  <Text style={s.modalConfirmBtnText}>Look Up</Text>
+                  <Text style={s.modalConfirmBtnText}>{t('grading.look_up')}</Text>
                 </>
               )}
             </Pressable>

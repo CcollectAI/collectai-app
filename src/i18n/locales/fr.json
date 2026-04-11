@@ -125,7 +125,44 @@
   },
 
   "add_manual": {
-    "discard_draft_a11y": "Abandonner le brouillon"
+    "discard_draft_a11y": "Abandonner le brouillon",
+    "condition_value_title": "État et valeur",
+    "condition_grade": "État / Note",
+    "select_condition": "Sélectionner l'état",
+    "none_clear": "Aucun (effacer la sélection)",
+    "custom_condition_placeholder": "Saisir un état personnalisé...",
+    "custom_condition_a11y": "État personnalisé",
+    "purchase_price": "Prix d'achat",
+    "purchase_price_a11y": "Prix d'achat",
+    "estimated_value_label": "Valeur estimée",
+    "estimated_value_a11y": "Valeur estimée"
+  },
+
+  "filters": {
+    "close_a11y": "Fermer les filtres",
+    "sort_by": "Trier par",
+    "price_range": "Gamme de prix",
+    "reset_a11y": "Réinitialiser tous les filtres",
+    "save_preset_a11y": "Enregistrer les filtres actuels comme préréglage",
+    "apply_a11y": "Appliquer les filtres",
+    "apply": "Appliquer les filtres",
+    "preset_name_placeholder": "Nom du préréglage",
+    "preset_name_a11y": "Nom du préréglage",
+    "save_preset_btn_a11y": "Enregistrer le préréglage"
+  },
+
+  "grading": {
+    "lookup_a11y": "Rechercher un certificat de grading",
+    "look_up_certificate": "Rechercher un certificat",
+    "loading_population": "Chargement des données de population...",
+    "population_report": "Rapport de population",
+    "submit_for_grading": "Soumettre au grading",
+    "close_modal_a11y": "Fermer la fenêtre",
+    "close_lookup_a11y": "Fermer la recherche de certificat",
+    "grading_service": "Service de grading",
+    "cert_number": "Numéro de certificat",
+    "lookup_cert_a11y": "Rechercher un certificat",
+    "look_up": "Rechercher"
   },
 
   "auth": {
@@ -350,9 +387,18 @@
     "currency": "Devise",
     "language": "Langue",
     "haptics": "Retour haptique",
+    "haptics_desc": "Retour vibratoire pour les interactions",
     "animations": "Animations",
+    "animations_desc": "Activer les micro-animations dans toute l'application",
     "notifications": "Notifications",
     "dark_mode": "Mode sombre",
+    "dark_mode_desc": "Basculer entre thème clair et sombre",
+    "region_currency": "Région & devise",
+    "region": "Région",
+    "change_region_a11y": "Changer de région",
+    "change_currency_a11y": "Changer de devise",
+    "select_region": "Sélectionner une région",
+    "select_currency": "Sélectionner une devise",
     "privacy": "Politique de confidentialité",
     "terms": "Conditions d'utilisation",
     "help": "Aide et commentaires",
@@ -360,6 +406,42 @@
     "version": "Version",
     "delete_account": "Supprimer le compte",
     "delete_account_confirm": "Cela supprimera définitivement votre compte et toutes vos données. Cette action est irréversible."
+  },
+
+  "account": {
+    "edit_profile": "Modifier le profil",
+    "edit_profile_desc": "Modifier votre nom d'utilisateur et bio",
+    "edit_profile_a11y": "Modifier le profil",
+    "change_password": "Changer le mot de passe",
+    "change_password_desc": "Mettre à jour le mot de passe de votre compte",
+    "change_password_a11y": "Changer le mot de passe",
+    "sign_out": "Se déconnecter",
+    "sign_out_a11y": "Se déconnecter",
+    "manage_subscription": "Gérer l'abonnement",
+    "manage_subscription_desc": "Gérez votre abonnement",
+    "manage_subscription_a11y": "Gérer l'abonnement",
+    "billing_portal": "Portail de facturation",
+    "billing_portal_desc": "Moyens de paiement, factures, annulation",
+    "billing_portal_a11y": "Ouvrir le portail de facturation",
+    "two_factor": "Auth à deux facteurs",
+    "two_factor_desc": "Sécurisez votre compte avec 2FA",
+    "two_factor_a11y": "Authentification à deux facteurs",
+    "my_listings": "Mes annonces & offres",
+    "my_listings_desc": "Gérer les objets en vente et les offres P2P",
+    "my_listings_a11y": "Mes annonces et offres P2P",
+    "blocked_users": "Utilisateurs bloqués",
+    "blocked_users_desc": "Gérer les utilisateurs bloqués",
+    "blocked_users_a11y": "Utilisateurs bloqués",
+    "export_insurance": "Exporter le rapport d'assurance",
+    "export_insurance_desc": "Générer un rapport d'évaluation PDF pour l'assurance",
+    "export_insurance_a11y": "Exporter le rapport d'évaluation pour assurance",
+    "delete_account": "Supprimer le compte",
+    "delete_account_a11y": "Supprimer le compte",
+    "bio_placeholder": "Parlez-vous aux autres collectionneurs",
+    "new_password": "Nouveau mot de passe",
+    "new_password_placeholder": "Au moins 8 caractères",
+    "confirm_new_password": "Confirmer le nouveau mot de passe",
+    "confirm_new_password_placeholder": "Confirmer le nouveau mot de passe"
   },
 
   "billing": {
