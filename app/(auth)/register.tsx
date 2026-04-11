@@ -210,6 +210,7 @@ function RegisterScreen() {
             <View style={styles.form}>
               <Animated.View style={getItemStyle(1)}>
                 <AuthTextInput
+                  testID="username-input"
                   label="Username"
                   icon="person-outline"
                   value={username}
@@ -225,6 +226,7 @@ function RegisterScreen() {
               <Animated.View style={[{ marginTop: 14 }, getItemStyle(2)]}>
                 <AuthTextInput
                   ref={emailRef}
+                  testID="email-input"
                   label="Email"
                   icon="mail-outline"
                   value={email}
@@ -240,6 +242,7 @@ function RegisterScreen() {
               <Animated.View style={[{ marginTop: 14 }, getItemStyle(3)]}>
                 <AuthTextInput
                   ref={passwordRef}
+                  testID="password-input"
                   label="Password"
                   icon="lock-closed-outline"
                   value={password}

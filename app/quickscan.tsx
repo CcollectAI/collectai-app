@@ -753,6 +753,7 @@ function QuickScanScreen() {
       {phase === 'camera' && (
         <>
           <AnimatedPressable
+            testID="gallery-scan-btn"
             style={[styles.galleryBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
             onPress={handleScreenshotScan}
             accessibilityRole="button"

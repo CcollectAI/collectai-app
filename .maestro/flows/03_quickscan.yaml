@@ -1,0 +1,43 @@
+# Critical flow: logged-in user scans their first item.
+#
+# Verifies:
+#   - Add tab is reachable from home
+#   - QuickScan AI hero opens the camera flow
+#   - Gallery fallback works (so the test doesn't need a real camera)
+#   - Scan result card renders prediction + confidence + Add to Collection CTA
+#   - Tapping Add to Collection routes to item detail with source=ai
+#
+# Prereqs: seeded user logged in (run 01_login.yaml first or use runFlow)
+
+appId: com.collectai.app
+name: QuickScan flow
+---
+- runFlow: 01_login.yaml
+
+# Navigate to Add tab
+- tapOn: "Add"
+- assertVisible: "QuickScan AI"
+- assertVisible: "Fast, camera-first flow."
+
+# Open QuickScan
+- tapOn: "Start QuickScan"
+
+# Use gallery picker (simulates photo selection without needing camera)
+- tapOn:
+    id: "gallery-scan-btn"
+
+# Wait for identification (up to 15s — OpenAI call + ML inference)
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Identified"
+    timeout: 15000
+
+# Verify result card
+- assertVisible: "Estimated Value"
+- assertVisible: "AI Confidence"
+
+# Save to collection
+- tapOn: "Add to Collection"
+
+# Land on item detail
+- assertVisible: "Save to Collection"

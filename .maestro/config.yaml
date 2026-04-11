@@ -1,0 +1,19 @@
+# Maestro E2E config for CollectAI.
+#
+# Bundle identifiers (matches app.json):
+#   iOS:     com.collectai.app
+#   Android: com.collectai.app
+#
+# Run locally:
+#   maestro test .maestro/flows/<flow>.yaml
+#
+# Run the whole suite:
+#   maestro test .maestro/flows/
+#
+# Prereqs:
+#   - iOS simulator or Android emulator running
+#   - CollectAI dev build installed (eas build --profile development or
+#     expo run:ios / expo run:android)
+#   - Mock auth enabled (see docs/e2e-setup.md)
+
+appId: com.collectai.app

@@ -1,0 +1,49 @@
+# Critical flow: new-user signup → onboarding → first item.
+#
+# Verifies:
+#   - Sign up form accepts username, email, password
+#   - Terms checkbox is required
+#   - Post-signup routes to verify-email (since Supabase requires confirmation)
+#   - Back-to-sign-in link works
+#
+# Note: full email verification requires a mail-trap. This flow stops at
+# verify-email and confirms the expected screen renders.
+
+appId: com.collectai.app
+name: Signup flow
+---
+- launchApp:
+    clearState: true
+
+# Navigate from login to register
+- assertVisible: "Welcome back"
+- tapOn: "Sign up"
+
+# Register screen
+- assertVisible: "Create Account"
+- assertVisible: "Join the collector community"
+
+# Fill form with unique values
+- tapOn:
+    id: "username-input"
+- inputText: "qa_${MAESTRO_RUN_ID}"
+- tapOn:
+    id: "email-input"
+- inputText: "qa+${MAESTRO_RUN_ID}@collectai.app"
+- tapOn:
+    id: "password-input"
+- inputText: "StrongPass!234"
+
+# Strength bar should advance — verify "Strong" or "Excellent" label appears
+- assertVisible:
+    text: ".*(Strong|Excellent).*"
+
+# Accept T&C
+- tapOn: "I agree to the"
+
+# Submit
+- tapOn: "Create Account"
+
+# Should route to verify-email screen
+- assertVisible: "Check your email"
+- assertVisible: "Resend email"

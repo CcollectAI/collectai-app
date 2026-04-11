@@ -1,0 +1,35 @@
+# Critical flow: existing user login.
+#
+# Verifies:
+#   - Welcome back screen renders
+#   - Email + password fields accept input
+#   - Sign In button navigates to home tab
+#   - Portfolio header shows "Portfolio" (home.portfolio_title)
+#
+# Prereqs: test account credentials in .maestro/.env or passed via --env
+#   MAESTRO_TEST_EMAIL=qa+login@collectai.app
+#   MAESTRO_TEST_PASSWORD=testpass123
+
+appId: com.collectai.app
+name: Login flow
+---
+- launchApp:
+    clearState: true
+
+# Welcome back screen
+- assertVisible: "Welcome back"
+
+# Fill credentials
+- tapOn:
+    id: "email-input"
+- inputText: ${MAESTRO_TEST_EMAIL}
+- tapOn:
+    id: "password-input"
+- inputText: ${MAESTRO_TEST_PASSWORD}
+
+# Submit
+- tapOn: "Sign In"
+
+# Should land on Portfolio home
+- assertVisible: "Portfolio"
+- assertVisible: "Track your collection value."

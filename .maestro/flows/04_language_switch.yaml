@@ -1,0 +1,45 @@
+# Critical flow: language picker changes UI strings live.
+#
+# Verifies:
+#   - Settings → Region & Currency → Language opens picker
+#   - Selecting "Nederlands" updates the tab bar immediately
+#   - Tab labels are localized (nav.* keys in nl.json)
+#   - Reverting to "System default" restores English
+#
+# This exercises the i18n.changeLanguage() sync path in src/lib/settings.tsx.
+
+appId: com.collectai.app
+name: Language picker flow
+---
+- runFlow: 01_login.yaml
+
+# Open settings from home header
+- tapOn:
+    id: "open-settings-btn"
+
+# Scroll to Region & Currency section
+- scrollUntilVisible:
+    element: "Region & Currency"
+    direction: DOWN
+
+# Open language picker
+- tapOn: "Language"
+- assertVisible: "System default"
+- assertVisible: "Nederlands"
+
+# Switch to Dutch
+- tapOn: "Nederlands"
+
+# Tab bar label should now read "Instellingen" (nav.settings in nl.json)
+- assertVisible: "Instellingen"
+
+# Restore English
+- tapOn: "Instellingen"
+- scrollUntilVisible:
+    element: "Taal"
+    direction: DOWN
+- tapOn: "Taal"
+- tapOn: "System default"
+
+# Back to English
+- assertVisible: "Settings"

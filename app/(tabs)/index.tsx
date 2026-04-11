@@ -510,6 +510,7 @@ function PortfolioScreen() {
             <InboxHeaderButton color={colors.text} size={22} />
             <ThemeToggleButton size={22} />
             <AnimatedPressable
+              testID="open-settings-btn"
               onPress={handleOpenSettings}
               style={styles.iconBtn}
               accessibilityRole="button"
