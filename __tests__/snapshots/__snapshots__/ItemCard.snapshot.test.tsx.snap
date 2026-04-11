@@ -97,8 +97,7 @@ exports[`ItemCard snapshots matches snapshot with condition badge (grading-eligi
             }
           }
         >
-          $
-          350
+          €350
         </Text>
       </View>
       <View
@@ -229,8 +228,7 @@ exports[`ItemCard snapshots matches snapshot with image and value 1`] = `
             }
           }
         >
-          $
-          350
+          €350
         </Text>
       </View>
     </View>
@@ -335,8 +333,7 @@ exports[`ItemCard snapshots matches snapshot with no category 1`] = `
             }
           }
         >
-          $
-          350
+          €350
         </Text>
       </View>
     </View>
@@ -437,8 +434,7 @@ exports[`ItemCard snapshots matches snapshot without image (placeholder) 1`] = `
             }
           }
         >
-          $
-          350
+          €350
         </Text>
       </View>
     </View>

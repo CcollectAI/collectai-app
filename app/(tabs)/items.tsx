@@ -43,6 +43,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import logger from "@/utils/logger";
 import { BulkActionsToolbar } from '@/components/BulkActionsToolbar';
 import { ItemsListHeader } from '@/components/ItemsListHeader';
+import { AdBanner } from '@/components/ads/AdBanner';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import {
   ItemsGridHeader,
@@ -714,6 +715,8 @@ const ItemsScreen: React.FC = () => {
           clearFilters();
         }}
       />
+      {/* Ad slot — invisible until FEATURE_ADS is enabled */}
+      <AdBanner placement="items_banner" />
     </Animated.View>
   );
 

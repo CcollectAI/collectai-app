@@ -41,6 +41,14 @@ jest.mock('expo-image', () => {
 
 jest.mock('../../src/hooks/useItems', () => ({}));
 jest.mock('../../assets/images/placeholder.png', () => 1);
+jest.mock('../../src/lib/settings', () => ({
+  useSettings: () => ({ settings: { hapticsEnabled: true, currency: 'EUR' }, updateSettings: jest.fn(), ready: true }),
+}));
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(), notificationAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: 'Light', Medium: 'Medium', Heavy: 'Heavy' },
+  NotificationFeedbackType: { Success: 'Success', Warning: 'Warning', Error: 'Error' },
+}));
 
 import ItemCard from '../../src/components/ItemCard';
 

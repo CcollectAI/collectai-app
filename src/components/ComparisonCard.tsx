@@ -9,6 +9,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 import type { QuickScanResult, CurrencyCode } from '@/data/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -77,6 +79,8 @@ function ComparisonCardInner({
   onRetake,
 }: Props) {
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
+  const haptic = (intent: HapticIntent) => fireHaptic(intent, { enabled: settings.hapticsEnabled });
 
   const priceA = itemA.prediction.estimatedMid;
   const priceB = itemB.prediction.estimatedMid;
@@ -176,7 +180,7 @@ function ComparisonCardInner({
         <View style={styles.btnRow}>
           <AnimatedPressable
             style={[styles.actionBtn, { backgroundColor: colors.brand.base }]}
-            onPress={onKeepA}
+            onPress={() => { haptic(HapticIntent.JUDGMENT_LOCKED); onKeepA(); }}
             accessibilityRole="button"
             accessibilityLabel="Keep item A"
           >
@@ -184,7 +188,7 @@ function ComparisonCardInner({
           </AnimatedPressable>
           <AnimatedPressable
             style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]}
-            onPress={onKeepB}
+            onPress={() => { haptic(HapticIntent.JUDGMENT_LOCKED); onKeepB(); }}
             accessibilityRole="button"
             accessibilityLabel="Keep item B"
           >
@@ -194,14 +198,14 @@ function ComparisonCardInner({
         <View style={styles.btnRow}>
           <AnimatedPressable
             style={[styles.secondaryBtn, { borderColor: colors.border }]}
-            onPress={onKeepBoth}
+            onPress={() => { haptic(HapticIntent.JUDGMENT_LOCKED); onKeepBoth(); }}
             accessibilityRole="button"
           >
             <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Keep Both</Text>
           </AnimatedPressable>
           <AnimatedPressable
             style={[styles.secondaryBtn, { borderColor: colors.border }]}
-            onPress={onRetake}
+            onPress={() => { haptic(HapticIntent.CONFIRMATION_LIGHT); onRetake(); }}
             accessibilityRole="button"
           >
             <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Retake</Text>

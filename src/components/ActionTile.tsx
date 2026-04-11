@@ -2,6 +2,8 @@ import React, { memo } from "react";
 import { View, Text } from "react-native";
 import { AnimatedPressable } from "@/motion";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 
 function ActionTile({
   label,
@@ -13,9 +15,10 @@ function ActionTile({
   onPress?: () => void;
 }) {
   const { colors, radius, spacing, shadow } = useAppTheme();
+  const { settings } = useSettings();
   return (
     <AnimatedPressable
-      onPress={onPress}
+      onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); onPress?.(); }}
       accessibilityRole="button"
       accessibilityLabel={label}
       style={{

@@ -9,6 +9,7 @@ const DEFAULT_LIMITS: BillingStatus['limits'] = {
   advanced_analytics: false,
   condition_grading: false,
   set_completion: false,
+  show_ads: true,
 };
 
 /**

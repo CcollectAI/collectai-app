@@ -19,4 +19,7 @@ export const featureFlags = {
   FEATURE_VIEWFINDER_HINTS: true,
   FEATURE_MULTI_ITEM_SCAN: true,
   FEATURE_COMPARISON_SCAN: true,
+  // Ads — dark by default. Enable via PostHog remote flag or manually
+  // when user threshold is reached. Free users only; paid = ad-free.
+  FEATURE_ADS: false,
 };

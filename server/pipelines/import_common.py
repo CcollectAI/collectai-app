@@ -257,6 +257,10 @@ class CatalogItem:
             self.title = self.title[:MAX_TITLE_LEN]
 
     def to_row(self) -> dict:
+        # Auto-parse notes into attributes_json (idempotent — won't overwrite
+        # explicit attributes_json keys set by the pipeline)
+        self._parse_notes_into_attributes()
+
         row = {
             "category": self.category,
             "item_key": self.item_key,
@@ -273,6 +277,27 @@ class CatalogItem:
         if self.attributes_json:
             row["attributes_json"] = json.dumps(self.attributes_json)
         return row
+
+    def _parse_notes_into_attributes(self) -> None:
+        """Parse `notes` free-text into structured attributes_json keys.
+
+        Existing keys are preserved (notes-derived values only fill gaps).
+        Safe to call multiple times.
+        """
+        if not self.notes or not self.notes.strip():
+            return
+        try:
+            from pipelines.notes_parser import parse_notes
+            parsed = parse_notes(self.category, self.notes, self.brand)
+        except Exception:
+            return
+        if not parsed:
+            return
+        if self.attributes_json is None:
+            self.attributes_json = {}
+        for k, v in parsed.items():
+            if k not in self.attributes_json:
+                self.attributes_json[k] = v
 
 
 @dataclass

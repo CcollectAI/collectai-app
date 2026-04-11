@@ -163,7 +163,7 @@ class TestWebhook:
         mock_stripe.Webhook.construct_event.return_value = event
 
         mock_pool = AsyncMock()
-        mock_pool.fetchrow.return_value = None  # Event not yet in DB
+        mock_pool.fetchrow.return_value = {"event_id": "evt_checkout_test_1"}  # INSERT succeeded (new event)
 
         with patch("app.routes.billing_router.STRIPE_WEBHOOK_SECRET", "whsec_test"), \
              patch("app.routes.billing_router._get_stripe", return_value=mock_stripe), \
@@ -176,8 +176,9 @@ class TestWebhook:
             )
             assert resp.status_code == 200
             assert resp.json()["received"] is True
-            # execute called for dedup INSERT + checkout handler INSERT
-            assert mock_pool.execute.call_count >= 2
+            # fetchrow for dedup INSERT ... RETURNING, execute for checkout handler
+            assert mock_pool.fetchrow.call_count >= 1  # dedup check
+            assert mock_pool.execute.call_count >= 1   # subscription upsert
 
     def test_subscription_deleted_event(self, client):
         """customer.subscription.deleted downgrades to free."""
@@ -194,7 +195,9 @@ class TestWebhook:
         mock_stripe.Webhook.construct_event.return_value = event
 
         mock_pool = AsyncMock()
-        mock_pool.fetchrow.return_value = None  # Event not yet in DB
+        # First fetchrow: dedup check (return row = new event)
+        # Second fetchrow: sponsor_subscriptions check (return None = not a sponsor)
+        mock_pool.fetchrow.side_effect = [{"event_id": "evt_deleted_test_1"}, None]
 
         with patch("app.routes.billing_router.STRIPE_WEBHOOK_SECRET", "whsec_test"), \
              patch("app.routes.billing_router._get_stripe", return_value=mock_stripe), \
@@ -206,8 +209,9 @@ class TestWebhook:
                 headers={"Stripe-Signature": "valid_sig"},
             )
             assert resp.status_code == 200
-            # execute called for dedup INSERT + subscription handler UPDATE
-            assert mock_pool.execute.call_count >= 2
+            # fetchrow for dedup check, execute for subscription handler UPDATE
+            assert mock_pool.fetchrow.call_count >= 1
+            assert mock_pool.execute.call_count >= 1
             # Verify the handler SQL contains 'free' and 'canceled'
             handler_calls = [c for c in mock_pool.execute.call_args_list
                            if "free" in str(c) and "canceled" in str(c)]
@@ -229,7 +233,12 @@ class TestWebhook:
         mock_stripe = MagicMock()
         mock_stripe.Webhook.construct_event.return_value = event
         mock_pool = AsyncMock()
-        mock_pool.fetchrow.return_value = None  # Event not yet in DB
+        # First fetchrow: dedup INSERT succeeds (new event, returns row)
+        # Second fetchrow: dedup INSERT conflict (duplicate, returns None)
+        mock_pool.fetchrow.side_effect = [
+            {"event_id": "evt_dedup_test_1"},  # first call: new event
+            None,                                # second call: duplicate (ON CONFLICT DO NOTHING)
+        ]
 
         with patch("app.routes.billing_router.STRIPE_WEBHOOK_SECRET", "whsec_test"), \
              patch("app.routes.billing_router._get_stripe", return_value=mock_stripe), \
@@ -243,10 +252,12 @@ class TestWebhook:
             )
             assert resp1.status_code == 200
             assert resp1.json().get("duplicate") is None
-            # execute called for: dedup INSERT + checkout handler INSERT
-            assert mock_pool.execute.call_count == 2
+            # fetchrow for dedup check, execute for checkout handler
+            assert mock_pool.fetchrow.call_count >= 1
+            assert mock_pool.execute.call_count >= 1
+            first_execute_count = mock_pool.execute.call_count
 
-            # Second call is deduped (caught by in-memory _SEEN_EVENTS)
+            # Second call is deduped (DB INSERT returns None = already exists)
             resp2 = client.post(
                 "/billing/webhook",
                 content=json.dumps(event).encode(),
@@ -254,8 +265,8 @@ class TestWebhook:
             )
             assert resp2.status_code == 200
             assert resp2.json()["duplicate"] is True
-            # execute was NOT called again
-            assert mock_pool.execute.call_count == 2
+            # execute was NOT called again (deduped before reaching handler)
+            assert mock_pool.execute.call_count == first_execute_count
 
 
 class TestPlanLimits:

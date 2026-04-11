@@ -17,6 +17,17 @@ jest.mock('@/lib/format', () => ({
   formatPrice: (val: number, cur: string) => `${cur} ${val.toFixed(2)}`,
 }));
 
+jest.mock('@/lib/settings', () => ({
+  useSettings: () => ({ settings: { hapticsEnabled: true }, updateSettings: jest.fn(), ready: true }),
+}));
+
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(),
+  notificationAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: 'Light', Medium: 'Medium', Heavy: 'Heavy' },
+  NotificationFeedbackType: { Success: 'Success', Warning: 'Warning', Error: 'Error' },
+}));
+
 const makeResult = (name: string, price: number): QuickScanResult => ({
   attributes: { category: 'pokemon', conditionGuess: 'near_mint', editionGuess: '1st Edition' },
   prediction: {

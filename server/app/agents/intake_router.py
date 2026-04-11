@@ -326,12 +326,29 @@ def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
         except Exception:
             pass
 
+    # Normalize vision-extracted attributes against the catalog vocabulary
+    # (snaps fuzzy matches to canonical values like "rolex" → "Rolex")
+    normalized_attrs = result.attributes
+    try:
+        from app.ml.attribute_normalizer import normalize_attributes
+        normalized_attrs, normalize_log = normalize_attributes(
+            result.category_id or "",
+            result.attributes or {},
+        )
+        if normalize_log:
+            logger.debug(
+                "Attribute normalization for %s: %s",
+                result.category_id, normalize_log,
+            )
+    except Exception as e:
+        logger.debug("Attribute normalization failed: %s", e)
+
     return IntakeResultResponse(
         name=result.name,
         category_id=result.category_id,
         category_confidence=round(result.category_confidence, 4),
         subtype_id=result.subtype_id,
-        attributes=result.attributes,
+        attributes=normalized_attrs,
         identification_method=result.identification_method,
         barcode=result.barcode,
         barcode_type=result.barcode_type,

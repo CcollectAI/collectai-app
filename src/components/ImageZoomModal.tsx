@@ -15,6 +15,7 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
+import { lightTap } from '@/lib/haptics';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -39,7 +40,7 @@ export function ImageZoomModal({ visible, imageUri, onClose }: ImageZoomModalPro
       <View style={styles.backdrop}>
         {/* Close button */}
         <AnimatedPressable
-          onPress={onClose}
+          onPress={() => { lightTap(); onClose(); }}
           style={styles.closeBtn}
           accessibilityRole="button"
           accessibilityLabel="Close image viewer"

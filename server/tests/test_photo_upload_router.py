@@ -76,12 +76,24 @@ def _fake_s3_client():
     return s3
 
 
+# Minimal valid JPEG bytes for imghdr detection
+_JPEG_HEADER = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
+
+
 def _fake_upload_file(
-    content: bytes = b"fake-image-bytes-16chars",
+    content: bytes | None = None,
     content_type: str = "image/jpeg",
     filename: str = "test.jpg",
 ):
-    """Create a dict suitable for TestClient multipart files param."""
+    """Create a dict suitable for TestClient multipart files param.
+
+    If content is not provided, uses a minimal JPEG-valid header.
+    """
+    if content is None:
+        content = _JPEG_HEADER + b"x" * 50
+    elif content and content_type == "image/jpeg" and not content.startswith(b"\xff\xd8"):
+        # Prepend JPEG magic bytes for tests that pass arbitrary bytes
+        content = _JPEG_HEADER + content
     return {"file": (filename, io.BytesIO(content), content_type)}
 
 
@@ -203,7 +215,7 @@ class TestServerSideUpload:
              patch("app.features.photo_upload_router.generate_blurhash", return_value="LKO2?V%2Tw=w]~RB"):
             resp = client.post(
                 "/photos/upload",
-                files=_fake_upload_file(content=b"x" * 100),
+                files=_fake_upload_file(),
                 data={"item_id": ITEM_ID},
             )
 
@@ -214,7 +226,7 @@ class TestServerSideUpload:
         assert "blurhash" in data
         assert data["width"] == 800
         assert data["height"] == 600
-        assert data["original_size"] == 100
+        assert data["original_size"] == len(_JPEG_HEADER) + 50  # default content size
         assert data["optimized_size"] == len(b"optimized")
 
     def test_response_schema_types(self):

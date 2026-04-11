@@ -44,6 +44,8 @@ TIER_2 = [
     "designer_toys", "vinyl_records", "warhammer", "retro_games", "manga",
     "fragrances", "keycaps", "disney", "gunpla", "bluray_steelbook",
     "kpop_lightsticks", "blind_box", "diecast", "scale_models", "loungefly",
+    "action_figures", "comic_books", "digimon", "marvel_legends", "one_piece_tcg",
+    "pens", "plush_collectibles", "retro_handhelds", "vintage_cameras", "whiskey",
 ]
 
 # Categories that already have market_hits from API imports — skip these
@@ -101,11 +103,43 @@ async def get_sample_items(conn, category: str, limit: int) -> list[dict]:
     return [{"title": r["title"], "item_key": r["item_key"]} for r in rows]
 
 
+def simplify_query(title: str, category: str) -> str:
+    """Simplify a catalog title into a better marketplace search query.
+
+    Catalog titles are often hyper-specific ("Folklore Running Like Water Vinyl
+    (Green)") which return 0 results on eBay. Simplify to the essence:
+    "Taylor Swift Folklore Vinyl" or "LeBron James Topps Chrome".
+    """
+    import re
+    # Strip parentheticals like (Refractor), (Green), (Target Exclusive)
+    q = re.sub(r"\([^)]*\)", "", title).strip()
+    # Strip common suffixes that hurt search
+    for suffix in ["Limited Edition", "Exclusive", "Deluxe", "Special Edition"]:
+        q = q.replace(suffix, "").strip()
+    # For specific categories, prepend the category context
+    CATEGORY_PREFIX = {
+        "taylor_swift": "Taylor Swift",
+        "kpop_merch": "",  # BTS/Blackpink already in title
+        "kpop_lightsticks": "",
+        "sportscards": "",
+        "fragrances": "",
+    }
+    prefix = CATEGORY_PREFIX.get(category, "")
+    if prefix and prefix.lower() not in q.lower():
+        q = f"{prefix} {q}"
+    # Limit to ~8 words max (long queries confuse eBay search)
+    words = q.split()
+    if len(words) > 8:
+        q = " ".join(words[:8])
+    return q.strip()
+
+
 async def scrape_item(agent, title: str, category: str, item_key: str) -> list[dict]:
     """Call MarketplaceAgent for a single item, return market_hit dicts."""
+    query = simplify_query(title, category)
     try:
         result = await asyncio.wait_for(
-            agent.aggregate_search(query=title, category=category, limit=10),
+            agent.aggregate_search(query=query, category=category, limit=10),
             timeout=30,
         )
         hits = []

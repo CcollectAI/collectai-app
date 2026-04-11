@@ -184,6 +184,7 @@ async def process_intake(
                 brand=str(vis_brand) if vis_brand else None,
                 set_code=str(vis_set) if vis_set else None,
                 pool=pool,
+                extracted_attributes=result.attributes if isinstance(result.attributes, dict) else None,
             )
 
             if catalog_matches:

@@ -33,6 +33,7 @@ import { AnimatedPressable } from '@/motion';
 import type { QuickScanResult, CatalogAlternative, DetectedMultiItem } from '@/data/types';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
+import { useInterstitial } from '@/ads';
 import { radius } from '@/theme/tokens';
 
 import {
@@ -68,6 +69,7 @@ function QuickScanScreen() {
   const { colors } = useAppTheme();
   const { showToast } = useToast();
   const { settings } = useSettings();
+  const { recordAction: recordAdAction, tryShow: tryShowAd } = useInterstitial('scan_interstitial');
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [phase, setPhase] = useState<ScanPhase>('camera');
@@ -486,19 +488,16 @@ function QuickScanScreen() {
           : undefined,
       },
     });
+    // Record action toward interstitial throttle (no-op when ads disabled)
+    recordAdAction();
+    // Fire-and-forget interstitial attempt (throttled, no-op when ads disabled)
+    void tryShowAd();
     setPhase('done');
 
-    // Build notes from extracted details
+    // Pass extracted details as structured JSON so they can be persisted
+    // to items.attributes_json (not flattened into free-text notes).
     const details = scanResult.attributes.extractedDetails;
-    const notesParts: string[] = [];
-    if (details) {
-      for (const [k, v] of Object.entries(details)) {
-        if (v !== null && v !== undefined && v !== '') {
-          const label = k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-          notesParts.push(`${label}: ${String(v)}`);
-        }
-      }
-    }
+    const attributesJson = details ? JSON.stringify(details) : '';
 
     router.replace({
       pathname: '/item/[id]',
@@ -514,11 +513,11 @@ function QuickScanScreen() {
         q90: String(scanResult.prediction.estimatedHigh),
         confidence: String(Math.round(scanResult.prediction.confidence * 100)),
         imageUri: capturedUri,
-        notes: notesParts.join('\n'),
+        attributesJson,
         ...(scanResult.catalogMatchKey ? { catalogKey: scanResult.catalogMatchKey } : {}),
       },
     });
-  }, [scanResult, capturedUri, settings.hapticsEnabled]);
+  }, [scanResult, capturedUri, settings.hapticsEnabled, recordAdAction, tryShowAd]);
 
   const handleCancel = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });

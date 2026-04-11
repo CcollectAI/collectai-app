@@ -1,0 +1,885 @@
+{
+  "action_figures": {
+    "expected_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise",
+      "detail"
+    ],
+    "core_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise",
+      "detail"
+    ],
+    "field_coverage": {
+      "manufacturer": 1.0,
+      "product_line": 1.0,
+      "franchise": 1.0,
+      "detail": 1.0
+    },
+    "total_items_with_attrs": 611
+  },
+  "anime_bluray": {
+    "expected_fields": [
+      "publisher",
+      "edition",
+      "format"
+    ],
+    "core_fields": [
+      "publisher",
+      "edition",
+      "format"
+    ],
+    "field_coverage": {
+      "publisher": 1.0,
+      "edition": 1.0,
+      "format": 1.0
+    },
+    "total_items_with_attrs": 1140
+  },
+  "anime_figures": {
+    "expected_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise",
+      "detail",
+      "scale"
+    ],
+    "core_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise",
+      "detail"
+    ],
+    "field_coverage": {
+      "manufacturer": 1.0,
+      "product_line": 1.0,
+      "franchise": 1.0,
+      "detail": 1.0,
+      "scale": 0.611
+    },
+    "total_items_with_attrs": 1153
+  },
+  "anime_ost_vinyl": {
+    "expected_fields": [
+      "artist",
+      "album_title",
+      "label"
+    ],
+    "core_fields": [
+      "artist",
+      "album_title",
+      "label"
+    ],
+    "field_coverage": {
+      "artist": 1.0,
+      "album_title": 1.0,
+      "label": 1.0
+    },
+    "total_items_with_attrs": 1106
+  },
+  "anime_soundtrack": {
+    "expected_fields": [
+      "anime_franchise",
+      "composer",
+      "format",
+      "edition"
+    ],
+    "core_fields": [
+      "anime_franchise",
+      "composer",
+      "format",
+      "edition"
+    ],
+    "field_coverage": {
+      "anime_franchise": 1.0,
+      "composer": 1.0,
+      "format": 1.0,
+      "edition": 1.0
+    },
+    "total_items_with_attrs": 1134
+  },
+  "bandai_premium": {
+    "expected_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise"
+    ],
+    "core_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise"
+    ],
+    "field_coverage": {
+      "manufacturer": 1.0,
+      "product_line": 1.0,
+      "franchise": 1.0
+    },
+    "total_items_with_attrs": 1132
+  },
+  "blind_box": {
+    "expected_fields": [
+      "description"
+    ],
+    "core_fields": [
+      "description"
+    ],
+    "field_coverage": {
+      "description": 1.0,
+      "series_count": 0.05
+    },
+    "total_items_with_attrs": 501
+  },
+  "bluray_steelbook": {
+    "expected_fields": [
+      "distributor",
+      "edition",
+      "format"
+    ],
+    "core_fields": [
+      "distributor",
+      "edition",
+      "format"
+    ],
+    "field_coverage": {
+      "distributor": 1.0,
+      "edition": 1.0,
+      "format": 1.0
+    },
+    "total_items_with_attrs": 1114
+  },
+  "city_pop_vinyl": {
+    "expected_fields": [
+      "artist"
+    ],
+    "core_fields": [
+      "artist"
+    ],
+    "field_coverage": {
+      "artist": 1.0
+    },
+    "total_items_with_attrs": 704
+  },
+  "comic_books": {
+    "expected_fields": [
+      "publisher",
+      "series_title",
+      "key_issue_note"
+    ],
+    "core_fields": [
+      "publisher",
+      "series_title",
+      "key_issue_note"
+    ],
+    "field_coverage": {
+      "publisher": 1.0,
+      "series_title": 1.0,
+      "key_issue_note": 1.0
+    },
+    "total_items_with_attrs": 505
+  },
+  "designer_toys": {
+    "expected_fields": [
+      "artist",
+      "series",
+      "edition"
+    ],
+    "core_fields": [
+      "artist",
+      "series",
+      "edition"
+    ],
+    "field_coverage": {
+      "artist": 1.0,
+      "series": 1.0,
+      "edition": 1.0
+    },
+    "total_items_with_attrs": 1126
+  },
+  "diecast": {
+    "expected_fields": [
+      "scale"
+    ],
+    "core_fields": [
+      "scale"
+    ],
+    "field_coverage": {
+      "scale": 1.0,
+      "f1_1": 0.008,
+      "kyosho_1": 0.002,
+      "f1_collection_1": 0.001
+    },
+    "total_items_with_attrs": 1140
+  },
+  "digimon": {
+    "expected_fields": [
+      "set_name"
+    ],
+    "core_fields": [
+      "set_name"
+    ],
+    "field_coverage": {
+      "set_name": 1.0
+    },
+    "total_items_with_attrs": 503
+  },
+  "disney": {
+    "expected_fields": [
+      "product_type"
+    ],
+    "core_fields": [
+      "product_type"
+    ],
+    "field_coverage": {
+      "product_type": 1.0,
+      "limited_edition_size": 0.098
+    },
+    "total_items_with_attrs": 1177
+  },
+  "fragrances": {
+    "expected_fields": [
+      "house"
+    ],
+    "core_fields": [
+      "house"
+    ],
+    "field_coverage": {
+      "house": 1.0
+    },
+    "total_items_with_attrs": 1104
+  },
+  "funko": {
+    "expected_fields": [
+      "series",
+      "figure_number",
+      "exclusive_tag"
+    ],
+    "core_fields": [
+      "series",
+      "figure_number"
+    ],
+    "field_coverage": {
+      "series": 1.0,
+      "figure_number": 1.0,
+      "exclusive_tag": 0.604
+    },
+    "total_items_with_attrs": 1141
+  },
+  "ghibli": {
+    "expected_fields": [
+      "film_title",
+      "product_type"
+    ],
+    "core_fields": [
+      "film_title",
+      "product_type"
+    ],
+    "field_coverage": {
+      "film_title": 1.0,
+      "product_type": 1.0
+    },
+    "total_items_with_attrs": 1132
+  },
+  "gunpla": {
+    "expected_fields": [
+      "series",
+      "grade",
+      "scale"
+    ],
+    "core_fields": [
+      "series"
+    ],
+    "field_coverage": {
+      "series": 1.0,
+      "grade": 0.739,
+      "scale": 0.67,
+      "grade_scale": 0.261
+    },
+    "total_items_with_attrs": 1211
+  },
+  "hot_toys": {
+    "expected_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise"
+    ],
+    "core_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise"
+    ],
+    "field_coverage": {
+      "manufacturer": 1.0,
+      "product_line": 1.0,
+      "franchise": 1.0
+    },
+    "total_items_with_attrs": 1129
+  },
+  "jp_event": {
+    "expected_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise"
+    ],
+    "core_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise"
+    ],
+    "field_coverage": {
+      "manufacturer": 1.0,
+      "product_line": 1.0,
+      "franchise": 1.0
+    },
+    "total_items_with_attrs": 1107
+  },
+  "jp_magazine": {
+    "expected_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise",
+      "detail"
+    ],
+    "core_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise",
+      "detail"
+    ],
+    "field_coverage": {
+      "manufacturer": 1.0,
+      "product_line": 1.0,
+      "franchise": 1.0,
+      "detail": 1.0
+    },
+    "total_items_with_attrs": 1142
+  },
+  "keycaps": {
+    "expected_fields": [
+      "profile",
+      "material"
+    ],
+    "core_fields": [
+      "profile",
+      "material"
+    ],
+    "field_coverage": {
+      "profile": 1.0,
+      "material": 1.0
+    },
+    "total_items_with_attrs": 1139
+  },
+  "kpop_lightsticks": {
+    "expected_fields": [
+      "group_name",
+      "album_era",
+      "variant"
+    ],
+    "core_fields": [
+      "group_name",
+      "album_era",
+      "variant"
+    ],
+    "field_coverage": {
+      "group_name": 1.0,
+      "album_era": 1.0,
+      "variant": 1.0,
+      "abv_percent": 0.001
+    },
+    "total_items_with_attrs": 1147
+  },
+  "kpop_merch": {
+    "expected_fields": [
+      "group_name",
+      "album_era",
+      "variant"
+    ],
+    "core_fields": [
+      "group_name",
+      "album_era",
+      "variant"
+    ],
+    "field_coverage": {
+      "group_name": 1.0,
+      "album_era": 1.0,
+      "variant": 1.0
+    },
+    "total_items_with_attrs": 1138
+  },
+  "lego": {
+    "expected_fields": [
+      "theme",
+      "subtheme",
+      "year",
+      "piece_count"
+    ],
+    "core_fields": [
+      "theme",
+      "subtheme",
+      "year"
+    ],
+    "field_coverage": {
+      "theme": 1.0,
+      "subtheme": 1.0,
+      "year": 1.0,
+      "piece_count": 0.615
+    },
+    "total_items_with_attrs": 26481
+  },
+  "lorcana": {
+    "expected_fields": [
+      "set_name"
+    ],
+    "core_fields": [
+      "set_name"
+    ],
+    "field_coverage": {
+      "set_name": 1.0
+    },
+    "total_items_with_attrs": 795
+  },
+  "loungefly": {
+    "expected_fields": [
+      "franchise",
+      "product_type",
+      "retailer"
+    ],
+    "core_fields": [
+      "franchise",
+      "product_type",
+      "retailer"
+    ],
+    "field_coverage": {
+      "franchise": 1.0,
+      "product_type": 1.0,
+      "retailer": 1.0
+    },
+    "total_items_with_attrs": 1130
+  },
+  "manga": {
+    "expected_fields": [
+      "volume_count"
+    ],
+    "core_fields": [
+      "volume_count"
+    ],
+    "field_coverage": {
+      "volume_count": 1.0,
+      "mal_score": 0.204,
+      "publication_status": 0.201
+    },
+    "total_items_with_attrs": 981
+  },
+  "marvel_legends": {
+    "expected_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise"
+    ],
+    "core_fields": [
+      "manufacturer",
+      "product_line"
+    ],
+    "field_coverage": {
+      "manufacturer": 1.0,
+      "product_line": 1.0,
+      "franchise": 0.34
+    },
+    "total_items_with_attrs": 612
+  },
+  "mtg": {
+    "expected_fields": [
+      "set_name"
+    ],
+    "core_fields": [
+      "set_name"
+    ],
+    "field_coverage": {
+      "set_name": 1.0
+    },
+    "total_items_with_attrs": 31599
+  },
+  "nintendo_merch": {
+    "expected_fields": [
+      "franchise",
+      "product_type",
+      "variant"
+    ],
+    "core_fields": [
+      "franchise",
+      "product_type"
+    ],
+    "field_coverage": {
+      "franchise": 1.0,
+      "product_type": 1.0,
+      "variant": 0.405
+    },
+    "total_items_with_attrs": 1118
+  },
+  "one_piece": {
+    "expected_fields": [
+      "franchise",
+      "product_type"
+    ],
+    "core_fields": [
+      "franchise",
+      "product_type"
+    ],
+    "field_coverage": {
+      "franchise": 1.0,
+      "product_type": 0.995
+    },
+    "total_items_with_attrs": 1145
+  },
+  "one_piece_tcg": {
+    "expected_fields": [
+      "set_name"
+    ],
+    "core_fields": [
+      "set_name"
+    ],
+    "field_coverage": {
+      "set_name": 1.0
+    },
+    "total_items_with_attrs": 534
+  },
+  "oop_board_games": {
+    "expected_fields": [
+      "publisher"
+    ],
+    "core_fields": [
+      "publisher"
+    ],
+    "field_coverage": {
+      "publisher": 1.0
+    },
+    "total_items_with_attrs": 1107
+  },
+  "pens": {
+    "expected_fields": [
+      "year"
+    ],
+    "core_fields": [
+      "year"
+    ],
+    "field_coverage": {
+      "year": 1.0
+    },
+    "total_items_with_attrs": 18
+  },
+  "plush_collectibles": {
+    "expected_fields": [
+      "brand",
+      "squad"
+    ],
+    "core_fields": [
+      "brand",
+      "squad"
+    ],
+    "field_coverage": {
+      "brand": 1.0,
+      "squad": 1.0
+    },
+    "total_items_with_attrs": 548
+  },
+  "pokemon": {
+    "expected_fields": [
+      "set_name",
+      "card_number",
+      "set_total"
+    ],
+    "core_fields": [
+      "set_name",
+      "card_number",
+      "set_total"
+    ],
+    "field_coverage": {
+      "set_name": 1.0,
+      "card_number": 0.92,
+      "set_total": 0.92
+    },
+    "total_items_with_attrs": 20237
+  },
+  "pop_fandom": {
+    "expected_fields": [
+      "franchise",
+      "product_type",
+      "variant"
+    ],
+    "core_fields": [
+      "franchise",
+      "product_type",
+      "variant"
+    ],
+    "field_coverage": {
+      "franchise": 1.0,
+      "product_type": 1.0,
+      "variant": 1.0
+    },
+    "total_items_with_attrs": 1139
+  },
+  "retro_games": {
+    "expected_fields": [
+      "platform",
+      "region",
+      "year"
+    ],
+    "core_fields": [
+      "platform",
+      "region",
+      "year"
+    ],
+    "field_coverage": {
+      "platform": 1.0,
+      "region": 1.0,
+      "year": 1.0
+    },
+    "total_items_with_attrs": 1178
+  },
+  "retro_handhelds": {
+    "expected_fields": [
+      "platform",
+      "region",
+      "cib_status"
+    ],
+    "core_fields": [
+      "platform",
+      "region",
+      "cib_status"
+    ],
+    "field_coverage": {
+      "platform": 1.0,
+      "region": 1.0,
+      "cib_status": 1.0
+    },
+    "total_items_with_attrs": 505
+  },
+  "retro_pokemon": {
+    "expected_fields": [
+      "franchise",
+      "product_type"
+    ],
+    "core_fields": [
+      "franchise",
+      "product_type"
+    ],
+    "field_coverage": {
+      "franchise": 1.0,
+      "product_type": 1.0
+    },
+    "total_items_with_attrs": 1151
+  },
+  "scale_models": {
+    "expected_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise",
+      "scale"
+    ],
+    "core_fields": [
+      "manufacturer",
+      "product_line",
+      "franchise",
+      "scale"
+    ],
+    "field_coverage": {
+      "manufacturer": 1.0,
+      "product_line": 1.0,
+      "franchise": 1.0,
+      "scale": 0.919
+    },
+    "total_items_with_attrs": 1137
+  },
+  "sneakers": {
+    "expected_fields": [
+      "release_type",
+      "sku"
+    ],
+    "core_fields": [
+      "release_type",
+      "sku"
+    ],
+    "field_coverage": {
+      "release_type": 1.0,
+      "sku": 1.0
+    },
+    "total_items_with_attrs": 501
+  },
+  "sportscards": {
+    "expected_fields": [
+      "set_info",
+      "player_name"
+    ],
+    "core_fields": [
+      "set_info",
+      "player_name"
+    ],
+    "field_coverage": {
+      "set_info": 1.0,
+      "player_name": 1.0
+    },
+    "total_items_with_attrs": 1131
+  },
+  "taylor_swift": {
+    "expected_fields": [
+      "year"
+    ],
+    "core_fields": [
+      "year"
+    ],
+    "field_coverage": {
+      "year": 1.0
+    },
+    "total_items_with_attrs": 25
+  },
+  "theme_park": {
+    "expected_fields": [
+      "franchise",
+      "product_type",
+      "variant"
+    ],
+    "core_fields": [
+      "franchise",
+      "product_type",
+      "variant"
+    ],
+    "field_coverage": {
+      "franchise": 1.0,
+      "product_type": 1.0,
+      "variant": 1.0
+    },
+    "total_items_with_attrs": 1142
+  },
+  "vintage_cameras": {
+    "expected_fields": [
+      "manufacturer"
+    ],
+    "core_fields": [
+      "manufacturer"
+    ],
+    "field_coverage": {
+      "manufacturer": 1.0,
+      "year": 0.026,
+      "movement": 0.002
+    },
+    "total_items_with_attrs": 507
+  },
+  "vintage_toys": {
+    "expected_fields": [
+      "manufacturer",
+      "year"
+    ],
+    "core_fields": [
+      "manufacturer",
+      "year"
+    ],
+    "field_coverage": {
+      "manufacturer": 1.0,
+      "year": 1.0
+    },
+    "total_items_with_attrs": 616
+  },
+  "vinyl_records": {
+    "expected_fields": [
+      "artist",
+      "album_title",
+      "label"
+    ],
+    "core_fields": [
+      "artist",
+      "album_title",
+      "label"
+    ],
+    "field_coverage": {
+      "artist": 1.0,
+      "album_title": 1.0,
+      "label": 1.0
+    },
+    "total_items_with_attrs": 502
+  },
+  "vtuber": {
+    "expected_fields": [
+      "agency",
+      "talent_name",
+      "product_type",
+      "event"
+    ],
+    "core_fields": [
+      "agency",
+      "talent_name",
+      "product_type",
+      "event"
+    ],
+    "field_coverage": {
+      "agency": 1.0,
+      "talent_name": 1.0,
+      "product_type": 1.0,
+      "event": 1.0
+    },
+    "total_items_with_attrs": 1106
+  },
+  "warhammer": {
+    "expected_fields": [
+      "game_system",
+      "faction"
+    ],
+    "core_fields": [
+      "game_system",
+      "faction"
+    ],
+    "field_coverage": {
+      "game_system": 1.0,
+      "faction": 1.0
+    },
+    "total_items_with_attrs": 1203
+  },
+  "watches": {
+    "expected_fields": [
+      "brand",
+      "model_name",
+      "case_material",
+      "reference_number",
+      "movement"
+    ],
+    "core_fields": [
+      "brand",
+      "model_name",
+      "case_material",
+      "reference_number",
+      "movement"
+    ],
+    "field_coverage": {
+      "brand": 1.0,
+      "model_name": 1.0,
+      "case_material": 1.0,
+      "reference_number": 0.962,
+      "movement": 0.936
+    },
+    "total_items_with_attrs": 503
+  },
+  "whiskey": {
+    "expected_fields": [
+      "brand"
+    ],
+    "core_fields": [
+      "brand"
+    ],
+    "field_coverage": {
+      "brand": 1.0
+    },
+    "total_items_with_attrs": 412
+  },
+  "yugioh": {
+    "expected_fields": [
+      "set_name"
+    ],
+    "core_fields": [
+      "set_name"
+    ],
+    "field_coverage": {
+      "set_name": 1.0
+    },
+    "total_items_with_attrs": 38183
+  }
+}

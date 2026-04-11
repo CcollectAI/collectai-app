@@ -116,6 +116,7 @@ export interface BillingStatus {
     advanced_analytics: boolean;
     condition_grading: boolean;
     set_completion: boolean;
+    show_ads?: boolean;
   };
 }
 

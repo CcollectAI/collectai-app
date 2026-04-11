@@ -11,6 +11,8 @@ import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 
 // Archive uses warning color from theme (resolved at render time)
 
@@ -56,13 +58,15 @@ export const BulkActionsToolbar = React.memo(function BulkActionsToolbar({
   onDelete,
 }: BulkActionsToolbarProps) {
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
+  const haptic = (intent: HapticIntent) => fireHaptic(intent, { enabled: settings.hapticsEnabled });
   return (
     <>
       {/* Header row */}
       <View style={s.header}>
         <AnimatedPressable
           style={s.closeBtn}
-          onPress={onExit}
+          onPress={() => { haptic(HapticIntent.CONFIRMATION_LIGHT); onExit(); }}
           accessibilityRole="button"
           accessibilityLabel="Exit multi-select mode"
         >
@@ -74,7 +78,7 @@ export const BulkActionsToolbar = React.memo(function BulkActionsToolbar({
         <View style={s.actions}>
           <AnimatedPressable
             style={s.actionBtn}
-            onPress={isAllSelected ? onDeselectAll : onSelectAll}
+            onPress={() => { haptic(HapticIntent.CONFIRMATION_LIGHT); (isAllSelected ? onDeselectAll : onSelectAll)(); }}
             accessibilityRole="button"
             accessibilityLabel={isAllSelected ? "Deselect all items" : "Select all items"}
           >
@@ -94,7 +98,7 @@ export const BulkActionsToolbar = React.memo(function BulkActionsToolbar({
             <View style={s.row}>
               <AnimatedPressable
                 style={[s.btn, { backgroundColor: theme.accent + "10" }]}
-                onPress={onChangeCategory}
+                onPress={() => { haptic(HapticIntent.CONFIRMATION_LIGHT); onChangeCategory(); }}
                 disabled={disabled}
                 accessibilityRole="button"
                 accessibilityLabel="Move selected items to category"
@@ -105,7 +109,7 @@ export const BulkActionsToolbar = React.memo(function BulkActionsToolbar({
 
               <AnimatedPressable
                 style={[s.btn, { backgroundColor: theme.accent + "10" }]}
-                onPress={onExport}
+                onPress={() => { haptic(HapticIntent.JUDGMENT_LOCKED); onExport(); }}
                 disabled={disabled}
                 accessibilityRole="button"
                 accessibilityLabel="Export selected items"
@@ -116,7 +120,7 @@ export const BulkActionsToolbar = React.memo(function BulkActionsToolbar({
 
               <AnimatedPressable
                 style={[s.btn, { backgroundColor: colors.warning + '10' }]}
-                onPress={onArchive}
+                onPress={() => { haptic(HapticIntent.JUDGMENT_LOCKED); onArchive(); }}
                 disabled={disabled}
                 accessibilityRole="button"
                 accessibilityLabel="Archive selected items"
@@ -127,7 +131,7 @@ export const BulkActionsToolbar = React.memo(function BulkActionsToolbar({
 
               <AnimatedPressable
                 style={[s.btn, { backgroundColor: colors.danger + '10' }]}
-                onPress={onDelete}
+                onPress={() => { haptic(HapticIntent.ALERT_TRIGGERED); onDelete(); }}
                 disabled={disabled}
                 accessibilityRole="button"
                 accessibilityLabel="Delete selected items"

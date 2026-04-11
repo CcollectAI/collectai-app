@@ -47,6 +47,7 @@ import { MarketplacePageHeader } from '@/components/marketplace/MarketplacePageH
 import { MarketplaceResultCard, type MarketplaceResultItem } from '@/components/marketplace/MarketplaceResultCard';
 import { MarketplaceEmptyState } from '@/components/marketplace/MarketplaceEmptyState';
 import { DemandHeatBanner } from '@/components/marketplace/DemandHeatBanner';
+import { AdBanner } from '@/components/ads/AdBanner';
 import { RegionalInsightsSection } from '@/components/marketplace/RegionalInsightsSection';
 
 // --- Types for marketplace API results ---
@@ -596,6 +597,9 @@ const SearchScreen: React.FC = () => {
           onOpenFilter={openFilter}
           activeFilterCount={activeFilterCount}
         />
+
+        {/* Ad slot — invisible until FEATURE_ADS is enabled */}
+        <AdBanner placement="marketplace_banner" />
 
         {/* Find Collectors button */}
         {!trimmedQuery && (

@@ -1,0 +1,53 @@
+{
+  "model_type": "ridge_v2",
+  "category": "anime_ost_vinyl",
+  "version": "20260410_192041",
+  "features": [
+    "condition_score",
+    "rarity_score",
+    "edition_score"
+  ],
+  "standardizer": {
+    "mean": [
+      0.8500000000001339,
+      0.30000000000001903,
+      0.711845450490637
+    ],
+    "std": [
+      1.3389289676979388e-13,
+      1.9040324872321435e-14,
+      0.18595552048017142
+    ]
+  },
+  "ridge": {
+    "coef": [
+      0.0,
+      0.0,
+      22.313801711527255
+    ],
+    "intercept": 82.21532114183807
+  },
+  "ridge_q10": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 40.0
+  },
+  "ridge_q90": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 150.0
+  },
+  "best_alpha": 100.0,
+  "cv_mae": 32.52,
+  "train_mae": 32.5,
+  "uncertainty_scale": 1.0,
+  "train_size": 8968,
+  "mae": 32.52,
+  "created_at": "2026-04-10T19:20:44.894920+00:00"
+}

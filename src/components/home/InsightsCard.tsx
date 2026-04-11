@@ -12,6 +12,7 @@ import type { PortfolioTierSummary } from '@/analytics/portfolioMetrics';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { formatPrice } from '@/lib/format';
+import { ProgressRing } from '@/components/ProgressRing';
 
 const TIER_COLORS: Record<string, string> = {
   Diamond: '#A78BFA',
@@ -99,6 +100,7 @@ function InsightsCardInner({ insights, tierSummary, onViewDetails }: InsightsCar
           </View>
           <View style={styles.tierScores}>
             <View style={styles.tierScoreItem}>
+              <ProgressRing progress={tierSummary.rarityScore} size={36} strokeWidth={3} progressColor="#A78BFA" />
               <Text style={[styles.tierScoreValue, { color: colors.text }]}>
                 {Math.round(tierSummary.rarityScore * 100)}
               </Text>
@@ -106,6 +108,7 @@ function InsightsCardInner({ insights, tierSummary, onViewDetails }: InsightsCar
             </View>
             <View style={[styles.tierScoreDivider, { backgroundColor: colors.border }]} />
             <View style={styles.tierScoreItem}>
+              <ProgressRing progress={tierSummary.completenessScore} size={36} strokeWidth={3} progressColor="#0BA86C" />
               <Text style={[styles.tierScoreValue, { color: colors.text }]}>
                 {Math.round(tierSummary.completenessScore * 100)}
               </Text>
@@ -113,6 +116,7 @@ function InsightsCardInner({ insights, tierSummary, onViewDetails }: InsightsCar
             </View>
             <View style={[styles.tierScoreDivider, { backgroundColor: colors.border }]} />
             <View style={styles.tierScoreItem}>
+              <ProgressRing progress={tierSummary.diversificationScore} size={36} strokeWidth={3} progressColor="#38BDF8" />
               <Text style={[styles.tierScoreValue, { color: colors.text }]}>
                 {Math.round(tierSummary.diversificationScore * 100)}
               </Text>

@@ -226,6 +226,7 @@ from app.routes.geo_router import router as geo_router
 from app.features.sponsor_company_router import router as sponsor_company_router
 from app.features.build_paint_router import router as build_paint_router
 from app.features.set_router import router as set_router
+from app.features.attribute_autocomplete_router import router as attribute_autocomplete_router
 from app.features.task_queue_router import router as task_queue_router
 from app.features.activity_router import router as activity_router
 from app.features.search_router import router as search_router
@@ -295,6 +296,7 @@ app.include_router(geo_router)
 app.include_router(sponsor_company_router)
 app.include_router(build_paint_router)
 app.include_router(set_router)
+app.include_router(attribute_autocomplete_router)
 app.include_router(task_queue_router)
 app.include_router(activity_router)
 app.include_router(search_router)

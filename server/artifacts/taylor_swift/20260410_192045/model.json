@@ -1,0 +1,53 @@
+{
+  "model_type": "ridge_v2",
+  "category": "taylor_swift",
+  "version": "20260410_192045",
+  "features": [
+    "condition_score",
+    "rarity_score",
+    "edition_score"
+  ],
+  "standardizer": {
+    "mean": [
+      0.8500000000001116,
+      0.3000000000000032,
+      0.6183302752293263
+    ],
+    "std": [
+      1.1157741397482823e-13,
+      3.219646771412954e-15,
+      0.17136284384779416
+    ]
+  },
+  "ridge": {
+    "coef": [
+      0.0,
+      0.0,
+      38.55231018098583
+    ],
+    "intercept": 91.55902140672073
+  },
+  "ridge_q10": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 33.0
+  },
+  "ridge_q90": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 200.0
+  },
+  "best_alpha": 100.0,
+  "cv_mae": 48.5,
+  "train_mae": 48.45,
+  "uncertainty_scale": 1.0,
+  "train_size": 8175,
+  "mae": 48.5,
+  "created_at": "2026-04-10T19:20:47.894739+00:00"
+}

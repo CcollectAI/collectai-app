@@ -18,6 +18,7 @@ import logger from '@/utils/logger';
 import { formatPrice } from '@/lib/format';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
+import { ProgressRing } from '@/components/ProgressRing';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 const MIN_COMPLETENESS = 0.4;
@@ -135,10 +136,20 @@ const SetsToCompleteScreen: React.FC = () => {
             );
             return (
               <View key={s.key} style={[styles.card, { backgroundColor: colors.card }]}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>{s.key}</Text>
-                <Text style={[styles.cardMeta, { color: colors.muted }]}>
-                  {s.category} · {s.ownedCount}/{s.expectedCount} items
-                </Text>
+                <View style={styles.cardHeader}>
+                  <ProgressRing
+                    progress={s.completenessRatio}
+                    size={48}
+                    strokeWidth={5}
+                    progressColor={s.completenessRatio >= 0.8 ? '#0BA86C' : colors.accent}
+                  />
+                  <View style={styles.cardHeaderText}>
+                    <Text style={[styles.cardTitle, { color: colors.text }]}>{s.key}</Text>
+                    <Text style={[styles.cardMeta, { color: colors.muted }]}>
+                      {s.category} · {s.ownedCount}/{s.expectedCount} items
+                    </Text>
+                  </View>
+                </View>
                 <Text style={[styles.cardRow, { color: colors.text }]}>
                   Completeness:{' '}
                   {Math.round(s.completenessRatio * 100)}%
@@ -195,6 +206,15 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
+  },
+  cardHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 12,
+    marginBottom: 4,
+  },
+  cardHeaderText: {
+    flex: 1,
   },
   cardTitle: {
     fontSize: 14,

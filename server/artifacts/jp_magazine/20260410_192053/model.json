@@ -1,0 +1,53 @@
+{
+  "model_type": "ridge_v2",
+  "category": "jp_magazine",
+  "version": "20260410_192053",
+  "features": [
+    "condition_score",
+    "rarity_score",
+    "edition_score"
+  ],
+  "standardizer": {
+    "mean": [
+      0.8499999999999739,
+      0.2999999999999718,
+      0.4918570347957783
+    ],
+    "std": [
+      2.609024107869118e-14,
+      2.8199664825478976e-14,
+      0.20752675306378376
+    ]
+  },
+  "ridge": {
+    "coef": [
+      0.0,
+      0.0,
+      27.41132326100702
+    ],
+    "intercept": 47.051626323753794
+  },
+  "ridge_q10": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 14.0
+  },
+  "ridge_q90": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 90.0
+  },
+  "best_alpha": 100.0,
+  "cv_mae": 24.04,
+  "train_mae": 23.99,
+  "uncertainty_scale": 1.0,
+  "train_size": 5288,
+  "mae": 24.04,
+  "created_at": "2026-04-10T19:20:54.785106+00:00"
+}

@@ -9,6 +9,8 @@ import { router, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 
 type Props = {
   feature: string;
@@ -17,6 +19,7 @@ type Props = {
 
 export const UpgradePrompt = React.memo(function UpgradePrompt({ feature, requiredPlan = 'Pro' }: Props) {
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
   return (
     <View style={[styles.container, { backgroundColor: colors.warningBg, borderColor: colors.warning + '40' }]}>
       <View style={styles.row}>
@@ -27,7 +30,7 @@ export const UpgradePrompt = React.memo(function UpgradePrompt({ feature, requir
         </View>
       </View>
       <AnimatedPressable
-        onPress={() => router.push('/settings' as Href)}
+        onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push('/settings' as Href); }}
         style={[styles.btn, { backgroundColor: colors.accent }]}
         accessibilityRole="button"
         accessibilityLabel={`Upgrade to ${requiredPlan}`}

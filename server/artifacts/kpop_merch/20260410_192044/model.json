@@ -1,0 +1,53 @@
+{
+  "model_type": "ridge_v2",
+  "category": "kpop_merch",
+  "version": "20260410_192044",
+  "features": [
+    "condition_score",
+    "rarity_score",
+    "edition_score"
+  ],
+  "standardizer": {
+    "mean": [
+      0.8499999999999659,
+      0.29999999999999477,
+      0.5360070515645801
+    ],
+    "std": [
+      3.4083846855992306e-14,
+      5.218048215738236e-15,
+      0.2773777162683207
+    ]
+  },
+  "ridge": {
+    "coef": [
+      0.0,
+      0.0,
+      64.20591259439297
+    ],
+    "intercept": 86.90348171000771
+  },
+  "ridge_q10": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 18.0
+  },
+  "ridge_q90": {
+    "coef": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "intercept": 250.0
+  },
+  "best_alpha": 100.0,
+  "cv_mae": 48.66,
+  "train_mae": 47.81,
+  "uncertainty_scale": 1.0,
+  "train_size": 2269,
+  "mae": 48.66,
+  "created_at": "2026-04-10T19:20:45.264982+00:00"
+}

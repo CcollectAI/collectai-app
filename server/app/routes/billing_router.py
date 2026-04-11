@@ -107,9 +107,9 @@ def _resolve_price_id(plan: str, interval: str = "monthly") -> str | None:
     return intervals.get(interval) or intervals.get("monthly") or None
 
 PLAN_LIMITS = {
-    "free": {"max_mandates": 3, "deal_discovery": False, "dossier_pdf": False, "advanced_analytics": False},
-    "pro": {"max_mandates": 10, "deal_discovery": True, "dossier_pdf": True, "advanced_analytics": False},
-    "premium": {"max_mandates": 50, "deal_discovery": True, "dossier_pdf": True, "advanced_analytics": True},
+    "free": {"max_mandates": 3, "deal_discovery": False, "dossier_pdf": False, "advanced_analytics": False, "show_ads": True},
+    "pro": {"max_mandates": 10, "deal_discovery": True, "dossier_pdf": True, "advanced_analytics": False, "show_ads": False},
+    "premium": {"max_mandates": 50, "deal_discovery": True, "dossier_pdf": True, "advanced_analytics": True, "show_ads": False},
 }
 
 # ---------------------------------------------------------------------------

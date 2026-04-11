@@ -131,8 +131,16 @@ async def _get_real_prediction(
         return None
 
 
-def _build_features(attrs: QuickScanAttributes, model_features: list[str]) -> dict[str, float]:
-    """Build feature dict dynamically based on model's expected features."""
+def _build_features(
+    attrs: QuickScanAttributes,
+    model_features: list[str],
+    extracted_attributes: dict | None = None,
+) -> dict[str, float]:
+    """Build feature dict dynamically based on model's expected features.
+
+    If `extracted_attributes` is provided (from vision pipeline), attribute-
+    derived features (brand_tier, set_age, etc.) are merged into the result.
+    """
     # Core feature generators
     core = {
         "condition_score": lambda: _condition_to_score(attrs.condition_guess),
@@ -146,10 +154,21 @@ def _build_features(attrs: QuickScanAttributes, model_features: list[str]) -> di
         "set_age_years": lambda: 0.0,
     }
 
+    # Compute attribute-derived features (brand_tier, has_year, etc.)
+    attr_feats: dict[str, float] = {}
+    if extracted_attributes:
+        try:
+            from app.ml.attribute_features import featurize_attributes
+            attr_feats = featurize_attributes(attrs.category, extracted_attributes)
+        except Exception:
+            pass
+
     features: dict[str, float] = {}
     for feat in model_features:
         if feat in core:
             features[feat] = core[feat]()
+        elif feat in attr_feats:
+            features[feat] = attr_feats[feat]
         else:
             features[feat] = 0.0  # Safe default for unknown features
 

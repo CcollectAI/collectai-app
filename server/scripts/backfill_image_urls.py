@@ -1,0 +1,264 @@
+#!/usr/bin/env python3
+"""
+Backfill image_url for catalog items missing images.
+
+Strategy:
+1. Wikimedia Commons API search → first result image (free, no auth)
+2. Wikipedia REST API article image → fallback
+3. Generic placeholder if both fail
+
+Runs locally over `category_items` table OR can produce a SQL UPDATE
+file from the catalog seed v2 files.
+
+Usage:
+    # Dry run on a single category, write SQL update file:
+    python -m scripts.backfill_image_urls --category watches --dry-run
+
+    # Apply to live DB:
+    python -m scripts.backfill_image_urls --category watches --apply
+
+    # All categories:
+    python -m scripts.backfill_image_urls --all --dry-run
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+import time
+import urllib.parse
+import urllib.request
+from pathlib import Path
+from typing import Optional
+
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+
+WIKIMEDIA_SEARCH = "https://commons.wikimedia.org/w/api.php"
+WIKIPEDIA_SEARCH = "https://en.wikipedia.org/w/api.php"
+
+USER_AGENT = "CollectAI/1.0 (+https://collectai.app; image-backfill)"
+REQUEST_DELAY_SEC = 0.5  # Polite rate limit
+
+
+def _http_get_json(url: str, params: dict) -> Optional[dict]:
+    """Simple HTTP GET returning parsed JSON, or None on error."""
+    try:
+        full = url + "?" + urllib.parse.urlencode(params)
+        req = urllib.request.Request(full, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return None
+
+
+def find_wikimedia_image(query: str) -> Optional[str]:
+    """Search Wikimedia Commons for an image matching the query."""
+    if not query or len(query) < 3:
+        return None
+
+    data = _http_get_json(WIKIMEDIA_SEARCH, {
+        "action": "query",
+        "format": "json",
+        "generator": "search",
+        "gsrsearch": f"{query} filetype:bitmap",
+        "gsrlimit": 1,
+        "gsrnamespace": 6,  # File namespace
+        "prop": "imageinfo",
+        "iiprop": "url",
+        "iiurlwidth": 480,
+    })
+
+    if not data:
+        return None
+
+    pages = data.get("query", {}).get("pages", {})
+    for _pid, page in pages.items():
+        images = page.get("imageinfo") or []
+        if images:
+            return images[0].get("thumburl") or images[0].get("url")
+    return None
+
+
+def find_wikipedia_lead_image(query: str) -> Optional[str]:
+    """Get the lead image of a Wikipedia article matching the query."""
+    if not query or len(query) < 3:
+        return None
+
+    data = _http_get_json(WIKIPEDIA_SEARCH, {
+        "action": "query",
+        "format": "json",
+        "generator": "search",
+        "gsrsearch": query,
+        "gsrlimit": 1,
+        "prop": "pageimages",
+        "pithumbsize": 480,
+    })
+
+    if not data:
+        return None
+
+    pages = data.get("query", {}).get("pages", {})
+    for _pid, page in pages.items():
+        thumb = page.get("thumbnail")
+        if thumb:
+            return thumb.get("source")
+    return None
+
+
+def find_image_url(query: str) -> Optional[str]:
+    """Try Wikimedia Commons first, fall back to Wikipedia article image."""
+    url = find_wikimedia_image(query)
+    if url:
+        return url
+    return find_wikipedia_lead_image(query)
+
+
+# ---------------------------------------------------------------------------
+# Local SQL processing (no DB)
+# ---------------------------------------------------------------------------
+
+# Match a row from the v2 seed file
+_ROW_RE = re.compile(
+    r"\(\s*'([^']*)'\s*,\s*"     # category
+    r"'((?:[^']|'')*)'\s*,\s*"   # set_code
+    r"'((?:[^']|'')*)'\s*,\s*"   # item_key
+    r"'((?:[^']|'')*)'\s*,",     # title
+    re.DOTALL,
+)
+
+
+def _unescape(s: str) -> str:
+    return s.replace("''", "'")
+
+
+def _sql_escape(s: str) -> str:
+    return s.replace("'", "''")
+
+
+def process_category_dry(category: str, limit: int = 10) -> dict:
+    """
+    Generate UPDATE statements for the first `limit` items in a category.
+    Writes to server/data/<category>/image_backfill.sql.
+
+    Limited to a small batch by default to avoid hammering Wikimedia.
+    """
+    seed_v2 = DATA_DIR / category / "catalog_seed_v2.sql"
+    if not seed_v2.exists():
+        seed_v2 = DATA_DIR / category / "catalog_seed.sql"
+        if not seed_v2.exists():
+            return {"category": category, "skipped": "no seed file"}
+
+    text = seed_v2.read_text(encoding="utf-8")
+    rows = []
+    for m in _ROW_RE.finditer(text):
+        rows.append({
+            "category": _unescape(m.group(1)),
+            "set_code": _unescape(m.group(2)),
+            "item_key": _unescape(m.group(3)),
+            "title": _unescape(m.group(4)),
+        })
+
+    if not rows:
+        return {"category": category, "skipped": "no rows parsed"}
+
+    rows = rows[:limit]
+
+    found = 0
+    sql_lines = [
+        f"-- Image URL backfill for {category}",
+        f"-- Source: {seed_v2.name}",
+        f"-- Generated by backfill_image_urls.py (dry-run, limit={limit})",
+        "",
+    ]
+
+    for row in rows:
+        # Build a search query from title + brand-ish parts
+        query = row["title"]
+        url = find_image_url(query)
+        if url:
+            found += 1
+            sql_lines.append(
+                f"UPDATE category_items SET image_url = '{_sql_escape(url)}' "
+                f"WHERE category = '{_sql_escape(row['category'])}' "
+                f"AND item_key = '{_sql_escape(row['item_key'])}' "
+                f"AND (image_url IS NULL OR image_url = '');"
+            )
+        time.sleep(REQUEST_DELAY_SEC)
+
+    out_path = DATA_DIR / category / "image_backfill.sql"
+    out_path.write_text("\n".join(sql_lines) + "\n", encoding="utf-8")
+
+    return {
+        "category": category,
+        "rows_attempted": len(rows),
+        "images_found": found,
+        "output": str(out_path.relative_to(DATA_DIR.parent)),
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Backfill image_url for catalog items")
+    parser.add_argument("--category", help="Process a single category")
+    parser.add_argument("--all", action="store_true", help="Process all categories")
+    parser.add_argument("--limit", type=int, default=10, help="Items per category (dry-run)")
+    parser.add_argument("--dry-run", action="store_true", default=True,
+                        help="Write SQL file, don't apply (default)")
+    parser.add_argument("--apply", action="store_true",
+                        help="Apply to live DB (requires DB_DSN, not implemented)")
+    args = parser.parse_args()
+
+    if args.apply:
+        print("--apply mode not yet implemented (would require DB credentials)")
+        sys.exit(1)
+
+    if not args.category and not args.all:
+        print("Must specify --category or --all")
+        sys.exit(1)
+
+    categories = []
+    if args.category:
+        categories = [args.category]
+    else:
+        categories = sorted([d.name for d in DATA_DIR.iterdir() if d.is_dir() and not d.name.startswith("_")])
+
+    print(f"\n{'='*60}")
+    print(f"  IMAGE URL BACKFILL")
+    print(f"{'='*60}")
+    print(f"  Categories: {len(categories)}")
+    print(f"  Items per category (limit): {args.limit}")
+    print(f"  Total queries: ~{len(categories) * args.limit * 2}")  # 2 fallbacks
+    print()
+
+    total_found = 0
+    total_attempted = 0
+    for cat in categories:
+        try:
+            stats = process_category_dry(cat, args.limit)
+            if stats.get("skipped"):
+                print(f"  {cat:25s}  SKIP: {stats['skipped']}")
+                continue
+            print(
+                f"  {cat:25s}  "
+                f"attempted={stats['rows_attempted']:3d}  "
+                f"found={stats['images_found']:3d}"
+            )
+            total_found += stats["images_found"]
+            total_attempted += stats["rows_attempted"]
+        except KeyboardInterrupt:
+            print("\nInterrupted by user")
+            break
+        except Exception as e:
+            print(f"  {cat:25s}  ERROR: {e}")
+
+    print(f"\n{'='*60}")
+    print(f"  Total attempted: {total_attempted}")
+    print(f"  Total found:     {total_found}")
+    if total_attempted:
+        print(f"  Hit rate:        {round(100 * total_found / total_attempted, 1)}%")
+    print(f"\n  SQL files written to server/data/<category>/image_backfill.sql")
+
+
+if __name__ == "__main__":
+    main()

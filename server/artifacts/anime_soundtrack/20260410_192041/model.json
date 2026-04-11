@@ -1,0 +1,53 @@
+{
+  "model_type": "ridge_v2",
+  "category": "anime_soundtrack",
+  "version": "20260410_192041",
+  "features": [
+    "condition_score",
+    "rarity_score",
+    "edition_score"
+  ],
+  "standardizer": {
+    "mean": [
+      0.8499999999999538,
+      0.2999999999999861,
+      0.6037915512465187
+    ],
+    "std": [
+      4.618527782440651e-14,
+      1.3877787807814457e-14,
+      0.24651376891883076
+    ]
+  },
+  "ridge": {
+    "coef": [
+      0.0,
+      0.0,
+      27.29792418136687
+    ],
+    "intercept": 62.05900277008099
+  },
+  "ridge_q10": {
+    "coef": [
+      0.0,
+      0.0,
+      8.874495681077907
+    ],
+    "intercept": 27.936495844874674
+  },
+  "ridge_q90": {
+    "coef": [
+      0.0,
+      0.0,
+      51.76789147295446
+    ],
+    "intercept": 98.79622576176892
+  },
+  "best_alpha": 0.01,
+  "cv_mae": 23.91,
+  "train_mae": 23.9,
+  "uncertainty_scale": 1.0,
+  "train_size": 2888,
+  "mae": 23.91,
+  "created_at": "2026-04-10T19:20:41.799201+00:00"
+}

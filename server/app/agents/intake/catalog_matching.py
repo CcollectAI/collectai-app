@@ -20,6 +20,90 @@ logger = logging.getLogger(__name__)
 # Catalog matching helpers (RAG step)
 # ---------------------------------------------------------------------------
 
+async def _match_by_attributes(
+    conn,
+    category_id: str,
+    attributes: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """
+    Match catalog items by JSONB attribute values.
+
+    Tries the most-discriminating fields first (card_number, reference_number,
+    set_code) and falls back to less-discriminating ones (set_name, brand).
+    Score reflects how many fields matched and how unique they are.
+    """
+    if not attributes:
+        return []
+
+    results: list[dict[str, Any]] = []
+
+    # High-discrimination fields (often unique within a category)
+    high_disc = {
+        "reference_number": ("reference_number", 0.95),
+        "card_number": ("card_number", 0.85),
+        "set_code": ("set_code", 0.85),
+        "sku": ("sku", 0.95),
+        "barcode": ("barcode", 0.99),
+    }
+
+    for attr_key, (json_key, score) in high_disc.items():
+        val = attributes.get(attr_key)
+        if val is None or val == "":
+            continue
+        try:
+            rows = await conn.fetch(
+                """
+                SELECT id, category, item_key, title, brand, rarity,
+                       set_code, image_url, notes, attributes_json
+                FROM category_items
+                WHERE category = $1
+                  AND attributes_json ->> $2 = $3
+                LIMIT 5
+                """,
+                category_id,
+                json_key,
+                str(val),
+            )
+            for row in rows:
+                results.append({
+                    **dict(row),
+                    "_score": score,
+                    "_reason": f"attr:{attr_key}",
+                })
+        except Exception as e:
+            logger.debug(f"Attribute match query failed for {attr_key}: {e}")
+
+    # Medium-discrimination: set_name + brand combo (high if both match)
+    set_name = attributes.get("set_name")
+    brand = attributes.get("brand") or attributes.get("manufacturer")
+    if set_name and brand:
+        try:
+            rows = await conn.fetch(
+                """
+                SELECT id, category, item_key, title, brand, rarity,
+                       set_code, image_url, notes, attributes_json
+                FROM category_items
+                WHERE category = $1
+                  AND attributes_json ->> 'set_name' ILIKE $2
+                  AND brand ILIKE $3
+                LIMIT 5
+                """,
+                category_id,
+                f"%{set_name}%",
+                f"%{brand}%",
+            )
+            for row in rows:
+                results.append({
+                    **dict(row),
+                    "_score": 0.80,
+                    "_reason": "attr:set_name+brand",
+                })
+        except Exception as e:
+            logger.debug(f"set+brand match failed: {e}")
+
+    return results
+
+
 async def _match_catalog_items(
     category_id: Optional[str],
     suggested_name: Optional[str],
@@ -27,9 +111,17 @@ async def _match_catalog_items(
     brand: Optional[str],
     set_code: Optional[str],
     pool,
+    extracted_attributes: Optional[dict[str, Any]] = None,
 ) -> list[dict[str, Any]]:
     """
     Multi-strategy catalog search against category_items table.
+
+    Strategies (in order of confidence):
+      0. Attribute-based JSONB match (highest — exact set_name + card_number, etc.)
+      1. Exact item_key match
+      2. Title match
+      3. Keyword search
+      4. Brand + set_code match
 
     Returns top 5 matches ranked by match_score (descending).
     """
@@ -41,6 +133,29 @@ async def _match_catalog_items(
 
     try:
         async with pool.acquire() as conn:
+            # Strategy 0: Attribute-based JSONB match (highest confidence).
+            # Joins on structured fields extracted by vision (set_name, card_number,
+            # reference_number, etc.) — much more reliable than fuzzy text match.
+            if extracted_attributes:
+                attr_matches = await _match_by_attributes(
+                    conn, category_id, extracted_attributes
+                )
+                for row in attr_matches:
+                    rid = str(row["id"])
+                    if rid not in seen_ids:
+                        seen_ids.add(rid)
+                        matches.append({
+                            "catalog_item_id": rid,
+                            "item_key": row["item_key"],
+                            "title": row["title"],
+                            "category": row["category"],
+                            "brand": row["brand"],
+                            "rarity": row["rarity"],
+                            "set_code": row["set_code"],
+                            "image_url": row["image_url"],
+                            "match_score": row["_score"],
+                            "match_reason": row["_reason"],
+                        })
             # Strategy 1: Exact item_key match (highest confidence)
             if suggested_name:
                 normalized = _normalize_for_search(suggested_name)

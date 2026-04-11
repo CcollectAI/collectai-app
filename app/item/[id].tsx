@@ -130,6 +130,7 @@ function ItemDetailScreen() {
     q90?: string;
     confidence?: string;
     explanation?: string;
+    attributesJson?: string;
   }>();
 
   const {
@@ -147,6 +148,7 @@ function ItemDetailScreen() {
     q90,
     confidence,
     explanation,
+    attributesJson: initialAttributesJson,
   } = params;
 
   const isDraft = id === 'draft' || draft === '1';
@@ -155,12 +157,23 @@ function ItemDetailScreen() {
   // ── Resolve category slug early — needed by grading, build, size, progress sections ──
   const categorySlugRaw = CATEGORY_ID_MAP[category] || category.toLowerCase().replace(/[^a-z0-9_]/g, '');
 
+  // Parse extracted attributes from QuickScan (passed as JSON string)
+  const initialAttributes = useMemo(() => {
+    if (!initialAttributesJson) return null;
+    try {
+      return JSON.parse(initialAttributesJson) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }, [initialAttributesJson]);
+
   // ── Consolidated local state (useItemDetail hook) ──────────────────────
   const detail = useItemDetail({
     id, isDraft,
     initialName: name, initialCategory: category, initialCollection: collection,
     initialCondition: condition, initialValue: value, initialNotes: initialNotes,
     imageUri, categorySlug: categorySlugRaw, q50,
+    initialAttributes,
   });
   const {
     isEditing, setIsEditing,

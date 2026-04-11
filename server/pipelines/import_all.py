@@ -83,7 +83,25 @@ TIER_3 = [
     ("fragrances", "import_niche_perfumery", "Fragrances (curated)"),
 ]
 
-ALL_TIERS = {1: TIER_1, 2: TIER_2, 3: TIER_3}
+TIER_4 = [
+    ("action_figures",    "import_action_figures",    "Action Figures (curated)"),
+    ("blind_box",         "import_blind_box",         "Blind Box / Mystery (curated)"),
+    ("comic_books",       "import_comic_books",       "Comic Books (curated)"),
+    ("digimon",           "import_digimon",           "Digimon TCG (curated)"),
+    ("marvel_legends",    "import_marvel_legends",    "Marvel Legends (curated)"),
+    ("one_piece_tcg",     "import_one_piece_tcg",     "One Piece TCG (curated)"),
+    ("pens",              "import_pens",              "Fountain Pens (curated)"),
+    ("plush_collectibles","import_plush_collectibles","Plush Collectibles (curated)"),
+    ("retro_handhelds",   "import_retro_handhelds",   "Retro Handhelds (curated)"),
+    ("sneakers",          "import_sneakers",          "Sneakers (curated)"),
+    ("vintage_cameras",   "import_vintage_cameras",   "Vintage Cameras (curated)"),
+    ("vintage_toys",      "import_vintage_toys",      "Vintage Toys (curated)"),
+    ("vinyl_records",     "import_vinyl",             "Vinyl Records (curated)"),
+    ("watches",           "import_watches",           "Watches (curated)"),
+    ("whiskey",           "import_whiskey",           "Whiskey (curated)"),
+]
+
+ALL_TIERS = {1: TIER_1, 2: TIER_2, 3: TIER_3, 4: TIER_4}
 
 
 # ---------------------------------------------------------------------------
@@ -181,7 +199,7 @@ def run_import(module_name: str, category: str, description: str,
 
 def main():
     parser = argparse.ArgumentParser(description="Run all category import pipelines")
-    parser.add_argument("--tier", type=int, choices=[1, 2, 3], default=None,
+    parser.add_argument("--tier", type=int, choices=[1, 2, 3, 4], default=None,
                         help="Run only a specific tier")
     parser.add_argument("--category", type=str, default=None,
                         help="Run only a specific category slug")
@@ -250,7 +268,7 @@ def main():
             logger.error(f"Unknown category '{args.category}'")
             sys.exit(1)
     else:
-        tiers_to_run = [args.tier] if args.tier else [1, 2, 3]
+        tiers_to_run = [args.tier] if args.tier else [1, 2, 3, 4]
 
         for tier_num in tiers_to_run:
             tier = ALL_TIERS[tier_num]
@@ -289,6 +307,29 @@ def main():
 
     # Close shared HTTP client
     close_http_client()
+
+    # Auto-rebuild vocab + brand registry + schema if any imports succeeded
+    if results.get("success"):
+        try:
+            logger.info("Rebuilding attribute vocabulary...")
+            from pipelines.build_attribute_vocab import main as build_vocab
+            build_vocab()
+        except Exception as e:
+            logger.warning(f"Failed to rebuild vocab: {e}")
+
+        try:
+            logger.info("Rebuilding brand registry...")
+            from pipelines.build_brand_registry import main as build_brands
+            build_brands()
+        except Exception as e:
+            logger.warning(f"Failed to rebuild brand registry: {e}")
+
+        try:
+            logger.info("Rebuilding attribute schema...")
+            from pipelines.train_attribute_completeness import main as build_schema
+            build_schema()
+        except Exception as e:
+            logger.warning(f"Failed to rebuild schema: {e}")
 
     # Summary
     logger.info(f"\n{'='*60}")

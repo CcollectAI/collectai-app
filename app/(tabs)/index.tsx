@@ -31,6 +31,8 @@ import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { featureFlags } from "@/config/featureFlags";
 import { InsightsCard } from "@/components/home/InsightsCard";
+import { AdBanner } from "@/components/ads/AdBanner";
+import { AutoSetProgressList } from "@/components/AutoSetProgressList";
 import { AlertsCard } from "@/components/home/AlertsCard";
 import { PortfolioValueHeader } from "@/components/home/PortfolioValueHeader";
 import { ChartRangeSelector } from "@/components/home/ChartRangeSelector";
@@ -721,6 +723,12 @@ function PortfolioScreen() {
 
         {/* Hot Right Now — Demand Heat */}
         <DemandHeatSection />
+
+        {/* Auto-detected set completion (uses structured attributes_json) */}
+        <AutoSetProgressList limit={5} />
+
+        {/* Ad slot — invisible until FEATURE_ADS is enabled */}
+        <AdBanner placement="portfolio_banner" />
 
         {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && limits.advanced_analytics && (
           <InsightsCard
