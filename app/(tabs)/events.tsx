@@ -30,6 +30,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useTranslation } from 'react-i18next';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { CountdownBadge } from '@/components/EventCountdown';
@@ -58,6 +59,7 @@ function EventsScreen() {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -430,7 +432,7 @@ function EventsScreen() {
                 handleSetReminder(event);
               }}
               accessibilityRole="button"
-              accessibilityLabel="Set reminder for event"
+              accessibilityLabel={t('events.reminder_a11y')}
               accessibilityHint="Schedules a notification one hour before the event"
             >
               <Ionicons name="notifications-outline" size={16} color={colors.accent} />
@@ -468,10 +470,10 @@ function EventsScreen() {
           onPress={handleCreateEvent}
           style={[styles.createEventPill, { backgroundColor: colors.accent }]}
           accessibilityRole="button"
-          accessibilityLabel="Create new event"
+          accessibilityLabel={t('events.create_event_a11y')}
         >
           <Ionicons name="add" size={16} color={colors.accentText} />
-          <Text style={[styles.createEventPillText, { color: colors.accentText }]}>Create Event</Text>
+          <Text style={[styles.createEventPillText, { color: colors.accentText }]}>{t('events.create_event')}</Text>
         </AnimatedPressable>
 
         {!BETA_MODE && (
@@ -480,7 +482,7 @@ function EventsScreen() {
               onPress={handleOpenSponsor}
               style={[styles.sponsorPill, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
               accessibilityRole="button"
-              accessibilityLabel="Sponsor events"
+              accessibilityLabel={t('events.sponsor_a11y')}
             >
               <Ionicons name="megaphone-outline" size={14} color={colors.accent} />
               <Text style={[styles.sponsorPillText, { color: colors.accent }]}>Sponsor</Text>
@@ -490,7 +492,7 @@ function EventsScreen() {
               onPress={handleOpenTwitch}
               style={[styles.sponsorPill, { borderColor: TWITCH_PURPLE, backgroundColor: TWITCH_PURPLE + '10' }]}
               accessibilityRole="button"
-              accessibilityLabel="Twitch creators hub"
+              accessibilityLabel={t('events.twitch_a11y')}
             >
               <Ionicons name="logo-twitch" size={14} color={TWITCH_PURPLE} />
               <Text style={[styles.sponsorPillText, { color: TWITCH_PURPLE }]}>Twitch</Text>
@@ -505,10 +507,10 @@ function EventsScreen() {
         <TextInput
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Search events..."
+          placeholder={t('events.search_placeholder')}
           placeholderTextColor={colors.muted}
           style={[styles.searchInput, { color: colors.text }]}
-          accessibilityLabel="Search events"
+          accessibilityLabel={t('events.search_a11y')}
           returnKeyType="search"
           clearButtonMode="while-editing"
         />
@@ -516,7 +518,7 @@ function EventsScreen() {
           <AnimatedPressable
             onPress={() => setSearchQuery('')}
             accessibilityRole="button"
-            accessibilityLabel="Clear search"
+            accessibilityLabel={t('common.clear_search')}
           >
             <Ionicons name="close-circle" size={18} color={colors.muted} />
           </AnimatedPressable>
@@ -541,7 +543,7 @@ function EventsScreen() {
               },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Show all event types"
+            accessibilityLabel={t('events.show_all_a11y')}
             accessibilityState={{ selected: !kindFilter }}
           >
             <Text style={[styles.kindChipText, { color: !kindFilter ? colors.accentText : colors.text }]}>All</Text>
@@ -702,23 +704,23 @@ function EventsScreen() {
           ) : nearbyError ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
-              <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 12 }]}>Could not load nearby events</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>Check your connection and try again.</Text>
+              <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 12 }]}>{t('events.load_error_title')}</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>{t('events.load_error_body')}</Text>
               <AnimatedPressable
                 onPress={handleRetryNearby}
                 style={[styles.retryBtn, { backgroundColor: colors.accent }]}
                 accessibilityRole="button"
-                accessibilityLabel="Retry loading nearby events"
+                accessibilityLabel={t('events.retry_a11y')}
               >
                 <Ionicons name="refresh-outline" size={16} color={colors.accentText} />
-                <Text style={[styles.retryBtnText, { color: colors.accentText }]}>Retry</Text>
+                <Text style={[styles.retryBtnText, { color: colors.accentText }]}>{t('common.retry_action')}</Text>
               </AnimatedPressable>
             </View>
           ) : nearbyEvents.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="location-outline" size={48} color={colors.muted} />
-              <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 12 }]}>No nearby events</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>No events found within 50km of your location</Text>
+              <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 12 }]}>{t('events.empty_title')}</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>{t('events.empty_body')}</Text>
             </View>
           ) : (
             nearbyEvents.map((ev) => (

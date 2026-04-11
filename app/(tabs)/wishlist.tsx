@@ -31,6 +31,7 @@ import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/components/Toast';
 import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
@@ -57,6 +58,7 @@ function WatchlistTabScreen() {
   const { colors } = useAppTheme();
   const { user } = useAuthContext();
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
@@ -446,7 +448,7 @@ function WatchlistTabScreen() {
       <View style={[styles.emptyIconWrap, { backgroundColor: colors.accent + '15' }]}>
         <Ionicons name="eye-outline" size={40} color={colors.accent} />
       </View>
-      <Text style={[styles.emptyTitle, { color: colors.text }]}>Start your watchlist</Text>
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('wishlist.empty_title')}</Text>
       <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
         Track prices, get alerts when items drop, and never miss a deal on items you want.
       </Text>
@@ -457,23 +459,23 @@ function WatchlistTabScreen() {
           openModal();
         }}
         accessibilityRole="button"
-        accessibilityLabel="Add your first watchlist item"
+        accessibilityLabel={t('wishlist.add_first_a11y')}
       >
         <Ionicons name="add" size={18} color={colors.accentText} />
-        <Text style={[styles.emptyBtnText, { color: colors.accentText }]}>Add your first item</Text>
+        <Text style={[styles.emptyBtnText, { color: colors.accentText }]}>{t('wishlist.add_first')}</Text>
       </AnimatedPressable>
       <View style={styles.emptyFeatures}>
         <View style={styles.emptyFeatureRow}>
           <Ionicons name="notifications-outline" size={16} color={colors.muted} />
-          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>Price drop alerts</Text>
+          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>{t('wishlist.feature_price_drops')}</Text>
         </View>
         <View style={styles.emptyFeatureRow}>
           <Ionicons name="trending-down-outline" size={16} color={colors.muted} />
-          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>Target price tracking</Text>
+          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>{t('wishlist.feature_target_price')}</Text>
         </View>
         <View style={styles.emptyFeatureRow}>
           <Ionicons name="flash-outline" size={16} color={colors.muted} />
-          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>Restock notifications</Text>
+          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>{t('wishlist.feature_restock')}</Text>
         </View>
       </View>
     </View>
@@ -531,25 +533,25 @@ function WatchlistTabScreen() {
         >
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Add to Watchlist</Text>
-              <AnimatedPressable onPress={() => { closeModal(); resetForm(); }} accessibilityRole="button" accessibilityLabel="Close add to watchlist form">
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('wishlist.add_to_watchlist')}</Text>
+              <AnimatedPressable onPress={() => { closeModal(); resetForm(); }} accessibilityRole="button" accessibilityLabel={t('wishlist.close_add_form_a11y')}>
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
 
             {/* Title */}
-            <Text style={[styles.label, { color: colors.text }]}>Title *</Text>
+            <Text style={[styles.label, { color: colors.text }]}>{t('wishlist.title_required')}</Text>
             <TextInput
               value={formTitle}
               onChangeText={setFormTitle}
               placeholder="e.g. Charizard VMAX Rainbow"
               placeholderTextColor={colors.muted}
               style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-              accessibilityLabel="Item title"
+              accessibilityLabel={t('wishlist.title_a11y')}
             />
 
             {/* Category */}
-            <Text style={[styles.label, { color: colors.text }]}>Category *</Text>
+            <Text style={[styles.label, { color: colors.text }]}>{t('wishlist.category_required')}</Text>
             <AnimatedPressable
               style={[styles.input, styles.pickerBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
               onPress={() => openCategoryPicker()}
@@ -593,12 +595,12 @@ function WatchlistTabScreen() {
               onPress={handleAdd}
               disabled={saving}
               accessibilityRole="button"
-              accessibilityLabel="Add to watchlist"
+              accessibilityLabel={t('wishlist.add_to_watchlist_a11y')}
             >
               {saving ? (
                 <ActivityIndicator size="small" color={colors.accentText} />
               ) : (
-                <Text style={[styles.saveBtnText, { color: colors.accentText }]}>Add to Watchlist</Text>
+                <Text style={[styles.saveBtnText, { color: colors.accentText }]}>{t('wishlist.add_to_watchlist')}</Text>
               )}
             </AnimatedPressable>
           </View>
@@ -611,10 +613,10 @@ function WatchlistTabScreen() {
           style={styles.pickerOverlay}
           onPress={() => closeCategoryPicker()}
           accessibilityRole="button"
-          accessibilityLabel="Close category picker"
+          accessibilityLabel={t('wishlist.close_category_picker_a11y')}
         >
           <View style={[styles.pickerContent, { backgroundColor: colors.card }]}>
-            <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Category</Text>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('wishlist.select_category')}</Text>
             {CATEGORIES.map((cat) => (
               <AnimatedPressable
                 key={cat}
@@ -647,8 +649,8 @@ function WatchlistTabScreen() {
         >
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Add to Collection</Text>
-              <AnimatedPressable onPress={() => { closeAcquireModal(); setAcquireItem(null); }} accessibilityRole="button" accessibilityLabel="Close acquisition form">
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('wishlist.add_to_collection')}</Text>
+              <AnimatedPressable onPress={() => { closeAcquireModal(); setAcquireItem(null); }} accessibilityRole="button" accessibilityLabel={t('wishlist.close_acquisition_a11y')}>
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
@@ -674,13 +676,13 @@ function WatchlistTabScreen() {
                   placeholderTextColor={colors.muted}
                   keyboardType="numeric"
                   style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                  accessibilityLabel="Price paid in euros"
+                  accessibilityLabel={t('wishlist.price_paid_a11y')}
                 />
                 <Text style={[styles.helperText, { color: colors.muted }]}>
                   This helps improve price predictions for everyone
                 </Text>
 
-                <Text style={[styles.label, { color: colors.text }]}>Notes (optional)</Text>
+                <Text style={[styles.label, { color: colors.text }]}>{t('wishlist.notes_optional')}</Text>
                 <TextInput
                   value={acquireNotes}
                   onChangeText={setAcquireNotes}
@@ -689,7 +691,7 @@ function WatchlistTabScreen() {
                   multiline
                   numberOfLines={2}
                   style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                  accessibilityLabel="Acquisition notes"
+                  accessibilityLabel={t('wishlist.notes_a11y')}
                 />
 
                 <AnimatedPressable
@@ -697,14 +699,14 @@ function WatchlistTabScreen() {
                   onPress={handleConfirmAcquire}
                   disabled={acquiring}
                   accessibilityRole="button"
-                  accessibilityLabel="Add to my collection"
+                  accessibilityLabel={t('wishlist.add_to_my_collection_a11y')}
                 >
                   {acquiring ? (
                     <ActivityIndicator size="small" color={colors.accentText} />
                   ) : (
                     <>
                       <Ionicons name="checkmark-circle" size={20} color={colors.accentText} />
-                      <Text style={[styles.acquireBtnText, { color: colors.accentText }]}>Add to My Collection</Text>
+                      <Text style={[styles.acquireBtnText, { color: colors.accentText }]}>{t('wishlist.add_to_my_collection')}</Text>
                     </>
                   )}
                 </AnimatedPressable>
@@ -722,8 +724,8 @@ function WatchlistTabScreen() {
         >
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Set Target Price</Text>
-              <AnimatedPressable onPress={() => { closeEditTargetModal(); setEditTargetItem(null); }} accessibilityRole="button" accessibilityLabel="Close target price editor">
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('wishlist.set_target_price')}</Text>
+              <AnimatedPressable onPress={() => { closeEditTargetModal(); setEditTargetItem(null); }} accessibilityRole="button" accessibilityLabel={t('wishlist.close_target_edit_a11y')}>
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
@@ -750,7 +752,7 @@ function WatchlistTabScreen() {
                   keyboardType="numeric"
                   autoFocus
                   style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                  accessibilityLabel="Target price"
+                  accessibilityLabel={t('wishlist.target_price_input_a11y')}
                 />
                 <Text style={[styles.helperText, { color: colors.muted }]}>
                   A price alert will be created automatically when you set a target price.
@@ -761,12 +763,12 @@ function WatchlistTabScreen() {
                   onPress={handleSaveTargetPrice}
                   disabled={editTargetSaving}
                   accessibilityRole="button"
-                  accessibilityLabel="Save target price"
+                  accessibilityLabel={t('wishlist.save_target_a11y')}
                 >
                   {editTargetSaving ? (
                     <ActivityIndicator size="small" color={colors.accentText} />
                   ) : (
-                    <Text style={[styles.saveBtnText, { color: colors.accentText }]}>Save Target Price</Text>
+                    <Text style={[styles.saveBtnText, { color: colors.accentText }]}>{t('wishlist.save_target_button')}</Text>
                   )}
                 </AnimatedPressable>
               </>

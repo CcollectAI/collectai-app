@@ -64,7 +64,14 @@
     "close_acquisition_a11y": "Cerrar formulario de adquisición",
     "price_paid_a11y": "Precio pagado en euros",
     "notes_optional": "Notas (opcional)",
-    "notes_a11y": "Notas de adquisición"
+    "notes_a11y": "Notas de adquisición",
+    "add_to_my_collection": "Añadir a mi colección",
+    "add_to_my_collection_a11y": "Añadir a mi colección",
+    "set_target_price": "Fijar precio objetivo",
+    "close_target_edit_a11y": "Cerrar editor de precio objetivo",
+    "target_price_input_a11y": "Precio objetivo",
+    "save_target_a11y": "Guardar precio objetivo",
+    "save_target_button": "Guardar precio objetivo"
   },
 
   "events": {

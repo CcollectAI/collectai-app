@@ -64,7 +64,14 @@
     "close_acquisition_a11y": "取得フォームを閉じる",
     "price_paid_a11y": "支払い価格（ユーロ）",
     "notes_optional": "メモ（任意）",
-    "notes_a11y": "取得メモ"
+    "notes_a11y": "取得メモ",
+    "add_to_my_collection": "マイコレクションに追加",
+    "add_to_my_collection_a11y": "マイコレクションに追加",
+    "set_target_price": "目標価格を設定",
+    "close_target_edit_a11y": "目標価格エディターを閉じる",
+    "target_price_input_a11y": "目標価格",
+    "save_target_a11y": "目標価格を保存",
+    "save_target_button": "目標価格を保存"
   },
 
   "events": {

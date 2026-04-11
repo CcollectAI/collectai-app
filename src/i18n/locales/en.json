@@ -64,7 +64,14 @@
     "close_acquisition_a11y": "Close acquisition form",
     "price_paid_a11y": "Price paid in euros",
     "notes_optional": "Notes (optional)",
-    "notes_a11y": "Acquisition notes"
+    "notes_a11y": "Acquisition notes",
+    "add_to_my_collection": "Add to My Collection",
+    "add_to_my_collection_a11y": "Add to my collection",
+    "set_target_price": "Set Target Price",
+    "close_target_edit_a11y": "Close target price editor",
+    "target_price_input_a11y": "Target price",
+    "save_target_a11y": "Save target price",
+    "save_target_button": "Save Target Price"
   },
 
   "events": {

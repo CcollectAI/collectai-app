@@ -173,11 +173,12 @@ function main() {
   if (!quiet) {
     for (const { file, findings } of perFile) {
       console.log(`\n${file}  (${findings.length})`);
-      for (const f of findings.slice(0, 20)) {
+      const displayLimit = process.argv.includes('--all') ? findings.length : 20;
+      for (const f of findings.slice(0, displayLimit)) {
         console.log(`  ${file}:${f.line}  [${f.kind}]  ${f.text}`);
       }
-      if (findings.length > 20) {
-        console.log(`  … and ${findings.length - 20} more`);
+      if (findings.length > displayLimit) {
+        console.log(`  … and ${findings.length - displayLimit} more`);
       }
     }
   }

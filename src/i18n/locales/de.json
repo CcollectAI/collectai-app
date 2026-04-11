@@ -64,7 +64,14 @@
     "close_acquisition_a11y": "Kauf-Formular schließen",
     "price_paid_a11y": "Bezahlter Preis in Euro",
     "notes_optional": "Notizen (optional)",
-    "notes_a11y": "Kauf-Notizen"
+    "notes_a11y": "Kauf-Notizen",
+    "add_to_my_collection": "Zu meiner Sammlung hinzufügen",
+    "add_to_my_collection_a11y": "Zu meiner Sammlung hinzufügen",
+    "set_target_price": "Zielpreis festlegen",
+    "close_target_edit_a11y": "Zielpreis-Editor schließen",
+    "target_price_input_a11y": "Zielpreis",
+    "save_target_a11y": "Zielpreis speichern",
+    "save_target_button": "Zielpreis speichern"
   },
 
   "events": {

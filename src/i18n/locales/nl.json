@@ -64,7 +64,14 @@
     "close_acquisition_a11y": "Aanschaf-formulier sluiten",
     "price_paid_a11y": "Betaalde prijs in euro's",
     "notes_optional": "Notities (optioneel)",
-    "notes_a11y": "Aanschaf-notities"
+    "notes_a11y": "Aanschaf-notities",
+    "add_to_my_collection": "Toevoegen aan mijn collectie",
+    "add_to_my_collection_a11y": "Toevoegen aan mijn collectie",
+    "set_target_price": "Streefprijs instellen",
+    "close_target_edit_a11y": "Streefprijs-editor sluiten",
+    "target_price_input_a11y": "Streefprijs",
+    "save_target_a11y": "Streefprijs opslaan",
+    "save_target_button": "Streefprijs opslaan"
   },
 
   "events": {

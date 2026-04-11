@@ -64,7 +64,14 @@
     "close_acquisition_a11y": "Fermer le formulaire d'acquisition",
     "price_paid_a11y": "Prix payé en euros",
     "notes_optional": "Notes (facultatif)",
-    "notes_a11y": "Notes d'acquisition"
+    "notes_a11y": "Notes d'acquisition",
+    "add_to_my_collection": "Ajouter à ma collection",
+    "add_to_my_collection_a11y": "Ajouter à ma collection",
+    "set_target_price": "Définir le prix cible",
+    "close_target_edit_a11y": "Fermer l'éditeur de prix cible",
+    "target_price_input_a11y": "Prix cible",
+    "save_target_a11y": "Enregistrer le prix cible",
+    "save_target_button": "Enregistrer le prix cible"
   },
 
   "events": {

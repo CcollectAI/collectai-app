@@ -64,7 +64,14 @@
     "close_acquisition_a11y": "구입 양식 닫기",
     "price_paid_a11y": "지불한 가격 (유로)",
     "notes_optional": "메모 (선택 사항)",
-    "notes_a11y": "구입 메모"
+    "notes_a11y": "구입 메모",
+    "add_to_my_collection": "내 컬렉션에 추가",
+    "add_to_my_collection_a11y": "내 컬렉션에 추가",
+    "set_target_price": "목표 가격 설정",
+    "close_target_edit_a11y": "목표 가격 편집기 닫기",
+    "target_price_input_a11y": "목표 가격",
+    "save_target_a11y": "목표 가격 저장",
+    "save_target_button": "목표 가격 저장"
   },
 
   "events": {
