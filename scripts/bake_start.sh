@@ -80,10 +80,15 @@ export MATVIEW_REFRESH_ENABLED="${MATVIEW_REFRESH_ENABLED:-true}"
 export AUTO_DELIST_ENABLED="${AUTO_DELIST_ENABLED:-false}"   # not needed pre-launch
 export CALIBRATION_ENABLED="${CALIBRATION_ENABLED:-true}"
 export EVENT_SCRAPER_ENABLED="${EVENT_SCRAPER_ENABLED:-false}"  # not needed pre-launch
+# R50f: valuation + catalog_crawler MUST run during bake to populate
+# price_predictions for TIER 4 categories (no market_hits until crawler runs).
+export VALUATION_ENABLED="${VALUATION_ENABLED:-true}"
+export CATALOG_CRAWLER_ENABLED="${CATALOG_CRAWLER_ENABLED:-true}"
 
-# ── G7: DB pool sizing for the bake (5 schedulers + uvicorn workers + admin) ──
+# ── G7: DB pool sizing for the bake (7 schedulers + uvicorn workers + admin) ──
+# Bumped from 30 → 35 in R50f to account for valuation + catalog_crawler schedulers
 export DB_POOL_MIN="${DB_POOL_MIN:-5}"
-export DB_POOL_MAX="${DB_POOL_MAX:-30}"
+export DB_POOL_MAX="${DB_POOL_MAX:-35}"
 
 # ── G5: spend cap ───────────────────────────────────────────────────────────
 export MONTHLY_BUDGET_EUR="${MONTHLY_BUDGET_EUR:-150}"

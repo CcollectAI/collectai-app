@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { CatalogImage } from '@/components/CatalogImage';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -156,13 +157,13 @@ function CatalogBrowseSectionInner({
                   style={[s.catalogItemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 >
                   {/* Thumbnail */}
-                  {cItem.image_url ? (
-                    <Image source={{ uri: cItem.image_url }} style={s.catalogItemThumb} />
-                  ) : (
-                    <View style={[s.catalogItemThumbPlaceholder, { backgroundColor: accentColor + '10' }]}>
-                      <Ionicons name="cube-outline" size={18} color={accentColor} />
-                    </View>
-                  )}
+                  <CatalogImage
+                    uri={cItem.image_url}
+                    style={s.catalogItemThumb}
+                    fallbackIcon="cube-outline"
+                    fallbackBackground={accentColor + '10'}
+                    fallbackIconColor={accentColor}
+                  />
 
                   {/* Item info */}
                   <View style={s.catalogItemInfo}>

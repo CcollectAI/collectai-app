@@ -21,6 +21,7 @@ import { AnimatedPressable } from '@/motion';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { SkeletonList } from '@/components/Skeleton';
+import { CatalogImage } from '@/components/CatalogImage';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
 
@@ -67,13 +68,13 @@ const CatalogSearchResult = React.memo(function CatalogSearchResult({ item, colo
       accessibilityRole="button"
       accessibilityLabel={`View ${item.title} in catalog`}
     >
-      {item.imageUrl ? (
-        <Image source={{ uri: item.imageUrl }} style={resultStyles.resultThumb} />
-      ) : (
-        <View style={[resultStyles.resultThumbPlaceholder, { backgroundColor: colors.accent + '10' }]}>
-          <Ionicons name="library-outline" size={18} color={colors.accent} />
-        </View>
-      )}
+      <CatalogImage
+        uri={item.imageUrl}
+        style={resultStyles.resultThumb}
+        fallbackIcon="library-outline"
+        fallbackBackground={colors.accent + '10'}
+        fallbackIconColor={colors.accent}
+      />
       <View style={resultStyles.resultInfo}>
         <Text style={[resultStyles.resultTitle, { color: colors.text }]} numberOfLines={1}>{item.title}</Text>
         <Text style={[resultStyles.resultSubtitle, { color: colors.muted }]}>

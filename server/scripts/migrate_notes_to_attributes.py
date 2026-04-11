@@ -162,11 +162,44 @@ def process_category(category_dir: Path) -> dict:
 
 def _apply_to_db(rows: list[dict]) -> int:
     """
-    Apply parsed attributes to live DB. Reads DATABASE_URL from environment.
-    Returns the number of rows updated.
+    DEPRECATED — DO NOT USE. Left in place for reference only.
 
-    Only updates rows where attributes_json is currently empty ('{}').
+    This function attempted to merge notes-parsed attributes into the live
+    `category_items.attributes_json` column via `jsonb || jsonb`. It
+    corrupted 4,107 rows in Round 50e before being discovered and rolled
+    back (see memory/learnings.md "JSONB `||` Merge Corrupted 4,107 Rows").
+
+    The root cause: the DB's `attributes_json` column stores mixed JSONB
+    types (object, array, string) — NOT consistently objects. PostgreSQL's
+    `jsonb || jsonb` silently converts `object || array` into a concatenated
+    array instead of merging keys, prepending the parsed object as a new
+    array element. Additionally, `@>` containment on arrays is element-wise,
+    not deep, so the "skip if already contains" guard never fired on array
+    rows.
+
+    The CORRECT enrichment path going forward:
+    1. Fresh imports via `import_all.py` pass through `CatalogItem.to_row()`,
+       which auto-parses notes → attributes_json via the hook added in R50d.
+    2. Existing rows are NEVER touched by this path — their data is already
+       whatever the source API provided at import time.
+    3. If future enrichment is needed, it MUST:
+         a. Type-check via `jsonb_typeof(attributes_json)` before merging
+         b. Handle object, array, and string cases explicitly
+         c. Test on ONE row wrapped in BEGIN...ROLLBACK before committing
+         d. Read back the affected row after committing to verify
+
+    Keeping this function for reference but it raises on invocation.
     """
+    raise RuntimeError(
+        "_apply_to_db is DEPRECATED — see docstring. "
+        "Use `import_all.py --tier N` for fresh imports instead. "
+        "For existing-row enrichment, you MUST first solve the mixed-type "
+        "JSONB problem in category_items.attributes_json."
+    )
+
+
+def _apply_to_db_LEGACY_DO_NOT_USE(rows: list[dict]) -> int:
+    """Original (broken) implementation — for historical reference only."""
     import os
     dsn = os.environ.get("DATABASE_URL") or os.environ.get("DB_DSN")
     if not dsn:
@@ -189,15 +222,18 @@ def _apply_to_db(rows: list[dict]) -> int:
                 attrs = parse_notes(row["category"], row["notes"], row["brand"])
                 if not attrs:
                     continue
+                # Use JSONB concatenation (||) where parsed keys don't clobber
+                # existing. We place parsed attrs FIRST so existing values win:
+                #   new_attrs = parsed || COALESCE(existing, '{}')
                 cur.execute(
                     """
                     UPDATE category_items
-                    SET attributes_json = %s::jsonb
+                    SET attributes_json = %s::jsonb || COALESCE(attributes_json, '{}'::jsonb)
                     WHERE category = %s
                       AND item_key = %s
-                      AND (attributes_json IS NULL OR attributes_json = '{}'::jsonb)
+                      AND NOT (COALESCE(attributes_json, '{}'::jsonb) @> %s::jsonb)
                     """,
-                    (Json(attrs), row["category"], row["item_key"]),
+                    (Json(attrs), row["category"], row["item_key"], Json(attrs)),
                 )
                 if cur.rowcount > 0:
                     updated += cur.rowcount
@@ -212,9 +248,28 @@ def _apply_to_db(rows: list[dict]) -> int:
 def main():
     parser = argparse.ArgumentParser(description="Migrate catalog notes → attributes_json")
     parser.add_argument("--category", help="Process only this category")
-    parser.add_argument("--apply", action="store_true", help="Execute against live DB (requires DATABASE_URL)")
+    parser.add_argument("--apply", action="store_true", help="[DEPRECATED] Would execute against live DB — disabled due to R50e bug")
     parser.add_argument("--quiet", action="store_true", help="Suppress per-category output")
     args = parser.parse_args()
+
+    if args.apply:
+        print("\n" + "="*70)
+        print("  ERROR: --apply mode is DEPRECATED")
+        print("="*70)
+        print("""
+This script's --apply mode is disabled. It corrupted 4,107 rows in Round
+50e because the DB's attributes_json column stores mixed JSONB types and
+`jsonb || jsonb` silently concatenates object/array pairs instead of
+merging keys.
+
+See: memory/learnings.md — "JSONB || Merge Corrupted 4,107 Rows"
+
+For fresh imports, use: python -m pipelines.import_all --tier N
+
+For existing-row enrichment, you MUST first fix the mixed-type JSONB
+column (see docstring of _apply_to_db in this file for the requirements).
+""")
+        sys.exit(1)
 
     categories: list[Path] = []
     if args.category:

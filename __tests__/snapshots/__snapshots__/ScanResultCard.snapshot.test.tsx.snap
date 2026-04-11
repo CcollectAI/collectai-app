@@ -810,13 +810,32 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
             ]
           }
         >
-          <Image
+          <ViewManagerAdapter_ExpoImage
             accessibilityLabel="Image of Charizard Shadowless"
-            resizeMode="cover"
-            source={
+            alignItems="center"
+            borderRadius={10}
+            containerViewRef={"[React.ref]"}
+            contentFit="cover"
+            contentPosition={
               {
-                "uri": "https://example.com/alt.jpg",
+                "left": "50%",
+                "top": "50%",
               }
+            }
+            height={52}
+            justifyContent="center"
+            nativeViewRef={"[React.ref]"}
+            onError={[Function]}
+            onLoad={[Function]}
+            onLoadStart={[Function]}
+            onProgress={[Function]}
+            placeholder={[]}
+            source={
+              [
+                {
+                  "uri": "https://example.com/alt.jpg",
+                },
+              ]
             }
             style={
               {
@@ -827,6 +846,12 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
                 "width": 52,
               }
             }
+            transition={
+              {
+                "duration": 150,
+              }
+            }
+            width={52}
           />
           <View
             style={

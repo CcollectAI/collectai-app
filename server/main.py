@@ -123,11 +123,16 @@ async def lifespan(app: FastAPI):
             logging.getLogger("uvicorn").warning("[startup] Failed to start task queue worker: %s", e)
 
     # Optional schedulers — opt-in via env vars so deployments can pick which ones run.
+    # VALUATION and CATALOG_CRAWLER added in R50f: required for TIER 4 price
+    # predictions during the 14-day bake. Previously these only ran via
+    # manual `python -m workers.<name>` invocation with no scheduler loop.
     _optional_schedulers = [
         ("AUTO_DELIST_ENABLED", "workers.auto_delist_scheduler", "auto-delist"),
         ("CALIBRATION_ENABLED", "workers.calibration_scheduler", "calibration"),
         ("MODEL_RETRAIN_ENABLED", "workers.model_retrain_scheduler", "model retrain"),
         ("EVENT_SCRAPER_ENABLED", "workers.event_scraper_scheduler", "event scraper"),
+        ("VALUATION_ENABLED", "workers.valuation_scheduler", "valuation"),
+        ("CATALOG_CRAWLER_ENABLED", "workers.catalog_crawler_scheduler", "catalog crawler"),
     ]
     for env_var, mod_path, label in _optional_schedulers:
         if os.getenv(env_var, "false").lower() in ("true", "1"):

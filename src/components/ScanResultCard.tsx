@@ -27,6 +27,7 @@ import { formatPrice } from '@/lib/format';
 import { featureFlags } from '@/config/featureFlags';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { track } from '@/analytics/track';
+import { CatalogImage } from '@/components/CatalogImage';
 import { ScanFeedbackPanel } from '@/components/quickscan/ScanFeedbackPanel';
 import { ScanSocialProof } from '@/components/quickscan/ScanSocialProof';
 import { ConditionGradeSelector } from '@/components/quickscan/ConditionGradeSelector';
@@ -494,13 +495,12 @@ function ScanResultCardInner({
                       <Ionicons name="checkmark" size={10} color="#FFFFFF" />
                     </View>
                   )}
-                  {!!alt.imageUrl ? (
-                    <Image source={{ uri: alt.imageUrl }} style={styles.altImage} resizeMode="cover" accessibilityLabel={`Image of ${alt.title ?? 'alternative'}`} />
-                  ) : (
-                    <View style={[styles.altImage, { backgroundColor: colors.skeleton }]}>
-                      <Ionicons name="image-outline" size={20} color={colors.muted} />
-                    </View>
-                  )}
+                  <CatalogImage
+                    uri={alt.imageUrl}
+                    style={styles.altImage}
+                    fallbackIcon="image-outline"
+                    accessibilityLabel={`Image of ${alt.title ?? 'alternative'}`}
+                  />
                   <View style={styles.altInfo}>
                     <Text style={[styles.altTitle, { color: colors.text }]} numberOfLines={2}>
                       {alt.title ?? 'Unknown'}

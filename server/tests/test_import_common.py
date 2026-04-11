@@ -99,8 +99,10 @@ class TestValidation:
             _validate_price(-1.0)
 
     def test_validate_price_too_high(self):
+        # MAX_PRICE_EUR raised to €20M in R50f to accommodate grail collectibles
+        # (F.P. Journe watches, Action Comics #1, Paul Newman Daytona etc.)
         with pytest.raises(ValidationError, match="exceeds max"):
-            _validate_price(2_000_000.0)
+            _validate_price(25_000_000.0)
 
 
 # ---------------------------------------------------------------------------

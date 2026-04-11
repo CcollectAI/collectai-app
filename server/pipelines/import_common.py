@@ -205,7 +205,13 @@ def condition_score(condition: str) -> float:
 MAX_ITEM_KEY_LEN = 255
 MAX_TITLE_LEN = 500
 MIN_PRICE_EUR = 0.0
-MAX_PRICE_EUR = 1_000_000.0
+# Upper bound for a single collectible price (EUR).
+# Raised from €1M to €20M in Round 50f to accommodate grail-tier collectibles:
+# - Paul Newman Rolex Daytona sold for ~$17.8M
+# - Action Comics #1 CGC 8.0 sold for ~$5.3M
+# - Jaeger-LeCoultre Reverso Hybris Mechanica Quadriptyque retail ~€1.5M
+# Anything above €20M is almost certainly a data entry error.
+MAX_PRICE_EUR = 20_000_000.0
 
 
 class ValidationError(Exception):
