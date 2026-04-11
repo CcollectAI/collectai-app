@@ -11,7 +11,7 @@ import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 
-const LAST_UPDATED = 'March 27, 2026';
+const LAST_UPDATED = 'April 11, 2026';
 
 function TermsOfServiceScreenInner() {
   const router = useRouter();
@@ -73,6 +73,10 @@ function TermsOfServiceScreenInner() {
           <Text style={styles.bold}>Comparison Scan:</Text> The side-by-side comparison feature is provided for informational purposes. Comparison results are AI-generated and should be independently verified.
           {'\n\n'}
           <Text style={styles.bold}>Accuracy Disclaimer:</Text> While we strive to improve AI accuracy continuously, all AI features are provided "as is." We make no guarantees regarding the correctness of item identification, categorization, condition assessment, or valuation. AI confidence scores indicate model certainty, not objective accuracy.
+          {'\n\n'}
+          <Text style={styles.bold}>Structured Attribute Extraction:</Text> QuickScan extracts category-specific structured attributes from scanned items (e.g. brand, reference number, set name, card number, year). These attributes are saved to your item record alongside the AI-identified name and category. Extracted attributes are AI-generated estimates and may contain errors. You can edit or remove any extracted attribute from the item detail screen. You are responsible for verifying and correcting attributes before relying on them for insurance, sale, or valuation purposes.
+          {'\n\n'}
+          <Text style={styles.bold}>Attribute Canonicalization:</Text> Extracted attribute values may be automatically "snapped" to canonical forms from our catalog vocabulary (e.g. "rolex" → "Rolex") to keep your collection consistent. Canonicalization is performed on extraction only — it does not retroactively modify items you previously saved.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>5. Price Estimates & Valuations</Text>
@@ -221,22 +225,45 @@ function TermsOfServiceScreenInner() {
           You agree to indemnify and hold harmless CollectAI from any claims, damages, or expenses arising from your use of the Service, your violation of these Terms, your marketplace listings or sales, or your infringement of any third-party rights.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>23. Changes to Terms</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>23. Automatic Set Completion</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          The Service includes an automatic set completion feature that computes your progress toward completing collectible sets (e.g. Pokemon Base Set, LEGO City) by comparing structured attributes on your saved items against our catalog. Set completion percentages are informational only and depend on:
+          {'\n'}
+          {'\u2022'} The accuracy of structured attributes on your saved items (which you can edit){'\n'}
+          {'\u2022'} The completeness of our catalog for a given set{'\n'}
+          {'\u2022'} Our interpretation of what constitutes a complete set (which may change as catalogs are refined){'\n\n'}
+          Automatic set completion is not authoritative. For serious collection valuation or insurance purposes, consult a professional appraiser.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>24. Advertising</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          CollectAI is a freemium product. The free tier may, in the future, display non-intrusive advertising in the app. As of this Terms' "Last updated" date, <Text style={styles.bold}>advertising infrastructure is installed but inactive</Text> — no ads are shown to any user.
+          {'\n\n'}
+          When ads are activated:{'\n'}
+          {'\u2022'} Ads will only appear for users on the free tier. Paid subscribers (Pro, Premium) receive an ad-free experience as a benefit of their subscription.{'\n'}
+          {'\u2022'} Ad frequency is throttled: a maximum of 5 interstitial ads per session, a 3-minute cooldown between interstitials, and at most one banner ad per screen.{'\n'}
+          {'\u2022'} Ads are served via a third-party mediation network (planned: AppLovin MAX). When activated, the ad provider will be disclosed in the Privacy Policy.{'\n'}
+          {'\u2022'} You can remove ads by upgrading to Pro or Premium at any time.{'\n'}
+          {'\u2022'} We do not share your collection data, search queries, or account information with ad networks. See the Privacy Policy for details on what data (if any) is shared with ad networks.{'\n\n'}
+          You agree that using the free tier may, in the future, include viewing ads. If you object to ads, you may upgrade to a paid tier or discontinue use of the Service.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>25. Changes to Terms</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           We reserve the right to modify these Terms at any time. We will notify you of material changes through in-app notifications and by updating the "Last updated" date. Continued use of the Service after changes constitutes acceptance of the new Terms. If you do not agree with the changes, you should stop using the Service.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>24. Governing Law & Disputes</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>26. Governing Law & Disputes</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           These Terms shall be governed by the laws of the Netherlands. Any disputes arising from these Terms or the Service shall be resolved in the courts of the Netherlands. For EU consumers, this does not affect your rights under mandatory consumer protection laws of your country of residence.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>25. Severability</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>27. Severability</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           If any provision of these Terms is found to be unenforceable, the remaining provisions shall continue in full force and effect.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>26. Contact</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>28. Contact</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           For questions about these Terms, contact us at:{'\n'}
           legal@collectai.app{'\n\n'}

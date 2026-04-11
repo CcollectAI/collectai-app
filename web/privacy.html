@@ -26,7 +26,7 @@
 <div class="container">
   <a href="/" class="back-link">&larr; Back to CollectAI</a>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: March 11, 2026</p>
+  <p class="updated">Last updated: April 11, 2026</p>
 
   <p>CollectAI ("we", "our", "us") operates the CollectAI mobile application (the "Service"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.</p>
 
@@ -55,11 +55,14 @@
 
   <h2>3. AI &amp; Machine Learning</h2>
   <p><strong>Vision Classification:</strong> We use OpenAI Vision API and on-device classifiers to identify collectible items from photos. Classification results include item name, category, and confidence scores. Per-field confidence levels are provided so you can assess accuracy.</p>
-  <p><strong>CLIP Embeddings:</strong> We generate CLIP embeddings from your item images to match against our catalog of 35,000+ curated items across 51 categories. Embeddings are numerical representations of visual features and cannot be used to reconstruct the original image. Cached embeddings may be retained to improve matching speed.</p>
+  <p><strong>CLIP Embeddings:</strong> We generate CLIP embeddings from your item images to match against our catalog of 120,000+ curated items across 54 categories. Embeddings are numerical representations of visual features and cannot be used to reconstruct the original image. Cached embeddings may be retained to improve matching speed.</p>
   <p><strong>Price Prediction Models:</strong> We use Ridge regression machine learning models to predict item values with q10/q50/q90 quantile estimates (low/median/high). Models are trained on aggregated, anonymized marketplace data and are periodically retrained to reflect current market conditions.</p>
   <p><strong>Condition Grading AI:</strong> Our condition assessment AI analyzes item photos to detect defects and estimate grades on standard scales (PSA 1-10, CGC 0.5-10.0, generic condition tiers). AI grades are estimates and should not substitute for professional grading services.</p>
   <p><strong>Feedback &amp; Corrections:</strong> When you correct an AI identification or condition grade, your correction is used to improve the AI for all users. Corrections are anonymized before being used for model improvement &mdash; they are not linked to your account or personal information. You may submit corrections at any time through the inline editing interface on scan results.</p>
   <p><strong>Scarcity &amp; Demand Analysis:</strong> We analyze aggregated marketplace data to generate scarcity scores and demand heat signals for collectible items. These signals are derived from anonymized supply and demand metrics and do not contain personal user data.</p>
+  <p><strong>Structured Attribute Extraction:</strong> When QuickScan identifies an item, our vision pipeline extracts category-specific structured attributes (e.g., for a watch: brand, model name, reference number, movement, case material; for a Pokemon card: set name, card number, rarity, holo status). These attributes are saved to your item so the app can automatically compute set completion, match duplicates, and surface category-specific filters. Attribute extraction follows the same retention policy as QuickScan (images not retained after processing unless you save the item).</p>
+  <p><strong>Catalog Vocabulary &amp; Canonicalization:</strong> We maintain a per-category vocabulary of canonical brand names, set names, and other attribute values derived from our curated catalog. When AI extracts an attribute, it is "snapped" to the canonical form if a close match exists (e.g. "rolex" &rarr; "Rolex") to keep your collection data clean and consistent. The vocabulary is built from public catalog data &mdash; it does not contain any user-specific information.</p>
+  <p><strong>Attribute-Based Catalog Matching:</strong> In addition to visual matching via CLIP embeddings, we also match scanned items to catalog entries by exact-match on structured identifiers (card number, reference number, SKU, barcode). This improves identification accuracy without transmitting any additional data beyond what QuickScan already processes.</p>
 
   <h2>4. Geolocation</h2>
   <p><strong>IP-Based Region Detection:</strong> We use your IP address to determine your approximate geographic region (country-level) for currency preferences and regional marketplace features via ip-api.com. IP-based region data is cached for 24 hours.</p>
@@ -247,10 +250,26 @@
   <h2>18. Children's Privacy</h2>
   <p>Our Service is not intended for children under 13 (or under 16 in the EU). We do not knowingly collect personal data from children. If you are a parent or guardian and become aware that your child has provided us with personal data, please contact us and we will delete the data promptly.</p>
 
-  <h2>19. Changes to This Policy</h2>
+  <h2>19. Automatic Set Completion Tracking</h2>
+  <p>When you save items with structured attributes (see Section 3), the app automatically computes set completion progress by joining your collection against our catalog on fields such as <strong>set_name</strong> and <strong>card_number</strong>. For example, if you own 47 items tagged as "Pokemon Base Set" and our catalog has 102 items in that set, the app will show "Base Set: 47/102 (46%)". This feature is computed server-side on demand and requires no additional data collection. Set progress is visible only to you unless you explicitly share your collection publicly.</p>
+
+  <h2>20. Advertising (Future Activation)</h2>
+  <p>CollectAI is a freemium product. The free tier may, in the future, include non-intrusive advertising in certain placements. Ad infrastructure is currently installed in the app but <strong>dark</strong> &mdash; no ads are shown to any user as of this policy's "Last updated" date.</p>
+  <p>When ads are enabled:</p>
+  <ul>
+    <li>Ads will be served via a third-party mediation network (planned: AppLovin MAX). The exact provider will be disclosed here prior to activation.</li>
+    <li>Paid subscribers (Pro, Premium) will not see ads &mdash; ad-free is a benefit of the paid tiers.</li>
+    <li>Free users will see throttled ads (maximum 5 interstitials per session, 3-minute cooldown between interstitials, one banner per screen).</li>
+    <li>Ad networks may use device identifiers (IDFA on iOS, AAID on Android) subject to your device-level tracking permission. On iOS 14.5+, you will be asked via the App Tracking Transparency prompt before any tracking occurs.</li>
+    <li>We do not share your collection data, search queries, or any other account information with ad networks. Ads are served based only on generic, non-PII signals from the ad network itself.</li>
+    <li>You can upgrade to a paid tier at any time to remove ads.</li>
+  </ul>
+  <p>When ads are activated, we will update this policy and notify users in-app.</p>
+
+  <h2>21. Changes to This Policy</h2>
   <p>We may update this privacy policy from time to time. We will notify you of material changes through in-app notifications and by updating the "Last updated" date. Continued use of the Service after changes constitutes acceptance of the updated policy.</p>
 
-  <h2>20. Contact Us</h2>
+  <h2>22. Contact Us</h2>
   <p>If you have questions about this privacy policy, please contact us at:<br><a href="mailto:privacy@collectai.app">privacy@collectai.app</a></p>
   <p>CollectAI<br>The Netherlands</p>
 </div>

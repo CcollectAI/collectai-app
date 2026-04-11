@@ -82,7 +82,7 @@
         "applicationCategory": "LifestyleApplication",
         "operatingSystem": "iOS, Android",
         "datePublished": "2026-01-01",
-        "dateModified": "2026-03-31",
+        "dateModified": "2026-04-11",
         "offers": {
             "@type": "Offer",
             "price": "0",
@@ -91,17 +91,20 @@
         },
         "featureList": [
             "AI-powered collectible scanning and identification from photos",
+            "Structured attribute extraction (brand, set name, card number, reference number, year, material)",
+            "Automatic set completion tracking across 54 categories",
             "Real-time price valuation from 37 marketplace data sources",
             "Portfolio dashboard with daily value tracking",
             "Condition grading with PSA, CGC, and BGS support",
             "Price comparison across eBay, TCGPlayer, StockX, Cardmarket, Discogs, and 30+ more",
             "Watchlist with price drop alerts",
             "Barcode and ISBN scanning",
-            "Set completion tracking",
+            "Duplicate and variant detection",
+            "Catalog of 120,000+ curated items across 54 categories",
             "Chat and messaging between collectors",
             "Collection export for insurance documentation",
             "Multi-currency support: EUR, USD, GBP, JPY, KRW, AUD, CAD",
-            "54 collectible categories including trading cards, Funko Pop, LEGO, vinyl records, watches, anime figures, and more",
+            "54 collectible categories including trading cards, Funko Pop, LEGO, vinyl records, watches, anime figures, sneakers, whiskey, comic books, and more",
             "Dark mode and offline access"
         ],
         "screenshot": "https://collectai.app/screenshot.png",
@@ -157,7 +160,7 @@
     {
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        "dateModified": "2026-03-31",
+        "dateModified": "2026-04-11",
         "mainEntity": [
             {
                 "@type": "Question",
@@ -253,6 +256,30 @@
                 "acceptedAnswer": {
                     "@type": "Answer",
                     "text": "CollectAI differs in four key ways: (1) AI vision identifies collectibles from a photo — no manual search, (2) pricing from 37 marketplace sources instead of one, (3) probabilistic price ranges (low, mid, high) via machine learning instead of a single estimate, and (4) 54 categories in one app, whereas most alternatives focus on a single category like cards or Funko. It also includes condition grading, barcode scanning, chat, and collection export."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Does CollectAI automatically track which items I'm missing from a set?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. When you scan items, CollectAI extracts structured details like set name and card number. It then automatically computes your completion progress for each set — for example, 'Pokemon Base Set: 47/102 (46%)' — without any manual tracking. This works across trading cards (Pokemon, Yu-Gi-Oh, Magic, Lorcana), LEGO themes, Funko Pop lines, anime figure series, and more. The set completion view shows you exactly which items you still need to complete the set."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What details does CollectAI extract when I scan a collectible?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "When you scan an item, CollectAI's AI vision pipeline extracts category-specific structured details alongside the item name and estimated value. For a Pokemon card you get set name, card number, rarity, and holographic status. For a watch you get brand, model name, reference number, movement caliber, and case material. For a Funko Pop you get franchise, figure number, and exclusive tag. For a comic you get publisher, series, and key issue notes. These details are saved to your collection automatically so you can search, filter, and track set completion without manually entering anything."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What categories does CollectAI support?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "CollectAI supports 54 collectible categories: trading cards (Pokemon, Yu-Gi-Oh, Magic the Gathering, Lorcana, Digimon, One Piece TCG), sports cards, comic books, Funko Pop, LEGO, Warhammer, retro games, manga, anime figures, Hot Toys, designer toys (KAWS/Bearbrick), action figures, Marvel Legends, vintage toys, gunpla, scale models, Blu-ray steelbooks, K-pop merch, Taylor Swift collectibles, Disney pins, Studio Ghibli, vintage cameras, watches, sneakers, vinyl records, whiskey, fragrances, fountain pens, plush collectibles, blind box figures, retro handhelds, and more. Each category has its own structured attribute extraction and price prediction model."
                 }
             }
         ]
@@ -884,7 +911,7 @@
             <div class="stat-label">Categories</div>
         </div>
         <div class="stat-item">
-            <div class="stat-number">46,500+</div>
+            <div class="stat-number">123,000+</div>
             <div class="stat-label">Items in Catalog</div>
         </div>
         <div class="stat-item">
@@ -1175,6 +1202,26 @@
                 </button>
                 <div class="faq-answer">
                     <p>CollectAI differs in four key ways: (1) AI vision identifies collectibles from a photo — no manual search, (2) pricing from 37 marketplace sources instead of one, (3) probabilistic price ranges (low, mid, high) via machine learning instead of a single estimate, and (4) 54 categories in one app, whereas most alternatives focus on a single category like cards or Funko. It also includes condition grading, barcode scanning, chat, and collection export.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">
+                    <span>Does CollectAI automatically track which items I'm missing from a set?</span>
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <p>Yes. When you scan items, CollectAI extracts structured details like set name and card number. It then automatically computes your completion progress for each set — for example, "Pokemon Base Set: 47/102 (46%)" — without any manual tracking. This works across trading cards (Pokemon, Yu-Gi-Oh, Magic, Lorcana), LEGO themes, Funko Pop lines, anime figure series, and more. The set completion view shows you exactly which items you still need to complete the set.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">
+                    <span>What details does CollectAI extract when I scan a collectible?</span>
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <p>When you scan an item, CollectAI's AI vision pipeline extracts category-specific structured details alongside the item name and estimated value. For a Pokemon card you get set name, card number, rarity, and holographic status. For a watch you get brand, model name, reference number, movement caliber, and case material. For a Funko Pop you get franchise, figure number, and exclusive tag. For a comic you get publisher, series, and key issue notes. These details are saved to your collection automatically so you can search, filter, and track set completion without manually entering anything.</p>
                 </div>
             </div>
 

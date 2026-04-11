@@ -13,7 +13,7 @@ import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 
-const LAST_UPDATED = 'March 27, 2026';
+const LAST_UPDATED = 'April 11, 2026';
 
 function PrivacyPolicyScreenInner() {
   const router = useRouter();
@@ -47,7 +47,7 @@ function PrivacyPolicyScreenInner() {
           {'\n\n'}
           <Text style={styles.bold}>Profile Data:</Text> You may optionally provide a bio, avatar photo, and collecting interests. Your display name and handle are visible to other users.
           {'\n\n'}
-          <Text style={styles.bold}>Collection Data:</Text> Items you add to your collection, including titles, descriptions, photos, categories (across 54 collectible categories), valuations, condition, and category-specific attributes. This data is stored securely in your private account.
+          <Text style={styles.bold}>Collection Data:</Text> Items you add to your collection, including titles, descriptions, photos, categories (across 54 collectible categories), valuations, condition, and category-specific structured attributes. Structured attributes include fields extracted from AI scans (e.g., set name, card number, reference number, year, brand, material, edition) and are stored in a JSON attributes field alongside each item to enable features such as set completion tracking, smarter catalog matching, and more accurate price predictions. This data is stored securely in your private account.
           {'\n\n'}
           <Text style={styles.bold}>Build & Paint Projects:</Text> Project titles, steps, progress, notes, and photos you create to track builds of collectible items (model kits, miniatures, etc.).
           {'\n\n'}
@@ -98,6 +98,12 @@ function PrivacyPolicyScreenInner() {
           <Text style={styles.bold}>Feedback & Corrections:</Text> When you correct an AI identification or condition grade, your correction is used to improve the AI for all users. Corrections are anonymized before being used for model improvement — they are not linked to your account or personal information. You may submit corrections at any time through the inline editing interface on scan results.
           {'\n\n'}
           <Text style={styles.bold}>Scarcity & Demand Analysis:</Text> We analyze aggregated marketplace data to generate scarcity scores and demand heat signals for collectible items. These signals are derived from anonymized supply and demand metrics and do not contain personal user data.
+          {'\n\n'}
+          <Text style={styles.bold}>Structured Attribute Extraction:</Text> When QuickScan identifies an item, our vision pipeline extracts category-specific structured attributes (e.g. for a watch: brand, model name, reference number, movement, case material; for a Pokemon card: set name, card number, rarity, holo status). These structured attributes are saved to your item record so the app can automatically compute set completion, match duplicates, and surface category-specific filters. Attribute extraction runs on the same image data processed by the QuickScan vision pipeline and follows the same retention policy (images not retained after processing unless you save the item).
+          {'\n\n'}
+          <Text style={styles.bold}>Catalog Vocabulary & Canonicalization:</Text> We maintain a per-category vocabulary of canonical brand names, set names, and other attribute values derived from our curated catalog. When AI extracts an attribute, it is "snapped" to the canonical form if a close match exists (e.g. "rolex" → "Rolex") to keep your collection data clean and consistent. The vocabulary is built from public catalog data — it does not contain any user-specific information.
+          {'\n\n'}
+          <Text style={styles.bold}>Attribute-Based Catalog Matching:</Text> In addition to visual matching via CLIP embeddings, we also match scanned items to catalog entries by exact-match on structured identifiers (card number, reference number, SKU, barcode). This improves identification accuracy, especially for items with weak visual signals, without transmitting any additional data beyond what QuickScan already processes.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>4. Geolocation</Text>
@@ -224,6 +230,7 @@ function PrivacyPolicyScreenInner() {
           {'\u2022'} With other users, as described in the Social Features section{'\n'}
           {'\u2022'} With OpenAI for image processing (QuickScan, condition grading){'\n'}
           {'\u2022'} With Stripe for payment processing{'\n'}
+          {'\u2022'} With ad-mediation networks (only when ads are activated — see Section 20 for details and conditions){'\n'}
           {'\u2022'} To comply with legal obligations{'\n'}
           {'\u2022'} To protect against legal liability{'\n'}
           {'\u2022'} Aggregated and anonymized data may be used for analytics and model training{'\n'}
@@ -281,12 +288,31 @@ function PrivacyPolicyScreenInner() {
           Our Service is not intended for children under 13 (or under 16 in the EU). We do not knowingly collect personal data from children. If you are a parent or guardian and become aware that your child has provided us with personal data, please contact us and we will delete the data promptly.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>19. Changes to This Policy</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>19. Automatic Set Completion Tracking</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          When you save items with structured attributes (see Section 3), the app automatically computes set completion progress by joining your collection against our catalog on fields such as <Text style={styles.bold}>set_name</Text> and <Text style={styles.bold}>card_number</Text>. For example, if you own 47 items tagged as "Pokemon Base Set" and our catalog has 102 items in that set, the app will show "Base Set: 47/102 (46%)". This feature is computed server-side on demand and requires no additional data collection — it works entirely from data you have already saved to your collection. Set progress is visible only to you unless you explicitly share your collection publicly. You can prevent auto-detection for a specific item by clearing its structured attributes in the item detail screen.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>20. Advertising (Future Activation)</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          CollectAI is a freemium product. The free tier may, in the future, include non-intrusive advertising in certain placements (e.g., banner ads at the bottom of catalog browse screens, occasional interstitial ads after significant actions). Ad infrastructure is currently installed in the app but <Text style={styles.bold}>dark</Text> — no ads are shown to any user as of this policy's "Last updated" date.
+          {'\n\n'}
+          <Text style={styles.bold}>When ads are enabled, the following applies:</Text>{'\n'}
+          {'\u2022'} Ads will be served via a third-party mediation network (planned: AppLovin MAX). The exact provider will be disclosed here prior to activation.{'\n'}
+          {'\u2022'} Paid subscribers (Pro, Premium) will not see ads — ad-free is a benefit of the paid tiers.{'\n'}
+          {'\u2022'} Free users will see ads throttled to prevent overwhelming the experience (maximum 5 interstitials per session, 3-minute cooldown between interstitials, one banner per screen).{'\n'}
+          {'\u2022'} Ad networks may use device identifiers (IDFA on iOS, AAID on Android) subject to your device-level tracking permission. On iOS 14.5+, you will be asked via the App Tracking Transparency prompt before any tracking occurs.{'\n'}
+          {'\u2022'} We do not share your collection data, search queries, or any other account information with ad networks. Ads are served based only on generic, non-PII signals from the ad network itself.{'\n'}
+          {'\u2022'} You can upgrade to a paid tier at any time to remove ads.{'\n\n'}
+          When ads are activated, we will update this policy and notify users in-app.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>21. Changes to This Policy</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           We may update this privacy policy from time to time. We will notify you of material changes through in-app notifications and by updating the "Last updated" date. Continued use of the Service after changes constitutes acceptance of the updated policy.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>20. Contact Us</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>22. Contact Us</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           If you have questions about this privacy policy, please contact us at:{'\n'}
           privacy@collectai.app{'\n\n'}

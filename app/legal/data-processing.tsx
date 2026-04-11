@@ -11,7 +11,7 @@ import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 
-const LAST_UPDATED = 'March 27, 2026';
+const LAST_UPDATED = 'April 11, 2026';
 
 function DataProcessingScreenInner() {
   const router = useRouter();
@@ -51,6 +51,7 @@ function DataProcessingScreenInner() {
         <Text style={[styles.body, { color: colors.text }]}>
           <Text style={styles.bold}>Collection Data:</Text> Item titles, descriptions, categories (across 54 collectible categories), valuations, condition grades, category-specific attributes, and 46,500+ curated catalog items used for matching and identification.{'\n\n'}
           <Text style={styles.bold}>Image Data:</Text> Photos captured via QuickScan or uploaded from your device gallery for AI identification, condition grading, and catalog matching. Images are processed using OpenAI Vision API and CLIP embeddings.{'\n\n'}
+          <Text style={styles.bold}>Structured Attribute Data:</Text> Category-specific attributes (e.g., brand, reference number, set name, card number, year, material) extracted from scanned items by the AI vision pipeline. These attributes are stored alongside each item to enable features like set completion tracking, duplicate detection, and improved price prediction. Structured attributes are normalized against a catalog vocabulary for consistency.{'\n\n'}
           <Text style={styles.bold}>Marketplace Data:</Text> Aggregated pricing, availability, and listing data from 37 third-party marketplace sources used for price estimates, deal detection, and market analysis.{'\n\n'}
           <Text style={styles.bold}>Chat & Messaging Data:</Text> Direct messages, DM requests, and conversation metadata between users via Supabase Realtime.{'\n\n'}
           <Text style={styles.bold}>Event Data:</Text> Event details, RSVP records, attendance data, announcements, ticket purchases, and sponsor information for collector events.{'\n\n'}
@@ -62,7 +63,8 @@ function DataProcessingScreenInner() {
         <Text style={[styles.heading, { color: colors.text }]}>3. Processing Purposes</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           <Text style={styles.bold}>Service Delivery:</Text> Providing core app functionality including collection management, item tracking, search, social features, events, and multi-marketplace selling.{'\n\n'}
-          <Text style={styles.bold}>AI & Machine Learning:</Text> Item identification via OpenAI Vision API, catalog matching via CLIP embeddings, price prediction using Ridge regression models (q10/q50/q90 quantiles), AI condition grading, scarcity scoring, and demand analysis. Anonymized user corrections are used to improve model accuracy.{'\n\n'}
+          <Text style={styles.bold}>AI & Machine Learning:</Text> Item identification via OpenAI Vision API, catalog matching via CLIP embeddings and exact-match on structured attributes (reference number, card number, SKU, barcode), price prediction using Ridge regression models (q10/q50/q90 quantiles) with brand-tier and attribute-derived features, AI condition grading, scarcity scoring, demand analysis, and automatic set completion computation. Anonymized user corrections are used to improve model accuracy.{'\n\n'}
+          <Text style={styles.bold}>Catalog Aggregation:</Text> Our catalog currently contains 123,872 curated items across 54 categories with approximately 166,000 market hits observed from 37+ public marketplace sources. Catalog data is public reference information and does not contain personal data.{'\n\n'}
           <Text style={styles.bold}>Marketplace Aggregation:</Text> Collecting and normalizing pricing data from 37 sources across 54 categories to provide price estimates, deal detection, watchlist monitoring, and market insights.{'\n\n'}
           <Text style={styles.bold}>Notifications:</Text> Delivering push notifications for price alerts, deal discoveries, watchlist updates, event updates, direct messages, and announcements. Notifications are subject to tier-based frequency caps (free: 5/day, Pro: 15/day, Premium: 30/day) and user preference settings.{'\n\n'}
           <Text style={styles.bold}>Analytics & Improvement:</Text> Anonymized usage analytics via PostHog and crash reporting via Sentry to improve service quality and reliability.{'\n\n'}
@@ -80,6 +82,8 @@ function DataProcessingScreenInner() {
           {'\u2022'} <Text style={styles.bold}>PostHog</Text> — Product analytics and feature usage tracking (anonymized){'\n'}
           {'\u2022'} <Text style={styles.bold}>Sentry</Text> — Error monitoring and crash reporting{'\n'}
           {'\u2022'} <Text style={styles.bold}>Expo</Text> — App distribution, OTA updates, and push notification delivery{'\n\n'}
+          <Text style={styles.bold}>Potential future sub-processors (not yet active):</Text>{'\n'}
+          {'\u2022'} <Text style={styles.bold}>AppLovin MAX</Text> (ad mediation) — will be engaged if and when we activate advertising for free-tier users. Currently installed in the app but dark (no data shared). We will update this DPA and notify users in-app before any activation.{'\n\n'}
           Each sub-processor is contractually bound to process data only for the purposes specified and in accordance with applicable data protection laws. We maintain an up-to-date list of sub-processors and will notify users of material changes.
         </Text>
 
