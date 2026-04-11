@@ -24,7 +24,101 @@
     "yes": "はい",
     "no": "いいえ",
     "optional": "任意",
-    "required": "必須"
+    "required": "必須",
+    "go_back": "戻る",
+    "clear": "クリア",
+    "clear_search": "検索をクリア",
+    "clear_recent": "最近の検索をクリア",
+    "retry_action": "再試行"
+  },
+
+  "add_tab": {
+    "subtitle": "高速、カメラ優先のフロー。",
+    "quickscan_ai": "QuickScan AI",
+    "start_quickscan": "QuickScanを開始",
+    "start_quickscan_a11y": "QuickScanを開始して写真でアイテムを追加",
+    "scan_barcode": "バーコード / ISBNをスキャン",
+    "scan_barcode_a11y": "バーコードまたはISBNをスキャン",
+    "import_url": "URLからインポート",
+    "import_url_a11y": "マーケットプレイスのURLからアイテムをインポート",
+    "add_manually": "手動で追加",
+    "add_manually_a11y": "アイテムを手動で追加"
+  },
+
+  "wishlist": {
+    "empty_title": "ウォッチリストを始めよう",
+    "add_first_a11y": "最初のウォッチリストアイテムを追加",
+    "add_first": "最初のアイテムを追加",
+    "feature_price_drops": "値下げアラート",
+    "feature_target_price": "目標価格追跡",
+    "feature_restock": "再入荷通知",
+    "add_to_watchlist": "ウォッチリストに追加",
+    "close_add_form_a11y": "フォームを閉じる",
+    "title_required": "タイトル *",
+    "title_a11y": "アイテムタイトル",
+    "category_required": "カテゴリー *",
+    "add_to_watchlist_a11y": "ウォッチリストに追加",
+    "close_category_picker_a11y": "カテゴリー選択を閉じる",
+    "select_category": "カテゴリーを選択",
+    "add_to_collection": "コレクションに追加",
+    "close_acquisition_a11y": "取得フォームを閉じる",
+    "price_paid_a11y": "支払い価格（ユーロ）",
+    "notes_optional": "メモ（任意）",
+    "notes_a11y": "取得メモ"
+  },
+
+  "events": {
+    "reminder_a11y": "イベントのリマインダーを設定",
+    "create_event": "イベントを作成",
+    "create_event_a11y": "新しいイベントを作成",
+    "sponsor_a11y": "イベントをスポンサー",
+    "twitch_a11y": "Twitchクリエイターズハブ",
+    "search_placeholder": "イベントを検索...",
+    "search_a11y": "イベントを検索",
+    "show_all_a11y": "すべてのイベントタイプを表示",
+    "load_error_title": "近くのイベントを読み込めませんでした",
+    "load_error_body": "接続を確認してもう一度お試しください。",
+    "retry_a11y": "近くのイベントの読み込みを再試行",
+    "empty_title": "近くにイベントがありません",
+    "empty_body": "現在地から50km以内にイベントは見つかりませんでした"
+  },
+
+  "marketplace": {
+    "find_collectors": "コレクターを探す",
+    "find_collectors_a11y": "コレクターを探す",
+    "popular_searches": "人気の検索",
+    "close_user_search_a11y": "ユーザー検索を閉じる",
+    "search_users_placeholder": "名前またはハンドル名で検索...",
+    "search_users_a11y": "名前またはハンドル名でユーザー検索"
+  },
+
+  "search": {
+    "placeholder": "アイテム、コレクター、イベントを検索...",
+    "input_a11y": "検索フィールド",
+    "unavailable": "検索を利用できません",
+    "retry_a11y": "検索を再試行",
+    "no_results": "結果が見つかりません"
+  },
+
+  "item_detail": {
+    "valuation_a11y": "アイテムの評価と詳細",
+    "save_a11y": "コレクションに保存",
+    "save": "コレクションに保存"
+  },
+
+  "onboarding": {
+    "skip_a11y": "カテゴリー選択をスキップ",
+    "change_region_a11y": "地域を変更",
+    "confirm_age_a11y": "年齢要件を確認",
+    "select_region": "地域を選択"
+  },
+
+  "quickscan_screen": {
+    "gallery_a11y": "ギャラリーまたはスクリーンショットからスキャン"
+  },
+
+  "add_manual": {
+    "discard_draft_a11y": "下書きを破棄"
   },
 
   "auth": {
@@ -123,13 +217,40 @@
 
   "home": {
     "portfolio_value": "ポートフォリオ価値",
+    "portfolio_title": "ポートフォリオ",
+    "portfolio_subtitle": "コレクションの価値を追跡しましょう。",
     "top_items": "トップアイテム",
     "recent_activity": "最近のアクティビティ",
     "set_progress": "セット進捗",
     "sets_in_progress": "{{count}}個のセット進行中",
     "sets_in_progress_plural": "{{count}}個のセット進行中",
     "no_items_yet": "アイテムを追加してコレクションを表示",
-    "scan_your_first": "最初のアイテムをスキャン"
+    "scan_your_first": "最初のアイテムをスキャン",
+    "start_collection": "コレクションを始める",
+    "start_collection_subtitle": "コレクタブルを撮影すると、AIが即座に価値を査定します",
+    "quickscan_ai": "QuickScan AI",
+    "or_add_manually": "または手動で追加",
+    "add_to_collection": "コレクションに追加",
+    "add_to_collection_subtitle": "スキャン、撮影、または手動で入力",
+    "total_items": "アイテム合計",
+    "categories": "カテゴリー",
+    "portfolio": "ポートフォリオ",
+    "extended_insights": "拡張ポートフォリオインサイト",
+    "extended_insights_active": "詳細な分析、トレンド予測、価格アラート",
+    "extended_insights_locked": "詳細な分析、トレンド予測、価格アラートをアンロック",
+    "deal_agent": "Deal Agent",
+    "deal_agent_active": "常時稼働のディール発見",
+    "deal_agent_locked": "Proにアップグレードしてアンロック",
+    "view": "表示",
+    "upgrade": "アップグレード",
+    "open_settings_a11y": "設定を開く",
+    "open_quickscan_a11y": "QuickScan AIを開いて最初のアイテムをスキャン",
+    "add_manually_a11y": "アイテムを手動で追加",
+    "add_to_collection_a11y": "コレクションにアイテムを追加",
+    "insights_view_a11y": "拡張ポートフォリオインサイトを表示",
+    "insights_upgrade_a11y": "拡張ポートフォリオインサイトにアップグレード",
+    "deal_agent_open_a11y": "Deal Agentを開く",
+    "deal_agent_upgrade_a11y": "アップグレードしてDeal Agentをアンロック"
   },
 
   "items": {

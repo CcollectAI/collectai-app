@@ -19,6 +19,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { useTranslation } from "react-i18next";
 import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
@@ -53,6 +54,7 @@ const ManualAddScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { t } = useTranslation();
 
   const { pickAndUpload, uploading: photoUploading, error: photoError, photoUrl, clearError: clearPhotoError } = usePhotoUpload("manual-draft");
 
@@ -342,7 +344,7 @@ const ManualAddScreen: React.FC = () => {
                 onPress={handleDiscardDraft}
                 style={styles.discardDraftButton}
                 accessibilityRole="button"
-                accessibilityLabel="Discard draft"
+                accessibilityLabel={t('add_manual.discard_draft_a11y')}
               >
                 <Text style={[styles.discardDraftText, { color: colors.error ?? '#E53935' }]}>
                   Discard Draft

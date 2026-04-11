@@ -25,6 +25,7 @@ import { useItemMarketplace } from "@/hooks/useItemMarketplace";
 import { useItemDetail } from "@/hooks/useItemDetail";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { useTranslation } from "react-i18next";
 import { useToast } from "@/components/Toast";
 import { dataProvider } from "@/data";
 import { ImageZoomModal } from "@/components/ImageZoomModal";
@@ -113,6 +114,7 @@ const CATEGORY_ID_MAP: Record<string, string> = {
 function ItemDetailScreen() {
   const { colors: theme } = useAppTheme();
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { limits } = useBillingLimits();
   const params = useLocalSearchParams<{
@@ -700,7 +702,7 @@ function ItemDetailScreen() {
             onSizeValueChange={setItemSizeValue}
           />
 
-          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]} accessibilityRole="summary" accessibilityLabel="Item valuation and details">
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]} accessibilityRole="summary" accessibilityLabel={t('item_detail.valuation_a11y')}>
             {/* Price display — PriceCard, legacy bands, confidence, explanation, scarcity, comps */}
             <ItemPriceSection
               priceEstimate={priceEstimate}
@@ -888,14 +890,14 @@ function ItemDetailScreen() {
                 { backgroundColor: theme.accent, opacity: savingDraft ? 0.7 : 1 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Save to collection"
+              accessibilityLabel={t('item_detail.save_a11y')}
             >
               {savingDraft ? (
                 <ActivityIndicator size="small" color={theme.accentText} />
               ) : (
                 <>
                   <Ionicons name="checkmark-circle" size={20} color={theme.accentText} />
-                  <Text style={[styles.stickyButtonText, { color: theme.accentText }]}>Save to Collection</Text>
+                  <Text style={[styles.stickyButtonText, { color: theme.accentText }]}>{t('item_detail.save')}</Text>
                 </>
               )}
             </Pressable>

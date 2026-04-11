@@ -18,6 +18,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { useTranslation } from "react-i18next";
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { useToast } from '@/components/Toast';
@@ -38,6 +39,7 @@ const AddScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const { showToast } = useToast();
 
   const handleQuickScanPress = () => {
@@ -148,7 +150,7 @@ return (
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
             <Text style={[styles.title, { color: colors.text }]}>Add</Text>
-            <Text style={[styles.subtitle, { color: colors.muted }]}>Fast, camera-first flow.</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>{t('add_tab.subtitle')}</Text>
           </View>
           <View style={styles.headerIcons}>
             <InboxHeaderButton color={colors.text} size={22} />
@@ -162,18 +164,18 @@ return (
             style={[styles.quickScanCard, { backgroundColor: colors.card }]}
             onPress={handleQuickScanPress}
             accessibilityRole="button"
-            accessibilityLabel="Start QuickScan to add item by photo"
+            accessibilityLabel={t('add_tab.start_quickscan_a11y')}
           >
             <View style={[styles.quickScanIconCircle, { backgroundColor: colors.accent + '20' }]}>
               <Ionicons name="scan-outline" size={32} color={colors.accent} />
             </View>
-            <Text style={[styles.quickScanTitle, { color: colors.text }]}>QuickScan AI</Text>
+            <Text style={[styles.quickScanTitle, { color: colors.text }]}>{t('add_tab.quickscan_ai')}</Text>
             <Text style={[styles.quickScanSubtitle, { color: colors.muted }]}>
               Snap a photo and we prefill the details. You can override anything
               before saving.
             </Text>
             <View style={[styles.quickScanButton, { backgroundColor: colors.accent + '20' }]}>
-              <Text style={[styles.quickScanButtonText, { color: colors.accent }]}>Start QuickScan</Text>
+              <Text style={[styles.quickScanButtonText, { color: colors.accent }]}>{t('add_tab.start_quickscan')}</Text>
               <Ionicons name="chevron-forward" size={18} color={colors.accent} />
             </View>
           </AnimatedPressable>
@@ -187,13 +189,13 @@ return (
             router.push('/barcode-scan');
           }}
           accessibilityRole="button"
-          accessibilityLabel="Scan barcode or ISBN"
+          accessibilityLabel={t('add_tab.scan_barcode_a11y')}
         >
           <View style={[styles.barcodeIconCircle, { backgroundColor: colors.accent + '15' }]}>
             <Ionicons name="barcode-outline" size={24} color={colors.accent} />
           </View>
           <View style={styles.barcodeTextBlock}>
-            <Text style={[styles.barcodeTitle, { color: colors.text }]}>Scan barcode / ISBN</Text>
+            <Text style={[styles.barcodeTitle, { color: colors.text }]}>{t('add_tab.scan_barcode')}</Text>
             <Text style={[styles.barcodeSubtitle, { color: colors.muted }]}>
               Books, albums, boxed products with barcodes.
             </Text>
@@ -209,13 +211,13 @@ return (
             router.push('/import-url');
           }}
           accessibilityRole="button"
-          accessibilityLabel="Import item from marketplace URL"
+          accessibilityLabel={t('add_tab.import_url_a11y')}
         >
           <View style={[styles.barcodeIconCircle, { backgroundColor: colors.accent + '15' }]}>
             <Ionicons name="link-outline" size={24} color={colors.accent} />
           </View>
           <View style={styles.barcodeTextBlock}>
-            <Text style={[styles.barcodeTitle, { color: colors.text }]}>Import from URL</Text>
+            <Text style={[styles.barcodeTitle, { color: colors.text }]}>{t('add_tab.import_url')}</Text>
             <Text style={[styles.barcodeSubtitle, { color: colors.muted }]}>
               Paste a link from eBay, Mercari, StockX, or other marketplaces.
             </Text>
@@ -235,13 +237,13 @@ return (
           style={[styles.manualCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
           onPress={handleManualAddPress}
           accessibilityRole="button"
-          accessibilityLabel="Add item manually"
+          accessibilityLabel={t('add_tab.add_manually_a11y')}
         >
           <View style={[styles.manualIconCircle, { backgroundColor: colors.background }]}>
             <Ionicons name="create-outline" size={24} color={colors.text} />
           </View>
           <View style={styles.manualTextBlock}>
-            <Text style={[styles.manualTitle, { color: colors.text }]}>Add manually</Text>
+            <Text style={[styles.manualTitle, { color: colors.text }]}>{t('add_tab.add_manually')}</Text>
             <Text style={[styles.manualSubtitle, { color: colors.muted }]}>
               Enter card / figure details yourself if you prefer full control.
             </Text>

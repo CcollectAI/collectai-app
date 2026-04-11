@@ -24,7 +24,101 @@
     "yes": "Yes",
     "no": "No",
     "optional": "Optional",
-    "required": "Required"
+    "required": "Required",
+    "go_back": "Go back",
+    "clear": "Clear",
+    "clear_search": "Clear search",
+    "clear_recent": "Clear recent searches",
+    "retry_action": "Retry"
+  },
+
+  "add_tab": {
+    "subtitle": "Fast, camera-first flow.",
+    "quickscan_ai": "QuickScan AI",
+    "start_quickscan": "Start QuickScan",
+    "start_quickscan_a11y": "Start QuickScan to add item by photo",
+    "scan_barcode": "Scan barcode / ISBN",
+    "scan_barcode_a11y": "Scan barcode or ISBN",
+    "import_url": "Import from URL",
+    "import_url_a11y": "Import item from marketplace URL",
+    "add_manually": "Add manually",
+    "add_manually_a11y": "Add item manually"
+  },
+
+  "wishlist": {
+    "empty_title": "Start your watchlist",
+    "add_first_a11y": "Add your first watchlist item",
+    "add_first": "Add your first item",
+    "feature_price_drops": "Price drop alerts",
+    "feature_target_price": "Target price tracking",
+    "feature_restock": "Restock notifications",
+    "add_to_watchlist": "Add to Watchlist",
+    "close_add_form_a11y": "Close add to watchlist form",
+    "title_required": "Title *",
+    "title_a11y": "Item title",
+    "category_required": "Category *",
+    "add_to_watchlist_a11y": "Add to watchlist",
+    "close_category_picker_a11y": "Close category picker",
+    "select_category": "Select Category",
+    "add_to_collection": "Add to Collection",
+    "close_acquisition_a11y": "Close acquisition form",
+    "price_paid_a11y": "Price paid in euros",
+    "notes_optional": "Notes (optional)",
+    "notes_a11y": "Acquisition notes"
+  },
+
+  "events": {
+    "reminder_a11y": "Set reminder for event",
+    "create_event": "Create Event",
+    "create_event_a11y": "Create new event",
+    "sponsor_a11y": "Sponsor events",
+    "twitch_a11y": "Twitch creators hub",
+    "search_placeholder": "Search events...",
+    "search_a11y": "Search events",
+    "show_all_a11y": "Show all event types",
+    "load_error_title": "Could not load nearby events",
+    "load_error_body": "Check your connection and try again.",
+    "retry_a11y": "Retry loading nearby events",
+    "empty_title": "No nearby events",
+    "empty_body": "No events found within 50km of your location"
+  },
+
+  "marketplace": {
+    "find_collectors": "Find Collectors",
+    "find_collectors_a11y": "Find collectors",
+    "popular_searches": "Popular searches",
+    "close_user_search_a11y": "Close user search",
+    "search_users_placeholder": "Search by name or handle...",
+    "search_users_a11y": "Search users by name or handle"
+  },
+
+  "search": {
+    "placeholder": "Search items, collectors, events...",
+    "input_a11y": "Search input",
+    "unavailable": "Search unavailable",
+    "retry_a11y": "Retry search",
+    "no_results": "No results found"
+  },
+
+  "item_detail": {
+    "valuation_a11y": "Item valuation and details",
+    "save_a11y": "Save to collection",
+    "save": "Save to Collection"
+  },
+
+  "onboarding": {
+    "skip_a11y": "Skip to category selection",
+    "change_region_a11y": "Change region",
+    "confirm_age_a11y": "Confirm age requirement",
+    "select_region": "Select Region"
+  },
+
+  "quickscan_screen": {
+    "gallery_a11y": "Scan from gallery or screenshot"
+  },
+
+  "add_manual": {
+    "discard_draft_a11y": "Discard draft"
   },
 
   "auth": {
@@ -123,13 +217,40 @@
 
   "home": {
     "portfolio_value": "Portfolio value",
+    "portfolio_title": "Portfolio",
+    "portfolio_subtitle": "Track your collection value.",
     "top_items": "Top items",
     "recent_activity": "Recent activity",
     "set_progress": "Set progress",
     "sets_in_progress": "{{count}} set in progress",
     "sets_in_progress_plural": "{{count}} sets in progress",
     "no_items_yet": "Start adding items to see your collection",
-    "scan_your_first": "Scan your first item"
+    "scan_your_first": "Scan your first item",
+    "start_collection": "Start Your Collection",
+    "start_collection_subtitle": "Snap a photo of any collectible to get an instant AI valuation",
+    "quickscan_ai": "QuickScan AI",
+    "or_add_manually": "or add manually",
+    "add_to_collection": "Add to Collection",
+    "add_to_collection_subtitle": "Scan, snap, or enter manually",
+    "total_items": "Total Items",
+    "categories": "Categories",
+    "portfolio": "Portfolio",
+    "extended_insights": "Extended Portfolio Insights",
+    "extended_insights_active": "Deep analytics, trend forecasts & price alerts",
+    "extended_insights_locked": "Unlock deep analytics, trend forecasts & price alerts",
+    "deal_agent": "Deal Agent",
+    "deal_agent_active": "Always-on deal discovery",
+    "deal_agent_locked": "Upgrade to Pro to unlock",
+    "view": "View",
+    "upgrade": "Upgrade",
+    "open_settings_a11y": "Open settings",
+    "open_quickscan_a11y": "Open QuickScan AI to scan your first item",
+    "add_manually_a11y": "Add an item manually",
+    "add_to_collection_a11y": "Add an item to your collection",
+    "insights_view_a11y": "View extended portfolio insights",
+    "insights_upgrade_a11y": "Upgrade for extended portfolio insights",
+    "deal_agent_open_a11y": "Open Deal Agent",
+    "deal_agent_upgrade_a11y": "Upgrade to unlock Deal Agent"
   },
 
   "items": {

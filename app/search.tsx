@@ -24,6 +24,7 @@ import { SkeletonList } from '@/components/Skeleton';
 import { CatalogImage } from '@/components/CatalogImage';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 const RECENT_SEARCHES_KEY = '@collectai/recent_searches';
 const MAX_RECENT_SEARCHES = 10;
@@ -159,6 +160,7 @@ const resultStyles = StyleSheet.create({
 function SearchScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
@@ -242,23 +244,23 @@ function SearchScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Search Header */}
       <View style={styles.header}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back')}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Ionicons name="search" size={18} color={colors.muted} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Search items, collectors, events..."
+            placeholder={t('search.placeholder')}
             placeholderTextColor={colors.muted}
             value={query}
             onChangeText={handleQueryChange}
             autoFocus
             returnKeyType="search"
-            accessibilityLabel="Search input"
+            accessibilityLabel={t('search.input_a11y')}
           />
           {query.length > 0 && (
-            <AnimatedPressable onPress={() => { setQuery(''); setResults(null); }} accessibilityRole="button" accessibilityLabel="Clear search">
+            <AnimatedPressable onPress={() => { setQuery(''); setResults(null); }} accessibilityRole="button" accessibilityLabel={t('common.clear_search')}>
               <Ionicons name="close-circle" size={18} color={colors.muted} />
             </AnimatedPressable>
           )}
@@ -271,8 +273,8 @@ function SearchScreen() {
           <View style={styles.section}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <Text style={[styles.sectionTitle, { color: colors.muted }]} accessibilityRole="header">RECENT SEARCHES</Text>
-              <AnimatedPressable onPress={clearRecentSearches} accessibilityRole="button" accessibilityLabel="Clear recent searches">
-                <Text style={{ color: colors.accent, fontSize: text.sm, fontWeight: fontWeight.semibold }}>Clear</Text>
+              <AnimatedPressable onPress={clearRecentSearches} accessibilityRole="button" accessibilityLabel={t('common.clear_recent')}>
+                <Text style={{ color: colors.accent, fontSize: text.sm, fontWeight: fontWeight.semibold }}>{t('common.clear')}</Text>
               </AnimatedPressable>
             </View>
             {recentSearches.map((term, idx) => (
@@ -302,9 +304,9 @@ function SearchScreen() {
         {!loading && error && (
           <View style={styles.emptyContainer}>
             <Ionicons name="alert-circle-outline" size={48} color={colors.muted} />
-            <Text style={[styles.emptyText, { color: colors.muted }]}>Search unavailable</Text>
-            <AnimatedPressable onPress={() => doSearch(query)} style={{ marginTop: 12, paddingHorizontal: 20, paddingVertical: 10, borderRadius: radius.xs, backgroundColor: colors.accent }} accessibilityRole="button" accessibilityLabel="Retry search">
-              <Text style={{ color: colors.accentText, fontWeight: fontWeight.semibold, fontSize: text.md }}>Retry</Text>
+            <Text style={[styles.emptyText, { color: colors.muted }]}>{t('search.unavailable')}</Text>
+            <AnimatedPressable onPress={() => doSearch(query)} style={{ marginTop: 12, paddingHorizontal: 20, paddingVertical: 10, borderRadius: radius.xs, backgroundColor: colors.accent }} accessibilityRole="button" accessibilityLabel={t('search.retry_a11y')}>
+              <Text style={{ color: colors.accentText, fontWeight: fontWeight.semibold, fontSize: text.md }}>{t('common.retry_action')}</Text>
             </AnimatedPressable>
           </View>
         )}
@@ -312,7 +314,7 @@ function SearchScreen() {
         {!loading && !error && query.length > 0 && !hasResults && (
           <View style={styles.emptyContainer}>
             <Ionicons name="search-outline" size={48} color={colors.muted} />
-            <Text style={[styles.emptyText, { color: colors.muted }]}>No results found</Text>
+            <Text style={[styles.emptyText, { color: colors.muted }]}>{t('search.no_results')}</Text>
           </View>
         )}
 

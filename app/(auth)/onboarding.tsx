@@ -29,6 +29,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import { useSettings, REGION_DEFAULTS } from '@/lib/settings';
 import type { Region } from '@/lib/settings';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { collectorsApi, logActivity } from '@/api/collectorsApi';
 import { API_BASE } from '@/api/config';
@@ -204,6 +205,7 @@ function OnboardingScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { settings, updateSettings } = useSettings();
+  const { t } = useTranslation();
   const { colors, isDark } = useAppTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -371,7 +373,7 @@ function OnboardingScreen() {
               onPress={handleSkip}
               style={styles.skipBtn}
               accessibilityRole="button"
-              accessibilityLabel="Skip to category selection"
+              accessibilityLabel={t('onboarding.skip_a11y')}
             >
               <Text style={[styles.skipText, { color: colors.muted }]}>Skip</Text>
             </AnimatedPressable>
@@ -502,7 +504,7 @@ function OnboardingScreen() {
                         onPress={() => setRegionPickerVisible(true)}
                         style={styles.changeRegionBtn}
                         accessibilityRole="button"
-                        accessibilityLabel="Change region"
+                        accessibilityLabel={t('onboarding.change_region_a11y')}
                       >
                         <Text style={[styles.changeRegionText, { color: colors.brand.dark }]}>Change</Text>
                       </TouchableOpacity>
@@ -516,7 +518,7 @@ function OnboardingScreen() {
                     activeOpacity={0.7}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: ageConfirmed }}
-                    accessibilityLabel="Confirm age requirement"
+                    accessibilityLabel={t('onboarding.confirm_age_a11y')}
                   >
                     <View
                       style={[
@@ -589,7 +591,7 @@ function OnboardingScreen() {
               <TouchableOpacity onPress={() => setRegionPickerVisible(false)}>
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
-              <Text style={[styles.regionPickerTitle, { color: colors.text }]}>Select Region</Text>
+              <Text style={[styles.regionPickerTitle, { color: colors.text }]}>{t('onboarding.select_region')}</Text>
               <View style={{ width: 24 }} />
             </View>
             {REGION_OPTIONS.map((opt) => (

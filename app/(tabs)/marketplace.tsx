@@ -27,6 +27,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { formatPrice, formatDualPrice } from "@/lib/format";
 import { useSettings as useSettingsHook } from "@/lib/settings";
+import { useTranslation } from "react-i18next";
 // InboxHeaderButton and ThemeToggleButton moved to MarketplacePageHeader
 import { CATEGORIES } from "@/data/categories";
 import { collectorsApi } from "@/api/collectorsApi";
@@ -135,6 +136,7 @@ const SearchScreen: React.FC = () => {
   const { colors, isDark } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettingsHook();
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
@@ -607,10 +609,10 @@ const SearchScreen: React.FC = () => {
             style={[styles.findCollectorsButton, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
             onPress={openUserSearch}
             accessibilityRole="button"
-            accessibilityLabel="Find collectors"
+            accessibilityLabel={t('marketplace.find_collectors_a11y')}
           >
             <Ionicons name="people-outline" size={18} color={colors.accent} />
-            <Text style={[styles.findCollectorsText, { color: colors.accent }]}>Find Collectors</Text>
+            <Text style={[styles.findCollectorsText, { color: colors.accent }]}>{t('marketplace.find_collectors')}</Text>
             <Ionicons name="chevron-forward" size={16} color={colors.accent} />
           </AnimatedPressable>
         )}
@@ -627,7 +629,7 @@ const SearchScreen: React.FC = () => {
         {/* Popular searches (preset chips) */}
         {!trimmedQuery && (
           <View style={styles.presetChipsSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Popular searches</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('marketplace.popular_searches')}</Text>
             <View style={styles.presetChipsRow}>
               {['Charizard', 'Black Lotus', 'Funko Pop', 'Jordan 1', 'LEGO Star Wars', 'Pikachu'].map((term) => (
                 <TouchableOpacity
@@ -737,11 +739,11 @@ const SearchScreen: React.FC = () => {
               <TouchableOpacity
                 onPress={handleCloseUserSearch}
                 accessibilityRole="button"
-                accessibilityLabel="Close user search"
+                accessibilityLabel={t('marketplace.close_user_search_a11y')}
               >
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
-              <Text style={[styles.filterHeaderTitle, { color: colors.text }]}>Find Collectors</Text>
+              <Text style={[styles.filterHeaderTitle, { color: colors.text }]}>{t('marketplace.find_collectors')}</Text>
               <View style={{ width: 24 }} />
             </View>
 
@@ -752,18 +754,18 @@ const SearchScreen: React.FC = () => {
                 <TextInput
                   value={userSearchQuery}
                   onChangeText={setUserSearchQuery}
-                  placeholder="Search by name or handle..."
+                  placeholder={t('marketplace.search_users_placeholder')}
                   placeholderTextColor={colors.muted}
                   autoFocus
                   style={[styles.searchInput, { color: colors.text }]}
-                  accessibilityLabel="Search users by name or handle"
+                  accessibilityLabel={t('marketplace.search_users_a11y')}
                   returnKeyType="search"
                 />
                 {userSearchQuery.length > 0 && (
                   <TouchableOpacity
                     onPress={handleClearUserSearch}
                     accessibilityRole="button"
-                    accessibilityLabel="Clear search"
+                    accessibilityLabel={t('common.clear_search')}
                   >
                     <Ionicons name="close-circle" size={18} color={colors.muted} />
                   </TouchableOpacity>

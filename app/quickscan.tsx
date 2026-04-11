@@ -20,6 +20,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { isDeviceOnline } from '@/hooks/useNetworkStatus';
 import { useToast } from '@/components/Toast';
 import { useSettings } from '@/lib/settings';
+import { useTranslation } from 'react-i18next';
 import { ScanResultCard } from '@/components/ScanResultCard';
 import { MultiItemOverlay } from '@/components/MultiItemOverlay';
 import { ComparisonCard } from '@/components/ComparisonCard';
@@ -69,6 +70,7 @@ function QuickScanScreen() {
   const { colors } = useAppTheme();
   const { showToast } = useToast();
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const { recordAction: recordAdAction, tryShow: tryShowAd } = useInterstitial('scan_interstitial');
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
@@ -754,7 +756,7 @@ function QuickScanScreen() {
             style={[styles.galleryBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
             onPress={handleScreenshotScan}
             accessibilityRole="button"
-            accessibilityLabel="Scan from gallery or screenshot"
+            accessibilityLabel={t('quickscan_screen.gallery_a11y')}
           >
             <Ionicons name="image-outline" size={22} color={colors.accentText} />
           </AnimatedPressable>

@@ -24,7 +24,101 @@
     "yes": "Oui",
     "no": "Non",
     "optional": "Facultatif",
-    "required": "Obligatoire"
+    "required": "Obligatoire",
+    "go_back": "Retour",
+    "clear": "Effacer",
+    "clear_search": "Effacer la recherche",
+    "clear_recent": "Effacer les recherches récentes",
+    "retry_action": "Réessayer"
+  },
+
+  "add_tab": {
+    "subtitle": "Flux rapide, photo d'abord.",
+    "quickscan_ai": "QuickScan IA",
+    "start_quickscan": "Démarrer QuickScan",
+    "start_quickscan_a11y": "Démarrer QuickScan pour ajouter un objet par photo",
+    "scan_barcode": "Scanner code-barres / ISBN",
+    "scan_barcode_a11y": "Scanner code-barres ou ISBN",
+    "import_url": "Importer depuis une URL",
+    "import_url_a11y": "Importer un objet depuis une URL de marché",
+    "add_manually": "Ajouter manuellement",
+    "add_manually_a11y": "Ajouter un objet manuellement"
+  },
+
+  "wishlist": {
+    "empty_title": "Commencez votre liste de suivi",
+    "add_first_a11y": "Ajouter votre premier objet à la liste",
+    "add_first": "Ajouter votre premier objet",
+    "feature_price_drops": "Alertes de baisse de prix",
+    "feature_target_price": "Suivi du prix cible",
+    "feature_restock": "Notifications de restockage",
+    "add_to_watchlist": "Ajouter à la liste de suivi",
+    "close_add_form_a11y": "Fermer le formulaire",
+    "title_required": "Titre *",
+    "title_a11y": "Titre de l'objet",
+    "category_required": "Catégorie *",
+    "add_to_watchlist_a11y": "Ajouter à la liste de suivi",
+    "close_category_picker_a11y": "Fermer le sélecteur de catégorie",
+    "select_category": "Sélectionner une catégorie",
+    "add_to_collection": "Ajouter à la collection",
+    "close_acquisition_a11y": "Fermer le formulaire d'acquisition",
+    "price_paid_a11y": "Prix payé en euros",
+    "notes_optional": "Notes (facultatif)",
+    "notes_a11y": "Notes d'acquisition"
+  },
+
+  "events": {
+    "reminder_a11y": "Définir un rappel pour l'événement",
+    "create_event": "Créer un événement",
+    "create_event_a11y": "Créer un nouvel événement",
+    "sponsor_a11y": "Parrainer des événements",
+    "twitch_a11y": "Hub créateurs Twitch",
+    "search_placeholder": "Rechercher des événements...",
+    "search_a11y": "Rechercher des événements",
+    "show_all_a11y": "Afficher tous les types d'événements",
+    "load_error_title": "Impossible de charger les événements",
+    "load_error_body": "Vérifiez votre connexion et réessayez.",
+    "retry_a11y": "Réessayer le chargement des événements",
+    "empty_title": "Aucun événement à proximité",
+    "empty_body": "Aucun événement trouvé dans un rayon de 50 km"
+  },
+
+  "marketplace": {
+    "find_collectors": "Trouver des collectionneurs",
+    "find_collectors_a11y": "Trouver des collectionneurs",
+    "popular_searches": "Recherches populaires",
+    "close_user_search_a11y": "Fermer la recherche d'utilisateurs",
+    "search_users_placeholder": "Rechercher par nom ou pseudo...",
+    "search_users_a11y": "Rechercher des utilisateurs par nom ou pseudo"
+  },
+
+  "search": {
+    "placeholder": "Rechercher objets, collectionneurs, événements...",
+    "input_a11y": "Champ de recherche",
+    "unavailable": "Recherche indisponible",
+    "retry_a11y": "Réessayer la recherche",
+    "no_results": "Aucun résultat trouvé"
+  },
+
+  "item_detail": {
+    "valuation_a11y": "Évaluation et détails de l'objet",
+    "save_a11y": "Enregistrer dans la collection",
+    "save": "Enregistrer dans la collection"
+  },
+
+  "onboarding": {
+    "skip_a11y": "Passer la sélection de catégorie",
+    "change_region_a11y": "Changer de région",
+    "confirm_age_a11y": "Confirmer l'exigence d'âge",
+    "select_region": "Sélectionner une région"
+  },
+
+  "quickscan_screen": {
+    "gallery_a11y": "Scanner depuis la galerie ou une capture d'écran"
+  },
+
+  "add_manual": {
+    "discard_draft_a11y": "Abandonner le brouillon"
   },
 
   "auth": {
@@ -123,13 +217,40 @@
 
   "home": {
     "portfolio_value": "Valeur du portefeuille",
+    "portfolio_title": "Portefeuille",
+    "portfolio_subtitle": "Suivez la valeur de votre collection.",
     "top_items": "Principaux objets",
     "recent_activity": "Activité récente",
     "set_progress": "Progression des séries",
     "sets_in_progress": "{{count}} série en cours",
     "sets_in_progress_plural": "{{count}} séries en cours",
     "no_items_yet": "Ajoutez des objets pour voir votre collection",
-    "scan_your_first": "Scannez votre premier objet"
+    "scan_your_first": "Scannez votre premier objet",
+    "start_collection": "Commencez votre collection",
+    "start_collection_subtitle": "Photographiez un objet de collection pour une estimation IA instantanée",
+    "quickscan_ai": "QuickScan IA",
+    "or_add_manually": "ou ajouter manuellement",
+    "add_to_collection": "Ajouter à la collection",
+    "add_to_collection_subtitle": "Scannez, photographiez ou saisissez manuellement",
+    "total_items": "Total des objets",
+    "categories": "Catégories",
+    "portfolio": "Portefeuille",
+    "extended_insights": "Analyses de portefeuille avancées",
+    "extended_insights_active": "Analyses approfondies, prévisions de tendances et alertes de prix",
+    "extended_insights_locked": "Débloquez les analyses approfondies, prévisions et alertes",
+    "deal_agent": "Deal Agent",
+    "deal_agent_active": "Détection de bonnes affaires en continu",
+    "deal_agent_locked": "Passez à Pro pour débloquer",
+    "view": "Voir",
+    "upgrade": "Mettre à niveau",
+    "open_settings_a11y": "Ouvrir les paramètres",
+    "open_quickscan_a11y": "Ouvrir QuickScan IA pour scanner votre premier objet",
+    "add_manually_a11y": "Ajouter un objet manuellement",
+    "add_to_collection_a11y": "Ajouter un objet à votre collection",
+    "insights_view_a11y": "Voir les analyses de portefeuille avancées",
+    "insights_upgrade_a11y": "Mettre à niveau pour les analyses avancées",
+    "deal_agent_open_a11y": "Ouvrir Deal Agent",
+    "deal_agent_upgrade_a11y": "Mettre à niveau pour débloquer Deal Agent"
   },
 
   "items": {

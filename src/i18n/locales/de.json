@@ -24,7 +24,101 @@
     "yes": "Ja",
     "no": "Nein",
     "optional": "Optional",
-    "required": "Erforderlich"
+    "required": "Erforderlich",
+    "go_back": "Zurück",
+    "clear": "Leeren",
+    "clear_search": "Suche leeren",
+    "clear_recent": "Letzte Suchen löschen",
+    "retry_action": "Erneut"
+  },
+
+  "add_tab": {
+    "subtitle": "Schneller, kamerazuerst Flow.",
+    "quickscan_ai": "QuickScan AI",
+    "start_quickscan": "QuickScan starten",
+    "start_quickscan_a11y": "QuickScan starten, um Objekt per Foto hinzuzufügen",
+    "scan_barcode": "Barcode / ISBN scannen",
+    "scan_barcode_a11y": "Barcode oder ISBN scannen",
+    "import_url": "Von URL importieren",
+    "import_url_a11y": "Objekt von Marktplatz-URL importieren",
+    "add_manually": "Manuell hinzufügen",
+    "add_manually_a11y": "Objekt manuell hinzufügen"
+  },
+
+  "wishlist": {
+    "empty_title": "Starte deine Wunschliste",
+    "add_first_a11y": "Erstes Wunschlisten-Objekt hinzufügen",
+    "add_first": "Erstes Objekt hinzufügen",
+    "feature_price_drops": "Preisalarme",
+    "feature_target_price": "Zielpreis verfolgen",
+    "feature_restock": "Nachschub-Benachrichtigungen",
+    "add_to_watchlist": "Zur Wunschliste hinzufügen",
+    "close_add_form_a11y": "Formular schließen",
+    "title_required": "Titel *",
+    "title_a11y": "Objekt-Titel",
+    "category_required": "Kategorie *",
+    "add_to_watchlist_a11y": "Zur Wunschliste hinzufügen",
+    "close_category_picker_a11y": "Kategorieauswahl schließen",
+    "select_category": "Kategorie auswählen",
+    "add_to_collection": "Zur Sammlung hinzufügen",
+    "close_acquisition_a11y": "Kauf-Formular schließen",
+    "price_paid_a11y": "Bezahlter Preis in Euro",
+    "notes_optional": "Notizen (optional)",
+    "notes_a11y": "Kauf-Notizen"
+  },
+
+  "events": {
+    "reminder_a11y": "Erinnerung für Event setzen",
+    "create_event": "Event erstellen",
+    "create_event_a11y": "Neues Event erstellen",
+    "sponsor_a11y": "Events sponsern",
+    "twitch_a11y": "Twitch Creators Hub",
+    "search_placeholder": "Events suchen...",
+    "search_a11y": "Events suchen",
+    "show_all_a11y": "Alle Eventtypen anzeigen",
+    "load_error_title": "Events konnten nicht geladen werden",
+    "load_error_body": "Prüfe deine Verbindung und versuche es erneut.",
+    "retry_a11y": "Event-Ladung erneut versuchen",
+    "empty_title": "Keine Events in der Nähe",
+    "empty_body": "Keine Events innerhalb 50 km von deinem Standort gefunden"
+  },
+
+  "marketplace": {
+    "find_collectors": "Sammler finden",
+    "find_collectors_a11y": "Sammler finden",
+    "popular_searches": "Beliebte Suchen",
+    "close_user_search_a11y": "Benutzersuche schließen",
+    "search_users_placeholder": "Nach Name oder Handle suchen...",
+    "search_users_a11y": "Benutzer nach Name oder Handle suchen"
+  },
+
+  "search": {
+    "placeholder": "Objekte, Sammler, Events suchen...",
+    "input_a11y": "Suchfeld",
+    "unavailable": "Suche nicht verfügbar",
+    "retry_a11y": "Suche erneut versuchen",
+    "no_results": "Keine Ergebnisse gefunden"
+  },
+
+  "item_detail": {
+    "valuation_a11y": "Objekt-Bewertung und Details",
+    "save_a11y": "In Sammlung speichern",
+    "save": "In Sammlung speichern"
+  },
+
+  "onboarding": {
+    "skip_a11y": "Kategorieauswahl überspringen",
+    "change_region_a11y": "Region ändern",
+    "confirm_age_a11y": "Altersanforderung bestätigen",
+    "select_region": "Region auswählen"
+  },
+
+  "quickscan_screen": {
+    "gallery_a11y": "Aus Galerie oder Screenshot scannen"
+  },
+
+  "add_manual": {
+    "discard_draft_a11y": "Entwurf verwerfen"
   },
 
   "auth": {
@@ -123,13 +217,40 @@
 
   "home": {
     "portfolio_value": "Portfoliowert",
+    "portfolio_title": "Portfolio",
+    "portfolio_subtitle": "Verfolge den Wert deiner Sammlung.",
     "top_items": "Top-Objekte",
     "recent_activity": "Letzte Aktivität",
     "set_progress": "Set-Fortschritt",
     "sets_in_progress": "{{count}} Set in Bearbeitung",
     "sets_in_progress_plural": "{{count}} Sets in Bearbeitung",
     "no_items_yet": "Füge Objekte hinzu, um deine Sammlung zu sehen",
-    "scan_your_first": "Scanne dein erstes Objekt"
+    "scan_your_first": "Scanne dein erstes Objekt",
+    "start_collection": "Starte deine Sammlung",
+    "start_collection_subtitle": "Fotografiere ein Sammlerstück für eine sofortige KI-Bewertung",
+    "quickscan_ai": "QuickScan AI",
+    "or_add_manually": "oder manuell hinzufügen",
+    "add_to_collection": "Zur Sammlung hinzufügen",
+    "add_to_collection_subtitle": "Scannen, fotografieren oder manuell eingeben",
+    "total_items": "Objekte gesamt",
+    "categories": "Kategorien",
+    "portfolio": "Portfolio",
+    "extended_insights": "Erweiterte Portfolio-Insights",
+    "extended_insights_active": "Tiefenanalysen, Trendprognosen & Preiswarnungen",
+    "extended_insights_locked": "Tiefenanalysen, Trendprognosen & Preiswarnungen freischalten",
+    "deal_agent": "Deal Agent",
+    "deal_agent_active": "Ständige Deal-Überwachung",
+    "deal_agent_locked": "Auf Pro upgraden zum Freischalten",
+    "view": "Ansehen",
+    "upgrade": "Upgrade",
+    "open_settings_a11y": "Einstellungen öffnen",
+    "open_quickscan_a11y": "QuickScan AI öffnen, um dein erstes Objekt zu scannen",
+    "add_manually_a11y": "Ein Objekt manuell hinzufügen",
+    "add_to_collection_a11y": "Ein Objekt zur Sammlung hinzufügen",
+    "insights_view_a11y": "Erweiterte Portfolio-Insights ansehen",
+    "insights_upgrade_a11y": "Upgrade für erweiterte Portfolio-Insights",
+    "deal_agent_open_a11y": "Deal Agent öffnen",
+    "deal_agent_upgrade_a11y": "Upgrade, um Deal Agent freizuschalten"
   },
 
   "items": {

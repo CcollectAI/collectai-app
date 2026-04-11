@@ -24,7 +24,101 @@
     "yes": "Ja",
     "no": "Nee",
     "optional": "Optioneel",
-    "required": "Verplicht"
+    "required": "Verplicht",
+    "go_back": "Terug",
+    "clear": "Wissen",
+    "clear_search": "Zoekopdracht wissen",
+    "clear_recent": "Recente zoekopdrachten wissen",
+    "retry_action": "Opnieuw"
+  },
+
+  "add_tab": {
+    "subtitle": "Snelle, camera-gerichte flow.",
+    "quickscan_ai": "QuickScan AI",
+    "start_quickscan": "QuickScan starten",
+    "start_quickscan_a11y": "Start QuickScan om item via foto toe te voegen",
+    "scan_barcode": "Streepjescode / ISBN scannen",
+    "scan_barcode_a11y": "Streepjescode of ISBN scannen",
+    "import_url": "Importeren via URL",
+    "import_url_a11y": "Item importeren vanaf marktplaats-URL",
+    "add_manually": "Handmatig toevoegen",
+    "add_manually_a11y": "Item handmatig toevoegen"
+  },
+
+  "wishlist": {
+    "empty_title": "Start je verlanglijst",
+    "add_first_a11y": "Voeg je eerste verlanglijst-item toe",
+    "add_first": "Voeg je eerste item toe",
+    "feature_price_drops": "Prijswaarschuwingen",
+    "feature_target_price": "Streefprijs volgen",
+    "feature_restock": "Voorraad-meldingen",
+    "add_to_watchlist": "Toevoegen aan verlanglijst",
+    "close_add_form_a11y": "Formulier sluiten",
+    "title_required": "Titel *",
+    "title_a11y": "Item-titel",
+    "category_required": "Categorie *",
+    "add_to_watchlist_a11y": "Toevoegen aan verlanglijst",
+    "close_category_picker_a11y": "Categoriekiezer sluiten",
+    "select_category": "Categorie selecteren",
+    "add_to_collection": "Toevoegen aan collectie",
+    "close_acquisition_a11y": "Aanschaf-formulier sluiten",
+    "price_paid_a11y": "Betaalde prijs in euro's",
+    "notes_optional": "Notities (optioneel)",
+    "notes_a11y": "Aanschaf-notities"
+  },
+
+  "events": {
+    "reminder_a11y": "Herinnering instellen voor evenement",
+    "create_event": "Evenement aanmaken",
+    "create_event_a11y": "Nieuw evenement aanmaken",
+    "sponsor_a11y": "Evenementen sponsoren",
+    "twitch_a11y": "Twitch creators hub",
+    "search_placeholder": "Zoek evenementen...",
+    "search_a11y": "Evenementen zoeken",
+    "show_all_a11y": "Alle evenementtypes tonen",
+    "load_error_title": "Kon evenementen niet laden",
+    "load_error_body": "Controleer je verbinding en probeer opnieuw.",
+    "retry_a11y": "Laden van evenementen opnieuw proberen",
+    "empty_title": "Geen evenementen in de buurt",
+    "empty_body": "Geen evenementen gevonden binnen 50 km van je locatie"
+  },
+
+  "marketplace": {
+    "find_collectors": "Verzamelaars vinden",
+    "find_collectors_a11y": "Verzamelaars vinden",
+    "popular_searches": "Populaire zoekopdrachten",
+    "close_user_search_a11y": "Gebruikers-zoekopdracht sluiten",
+    "search_users_placeholder": "Zoek op naam of gebruikersnaam...",
+    "search_users_a11y": "Gebruikers zoeken op naam of gebruikersnaam"
+  },
+
+  "search": {
+    "placeholder": "Zoek items, verzamelaars, evenementen...",
+    "input_a11y": "Zoekveld",
+    "unavailable": "Zoeken niet beschikbaar",
+    "retry_a11y": "Zoeken opnieuw proberen",
+    "no_results": "Geen resultaten gevonden"
+  },
+
+  "item_detail": {
+    "valuation_a11y": "Item-taxatie en details",
+    "save_a11y": "Opslaan in collectie",
+    "save": "Opslaan in collectie"
+  },
+
+  "onboarding": {
+    "skip_a11y": "Categorie-keuze overslaan",
+    "change_region_a11y": "Regio wijzigen",
+    "confirm_age_a11y": "Leeftijdsvereiste bevestigen",
+    "select_region": "Regio selecteren"
+  },
+
+  "quickscan_screen": {
+    "gallery_a11y": "Scannen vanaf galerij of screenshot"
+  },
+
+  "add_manual": {
+    "discard_draft_a11y": "Concept verwerpen"
   },
 
   "auth": {
@@ -123,13 +217,40 @@
 
   "home": {
     "portfolio_value": "Portfoliowaarde",
+    "portfolio_title": "Portfolio",
+    "portfolio_subtitle": "Volg de waarde van je collectie.",
     "top_items": "Topitems",
     "recent_activity": "Recente activiteit",
     "set_progress": "Setvoortgang",
     "sets_in_progress": "{{count}} set in uitvoering",
     "sets_in_progress_plural": "{{count}} sets in uitvoering",
     "no_items_yet": "Voeg items toe om je collectie te zien",
-    "scan_your_first": "Scan je eerste item"
+    "scan_your_first": "Scan je eerste item",
+    "start_collection": "Start je collectie",
+    "start_collection_subtitle": "Maak een foto van een verzamelobject voor een directe AI-taxatie",
+    "quickscan_ai": "QuickScan AI",
+    "or_add_manually": "of handmatig toevoegen",
+    "add_to_collection": "Toevoegen aan collectie",
+    "add_to_collection_subtitle": "Scannen, fotograferen of handmatig invoeren",
+    "total_items": "Totaal items",
+    "categories": "Categorieën",
+    "portfolio": "Portfolio",
+    "extended_insights": "Uitgebreide portfolio-inzichten",
+    "extended_insights_active": "Diepe analyses, trendvoorspellingen en prijswaarschuwingen",
+    "extended_insights_locked": "Ontgrendel diepe analyses, trendvoorspellingen en prijswaarschuwingen",
+    "deal_agent": "Deal Agent",
+    "deal_agent_active": "Altijd-aan deal-ontdekking",
+    "deal_agent_locked": "Upgrade naar Pro om te ontgrendelen",
+    "view": "Bekijken",
+    "upgrade": "Upgraden",
+    "open_settings_a11y": "Instellingen openen",
+    "open_quickscan_a11y": "Open QuickScan AI om je eerste item te scannen",
+    "add_manually_a11y": "Een item handmatig toevoegen",
+    "add_to_collection_a11y": "Een item aan je collectie toevoegen",
+    "insights_view_a11y": "Uitgebreide portfolio-inzichten bekijken",
+    "insights_upgrade_a11y": "Upgrade voor uitgebreide portfolio-inzichten",
+    "deal_agent_open_a11y": "Deal Agent openen",
+    "deal_agent_upgrade_a11y": "Upgrade om Deal Agent te ontgrendelen"
   },
 
   "items": {

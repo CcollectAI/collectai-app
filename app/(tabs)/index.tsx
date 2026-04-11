@@ -45,6 +45,7 @@ import { useAlertsFeed } from "@/hooks/useAlertsFeed";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { useTranslation } from "react-i18next";
 import { formatPrice } from "@/lib/format";
 import { useToast } from "@/components/Toast";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
@@ -158,6 +159,7 @@ function PortfolioScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { limits } = useBillingLimits();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
@@ -486,8 +488,8 @@ function PortfolioScreen() {
         {/* Header */}
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Portfolio</Text>
-            <Text style={[styles.headerSubtitle, { color: colors.muted }]}>Track your collection value.</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{t('home.portfolio_title')}</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.muted }]}>{t('home.portfolio_subtitle')}</Text>
           </View>
           <View style={styles.headerIcons}>
             <AnimatedPressable
@@ -511,7 +513,7 @@ function PortfolioScreen() {
               onPress={handleOpenSettings}
               style={styles.iconBtn}
               accessibilityRole="button"
-              accessibilityLabel="Open settings"
+              accessibilityLabel={t('home.open_settings_a11y')}
             >
               <Ionicons name="settings-outline" size={22} color={colors.text} />
             </AnimatedPressable>
@@ -524,26 +526,26 @@ function PortfolioScreen() {
             <View style={[styles.emptyIconCircle, { backgroundColor: colors.accent + '15' }]}>
               <Ionicons name="camera-outline" size={64} color={colors.accent} />
             </View>
-            <Text style={[styles.emptyHeadline, { color: colors.text }]}>Start Your Collection</Text>
+            <Text style={[styles.emptyHeadline, { color: colors.text }]}>{t('home.start_collection')}</Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-              Snap a photo of any collectible to get an instant AI valuation
+              {t('home.start_collection_subtitle')}
             </Text>
             <AnimatedPressable
               style={[styles.emptyCta, { backgroundColor: colors.accent }]}
               onPress={handleOpenQuickScan}
               accessibilityRole="button"
-              accessibilityLabel="Open QuickScan AI to scan your first item"
+              accessibilityLabel={t('home.open_quickscan_a11y')}
             >
               <Ionicons name="camera" size={20} color={colors.accentText} style={styles.iconMarginRight} />
-              <Text style={[styles.emptyCtaText, { color: colors.accentText }]}>QuickScan AI</Text>
+              <Text style={[styles.emptyCtaText, { color: colors.accentText }]}>{t('home.quickscan_ai')}</Text>
             </AnimatedPressable>
             <AnimatedPressable
               style={styles.emptySecondary}
               onPress={handleOpenManualAdd}
               accessibilityRole="button"
-              accessibilityLabel="Add an item manually"
+              accessibilityLabel={t('home.add_manually_a11y')}
             >
-              <Text style={[styles.emptySecondaryText, { color: colors.muted }]}>or add manually</Text>
+              <Text style={[styles.emptySecondaryText, { color: colors.muted }]}>{t('home.or_add_manually')}</Text>
             </AnimatedPressable>
           </View>
         ) : (
@@ -606,14 +608,14 @@ function PortfolioScreen() {
           onPress={handleOpenAddMenu}
           style={[styles.addBanner, { backgroundColor: colors.accent + '0D', borderColor: colors.accent + '30' }]}
           accessibilityRole="button"
-          accessibilityLabel="Add an item to your collection"
+          accessibilityLabel={t('home.add_to_collection_a11y')}
         >
           <View style={[styles.addBannerIconWrap, { backgroundColor: colors.accent }]}>
             <Ionicons name="add" size={18} color={colors.accentText} />
           </View>
           <View style={styles.addBannerText}>
-            <Text style={[styles.addBannerTitle, { color: colors.text }]}>Add to Collection</Text>
-            <Text style={[styles.addBannerSubtitle, { color: colors.muted }]}>Scan, snap, or enter manually</Text>
+            <Text style={[styles.addBannerTitle, { color: colors.text }]}>{t('home.add_to_collection')}</Text>
+            <Text style={[styles.addBannerSubtitle, { color: colors.muted }]}>{t('home.add_to_collection_subtitle')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.accent} />
         </AnimatedPressable>
@@ -644,21 +646,21 @@ function PortfolioScreen() {
           <View style={[styles.globalStats, { borderColor: colors.border }]}>
             <View style={styles.globalStatItem}>
               <Text style={[styles.globalStatValue, { color: colors.text }]}>{categoryBreakdown.length}</Text>
-              <Text style={[styles.globalStatLabel, { color: colors.muted }]}>Categories</Text>
+              <Text style={[styles.globalStatLabel, { color: colors.muted }]}>{t('home.categories')}</Text>
             </View>
             <View style={[styles.globalStatDivider, { backgroundColor: colors.border }]} />
             <View style={styles.globalStatItem}>
               <Text style={[styles.globalStatValue, { color: colors.text }]}>
                 {globalStatsTotalItems}
               </Text>
-              <Text style={[styles.globalStatLabel, { color: colors.muted }]}>Total Items</Text>
+              <Text style={[styles.globalStatLabel, { color: colors.muted }]}>{t('home.total_items')}</Text>
             </View>
             <View style={[styles.globalStatDivider, { backgroundColor: colors.border }]} />
             <View style={styles.globalStatItem}>
               <Text style={[styles.globalStatValue, { color: colors.accent }]}>
                 {formatPrice(globalStatsTotalValue)}
               </Text>
-              <Text style={[styles.globalStatLabel, { color: colors.muted }]}>Portfolio</Text>
+              <Text style={[styles.globalStatLabel, { color: colors.muted }]}>{t('home.portfolio')}</Text>
             </View>
           </View>
         )}
@@ -668,23 +670,23 @@ function PortfolioScreen() {
           style={[styles.insightsCta, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={handleInsightsCtaPress}
           accessibilityRole="button"
-          accessibilityLabel={limits.advanced_analytics ? "View extended portfolio insights" : "Upgrade for extended portfolio insights"}
+          accessibilityLabel={limits.advanced_analytics ? t('home.insights_view_a11y') : t('home.insights_upgrade_a11y')}
         >
           <View style={styles.insightsCtaLeft}>
             <View style={[styles.insightsCtaIcon, { backgroundColor: colors.accent + '15' }]}>
               <Ionicons name={limits.advanced_analytics ? "analytics" : "lock-closed"} size={18} color={colors.accent} />
             </View>
             <View style={styles.insightsCtaTextBlock}>
-              <Text style={[styles.insightsCtaTitle, { color: colors.text }]}>Extended Portfolio Insights</Text>
+              <Text style={[styles.insightsCtaTitle, { color: colors.text }]}>{t('home.extended_insights')}</Text>
               <Text style={[styles.insightsCtaSub, { color: colors.muted }]}>
                 {limits.advanced_analytics
-                  ? "Deep analytics, trend forecasts & price alerts"
-                  : "Unlock deep analytics, trend forecasts & price alerts"}
+                  ? t('home.extended_insights_active')
+                  : t('home.extended_insights_locked')}
               </Text>
             </View>
           </View>
           <View style={[styles.insightsCtaBtn, { backgroundColor: colors.accent }]}>
-            <Text style={[styles.insightsCtaBtnText, { color: colors.accentText }]}>{limits.advanced_analytics ? "View" : "Upgrade"}</Text>
+            <Text style={[styles.insightsCtaBtnText, { color: colors.accentText }]}>{limits.advanced_analytics ? t('home.view') : t('home.upgrade')}</Text>
           </View>
         </AnimatedPressable>
 
@@ -703,21 +705,21 @@ function PortfolioScreen() {
           style={[styles.analyticsBanner, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={handleDealAgentPress}
           accessibilityRole="button"
-          accessibilityLabel={limits.deal_discovery ? "Open Deal Agent" : "Upgrade to unlock Deal Agent"}
+          accessibilityLabel={limits.deal_discovery ? t('home.deal_agent_open_a11y') : t('home.deal_agent_upgrade_a11y')}
         >
           <View style={styles.analyticsBannerLeft}>
             <View style={[styles.analyticsIconWrap, { backgroundColor: colors.accent + '15' }]}>
               <Ionicons name={limits.deal_discovery ? "flash" : "lock-closed"} size={18} color={colors.accent} />
             </View>
             <View style={styles.analyticsBannerText}>
-              <Text style={[styles.analyticsBannerTitle, { color: colors.text }]}>Deal Agent</Text>
+              <Text style={[styles.analyticsBannerTitle, { color: colors.text }]}>{t('home.deal_agent')}</Text>
               <Text style={[styles.analyticsBannerSubtitle, { color: colors.muted }]}>
-                {limits.deal_discovery ? "Always-on deal discovery" : "Upgrade to Pro to unlock"}
+                {limits.deal_discovery ? t('home.deal_agent_active') : t('home.deal_agent_locked')}
               </Text>
             </View>
           </View>
           <View style={[styles.analyticsBannerBtn, { backgroundColor: colors.accent }]}>
-            <Text style={[styles.analyticsBannerBtnText, { color: colors.accentText }]}>{limits.deal_discovery ? "View" : "Upgrade"}</Text>
+            <Text style={[styles.analyticsBannerBtnText, { color: colors.accentText }]}>{limits.deal_discovery ? t('home.view') : t('home.upgrade')}</Text>
           </View>
         </AnimatedPressable>
 
