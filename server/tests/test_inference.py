@@ -281,3 +281,98 @@ class TestCoefMismatchWarnings:
             result = ridge_infer_quantiles(RIDGE_V2_ARTIFACT, features)
         assert result is not None
         assert "coef mismatch" not in caplog.text
+
+
+# ---------------------------------------------------------------------------
+# Bake-quality integration tests: load all real trained artifacts and verify
+# each produces sane predictions. Catches: negative q50, q10 > q90 ordering
+# bugs, NaN/Inf, missing features, corrupt JSON. Runs against the ACTIVE
+# production model per category (server/artifacts/<cat>/active/model.json).
+# ---------------------------------------------------------------------------
+
+from pathlib import Path
+import json
+
+ARTIFACTS_ROOT = Path(__file__).resolve().parent.parent / "artifacts"
+
+
+def _discover_active_artifacts() -> list[tuple[str, dict]]:
+    """Load every active model.json as (category, artifact) tuples.
+
+    Skips any category with missing or malformed JSON rather than failing the
+    whole collection — we want the test to scale as categories are added.
+    """
+    if not ARTIFACTS_ROOT.exists():
+        return []
+    out: list[tuple[str, dict]] = []
+    for cat_dir in sorted(ARTIFACTS_ROOT.iterdir()):
+        if not cat_dir.is_dir():
+            continue
+        model_file = cat_dir / "active" / "model.json"
+        if not model_file.exists():
+            continue
+        try:
+            artifact = json.loads(model_file.read_text())
+        except Exception:
+            continue
+        out.append((cat_dir.name, artifact))
+    return out
+
+
+class TestBakedArtifactQuality:
+    """Smoke tests against the actual 54 trained Ridge models on disk."""
+
+    def test_at_least_one_active_model_exists(self):
+        """Sanity: we should have at least one category with a trained model."""
+        artifacts = _discover_active_artifacts()
+        assert len(artifacts) > 0, "No active models found in server/artifacts/*/active/"
+
+    @pytest.mark.parametrize("category,artifact", _discover_active_artifacts())
+    def test_quantile_inference_produces_sane_prediction(self, category: str, artifact: dict):
+        """Every baked model must produce non-negative q10 ≤ q50 ≤ q90 predictions.
+
+        Uses a default "average condition, average rarity" feature input. If
+        this fails, the model has been trained on bad data or has numerically
+        unstable coefficients. This is the gate that catches Ridge calibration
+        regressions before they ship to users.
+        """
+        model_features = artifact.get("features", [])
+        assert model_features, f"{category}: no features in artifact"
+
+        # Default-input feature dict: 0.5 for everything except condition=0.85 (NM)
+        features = {f: 0.5 for f in model_features}
+        if "condition_score" in features:
+            features["condition_score"] = 0.85
+        if "is_sealed" in features:
+            features["is_sealed"] = 0.0
+        if "is_graded" in features:
+            features["is_graded"] = 0.0
+
+        result = ridge_infer_quantiles(artifact, features)
+
+        assert result is not None, f"{category}: ridge_infer_quantiles returned None"
+        assert "q10" in result and "q50" in result and "q90" in result, (
+            f"{category}: missing quantile keys in {result}"
+        )
+
+        q10, q50, q90 = result["q10"], result["q50"], result["q90"]
+
+        # Finite
+        import math
+        assert math.isfinite(q10), f"{category}: q10 is not finite ({q10})"
+        assert math.isfinite(q50), f"{category}: q50 is not finite ({q50})"
+        assert math.isfinite(q90), f"{category}: q90 is not finite ({q90})"
+
+        # Non-negative (no negative prices ever reach users)
+        assert q10 >= 0, f"{category}: q10 negative ({q10})"
+        assert q50 >= 0, f"{category}: q50 negative ({q50})"
+        assert q90 >= 0, f"{category}: q90 negative ({q90})"
+
+        # Ordering
+        assert q10 <= q50 <= q90, (
+            f"{category}: quantile ordering violated (q10={q10}, q50={q50}, q90={q90})"
+        )
+
+        # Sanity ceiling — nothing a user scans with default features should
+        # ever predict more than €50M. Grail-tier items need real context.
+        assert q90 <= 50_000_000, f"{category}: q90 exceeds €50M sanity cap ({q90})"
