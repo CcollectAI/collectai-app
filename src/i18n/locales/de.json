@@ -1,0 +1,145 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "done": "Fertig",
+    "ok": "OK",
+    "close": "Schließen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "continue": "Fortfahren",
+    "skip": "Überspringen",
+    "retry": "Erneut versuchen",
+    "refresh": "Aktualisieren",
+    "loading": "Wird geladen…",
+    "error": "Etwas ist schiefgelaufen",
+    "empty": "Noch nichts hier",
+    "search": "Suchen",
+    "filter": "Filter",
+    "sort": "Sortieren",
+    "share": "Teilen",
+    "export": "Exportieren",
+    "yes": "Ja",
+    "no": "Nein",
+    "optional": "Optional",
+    "required": "Erforderlich"
+  },
+
+  "auth": {
+    "sign_in": "Anmelden",
+    "sign_up": "Registrieren",
+    "sign_out": "Abmelden",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "forgot_password": "Passwort vergessen?",
+    "create_account": "Konto erstellen",
+    "continue_with_google": "Mit Google fortfahren",
+    "continue_with_apple": "Mit Apple fortfahren",
+    "already_have_account": "Du hast schon ein Konto?",
+    "no_account": "Noch kein Konto?",
+    "verify_email": "E-Mail verifizieren",
+    "welcome_back": "Willkommen zurück",
+    "welcome": "Willkommen bei CollectAI"
+  },
+
+  "nav": {
+    "home": "Start",
+    "items": "Objekte",
+    "add": "Hinzufügen",
+    "marketplace": "Marktplatz",
+    "wishlist": "Merkliste",
+    "search": "Suche",
+    "settings": "Einstellungen",
+    "profile": "Profil"
+  },
+
+  "home": {
+    "portfolio_value": "Portfoliowert",
+    "top_items": "Top-Objekte",
+    "recent_activity": "Letzte Aktivität",
+    "set_progress": "Set-Fortschritt",
+    "sets_in_progress": "{{count}} Set in Bearbeitung",
+    "sets_in_progress_plural": "{{count}} Sets in Bearbeitung",
+    "no_items_yet": "Füge Objekte hinzu, um deine Sammlung zu sehen",
+    "scan_your_first": "Scanne dein erstes Objekt"
+  },
+
+  "items": {
+    "title": "Objekte",
+    "all": "Alle",
+    "category": "Kategorie",
+    "condition": "Zustand",
+    "value": "Wert",
+    "estimated_value": "Geschätzter Wert",
+    "added": "Hinzugefügt",
+    "delete_item": "Objekt löschen",
+    "delete_confirm": "Bist du sicher, dass du dieses Objekt löschen möchtest?",
+    "select_all": "Alle auswählen",
+    "deselect_all": "Auswahl aufheben",
+    "bulk_move": "Verschieben",
+    "bulk_archive": "Archivieren",
+    "bulk_delete": "Löschen",
+    "bulk_export": "Exportieren"
+  },
+
+  "scan": {
+    "title": "QuickScan",
+    "capture": "Tippen zum Aufnehmen",
+    "analyzing": "Analysiere…",
+    "identified": "Erkannt",
+    "add_to_collection": "Zur Sammlung hinzufügen",
+    "retake": "Erneut",
+    "cant_identify": "Objekt konnte nicht erkannt werden",
+    "add_manually": "Manuell hinzufügen",
+    "detected_details": "Erkannte Details",
+    "confidence": "Vertrauen",
+    "low_confidence_warning": "Geringes Vertrauen — bitte vor dem Speichern prüfen",
+    "scan_another": "Weiteres scannen"
+  },
+
+  "settings": {
+    "title": "Einstellungen",
+    "account": "Konto",
+    "preferences": "Präferenzen",
+    "currency": "Währung",
+    "language": "Sprache",
+    "haptics": "Haptisches Feedback",
+    "animations": "Animationen",
+    "notifications": "Benachrichtigungen",
+    "dark_mode": "Dunkler Modus",
+    "privacy": "Datenschutzerklärung",
+    "terms": "Nutzungsbedingungen",
+    "help": "Hilfe & Feedback",
+    "about": "Über",
+    "version": "Version",
+    "delete_account": "Konto löschen",
+    "delete_account_confirm": "Dies löscht dein Konto und alle Daten dauerhaft. Diese Aktion kann nicht rückgängig gemacht werden."
+  },
+
+  "billing": {
+    "free": "Kostenlos",
+    "pro": "Pro",
+    "premium": "Premium",
+    "upgrade": "Upgrade",
+    "upgrade_to_pro": "Auf Pro upgraden",
+    "upgrade_to_premium": "Auf Premium upgraden",
+    "manage_subscription": "Abonnement verwalten",
+    "current_plan": "Aktueller Plan",
+    "feature_requires_pro": "{{feature}} erfordert Pro",
+    "feature_requires_premium": "{{feature}} erfordert Premium"
+  },
+
+  "set_completion": {
+    "title": "Set-Fortschritt",
+    "subtitle": "Automatisch aus deinen Objekten erkannt",
+    "complete": "{{owned}}/{{total}} • {{pct}}%",
+    "no_sets": "Noch keine Sets in Bearbeitung"
+  },
+
+  "ads": {
+    "sponsored": "Gesponsert",
+    "ad": "Werbung"
+  }
+}

@@ -60,6 +60,8 @@ import { recordActiveDay } from "@/hooks/useStoreReview";
 import { initAnalytics, trackScreen } from "@/analytics/track";
 import { featureFlags } from "@/config/featureFlags";
 import { FeatureTourProvider } from "@/lib/featureTour";
+// Initialize i18n — side-effect import. Must run before any useTranslation() call.
+import "@/i18n";
 
 /* ---------- OTA Updates (guarded so dev builds work) ---------- */
 let Updates: {

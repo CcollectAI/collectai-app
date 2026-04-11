@@ -8,10 +8,10 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ProgressRing } from '@/components/ProgressRing';
 import { useAutoSetProgress } from '@/hooks/useAutoSetProgress';
-import { pluralize } from '@/utils/pluralize';
 
 interface AutoSetProgressListProps {
   /** Optional category filter */
@@ -22,6 +22,7 @@ interface AutoSetProgressListProps {
 
 export function AutoSetProgressList({ category, limit = 5 }: AutoSetProgressListProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const { sets, loading, error } = useAutoSetProgress(category);
 
   if (loading) {
@@ -41,9 +42,9 @@ export function AutoSetProgressList({ category, limit = 5 }: AutoSetProgressList
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Set Progress</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('set_completion.title')}</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          {pluralize(sets.length, 'set')} in progress
+          {t('home.sets_in_progress', { count: sets.length })}
         </Text>
       </View>
 

@@ -1,0 +1,145 @@
+{
+  "common": {
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "done": "Klaar",
+    "ok": "OK",
+    "close": "Sluiten",
+    "back": "Terug",
+    "next": "Volgende",
+    "continue": "Doorgaan",
+    "skip": "Overslaan",
+    "retry": "Opnieuw",
+    "refresh": "Vernieuwen",
+    "loading": "Laden…",
+    "error": "Er is iets misgegaan",
+    "empty": "Nog niets hier",
+    "search": "Zoeken",
+    "filter": "Filter",
+    "sort": "Sorteren",
+    "share": "Delen",
+    "export": "Exporteren",
+    "yes": "Ja",
+    "no": "Nee",
+    "optional": "Optioneel",
+    "required": "Verplicht"
+  },
+
+  "auth": {
+    "sign_in": "Inloggen",
+    "sign_up": "Registreren",
+    "sign_out": "Uitloggen",
+    "email": "E-mail",
+    "password": "Wachtwoord",
+    "forgot_password": "Wachtwoord vergeten?",
+    "create_account": "Account aanmaken",
+    "continue_with_google": "Doorgaan met Google",
+    "continue_with_apple": "Doorgaan met Apple",
+    "already_have_account": "Heb je al een account?",
+    "no_account": "Nog geen account?",
+    "verify_email": "Verifieer je e-mail",
+    "welcome_back": "Welkom terug",
+    "welcome": "Welkom bij CollectAI"
+  },
+
+  "nav": {
+    "home": "Home",
+    "items": "Items",
+    "add": "Toevoegen",
+    "marketplace": "Marktplaats",
+    "wishlist": "Verlanglijst",
+    "search": "Zoeken",
+    "settings": "Instellingen",
+    "profile": "Profiel"
+  },
+
+  "home": {
+    "portfolio_value": "Portfoliowaarde",
+    "top_items": "Topitems",
+    "recent_activity": "Recente activiteit",
+    "set_progress": "Setvoortgang",
+    "sets_in_progress": "{{count}} set in uitvoering",
+    "sets_in_progress_plural": "{{count}} sets in uitvoering",
+    "no_items_yet": "Voeg items toe om je collectie te zien",
+    "scan_your_first": "Scan je eerste item"
+  },
+
+  "items": {
+    "title": "Items",
+    "all": "Alle",
+    "category": "Categorie",
+    "condition": "Conditie",
+    "value": "Waarde",
+    "estimated_value": "Geschatte waarde",
+    "added": "Toegevoegd",
+    "delete_item": "Item verwijderen",
+    "delete_confirm": "Weet je zeker dat je dit item wilt verwijderen?",
+    "select_all": "Alles selecteren",
+    "deselect_all": "Alles deselecteren",
+    "bulk_move": "Verplaatsen",
+    "bulk_archive": "Archiveren",
+    "bulk_delete": "Verwijderen",
+    "bulk_export": "Exporteren"
+  },
+
+  "scan": {
+    "title": "QuickScan",
+    "capture": "Tik om te fotograferen",
+    "analyzing": "Analyseren…",
+    "identified": "Geïdentificeerd",
+    "add_to_collection": "Aan collectie toevoegen",
+    "retake": "Opnieuw",
+    "cant_identify": "Kan dit item niet identificeren",
+    "add_manually": "Handmatig toevoegen",
+    "detected_details": "Gedetecteerde details",
+    "confidence": "Zekerheid",
+    "low_confidence_warning": "Lage zekerheid — controleer voor opslaan",
+    "scan_another": "Nog een scannen"
+  },
+
+  "settings": {
+    "title": "Instellingen",
+    "account": "Account",
+    "preferences": "Voorkeuren",
+    "currency": "Valuta",
+    "language": "Taal",
+    "haptics": "Haptische feedback",
+    "animations": "Animaties",
+    "notifications": "Meldingen",
+    "dark_mode": "Donkere modus",
+    "privacy": "Privacybeleid",
+    "terms": "Servicevoorwaarden",
+    "help": "Help & feedback",
+    "about": "Over",
+    "version": "Versie",
+    "delete_account": "Account verwijderen",
+    "delete_account_confirm": "Dit verwijdert je account en alle gegevens permanent. Deze actie kan niet ongedaan worden gemaakt."
+  },
+
+  "billing": {
+    "free": "Gratis",
+    "pro": "Pro",
+    "premium": "Premium",
+    "upgrade": "Upgraden",
+    "upgrade_to_pro": "Upgraden naar Pro",
+    "upgrade_to_premium": "Upgraden naar Premium",
+    "manage_subscription": "Abonnement beheren",
+    "current_plan": "Huidig abonnement",
+    "feature_requires_pro": "{{feature}} vereist Pro",
+    "feature_requires_premium": "{{feature}} vereist Premium"
+  },
+
+  "set_completion": {
+    "title": "Setvoortgang",
+    "subtitle": "Automatisch gedetecteerd uit je items",
+    "complete": "{{owned}}/{{total}} • {{pct}}%",
+    "no_sets": "Nog geen sets in uitvoering"
+  },
+
+  "ads": {
+    "sponsored": "Gesponsord",
+    "ad": "Advertentie"
+  }
+}

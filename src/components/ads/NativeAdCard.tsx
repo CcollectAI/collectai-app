@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAds } from '@/ads/useAds';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
@@ -26,6 +27,7 @@ interface NativeAdCardProps {
 export function NativeAdCard({ placement = 'items_native', style }: NativeAdCardProps) {
   const { showAds } = useAds();
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   if (!showAds) return null;
 
@@ -33,10 +35,10 @@ export function NativeAdCard({ placement = 'items_native', style }: NativeAdCard
   return (
     <View
       style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }, style]}
-      accessibilityLabel="Sponsored content"
+      accessibilityLabel={t('ads.sponsored')}
       accessibilityRole="none"
     >
-      <Text style={[styles.label, { color: colors.muted }]}>Ad</Text>
+      <Text style={[styles.label, { color: colors.muted }]}>{t('ads.ad')}</Text>
     </View>
   );
 }

@@ -1,0 +1,145 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "done": "Listo",
+    "ok": "OK",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "continue": "Continuar",
+    "skip": "Omitir",
+    "retry": "Reintentar",
+    "refresh": "Actualizar",
+    "loading": "Cargando…",
+    "error": "Algo salió mal",
+    "empty": "Aquí no hay nada todavía",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "share": "Compartir",
+    "export": "Exportar",
+    "yes": "Sí",
+    "no": "No",
+    "optional": "Opcional",
+    "required": "Obligatorio"
+  },
+
+  "auth": {
+    "sign_in": "Iniciar sesión",
+    "sign_up": "Registrarse",
+    "sign_out": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgot_password": "¿Olvidaste tu contraseña?",
+    "create_account": "Crear cuenta",
+    "continue_with_google": "Continuar con Google",
+    "continue_with_apple": "Continuar con Apple",
+    "already_have_account": "¿Ya tienes una cuenta?",
+    "no_account": "¿No tienes una cuenta?",
+    "verify_email": "Verifica tu correo electrónico",
+    "welcome_back": "Bienvenido de vuelta",
+    "welcome": "Bienvenido a CollectAI"
+  },
+
+  "nav": {
+    "home": "Inicio",
+    "items": "Artículos",
+    "add": "Añadir",
+    "marketplace": "Marketplace",
+    "wishlist": "Lista de seguimiento",
+    "search": "Buscar",
+    "settings": "Ajustes",
+    "profile": "Perfil"
+  },
+
+  "home": {
+    "portfolio_value": "Valor del portafolio",
+    "top_items": "Artículos destacados",
+    "recent_activity": "Actividad reciente",
+    "set_progress": "Progreso de la colección",
+    "sets_in_progress": "{{count}} colección en progreso",
+    "sets_in_progress_plural": "{{count}} colecciones en progreso",
+    "no_items_yet": "Añade artículos para ver tu colección",
+    "scan_your_first": "Escanea tu primer artículo"
+  },
+
+  "items": {
+    "title": "Artículos",
+    "all": "Todos",
+    "category": "Categoría",
+    "condition": "Condición",
+    "value": "Valor",
+    "estimated_value": "Valor estimado",
+    "added": "Añadido",
+    "delete_item": "Eliminar artículo",
+    "delete_confirm": "¿Seguro que quieres eliminar este artículo?",
+    "select_all": "Seleccionar todo",
+    "deselect_all": "Deseleccionar todo",
+    "bulk_move": "Mover",
+    "bulk_archive": "Archivar",
+    "bulk_delete": "Eliminar",
+    "bulk_export": "Exportar"
+  },
+
+  "scan": {
+    "title": "QuickScan",
+    "capture": "Toca para capturar",
+    "analyzing": "Analizando…",
+    "identified": "Identificado",
+    "add_to_collection": "Añadir a la colección",
+    "retake": "Repetir",
+    "cant_identify": "No se puede identificar este artículo",
+    "add_manually": "Añadir manualmente",
+    "detected_details": "Detalles detectados",
+    "confidence": "Confianza",
+    "low_confidence_warning": "Confianza baja — verifica antes de guardar",
+    "scan_another": "Escanear otro"
+  },
+
+  "settings": {
+    "title": "Ajustes",
+    "account": "Cuenta",
+    "preferences": "Preferencias",
+    "currency": "Moneda",
+    "language": "Idioma",
+    "haptics": "Retroalimentación háptica",
+    "animations": "Animaciones",
+    "notifications": "Notificaciones",
+    "dark_mode": "Modo oscuro",
+    "privacy": "Política de privacidad",
+    "terms": "Términos del servicio",
+    "help": "Ayuda y comentarios",
+    "about": "Acerca de",
+    "version": "Versión",
+    "delete_account": "Eliminar cuenta",
+    "delete_account_confirm": "Esto eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer."
+  },
+
+  "billing": {
+    "free": "Gratis",
+    "pro": "Pro",
+    "premium": "Premium",
+    "upgrade": "Mejorar",
+    "upgrade_to_pro": "Mejorar a Pro",
+    "upgrade_to_premium": "Mejorar a Premium",
+    "manage_subscription": "Gestionar suscripción",
+    "current_plan": "Plan actual",
+    "feature_requires_pro": "{{feature}} requiere Pro",
+    "feature_requires_premium": "{{feature}} requiere Premium"
+  },
+
+  "set_completion": {
+    "title": "Progreso de la colección",
+    "subtitle": "Detectado automáticamente desde tus artículos",
+    "complete": "{{owned}}/{{total}} • {{pct}}%",
+    "no_sets": "Todavía no hay colecciones en progreso"
+  },
+
+  "ads": {
+    "sponsored": "Patrocinado",
+    "ad": "Anuncio"
+  }
+}

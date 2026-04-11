@@ -2,6 +2,7 @@ import React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { BETA_MODE } from "@/config/featureFlags";
@@ -9,6 +10,7 @@ import { BETA_MODE } from "@/config/featureFlags";
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -38,9 +40,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Portfolio",
-          tabBarLabel: "Portfolio",
-          tabBarAccessibilityLabel: "Portfolio tab",
+          title: t('nav.home'),
+          tabBarLabel: t('nav.home'),
+          tabBarAccessibilityLabel: t('nav.home'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "pie-chart" : "pie-chart-outline"}
@@ -55,9 +57,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="items"
         options={{
-          title: "Items",
-          tabBarLabel: "Items",
-          tabBarAccessibilityLabel: "Items tab — view your collection",
+          title: t('nav.items'),
+          tabBarLabel: t('nav.items'),
+          tabBarAccessibilityLabel: t('nav.items'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "albums" : "albums-outline"}
@@ -72,9 +74,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="add"
         options={{
-          title: "Add",
-          tabBarLabel: "Add",
-          tabBarAccessibilityLabel: "Add tab — add a new item",
+          title: t('nav.add'),
+          tabBarLabel: t('nav.add'),
+          tabBarAccessibilityLabel: t('nav.add'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "add-circle" : "add-circle-outline"}
@@ -111,9 +113,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="marketplace"
         options={{
-          title: "Search",
-          tabBarLabel: "Search",
-          tabBarAccessibilityLabel: "Search tab — search marketplace",
+          title: t('nav.search'),
+          tabBarLabel: t('nav.search'),
+          tabBarAccessibilityLabel: t('nav.search'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "search" : "search-outline"}

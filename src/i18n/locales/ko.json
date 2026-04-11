@@ -1,0 +1,145 @@
+{
+  "common": {
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "편집",
+    "done": "완료",
+    "ok": "확인",
+    "close": "닫기",
+    "back": "뒤로",
+    "next": "다음",
+    "continue": "계속",
+    "skip": "건너뛰기",
+    "retry": "다시 시도",
+    "refresh": "새로고침",
+    "loading": "로딩 중…",
+    "error": "문제가 발생했습니다",
+    "empty": "아직 여기에는 아무것도 없습니다",
+    "search": "검색",
+    "filter": "필터",
+    "sort": "정렬",
+    "share": "공유",
+    "export": "내보내기",
+    "yes": "예",
+    "no": "아니요",
+    "optional": "선택 사항",
+    "required": "필수"
+  },
+
+  "auth": {
+    "sign_in": "로그인",
+    "sign_up": "가입하기",
+    "sign_out": "로그아웃",
+    "email": "이메일",
+    "password": "비밀번호",
+    "forgot_password": "비밀번호를 잊으셨나요?",
+    "create_account": "계정 만들기",
+    "continue_with_google": "Google로 계속하기",
+    "continue_with_apple": "Apple로 계속하기",
+    "already_have_account": "이미 계정이 있으신가요?",
+    "no_account": "계정이 없으신가요?",
+    "verify_email": "이메일을 확인하세요",
+    "welcome_back": "다시 오신 것을 환영합니다",
+    "welcome": "CollectAI에 오신 것을 환영합니다"
+  },
+
+  "nav": {
+    "home": "홈",
+    "items": "아이템",
+    "add": "추가",
+    "marketplace": "마켓플레이스",
+    "wishlist": "워치리스트",
+    "search": "검색",
+    "settings": "설정",
+    "profile": "프로필"
+  },
+
+  "home": {
+    "portfolio_value": "포트폴리오 가치",
+    "top_items": "인기 아이템",
+    "recent_activity": "최근 활동",
+    "set_progress": "세트 진행률",
+    "sets_in_progress": "진행 중인 세트 {{count}}개",
+    "sets_in_progress_plural": "진행 중인 세트 {{count}}개",
+    "no_items_yet": "아이템을 추가하여 컬렉션을 확인하세요",
+    "scan_your_first": "첫 아이템 스캔하기"
+  },
+
+  "items": {
+    "title": "아이템",
+    "all": "전체",
+    "category": "카테고리",
+    "condition": "상태",
+    "value": "가치",
+    "estimated_value": "예상 가치",
+    "added": "추가됨",
+    "delete_item": "아이템 삭제",
+    "delete_confirm": "이 아이템을 삭제하시겠습니까?",
+    "select_all": "모두 선택",
+    "deselect_all": "모두 해제",
+    "bulk_move": "이동",
+    "bulk_archive": "보관",
+    "bulk_delete": "삭제",
+    "bulk_export": "내보내기"
+  },
+
+  "scan": {
+    "title": "퀵 스캔",
+    "capture": "탭하여 촬영",
+    "analyzing": "분석 중…",
+    "identified": "식별 완료",
+    "add_to_collection": "컬렉션에 추가",
+    "retake": "다시 촬영",
+    "cant_identify": "이 아이템을 식별할 수 없습니다",
+    "add_manually": "수동으로 추가",
+    "detected_details": "감지된 세부 정보",
+    "confidence": "신뢰도",
+    "low_confidence_warning": "신뢰도가 낮습니다 — 저장 전 확인해 주세요",
+    "scan_another": "다른 아이템 스캔"
+  },
+
+  "settings": {
+    "title": "설정",
+    "account": "계정",
+    "preferences": "환경설정",
+    "currency": "통화",
+    "language": "언어",
+    "haptics": "햅틱 피드백",
+    "animations": "애니메이션",
+    "notifications": "알림",
+    "dark_mode": "다크 모드",
+    "privacy": "개인정보 처리방침",
+    "terms": "서비스 약관",
+    "help": "도움말 및 피드백",
+    "about": "정보",
+    "version": "버전",
+    "delete_account": "계정 삭제",
+    "delete_account_confirm": "계정과 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
+  },
+
+  "billing": {
+    "free": "무료",
+    "pro": "Pro",
+    "premium": "Premium",
+    "upgrade": "업그레이드",
+    "upgrade_to_pro": "Pro로 업그레이드",
+    "upgrade_to_premium": "Premium으로 업그레이드",
+    "manage_subscription": "구독 관리",
+    "current_plan": "현재 플랜",
+    "feature_requires_pro": "{{feature}}은(는) Pro가 필요합니다",
+    "feature_requires_premium": "{{feature}}은(는) Premium이 필요합니다"
+  },
+
+  "set_completion": {
+    "title": "세트 진행률",
+    "subtitle": "아이템에서 자동 감지됨",
+    "complete": "{{owned}}/{{total}} • {{pct}}%",
+    "no_sets": "아직 진행 중인 세트가 없습니다"
+  },
+
+  "ads": {
+    "sponsored": "스폰서",
+    "ad": "광고"
+  }
+}

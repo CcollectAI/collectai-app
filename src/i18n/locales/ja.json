@@ -1,0 +1,145 @@
+{
+  "common": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "done": "完了",
+    "ok": "OK",
+    "close": "閉じる",
+    "back": "戻る",
+    "next": "次へ",
+    "continue": "続ける",
+    "skip": "スキップ",
+    "retry": "再試行",
+    "refresh": "更新",
+    "loading": "読み込み中…",
+    "error": "エラーが発生しました",
+    "empty": "ここにはまだ何もありません",
+    "search": "検索",
+    "filter": "フィルター",
+    "sort": "並び替え",
+    "share": "共有",
+    "export": "エクスポート",
+    "yes": "はい",
+    "no": "いいえ",
+    "optional": "任意",
+    "required": "必須"
+  },
+
+  "auth": {
+    "sign_in": "サインイン",
+    "sign_up": "サインアップ",
+    "sign_out": "サインアウト",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "forgot_password": "パスワードをお忘れですか？",
+    "create_account": "アカウント作成",
+    "continue_with_google": "Googleで続ける",
+    "continue_with_apple": "Appleで続ける",
+    "already_have_account": "すでにアカウントをお持ちですか？",
+    "no_account": "アカウントをお持ちではありませんか？",
+    "verify_email": "メールを確認",
+    "welcome_back": "お帰りなさい",
+    "welcome": "CollectAIへようこそ"
+  },
+
+  "nav": {
+    "home": "ホーム",
+    "items": "アイテム",
+    "add": "追加",
+    "marketplace": "マーケット",
+    "wishlist": "ウォッチリスト",
+    "search": "検索",
+    "settings": "設定",
+    "profile": "プロフィール"
+  },
+
+  "home": {
+    "portfolio_value": "ポートフォリオ価値",
+    "top_items": "トップアイテム",
+    "recent_activity": "最近のアクティビティ",
+    "set_progress": "セット進捗",
+    "sets_in_progress": "{{count}}個のセット進行中",
+    "sets_in_progress_plural": "{{count}}個のセット進行中",
+    "no_items_yet": "アイテムを追加してコレクションを表示",
+    "scan_your_first": "最初のアイテムをスキャン"
+  },
+
+  "items": {
+    "title": "アイテム",
+    "all": "すべて",
+    "category": "カテゴリー",
+    "condition": "状態",
+    "value": "価値",
+    "estimated_value": "推定価値",
+    "added": "追加済み",
+    "delete_item": "アイテムを削除",
+    "delete_confirm": "このアイテムを削除してもよろしいですか？",
+    "select_all": "すべて選択",
+    "deselect_all": "選択をすべて解除",
+    "bulk_move": "移動",
+    "bulk_archive": "アーカイブ",
+    "bulk_delete": "削除",
+    "bulk_export": "エクスポート"
+  },
+
+  "scan": {
+    "title": "クイックスキャン",
+    "capture": "タップで撮影",
+    "analyzing": "解析中…",
+    "identified": "識別完了",
+    "add_to_collection": "コレクションに追加",
+    "retake": "撮り直し",
+    "cant_identify": "このアイテムを識別できませんでした",
+    "add_manually": "手動で追加",
+    "detected_details": "検出された詳細",
+    "confidence": "信頼度",
+    "low_confidence_warning": "信頼度が低い — 保存前に確認してください",
+    "scan_another": "もう一度スキャン"
+  },
+
+  "settings": {
+    "title": "設定",
+    "account": "アカウント",
+    "preferences": "環境設定",
+    "currency": "通貨",
+    "language": "言語",
+    "haptics": "ハプティックフィードバック",
+    "animations": "アニメーション",
+    "notifications": "通知",
+    "dark_mode": "ダークモード",
+    "privacy": "プライバシーポリシー",
+    "terms": "利用規約",
+    "help": "ヘルプ＆フィードバック",
+    "about": "アプリについて",
+    "version": "バージョン",
+    "delete_account": "アカウントを削除",
+    "delete_account_confirm": "アカウントとすべてのデータが完全に削除されます。この操作は取り消せません。"
+  },
+
+  "billing": {
+    "free": "無料",
+    "pro": "Pro",
+    "premium": "Premium",
+    "upgrade": "アップグレード",
+    "upgrade_to_pro": "Proにアップグレード",
+    "upgrade_to_premium": "Premiumにアップグレード",
+    "manage_subscription": "サブスクリプションを管理",
+    "current_plan": "現在のプラン",
+    "feature_requires_pro": "{{feature}}はProが必要です",
+    "feature_requires_premium": "{{feature}}はPremiumが必要です"
+  },
+
+  "set_completion": {
+    "title": "セット進捗",
+    "subtitle": "アイテムから自動検出",
+    "complete": "{{owned}}/{{total}} • {{pct}}%",
+    "no_sets": "進行中のセットはまだありません"
+  },
+
+  "ads": {
+    "sponsored": "スポンサー",
+    "ad": "広告"
+  }
+}
