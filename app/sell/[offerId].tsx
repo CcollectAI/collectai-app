@@ -104,7 +104,7 @@ function OfferDetailScreen() {
   const [sellerRep, setSellerRep] = useState<UserReputation | null>(null);
   const [buyerRep, setBuyerRep] = useState<UserReputation | null>(null);
   // Risk flags
-  const [riskFlags, setRiskFlags] = useState<Array<{ flag: string; severity: string; message: string }>>([]);
+  const [riskFlags, setRiskFlags] = useState<{ flag: string; severity: string; message: string }[]>([]);
 
   const currentUserId = user?.id;
   const isSeller = offer ? currentUserId === offer.sellerId : false;

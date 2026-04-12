@@ -67,11 +67,11 @@ const MarketInsightsSection: React.FC<Props> = ({ deepDive, deepDiveLoading, col
         )}
 
         {/* Top Traded Items */}
-        {Array.isArray(deepDive.top_traded_items) && (deepDive.top_traded_items as Array<Record<string, unknown>>).length > 0 && (
+        {Array.isArray(deepDive.top_traded_items) && (deepDive.top_traded_items as Record<string, unknown>[]).length > 0 && (
           <View style={styles.insightSubSection}>
             <Text style={[styles.insightSubTitle, { color: colors.text }]}>Top Traded Items</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topTradedRow}>
-              {(deepDive.top_traded_items as Array<Record<string, unknown>>).map((item, idx) => (
+              {(deepDive.top_traded_items as Record<string, unknown>[]).map((item, idx) => (
                 <View
                   key={String(item.id ?? idx)}
                   style={[styles.topTradedCard, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -89,10 +89,10 @@ const MarketInsightsSection: React.FC<Props> = ({ deepDive, deepDiveLoading, col
         )}
 
         {/* Top Movers */}
-        {Array.isArray(deepDive.top_movers) && (deepDive.top_movers as Array<Record<string, unknown>>).length > 0 && (
+        {Array.isArray(deepDive.top_movers) && (deepDive.top_movers as Record<string, unknown>[]).length > 0 && (
           <View style={styles.insightSubSection}>
             <Text style={[styles.insightSubTitle, { color: colors.text }]}>Top Movers</Text>
-            {(deepDive.top_movers as Array<Record<string, unknown>>).map((mover, idx) => {
+            {(deepDive.top_movers as Record<string, unknown>[]).map((mover, idx) => {
               const changePct = Number(mover.change_pct ?? mover.changePct ?? 0);
               const isPositive = changePct >= 0;
               return (

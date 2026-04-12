@@ -71,12 +71,12 @@ export const unsubscribeDropAlert = (eventId: string) =>
   del(`/events/${encodeURIComponent(eventId)}/alert`);
 
 export const listMyDropAlerts = () =>
-  get<Array<{
+  get<{
     user_id: string;
     event_id: string;
     notify_before_hours: number;
     created_at: string | null;
-  }>>("/events/my-alerts");
+  }[]>("/events/my-alerts");
 
 export const getNearbyEvents = (lat?: number, lng?: number, radiusKm = 50) => {
   const sp = new URLSearchParams();

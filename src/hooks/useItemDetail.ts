@@ -21,7 +21,7 @@ import logger from '@/utils/logger';
 interface EvidenceData {
   explanation: string | null;
   evidence_summary: {
-    sources: Array<{ source: string; count: number; avg_price: number; date_range?: string }>;
+    sources: { source: string; count: number; avg_price: number; date_range?: string }[];
     total_comps: number;
   } | null;
   evidence_hit_ids: string[];
@@ -177,13 +177,13 @@ export function useItemDetail(params: UseItemDetailParams) {
     let cancelled = false;
     collectorsApi.getScarcityScores(categorySlug).then((data) => {
       if (cancelled) return;
-      const resp = data as { items?: Array<{ item_key: string; scarcity_score: number; listing_count: number; supply_trend: string }> } | undefined;
+      const resp = data as { items?: { item_key: string; scarcity_score: number; listing_count: number; supply_trend: string }[] } | undefined;
       const match = resp?.items?.find((i) => i.item_key?.toLowerCase().includes(editableName.toLowerCase().slice(0, 20)));
       if (match) setScarcityData(match);
     }).catch((err) => logger.warn('[ItemDetail] fetch error:', err));
     collectorsApi.marketplaceComps(editableName, categorySlug).then((data) => {
       if (cancelled) return;
-      const resp = data as { comps?: Array<{ source: string; title: string; price: number; currency: string }> } | undefined;
+      const resp = data as { comps?: { source: string; title: string; price: number; currency: string }[] } | undefined;
       const comps = resp?.comps;
       if (Array.isArray(comps) && comps.length) setMarketComps(comps.slice(0, 5));
     }).catch((err) => logger.warn('[ItemDetail] fetch error:', err));

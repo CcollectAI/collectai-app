@@ -106,7 +106,7 @@ export function classifyOnDevice(
  * Call once and cache.
  */
 export function buildCategoryDistribution(
-  items: Array<{ category: string }>,
+  items: { category: string }[],
 ): UserCategoryDistribution {
   const dist: UserCategoryDistribution = {};
   for (const item of items) {

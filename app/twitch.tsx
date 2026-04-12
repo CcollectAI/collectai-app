@@ -7,8 +7,7 @@ import { View, Text, ScrollView, StyleSheet, Animated, ActivityIndicator } from 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEnterReveal } from "@/motion";
-import { AnimatedPressable } from "@/motion";
+import { useEnterReveal , AnimatedPressable } from "@/motion";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import { QuickNavBar } from "@/components/QuickNavBar";

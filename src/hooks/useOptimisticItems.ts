@@ -15,7 +15,7 @@ import { dataProvider } from '@/data';
 import type { Item, CreateItemInput } from '@/data/types';
 import logger from '@/utils/logger';
 
-type ItemListSetter = React.Dispatch<React.SetStateAction<Array<{ id: string; name?: string; category?: string; _isTemp?: boolean; [key: string]: unknown }>>>;
+type ItemListSetter = React.Dispatch<React.SetStateAction<{ id: string; name?: string; category?: string; _isTemp?: boolean; [key: string]: unknown }[]>>;
 
 // Generic id-keyed setter for bulk ops — works with any item shape that has an `id`.
 type IdSetter<T extends { id: string }> = React.Dispatch<React.SetStateAction<T[]>>;

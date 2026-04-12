@@ -81,7 +81,7 @@ export async function initOfflineQueue(): Promise<void> {
 // ── Failure notification ─────────────────────────────────────────────────────
 
 type FailureListener = (
-  failed: Array<{ type: MutationType; id: string; createdAt: string }>,
+  failed: { type: MutationType; id: string; createdAt: string }[],
 ) => void;
 const _failureListeners: FailureListener[] = [];
 

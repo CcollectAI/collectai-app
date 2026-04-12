@@ -9,7 +9,7 @@ export const uploadPhoto = (itemId: string, uri: string, mimeType: string) => {
   const formData = new FormData();
   const filename = uri.split("/").pop() || "photo.jpg";
   // React Native's FormData accepts this shape for file uploads
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   formData.append("file", { uri, name: filename, type: mimeType } as any);
   formData.append("item_id", itemId);
   return postMultipart<ServerUploadResponse>("/photos/upload", formData);
@@ -31,12 +31,12 @@ export const deletePhoto = (photoKey: string) =>
 
 export const listItemPhotos = (itemId: string) =>
   get<{
-    photos: Array<{
+    photos: {
       photo_key: string;
       cdn_url: string;
       size?: number;
       last_modified?: string;
-    }>;
+    }[];
     item_id: string;
   }>(`/photos/list/${itemId}`);
 
@@ -44,14 +44,14 @@ export const listItemPhotos = (itemId: string) =>
 export const getProvenance = (itemId: string) =>
   get<{
     item_id: string;
-    events: Array<{
+    events: {
       id: string;
       event_type: string;
       timestamp: string;
       note: string | null;
       source: string | null;
       metadata: Record<string, unknown>;
-    }>;
+    }[];
     authenticity_signals: string[];
     created_at: string | null;
   }>(`/provenance/items/${encodeURIComponent(itemId)}`);
@@ -63,9 +63,9 @@ export const getDossier = (itemId: string) =>
     generated_at: string;
     identity: Record<string, unknown>;
     valuation: Record<string, unknown>;
-    provenance: Array<Record<string, unknown>>;
-    price_history: Array<Record<string, unknown>>;
-    market_comps: Array<Record<string, unknown>>;
+    provenance: Record<string, unknown>[];
+    price_history: Record<string, unknown>[];
+    market_comps: Record<string, unknown>[];
     photos: string[];
     collections: string[];
     authenticity_signals: string[];
@@ -118,14 +118,14 @@ export const updateItemAttributes = (itemId: string, attributes: Record<string, 
 // Item Images (multi-photo per item)
 export const listItemImages = (itemId: string) =>
   get<{
-    images: Array<{
+    images: {
       id: string;
       item_id: string;
       image_url: string;
       label: string | null;
       position: number;
       created_at: string | null;
-    }>;
+    }[];
     item_id: string;
     total: number;
   }>(`/items/${encodeURIComponent(itemId)}/images`);
@@ -134,7 +134,7 @@ export const uploadItemImage = (itemId: string, uri: string, label?: string) => 
   const formData = new FormData();
   const filename = uri.split("/").pop() || "photo.jpg";
   // React Native's FormData accepts this shape for file uploads
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   formData.append("file", { uri, name: filename, type: "image/jpeg" } as any);
   if (label) formData.append("label", label);
   return postMultipart<{

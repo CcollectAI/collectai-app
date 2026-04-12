@@ -5,7 +5,7 @@ import { get, post, del, put, patch } from "./httpClient";
 
 export const getChatThreads = () =>
   get<
-    Array<{
+    {
       id: string;
       other_user_id: string;
       other_user_name: string;
@@ -14,7 +14,7 @@ export const getChatThreads = () =>
       last_message_preview: string | null;
       last_message_at: string | null;
       unread_count: number;
-    }>
+    }[]
   >("/chat/threads");
 
 export const getChatMessages = (
@@ -22,14 +22,14 @@ export const getChatMessages = (
   params?: { limit?: number; offset?: number },
 ) =>
   get<
-    Array<{
+    {
       id: string;
       thread_id: string;
       author_user_id: string;
       text: string;
       created_at: string;
       read_at: string | null;
-    }>
+    }[]
   >(
     `/chat/threads/${threadId}/messages${params ? `?limit=${params.limit ?? 50}&offset=${params.offset ?? 0}` : ""}`,
   );

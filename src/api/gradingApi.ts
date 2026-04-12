@@ -27,11 +27,11 @@ export const gradingPopulation = (itemName: string, category: string, service?: 
     category: string;
     service: string;
     total_graded: number;
-    population: Array<{
+    population: {
       grade: string;
       count: number;
       pct_of_total: number | null;
-    }>;
+    }[];
     avg_grade: number | null;
     highest_grade: string | null;
     last_updated: string | null;
@@ -39,7 +39,7 @@ export const gradingPopulation = (itemName: string, category: string, service?: 
 
 export const gradingServices = (category?: string) =>
   get<{
-    services: Array<{
+    services: {
       id: string;
       name: string;
       short_name: string;
@@ -49,6 +49,6 @@ export const gradingServices = (category?: string) =>
       categories: string[];
       turnaround: string;
       price_range: string;
-    }>;
+    }[];
     eligible_categories: string[];
   }>(`/grading/services${category ? `?category=${encodeURIComponent(category)}` : ''}`);

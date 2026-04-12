@@ -46,10 +46,10 @@ export const getTaxonomy = () => get("/taxonomy/current");
 export const getTaxonomyCategories = () =>
   get<{
     version: string;
-    categories: Array<{
+    categories: {
       category_id: string;
       display_name: string;
       subtypes: string[];
       collections: string[];
-    }>;
+    }[];
   }>("/taxonomy/categories");

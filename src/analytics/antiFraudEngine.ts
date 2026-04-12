@@ -265,7 +265,7 @@ export function assessAntiFraud(context: AntiFraudContext): AntiFraudAssessment 
  * Helper: reduce item-level fraud scores into a portfolio-level signal in [0,1].
  */
 export function aggregatePortfolioFraudScore(
-  itemFraudScores: Array<number | undefined>,
+  itemFraudScores: (number | undefined)[],
 ): number {
   const scores = itemFraudScores
     .filter((s): s is number => typeof s === 'number')

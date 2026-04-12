@@ -151,7 +151,7 @@ function RegisterScreen() {
         }
         // Don't strand the user with an auth account but no profile — log and continue.
         // The post-verify flow will retry profile creation on first sign-in.
-        // eslint-disable-next-line no-console
+         
         console.warn('[register] profile upsert failed', code, profileError);
       }
 

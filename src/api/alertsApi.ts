@@ -5,7 +5,7 @@ import { get, post, del } from "./httpClient";
 
 export const getAlertTriggerHistory = () =>
   get<{
-    triggers: Array<{
+    triggers: {
       id: string;
       alert_id: string | null;
       item_id: string | null;
@@ -14,7 +14,7 @@ export const getAlertTriggerHistory = () =>
       message: string;
       read: boolean;
       created_at: string;
-    }>;
+    }[];
     unread_count: number;
   }>("/alerts/trigger-history");
 
@@ -23,7 +23,7 @@ export const markTriggerRead = (triggerId: string) =>
 
 export const getMyAlerts = () =>
   get<{
-    alerts: Array<{
+    alerts: {
       id: string;
       user_id: string;
       item_id: string | null;
@@ -33,7 +33,7 @@ export const getMyAlerts = () =>
       direction: string | null;
       active: boolean;
       created_at: string;
-    }>;
+    }[];
   }>("/alerts/mine");
 
 export const createAlert = (payload: {

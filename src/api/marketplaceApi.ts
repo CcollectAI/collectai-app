@@ -36,12 +36,12 @@ export const marketplaceComps = (itemRef: string, category?: string, region?: st
 // Affiliate links
 export const getAffiliateLinks = (query: string, category?: string, limit = 6, region?: string) =>
   get<{
-    links: Array<{
+    links: {
       source: string;
       url: string;
       affiliate_url: string;
       label: string;
-    }>;
+    }[];
   }>(`/marketplace/affiliate-links?query=${encodeURIComponent(query)}${category ? `&category=${encodeURIComponent(category)}` : ""}&limit=${limit}${region ? `&region=${encodeURIComponent(region)}` : ""}`);
 
 export const tagAffiliateUrl = (url: string, source: string) =>

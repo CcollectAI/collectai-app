@@ -3,7 +3,7 @@ import { logger } from "@/lib/logger";
 import { SUPABASE_URL as URL, SUPABASE_ANON_KEY as KEY, SUPABASE_MODE as MODE } from "@/api/config";
 import { secureStoreAdapter } from "@/lib/secureStoreAdapter";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function makeMock(): SupabaseClient<any, any, any> {
   logger.warn("[supabase] MOCK mode enabled");
   const noop = async () => ({ data: null, error: null });
@@ -13,16 +13,16 @@ function makeMock(): SupabaseClient<any, any, any> {
     auth: {
       getSession: async () => ({ data: { session: null }, error: null }),
       getUser: async () => ({ data: { user: null }, error: null }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} }}, error: null } as any),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       signInWithOtp: async () => ({ error: null } as any),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       verifyOtp: async () => ({ error: null } as any),
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     from: () => ({ select: noop, insert: noop, update: noop, delete: noop, upsert: noop } as any),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
   } as any;
 }
 

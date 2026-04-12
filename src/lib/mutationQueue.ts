@@ -69,7 +69,7 @@ export type QueuedMutation = {
 
 /** Callback invoked when mutations permanently fail after all retries. */
 export type OnPermanentFailureCallback = (
-  failed: Array<{ type: MutationType; id: string; createdAt: string }>,
+  failed: { type: MutationType; id: string; createdAt: string }[],
 ) => void;
 
 // ── Internal state ──────────────────────────────────────────────────────────
@@ -193,7 +193,7 @@ export async function replayQueue(
   let succeeded = 0;
   let failed = 0;
   const retryLater: QueuedMutation[] = [];
-  const permanentlyFailed: Array<{ type: MutationType; id: string; createdAt: string }> = [];
+  const permanentlyFailed: { type: MutationType; id: string; createdAt: string }[] = [];
 
   logger.info(`[MutationQueue] Replaying ${_queue.length} mutations`);
 

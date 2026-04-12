@@ -209,11 +209,11 @@ function UserProfileScreen() {
   }, [retry]);
 
   // Fetch real achievements from backend, fall back to client-side derivation
-  const [apiAchievements, setApiAchievements] = useState<Array<{ id: string; title: string; tier: string; earned: boolean }> | null>(null);
+  const [apiAchievements, setApiAchievements] = useState<{ id: string; title: string; tier: string; earned: boolean }[] | null>(null);
   // Fetch gamification profile (XP, level, streak)
   const [gamProfile, setGamProfile] = useState<{ xp: number; level: number; streak_days: number } | null>(null);
   // Fetch active challenges
-  const [challenges, setChallenges] = useState<Array<{ id: string; title: string; progress: number; target: number; reward_xp: number }>>([]);
+  const [challenges, setChallenges] = useState<{ id: string; title: string; progress: number; target: number; reward_xp: number }[]>([]);
   // Recent achievements (for "New!" badges)
   const [recentAchievementIds, setRecentAchievementIds] = useState<Set<string>>(new Set());
 

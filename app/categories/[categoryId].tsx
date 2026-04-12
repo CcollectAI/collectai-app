@@ -73,7 +73,7 @@ function CategoryStoreScreen() {
   const [shopSheetVisible, setShopSheetVisible] = useState(false);
 
   // Affiliate links for external marketplace buttons
-  const [affiliateLinks, setAffiliateLinks] = useState<Array<{ source: string; url: string; affiliate_url: string; label: string }>>([]);
+  const [affiliateLinks, setAffiliateLinks] = useState<{ source: string; url: string; affiliate_url: string; label: string }[]>([]);
 
   // Market insights state
   const [deepDive, setDeepDive] = useState<Record<string, unknown> | null>(null);

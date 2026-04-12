@@ -87,13 +87,13 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
   }, []);
 
   const eventBlocks = useMemo(() => {
-    const blocks: Array<{
+    const blocks: {
       event: CollectorsEvent;
       dayIndex: number;
       topOffset: number;
       height: number;
       startTime: string;
-    }> = [];
+    }[] = [];
 
     for (const evt of events) {
       if (!evt.date) continue;

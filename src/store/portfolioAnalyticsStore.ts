@@ -145,7 +145,7 @@ let client: CollectorsClient | null = null;
 
 try {
   // Dynamic require to avoid bundling issues if the client path changes.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   client = require('@/services/collectorsClient');
 } catch (_e) {
   // Silent fallback to demo data.

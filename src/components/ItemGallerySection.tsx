@@ -124,10 +124,8 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
 
   if (effectiveGalleryImages.length > 0 || (!isDraft && id)) {
     // Build data array: real/effective images + "Add Photo" card for saved items
-    const galleryData: Array<
-      | ({ type: "image" } & ItemImage)
-      | { type: "add"; id: string; item_id: string; image_url: string; label: null; position: number; created_at: null }
-    > = [
+    const galleryData: (| ({ type: "image" } & ItemImage)
+      | { type: "add"; id: string; item_id: string; image_url: string; label: null; position: number; created_at: null })[] = [
       ...effectiveGalleryImages.map((img) => ({ type: "image" as const, ...img })),
       ...(!isDraft && id
         ? [{ type: "add" as const, id: "__add__", item_id: "", image_url: "", label: null as null, position: 999, created_at: null as null }]

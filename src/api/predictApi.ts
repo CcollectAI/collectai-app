@@ -16,7 +16,7 @@ export const predictV2 = (payload: {
 
 export const getItemPriceTrend = (itemId: string, days = 90) =>
   get<{
-    data_points: Array<{ date: string; q50: number; q10: number; q90: number }>;
+    data_points: { date: string; q50: number; q10: number; q90: number }[];
     direction: 'up' | 'down' | 'flat';
     pct_change: number;
     current_q50: number;
@@ -27,7 +27,7 @@ export const getPriceEvidence = (itemId: string) =>
   get<{
     explanation: string | null;
     evidence_summary: {
-      sources: Array<{ source: string; count: number; avg_price: number; date_range?: string }>;
+      sources: { source: string; count: number; avg_price: number; date_range?: string }[];
       total_comps: number;
     } | null;
     evidence_hit_ids: string[];

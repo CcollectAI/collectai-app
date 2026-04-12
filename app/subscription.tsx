@@ -131,7 +131,7 @@ function SubscriptionScreen() {
   useEffect(() => {
     track({ name: 'subscription_screen_viewed' });
     fetchBilling();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   function isValidUrl(url: unknown): url is string {

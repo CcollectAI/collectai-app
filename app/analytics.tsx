@@ -85,8 +85,8 @@ function AnalyticsScreen() {
 
   const [collectionTrends, setCollectionTrends] = useState<Record<string, unknown> | null>(null);
   const [predictionAccuracy, setPredictionAccuracy] = useState<{ category: string; mae: number; mape: number; r2: number }[] | null>(null);
-  const [categoryStats, setCategoryStats] = useState<Array<{ category: string; item_count: number; total_value: number; avg_value: number; change_7d: number; change_7d_pct: number; trend: string; max_item_value: number }>>([]);
-  const [categoryHealth, setCategoryHealth] = useState<Array<{ category: string; volatility: number; trend_strength: number; health: string }>>([]);
+  const [categoryStats, setCategoryStats] = useState<{ category: string; item_count: number; total_value: number; avg_value: number; change_7d: number; change_7d_pct: number; trend: string; max_item_value: number }[]>([]);
+  const [categoryHealth, setCategoryHealth] = useState<{ category: string; volatility: number; trend_strength: number; health: string }[]>([]);
 
   const { data: analyticsData, loading, error, retry } = useAsync(
     () => Promise.all([

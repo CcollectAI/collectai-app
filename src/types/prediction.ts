@@ -9,7 +9,7 @@ export type PredictionSession = {
   price_mid_eur: number | null;
   price_high_eur: number | null;
   features: Record<string, unknown> | null;
-  comps: Array<Record<string, unknown>> | null;
+  comps: Record<string, unknown>[] | null;
   created_at: string;
   updated_at: string;
 };

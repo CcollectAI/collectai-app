@@ -16,6 +16,15 @@
  * ```
  */
 
+import type {
+  MarketProviderAdapter,
+  ProviderSearchOptions,
+  AggregatorConfig,
+} from './types';
+import type { MarketSearchResult, MarketHit } from '../../data/types';
+import { DEFAULT_AGGREGATOR_CONFIG } from './types';
+import { logger } from '@/lib/logger';
+
 export type {
   MarketProviderAdapter,
   ProviderSearchOptions,
@@ -28,15 +37,6 @@ export { DEFAULT_AGGREGATOR_CONFIG } from './types';
 
 // Concrete adapter implementations
 export { EbayAdapter, TCGPlayerAdapter, createAdapters } from './adapters';
-
-import type {
-  MarketProviderAdapter,
-  ProviderSearchOptions,
-  AggregatorConfig,
-} from './types';
-import type { MarketSearchResult, MarketHit } from '../../data/types';
-import { DEFAULT_AGGREGATOR_CONFIG } from './types';
-import { logger } from '@/lib/logger';
 
 /**
  * Aggregate search results from multiple providers.

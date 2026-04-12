@@ -308,7 +308,7 @@ function PortfolioScreen() {
         const data = res as Record<string, unknown>;
         // Backend returns "breakdown", also check "categories" for compat
         const cats = Array.isArray(data?.breakdown)
-          ? (data.breakdown as Array<Record<string, unknown>>).map((b) => ({
+          ? (data.breakdown as Record<string, unknown>[]).map((b) => ({
               category: String(b.category ?? ''),
               item_count: Number(b.item_count ?? 0),
               total_value: Number(b.total_value ?? 0),

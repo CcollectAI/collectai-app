@@ -21,6 +21,8 @@
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { logger } from '@/lib/logger';
+
 export type ObjectStorePrefix =
   | 'market_comps'
   | 'price_comps'
@@ -29,8 +31,6 @@ export type ObjectStorePrefix =
   | 'embeddings'
   | 'training/raw'
   | 'training/processed';
-
-import { logger } from '@/lib/logger';
 
 export type ObjectMetadata = {
   objectKey: string;

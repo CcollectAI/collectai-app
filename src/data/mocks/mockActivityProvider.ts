@@ -29,7 +29,7 @@ export async function unifiedSearch(query: string, limit = 5) {
     users: [
       { id: 'u1', displayName: 'CollectorPro', handle: 'collectorpro', avatarUrl: null as string | null },
     ].filter((u) => u.displayName.toLowerCase().includes(q)).slice(0, limit),
-    events: [] as Array<{ id: string; title: string; startDate?: string; location?: string; category?: string }>,
-    categories: [] as Array<{ id: string; name: string }>,
+    events: [] as { id: string; title: string; startDate?: string; location?: string; category?: string }[],
+    categories: [] as { id: string; name: string }[],
   };
 }

@@ -12,7 +12,7 @@ export const intakeImageOnly = (imageUri: string) => {
   const formData = new FormData();
   const filename = imageUri.split("/").pop() || "scan.jpg";
   // React Native's FormData accepts this shape for file uploads
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   formData.append("file", { uri: imageUri, name: filename, type: "image/jpeg" } as any);
   return postMultipart<IntakeResultResponse>("/intake/image-only", formData);
 };
@@ -135,7 +135,7 @@ export const browseCatalogItems = (categoryId: string, opts?: {
   if (opts?.rarity) sp.set('rarity', opts.rarity);
   const query = sp.toString();
   return get<{
-    items: Array<{
+    items: {
       id: string;
       category: string;
       item_key: string;
@@ -147,7 +147,7 @@ export const browseCatalogItems = (categoryId: string, opts?: {
       external_id: string | null;
       set_code: string | null;
       estimated_price: number | null;
-    }>;
+    }[];
     total: number;
     limit: number;
     offset: number;

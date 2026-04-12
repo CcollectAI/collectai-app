@@ -43,11 +43,11 @@ import {
   AddManualSubmitSection,
 } from '@/components/add-manual';
 
-type SaveState = "idle" | "saving" | "success" | "error";
-
 import { CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 import { CUSTOM_CATEGORY_SENTINEL } from '@/components/add-manual/CategoryPickerModal';
 import { getCategoryFields } from '@/constants/categoryFields';
+
+type SaveState = "idle" | "saving" | "success" | "error";
 
 const ManualAddScreen: React.FC = () => {
   const router = useRouter();
@@ -72,7 +72,7 @@ const ManualAddScreen: React.FC = () => {
   const [notes, setNotes] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [acquisitionDate, setAcquisitionDate] = useState("");
-  const [customFields, setCustomFields] = useState<Array<{key: string; value: string}>>([]);
+  const [customFields, setCustomFields] = useState<{key: string; value: string}[]>([]);
   const [categoryAttrs, setCategoryAttrs] = useState<Record<string, string | boolean>>({});
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [errorText, setErrorText] = useState<string | null>(null);

@@ -112,7 +112,7 @@ export async function persistQuickscanDraft(input: QuickscanDraft): Promise<Pers
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export async function quickscanSingle(_imageUri?: string): Promise<QuickScanResult> {
   return {
     itemId: null,

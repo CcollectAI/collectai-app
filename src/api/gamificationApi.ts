@@ -21,41 +21,41 @@ export const getPublicGamificationProfile = (userId: string) =>
       current_streak: number;
       achievements_unlocked: number;
       achievements_total: number;
-      recent_achievements: Array<{
+      recent_achievements: {
         id: string;
         title: string;
         icon: string;
         tier: string;
         unlocked_at: string | null;
-      }>;
+      }[];
     };
   }>(`/gamification/profile/${encodeURIComponent(userId)}`);
 
 export const getAchievements = () =>
   get<{
-    achievements: Array<{
+    achievements: {
       id: string;
       title: string;
       description: string;
       tier: string;
       earned: boolean;
       earned_at: string | null;
-    }>;
+    }[];
   }>("/gamification/achievements");
 
 export const getRecentAchievements = () =>
   get<{
-    achievements: Array<{
+    achievements: {
       id: string;
       title: string;
       tier: string;
       earned_at: string;
-    }>;
+    }[];
   }>("/gamification/achievements/recent");
 
 export const getActiveChallenges = () =>
   get<{
-    challenges: Array<{
+    challenges: {
       id: string;
       title: string;
       description: string;
@@ -63,7 +63,7 @@ export const getActiveChallenges = () =>
       target: number;
       reward_xp: number;
       expires_at: string | null;
-    }>;
+    }[];
   }>("/gamification/challenges");
 
 export const getLeaderboard = (scope?: string, category?: string) => {
@@ -72,13 +72,13 @@ export const getLeaderboard = (scope?: string, category?: string) => {
   if (category) sp.set("category", category);
   const q = sp.toString();
   return get<{
-    entries: Array<{
+    entries: {
       rank: number;
       user_id: string;
       display_name: string;
       xp: number;
       level: number;
       avatar_url: string | null;
-    }>;
+    }[];
   }>(`/gamification/leaderboard${q ? `?${q}` : ""}`);
 };

@@ -152,7 +152,7 @@ function AlertsScreen() {
         .getAlertTriggerHistory()
         .catch((err) => {
           logger.warn('[Alerts] Failed to load triggers', err);
-          return { triggers: [] as Array<{ id: string; alert_id: string | null; item_id: string | null; trigger_type: string; trigger_value: Record<string, unknown>; message: string; read: boolean; created_at: string }>, unread_count: 0 };
+          return { triggers: [] as { id: string; alert_id: string | null; item_id: string | null; trigger_type: string; trigger_value: Record<string, unknown>; message: string; read: boolean; created_at: string }[], unread_count: 0 };
         });
       return {
         triggers: historyData.triggers.map((t) => ({

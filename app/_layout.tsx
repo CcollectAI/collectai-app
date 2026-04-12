@@ -12,6 +12,25 @@ import {
   Roboto_700Bold,
   Roboto_900Black,
 } from "@expo-google-fonts/roboto";
+import { SettingsProvider } from "@/lib/settings";
+import { ToastProvider } from "@/components/Toast";
+import { InboxHeaderButton } from "@/components/InboxHeaderButton";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton";
+import { useAppTheme } from "@/hooks/useAppTheme";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { usePresenceHeartbeat } from "@/hooks/usePresenceHeartbeat";
+import { AuthProvider } from "@/providers/AuthProvider";
+import { useAuthContext } from "@/providers/useAuthContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OfflineBanner } from "@/components/OfflineBanner";
+import { initOfflineQueue } from "@/data/OfflineDataProvider";
+import { SplashScreen as BrandedSplash } from "@/components/SplashScreen";
+import { recordActiveDay } from "@/hooks/useStoreReview";
+import { initAnalytics, trackScreen } from "@/analytics/track";
+import { featureFlags } from "@/config/featureFlags";
+import { FeatureTourProvider } from "@/lib/featureTour";
+// Initialize i18n — side-effect import. Must run before any useTranslation() call.
+import "@/i18n";
 
 /* ---------- Global font defaults ----------
  * This monkey-patch runs at import time (before fonts are loaded).
@@ -43,25 +62,6 @@ try {
 } catch {
   // Font monkey-patch failed — system font will be used as fallback
 }
-import { SettingsProvider } from "@/lib/settings";
-import { ToastProvider } from "@/components/Toast";
-import { InboxHeaderButton } from "@/components/InboxHeaderButton";
-import { ThemeToggleButton } from "@/components/ThemeToggleButton";
-import { useAppTheme } from "@/hooks/useAppTheme";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { usePresenceHeartbeat } from "@/hooks/usePresenceHeartbeat";
-import { AuthProvider } from "@/providers/AuthProvider";
-import { useAuthContext } from "@/providers/useAuthContext";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { OfflineBanner } from "@/components/OfflineBanner";
-import { initOfflineQueue } from "@/data/OfflineDataProvider";
-import { SplashScreen as BrandedSplash } from "@/components/SplashScreen";
-import { recordActiveDay } from "@/hooks/useStoreReview";
-import { initAnalytics, trackScreen } from "@/analytics/track";
-import { featureFlags } from "@/config/featureFlags";
-import { FeatureTourProvider } from "@/lib/featureTour";
-// Initialize i18n — side-effect import. Must run before any useTranslation() call.
-import "@/i18n";
 
 /* ---------- OTA Updates (guarded so dev builds work) ---------- */
 let Updates: {

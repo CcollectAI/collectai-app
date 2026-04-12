@@ -182,26 +182,26 @@ export async function submitScanFeedback(feedback: {
 }
 
 type MultiDetectApiResponse = {
-  items: Array<{
+  items: {
     item_index: number;
     bounding_box: { x: number; y: number; w: number; h: number };
     category_hint: string | null;
     suggested_name: string | null;
     confidence: number;
-  }>;
+  }[];
   total_detected: number;
 };
 
 export async function multiDetect(
   imageUri: string,
 ): Promise<{
-  items: Array<{
+  items: {
     itemIndex: number;
     boundingBox: { x: number; y: number; w: number; h: number };
     categoryHint: string | null;
     suggestedName: string | null;
     confidence: number;
-  }>;
+  }[];
   totalDetected: number;
 }> {
   const form = new FormData();
@@ -242,13 +242,13 @@ export type ValueSummaryData = {
   member_since: string | null;
   days_as_member: number;
   currency: string;
-  top_smart_buys: Array<{
+  top_smart_buys: {
     item_name: string;
     category: string;
     purchase_price: number;
     market_value: number;
     saved: number;
-  }>;
+  }[];
 };
 
 export const getValueSummary = () => get<ValueSummaryData>("/value-summary");

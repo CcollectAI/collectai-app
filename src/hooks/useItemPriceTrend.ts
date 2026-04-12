@@ -9,7 +9,7 @@ import { useSettings } from '@/lib/settings';
 import logger from '@/utils/logger';
 
 interface PriceTrendData {
-  data_points: Array<{ date: string; q50: number; q10: number; q90: number }>;
+  data_points: { date: string; q50: number; q10: number; q90: number }[];
   direction: 'up' | 'down' | 'flat';
   pct_change: number;
   current_q50: number;

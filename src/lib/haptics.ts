@@ -10,7 +10,7 @@ import { Platform } from 'react-native';
 import { logger } from '@/lib/logger';
 
 // Optional dependency - graceful fallback if not installed
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 let Haptics: Record<string, any> | null = null;
 
 try {

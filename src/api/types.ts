@@ -26,12 +26,12 @@ export type IntakeResultResponse = {
   barcode_type: string | null;
   taxonomy_version: string;
   taxonomy_confidence: number;
-  suggested_corrections: Array<{
+  suggested_corrections: {
     from_category: string;
     to_category: string;
     frequency: number;
     user_count: number;
-  }>;
+  }[];
   estimated_price: number | null;
   price_source: string | null;
   price_band: {
@@ -45,7 +45,7 @@ export type IntakeResultResponse = {
   catalog_miss: boolean;
   catalog_match_id: string | null;
   catalog_match_key: string | null;
-  alternatives: Array<{
+  alternatives: {
     catalog_item_id: string | null;
     item_key: string | null;
     title: string | null;
@@ -56,7 +56,7 @@ export type IntakeResultResponse = {
     image_url: string | null;
     match_score: number;
     match_reason: string | null;
-  }>;
+  }[];
   field_confidence: {
     category: number;
     name: number;
@@ -70,13 +70,13 @@ export type IntakeResultResponse = {
     collector_count: number;
     is_trending: boolean;
     trend_rank: number | null;
-    recent_sold: Array<{
+    recent_sold: {
       title: string | null;
       price: number | null;
       currency: string;
       sold_at: string | null;
       source: string | null;
-    }>;
+    }[];
     scarcity: {
       listing_count: number;
       supply_trend: string;
@@ -90,12 +90,12 @@ export type IntakeResultResponse = {
     variant_of: string | null;
     set_completion: { owned: number; total: number; pct: number } | null;
   } | null;
-  defect_annotations: Array<{
+  defect_annotations: {
     type: string | null;
     severity: string | null;
     location: string | null;
     description: string | null;
-  }>;
+  }[];
   suggested_grade: {
     scale: string | null;
     grade_value: string | null;

@@ -65,7 +65,7 @@ function EventsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'week' | 'nearby'>('list');
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
-  const [nearbyEvents, setNearbyEvents] = useState<Array<{ id: string; title: string; date: string; location?: string; distance_km?: number }>>([]);
+  const [nearbyEvents, setNearbyEvents] = useState<{ id: string; title: string; date: string; location?: string; distance_km?: number }[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState(false);
   const [kindFilter, setKindFilter] = useState<string | null>(null);

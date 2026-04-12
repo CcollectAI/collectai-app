@@ -30,11 +30,11 @@ const RECENT_SEARCHES_KEY = '@collectai/recent_searches';
 const MAX_RECENT_SEARCHES = 10;
 
 type SearchResults = {
-  items: Array<{ id: string; name: string; category: string; imageUrl?: string | null; price?: number }>;
-  catalog: Array<{ id: string; category: string; itemKey: string; title: string; brand?: string | null; imageUrl?: string | null }>;
-  users: Array<{ id: string; displayName: string; handle?: string; avatarUrl?: string | null }>;
-  events: Array<{ id: string; title: string; startDate?: string; location?: string; category?: string }>;
-  categories: Array<{ id: string; name: string }>;
+  items: { id: string; name: string; category: string; imageUrl?: string | null; price?: number }[];
+  catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; imageUrl?: string | null }[];
+  users: { id: string; displayName: string; handle?: string; avatarUrl?: string | null }[];
+  events: { id: string; title: string; startDate?: string; location?: string; category?: string }[];
+  categories: { id: string; name: string }[];
 };
 
 const ItemSearchResult = React.memo(function ItemSearchResult({ item, colors, onPress }: { item: SearchResults['items'][number]; colors: ReturnType<typeof useAppTheme>['colors']; onPress: () => void }) {

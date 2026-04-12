@@ -74,7 +74,7 @@ export async function unifiedSearch(query: string, limit = 5) {
         location: e.location as string | undefined,
         category: e.category as string | undefined,
       })),
-      categories: (resp.categories as Array<{ id: string; name: string }>) || [],
+      categories: (resp.categories as { id: string; name: string }[]) || [],
     };
   } catch {
     return { items: [], catalog: [], users: [], events: [], categories: [] };

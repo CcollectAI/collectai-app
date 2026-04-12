@@ -374,13 +374,13 @@ function SellerDashboardScreen() {
   const feeSchedules = dashboardData?.feeSchedules ?? [];
 
   // Actuals vs Predicted (L2)
-  const [predictionComps, setPredictionComps] = useState<Array<{ item_key: string; predicted: number; actual: number; category: string }>>([]);
+  const [predictionComps, setPredictionComps] = useState<{ item_key: string; predicted: number; actual: number; category: string }[]>([]);
   useEffect(() => {
     let cancelled = false;
     collectorsApi.getPredictionAccuracy()
       .then((data) => {
         if (cancelled) return;
-        const resp = data as { comparisons?: Array<{ item_key: string; predicted: number; actual: number; category: string }> } | undefined;
+        const resp = data as { comparisons?: { item_key: string; predicted: number; actual: number; category: string }[] } | undefined;
         if (Array.isArray(resp?.comparisons)) setPredictionComps(resp!.comparisons.slice(0, 6));
       })
       .catch((err) => logger.warn('[SellerDash] prediction accuracy fetch failed:', err));

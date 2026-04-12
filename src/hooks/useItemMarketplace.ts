@@ -36,10 +36,10 @@ export function useItemMarketplace(
   const [dossierError, setDossierError] = useState(false);
 
   // Provenance state
-  const [provenanceEvents, setProvenanceEvents] = useState<Array<{
+  const [provenanceEvents, setProvenanceEvents] = useState<{
     id: string; eventType: string; timestamp: string;
     note: string | null; source: string | null; metadata: Record<string, unknown>;
-  }>>([]);
+  }[]>([]);
   const [authenticitySignals, setAuthenticitySignals] = useState<string[]>([]);
   const [provenanceLoading, setProvenanceLoading] = useState(false);
   const [provenanceExpanded, setProvenanceExpanded] = useState(false);

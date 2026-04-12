@@ -14,9 +14,9 @@ import { logger } from '@/lib/logger';
 import type { ExpoCalendarEntry } from '@/../types/api';
 
 // Optional dependencies - graceful fallback if not installed
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 let Calendar: Record<string, any> | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 let Notifications: Record<string, any> | null = null;
 
 try {

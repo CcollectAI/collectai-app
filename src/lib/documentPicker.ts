@@ -41,7 +41,7 @@ export async function pickDocument(
     return { canceled: true, document: null };
   }
 
-  const assets = raw.assets as Array<Record<string, unknown>> | undefined;
+  const assets = raw.assets as Record<string, unknown>[] | undefined;
   const asset = assets && assets.length > 0 ? assets[0] : raw;
 
   const uri = asset.uri as string | undefined;

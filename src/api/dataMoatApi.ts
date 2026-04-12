@@ -8,35 +8,35 @@ export const getSupplyTrends = (category?: string, days = 30) => {
   if (category) sp.set("category", category);
   sp.set("days", String(days));
   return get<{
-    trends: Array<{
+    trends: {
       date: string;
       listing_count: number;
       avg_price: number;
       category: string;
-    }>;
+    }[];
   }>(`/data-moat/supply-trends?${sp.toString()}`);
 };
 
 export const getDemandHeat = (category?: string) =>
   get<{
-    items: Array<{
+    items: {
       item_key: string;
       title: string;
       category: string;
       demand_score: number;
       search_count: number;
-    }>;
+    }[];
   }>(`/data-moat/demand-heat${category ? `?category=${encodeURIComponent(category)}` : ""}`);
 
 export const getScarcityScores = (category?: string) =>
   get<{
-    items: Array<{
+    items: {
       item_key: string;
       title: string;
       scarcity_score: number;
       listing_count: number;
       supply_trend: string;
-    }>;
+    }[];
   }>(`/data-moat/scarcity${category ? `?category=${encodeURIComponent(category)}` : ""}`);
 
 export const getDemandHeatByRegion = (category?: string, days = 7) => {

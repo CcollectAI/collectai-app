@@ -5,12 +5,12 @@ import { get, post, del } from "./httpClient";
 
 export const searchUsers = (query: string, limit = 10) =>
   get<{
-    users: Array<{
+    users: {
       user_id: string;
       display_name: string;
       handle: string | null;
       avatar_url: string | null;
-    }>;
+    }[];
   }>(`/social/users/search?q=${encodeURIComponent(query)}&limit=${limit}`);
 
 export const blockUser = (userId: string) =>
@@ -21,9 +21,9 @@ export const unblockUser = (userId: string) =>
 
 export const listBlockedUsers = () =>
   get<{
-    blocked: Array<{
+    blocked: {
       user_id: string;
       display_name: string | null;
       blocked_at: string;
-    }>;
+    }[];
   }>("/social/blocked");

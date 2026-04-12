@@ -16,7 +16,7 @@ export const API_BASE: string = (() => {
   const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
   if (envUrl) return envUrl;
   if (typeof __DEV__ !== 'undefined' && __DEV__) {
-    // eslint-disable-next-line no-console
+     
     console.warn('[config] EXPO_PUBLIC_API_BASE_URL is not set — using localhost fallback');
     return 'http://localhost:8000';
   }
@@ -42,7 +42,7 @@ export const SUPABASE_MODE: string = (process.env.EXPO_PUBLIC_SUPABASE_MODE ?? '
 
 // Warn if a non-dev build is running with mock data (likely a misconfigured release)
 if (SUPABASE_MODE === 'mock' && typeof __DEV__ !== 'undefined' && !__DEV__) {
-  // eslint-disable-next-line no-console
+   
   console.error(
     '[config] WARNING: Production build running with SUPABASE_MODE=mock. ' +
     'This is likely a misconfigured build. Set EXPO_PUBLIC_SUPABASE_MODE=strict for production.',

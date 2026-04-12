@@ -5,8 +5,29 @@
  */
 
 // ── Re-export shared HTTP primitives & error class ─────────────────────────
-export { ApiError } from "./httpClient";
 import { get, post, del, patch } from "./httpClient";
+
+// ── Import everything from domain modules to build the collectorsApi object ─
+import * as intakeApi from "./intakeApi";
+import * as itemsApi from "./itemsApi";
+import * as marketplaceApi from "./marketplaceApi";
+import * as dealsApi from "./dealsApi";
+import * as gamificationApi from "./gamificationApi";
+import * as eventsApi from "./eventsApi";
+import * as chatApi from "./chatApi";
+import * as portfolioApi from "./portfolioApi";
+import * as socialApi from "./socialApi";
+import * as alertsApi from "./alertsApi";
+import * as notificationsApi from "./notificationsApi";
+import * as predictApi from "./predictApi";
+import * as settingsApi from "./settingsApi";
+import * as dataMoatApi from "./dataMoatApi";
+import * as collectionsApiModule from "./collectionsApi";
+import * as setsApi from "./setsApi";
+import * as sponsorApi from "./sponsorApi";
+import * as gradingApi from "./gradingApi";
+import * as miscApi from "./miscApi";
+export { ApiError } from "./httpClient";
 
 // ── Re-export shared types ─────────────────────────────────────────────────
 export type { ServerUploadResponse, IntakeResultResponse, BillingStatus, NotificationItem, NotificationHistoryResponse } from "./types";
@@ -32,27 +53,6 @@ export {
   markNotificationRead,
   markAllNotificationsRead,
 } from "./notificationsApi";
-
-// ── Import everything from domain modules to build the collectorsApi object ─
-import * as intakeApi from "./intakeApi";
-import * as itemsApi from "./itemsApi";
-import * as marketplaceApi from "./marketplaceApi";
-import * as dealsApi from "./dealsApi";
-import * as gamificationApi from "./gamificationApi";
-import * as eventsApi from "./eventsApi";
-import * as chatApi from "./chatApi";
-import * as portfolioApi from "./portfolioApi";
-import * as socialApi from "./socialApi";
-import * as alertsApi from "./alertsApi";
-import * as notificationsApi from "./notificationsApi";
-import * as predictApi from "./predictApi";
-import * as settingsApi from "./settingsApi";
-import * as dataMoatApi from "./dataMoatApi";
-import * as collectionsApiModule from "./collectionsApi";
-import * as setsApi from "./setsApi";
-import * as sponsorApi from "./sponsorApi";
-import * as gradingApi from "./gradingApi";
-import * as miscApi from "./miscApi";
 
 // ── Assemble the unified collectorsApi object ──────────────────────────────
 // Every method that was on the original object is mapped here, preserving

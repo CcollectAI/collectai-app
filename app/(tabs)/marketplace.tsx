@@ -153,8 +153,8 @@ const SearchScreen: React.FC = () => {
   const [userSearchLoading, setUserSearchLoading] = useState(false);
   const [quickViewItem, setQuickViewItem] = useState<SearchResult | null>(null);
   const [quickViewVisible, openQuickView, closeQuickView] = useModal();
-  const [demandHeat, setDemandHeat] = useState<Array<{ item_key: string; title: string; category: string; demand_score: number; search_count: number }>>([]);
-  const [regionalDemand, setRegionalDemand] = useState<Array<{ item_key: string; category: string; signal_count: number; region: string }>>([]);
+  const [demandHeat, setDemandHeat] = useState<{ item_key: string; title: string; category: string; demand_score: number; search_count: number }[]>([]);
+  const [regionalDemand, setRegionalDemand] = useState<{ item_key: string; category: string; signal_count: number; region: string }[]>([]);
   const debouncedUserQuery = useDebounce(userSearchQuery.trim(), 350);
 
   useEffect(() => {
@@ -177,7 +177,7 @@ const SearchScreen: React.FC = () => {
       try {
         const data = await collectorsApi.getDemandHeat();
         if (cancelled) return;
-        const resp = data as { items?: Array<{ item_key: string; title: string; category: string; demand_score: number; search_count: number }> } | undefined;
+        const resp = data as { items?: { item_key: string; title: string; category: string; demand_score: number; search_count: number }[] } | undefined;
         const items = resp?.items;
         if (Array.isArray(items) && items.length) {
           const sliced = items.slice(0, 6);
@@ -201,7 +201,7 @@ const SearchScreen: React.FC = () => {
       try {
         const data = await collectorsApi.getDemandHeatByRegion();
         if (cancelled) return;
-        const resp = data as { items?: Array<{ item_key: string; category: string; signal_count: number; region: string }> } | undefined;
+        const resp = data as { items?: { item_key: string; category: string; signal_count: number; region: string }[] } | undefined;
         if (Array.isArray(resp?.items)) {
           const sliced = resp!.items.slice(0, 5);
           setRegionalDemand(sliced);
@@ -260,7 +260,7 @@ const SearchScreen: React.FC = () => {
     let cancelled = false;
     (async () => {
       try {
-        const resp = await collectorsApi.fetchInsights() as { trending_items?: Array<{ category?: string; change_pct?: number }> };
+        const resp = await collectorsApi.fetchInsights() as { trending_items?: { category?: string; change_pct?: number }[] };
         if (cancelled || !resp?.trending_items?.length) return;
         const catMap = CATEGORIES.reduce<Record<string, string>>((m, c) => { m[c.id] = c.name; return m; }, {});
         const seen = new Set<string>();

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { router } from 'expo-router';
+import { router , useLocalSearchParams } from 'expo-router';
 import {
   ScrollView,
   View,
@@ -13,7 +13,6 @@ import {
   RefreshControl,
   useWindowDimensions,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { showActionSheet } from "@/hooks/useActionSheetPicker";
@@ -75,11 +74,13 @@ import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
 import { ItemEditBar } from '@/components/item/ItemEditBar';
 import { ItemPriceSection } from '@/components/item/ItemPriceSection';
 import { ItemNotesEditor } from '@/components/item/ItemNotesEditor';
+// Pull from single source of truth — all 36 categories
+import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG, GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
 // DossierData and MarketHit types imported from extracted components
 
 // Price trend data shape
 interface PriceTrendData {
-  data_points: Array<{ date: string; q50: number; q10: number; q90: number }>;
+  data_points: { date: string; q50: number; q10: number; q90: number }[];
   direction: 'up' | 'down' | 'flat';
   pct_change: number;
   current_q50: number;
@@ -102,8 +103,6 @@ const toNum = (value: string | number | undefined | null): number | undefined =>
 const COLLECTION_OPTIONS = ['Not set', 'Base Set', 'Jungle', 'Fossil', 'Team Rocket', 'Gym Heroes', 'Neo Genesis', 'Other'];
 const CONDITION_OPTIONS_GENERAL = ['Not set', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
 const CONDITION_OPTIONS_GRADED = ['Not set', 'PSA 10', 'PSA 9', 'PSA 8', 'PSA 7', 'BGS 10', 'BGS 9.5', 'CGC 9.8', 'CGC 9.6', 'Raw', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
-// Pull from single source of truth — all 36 categories
-import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG, GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
 
 const CATEGORY_OPTIONS = [...ALL_CATS.map((c) => c.name), 'Other'];
 const CATEGORY_ID_MAP: Record<string, string> = {

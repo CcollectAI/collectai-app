@@ -28,9 +28,9 @@ export interface DossierData {
   generated_at: string;
   identity: Record<string, unknown>;
   valuation: Record<string, unknown>;
-  provenance: Array<Record<string, unknown>>;
-  price_history: Array<Record<string, unknown>>;
-  market_comps: Array<Record<string, unknown>>;
+  provenance: Record<string, unknown>[];
+  price_history: Record<string, unknown>[];
+  market_comps: Record<string, unknown>[];
   photos: string[];
   collections: string[];
   authenticity_signals: string[];

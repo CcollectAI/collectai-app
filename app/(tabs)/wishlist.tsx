@@ -40,11 +40,11 @@ import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
 import { WishlistStatsBar } from '@/components/wishlist/WishlistStatsBar';
 import { WishlistSortControls } from '@/components/wishlist/WishlistSortControls';
 
-const CONGRATS_DISPLAY_DURATION = 2000;
-const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as const };
-
 // Pull from single source of truth — all 36 categories + "Other"
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
+
+const CONGRATS_DISPLAY_DURATION = 2000;
+const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as const };
 const CATEGORIES = [...ALL_CATS.map((c) => c.name), 'Other'];
 
 function formatDate(dateStr: string | undefined): string {

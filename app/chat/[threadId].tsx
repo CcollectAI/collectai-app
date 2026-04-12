@@ -76,7 +76,7 @@ function ThreadDetailScreen() {
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const presenceChannelRef = useRef<any>(null);
   const isNearBottomRef = useRef(true);
 
@@ -211,7 +211,7 @@ function ThreadDetailScreen() {
         // Check if any user other than us is typing
         const otherUsers = Object.keys(state).filter((key) => key !== currentUserId);
         const anyoneTyping = otherUsers.some((key) => {
-          const presences = state[key] as Array<{ typing?: boolean }>;
+          const presences = state[key] as { typing?: boolean }[];
           return presences?.some((p) => p.typing);
         });
         setOtherTyping(anyoneTyping);

@@ -45,14 +45,14 @@ const LeaderboardScreen: React.FC = () => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [apiEntries, setApiEntries] = useState<Array<{
+  const [apiEntries, setApiEntries] = useState<{
     rank: number;
     user_id: string;
     display_name: string;
     xp: number;
     level: number;
     avatar_url: string | null;
-  }> | null>(null);
+  }[] | null>(null);
 
   const loadLeaderboardRef = useRef<{ cancelled: boolean }>({ cancelled: false });
 

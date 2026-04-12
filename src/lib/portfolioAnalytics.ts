@@ -31,7 +31,7 @@ function toNumber(value: unknown): number {
  * Compute portfolio-level P/L summary.
  */
 export function calculatePortfolioPLSummary(
-  rawItems: Array<Partial<PortfolioLikeItem>>
+  rawItems: Partial<PortfolioLikeItem>[]
 ): PortfolioPLSummary {
   let totalCurrentValue = 0;
   let totalCostBasis = 0;
@@ -61,7 +61,7 @@ export function calculatePortfolioPLSummary(
  * Compute per-item P/L and ROI.
  */
 export function calculatePerItemPL(
-  rawItems: Array<Partial<PortfolioLikeItem>>
+  rawItems: Partial<PortfolioLikeItem>[]
 ): ItemPL[] {
   return rawItems.map((item, index) => {
     const currentValue = toNumber(item.currentValue);

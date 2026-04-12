@@ -31,14 +31,14 @@ interface ProvenanceHistorySectionProps {
   hapticsEnabled: boolean;
   provenanceExpanded: boolean;
   provenanceLoading: boolean;
-  provenanceEvents: Array<{
+  provenanceEvents: {
     id: string;
     eventType: string;
     timestamp: string;
     note: string | null;
     source: string | null;
     metadata: Record<string, unknown>;
-  }>;
+  }[];
   authenticitySignals: string[];
   onToggleExpanded: () => void;
 }
