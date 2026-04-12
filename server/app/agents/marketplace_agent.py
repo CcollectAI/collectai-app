@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -527,12 +528,12 @@ class MarketplaceAgent:
                             _parse_sold_date(hit.get("sold_at")),
                             hit.get("url"),
                             normalized_key,
-                            {
+                            json.dumps({
                                 "content_hash": hit.get("content_hash", ""),
                                 "provenance_score": scored.provenance_score,
                                 "source_reliability": scored.source_reliability,
                                 "is_sold": scored.is_sold,
-                            },
+                            }),
                         )
                         inserted += 1
                     except Exception:
