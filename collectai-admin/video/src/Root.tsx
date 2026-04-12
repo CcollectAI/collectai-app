@@ -11,6 +11,10 @@ import { WhatsItWorth } from "./compositions/WhatsItWorth";
 import { HiddenGem } from "./compositions/HiddenGem";
 import { MarketAlert } from "./compositions/MarketAlert";
 import { CollectionFlex } from "./compositions/CollectionFlex";
+import { AppStoreScreenshot } from "./compositions/AppStoreScreenshot";
+
+// App Store screenshot dimensions
+const SCREENSHOT = { width: 1320, height: 2868, fps: 1 }; // iPhone 16 Pro Max 6.9"
 
 export const RemotionRoot: React.FC = () => (
   <>
@@ -123,6 +127,97 @@ export const RemotionRoot: React.FC = () => (
         timeCollecting: "3 years",
         ctaText: "Track & flex your collection",
         language: "EN",
+      }}
+    />
+    {/* ─── App Store Screenshots ──────────────────────────────────── */}
+
+    <Composition
+      id="Screenshot-1-Home"
+      component={AppStoreScreenshot}
+      durationInFrames={1}
+      fps={SCREENSHOT.fps}
+      width={SCREENSHOT.width}
+      height={SCREENSHOT.height}
+      defaultProps={{
+        headline: "Your Collection, One Tap Away",
+        subheadline: "Track value across 54 categories",
+        screenType: "home" as const,
+        badgeText: "AI-Powered",
+      }}
+    />
+
+    <Composition
+      id="Screenshot-2-QuickScan"
+      component={AppStoreScreenshot}
+      durationInFrames={1}
+      fps={SCREENSHOT.fps}
+      width={SCREENSHOT.width}
+      height={SCREENSHOT.height}
+      defaultProps={{
+        headline: "Scan. Identify. Value.",
+        subheadline: "Point your camera at any collectible",
+        screenType: "quickscan" as const,
+        accentColor: "#10B981",
+      }}
+    />
+
+    <Composition
+      id="Screenshot-3-ItemDetail"
+      component={AppStoreScreenshot}
+      durationInFrames={1}
+      fps={SCREENSHOT.fps}
+      width={SCREENSHOT.width}
+      height={SCREENSHOT.height}
+      defaultProps={{
+        headline: "Know the Real Price",
+        subheadline: "AI valuation backed by market evidence",
+        screenType: "item-detail" as const,
+        badgeText: "14 Sources",
+      }}
+    />
+
+    <Composition
+      id="Screenshot-4-Collection"
+      component={AppStoreScreenshot}
+      durationInFrames={1}
+      fps={SCREENSHOT.fps}
+      width={SCREENSHOT.width}
+      height={SCREENSHOT.height}
+      defaultProps={{
+        headline: "Portfolio at a Glance",
+        subheadline: "Every item tracked, every value updated",
+        screenType: "collection" as const,
+      }}
+    />
+
+    <Composition
+      id="Screenshot-5-Marketplace"
+      component={AppStoreScreenshot}
+      durationInFrames={1}
+      fps={SCREENSHOT.fps}
+      width={SCREENSHOT.width}
+      height={SCREENSHOT.height}
+      defaultProps={{
+        headline: "37 Marketplaces, One Search",
+        subheadline: "eBay, StockX, TCGPlayer, Chrono24 & more",
+        screenType: "marketplace" as const,
+        badgeText: "Real-Time Prices",
+      }}
+    />
+
+    <Composition
+      id="Screenshot-6-Deals"
+      component={AppStoreScreenshot}
+      durationInFrames={1}
+      fps={SCREENSHOT.fps}
+      width={SCREENSHOT.width}
+      height={SCREENSHOT.height}
+      defaultProps={{
+        headline: "Never Miss a Deal",
+        subheadline: "AI scans marketplaces for undervalued finds",
+        screenType: "deals" as const,
+        accentColor: "#10B981",
+        badgeText: "Deal Discovery",
       }}
     />
   </>
