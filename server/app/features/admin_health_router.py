@@ -24,7 +24,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from app.db import get_pool
-from app.worker_registry import get_worker_health
+from app.worker_registry import check_and_alert_overdue, get_worker_health
 
 _log = logging.getLogger("collectai.admin_health")
 
@@ -66,7 +66,15 @@ async def worker_health(request: Request) -> JSONResponse:
     if err is not None:
         return err
 
-    return JSONResponse(get_worker_health())
+    health = get_worker_health()
+
+    # Fire-and-forget: send Telegram alert if any workers are overdue (1h cooldown)
+    try:
+        await check_and_alert_overdue()
+    except Exception:
+        _log.debug("[worker-health] overdue alert check failed", exc_info=True)
+
+    return JSONResponse(health)
 
 
 @router.get("/admin/demand-summary", summary="Catalog demand signals summary")

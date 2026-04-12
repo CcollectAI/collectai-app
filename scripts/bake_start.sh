@@ -107,7 +107,16 @@ if [ -f "$PID_FILE" ]; then
 fi
 # Also catch any rogue uvicorn that wasn't tracked
 pkill -f "uvicorn main:app" 2>/dev/null || true
-sleep 1
+# Wait for port to be released (prevents EADDRINUSE on restart)
+BAKE_PORT="${PORT:-8000}"
+for _w in 1 2 3 4 5; do
+  if ! ss -tlnp 2>/dev/null | grep -q ":${BAKE_PORT} " && \
+     ! lsof -i ":${BAKE_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
+    break
+  fi
+  log "waiting for port ${BAKE_PORT} to be released (attempt $_w/5)"
+  sleep 2
+done
 
 # ── G2: memory check before catalog import ──────────────────────────────────
 section "G2: memory check"

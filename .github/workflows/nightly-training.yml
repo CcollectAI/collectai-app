@@ -5,17 +5,29 @@ on:
 jobs:
   export-train:
     runs-on: ubuntu-latest
+    env:
+      HAS_SECRETS: ${{ secrets.SUPABASE_URL != '' }}
     steps:
+      - name: Check secrets
+        if: env.HAS_SECRETS != 'true'
+        run: |
+          echo "::warning::Skipping — required secrets not configured (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, S3_DATA_BUCKET, AWS credentials)"
+          exit 0
       - uses: actions/checkout@v4
+        if: env.HAS_SECRETS == 'true'
       - uses: actions/setup-python@v5
+        if: env.HAS_SECRETS == 'true'
         with: { python-version: '3.12' }
       - name: Install deps
+        if: env.HAS_SECRETS == 'true'
         run: pip install requests
       - name: AWS CLI
+        if: env.HAS_SECRETS == 'true'
         uses: aws-actions/setup-cli@v2
         with:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Run exporter
+        if: env.HAS_SECRETS == 'true'
         env:
           SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

@@ -11,7 +11,10 @@ Environment=FLAG_MARKET_EBAY=1
 Environment=FLAG_PHOTO_FASTPASS=1
 ExecStart=/opt/collectors/deploy/run_uvicorn.sh
 Restart=always
-RestartSec=3
+RestartSec=5
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=10
 LimitNOFILE=65536
 
 [Install]

@@ -24,7 +24,12 @@ export const handler = async (req: Request) => {
     const parsed = BodySchema.parse(await req.json().catch(() => ({})))
     const idem_key = parsed.idem_key || crypto.randomUUID()
 
+    // Resolve authenticated user for RLS (user_id = auth.uid())
+    const { data: { user } } = await supa.auth.getUser()
+    const user_id = user?.id ?? null
+
     const { data, error } = await supa.from('predict_sessions').insert({
+      user_id,
       source: parsed.source,
       version: parsed.version,
       category: parsed.category,

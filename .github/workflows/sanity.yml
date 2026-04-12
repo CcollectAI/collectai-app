@@ -9,6 +9,8 @@ jobs:
         with: { python-version: "3.12" }
       - name: Install system deps
         run: sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib jq
+      - name: Start PostgreSQL
+        run: sudo systemctl start postgresql
       - name: Setup Postgres
         run: |
           sudo -u postgres psql -c "CREATE USER collectors WITH PASSWORD 'collectors' SUPERUSER;"

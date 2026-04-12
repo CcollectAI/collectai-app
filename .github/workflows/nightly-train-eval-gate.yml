@@ -19,17 +19,29 @@ jobs:
   train-all:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      HAS_SECRETS: ${{ secrets.SUPABASE_URL != '' }}
 
     steps:
+      - name: Check secrets
+        if: env.HAS_SECRETS != 'true'
+        run: |
+          echo "::warning::Skipping — required secrets not configured (SUPABASE_URL, SUPABASE_SERVICE_KEY)"
+          exit 0
+
       - uses: actions/checkout@v4
+        if: env.HAS_SECRETS == 'true'
 
       - uses: actions/setup-python@v5
+        if: env.HAS_SECRETS == 'true'
         with: { python-version: "3.12" }
 
       - name: Install dependencies
+        if: env.HAS_SECRETS == 'true'
         run: pip install -r requirements.txt || pip install scikit-learn numpy httpx pyyaml asyncpg
 
       - name: Export user feedback for retraining
+        if: env.HAS_SECRETS == 'true'
         env:
           DB_DSN: ${{ secrets.DB_DSN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -40,6 +52,7 @@ jobs:
           echo "Feedback export complete."
 
       - name: Train all categories
+        if: env.HAS_SECRETS == 'true'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -69,6 +82,7 @@ jobs:
           fi
 
       - name: Evaluate & Gate
+        if: env.HAS_SECRETS == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
@@ -84,7 +98,7 @@ jobs:
           fi
 
       - name: Upload artifacts on failure
-        if: failure()
+        if: failure() && env.HAS_SECRETS == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: training-logs

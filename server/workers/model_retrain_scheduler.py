@@ -3,6 +3,12 @@
 
 Default: once per week (604800 seconds).
 
+NOTE: Production retraining is handled by GitHub Actions
+(.github/workflows/nightly-train-eval-gate.yml) which runs daily at 02:00 UTC
+with eval gating. This in-process scheduler is kept for manual/local use only.
+Do NOT enable MODEL_RETRAIN_ENABLED in production to avoid duplicate
+orchestration.
+
 Configuration via environment variables:
   MODEL_RETRAIN_INTERVAL_SECS  — seconds between runs (default 604800 = weekly)
   DB_DSN                       — database connection string (required)

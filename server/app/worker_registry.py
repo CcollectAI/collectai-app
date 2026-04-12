@@ -10,11 +10,17 @@ and also tracked in-memory for fast access.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
+from datetime import datetime, timezone
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+# Cooldown tracking for overdue alerts (epoch timestamp of last alert sent)
+_last_overdue_alert_at: float = 0.0
+_OVERDUE_ALERT_COOLDOWN_S: float = 3600.0  # 1 hour
 
 # In-memory worker run tracking
 # {worker_name: {"last_run": epoch, "last_status": "ok"|"error", "runs": int, "errors": int}}
@@ -296,3 +302,72 @@ def get_status() -> dict:
             "overdue": overdue,
         }
     return workers
+
+
+async def health_monitor_loop(interval_s: float = 900.0) -> None:
+    """Background loop that calls check_and_alert_overdue() every *interval_s* seconds.
+
+    Never raises — all exceptions are caught and logged so the task cannot crash.
+    """
+    logger.info("[health_monitor] Started (interval=%ds)", interval_s)
+    while True:
+        try:
+            await asyncio.sleep(interval_s)
+            await check_and_alert_overdue()
+        except asyncio.CancelledError:
+            logger.info("[health_monitor] Cancelled, exiting")
+            return
+        except Exception:
+            logger.exception("[health_monitor] Unexpected error (will retry next cycle)")
+
+
+async def check_and_alert_overdue(*, force: bool = False) -> bool:
+    """Check for overdue workers and send a Telegram alert if any are found.
+
+    Uses a 1-hour cooldown to avoid spamming.  Pass ``force=True`` to bypass
+    the cooldown (useful for manual /ops endpoint calls).
+
+    Returns True if an alert was sent, False otherwise.
+
+    Workers that have *never* run are excluded — they would fire on every fresh
+    restart and produce noise.  Only workers that ran at least once and then
+    became overdue are reported.
+    """
+    global _last_overdue_alert_at
+
+    now = time.time()
+    if not force and (now - _last_overdue_alert_at) < _OVERDUE_ALERT_COOLDOWN_S:
+        return False
+
+    overdue = [
+        w for w in get_overdue_workers()
+        if w["last_run_ago_s"] is not None  # exclude never-ran workers
+    ]
+    if not overdue:
+        return False
+
+    # Build message
+    lines: list[str] = ["\u26a0\ufe0f <b>Overdue Workers</b>\n"]
+    for w in overdue:
+        interval_min = round(w["expected_interval_s"] / 60, 1)
+        ago_min = round(w["last_run_ago_s"] / 60, 1)
+        status_tag = f' (last: {w["last_status"]})' if w["last_status"] else ""
+        lines.append(
+            f"\u2022 <b>{w['name']}</b> — last ran {ago_min}m ago "
+            f"(expected every {interval_min}m){status_tag}"
+        )
+
+    lines.append(f"\n{len(overdue)} worker(s) overdue as of "
+                  f"{datetime.now(timezone.utc).strftime('%H:%M UTC')}")
+
+    try:
+        from app.lib.telegram_ops import send_ops_alert
+
+        sent = await send_ops_alert("\n".join(lines))
+        if sent:
+            _last_overdue_alert_at = now
+            logger.info("[worker_registry] Overdue alert sent for %d worker(s)", len(overdue))
+        return sent
+    except Exception as exc:
+        logger.warning("[worker_registry] Failed to send overdue alert: %s", exc)
+        return False

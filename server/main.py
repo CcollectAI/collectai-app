@@ -126,6 +126,12 @@ async def lifespan(app: FastAPI):
     # VALUATION and CATALOG_CRAWLER added in R50f: required for TIER 4 price
     # predictions during the 14-day bake. Previously these only ran via
     # manual `python -m workers.<name>` invocation with no scheduler loop.
+    #
+    # NOTE: Model retraining is handled by GitHub Actions
+    # (.github/workflows/nightly-train-eval-gate.yml) which runs daily at
+    # 02:00 UTC with eval gating. The in-process MODEL_RETRAIN_ENABLED
+    # scheduler is kept for manual/local use but should stay disabled in
+    # production to avoid duplicate orchestration.
     _optional_schedulers = [
         ("AUTO_DELIST_ENABLED", "workers.auto_delist_scheduler", "auto-delist"),
         ("CALIBRATION_ENABLED", "workers.calibration_scheduler", "calibration"),
@@ -144,6 +150,14 @@ async def lifespan(app: FastAPI):
                 logging.getLogger("uvicorn").warning(
                     "[startup] Failed to start %s scheduler: %s", label, e,
                 )
+
+    # Worker health monitor — checks for overdue workers every 15 min and sends Telegram alerts
+    try:
+        from app.worker_registry import health_monitor_loop
+        asyncio.create_task(health_monitor_loop())
+        logging.getLogger("uvicorn").info("[startup] Worker health monitor started")
+    except Exception as e:
+        logging.getLogger("uvicorn").warning("[startup] Failed to start health monitor: %s", e)
 
     yield
 
