@@ -135,7 +135,38 @@
     "purchase_price": "Kaufpreis",
     "purchase_price_a11y": "Kaufpreis",
     "estimated_value_label": "Geschätzter Wert",
-    "estimated_value_a11y": "Geschätzter Wert"
+    "estimated_value_a11y": "Geschätzter Wert",
+    "additional_details": "Weitere Details",
+    "date_acquired": "Erwerbsdatum",
+    "date_acquired_a11y": "Erwerbsdatum",
+    "source_placeholder": "Twitch-Stream, lokaler Laden, Cardmarket…",
+    "source_a11y": "Quelle des Kaufs",
+    "notes_placeholder": "Druckauflage, Geschichte, Pläne, etc.",
+    "done_notes_a11y": "Notizen fertig bearbeitet",
+    "custom_details": "Benutzerdefinierte Details",
+    "field_name_placeholder": "Feldname",
+    "remove_field_a11y": "Feld entfernen",
+    "add_custom_field_a11y": "Benutzerdefiniertes Feld hinzufügen",
+    "add_field": "Feld hinzufügen"
+  },
+
+  "items_empty": {
+    "quickscan_ai": "QuickScan AI",
+    "quickscan_ai_a11y": "QuickScan AI",
+    "add_manually": "Manuell hinzufügen",
+    "add_manually_a11y": "Objekt manuell hinzufügen",
+    "scan_barcode": "Barcode scannen",
+    "scan_barcode_a11y": "Einen Barcode scannen"
+  },
+
+  "barcode": {
+    "product_found": "Produkt gefunden",
+    "estimated_price": "Geschätzter Preis",
+    "scan_another_a11y": "Einen weiteren Barcode scannen",
+    "scan_another": "Erneut scannen",
+    "save_a11y": "In Sammlung speichern",
+    "add_watchlist_a11y": "Stattdessen zur Wunschliste hinzufügen",
+    "add_watchlist_btn": "Zur Wunschliste hinzufügen"
   },
 
   "filters": {

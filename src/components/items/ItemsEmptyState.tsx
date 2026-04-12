@@ -7,10 +7,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 export const ItemsEmptyState = React.memo(function ItemsEmptyState() {
   const { colors } = useAppTheme();
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.emptyContainer}>
@@ -21,28 +23,28 @@ export const ItemsEmptyState = React.memo(function ItemsEmptyState() {
         onPress={() => router.push('/quickscan')}
         style={[styles.emptyCtaBtn, { backgroundColor: colors.accent }]}
         accessibilityRole="button"
-        accessibilityLabel="QuickScan AI"
+        accessibilityLabel={t('items_empty.quickscan_ai_a11y')}
       >
         <Ionicons name="camera-outline" size={18} color="#fff" />
-        <Text style={styles.emptyCtaBtnText}>QuickScan AI</Text>
+        <Text style={styles.emptyCtaBtnText}>{t('items_empty.quickscan_ai')}</Text>
       </AnimatedPressable>
       <AnimatedPressable
         onPress={() => router.push('/add-manual')}
         style={[styles.emptyCtaBtn, { borderColor: colors.border, borderWidth: 1, backgroundColor: colors.card }]}
         accessibilityRole="button"
-        accessibilityLabel="Add item manually"
+        accessibilityLabel={t('items_empty.add_manually_a11y')}
       >
         <Ionicons name="add-circle-outline" size={18} color={colors.text} />
-        <Text style={[styles.emptyCtaBtnTextSecondary, { color: colors.text }]}>Add Item Manually</Text>
+        <Text style={[styles.emptyCtaBtnTextSecondary, { color: colors.text }]}>{t('items_empty.add_manually')}</Text>
       </AnimatedPressable>
       <AnimatedPressable
         onPress={() => router.push('/barcode-scan')}
         style={[styles.emptyCtaBtn, { borderColor: colors.border, borderWidth: 1, backgroundColor: colors.card }]}
         accessibilityRole="button"
-        accessibilityLabel="Scan a barcode"
+        accessibilityLabel={t('items_empty.scan_barcode_a11y')}
       >
         <Ionicons name="barcode-outline" size={18} color={colors.text} />
-        <Text style={[styles.emptyCtaBtnTextSecondary, { color: colors.text }]}>Scan Barcode</Text>
+        <Text style={[styles.emptyCtaBtnTextSecondary, { color: colors.text }]}>{t('items_empty.scan_barcode')}</Text>
       </AnimatedPressable>
     </View>
   );

@@ -135,7 +135,38 @@
     "purchase_price": "Purchase Price",
     "purchase_price_a11y": "Purchase price",
     "estimated_value_label": "Estimated Value",
-    "estimated_value_a11y": "Estimated value"
+    "estimated_value_a11y": "Estimated value",
+    "additional_details": "Additional Details",
+    "date_acquired": "Date acquired",
+    "date_acquired_a11y": "Date acquired",
+    "source_placeholder": "Twitch stream, local shop, Cardmarket…",
+    "source_a11y": "Source where item was purchased",
+    "notes_placeholder": "Print line, story, plans, etc.",
+    "done_notes_a11y": "Done editing notes",
+    "custom_details": "Custom details",
+    "field_name_placeholder": "Field name",
+    "remove_field_a11y": "Remove field",
+    "add_custom_field_a11y": "Add custom field",
+    "add_field": "Add field"
+  },
+
+  "items_empty": {
+    "quickscan_ai": "QuickScan AI",
+    "quickscan_ai_a11y": "QuickScan AI",
+    "add_manually": "Add Item Manually",
+    "add_manually_a11y": "Add item manually",
+    "scan_barcode": "Scan Barcode",
+    "scan_barcode_a11y": "Scan a barcode"
+  },
+
+  "barcode": {
+    "product_found": "Product Found",
+    "estimated_price": "Estimated Price",
+    "scan_another_a11y": "Scan another barcode",
+    "scan_another": "Scan Another",
+    "save_a11y": "Save to collection",
+    "add_watchlist_a11y": "Add to watchlist instead",
+    "add_watchlist_btn": "Add to Watchlist Instead"
   },
 
   "filters": {

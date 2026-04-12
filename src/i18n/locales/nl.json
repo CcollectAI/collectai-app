@@ -135,7 +135,38 @@
     "purchase_price": "Aankoopprijs",
     "purchase_price_a11y": "Aankoopprijs",
     "estimated_value_label": "Geschatte waarde",
-    "estimated_value_a11y": "Geschatte waarde"
+    "estimated_value_a11y": "Geschatte waarde",
+    "additional_details": "Extra details",
+    "date_acquired": "Datum verworven",
+    "date_acquired_a11y": "Datum verworven",
+    "source_placeholder": "Twitch stream, lokale winkel, Cardmarket…",
+    "source_a11y": "Bron waar item is gekocht",
+    "notes_placeholder": "Print run, verhaal, plannen, etc.",
+    "done_notes_a11y": "Klaar met notities bewerken",
+    "custom_details": "Aangepaste details",
+    "field_name_placeholder": "Veldnaam",
+    "remove_field_a11y": "Veld verwijderen",
+    "add_custom_field_a11y": "Aangepast veld toevoegen",
+    "add_field": "Veld toevoegen"
+  },
+
+  "items_empty": {
+    "quickscan_ai": "QuickScan AI",
+    "quickscan_ai_a11y": "QuickScan AI",
+    "add_manually": "Handmatig toevoegen",
+    "add_manually_a11y": "Item handmatig toevoegen",
+    "scan_barcode": "Streepjescode scannen",
+    "scan_barcode_a11y": "Een streepjescode scannen"
+  },
+
+  "barcode": {
+    "product_found": "Product gevonden",
+    "estimated_price": "Geschatte prijs",
+    "scan_another_a11y": "Nog een streepjescode scannen",
+    "scan_another": "Opnieuw scannen",
+    "save_a11y": "Opslaan in collectie",
+    "add_watchlist_a11y": "Toevoegen aan verlanglijst",
+    "add_watchlist_btn": "Toevoegen aan verlanglijst"
   },
 
   "filters": {

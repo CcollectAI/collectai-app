@@ -135,7 +135,38 @@
     "purchase_price": "Precio de compra",
     "purchase_price_a11y": "Precio de compra",
     "estimated_value_label": "Valor estimado",
-    "estimated_value_a11y": "Valor estimado"
+    "estimated_value_a11y": "Valor estimado",
+    "additional_details": "Detalles adicionales",
+    "date_acquired": "Fecha de adquisición",
+    "date_acquired_a11y": "Fecha de adquisición",
+    "source_placeholder": "Stream de Twitch, tienda local, Cardmarket…",
+    "source_a11y": "Fuente de compra del artículo",
+    "notes_placeholder": "Tirada, historia, planes, etc.",
+    "done_notes_a11y": "Notas terminadas",
+    "custom_details": "Detalles personalizados",
+    "field_name_placeholder": "Nombre del campo",
+    "remove_field_a11y": "Eliminar campo",
+    "add_custom_field_a11y": "Añadir campo personalizado",
+    "add_field": "Añadir campo"
+  },
+
+  "items_empty": {
+    "quickscan_ai": "QuickScan IA",
+    "quickscan_ai_a11y": "QuickScan IA",
+    "add_manually": "Añadir manualmente",
+    "add_manually_a11y": "Añadir artículo manualmente",
+    "scan_barcode": "Escanear código",
+    "scan_barcode_a11y": "Escanear un código de barras"
+  },
+
+  "barcode": {
+    "product_found": "Producto encontrado",
+    "estimated_price": "Precio estimado",
+    "scan_another_a11y": "Escanear otro código de barras",
+    "scan_another": "Escanear otro",
+    "save_a11y": "Guardar en la colección",
+    "add_watchlist_a11y": "Añadir a la lista de seguimiento",
+    "add_watchlist_btn": "Añadir a la lista de seguimiento"
   },
 
   "filters": {

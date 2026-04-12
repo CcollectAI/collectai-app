@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Keyboard, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
 interface CustomField {
@@ -29,12 +30,13 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
   showCustomFields, customFields, onCustomFieldsChange,
 }: Props) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Ionicons name="document-text-outline" size={16} color={colors.accent} />
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Additional Details</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('add_manual.additional_details')}</Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -58,7 +60,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
 
         {/* Acquisition date */}
         <View style={styles.fieldBlock}>
-          <Text style={[styles.fieldLabel, { color: colors.text }]}>Date acquired</Text>
+          <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('add_manual.date_acquired')}</Text>
           <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
             <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
             <TextInput
@@ -69,7 +71,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
               keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
               maxLength={10}
               style={[styles.input, { color: colors.text }]}
-              accessibilityLabel="Date acquired"
+              accessibilityLabel={t('add_manual.date_acquired_a11y')}
               returnKeyType="next"
             />
           </View>
@@ -83,10 +85,10 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
             <TextInput
               value={source}
               onChangeText={onSourceChange}
-              placeholder="Twitch stream, local shop, Cardmarket…"
+              placeholder={t('add_manual.source_placeholder')}
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
-              accessibilityLabel="Source where item was purchased"
+              accessibilityLabel={t('add_manual.source_a11y')}
               returnKeyType="next"
             />
           </View>
@@ -100,7 +102,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
               onChangeText={onNotesChange}
               multiline
               numberOfLines={3}
-              placeholder="Print line, story, plans, etc."
+              placeholder={t('add_manual.notes_placeholder')}
               placeholderTextColor={colors.muted}
               style={[styles.inputMultiline, { color: colors.text }]}
               textAlignVertical="top"
@@ -111,7 +113,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
                 onPress={() => Keyboard.dismiss()}
                 style={[styles.notesDoneBtn, { backgroundColor: colors.accent }]}
                 accessibilityRole="button"
-                accessibilityLabel="Done editing notes"
+                accessibilityLabel={t('add_manual.done_notes_a11y')}
               >
                 <Ionicons name="checkmark" size={18} color="#fff" />
               </TouchableOpacity>
@@ -122,7 +124,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
         {/* Custom key/value fields — shown for custom categories */}
         {showCustomFields && (
           <View style={styles.fieldBlock}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>Custom details</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('add_manual.custom_details')}</Text>
             <Text style={[styles.customHint, { color: colors.muted }]}>
               Add any details specific to your item (e.g. Vintage, Region, Size)
             </Text>
@@ -136,7 +138,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
                       updated[idx] = { ...updated[idx], key: text };
                       onCustomFieldsChange(updated);
                     }}
-                    placeholder="Field name"
+                    placeholder={t('add_manual.field_name_placeholder')}
                     placeholderTextColor={colors.muted}
                     style={[styles.input, { color: colors.text }]}
                     accessibilityLabel={`Custom field ${idx + 1} name`}
@@ -159,7 +161,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
                 <TouchableOpacity
                   onPress={() => onCustomFieldsChange(customFields.filter((_, i) => i !== idx))}
                   hitSlop={8}
-                  accessibilityLabel="Remove field"
+                  accessibilityLabel={t('add_manual.remove_field_a11y')}
                 >
                   <Ionicons name="close-circle" size={20} color={colors.muted} />
                 </TouchableOpacity>
@@ -169,10 +171,10 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
               onPress={() => onCustomFieldsChange([...customFields, { key: '', value: '' }])}
               style={[styles.addFieldBtn, { borderColor: colors.accent }]}
               accessibilityRole="button"
-              accessibilityLabel="Add custom field"
+              accessibilityLabel={t('add_manual.add_custom_field_a11y')}
             >
               <Ionicons name="add" size={16} color={colors.accent} />
-              <Text style={[styles.addFieldText, { color: colors.accent }]}>Add field</Text>
+              <Text style={[styles.addFieldText, { color: colors.accent }]}>{t('add_manual.add_field')}</Text>
             </TouchableOpacity>
           </View>
         )}

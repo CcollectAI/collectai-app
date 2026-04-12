@@ -12,6 +12,7 @@ import {
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
@@ -46,6 +47,7 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
   onAddToWatchlist,
 }: BarcodeResultCardProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <ScrollView style={styles.resultContainer} contentContainerStyle={styles.resultContent}>
@@ -53,7 +55,7 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
       <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.productHeader}>
           <Ionicons name="checkmark-circle" size={32} color={colors.accent} />
-          <Text style={[styles.productFound, { color: colors.text }]}>Product Found</Text>
+          <Text style={[styles.productFound, { color: colors.text }]}>{t('barcode.product_found')}</Text>
         </View>
 
         <Text style={[styles.productTitle, { color: colors.text }]}>
@@ -91,7 +93,7 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
 
         {lookupResult.priceBand && (
           <View style={[styles.priceCard, { backgroundColor: colors.background }]}>
-            <Text style={[styles.priceLabel, { color: colors.muted }]}>Estimated Price</Text>
+            <Text style={[styles.priceLabel, { color: colors.muted }]}>{t('barcode.estimated_price')}</Text>
             <Text style={[styles.priceValue, { color: colors.text }]}>
               {formatPrice(lookupResult.priceBand.q50, currency)}
             </Text>
@@ -114,10 +116,10 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
           style={[styles.secondaryButtonHalf, { borderColor: colors.border }]}
           onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled }); onRescan(); }}
           accessibilityRole="button"
-          accessibilityLabel="Scan another barcode"
+          accessibilityLabel={t('barcode.scan_another_a11y')}
         >
           <Ionicons name="scan-outline" size={18} color={colors.text} />
-          <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Scan Another</Text>
+          <Text style={[styles.secondaryButtonText, { color: colors.text }]}>{t('barcode.scan_another')}</Text>
         </AnimatedPressable>
 
         <AnimatedPressable
@@ -125,7 +127,7 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
           onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: hapticsEnabled }); onSave(); }}
           disabled={isSaving}
           accessibilityRole="button"
-          accessibilityLabel="Save to collection"
+          accessibilityLabel={t('barcode.save_a11y')}
         >
           {isSaving ? (
             <ActivityIndicator size="small" color={colors.card} />
@@ -142,10 +144,10 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
         style={[styles.watchlistButton, { borderColor: colors.border }]}
         onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled }); onAddToWatchlist(); }}
         accessibilityRole="button"
-        accessibilityLabel="Add to watchlist instead"
+        accessibilityLabel={t('barcode.add_watchlist_a11y')}
       >
         <Ionicons name="eye-outline" size={18} color={colors.muted} />
-        <Text style={[styles.watchlistButtonText, { color: colors.muted }]}>Add to Watchlist Instead</Text>
+        <Text style={[styles.watchlistButtonText, { color: colors.muted }]}>{t('barcode.add_watchlist_btn')}</Text>
       </AnimatedPressable>
 
       {affiliateLink && (
