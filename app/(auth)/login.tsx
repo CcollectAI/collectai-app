@@ -350,7 +350,8 @@ function LoginScreen() {
                 </AnimatedPressable>
               )}
 
-              {/* Demo Login */}
+              {/* Demo Login — dev builds only */}
+              {__DEV__ && (
               <AnimatedPressable
                 style={[
                   styles.demoBtn,
@@ -367,6 +368,7 @@ function LoginScreen() {
                 <Ionicons name="play-circle-outline" size={20} color={colors.brand.dark} />
                 <Text style={[styles.demoBtnText, { color: colors.brand.dark }]}>{t('auth.try_demo_mode')}</Text>
               </AnimatedPressable>
+              )}
             </Animated.View>
 
             {/* Footer */}
