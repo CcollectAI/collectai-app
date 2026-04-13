@@ -32,7 +32,19 @@ VINTED_SOLD_RELIABILITY = 0.70
 VINTED_DOMAINS = {
     "europe": "www.vinted.fr",
     "americas": "www.vinted.com",
+    "japan": "www.vinted.fr",       # no JP Vinted — fallback to FR
     "other": "www.vinted.fr",
+    # Country-specific (used when user locale is known)
+    "uk": "www.vinted.co.uk",
+    "gb": "www.vinted.co.uk",
+    "de": "www.vinted.de",
+    "es": "www.vinted.es",
+    "nl": "www.vinted.nl",
+    "it": "www.vinted.it",
+    "fr": "www.vinted.fr",
+    "be": "www.vinted.be",
+    "pl": "www.vinted.pl",
+    "pt": "www.vinted.pt",
 }
 
 VINTED_SEARCH_PATH = "/api/v2/catalog/items"

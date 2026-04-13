@@ -207,6 +207,10 @@ comc_circuit = CircuitBreaker("comc", max_failures=5, cooldown_seconds=60)
 reverb_circuit = CircuitBreaker("reverb", max_failures=5, cooldown_seconds=60)
 abebooks_circuit = CircuitBreaker("abebooks", max_failures=5, cooldown_seconds=60)
 leboncoin_circuit = CircuitBreaker("leboncoin", max_failures=5, cooldown_seconds=60)
+marktplaats_circuit = CircuitBreaker("marktplaats", max_failures=5, cooldown_seconds=60)
+wallapop_circuit = CircuitBreaker("wallapop", max_failures=5, cooldown_seconds=60)
+gumtree_circuit = CircuitBreaker("gumtree", max_failures=5, cooldown_seconds=60)
+depop_circuit = CircuitBreaker("depop", max_failures=5, cooldown_seconds=60)
 
 
 def all_circuit_status() -> list[dict]:
@@ -232,5 +236,9 @@ def all_circuit_status() -> list[dict]:
             etsy_circuit,
             comc_circuit, reverb_circuit, abebooks_circuit,
             leboncoin_circuit,
+            marktplaats_circuit,
+            wallapop_circuit,
+            gumtree_circuit,
+            depop_circuit,
         )
     ]

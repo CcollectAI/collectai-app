@@ -516,6 +516,9 @@ class MarketplaceAgent:
             async with get_conn() as conn:
                 for scored in result.hits:
                     hit = scored.hit
+                    # Skip zero/null prices — these skew training and valuations
+                    if not hit.get("price") or float(hit.get("price", 0)) <= 0:
+                        continue
                     # Normalize price to EUR
                     raw_price = hit.get("price")
                     raw_currency = hit.get("currency", "EUR")

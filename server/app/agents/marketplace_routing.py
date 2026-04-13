@@ -78,6 +78,10 @@ SOURCE_RELIABILITY: Dict[str, float] = {
     "abebooks": 0.80,
     "abebooks_sold": 0.80,
     "leboncoin": 0.65,
+    "marktplaats": 0.60,
+    "wallapop": 0.60,
+    "gumtree": 0.55,
+    "depop": 0.65,
 }
 
 # Bonus scores
@@ -170,6 +174,10 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
     "reverb": {"vinyl_records", "anime_ost_vinyl"},
     "abebooks": {"comic_books", "manga"},
     "leboncoin": None,  # unrestricted — France's largest general classifieds
+    "marktplaats": None,  # unrestricted — Netherlands' largest classifieds (eBay-owned)
+    "wallapop": None,  # unrestricted — Spain's largest second-hand marketplace
+    "gumtree": None,  # unrestricted — UK's largest classifieds
+    "depop": {"sneakers", "vintage_toys", "designer_toys", "kpop_merch", "streetwear", "funko"},  # UK fashion/streetwear resale
 }
 
 
