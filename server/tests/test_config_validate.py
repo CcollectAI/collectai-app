@@ -23,6 +23,8 @@ def _reload_config_and_validate(env_overrides: dict) -> None:
     into module-level constants (DEV_MODE, DB_ENABLED, JWT_SECRET, etc.).
     """
     combined = {**os.environ, **env_overrides}
+    # Clear CI env so hostname-based DEV_MODE guard isn't bypassed in tests
+    combined.setdefault("CI", "")
     with patch.dict(os.environ, combined, clear=True):
         import app.config as cfg
         importlib.reload(cfg)
@@ -51,7 +53,6 @@ class TestDevModeGuard:
             "DEV_MODE": "true",
             "DB_ENABLED": "false",
             "FORCE_DEV_MODE": "",
-            "CI": "",
         }
         with patch("socket.gethostname", return_value="ip-172-31-10-42.eu-central-1.compute.internal"):
             with pytest.raises(SystemExit):
@@ -63,7 +64,6 @@ class TestDevModeGuard:
             "DEV_MODE": "true",
             "DB_ENABLED": "false",
             "FORCE_DEV_MODE": "",
-            "CI": "",
         }
         with patch("socket.gethostname", return_value="ec2-3-75-182-41"):
             with pytest.raises(SystemExit):
@@ -94,7 +94,6 @@ class TestDevModeGuard:
         env = {
             "DEV_MODE": "true",
             "DB_ENABLED": "false",
-            "CI": "",
         }
         with patch("socket.gethostname", return_value="MacBook-Pro"):
             with pytest.raises(SystemExit):
@@ -105,7 +104,6 @@ class TestDevModeGuard:
         env = {
             "DEV_MODE": "true",
             "DB_ENABLED": "false",
-            "CI": "",
         }
         with patch("socket.gethostname", return_value="MBP-Merle"):
             with pytest.raises(SystemExit):
