@@ -28,7 +28,7 @@ scikit-learn==1.6.1
 boto3==1.42.45
 
 # Auth
-PyJWT==2.9.0
+PyJWT==2.10.1
 
 # Web Scraping
 firecrawl-py==1.6.2
