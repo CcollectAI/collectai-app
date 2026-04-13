@@ -30,6 +30,9 @@ boto3==1.42.45
 # Auth
 PyJWT==2.10.1
 
+# Form data (required by FastAPI file uploads)
+python-multipart==0.0.20
+
 # Web Scraping
 firecrawl-py==1.6.2
 crawl4ai>=0.4.3
