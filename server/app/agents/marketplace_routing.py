@@ -82,6 +82,7 @@ SOURCE_RELIABILITY: Dict[str, float] = {
     "wallapop": 0.60,
     "gumtree": 0.55,
     "depop": 0.65,
+    "kleinanzeigen": 0.65,
 }
 
 # Bonus scores
@@ -178,6 +179,7 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
     "wallapop": None,  # unrestricted — Spain's largest second-hand marketplace
     "gumtree": None,  # unrestricted — UK's largest classifieds
     "depop": {"sneakers", "vintage_toys", "designer_toys", "kpop_merch", "streetwear", "funko"},  # UK fashion/streetwear resale
+    "kleinanzeigen": None,  # unrestricted — Germany's largest classifieds (50M+ users)
 }
 
 
