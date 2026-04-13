@@ -515,8 +515,8 @@ class MarketplaceAgent:
                             """
                             INSERT INTO market_hits
                                 (provider, listing_id, title, price, currency,
-                                 condition, ended_at, url, normalized_key, features_json)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                                 condition, ended_at, url, normalized_key, item_ref, features_json)
+                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                             ON CONFLICT (provider, listing_id) DO NOTHING
                             """,
                             hit.get("source", ""),
@@ -528,6 +528,7 @@ class MarketplaceAgent:
                             _parse_sold_date(hit.get("sold_at")),
                             hit.get("url"),
                             normalized_key,
+                            normalized_key,  # item_ref = normalized_key for valuation worker
                             json.dumps({
                                 "content_hash": hit.get("content_hash", ""),
                                 "provenance_score": scored.provenance_score,

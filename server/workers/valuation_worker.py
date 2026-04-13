@@ -272,15 +272,17 @@ async def run_once():
             # ---------------------------------------------------------------
             # INSERT price prediction with evidence + confidence
             # ---------------------------------------------------------------
+            category = item_ref.split(":")[0] if ":" in item_ref else None
             await conn.execute(
                 """
                 INSERT INTO public.price_predictions
-                    (item_ref, q10, q50, q90, generated_at,
+                    (item_ref, category, q10, q50, q90, generated_at,
                      evidence_hit_ids, evidence_summary, explanation,
                      conf_score)
-                VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10)
                 """,
                 item_ref,
+                category,
                 q10,
                 q50,
                 q90,
