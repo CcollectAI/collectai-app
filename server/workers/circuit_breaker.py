@@ -212,6 +212,7 @@ wallapop_circuit = CircuitBreaker("wallapop", max_failures=5, cooldown_seconds=6
 gumtree_circuit = CircuitBreaker("gumtree", max_failures=5, cooldown_seconds=60)
 depop_circuit = CircuitBreaker("depop", max_failures=5, cooldown_seconds=60)
 kleinanzeigen_circuit = CircuitBreaker("kleinanzeigen", max_failures=5, cooldown_seconds=60)
+onetwothirtypoint_circuit = CircuitBreaker("onetwothirtypoint", max_failures=5, cooldown_seconds=60)
 
 
 def all_circuit_status() -> list[dict]:
@@ -242,5 +243,6 @@ def all_circuit_status() -> list[dict]:
             gumtree_circuit,
             depop_circuit,
             kleinanzeigen_circuit,
+            onetwothirtypoint_circuit,
         )
     ]

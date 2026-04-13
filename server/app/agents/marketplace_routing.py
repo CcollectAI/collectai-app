@@ -83,6 +83,8 @@ SOURCE_RELIABILITY: Dict[str, float] = {
     "gumtree": 0.55,
     "depop": 0.65,
     "kleinanzeigen": 0.65,
+    "130point": 0.80,
+    "130point_sold": 0.80,
 }
 
 # Bonus scores
@@ -180,6 +182,7 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
     "gumtree": None,  # unrestricted — UK's largest classifieds
     "depop": {"sneakers", "vintage_toys", "designer_toys", "kpop_merch", "streetwear", "funko"},  # UK fashion/streetwear resale
     "kleinanzeigen": None,  # unrestricted — Germany's largest classifieds (50M+ users)
+    "130point": {"sportscards", "pokemon", "retro_pokemon"},  # eBay sold aggregator for sports/Pokemon cards
 }
 
 
