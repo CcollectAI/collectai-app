@@ -292,7 +292,10 @@ done
 
 # ── G5: ping Telegram that the bake started ────────────────────────────────
 if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
-  MSG="🔥 CollectAI bake started%0A• ${#ACTIVE[@]} paid sources active%0A• ${CATALOG_COUNT} catalog items%0A• budget €${MONTHLY_BUDGET_EUR}/mo%0A• pid ${NEW_PID}"
+  # Fetch live counts for the Telegram message
+  MARKET_HITS=$(psql "$DB_DSN" -tAc "SELECT count(*) FROM public.market_hits;" 2>/dev/null || echo "?")
+  PREDICTIONS=$(psql "$DB_DSN" -tAc "SELECT count(*) FROM public.price_predictions;" 2>/dev/null || echo "?")
+  MSG="🔥 CollectAI bake started%0A• ${#ACTIVE[@]} paid sources active%0A• ${CATALOG_COUNT} catalog items%0A• ${MARKET_HITS} market hits%0A• ${PREDICTIONS} predictions%0A• budget €${MONTHLY_BUDGET_EUR}/mo%0A• pid ${NEW_PID}"
   curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
     -d "chat_id=${TELEGRAM_CHAT_ID}" -d "text=${MSG}" -d "parse_mode=Markdown" \
     >/dev/null 2>&1 && log "telegram start ping sent" || log "telegram ping failed (non-fatal)"
