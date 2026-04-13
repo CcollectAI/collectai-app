@@ -170,7 +170,7 @@ function useProtectedRoute() {
     if (!user && !inAuthGroup) {
       // Not signed in and not on an auth screen — go to login
       router.replace('/(auth)/login');
-    } else if (user && !onboardingComplete && segments[1] !== 'onboarding') {
+    } else if (user && !onboardingComplete && (segments as string[])[1] !== 'onboarding') {
       // Signed in but hasn't completed onboarding
       router.replace('/(auth)/onboarding');
     } else if (user && onboardingComplete && inAuthGroup) {
