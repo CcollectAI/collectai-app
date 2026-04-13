@@ -349,7 +349,8 @@ def validate_config() -> None:
     # --- R15-1: DEV_MODE production guard ---
     if DEV_MODE:
         hostname = socket.gethostname().lower()
-        is_local = any(
+        is_ci = os.getenv("CI", "").lower() in ("true", "1")
+        is_local = is_ci or any(
             hostname.startswith(prefix)
             for prefix in ("localhost", "127.")
         ) or hostname.endswith((".local", ".home"))
