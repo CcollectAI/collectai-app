@@ -54,7 +54,7 @@ async def _get_crawler() -> Any:
     from crawl4ai import AsyncWebCrawler, BrowserConfig
 
     browser_cfg = BrowserConfig(headless=CRAWL4AI_HEADLESS)
-    _crawler = AsyncWebCrawler(browser_config=browser_cfg)
+    _crawler = AsyncWebCrawler(config=browser_cfg)
     await _crawler.start()
     return _crawler
 
