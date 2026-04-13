@@ -13,15 +13,25 @@ jobs:
   run-e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      HAS_SECRETS: ${{ secrets.SUPA_REF != '' }}
 
     steps:
+      - name: Check secrets
+        if: env.HAS_SECRETS != 'true'
+        run: |
+          echo "::warning::Skipping — SUPA_REF secret not configured"
+          exit 0
       - name: Checkout
+        if: env.HAS_SECRETS == 'true'
         uses: actions/checkout@v4
 
       - name: Prepare scripts dir (if needed)
+        if: env.HAS_SECRETS == 'true'
         run: mkdir -p logs
 
       - name: Create supa_test.env from secrets
+        if: env.HAS_SECRETS == 'true'
         run: |
           cat > supa_test.env <<ENV
           SUPA_REF=${{ secrets.SUPA_REF }}
@@ -33,6 +43,7 @@ jobs:
           nl -ba supa_test.env | sed 's/.*/[masked]/' >/dev/null # noop; ensure file exists
 
       - name: Add auth doctor (hard fix) script
+        if: env.HAS_SECRETS == 'true'
         run: |
           cat > auth_hard_fix_and_run.sh <<'BASH'
           #!/usr/bin/env bash
@@ -86,6 +97,7 @@ jobs:
           chmod +x auth_hard_fix_and_run.sh
 
       - name: Add minimal check_jwt.sh and sanity_e2e_strict.sh if missing
+        if: env.HAS_SECRETS == 'true'
         run: |
           [[ -f check_jwt.sh ]] || cat > check_jwt.sh <<'BASH'
           #!/usr/bin/env bash
@@ -114,6 +126,7 @@ jobs:
           chmod +x sanity_e2e_strict.sh
 
       - name: Run doctor + E2E
+        if: env.HAS_SECRETS == 'true'
         run: |
           set -e
           ./auth_hard_fix_and_run.sh

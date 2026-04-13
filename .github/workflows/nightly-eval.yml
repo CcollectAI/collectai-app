@@ -20,7 +20,7 @@ jobs:
         with: { python-version: '3.12' }
       - name: Install deps
         if: env.HAS_SECRETS == 'true'
-        run: pip install requests
+        run: pip install requests boto3 httpx
       - name: Run evaluator
         if: env.HAS_SECRETS == 'true'
         env:
