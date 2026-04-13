@@ -76,7 +76,10 @@ def is_overdue(worker_name: str) -> bool:
         return True
 
     elapsed = time.time() - entry["last_run"]
-    return elapsed > (interval * 1.5)
+    # Matview workers are non-critical refresh jobs — use 3x threshold
+    # to avoid false alarms during heavy scraping or DB contention
+    multiplier = 3.0 if "matview" in worker_name else 1.5
+    return elapsed > (interval * multiplier)
 
 
 def get_overdue_workers() -> list[dict]:
