@@ -532,15 +532,17 @@ class MarketplaceAgent:
                             """
                             INSERT INTO market_hits
                                 (provider, listing_id, title, price, currency,
+                                 price_eur,
                                  condition, ended_at, url, normalized_key, item_ref, features_json)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                             ON CONFLICT (provider, listing_id) DO NOTHING
                             """,
                             hit.get("source", ""),
                             hit.get("raw_id", ""),
                             hit.get("title", ""),
-                            price_eur,
-                            "EUR",  # always store as EUR after conversion
+                            raw_price,           # original price in original currency
+                            raw_currency,        # original currency (USD, EUR, JPY, etc.)
+                            price_eur,           # normalized EUR for training/valuation
                             hit.get("condition"),
                             _parse_sold_date(hit.get("sold_at")),
                             hit.get("url"),

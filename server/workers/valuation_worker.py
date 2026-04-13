@@ -168,7 +168,7 @@ async def run_once():
         # Fetch unprocessed market hits with full detail for evidence building
         # -------------------------------------------------------------------
         hit_rows = await conn.fetch("""
-            SELECT id, item_ref, source, price::numeric AS price, observed_at
+            SELECT id, item_ref, source, COALESCE(price_eur, price)::numeric AS price, observed_at
             FROM public.market_hits
             WHERE processed = false
               AND price IS NOT NULL
