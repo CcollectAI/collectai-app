@@ -21,11 +21,13 @@ jobs:
           pip install -r requirements.txt
       - name: Write .env
         run: |
-          cat > .env <<EOF
+          cat > .env <<'EOF'
           DATABASE_URL=postgresql://collectors:collectors@localhost:5432/collectors
           API_KEY=dev-key
           EOF
       - name: Apply migrations
+        env:
+          DATABASE_URL: postgresql://collectors:collectors@localhost:5432/collectors
         run: |
           psql "$DATABASE_URL" -f supabase/migrations/2025-10-01_collectors_core.sql
           psql "$DATABASE_URL" -f supabase/migrations/2025-10-02_alert_rules_fix.sql || true
