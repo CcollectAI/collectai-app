@@ -142,6 +142,12 @@ def _predict_ridge(model: dict, item_ref: str, fallback_q50: float) -> float | N
 
         # Predict
         prediction = sum(x_std[i] * coef[i] for i in range(len(x_std))) + intercept
+
+        # If model was trained on log-scale, convert back to EUR
+        if model.get("log_scale"):
+            import math
+            prediction = math.expm1(prediction)  # exp(x) - 1, inverse of log1p
+
         if prediction > 0:
             return float(prediction)
         return None

@@ -535,6 +535,7 @@ class RidgeModelPack:
         self.train_mae = train_mae
         self.cv_mae = cv_mae
         self.best_alpha = best_alpha
+        self.log_scale = False
         self.created_at = datetime.now(timezone.utc).isoformat()
 
     def to_json(self) -> dict:
@@ -566,6 +567,7 @@ class RidgeModelPack:
             "uncertainty_scale": 1.0,
             "train_size": self.train_size,
             "mae": round(self.cv_mae if self.cv_mae != float("inf") else self.train_mae, 2),
+            "log_scale": self.log_scale,
             "created_at": self.created_at,
         }
 
@@ -664,6 +666,13 @@ def train_ridge_model(
         logger.info(f"[{category}] Clipping {n_clipped} outlier prices above {p995:.2f}")
         y = np.clip(y, 0, p995)
 
+    # Log-scale training: reduces impact of extreme prices (grails vs commons)
+    # Train on log(price), predict log(price), then exp() back to EUR
+    use_log_scale = bool(np.max(y) / max(np.median(y), 1.0) > 20)  # auto-detect high variance
+    if use_log_scale:
+        logger.info(f"[{category}] Using log-scale pricing (max/median ratio = {np.max(y)/max(np.median(y),1):.0f}x)")
+        y = np.log1p(y)  # log(1 + price) to handle prices near 0
+
     # Cross-validate alpha if not specified
     if alpha is None:
         best_alpha, cv_mae = cross_validate_alpha(X, y)
@@ -726,11 +735,14 @@ def train_ridge_model(
         ridge_q90 = Ridge(alpha=best_alpha, random_state=42)
         ridge_q90.fit(X_scaled, y * 1.4, sample_weight=sample_weights)
 
-    # Compute training MAE
+    # Compute training MAE (in original EUR space if log-scaled)
     y_pred = ridge_q50.predict(X_scaled)
-    train_mae = mean_absolute_error(y, y_pred)
+    if use_log_scale:
+        train_mae = mean_absolute_error(np.expm1(y), np.expm1(y_pred))
+    else:
+        train_mae = mean_absolute_error(y, y_pred)
 
-    return RidgeModelPack(
+    pack = RidgeModelPack(
         category=category,
         version=version,
         feature_names=feature_names,
@@ -744,6 +756,8 @@ def train_ridge_model(
         cv_mae=cv_mae,
         best_alpha=best_alpha,
     )
+    pack.log_scale = use_log_scale
+    return pack
 
 
 # ---------------------------------------------------------------------------
