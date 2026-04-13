@@ -94,6 +94,7 @@ class TestDevModeGuard:
         env = {
             "DEV_MODE": "true",
             "DB_ENABLED": "false",
+            "CI": "",
         }
         with patch("socket.gethostname", return_value="MacBook-Pro"):
             with pytest.raises(SystemExit):
@@ -104,6 +105,7 @@ class TestDevModeGuard:
         env = {
             "DEV_MODE": "true",
             "DB_ENABLED": "false",
+            "CI": "",
         }
         with patch("socket.gethostname", return_value="MBP-Merle"):
             with pytest.raises(SystemExit):
