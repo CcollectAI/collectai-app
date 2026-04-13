@@ -33,7 +33,7 @@ SCHEDULES = {
     "vision_ingest": 0,                  # on-demand only
     "valuation_worker": 6 * 3600,        # every 6 hours
     "deal_discovery": 1800,              # every 30 minutes
-    "matview_demand": 300,               # every 5 minutes
+    "matview_demand": 600,               # every 10 minutes
     "matview_supply": 1800,              # every 30 minutes
     "task_worker": 5,                    # polls every 5 seconds
     "value_change_worker": 24 * 3600,    # daily
