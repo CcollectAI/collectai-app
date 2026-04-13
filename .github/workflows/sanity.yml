@@ -3,6 +3,8 @@ on: [push, pull_request]
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://collectors:collectors@localhost:5432/collectors
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,8 +28,6 @@ jobs:
           API_KEY=dev-key
           EOF
       - name: Apply migrations
-        env:
-          DATABASE_URL: postgresql://collectors:collectors@localhost:5432/collectors
         run: |
           psql "$DATABASE_URL" -f supabase/migrations/2025-10-01_collectors_core.sql
           psql "$DATABASE_URL" -f supabase/migrations/2025-10-02_alert_rules_fix.sql || true
