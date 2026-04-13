@@ -206,6 +206,7 @@ etsy_circuit = CircuitBreaker("etsy", max_failures=5, cooldown_seconds=60)
 comc_circuit = CircuitBreaker("comc", max_failures=5, cooldown_seconds=60)
 reverb_circuit = CircuitBreaker("reverb", max_failures=5, cooldown_seconds=60)
 abebooks_circuit = CircuitBreaker("abebooks", max_failures=5, cooldown_seconds=60)
+leboncoin_circuit = CircuitBreaker("leboncoin", max_failures=5, cooldown_seconds=60)
 
 
 def all_circuit_status() -> list[dict]:
@@ -230,5 +231,6 @@ def all_circuit_status() -> list[dict]:
             google_shopping_circuit,
             etsy_circuit,
             comc_circuit, reverb_circuit, abebooks_circuit,
+            leboncoin_circuit,
         )
     ]

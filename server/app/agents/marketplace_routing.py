@@ -77,6 +77,7 @@ SOURCE_RELIABILITY: Dict[str, float] = {
     "reverb_sold": 0.85,
     "abebooks": 0.80,
     "abebooks_sold": 0.80,
+    "leboncoin": 0.65,
 }
 
 # Bonus scores
@@ -116,9 +117,10 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
         "oop_board_games", "city_pop_vinyl",
     },
     "catawiki": {
-        "whiskey", "vintage_cameras", "watches", "pens", "designer_toys",
-        "comic_books", "vintage_toys", "loungefly", "vinyl_records", "diecast",
-        "oop_board_games", "fragrances",
+        "watches", "comic_books", "vintage_toys", "designer_toys", "pens",
+        "whiskey", "fragrances", "anime_figures", "sportscards", "vinyl_records",
+        "diecast", "art", "coins", "vintage_cameras", "loungefly",
+        "oop_board_games",
     },
     "whisky_auctioneer": {"whiskey"},
     "mandarake": {
@@ -167,6 +169,7 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
     "comc": {"sportscards", "pokemon", "mtg", "yugioh"},
     "reverb": {"vinyl_records", "anime_ost_vinyl"},
     "abebooks": {"comic_books", "manga"},
+    "leboncoin": None,  # unrestricted — France's largest general classifieds
 }
 
 

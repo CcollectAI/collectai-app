@@ -7,7 +7,8 @@ to HTML scraping of the search page.
 
 Prices are in EUR (European marketplace).
 
-Covers: whiskey, vintage_cameras, watches, pens, designer_toys, comic_books.
+Covers: watches, comic_books, vintage_toys, designer_toys, pens, whiskey,
+fragrances, anime_figures, sportscards, vinyl_records, diecast, art, coins.
 
 Env vars:
     CATAWIKI_ENABLED - "true" to enable (default: "true")
