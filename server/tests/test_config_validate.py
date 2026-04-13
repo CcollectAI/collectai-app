@@ -51,6 +51,7 @@ class TestDevModeGuard:
             "DEV_MODE": "true",
             "DB_ENABLED": "false",
             "FORCE_DEV_MODE": "",
+            "CI": "",
         }
         with patch("socket.gethostname", return_value="ip-172-31-10-42.eu-central-1.compute.internal"):
             with pytest.raises(SystemExit):
@@ -62,6 +63,7 @@ class TestDevModeGuard:
             "DEV_MODE": "true",
             "DB_ENABLED": "false",
             "FORCE_DEV_MODE": "",
+            "CI": "",
         }
         with patch("socket.gethostname", return_value="ec2-3-75-182-41"):
             with pytest.raises(SystemExit):
