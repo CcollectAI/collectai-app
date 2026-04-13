@@ -24,7 +24,9 @@ def _reload_config_and_validate(env_overrides: dict) -> None:
     """
     combined = {**os.environ, **env_overrides}
     # Clear CI env so hostname-based DEV_MODE guard isn't bypassed in tests
-    combined.setdefault("CI", "")
+    # (must override, not setdefault — os.environ already has CI=true on runners)
+    if "CI" not in env_overrides:
+        combined["CI"] = ""
     with patch.dict(os.environ, combined, clear=True):
         import app.config as cfg
         importlib.reload(cfg)
