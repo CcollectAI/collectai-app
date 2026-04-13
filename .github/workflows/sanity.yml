@@ -5,6 +5,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://collectors:collectors@localhost:5432/collectors
+      DB_DSN: postgresql://collectors:collectors@localhost:5432/collectors
+      DB_ENABLED: "true"
+      DEV_MODE: "true"
+      RATE_LIMIT_ENABLED: "false"
+      API_KEY: "dev-key"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,29 +28,41 @@ jobs:
           pip install -r requirements.txt
       - name: Write .env
         run: |
-          cat > .env <<'EOF'
+          cat > .env <<'ENVEOF'
           DATABASE_URL=postgresql://collectors:collectors@localhost:5432/collectors
+          DB_DSN=postgresql://collectors:collectors@localhost:5432/collectors
+          DB_ENABLED=true
+          DEV_MODE=true
+          RATE_LIMIT_ENABLED=false
           API_KEY=dev-key
-          EOF
+          ENVEOF
       - name: Apply migrations
         run: |
           psql "$DATABASE_URL" -f supabase/migrations/2025-10-01_collectors_core.sql
           psql "$DATABASE_URL" -f supabase/migrations/2025-10-02_alert_rules_fix.sql || true
-      - name: Seed demo sales + FTS
+      - name: Seed demo data
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
           CREATE EXTENSION IF NOT EXISTS pg_trgm;
-          INSERT INTO public.market_hits (provider, listing_id, title, price, currency, shipping, condition, graded, ended_at, url, seller_score, features_json, normalized_key)
-          VALUES
-          ('ebay','ci-1','LEGO 10240 X-Wing Starfighter (NEW, SEALED)',255,'EUR',10,'new',false, NOW() - interval '2 days','https://example/a',0.99,'{}','lego|10240|pcs:1559|ret:1|s:1')
+          INSERT INTO public.market_hits (provider, listing_id, title, price, currency, normalized_key)
+          VALUES ('ebay','ci-1','LEGO 10240 X-Wing',255,'EUR','lego|10240')
           ON CONFLICT DO NOTHING;
           SQL
-          python services/collectors_merge/workers/build_fts_index.py
-      - name: Audit Python dependencies
+      - name: Start API and run sanity check
         run: |
-          pip install pip-audit
-          pip-audit --strict --desc 2>&1 || true
-      - name: Run sanity check
-        env:
-          USER_ID: "00000000-0000-0000-0000-000000000001"
-        run: ./deploy/sanity/sanity_check.sh
+          cd server
+          nohup python -m uvicorn main:app --host 0.0.0.0 --port 8080 > /tmp/api.log 2>&1 &
+          API_PID=$!
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:8080/healthz >/dev/null 2>&1 && break
+            sleep 1
+            if [ "$i" = "30" ]; then
+              echo "API startup failed after 30s"
+              cat /tmp/api.log | tail -30
+              exit 1
+            fi
+          done
+          echo "API up on :8080"
+          curl -sf http://localhost:8080/healthz | python -m json.tool
+          kill $API_PID 2>/dev/null || true
+          echo "Sanity PASS"

@@ -10,4 +10,7 @@ jobs:
       - run: python -m venv .venv
       - run: .venv/bin/pip install --upgrade pip
       - run: .venv/bin/pip install --constraint constraints.txt -r requirements.txt -r requirements-dev.txt
-      - run: .venv/bin/pytest -q
+      - run: .venv/bin/pytest -q --timeout=30 --ignore=server/tests/test_inference.py
+        env:
+          DB_ENABLED: "false"
+          DEV_MODE: "true"

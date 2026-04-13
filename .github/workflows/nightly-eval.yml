@@ -6,7 +6,7 @@ jobs:
   eval:
     runs-on: ubuntu-latest
     env:
-      HAS_SECRETS: ${{ secrets.SUPABASE_URL != '' }}
+      HAS_SECRETS: ${{ secrets.S3_DATA_BUCKET != '' }}
     steps:
       - name: Check secrets
         if: env.HAS_SECRETS != 'true'
