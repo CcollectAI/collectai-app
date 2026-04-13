@@ -171,6 +171,8 @@ class DealDiscoveryAgent:
                     "user_id": user_id,
                     "listing_title": hit.get("title", ""),
                     "listing_price": float(hit.get("price", 0) or 0),
+                    "listing_currency": hit.get("currency", "EUR"),
+                    "listing_region": hit.get("listing_region"),
                     "listing_url": hit_url,
                     "affiliate_url": affiliate_url,
                     "deal_score": verdict.deal_score,
