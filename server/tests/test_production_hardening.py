@@ -483,7 +483,7 @@ class TestSplitRefreshIntervals:
         from app.worker_registry import SCHEDULES
         assert "matview_demand" in SCHEDULES
         assert "matview_supply" in SCHEDULES
-        assert SCHEDULES["matview_demand"] == 300
+        assert SCHEDULES["matview_demand"] == 600
         assert SCHEDULES["matview_supply"] == 1800
 
 
