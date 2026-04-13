@@ -507,9 +507,26 @@ class MarketplaceAgent:
 
         inserted = 0
         try:
+            # Import FX conversion — all prices stored as EUR
+            try:
+                from app.lib.fx_service import convert_to_eur
+            except ImportError:
+                convert_to_eur = None
+
             async with get_conn() as conn:
                 for scored in result.hits:
                     hit = scored.hit
+                    # Normalize price to EUR
+                    raw_price = hit.get("price")
+                    raw_currency = hit.get("currency", "EUR")
+                    if raw_price and raw_currency != "EUR" and convert_to_eur:
+                        try:
+                            price_eur = convert_to_eur(float(raw_price), raw_currency)
+                        except Exception:
+                            price_eur = raw_price  # fallback: store as-is
+                    else:
+                        price_eur = raw_price
+
                     try:
                         await conn.execute(
                             """
@@ -522,8 +539,8 @@ class MarketplaceAgent:
                             hit.get("source", ""),
                             hit.get("raw_id", ""),
                             hit.get("title", ""),
-                            hit.get("price"),
-                            hit.get("currency", "EUR"),
+                            price_eur,
+                            "EUR",  # always store as EUR after conversion
                             hit.get("condition"),
                             _parse_sold_date(hit.get("sold_at")),
                             hit.get("url"),
