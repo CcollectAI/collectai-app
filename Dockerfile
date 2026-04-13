@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 FROM base AS app
 COPY --from=deps /usr/local/lib/python3.12 /usr/local/lib/python3.12
+COPY --from=deps /usr/local/bin /usr/local/bin
 COPY server/ /opt/collectai/server/
 
 # Non-root user for security
