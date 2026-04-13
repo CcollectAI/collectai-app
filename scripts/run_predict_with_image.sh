@@ -4,7 +4,7 @@ set -euo pipefail
 JWT="$(cat .jwt)"
 API="${SUPABASE_URL}/functions/v1"
 
-IDEM_KEY="${IDEM_KEY:-calai-demo-1}"
+IDEM_KEY="${IDEM_KEY:-calai-ci-$(date +%s)-$$}"
 CATEGORY="${CATEGORY:-Pokemon}"
 TITLE="${TITLE:-Pikachu VMAX}"
 
