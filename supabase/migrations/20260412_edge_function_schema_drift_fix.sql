@@ -11,8 +11,9 @@ ALTER TABLE public.predict_sessions
 
 -- ── label_events ──────────────────────────────────────────────────────
 ALTER TABLE public.label_events
-  ADD COLUMN IF NOT EXISTS source  text,
-  ADD COLUMN IF NOT EXISTS version text;
+  ADD COLUMN IF NOT EXISTS source    text,
+  ADD COLUMN IF NOT EXISTS version   text,
+  ADD COLUMN IF NOT EXISTS image_url text;
 
 -- ── PostgREST schema reload ───────────────────────────────────────────
 NOTIFY pgrst, 'reload schema';
