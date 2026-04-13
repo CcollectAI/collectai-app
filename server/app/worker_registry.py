@@ -66,6 +66,11 @@ def is_overdue(worker_name: str) -> bool:
     Returns False for unknown workers or on-demand (interval=0) workers.
     Workers that have never run are considered overdue if they have a schedule.
     """
+    # Skip overdue checks for matview workers — non-critical refresh jobs
+    # that frequently miss cycles during scraping. Not worth alerting on.
+    if "matview" in worker_name:
+        return False
+
     interval = SCHEDULES.get(worker_name, 0)
     if interval <= 0:
         return False
@@ -76,10 +81,7 @@ def is_overdue(worker_name: str) -> bool:
         return True
 
     elapsed = time.time() - entry["last_run"]
-    # Matview workers are non-critical refresh jobs — use 3x threshold
-    # to avoid false alarms during heavy scraping or DB contention
-    multiplier = 3.0 if "matview" in worker_name else 1.5
-    return elapsed > (interval * multiplier)
+    return elapsed > (interval * 1.5)
 
 
 def get_overdue_workers() -> list[dict]:
