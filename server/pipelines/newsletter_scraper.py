@@ -1083,30 +1083,25 @@ class EventUpserter:
 
     @staticmethod
     def _event_to_row(event: ScrapedEvent) -> dict[str, Any]:
-        """Convert ScrapedEvent to a DB row dict."""
-        row: dict[str, Any] = {
+        """Convert ScrapedEvent to a DB row dict.
+
+        All fields are always included (as None if unset) — PostgREST batch
+        upsert requires every object in a batch to have the same keys.
+        """
+        return {
             "title": event.title,
             "kind": event.kind,
             "date": event.date,
             "source": "newsletter",
+            "category_id": event.category_id,
+            "time": event.time,
+            "end_date": event.end_date,
+            "location": event.location,
+            "online_url": event.online_url,
+            "description": event.description,
+            "source_url": event.source_url,
+            "image_url": event.image_url,
         }
-        if event.category_id:
-            row["category_id"] = event.category_id
-        if event.time:
-            row["time"] = event.time
-        if event.end_date:
-            row["end_date"] = event.end_date
-        if event.location:
-            row["location"] = event.location
-        if event.online_url:
-            row["online_url"] = event.online_url
-        if event.description:
-            row["description"] = event.description
-        if event.source_url:
-            row["source_url"] = event.source_url
-        if event.image_url:
-            row["image_url"] = event.image_url
-        return row
 
     def print_stats(self) -> None:
         """Log insert/update/skip counts."""

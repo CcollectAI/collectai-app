@@ -194,7 +194,10 @@ def _parse_feed_xml(
 
     for item in items[:20]:  # Max 20 events per feed
         # Extract title
-        title_el = item.find("title") or item.find("{http://www.w3.org/2005/Atom}title")
+        # NOTE: ElementTree leaf elements are falsy in Python — must use `is not None`
+        title_el = item.find("title")
+        if title_el is None:
+            title_el = item.find("{http://www.w3.org/2005/Atom}title")
         title = (title_el.text or "").strip() if title_el is not None else ""
         if not title or len(title) < 5:
             continue
@@ -217,7 +220,9 @@ def _parse_feed_xml(
             continue
 
         # Extract link
-        link_el = item.find("link") or item.find("{http://www.w3.org/2005/Atom}link")
+        link_el = item.find("link")
+        if link_el is None:
+            link_el = item.find("{http://www.w3.org/2005/Atom}link")
         if link_el is not None:
             source_url = link_el.get("href") or link_el.text or ""
         else:
