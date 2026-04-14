@@ -47,6 +47,78 @@ from pipelines.newsletter_scraper import (
 )
 
 # ---------------------------------------------------------------------------
+# Collector-relevance filter
+#
+# RSS feeds return ALL news articles, most of which aren't actual events
+# (retrospectives, reviews, opinions, top-10 lists). A collector cares about:
+#   - Product drops / releases with dates
+#   - Convention announcements
+#   - Meetup / tournament events
+#   - Limited / exclusive / collab items
+# Not:
+#   - Retrospective articles ("5 years of...", "Why X changed gaming")
+#   - Reviews ("Review:", "We tested...")
+#   - Opinion pieces ("Hot take:", "Best of...")
+#   - General news ("Company announces layoffs", "CEO interview")
+# ---------------------------------------------------------------------------
+
+# Positive signals — keep items matching any of these
+_COLLECTOR_SIGNALS = (
+    # Drop/release patterns
+    r"\brelease\b", r"\bdrop\b", r"\bdrops\b", r"\bdropping\b", r"\blaunches?\b",
+    r"\bpre-?order", r"\bavailable\b", r"\barrive\b", r"\barrives\b", r"\barriving\b",
+    r"\bpre-sale", r"\brestock\b", r"\brestocks?\b", r"\bcomes?\s+out\b",
+    r"\breveal", r"\bdebut", r"\bunveil", r"\bannounc", r"\bintroduc",
+    # Collector-specific
+    r"\blimited\b", r"\bexclusive\b", r"\bcollab", r"\brare\b", r"\bspecial\s+edition",
+    r"\bcollector", r"\banniversary\s+edition", r"\bdeluxe\b", r"\bgrail\b",
+    # Event patterns
+    r"\bconvention\b", r"\bexpo\b", r"\btournament\b", r"\bchampionship\b",
+    r"\bmeetup\b", r"\bmeet-up\b", r"\bfestival\b", r"\bfair\b",
+    # Format signals
+    r"\bnew\b.*\b(set|pack|figure|card|edition|version|colorway|colourway|model)",
+    r"\b(figure|set|pack|card|edition|version|colorway|colourway|model)\b.*\bnew\b",
+    # Date patterns — articles with specific dates are usually event-related
+    r"\b\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)",
+    r"\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}",
+)
+
+# Negative signals — skip items matching any of these (override positives)
+_NOISE_PATTERNS = (
+    r"^\s*(opinion|review|editorial|analysis|commentary|interview)[\s:]",
+    r"\btop\s+\d+\b", r"\b\d+\s+(best|worst|reasons|ways)\b",
+    r"\bretrospective\b", r"\blook\s+back\b", r"\byears?\s+ago\b",
+    r"\bwhy\s+(we|i|the|this|you)", r"\bhow\s+(we|i|the|this)",
+    r"\blayoffs?\b", r"\bceo\b", r"\bbankruptcy\b",
+    r"\btrailer\b", r"\bteaser\b",  # Media previews, not collectibles
+    # Filler content
+    r"\brandom\s+(set|figure|item)\s+of\s+the\s+day",  # Brickset noise
+    r"\bof\s+the\s+(day|week|month)\b",
+    # Manga/anime news that isn't merchandise-related
+    r"\bmanga\s+resumes\b", r"\bcancels?\b", r"\bending\b", r"\bconcludes?\b",
+    r"\bdistribution\s+partnership\b", r"\bairs?\b", r"\bairing\b",
+    # General industry news
+    r"\bpartnership\b", r"\bacquisition\b", r"\binvest", r"\bfunding\b",
+    # Gaming - reviews/news not drops
+    r"\bgameplay\b", r"\bpatch\s+notes\b", r"\bserver\b",
+)
+
+_collector_regex = re.compile("|".join(_COLLECTOR_SIGNALS), re.IGNORECASE)
+_noise_regex = re.compile("|".join(_NOISE_PATTERNS), re.IGNORECASE)
+
+
+def _is_collector_relevant(title: str, description: str = "") -> bool:
+    """Return True if the RSS item looks like a collector-relevant event/drop/release."""
+    text = f"{title} {description}".lower()
+
+    # Skip obvious noise
+    if _noise_regex.search(text):
+        return False
+
+    # Require at least one collector signal
+    return bool(_collector_regex.search(text))
+
+# ---------------------------------------------------------------------------
 # RSS Feed targets — maps to the same categories as firecrawl_events.py
 # Most blogs use /feed, /rss, /blog/feed, or wp-json endpoints
 # ---------------------------------------------------------------------------
@@ -238,6 +310,10 @@ def _parse_feed_xml(
             or ""
         )
         desc_clean = _strip_html(desc)[:500]
+
+        # Apply collector-relevance filter — skip pure news/retrospectives/reviews
+        if not _is_collector_relevant(title, desc_clean):
+            continue
 
         # Extract image
         image_url = _extract_image_from_xml(item)

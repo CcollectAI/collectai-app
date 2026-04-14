@@ -1014,7 +1014,7 @@ class EventUpserter:
             self._client = httpx.Client(timeout=30.0)
         return self._client
 
-    def upsert(self, events: list[ScrapedEvent]) -> None:
+    def upsert(self, events: list[ScrapedEvent], source: str = "newsletter") -> None:
         """
         Upsert a list of scraped events into the events table.
 
@@ -1033,29 +1033,30 @@ class EventUpserter:
         without_url = [e for e in events if not e.source_url]
 
         if with_url:
-            self._upsert_batch(with_url, conflict_key="source_url")
+            self._upsert_batch(with_url, conflict_key="source_url", source=source)
         if without_url:
-            self._upsert_batch(without_url, conflict_key="title,date")
+            self._upsert_batch(without_url, conflict_key="title,date", source=source)
 
     def _upsert_batch(
-        self, events: list[ScrapedEvent], conflict_key: str
+        self, events: list[ScrapedEvent], conflict_key: str, source: str = "newsletter"
     ) -> None:
         """POST rows to the Supabase PostgREST API."""
         client = self._get_client()
-        rows = [self._event_to_row(e) for e in events]
+        rows = [self._event_to_row(e, source=source) for e in events]
 
         headers = _supabase_headers()
         # Use Prefer header to signal upsert on the desired columns
         headers["Prefer"] = f"resolution=merge-duplicates"
 
+        # PostgREST requires ?on_conflict=<column> to perform actual UPDATE on conflict.
+        # Without this, unique constraint violations return 409 instead of updating.
+        # conflict_key may be comma-separated (e.g., "title,date") for composite keys.
+        url = f"{SUPABASE_URL}/rest/v1/events?on_conflict={conflict_key}"
+
         for i in range(0, len(rows), self.batch_size):
             batch = rows[i : i + self.batch_size]
             try:
-                resp = client.post(
-                    f"{SUPABASE_URL}/rest/v1/events",
-                    headers=headers,
-                    json=batch,
-                )
+                resp = client.post(url, headers=headers, json=batch)
                 if resp.status_code in (200, 201):
                     self.inserted += len(batch)
                     log.info(
@@ -1064,12 +1065,12 @@ class EventUpserter:
                         conflict_key,
                     )
                 elif resp.status_code == 409:
-                    # Conflict -- items already exist, count as updated
-                    self.updated += len(batch)
-                    log.info(
-                        "Conflict for batch of %d events (already exist).",
-                        len(batch),
+                    # Conflict remains — likely a constraint mismatch not the on_conflict target
+                    log.warning(
+                        "Conflict 409 for batch of %d events (on_conflict=%s) — merge-duplicates failed. Response: %s",
+                        len(batch), conflict_key, resp.text[:200],
                     )
+                    self.updated += len(batch)
                 else:
                     log.error(
                         "Upsert failed: %d %s",
@@ -1082,7 +1083,7 @@ class EventUpserter:
                 self.skipped += len(batch)
 
     @staticmethod
-    def _event_to_row(event: ScrapedEvent) -> dict[str, Any]:
+    def _event_to_row(event: ScrapedEvent, source: str = "newsletter") -> dict[str, Any]:
         """Convert ScrapedEvent to a DB row dict.
 
         All fields are always included (as None if unset) — PostgREST batch
@@ -1092,7 +1093,7 @@ class EventUpserter:
             "title": event.title,
             "kind": event.kind,
             "date": event.date,
-            "source": "newsletter",
+            "source": source,
             "category_id": event.category_id,
             "time": event.time,
             "end_date": event.end_date,
@@ -1113,12 +1114,8 @@ class EventUpserter:
         )
 
     async def upsert_events(self, events: list[ScrapedEvent], source: str = "scraper") -> None:
-        """Async wrapper for upsert() — sets source on each event before upserting."""
-        for e in events:
-            # Override source field in the row via a patched _event_to_row
-            pass
-        # Use sync upsert (httpx sync client)
-        self.upsert(events)
+        """Async wrapper for upsert() — passes source through to the row builder."""
+        self.upsert(events, source=source)
 
     def close(self) -> None:
         """Close the HTTP client."""

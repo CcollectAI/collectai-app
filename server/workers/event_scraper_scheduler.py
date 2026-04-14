@@ -71,6 +71,16 @@ async def run_once():
         logger.warning("Crawl4AI crawler failed: %s", e)
         errors.append(f"crawl4ai: {e}")
 
+    # 2b. Run MusicBrainz scraper (free, no key — vinyl release calendar)
+    try:
+        from pipelines.musicbrainz_events import run_musicbrainz_scraper
+        mb_events = await run_musicbrainz_scraper(days_ahead=60, dry_run=False)
+        logger.info("MusicBrainz scraper: %d events", len(mb_events))
+        total_events += len(mb_events)
+    except Exception as e:
+        logger.warning("MusicBrainz scraper failed: %s", e)
+        errors.append(f"musicbrainz: {e}")
+
     # 3. Run newsletter scraper (if IMAP credentials configured)
     if os.getenv("SCRAPER_EMAIL_HOST"):
         try:
