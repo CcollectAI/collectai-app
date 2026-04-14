@@ -427,14 +427,13 @@ class SupabaseIngest:
             return 0
         rows = [item.to_row() for item in items]
         total = 0
+        # PostgREST requires ?on_conflict=<columns> AND Prefer: resolution=merge-duplicates
+        # for UPSERT behavior. Without this, unique constraint violations return 409.
+        url = f"{SUPABASE_URL}/rest/v1/category_items?on_conflict=category,item_key"
         for i in range(0, len(rows), self.batch_size):
             batch = rows[i:i + self.batch_size]
             try:
-                resp = self.client.post(
-                    f"{SUPABASE_URL}/rest/v1/category_items",
-                    headers=_headers(),
-                    json=batch,
-                )
+                resp = self.client.post(url, headers=_headers(), json=batch)
                 if resp.status_code in (200, 201):
                     total += len(batch)
                 else:
