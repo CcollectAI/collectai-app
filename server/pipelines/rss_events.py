@@ -91,6 +91,24 @@ RSS_FEED_TARGETS: list[dict[str, Any]] = [
 
     # ── Pokemon Center ───────────────────────────────────────────────
     {"feed_url": "https://www.pokemoncenter.com/blog/feed/", "fallback_url": "https://www.pokemoncenter.com/whats-new", "category_id": "pokemon", "kind_default": "collection_drop", "description": "Pokemon Center"},
+
+    # ── Japan / Asia ─────────────────────────────────────────────────
+    {"feed_url": "https://www.goodsmile.info/en/posts/category/information/feed", "fallback_url": "https://www.goodsmile.info/en/posts/category/information", "category_id": "anime_figures", "kind_default": "release", "description": "Good Smile Japan"},
+    {"feed_url": "https://hobby.dengeki.com/feed/", "fallback_url": "https://hobby.dengeki.com/", "category_id": "anime_figures", "kind_default": "release", "description": "Dengeki Hobby (JP)"},
+    {"feed_url": "https://www.amiami.com/eng/feed/", "fallback_url": "https://www.amiami.com/eng/", "category_id": "anime_figures", "kind_default": "collection_drop", "description": "AmiAmi (JP)"},
+    {"feed_url": "https://pokemoncenter-online.com/news/feed/", "fallback_url": "https://www.pokemoncenter-online.com/", "category_id": "pokemon", "kind_default": "collection_drop", "description": "Pokemon Center JP"},
+    {"feed_url": "https://one-piece-figure.com/feed/", "fallback_url": "https://one-piece-figure.com/", "category_id": "one_piece", "kind_default": "release", "description": "One Piece figures (JP)"},
+
+    # ── Europe ───────────────────────────────────────────────────────
+    {"feed_url": "https://www.mcmcomiccon.com/feed/", "fallback_url": "https://www.mcmcomiccon.com/", "category_id": None, "kind_default": "convention", "description": "MCM Comic Con (London/Birmingham)"},
+    {"feed_url": "https://www.spielwarenmesse.de/en/magazine/feed/", "fallback_url": "https://www.spielwarenmesse.de/en/", "category_id": None, "kind_default": "convention", "description": "Spielwarenmesse (Nuremberg)"},
+    {"feed_url": "https://www.japan-expo-paris.com/en/feed/", "fallback_url": "https://www.japan-expo-paris.com/en/", "category_id": "anime_figures", "kind_default": "convention", "description": "Japan Expo (Paris)"},
+    {"feed_url": "https://www.cardmarket.com/en/Magic/News/feed/", "fallback_url": "https://www.cardmarket.com/en/Magic/News", "category_id": "mtg", "kind_default": "release", "description": "Cardmarket EU news"},
+    {"feed_url": "https://www.vinted.co.uk/blog/feed/", "fallback_url": "https://www.vinted.co.uk/blog", "category_id": None, "kind_default": "release", "description": "Vinted UK blog"},
+
+    # ── UK ───────────────────────────────────────────────────────────
+    {"feed_url": "https://www.forbiddenplanet.com/blog/feed/", "fallback_url": "https://www.forbiddenplanet.com/blog/", "category_id": None, "kind_default": "collection_drop", "description": "Forbidden Planet UK"},
+    {"feed_url": "https://www.magicmadhouse.co.uk/blog/feed/", "fallback_url": "https://www.magicmadhouse.co.uk/blog/", "category_id": "mtg", "kind_default": "release", "description": "Magic Madhouse UK"},
 ]
 
 
@@ -359,7 +377,7 @@ async def run_rss_scraper(
         except Exception as e:
             logger.warning("RSS upsert failed: %s", e)
         finally:
-            await upserter.close()
+            upserter.close()
 
     return all_events
 

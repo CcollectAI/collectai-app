@@ -139,6 +139,7 @@ async def lifespan(app: FastAPI):
         ("EVENT_SCRAPER_ENABLED", "workers.event_scraper_scheduler", "event scraper"),
         ("VALUATION_ENABLED", "workers.valuation_scheduler", "valuation"),
         ("CATALOG_CRAWLER_ENABLED", "workers.catalog_crawler_scheduler", "catalog crawler"),
+        ("MARKETPLACE_SCRAPE_ENABLED", "workers.marketplace_scrape_scheduler", "marketplace scrape"),
     ]
     for env_var, mod_path, label in _optional_schedulers:
         if os.getenv(env_var, "false").lower() in ("true", "1"):

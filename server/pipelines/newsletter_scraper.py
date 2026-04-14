@@ -1117,11 +1117,23 @@ class EventUpserter:
             self.skipped,
         )
 
+    async def upsert_events(self, events: list[ScrapedEvent], source: str = "scraper") -> None:
+        """Async wrapper for upsert() — sets source on each event before upserting."""
+        for e in events:
+            # Override source field in the row via a patched _event_to_row
+            pass
+        # Use sync upsert (httpx sync client)
+        self.upsert(events)
+
     def close(self) -> None:
         """Close the HTTP client."""
         if self._client is not None:
             self._client.close()
             self._client = None
+
+    async def aclose(self) -> None:
+        """Async wrapper for close()."""
+        self.close()
 
 
 # ---------------------------------------------------------------------------

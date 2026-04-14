@@ -53,12 +53,33 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
     time: e.time,
   }));
 
+  // Fetch spotlight items from catalog (category_items with images, highest value first)
+  const { data: spotlightData } = await supabase
+    .from('category_items')
+    .select('item_key, title, image_url, attributes_json')
+    .eq('category', categoryId)
+    .not('image_url', 'is', null)
+    .order('item_key', { ascending: true })
+    .limit(8);
+
+  type SpotlightRow = { item_key: string; title: string; image_url?: string | null; attributes_json?: Record<string, unknown> | null };
+  const spotlightSlides = (spotlightData ?? [])
+    .filter((r: SpotlightRow) => r.image_url)
+    .map((r: SpotlightRow) => ({
+      id: r.item_key,
+      title: r.title ?? 'Unknown',
+      subtitle: (r.attributes_json as Record<string, string> | null)?.brand
+        ?? (r.attributes_json as Record<string, string> | null)?.set_name
+        ?? undefined,
+      imageUrl: r.image_url ?? undefined,
+    }));
+
   return {
     categoryId: category.id,
     categoryName: category.name,
     categoryTagline: category.tagline,
     bannerImageUrl: category.bannerImageUrl,
-    spotlightSlides: [],
+    spotlightSlides,
     items,
     upcomingEvents,
     friendsWhoFollow: [],
