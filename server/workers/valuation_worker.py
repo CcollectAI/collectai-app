@@ -172,6 +172,7 @@ async def run_once():
             FROM public.market_hits
             WHERE processed = false
               AND price IS NOT NULL
+              AND item_ref IS NOT NULL
             ORDER BY item_ref, observed_at
         """)
 

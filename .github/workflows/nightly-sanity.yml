@@ -1,6 +1,6 @@
 name: Nightly Sanity
 on:
-  schedule: [{ cron: "17 2 * * *" }]
+  schedule: [{ cron: "17 5 * * *" }]
   workflow_dispatch: {}
 jobs:
   sanity:
@@ -17,9 +17,13 @@ jobs:
           echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> $GITHUB_ENV
           echo "TEST_EMAIL=${{ secrets.TEST_EMAIL }}" >> $GITHUB_ENV
           echo "TEST_PASSWORD=${{ secrets.TEST_PASSWORD }}" >> $GITHUB_ENV
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> $GITHUB_ENV
+          echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> $GITHUB_ENV
       - name: Install jq & curl
         run: sudo apt-get update && sudo apt-get install -y jq curl
-      - name: Run sanity
+      - name: Run health check
+        run: ./scripts/nightly_health_check.sh
+      - name: Run auth + predict sanity
         run: |
           ./scripts/force_jwt_refresh.sh
           ./scripts/run_predict_with_image.sh

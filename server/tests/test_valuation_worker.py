@@ -300,3 +300,56 @@ def test_predict_ridge_broken_model():
 
     result = _predict_ridge({}, "watches:rolex", 150.0)
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# 10. SQL query filters out NULL item_ref rows
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+@patch("workers.valuation_worker.record_run")
+@patch("workers.valuation_worker.asyncpg")
+async def test_null_item_ref_filtered_by_query(mock_asyncpg, mock_record_run, _clear_dsn):
+    """The SQL query must include 'AND item_ref IS NOT NULL' to prevent TypeError."""
+    mock_conn = AsyncMock()
+    mock_conn.fetch.return_value = []
+    mock_asyncpg.connect = AsyncMock(return_value=mock_conn)
+
+    from workers.valuation_worker import run_once
+
+    await run_once()
+
+    # Verify the SQL query includes the NULL filter
+    fetch_call = mock_conn.fetch.call_args
+    sql = fetch_call[0][0]
+    assert "item_ref IS NOT NULL" in sql, (
+        "Query must filter NULL item_ref to prevent 'argument of type NoneType is not iterable' crash"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 11. Required env var DB_DSN is validated
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+@patch("workers.valuation_worker.record_run")
+async def test_dsn_env_required(mock_record_run, _no_dsn):
+    """run_once should return early when DB_DSN is not set."""
+    from workers.valuation_worker import run_once
+
+    await run_once()
+
+    # Should not call record_run — just logs error and returns
+    mock_record_run.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# 12. Valuation scheduler validates DB_DSN on startup
+# ---------------------------------------------------------------------------
+def test_scheduler_exits_without_dsn(monkeypatch):
+    """Scheduler main() should exit(1) if DB_DSN is missing."""
+    monkeypatch.delenv("DB_DSN", raising=False)
+
+    from workers.valuation_scheduler import main
+
+    with pytest.raises(SystemExit) as exc_info:
+        main()
+    assert exc_info.value.code == 1
