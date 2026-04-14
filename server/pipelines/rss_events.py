@@ -52,63 +52,39 @@ from pipelines.newsletter_scraper import (
 # ---------------------------------------------------------------------------
 
 RSS_FEED_TARGETS: list[dict[str, Any]] = [
-    # ── Brand blogs (WordPress / standard RSS) ────────────────────────
-    {"feed_url": "https://www.pokemon.com/us/pokemon-news/rss", "fallback_url": "https://www.pokemon.com/us/pokemon-news", "category_id": "pokemon", "kind_default": "release", "description": "Pokemon news"},
-    {"feed_url": "https://magic.wizards.com/en/rss/rss.xml", "fallback_url": "https://magic.wizards.com/en/news", "category_id": "mtg", "kind_default": "release", "description": "MTG news"},
-    {"feed_url": "https://www.warhammer-community.com/feed/", "fallback_url": "https://www.warhammer-community.com/latest-news/", "category_id": "warhammer", "kind_default": "release", "description": "Warhammer Community"},
-    {"feed_url": "https://www.funko.com/blog/rss", "fallback_url": "https://www.funko.com/blog", "category_id": "funko", "kind_default": "collection_drop", "description": "Funko blog"},
-    {"feed_url": "https://goodsmile-global.com/news/feed/", "fallback_url": "https://goodsmile-global.com/news/", "category_id": "anime_figures", "kind_default": "release", "description": "Good Smile Company"},
-    {"feed_url": "https://www.sideshow.com/blog/feed/", "fallback_url": "https://www.sideshow.com/whats-new", "category_id": "hot_toys", "kind_default": "collection_drop", "description": "Sideshow Collectibles"},
-    {"feed_url": "https://hasbropulse.com/blogs/hasbro-pulse-blog.atom", "fallback_url": "https://hasbropulse.com/blogs/hasbro-pulse-blog", "category_id": "action_figures", "kind_default": "collection_drop", "description": "Hasbro Pulse"},
-    {"feed_url": "https://news.bandainamco.com/en/feed/", "fallback_url": "https://news.bandainamco.com/en/", "category_id": "gunpla", "kind_default": "release", "description": "Bandai Namco"},
-    {"feed_url": "https://www.topps.com/blog/feed/", "fallback_url": "https://www.topps.com/blog", "category_id": "sportscards", "kind_default": "collection_drop", "description": "Topps"},
-    {"feed_url": "https://blog.tcgplayer.com/feed/", "fallback_url": "https://tcgplayer.com/blog", "category_id": "pokemon", "kind_default": "release", "description": "TCGPlayer blog"},
-    {"feed_url": "https://sneakernews.com/feed/", "fallback_url": "https://sneakernews.com/release-dates/", "category_id": "sneakers", "kind_default": "collection_drop", "description": "Sneaker News"},
-    {"feed_url": "https://blog.discogs.com/en/feed/", "fallback_url": "https://www.discogs.com/blog", "category_id": "vinyl", "kind_default": "release", "description": "Discogs blog"},
-    {"feed_url": "https://recordstoreday.com/feed/", "fallback_url": "https://recordstoreday.com/", "category_id": "vinyl", "kind_default": "collection_drop", "description": "Record Store Day"},
-    {"feed_url": "https://www.hodinkee.com/feed", "fallback_url": "https://www.hodinkee.com/articles", "category_id": "watches", "kind_default": "release", "description": "Hodinkee"},
-    {"feed_url": "https://disneyparks.disney.go.com/blog/feed/", "fallback_url": "https://disneyparks.disney.go.com/blog/", "category_id": "disney", "kind_default": "collection_drop", "description": "Disney Parks Blog"},
-    {"feed_url": "https://www.fragrantica.com/news/rss.html", "fallback_url": "https://www.fragrantica.com/news/", "category_id": "fragrances", "kind_default": "release", "description": "Fragrantica news"},
-    {"feed_url": "https://www.penworld.eu/blog/feed/", "fallback_url": "https://www.penworld.eu/blog/", "category_id": "pens", "kind_default": "release", "description": "Penworld blog"},
+    # ═══════════════════════════════════════════════════════════════════
+    # ALL feeds below are VERIFIED to return valid RSS/Atom XML as of
+    # 2026-04-14. Do NOT add speculative URLs — curl first, commit second.
+    # ═══════════════════════════════════════════════════════════════════
 
-    # ── Convention / event pages (try RSS, many have feeds) ───────────
+    # ── US: Brand blogs & conventions (verified) ─────────────────────
+    {"feed_url": "https://www.sideshow.com/blog/feed/", "fallback_url": "https://www.sideshow.com/whats-new", "category_id": "hot_toys", "kind_default": "collection_drop", "description": "Sideshow Collectibles"},
+    {"feed_url": "https://sneakernews.com/feed/", "fallback_url": "https://sneakernews.com/release-dates/", "category_id": "sneakers", "kind_default": "collection_drop", "description": "Sneaker News"},
+    {"feed_url": "https://disneyparks.disney.go.com/blog/feed/", "fallback_url": "https://disneyparks.disney.go.com/blog/", "category_id": "disney", "kind_default": "collection_drop", "description": "Disney Parks Blog"},
     {"feed_url": "https://www.comic-con.org/feed/", "fallback_url": "https://www.comic-con.org/cci/", "category_id": None, "kind_default": "convention", "description": "SDCC"},
     {"feed_url": "https://www.anime-expo.org/feed/", "fallback_url": "https://www.anime-expo.org/", "category_id": "anime_figures", "kind_default": "convention", "description": "Anime Expo"},
-    {"feed_url": "https://www.gencon.com/feed/", "fallback_url": "https://www.gencon.com/", "category_id": "oop_board_games", "kind_default": "convention", "description": "Gen Con"},
+    {"feed_url": "https://kotaku.com/rss", "fallback_url": "https://kotaku.com/", "category_id": "retro_games", "kind_default": "release", "description": "Kotaku gaming news"},
 
-    # ── StockX / Catawiki (try, may not have RSS) ────────────────────
-    {"feed_url": "https://stockx.com/news/feed/", "fallback_url": "https://stockx.com/news", "category_id": "sneakers", "kind_default": "collection_drop", "description": "StockX news"},
-    {"feed_url": "https://www.catawiki.com/en/stories/feed/", "fallback_url": "https://www.catawiki.com/en/stories", "category_id": None, "kind_default": "convention", "description": "Catawiki stories"},
+    # ── Warhammer (verified) ─────────────────────────────────────────
+    {"feed_url": "https://www.belloflostsouls.net/feed", "fallback_url": "https://www.belloflostsouls.net/", "category_id": "warhammer", "kind_default": "release", "description": "Bell of Lost Souls"},
 
-    # ── LEGO (uses structured API, try RSS too) ──────────────────────
-    {"feed_url": "https://www.lego.com/en-us/categories/new-sets-and-products/rss", "fallback_url": "https://www.lego.com/en-us/categories/new-sets-and-products", "category_id": "lego", "kind_default": "collection_drop", "description": "LEGO new sets"},
+    # ── LEGO (verified) ──────────────────────────────────────────────
+    {"feed_url": "https://brickset.com/feed", "fallback_url": "https://brickset.com/", "category_id": "lego", "kind_default": "release", "description": "Brickset LEGO news"},
+    {"feed_url": "https://bricksfanz.com/feed/", "fallback_url": "https://bricksfanz.com/", "category_id": "lego", "kind_default": "release", "description": "BricksFanz UK"},
 
-    # ── Watch events ─────────────────────────────────────────────────
-    {"feed_url": "https://www.watchesandwonders.com/en/news/feed/", "fallback_url": "https://www.watchesandwonders.com/en/news/", "category_id": "watches", "kind_default": "convention", "description": "Watches & Wonders"},
+    # ── Watches (verified) ───────────────────────────────────────────
+    {"feed_url": "https://www.fratellowatches.com/feed/", "fallback_url": "https://www.fratellowatches.com/", "category_id": "watches", "kind_default": "release", "description": "Fratello Watches"},
+    {"feed_url": "https://www.ablogtowatch.com/feed/", "fallback_url": "https://www.ablogtowatch.com/", "category_id": "watches", "kind_default": "release", "description": "aBlogtoWatch"},
 
-    # ── Hot Toys ─────────────────────────────────────────────────────
-    {"feed_url": "https://www.hottoyscollectibles.com/news/feed/", "fallback_url": "https://www.hottoyscollectibles.com/news", "category_id": "hot_toys", "kind_default": "release", "description": "Hot Toys news"},
+    # ── Anime / Japan (verified) ─────────────────────────────────────
+    {"feed_url": "https://www.animenewsnetwork.com/news/rss.xml", "fallback_url": "https://www.animenewsnetwork.com/news/", "category_id": "anime_figures", "kind_default": "release", "description": "Anime News Network"},
+    {"feed_url": "https://myanimelist.net/rss/news.xml", "fallback_url": "https://myanimelist.net/news", "category_id": "anime_figures", "kind_default": "release", "description": "MyAnimeList news"},
+    {"feed_url": "https://hobby.dengeki.com/feed/", "fallback_url": "https://hobby.dengeki.com/", "category_id": "anime_figures", "kind_default": "release", "description": "Dengeki Hobby (JP figures/models)"},
+    {"feed_url": "https://soranews24.com/feed/", "fallback_url": "https://soranews24.com/", "category_id": None, "kind_default": "release", "description": "SoraNews24 (Japan pop culture)"},
 
-    # ── Pokemon Center ───────────────────────────────────────────────
-    {"feed_url": "https://www.pokemoncenter.com/blog/feed/", "fallback_url": "https://www.pokemoncenter.com/whats-new", "category_id": "pokemon", "kind_default": "collection_drop", "description": "Pokemon Center"},
-
-    # ── Japan / Asia ─────────────────────────────────────────────────
-    {"feed_url": "https://www.goodsmile.info/en/posts/category/information/feed", "fallback_url": "https://www.goodsmile.info/en/posts/category/information", "category_id": "anime_figures", "kind_default": "release", "description": "Good Smile Japan"},
-    {"feed_url": "https://hobby.dengeki.com/feed/", "fallback_url": "https://hobby.dengeki.com/", "category_id": "anime_figures", "kind_default": "release", "description": "Dengeki Hobby (JP)"},
-    {"feed_url": "https://www.amiami.com/eng/feed/", "fallback_url": "https://www.amiami.com/eng/", "category_id": "anime_figures", "kind_default": "collection_drop", "description": "AmiAmi (JP)"},
-    {"feed_url": "https://pokemoncenter-online.com/news/feed/", "fallback_url": "https://www.pokemoncenter-online.com/", "category_id": "pokemon", "kind_default": "collection_drop", "description": "Pokemon Center JP"},
-    {"feed_url": "https://one-piece-figure.com/feed/", "fallback_url": "https://one-piece-figure.com/", "category_id": "one_piece", "kind_default": "release", "description": "One Piece figures (JP)"},
-
-    # ── Europe ───────────────────────────────────────────────────────
-    {"feed_url": "https://www.mcmcomiccon.com/feed/", "fallback_url": "https://www.mcmcomiccon.com/", "category_id": None, "kind_default": "convention", "description": "MCM Comic Con (London/Birmingham)"},
-    {"feed_url": "https://www.spielwarenmesse.de/en/magazine/feed/", "fallback_url": "https://www.spielwarenmesse.de/en/", "category_id": None, "kind_default": "convention", "description": "Spielwarenmesse (Nuremberg)"},
-    {"feed_url": "https://www.japan-expo-paris.com/en/feed/", "fallback_url": "https://www.japan-expo-paris.com/en/", "category_id": "anime_figures", "kind_default": "convention", "description": "Japan Expo (Paris)"},
-    {"feed_url": "https://www.cardmarket.com/en/Magic/News/feed/", "fallback_url": "https://www.cardmarket.com/en/Magic/News", "category_id": "mtg", "kind_default": "release", "description": "Cardmarket EU news"},
-    {"feed_url": "https://www.vinted.co.uk/blog/feed/", "fallback_url": "https://www.vinted.co.uk/blog", "category_id": None, "kind_default": "release", "description": "Vinted UK blog"},
-
-    # ── UK ───────────────────────────────────────────────────────────
-    {"feed_url": "https://www.forbiddenplanet.com/blog/feed/", "fallback_url": "https://www.forbiddenplanet.com/blog/", "category_id": None, "kind_default": "collection_drop", "description": "Forbidden Planet UK"},
-    {"feed_url": "https://www.magicmadhouse.co.uk/blog/feed/", "fallback_url": "https://www.magicmadhouse.co.uk/blog/", "category_id": "mtg", "kind_default": "release", "description": "Magic Madhouse UK"},
+    # ── UK / Europe (verified) ───────────────────────────────────────
+    {"feed_url": "https://www.japantimes.co.jp/feed/", "fallback_url": "https://www.japantimes.co.jp/", "category_id": None, "kind_default": "release", "description": "Japan Times (JP events/culture)"},
+    {"feed_url": "https://www.geeknative.com/feed/", "fallback_url": "https://www.geeknative.com/", "category_id": None, "kind_default": "release", "description": "Geek Native UK (tabletop/collectibles)"},
 ]
 
 
