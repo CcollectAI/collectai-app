@@ -1,7 +1,7 @@
 """
-Import Disney collectibles catalog (500+ items).
+Import Disney collectibles catalog (800+ items).
 
-Layer 1 (Catalog):  Curated 300+ items across 30+ subcategories → category_items
+Layer 1 (Catalog):  Curated 800+ items across 40+ subcategories → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
 Sources:
@@ -12,7 +12,12 @@ Sources:
   Vinylmation, Disney Infinity, designer ears & spirit jerseys, vintage animation
   cels, Disney Animator's Collection, Disney Designer dolls, Disney Store vintage
   plush, vintage Disneyland/WDW park maps, runDisney medals, Disney100 celebration
-  items, Shanghai/Tokyo Disney exclusives, and limited ornaments
+  items, Shanghai/Tokyo Disney exclusives, limited ornaments, MagicBand+ collectibles,
+  Sideshow/Hot Toys Disney figures, Disney x luxury collaborations (Coach, Pandora,
+  Dooney & Bourke, Gucci, Givenchy, Montblanc), Pixar deep-cuts (Toy Story, Monsters
+  Inc, Up, WALL-E, Coco, Ratatouille), Star Wars Galaxy's Edge exclusives (legacy
+  lightsabers, Savi's Workshop, droids, holocrons), Marvel Disney Parks exclusives
+  (Avengers Campus, replicas), and vintage Disneyana (1930s-1980s toys & memorabilia)
 
 Usage:
     python -m pipelines.import_disney [--dry-run]
@@ -40,7 +45,7 @@ CATEGORY = "disney"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Disney collectibles catalog — 500+ items across 35+ subcategories."""
+    """Curated Disney collectibles catalog — 800+ items across 40+ subcategories."""
 
     # (subcategory, name, edition, rarity_tier, price_eur)
     # rarity_tier: grail (>200), high (80-200), mid (30-80), standard (<30)
@@ -1138,6 +1143,13 @@ def get_curated_catalog() -> list[dict]:
             existing_keys.add(key)
             catalog.append(item)
 
+    # Add wave 3 expansion items
+    for item in _wave3_expansion():
+        key = (item["subcategory"], item["name"])
+        if key not in existing_keys:
+            existing_keys.add(key)
+            catalog.append(item)
+
     # Deduplicate by ('name',) (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
@@ -1667,6 +1679,318 @@ def _wave2_expansion() -> list[dict]:
     return result
 
 
+def _wave3_expansion() -> list[dict]:
+    """Wave 3 — ~250 items: Disney Parks exclusive merchandise, Sideshow/Hot Toys,
+    animation art, vintage Disneyana, luxury collaborations, Pixar deep-cuts,
+    Galaxy's Edge exclusives, Marvel Disney Parks exclusives, MagicBand+, spirit jerseys."""
+
+    # (subcategory, name, edition, rarity_tier, price_eur)
+    variants = [
+        # ── Disney Parks Exclusive Pins — Deep Cuts ────────────────────
+        ("pins", "Club 33 50th Anniversary LE 333 Pin", "LE 333", "grail", 500),
+        ("pins", "Club 33 Disneyland Paris Exclusive Member Pin", "LE", "grail", 400),
+        ("pins", "DVC (Disney Vacation Club) Member Exclusive LE 1500 Pin", "LE 1500", "high", 95),
+        ("pins", "EPCOT Flower & Garden Festival Figment Topiary LE 3000 Pin", "LE 3000", "high", 75),
+        ("pins", "EPCOT Food & Wine Festival Chef Remy LE 2500 Pin", "LE 2500", "high", 80),
+        ("pins", "Disney After Hours BOO Bash LE 2000 Pin", "LE 2000", "high", 90),
+        ("pins", "Disney Aulani Resort Exclusive Duffy LE 2000 Pin", "LE 2000", "high", 85),
+        ("pins", "WDI (Walt Disney Imagineering) Profile Series LE 300 Pin", "LE 300", "grail", 350),
+        ("pins", "WDI Haunted Mansion Butler LE 250 Pin", "LE 250", "grail", 380),
+        ("pins", "Disney Employee Center (DEC) LE 250 Villain Pin", "LE 250", "grail", 320),
+        ("pins", "Disney Soda Fountain LE 400 Ariel Jumbo Pin", "LE 400", "grail", 300),
+        ("pins", "Disneyland Diamond Celebration 60th LE 2000 Pin", "LE 2000", "high", 110),
+
+        # ── MagicBand+ Collectibles ───────────────────────────────────
+        ("magicband", "MagicBand+ Haunted Mansion Hitchhiking Ghosts (LE 3000)", "LE 3000", "high", 85),
+        ("magicband", "MagicBand+ Figment Epcot Festival (LE 2500)", "LE 2500", "high", 90),
+        ("magicband", "MagicBand+ 50th Anniversary Gold (LE 5000)", "LE 5000", "mid", 55),
+        ("magicband", "MagicBand+ Tron Lightcycle Run Grand Opening (LE 2000)", "LE 2000", "high", 95),
+        ("magicband", "MagicBand+ Star Wars Galaxy's Edge Kyber Crystal", "Park Exclusive", "mid", 45),
+        ("magicband", "MagicBand+ Disney Villains After Hours (LE 1500)", "LE 1500", "high", 110),
+        ("magicband", "MagicBand+ Nightmare Before Christmas Oogie Boogie Bash", "Event Exclusive", "high", 100),
+        ("magicband", "MagicBand+ Disney100 Platinum Celebration", "D100 Exclusive", "high", 80),
+        ("magicband", "MagicBand+ Annual Passholder Exclusive 2025", "Park Exclusive", "mid", 50),
+        ("magicband", "MagicBand+ Guardians of the Galaxy Cosmic Rewind", "Park Exclusive", "mid", 45),
+
+        # ── Vinylmation Deep Cuts ─────────────────────────────────────
+        ("vinylmation", "Vinylmation Eachez Series Cheshire Cat (Rare)", "LE", "high", 85),
+        ("vinylmation", "Vinylmation Celebrations Series Wedding Mickey 9in", "Limited", "high", 110),
+        ("vinylmation", "Vinylmation Chinese Zodiac Series Dragon", "Limited", "mid", 55),
+        ("vinylmation", "Vinylmation Theme Park Favorites Series Figment", "Park Exclusive", "high", 95),
+        ("vinylmation", "Vinylmation Disney Animation Series Sorcerer Mickey (Chaser)", "Chase Variant", "high", 120),
+        ("vinylmation", "Vinylmation Robots Series WALL-E 3in", "Standard", "mid", 40),
+        ("vinylmation", "Vinylmation Pirates of the Caribbean Series Jack Sparrow 9in", "Limited", "high", 100),
+        ("vinylmation", "Vinylmation Designer Series Oswald the Lucky Rabbit", "Limited", "high", 90),
+
+        # ── Sideshow / Hot Toys Disney Figures ────────────────────────
+        ("sideshow", "Hot Toys Woody (Toy Story) 1/6 Scale Figure", "Premium", "grail", 280),
+        ("sideshow", "Hot Toys Buzz Lightyear (Toy Story) 1/6 Scale Figure", "Premium", "grail", 290),
+        ("sideshow", "Hot Toys Jack Sparrow (Pirates of the Caribbean) 1/6 Scale", "Premium", "grail", 380),
+        ("sideshow", "Hot Toys Captain Jack Sparrow DX15 1/6 Scale", "Premium", "grail", 450),
+        ("sideshow", "Hot Toys Davy Jones 1/6 Scale Figure", "Premium", "grail", 400),
+        ("sideshow", "Hot Toys Maleficent (Angelina Jolie) 1/6 Scale Figure", "Premium", "grail", 350),
+        ("sideshow", "Hot Toys Iron Man Mark L (Avengers Campus) 1/6 Scale", "Premium", "grail", 380),
+        ("sideshow", "Hot Toys Spider-Man (Avengers Campus) 1/6 Scale", "Premium", "grail", 320),
+        ("sideshow", "Hot Toys Thanos (Endgame) 1/6 Scale Figure", "Premium", "grail", 420),
+        ("sideshow", "Sideshow Maleficent Premium Format Statue", "LE 1500", "grail", 550),
+        ("sideshow", "Sideshow Ariel Premium Format Statue", "LE 1500", "grail", 500),
+        ("sideshow", "Sideshow Snow White Premium Format Statue", "LE 1500", "grail", 480),
+        ("sideshow", "Sideshow Cinderella Premium Format Statue", "LE 1500", "grail", 520),
+        ("sideshow", "Sideshow Tinker Bell Fairytale Fantasies Statue", "LE 2000", "grail", 350),
+        ("sideshow", "Sideshow Evil Queen Fairytale Fantasies Statue", "LE 2000", "grail", 400),
+        ("sideshow", "Sideshow Belle Fairytale Fantasies Statue", "LE 2000", "grail", 380),
+        ("sideshow", "Hot Toys Grogu (Life-Size) Figure", "Premium", "grail", 450),
+        ("sideshow", "Hot Toys Mandalorian & Grogu 1/6 Scale Deluxe Set", "Premium", "grail", 520),
+        ("sideshow", "Beast Kingdom Egg Attack Stitch (Dynamic 8ction Heroes)", "Premium", "high", 85),
+        ("sideshow", "Beast Kingdom Egg Attack Woody & Forky Set", "Premium", "high", 95),
+
+        # ── Disney Animation Art & Cels — Deep Cuts ───────────────────
+        ("animation_cels", "Original Production Cel Dumbo Pink Elephants Sequence", "Vintage", "grail", 4500),
+        ("animation_cels", "Original Production Cel Lady and the Tramp Spaghetti Scene", "Vintage", "grail", 6500),
+        ("animation_cels", "Original Production Cel 101 Dalmatians Cruella De Vil", "Vintage", "grail", 3500),
+        ("animation_cels", "Original Production Cel The Jungle Book Baloo & Mowgli", "Vintage", "grail", 3200),
+        ("animation_cels", "Original Production Cel Robin Hood & Maid Marian", "Vintage", "grail", 2800),
+        ("animation_cels", "Original Production Cel The Rescuers Bianca & Bernard", "Vintage", "grail", 2200),
+        ("animation_cels", "Original Production Cel The Aristocats Marie", "Vintage", "grail", 2500),
+        ("animation_cels", "Original Production Cel Winnie the Pooh Blustery Day", "Vintage", "grail", 3000),
+        ("animation_cels", "Original Production Drawing Maleficent Dragon Marc Davis", "Vintage", "grail", 5000),
+        ("animation_cels", "Original Concept Art Mary Blair It's a Small World", "Vintage", "grail", 8000),
+        ("animation_cels", "Original Concept Art Eyvind Earle Sleeping Beauty Background", "Vintage", "grail", 10000),
+        ("animation_cels", "Sericel Mulan LE 2500 (Training Montage)", "LE 2500", "high", 180),
+        ("animation_cels", "Sericel Hercules LE 5000 (Zero to Hero)", "LE 5000", "high", 140),
+        ("animation_cels", "Sericel Tarzan LE 5000 (Surfing the Trees)", "LE 5000", "high", 130),
+        ("animation_cels", "Disney Animation Gallery Tangled Concept Art Print", "Limited Print", "high", 120),
+
+        # ── Vintage Disneyana (Pre-1990 Toys & Memorabilia) ───────────
+        ("vintage", "1930s Mickey Mouse Charlotte Clark Stuffed Doll", "Vintage", "grail", 5000),
+        ("vintage", "1930s Mickey Mouse Steiff Doll (Original)", "Vintage", "grail", 8000),
+        ("vintage", "1930s Minnie Mouse Steiff Doll (Original)", "Vintage", "grail", 6000),
+        ("vintage", "1930s Three Little Pigs Bisque Figurine Set", "Vintage", "grail", 450),
+        ("vintage", "1940s Dumbo Ceramic Figurine (Vernon Kilns)", "Vintage", "grail", 350),
+        ("vintage", "1940s Bambi Ceramic Figurine Set (Vernon Kilns)", "Vintage", "grail", 500),
+        ("vintage", "1950s Peter Pan Tin Lunch Box", "Vintage", "high", 200),
+        ("vintage", "1950s Davy Crockett Official Frontier Outfit (Complete)", "Vintage", "grail", 350),
+        ("vintage", "1950s Disneyland Viewliner Souvenir Postcard Set", "Vintage", "high", 150),
+        ("vintage", "1960s Mary Poppins Tea Set (Porcelain, Complete)", "Vintage", "grail", 280),
+        ("vintage", "1960s Disneyland Matterhorn Bobsled Souvenir Model", "Vintage", "high", 180),
+        ("vintage", "1960s The Jungle Book Movie Premiere Program", "Vintage", "high", 120),
+        ("vintage", "1970s Disneyland Space Mountain Grand Opening Program", "Vintage", "grail", 300),
+        ("vintage", "1970s Walt Disney World Bear Country Opening Poster", "Vintage", "high", 180),
+        ("vintage", "1980s Epcot Center Horizons Attraction Poster (Original)", "Vintage", "grail", 400),
+        ("vintage", "1980s Disney Afternoon Darkwing Duck Action Figure Set", "Vintage", "high", 150),
+        ("vintage", "1980s TaleSpin Don Karnage Action Figure (Playmates)", "Vintage", "high", 100),
+        ("vintage", "1989 The Little Mermaid Movie Premiere Press Kit", "Vintage", "grail", 250),
+        ("vintage", "1930s Silly Symphony Tin Toy Music Box", "Vintage", "grail", 600),
+        ("vintage", "1940s Pinocchio Multiplane Camera Cel (Studio Provenance)", "Vintage", "grail", 15000),
+
+        # ── Disney x Luxury Collaborations ────────────────────────────
+        ("luxury_collab", "Coach x Disney Thumper & Friends Backpack", "Limited", "high", 180),
+        ("luxury_collab", "Coach x Disney Cruella Print Tote", "Limited", "high", 165),
+        ("luxury_collab", "Coach x Disney Holiday Mickey Crossbody", "Seasonal", "high", 140),
+        ("luxury_collab", "Pandora x Disney Cinderella Pumpkin Coach Charm", "Limited", "mid", 60),
+        ("luxury_collab", "Pandora x Disney Pixar Toy Story Alien Charm", "Limited", "mid", 50),
+        ("luxury_collab", "Pandora x Disney Lion King Simba Charm", "Limited", "mid", 55),
+        ("luxury_collab", "Pandora x Disney Winnie the Pooh Charm Set", "Limited", "high", 85),
+        ("luxury_collab", "Pandora x Disney Enchanted Rose Charm & Ring Set", "Limited", "high", 120),
+        ("luxury_collab", "Dooney & Bourke Disney Enchanted Rose Tote", "Park Exclusive", "high", 165),
+        ("luxury_collab", "Dooney & Bourke Disney Fantasia Sorcerer Mickey Satchel", "Park Exclusive", "high", 175),
+        ("luxury_collab", "Dooney & Bourke Disney Figment Crossbody", "Park Exclusive", "high", 160),
+        ("luxury_collab", "Dooney & Bourke Disney Hocus Pocus Tote", "Seasonal", "high", 155),
+        ("luxury_collab", "Dooney & Bourke Disney Parks Life Crossbody", "Park Exclusive", "high", 140),
+        ("luxury_collab", "Gucci x Disney Ace Sneakers Mickey Mouse (White)", "Limited", "grail", 700),
+        ("luxury_collab", "Gucci x Disney GG Mickey Canvas Backpack", "Limited", "grail", 1200),
+        ("luxury_collab", "Givenchy x Disney Bambi Embroidered Hoodie", "Limited", "grail", 800),
+        ("luxury_collab", "Givenchy x Disney Bambi Print T-Shirt", "Limited", "grail", 350),
+        ("luxury_collab", "Marc Jacobs x Disney Redux Grunge Collection Tee", "Limited", "high", 120),
+        ("luxury_collab", "Fossil x Disney Minnie Mouse Watch (LE 3000)", "LE 3000", "high", 130),
+        ("luxury_collab", "Shinola x Disney Great Americans Runwell Watch", "LE 500", "grail", 450),
+        ("luxury_collab", "S.T. Dupont x Disney Mickey Art Collection Lighter", "LE 1942", "grail", 600),
+        ("luxury_collab", "Montblanc x Disney Great Characters Walt Disney Pen (LE)", "LE 1901", "grail", 800),
+
+        # ── Pixar Collectibles — Toy Story Deep Cuts ──────────────────
+        ("pixar", "Toy Story Signature Collection Woody Doll (Thinkway)", "Premium", "high", 150),
+        ("pixar", "Toy Story Signature Collection Buzz Lightyear (Thinkway)", "Premium", "high", 160),
+        ("pixar", "Toy Story Signature Collection Jessie Doll (Thinkway)", "Premium", "high", 140),
+        ("pixar", "Toy Story Rex Dinosaur Jim Shore Figurine", "Standard", "mid", 55),
+        ("pixar", "Toy Story Aliens Pizza Planet Truck Replica", "Limited", "high", 95),
+        ("pixar", "Toy Story Hamm Piggy Bank (Screen-Accurate Replica)", "Standard", "mid", 40),
+        ("pixar", "Toy Story Sid's Room Diorama Figurine Set", "D23 Exclusive", "high", 130),
+
+        # ── Pixar Collectibles — Monsters Inc ─────────────────────────
+        ("pixar", "Monsters Inc Mike Wazowski Jim Shore Figurine", "Standard", "mid", 50),
+        ("pixar", "Monsters Inc Boo's Door Replica (Wall Mount)", "Limited", "high", 120),
+        ("pixar", "Monsters Inc CDA Agent Figure (LE 2000)", "LE 2000", "high", 85),
+        ("pixar", "Monsters University Oozma Kappa Figurine Set", "Standard", "mid", 55),
+
+        # ── Pixar Collectibles — Up, WALL-E, Coco ────────────────────
+        ("pixar", "Up Carl Fredricksen & Russell Snow Globe (Musical)", "Limited", "high", 110),
+        ("pixar", "Up Grape Soda Pin Replica (Ellie Badge)", "Standard", "standard", 18),
+        ("pixar", "Up Paradise Falls Painting Replica Print", "Limited Print", "high", 85),
+        ("pixar", "WALL-E Directive A113 Snow Globe", "Limited", "high", 100),
+        ("pixar", "WALL-E BnL Corporation Fire Extinguisher Prop Replica", "Limited", "high", 80),
+        ("pixar", "WALL-E & EVE Dancing Music Box", "Limited", "high", 95),
+        ("pixar", "Coco Guitar of Ernesto de la Cruz (Full Size Replica)", "Premium", "grail", 250),
+        ("pixar", "Coco Mama Imelda Alebrije Pepita Figurine", "Standard", "mid", 55),
+        ("pixar", "Coco Land of the Dead Diorama Light-Up Figurine", "Limited", "high", 130),
+
+        # ── Pixar Collectibles — Ratatouille, Brave, Inside Out ───────
+        ("pixar", "Ratatouille Gusteau's Restaurant Sign Replica", "Limited", "high", 110),
+        ("pixar", "Ratatouille Remy & Emile Figurine Set (Jim Shore)", "Standard", "mid", 60),
+        ("pixar", "Brave Queen Elinor Bear Figurine", "Standard", "mid", 45),
+        ("pixar", "Brave Merida's Bow & Arrow Prop Replica Set", "Limited", "high", 95),
+        ("pixar", "Inside Out Control Panel Light-Up Replica", "D23 Exclusive", "high", 150),
+        ("pixar", "Inside Out 2 Complete Emotion Figurine Set (9 Figures)", "Standard", "mid", 65),
+
+        # ── Star Wars Galaxy's Edge — Deep Cuts ──────────────────────
+        ("galaxys_edge", "Galaxy's Edge Legacy Lightsaber (Obi-Wan Kenobi)", "Park Exclusive", "high", 180),
+        ("galaxys_edge", "Galaxy's Edge Legacy Lightsaber (Yoda)", "Park Exclusive", "high", 175),
+        ("galaxys_edge", "Galaxy's Edge Legacy Lightsaber (Leia Organa)", "Park Exclusive", "high", 190),
+        ("galaxys_edge", "Galaxy's Edge Legacy Lightsaber (Cal Kestis)", "Park Exclusive", "high", 200),
+        ("galaxys_edge", "Galaxy's Edge Legacy Lightsaber (Ventress)", "Park Exclusive", "high", 190),
+        ("galaxys_edge", "Galaxy's Edge Legacy Blaster (Han Solo DL-44)", "Park Exclusive", "high", 120),
+        ("galaxys_edge", "Galaxy's Edge Legacy Blaster (Boba Fett EE-3)", "Park Exclusive", "high", 130),
+        ("galaxys_edge", "Galaxy's Edge Holocron Jedi (Complete w/ Kyber)", "Park Exclusive", "high", 90),
+        ("galaxys_edge", "Galaxy's Edge Holocron Sith (Complete w/ Kyber)", "Park Exclusive", "high", 90),
+        ("galaxys_edge", "Galaxy's Edge Droid Depot Custom C-Series Unit", "Park Exclusive", "high", 115),
+        ("galaxys_edge", "Galaxy's Edge Dok-Ondar's Antiquities Sith Chalice", "Park Exclusive", "mid", 55),
+        ("galaxys_edge", "Galaxy's Edge Toydarian Toymaker Loth-Cat Plush", "Park Exclusive", "mid", 35),
+        ("galaxys_edge", "Galaxy's Edge Creature Stall Porg Puppet", "Park Exclusive", "mid", 45),
+        ("galaxys_edge", "Galaxy's Edge Creature Stall Kowakian Monkey-Lizard", "Park Exclusive", "mid", 50),
+        ("galaxys_edge", "Galaxy's Edge Ronto Roasters Souvenir Ronto Wrap Carrier", "Park Exclusive", "standard", 25),
+        ("galaxys_edge", "Galaxy's Edge Millennium Falcon Model (Exclusive)", "Park Exclusive", "high", 95),
+        ("galaxys_edge", "Galaxy's Edge Savi's Workshop Lightsaber Peace & Justice", "Park Exclusive", "high", 200),
+        ("galaxys_edge", "Galaxy's Edge Savi's Workshop Lightsaber Power & Control", "Park Exclusive", "high", 200),
+        ("galaxys_edge", "Galaxy's Edge Savi's Workshop Lightsaber Elemental Nature", "Park Exclusive", "high", 200),
+        ("galaxys_edge", "Galaxy's Edge Savi's Workshop Lightsaber Protection & Defense", "Park Exclusive", "high", 200),
+
+        # ── Marvel Disney Parks Exclusives — Deep Cuts ────────────────
+        ("marvel_parks", "Avengers Campus WEB Power Band (Interactive)", "Park Exclusive", "mid", 40),
+        ("marvel_parks", "Avengers Campus WEB Tech Backpack Spider-Bot Carrier", "Park Exclusive", "mid", 60),
+        ("marvel_parks", "Disney Parks Iron Man Arc Reactor Light-Up Replica", "Park Exclusive", "high", 80),
+        ("marvel_parks", "Disney Parks Doctor Strange Eye of Agamotto Replica", "Premium", "high", 130),
+        ("marvel_parks", "Disney Parks Black Panther Vibranium Gauntlet Replica", "Premium", "high", 110),
+        ("marvel_parks", "Disney Parks Loki Scepter Replica (LE 2500)", "LE 2500", "high", 150),
+        ("marvel_parks", "Disney Parks Thor Mjolnir Hammer Replica (Metal)", "Premium", "grail", 200),
+        ("marvel_parks", "Disney Parks Guardians Cosmic Rewind Spirit Jersey", "Park Exclusive", "mid", 70),
+        ("marvel_parks", "Disney Parks Spider-Man Webshooter Toy", "Park Exclusive", "mid", 35),
+        ("marvel_parks", "Avengers Campus Opening Day Spirit Jersey", "Park Exclusive", "high", 85),
+        ("marvel_parks", "Disney Parks Avengers Endgame Infinity Gauntlet (LE 3000)", "LE 3000", "grail", 280),
+        ("marvel_parks", "Disney Parks Marvel Pin Trading Starter Set (4pc)", "Standard", "standard", 20),
+        ("marvel_parks", "Disney Parks Groot Dancing Baby Groot Figurine", "Park Exclusive", "mid", 35),
+        ("marvel_parks", "Avengers Campus Captain America Shield Photo Prop", "Park Exclusive", "mid", 55),
+        ("marvel_parks", "Disney Parks Marvel Loungefly Avengers Backpack", "Park Exclusive", "high", 80),
+
+        # ── Spirit Jerseys — Deep Cuts ────────────────────────────────
+        ("ears", "Disney Parks Spirit Jersey Haunted Mansion Grim Grinning Ghosts", "Park Exclusive", "high", 85),
+        ("ears", "Disney Parks Spirit Jersey Figment One Little Spark", "Park Exclusive", "high", 90),
+        ("ears", "Disney Parks Spirit Jersey Pirates of the Caribbean", "Park Exclusive", "mid", 70),
+        ("ears", "Disney Parks Spirit Jersey Enchanted Tiki Room", "Park Exclusive", "mid", 70),
+        ("ears", "Disney Parks Spirit Jersey Jungle Cruise Skipper", "Park Exclusive", "mid", 65),
+        ("ears", "Disney Parks Spirit Jersey It's a Small World", "Park Exclusive", "mid", 65),
+        ("ears", "Disney Parks Spirit Jersey Space Mountain", "Park Exclusive", "mid", 65),
+        ("ears", "Disney Parks Spirit Jersey Twilight Zone Tower of Terror", "Park Exclusive", "high", 80),
+        ("ears", "Disney Parks Spirit Jersey Raya and the Last Dragon", "Park Exclusive", "mid", 65),
+        ("ears", "Disney Parks Spirit Jersey Wish Asha", "Park Exclusive", "mid", 60),
+
+        # ── Loungefly Bags — Park Exclusive Deep Cuts ─────────────────
+        ("loungefly", "Loungefly Disney Haunted Mansion Madame Leota Mini Backpack", "Park Exclusive", "high", 95),
+        ("loungefly", "Loungefly Disney Main Street Electrical Parade Backpack", "Park Exclusive", "high", 100),
+        ("loungefly", "Loungefly Disney Club 33 Exclusive Mini Backpack", "Club 33 Exclusive", "grail", 200),
+        ("loungefly", "Loungefly Disney Orange Bird Crossbody", "Park Exclusive", "high", 85),
+        ("loungefly", "Loungefly Disney Tron Legacy Mini Backpack", "Park Exclusive", "high", 80),
+        ("loungefly", "Loungefly Disney Wish Asha Sequin Mini Backpack", "Standard", "mid", 55),
+        ("loungefly", "Loungefly Disney Jungle Cruise Mini Backpack", "Park Exclusive", "high", 80),
+        ("loungefly", "Loungefly Disney Figment 3D Mini Backpack", "Park Exclusive", "high", 110),
+
+        # ── Disney Fine Art — Additional Artists ──────────────────────
+        ("fine_art", "Thomas Kinkade Tangled Rapunzel Tower Signed Canvas", "Signed Print", "grail", 450),
+        ("fine_art", "Thomas Kinkade Lion King Return to Pride Rock Canvas", "Limited Print", "high", 200),
+        ("fine_art", "Thomas Kinkade Little Mermaid Signed Canvas", "Signed Print", "grail", 480),
+        ("fine_art", "Rob Kaz 'Aloha Stitch' Giclee on Canvas", "Limited Print", "high", 160),
+        ("fine_art", "SHAG It's a Small World Serigraph", "Limited Print", "high", 170),
+        ("fine_art", "Rodel Gonzalez 'Together in Neverland' Giclee", "Limited Print", "high", 140),
+        ("fine_art", "Trevor Carlton 'Mickey's Grand Entrance' Giclee", "Limited Print", "high", 130),
+        ("fine_art", "Michael Humphries 'Walt's Dream' Giclee", "Limited Print", "high", 150),
+        ("fine_art", "Heather Edwards 'Haunted Mansion Ghosts' Giclee", "Limited Print", "high", 160),
+
+        # ── Disney Dooney & Bourke — Deep Cuts ────────────────────────
+        ("dooney_bourke", "Dooney & Bourke Disney Cinderella Castle Fireworks Satchel", "Park Exclusive", "high", 180),
+        ("dooney_bourke", "Dooney & Bourke Disney Haunted Mansion Wallpaper Tote", "Park Exclusive", "high", 170),
+        ("dooney_bourke", "Dooney & Bourke Disney Fantasia Sorcerer Mickey Tote", "Park Exclusive", "high", 175),
+        ("dooney_bourke", "Dooney & Bourke Disney Figment Rainbow Crossbody", "Park Exclusive", "high", 160),
+        ("dooney_bourke", "Dooney & Bourke Disney Aulani Exclusive Tote", "Park Exclusive", "high", 165),
+        ("dooney_bourke", "Dooney & Bourke Disney Hocus Pocus Satchel", "Seasonal", "high", 155),
+        ("dooney_bourke", "Dooney & Bourke Disney Encanto Mirabel Crossbody", "Standard", "high", 135),
+        ("dooney_bourke", "Dooney & Bourke Disney Stitch Pineapple Tote", "Standard", "high", 140),
+
+        # ── Disney Enchanted Fine Jewelry — Additional ────────────────
+        ("jewelry", "Enchanted Disney Rapunzel Sun Pendant Diamond Necklace", "Enchanted", "high", 170),
+        ("jewelry", "Enchanted Disney Snow White Poison Apple Ring", "Enchanted", "high", 140),
+        ("jewelry", "Enchanted Disney Mulan Flower Diamond Earrings", "Enchanted", "high", 155),
+        ("jewelry", "Enchanted Disney Tiana Lily Pad Diamond Ring", "Enchanted", "high", 165),
+        ("jewelry", "Enchanted Disney Moana Ocean Wave Diamond Pendant", "Enchanted", "high", 150),
+        ("jewelry", "Enchanted Disney Pocahontas Compass Diamond Necklace", "Enchanted", "high", 160),
+
+        # ── Disney Encanto & Wish Collectibles ────────────────────────
+        ("encanto", "Encanto Luisa Strongwoman Figurine", "Standard", "mid", 40),
+        ("encanto", "Encanto Antonio & Animals Figurine Set", "Standard", "mid", 45),
+        ("encanto", "Encanto Casita Music Box (We Don't Talk About Bruno)", "Limited", "high", 85),
+        ("encanto", "Encanto Designer Dolls Complete Set (5 Dolls)", "Designer LE", "grail", 350),
+        ("encanto", "Disney Wish Asha Star Wishing Figurine Set", "Standard", "mid", 40),
+        ("encanto", "Disney Wish Valentino Goat Plush (Park Exclusive)", "Park Exclusive", "mid", 35),
+        ("encanto", "Disney Wish Asha LE 5000 Doll", "LE 5000", "high", 95),
+
+        # ── Disney Popcorn Buckets — Additional Park Exclusives ───────
+        ("popcorn_buckets", "Figment Popcorn Bucket (2024 EPCOT Festival Redesign)", "Park Exclusive", "high", 130),
+        ("popcorn_buckets", "Tiana's Bayou Adventure Opening Day Popcorn Bucket", "Park Exclusive", "high", 90),
+        ("popcorn_buckets", "Baby Yoda Grogu Popcorn Bucket (Hollywood Studios)", "Park Exclusive", "mid", 65),
+        ("popcorn_buckets", "Stitch Pineapple Popcorn Bucket", "Park Exclusive", "mid", 55),
+        ("popcorn_buckets", "Orange Bird Popcorn Bucket (Adventureland)", "Park Exclusive", "high", 80),
+        ("popcorn_buckets", "Enchanted Tiki Room Pineapple Dole Whip Bucket", "Park Exclusive", "mid", 60),
+
+        # ── Disney Music Collectibles — Vinyl ─────────────────────────
+        ("music", "Encanto Soundtrack Vinyl (Butterfly Purple)", "Limited", "mid", 50),
+        ("music", "Wish Original Soundtrack Vinyl (Wishing Star Blue)", "Limited", "mid", 40),
+        ("music", "Lilo & Stitch Soundtrack Vinyl (Hawaiian Sunset)", "Limited", "mid", 55),
+        ("music", "Toy Story Complete Score Box Set Vinyl (4LP)", "Limited", "high", 120),
+        ("music", "The Jungle Book Soundtrack Vinyl (Jungle Green)", "Limited", "mid", 50),
+        ("music", "Raya and the Last Dragon Soundtrack Vinyl", "Limited", "mid", 40),
+
+        # ── Additional D23 & Convention Items ─────────────────────────
+        ("d23", "D23 Expo 2019 Exclusive Figment Dreamfinder Reunion Pin Set", "D23 LE 2019", "grail", 200),
+        ("d23", "D23 Expo 2024 Exclusive Tron Legacy LE Light Cycle Replica", "D23 LE 2024", "grail", 300),
+        ("d23", "D23 Expo 2024 Exclusive Disney Wish Movie Premiere Pin", "D23 LE 2024", "high", 90),
+        ("d23", "SDCC Disney Exclusive Haunted Mansion ReAction Figure Set", "SDCC Exclusive", "high", 120),
+        ("d23", "NYCC Disney Exclusive Nightmare Before Christmas Mondo Poster", "NYCC Exclusive", "high", 150),
+
+        # ── Disney Stitch Collection — Deep Cuts ──────────────────────
+        ("stitch", "Stitch Crashes Disney February (Sleeping Beauty) LE Pin", "LE Monthly", "mid", 45),
+        ("stitch", "Stitch Crashes Disney Complete Plush Set (12 Monthly)", "LE Monthly", "grail", 500),
+        ("stitch", "Stitch Crashes Disney Complete Spirit Jersey Set (12)", "LE Monthly", "grail", 600),
+        ("stitch", "Stitch 626 Experiment Pod Container Replica", "Limited", "high", 85),
+        ("stitch", "Stitch Aloha Festival Jim Shore Figurine", "Standard", "mid", 50),
+
+        # ── Additional Disney Parks Opening Day Items ─────────────────
+        ("parks", "Tiana's Bayou Adventure Opening Day 2024 LE Pin", "LE 3000", "high", 85),
+        ("parks", "Tiana's Bayou Adventure Opening Day Spirit Jersey", "Park Exclusive", "high", 80),
+        ("parks", "Lightning Lane Multi Pass Inaugural Commemorative Pin", "Park Exclusive", "mid", 40),
+        ("parks", "Disneyland Forward Expansion Announcement Commemorative Pin", "LE 2000", "high", 90),
+        ("parks", "Walt Disney World Tron Coaster Opening Day 2023 Spirit Jersey", "Park Exclusive", "mid", 70),
+        ("parks", "Epic Universe Opening Day 2025 Commemorative Pin", "LE 2000", "high", 100),
+    ]
+
+    result = []
+    for subcategory, name, edition, tier, price in variants:
+        result.append({
+            "subcategory": subcategory,
+            "name": name,
+            "edition": edition,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return result
+
+
 def item_to_catalog_item(item: dict) -> CatalogItem:
     name = item["name"]
     edition = item["edition"]
@@ -1716,6 +2040,13 @@ def item_to_price_observation(item: dict) -> PriceObservation:
         "shopDisney LE": 0.7, "Hallmark Exclusive": 0.55,
         "Store Exclusive": 0.6, "Swarovski LE": 0.9, "Funko Exclusive": 0.75,
         "Disney Traditions": 0.5,
+        "LE 333": 0.98, "LE 1901": 0.99, "LE 1942": 0.99,
+        "Club 33 Exclusive": 0.95, "SDCC Exclusive": 0.85,
+        "D23 LE 2019": 0.9, "D23 LE 2022": 0.9, "D23 LE 2024": 0.9,
+        "D23 Members Only": 0.8, "D23 Gold": 0.9, "D23 Expo": 0.85, "D23 LE": 0.85,
+        "Archival": 0.7, "Archives": 0.7, "Archives LE": 0.85,
+        "Sericel LE 500": 0.95, "Sericel LE 750": 0.9,
+        "Super Rare": 0.75,
         "Standard": 0.2,
     }
 
