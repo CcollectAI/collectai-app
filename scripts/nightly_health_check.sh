@@ -116,7 +116,37 @@ else
   warn "EC2 healthz unreachable from CI (expected — private network): $(echo "$EC2_HEALTH" | head -c 120)"
 fi
 
-# ── 7. NULL item_ref check (catches the bug we fixed today) ──────────────
+# ── 7. Event sources health (RSS feeds + APIs reachability) ──────────────
+echo ""
+echo "=== EVENT SOURCES ==="
+# Fetch events count from last 24h to verify event scraper is working
+EVENTS_24H=$(curl -sI "${SUPABASE_URL}/rest/v1/events?select=id&created_at=gte.$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-24H +%Y-%m-%dT%H:%M:%S 2>/dev/null)" \
+  -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+  -H "Prefer: count=exact" \
+  -H "Range: 0-0" 2>/dev/null | grep -i content-range | sed 's/.*\///;s/\r//')
+
+if [ -z "$EVENTS_24H" ] || [ "$EVENTS_24H" = "0" ]; then
+  warn "No new events in last 24h (event scraper may be stalled)"
+else
+  pass "$EVENTS_24H new events in last 24h"
+fi
+
+# Total events count
+EVENTS_TOTAL=$(curl -sI "${SUPABASE_URL}/rest/v1/events?select=id" \
+  -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+  -H "Prefer: count=exact" \
+  -H "Range: 0-0" 2>/dev/null | grep -i content-range | sed 's/.*\///;s/\r//')
+
+if [ -z "$EVENTS_TOTAL" ] || [ "$EVENTS_TOTAL" = "0" ]; then
+  fail "events table is empty"
+else
+  pass "events total: $EVENTS_TOTAL rows"
+  [ "$EVENTS_TOTAL" -lt 100 ] 2>/dev/null && warn "events total below 100 threshold"
+fi
+
+# ── 8. NULL item_ref check (catches the bug we fixed today) ──────────────
 echo ""
 echo "=== DATA INTEGRITY ==="
 NULL_REFS=$(curl -sI "${SUPABASE_URL}/rest/v1/market_hits?select=id&item_ref=is.null&processed=is.false" \

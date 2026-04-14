@@ -157,6 +157,11 @@ RSS_FEED_TARGETS: list[dict[str, Any]] = [
     # ── UK / Europe (verified) ───────────────────────────────────────
     {"feed_url": "https://www.japantimes.co.jp/feed/", "fallback_url": "https://www.japantimes.co.jp/", "category_id": None, "kind_default": "release", "description": "Japan Times (JP events/culture)"},
     {"feed_url": "https://www.geeknative.com/feed/", "fallback_url": "https://www.geeknative.com/", "category_id": None, "kind_default": "release", "description": "Geek Native UK (tabletop/collectibles)"},
+
+    # ── High-signal hobby blogs (verified + signal-filtered 2026-04-14) ──
+    {"feed_url": "https://jaysbrickblog.com/feed", "fallback_url": "https://jaysbrickblog.com/", "category_id": "lego", "kind_default": "release", "description": "Jays Brick Blog (LEGO drops)"},
+    {"feed_url": "https://www.hodinkee.com/articles.rss", "fallback_url": "https://www.hodinkee.com/articles", "category_id": "watches", "kind_default": "release", "description": "Hodinkee articles (watch releases)"},
+    {"feed_url": "https://blabbermouth.net/feed/", "fallback_url": "https://blabbermouth.net/", "category_id": "vinyl_records", "kind_default": "release", "description": "Blabbermouth (music/vinyl releases)"},
 ]
 
 
