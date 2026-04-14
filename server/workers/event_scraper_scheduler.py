@@ -81,6 +81,16 @@ async def run_once():
         logger.warning("MusicBrainz scraper failed: %s", e)
         errors.append(f"musicbrainz: {e}")
 
+    # 2c. Run Limitless TCG scraper (free, no key — TCG tournaments)
+    try:
+        from pipelines.limitless_tcg_events import run_limitless_scraper
+        lt_events = await run_limitless_scraper(dry_run=False)
+        logger.info("Limitless TCG scraper: %d events", len(lt_events))
+        total_events += len(lt_events)
+    except Exception as e:
+        logger.warning("Limitless TCG scraper failed: %s", e)
+        errors.append(f"limitless_tcg: {e}")
+
     # 3. Run newsletter scraper (if IMAP credentials configured)
     if os.getenv("SCRAPER_EMAIL_HOST"):
         try:
