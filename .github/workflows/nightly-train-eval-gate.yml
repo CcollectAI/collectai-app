@@ -48,7 +48,6 @@ jobs:
           DB_DSN: ${{ secrets.DB_DSN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           echo "Exporting unprocessed user feedback..."
           python -m pipelines.export_feedback
@@ -63,7 +62,7 @@ jobs:
           AWS_DEFAULT_REGION: eu-west-1
           ARTIFACT_BUCKET: collectai-models
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           CATEGORY="${{ github.event.inputs.category }}"
           FEEDBACK_FLAG=""
@@ -90,7 +89,7 @@ jobs:
         if: env.HAS_SECRETS == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           GATE_IMPROVE_PCT: "3"
         run: |
