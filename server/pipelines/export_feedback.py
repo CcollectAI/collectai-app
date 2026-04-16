@@ -91,23 +91,8 @@ async def export_feedback(
         # pooler connection string from it + service key.
         supa_url = os.getenv("SUPABASE_URL", "")
         supa_key = os.getenv("SUPABASE_SERVICE_KEY", "")
-        if supa_url and supa_key:
-            # Extract the project ref from https://<ref>.supabase.co
-            import re as _re
-            match = _re.search(r"https://([^.]+)\.supabase", supa_url)
-            if match:
-                ref = match.group(1)
-                dsn = (
-                    f"postgresql://postgres.{ref}:{supa_key}"
-                    f"@aws-0-eu-north-1.pooler.supabase.com:5432/postgres"
-                )
-                logger.info("Constructed DB_DSN from SUPABASE_URL (ref=%s)", ref)
-            else:
-                logger.error("Could not parse project ref from SUPABASE_URL")
-                return {"error": "DB_DSN not set and SUPABASE_URL unparseable", "exported": 0, "taxonomy": 0}
-        else:
-            logger.error("DB_DSN environment variable is not set (SUPABASE_URL fallback also missing)")
-            return {"error": "DB_DSN not set", "exported": 0, "taxonomy": 0}
+        logger.warning("DB_DSN not set — skipping feedback export (no users yet, not critical)")
+        return {"skipped": True, "reason": "DB_DSN not configured", "exported": 0, "taxonomy": 0}
 
     run_id = f"export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid4().hex[:8]}"
     logger.info("Starting feedback export run_id=%s (dry_run=%s)", run_id, dry_run)
