@@ -46,6 +46,7 @@ jobs:
           pip install httpx boto3 || true
 
       - name: Run import_all.py (all tiers)
+        working-directory: server
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
