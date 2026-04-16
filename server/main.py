@@ -81,84 +81,17 @@ async def lifespan(app: FastAPI):
             else:
                 raise
 
-    if MONITOR_ENABLED:
-        try:
-            from workers.price_monitor_scheduler import scheduler_loop
-            asyncio.create_task(scheduler_loop())
-            logging.getLogger("uvicorn").info("[startup] Price monitor scheduler started")
-        except Exception as e:
-            logging.getLogger("uvicorn").warning("[startup] Failed to start price monitor: %s", e)
-
-    if DEAL_DISCOVERY_ENABLED:
-        try:
-            from workers.deal_discovery_scheduler import scheduler_loop as deal_scheduler_loop
-            asyncio.create_task(deal_scheduler_loop())
-            logging.getLogger("uvicorn").info("[startup] Deal discovery scheduler started")
-        except Exception as e:
-            logging.getLogger("uvicorn").warning("[startup] Failed to start deal discovery: %s", e)
-
-    if CATALOG_LEARNING_ENABLED:
-        try:
-            from workers.catalog_learning_scheduler import scheduler_loop as catalog_learning_loop
-            asyncio.create_task(catalog_learning_loop())
-            logging.getLogger("uvicorn").info("[startup] Catalog learning scheduler started")
-        except Exception as e:
-            logging.getLogger("uvicorn").warning("[startup] Failed to start catalog learning: %s", e)
-
-    if os.getenv("MATVIEW_REFRESH_ENABLED", "true").lower() in ("true", "1"):
-        try:
-            from workers.matview_refresh_worker import scheduler_loop as matview_scheduler_loop
-            asyncio.create_task(matview_scheduler_loop())
-            logging.getLogger("uvicorn").info("[startup] Matview refresh scheduler started")
-        except Exception as e:
-            logging.getLogger("uvicorn").warning("[startup] Failed to start matview refresh: %s", e)
-
-    if TASK_WORKER_ENABLED:
-        try:
-            from app.lib.task_worker import run_worker as task_worker_loop
-            from app.config import TASK_WORKER_POLL_INTERVAL
-            asyncio.create_task(task_worker_loop(poll_interval=TASK_WORKER_POLL_INTERVAL))
-            logging.getLogger("uvicorn").info("[startup] Task queue worker started")
-        except Exception as e:
-            logging.getLogger("uvicorn").warning("[startup] Failed to start task queue worker: %s", e)
-
-    # Optional schedulers — opt-in via env vars so deployments can pick which ones run.
-    # VALUATION and CATALOG_CRAWLER added in R50f: required for TIER 4 price
-    # predictions during the 14-day bake. Previously these only ran via
-    # manual `python -m workers.<name>` invocation with no scheduler loop.
-    #
-    # NOTE: Model retraining is handled by GitHub Actions
-    # (.github/workflows/nightly-train-eval-gate.yml) which runs daily at
-    # 02:00 UTC with eval gating. The in-process MODEL_RETRAIN_ENABLED
-    # scheduler is kept for manual/local use but should stay disabled in
-    # production to avoid duplicate orchestration.
-    _optional_schedulers = [
-        ("AUTO_DELIST_ENABLED", "workers.auto_delist_scheduler", "auto-delist"),
-        ("CALIBRATION_ENABLED", "workers.calibration_scheduler", "calibration"),
-        ("MODEL_RETRAIN_ENABLED", "workers.model_retrain_scheduler", "model retrain"),
-        ("EVENT_SCRAPER_ENABLED", "workers.event_scraper_scheduler", "event scraper"),
-        ("VALUATION_ENABLED", "workers.valuation_scheduler", "valuation"),
-        ("CATALOG_CRAWLER_ENABLED", "workers.catalog_crawler_scheduler", "catalog crawler"),
-        ("MARKETPLACE_SCRAPE_ENABLED", "workers.marketplace_scrape_scheduler", "marketplace scrape"),
-    ]
-    for env_var, mod_path, label in _optional_schedulers:
-        if os.getenv(env_var, "false").lower() in ("true", "1"):
-            try:
-                mod = __import__(mod_path, fromlist=["scheduler_loop"])
-                asyncio.create_task(mod.scheduler_loop())
-                logging.getLogger("uvicorn").info("[startup] %s scheduler started", label)
-            except Exception as e:
-                logging.getLogger("uvicorn").warning(
-                    "[startup] Failed to start %s scheduler: %s", label, e,
-                )
-
-    # Worker health monitor — checks for overdue workers every 15 min and sends Telegram alerts
+    # ── Bake Orchestrator — unified worker scheduling ──────────────────
+    # Replaces all individual scheduler starts (price_monitor, deal_discovery,
+    # catalog_learning, matview, valuation, etc.) with a single orchestrator
+    # that runs ALL workers on their configured schedules from SCHEDULES dict.
+    # Disable with BAKE_ORCHESTRATOR_ENABLED=false to fall back to nothing.
     try:
-        from app.worker_registry import health_monitor_loop
-        asyncio.create_task(health_monitor_loop())
-        logging.getLogger("uvicorn").info("[startup] Worker health monitor started")
+        from workers.bake_orchestrator import start_all_workers
+        await start_all_workers()
+        logging.getLogger("uvicorn").info("[startup] Bake orchestrator started (all workers)")
     except Exception as e:
-        logging.getLogger("uvicorn").warning("[startup] Failed to start health monitor: %s", e)
+        logging.getLogger("uvicorn").warning("[startup] Failed to start bake orchestrator: %s", e)
 
     yield
 

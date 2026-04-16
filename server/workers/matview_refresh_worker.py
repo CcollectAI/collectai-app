@@ -54,14 +54,34 @@ MATVIEWS = [
 ]
 
 _shutdown = False
-_shutdown_event = asyncio.Event()
+_shutdown_event: asyncio.Event | None = None
+
+
+def _get_shutdown_event() -> asyncio.Event:
+    """Lazily create the shutdown event in the current event loop.
+
+    If the existing event is bound to a different loop (e.g. test teardown),
+    recreate it for the current loop.
+    """
+    global _shutdown_event
+    if _shutdown_event is None:
+        _shutdown_event = asyncio.Event()
+    else:
+        # On Python 3.10+ asyncio primitives are bound to the running loop.
+        # If the loop changed (common in tests), recreate.
+        try:
+            _shutdown_event._get_loop()  # type: ignore[attr-defined]
+        except RuntimeError:
+            _shutdown_event = asyncio.Event()
+    return _shutdown_event
 
 
 def _handle_signal(sig, _frame):
     global _shutdown
     logger.info("Received signal %s, shutting down...", sig)
     _shutdown = True
-    _shutdown_event.set()
+    evt = _get_shutdown_event()
+    evt.set()
 
 
 @with_async_retry(max_retries=2, base_delay=5.0, max_delay=30.0)
@@ -145,7 +165,7 @@ async def _demand_loop():
             record_run("matview_demand", "error")
             logger.exception("demand refresh crashed: %r", e)
         try:
-            await asyncio.wait_for(_shutdown_event.wait(), timeout=DEMAND_INTERVAL)
+            await asyncio.wait_for(_get_shutdown_event().wait(), timeout=DEMAND_INTERVAL)
             break  # shutdown was signaled
         except asyncio.TimeoutError:
             pass  # normal timeout, continue to next iteration
@@ -161,7 +181,7 @@ async def _supply_loop():
             record_run("matview_supply", "error")
             logger.exception("supply refresh crashed: %r", e)
         try:
-            await asyncio.wait_for(_shutdown_event.wait(), timeout=SUPPLY_INTERVAL)
+            await asyncio.wait_for(_get_shutdown_event().wait(), timeout=SUPPLY_INTERVAL)
             break  # shutdown was signaled
         except asyncio.TimeoutError:
             pass  # normal timeout, continue to next iteration

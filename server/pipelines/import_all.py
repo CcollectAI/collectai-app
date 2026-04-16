@@ -22,6 +22,7 @@ import importlib
 import json
 import sqlite3
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -110,10 +111,13 @@ ALL_TIERS = {1: TIER_1, 2: TIER_2, 3: TIER_3, 4: TIER_4}
 
 CHECKPOINT_DB = Path(__file__).resolve().parent.parent / "data" / ".import_checkpoint.db"
 
+# Thread-safety lock for SQLite checkpoint writes when --parallel > 1
+_checkpoint_lock = threading.Lock()
+
 
 def _init_checkpoint_db() -> sqlite3.Connection:
     CHECKPOINT_DB.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(CHECKPOINT_DB))
+    conn = sqlite3.connect(str(CHECKPOINT_DB), check_same_thread=False)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS checkpoints (
             run_id TEXT NOT NULL,
@@ -132,32 +136,35 @@ def _init_checkpoint_db() -> sqlite3.Connection:
 def _mark_checkpoint(conn: sqlite3.Connection, run_id: str, category: str,
                      status: str, error_msg: str = "") -> None:
     now = datetime.now().isoformat()
-    if status == "running":
-        conn.execute(
-            "INSERT OR REPLACE INTO checkpoints (run_id, category, status, started_at) VALUES (?, ?, ?, ?)",
-            (run_id, category, status, now),
-        )
-    else:
-        conn.execute(
-            "UPDATE checkpoints SET status = ?, finished_at = ?, error_msg = ? WHERE run_id = ? AND category = ?",
-            (status, now, error_msg, run_id, category),
-        )
-    conn.commit()
+    with _checkpoint_lock:
+        if status == "running":
+            conn.execute(
+                "INSERT OR REPLACE INTO checkpoints (run_id, category, status, started_at) VALUES (?, ?, ?, ?)",
+                (run_id, category, status, now),
+            )
+        else:
+            conn.execute(
+                "UPDATE checkpoints SET status = ?, finished_at = ?, error_msg = ? WHERE run_id = ? AND category = ?",
+                (status, now, error_msg, run_id, category),
+            )
+        conn.commit()
 
 
 def _get_completed_categories(conn: sqlite3.Connection, run_id: str) -> set[str]:
-    rows = conn.execute(
-        "SELECT category FROM checkpoints WHERE run_id = ? AND status = 'success'",
-        (run_id,),
-    ).fetchall()
-    return {r[0] for r in rows}
+    with _checkpoint_lock:
+        rows = conn.execute(
+            "SELECT category FROM checkpoints WHERE run_id = ? AND status = 'success'",
+            (run_id,),
+        ).fetchall()
+        return {r[0] for r in rows}
 
 
 def _get_latest_run_id(conn: sqlite3.Connection) -> str | None:
-    row = conn.execute(
-        "SELECT DISTINCT run_id FROM checkpoints ORDER BY run_id DESC LIMIT 1"
-    ).fetchone()
-    return row[0] if row else None
+    with _checkpoint_lock:
+        row = conn.execute(
+            "SELECT DISTINCT run_id FROM checkpoints ORDER BY run_id DESC LIMIT 1"
+        ).fetchone()
+        return row[0] if row else None
 
 
 # ---------------------------------------------------------------------------
