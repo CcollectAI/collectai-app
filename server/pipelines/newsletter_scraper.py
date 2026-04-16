@@ -34,6 +34,20 @@ from email.header import decode_header
 from pathlib import Path
 from typing import Any, Optional
 
+
+def _compose_starts_at(date_str: Optional[str], time_str: Optional[str]) -> Optional[str]:
+    """Combine date (YYYY-MM-DD) and optional time (HH:MM) into ISO timestamp (UTC)."""
+    if not date_str:
+        return None
+    try:
+        if time_str:
+            dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+        else:
+            dt = datetime.strptime(date_str, "%Y-%m-%d")
+        return dt.replace(tzinfo=timezone.utc).isoformat()
+    except (ValueError, TypeError):
+        return None
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -1089,10 +1103,14 @@ class EventUpserter:
         All fields are always included (as None if unset) — PostgREST batch
         upsert requires every object in a batch to have the same keys.
         """
+        starts_at = _compose_starts_at(event.date, event.time)
+        ends_at = _compose_starts_at(event.end_date, None) if event.end_date else None
         return {
             "title": event.title,
             "kind": event.kind,
             "date": event.date,
+            "starts_at": starts_at,
+            "ends_at": ends_at,
             "source": source,
             "category_id": event.category_id,
             "time": event.time,

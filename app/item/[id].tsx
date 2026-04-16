@@ -74,6 +74,8 @@ import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
 import { ItemEditBar } from '@/components/item/ItemEditBar';
 import { ItemPriceSection } from '@/components/item/ItemPriceSection';
 import { ItemNotesEditor } from '@/components/item/ItemNotesEditor';
+import { PriceTrendChart } from '@/components/PriceTrendChart';
+import { SellTimingBadge } from '@/components/SellTimingBadge';
 // Pull from single source of truth — all 36 categories
 import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG, GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
 // DossierData and MarketHit types imported from extracted components
@@ -743,7 +745,15 @@ function ItemDetailScreen() {
               />
             )}
 
-            {/* Price History section removed — data available via Full Report and Market Prices */}
+            {/* Price Trend Chart — shows q50 line with q10-q90 confidence band */}
+            {!isDraft && id && (
+              <PriceTrendChart itemId={id} />
+            )}
+
+            {/* Sell Timing Badge — stub, gated behind Premium */}
+            {!isDraft && id && (
+              <SellTimingBadge itemId={id} />
+            )}
 
             {/* Item History — collapsible */}
             {!isDraft && id && (

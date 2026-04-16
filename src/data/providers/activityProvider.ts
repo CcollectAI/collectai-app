@@ -59,7 +59,8 @@ export async function unifiedSearch(query: string, limit = 5) {
         itemKey: (c.item_key ?? c.itemKey) as string,
         title: c.title as string,
         brand: (c.brand ?? null) as string | null,
-        imageUrl: (c.image_url ?? c.imageUrl ?? null) as string | null,
+        // R50k: catalog reference images backend-only
+        hasReferenceImage: Boolean(c.has_reference_image ?? false),
       })),
       users: ((resp.users as Record<string, unknown>[]) || []).map((u) => ({
         id: u.id as string,

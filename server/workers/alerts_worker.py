@@ -32,25 +32,26 @@ DSN = os.getenv("DB_DSN")
 # items to get the owner, filters for low-value (q50 < 10), and excludes
 # items that already had a low_value alert fired in the last 24 hours.
 _BATCH_QUERY = """
-SELECT DISTINCT ON (pp.item_id)
-    pp.item_id,
+SELECT DISTINCT ON (pp.item_ref)
+    pp.item_ref,
     pp.q10,
     pp.q50,
     pp.q90,
     i.user_id
 FROM public.price_predictions pp
-JOIN public.items i ON i.id = pp.item_id
+JOIN public.items i ON i.canonical_key = pp.item_ref
 WHERE pp.q50 IS NOT NULL
   AND pp.q50 < 10
+  AND pp.item_ref IS NOT NULL
   AND i.user_id IS NOT NULL
   AND NOT EXISTS (
       SELECT 1 FROM public.alert_trigger_history ath
       WHERE ath.user_id = i.user_id
-        AND ath.item_id = pp.item_id::text
+        AND ath.item_id = pp.item_ref
         AND ath.trigger_type = 'low_value'
         AND ath.created_at > now() - interval '24 hours'
   )
-ORDER BY pp.item_id, pp.asof DESC
+ORDER BY pp.item_ref, pp.generated_at DESC
 LIMIT 50
 """
 
@@ -67,7 +68,7 @@ async def run_once():
 
         fired = 0
         for r in rows:
-            item_id = r["item_id"]
+            item_id = r["item_ref"]
             owner = r["user_id"]
             mid = r["q50"]
 

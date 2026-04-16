@@ -101,13 +101,13 @@ async def portfolio_timeseries(
             rows = await conn.fetch(
                 """
                 SELECT
-                    DATE(pp.asof) AS day,
+                    DATE(pp.generated_at) AS day,
                     COALESCE(SUM(pp.q50), 0) AS total_value
                 FROM price_predictions pp
-                JOIN items i ON i.id = pp.item_id
+                JOIN items i ON i.canonical_key = pp.item_ref
                 WHERE i.user_id = $1
-                  AND pp.asof >= $2
-                GROUP BY DATE(pp.asof)
+                  AND pp.generated_at >= $2
+                GROUP BY DATE(pp.generated_at)
                 ORDER BY day ASC
                 """,
                 user_id,
@@ -152,29 +152,29 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
             rows = await conn.fetch(
                 """
                 WITH latest AS (
-                    SELECT DISTINCT ON (pp.item_id)
-                        pp.item_id, pp.q50, pp.asof
+                    SELECT DISTINCT ON (pp.item_ref)
+                        pp.item_ref, pp.q50, pp.generated_at
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
+                    JOIN items i ON i.canonical_key = pp.item_ref
                     WHERE i.user_id = $1
-                    ORDER BY pp.item_id, pp.asof DESC
+                    ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
                 prev AS (
-                    SELECT DISTINCT ON (pp.item_id)
-                        pp.item_id, pp.q50 AS prev_q50
+                    SELECT DISTINCT ON (pp.item_ref)
+                        pp.item_ref, pp.q50 AS prev_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
+                    JOIN items i ON i.canonical_key = pp.item_ref
                     WHERE i.user_id = $1
-                      AND pp.asof < CURRENT_DATE
-                    ORDER BY pp.item_id, pp.asof DESC
+                      AND pp.generated_at < CURRENT_DATE
+                    ORDER BY pp.item_ref, pp.generated_at DESC
                 )
                 SELECT
                     i.id, i.name, i.category,
                     COALESCE(l.q50, 0) AS current_value,
                     COALESCE(p.prev_q50, l.q50, 0) AS prev_value
                 FROM items i
-                LEFT JOIN latest l ON l.item_id = i.id
-                LEFT JOIN prev p ON p.item_id = i.id
+                LEFT JOIN latest l ON l.item_ref = i.canonical_key
+                LEFT JOIN prev p ON p.item_ref = i.canonical_key
                 WHERE i.user_id = $1
                 ORDER BY COALESCE(l.q50, 0) DESC
                 """,
@@ -230,20 +230,20 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
             rows = await conn.fetch(
                 """
                 WITH latest AS (
-                    SELECT DISTINCT ON (pp.item_id)
-                        pp.item_id, pp.q50, pp.q10, pp.q90
+                    SELECT DISTINCT ON (pp.item_ref)
+                        pp.item_ref, pp.q50, pp.q10, pp.q90
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
+                    JOIN items i ON i.canonical_key = pp.item_ref
                     WHERE i.user_id = $1
-                    ORDER BY pp.item_id, pp.asof DESC
+                    ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
                 earliest AS (
-                    SELECT DISTINCT ON (pp.item_id)
-                        pp.item_id, pp.q50 AS first_q50
+                    SELECT DISTINCT ON (pp.item_ref)
+                        pp.item_ref, pp.q50 AS first_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
+                    JOIN items i ON i.canonical_key = pp.item_ref
                     WHERE i.user_id = $1
-                    ORDER BY pp.item_id, pp.asof ASC
+                    ORDER BY pp.item_ref, pp.generated_at ASC
                 )
                 SELECT
                     i.id, i.name, i.category,
@@ -252,8 +252,8 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     COALESCE(l.q90, 0) AS q90,
                     COALESCE(e.first_q50, 0) AS cost_basis
                 FROM items i
-                LEFT JOIN latest l ON l.item_id = i.id
-                LEFT JOIN earliest e ON e.item_id = i.id
+                LEFT JOIN latest l ON l.item_ref = i.canonical_key
+                LEFT JOIN earliest e ON e.item_ref = i.canonical_key
                 WHERE i.user_id = $1
                 ORDER BY COALESCE(l.q50, 0) DESC
                 """,
@@ -300,8 +300,8 @@ async def portfolio_summary(user_id: str = Depends(get_current_user_id)) -> dict
                     FROM items i
                     LEFT JOIN LATERAL (
                         SELECT q50 FROM price_predictions pp
-                        WHERE pp.item_id = i.id
-                        ORDER BY pp.asof DESC LIMIT 1
+                        WHERE pp.item_ref = i.canonical_key
+                        ORDER BY pp.generated_at DESC LIMIT 1
                     ) lp ON TRUE
                     WHERE i.user_id = $1
                     """,
@@ -370,21 +370,21 @@ async def portfolio_category_stats(
             rows = await conn.fetch(
                 """
                 WITH latest AS (
-                    SELECT DISTINCT ON (pp.item_id)
-                        pp.item_id, pp.q50, pp.asof
+                    SELECT DISTINCT ON (pp.item_ref)
+                        pp.item_ref, pp.q50, pp.generated_at
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
+                    JOIN items i ON i.canonical_key = pp.item_ref
                     WHERE i.user_id = $1
-                    ORDER BY pp.item_id, pp.asof DESC
+                    ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
                 prev_7d AS (
-                    SELECT DISTINCT ON (pp.item_id)
-                        pp.item_id, pp.q50 AS q50_7d
+                    SELECT DISTINCT ON (pp.item_ref)
+                        pp.item_ref, pp.q50 AS q50_7d
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
+                    JOIN items i ON i.canonical_key = pp.item_ref
                     WHERE i.user_id = $1
-                      AND pp.asof <= NOW() - INTERVAL '7 days'
-                    ORDER BY pp.item_id, pp.asof DESC
+                      AND pp.generated_at <= NOW() - INTERVAL '7 days'
+                    ORDER BY pp.item_ref, pp.generated_at DESC
                 )
                 SELECT
                     i.category,
@@ -394,8 +394,8 @@ async def portfolio_category_stats(
                     COALESCE(SUM(l.q50), 0) - COALESCE(SUM(p.q50_7d), 0) AS change_7d,
                     MAX(l.q50) AS max_item_value
                 FROM items i
-                LEFT JOIN latest l ON l.item_id = i.id
-                LEFT JOIN prev_7d p ON p.item_id = i.id
+                LEFT JOIN latest l ON l.item_ref = i.canonical_key
+                LEFT JOIN prev_7d p ON p.item_ref = i.canonical_key
                 WHERE i.user_id = $1
                   AND i.category IS NOT NULL
                 GROUP BY i.category
@@ -459,13 +459,13 @@ async def category_health(
                 daily_vals AS (
                     SELECT
                         i.category,
-                        DATE(pp.asof) AS day,
+                        DATE(pp.generated_at) AS day,
                         SUM(pp.q50) AS day_val
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
+                    JOIN items i ON i.canonical_key = pp.item_ref
                     WHERE i.user_id = $1
-                      AND pp.asof >= NOW() - INTERVAL '30 days'
-                    GROUP BY i.category, DATE(pp.asof)
+                      AND pp.generated_at >= NOW() - INTERVAL '30 days'
+                    GROUP BY i.category, DATE(pp.generated_at)
                 ),
                 stats AS (
                     SELECT

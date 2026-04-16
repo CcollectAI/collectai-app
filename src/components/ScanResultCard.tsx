@@ -28,7 +28,6 @@ import { featureFlags } from '@/config/featureFlags';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { track } from '@/analytics/track';
 import { useTranslation } from 'react-i18next';
-import { CatalogImage } from '@/components/CatalogImage';
 import { ScanFeedbackPanel } from '@/components/quickscan/ScanFeedbackPanel';
 import { ScanSocialProof } from '@/components/quickscan/ScanSocialProof';
 import { ConditionGradeSelector } from '@/components/quickscan/ConditionGradeSelector';
@@ -506,12 +505,6 @@ function ScanResultCardInner({
                       <Ionicons name="checkmark" size={10} color="#FFFFFF" />
                     </View>
                   )}
-                  <CatalogImage
-                    uri={alt.imageUrl}
-                    style={styles.altImage}
-                    fallbackIcon="image-outline"
-                    accessibilityLabel={t('scan.image_of_a11y', { title: alt.title ?? t('scan.unknown') })}
-                  />
                   <View style={styles.altInfo}>
                     <Text style={[styles.altTitle, { color: colors.text }]} numberOfLines={2}>
                       {alt.title ?? t('scan.unknown')}

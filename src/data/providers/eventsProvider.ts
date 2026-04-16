@@ -123,8 +123,8 @@ export async function listEvents(pagination?: PaginationParams): Promise<Collect
   const limit = pagination?.limit ?? API_LIMITS.ALERTS_DEFAULT;
   const offset = pagination?.offset ?? 0;
   const { data, error } = await supabase.rpc('rpc_list_personalized_events_v1', {
-    p_limit: limit,
-    p_offset: offset,
+    p_category_id: null,
+    p_include_past: false,
   });
 
   if (error) {
@@ -132,7 +132,8 @@ export async function listEvents(pagination?: PaginationParams): Promise<Collect
     throw new Error(error.message || 'Failed to load events');
   }
 
-  return (data ?? []).map((row: Record<string, unknown>) => mapEventRow(row));
+  const all = (data ?? []).map((row: Record<string, unknown>) => mapEventRow(row));
+  return all.slice(offset, offset + limit);
 }
 
 export async function createEvent(input: CreateEventInput): Promise<CollectorsEvent> {

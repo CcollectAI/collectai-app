@@ -118,8 +118,10 @@ async def unified_search(
             items = [dict(r) for r in item_rows] if item_rows else []
 
             # Search catalog items (category_items — public catalog)
+            # R50k: image_url kept backend-only; API returns has_reference_image only
             catalog_rows = await conn.fetch(
-                """SELECT id, category, item_key, title, brand, image_url
+                """SELECT id, category, item_key, title, brand,
+                          (image_url IS NOT NULL) AS has_reference_image
                    FROM category_items
                    WHERE title ILIKE $1
                    ORDER BY title ASC

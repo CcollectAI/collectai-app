@@ -385,7 +385,7 @@ async def export_insurance_report(
                 """
                 SELECT
                     i.id,
-                    COALESCE(i.title, i.normalized_key, '') AS title,
+                    COALESCE(i.title, i.canonical_key, '') AS title,
                     COALESCE(i.category, '')                 AS category,
                     COALESCE(i.condition, '')                AS condition,
                     COALESCE(i.grade, '')                    AS grade,

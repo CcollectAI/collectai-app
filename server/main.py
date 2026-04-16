@@ -192,6 +192,7 @@ from app.features.export_router import router as export_router
 from app.features.marketplace_listing_router import router as marketplace_listing_router
 from app.features.chat_router import router as chat_router
 from app.features.admin_health_router import router as admin_health_router
+from app.features.sell_timing_router import router as sell_timing_router
 
 # ---------------------------------------------------------------------------
 # Register routers
@@ -263,6 +264,7 @@ app.include_router(marketplace_listing_router)
 app.include_router(chat_router)
 app.include_router(admin_health_router)
 app.include_router(value_summary_router.router)
+app.include_router(sell_timing_router)
 
 # Twitch (optional)
 try:
@@ -317,6 +319,7 @@ _v1.include_router(grading_router)
 _v1.include_router(export_router)
 _v1.include_router(marketplace_listing_router)
 _v1.include_router(chat_router)
+_v1.include_router(sell_timing_router)
 app.include_router(_v1)
 
 # ---------------------------------------------------------------------------

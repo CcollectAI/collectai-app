@@ -66,6 +66,8 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("auction_alert_worker",    "workers.auction_alert_worker",       "run_once", True),
     # ── Aggregate catalog attributes (data flywheel) ──
     ("aggregate_catalog_attributes", "workers.aggregate_catalog_attributes", "run_once", False),
+    # ── Feedback loop (label_events → catalog) ──
+    ("feedback_loop_worker",    "workers.feedback_loop_worker",       "run_once", True),
 
     # ── Workers with their own scheduler_loop (matview has split intervals) ──
     # matview_refresh uses its own scheduler_loop with demand/supply split

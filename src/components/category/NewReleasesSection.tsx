@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
@@ -14,7 +14,6 @@ import logger from '@/utils/logger';
 type NewItem = {
   id: string;
   title: string;
-  image_url?: string;
   estimated_price?: number;
   year?: string;
 };
@@ -38,7 +37,6 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
         setItems(arr.slice(0, 6).map((i) => ({
           id: i.id,
           title: i.title,
-          image_url: i.image_url ?? undefined,
           estimated_price: i.estimated_price ?? undefined,
         })));
       })
@@ -64,13 +62,9 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
             accessibilityRole="button"
             accessibilityLabel={item.title}
           >
-            {item.image_url ? (
-              <Image source={{ uri: item.image_url }} style={styles.image} />
-            ) : (
-              <View style={[styles.imagePlaceholder, { backgroundColor: colors.accent + '18' }]}>
-                <Ionicons name="cube-outline" size={20} color={colors.accent} />
-              </View>
-            )}
+            <View style={[styles.imagePlaceholder, { backgroundColor: colors.accent + '18' }]}>
+              <Ionicons name="cube-outline" size={20} color={colors.accent} />
+            </View>
             <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={2}>
               {item.title}
             </Text>

@@ -71,16 +71,20 @@ async def _get_stale_items(conn, batch_size: int):
 
 
 async def _scrape_item(agent, item_key: str, title: str, category: str):
-    """Search for a single item using free adapters only."""
+    """Search for a single item using free adapters only, then persist hits."""
     try:
-        results = await agent.find_sold_comps(
+        result = await agent.find_sold_comps(
             query=title,
             category=category,
-            max_results=20,
+            limit=20,
         )
-        if results:
-            logger.info("  %s: %d hits", item_key[:40], len(results))
-        return len(results) if results else 0
+        hits = getattr(result, "hits", []) or []
+        if not hits:
+            return 0
+        normalized_key = f"{category}:{item_key}"
+        inserted = await agent.persist_comps_to_db(result, normalized_key=normalized_key, category=category)
+        logger.info("  %s: %d hits, %d persisted", item_key[:40], len(hits), inserted)
+        return inserted
     except Exception as e:
         logger.warning("  %s: error %s", item_key[:40], e)
         return 0

@@ -10,7 +10,6 @@ import React from 'react';
 import {
   View,
   Text,
-  Image,
   TextInput,
   ActivityIndicator,
   StyleSheet,
@@ -19,7 +18,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { CatalogImage } from '@/components/CatalogImage';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -31,7 +29,8 @@ export type CatalogItemData = {
   brand: string | null;
   rarity: string | null;
   notes: string | null;
-  image_url: string | null;
+  // R50k: catalog reference images are backend-only
+  has_reference_image?: boolean;
   external_id: string | null;
   set_code: string | null;
   estimated_price: number | null;
@@ -156,15 +155,6 @@ function CatalogBrowseSectionInner({
                   key={cItem.id}
                   style={[s.catalogItemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 >
-                  {/* Thumbnail */}
-                  <CatalogImage
-                    uri={cItem.image_url}
-                    style={s.catalogItemThumb}
-                    fallbackIcon="cube-outline"
-                    fallbackBackground={accentColor + '10'}
-                    fallbackIconColor={accentColor}
-                  />
-
                   {/* Item info */}
                   <View style={s.catalogItemInfo}>
                     <Text style={[s.catalogItemTitle, { color: colors.text }]} numberOfLines={1}>

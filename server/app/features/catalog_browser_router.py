@@ -44,7 +44,7 @@ class CatalogItem(BaseModel):
     brand: Optional[str] = None
     rarity: Optional[str] = None
     notes: Optional[str] = None
-    image_url: Optional[str] = None
+    has_reference_image: bool = False  # R50k: image_url kept backend-only for intake/QuickScan matching
     external_id: Optional[str] = None
     set_code: Optional[str] = None
     estimated_price: Optional[float] = None
@@ -165,7 +165,7 @@ async def browse_catalog_items(
             brand=r["brand"],
             rarity=r["rarity"],
             notes=r["notes"],
-            image_url=r["image_url"],
+            has_reference_image=bool(r["image_url"]),
             external_id=r["external_id"],
             set_code=r["set_code"],
             estimated_price=price_map.get(r["item_key"]),

@@ -245,7 +245,7 @@ export async function quickscanSingle(imageUri?: string): Promise<QuickScanResul
       brand: alt.brand ?? null,
       rarity: alt.rarity ?? null,
       setCode: alt.set_code ?? null,
-      imageUrl: alt.image_url ?? null,
+      hasReferenceImage: alt.has_reference_image ?? false,
       matchScore: alt.match_score ?? 0,
       matchReason: alt.match_reason ?? null,
     }));

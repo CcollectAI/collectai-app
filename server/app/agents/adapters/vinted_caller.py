@@ -89,6 +89,24 @@ def _normalize_item(item: Dict[str, Any], is_sold: bool = False) -> Dict[str, An
     # URL
     url = item.get("url") or f"https://www.vinted.fr/items/{item_id}"
 
+    # Extract structured attributes from Vinted filter facets
+    attrs: Dict[str, Any] = {}
+    if condition:
+        attrs["condition"] = condition
+    brand = item.get("brand_title") or item.get("brand")
+    if brand and isinstance(brand, str):
+        attrs["brand"] = brand
+    size = item.get("size_title") or item.get("size")
+    if size and isinstance(size, str):
+        attrs["size"] = size
+    color = item.get("color1") or item.get("color")
+    if color and isinstance(color, str):
+        attrs["color"] = color
+    # Vinted category_id is a numeric taxonomy ID — keep under raw
+    cat_id = item.get("catalog_id") or item.get("category_id")
+    if cat_id:
+        attrs.setdefault("attributes_raw", {})["vinted_catalog_id"] = cat_id
+
     return {
         "source": "vinted",
         "raw_id": f"vinted-{item_id}",
@@ -102,6 +120,7 @@ def _normalize_item(item: Dict[str, Any], is_sold: bool = False) -> Dict[str, An
         "image_url": image_url,
         "is_sold": is_sold,
         "sold_at": item.get("sold_at") or item.get("updated_at") if is_sold else None,
+        "attributes": attrs,
     }
 
 

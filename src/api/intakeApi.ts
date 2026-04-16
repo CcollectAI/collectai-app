@@ -143,7 +143,8 @@ export const browseCatalogItems = (categoryId: string, opts?: {
       brand: string | null;
       rarity: string | null;
       notes: string | null;
-      image_url: string | null;
+      // R50k: catalog reference images backend-only
+      has_reference_image?: boolean;
       external_id: string | null;
       set_code: string | null;
       estimated_price: number | null;

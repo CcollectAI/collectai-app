@@ -295,35 +295,35 @@ async def get_home_widget(
             row = await conn.fetchrow(
                 """
                 WITH latest AS (
-                    SELECT DISTINCT ON (pp.item_id)
-                        pp.item_id,
+                    SELECT DISTINCT ON (pp.item_ref)
+                        pp.item_ref,
                         pp.q50 AS latest_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
+                    JOIN items i ON i.canonical_key = pp.item_ref
                     WHERE i.user_id = $1
-                    ORDER BY pp.item_id, pp.asof DESC
+                    ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
                 prev AS (
-                    SELECT DISTINCT ON (pp.item_id)
-                        pp.item_id,
+                    SELECT DISTINCT ON (pp.item_ref)
+                        pp.item_ref,
                         pp.q50 AS prev_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
+                    JOIN items i ON i.canonical_key = pp.item_ref
                     WHERE i.user_id = $1
-                      AND pp.asof <= $2
-                    ORDER BY pp.item_id, pp.asof DESC
+                      AND pp.generated_at <= $2
+                    ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
                 combined AS (
                     SELECT
-                        l.item_id,
+                        l.item_ref,
                         l.latest_q50,
                         COALESCE(p.prev_q50, l.latest_q50) AS prev_q50,
                         ABS(l.latest_q50 - COALESCE(p.prev_q50, l.latest_q50)) AS abs_change
                     FROM latest l
-                    LEFT JOIN prev p ON p.item_id = l.item_id
+                    LEFT JOIN prev p ON p.item_ref = l.item_ref
                 ),
                 mover AS (
-                    SELECT item_id, latest_q50, prev_q50
+                    SELECT item_ref, latest_q50, prev_q50
                     FROM combined
                     ORDER BY abs_change DESC
                     LIMIT 1
@@ -332,8 +332,8 @@ async def get_home_widget(
                     COALESCE(SUM(c.latest_q50), 0)   AS collection_value,
                     COALESCE(SUM(c.prev_q50), 0)     AS yesterday_value,
                     COALESCE(
-                        (SELECT COALESCE(i.title, i.normalized_key, i.id::text)
-                         FROM mover m JOIN items i ON i.id = m.item_id),
+                        (SELECT COALESCE(i.title, i.canonical_key, i.id::text)
+                         FROM mover m JOIN items i ON i.canonical_key = m.item_ref),
                         '--'
                     ) AS biggest_mover_name,
                     COALESCE(

@@ -95,13 +95,13 @@ async def get_collection_trends(
             ts_rows = await conn.fetch(
                 """
                 SELECT
-                    date_trunc('day', pp.asof) AS day,
+                    date_trunc('day', pp.generated_at) AS day,
                     SUM(pp.q50)                AS total_value
                 FROM price_predictions pp
-                JOIN items i ON i.id = pp.item_id
+                JOIN items i ON i.canonical_key = pp.item_ref
                 WHERE i.user_id = $1
-                  AND pp.asof >= $2
-                GROUP BY date_trunc('day', pp.asof)
+                  AND pp.generated_at >= $2
+                GROUP BY date_trunc('day', pp.generated_at)
                 ORDER BY day
                 """,
                 user_id,
@@ -121,9 +121,9 @@ async def get_collection_trends(
                         i.category,
                         pp.q50 AS first_value
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
-                    WHERE i.user_id = $1 AND pp.asof >= $2
-                    ORDER BY i.id, pp.asof ASC
+                    JOIN items i ON i.canonical_key = pp.item_ref
+                    WHERE i.user_id = $1 AND pp.generated_at >= $2
+                    ORDER BY i.id, pp.generated_at ASC
                 ),
                 latest AS (
                     SELECT DISTINCT ON (i.id)
@@ -131,9 +131,9 @@ async def get_collection_trends(
                         i.category,
                         pp.q50 AS last_value
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
-                    WHERE i.user_id = $1 AND pp.asof >= $2
-                    ORDER BY i.id, pp.asof DESC
+                    JOIN items i ON i.canonical_key = pp.item_ref
+                    WHERE i.user_id = $1 AND pp.generated_at >= $2
+                    ORDER BY i.id, pp.generated_at DESC
                 )
                 SELECT
                     e.category,
@@ -308,23 +308,23 @@ async def get_portfolio_category_breakdown(
             rows = await conn.fetch(
                 """
                 WITH latest_pred AS (
-                    SELECT DISTINCT ON (pp.item_id)
-                        pp.item_id,
+                    SELECT DISTINCT ON (pp.item_ref)
+                        pp.item_ref,
                         pp.q50,
-                        pp.asof
+                        pp.generated_at
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
+                    JOIN items i ON i.canonical_key = pp.item_ref
                     WHERE i.user_id = $1
-                    ORDER BY pp.item_id, pp.asof DESC
+                    ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
                 earliest_pred AS (
-                    SELECT DISTINCT ON (pp.item_id)
-                        pp.item_id,
+                    SELECT DISTINCT ON (pp.item_ref)
+                        pp.item_ref,
                         pp.q50 AS first_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
+                    JOIN items i ON i.canonical_key = pp.item_ref
                     WHERE i.user_id = $1
-                    ORDER BY pp.item_id, pp.asof ASC
+                    ORDER BY pp.item_ref, pp.generated_at ASC
                 )
                 SELECT
                     i.category,
@@ -332,8 +332,8 @@ async def get_portfolio_category_breakdown(
                     COALESCE(SUM(lp.q50), 0) AS total_value,
                     COALESCE(SUM(ep.first_q50), 0) AS first_total
                 FROM items i
-                LEFT JOIN latest_pred lp ON lp.item_id = i.id
-                LEFT JOIN earliest_pred ep ON ep.item_id = i.id
+                LEFT JOIN latest_pred lp ON lp.item_ref = i.canonical_key
+                LEFT JOIN earliest_pred ep ON ep.item_ref = i.canonical_key
                 WHERE i.user_id = $1
                   AND i.category IS NOT NULL
                 GROUP BY i.category

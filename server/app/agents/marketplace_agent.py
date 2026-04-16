@@ -490,8 +490,13 @@ class MarketplaceAgent:
         self,
         result: AggregationResult,
         normalized_key: Optional[str] = None,
+        category: Optional[str] = None,
     ) -> int:
         """Persist scored market hits to the market_hits table.
+
+        Populates `market_hits.attrs` with structured listing attributes
+        (normalized via attribute_normalizer) so the data flywheel can
+        aggregate them into category_items.attributes_json.market_observed.
 
         Returns the number of rows inserted.
         """
@@ -504,6 +509,12 @@ class MarketplaceAgent:
         if not db_configured():
             logger.info("[MarketplaceAgent] DB not configured, skipping persistence")
             return 0
+
+        # Attribute normalizer (optional — import lazily to avoid hard coupling)
+        try:
+            from app.ml.attribute_normalizer import normalize_attributes
+        except Exception:
+            normalize_attributes = None
 
         inserted = 0
         try:
@@ -530,14 +541,27 @@ class MarketplaceAgent:
                     else:
                         price_eur = raw_price
 
+                    # Structured attributes — normalize to canonical vocab
+                    raw_attrs = hit.get("attributes") or {}
+                    if not isinstance(raw_attrs, dict):
+                        raw_attrs = {}
+                    if normalize_attributes and category and raw_attrs:
+                        try:
+                            normed, _log = normalize_attributes(category, raw_attrs)
+                            if isinstance(normed, dict):
+                                raw_attrs = normed
+                        except Exception:
+                            pass
+
                     try:
                         await conn.execute(
                             """
                             INSERT INTO market_hits
                                 (provider, listing_id, title, price, currency,
                                  price_eur,
-                                 condition, ended_at, url, normalized_key, item_ref, features_json)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                                 condition, ended_at, url, normalized_key, item_ref, features_json,
+                                 attrs)
+                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                             ON CONFLICT (provider, listing_id) DO NOTHING
                             """,
                             hit.get("source", ""),
@@ -557,6 +581,7 @@ class MarketplaceAgent:
                                 "source_reliability": scored.source_reliability,
                                 "is_sold": scored.is_sold,
                             }),
+                            json.dumps(raw_attrs),  # asyncpg jsonb needs str (learnings #18)
                         )
                         inserted += 1
                     except Exception:

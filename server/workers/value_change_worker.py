@@ -250,6 +250,18 @@ async def run_once():
             if not _is_value_changes_enabled(prefs_row):
                 continue
 
+            # Plan gate: portfolio value notifications are Pro/Premium only
+            try:
+                tier_row = await conn.fetchrow(
+                    "SELECT subscription_tier FROM public.user_settings WHERE user_id = $1",
+                    user_id,
+                )
+                tier = (tier_row["subscription_tier"] if tier_row and tier_row["subscription_tier"] else "free")
+                if tier == "free":
+                    continue
+            except Exception:
+                pass  # On error, allow through rather than block
+
             # 2. Get historical portfolio value
             hist_row = await conn.fetchrow(
                 _HISTORICAL_PORTFOLIO_QUERY, user_id, lookback_date

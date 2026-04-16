@@ -166,7 +166,8 @@ export type CatalogAlternative = {
   brand: string | null;
   rarity: string | null;
   setCode: string | null;
-  imageUrl: string | null;
+  /** R50k: catalog reference images are backend-only; mobile app does not render them. */
+  hasReferenceImage?: boolean;
   matchScore: number;
   matchReason: string | null;
 };

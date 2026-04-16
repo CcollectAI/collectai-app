@@ -82,6 +82,27 @@ def _normalize_item(item: Dict[str, Any], is_sold: bool = False) -> Dict[str, An
     # Sold date
     sold_at = item.get("updated") or item.get("soldDate") if is_sold else None
 
+    # Extract structured attributes
+    attrs: Dict[str, Any] = {}
+    if condition:
+        attrs["condition"] = condition
+    brand = item.get("brandName") or (item.get("brand", {}).get("name") if isinstance(item.get("brand"), dict) else item.get("brand"))
+    if brand and isinstance(brand, str):
+        attrs["brand"] = brand
+    size = item.get("size") or (item.get("itemSize", {}).get("name") if isinstance(item.get("itemSize"), dict) else item.get("itemSize"))
+    if size and isinstance(size, str):
+        attrs["size"] = size
+    color = item.get("color") or (item.get("itemColor", {}).get("name") if isinstance(item.get("itemColor"), dict) else item.get("itemColor"))
+    if color and isinstance(color, str):
+        attrs["color"] = color
+    # Mercari tags — category taxonomy hints
+    tags = item.get("tags") or item.get("itemTags") or []
+    if isinstance(tags, list) and tags:
+        tag_values = [t.get("name") if isinstance(t, dict) else str(t) for t in tags]
+        tag_values = [t for t in tag_values if t]
+        if tag_values:
+            attrs["attributes_raw"] = {"mercari_tags": tag_values}
+
     return {
         "source": "mercari_us",
         "raw_id": f"mercari-us-{item_id}",
@@ -95,6 +116,7 @@ def _normalize_item(item: Dict[str, Any], is_sold: bool = False) -> Dict[str, An
         "image_url": image_url,
         "is_sold": is_sold,
         "sold_at": sold_at,
+        "attributes": attrs,
     }
 
 

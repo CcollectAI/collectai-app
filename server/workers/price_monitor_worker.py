@@ -122,8 +122,8 @@ async def check_threshold_alerts(conn):
             """
             SELECT q50, q10, q90
             FROM public.price_predictions
-            WHERE item_id = $1
-            ORDER BY asof DESC
+            WHERE item_ref = $1
+            ORDER BY generated_at DESC
             LIMIT 1
             """,
             item_id,
@@ -223,7 +223,7 @@ async def detect_anomalies(conn):
             EXISTS (
               SELECT 1 FROM public.items i
               WHERE i.canonical_key = ph.item_ref
-                AND i.updated_at > now() - interval '7 days'
+                AND i.user_id IS NOT NULL
             )
             OR EXISTS (
               SELECT 1 FROM public.watchlist_items w
@@ -313,7 +313,7 @@ async def detect_anomalies(conn):
             """
             SELECT DISTINCT user_id, id AS item_id
             FROM public.items
-            WHERE normalized_key = $1
+            WHERE canonical_key = $1
                OR id::text = $1
             """,
             item_ref,

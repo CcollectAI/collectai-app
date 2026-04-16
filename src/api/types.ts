@@ -53,7 +53,8 @@ export type IntakeResultResponse = {
     brand: string | null;
     rarity: string | null;
     set_code: string | null;
-    image_url: string | null;
+    // R50k: catalog reference images are backend-only
+    has_reference_image?: boolean;
     match_score: number;
     match_reason: string | null;
   }[];

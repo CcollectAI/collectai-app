@@ -95,6 +95,60 @@ def _convert_price(price: float, currency: str, rates: Dict[str, float] | None =
     return result
 
 
+def _extract_browse_attrs(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract structured attributes from an eBay Browse item.
+
+    Pulls from condition, localizedAspects (item specifics), seller, and
+    categoryPath. Unknown/unmapped fields are grouped under `attributes_raw`.
+    """
+    attrs: Dict[str, Any] = {}
+    raw: Dict[str, Any] = {}
+
+    # Condition (canonical-ish already)
+    cond = item.get("condition") or item.get("conditionId")
+    if cond:
+        attrs["condition"] = cond
+
+    # Item specifics / localizedAspects — list of {name, value}
+    for aspect in item.get("localizedAspects") or []:
+        if not isinstance(aspect, dict):
+            continue
+        name = (aspect.get("name") or "").strip().lower().replace(" ", "_")
+        value = aspect.get("value")
+        if not name or value in (None, ""):
+            continue
+        # Map common aspects to canonical keys
+        if name in ("brand", "manufacturer", "publisher"):
+            attrs[name] = value
+        elif name in ("color", "colour"):
+            attrs["color"] = value
+        elif name in ("size", "us_shoe_size", "eu_shoe_size"):
+            attrs["size"] = value
+        elif name in ("year", "year_manufactured", "release_year"):
+            attrs["year"] = value
+        elif name in ("material",):
+            attrs["material"] = value
+        elif name in ("grade", "professional_grader"):
+            attrs["grade"] = value
+        elif name in ("set", "set_name"):
+            attrs["set_name"] = value
+        elif name in ("card_number", "card_#", "card_num"):
+            attrs["card_number"] = value
+        elif name in ("reference_number", "model"):
+            attrs["reference_number"] = value
+        else:
+            raw[name] = value
+
+    # Category path hint
+    cat_path = item.get("categoryPath")
+    if cat_path:
+        raw["ebay_category_path"] = cat_path
+
+    if raw:
+        attrs["attributes_raw"] = raw
+    return attrs
+
+
 def _normalize_browse_item(item: Dict[str, Any], rates: Dict[str, float] | None = None) -> Dict[str, Any]:
     """Normalize an eBay Browse API item summary to a MarketHit dict."""
     raw_price = float(item.get("price", {}).get("value", 0) or 0)
@@ -148,6 +202,7 @@ def _normalize_browse_item(item: Dict[str, Any], rates: Dict[str, float] | None 
         "shipping_cost": shipping_cost,
         "domestic_only": domestic_only,
         "ships_from": ships_from,
+        "attributes": _extract_browse_attrs(item),
     }
 
 
@@ -201,6 +256,11 @@ def _normalize_finding_item(item: Dict[str, Any], rates: Dict[str, float] | None
     except (IndexError, TypeError):
         pass
 
+    # Finding API returns a flatter structure; extract what we can
+    finding_attrs: Dict[str, Any] = {}
+    if condition_str:
+        finding_attrs["condition"] = condition_str
+
     return {
         "source": "ebay",
         "raw_id": str(raw_id),
@@ -214,6 +274,7 @@ def _normalize_finding_item(item: Dict[str, Any], rates: Dict[str, float] | None
         "condition": condition_str,
         "image_url": image_url,
         "is_sold": True,
+        "attributes": finding_attrs,
     }
 
 

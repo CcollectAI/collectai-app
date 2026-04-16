@@ -50,6 +50,8 @@ SCHEDULES = {
     "auto_delist_worker": 900,               # every 15 minutes
     "auction_alert_worker": 300,              # every 5 minutes
     "event_scraper_worker": 6 * 3600,       # every 6 hours
+    "aggregate_catalog_attributes": 6 * 3600,  # R50k data flywheel — every 6h
+    "feedback_loop_worker": 3600,                # every 1 hour — label_events → catalog
 }
 
 
@@ -99,6 +101,8 @@ def get_overdue_workers() -> list[dict]:
 
     for name, interval in SCHEDULES.items():
         if interval <= 0:
+            continue
+        if "matview" in name:
             continue
 
         entry = _registry.get(name, {})
