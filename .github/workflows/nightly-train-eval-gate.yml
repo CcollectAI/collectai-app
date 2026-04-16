@@ -47,6 +47,7 @@ jobs:
         env:
           DB_DSN: ${{ secrets.DB_DSN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           echo "Exporting unprocessed user feedback..."
