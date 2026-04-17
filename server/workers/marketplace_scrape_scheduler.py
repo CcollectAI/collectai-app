@@ -54,16 +54,23 @@ def _handle_signal(signum, frame):
 
 
 async def _get_stale_items(conn, batch_size: int):
-    """Get catalog items that haven't had market_hits in the last 7 days.
+    """Get catalog items due for a scrape attempt.
 
-    Tiebreaker uses RANDOM() so niche items (no adapter ever finds them)
-    don't dominate every cycle — without this, the 10 alphabetically-first
-    NULL-last_seen items get re-picked forever and productive items starve.
-    See 2026-04-17 incident: 3 consecutive batches produced 0 hits because
-    the same 10 anime_ost_vinyl/seiyuu items kept being selected.
+    Selection policy:
+      1. `last_scrape_attempt_at IS NULL`  (never attempted — bootstrap)
+      2. Else, oldest `last_scrape_attempt_at` first (round-robin).
+
+    Filter: skip items that already have market_hits within the last 7d
+    (no need to re-scrape).
+
+    The `last_scrape_attempt_at` column is bumped after each attempt
+    regardless of hit count. Without this, niche items with
+    `mh.last_seen IS NULL` (no adapter can find them) kept winning every
+    cycle because the old selector ordered by `last_seen NULLS FIRST` —
+    see 2026-04-17 incident where 3 consecutive batches returned 0 hits.
     """
     return await conn.fetch("""
-        SELECT ci.item_key, ci.title, ci.category
+        SELECT ci.id, ci.item_key, ci.title, ci.category
         FROM category_items ci
         LEFT JOIN (
             SELECT item_ref, MAX(seen_at) AS last_seen
@@ -72,9 +79,27 @@ async def _get_stale_items(conn, batch_size: int):
         ) mh ON mh.item_ref = ci.category || ':' || ci.item_key
         WHERE ci.title IS NOT NULL
           AND (mh.last_seen IS NULL OR mh.last_seen < NOW() - INTERVAL '7 days')
-        ORDER BY mh.last_seen ASC NULLS FIRST, RANDOM()
+        ORDER BY ci.last_scrape_attempt_at ASC NULLS FIRST, RANDOM()
         LIMIT $1
     """, batch_size)
+
+
+async def _mark_attempted(conn, item_ids: list) -> None:
+    """Bump last_scrape_attempt_at for every item we tried this cycle.
+
+    Called regardless of whether the attempt produced hits — the whole
+    point is that niche items don't lock the queue after a zero-hit run.
+    category_items.id is uuid; asyncpg handles the coercion from the
+    Python-side values returned by fetch() automatically.
+    """
+    if not item_ids:
+        return
+    await conn.execute(
+        "UPDATE public.category_items "
+        "SET last_scrape_attempt_at = NOW() "
+        "WHERE id = ANY($1::uuid[])",
+        item_ids,
+    )
 
 
 async def _scrape_item(agent, item_key: str, title: str, category: str):
@@ -140,6 +165,7 @@ async def run_once():
 
         total_hits = 0
         zero_hit_items = 0
+        attempted_ids: list[int] = []
         for row in items:
             if _shutdown:
                 break
@@ -152,6 +178,7 @@ async def run_once():
             total_hits += hits
             if hits == 0:
                 zero_hit_items += 1
+            attempted_ids.append(row["id"])
             # Small delay to avoid hammering adapters
             await asyncio.sleep(2)
 
@@ -159,6 +186,14 @@ async def run_once():
             await agent.close()
         except Exception:
             pass
+
+        # Bump last_scrape_attempt_at for every item we tried this cycle
+        # — even the ones that produced 0 hits. Keeps niche items from
+        # re-winning the selector next cycle.
+        try:
+            await _mark_attempted(conn, attempted_ids)
+        except Exception as e:
+            logger.warning("Failed to mark items attempted: %s", e)
 
         # WARN when the whole batch produced nothing — usually a sign that
         # adapter circuits are clustered-open. Appears in grep for "Batch

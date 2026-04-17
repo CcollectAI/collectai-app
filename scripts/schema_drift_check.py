@@ -47,9 +47,9 @@ EXPECTED: list[tuple[str, list[str], str]] = [
         [
             "id", "category", "item_key", "title", "set_code", "brand",
             "rarity", "notes", "image_url", "barcode", "attributes_json",
-            "created_at", "updated_at",
+            "created_at", "updated_at", "last_scrape_attempt_at",
         ],
-        "pipelines/import_common.CatalogItem.to_row()",
+        "pipelines/import_common.CatalogItem.to_row() + workers/marketplace_scrape_scheduler.py",
     ),
     (
         "market_hits",
