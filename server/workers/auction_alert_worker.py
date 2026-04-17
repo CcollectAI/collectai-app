@@ -47,9 +47,8 @@ async def run_once():
         now = datetime.now(timezone.utc)
         window_end = now + timedelta(minutes=ALERT_WINDOW_MINUTES)
 
-        # Find auction listings ending soon that match watchlist items
-        # market_hits has: source, item_ref, url, price, extra_json (which may contain end_time/sold_at)
-        # We check extra_json->>'end_time' or the sold_at field for auction end times
+        # Find auction listings ending soon that match watchlist items.
+        # market_hits columns used: provider, item_ref, url, title, price, ended_at.
         rows = await conn.fetch(
             """
             SELECT DISTINCT ON (mh.url)
@@ -57,9 +56,9 @@ async def run_once():
                 mh.item_ref,
                 mh.url,
                 mh.price,
-                mh.source,
-                mh.extra_json->>'end_time' AS end_time_str,
-                mh.extra_json->>'title' AS listing_title,
+                mh.provider,
+                mh.ended_at AS end_time,
+                mh.title AS listing_title,
                 wi.user_id,
                 wi.title AS watchlist_title,
                 wi.id AS watchlist_id,
@@ -73,13 +72,13 @@ async def run_once():
                         OR mh.item_ref ILIKE '%%' || REPLACE(wi.title, ' ', '_') || '%%'
                     )
                 )
-            WHERE mh.source IN ('ebay', 'yahoo_auctions', 'catawiki')
-              AND mh.extra_json->>'end_time' IS NOT NULL
-              AND (mh.extra_json->>'end_time')::timestamptz > $1
-              AND (mh.extra_json->>'end_time')::timestamptz <= $2
+            WHERE mh.provider IN ('ebay', 'yahoo_auctions', 'catawiki')
+              AND mh.ended_at IS NOT NULL
+              AND mh.ended_at > $1
+              AND mh.ended_at <= $2
               AND NOT EXISTS (
                   SELECT 1 FROM public.alert_trigger_history ath
-                  WHERE ath.user_id = wi.user_id::text
+                  WHERE ath.user_id = wi.user_id
                     AND ath.item_id = mh.url
                     AND ath.trigger_type = 'auction_ending'
                     AND ath.created_at > now() - ($3 || ' hours')::interval
@@ -105,13 +104,14 @@ async def run_once():
             user_id = str(row["user_id"])
             listing_title = row["listing_title"] or row["watchlist_title"] or "Auction item"
             price = float(row["price"]) if row["price"] else None
-            source = row["source"]
+            provider = row["provider"]
             url = row["url"]
-            end_time_str = row["end_time_str"]
+            end_time = row["end_time"]
+            end_time_str = end_time.isoformat() if end_time else None
 
             price_str = f" at \u20ac{price:.2f}" if price else ""
             body = (
-                f"{listing_title[:60]}{price_str} on {source} "
+                f"{listing_title[:60]}{price_str} on {provider} "
                 f"\u2014 ending in ~{ALERT_WINDOW_MINUTES} min!"
             )
 
@@ -119,7 +119,7 @@ async def run_once():
             trigger_value = json.dumps({
                 "url": url,
                 "price": price,
-                "source": source,
+                "provider": provider,
                 "end_time": end_time_str,
                 "watchlist_id": str(row["watchlist_id"]),
             })
@@ -147,7 +147,7 @@ async def run_once():
                     data={
                         "type": "auction_ending",
                         "url": url,
-                        "source": source,
+                        "provider": provider,
                         "price": price,
                         "end_time": end_time_str,
                     },

@@ -52,6 +52,7 @@ SCHEDULES = {
     "event_scraper_worker": 6 * 3600,       # every 6 hours
     "aggregate_catalog_attributes": 6 * 3600,  # R50k data flywheel — every 6h
     "feedback_loop_worker": 3600,                # every 1 hour — label_events → catalog
+    "marketplace_scrape_worker": 300,            # every 5 minutes — catalog → market_hits producer
 }
 
 

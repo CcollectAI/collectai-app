@@ -55,9 +55,19 @@ EXPECTED: list[tuple[str, list[str], str]] = [
         "market_hits",
         [
             "provider", "listing_id", "title", "price", "currency",
-            "condition", "normalized_key", "category",
+            "condition", "normalized_key", "category", "attrs",
+            "features_json", "ended_at", "seen_at", "price_eur",
         ],
-        "pipelines/import_common.SupabaseIngest.upsert_market_hits()",
+        "pipelines/import_common.SupabaseIngest.upsert_market_hits() + workers/auction_alert_worker.py",
+    ),
+    (
+        "label_events",
+        [
+            "id", "user_id", "item_id", "action", "payload", "created_at",
+            "corrected_title", "corrected_condition", "corrected_price_eur",
+            "processed_at",
+        ],
+        "workers/feedback_loop_worker.py + app/features/intake_router.py",
     ),
     (
         "user_price_alerts",
@@ -130,6 +140,43 @@ EXPECTED: list[tuple[str, list[str], str]] = [
 ]
 
 
+# Enum drift: (enum_name, expected_values, source)
+# Code queries against enum text literals — if a value the code uses doesn't
+# exist in the enum, Postgres raises "invalid input value for enum" at
+# prepare time. Feedback loop R50k hit this with 'correct' vs 'correction'.
+EXPECTED_ENUMS: list[tuple[str, list[str], str]] = [
+    (
+        "label_action",
+        ["label", "correction", "confirm"],
+        "workers/feedback_loop_worker.py",
+    ),
+]
+
+
+async def check_enum(conn, enum_name: str, expected_values: list[str]) -> dict:
+    """Return {missing: [], present: [], extra: [], exists: bool}."""
+    rows = await conn.fetch(
+        "SELECT e.enumlabel AS v FROM pg_type t "
+        "JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname = $1",
+        enum_name,
+    )
+    if not rows:
+        return {
+            "exists": False,
+            "missing": expected_values,
+            "present": [],
+            "extra": [],
+        }
+    actual = {r["v"] for r in rows}
+    expected = set(expected_values)
+    return {
+        "exists": True,
+        "missing": sorted(expected - actual),
+        "present": sorted(expected & actual),
+        "extra": sorted(actual - expected),
+    }
+
+
 async def check_table(conn, table: str, expected_cols: list[str]) -> dict:
     """Return {missing: [], present: [], extra: [], exists: bool}."""
     table_exists = await conn.fetchval(
@@ -176,16 +223,23 @@ async def main_async(json_mode: bool, fix_suggest: bool) -> int:
         return 2
 
     results = []
+    enum_results = []
     try:
         for table, expected_cols, source in EXPECTED:
             r = await check_table(conn, table, expected_cols)
             r["table"] = table
             r["source"] = source
             results.append(r)
+        for enum_name, expected_values, source in EXPECTED_ENUMS:
+            r = await check_enum(conn, enum_name, expected_values)
+            r["enum"] = enum_name
+            r["source"] = source
+            enum_results.append(r)
     finally:
         await conn.close()
 
     total_missing = sum(len(r["missing"]) for r in results)
+    total_missing += sum(len(r["missing"]) for r in enum_results)
     missing_tables = [r for r in results if not r["exists"]]
     drifted_tables = [r for r in results if r["exists"] and r["missing"]]
 
@@ -216,6 +270,13 @@ async def main_async(json_mode: bool, fix_suggest: bool) -> int:
                 for r in drifted_tables:
                     print(f"  • {r['table']:30s} missing: {', '.join(r['missing'])}")
                     print(f"    {'':30s} writes from: {r['source']}")
+            drifted_enums = [r for r in enum_results if r["missing"]]
+            if drifted_enums:
+                print()
+                print("⚠️  ENUM DRIFT (enum missing expected values — code uses them in queries):")
+                for r in drifted_enums:
+                    print(f"  • {r['enum']:30s} missing: {', '.join(r['missing'])}")
+                    print(f"    {'':30s} used by: {r['source']}")
             if fix_suggest:
                 print()
                 print("── suggested ALTER TABLE statements ──")

@@ -381,6 +381,15 @@ def validate_config() -> None:
             _log.critical("Missing required env vars for production: %s", ", ".join(missing))
             raise SystemExit(1)
 
+        # --- Bake-critical: alerting dead silence is a known footgun (L44, L46) ---
+        # If the orchestrator's alert paths aren't wired, failures go unnoticed
+        # until someone checks logs manually. Warn loudly but don't exit.
+        if not os.getenv("TELEGRAM_BOT_TOKEN") or not os.getenv("TELEGRAM_CHAT_ID"):
+            _log.warning(
+                "TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not set — bake worker "
+                "failure alerts will be dropped. Set both to enable paging."
+            )
+
         # CORS: warn if still using only localhost origins
         localhost_only = all(
             "localhost" in o or "127.0.0.1" in o or "192.168." in o or "10." in o

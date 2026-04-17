@@ -81,12 +81,12 @@ async def _check_watchlist_snipes(conn) -> int:
           AND mh.price_eur IS NOT NULL
           AND mh.price_eur > 0
           AND mh.price_eur <= w.target_price
-          AND mh.created_at > now() - interval '30 minutes'
+          AND mh.seen_at > now() - interval '30 minutes'
         WHERE w.target_price IS NOT NULL
           AND w.target_price > 0
           AND NOT EXISTS (
               SELECT 1 FROM public.alert_trigger_history ath
-              WHERE ath.user_id = w.user_id::text
+              WHERE ath.user_id = w.user_id
                 AND ath.item_id = 'watchlist_snipe:' || w.id::text
                 AND ath.trigger_type = 'watchlist_snipe'
                 AND ath.created_at > now() - interval '24 hours'

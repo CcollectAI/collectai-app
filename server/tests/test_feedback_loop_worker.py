@@ -70,7 +70,7 @@ async def test_label_correction_updates_catalog():
         "corrected_condition": "near_mint",
         "corrected_price_eur": 150.0,
         "payload": None,
-        "action": "correct",
+        "action": "correction",
         "canonical_key": "pokemon-charizard",
         "category": "pokemon",
     }
@@ -131,7 +131,7 @@ async def test_missing_canonical_key_still_processed():
         "corrected_condition": None,
         "corrected_price_eur": None,
         "payload": None,
-        "action": "correct",
+        "action": "correction",
         "canonical_key": None,  # Missing
         "category": None,
     }

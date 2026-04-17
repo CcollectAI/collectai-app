@@ -89,6 +89,19 @@ _WEEKLY_WORKERS: list[tuple[str, str, str, bool]] = [
 # ── Per-worker error tracking for health summary ─────────────────────────
 _worker_errors: dict[str, int] = {}
 _worker_last_ok: dict[str, float] = {}
+_worker_import_failures: dict[str, str] = {}
+# Workers we've already paged Telegram for — avoids re-paging every health tick
+_alerted_workers: set[str] = set()
+ALERT_THRESHOLD = int(os.getenv("BAKE_ALERT_THRESHOLD", "3"))
+
+
+async def _send_telegram_alert(message: str) -> None:
+    """Send an ops alert via telegram_ops. Never raises."""
+    try:
+        from app.lib.telegram_ops import send_ops_alert
+        await send_ops_alert(message)
+    except Exception as e:
+        logger.warning("[bake_orchestrator] Telegram alert failed: %s", e)
 _active_tasks: dict[str, asyncio.Task] = {}
 
 
@@ -114,6 +127,7 @@ async def _run_worker_loop(
         mod = __import__(module_path, fromlist=[func_name])
         run_fn = getattr(mod, func_name)
     except Exception as e:
+        _worker_import_failures[name] = f"{type(e).__name__}: {e}"
         logger.error(
             "[bake_orchestrator] Failed to import %s.%s: %s", module_path, func_name, e,
         )
@@ -187,21 +201,241 @@ async def _health_summary_loop(interval_s: float = 1800.0) -> None:
                     logger.warning(
                         "[bake_orchestrator]   %s: %d consecutive errors", wname, count,
                     )
+                    if count >= ALERT_THRESHOLD and wname not in _alerted_workers:
+                        _alerted_workers.add(wname)
+                        await _send_telegram_alert(
+                            f"⚠️ Bake worker {wname} has failed {count}× consecutively — "
+                            f"check bake.log on collectai EC2."
+                        )
+                # Clear alert flag once a worker recovers
+                for wname in list(_alerted_workers):
+                    if wname not in _worker_errors:
+                        _alerted_workers.discard(wname)
+
+            if _worker_import_failures:
+                for wname, err in sorted(_worker_import_failures.items()):
+                    logger.error(
+                        "[bake_orchestrator]   %s: IMPORT FAILED at startup (%s) — "
+                        "deploy missing module and restart", wname, err,
+                    )
+                    alert_key = f"import:{wname}"
+                    if alert_key not in _alerted_workers:
+                        _alerted_workers.add(alert_key)
+                        await _send_telegram_alert(
+                            f"🔥 Bake worker {wname} FAILED TO IMPORT at startup "
+                            f"({err}) — module likely not deployed to EC2."
+                        )
 
             # Restart dead tasks (unless they were cancelled)
             for wname, task in list(_active_tasks.items()):
                 if task.done() and not task.cancelled():
                     exc = task.exception() if not task.cancelled() else None
-                    logger.warning(
-                        "[bake_orchestrator] Task %s died (exc=%s), NOT restarting "
-                        "(worker loop should be infinite — check logs)",
-                        wname, exc,
-                    )
+                    import_err = _worker_import_failures.get(wname)
+                    if import_err:
+                        logger.error(
+                            "[bake_orchestrator] Task %s dead — import failure: %s",
+                            wname, import_err,
+                        )
+                    else:
+                        logger.warning(
+                            "[bake_orchestrator] Task %s died (exc=%s), NOT restarting "
+                            "(worker loop should be infinite — check logs)",
+                            wname, exc,
+                        )
 
         except asyncio.CancelledError:
             return
         except Exception:
             logger.exception("[bake_orchestrator] Health summary error")
+
+
+async def _instance_health_monitor(
+    interval_s: float = 900.0,
+    disk_threshold_pct: int = 80,
+    rss_threshold_mb: int = 3000,
+    ingest_stale_minutes: int = 60,
+    worker_runs_stale_minutes: int = 15,
+) -> None:
+    """Monitor EC2 instance health and alert on degradation.
+
+    Alerts cover failure modes not tied to a single worker:
+      * Disk fills up (R50j incident: 91% → logs/journals exploded)
+      * RSS creeps toward the 4GB t3.medium limit (Crawl4AI + Chromium)
+      * Ingest stalls (no market_hits for > threshold)
+      * Worker loop stops recording (no worker_runs for > threshold)
+
+    One alert per condition per occurrence; clears when healthy again.
+    """
+    import shutil
+    import resource
+
+    alerted: set[str] = set()
+    # Delay first scan so ingest/workers have time to fire after startup.
+    await asyncio.sleep(min(interval_s, 300.0))
+
+    while True:
+        try:
+            issues: list[tuple[str, str]] = []
+
+            # Disk
+            try:
+                total, used, _free = shutil.disk_usage("/")
+                pct = (used / total) * 100
+                if pct >= disk_threshold_pct:
+                    issues.append((
+                        "disk_full",
+                        f"disk at {pct:.0f}% ({used/1e9:.1f}G / {total/1e9:.1f}G)",
+                    ))
+            except Exception as e:
+                logger.debug("disk_usage probe failed: %s", e)
+
+            # Memory (RSS of this process in MB on Linux; ru_maxrss is KB)
+            try:
+                rss_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+                rss_mb = rss_kb / 1024
+                if rss_mb >= rss_threshold_mb:
+                    issues.append((
+                        "memory_pressure",
+                        f"RSS at {rss_mb:.0f}MB (limit {rss_threshold_mb}MB)",
+                    ))
+            except Exception as e:
+                logger.debug("rusage probe failed: %s", e)
+
+            # DB-side staleness probes
+            dsn = os.getenv("DB_DSN")
+            if dsn:
+                try:
+                    import asyncpg
+                    conn = await asyncpg.connect(dsn, timeout=10)
+                    try:
+                        mh_recent = await conn.fetchval(
+                            "SELECT count(*) FROM public.market_hits "
+                            "WHERE seen_at > now() - ($1 || ' minutes')::interval",
+                            str(ingest_stale_minutes),
+                        )
+                        if mh_recent == 0:
+                            issues.append((
+                                "ingest_stalled",
+                                f"no market_hits inserted in last {ingest_stale_minutes}min",
+                            ))
+                        wr_recent = await conn.fetchval(
+                            "SELECT count(*) FROM public.worker_runs "
+                            "WHERE started_at > now() - ($1 || ' minutes')::interval",
+                            str(worker_runs_stale_minutes),
+                        )
+                        if wr_recent == 0:
+                            issues.append((
+                                "worker_runs_stalled",
+                                f"no worker_runs in last {worker_runs_stale_minutes}min — "
+                                "orchestrator may be wedged",
+                            ))
+                        # Matview freshness: alert if a matview worker hasn't
+                        # run in >6x its expected interval (scheduler wedged).
+                        # matview_demand=600s (10m), matview_supply=1800s (30m).
+                        for mv_name, stale_min in (("matview_demand", 60),
+                                                   ("matview_supply", 180)):
+                            mv_recent = await conn.fetchval(
+                                "SELECT count(*) FROM public.worker_runs "
+                                "WHERE worker_name = $1 AND started_at > "
+                                "now() - ($2 || ' minutes')::interval",
+                                mv_name, str(stale_min),
+                            )
+                            if mv_recent == 0:
+                                issues.append((
+                                    f"matview_stale_{mv_name}",
+                                    f"{mv_name} has not refreshed in >{stale_min}min",
+                                ))
+                    finally:
+                        await conn.close()
+                except Exception as e:
+                    logger.debug("DB staleness probe failed: %s", e)
+
+            # Fire alerts for new issues, clear resolved ones
+            current_keys = {k for k, _ in issues}
+            for key, detail in issues:
+                logger.warning("[bake_orchestrator] INSTANCE %s: %s", key, detail)
+                if key not in alerted:
+                    alerted.add(key)
+                    await _send_telegram_alert(
+                        f"🚨 Bake instance health: {key} — {detail}"
+                    )
+            for k in list(alerted):
+                if k not in current_keys:
+                    alerted.discard(k)
+                    logger.info("[bake_orchestrator] INSTANCE %s cleared", k)
+
+        except asyncio.CancelledError:
+            return
+        except Exception:
+            logger.exception("[bake_orchestrator] Instance health monitor error")
+
+        try:
+            await asyncio.sleep(interval_s)
+        except asyncio.CancelledError:
+            return
+
+
+async def _circuit_breaker_monitor(
+    stale_open_threshold_s: float = 24 * 3600.0,
+    interval_s: float = 3600.0,
+) -> None:
+    """Alert when adapter circuit breakers stay OPEN for > threshold.
+
+    Stuck-open breakers mean the adapter is structurally dead (API closed,
+    credentials revoked, upstream permanently down). Every retry cycle
+    wastes CPU and fills the log with the same error. The operator should
+    know so they can de-register the adapter.
+    """
+    alerted: set[str] = set()
+    # Delay first scan so breakers have a chance to trip after startup.
+    await asyncio.sleep(min(interval_s, 900.0))
+    while True:
+        try:
+            from workers.circuit_breaker import all_circuit_status
+            import time as _t
+
+            statuses = all_circuit_status()
+            now = _t.time()
+            stuck = []
+            for s in statuses:
+                if s.get("state") != "open":
+                    continue
+                opened = s.get("open_since")
+                if opened is None:
+                    continue
+                age = now - opened
+                if age >= stale_open_threshold_s:
+                    stuck.append((s["name"], age))
+
+            if stuck:
+                for name, age in stuck:
+                    hours = age / 3600
+                    logger.warning(
+                        "[bake_orchestrator] Circuit '%s' OPEN for %.1fh — "
+                        "likely structural failure", name, hours,
+                    )
+                    if name not in alerted:
+                        alerted.add(name)
+                        await _send_telegram_alert(
+                            f"🔌 Adapter '{name}' circuit OPEN for {hours:.1f}h — "
+                            f"structurally dead? Consider removing from scrape manifest."
+                        )
+
+            # Clear alerts for recovered breakers
+            open_names = {s["name"] for s in statuses if s.get("state") == "open"}
+            for n in list(alerted):
+                if n not in open_names:
+                    alerted.discard(n)
+
+        except asyncio.CancelledError:
+            return
+        except Exception:
+            logger.exception("[bake_orchestrator] Circuit-breaker monitor error")
+
+        try:
+            await asyncio.sleep(interval_s)
+        except asyncio.CancelledError:
+            return
 
 
 async def start_all_workers() -> None:
@@ -273,6 +507,8 @@ async def start_all_workers() -> None:
 
     # Health summary loop
     asyncio.create_task(_health_summary_loop(), name="orchestrator:health_summary")
+    asyncio.create_task(_circuit_breaker_monitor(), name="orchestrator:cb_monitor")
+    asyncio.create_task(_instance_health_monitor(), name="orchestrator:instance_health")
 
     logger.info(
         "[bake_orchestrator] === STARTED %d workers, skipped %d ===",

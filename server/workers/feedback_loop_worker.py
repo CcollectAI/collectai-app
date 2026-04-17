@@ -71,7 +71,7 @@ async def _process_label_corrections(conn) -> int:
           AND (le.corrected_title IS NOT NULL
                OR le.corrected_condition IS NOT NULL
                OR le.corrected_price_eur IS NOT NULL
-               OR le.action IN ('confirm', 'correct'))
+               OR le.action IN ('confirm', 'correction'))
         ORDER BY le.created_at ASC
         LIMIT $1
         """,
@@ -221,13 +221,16 @@ async def _process_prediction_confirmations(conn) -> int:
         )
         logger.info("Added processed_at column to predict_sessions")
 
+    # predict_sessions.item_id is bigint, items.id is uuid — can't join directly.
+    # canonical_key is unavailable via this path; we degrade gracefully to
+    # "process without canonical_key" below (canonical_key=None skips the
+    # category_items UPDATE but still marks the session as processed).
     rows = await conn.fetch(
         """
         SELECT ps.id, ps.category, ps.status, ps.confidence,
                ps.price_mid_eur, ps.output, ps.meta,
-               i.canonical_key
+               NULL::text AS canonical_key
         FROM public.predict_sessions ps
-        LEFT JOIN public.items i ON i.id = ps.item_id
         WHERE ps.processed_at IS NULL
           AND ps.status IN ('confirmed', 'corrected')
         ORDER BY ps.created_at ASC

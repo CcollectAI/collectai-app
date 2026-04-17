@@ -82,6 +82,10 @@ class CircuitBreaker:
         self._failure_count = 0
         self._half_open_calls = 0
         self._last_failure_time: float = 0.0
+        # Wall-clock time of the first transition to OPEN in the current
+        # open-streak. Cleared when the breaker returns to CLOSED. Used by
+        # the ops monitor to page for adapters stuck OPEN for > 24h.
+        self._open_since_wall: float | None = None
         self._lock = Lock()
 
     @property
@@ -121,6 +125,7 @@ class CircuitBreaker:
                     logger.info("Circuit '%s' recovered → CLOSED", self.name)
                 self._state = CircuitState.CLOSED
                 self._failure_count = 0
+                self._open_since_wall = None
 
     def record_failure(self) -> None:
         """Call after a failed external request."""
@@ -135,8 +140,11 @@ class CircuitBreaker:
                     self.name,
                     self.cooldown_seconds,
                 )
+                # Keep _open_since_wall from the original trip.
             elif self._failure_count >= self.max_failures:
                 self._state = CircuitState.OPEN
+                if self._open_since_wall is None:
+                    self._open_since_wall = time.time()
                 logger.warning(
                     "Circuit '%s' tripped after %d failures → OPEN (cooldown %.0fs)",
                     self.name,
@@ -161,6 +169,7 @@ class CircuitBreaker:
                 "failure_count": self._failure_count,
                 "max_failures": self.max_failures,
                 "cooldown_seconds": self.cooldown_seconds,
+                "open_since": self._open_since_wall,
             }
 
 
