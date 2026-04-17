@@ -430,7 +430,7 @@ exports[`OfferTimeline matches snapshot with events 1`] = `
           ]
         }
       >
-        Mar 10 at 01:00 PM
+        Mar 10 at 12:00 PM
       </Text>
     </View>
   </View>
@@ -535,7 +535,7 @@ exports[`OfferTimeline matches snapshot with events 1`] = `
           ]
         }
       >
-        Mar 10 at 01:00 PM
+        Mar 10 at 12:00 PM
       </Text>
     </View>
   </View>
