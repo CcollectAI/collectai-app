@@ -253,8 +253,11 @@ async def _instance_health_monitor(
     interval_s: float = 900.0,
     disk_threshold_pct: int = 80,
     rss_threshold_mb: int = 3000,
-    ingest_stale_minutes: int = 60,
-    worker_runs_stale_minutes: int = 15,
+    # Tightened 2026-04-17 after a 16-min ingest dip went untriggered under
+    # the old 60-min threshold. 30 min is the point where adapter outages
+    # stop being transient and start meaning structural trouble.
+    ingest_stale_minutes: int = 30,
+    worker_runs_stale_minutes: int = 10,
 ) -> None:
     """Monitor EC2 instance health and alert on degradation.
 

@@ -54,7 +54,14 @@ def _handle_signal(signum, frame):
 
 
 async def _get_stale_items(conn, batch_size: int):
-    """Get catalog items that haven't had market_hits in the last 7 days."""
+    """Get catalog items that haven't had market_hits in the last 7 days.
+
+    Tiebreaker uses RANDOM() so niche items (no adapter ever finds them)
+    don't dominate every cycle — without this, the 10 alphabetically-first
+    NULL-last_seen items get re-picked forever and productive items starve.
+    See 2026-04-17 incident: 3 consecutive batches produced 0 hits because
+    the same 10 anime_ost_vinyl/seiyuu items kept being selected.
+    """
     return await conn.fetch("""
         SELECT ci.item_key, ci.title, ci.category
         FROM category_items ci
@@ -65,7 +72,7 @@ async def _get_stale_items(conn, batch_size: int):
         ) mh ON mh.item_ref = ci.category || ':' || ci.item_key
         WHERE ci.title IS NOT NULL
           AND (mh.last_seen IS NULL OR mh.last_seen < NOW() - INTERVAL '7 days')
-        ORDER BY mh.last_seen ASC NULLS FIRST
+        ORDER BY mh.last_seen ASC NULLS FIRST, RANDOM()
         LIMIT $1
     """, batch_size)
 
@@ -132,6 +139,7 @@ async def run_once():
                 setattr(agent, attr, None)
 
         total_hits = 0
+        zero_hit_items = 0
         for row in items:
             if _shutdown:
                 break
@@ -142,6 +150,8 @@ async def run_once():
                 row["category"],
             )
             total_hits += hits
+            if hits == 0:
+                zero_hit_items += 1
             # Small delay to avoid hammering adapters
             await asyncio.sleep(2)
 
@@ -150,7 +160,19 @@ async def run_once():
         except Exception:
             pass
 
-        logger.info("Batch complete: %d items, %d total hits", len(items), total_hits)
+        # WARN when the whole batch produced nothing — usually a sign that
+        # adapter circuits are clustered-open. Appears in grep for "Batch
+        # unproductive" so ops can triage quickly.
+        if total_hits == 0 and len(items) > 0:
+            logger.warning(
+                "Batch unproductive: 0 hits from %d items — check adapter circuit state",
+                len(items),
+            )
+        else:
+            logger.info(
+                "Batch complete: %d items, %d total hits, %d items with 0 hits",
+                len(items), total_hits, zero_hit_items,
+            )
         record_run("marketplace_scrape_worker", "ok")
         return total_hits
 
