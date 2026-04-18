@@ -68,6 +68,12 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("aggregate_catalog_attributes", "workers.aggregate_catalog_attributes", "run_once", False),
     # ── Feedback loop (label_events → catalog) ──
     ("feedback_loop_worker",    "workers.feedback_loop_worker",       "run_once", True),
+    # ── tcgcsv: daily TCGPlayer public-price dump → market_hits ──
+    ("tcgcsv_worker",           "pipelines.import_tcgcsv",            "run_once", True),
+    # ── discogs: daily lowest asking-price (is_listing=true) for vinyl/anime_ost/city_pop ──
+    ("discogs_worker",          "pipelines.import_discogs",           "run_once", True),
+    # ── R50l sanity probe: hourly correctness checks on critical tables ──
+    ("sanity_probe_worker",     "workers.sanity_probe_worker",        "run_once", True),
 
     # ── Workers with their own scheduler_loop (matview has split intervals) ──
     # matview_refresh uses its own scheduler_loop with demand/supply split

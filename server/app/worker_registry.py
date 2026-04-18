@@ -53,6 +53,8 @@ SCHEDULES = {
     "feedback_loop_worker": 3600,                # every 1 hour — label_events → catalog
     "marketplace_scrape_worker": 300,            # every 5 minutes — catalog → market_hits producer
     "tcgcsv_worker": 24 * 3600,                  # daily — TCGPlayer public price dump (MTG/Pokemon/Yugioh/Lorcana/OPTCG/Digimon)
+    "discogs_worker": 24 * 3600,                 # daily — Discogs lowest asking-price for vinyl/anime_ost/city_pop
+    "sanity_probe_worker": 3600,                 # R50l — hourly correctness checks on critical tables
 }
 
 
