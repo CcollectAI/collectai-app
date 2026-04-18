@@ -21,6 +21,8 @@ from urllib.parse import quote_plus
 
 import httpx
 
+from app.agents.adapters._jp_proxy import configured as jp_proxy_configured
+from app.agents.adapters._jp_proxy import fetch_via_proxy
 from workers.circuit_breaker import mandarake_circuit, CircuitOpenError
 
 logger = logging.getLogger(__name__)
@@ -143,28 +145,35 @@ class MandarakeCaller:
             return []
 
         try:
-            client = await self._client()
-            resp = await client.get(
-                MANDARAKE_SEARCH_URL,
-                params={
-                    "keyword": query,
-                    "lang": "en",
-                },
-            )
-
-            if resp.status_code != 200:
+            url = f"{MANDARAKE_SEARCH_URL}?keyword={quote_plus(query)}&lang=en"
+            html = await self._fetch_html(url)
+            if not html:
                 mandarake_circuit.record_failure()
-                logger.warning("Mandarake search returned %d", resp.status_code)
                 return []
 
             mandarake_circuit.record_success()
-            results = self._parse_search_page(resp.text, limit)
+            results = self._parse_search_page(html, limit)
             return results
 
         except Exception as exc:
             mandarake_circuit.record_failure()
             logger.warning("Mandarake search error: %s", exc)
             return []
+
+    async def _fetch_html(self, url: str) -> Optional[str]:
+        """Prefer JP Lambda proxy when configured. From EU IP, Mandarake
+        returns a near-empty geo-filter page on direct requests."""
+        if jp_proxy_configured():
+            html = await fetch_via_proxy(url)
+            return html  # None on proxy failure
+        client = await self._client()
+        try:
+            resp = await client.get(url)
+            if resp.status_code == 200:
+                return resp.text
+            return None
+        except Exception:
+            return None
 
     def _parse_search_page(self, html: str, limit: int) -> List[Dict[str, Any]]:
         """Parse Mandarake search results from HTML.

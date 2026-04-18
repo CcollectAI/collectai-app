@@ -23,6 +23,8 @@ from urllib.parse import quote_plus
 
 import httpx
 
+from app.agents.adapters._jp_proxy import configured as jp_proxy_configured
+from app.agents.adapters._jp_proxy import fetch_via_proxy
 from workers.circuit_breaker import CircuitBreaker, CircuitOpenError
 
 logger = logging.getLogger(__name__)
@@ -128,38 +130,51 @@ def _normalize_listing(item: Dict[str, Any], rates: Optional[Dict[str, float]] =
 def _parse_buyee_html(html: str) -> List[Dict[str, Any]]:
     """Extract listings from Buyee search results HTML.
 
-    This is a lightweight parser — for production, pair with Firecrawl
-    or Crawl4AI for more robust extraction.
+    Current layout (verified 2026-04-18 via JP Lambda proxy): each result
+    is an ``<li class="itemCard">`` containing an ``<a>`` to
+    ``/item/jdirectitems/auction/{id}``. Title is in the ``alt`` of the
+    thumbnail image. Price is a JPY string somewhere in the card body
+    (class varies; we grep the block text).
     """
     listings: List[Dict[str, Any]] = []
+    try:
+        from bs4 import BeautifulSoup
+    except ImportError:
+        logger.warning("BeautifulSoup not available; buyee parsing disabled")
+        return listings
 
-    # Split by item blocks (common Buyee patterns)
-    # Look for item links and price blocks
-    item_pattern = re.compile(
-        r'<a[^>]+href="[^"]*?/item/yahoo/auction/([a-zA-Z0-9]+)"[^>]*>'
-        r'.*?'
-        r'<(?:img|picture)[^>]+src="([^"]*)"'
-        r'.*?'
-        r'>(.*?)</a>',
-        re.DOTALL,
-    )
+    soup = BeautifulSoup(html, "lxml")
+    cards = soup.select("li.itemCard")
+    for card in cards:
+        anchor = card.find("a", href=re.compile(r"/item/[a-z]+/auction/"))
+        if not anchor:
+            continue
+        href = anchor.get("href", "")
+        m = re.search(r"/item/[a-z]+/auction/([a-zA-Z0-9]+)", href)
+        if not m:
+            continue
+        item_id = m.group(1)
 
-    for match in item_pattern.finditer(html):
-        item_id, image, body = match.groups()
-        # Extract title (strip HTML tags)
-        title = re.sub(r'<[^>]+>', '', body).strip()[:200]
+        # Title: prefer thumbnail alt (carries the full JP title), fall back
+        # to the card's visible text stripped.
+        img = card.find("img")
+        alt = (img.get("alt") or "").strip() if img else ""
+        title = alt[:200] if alt else card.get_text(" ", strip=True)[:200]
         if not title:
             continue
 
-        # Try to find price near this listing
-        price = _extract_jpy_price(body)
+        image = img.get("src", "") if img else ""
+
+        # Price — the card body contains at least one ``¥X,XXX`` or ``X,XXX円``.
+        card_text = card.get_text(" ", strip=True)
+        price = _extract_jpy_price(card_text)
 
         listings.append({
             "id": item_id,
             "title": title,
             "image": image,
             "price": price or 0,
-            "url": f"{BUYEE_ITEM_URL}/{item_id}",
+            "url": f"https://buyee.jp{href}" if href.startswith("/") else href,
         })
 
     return listings
@@ -215,15 +230,16 @@ class YahooAuctionsCaller:
             return []
 
         try:
-            client = await self._client()
             encoded_query = quote_plus(query)
-            url = f"{BUYEE_SEARCH_URL}/{encoded_query}"
+            url = f"{BUYEE_SEARCH_URL}/{encoded_query}?translationType=1"
 
-            resp = await client.get(url, params={"translationType": "1"})
-            resp.raise_for_status()
+            html = await self._fetch_html(url)
+            if not html:
+                yahoo_circuit.record_failure()
+                return []
             yahoo_circuit.record_success()
 
-            raw_listings = _parse_buyee_html(resp.text)
+            raw_listings = _parse_buyee_html(html)
             return [_normalize_listing(item, rates) for item in raw_listings[:limit]]
 
         except Exception as exc:
@@ -248,15 +264,16 @@ class YahooAuctionsCaller:
             return []
 
         try:
-            client = await self._client()
             encoded_query = quote_plus(query)
-            url = f"{BUYEE_SEARCH_URL}/{encoded_query}"
+            url = f"{BUYEE_SEARCH_URL}/{encoded_query}?translationType=1&status=closed"
 
-            resp = await client.get(url, params={"translationType": "1", "status": "closed"})
-            resp.raise_for_status()
+            html = await self._fetch_html(url)
+            if not html:
+                yahoo_circuit.record_failure()
+                return []
             yahoo_circuit.record_success()
 
-            raw_listings = _parse_buyee_html(resp.text)
+            raw_listings = _parse_buyee_html(html)
             results = [_normalize_listing(item, rates) for item in raw_listings[:limit]]
             for r in results:
                 r["is_sold"] = True
@@ -266,6 +283,31 @@ class YahooAuctionsCaller:
             yahoo_circuit.record_failure()
             logger.warning("Yahoo Auctions sold comps error: %s", exc)
             return []
+
+    async def _fetch_html(self, url: str) -> Optional[str]:
+        """Fetch HTML — prefer JP Lambda proxy when configured, else direct.
+
+        From EU IP, direct requests to buyee.jp return 403 and/or
+        Google-Translate wrapper pages. The JP proxy (Lambda in Tokyo)
+        returns real content. When JP_PROXY_URL is unset, falls back to
+        direct httpx — will typically fail from EU but preserves local
+        dev / other-region deployments.
+        """
+        if jp_proxy_configured():
+            html = await fetch_via_proxy(url)
+            if html:
+                return html
+            # Proxy configured but returned None — don't silently fall through
+            # to direct (would only re-confirm the EU block).
+            return None
+        # Direct path (default in environments without the proxy)
+        client = await self._client()
+        try:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            return resp.text
+        except Exception:
+            return None
 
     async def health_check(self) -> bool:
         if not self.configured:
