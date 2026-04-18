@@ -74,6 +74,8 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("discogs_worker",          "pipelines.import_discogs",           "run_once", True),
     # ── R50l sanity probe: hourly correctness checks on critical tables ──
     ("sanity_probe_worker",     "workers.sanity_probe_worker",        "run_once", True),
+    # ── R50l discovery audit: daily broad sweep for orphaned/stale/drift data ──
+    ("discovery_audit_worker",  "workers.discovery_audit_worker",     "run_once", True),
 
     # ── Workers with their own scheduler_loop (matview has split intervals) ──
     # matview_refresh uses its own scheduler_loop with demand/supply split

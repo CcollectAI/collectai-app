@@ -55,6 +55,7 @@ SCHEDULES = {
     "tcgcsv_worker": 24 * 3600,                  # daily — TCGPlayer public price dump (MTG/Pokemon/Yugioh/Lorcana/OPTCG/Digimon)
     "discogs_worker": 24 * 3600,                 # daily — Discogs lowest asking-price for vinyl/anime_ost/city_pop
     "sanity_probe_worker": 3600,                 # R50l — hourly correctness checks on critical tables
+    "discovery_audit_worker": 24 * 3600,         # R50l — daily broad discovery audit (orphan FKs, null rates, flow-through)
 }
 
 

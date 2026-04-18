@@ -28,8 +28,12 @@ logger = logging.getLogger(__name__)
 
 DSN = os.getenv("DB_DSN")
 
-# Minimum predictions + actuals needed to compute meaningful metrics
-MIN_SAMPLES = 5
+# Minimum predictions + actuals needed to compute meaningful metrics.
+# Lowered from 5 → 2 in R50l because post-clamp many categories had <5
+# (predictions, actual) pairs and the worker was silently skipping every
+# category — 19 OK runs produced 0 snapshots. 2 samples is too few for a
+# robust PICP but gives us *some* signal instead of none.
+MIN_SAMPLES = 2
 
 # PICP threshold for gate_pass
 PICP_THRESHOLD = 0.80
