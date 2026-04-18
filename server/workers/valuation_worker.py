@@ -27,6 +27,13 @@ _DECAY_HALF_LIFE = 30.0
 # Model blending weight when calibration gate passes
 _MODEL_BLEND_ALPHA = 0.7
 
+# Sanity ceiling on predicted prices. Anything above this is almost certainly
+# a feature-extraction NaN/Inf or a log-space blow-up (e.g. expm1 on a large
+# intercept). Lego Ridge model was emitting €1.5B for 65 items in Apr 2026;
+# this clamp drops the model contribution and falls back to empirical.
+# 20M euro is the documented grail-tier upper bound (R50f).
+_MAX_SANE_PRICE_EUR = 20_000_000.0
+
 
 def _build_evidence(hits: list[dict]) -> tuple[list[str], dict, str]:
     """
@@ -144,13 +151,20 @@ def _predict_ridge(model: dict, item_ref: str, fallback_q50: float) -> float | N
         prediction = sum(x_std[i] * coef[i] for i in range(len(x_std))) + intercept
 
         # If model was trained on log-scale, convert back to EUR
+        # (math is imported at module level — do NOT re-import here, as a local
+        # `import math` makes the name function-local and shadows module-level
+        # for the non-log path, triggering UnboundLocalError).
         if model.get("log_scale"):
-            import math
             prediction = math.expm1(prediction)  # exp(x) - 1, inverse of log1p
 
-        if prediction > 0:
-            return float(prediction)
-        return None
+        if not math.isfinite(prediction):
+            return None
+        if prediction <= 0:
+            return None
+        if prediction > _MAX_SANE_PRICE_EUR:
+            # Log-space blow-up or feature NaN — drop model, empirical wins
+            return None
+        return float(prediction)
     except Exception:
         return None
 
@@ -173,6 +187,7 @@ async def run_once():
             WHERE processed = false
               AND price IS NOT NULL
               AND item_ref IS NOT NULL
+              AND (is_listing IS NOT TRUE)  -- exclude asking-price rows (Discogs listings)
             ORDER BY item_ref, observed_at
         """)
 
@@ -250,8 +265,10 @@ async def run_once():
                     if alpha > 0:
                         model_q50 = _predict_ridge(model, item_ref, q50)
                         if model_q50 is not None:
-                            q50 = alpha * model_q50 + (1 - alpha) * q50
-                            model_used = True
+                            blended = alpha * model_q50 + (1 - alpha) * q50
+                            if math.isfinite(blended) and 0 < blended <= _MAX_SANE_PRICE_EUR:
+                                q50 = blended
+                                model_used = True
             except Exception as e:
                 logging.debug("Model blending skipped for %s: %s", item_ref, e)
 

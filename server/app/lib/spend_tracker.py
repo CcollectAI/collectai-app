@@ -164,6 +164,8 @@ class SpendTracker:
             self._provider_calls[provider] = (
                 self._provider_calls.get(provider, 0) + 1
             )
+            # Durable persist (best-effort — failures must not break the caller)
+            self._persist_event(provider, actual_cost)
 
             # Keep rolling log (last 100 entries)
             entry = {
@@ -194,6 +196,62 @@ class SpendTracker:
                 self._alerted_75 = True
                 logger.warning("Spend at 75%%: %.2f/%.2f EUR", spent, budget)
                 self._fire_telegram_alert(pct, spent, budget)
+
+    @staticmethod
+    def _persist_event(provider: str, cost_eur: float) -> None:
+        """Best-effort async insert into public.spend_events. Never raises."""
+        import asyncio
+        try:
+            from app.lib.db_helpers import get_db_pool
+            pool = get_db_pool()
+            if pool is None:
+                return
+            loop = asyncio.get_running_loop()
+        except Exception:
+            return
+
+        async def _insert():
+            try:
+                async with pool.acquire() as conn:
+                    await conn.execute(
+                        "INSERT INTO public.spend_events (provider, cost_eur) "
+                        "VALUES ($1, $2::numeric)",
+                        provider, cost_eur,
+                    )
+            except Exception as e:
+                logger.debug("spend_events insert failed: %s", e)
+
+        loop.create_task(_insert())
+
+    async def hydrate_from_db(self) -> None:
+        """Reload current-month spend from public.spend_events on startup.
+
+        Called once from main.py lifespan so a restart doesn't lose totals.
+        """
+        try:
+            from app.lib.db_helpers import get_db_pool
+            pool = get_db_pool()
+            if pool is None:
+                return
+            async with pool.acquire() as conn:
+                rows = await conn.fetch(
+                    "SELECT provider, SUM(cost_eur)::float AS spent, COUNT(*)::int AS n "
+                    "FROM public.spend_events WHERE month_key = $1 GROUP BY provider",
+                    self._month_key(),
+                )
+        except Exception as e:
+            logger.debug("spend hydrate skipped: %s", e)
+            return
+
+        with self._lock:
+            for r in rows:
+                p = r["provider"]
+                self._provider_spend[p] = self._provider_spend.get(p, 0.0) + float(r["spent"] or 0.0)
+                self._provider_calls[p] = self._provider_calls.get(p, 0) + int(r["n"] or 0)
+            logger.info(
+                "Spend tracker hydrated: %.4f EUR across %d providers",
+                self.total_spent, len(self._provider_spend),
+            )
 
     @staticmethod
     def _fire_telegram_alert(pct: float, spent: float, budget: float) -> None:

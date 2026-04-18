@@ -110,6 +110,7 @@ async def run_once():
                   AND price IS NOT NULL
                   AND ended_at IS NOT NULL
                   AND ended_at > now() - ($2 || ' days')::interval
+                  AND (is_listing IS NOT TRUE)
                 """,
                 item_refs,
                 str(SOLD_LOOKBACK_DAYS),
@@ -167,7 +168,7 @@ async def run_once():
             await conn.execute(
                 """
                 INSERT INTO public.calibration_snapshots
-                    (category, picp, ace, mae, n_samples, gate_pass, gate_reasons)
+                    (category, picp, ace, mae, samples, gate_pass, gate_reasons)
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                 """,
                 category,

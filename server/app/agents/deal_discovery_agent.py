@@ -512,7 +512,9 @@ class DealDiscoveryAgent:
 
             # Use URL as listing_id since marketplace listing IDs may not be available
             listing_id = url[:500]
-            normalized_key = f"{category or ''}/{query[:100]}" if query else None
+            # Use ':' as category prefix so downstream valuation/calibration
+            # can split on it (matches the convention in marketplace_scrape_scheduler).
+            normalized_key = f"{category}:{query[:100]}" if (category and query) else None
 
             rows.append((
                 source,
@@ -523,6 +525,8 @@ class DealDiscoveryAgent:
                 hit.get("condition"),
                 url,
                 normalized_key,
+                normalized_key,  # item_ref mirrors normalized_key for the valuation worker
+                category,
                 hit.get("shipping_cost"),
                 hit.get("ships_from"),
                 hit.get("domestic_only", False),
@@ -535,9 +539,10 @@ class DealDiscoveryAgent:
             await conn.executemany(
                 """
                 INSERT INTO public.market_hits
-                    (provider, listing_id, title, price, currency, condition, url, normalized_key,
+                    (provider, listing_id, title, price, currency, condition, url,
+                     normalized_key, item_ref, category,
                      shipping, ships_from, domestic_only)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                 ON CONFLICT (provider, listing_id) DO NOTHING
                 """,
                 rows,

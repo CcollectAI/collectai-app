@@ -81,6 +81,12 @@ async def lifespan(app: FastAPI):
             else:
                 raise
 
+    # Hydrate spend totals from DB so a bake restart doesn't zero out the month.
+    try:
+        await spend_tracker.hydrate_from_db()
+    except Exception as e:
+        logging.getLogger("uvicorn").debug("[startup] spend hydrate skipped: %s", e)
+
     # ── Bake Orchestrator — unified worker scheduling ──────────────────
     # Replaces all individual scheduler starts (price_monitor, deal_discovery,
     # catalog_learning, matview, valuation, etc.) with a single orchestrator
