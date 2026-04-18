@@ -41,6 +41,22 @@ MAX_DAYS = int(os.getenv("MARKETPLACE_SCRAPE_MAX_DAYS", "5"))
 # Adapters to SKIP (paid per-call)
 PAID_ADAPTERS = {"firecrawl", "scrape_do", "serpapi", "google_shopping"}
 
+# Categories that already have >100% coverage via dedicated bulk feeds
+# (tcgcsv + scryfall). Including them in this worker's SELECT just means
+# 80K+ TCG card items hog the queue and starve thin cats (disney, funko,
+# hot_toys etc. were at <2% attempt rate despite running for days).
+#
+# Coverage snapshot (2026-04-18): pokemon 311%, yugioh 189%, mtg 728%,
+# lorcana 651%, one_piece_tcg 817%, digimon 1233%.
+SKIP_CATEGORIES = {
+    "pokemon",
+    "yugioh",
+    "mtg",
+    "lorcana",
+    "one_piece_tcg",
+    "digimon",
+}
+
 _shutdown = False
 _shutdown_event = asyncio.Event()
 _started_at = time.time()
@@ -78,10 +94,11 @@ async def _get_stale_items(conn, batch_size: int):
             GROUP BY item_ref
         ) mh ON mh.item_ref = ci.category || ':' || ci.item_key
         WHERE ci.title IS NOT NULL
+          AND ci.category <> ALL($2::text[])
           AND (mh.last_seen IS NULL OR mh.last_seen < NOW() - INTERVAL '7 days')
         ORDER BY ci.last_scrape_attempt_at ASC NULLS FIRST, RANDOM()
         LIMIT $1
-    """, batch_size)
+    """, batch_size, sorted(SKIP_CATEGORIES))
 
 
 async def _mark_attempted(conn, item_ids: list) -> None:
