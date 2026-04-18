@@ -216,17 +216,17 @@ def upsert_hits_batched(
     # market_hits corrupt training (learning #23). Convert USD → EUR via the
     # fx_service; fall back to storing price unchanged if FX lookup fails.
     try:
-        from app.lib.fx_service import convert_to_eur
+        from app.lib.fx_service import convert_to_eur_sync
     except Exception:
-        convert_to_eur = None
+        convert_to_eur_sync = None
 
     for i in range(0, len(hits), batch_size):
         batch = hits[i:i + batch_size]
         rows = []
         for h in batch:
-            if convert_to_eur and h.currency and h.currency != "EUR":
+            if convert_to_eur_sync and h.currency and h.currency != "EUR":
                 try:
-                    price_eur = convert_to_eur(float(h.price), h.currency)
+                    price_eur = convert_to_eur_sync(float(h.price), h.currency)
                 except Exception:
                     price_eur = h.price
             else:

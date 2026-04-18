@@ -72,33 +72,60 @@ def _handle_signal(signum, frame):
 async def _get_stale_items(conn, batch_size: int):
     """Get catalog items due for a scrape attempt.
 
-    Selection policy:
-      1. `last_scrape_attempt_at IS NULL`  (never attempted — bootstrap)
-      2. Else, oldest `last_scrape_attempt_at` first (round-robin).
+    Two-pass policy, both of which hit the same partial index
+    `idx_category_items_scrape_attempt` on `last_scrape_attempt_at NULLS FIRST
+    WHERE title IS NOT NULL`:
 
-    Filter: skip items that already have market_hits within the last 7d
-    (no need to re-scrape).
+      1. **Bootstrap**: `WHERE last_scrape_attempt_at IS NULL LIMIT N` — uses
+         the NULL-leading partial index; degenerates to a covered range scan.
+      2. **Round-robin**: once all items have been touched once, fall back to
+         `ORDER BY last_scrape_attempt_at ASC LIMIT N` (again index-aided).
 
-    The `last_scrape_attempt_at` column is bumped after each attempt
-    regardless of hit count. Without this, niche items with
-    `mh.last_seen IS NULL` (no adapter can find them) kept winning every
-    cycle because the old selector ordered by `last_seen NULLS FIRST` —
-    see 2026-04-17 incident where 3 consecutive batches returned 0 hits.
+    History of this query:
+      * v1 LEFT-JOINed a `MAX(seen_at) GROUP BY item_ref` aggregate over the
+        full 200k `market_hits` rows every cycle — timed out on the pooler's
+        30s cap.
+      * v2 dropped the aggregate but kept `WHERE category <> ALL(skip)` +
+        `ORDER BY last_scrape_attempt_at`. Planner chose a Parallel Seq Scan
+        (11s / 40 rows) because the `<>ALL` filter matches ~75% of rows — the
+        partial index became unattractive relative to a full scan.
+      * v3 (this): splits into two index-friendly queries and filters
+        SKIP_CATEGORIES in Python after the fetch. Over-fetches 4× the batch
+        size to cover the skip-ratio without a second round-trip.
     """
-    return await conn.fetch("""
-        SELECT ci.id, ci.item_key, ci.title, ci.category
-        FROM category_items ci
-        LEFT JOIN (
-            SELECT item_ref, MAX(seen_at) AS last_seen
-            FROM market_hits
-            GROUP BY item_ref
-        ) mh ON mh.item_ref = ci.category || ':' || ci.item_key
-        WHERE ci.title IS NOT NULL
-          AND ci.category <> ALL($2::text[])
-          AND (mh.last_seen IS NULL OR mh.last_seen < NOW() - INTERVAL '7 days')
-        ORDER BY ci.last_scrape_attempt_at ASC NULLS FIRST, RANDOM()
+    skip_set = set(SKIP_CATEGORIES)
+    over_fetch = max(batch_size * 4, 160)
+
+    # Pass 1: items never attempted — uses the NULLS FIRST partial index
+    rows = await conn.fetch(
+        """
+        SELECT id, item_key, title, category
+        FROM public.category_items
+        WHERE title IS NOT NULL
+          AND last_scrape_attempt_at IS NULL
         LIMIT $1
-    """, batch_size, sorted(SKIP_CATEGORIES))
+        """,
+        over_fetch,
+    )
+    out = [r for r in rows if r["category"] not in skip_set][:batch_size]
+    if len(out) >= batch_size:
+        return out
+
+    # Pass 2: fall back to the oldest-attempted when bootstrap is drained
+    rows = await conn.fetch(
+        """
+        SELECT id, item_key, title, category
+        FROM public.category_items
+        WHERE title IS NOT NULL
+          AND last_scrape_attempt_at IS NOT NULL
+        ORDER BY last_scrape_attempt_at ASC
+        LIMIT $1
+        """,
+        over_fetch,
+    )
+    remaining = batch_size - len(out)
+    out.extend([r for r in rows if r["category"] not in skip_set][:remaining])
+    return out
 
 
 async def _mark_attempted(conn, item_ids: list) -> None:

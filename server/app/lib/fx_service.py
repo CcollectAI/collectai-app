@@ -112,3 +112,22 @@ async def convert_to_eur(amount: float, currency: str) -> float:
         logger.warning("[fx_service] Unknown currency %s, returning amount as-is", currency)
         return amount
     return round(amount * rate, 2)
+
+
+def convert_to_eur_sync(amount: float, currency: str) -> float:
+    """Sync convert_to_eur for batch import jobs that run outside an event loop.
+
+    Uses hardcoded fallback rates (from app.config) — accepts ~1-3% drift vs
+    the live ECB rate in exchange for not needing an async context. Imports
+    run nightly against thousands of rows; the async version silently returned
+    a coroutine (learning 2026-04-18) that serialised into JSON as
+    "Object of type coroutine is not JSON serializable" and dropped entire
+    upsert batches on the floor.
+    """
+    if currency.upper() == "EUR":
+        return amount
+    rate = _FALLBACK_TO_EUR.get(currency.upper())
+    if rate is None:
+        logger.warning("[fx_service] Unknown currency %s, returning amount as-is", currency)
+        return amount
+    return round(amount * rate, 2)

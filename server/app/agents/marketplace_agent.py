@@ -27,7 +27,7 @@ from app.agents.adapters.vinted_caller import VintedCaller
 from app.agents.adapters.mavin_caller import MavinCaller
 from app.agents.adapters.catawiki_caller import CatawikiCaller
 from app.agents.adapters.whisky_auctioneer_caller import WhiskyAuctioneerCaller
-from app.agents.adapters.mandarake_caller import MandarakeCaller
+from app.agents.adapters.suruga_ya_caller import SurugaYaCaller
 from app.agents.adapters.bezel_caller import BezelCaller
 from app.agents.adapters.chrono24_caller import Chrono24Caller
 from app.agents.adapters.keh_caller import KEHCaller
@@ -108,7 +108,7 @@ class MarketplaceAgent:
         self._mavin = MavinCaller()
         self._catawiki = CatawikiCaller()
         self._whisky_auctioneer = WhiskyAuctioneerCaller()
-        self._mandarake = MandarakeCaller()
+        self._suruga_ya = SurugaYaCaller()
         self._bezel = BezelCaller()
         self._chrono24 = Chrono24Caller()
         self._keh = KEHCaller()
@@ -151,7 +151,7 @@ class MarketplaceAgent:
             "mavin": self._mavin,
             "catawiki": self._catawiki,
             "whisky_auctioneer": self._whisky_auctioneer,
-            "mandarake": self._mandarake,
+            "suruga_ya": self._suruga_ya,
             "bezel": self._bezel,
             "chrono24": self._chrono24,
             "keh": self._keh,
@@ -535,7 +535,12 @@ class MarketplaceAgent:
                     raw_currency = hit.get("currency", "EUR")
                     if raw_price and raw_currency != "EUR" and convert_to_eur:
                         try:
-                            price_eur = convert_to_eur(float(raw_price), raw_currency)
+                            # convert_to_eur is async — missing await meant
+                            # price_eur was a coroutine that serialised into
+                            # JSON as "Object of type coroutine is not JSON
+                            # serializable" and dropped whole batches (learning
+                            # 2026-04-18).
+                            price_eur = await convert_to_eur(float(raw_price), raw_currency)
                         except Exception:
                             price_eur = raw_price  # fallback: store as-is
                     else:

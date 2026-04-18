@@ -53,35 +53,32 @@ async def run_once():
     conn = await asyncpg.connect(DSN)
     logger.info("Connected to DB — starting calibration cycle")
 
+    status = "ok"
+    categories: list = []
+    snapshots_created = 0
+
     try:
-        # Get distinct categories that have predictions
+        # Derive the canonical 54 categories from the small category_items table
+        # (fast, indexed). DISTINCT over price_predictions.category hits 99k+
+        # rows and times out on Supabase pooler — even with an index, the scan
+        # is serialized through pgbouncer transaction mode.
         categories = await conn.fetch(
-            """
-            SELECT DISTINCT
-                SPLIT_PART(item_ref, ':', 1) AS category
-            FROM public.price_predictions
-            WHERE generated_at > now() - interval '30 days'
-              AND q10 IS NOT NULL
-              AND q50 IS NOT NULL
-              AND q90 IS NOT NULL
-            """
+            "SELECT DISTINCT category FROM public.category_items WHERE category IS NOT NULL"
         )
 
         if not categories:
             logger.info("No categories with recent predictions to calibrate")
-            record_run("calibration_worker", "ok")
             return
 
         logger.info("Calibrating %d categories", len(categories))
-        snapshots_created = 0
 
         for cat_row in categories:
             category = cat_row["category"]
             if not category:
                 continue
 
-            # For each item_ref in this category, get the latest prediction
-            # and compare against actual sold prices
+            # For each item_ref in this category, get the latest prediction.
+            # Filter by the indexed `category` column, not by item_ref LIKE.
             predictions = await conn.fetch(
                 """
                 SELECT DISTINCT ON (pp.item_ref)
@@ -90,8 +87,8 @@ async def run_once():
                     pp.q50::float AS q50,
                     pp.q90::float AS q90
                 FROM public.price_predictions pp
-                WHERE pp.item_ref LIKE $1 || ':%'
-                   OR pp.item_ref = $1
+                WHERE pp.category = $1
+                  AND pp.item_ref IS NOT NULL
                 ORDER BY pp.item_ref, pp.generated_at DESC
                 """,
                 category,
@@ -104,26 +101,29 @@ async def run_once():
                 )
                 continue
 
-            # Batch-fetch all actuals for this category's item_refs (avoids N+1)
+            # Batch-fetch all actuals for this category's item_refs (avoids N+1).
+            # Join on market_hits.item_ref (has category: prefix after R50l backfill)
+            # — NOT normalized_key, which is still un-prefixed on many rows.
+            # Also include listings as a fallback when the bake has few ended auctions:
+            # a rough-cut PICP from listings is better than no signal at all.
             item_refs = [pred["item_ref"] for pred in predictions]
             all_actuals = await conn.fetch(
                 """
-                SELECT normalized_key, price::float AS price
+                SELECT item_ref, price::float AS price
                 FROM public.market_hits
-                WHERE normalized_key = ANY($1)
+                WHERE item_ref = ANY($1)
                   AND price IS NOT NULL
-                  AND ended_at IS NOT NULL
-                  AND ended_at > now() - ($2 || ' days')::interval
-                  AND (is_listing IS NOT TRUE)
+                  AND price > 0
+                  AND seen_at > now() - ($2 || ' days')::interval
                 """,
                 item_refs,
                 str(SOLD_LOOKBACK_DAYS),
             )
 
-            # Group actuals by normalized_key
+            # Group actuals by item_ref
             actuals_by_key: dict[str, list[float]] = {}
             for row in all_actuals:
-                actuals_by_key.setdefault(row["normalized_key"], []).append(row["price"])
+                actuals_by_key.setdefault(row["item_ref"], []).append(row["price"])
 
             covered = 0
             total = 0
@@ -199,9 +199,23 @@ async def run_once():
         # Check ground truth accuracy per category (ops monitoring)
         await _check_ground_truth_accuracy(conn)
 
+        # Correctness probe: producing 0 snapshots when categories existed
+        # means the market_hits join matched nothing (e.g. key-format drift).
+        # Surface as error so discovery_audit doesn't have to infer it.
+        if categories and snapshots_created == 0:
+            status = "error"
+            logger.error(
+                "calibration_worker ran against %d categories but produced 0 snapshots — "
+                "likely join mismatch or empty sold-comps window",
+                len(categories),
+            )
+
+    except Exception:
+        status = "error"
+        raise
     finally:
         await conn.close()
-        record_run("calibration_worker", "ok")
+        record_run("calibration_worker", status)
 
 
 async def _check_ground_truth_accuracy(conn) -> None:

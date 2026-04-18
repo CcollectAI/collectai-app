@@ -122,6 +122,56 @@ CHECKS: list[dict] = [
         """,
         "description": "price_predictions.category must match item_ref prefix",
     },
+    {
+        # Added 2026-04-18 after calibration_worker was "ok" for 7d with 0
+        # output. Correctness probe instead of liveness probe.
+        "name": "calibration_snapshots.recent_writes",
+        "sql": """
+            SELECT CASE
+                WHEN (SELECT COUNT(*) FROM public.calibration_snapshots
+                       WHERE created_at > now() - interval '2 days') = 0
+                 AND (SELECT COUNT(*) FROM public.worker_runs
+                       WHERE worker_name='calibration_worker'
+                         AND finished_at > now() - interval '2 days'
+                         AND status='ok') >= 2
+                THEN 1 ELSE 0
+            END AS violators,
+            NULL::text AS sample_id
+        """,
+        "description": "calibration_worker has ok runs but wrote 0 snapshots in 2 days",
+    },
+    {
+        # Catches the R50l-followup pattern — any status leaked outside ok/error
+        # should surface within an hour, not wait for the daily discovery audit.
+        "name": "worker_runs.status_in_ok_error",
+        "sql": """
+            SELECT COUNT(*) AS violators,
+                   MAX(worker_name) AS sample_id
+            FROM public.worker_runs
+            WHERE finished_at > now() - interval '2 days'
+              AND status NOT IN ('ok','error')
+        """,
+        "description": "worker_runs.status must be 'ok' or 'error' (partial drift)",
+    },
+    {
+        # Producer-stall correctness probe (learning #45: marketplace_scrape
+        # silently skipped for 24h). Alerts when an "active" producer worker
+        # hasn't added rows to its target table in 6h while reporting ok runs.
+        "name": "market_hits.producer_stall",
+        "sql": """
+            SELECT CASE
+                WHEN (SELECT COUNT(*) FROM public.market_hits
+                       WHERE seen_at > now() - interval '6 hours') = 0
+                 AND (SELECT COUNT(*) FROM public.worker_runs
+                       WHERE worker_name='marketplace_scrape_worker'
+                         AND finished_at > now() - interval '6 hours'
+                         AND status='ok') >= 3
+                THEN 1 ELSE 0
+            END AS violators,
+            NULL::text AS sample_id
+        """,
+        "description": "marketplace_scrape_worker ok but 0 market_hits written in 6h",
+    },
 ]
 
 

@@ -276,9 +276,9 @@ def _upsert(hits: list[MarketHit], stats: IngestStats) -> int:
     # currency, usually USD. Training on mixed currency corrupts the model
     # (learning #23). Convert to EUR at upsert time.
     try:
-        from app.lib.fx_service import convert_to_eur
+        from app.lib.fx_service import convert_to_eur_sync
     except Exception:
-        convert_to_eur = None
+        convert_to_eur_sync = None
 
     rows = []
     for h in hits:
@@ -287,9 +287,9 @@ def _upsert(hits: list[MarketHit], stats: IngestStats) -> int:
             "listing_type": "min_asking",
             "source_note": "discogs_api_lowest_price",
         }
-        if convert_to_eur and h.currency and h.currency != "EUR":
+        if convert_to_eur_sync and h.currency and h.currency != "EUR":
             try:
-                price_eur = convert_to_eur(float(h.price), h.currency)
+                price_eur = convert_to_eur_sync(float(h.price), h.currency)
             except Exception:
                 price_eur = h.price
         else:

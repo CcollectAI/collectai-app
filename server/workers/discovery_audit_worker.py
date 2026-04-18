@@ -194,13 +194,25 @@ CHECKS: list[dict] = [
         "name": "quantile_outlier_categories",
         "severity": "warning",
         "threshold": 0,
-        "description": "Category with max(q50) > 100x average — Ridge outlier",
+        # A category trips this when max(q50) is >100× the category average AND
+        # the category has enough rows (>20) AND a non-trivial average (>€100)
+        # AND the max itself is absurd (>€100k). Without these guards, a tiny
+        # category with one legit grail (F.P. Journe watch, Action Comics #1)
+        # pages every day — the 20M clamp already blocks true Ridge blow-ups.
+        "description": "Category with absurd Ridge outlier (>100× avg, max>€100k, n>20)",
         "sql": """
             SELECT COUNT(*) AS violators FROM (
-              SELECT category FROM public.price_predictions
+              SELECT split_part(item_ref, ':', 1) AS category,
+                     COUNT(*) AS n,
+                     MAX(q50) AS mx,
+                     AVG(q50) AS avg
+              FROM public.price_predictions
               WHERE q50 IS NOT NULL AND generated_at > now() - interval '7 days'
-              GROUP BY category
-              HAVING MAX(q50) / NULLIF(AVG(q50),0) > 100
+              GROUP BY 1
+              HAVING COUNT(*) > 20
+                 AND AVG(q50) > 100
+                 AND MAX(q50) > 100000
+                 AND MAX(q50) / NULLIF(AVG(q50),0) > 100
             ) d
         """,
     },
