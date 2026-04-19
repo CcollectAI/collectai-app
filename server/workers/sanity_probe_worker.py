@@ -56,17 +56,27 @@ _last_alerted_at: dict[str, datetime] = {}
 # Check definitions — each returns (violator_count, sample_offending_row_or_none)
 # ---------------------------------------------------------------------------
 
+#
+# Check queries are time-windowed to the last 24 hours (except the
+# attributes_json repair check which uses a bounded sample). Full-table
+# counts on market_hits (~600k rows) and price_predictions (~300k 7d)
+# regularly exceed the Supabase pooler 30s statement_timeout. 24h windows
+# catch *new* violations immediately while keeping queries index-aided.
+# (Hardened 2026-04-19 after R4 audit showed 13 probe timeouts.)
 CHECKS: list[dict] = [
     {
         "name": "category_items.attributes_json_is_object",
         "sql": """
             SELECT COUNT(*) AS violators,
                    MAX(id::text) AS sample_id
-            FROM public.category_items
-            WHERE attributes_json IS NOT NULL
-              AND jsonb_typeof(attributes_json) <> 'object'
+            FROM (
+              SELECT id, attributes_json FROM public.category_items
+              WHERE attributes_json IS NOT NULL
+              ORDER BY id DESC LIMIT 10000
+            ) sample
+            WHERE jsonb_typeof(attributes_json) <> 'object'
         """,
-        "description": "attributes_json must always be a JSONB object (not string/array)",
+        "description": "attributes_json must always be a JSONB object (sample of 10k most recent)",
     },
     {
         "name": "price_predictions.q50_under_20M",
@@ -74,9 +84,10 @@ CHECKS: list[dict] = [
             SELECT COUNT(*) AS violators,
                    MAX(item_ref) AS sample_id
             FROM public.price_predictions
-            WHERE q50 > 20000000 OR q10 > 20000000 OR q90 > 20000000
+            WHERE generated_at > now() - interval '24 hours'
+              AND (q50 > 20000000 OR q10 > 20000000 OR q90 > 20000000)
         """,
-        "description": "price_predictions quantiles must be <= €20M",
+        "description": "price_predictions quantiles must be <= €20M (24h window)",
     },
     {
         "name": "price_predictions.quantiles_ordered",
@@ -84,9 +95,10 @@ CHECKS: list[dict] = [
             SELECT COUNT(*) AS violators,
                    MAX(item_ref) AS sample_id
             FROM public.price_predictions
-            WHERE (q10 > q50) OR (q50 > q90) OR (q10 > q90)
+            WHERE generated_at > now() - interval '24 hours'
+              AND ((q10 > q50) OR (q50 > q90) OR (q10 > q90))
         """,
-        "description": "price_predictions require q10 <= q50 <= q90",
+        "description": "price_predictions require q10 <= q50 <= q90 (24h window)",
     },
     {
         "name": "market_hits.item_ref_prefixed",
@@ -94,11 +106,12 @@ CHECKS: list[dict] = [
             SELECT COUNT(*) AS violators,
                    MAX(id::text) AS sample_id
             FROM public.market_hits
-            WHERE item_ref IS NOT NULL
+            WHERE seen_at > now() - interval '24 hours'
+              AND item_ref IS NOT NULL
               AND item_ref NOT LIKE '%:%'
               AND category IS NOT NULL
         """,
-        "description": "market_hits.item_ref must be `category:item_key` formatted",
+        "description": "market_hits.item_ref must be `category:item_key` formatted (24h window)",
     },
     {
         "name": "market_hits.price_eur_sane",
@@ -106,9 +119,10 @@ CHECKS: list[dict] = [
             SELECT COUNT(*) AS violators,
                    MAX(id::text) AS sample_id
             FROM public.market_hits
-            WHERE price_eur > 20000000 OR price > 20000000
+            WHERE seen_at > now() - interval '24 hours'
+              AND (price_eur > 20000000 OR price > 20000000)
         """,
-        "description": "market_hits price must be <= €20M (see learning #25)",
+        "description": "market_hits price must be <= €20M (24h window)",
     },
     {
         "name": "price_predictions.category_matches_item_ref",
@@ -116,11 +130,12 @@ CHECKS: list[dict] = [
             SELECT COUNT(*) AS violators,
                    MAX(item_ref) AS sample_id
             FROM public.price_predictions
-            WHERE item_ref LIKE '%:%'
+            WHERE generated_at > now() - interval '24 hours'
+              AND item_ref LIKE '%:%'
               AND category IS NOT NULL
               AND split_part(item_ref, ':', 1) <> category
         """,
-        "description": "price_predictions.category must match item_ref prefix",
+        "description": "price_predictions.category must match item_ref prefix (24h window)",
     },
     {
         # Added 2026-04-18 after calibration_worker was "ok" for 7d with 0

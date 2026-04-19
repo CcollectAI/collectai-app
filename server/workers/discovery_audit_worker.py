@@ -46,14 +46,19 @@ _last_alerted_at: dict[str, datetime] = {}
 #   tolerate low-level noise)
 CHECKS: list[dict] = [
     # --- A. Referential integrity ---
+    # All check queries are time-windowed where possible. Full-table scans on
+    # market_hits (~600k rows) and price_predictions (~300k 7d) regularly
+    # exceed the Supabase pooler 30s statement_timeout. Hardened 2026-04-19
+    # after R4 audit showed 13 probe timeouts.
     {
         "name": "orphan_predictions",
         "severity": "warning",
         "threshold": 2000,  # TCG cards (mtg/pokemon/yugioh) have long-tail sets not yet in curated catalog — tolerate signal without catalog entries
-        "description": "price_predictions with item_ref not in category_items (excl. tcgplayer:* keys + mtg/pokemon/yugioh)",
+        "description": "price_predictions with item_ref not in category_items (7d window, excl. tcgplayer:* keys + mtg/pokemon/yugioh)",
         "sql": """
             SELECT COUNT(*) AS violators FROM public.price_predictions pp
-            WHERE pp.item_ref IS NOT NULL AND pp.item_ref LIKE '%:%'
+            WHERE pp.generated_at > now() - interval '7 days'
+              AND pp.item_ref IS NOT NULL AND pp.item_ref LIKE '%:%'
               AND pp.item_ref NOT LIKE '%:tcgplayer:%'
               AND split_part(pp.item_ref, ':', 1) NOT IN ('mtg','pokemon','yugioh')
               AND NOT EXISTS (
@@ -67,10 +72,11 @@ CHECKS: list[dict] = [
         "name": "orphan_market_hits",
         "severity": "warning",
         "threshold": 100000,  # tcgplayer/cardmarket/scryfall/ebay carry legit market signal for non-curated items; tolerate and alert only on regressions
-        "description": "market_hits with item_ref not in category_items (excl. tcgcsv + mtg/pokemon/yugioh long-tail)",
+        "description": "market_hits with item_ref not in category_items (7d window, excl. tcgcsv + mtg/pokemon/yugioh long-tail)",
         "sql": """
             SELECT COUNT(*) AS violators FROM public.market_hits mh
-            WHERE mh.item_ref IS NOT NULL AND mh.item_ref LIKE '%:%'
+            WHERE mh.seen_at > now() - interval '7 days'
+              AND mh.item_ref IS NOT NULL AND mh.item_ref LIKE '%:%'
               AND mh.provider <> 'tcgcsv'
               AND split_part(mh.item_ref, ':', 1) NOT IN ('mtg','pokemon','yugioh')
               AND NOT EXISTS (
@@ -99,10 +105,11 @@ CHECKS: list[dict] = [
         "name": "ended_before_seen",
         "severity": "warning",
         "threshold": 10,
-        "description": "market_hits.ended_at earlier than seen_at (parsing bug)",
+        "description": "market_hits.ended_at earlier than seen_at — parsing bug (7d window)",
         "sql": """
             SELECT COUNT(*) AS violators FROM public.market_hits
-            WHERE ended_at IS NOT NULL AND seen_at IS NOT NULL
+            WHERE seen_at > now() - interval '7 days'
+              AND ended_at IS NOT NULL AND seen_at IS NOT NULL
               AND ended_at < seen_at - interval '1 day'
         """,
     },
