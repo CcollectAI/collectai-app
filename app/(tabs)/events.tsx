@@ -44,7 +44,6 @@ import { collectorsApi } from '@/api/collectorsApi';
 import * as Location from 'expo-location';
 import logger from '@/utils/logger';
 import { radius, spacing, text, fontWeight, gap, shadow } from '@/theme/tokens';
-import { TWITCH_PURPLE } from '@/constants/colors';
 import { BETA_MODE } from '@/config/featureFlags';
 
 const VIEW_MODE_TABS = [
@@ -281,11 +280,6 @@ function EventsScreen() {
     router.push('/sponsor/dashboard');
   }, [router, settings.hapticsEnabled]);
 
-  const handleOpenTwitch = useCallback(() => {
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push('/twitch');
-  }, [router, settings.hapticsEnabled]);
-
   const handleViewModeChange = useCallback((key: 'list' | 'calendar' | 'week' | 'nearby') => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setViewMode(key);
@@ -490,28 +484,19 @@ function EventsScreen() {
         </AnimatedPressable>
 
         {!BETA_MODE && isBusinessAccount && (
-          <>
-            <AnimatedPressable
-              onPress={handleOpenSponsor}
-              style={[styles.sponsorPill, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
-              accessibilityRole="button"
-              accessibilityLabel={t('events.sponsor_a11y')}
-            >
-              <Ionicons name="megaphone-outline" size={14} color={colors.accent} />
-              <Text style={[styles.sponsorPillText, { color: colors.accent }]}>Sponsor</Text>
-            </AnimatedPressable>
-
-            <AnimatedPressable
-              onPress={handleOpenTwitch}
-              style={[styles.sponsorPill, { borderColor: TWITCH_PURPLE, backgroundColor: TWITCH_PURPLE + '10' }]}
-              accessibilityRole="button"
-              accessibilityLabel={t('events.twitch_a11y')}
-            >
-              <Ionicons name="logo-twitch" size={14} color={TWITCH_PURPLE} />
-              <Text style={[styles.sponsorPillText, { color: TWITCH_PURPLE }]}>Twitch</Text>
-            </AnimatedPressable>
-          </>
+          <AnimatedPressable
+            onPress={handleOpenSponsor}
+            style={[styles.sponsorPill, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('events.sponsor_a11y')}
+          >
+            <Ionicons name="megaphone-outline" size={14} color={colors.accent} />
+            <Text style={[styles.sponsorPillText, { color: colors.accent }]}>Sponsor</Text>
+          </AnimatedPressable>
         )}
+        {/* Twitch chip removed 2026-04-19: /twitch is a stub (Active Drops: —,
+            no creator list, only the leaderboard link is wired). Re-enable
+            once the Twitch landing page actually has content to show. */}
       </View>
 
       {/* Search Bar */}

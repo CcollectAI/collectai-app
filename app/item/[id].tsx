@@ -746,102 +746,21 @@ function ItemDetailScreen() {
               />
             )}
 
-            {/* Price Trend Chart — Pro-gated 2026-04-18 */}
-            {!isDraft && id && (
-              limits.advanced_analytics ? (
-                <PriceTrendChart itemId={id} />
-              ) : (
-                <LockedPreviewSection
-                  title="Price Trend"
-                  subtitle="See the q10–q90 confidence band and 90-day price history with Pro."
-                  previewType="chart"
-                />
-              )
-            )}
+            {/* ═══════════════ USER-OWNED SECTIONS (top) ═══════════════ */}
+            {/* Reordered 2026-04-19: things the user OWNS (notes, build project,
+                progress, shop) come FIRST so they don't have to scroll past
+                paywalled sections to edit their own data. Pro-gated sections
+                moved below. */}
 
-            {/* Sell Timing Badge — stub, gated behind Premium */}
-            {!isDraft && id && (
-              <SellTimingBadge itemId={id} />
-            )}
-
-            {/* Item History — Pro-gated 2026-04-18 */}
-            {!isDraft && id && (
-              limits.advanced_analytics ? (
-                <ProvenanceHistorySection
-                  theme={theme}
-                  hapticsEnabled={settings.hapticsEnabled}
-                  provenanceExpanded={provenanceExpanded}
-                  provenanceLoading={provenanceLoading}
-                  provenanceEvents={provenanceEvents}
-                  authenticitySignals={authenticitySignals}
-                  onToggleExpanded={() => setProvenanceExpanded(!provenanceExpanded)}
-                />
-              ) : (
-                <LockedPreviewSection
-                  title="Item History"
-                  subtitle="View provenance events and authenticity signals with Pro."
-                  previewType="list"
-                />
-              )
-            )}
-
-            {/* Grading Section — for eligible categories (Pro+) */}
-            {!isDraft && id && isGradingEligible && !limits.condition_grading && (
-              <UpgradePrompt feature="Condition Grading" requiredPlan="Pro" />
-            )}
-            {!isDraft && id && isGradingEligible && limits.condition_grading && (
-              <GradingSection
-                theme={theme}
-                hapticsEnabled={settings.hapticsEnabled}
-                gradingExpanded={gradingExpanded}
-                onToggleExpanded={() => {
-                  if (!gradingExpanded) {
-                    loadGradingServices();
-                    if (!gradingPopulation) loadGradingPopulation();
-                  }
-                  setGradingExpanded(!gradingExpanded);
-                }}
-                gradingLookupResult={gradingLookupResult}
-                gradingPopulation={gradingPopulation}
-                gradingPopLoading={gradingPopLoading}
-                gradingServices={gradingServices}
-                gradingModalVisible={gradingModalVisible}
-                onSetGradingModalVisible={setGradingModalVisible}
-                gradingCertInput={gradingCertInput}
-                onSetGradingCertInput={setGradingCertInput}
-                gradingServicePick={gradingServicePick}
-                onSetGradingServicePick={setGradingServicePick}
-                gradingLookupLoading={gradingLookupLoading}
-                onGradingLookup={handleGradingLookup}
-              />
-            )}
-
-            {/* Valuation Report (Dossier) — Pro-gated 2026-04-18 */}
-            {!isDraft && id && (
-              limits.advanced_analytics ? (
-                <DossierReportSection
-                  theme={theme}
-                  dossierData={dossierData}
-                  dossierLoading={dossierLoading}
-                  dossierExpanded={dossierExpanded}
-                  dossierError={dossierError}
-                  onToggleExpanded={() => {
-                    if (!dossierData && !dossierError) loadDossier();
-                    else setDossierExpanded(!dossierExpanded);
-                  }}
-                  onRetry={() => loadDossier()}
-                  itemId={id}
-                  formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
-                  toNum={toNum}
-                />
-              ) : (
-                <LockedPreviewSection
-                  title="Valuation Report"
-                  subtitle="Get a full dossier PDF with comps, confidence, and provenance signals with Pro."
-                  previewType="report"
-                />
-              )
-            )}
+            {/* Notes (editable) — top priority per user feedback */}
+            <ItemNotesEditor
+              notes={notes}
+              onChangeNotes={setNotes}
+              onSaveNotes={onSaveNotes}
+              keyboardVisible={keyboardVisible}
+              onLayout={(y) => { notesLayoutY.current = y; }}
+              onFocus={scrollToNotes}
+            />
 
             {/* Build Project — for buildable categories */}
             {!isDraft && id && itemIsBuildable && (
@@ -879,7 +798,108 @@ function ItemDetailScreen() {
               <ItemShopSection affiliateLinks={affiliateLinks} />
             )}
 
-            {/* Market Prices — Pro-gated 2026-04-18 */}
+            {/* Sell Timing Badge — lightweight, keep near the top */}
+            {!isDraft && id && (
+              <SellTimingBadge itemId={id} />
+            )}
+
+            {/* Grading Section — category-specific, kept mid-stack */}
+            {!isDraft && id && isGradingEligible && !limits.condition_grading && (
+              <UpgradePrompt feature="Condition Grading" requiredPlan="Pro" />
+            )}
+            {!isDraft && id && isGradingEligible && limits.condition_grading && (
+              <GradingSection
+                theme={theme}
+                hapticsEnabled={settings.hapticsEnabled}
+                gradingExpanded={gradingExpanded}
+                onToggleExpanded={() => {
+                  if (!gradingExpanded) {
+                    loadGradingServices();
+                    if (!gradingPopulation) loadGradingPopulation();
+                  }
+                  setGradingExpanded(!gradingExpanded);
+                }}
+                gradingLookupResult={gradingLookupResult}
+                gradingPopulation={gradingPopulation}
+                gradingPopLoading={gradingPopLoading}
+                gradingServices={gradingServices}
+                gradingModalVisible={gradingModalVisible}
+                onSetGradingModalVisible={setGradingModalVisible}
+                gradingCertInput={gradingCertInput}
+                onSetGradingCertInput={setGradingCertInput}
+                gradingServicePick={gradingServicePick}
+                onSetGradingServicePick={setGradingServicePick}
+                gradingLookupLoading={gradingLookupLoading}
+                onGradingLookup={handleGradingLookup}
+              />
+            )}
+
+            {/* ═══════════════ PRO FEATURES (bottom) ═══════════════ */}
+            {/* Paywall-gated analytics features — shown last with realistic
+                mock previews so free users see what they'd unlock. */}
+
+            {/* Price Trend Chart */}
+            {!isDraft && id && (
+              limits.advanced_analytics ? (
+                <PriceTrendChart itemId={id} />
+              ) : (
+                <LockedPreviewSection
+                  title="Price Trend"
+                  subtitle="See the q10–q90 confidence band and 90-day price history with Pro."
+                  previewType="chart"
+                />
+              )
+            )}
+
+            {/* Item History */}
+            {!isDraft && id && (
+              limits.advanced_analytics ? (
+                <ProvenanceHistorySection
+                  theme={theme}
+                  hapticsEnabled={settings.hapticsEnabled}
+                  provenanceExpanded={provenanceExpanded}
+                  provenanceLoading={provenanceLoading}
+                  provenanceEvents={provenanceEvents}
+                  authenticitySignals={authenticitySignals}
+                  onToggleExpanded={() => setProvenanceExpanded(!provenanceExpanded)}
+                />
+              ) : (
+                <LockedPreviewSection
+                  title="Item History"
+                  subtitle="View provenance events and authenticity signals with Pro."
+                  previewType="history"
+                />
+              )
+            )}
+
+            {/* Valuation Report (Dossier) */}
+            {!isDraft && id && (
+              limits.advanced_analytics ? (
+                <DossierReportSection
+                  theme={theme}
+                  dossierData={dossierData}
+                  dossierLoading={dossierLoading}
+                  dossierExpanded={dossierExpanded}
+                  dossierError={dossierError}
+                  onToggleExpanded={() => {
+                    if (!dossierData && !dossierError) loadDossier();
+                    else setDossierExpanded(!dossierExpanded);
+                  }}
+                  onRetry={() => loadDossier()}
+                  itemId={id}
+                  formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
+                  toNum={toNum}
+                />
+              ) : (
+                <LockedPreviewSection
+                  title="Valuation Report"
+                  subtitle="Get a full dossier PDF with comps, confidence, and provenance signals with Pro."
+                  previewType="report"
+                />
+              )
+            )}
+
+            {/* Market Prices */}
             {!isDraft && id && (
               limits.advanced_analytics ? (
                 <MarketplacePricesSection
@@ -905,16 +925,6 @@ function ItemDetailScreen() {
                 />
               )
             )}
-
-            {/* Notes (editable) */}
-            <ItemNotesEditor
-              notes={notes}
-              onChangeNotes={setNotes}
-              onSaveNotes={onSaveNotes}
-              keyboardVisible={keyboardVisible}
-              onLayout={(y) => { notesLayoutY.current = y; }}
-              onFocus={scrollToNotes}
-            />
 
             {/* Bottom spacer inside card */}
 

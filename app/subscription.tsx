@@ -205,21 +205,46 @@ function SubscriptionScreen() {
         {loading ? (
           <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
         ) : fetchError ? (
-          <View style={styles.comingSoonSection}>
-            <View style={[styles.comingSoonIcon, { backgroundColor: colors.danger + '15' }]}>
-              <Ionicons name="cloud-offline-outline" size={40} color={colors.danger} />
+          // Degraded mode: backend billing fetch failed, but we still render
+          // the plan cards so the user can see the UI (2026-04-19 UX change
+          // — was blocking the whole page with an error card previously).
+          <>
+            <View style={[styles.warningBanner, { backgroundColor: colors.warning + '15' }]}>
+              <Ionicons name="warning-outline" size={18} color={colors.warning} />
+              <Text style={[styles.warningText, { color: colors.text }]}>
+                Couldn't load your current plan. Showing plans in preview mode.{' '}
+                <Text style={{ color: colors.accent }} onPress={fetchBilling}>Retry</Text>
+              </Text>
             </View>
-            <Text style={[styles.comingSoonTitle, { color: colors.text }]}>Something Went Wrong</Text>
-            <Text style={[styles.comingSoonText, { color: colors.muted }]}>{fetchError}</Text>
-            <AnimatedPressable
-              style={[styles.selectBtn, { backgroundColor: colors.accent, marginTop: 20, paddingHorizontal: 32 }]}
-              onPress={fetchBilling}
-              accessibilityRole="button"
-              accessibilityLabel="Retry loading subscription"
-            >
-              <Text style={styles.selectBtnText}>Retry</Text>
-            </AnimatedPressable>
-          </View>
+            <View style={styles.plans}>
+              <PlanCard
+                name="Free"
+                price={`${settings.currency} 0/mo`}
+                features={['3 purchase mandates', 'Basic valuation', 'Community access']}
+                current={true}
+                colors={colors}
+              />
+              <PlanCard
+                name="Pro"
+                price={`${settings.currency} 4.99/mo`}
+                features={['10 purchase mandates', 'Deal discovery', 'Dossier PDF export', 'Priority support']}
+                current={false}
+                recommended
+                onSelect={() => handleUpgrade('pro')}
+                loading={upgrading === 'pro'}
+                colors={colors}
+              />
+              <PlanCard
+                name="Premium"
+                price={`${settings.currency} 9.99/mo`}
+                features={['50 purchase mandates', 'Deal discovery', 'Dossier PDF export', 'Advanced analytics', 'Priority support']}
+                current={false}
+                onSelect={() => handleUpgrade('premium')}
+                loading={upgrading === 'premium'}
+                colors={colors}
+              />
+            </View>
+          </>
         ) : billingUnavailable ? (
           <View style={styles.comingSoonSection}>
             <View style={[styles.comingSoonIcon, { backgroundColor: colors.accent + '15' }]}>
