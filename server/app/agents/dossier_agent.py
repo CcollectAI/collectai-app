@@ -141,11 +141,17 @@ async def generate_dossier(
     # ------------------------------------------------------------------
     # 1. Identity -- items table
     # ------------------------------------------------------------------
+    # Column drift: items only has id, user_id, title, category, condition,
+    # attributes_json, canonical_key, created_at on this schema. The other
+    # fields (grade, graded_by, sealed, taxonomy_version, subtype_id,
+    # collections, images) live elsewhere or don't exist yet — pull what we
+    # have and default the rest so the dossier renders.
+    # items column names on this schema: attrs (jsonb, not attributes_json),
+    # no updated_at. Selecting what actually exists so the query doesn't crash.
     item_row = await conn.fetchrow(
         """
-        SELECT id, user_id, title, category, condition, grade, graded_by,
-               sealed, attributes_json, taxonomy_version, subtype_id,
-               collections, images, created_at, updated_at
+        SELECT id, user_id, title, category, condition, attrs AS attributes_json,
+               canonical_key, created_at, image_url
         FROM public.items
         WHERE id = $1::uuid AND user_id = $2::uuid
         """,
@@ -156,37 +162,32 @@ async def generate_dossier(
     if item_row is None:
         raise ValueError("Item not found or not owned by user")
 
-    attributes = _parse_json_field(item_row["attributes_json"])
-    collections_raw = item_row.get("collections")
-    if isinstance(collections_raw, str):
-        try:
-            collections_list = json.loads(collections_raw)
-        except (json.JSONDecodeError, TypeError):
-            collections_list = [collections_raw] if collections_raw else []
-    elif isinstance(collections_raw, list):
-        collections_list = collections_raw
-    else:
-        collections_list = []
+    canonical_key: Optional[str] = item_row.get("canonical_key")
 
-    # Extract photos from the images JSONB array
-    images_raw = _parse_json_field(item_row.get("images"))
-    first_image_url: Optional[str] = None
-    if isinstance(images_raw, list) and images_raw:
-        first_image_url = images_raw[0] if isinstance(images_raw[0], str) else None
+    attributes = _parse_json_field(item_row["attributes_json"])
+    collections_list: List[Any] = []  # `collections` column not present on items; left empty
+
+    # image_url column holds the single user-uploaded photo; no separate images array
+    first_image_url: Optional[str] = item_row.get("image_url")
+    images_raw = [first_image_url] if first_image_url else []
+
+    # Pull grading fields from attributes_json if present (kept as dossier
+    # fields for back-compat with the response schema).
+    attrs_dict = attributes if isinstance(attributes, dict) else {}
 
     identity = {
         "name": item_row["title"],
         "category": item_row["category"],
         "condition": item_row["condition"],
-        "grade": item_row["grade"],
-        "graded_by": item_row["graded_by"],
-        "sealed": item_row["sealed"],
-        "subtype_id": item_row.get("subtype_id"),
-        "taxonomy_version": item_row.get("taxonomy_version"),
+        "grade": attrs_dict.get("grade"),
+        "graded_by": attrs_dict.get("graded_by"),
+        "sealed": attrs_dict.get("sealed"),
+        "subtype_id": attrs_dict.get("subtype_id"),
+        "taxonomy_version": attrs_dict.get("taxonomy_version"),
         "attributes": attributes or {},
         "image_url": first_image_url,
         "created_at": _ts(item_row.get("created_at")),
-        "updated_at": _ts(item_row.get("updated_at")),
+        "updated_at": _ts(item_row.get("updated_at")) if item_row.get("updated_at") else None,
     }
 
     # Photos list from the images JSONB array + S3 object_pointers
@@ -216,17 +217,20 @@ async def generate_dossier(
     # ------------------------------------------------------------------
     valuation: Dict[str, Any] = {}
     try:
+        # Column drift fix 2026-04-19: price_predictions has item_ref (text)
+        # and generated_at, not item_id (uuid) and asof. Look up by the
+        # user's canonical catalog key.
         pred_row = await conn.fetchrow(
             """
             SELECT q10, q50, q90, conf_score, explanation,
-                   evidence_summary, evidence_hit_ids, asof
+                   evidence_summary, evidence_hit_ids, generated_at
             FROM public.price_predictions
-            WHERE item_id = $1::uuid
-            ORDER BY asof DESC
+            WHERE item_ref = $1
+            ORDER BY generated_at DESC
             LIMIT 1
             """,
-            item_id,
-        )
+            canonical_key,
+        ) if canonical_key else None
         if pred_row:
             valuation = {
                 "q10": float(pred_row["q10"]) if pred_row["q10"] is not None else None,
@@ -240,7 +244,7 @@ async def generate_dossier(
                 "explanation": pred_row.get("explanation"),
                 "evidence_summary": _parse_json_field(pred_row.get("evidence_summary")),
                 "evidence_hit_ids": _parse_json_field(pred_row.get("evidence_hit_ids")) or [],
-                "predicted_at": _ts(pred_row.get("asof")),
+                "predicted_at": _ts(pred_row.get("generated_at")),
             }
     except Exception as e:
         logger.warning("[dossier] Could not fetch price_predictions: %s", e)
@@ -276,6 +280,7 @@ async def generate_dossier(
     # ------------------------------------------------------------------
     price_history: List[Dict[str, Any]] = []
     try:
+        # Look up by canonical catalog key, not user's items.id UUID (2026-04-19 fix)
         ph_rows = await conn.fetch(
             """
             SELECT price_q50, price_q10, price_q90, source, snapshot_at
@@ -283,8 +288,8 @@ async def generate_dossier(
             WHERE item_ref = $1
             ORDER BY snapshot_at ASC
             """,
-            item_id,
-        )
+            canonical_key,
+        ) if canonical_key else []
         for row in ph_rows:
             price_history.append({
                 "price": float(row["price_q50"]) if row["price_q50"] is not None else None,
@@ -310,6 +315,7 @@ async def generate_dossier(
             SELECT title, price, currency, provider, ended_at, url, condition
             FROM public.market_hits
             WHERE normalized_key ILIKE $1
+              AND (is_listing IS NOT TRUE)
             ORDER BY ended_at DESC NULLS LAST
             LIMIT 10
             """,
