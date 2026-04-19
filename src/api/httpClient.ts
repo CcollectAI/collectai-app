@@ -6,7 +6,10 @@
 import { API_BASE } from "./config";
 import { supabase } from "@/lib/supabase";
 
-const REQUEST_TIMEOUT_MS = 15_000; // 15 seconds
+// Default: 45 s. Covers the slowest legitimate call today — marketplace_search
+// live-aggregates across 44 adapters and can take 40+ s. Everything else
+// responds in <2 s so the longer default doesn't slow normal flows.
+const REQUEST_TIMEOUT_MS = 45_000;
 const MAX_RETRIES = 2;
 const RETRY_BASE_MS = 500; // exponential backoff base
 
