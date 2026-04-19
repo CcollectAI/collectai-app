@@ -30,6 +30,40 @@ except ImportError:
     logger.warning("boto3 not installed; S3 model loading disabled")
 
 
+# Schema probe: the live model_registry table has a different column set
+# from what this loader was written for (columns are id, name, version, params,
+# created_at, uri, is_canary — no `category`, `model_type`, `s3_key`,
+# `artifact_json`, `uncertainty_scale`, `is_active`). Querying the old columns
+# logs a warning on every valuation row, spamming the log. Probe once and
+# short-circuit if the schema doesn't match — the valuation_worker gracefully
+# falls back to the empirical model on None. (Schema drift uncovered during
+# the 2026-04-19 silent-sleeper audit.)
+_REGISTRY_SCHEMA_OK: bool | None = None
+
+
+async def _schema_is_compatible(conn) -> bool:
+    global _REGISTRY_SCHEMA_OK
+    if _REGISTRY_SCHEMA_OK is not None:
+        return _REGISTRY_SCHEMA_OK
+    try:
+        cols = await conn.fetch(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_schema='public' AND table_name='model_registry'"
+        )
+        names = {r["column_name"] for r in cols}
+        _REGISTRY_SCHEMA_OK = {"category", "model_type", "is_active"}.issubset(names)
+        if not _REGISTRY_SCHEMA_OK:
+            logger.info(
+                "[model_loader] model_registry schema incompatible "
+                "(missing %s) — skipping DB-side lookups; valuation_worker "
+                "will use empirical fallback until a loader rewrite lands.",
+                {"category", "model_type", "is_active"} - names,
+            )
+    except Exception:
+        _REGISTRY_SCHEMA_OK = False
+    return _REGISTRY_SCHEMA_OK
+
+
 async def _fetch_model_registry_entry(
     category: str,
     is_canary: bool = False,
@@ -45,6 +79,9 @@ async def _fetch_model_registry_entry(
 
     try:
         async with pool.acquire() as conn:
+            if not await _schema_is_compatible(conn):
+                return None
+
             if is_canary:
                 row = await conn.fetchrow(
                     """
@@ -73,7 +110,7 @@ async def _fetch_model_registry_entry(
                 return dict(row)
             return None
     except Exception as e:
-        logger.warning(f"Failed to fetch model_registry entry for {category}: {e}")
+        logger.debug("model_registry lookup for %s failed: %s", category, e)
         return None
 
 

@@ -93,39 +93,46 @@ async def _get_stale_items(conn, batch_size: int):
         SKIP_CATEGORIES in Python after the fetch. Over-fetches 4× the batch
         size to cover the skip-ratio without a second round-trip.
     """
-    skip_set = set(SKIP_CATEGORIES)
-    over_fetch = max(batch_size * 4, 160)
+    # Filter skip categories IN SQL (not Python) because the NULL-attempted
+    # pool is ~136k rows dominated by TCG categories (mtg/pokemon/yugioh/etc)
+    # that are in SKIP_CATEGORIES. A Python-side filter threw away all rows
+    # every cycle (2026-04-19: 6h of 0-hit cycles because the first 160 rows
+    # were all yugioh). Postgres scans the partial index until it finds
+    # batch_size matching rows — typically still fast.
+    skip_list = sorted(SKIP_CATEGORIES)
 
-    # Pass 1: items never attempted — uses the NULLS FIRST partial index
-    rows = await conn.fetch(
+    # Pass 1: items never attempted — uses idx_category_items_scrape_attempt_null
+    out = await conn.fetch(
         """
         SELECT id, item_key, title, category
         FROM public.category_items
         WHERE title IS NOT NULL
           AND last_scrape_attempt_at IS NULL
+          AND category <> ALL($2::text[])
         LIMIT $1
         """,
-        over_fetch,
+        batch_size,
+        skip_list,
     )
-    out = [r for r in rows if r["category"] not in skip_set][:batch_size]
     if len(out) >= batch_size:
-        return out
+        return list(out)
 
     # Pass 2: fall back to the oldest-attempted when bootstrap is drained
-    rows = await conn.fetch(
+    remaining = batch_size - len(out)
+    pass2 = await conn.fetch(
         """
         SELECT id, item_key, title, category
         FROM public.category_items
         WHERE title IS NOT NULL
           AND last_scrape_attempt_at IS NOT NULL
+          AND category <> ALL($2::text[])
         ORDER BY last_scrape_attempt_at ASC
         LIMIT $1
         """,
-        over_fetch,
+        remaining,
+        skip_list,
     )
-    remaining = batch_size - len(out)
-    out.extend([r for r in rows if r["category"] not in skip_set][:remaining])
-    return out
+    return list(out) + list(pass2)
 
 
 async def _mark_attempted(conn, item_ids: list) -> None:
