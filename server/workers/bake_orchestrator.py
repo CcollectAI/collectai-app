@@ -381,6 +381,15 @@ async def _instance_health_monitor(
                 if k not in current_keys:
                     alerted.discard(k)
                     logger.info("[bake_orchestrator] INSTANCE %s cleared", k)
+                    # Tell Telegram the issue resolved so an operator staring
+                    # at the stale fire message knows it's over. Without this,
+                    # every transient stall leaves a permanent-looking alert
+                    # in the chat history. (2026-04-19: user reported seeing
+                    # an ingest_stalled fire in Telegram 2h after ingest had
+                    # already recovered.)
+                    await _send_telegram_alert(
+                        f"✅ Bake instance recovered: {k}"
+                    )
 
         except asyncio.CancelledError:
             return
