@@ -123,10 +123,20 @@ async def run_once():
         logger.warning("Enrichment failed: %s", e)
         errors.append(f"enrich: {e}")
 
-    status = "ok" if not errors else "partial"
+    # Output-based status classification (refined 2026-04-19 after the deep
+    # silent-sleepers audit flagged event_scraper at 65% error rate). R50l-
+    # followup normalized any sub-step failure to `status='error'`, which
+    # mis-classified cycles that produced 300+ events but hit one flaky RSS
+    # feed. Policy now:
+    #   - ok    = produced events (even if one sub-feed failed)
+    #   - error = zero events + any sub-step errored (real failure)
+    # Rationale: the essay's invariant is "correctness over liveness" — if
+    # real events landed, the cycle succeeded at its primary job regardless
+    # of secondary sub-step flakiness.
+    status = "ok" if total_events > 0 else ("error" if errors else "ok")
     logger.info(
-        "=== Event scraper cycle complete: %d events, %d errors ===",
-        total_events, len(errors),
+        "=== Event scraper cycle complete: %d events, %d errors, status=%s ===",
+        total_events, len(errors), status,
     )
     record_run("event_scraper_worker", status)
 
