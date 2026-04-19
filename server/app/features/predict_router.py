@@ -200,15 +200,25 @@ async def get_price_trend(
 
     try:
         async with get_conn() as conn:
-            # Verify item ownership
-            owner_check = await conn.fetchval(
-                "SELECT 1 FROM public.items WHERE id = $1::uuid AND user_id = $2::uuid",
+            # Verify item ownership AND resolve the canonical_key used by
+            # price_history. Pre-fix 2026-04-19 the query did WHERE
+            # item_ref = <user's item uuid> which never matched
+            # (price_history.item_ref is a catalog key like 'mtg:black-lotus-415',
+            # not a user-item UUID). Result: paid users always saw an empty
+            # Price Trend chart.
+            owner_row = await conn.fetchrow(
+                "SELECT canonical_key FROM public.items "
+                "WHERE id = $1::uuid AND user_id = $2::uuid",
                 item_id, user_id,
             )
-            if owner_check is None:
+            if owner_row is None:
                 raise error_response(404, "Item not found")
+            canonical = owner_row["canonical_key"]
+            if not canonical:
+                # User item not linked to a catalog entry — no trend data possible
+                return PriceTrendResponse(item_ref=item_id, period_days=days)
 
-            # Fetch price history snapshots
+            # Fetch price history snapshots by the canonical catalog key
             rows = await conn.fetch(
                 """
                 SELECT price_q50, price_q10, price_q90, snapshot_at
@@ -217,7 +227,7 @@ async def get_price_trend(
                   AND snapshot_at >= now() - ($2 || ' days')::interval
                 ORDER BY snapshot_at ASC
                 """,
-                item_id, str(days),
+                canonical, str(days),
             )
 
             if not rows:

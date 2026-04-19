@@ -14,6 +14,9 @@ export const predictV2 = (payload: {
   asof: string;
 }>("/predict_v2", payload);
 
+// Path fixed 2026-04-19: backend is /predict/trend/{item_id}, not
+// /predict/{item_id}/trend. Pre-fix the call 404'd so paid users saw
+// a "nothing to show" chart despite Pro unlock.
 export const getItemPriceTrend = (itemId: string, days = 90) =>
   get<{
     data_points: { date: string; q50: number; q10: number; q90: number }[];
@@ -21,7 +24,7 @@ export const getItemPriceTrend = (itemId: string, days = 90) =>
     pct_change: number;
     current_q50: number;
     period_days: number;
-  }>(`/predict/${encodeURIComponent(itemId)}/trend?days=${days}`);
+  }>(`/predict/trend/${encodeURIComponent(itemId)}?days=${days}`);
 
 export const getPriceEvidence = (itemId: string) =>
   get<{
