@@ -106,27 +106,34 @@ CHECKS: list[dict] = [
     },
     {
         "name": "market_hits.item_ref_prefixed",
+        # Use %s partition placeholder — substituted with the current-month
+        # partition name at query time (e.g. market_hits_y2026m04). Postgres
+        # runtime partition pruning won't always kick in on `seen_at > now() -
+        # interval 'X'` because `now()` is evaluated late; hitting the
+        # partition directly is deterministic and ~100x faster.
         "sql": """
             SELECT COUNT(*) AS violators,
                    MAX(id::text) AS sample_id
-            FROM public.market_hits
+            FROM public.{current_month_partition}
             WHERE seen_at > now() - interval '24 hours'
               AND item_ref IS NOT NULL
               AND item_ref NOT LIKE '%:%'
               AND category IS NOT NULL
         """,
-        "description": "market_hits.item_ref must be `category:item_key` formatted (24h window)",
+        "description": "market_hits.item_ref must be `category:item_key` formatted (24h)",
+        "partition_scoped": True,
     },
     {
         "name": "market_hits.price_eur_sane",
         "sql": """
             SELECT COUNT(*) AS violators,
                    MAX(id::text) AS sample_id
-            FROM public.market_hits
+            FROM public.{current_month_partition}
             WHERE seen_at > now() - interval '24 hours'
               AND (price_eur > 20000000 OR price > 20000000)
         """,
-        "description": "market_hits price must be <= €20M (24h window)",
+        "description": "market_hits price must be <= €20M (24h)",
+        "partition_scoped": True,
     },
     {
         "name": "price_predictions.category_matches_item_ref",
@@ -242,12 +249,21 @@ async def run_once() -> None:
         await conn.execute("SET statement_timeout = '20s'")
     except Exception:
         pass
+
+    # Resolve current-month partition name for queries that use
+    # {current_month_partition} — dramatic speedup vs parent-table scans.
+    now = datetime.now(timezone.utc)
+    current_month_partition = f"market_hits_y{now.year:04d}m{now.month:02d}"
+
     failing_new: list[dict] = []
     try:
         for check in CHECKS:
+            sql = check["sql"]
+            if check.get("partition_scoped"):
+                sql = sql.format(current_month_partition=current_month_partition)
             try:
                 row = await asyncio.wait_for(
-                    conn.fetchrow(check["sql"]),
+                    conn.fetchrow(sql),
                     timeout=20.0,
                 )
                 violators = int(row["violators"] or 0) if row else 0

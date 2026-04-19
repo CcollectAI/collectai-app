@@ -104,6 +104,26 @@ _WEEKLY_WORKERS: list[tuple[str, str, str, bool]] = [
 # ── Per-worker error tracking for health summary ─────────────────────────
 _worker_errors: dict[str, int] = {}
 _worker_last_ok: dict[str, float] = {}
+# Track which workers are mid-cycle so light workers can yield when heavy
+# ones are doing full-table scans / partition reads. Added 2026-04-19 after
+# R4 audit showed probe queries repeatedly timing out during concurrent
+# valuation_worker runs.
+_in_flight: set[str] = set()
+
+# "Heavy" workers do long-running full-table reads or writes and monopolise
+# DB CPU when active. Light workers (probes/audits) should skip cycles when
+# any heavy worker is in flight — the next hourly probe still catches new
+# violations without fighting for resources.
+_HEAVY_WORKERS: frozenset[str] = frozenset({
+    "valuation_worker",
+    "aggregate_catalog_attributes",
+    "model_retrain_worker",
+    "catalog_crawler_worker",
+})
+_LIGHT_YIELDING_WORKERS: frozenset[str] = frozenset({
+    "sanity_probe_worker",
+    "discovery_audit_worker",
+})
 _worker_import_failures: dict[str, str] = {}
 # Workers we've already paged Telegram for — avoids re-paging every health tick
 _alerted_workers: set[str] = set()
@@ -158,7 +178,24 @@ async def _run_worker_loop(
     await asyncio.sleep(stagger)
 
     while True:
+        # Light workers yield when heavy workers are mid-cycle — prevents
+        # probes / audits from fighting valuation_worker for DB bandwidth.
+        if name in _LIGHT_YIELDING_WORKERS:
+            heavy_now = _in_flight & _HEAVY_WORKERS
+            if heavy_now:
+                logger.info(
+                    "[bake_orchestrator] %s yielding this cycle — heavy workers in flight: %s",
+                    name, sorted(heavy_now),
+                )
+                record_run(name, "ok", duration_s=0.0)  # not a failure, deferred
+                try:
+                    await asyncio.sleep(interval_s)
+                    continue
+                except asyncio.CancelledError:
+                    return
+
         t0 = time.monotonic()
+        _in_flight.add(name)
         try:
             # Some run_once() functions accept keyword args — call with no args
             # since the orchestrator always uses the default signature.
@@ -188,6 +225,8 @@ async def _run_worker_loop(
             logger.exception(
                 "[bake_orchestrator] %s failed after %.1fs: %s", name, duration, e,
             )
+        finally:
+            _in_flight.discard(name)
 
         # Sleep until next cycle
         try:

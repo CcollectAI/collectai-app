@@ -19,6 +19,7 @@ import { useFeatureTour } from '@/lib/featureTour';
 import { PrivacySettingsSection } from '@/components/settings/PrivacySettingsSection';
 import { AppearanceSection } from '@/components/settings/AppearanceSection';
 import { ProfileEditSection } from '@/components/settings/ProfileEditSection';
+import { DevForcePlanSection } from '@/components/settings/DevForcePlanSection';
 
 export default function Settings() {
   const router = useRouter();
@@ -94,6 +95,9 @@ export default function Settings() {
 
       {/* Account Section (profile, password, sign out, billing, etc.) */}
       <ProfileEditSection />
+
+      {/* Dev-only: Force subscription tier (for previewing paid views) */}
+      <DevForcePlanSection />
 
       {/* About Section */}
       <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>

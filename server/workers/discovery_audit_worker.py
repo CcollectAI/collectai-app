@@ -265,10 +265,14 @@ async def run_once() -> None:
         record_run("discovery_audit_worker", "error")
         return
 
-    conn = await asyncpg.connect(DSN)
+    # Prefer direct DSN (no pooler 30s cap) — mirrors sanity_probe_worker.
+    # SET LOCAL only works in transactions; we want the session-level cap so
+    # each fetchrow respects it. Pre-fix the 60s was a no-op and a stuck
+    # COUNT on market_hits blocked the whole audit.
+    probe_dsn = os.getenv("DB_DSN_DIRECT") or DSN
+    conn = await asyncpg.connect(probe_dsn, timeout=20)
     try:
-        # Per-statement timeout so a slow check doesn't stall the whole audit
-        await conn.execute("SET LOCAL statement_timeout = '60s'")
+        await conn.execute("SET statement_timeout = '30s'")
     except Exception:
         pass
 
@@ -276,8 +280,17 @@ async def run_once() -> None:
     try:
         for check in CHECKS:
             try:
-                row = await conn.fetchrow(check["sql"])
+                # Double-bound: asyncio cancels the fetch + statement_timeout
+                # kills the server-side query. Either one firing stops the
+                # hang without dropping the whole audit.
+                row = await asyncio.wait_for(
+                    conn.fetchrow(check["sql"]),
+                    timeout=30.0,
+                )
                 violators = int(row["violators"] or 0) if row else 0
+            except asyncio.TimeoutError:
+                logger.warning("discovery_audit %s query timed out (>30s)", check["name"])
+                continue
             except Exception as e:
                 logger.warning("discovery_audit %s failed: %s", check["name"], e)
                 continue
