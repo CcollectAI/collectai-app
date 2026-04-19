@@ -78,7 +78,7 @@ CREATE TABLE market_hits_2026_04 PARTITION OF market_hits
 | Cold | S3 Glacier | 24+ months | columnar | ~$0.004/GB/mo | hours |
 
 **Data lake path for warm tier:**
-1. Nightly job: for each partition > 6 months old, export to `s3://collectai-datalake/market_hits/year=2026/month=04/part-NNN.parquet`
+1. Nightly job: for each partition > 6 months old, export to `s3://collectai-warehouse-prod-eu-north-1/market_hits/year=2026/month=04/part-NNN.parquet`
 2. Schema: Apache Parquet, snappy compression, partitioned by `year/month/category`. Expected ~10x compression vs Postgres (columnar + dict encoding).
 3. Read path: `DuckDB` as query engine. It reads Parquet straight from S3 with predicate pushdown. 100x cheaper than keeping everything hot.
 4. DETACH old Postgres partitions after S3 export verified.
@@ -169,3 +169,31 @@ The plan separates **storage format** (Postgres row / S3 columnar) from **query 
 ---
 
 **Status:** hot/cold split running tonight on EC2 (R50m). pg_partman + monthly partitioning = week 2 deliverable. S3 Parquet export = week 4-5 deliverable.
+
+---
+
+## 10. Lessons from the R50m rollout (appended 2026-04-19)
+
+### ON CONFLICT + partitioned tables
+
+Postgres requires any unique constraint on a partitioned table to include the partition key columns. That means `ON CONFLICT (provider, listing_id) DO NOTHING` stops working after you partition by `seen_at` — you either need to include `seen_at` in the conflict target (which defeats deduplication since `seen_at = NOW()` is unique per insert) or change writers to use `WHERE NOT EXISTS`.
+
+**Fix we shipped for marketplace_agent (asyncpg direct writer):**
+```sql
+INSERT INTO market_hits (...)
+SELECT $1, $2, ...
+WHERE NOT EXISTS (
+  SELECT 1 FROM market_hits WHERE provider = $1 AND listing_id = $2
+);
+```
+This uses the `(provider, listing_id, seen_at)` composite index's leading columns for a fast existence probe across partitions.
+
+**Fix pending for PostgREST writers (tcgcsv, discogs):** PostgREST's `?on_conflict=...` query param can't be converted to `WHERE NOT EXISTS` directly. Need a Supabase SQL function (RPC) that does the dedup server-side. Those two daily workers are disabled in the bake_orchestrator manifest until the RPC ships.
+
+### Bucket naming
+
+Original bucket `collectai-datalake` was renamed to `collectai-warehouse-prod-eu-north-1` the same day, before any data landed. Convention: `collectai-{purpose}-{env}-{region}`. Rationale: the bucket name doesn't need dates (S3 lifecycle + Hive-style object-key partitioning handle aging) but it DOES need env + region for multi-region / multi-env futures.
+
+### Writer bugs hide in INSERT column lists
+
+After partitioning, a `null_category_rate` audit alarm fired — 58,995 market_hits rows had NULL category in the last 7 days, all with recoverable `category:` prefix in `item_ref`. Root cause: `persist_comps_to_db` accepted `category` as a kwarg but never included it in the INSERT column list. Adding to the list + backfilling fixed it, but the broader lesson is **every kwarg a writer accepts should have a CI test asserting the resulting row has that column populated**. The R50l essay's "post-write assertion at the writer" rule would have caught this on day 1.

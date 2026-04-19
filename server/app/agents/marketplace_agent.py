@@ -558,16 +558,39 @@ class MarketplaceAgent:
                         except Exception:
                             pass
 
+                    # Category defaults from the caller arg, but fall back to
+                    # the item_ref prefix when caller didn't pass one. Without
+                    # this, eBay/Vinted/Crawl4AI cycles persisted 59k rows
+                    # with NULL category (2026-04-19 audit: 15.7% null_category_rate)
+                    # even though item_ref had the `category:` prefix.
+                    resolved_category = category
+                    if not resolved_category and normalized_key and ":" in normalized_key:
+                        resolved_category = normalized_key.split(":", 1)[0]
+
                     try:
+                        # WHERE NOT EXISTS (not ON CONFLICT) because market_hits
+                        # was partitioned by seen_at on 2026-04-19 and Postgres
+                        # requires partition-key columns in any unique index on
+                        # a partitioned table — so ON CONFLICT (provider,
+                        # listing_id) raises 42P10 "no matching unique or
+                        # exclusion constraint" every time. WHERE NOT EXISTS
+                        # uses the (provider, listing_id, seen_at) composite
+                        # index for a fast existence probe that works across
+                        # partitions.
                         await conn.execute(
                             """
                             INSERT INTO market_hits
                                 (provider, listing_id, title, price, currency,
                                  price_eur,
-                                 condition, ended_at, url, normalized_key, item_ref, features_json,
+                                 condition, ended_at, url, normalized_key, item_ref,
+                                 category,
+                                 features_json,
                                  attrs)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-                            ON CONFLICT (provider, listing_id) DO NOTHING
+                            SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+                            WHERE NOT EXISTS (
+                              SELECT 1 FROM market_hits
+                              WHERE provider = $1 AND listing_id = $2
+                            )
                             """,
                             hit.get("source", ""),
                             hit.get("raw_id", ""),
@@ -580,6 +603,7 @@ class MarketplaceAgent:
                             hit.get("url"),
                             normalized_key,
                             normalized_key,  # item_ref = normalized_key for valuation worker
+                            resolved_category,
                             json.dumps({
                                 "content_hash": hit.get("content_hash", ""),
                                 "provenance_score": scored.provenance_score,
