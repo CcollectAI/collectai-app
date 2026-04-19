@@ -142,11 +142,15 @@ async def _fetch_groups(conn, category_filter: Optional[str], limit_per_item: in
         where += " AND ci.category = $1"
         params.append(category_filter)
 
-    # Aggregate in DB — emit one row per item_ref with jsonb_agg of attrs
+    # Aggregate in DB — emit one row per item_ref with jsonb_agg of attrs.
+    # ORDER BY seen_at (was incorrectly created_at — market_hits uses seen_at;
+    # the created_at reference errored out on every run, masked by the
+    # ATTR_AGGREGATION_ENABLED flag recording status=ok on flag-skip. Fixed
+    # 2026-04-19 during silent-sleepers audit.)
     query = f"""
         SELECT ci.category AS category,
                ci.item_key AS item_key,
-               jsonb_agg(mh.attrs ORDER BY mh.created_at DESC) AS attrs_list
+               jsonb_agg(mh.attrs ORDER BY mh.seen_at DESC) AS attrs_list
         FROM public.market_hits mh
         JOIN public.category_items ci
           ON ci.category = split_part(mh.item_ref, ':', 1)
@@ -213,7 +217,10 @@ async def run_once(
             "Set env to enable writes.", _WORKER_NAME,
         )
         stats["skipped_flag"] = True
-        _record_run_safe(stats)
+        # Record as error, NOT ok — skipping because of a feature flag being
+        # off is a silent-sleeper signal, not a healthy outcome. Per the
+        # R50l correctness-over-liveness rule this distinction matters.
+        _record_run_safe(stats, status="error")
         return stats
 
     try:
