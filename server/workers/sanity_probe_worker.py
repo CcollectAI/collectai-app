@@ -231,14 +231,30 @@ async def run_once() -> None:
         record_run("sanity_probe_worker", "error")
         return
 
-    conn = await asyncpg.connect(DSN)
+    # Prefer the direct DSN (no pooler 30s cap) — falls back to the pooler
+    # when not configured. Direct connection is slightly slower to establish
+    # (~9s vs ~1s for pooler) but allows a realistic 20s per-query timeout.
+    probe_dsn = os.getenv("DB_DSN_DIRECT") or DSN
+    conn = await asyncpg.connect(probe_dsn, timeout=20)
+    # Server-side query timeout on top of asyncio.wait_for — cuts runaway
+    # plans at Postgres layer too.
+    try:
+        await conn.execute("SET statement_timeout = '20s'")
+    except Exception:
+        pass
     failing_new: list[dict] = []
     try:
         for check in CHECKS:
             try:
-                row = await conn.fetchrow(check["sql"])
+                row = await asyncio.wait_for(
+                    conn.fetchrow(check["sql"]),
+                    timeout=20.0,
+                )
                 violators = int(row["violators"] or 0) if row else 0
                 sample_id = row["sample_id"] if row else None
+            except asyncio.TimeoutError:
+                logger.warning("sanity_probe %s query timed out (>20s)", check["name"])
+                continue
             except Exception as e:
                 logger.warning("sanity_probe %s query failed: %s", check["name"], e)
                 continue
