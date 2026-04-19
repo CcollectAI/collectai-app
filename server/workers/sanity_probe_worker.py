@@ -66,17 +66,21 @@ _last_alerted_at: dict[str, datetime] = {}
 CHECKS: list[dict] = [
     {
         "name": "category_items.attributes_json_is_object",
+        # Unordered LIMIT 500 is O(1) vs an ordered-sample that Postgres
+        # turns into a full scan. Under normal DB load, 500 is enough to
+        # catch systematic drift — we don't need exhaustive coverage every
+        # hour; we need a tripwire. Full repair happens in a one-off script.
         "sql": """
             SELECT COUNT(*) AS violators,
                    MAX(id::text) AS sample_id
             FROM (
               SELECT id, attributes_json FROM public.category_items
               WHERE attributes_json IS NOT NULL
-              ORDER BY id DESC LIMIT 10000
+              LIMIT 500
             ) sample
             WHERE jsonb_typeof(attributes_json) <> 'object'
         """,
-        "description": "attributes_json must always be a JSONB object (sample of 10k most recent)",
+        "description": "attributes_json must always be a JSONB object (500-row tripwire sample)",
     },
     {
         "name": "price_predictions.q50_under_20M",
