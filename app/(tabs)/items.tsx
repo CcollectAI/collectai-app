@@ -44,6 +44,13 @@ import logger from "@/utils/logger";
 import { BulkActionsToolbar } from '@/components/BulkActionsToolbar';
 import { ItemsListHeader } from '@/components/ItemsListHeader';
 import { AdBanner } from '@/components/ads/AdBanner';
+import {
+  CategoryBreakdownSection,
+  type CategoryBreakdownItem,
+} from '@/components/home/CategoryBreakdownSection';
+import { collectorsApi } from '@/api/collectorsApi';
+import { formatPrice } from '@/lib/format';
+import { getCategoryById, getCategoryByName } from '@/data/categories';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import {
   ItemsGridHeader,
@@ -142,6 +149,30 @@ const ItemsScreen: React.FC = () => {
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
+
+  // Category breakdown (moved from home tab 2026-04-18)
+  const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdownItem[]>([]);
+  const [breakdownLoading, setBreakdownLoading] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setBreakdownLoading(true);
+    collectorsApi.getPortfolioCategoryBreakdown()
+      .then((data) => {
+        if (cancelled) return;
+        const cats = Array.isArray((data as { categories?: unknown })?.categories)
+          ? (data as { categories: CategoryBreakdownItem[] }).categories
+          : [];
+        setCategoryBreakdown(cats);
+      })
+      .catch((err) => {
+        logger.warn('[Items] category breakdown fetch failed:', err);
+        if (!cancelled) setCategoryBreakdown([]);
+      })
+      .finally(() => {
+        if (!cancelled) setBreakdownLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   // Restore persisted view mode on mount
   useEffect(() => {
@@ -715,6 +746,23 @@ const ItemsScreen: React.FC = () => {
           clearFilters();
         }}
       />
+
+      {/* Category Breakdown (moved from home tab 2026-04-18) */}
+      <CategoryBreakdownSection
+        theme={colors}
+        breakdown={categoryBreakdown}
+        loading={breakdownLoading}
+        formatPrice={(v) => formatPrice(v)}
+        resolveCategoryName={(raw) => {
+          const cat = getCategoryById(raw) ?? getCategoryByName(raw);
+          return cat?.name ?? raw;
+        }}
+        onCategoryPress={(catRaw) => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          setFilterCategory(catRaw);
+        }}
+      />
+
       {/* Ad slot — invisible until FEATURE_ADS is enabled */}
       <AdBanner placement="items_banner" />
     </Animated.View>

@@ -202,27 +202,13 @@ return (
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />
         </AnimatedPressable>
 
-        {/* Import from URL card */}
-        <AnimatedPressable
-          style={[styles.barcodeCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push('/import-url');
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={t('add_tab.import_url_a11y')}
-        >
-          <View style={[styles.barcodeIconCircle, { backgroundColor: colors.accent + '15' }]}>
-            <Ionicons name="link-outline" size={24} color={colors.accent} />
-          </View>
-          <View style={styles.barcodeTextBlock}>
-            <Text style={[styles.barcodeTitle, { color: colors.text }]}>{t('add_tab.import_url')}</Text>
-            <Text style={[styles.barcodeSubtitle, { color: colors.muted }]}>
-              Paste a link from eBay, Mercari, StockX, or other marketplaces.
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-        </AnimatedPressable>
+        {/* Import from file (replaces the former URL-import card 2026-04-18) */}
+        <AddImportCard
+          importBusy={importBusy}
+          importSummary={importSummary}
+          onUploadFile={handleImportCollectionFile}
+          onDownloadTemplate={handleDownloadImportTemplate}
+        />
 
         {/* Divider */}
         <View style={styles.dividerRow}>
@@ -249,13 +235,6 @@ return (
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />
         </AnimatedPressable>
-
-        <AddImportCard
-          importBusy={importBusy}
-          importSummary={importSummary}
-          onUploadFile={handleImportCollectionFile}
-          onDownloadTemplate={handleDownloadImportTemplate}
-        />
         </Animated.View>
 </ScrollView>
     </SafeAreaView>

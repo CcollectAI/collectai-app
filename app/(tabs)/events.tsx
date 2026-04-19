@@ -69,6 +69,19 @@ function EventsScreen() {
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState(false);
   const [kindFilter, setKindFilter] = useState<string | null>(null);
+  // Business-user gate: Sponsor + Twitch CTAs only render when the user owns
+  // at least one sponsor company. Customers see a cleaner header.
+  const [isBusinessAccount, setIsBusinessAccount] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    dataProvider
+      .getMySponsorCompanies()
+      .then((companies) => {
+        if (!cancelled) setIsBusinessAccount(companies.length > 0);
+      })
+      .catch((err) => logger.warn('[events] getMySponsorCompanies failed', err));
+    return () => { cancelled = true; };
+  }, []);
 
   // Paginated data fetching
   const eventFetcher = useCallback(
@@ -476,7 +489,7 @@ function EventsScreen() {
           <Text style={[styles.createEventPillText, { color: colors.accentText }]}>{t('events.create_event')}</Text>
         </AnimatedPressable>
 
-        {!BETA_MODE && (
+        {!BETA_MODE && isBusinessAccount && (
           <>
             <AnimatedPressable
               onPress={handleOpenSponsor}
@@ -846,23 +859,27 @@ const styles = StyleSheet.create({
   },
   viewModeTabs: {
     flexDirection: 'row',
+    width: '100%',
     borderRadius: radius.lg,
     padding: 4,
     marginBottom: 14,
+    gap: 4,
   },
   viewModeTab: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 11,
+    gap: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     borderRadius: radius.sm,
   },
   viewModeTabText: {
     fontSize: text.md,
     fontWeight: fontWeight.semibold,
     letterSpacing: 0.1,
+    textAlign: 'center',
   },
   section: {
     marginBottom: 16,

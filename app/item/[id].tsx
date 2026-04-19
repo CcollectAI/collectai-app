@@ -64,6 +64,7 @@ import { BuildProjectSection } from '@/components/BuildProjectSection';
 import { ProvenanceHistorySection } from '@/components/ProvenanceHistorySection';
 import { track } from '@/analytics/track';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
+import { LockedPreviewSection } from '@/components/LockedPreviewSection';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { ItemDetailsCard } from '@/components/item/ItemDetailsCard';
 import { ItemQuickActionsRow } from '@/components/item/ItemQuickActionsRow';
@@ -745,9 +746,17 @@ function ItemDetailScreen() {
               />
             )}
 
-            {/* Price Trend Chart — shows q50 line with q10-q90 confidence band */}
+            {/* Price Trend Chart — Pro-gated 2026-04-18 */}
             {!isDraft && id && (
-              <PriceTrendChart itemId={id} />
+              limits.advanced_analytics ? (
+                <PriceTrendChart itemId={id} />
+              ) : (
+                <LockedPreviewSection
+                  title="Price Trend"
+                  subtitle="See the q10–q90 confidence band and 90-day price history with Pro."
+                  previewType="chart"
+                />
+              )
             )}
 
             {/* Sell Timing Badge — stub, gated behind Premium */}
@@ -755,17 +764,25 @@ function ItemDetailScreen() {
               <SellTimingBadge itemId={id} />
             )}
 
-            {/* Item History — collapsible */}
+            {/* Item History — Pro-gated 2026-04-18 */}
             {!isDraft && id && (
-              <ProvenanceHistorySection
-                theme={theme}
-                hapticsEnabled={settings.hapticsEnabled}
-                provenanceExpanded={provenanceExpanded}
-                provenanceLoading={provenanceLoading}
-                provenanceEvents={provenanceEvents}
-                authenticitySignals={authenticitySignals}
-                onToggleExpanded={() => setProvenanceExpanded(!provenanceExpanded)}
-              />
+              limits.advanced_analytics ? (
+                <ProvenanceHistorySection
+                  theme={theme}
+                  hapticsEnabled={settings.hapticsEnabled}
+                  provenanceExpanded={provenanceExpanded}
+                  provenanceLoading={provenanceLoading}
+                  provenanceEvents={provenanceEvents}
+                  authenticitySignals={authenticitySignals}
+                  onToggleExpanded={() => setProvenanceExpanded(!provenanceExpanded)}
+                />
+              ) : (
+                <LockedPreviewSection
+                  title="Item History"
+                  subtitle="View provenance events and authenticity signals with Pro."
+                  previewType="list"
+                />
+              )
             )}
 
             {/* Grading Section — for eligible categories (Pro+) */}
@@ -799,23 +816,31 @@ function ItemDetailScreen() {
               />
             )}
 
-            {/* Dossier Section */}
+            {/* Valuation Report (Dossier) — Pro-gated 2026-04-18 */}
             {!isDraft && id && (
-              <DossierReportSection
-                theme={theme}
-                dossierData={dossierData}
-                dossierLoading={dossierLoading}
-                dossierExpanded={dossierExpanded}
-                dossierError={dossierError}
-                onToggleExpanded={() => {
-                  if (!dossierData && !dossierError) loadDossier();
-                  else setDossierExpanded(!dossierExpanded);
-                }}
-                onRetry={() => loadDossier()}
-                itemId={id}
-                formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
-                toNum={toNum}
-              />
+              limits.advanced_analytics ? (
+                <DossierReportSection
+                  theme={theme}
+                  dossierData={dossierData}
+                  dossierLoading={dossierLoading}
+                  dossierExpanded={dossierExpanded}
+                  dossierError={dossierError}
+                  onToggleExpanded={() => {
+                    if (!dossierData && !dossierError) loadDossier();
+                    else setDossierExpanded(!dossierExpanded);
+                  }}
+                  onRetry={() => loadDossier()}
+                  itemId={id}
+                  formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
+                  toNum={toNum}
+                />
+              ) : (
+                <LockedPreviewSection
+                  title="Valuation Report"
+                  subtitle="Get a full dossier PDF with comps, confidence, and provenance signals with Pro."
+                  previewType="report"
+                />
+              )
             )}
 
             {/* Build Project — for buildable categories */}
@@ -854,23 +879,31 @@ function ItemDetailScreen() {
               <ItemShopSection affiliateLinks={affiliateLinks} />
             )}
 
-            {/* Marketplace Section */}
+            {/* Market Prices — Pro-gated 2026-04-18 */}
             {!isDraft && id && (
-              <MarketplacePricesSection
-                theme={theme}
-                marketResults={marketResults}
-                marketLoading={marketLoading}
-                marketExpanded={marketExpanded}
-                marketError={marketError}
-                editableName={editableName}
-                onToggleExpanded={() => {
-                  if (marketResults.length === 0 && !marketError) loadMarketResults();
-                  else setMarketExpanded(!marketExpanded);
-                }}
-                onRetry={() => loadMarketResults()}
-                formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
-                toNum={toNum}
-              />
+              limits.advanced_analytics ? (
+                <MarketplacePricesSection
+                  theme={theme}
+                  marketResults={marketResults}
+                  marketLoading={marketLoading}
+                  marketExpanded={marketExpanded}
+                  marketError={marketError}
+                  editableName={editableName}
+                  onToggleExpanded={() => {
+                    if (marketResults.length === 0 && !marketError) loadMarketResults();
+                    else setMarketExpanded(!marketExpanded);
+                  }}
+                  onRetry={() => loadMarketResults()}
+                  formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
+                  toNum={toNum}
+                />
+              ) : (
+                <LockedPreviewSection
+                  title="Market Prices"
+                  subtitle="See live listings from eBay, Mercari, Vinted and more with Pro."
+                  previewType="list"
+                />
+              )
             )}
 
             {/* Notes (editable) */}

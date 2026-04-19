@@ -47,6 +47,7 @@ import { CategoryPerformanceSection } from '@/components/CategoryPerformanceSect
 import { PortfolioTierBadge } from '@/components/analytics/PortfolioTierBadge';
 import { WinnersLosersSection } from '@/components/analytics/WinnersLosersSection';
 import { PredictionAccuracySection } from '@/components/analytics/PredictionAccuracySection';
+import { DemandHeatSection } from '@/components/home/DemandHeatSection';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tier-specific tokens (not theme-dependent)
@@ -88,12 +89,40 @@ function AnalyticsScreen() {
   const [categoryStats, setCategoryStats] = useState<{ category: string; item_count: number; total_value: number; avg_value: number; change_7d: number; change_7d_pct: number; trend: string; max_item_value: number }[]>([]);
   const [categoryHealth, setCategoryHealth] = useState<{ category: string; volatility: number; trend_strength: number; health: string }[]>([]);
 
-  const { data: analyticsData, loading, error, retry } = useAsync(
-    () => Promise.all([
-      fetchPortfolioSnapshot(),
-      dataProvider.listCategorySummaries(),
-    ]).then(([snap, cats]) => ({ snapshot: snap, categorySummaries: cats })),
-    [],
+  // Split fetches so a single endpoint failure doesn't blank the whole screen
+  // (previously Promise.all short-circuited — if either snapshot or categories
+  // threw, paid users saw "analytics fetch failed" with no diagnostic).
+  const {
+    data: snapshotData,
+    loading: snapshotLoading,
+    error: snapshotError,
+    retry: retrySnapshot,
+  } = useAsync(() => fetchPortfolioSnapshot(), []);
+
+  const {
+    data: categoryData,
+    loading: categoriesLoading,
+    error: categoryError,
+    retry: retryCategories,
+  } = useAsync(() => dataProvider.listCategorySummaries(), []);
+
+  const loading = snapshotLoading || categoriesLoading;
+  const errMsg = (e: unknown): string => {
+    if (!e) return '';
+    if (typeof e === 'string') return e;
+    if (e instanceof Error) return e.message;
+    return String(e);
+  };
+  const errorParts: string[] = [];
+  if (snapshotError) errorParts.push(`snapshot: ${errMsg(snapshotError)}`);
+  if (categoryError) errorParts.push(`categories: ${errMsg(categoryError)}`);
+  const error = errorParts.length ? errorParts.join(' · ') : null;
+  const retry = useCallback(async () => {
+    await Promise.all([retrySnapshot(), retryCategories()]);
+  }, [retrySnapshot, retryCategories]);
+  const analyticsData = useMemo(
+    () => ({ snapshot: snapshotData, categorySummaries: categoryData ?? [] }),
+    [snapshotData, categoryData],
   );
 
   // Fetch backend collection trends + prediction accuracy (enrichment) — parallelized
@@ -195,6 +224,13 @@ function AnalyticsScreen() {
         {/* Upgrade prompt for free-tier users */}
         {!limits.advanced_analytics && (
           <UpgradePrompt feature="Advanced Analytics" requiredPlan="Pro" />
+        )}
+
+        {/* Hot Right Now (moved from home 2026-04-18, Pro-gated) */}
+        {limits.advanced_analytics ? (
+          <DemandHeatSection />
+        ) : (
+          <UpgradePrompt feature="Hot Right Now" requiredPlan="Pro" />
         )}
 
         {/* Error Banner */}

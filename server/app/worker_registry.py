@@ -56,6 +56,7 @@ SCHEDULES = {
     "discogs_worker": 24 * 3600,                 # daily — Discogs lowest asking-price for vinyl/anime_ost/city_pop
     "sanity_probe_worker": 3600,                 # R50l — hourly correctness checks on critical tables
     "discovery_audit_worker": 24 * 3600,         # R50l — daily broad discovery audit (orphan FKs, null rates, flow-through)
+    "datalake_export_worker": 24 * 3600,         # R50m — nightly export of closed partitions → S3 parquet
 }
 
 

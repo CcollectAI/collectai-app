@@ -74,17 +74,18 @@ const s = StyleSheet.create({
   rangeRow: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 8,
+    gap: 6,
     marginBottom: 12,
   },
   rangeBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 5,
+    paddingHorizontal: 11,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 7,
   },
   rangeText: {
     fontWeight: "700",
-    fontSize: 13,
+    fontSize: 11,
+    letterSpacing: 0.2,
   },
 });

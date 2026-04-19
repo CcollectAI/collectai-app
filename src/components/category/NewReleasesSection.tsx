@@ -53,6 +53,9 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
         <Text style={[styles.title, { color: colors.text }]}>New Releases</Text>
       </View>
 
+      {/* Text-only cards — catalog image_url was removed in R50k (Wikimedia
+          coverage was too patchy, 50/50 placeholders looked buggy).
+          User-uploaded photos only show on the items tab. */}
       <View style={styles.grid}>
         {items.map((item) => (
           <AnimatedPressable
@@ -62,10 +65,10 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
             accessibilityRole="button"
             accessibilityLabel={item.title}
           >
-            <View style={[styles.imagePlaceholder, { backgroundColor: colors.accent + '18' }]}>
-              <Ionicons name="cube-outline" size={20} color={colors.accent} />
+            <View style={[styles.newBadge, { backgroundColor: colors.accent + '18' }]}>
+              <Text style={[styles.newBadgeText, { color: colors.accent }]}>NEW</Text>
             </View>
-            <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={2}>
+            <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={3}>
               {item.title}
             </Text>
             {item.estimated_price != null && (
@@ -85,9 +88,21 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   title: { fontSize: 16, fontWeight: '700' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  card: { width: '30%', borderRadius: 10, borderWidth: 1, padding: 8, alignItems: 'center' },
-  image: { width: 56, height: 56, borderRadius: 8, marginBottom: 6 },
-  imagePlaceholder: { width: 56, height: 56, borderRadius: 8, marginBottom: 6, alignItems: 'center', justifyContent: 'center' },
-  itemTitle: { fontSize: 11, fontWeight: '600', textAlign: 'center', lineHeight: 14 },
-  price: { fontSize: 11, fontWeight: '700', marginTop: 2 },
+  card: {
+    width: '30%',
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  newBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  newBadgeText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+  itemTitle: { fontSize: 12, fontWeight: '600', lineHeight: 15 },
+  price: { fontSize: 12, fontWeight: '700', marginTop: 'auto' },
 });

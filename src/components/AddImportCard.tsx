@@ -37,7 +37,11 @@ export const AddImportCard: React.FC<Props> = ({
       style={[
         styles.card,
         {
-          backgroundColor: colors.card,
+          // Grey background per 2026-04-18 add-tab redesign —
+          // distinguishes file-import from the card-style manual-add below it.
+          backgroundColor: colors.border + '33',
+          borderWidth: 1,
+          borderColor: colors.border,
         },
       ]}
     >

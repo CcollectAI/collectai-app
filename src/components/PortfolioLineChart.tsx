@@ -126,8 +126,14 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
         })()
       : height;
 
-  const startLabel = formatDateShort(sorted[0].t);
-  const endLabel = formatDateShort(sorted[sorted.length - 1].t);
+  // 4 evenly-spaced x-axis dates (previously only first+last showed, which the
+  // user reported as "missing dates on x-axis"). Fewer ticks on very short
+  // series so we don't render duplicate labels.
+  const tickCount = Math.min(4, sorted.length);
+  const xTickLabels: string[] = Array.from({ length: tickCount }, (_, i) => {
+    const idx = Math.round((i / Math.max(tickCount - 1, 1)) * (sorted.length - 1));
+    return formatDateShort(sorted[idx].t);
+  });
 
   return (
     <View
@@ -160,12 +166,14 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
               </View>
 
               <View pointerEvents="none" style={styles.xLabels}>
-                <Text style={[styles.axisText, { color: axisLabelColor }]}>
-                  {startLabel}
-                </Text>
-                <Text style={[styles.axisText, { color: axisLabelColor }]}>
-                  {endLabel}
-                </Text>
+                {xTickLabels.map((lbl, i) => (
+                  <Text
+                    key={`${lbl}-${i}`}
+                    style={[styles.axisText, { color: axisLabelColor }]}
+                  >
+                    {lbl}
+                  </Text>
+                ))}
               </View>
             </>
           )}

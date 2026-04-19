@@ -36,6 +36,12 @@ if DEV_MODE and ENVIRONMENT == "production":
 
 DB_ENABLED: bool = os.getenv("DB_ENABLED", "false").lower() == "true"
 DB_DSN: str = os.getenv("DB_DSN", "")
+# Direct DSN (session-mode Postgres, not the pooler) for bulk-write workers
+# like datalake_export_worker or one-shot migrations. Pooler transaction mode
+# has a 30s statement_timeout that kills long INSERTs; a direct connection
+# side-steps it. Falls back to DB_DSN when not set — see
+# docs/DATA_SCALING_PLAN.md §6 (governance rule on pooler vs direct).
+DB_DSN_DIRECT: str = os.getenv("DB_DSN_DIRECT", "") or DB_DSN
 DB_POOL_MIN: int = int(os.getenv("DB_POOL_MIN_SIZE", "5"))
 DB_POOL_MAX: int = int(os.getenv("DB_POOL_MAX_SIZE", "20"))
 DB_COMMAND_TIMEOUT: float = float(os.getenv("DB_COMMAND_TIMEOUT", "30"))

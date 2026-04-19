@@ -36,7 +36,7 @@ import { AutoSetProgressList } from "@/components/AutoSetProgressList";
 import { AlertsCard } from "@/components/home/AlertsCard";
 import { PortfolioValueHeader } from "@/components/home/PortfolioValueHeader";
 import { ChartRangeSelector } from "@/components/home/ChartRangeSelector";
-import { CategoryBreakdownSection, type CategoryBreakdownItem } from "@/components/home/CategoryBreakdownSection";
+import { type CategoryBreakdownItem } from "@/components/home/CategoryBreakdownSection";
 import { getCategoryByName, getCategoryById } from "@/data/categories";
 import { TopItemsList, type ItemRow } from "@/components/home/TopItemsList";
 import { FollowedCategoriesCarousel } from "@/components/home/FollowedCategoriesCarousel";
@@ -54,7 +54,6 @@ import logger from "@/utils/logger";
 import { useStoreReview } from "@/hooks/useStoreReview";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AddMenuModal } from "@/components/home/AddMenuModal";
-import { DemandHeatSection } from "@/components/home/DemandHeatSection";
 import { ValueSavedBanner } from "@/components/ValueSavedBanner";
 import { useValueSummary } from "@/hooks/useValueSummary";
 import { radius, spacing, text, fontWeight, gap, shadow } from '@/theme/tokens';
@@ -629,18 +628,7 @@ function PortfolioScreen() {
           hapticsEnabled={settings.hapticsEnabled}
         />
 
-        {/* Category Breakdown */}
-        <CategoryBreakdownSection
-          theme={colors}
-          breakdown={categoryBreakdown}
-          loading={breakdownLoading}
-          formatPrice={(v) => formatPrice(v)}
-          resolveCategoryName={(raw) => {
-            const cat = getCategoryById(raw) ?? getCategoryByName(raw);
-            return cat?.name ?? raw;
-          }}
-          onCategoryPress={handleBreakdownCategoryPress}
-        />
+        {/* Category Breakdown lives on the items tab (moved 2026-04-18). */}
 
         {/* Global Collection Stats */}
         {categoryBreakdown.length > 0 && (
@@ -724,8 +712,7 @@ function PortfolioScreen() {
           </View>
         </AnimatedPressable>
 
-        {/* Hot Right Now — Demand Heat */}
-        <DemandHeatSection />
+        {/* Hot Right Now moved to Analytics (paywall-gated) 2026-04-18. */}
 
         {/* Auto-detected set completion (uses structured attributes_json) */}
         <AutoSetProgressList limit={5} />
