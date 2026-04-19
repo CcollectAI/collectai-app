@@ -68,20 +68,6 @@ function EventsScreen() {
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState(false);
   const [kindFilter, setKindFilter] = useState<string | null>(null);
-  // Business-user gate: Sponsor + Twitch CTAs only render when the user owns
-  // at least one sponsor company. Customers see a cleaner header.
-  const [isBusinessAccount, setIsBusinessAccount] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    dataProvider
-      .getMySponsorCompanies()
-      .then((companies) => {
-        if (!cancelled) setIsBusinessAccount(companies.length > 0);
-      })
-      .catch((err) => logger.warn('[events] getMySponsorCompanies failed', err));
-    return () => { cancelled = true; };
-  }, []);
-
   // Paginated data fetching
   const eventFetcher = useCallback(
     async (limit: number, offset: number): Promise<CollectorsEvent[]> => {
@@ -273,11 +259,6 @@ function EventsScreen() {
   const handleCreateEvent = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push('/create-event');
-  }, [router, settings.hapticsEnabled]);
-
-  const handleOpenSponsor = useCallback(() => {
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push('/sponsor/dashboard');
   }, [router, settings.hapticsEnabled]);
 
   const handleViewModeChange = useCallback((key: 'list' | 'calendar' | 'week' | 'nearby') => {
@@ -483,20 +464,10 @@ function EventsScreen() {
           <Text style={[styles.createEventPillText, { color: colors.accentText }]}>{t('events.create_event')}</Text>
         </AnimatedPressable>
 
-        {!BETA_MODE && isBusinessAccount && (
-          <AnimatedPressable
-            onPress={handleOpenSponsor}
-            style={[styles.sponsorPill, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
-            accessibilityRole="button"
-            accessibilityLabel={t('events.sponsor_a11y')}
-          >
-            <Ionicons name="megaphone-outline" size={14} color={colors.accent} />
-            <Text style={[styles.sponsorPillText, { color: colors.accent }]}>Sponsor</Text>
-          </AnimatedPressable>
-        )}
-        {/* Twitch chip removed 2026-04-19: /twitch is a stub (Active Drops: —,
-            no creator list, only the leaderboard link is wired). Re-enable
-            once the Twitch landing page actually has content to show. */}
+        {/* Sponsor + Twitch chips removed 2026-04-19 — the events tab is
+            consumer-facing; sponsor onboarding lives at /sponsor/register
+            and /sponsor/dashboard (reached via direct navigation, not via
+            the user-facing events tab). Twitch page is still a stub. */}
       </View>
 
       {/* Search Bar */}

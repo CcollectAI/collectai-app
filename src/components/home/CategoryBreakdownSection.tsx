@@ -20,6 +20,17 @@ export type CategoryBreakdownItem = {
   percentage: number;
 };
 
+// Preview data shown when the user's real breakdown is empty — gives a
+// concrete sense of what the section will look like once they add items.
+// Flagged with `isMock: true` so we can render a "Preview" badge.
+const MOCK_BREAKDOWN: CategoryBreakdownItem[] = [
+  { category: 'Pokemon',     item_count: 47, total_value: 2340, percentage: 38 },
+  { category: 'LEGO',        item_count: 12, total_value: 1680, percentage: 27 },
+  { category: 'Hot Toys',    item_count:  8, total_value: 1120, percentage: 18 },
+  { category: 'Warhammer',   item_count: 34, total_value:  620, percentage: 10 },
+  { category: 'Vinyl Records', item_count: 22, total_value:  440, percentage:  7 },
+];
+
 // ── Props ──────────────────────────────────────────────────────────────
 
 interface CategoryBreakdownSectionProps {
@@ -49,20 +60,33 @@ function CategoryBreakdownSectionInner({
   resolveCategoryName,
 }: CategoryBreakdownSectionProps) {
   const displayName = (raw: string) => resolveCategoryName?.(raw) ?? raw;
+  // Fall back to mock preview when user has no items yet (2026-04-19)
+  const isPreview = !loading && breakdown.length === 0;
+  const effectiveBreakdown = isPreview ? MOCK_BREAKDOWN : breakdown;
   return (
     <>
       <View style={s.sectionHeader}>
         <Text style={[s.sectionTitle, { color: theme.text }]}>Category Breakdown</Text>
+        {isPreview && (
+          <View style={[s.previewBadge, { backgroundColor: theme.accent + '18' }]}>
+            <Text style={[s.previewBadgeText, { color: theme.accent }]}>PREVIEW</Text>
+          </View>
+        )}
       </View>
 
       {loading ? (
         <View style={[s.breakdownCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <SkeletonList count={3} type="row" />
         </View>
-      ) : breakdown.length > 0 ? (
+      ) : (
         <View style={[s.breakdownCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {isPreview && (
+            <Text style={[s.previewNote, { color: theme.muted }]}>
+              This is how your breakdown will look once you add items.
+            </Text>
+          )}
           {/* Horizontal bar chart for top 5 */}
-          {breakdown.slice(0, 5).map((cat, idx) => {
+          {effectiveBreakdown.slice(0, 5).map((cat, idx) => {
             const barColors = [
               theme.accent,
               theme.accent + "CC",
@@ -75,7 +99,7 @@ function CategoryBreakdownSectionInner({
               <AnimatedPressable
                 key={cat.category}
                 style={s.breakdownBarRow}
-                onPress={() => onCategoryPress?.(cat.category)}
+                onPress={() => { if (!isPreview) onCategoryPress?.(cat.category); }}
                 accessibilityRole="button"
                 accessibilityLabel={`${displayName(cat.category)}: ${cat.percentage.toFixed(0)}% of portfolio. Tap to view category.`}
               >
@@ -104,11 +128,11 @@ function CategoryBreakdownSectionInner({
             contentContainerStyle={s.breakdownCardsRow}
             style={s.breakdownCardsScroll}
           >
-            {breakdown.map((cat) => (
+            {effectiveBreakdown.map((cat) => (
               <AnimatedPressable
                 key={cat.category}
                 style={[s.breakdownCategoryCard, { backgroundColor: theme.background, borderColor: theme.border }]}
-                onPress={() => onCategoryPress?.(cat.category)}
+                onPress={() => { if (!isPreview) onCategoryPress?.(cat.category); }}
                 accessibilityRole="button"
                 accessibilityLabel={`${displayName(cat.category)}: ${cat.item_count} item${cat.item_count !== 1 ? "s" : ""}, ${formatPrice(cat.total_value)}, ${cat.percentage.toFixed(0)}%. Tap to view category.`}
               >
@@ -129,12 +153,6 @@ function CategoryBreakdownSectionInner({
               </AnimatedPressable>
             ))}
           </ScrollView>
-        </View>
-      ) : (
-        <View style={[s.breakdownCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <Text style={[s.breakdownEmpty, { color: theme.muted }]}>
-            Add items to see your category breakdown.
-          </Text>
         </View>
       )}
     </>
@@ -230,5 +248,20 @@ const s = StyleSheet.create({
     fontSize: textToken.md,
     textAlign: "center",
     paddingVertical: 16,
+  },
+  previewBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  previewBadgeText: {
+    fontSize: 10,
+    fontWeight: fw.extrabold,
+    letterSpacing: 0.5,
+  },
+  previewNote: {
+    fontSize: 11,
+    fontStyle: 'italic',
+    marginBottom: 10,
   },
 });

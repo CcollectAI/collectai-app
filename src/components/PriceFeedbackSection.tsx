@@ -106,7 +106,7 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
         <View style={s.feedbackButtonsRow}>
           <Pressable
             onPress={() => onShowSalePriceInput(true)}
-            style={[s.feedbackBtn, { backgroundColor: theme.success }]}
+            style={[s.feedbackBtn, { backgroundColor: theme.accent }]}
             accessibilityRole="button"
             accessibilityLabel="Report sale price"
           >
