@@ -121,17 +121,19 @@ WORKER_OUTPUTS: dict[str, WorkerOutput] = {
             "WHERE status = 'active' AND (expires_at IS NULL OR expires_at > now())"
         ),
     ),
-    # Shared alerts_outbox — scope via `kind` column so workers don't cover
-    # for each other. All three gated on having users/items to act on.
+    # auction_alert_worker writes to alert_trigger_history with
+    # trigger_type='auction_ending' (not alerts_outbox — corrected round 6
+    # 2026-04-20). Input gate narrowed to current-month market_hits
+    # partition so it doesn't scan the full partitioned set and time out
+    # on the pooler.
     "auction_alert_worker": WorkerOutput(
-        table="alerts_outbox",
+        table="alert_trigger_history",
         timestamp_column="created_at",
         max_staleness_hours=48.0,
-        where_clause="kind = 'auction_ending'",
+        where_clause="trigger_type = 'auction_ending'",
         input_exists_sql=(
-            "SELECT COUNT(*) AS cnt FROM public.market_hits "
-            "WHERE ended_at IS NOT NULL "
-            "  AND ended_at BETWEEN now() AND now() + interval '48 hours'"
+            "SELECT COUNT(*) AS cnt FROM public.watchlist_items "
+            "WHERE target_price IS NOT NULL"
         ),
     ),
     # signal_alerts_worker writes to public.alerts (not alerts_outbox —

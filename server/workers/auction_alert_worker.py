@@ -40,7 +40,15 @@ async def run_once():
         record_run("auction_alert_worker", "error")
         return
 
-    conn = await asyncpg.connect(DSN)
+    # Prefer direct DSN — the query joins partitioned market_hits (528K+
+    # rows) with watchlist_items via ILIKE, which the pooler's 30s
+    # statement_timeout cuts off every cycle. Round-2 fix to the finally
+    # clause means these 30s timeouts now correctly record status=error
+    # instead of silent ok (23 errors since 19:13 restart, caught by the
+    # silent_writer probe). Round-6 routes to DB_DSN_DIRECT so the
+    # query actually has time to complete. 2026-04-20.
+    probe_dsn = os.getenv("DB_DSN_DIRECT") or DSN
+    conn = await asyncpg.connect(probe_dsn)
     alerts_sent = 0
 
     try:

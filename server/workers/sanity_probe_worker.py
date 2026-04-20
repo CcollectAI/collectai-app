@@ -199,6 +199,40 @@ CHECKS: list[dict] = [
         """,
         "description": "marketplace_scrape_worker ok but 0 market_hits written in 6h",
     },
+    {
+        # Round-6 addition: 0-ingest probe is too lenient. 2026-04-20 saw
+        # eBay + Vinted circuits trip out while yahoo + crawl4ai kept writing,
+        # dropping ingest from 3000+/h → 200/h for 6h with no alert. New
+        # check trips when last 1h hits fall below 20% of the trailing 24h
+        # average AND the worker has been recording ok runs — meaning the
+        # worker's still trying but the adapters are degraded.
+        "name": "market_hits.volume_drop_vs_24h_avg",
+        "sql": """
+            WITH recent AS (
+                SELECT COUNT(*)::float AS n1h
+                FROM public.market_hits
+                WHERE seen_at > now() - interval '1 hour'
+            ),
+            baseline AS (
+                SELECT COUNT(*)::float / 24.0 AS avg_per_hour
+                FROM public.market_hits
+                WHERE seen_at BETWEEN now() - interval '25 hours'
+                                  AND now() - interval '1 hour'
+            )
+            SELECT CASE
+                WHEN baseline.avg_per_hour >= 100
+                 AND recent.n1h < baseline.avg_per_hour * 0.20
+                 AND (SELECT COUNT(*) FROM public.worker_runs
+                       WHERE worker_name = 'marketplace_scrape_worker'
+                         AND status = 'ok'
+                         AND finished_at > now() - interval '1 hour') >= 3
+                THEN 1 ELSE 0
+            END AS violators,
+            NULL::text AS sample_id
+            FROM recent, baseline
+        """,
+        "description": "marketplace ingest last 1h < 20% of 24h-trailing average (likely external adapter outage)",
+    },
 ]
 
 
