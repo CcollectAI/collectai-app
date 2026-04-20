@@ -1079,12 +1079,15 @@ class EventUpserter:
                         conflict_key,
                     )
                 elif resp.status_code == 409:
-                    # Conflict remains — likely a constraint mismatch not the on_conflict target
+                    # Conflict remains — likely a constraint mismatch not the on_conflict target.
+                    # Count as SKIPPED (not updated) — learning #29d: PostgREST 409 means
+                    # the row was NOT merged, so incrementing `updated` reports phantom work
+                    # and hides the schema drift. 2026-04-20 silent-fail round 2.
                     log.warning(
                         "Conflict 409 for batch of %d events (on_conflict=%s) — merge-duplicates failed. Response: %s",
                         len(batch), conflict_key, resp.text[:200],
                     )
-                    self.updated += len(batch)
+                    self.skipped += len(batch)
                 else:
                     log.error(
                         "Upsert failed: %d %s",

@@ -20,7 +20,7 @@ import logging
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
@@ -338,7 +338,9 @@ async def data_moat_health(
     """Data moat system health: signal counts, last timestamps, view freshness."""
     pool = get_db_pool()
     if pool is None:
-        return {"ok": False, "reason": "no_db_pool"}
+        # 503 surfaces the failure to callers/monitors; previously returned
+        # HTTP 200 with ok:False which every caller treats as a success.
+        raise HTTPException(status_code=503, detail="no_db_pool")
 
     try:
         async with pool.acquire() as conn:
@@ -392,7 +394,7 @@ async def data_moat_health(
             }
     except Exception as e:
         logger.error("[data_moat/health] DB error: %s", e)
-        return {"ok": False, "reason": str(e)}
+        raise HTTPException(status_code=500, detail=f"db_error: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -475,7 +477,7 @@ async def prediction_accuracy(
     """
     pool = get_db_pool()
     if pool is None:
-        return {"ok": False, "reason": "no_db_pool"}
+        raise HTTPException(status_code=503, detail="no_db_pool")
 
     try:
         async with pool.acquire() as conn:
@@ -520,7 +522,7 @@ async def prediction_accuracy(
             }
     except Exception as e:
         logger.error("[data_moat/prediction-accuracy] DB error: %s", e)
-        return {"ok": False, "reason": str(e)}
+        raise HTTPException(status_code=500, detail=f"db_error: {e}")
 
 
 # ---------------------------------------------------------------------------

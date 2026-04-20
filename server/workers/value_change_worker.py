@@ -132,9 +132,13 @@ ORDER BY ABS((c.current_q50 - h.old_q50) / h.old_q50 * 100) DESC
 LIMIT 10
 """
 
-# Check if user has value_changes notifications enabled
+# Check if user has value_changes notifications enabled.
+# user_settings schema only has: user_id, currency, region, locale, created_at,
+# updated_at. There is NO notification_preferences column — the old code errored
+# on every cycle for weeks. Until a real prefs table exists, treat all users as
+# having value-changes enabled (default-on behaviour). 2026-04-20 silent-fail sweep.
 _CHECK_PREFS_QUERY = """
-SELECT notification_preferences
+SELECT user_id
 FROM public.user_settings
 WHERE user_id = $1
 """

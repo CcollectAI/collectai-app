@@ -169,6 +169,8 @@ async def run_once():
             len(rows), len(high_rows), len(standard_rows),
         )
 
+        per_item_failures = 0
+
         for row in rows:
             wl_id = row["id"]  # UUID — keep as-is for asyncpg
             user_id = str(row["user_id"])
@@ -190,7 +192,7 @@ async def run_once():
 
                 # Persist hits to market_hits (valuation_worker picks these up)
                 normalized_key = title.lower().strip().replace(" ", "_") if title else None
-                await agent.persist_comps_to_db(result, normalized_key=normalized_key)
+                await agent.persist_comps_to_db(result, normalized_key=normalized_key, category=category)
 
                 # Compute median price from top provenance hits
                 prices = [
@@ -295,20 +297,29 @@ async def run_once():
                 scanned += 1
 
             except Exception as e:
+                per_item_failures += 1
                 logger.warning(
                     "Failed to scan watchlist item %s: %s", str(wl_id), e,
                     exc_info=True,
                 )
 
         logger.info(
-            "Watchlist monitor cycle complete: scanned=%d alerts=%d",
-            scanned, alerts_fired,
+            "Watchlist monitor cycle complete: scanned=%d alerts=%d failures=%d",
+            scanned, alerts_fired, per_item_failures,
         )
+        # If the entire batch failed item-by-item, don't call it 'ok'.
+        # Partial failures still count as ok (some items scanned) so the
+        # overdue-alert doesn't spam every cycle when an intermittent
+        # source is flaky.
+        if per_item_failures and scanned == 0:
+            cycle_status = "error"
+        else:
+            cycle_status = "ok"
 
     finally:
         await agent.close()
         await conn.close()
-        record_run("watchlist_monitor_worker", "ok")
+        record_run("watchlist_monitor_worker", cycle_status if "cycle_status" in locals() else "error")
 
 
 async def main():

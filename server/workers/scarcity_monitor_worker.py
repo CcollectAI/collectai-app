@@ -42,6 +42,7 @@ async def run_once():
     conn = await asyncpg.connect(DSN)
     logger.info("Connected to DB — starting scarcity monitor cycle")
 
+    status = "ok"
     try:
         # Import and run scarcity detection
         from app.features.data_moat import detect_scarcity
@@ -158,9 +159,15 @@ async def run_once():
             len(actionable), alerts_fired,
         )
 
+    except Exception:
+        status = "error"
+        raise
     finally:
         await conn.close()
-        record_run("scarcity_monitor_worker", "ok")
+        # Record truthful status — previously the finally block recorded
+        # 'ok' even when detect_scarcity() raised, double-recording with
+        # main()'s except-branch 'error' and polluting silent-writer probe.
+        record_run("scarcity_monitor_worker", status)
 
 
 async def main():

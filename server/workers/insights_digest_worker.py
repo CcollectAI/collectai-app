@@ -118,9 +118,13 @@ WHERE user_id = $1
   AND created_at >= $2
 """
 
-# Check user notification preferences
+# Check user notification preferences.
+# user_settings has no notification_preferences column — cross-worker fix
+# with value_change_worker during 2026-04-20 silent-fail sweep. Caller's
+# _is_digest_enabled() returns True when the row is empty, so default-on
+# behaviour preserves prior (broken) semantics.
 _CHECK_PREFS_QUERY = """
-SELECT notification_preferences
+SELECT user_id
 FROM public.user_settings
 WHERE user_id = $1
 """
@@ -184,10 +188,13 @@ async def run_once():
         lookback_date = now - timedelta(days=LOOKBACK_DAYS)
         digests_sent = 0
 
-        # Batch-fetch preferences for all users at once (avoids N+1)
+        # Batch-fetch preferences for all users at once (avoids N+1).
+        # See _CHECK_PREFS_QUERY comment — no notification_preferences
+        # column exists; this just probes user existence. _is_digest_enabled
+        # defaults True when the row lacks the field.
         all_user_ids = [row["user_id"] for row in user_rows]
         all_prefs_rows = await conn.fetch(
-            "SELECT user_id, notification_preferences FROM public.user_settings WHERE user_id = ANY($1)",
+            "SELECT user_id FROM public.user_settings WHERE user_id = ANY($1)",
             all_user_ids,
         )
         prefs_by_user = {r["user_id"]: r for r in all_prefs_rows}

@@ -573,6 +573,7 @@ async def run_once():
 
     conn = await asyncpg.connect(DSN)
     logger.info("Connected to DB — starting price monitor cycle")
+    status = "ok"
     try:
         threshold_count = await check_threshold_alerts(conn)
         anomaly_count = await detect_anomalies(conn)
@@ -584,9 +585,12 @@ async def run_once():
             anomaly_count,
             completion_count,
         )
+    except Exception:
+        status = "error"
+        raise
     finally:
         await conn.close()
-        record_run("price_monitor", "ok")
+        record_run("price_monitor", status)
 
 
 async def main():

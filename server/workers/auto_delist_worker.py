@@ -137,6 +137,7 @@ async def run_once():
                 sales_processed += 1
 
             except Exception as e:
+                per_sale_failures = per_sale_failures + 1 if "per_sale_failures" in locals() else 1
                 logger.warning(
                     "Failed to process sale %s for item %s: %s",
                     sale_id, item_id, e,
@@ -147,10 +148,14 @@ async def run_once():
             "Auto-delist cycle complete: sales_processed=%d delisted=%d",
             sales_processed, delisted_count,
         )
+        # Inventory integrity matters — if every sale failed to delist, that's
+        # data-consistency risk (overselling). Emit error so the supervisor
+        # and Telegram alerts surface it rather than 'ok'-papering-over.
+        cycle_status = "error" if (locals().get("per_sale_failures", 0) > 0 and sales_processed == 0) else "ok"
 
     finally:
         await conn.close()
-        record_run("auto_delist_worker", "ok")
+        record_run("auto_delist_worker", cycle_status if "cycle_status" in locals() else "error")
 
 
 async def main():

@@ -202,6 +202,39 @@ CHECKS: list[dict] = [
 ]
 
 
+async def _load_cooldowns_from_db(conn) -> None:
+    """Hydrate _last_alerted_at from the DB so process restarts don't
+    re-page already-alerted violations within the cooldown window.
+
+    Uses worker_runs rows written by the probe itself — the most recent
+    'ok' run's metadata carries a `paged` map of check_name -> iso_ts.
+    Best-effort: failure leaves the in-memory dict empty (re-alert risk
+    for one cycle, still better than losing cooldown entirely on restart).
+    """
+    if _last_alerted_at:  # already hydrated this process
+        return
+    try:
+        row = await conn.fetchrow(
+            "SELECT metadata FROM public.worker_runs "
+            "WHERE worker_name = 'sanity_probe_worker' "
+            "  AND status = 'ok' AND metadata ? 'paged' "
+            "ORDER BY finished_at DESC NULLS LAST LIMIT 1"
+        )
+        if row and row["metadata"]:
+            md = row["metadata"]
+            if isinstance(md, str):
+                import json as _json
+                md = _json.loads(md)
+            paged = md.get("paged") or {}
+            for check_name, iso_ts in paged.items():
+                try:
+                    _last_alerted_at[check_name] = datetime.fromisoformat(iso_ts)
+                except Exception:
+                    pass
+    except Exception as e:
+        logger.debug("sanity_probe: could not hydrate cooldowns: %s", e)
+
+
 def _cooldown_expired(check_name: str) -> bool:
     last = _last_alerted_at.get(check_name)
     if last is None:
@@ -265,6 +298,10 @@ async def run_once() -> None:
     now = datetime.now(timezone.utc)
     current_month_partition = f"market_hits_y{now.year:04d}m{now.month:02d}"
 
+    # Rehydrate cooldown state from DB on first run of this process so
+    # restarts don't cause an alert storm.
+    await _load_cooldowns_from_db(conn)
+
     failing_new: list[dict] = []
     try:
         for check in CHECKS:
@@ -307,10 +344,33 @@ async def run_once() -> None:
 
         if failing_new:
             await _page(failing_new)
+            # Persist cooldowns so a restart doesn't reset them.
+            await _persist_cooldowns(conn)
 
     finally:
         await conn.close()
     record_run("sanity_probe_worker", "ok")
+
+
+async def _persist_cooldowns(conn) -> None:
+    """Write the current _last_alerted_at dict to the most recent
+    sanity_probe_worker row's metadata as `paged: {name: iso_ts}`. The
+    next process that starts can rehydrate via _load_cooldowns_from_db
+    and honour the cooldown across restarts.
+    """
+    try:
+        import json as _json
+        paged = {n: ts.isoformat() for n, ts in _last_alerted_at.items()}
+        await conn.execute(
+            "UPDATE public.worker_runs "
+            "SET metadata = COALESCE(metadata, '{}'::jsonb) || $1::jsonb "
+            "WHERE id = (SELECT id FROM public.worker_runs "
+            "            WHERE worker_name = 'sanity_probe_worker' "
+            "            ORDER BY started_at DESC LIMIT 1)",
+            _json.dumps({"paged": paged}),
+        )
+    except Exception as e:
+        logger.debug("sanity_probe: could not persist cooldowns: %s", e)
 
 
 async def _check_silent_writers(conn, failing_new: list[dict]) -> None:
@@ -323,6 +383,26 @@ async def _check_silent_writers(conn, failing_new: list[dict]) -> None:
     """
     for worker_name, out in WORKER_OUTPUTS.items():
         check_name = f"silent_writer.{worker_name}"
+
+        # Input gate — if the worker has no input to process, its 0-output
+        # is correct, not a silent failure. Skip the check to avoid pages
+        # in low-traffic / dev environments. (2026-04-20: the probe fired
+        # on 5 workers that had no users/mandates/items to act on; this
+        # gate stops that noise.)
+        if out.input_exists_sql:
+            try:
+                row = await asyncio.wait_for(
+                    conn.fetchrow(out.input_exists_sql),
+                    timeout=10.0,
+                )
+                input_cnt = int(row["cnt"] or 0) if row else 0
+            except Exception as e:
+                logger.warning("sanity_probe %s input-gate failed: %s", check_name, e)
+                continue
+            if input_cnt == 0:
+                logger.info("sanity_probe %s: skipped (no input)", check_name)
+                continue
+
         where = f"AND ({out.where_clause})" if out.where_clause else ""
         sql = f"""
             SELECT CASE

@@ -52,6 +52,13 @@ class WorkerOutput:
     alerts_outbox table, scope to this worker's own `kind` value.
     Injected verbatim as `AND (<clause>)`. Never accept user input here."""
 
+    input_exists_sql: Optional[str] = None
+    """Optional SQL that returns a single row with column `cnt` (integer).
+    If cnt == 0, the silent-writer check is SKIPPED — this lets us avoid
+    false-positive pages in low-traffic environments where a worker
+    legitimately has no input (no active users, no mandates, no auctions,
+    etc.). Injected verbatim. Never accept user input here."""
+
 
 # Registry — one entry per worker that has a deterministic observable
 # output. New workers should add themselves here; probes/audits/exports
@@ -70,7 +77,12 @@ WORKER_OUTPUTS: dict[str, WorkerOutput] = {
     "catalog_learning_worker": WorkerOutput(
         table="category_items",
         timestamp_column="updated_at",
-        max_staleness_hours=6.0,
+        max_staleness_hours=24.0,
+        # Only flag if there are pending catalog_suggestions to process.
+        input_exists_sql=(
+            "SELECT COUNT(*) AS cnt FROM public.catalog_suggestions "
+            "WHERE status IN ('pending','new_category')"
+        ),
     ),
     "catalog_crawler_worker": WorkerOutput(
         table="category_items",
@@ -80,7 +92,13 @@ WORKER_OUTPUTS: dict[str, WorkerOutput] = {
     "feedback_loop_worker": WorkerOutput(
         table="price_ground_truths",
         timestamp_column="recorded_at",
-        max_staleness_hours=24.0,  # may legitimately be empty for new users
+        max_staleness_hours=48.0,
+        # Only flag if there are unprocessed label_events.correction rows
+        # waiting to turn into ground truths. Empty input = nothing to do.
+        input_exists_sql=(
+            "SELECT COUNT(*) AS cnt FROM public.label_events "
+            "WHERE action = 'correction' AND processed_at IS NULL"
+        ),
     ),
     "event_scraper_worker": WorkerOutput(
         table="events",
@@ -95,27 +113,44 @@ WORKER_OUTPUTS: dict[str, WorkerOutput] = {
     "deal_discovery": WorkerOutput(
         table="mandate_deals",
         timestamp_column="discovered_at",
-        max_staleness_hours=4.0,
+        max_staleness_hours=24.0,
+        # Only flag if there are active purchase_mandates to scan against.
+        # Empty mandates = 0 output is correct, not a silent failure.
+        input_exists_sql=(
+            "SELECT COUNT(*) AS cnt FROM public.purchase_mandates "
+            "WHERE status = 'active' AND (expires_at IS NULL OR expires_at > now())"
+        ),
     ),
     # Shared alerts_outbox — scope via `kind` column so workers don't cover
-    # for each other.
+    # for each other. All three gated on having users/items to act on.
     "auction_alert_worker": WorkerOutput(
         table="alerts_outbox",
         timestamp_column="created_at",
-        max_staleness_hours=24.0,  # legit to have no auctions ending
+        max_staleness_hours=48.0,
         where_clause="kind = 'auction_ending'",
+        input_exists_sql=(
+            "SELECT COUNT(*) AS cnt FROM public.market_hits "
+            "WHERE ended_at IS NOT NULL "
+            "  AND ended_at BETWEEN now() AND now() + interval '48 hours'"
+        ),
     ),
     "signal_alerts_worker": WorkerOutput(
         table="alerts_outbox",
         timestamp_column="created_at",
-        max_staleness_hours=24.0,
+        max_staleness_hours=48.0,
         where_clause="kind = 'signal'",
+        input_exists_sql=(
+            "SELECT COUNT(*) AS cnt FROM public.items"
+        ),
     ),
     "value_change_worker": WorkerOutput(
         table="alerts_outbox",
         timestamp_column="created_at",
-        max_staleness_hours=72.0,  # daily worker + legit no-value-change days
+        max_staleness_hours=96.0,
         where_clause="kind = 'value_change'",
+        input_exists_sql=(
+            "SELECT COUNT(*) AS cnt FROM public.items"
+        ),
     ),
     # aggregate_catalog_attributes writes a watermark `_last_aggregated_at`
     # into category_items.attributes_json.market_observed — the check

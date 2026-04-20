@@ -76,6 +76,7 @@ async def run_once():
               AND mh.ended_at IS NOT NULL
               AND mh.ended_at > $1
               AND mh.ended_at <= $2
+              AND (mh.is_listing IS NOT TRUE)
               AND NOT EXISTS (
                   SELECT 1 FROM public.alert_trigger_history ath
                   WHERE ath.user_id = wi.user_id
@@ -158,12 +159,16 @@ async def run_once():
                 logger.debug("Push skipped for auction alert: %s", push_err)
 
         logger.info("Auction alert cycle: %d alerts sent", alerts_sent)
+        status = "ok"
 
     except Exception as e:
         logger.warning("Auction alert worker error: %s", e, exc_info=True)
+        status = "error"
     finally:
         await conn.close()
-        record_run("auction_alert_worker", "ok")
+        # Record truthful status — previously always 'ok' even when the
+        # whole cycle crashed, masking time-critical auction alert failures.
+        record_run("auction_alert_worker", status if 'status' in locals() else "error")
 
 
 # ---------------------------------------------------------------------------
