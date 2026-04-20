@@ -2,7 +2,7 @@
  * ItemNotesEditor — Editable notes block for item detail screen.
  */
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, Keyboard, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { radius, text, fontWeight } from '@/theme/tokens';
@@ -26,11 +26,28 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
 }: ItemNotesEditorProps) {
   const { colors: theme } = useAppTheme();
   const notesInputRef = useRef<TextInput | null>(null);
+  // Track last-saved text so the Save button can disable when there's
+  // nothing to save. Pre-fix 2026-04-19: button was keyboardVisible-gated,
+  // which never fires on web → user had no way to save their notes.
+  const [lastSaved, setLastSaved] = useState(notes);
+
+  // Resync baseline whenever a fresh notes value flows in from props (e.g.
+  // after the server round-trip completes and the parent state updates).
+  useEffect(() => {
+    setLastSaved(notes);
+    // Only resync when notes changes from the outside, not while user is
+    // typing. We intentionally depend on `notes` only — React's concurrent
+    // mode still gives us the post-save value eventually.
+
+  }, []);
+
+  const hasChanges = notes !== lastSaved;
 
   const handleSave = useCallback(() => {
     onSaveNotes();
+    setLastSaved(notes);
     Keyboard.dismiss();
-  }, [onSaveNotes]);
+  }, [onSaveNotes, notes]);
 
   return (
     <View
@@ -41,7 +58,7 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
         <Text style={[styles.label, { color: theme.muted }]}>
           Notes
         </Text>
-        {keyboardVisible && (
+        {keyboardVisible && hasChanges && (
           <Pressable
             onPress={handleSave}
             style={[styles.notesDoneBtn, { backgroundColor: theme.accent }]}
@@ -73,6 +90,32 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
         blurOnSubmit={false}
         accessibilityLabel="Item notes"
       />
+
+      {/* Always-visible Save button below the textarea. Works on web
+          (no keyboard events), disabled when there's nothing to save. */}
+      <Pressable
+        onPress={handleSave}
+        disabled={!hasChanges}
+        style={[
+          styles.primarySaveBtn,
+          {
+            backgroundColor: hasChanges ? theme.accent : theme.border + '60',
+            opacity: hasChanges ? 1 : 0.7,
+          },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={hasChanges ? 'Save notes' : 'No changes to save'}
+        accessibilityState={{ disabled: !hasChanges }}
+      >
+        <Text
+          style={[
+            styles.primarySaveBtnText,
+            { color: hasChanges ? theme.accentText : theme.muted },
+          ]}
+        >
+          {hasChanges ? 'Save notes' : 'Saved'}
+        </Text>
+      </Pressable>
     </View>
   );
 });
@@ -108,5 +151,15 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     minHeight: 100,
     maxHeight: 220,
+  },
+  primarySaveBtn: {
+    marginTop: 10,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  primarySaveBtnText: {
+    fontSize: text.md,
+    fontWeight: fontWeight.bold,
   },
 });

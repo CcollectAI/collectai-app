@@ -417,8 +417,8 @@ function PortfolioScreen() {
 
   const handleInsightsCtaPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push(limits.advanced_analytics ? '/analytics' : '/subscription');
-  }, [router, settings.hapticsEnabled, limits.advanced_analytics]);
+    router.push('/analytics');
+  }, [router, settings.hapticsEnabled]);
 
   const handleAlertPress = useCallback((alert: { id: string; itemId?: string }) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });

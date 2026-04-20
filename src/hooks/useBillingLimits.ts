@@ -76,6 +76,7 @@ export function useBillingLimits() {
     initialForced ? FORCED_LIMITS[initialForced] : DEFAULT_LIMITS,
   );
   const [loading, setLoading] = useState(!initialForced);
+  const [isForced, setIsForced] = useState(Boolean(initialForced));
 
   useEffect(() => {
     let mounted = true;
@@ -89,6 +90,7 @@ export function useBillingLimits() {
         if (forced) {
           setPlan(forced);
           setLimits(FORCED_LIMITS[forced]);
+          setIsForced(true);
           setLoading(false);
           return;
         }
@@ -114,5 +116,5 @@ export function useBillingLimits() {
     return () => { mounted = false; };
   }, []);
 
-  return { plan, limits, loading };
+  return { plan, limits, loading, isForced };
 }

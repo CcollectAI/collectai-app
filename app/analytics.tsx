@@ -80,7 +80,7 @@ function AnalyticsScreen() {
     success: colors.success,
     danger: colors.danger,
   }), [colors]);
-  const { limits } = useBillingLimits();
+  const { limits, isForced } = useBillingLimits();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -172,14 +172,88 @@ function AnalyticsScreen() {
     setRefreshing(false);
   }, [retry]);
 
+  // Mock snapshot used ONLY when plan is dev-forced AND real fetch returned
+  // nothing useful (common on web dev with no real user items). Lets the
+  // design team preview Pro-tier layout end-to-end. Real users with a real
+  // paid plan never see this path — they see their own data.
+  // Typed as `PortfolioSnapshot` via `as any` cast because constructing the
+  // full schema (every field, every nested type) is expensive for sample
+  // data that never leaves dev mode.
+  const MOCK_SNAPSHOT = useMemo<PortfolioSnapshot>(
+    () => ({
+      pl: {
+        startValue: 3200,
+        currentValue: 4680,
+        deltaAbs: 1480,
+        deltaPct: 0.4625,
+        maxDrawdownPct: -0.08,
+      },
+      allocations: [
+        { category: 'Pokemon',      totalValue: 2340, weight: 0.50 },
+        { category: 'LEGO',         totalValue: 1100, weight: 0.24 },
+        { category: 'Hot Toys',     totalValue:  620, weight: 0.13 },
+        { category: 'Warhammer',    totalValue:  380, weight: 0.08 },
+        { category: 'Vinyl Records', totalValue: 240, weight: 0.05 },
+      ],
+      winnersLosers: {
+        winners: [
+          { id: 'm1', name: 'Charizard VMAX SWSH07', category: 'Pokemon', currentValue: 218, change7dPct: 0.18 },
+          { id: 'm2', name: 'LEGO Millennium Falcon 75192', category: 'LEGO', currentValue: 910, change7dPct: 0.11 },
+        ],
+        losers: [
+          { id: 'm3', name: 'Funko Batman Dorbz', category: 'Funko', currentValue: 24, change7dPct: -0.22 },
+        ],
+        neutral: [],
+      },
+      tierSummary: { tier: 'Gold', totalScore: 78, rarityScore: 72, completenessScore: 81, diversificationScore: 82 },
+      items: [
+        { id: 'm1', name: 'Charizard VMAX SWSH07', category: 'Pokemon',  currentValue: 218, change1dPct: 0.02, change7dPct: 0.18, quantity: 1 },
+        { id: 'm2', name: 'LEGO Millennium Falcon 75192', category: 'LEGO',  currentValue: 910, change1dPct: 0.00, change7dPct: 0.11, quantity: 1 },
+        { id: 'm3', name: 'Hot Toys Iron Man MK85',  category: 'Hot Toys', currentValue: 520, change1dPct: 0.01, change7dPct: 0.05, quantity: 1 },
+        { id: 'm4', name: 'Warhammer Space Marines box', category: 'Warhammer', currentValue: 120, change1dPct: -0.01, change7dPct: 0.02, quantity: 1 },
+        { id: 'm5', name: "Thriller (MJ) Vinyl", category: 'Vinyl Records', currentValue: 80, change1dPct: 0.00, change7dPct: 0.00, quantity: 1 },
+        { id: 'm6', name: 'Funko Batman Dorbz', category: 'Funko', currentValue: 24, change1dPct: -0.03, change7dPct: -0.22, quantity: 1 },
+      ],
+      series: [],
+    } as unknown as PortfolioSnapshot),
+    [],
+  );
+
+  const MOCK_CATEGORIES = useMemo(
+    () => [
+      { id: 'pokemon',  name: 'Pokemon',  ownedCount: 47, totalCount: 185, completionPct: 25 },
+      { id: 'lego',     name: 'LEGO',     ownedCount: 12, totalCount:  60, completionPct: 20 },
+      { id: 'hot_toys', name: 'Hot Toys', ownedCount:  8, totalCount:  40, completionPct: 20 },
+    ],
+    [],
+  );
+
+  // When dev plan is forced AND real snapshot produced no useful data, swap
+  // in MOCK_SNAPSHOT so the Pro-tier Analytics layout renders end-to-end.
+  const effectiveSnapshot = useMemo(() => {
+    const real = snapshot;
+    const realHasData = real && ((real.items?.length ?? 0) > 0 || real.pl);
+    if (isForced && !realHasData) return MOCK_SNAPSHOT;
+    return real;
+  }, [snapshot, isForced, MOCK_SNAPSHOT]);
+
+  const effectiveCategories = useMemo(() => {
+    if (isForced && (!categorySummaries || categorySummaries.length === 0)) {
+      return MOCK_CATEGORIES;
+    }
+    return categorySummaries;
+  }, [categorySummaries, isForced, MOCK_CATEGORIES]);
+
+  const isPreview = isForced && (effectiveSnapshot === MOCK_SNAPSHOT);
+
   // M4: Memoize derived snapshot data to avoid recomputing on every render
-  const { pl, allocations, winnersLosers, tierSummary, items } = useMemo(() => snapshot ?? {
+  const { pl, allocations, winnersLosers, tierSummary, items } = useMemo(() => effectiveSnapshot ?? {
     pl: null,
     allocations: [],
     winnersLosers: { winners: [], losers: [], neutral: [] },
     tierSummary: null,
     items: [],
-  }, [snapshot]);
+  }, [effectiveSnapshot]);
 
   const isPositive = useMemo(() => (pl?.deltaPct ?? 0) >= 0, [pl?.deltaPct]);
 
@@ -195,10 +269,10 @@ function AnalyticsScreen() {
 
   // Categories with owned items, sorted by completionPct desc
   const activeCategories = useMemo(() => {
-    return categorySummaries
+    return effectiveCategories
       .filter((c) => c.ownedCount > 0)
       .sort((a, b) => b.completionPct - a.completionPct);
-  }, [categorySummaries]);
+  }, [effectiveCategories]);
 
   if (loading) {
     return (
@@ -233,8 +307,20 @@ function AnalyticsScreen() {
           <UpgradePrompt feature="Hot Right Now" requiredPlan="Pro" />
         )}
 
-        {/* Error Banner */}
-        {error && (
+        {/* Preview banner when the dev plan override is active and we're
+            falling back to mock analytics data (real fetch failed/empty). */}
+        {isPreview && (
+          <View style={[styles.errorBanner, { backgroundColor: colors.accent + '18' }]}>
+            <Ionicons name="construct-outline" size={16} color={colors.accent} />
+            <Text style={[styles.errorText, { color: colors.text }]}>
+              Dev preview — sample analytics data. Add real items for live numbers.
+            </Text>
+          </View>
+        )}
+
+        {/* Error banner (suppressed in forced-plan preview mode — errors
+            are noise when we're knowingly showing mock data). */}
+        {error && !isPreview && (
           <View style={[styles.errorBanner, { backgroundColor: colors.dangerBg }]}>
             <Ionicons name="warning-outline" size={16} color={colors.error} />
             <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
