@@ -129,6 +129,17 @@ _worker_import_failures: dict[str, str] = {}
 _alerted_workers: set[str] = set()
 ALERT_THRESHOLD = int(os.getenv("BAKE_ALERT_THRESHOLD", "3"))
 
+# 2026-04-20: previously when a worker task died (silent return, cancelled
+# parent, or any exit without import failure) the supervisor logged "NOT
+# restarting" and left the worker permanently gone. sanity_probe_worker
+# stopped firing for 9h this way — we only noticed because the user
+# complained that "probes stopped". Fix: actually supervise — re-spawn
+# dead tasks with exponential backoff, and page Telegram on each restart
+# so we find out in minutes, not days.
+_worker_restart_counts: dict[str, int] = {}
+_worker_manifest_by_name: dict[str, tuple[str, str, int, bool]] = {}
+_MAX_RESTART_BACKOFF_S = 300.0
+
 
 async def _send_telegram_alert(message: str) -> None:
     """Send an ops alert via telegram_ops. Never raises."""
@@ -282,20 +293,49 @@ async def _health_summary_loop(interval_s: float = 1800.0) -> None:
 
             # Restart dead tasks (unless they were cancelled)
             for wname, task in list(_active_tasks.items()):
-                if task.done() and not task.cancelled():
-                    exc = task.exception() if not task.cancelled() else None
-                    import_err = _worker_import_failures.get(wname)
-                    if import_err:
-                        logger.error(
-                            "[bake_orchestrator] Task %s dead — import failure: %s",
-                            wname, import_err,
-                        )
-                    else:
-                        logger.warning(
-                            "[bake_orchestrator] Task %s died (exc=%s), NOT restarting "
-                            "(worker loop should be infinite — check logs)",
-                            wname, exc,
-                        )
+                if not task.done():
+                    continue
+                if task.cancelled():
+                    continue
+                exc = task.exception()
+                import_err = _worker_import_failures.get(wname)
+                if import_err:
+                    logger.error(
+                        "[bake_orchestrator] Task %s dead — import failure: %s",
+                        wname, import_err,
+                    )
+                    continue
+                manifest = _worker_manifest_by_name.get(wname)
+                if manifest is None:
+                    logger.warning(
+                        "[bake_orchestrator] Task %s died (exc=%s) but no manifest entry "
+                        "— cannot restart", wname, exc,
+                    )
+                    continue
+                module_path, func_name, interval_s, needs_db_dsn = manifest
+                count = _worker_restart_counts.get(wname, 0) + 1
+                _worker_restart_counts[wname] = count
+                backoff = min(_MAX_RESTART_BACKOFF_S, 5.0 * (2 ** min(count - 1, 6)))
+                logger.warning(
+                    "[bake_orchestrator] Task %s died (exc=%s) — respawning #%d after %.0fs",
+                    wname, exc, count, backoff,
+                )
+                alert_key = f"restart:{wname}"
+                if count >= ALERT_THRESHOLD and alert_key not in _alerted_workers:
+                    _alerted_workers.add(alert_key)
+                    await _send_telegram_alert(
+                        f"⚠️ Bake worker {wname} respawned {count}× "
+                        f"(last exc={exc}) — loop keeps exiting. Check bake.log."
+                    )
+
+                async def _respawn(n=wname, mp=module_path, fn=func_name,
+                                   it=interval_s, nd=needs_db_dsn, bo=backoff):
+                    await asyncio.sleep(bo)
+                    await _run_worker_loop(n, mp, fn, it, nd)
+
+                _active_tasks[wname] = asyncio.create_task(
+                    _respawn(), name=f"orchestrator:{wname}",
+                )
 
         except asyncio.CancelledError:
             return
@@ -526,6 +566,9 @@ async def start_all_workers() -> None:
             skipped += 1
             continue
 
+        _worker_manifest_by_name[registry_name] = (
+            module_path, func_name, interval, needs_db_dsn,
+        )
         task = asyncio.create_task(
             _run_worker_loop(registry_name, module_path, func_name, interval, needs_db_dsn),
             name=f"orchestrator:{registry_name}",

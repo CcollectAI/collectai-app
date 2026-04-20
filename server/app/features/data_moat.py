@@ -500,8 +500,8 @@ async def prediction_accuracy(
                 JOIN items i ON i.id = gt.item_id
                 LEFT JOIN LATERAL (
                     SELECT q10, q90 FROM price_predictions pp2
-                    WHERE pp2.item_id = gt.item_id
-                    ORDER BY pp2.asof DESC LIMIT 1
+                    WHERE pp2.item_ref = i.canonical_key
+                    ORDER BY pp2.generated_at DESC LIMIT 1
                 ) pp ON true
                 WHERE gt.recorded_at >= now() - ($1 || ' days')::interval
                   {cat_filter}
