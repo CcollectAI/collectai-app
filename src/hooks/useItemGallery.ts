@@ -29,6 +29,7 @@ export function useItemGallery(itemId: string | undefined, isDraft: boolean, ima
   const [zoomImageUri, setZoomImageUri] = useState<string | null>(null);
   const [galleryImages, setGalleryImages] = useState<ItemImage[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(false);
+  const [galleryError, setGalleryError] = useState<Error | null>(null);
   const [galleryActiveIndex, setGalleryActiveIndex] = useState(0);
   const [imageUploading, setImageUploading] = useState(false);
   const [pendingLabel, setPendingLabel] = useState<string | null>(null);
@@ -51,9 +52,16 @@ export function useItemGallery(itemId: string | undefined, isDraft: boolean, ima
     if (!itemId || isDraft) return;
     let cancelled = false;
     setGalleryLoading(true);
+    setGalleryError(null);
     collectorsApi.listItemImages(itemId)
       .then((data) => { if (!cancelled) setGalleryImages(data.images || []); })
-      .catch((err) => logger.warn('[useItemGallery] fetch error:', err))
+      .catch((err) => {
+        logger.warn('[useItemGallery] fetch error:', err);
+        // Round-4 silent-failure sweep: previously err was logged only,
+        // leaving galleryImages=[] indistinguishable from "legitimately
+        // no photos." Now callers can show an error banner + retry.
+        if (!cancelled) setGalleryError(err instanceof Error ? err : new Error(String(err)));
+      })
       .finally(() => { if (!cancelled) setGalleryLoading(false); });
     return () => { cancelled = true; };
   }, [itemId, isDraft]);
@@ -131,6 +139,7 @@ export function useItemGallery(itemId: string | undefined, isDraft: boolean, ima
     zoomImageUri, setZoomImageUri,
     galleryImages, setGalleryImages,
     galleryLoading,
+    galleryError,
     galleryActiveIndex, setGalleryActiveIndex,
     imageUploading,
     pendingLabel, setPendingLabel,
