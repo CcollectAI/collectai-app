@@ -267,7 +267,13 @@ async def run_once():
                         if model_q50 is not None:
                             blended = alpha * model_q50 + (1 - alpha) * q50
                             if math.isfinite(blended) and 0 < blended <= _MAX_SANE_PRICE_EUR:
-                                q50 = blended
+                                # Clamp into [q10, q90] so the CHECK constraint
+                                # `q10 <= q50 <= q90` on price_predictions can't
+                                # be violated. Without this, a model prediction
+                                # outside the empirical range (e.g. extrapolating
+                                # beyond observed comps) silently breaks every
+                                # INSERT in the cycle. Seen 2026-04-20.
+                                q50 = max(q10, min(q90, blended))
                                 model_used = True
             except Exception as e:
                 logging.debug("Model blending skipped for %s: %s", item_ref, e)

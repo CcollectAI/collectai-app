@@ -40,6 +40,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import asyncpg
 
 from app.worker_registry import record_run
+from app.lib.worker_output_registry import WORKER_OUTPUTS
 from workers.retry import with_async_retry, log_dead_letter
 
 logger = logging.getLogger(__name__)
@@ -216,12 +217,21 @@ async def _page(failing: list[dict]) -> None:
     except Exception:
         return
 
+    # HTML-escape user-supplied fragments — descriptions sometimes contain
+    # `>` / `<` (e.g. "stale >6h") and Telegram's HTML parser treats them
+    # as malformed tags and rejects the entire message with 400. Silent
+    # failure mode: violation is logged but never delivered.
+    import html as _html
+
     lines = ["🩺 <b>Sanity probe violations</b>\n"]
     for f in failing:
+        name = _html.escape(str(f.get("name", "")))
+        desc = _html.escape(str(f.get("description", "")))
+        sample = _html.escape(str(f.get("sample_id", "")))
         lines.append(
-            f"• <b>{f['name']}</b>: {f['violators']} rows\n"
-            f"  {f['description']}\n"
-            f"  sample row: <code>{f['sample_id']}</code>"
+            f"• <b>{name}</b>: {f['violators']} rows\n"
+            f"  {desc}\n"
+            f"  sample row: <code>{sample}</code>"
         )
     lines.append(f"\nProbe run at {datetime.now(timezone.utc).strftime('%H:%M UTC')}")
 
@@ -290,12 +300,79 @@ async def run_once() -> None:
             else:
                 logger.info("sanity_probe %s: clean", check["name"])
 
+        # Silent-writer probe — cross-check declared output freshness against
+        # worker_runs liveness. Added 2026-04-20 after 4 workers were found
+        # recording ok for 48h+ while their output tables stayed stale.
+        await _check_silent_writers(conn, failing_new)
+
         if failing_new:
             await _page(failing_new)
 
     finally:
         await conn.close()
     record_run("sanity_probe_worker", "ok")
+
+
+async def _check_silent_writers(conn, failing_new: list[dict]) -> None:
+    """For each worker in WORKER_OUTPUTS, page if it's had recent ok runs
+    but its declared output is stale beyond max_staleness_hours.
+
+    Appends any violations to failing_new (the caller's accumulator). Never
+    raises — individual check failures are logged and skipped so one dead
+    table can't suppress the rest.
+    """
+    for worker_name, out in WORKER_OUTPUTS.items():
+        check_name = f"silent_writer.{worker_name}"
+        where = f"AND ({out.where_clause})" if out.where_clause else ""
+        sql = f"""
+            SELECT CASE
+                WHEN (
+                    SELECT COUNT(*) FROM public.worker_runs
+                     WHERE worker_name = $1
+                       AND status = 'ok'
+                       AND finished_at > now() - interval '2 hours'
+                ) >= 2
+                AND COALESCE(
+                    EXTRACT(EPOCH FROM now() - (
+                        SELECT MAX({out.timestamp_column}) FROM public.{out.table}
+                         WHERE {out.timestamp_column} IS NOT NULL {where}
+                    )) / 3600.0,
+                    99999.0
+                ) > $2
+                THEN 1 ELSE 0
+            END AS violators,
+            $1::text AS sample_id
+        """
+        try:
+            row = await asyncio.wait_for(
+                conn.fetchrow(sql, worker_name, float(out.max_staleness_hours)),
+                timeout=20.0,
+            )
+            violators = int(row["violators"] or 0) if row else 0
+        except asyncio.TimeoutError:
+            logger.warning("sanity_probe %s query timed out", check_name)
+            continue
+        except Exception as e:
+            logger.warning("sanity_probe %s query failed: %s", check_name, e)
+            continue
+
+        if violators > 0:
+            desc = (
+                f"{worker_name} has ok runs in last 2h but "
+                f"{out.table}.{out.timestamp_column} is stale >"
+                f"{out.max_staleness_hours}h"
+            )
+            logger.warning("SILENT WRITER %s: %s", check_name, desc)
+            if _cooldown_expired(check_name):
+                failing_new.append({
+                    "name": check_name,
+                    "description": desc,
+                    "violators": 1,
+                    "sample_id": worker_name,
+                })
+                _last_alerted_at[check_name] = datetime.now(timezone.utc)
+        else:
+            logger.info("sanity_probe %s: clean", check_name)
 
 
 async def main():

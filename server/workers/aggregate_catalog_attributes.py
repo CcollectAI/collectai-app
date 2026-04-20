@@ -34,6 +34,7 @@ import statistics
 import sys
 import time
 from collections import Counter, defaultdict
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -256,8 +257,14 @@ async def run_once(
                 summary = aggregate_attrs_for_group(attrs_list, min_obs=min_obs)
                 if not summary:
                     continue
+                # Watermark so the silent-writer probe has an observable
+                # signal — without this, the worker could run ok for weeks
+                # while writing structurally correct but undetectably-stale
+                # data. The probe queries MAX(_last_aggregated_at) via
+                # WORKER_OUTPUTS.
+                summary["_last_aggregated_at"] = datetime.now(timezone.utc).isoformat()
                 stats["groups_promoted"] += 1
-                stats["fields_promoted"] += len(summary)
+                stats["fields_promoted"] += len(summary) - 1  # don't count watermark
 
                 if len(sample_output) < 5:
                     sample_output.append({

@@ -57,8 +57,9 @@ EXPECTED: list[tuple[str, list[str], str]] = [
             "provider", "listing_id", "title", "price", "currency",
             "condition", "normalized_key", "category", "attrs",
             "features_json", "ended_at", "seen_at", "price_eur",
+            "is_listing",
         ],
-        "pipelines/import_common.SupabaseIngest.upsert_market_hits() + workers/auction_alert_worker.py",
+        "pipelines/import_common.SupabaseIngest.upsert_market_hits() + pipelines/import_discogs.py",
     ),
     (
         "label_events",
@@ -137,6 +138,108 @@ EXPECTED: list[tuple[str, list[str], str]] = [
         ],
         "app/features/data_moat.py.record_demand_signal()",
     ),
+    (
+        "notifications",
+        [
+            # Real columns: id, user_id, title, body, payload, type, is_read, created_at.
+            # Added 2026-04-20 — silent-failure sweep found code elsewhere
+            # referenced `notification_type`, which doesn't exist; the real
+            # column is `type`. See FORBIDDEN_CODE_PATTERNS below.
+            "id", "user_id", "title", "body", "payload", "type",
+            "is_read", "created_at",
+        ],
+        "workers/{auction_alert,signal_alerts,value_change,watchlist_monitor}_worker.py",
+    ),
+    (
+        "price_ground_truths",
+        [
+            "id", "item_id", "actual_price", "currency", "source",
+            "prediction_q50", "error_pct", "recorded_at",
+        ],
+        "workers/feedback_loop_worker.py + app/features/data_moat.py",
+    ),
+    (
+        "price_predictions",
+        [
+            # item_ref (text) + generated_at (timestamptz) are the canonical
+            # join columns. The retired `item_id` / `asof` names must never
+            # reappear — see FORBIDDEN_CODE_PATTERNS. Silent-fail sweep
+            # 2026-04-20 caught pp2.item_id / pp2.asof in data_moat.py.
+            "id", "item_ref", "category", "q10", "q50", "q90",
+            "confidence", "comps_count", "model_version", "source",
+            "generated_at", "created_at", "conf_score",
+            "evidence_hit_ids", "evidence_summary", "explanation",
+        ],
+        "workers/valuation_worker.py + app/features/predict_router.py + app/agents/dossier_agent.py",
+    ),
+    (
+        "category_items",
+        [
+            # Note: `attributes_json` (jsonb) — NOT `attrs` (attrs is the
+            # market_hits column). And items.attrs ≠ category_items.attributes_json.
+            # The confusion between these two JSONB columns has burned us
+            # multiple times (learnings #31, R50m part 3 dossier bug).
+            "id", "category", "item_key", "title", "set_code", "brand",
+            "rarity", "notes", "image_url", "barcode", "attributes_json",
+            "created_at", "updated_at", "last_scrape_attempt_at",
+            "last_crawled_at",
+        ],
+        "pipelines/import_common + workers/{catalog_crawler,catalog_learning,aggregate_catalog_attributes}.py",
+    ),
+]
+
+
+# Code-level forbidden patterns — tokens that reference DB objects which do
+# not exist (or have been renamed). A pre-flight grep catches these before
+# they ship and silently break writes or reads. Added 2026-04-20 after 5
+# days of instance-by-instance column-drift fixes — this is the structural
+# remedy.
+#
+# Format: (regex, short description, list of path substrings to EXCLUDE).
+# Excludes are substring matches against the relative path — use them to
+# keep the tests that intentionally mention the forbidden name from
+# tripping the check.
+FORBIDDEN_CODE_PATTERNS: list[tuple[str, str, list[str]]] = [
+    # SQL-column refs only — we avoid matching Python identifiers that
+    # happen to spell the same word by anchoring to SQL syntax context
+    # (dot-prefixed aliases, SELECT/FROM/WHERE keywords).
+    (
+        r"\bpp2?\.item_id\b",
+        "price_predictions has no item_id column — use item_ref (text, canonical_key)",
+        ["schema_drift_check.py", "learnings.md", "memory"],
+    ),
+    (
+        r"\bpp2?\.asof\b",
+        "price_predictions has no asof column — use generated_at",
+        ["schema_drift_check.py", "learnings.md", "memory"],
+    ),
+    (
+        # Only SQL contexts — anchoring `notification_type` to SQL keywords
+        # lets us keep it out of the Python push() kwarg (which legitimately
+        # takes `notification_type` as a parameter name and maps it to the
+        # DB `type` column internally).
+        r"(WHERE|AND|OR|SELECT|INSERT|UPDATE|SET|=)\s+[a-zA-Z_]*\.?notification_type\b",
+        "notifications table has no notification_type column — use `type`",
+        ["schema_drift_check.py", "learnings.md", "memory"],
+    ),
+    (
+        r"\bFROM\s+deal_candidates\b|\bINTO\s+deal_candidates\b|\bUPDATE\s+deal_candidates\b",
+        "deal_candidates table does not exist — use mandate_deals or category_candidates",
+        ["schema_drift_check.py", "learnings.md", "memory"],
+    ),
+    (
+        # Match worker_runs table context with ended_at in the same SQL stmt.
+        # The previous `.*` variant matched plain text in comments/docstrings.
+        r"FROM\s+worker_runs[^;]*ended_at|ended_at[^;]*FROM\s+worker_runs|"
+        r"SET\s+ended_at\s*=\s*.*worker_runs|UPDATE\s+worker_runs[^;]*ended_at",
+        "worker_runs has no ended_at column — use finished_at",
+        ["schema_drift_check.py", "learnings.md", "memory"],
+    ),
+    (
+        r"category_items\.attrs\b|ci\.attrs\b",
+        "category_items has no `attrs` column — use attributes_json (attrs belongs to market_hits/items)",
+        ["schema_drift_check.py", "learnings.md", "memory"],
+    ),
 ]
 
 
@@ -204,6 +307,74 @@ async def check_table(conn, table: str, expected_cols: list[str]) -> dict:
     }
 
 
+def scan_forbidden_patterns() -> list[dict]:
+    """Grep server/ + scripts/ for known-bad DB references. Returns a list of
+    {pattern, description, hits: [{path, line, snippet}]} — empty list
+    means clean. Uses ripgrep if available, falls back to a Python walker
+    so the check works on minimal CI environments."""
+    import re
+    import subprocess
+
+    scan_roots = [
+        os.path.join(REPO_ROOT, "server"),
+        os.path.join(REPO_ROOT, "scripts"),
+    ]
+    violations: list[dict] = []
+
+    for regex, desc, excludes in FORBIDDEN_CODE_PATTERNS:
+        hits: list[dict] = []
+        # Prefer rg for speed; fall back to os.walk if rg isn't available.
+        try:
+            # -n line numbers, -I no-binary, --no-heading flat output,
+            # -g exclude glob patterns
+            cmd = ["rg", "-n", "--no-heading", "-I", "--color=never", regex] + scan_roots
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            lines = proc.stdout.splitlines()
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            # Python fallback: walk and regex-match
+            lines = []
+            pat = re.compile(regex)
+            for root in scan_roots:
+                for dirpath, _, files in os.walk(root):
+                    if any(s in dirpath for s in (".venv", "__pycache__", "node_modules")):
+                        continue
+                    for fn in files:
+                        if not fn.endswith((".py", ".sql", ".ts", ".tsx", ".js")):
+                            continue
+                        full = os.path.join(dirpath, fn)
+                        try:
+                            with open(full, encoding="utf-8") as f:
+                                for i, ln in enumerate(f, 1):
+                                    if pat.search(ln):
+                                        lines.append(f"{full}:{i}:{ln.rstrip()}")
+                        except Exception:
+                            continue
+
+        for line in lines:
+            parts = line.split(":", 2)
+            if len(parts) < 3:
+                continue
+            path, lineno, snippet = parts[0], parts[1], parts[2]
+            rel = os.path.relpath(path, REPO_ROOT)
+            if any(ex in rel for ex in excludes):
+                continue
+            # Skip pure comment lines (leading # or // after whitespace) —
+            # documentation that mentions the bad name (e.g. a migration
+            # note) is not a live reference.
+            stripped = snippet.strip()
+            if stripped.startswith("#") or stripped.startswith("//"):
+                continue
+            hits.append({"path": rel, "line": int(lineno), "snippet": stripped})
+
+        violations.append({
+            "pattern": regex,
+            "description": desc,
+            "hits": hits,
+        })
+
+    return violations
+
+
 async def main_async(json_mode: bool, fix_suggest: bool) -> int:
     try:
         import asyncpg
@@ -238,6 +409,10 @@ async def main_async(json_mode: bool, fix_suggest: bool) -> int:
     finally:
         await conn.close()
 
+    # Code-pattern scan — runs in-process, doesn't need DB.
+    forbidden_violations = scan_forbidden_patterns()
+    forbidden_hits = sum(len(v["hits"]) for v in forbidden_violations)
+
     total_missing = sum(len(r["missing"]) for r in results)
     total_missing += sum(len(r["missing"]) for r in enum_results)
     missing_tables = [r for r in results if not r["exists"]]
@@ -245,10 +420,12 @@ async def main_async(json_mode: bool, fix_suggest: bool) -> int:
 
     if json_mode:
         print(json.dumps({
-            "ok": total_missing == 0,
+            "ok": total_missing == 0 and forbidden_hits == 0,
             "total_expected_columns": sum(len(c) for _, c, _ in EXPECTED),
             "total_missing": total_missing,
             "tables": results,
+            "forbidden_code_patterns": forbidden_violations,
+            "forbidden_hits": forbidden_hits,
         }, indent=2))
     else:
         print("─" * 72)
@@ -289,14 +466,28 @@ async def main_async(json_mode: bool, fix_suggest: bool) -> int:
                 print()
                 print("(types are placeholders — match the migration that creates each column)")
 
+        if forbidden_hits:
+            print()
+            print("❌ FORBIDDEN CODE PATTERNS (DB refs that will fail at runtime):")
+            for v in forbidden_violations:
+                if not v["hits"]:
+                    continue
+                print(f"  • {v['description']}")
+                print(f"    pattern: {v['pattern']}")
+                for h in v["hits"][:8]:
+                    print(f"    {h['path']}:{h['line']}  {h['snippet'][:100]}")
+                if len(v["hits"]) > 8:
+                    print(f"    … and {len(v['hits']) - 8} more")
         print("─" * 72)
-        print(f"  expected columns: {sum(len(c) for _, c, _ in EXPECTED)}")
-        print(f"  missing total:    {total_missing}")
-        print(f"  tables checked:   {len(results)}")
-        print(f"  verdict:          {'PASS' if total_missing == 0 else 'FAIL'}")
+        print(f"  expected columns:     {sum(len(c) for _, c, _ in EXPECTED)}")
+        print(f"  missing total:        {total_missing}")
+        print(f"  tables checked:       {len(results)}")
+        print(f"  forbidden hits:       {forbidden_hits}")
+        verdict = "PASS" if (total_missing == 0 and forbidden_hits == 0) else "FAIL"
+        print(f"  verdict:              {verdict}")
         print("─" * 72)
 
-    return 0 if total_missing == 0 else 1
+    return 0 if (total_missing == 0 and forbidden_hits == 0) else 1
 
 
 def main() -> int:
