@@ -62,9 +62,26 @@ async def send_push(
             ticket = result.get("data", {})
             if ticket.get("status") == "error":
                 logger.warning("[push] Expo error: %s — %s", ticket.get("message"), token)
-                # Deactivate invalid tokens
+                # Deactivate invalid tokens. Previously this was logged as
+                # "should deactivate" but never actually ran the UPDATE — so
+                # dead tokens kept getting retried forever (learning #45
+                # class: log vs page vs actual state change). 2026-04-20
+                # round 4.
                 if ticket.get("details", {}).get("error") == "DeviceNotRegistered":
-                    logger.info("[push] Token no longer valid, should deactivate: %s", token[:20])
+                    try:
+                        from app.lib.db_helpers import get_db_pool
+                        _pool = get_db_pool()
+                        if _pool is not None:
+                            async with _pool.acquire() as _conn:
+                                await _conn.execute(
+                                    "UPDATE public.user_push_tokens "
+                                    "SET active = false, updated_at = now() "
+                                    "WHERE push_token = $1",
+                                    token,
+                                )
+                            logger.info("[push] Deactivated stale token: %s", token[:20])
+                    except Exception as _de:
+                        logger.warning("[push] Failed to deactivate token: %s", _de)
                 return False
 
             return True

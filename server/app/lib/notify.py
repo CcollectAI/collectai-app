@@ -49,14 +49,11 @@ async def _get_user_prefs(conn, user_id: str) -> dict:
     """Fetch notification preferences for a user. Returns defaults if not set.
 
     user_settings has no notification_preferences column (round-2 silent-
-    failure sweep 2026-04-20) — empty dict falls through to all-enabled
-    defaults in the call sites.
+    failure sweep 2026-04-20). Returns empty dict so call sites fall
+    through to all-enabled defaults. No DB round-trip — the previous
+    probe-for-user-id was dead code the grep flagged in round 4.
     """
-    await conn.fetchrow(
-        "SELECT user_id FROM public.user_settings WHERE user_id = $1",
-        user_id,
-    )
-    return {}  # empty = use defaults (all True)
+    return {}
 
 
 async def _get_daily_push_count(conn, user_id: str) -> int:

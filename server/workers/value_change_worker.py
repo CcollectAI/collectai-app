@@ -232,11 +232,13 @@ async def run_once():
         )
         prefs_by_user = {r["user_id"]: r for r in all_prefs_rows}
 
-        # Batch-fetch portfolio-level dedup (avoids N+1)
+        # Batch-fetch portfolio-level dedup (avoids N+1).
+        # alert_trigger_history.user_id is uuid — round-4 silent-fail
+        # sweep caught ::text[] raising "operator does not exist: uuid = text".
         dedup_rows = await conn.fetch(
             """
             SELECT DISTINCT user_id FROM public.alert_trigger_history
-            WHERE user_id = ANY($1::text[])
+            WHERE user_id = ANY($1::uuid[])
               AND trigger_type = 'value_change'
               AND created_at > now() - interval '1 hour' * $2
             """,

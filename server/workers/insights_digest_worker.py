@@ -96,7 +96,7 @@ historical_vals AS (
     ORDER BY pp.item_ref, pp.generated_at DESC
 )
 SELECT
-    c.item_id,
+    c.item_ref,
     c.item_name,
     c.current_q50,
     h.old_q50,
@@ -104,7 +104,7 @@ SELECT
         ((c.current_q50 - h.old_q50) / h.old_q50 * 100)
     ELSE 0 END AS pct_change
 FROM current_vals c
-JOIN historical_vals h ON h.item_id = c.item_id
+JOIN historical_vals h ON h.item_ref = c.item_ref
 WHERE h.old_q50 > 0
 ORDER BY pct_change DESC
 LIMIT 50
@@ -199,11 +199,15 @@ async def run_once():
         )
         prefs_by_user = {r["user_id"]: r for r in all_prefs_rows}
 
-        # Batch-fetch dedup check for all users at once (avoids N+1)
+        # Batch-fetch dedup check for all users at once (avoids N+1).
+        # alert_trigger_history.user_id is uuid, not text — casting the param
+        # array to ::text[] raises "operator does not exist: uuid = text".
+        # Was masked by the notification_preferences error until round 3
+        # fixed that. Learning #46 type-mismatch class.
         dedup_rows = await conn.fetch(
             """
             SELECT DISTINCT user_id FROM public.alert_trigger_history
-            WHERE user_id = ANY($1::text[])
+            WHERE user_id = ANY($1::uuid[])
               AND trigger_type = 'weekly_digest'
               AND created_at > now() - interval '7 days'
             """,
@@ -249,14 +253,14 @@ async def run_once():
                 first = movers[0]
                 if float(first["pct_change"]) > 0:
                     top_gainer = {
-                        "item_id": str(first["item_id"]),
+                        "item_ref": str(first["item_ref"]),
                         "item_name": first["item_name"] or f"Item {str(first['item_id'])[:8]}",
                         "pct_change": round(float(first["pct_change"]), 1),
                     }
                 last = movers[-1]
                 if float(last["pct_change"]) < 0:
                     top_loser = {
-                        "item_id": str(last["item_id"]),
+                        "item_ref": str(last["item_ref"]),
                         "item_name": last["item_name"] or f"Item {str(last['item_id'])[:8]}",
                         "pct_change": round(float(last["pct_change"]), 1),
                     }
