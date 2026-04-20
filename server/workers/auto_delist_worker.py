@@ -39,7 +39,9 @@ async def run_once():
         record_run("auto_delist_worker", "error")
         return
 
-    conn = await asyncpg.connect(DSN)
+    # Prefer direct DSN — round-6 pattern, avoids pooler 30s timeout on
+    # queries that join items + market_hits. 2026-04-20 round 7.
+    conn = await asyncpg.connect(os.getenv("DB_DSN_DIRECT") or DSN)
     logger.info("Connected to DB — starting auto-delist cycle")
 
     delisted_count = 0

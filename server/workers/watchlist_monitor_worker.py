@@ -103,7 +103,10 @@ async def run_once():
     from app.agents.marketplace_agent import MarketplaceAgent
     from app.features.data_moat import record_supply_snapshot
 
-    conn = await asyncpg.connect(DSN)
+    # Prefer direct DSN — watchlist monitor aggregates over all watchlist
+    # items + runs marketplace lookups per item; the pooler's 30s cap is
+    # easy to hit with 50+ watchlist entries. Round 7 2026-04-20.
+    conn = await asyncpg.connect(os.getenv("DB_DSN_DIRECT") or DSN)
     logger.info("Connected to DB — starting watchlist monitor cycle")
 
     # R46.15 guard removed — last_market_price + last_checked_at columns
