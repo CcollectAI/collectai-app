@@ -165,6 +165,13 @@ def record_run(worker_name: str, status: str = "ok", duration_s: Optional[float]
         logger.debug("[worker_registry] Failed to trigger DB persist for %s", worker_name)
 
 
+# Track fire-and-forget persist tasks so the GC doesn't drop them mid-flight
+# (learning 2026-04-20: create_task without holding a reference lets Python
+# drop the task before the INSERT completes, silently losing worker_runs rows
+# and breaking the health monitor, silent_writer probe, and overdue alerts).
+_pending_persist_tasks: set = set()
+
+
 def _persist_run_to_db(worker_name: str, status: str) -> None:
     """Persist worker run to DB table (best-effort, sync-safe)."""
     try:
@@ -176,29 +183,42 @@ def _persist_run_to_db(worker_name: str, status: str) -> None:
         import asyncio
         try:
             loop = asyncio.get_running_loop()
-            # Schedule as fire-and-forget task
-            loop.create_task(_async_persist_run(pool, worker_name, status))
+            task = loop.create_task(_async_persist_run(pool, worker_name, status))
+            # Hold a reference so GC doesn't drop the task.
+            _pending_persist_tasks.add(task)
+
+            def _on_done(t: asyncio.Task, wn: str = worker_name) -> None:
+                _pending_persist_tasks.discard(t)
+                exc = t.exception() if not t.cancelled() else None
+                if exc is not None:
+                    # Promote from debug → warning — without this, DB outages,
+                    # connection-pool exhaustion, or schema drift can wipe out
+                    # ALL worker_runs tracking in silence.
+                    logger.warning(
+                        "[worker_registry] persist task failed for %s: %r",
+                        wn, exc,
+                    )
+
+            task.add_done_callback(_on_done)
         except RuntimeError:
             # No event loop running — skip DB persist
             logger.debug("[worker_registry] No event loop for DB persist of %s", worker_name)
-    except Exception:
-        logger.debug("[worker_registry] DB persist setup failed for %s", worker_name)
+    except Exception as e:
+        logger.warning("[worker_registry] DB persist setup failed for %s: %r", worker_name, e)
 
 
 async def _async_persist_run(pool, worker_name: str, status: str) -> None:
-    """Async insert into worker_runs table."""
-    try:
-        async with pool.acquire() as conn:
-            await conn.execute(
-                """
-                INSERT INTO public.worker_runs (worker_name, status)
-                VALUES ($1, $2)
-                """,
-                worker_name,
-                status,
-            )
-    except Exception as e:
-        logger.debug("[worker_registry] Failed to persist run: %s", e)
+    """Async insert into worker_runs table. Re-raises on failure so the
+    done-callback in _persist_run_to_db surfaces the error at WARNING."""
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO public.worker_runs (worker_name, status)
+            VALUES ($1, $2)
+            """,
+            worker_name,
+            status,
+        )
 
 
 def get_worker_health() -> dict:

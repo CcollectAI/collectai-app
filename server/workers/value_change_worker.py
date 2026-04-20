@@ -221,10 +221,13 @@ async def run_once():
         portfolio_alerts = 0
         item_alerts = 0
 
-        # Batch-fetch user preferences for all users at once (avoids N+1)
+        # Batch-fetch user preferences for all users at once (avoids N+1).
+        # user_settings has no notification_preferences column — _parse_prefs
+        # handles None gracefully and _is_value_changes_enabled defaults to
+        # True on missing key. 2026-04-20 silent-fail round 3.
         all_user_ids = [row["user_id"] for row in portfolio_rows]
         all_prefs_rows = await conn.fetch(
-            "SELECT user_id, notification_preferences FROM public.user_settings WHERE user_id = ANY($1)",
+            "SELECT user_id FROM public.user_settings WHERE user_id = ANY($1)",
             all_user_ids,
         )
         prefs_by_user = {r["user_id"]: r for r in all_prefs_rows}

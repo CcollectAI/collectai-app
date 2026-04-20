@@ -18,6 +18,7 @@ async def run_once():
         return
 
     conn = await asyncpg.connect(DSN)
+    status = "ok"
     try:
         rows = await conn.fetch("""
             SELECT item_ref, vision_label, vision_score, q10, q50, q90, valuation_at
@@ -70,9 +71,12 @@ async def run_once():
                 """, ref, msg)
 
         logging.info("signal_alerts cycle done")
+    except Exception:
+        status = "error"
+        raise
     finally:
         await conn.close()
-        record_run("signal_alerts_worker", "ok")
+        record_run("signal_alerts_worker", status)
 
 async def main():
     try:

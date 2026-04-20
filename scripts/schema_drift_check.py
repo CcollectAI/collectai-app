@@ -240,6 +240,15 @@ FORBIDDEN_CODE_PATTERNS: list[tuple[str, str, list[str]]] = [
         "category_items has no `attrs` column — use attributes_json (attrs belongs to market_hits/items)",
         ["schema_drift_check.py", "learnings.md", "memory"],
     ),
+    (
+        # user_settings has only: user_id, currency, region, locale, created_at, updated_at.
+        # No notification_preferences column exists — referencing it errored every cycle
+        # for weeks in value_change_worker + insights_digest_worker. Fixed round-2 by
+        # dropping the query; this pattern prevents regression.
+        r"SELECT\s+notification_preferences\b|\bnotification_preferences\s+FROM\s+.*user_settings",
+        "user_settings has no notification_preferences column — default to enabled in caller",
+        ["schema_drift_check.py", "learnings.md", "memory"],
+    ),
 ]
 
 

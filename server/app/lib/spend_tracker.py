@@ -27,6 +27,10 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+# See _persist_event — holds strong refs to fire-and-forget insert tasks so
+# Python's GC doesn't drop them mid-INSERT and silently lose spend events.
+_pending_spend_tasks: set = set()
+
 
 class BudgetExceededError(Exception):
     """Raised when monthly spend budget has been reached."""
@@ -211,17 +215,29 @@ class SpendTracker:
             return
 
         async def _insert():
-            try:
-                async with pool.acquire() as conn:
-                    await conn.execute(
-                        "INSERT INTO public.spend_events (provider, cost_eur) "
-                        "VALUES ($1, $2::numeric)",
-                        provider, cost_eur,
-                    )
-            except Exception as e:
-                logger.debug("spend_events insert failed: %s", e)
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    "INSERT INTO public.spend_events (provider, cost_eur) "
+                    "VALUES ($1, $2::numeric)",
+                    provider, cost_eur,
+                )
 
-        loop.create_task(_insert())
+        # Hold a reference + done-callback so the task can't be GC'd mid-
+        # flight and so failures surface at WARNING level (previously lost
+        # at debug).
+        task = loop.create_task(_insert())
+        _pending_spend_tasks.add(task)
+
+        def _on_done(t, p=provider, c=cost_eur):
+            _pending_spend_tasks.discard(t)
+            exc = t.exception() if not t.cancelled() else None
+            if exc is not None:
+                logger.warning(
+                    "spend_events insert failed (provider=%s cost_eur=%s): %r",
+                    p, c, exc,
+                )
+
+        task.add_done_callback(_on_done)
 
     async def hydrate_from_db(self) -> None:
         """Reload current-month spend from public.spend_events on startup.

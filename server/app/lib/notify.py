@@ -46,17 +46,16 @@ ALERT_TYPE_TO_PREF = {
 
 
 async def _get_user_prefs(conn, user_id: str) -> dict:
-    """Fetch notification preferences for a user. Returns defaults if not set."""
-    row = await conn.fetchrow(
-        "SELECT notification_preferences FROM public.user_settings WHERE user_id = $1",
+    """Fetch notification preferences for a user. Returns defaults if not set.
+
+    user_settings has no notification_preferences column (round-2 silent-
+    failure sweep 2026-04-20) — empty dict falls through to all-enabled
+    defaults in the call sites.
+    """
+    await conn.fetchrow(
+        "SELECT user_id FROM public.user_settings WHERE user_id = $1",
         user_id,
     )
-    if row and row["notification_preferences"]:
-        import json
-        prefs = row["notification_preferences"]
-        if isinstance(prefs, str):
-            prefs = json.loads(prefs)
-        return prefs
     return {}  # empty = use defaults (all True)
 
 

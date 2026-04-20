@@ -229,19 +229,16 @@ async def get_notification_preferences(
     if not db_configured():
         return {"preferences": DEFAULT_NOTIFICATION_PREFERENCES}
 
+    # user_settings has no notification_preferences column (see round-2
+    # silent-failure sweep 2026-04-20). Until a real prefs table exists,
+    # every authenticated user gets the defaults. Probing by user_id
+    # lets us still fail loudly on DB errors.
     try:
         async with get_conn() as conn:
-            row = await conn.fetchrow(
-                "SELECT notification_preferences FROM public.user_settings WHERE user_id = $1",
+            await conn.fetchrow(
+                "SELECT user_id FROM public.user_settings WHERE user_id = $1",
                 user_id,
             )
-        if row and row["notification_preferences"]:
-            prefs = row["notification_preferences"]
-            if isinstance(prefs, str):
-                prefs = json.loads(prefs)
-            # Merge with defaults so new keys always appear
-            merged = {**DEFAULT_NOTIFICATION_PREFERENCES, **prefs}
-            return {"preferences": merged}
         return {"preferences": DEFAULT_NOTIFICATION_PREFERENCES}
     except asyncpg.PostgresError as e:
         logger.error("[notifications] Error fetching preferences: %s", e)

@@ -525,10 +525,29 @@ class MarketplaceAgent:
                 convert_to_eur = None
 
             async with get_conn() as conn:
+                # Writer-side sanity filter — reject crawler garbage BEFORE it
+                # pollutes market_hits. Seen 2026-04-20: 289 rows of Crawl4AI
+                # scraping "Site Statistics" pages on LEGO category pages and
+                # parsing the trending-stats number ($1,546,171,702.71) as a
+                # product price. Same class of bug as learning #25. The €20M
+                # sanity_probe catches these AFTER ingestion, but the fix
+                # belongs at the writer: listings above €1M are extraordinary
+                # outliers and almost always parse errors for our categories.
+                _WRITE_PRICE_CEILING_EUR = 1_000_000
+                _GARBAGE_TITLES = {
+                    "site statistics", "statistics", "trending", "new listings",
+                    "recently sold", "most watched", "unknown", "n/a",
+                }
+
                 for scored in result.hits:
                     hit = scored.hit
                     # Skip zero/null prices — these skew training and valuations
                     if not hit.get("price") or float(hit.get("price", 0)) <= 0:
+                        continue
+                    # Skip crawler-garbage titles — parsed from metadata pages
+                    # rather than real product listings.
+                    _title_norm = str(hit.get("title") or "").strip().lower()
+                    if _title_norm in _GARBAGE_TITLES or not _title_norm:
                         continue
                     # Normalize price to EUR
                     raw_price = hit.get("price")
@@ -545,6 +564,19 @@ class MarketplaceAgent:
                             price_eur = raw_price  # fallback: store as-is
                     else:
                         price_eur = raw_price
+
+                    # Writer-side price ceiling — see _WRITE_PRICE_CEILING_EUR
+                    # comment above. Drop obvious parse errors before they
+                    # reach market_hits.
+                    try:
+                        if price_eur is not None and float(price_eur) > _WRITE_PRICE_CEILING_EUR:
+                            logger.warning(
+                                "[MarketplaceAgent] Dropping hit: price_eur=%s > €%d ceiling (title=%r provider=%s)",
+                                price_eur, _WRITE_PRICE_CEILING_EUR, hit.get("title"), hit.get("provider"),
+                            )
+                            continue
+                    except (TypeError, ValueError):
+                        continue
 
                     # Structured attributes — normalize to canonical vocab
                     raw_attrs = hit.get("attributes") or {}
