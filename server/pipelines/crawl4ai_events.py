@@ -330,6 +330,80 @@ EVENT_PAGE_TARGETS: list[dict[str, Any]] = [
         "kind_default": "release",
         "description": "Penworld blog (new pen releases)",
     },
+
+    # ── EU conventions (Ticketmaster/SeatGeek miss these — 2026-04-21) ──
+    {
+        "url": "https://dutchcomiccon.com/",
+        "category_id": "comic_books",
+        "kind_default": "convention",
+        "description": "Dutch Comic Con — Jaarbeurs Utrecht, NL",
+    },
+    {
+        "url": "https://www.heroesdutchcomiccon.nl/",
+        "category_id": "comic_books",
+        "kind_default": "convention",
+        "description": "Heroes Dutch Comic Con — Jaarbeurs Utrecht, NL",
+    },
+    {
+        "url": "https://www.amsterdamcomiccon.com/",
+        "category_id": "comic_books",
+        "kind_default": "convention",
+        "description": "Amsterdam Comic Con — RAI Amsterdam, NL",
+    },
+    {
+        "url": "https://www.gamescom.global/en",
+        "category_id": "retro_games",
+        "kind_default": "convention",
+        "description": "Gamescom — Koelnmesse, DE (world's largest gaming con)",
+    },
+    {
+        "url": "https://www.dokomi.de/en/",
+        "category_id": "anime_figures",
+        "kind_default": "convention",
+        "description": "Dokomi — Messe Düsseldorf, DE (anime/manga)",
+    },
+    {
+        "url": "https://www.spiel-essen.de/en/",
+        "category_id": "lego",
+        "kind_default": "convention",
+        "description": "Spiel Essen — Messe Essen, DE (boardgame / toy fair)",
+    },
+    {
+        "url": "https://www.spielwarenmesse.de/en/",
+        "category_id": "lego",
+        "kind_default": "convention",
+        "description": "Spielwarenmesse — Messe Nürnberg, DE (toy fair)",
+    },
+    {
+        "url": "https://www.japan-expo-paris.com/en/",
+        "category_id": "anime_figures",
+        "kind_default": "convention",
+        "description": "Japan Expo — Porte de Versailles Paris, FR",
+    },
+    {
+        "url": "https://www.luccacomicsandgames.com/en/",
+        "category_id": "comic_books",
+        "kind_default": "convention",
+        "description": "Lucca Comics & Games — Lucca, IT (largest EU comic con)",
+    },
+    {
+        "url": "https://www.mcmcomiccon.com/london/",
+        "category_id": "comic_books",
+        "kind_default": "convention",
+        "description": "MCM London Comic Con — ExCeL London, UK",
+    },
+    {
+        "url": "https://www.brusselscomiccon.com/",
+        "category_id": "comic_books",
+        "kind_default": "convention",
+        "description": "Brussels Comic Con — Brussels Expo, BE",
+    },
+    {
+        "url": "https://www.fnac.com/Festival/International-Bande-Dessinee-Angouleme",
+        "category_id": "comic_books",
+        "kind_default": "convention",
+        "description": "Festival International de la Bande Dessinée — Angoulême, FR",
+    },
 ]
 
 
