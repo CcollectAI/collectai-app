@@ -136,19 +136,18 @@ WORKER_OUTPUTS: dict[str, WorkerOutput] = {
             "WHERE target_price IS NOT NULL"
         ),
     ),
-    # signal_alerts_worker writes to public.alerts (not alerts_outbox —
-    # corrected 2026-04-20 round 3 when registry's 'kind = signal' WHERE
-    # clause never matched any row; alerts_outbox uses kinds like
-    # 'price_drop_30d' / 'price_spike_7d' from a different writer path).
-    "signal_alerts_worker": WorkerOutput(
-        table="alerts",
-        timestamp_column="created_at",
-        max_staleness_hours=48.0,
-        where_clause="alert_type IN ('low_value','high_value')",
-        input_exists_sql=(
-            "SELECT COUNT(*) AS cnt FROM public.items"
-        ),
-    ),
+    # signal_alerts_worker: DISABLED 2026-04-21 alongside the manifest entry
+    # in bake_orchestrator.py. Kept here as a comment so the re-enable path
+    # is obvious — if you bring the worker back, restore this entry too.
+    # "signal_alerts_worker": WorkerOutput(
+    #     table="alerts",
+    #     timestamp_column="created_at",
+    #     max_staleness_hours=48.0,
+    #     where_clause="alert_type IN ('low_value','high_value')",
+    #     input_exists_sql=(
+    #         "SELECT COUNT(*) AS cnt FROM public.items"
+    #     ),
+    # ),
     # value_change_worker writes to alert_trigger_history, not alerts_outbox.
     "value_change_worker": WorkerOutput(
         table="alert_trigger_history",

@@ -60,8 +60,15 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("value_change_worker",     "workers.value_change_worker",        "run_once", True),
     # ── Category map (vision label → taxonomy) ──
     ("category_map_worker",     "workers.category_map_worker",        "run_once", True),
-    # ── Signal alerts ──
-    ("signal_alerts_worker",    "workers.signal_alerts_worker",       "run_once", True),
+    # ── Signal alerts: DISABLED 2026-04-21. v_item_signal returned 0 rows
+    # below the €15 threshold (catalog skews higher), and the INSERT path
+    # references public.users which doesn't exist in Supabase (users live
+    # in auth.users / profiles). Worker reported `ok` every cycle while
+    # writing 0 alerts — classic silent-writer pattern. Re-enable only
+    # after rewriting the threshold logic (e.g. %-drop vs prior q50) and
+    # pointing the INSERT at the correct user table. Also commented out
+    # of app/lib/worker_output_registry.py so sanity_probe stops paging.
+    # ("signal_alerts_worker",    "workers.signal_alerts_worker",       "run_once", True),
     # ── Auction end-time alerts ──
     ("auction_alert_worker",    "workers.auction_alert_worker",       "run_once", True),
     # ── Aggregate catalog attributes (data flywheel) ──

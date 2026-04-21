@@ -599,6 +599,21 @@ class MarketplaceAgent:
                     if not resolved_category and normalized_key and ":" in normalized_key:
                         resolved_category = normalized_key.split(":", 1)[0]
 
+                    # item_ref must be the canonical `{category}:{key}` form
+                    # (learnings.md §22, §64, root-cause essay post-write rule).
+                    # Callers are inconsistent: marketplace_scrape_scheduler
+                    # passes pre-prefixed normalized_key; adapter sites pass
+                    # bare keys. Until 2026-04-21 this column was assigned
+                    # `normalized_key` verbatim, producing 2,039 malformed
+                    # rows/day from bare-key callers. Accept either shape and
+                    # always emit the prefixed form.
+                    if normalized_key and ":" in normalized_key:
+                        item_ref = normalized_key
+                    elif resolved_category and normalized_key:
+                        item_ref = f"{resolved_category}:{normalized_key}"
+                    else:
+                        item_ref = None
+
                     try:
                         # WHERE NOT EXISTS (not ON CONFLICT) because market_hits
                         # was partitioned by seen_at on 2026-04-19 and Postgres
@@ -634,7 +649,7 @@ class MarketplaceAgent:
                             _parse_sold_date(hit.get("sold_at")),
                             hit.get("url"),
                             normalized_key,
-                            normalized_key,  # item_ref = normalized_key for valuation worker
+                            item_ref,
                             resolved_category,
                             json.dumps({
                                 "content_hash": hit.get("content_hash", ""),

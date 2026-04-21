@@ -162,6 +162,7 @@ OPENAI_VISION_MODEL: str = os.getenv("OPENAI_VISION_MODEL", "gpt-4o-mini")
 
 FIRECRAWL_API_KEY: str = os.getenv("FIRECRAWL_API_KEY", "")
 FIRECRAWL_BASE_URL: str = os.getenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v1")
+FIRECRAWL_ENABLED: bool = os.getenv("FIRECRAWL_ENABLED", "true").lower() in ("1", "true", "yes")
 
 # ---------------------------------------------------------------------------
 # Crawl4AI (local web crawler)
@@ -177,6 +178,7 @@ CRAWL4AI_HEADLESS: bool = os.getenv("CRAWL4AI_HEADLESS", "true").lower() in ("1"
 # ---------------------------------------------------------------------------
 
 SCRAPEDO_API_KEY: str = os.getenv("SCRAPEDO_API_KEY", "")
+SCRAPEDO_ENABLED: bool = os.getenv("SCRAPEDO_ENABLED", "true").lower() in ("1", "true", "yes")
 
 # ---------------------------------------------------------------------------
 # SerpAPI (Google Shopping)

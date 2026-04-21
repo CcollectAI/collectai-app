@@ -447,22 +447,49 @@ class SupabaseIngest:
         return total
 
     def upsert_market_hits(self, hits: list[MarketHit]) -> int:
-        """Upsert market hits. Returns count inserted."""
+        """Upsert market hits. Returns count inserted.
+
+        Writer contract (see learnings.md §22, §64, §65 and the root-cause
+        essay's post-write-assertion rule):
+          - item_ref is `{category}:{normalized_key}` — downstream readers
+            (valuation, calibration, price_predictions join) require this
+            exact format. Was silently dropped from this writer until
+            2026-04-21, leaving 133k rows with NULL item_ref invisible to
+            valuation. Bulk-backfilled via UPDATE WHERE item_ref IS NULL.
+          - price_eur mirrors `price` because all callers in the pipeline
+            pre-convert to EUR via to_eur() / Frankfurter FX; the schema
+            drift check (scripts/schema_drift_check.py) declares price_eur
+            as an expected column.
+        """
         if not self.enabled:
             return 0
-        rows = [
-            {
+        rows = []
+        dropped_bad_item_ref = 0
+        for h in hits:
+            item_ref = f"{h.category}:{h.normalized_key}" if (h.category and h.normalized_key) else None
+            # Post-write assertion per learnings.md root-cause essay:
+            # item_ref must either be NULL or contain a ':' separator.
+            if item_ref is not None and ":" not in item_ref:
+                dropped_bad_item_ref += 1
+                continue
+            rows.append({
                 "provider": h.provider,
                 "listing_id": h.listing_id,
                 "title": h.title,
                 "price": h.price,
+                "price_eur": h.price,
                 "currency": h.currency,
                 "condition": h.condition,
                 "normalized_key": h.normalized_key,
                 "category": h.category,
-            }
-            for h in hits
-        ]
+                "item_ref": item_ref,
+            })
+        if dropped_bad_item_ref:
+            self.stats.market_hits_errors += dropped_bad_item_ref
+            logger.error(
+                "upsert_market_hits dropped %d rows with malformed item_ref",
+                dropped_bad_item_ref,
+            )
         total = 0
         for i in range(0, len(rows), self.batch_size):
             batch = rows[i:i + self.batch_size]

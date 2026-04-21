@@ -19,7 +19,7 @@ from typing import Any, Optional
 
 import httpx
 
-from app.config import SCRAPEDO_API_KEY
+from app.config import SCRAPEDO_API_KEY, SCRAPEDO_ENABLED
 from app.lib.spend_tracker import spend_tracker, BudgetExceededError
 from workers.circuit_breaker import scrapedo_circuit, CircuitOpenError
 
@@ -43,8 +43,8 @@ def _get_client() -> httpx.AsyncClient:
 
 
 def configured() -> bool:
-    """Return True if Scrape.do API key is set."""
-    return bool(SCRAPEDO_API_KEY)
+    """Return True if Scrape.do is enabled and API key is set."""
+    return SCRAPEDO_ENABLED and bool(SCRAPEDO_API_KEY)
 
 
 async def close() -> None:

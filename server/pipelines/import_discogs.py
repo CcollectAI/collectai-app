@@ -294,6 +294,15 @@ def _upsert(hits: list[MarketHit], stats: IngestStats) -> int:
                 price_eur = h.price
         else:
             price_eur = h.price
+        # item_ref must be the canonical `{category}:{normalized_key}` form
+        # (learnings.md §22, §64, R50m backfill). Prior code wrote bare
+        # normalized_key producing rows invisible to valuation joins.
+        if h.normalized_key and ":" in h.normalized_key:
+            item_ref = h.normalized_key
+        elif h.category and h.normalized_key:
+            item_ref = f"{h.category}:{h.normalized_key}"
+        else:
+            item_ref = None
         rows.append({
             "provider": h.provider,
             "listing_id": h.listing_id,
@@ -303,8 +312,7 @@ def _upsert(hits: list[MarketHit], stats: IngestStats) -> int:
             "price_eur": price_eur,
             "condition": h.condition,
             "normalized_key": h.normalized_key,
-            # R50l: mirror normalized_key into item_ref so valuation joins.
-            "item_ref": h.normalized_key,
+            "item_ref": item_ref,
             "category": h.category,
             "url": h.url,
             "image_url": h.image_url,

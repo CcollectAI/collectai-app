@@ -58,6 +58,11 @@ EXPECTED: list[tuple[str, list[str], str]] = [
             "condition", "normalized_key", "category", "attrs",
             "features_json", "ended_at", "seen_at", "price_eur",
             "is_listing",
+            # item_ref added 2026-04-21: downstream valuation/calibration
+            # join on item_ref, and the writer was silently dropping it
+            # for all 16+ TCG/catalog import pipelines. See learnings.md §22,
+            # §64, §65 + the root-cause essay post-write-assertion rule.
+            "item_ref",
         ],
         "pipelines/import_common.SupabaseIngest.upsert_market_hits() + pipelines/import_discogs.py",
     ),

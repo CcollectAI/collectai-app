@@ -18,7 +18,7 @@ from typing import Any, Optional
 
 import httpx
 
-from app.config import FIRECRAWL_API_KEY, FIRECRAWL_BASE_URL
+from app.config import FIRECRAWL_API_KEY, FIRECRAWL_BASE_URL, FIRECRAWL_ENABLED
 from app.lib.spend_tracker import spend_tracker, BudgetExceededError
 
 logger = logging.getLogger(__name__)
@@ -47,8 +47,8 @@ def _headers() -> dict[str, str]:
 
 
 def configured() -> bool:
-    """Return True if Firecrawl API key is set."""
-    return bool(FIRECRAWL_API_KEY)
+    """Return True if Firecrawl is enabled and API key is set."""
+    return FIRECRAWL_ENABLED and bool(FIRECRAWL_API_KEY)
 
 
 async def close() -> None:

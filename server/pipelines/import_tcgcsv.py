@@ -231,6 +231,18 @@ def upsert_hits_batched(
                     price_eur = h.price
             else:
                 price_eur = h.price
+            # item_ref must be canonical `{category}:{normalized_key}` so
+            # valuation joins (learnings.md §22, §64, §957). The R50l fix
+            # that originally added item_ref used bare normalized_key, then
+            # R50m's backfill re-prefixed all rows. Updated 2026-04-21 to
+            # emit the prefixed form at the writer so re-enabling this
+            # pipeline doesn't reintroduce the bug.
+            if h.normalized_key and ":" in h.normalized_key:
+                item_ref = h.normalized_key
+            elif h.category and h.normalized_key:
+                item_ref = f"{h.category}:{h.normalized_key}"
+            else:
+                item_ref = None
             rows.append({
                 "provider": h.provider,
                 "listing_id": h.listing_id,
@@ -240,11 +252,7 @@ def upsert_hits_batched(
                 "price_eur": price_eur,
                 "condition": h.condition,
                 "normalized_key": h.normalized_key,
-                # R50l: item_ref must mirror normalized_key so the valuation
-                # worker can join tcgplayer hits into price_predictions. Before
-                # this fix, 275K tcgcsv rows were landing with NULL item_ref
-                # and never producing predictions.
-                "item_ref": h.normalized_key,
+                "item_ref": item_ref,
                 "category": h.category,
                 "url": h.url,
                 "image_url": h.image_url,
