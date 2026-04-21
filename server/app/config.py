@@ -181,6 +181,22 @@ SCRAPEDO_API_KEY: str = os.getenv("SCRAPEDO_API_KEY", "")
 SCRAPEDO_ENABLED: bool = os.getenv("SCRAPEDO_ENABLED", "true").lower() in ("1", "true", "yes")
 
 # ---------------------------------------------------------------------------
+# Ticketmaster Discovery API
+# ---------------------------------------------------------------------------
+
+TICKETMASTER_API_KEY: str = os.getenv("TICKETMASTER_API_KEY", "")
+TICKETMASTER_CONSUMER_SECRET: str = os.getenv("TICKETMASTER_CONSUMER_SECRET", "")
+TICKETMASTER_ENABLED: bool = os.getenv("TICKETMASTER_ENABLED", "true").lower() in ("1", "true", "yes")
+
+# ---------------------------------------------------------------------------
+# SeatGeek Search API
+# ---------------------------------------------------------------------------
+
+SEATGEEK_CLIENT_ID: str = os.getenv("SEATGEEK_CLIENT_ID", "")
+SEATGEEK_CLIENT_SECRET: str = os.getenv("SEATGEEK_CLIENT_SECRET", "")
+SEATGEEK_ENABLED: bool = os.getenv("SEATGEEK_ENABLED", "true").lower() in ("1", "true", "yes")
+
+# ---------------------------------------------------------------------------
 # SerpAPI (Google Shopping)
 # ---------------------------------------------------------------------------
 

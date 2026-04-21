@@ -193,7 +193,7 @@ vinted_circuit = CircuitBreaker("vinted", max_failures=5, cooldown_seconds=60)
 mavin_circuit = CircuitBreaker("mavin", max_failures=5, cooldown_seconds=60)
 catawiki_circuit = CircuitBreaker("catawiki", max_failures=5, cooldown_seconds=60)
 whisky_auctioneer_circuit = CircuitBreaker("whisky_auctioneer", max_failures=5, cooldown_seconds=60)
-mandarake_circuit = CircuitBreaker("mandarake", max_failures=5, cooldown_seconds=60)
+suruga_ya_circuit = CircuitBreaker("suruga_ya", max_failures=5, cooldown_seconds=120)
 bezel_circuit = CircuitBreaker("bezel", max_failures=5, cooldown_seconds=60)
 chrono24_circuit = CircuitBreaker("chrono24", max_failures=5, cooldown_seconds=60)
 keh_circuit = CircuitBreaker("keh", max_failures=5, cooldown_seconds=60)
@@ -222,6 +222,8 @@ gumtree_circuit = CircuitBreaker("gumtree", max_failures=5, cooldown_seconds=60)
 depop_circuit = CircuitBreaker("depop", max_failures=5, cooldown_seconds=60)
 kleinanzeigen_circuit = CircuitBreaker("kleinanzeigen", max_failures=5, cooldown_seconds=60)
 onetwothirtypoint_circuit = CircuitBreaker("onetwothirtypoint", max_failures=5, cooldown_seconds=60)
+ticketmaster_circuit = CircuitBreaker("ticketmaster", max_failures=5, cooldown_seconds=120)
+seatgeek_circuit = CircuitBreaker("seatgeek", max_failures=5, cooldown_seconds=120)
 
 
 def all_circuit_status() -> list[dict]:
@@ -234,7 +236,7 @@ def all_circuit_status() -> list[dict]:
             stockx_circuit, bricklink_circuit, firecrawl_circuit,
             crawl4ai_circuit, mercari_us_circuit, whatnot_circuit,
             vinted_circuit, mavin_circuit, catawiki_circuit,
-            whisky_auctioneer_circuit, mandarake_circuit,
+            whisky_auctioneer_circuit, suruga_ya_circuit,
             bezel_circuit, chrono24_circuit,
             keh_circuit, mpb_circuit,
             drop_circuit, gouletpens_circuit, brickeconomy_circuit,
@@ -253,5 +255,7 @@ def all_circuit_status() -> list[dict]:
             depop_circuit,
             kleinanzeigen_circuit,
             onetwothirtypoint_circuit,
+            ticketmaster_circuit,
+            seatgeek_circuit,
         )
     ]
