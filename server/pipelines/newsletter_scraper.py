@@ -1105,7 +1105,17 @@ class EventUpserter:
 
         All fields are always included (as None if unset) — PostgREST batch
         upsert requires every object in a batch to have the same keys.
+
+        Event-quality Phase 1: stamp `trust_tier` + `quality_score` at
+        ingest so downstream UX can gate display. Rules + rationale in
+        docs/EVENT_QUALITY_PLAN.md.
         """
+        # Lazy import to avoid coupling tests / CLI paths that don't need it.
+        from app.lib.event_quality import map_source_to_trust_tier, score_event
+
+        trust_tier = map_source_to_trust_tier(source)
+        quality_score, _reasons = score_event(event, trust_tier=trust_tier)
+
         starts_at = _compose_starts_at(event.date, event.time)
         ends_at = _compose_starts_at(event.end_date, None) if event.end_date else None
         return {
@@ -1123,6 +1133,8 @@ class EventUpserter:
             "description": event.description,
             "source_url": event.source_url,
             "image_url": event.image_url,
+            "trust_tier": trust_tier,
+            "quality_score": quality_score,
         }
 
     def print_stats(self) -> None:
