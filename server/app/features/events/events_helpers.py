@@ -340,7 +340,9 @@ def row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventRes
         is_public=row.get("is_public", True),
         latitude=row.get("latitude"),
         longitude=row.get("longitude"),
-        created_by=row.get("created_by"),
+        # asyncpg returns uuid columns as UUID objects; EventResponse.created_by
+        # is typed as Optional[str], so coerce here. Same pattern as `id` above.
+        created_by=str(row["created_by"]) if row.get("created_by") else None,
         source=row.get("source", "user"),
         attendee_count=row.get("attendee_count", 0),
         going_count=going_count,

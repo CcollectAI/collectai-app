@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time as dt_time, timezone
 from typing import Any, List, Optional
 from uuid import UUID, uuid4
 
@@ -291,9 +291,12 @@ async def create_event(
                     request.title,
                     request.kind,
                     request.category_id,
-                    request.date,
-                    request.time,
-                    request.end_date,
+                    # asyncpg requires Python date/time objects for date/time
+                    # columns; the request validator keeps these as strings
+                    # (YYYY-MM-DD / HH:MM). Parse here. 2026-04-22.
+                    date.fromisoformat(request.date),
+                    dt_time.fromisoformat(request.time) if request.time else None,
+                    date.fromisoformat(request.end_date) if request.end_date else None,
                     request.location,
                     request.online_url,
                     request.image_url,
