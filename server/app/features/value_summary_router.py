@@ -125,14 +125,14 @@ async def get_value_summary(
 
         # -- Alerts triggered --
         alerts_row = await conn.fetchrow(
-            "SELECT COUNT(*) AS cnt FROM notification_history WHERE user_id = $1 AND category = 'price_alert'",
+            "SELECT COUNT(*) AS cnt FROM notification_history WHERE user_id = $1 AND type = 'price_alert'",
             user_id,
         )
         total_alerts = alerts_row["cnt"] if alerts_row else 0
 
         # -- Duplicates prevented (tracked via analytics events) --
         dupes_row = await conn.fetchrow(
-            "SELECT COUNT(*) AS cnt FROM notification_history WHERE user_id = $1 AND category = 'duplicate_detected'",
+            "SELECT COUNT(*) AS cnt FROM notification_history WHERE user_id = $1 AND type = 'duplicate_detected'",
             user_id,
         )
         duplicates_prevented = dupes_row["cnt"] if dupes_row else 0
