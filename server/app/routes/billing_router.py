@@ -638,7 +638,7 @@ async def _handle_sponsor_checkout_completed(pool: Any, session: dict):
                 if row and row["category_id"]:
                     follower_rows = await conn.fetch(
                         """
-                        SELECT DISTINCT dt.push_token
+                        SELECT DISTINCT dt.token AS push_token
                         FROM user_category_follows ucf
                         JOIN device_tokens dt ON dt.user_id = ucf.user_id
                         WHERE ucf.category_id = $1 AND dt.active = true
