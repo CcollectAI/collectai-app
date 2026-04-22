@@ -87,11 +87,16 @@ async def compute_risk_flags(conn: Any, offer_id: str, user_id: str) -> dict[str
 
     Returns dict with offer_id, risk_flags list, seller_trust_score, and seller_badge.
     """
+    # 2026-04-22: rewrote to match canonical schema — offers has no item_id
+    # (it has listing_id) nor current_price (it's amount) nor currency
+    # (currency is on listings). Join provides item_id + currency.
     offer = await conn.fetchrow(
         """
-        SELECT id, item_id, current_price, currency, seller_id, buyer_id
-        FROM offers
-        WHERE id = $1::uuid AND (seller_id = $2::uuid OR buyer_id = $2::uuid)
+        SELECT o.id, l.item_id, o.amount AS current_price, l.currency,
+               o.seller_id, o.buyer_id
+        FROM public.offers o
+        JOIN public.listings l ON l.id = o.listing_id
+        WHERE o.id = $1::uuid AND (o.seller_id = $2::uuid OR o.buyer_id = $2::uuid)
         """,
         offer_id, user_id,
     )
@@ -101,20 +106,25 @@ async def compute_risk_flags(conn: Any, offer_id: str, user_id: str) -> dict[str
     flags: list[dict[str, str]] = []
     offer_price = float(offer["current_price"]) if offer["current_price"] else None
 
-    # Price outlier check: compare offer price to market_hits for the item
+    # Price outlier check: compare offer price to market_hits for the item.
+    # items.normalized_key was renamed to canonical_key; market_hits canonical
+    # join column is item_ref (= `{category}:{key}`), not normalized_key.
     if offer_price and offer["item_id"]:
         item_row = await conn.fetchrow(
-            "SELECT normalized_key FROM items WHERE id = $1::uuid",
+            "SELECT canonical_key FROM public.items WHERE id = $1::uuid",
             str(offer["item_id"]),
         )
-        if item_row and item_row["normalized_key"]:
+        if item_row and item_row["canonical_key"]:
             avg_row = await conn.fetchrow(
                 """
-                SELECT AVG(price) AS avg_price, STDDEV_POP(price) AS stddev_price, COUNT(*) AS sample_count
-                FROM market_hits
-                WHERE normalized_key = $1 AND price IS NOT NULL
+                SELECT AVG(price_eur) AS avg_price,
+                       STDDEV_POP(price_eur) AS stddev_price,
+                       COUNT(*) AS sample_count
+                FROM public.market_hits
+                WHERE item_ref = $1 AND price_eur IS NOT NULL
+                  AND (is_listing IS NOT TRUE)
                 """,
-                item_row["normalized_key"],
+                item_row["canonical_key"],
             )
             if avg_row and avg_row["avg_price"] and avg_row["stddev_price"]:
                 avg_price = float(avg_row["avg_price"])
