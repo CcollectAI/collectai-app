@@ -602,8 +602,8 @@ async def get_auto_set_progress(
 ):
     """
     Compute set completion using:
-      - User's items.attributes_json->>'set_name'
-      - category_items.attributes_json->>'set_name' for the catalog total
+      - User's items.attrs->>'set_name'
+      - category_items.attrs->>'set_name' for the catalog total
     """
     if not db_configured():
         return AutoSetsResponse(sets=[], total_categories=0, total_sets=0)
@@ -622,15 +622,15 @@ async def get_auto_set_progress(
                 WITH user_sets AS (
                     SELECT
                         items.category,
-                        items.attributes_json ->> 'set_name' AS set_name,
+                        items.attrs ->> 'set_name' AS set_name,
                         COUNT(*) AS owned_count,
                         ARRAY_AGG(items.title ORDER BY items.created_at DESC) AS titles
                     FROM items
                     WHERE items.user_id = $1
-                      AND items.attributes_json ->> 'set_name' IS NOT NULL
-                      AND items.attributes_json ->> 'set_name' != ''
+                      AND items.attrs ->> 'set_name' IS NOT NULL
+                      AND items.attrs ->> 'set_name' != ''
                       {cat_clause}
-                    GROUP BY items.category, items.attributes_json ->> 'set_name'
+                    GROUP BY items.category, items.attrs ->> 'set_name'
                     HAVING COUNT(*) >= $2
                 ),
                 catalog_totals AS (

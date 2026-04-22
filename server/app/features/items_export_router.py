@@ -56,14 +56,16 @@ async def export_items_overview(
                     COALESCE(i.title, i.canonical_key, '') AS title,
                     COALESCE(i.category, '')                 AS category,
                     COALESCE(i.condition, '')                AS condition,
-                    COALESCE(i.grade, '')                    AS grade,
+                    COALESCE(i.condition_grade, '')          AS grade,
                     pp.q50                                   AS estimated_value
                 FROM items i
                 LEFT JOIN LATERAL (
+                    -- price_predictions canonical join columns are item_ref
+                    -- + generated_at, not item_id + asof (learnings.md §42).
                     SELECT q50
                     FROM price_predictions
-                    WHERE item_id = i.id
-                    ORDER BY asof DESC
+                    WHERE item_ref = i.canonical_key
+                    ORDER BY generated_at DESC
                     LIMIT 1
                 ) pp ON true
                 WHERE i.user_id = $1
