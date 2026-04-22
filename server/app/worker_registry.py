@@ -140,13 +140,23 @@ def get_overdue_workers() -> list[dict]:
     return overdue
 
 
-def record_run(worker_name: str, status: str = "ok", duration_s: Optional[float] = None) -> None:
+def record_run(
+    worker_name: str,
+    status: str = "ok",
+    duration_s: Optional[float] = None,
+    error_repr: Optional[str] = None,
+) -> None:
     """Record a worker run completion (in-memory + best-effort DB persist).
 
     Args:
         worker_name: identifier for the worker
         status: "ok" or "error"
         duration_s: wall-clock seconds the run took (optional)
+        error_repr: short exception summary (type + message + first frame),
+                    persisted into worker_runs.metadata.error_repr so loud-
+                    but-empty errors don't hide their cause. Added 2026-04-22
+                    after the auction_alert / auto_delist / watchlist_monitor
+                    33%-error pattern surfaced with empty metadata.
     """
     entry = _registry.setdefault(worker_name, {"runs": 0, "errors": 0, "total_duration_s": 0.0, "duration_count": 0})
     entry["last_run"] = time.time()
@@ -162,7 +172,7 @@ def record_run(worker_name: str, status: str = "ok", duration_s: Optional[float]
 
     # Best-effort persist to DB (non-blocking)
     try:
-        _persist_run_to_db(worker_name, status)
+        _persist_run_to_db(worker_name, status, error_repr=error_repr)
     except Exception:
         logger.debug("[worker_registry] Failed to trigger DB persist for %s", worker_name)
 
@@ -174,7 +184,11 @@ def record_run(worker_name: str, status: str = "ok", duration_s: Optional[float]
 _pending_persist_tasks: set = set()
 
 
-def _persist_run_to_db(worker_name: str, status: str) -> None:
+def _persist_run_to_db(
+    worker_name: str,
+    status: str,
+    error_repr: Optional[str] = None,
+) -> None:
     """Persist worker run to DB table (best-effort, sync-safe)."""
     try:
         from app.lib.db_helpers import get_db_pool
@@ -185,7 +199,7 @@ def _persist_run_to_db(worker_name: str, status: str) -> None:
         import asyncio
         try:
             loop = asyncio.get_running_loop()
-            task = loop.create_task(_async_persist_run(pool, worker_name, status))
+            task = loop.create_task(_async_persist_run(pool, worker_name, status, error_repr))
             # Hold a reference so GC doesn't drop the task.
             _pending_persist_tasks.add(task)
 
@@ -209,18 +223,38 @@ def _persist_run_to_db(worker_name: str, status: str) -> None:
         logger.warning("[worker_registry] DB persist setup failed for %s: %r", worker_name, e)
 
 
-async def _async_persist_run(pool, worker_name: str, status: str) -> None:
+async def _async_persist_run(
+    pool,
+    worker_name: str,
+    status: str,
+    error_repr: Optional[str] = None,
+) -> None:
     """Async insert into worker_runs table. Re-raises on failure so the
-    done-callback in _persist_run_to_db surfaces the error at WARNING."""
+    done-callback in _persist_run_to_db surfaces the error at WARNING.
+
+    When error_repr is provided, writes it into metadata.error_repr so the
+    cause of a 'loud-but-empty' error stays visible in worker_runs.
+    """
     async with pool.acquire() as conn:
-        await conn.execute(
-            """
-            INSERT INTO public.worker_runs (worker_name, status)
-            VALUES ($1, $2)
-            """,
-            worker_name,
-            status,
-        )
+        if error_repr:
+            await conn.execute(
+                """
+                INSERT INTO public.worker_runs (worker_name, status, metadata)
+                VALUES ($1, $2, jsonb_build_object('error_repr', $3::text))
+                """,
+                worker_name,
+                status,
+                error_repr,
+            )
+        else:
+            await conn.execute(
+                """
+                INSERT INTO public.worker_runs (worker_name, status)
+                VALUES ($1, $2)
+                """,
+                worker_name,
+                status,
+            )
 
 
 def get_worker_health() -> dict:

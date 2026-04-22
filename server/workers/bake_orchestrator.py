@@ -240,8 +240,23 @@ async def _run_worker_loop(
         except Exception as e:
             duration = time.monotonic() - t0
             _worker_errors[name] = _worker_errors.get(name, 0) + 1
+            # Capture exception type + message + the worker-frame in the
+            # traceback so worker_runs.metadata.error_repr is populated
+            # (was {} before 2026-04-22 — every loud error stayed opaque,
+            # see learnings round 2 + 6/7).
+            import traceback as _tb
+            tb_frames = _tb.extract_tb(e.__traceback__)
+            worker_frame = next(
+                (f for f in reversed(tb_frames) if "/server/" in f.filename),
+                tb_frames[-1] if tb_frames else None,
+            )
+            frame_str = (
+                f" @ {worker_frame.filename.rsplit('/', 1)[-1]}:{worker_frame.lineno}"
+                if worker_frame else ""
+            )
+            error_repr = f"{type(e).__name__}: {e!s}{frame_str}"[:500]
             try:
-                record_run(name, "error", duration_s=duration)
+                record_run(name, "error", duration_s=duration, error_repr=error_repr)
             except Exception:
                 pass
             logger.exception(

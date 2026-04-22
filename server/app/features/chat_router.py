@@ -228,7 +228,7 @@ async def get_thread_messages(
 
             rows = await conn.fetch(
                 """
-                SELECT id, thread_id, sender_id, body, created_at, edited_at, deleted_at
+                SELECT id, thread_id, user_id AS sender_id, body, created_at, edited_at, deleted_at
                 FROM chat_messages_v1
                 WHERE thread_id = $1::uuid
                   AND deleted_at IS NULL
@@ -297,7 +297,9 @@ async def send_message(
             # Block check
             await _check_not_blocked(conn, user_id, other_user_id)
 
-            # Send via RPC (handles dm_messages insert + thread updated_at)
+            # Send via RPC — rewritten 2026-04-22 to match chat_messages_v1
+            # schema (column is user_id, not sender_user_id/sender_id). RPC
+            # signature is (thread_id, user_id, body); returns the full row.
             row = await conn.fetchrow(
                 "SELECT * FROM rpc_send_message_v1($1::uuid, $2::uuid, $3::text)",
                 thread_id,
@@ -309,6 +311,11 @@ async def send_message(
                 raise error_response(500, "Failed to send message", code=ErrorCode.DB_ERROR)
 
             message = dict(row)
+            # chat_messages_v1 column is user_id; API response uses sender_id
+            # for back-compat with frontend code written against the pre-2026-04-22
+            # router. Map the key here rather than schema-rename.
+            if "user_id" in message and "sender_id" not in message:
+                message["sender_id"] = message.pop("user_id")
             # Serialize
             for key in ("id", "thread_id", "sender_id"):
                 if key in message and message[key] is not None:
@@ -355,13 +362,15 @@ async def mark_thread_read(
             if other is None:
                 raise error_response(404, "Thread not found", code=ErrorCode.NOT_FOUND)
 
-            # Update last_read_at for this user on the thread
+            # Per-user read state lives in chat_thread_reads_v1 (upsert).
+            # dm_threads has no last_read_at column — that was the original
+            # router's mistake (2026-04-22 chat-fix pass).
             await conn.execute(
                 """
-                UPDATE dm_threads
-                SET last_read_at = now()
-                WHERE id = $1::uuid
-                  AND (requester_id = $2::uuid OR responder_id = $2::uuid)
+                INSERT INTO public.chat_thread_reads_v1 (thread_id, user_id, last_read_at, updated_at)
+                VALUES ($1::uuid, $2::uuid, now(), now())
+                ON CONFLICT (thread_id, user_id)
+                DO UPDATE SET last_read_at = now(), updated_at = now()
                 """,
                 thread_id,
                 user_id,
@@ -397,11 +406,12 @@ async def delete_message(
 
     try:
         async with pool.acquire() as conn:
-            # IDOR check: verify ownership
+            # IDOR check: verify ownership. Table column is user_id; aliased
+            # to sender_id on SELECT so existing Python keeps working.
             row = await conn.fetchrow(
                 """
-                SELECT sender_id, deleted_at
-                FROM dm_messages
+                SELECT user_id AS sender_id, deleted_at
+                FROM chat_messages_v1
                 WHERE id = $1::uuid
                 """,
                 message_id,
@@ -416,9 +426,9 @@ async def delete_message(
             # Soft delete
             await conn.execute(
                 """
-                UPDATE dm_messages
+                UPDATE chat_messages_v1
                 SET deleted_at = now()
-                WHERE id = $1::uuid AND sender_id = $2::uuid
+                WHERE id = $1::uuid AND user_id = $2::uuid
                 """,
                 message_id,
                 user_id,
@@ -455,11 +465,11 @@ async def edit_message(
 
     try:
         async with pool.acquire() as conn:
-            # IDOR check + fetch creation time
+            # IDOR check + fetch creation time. Aliased like the DELETE path above.
             row = await conn.fetchrow(
                 """
-                SELECT sender_id, created_at, deleted_at
-                FROM dm_messages
+                SELECT user_id AS sender_id, created_at, deleted_at
+                FROM chat_messages_v1
                 WHERE id = $1::uuid
                 """,
                 message_id,
@@ -483,13 +493,14 @@ async def edit_message(
                     code=ErrorCode.VALIDATION_ERROR,
                 )
 
-            # Perform edit
+            # Perform edit. RETURNING aliases user_id → sender_id to keep
+            # response shape stable for the frontend.
             updated = await conn.fetchrow(
                 """
-                UPDATE dm_messages
+                UPDATE chat_messages_v1
                 SET body = $3, edited_at = now()
-                WHERE id = $1::uuid AND sender_id = $2::uuid
-                RETURNING id, thread_id, sender_id, body, created_at, edited_at
+                WHERE id = $1::uuid AND user_id = $2::uuid
+                RETURNING id, thread_id, user_id AS sender_id, body, created_at, edited_at
                 """,
                 message_id,
                 user_id,
