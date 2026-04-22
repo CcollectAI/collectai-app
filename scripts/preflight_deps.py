@@ -36,6 +36,12 @@ CRITICAL_IMPORTS: list[str] = [
     "sklearn",       # Ridge models
     "numpy",
     "PIL",           # Pillow — image handling
+    # 2026-04-22: stripe was missing on EC2 for an unknown duration. Every
+    # /billing/checkout-session and /billing/portal-session call returned
+    # 503 "Billing not configured" because billing_router._get_stripe()
+    # caught the ImportError silently. Surfaced by E2E audit; preflight
+    # now refuses to start the bake if stripe SDK isn't installable.
+    "stripe",
     # Sentry is intentionally omitted — main.py + request_id.py both
     # guard `import sentry_sdk` with try/except ImportError so it's optional.
     # `telegram` pip package is not used; telegram_ops.py hits the API via httpx.
