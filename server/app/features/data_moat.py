@@ -505,7 +505,7 @@ async def prediction_accuracy(
                     WHERE pp2.item_ref = i.canonical_key
                     ORDER BY pp2.generated_at DESC LIMIT 1
                 ) pp ON true
-                WHERE gt.recorded_at >= now() - ($1 || ' days')::interval
+                WHERE gt.recorded_at >= now() - make_interval(days => $1)
                   {cat_filter}
                 """,
                 *params,
