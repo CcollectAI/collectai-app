@@ -113,10 +113,12 @@ async def _send_announcement_dms(
                         )
                         thread_id = str(new_thread["id"])
 
-                    # Insert the announcement message
+                    # Insert the announcement message into chat_messages_v1
+                    # (legacy `chat_messages` is room-based with columns
+                    # room_id/user_id/text — wrong shape for DMs). 2026-04-22.
                     await conn.execute(
                         """
-                        INSERT INTO chat_messages (thread_id, author_user_id, text)
+                        INSERT INTO chat_messages_v1 (thread_id, user_id, body)
                         VALUES ($1::uuid, $2::uuid, $3)
                         """,
                         thread_id,
