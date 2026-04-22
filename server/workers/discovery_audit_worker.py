@@ -105,12 +105,13 @@ CHECKS: list[dict] = [
         "name": "ended_before_seen",
         "severity": "warning",
         "threshold": 10,
-        "description": "market_hits.ended_at earlier than seen_at — parsing bug (7d window)",
+        "description": "ACTIVE listings with ended_at earlier than seen_at — parsing bug (7d window). Sold-listing comps are excluded because their ended_at IS the historical sale date and is naturally in the past.",
         "sql": """
             SELECT COUNT(*) AS violators FROM public.market_hits
             WHERE seen_at > now() - interval '7 days'
               AND ended_at IS NOT NULL AND seen_at IS NOT NULL
               AND ended_at < seen_at - interval '1 day'
+              AND is_listing = true
         """,
     },
     # --- C. Flow-through ---
