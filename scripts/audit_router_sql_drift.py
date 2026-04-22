@@ -49,11 +49,16 @@ SQL_BLOCK_RE = re.compile(
 )
 SQL_VERB_RE = re.compile(r'\b(SELECT|INSERT|UPDATE|DELETE|WITH|CREATE)\b', re.IGNORECASE)
 
-# table refs: FROM/INTO/JOIN/UPDATE <name> — possibly with public. prefix.
+# table refs: FROM/INTO/JOIN/UPDATE <name> — possibly with a schema prefix.
+# Schema-qualified refs to auth/information_schema/pg_catalog are valid SQL
+# but not in our public-schema scan, so they're matched and then skipped.
 TABLE_REF_RE = re.compile(
-    r'\b(?:FROM|INTO|JOIN|UPDATE)\s+(?:public\.)?([a-z_][a-z0-9_]*)',
+    r'\b(?:FROM|INTO|JOIN|UPDATE)\s+(?:(auth|public|information_schema|pg_catalog)\.)?([a-z_][a-z0-9_]*)',
     re.IGNORECASE,
 )
+# EXTRACT(... FROM x) is a SQL-builtin pattern that confuses TABLE_REF_RE —
+# strip these spans before matching.
+EXTRACT_FROM_RE = re.compile(r'\bEXTRACT\s*\(\s*\w+\s+FROM\s+[^)]+\)', re.IGNORECASE)
 
 # Alias mapping: FROM/JOIN <table> [AS] <alias>
 ALIAS_RE = re.compile(
@@ -133,10 +138,22 @@ async def fetch_schema(dsn: str) -> tuple[set[str], dict[str, set[str]], set[str
     return tables, columns, funcs
 
 
+SQL_LINE_COMMENT_RE = re.compile(r"--[^\n]*")
+
+
+def _strip_sql_comments(sql: str) -> str:
+    """Remove `-- …` line comments so words inside them aren't audited."""
+    return SQL_LINE_COMMENT_RE.sub("", sql)
+
+
 def iter_sql_blocks(text: str) -> Iterable[tuple[int, str]]:
-    """Yield (line_number, sql_text) for every triple-quoted SQL-shaped block."""
+    """Yield (line_number, sql_text) for every triple-quoted SQL-shaped block.
+
+    Body is returned with `-- …` line comments stripped so prose inside SQL
+    comments doesn't get audited as table/column references.
+    """
     for m in SQL_BLOCK_RE.finditer(text):
-        body = m.group(1)
+        body = _strip_sql_comments(m.group(1))
         if not SQL_VERB_RE.search(body):
             continue
         line = text[: m.start()].count("\n") + 1
@@ -181,9 +198,15 @@ def audit_file(
         ctes = collect_ctes(sql)
         aliases = collect_aliases(sql)
 
-        # Table refs
-        for m in TABLE_REF_RE.finditer(sql):
-            name = m.group(1).lower()
+        # Table refs — strip EXTRACT(unit FROM expr) spans first (they
+        # contain a literal FROM that isn't a table reference).
+        sql_for_tables = EXTRACT_FROM_RE.sub("", sql)
+        for m in TABLE_REF_RE.finditer(sql_for_tables):
+            schema = (m.group(1) or "").lower()
+            name = m.group(2).lower()
+            # Skip cross-schema references — we only audit `public.*`.
+            if schema in {"auth", "information_schema", "pg_catalog"}:
+                continue
             if name in SQL_KEYWORDS or name in ctes:
                 continue
             if name not in tables:

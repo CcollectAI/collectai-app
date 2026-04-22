@@ -187,9 +187,15 @@ async def list_corrections(
             # taxonomy_corrections join (which records user_id)
             rows = await conn.fetch(
                 """
-                SELECT t.id, t.corrected_price, t.corrected_condition,
-                       t.corrected_category, t.corrected_attributes,
-                       t.correction_notes, t.corrected_at
+                -- Column is corrected_price_eur on training_items; alias to
+                -- preserve the JSON response shape (`corrected_price`).
+                SELECT t.id,
+                       t.corrected_price_eur AS corrected_price,
+                       t.corrected_condition,
+                       t.corrected_category,
+                       t.corrected_attributes,
+                       t.correction_notes,
+                       t.corrected_at
                 FROM training_items t
                 INNER JOIN public.taxonomy_corrections tc
                     ON tc.item_id = t.id::text AND tc.user_id = $3

@@ -152,7 +152,9 @@ async def dashboard_users(
                 SELECT count(*) AS cnt FROM purchase_mandates m WHERE m.user_id = u.id
             ) mc ON true
             LEFT JOIN LATERAL (
-                SELECT count(*) AS cnt FROM category_items ci WHERE ci.user_id = u.id::text
+                -- 2026-04-22: previously aliased as catalog table; the
+                -- catalog has no per-user column, so count from items instead.
+                SELECT count(*) AS cnt FROM items i WHERE i.user_id = u.id
             ) ic ON true
             ORDER BY u.created_at DESC
             LIMIT $1 OFFSET $2

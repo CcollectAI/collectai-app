@@ -139,18 +139,15 @@ async def browse_catalog_items(
         try:
             price_rows = await pool.fetch(
                 """
-                -- market_observations is vestigial (1 row at audit time);
-                -- market_hits is the canonical comp source (~900K rows).
-                -- 2026-04-22 drift sweep redirected to use it. item_ref on
-                -- market_hits has the canonical `category:key` prefix, so
-                -- match against ci.item_ref (which already has the prefix)
-                -- with a fallback to category:item_key.
+                -- market_observations is vestigial (1 row); market_hits is the
+                -- canonical comp source (~900K rows). category_items has
+                -- (category, item_key); market_hits.item_ref is the
+                -- `category:item_key` concatenation.
                 SELECT ci.item_key, mp.price_eur AS price
                 FROM category_items ci
                 JOIN LATERAL (
                     SELECT price_eur FROM market_hits mh
-                    WHERE mh.item_ref = ci.item_ref
-                       OR mh.item_ref = (ci.category || ':' || ci.item_key)
+                    WHERE mh.item_ref = (ci.category || ':' || ci.item_key)
                     ORDER BY mh.seen_at DESC
                     LIMIT 1
                 ) mp ON TRUE

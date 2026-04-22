@@ -186,45 +186,33 @@ async def get_user_progress(
                 )
 
             async with pool.acquire() as conn:
+                # 2026-04-22: switched from collections + collection_items +
+                # user_category_ownership (the lean `collections` table is
+                # for user-named lists, not set/release tracking) to the
+                # canonical sets + user_set_progress model. user_set_progress
+                # already maintains owned_count + completion_pct so no
+                # GROUP BY needed. external_id maps to collection_key,
+                # name to display_name, category_id to category.
+                base_sql = """
+                    SELECT
+                        s.id            AS collection_id,
+                        s.external_id   AS collection_key,
+                        s.name          AS display_name,
+                        s.category_id   AS category,
+                        s.total_items,
+                        COALESCE(usp.owned_count, 0) AS owned_count
+                    FROM public.sets s
+                    LEFT JOIN public.user_set_progress usp
+                           ON usp.set_id = s.id AND usp.user_id = $1
+                """
                 if category:
                     rows = await conn.fetch(
-                        """
-                        SELECT
-                            c.id AS collection_id,
-                            c.collection_key,
-                            c.display_name,
-                            c.category,
-                            c.total_items,
-                            count(uco.id) AS owned_count
-                        FROM public.collections c
-                        LEFT JOIN public.collection_items ci ON ci.collection_id = c.id
-                        LEFT JOIN public.user_category_ownership uco
-                            ON uco.category_item_id = ci.category_item_id
-                            AND uco.user_id = $1
-                        WHERE c.category = $2
-                        GROUP BY c.id
-                        ORDER BY c.release_date DESC NULLS LAST
-                        """,
+                        base_sql + " WHERE s.category_id = $2 ORDER BY s.release_date DESC NULLS LAST",
                         uid, category,
                     )
                 else:
                     rows = await conn.fetch(
-                        """
-                        SELECT
-                            c.id AS collection_id,
-                            c.collection_key,
-                            c.display_name,
-                            c.category,
-                            c.total_items,
-                            count(uco.id) AS owned_count
-                        FROM public.collections c
-                        LEFT JOIN public.collection_items ci ON ci.collection_id = c.id
-                        LEFT JOIN public.user_category_ownership uco
-                            ON uco.category_item_id = ci.category_item_id
-                            AND uco.user_id = $1
-                        GROUP BY c.id
-                        ORDER BY c.release_date DESC NULLS LAST
-                        """,
+                        base_sql + " ORDER BY s.release_date DESC NULLS LAST",
                         uid,
                     )
 

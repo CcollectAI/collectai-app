@@ -140,15 +140,20 @@ async def get_value_summary(
         duplicates_prevented = dupes_row["cnt"] if dupes_row else 0
 
         # -- Deal Desk savings --
+        # Original query referenced a `deals` table that doesn't exist + an
+        # ask-vs-final price-savings column that was never built. The closest
+        # real table (mandate_deals) tracks listing_price only — no negotiation
+        # delta. Until the offer-flow feature ships (deferred per learnings.md
+        # 2026-04-22 chat-fix pass), count completed mandate_deals and return
+        # 0 savings. Replace with the real calculation when offers go live.
         deals_row = await conn.fetchrow(
             """
             SELECT
                 COUNT(*) AS deal_count,
-                COALESCE(SUM(initial_ask_price - final_price), 0) AS total_savings
-            FROM deals
-            WHERE buyer_id = $1
+                0::numeric AS total_savings
+            FROM mandate_deals
+            WHERE user_id = $1
               AND status = 'completed'
-              AND initial_ask_price > final_price
             """,
             user_id,
         )
