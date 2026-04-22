@@ -117,8 +117,10 @@ async def get_value_summary(
         total_scans = scan_row["cnt"] if scan_row else 0
 
         # -- Items tracked --
+        # portfolio_items is vestigial demo data (owner_tag='local_demo', 2 rows
+        # at audit time). Real user portfolio lives in `items` with user_id.
         items_row = await conn.fetchrow(
-            "SELECT COUNT(*) AS cnt FROM portfolio_items WHERE user_id = $1",
+            "SELECT COUNT(*) AS cnt FROM items WHERE user_id = $1::uuid",
             user_id,
         )
         total_items = items_row["cnt"] if items_row else 0
@@ -154,26 +156,29 @@ async def get_value_summary(
         deal_savings = float(deals_row["total_savings"]) if deals_row else 0.0
 
         # -- Smart buys: items where purchase_price < q50 market estimate --
+        # Source table corrected from vestigial portfolio_items → items.
+        # price_predictions canonical join columns: item_ref + generated_at
+        # (learnings.md §42), not item_id + created_at.
         smart_buys_rows = await conn.fetch(
             """
             SELECT
-                pi.name AS item_name,
-                pi.category,
-                pi.purchase_price,
+                COALESCE(i.title, i.manual_name, i.name, '') AS item_name,
+                i.category,
+                i.purchase_price,
                 pp.q50 AS market_value,
-                (pp.q50 - pi.purchase_price) AS saved
-            FROM portfolio_items pi
+                (pp.q50 - i.purchase_price) AS saved
+            FROM items i
             JOIN LATERAL (
                 SELECT q50 FROM price_predictions
-                WHERE item_id = pi.id
-                ORDER BY created_at DESC
+                WHERE item_ref = i.canonical_key
+                ORDER BY generated_at DESC
                 LIMIT 1
             ) pp ON true
-            WHERE pi.user_id = $1
-              AND pi.purchase_price IS NOT NULL
-              AND pi.purchase_price > 0
-              AND pp.q50 > pi.purchase_price
-            ORDER BY (pp.q50 - pi.purchase_price) DESC
+            WHERE i.user_id = $1::uuid
+              AND i.purchase_price IS NOT NULL
+              AND i.purchase_price > 0
+              AND pp.q50 > i.purchase_price
+            ORDER BY (pp.q50 - i.purchase_price) DESC
             LIMIT 20
             """,
             user_id,
