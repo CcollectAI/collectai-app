@@ -59,6 +59,7 @@ SCHEDULES = {
     "datalake_export_worker": 24 * 3600,         # R50m — nightly export of closed partitions → S3 parquet
     "ticketmaster_events_worker": 12 * 3600,     # 2026-04-21 — Ticketmaster Discovery API → events (twice daily)
     "seatgeek_events_worker": 12 * 3600,         # 2026-04-21 — SeatGeek Search API → events (twice daily)
+    "offer_expiry_worker": 3600,                 # 2026-04-22 — Deal Desk 48h auto-expire (hourly sweep)
 }
 
 

@@ -172,8 +172,8 @@ async def counter_offer(
                 raise error_response(403, "Not authorized to act on this offer", code=ErrorCode.FORBIDDEN)
 
             result = await conn.fetchval(
-                "SELECT rpc_counter_offer_v1($1::uuid, $2::numeric, $3::text)",
-                offer_id, body.price, body.message,
+                "SELECT rpc_counter_offer_v1($1::uuid, $2::numeric, $3::text, $4::uuid)",
+                offer_id, body.price, body.message, user_id,
             )
 
         try:
@@ -224,8 +224,8 @@ async def respond_offer(
                 raise error_response(403, "Not authorized to act on this offer", code=ErrorCode.FORBIDDEN)
 
             result = await conn.fetchval(
-                "SELECT rpc_respond_offer_v1($1::uuid, $2::boolean, $3::text)",
-                offer_id, body.accept, body.message,
+                "SELECT rpc_respond_offer_v1($1::uuid, $2::boolean, $3::text, $4::uuid)",
+                offer_id, body.accept, body.message, user_id,
             )
 
         try:
@@ -275,8 +275,8 @@ async def cancel_offer(
                 raise error_response(403, "Not authorized to act on this offer", code=ErrorCode.FORBIDDEN)
 
             result = await conn.fetchval(
-                "SELECT rpc_cancel_offer_v1($1::uuid)",
-                offer_id,
+                "SELECT rpc_cancel_offer_v1($1::uuid, $2::uuid)",
+                offer_id, user_id,
             )
 
         try:

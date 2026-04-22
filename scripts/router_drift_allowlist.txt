@@ -8,9 +8,6 @@
 # Removing a line MUST be paired with fixing the underlying drift.
 # Adding a line is a deliberate "we know this is broken; deferred".
 
-# ── Deal Desk feature sprint (deferred 2026-04-22) ──────────────────────────
-# v_offer_summary_v1 view + 4 RPCs + offers.seller_id need to be designed
-# alongside business decisions about offer state machine. Tracked separately;
-# until then, every site that references them is allowlisted to keep CI green.
-app/agents/deal_desk_router.py:TABLE_MISSING:v_offer_summary_v1
-app/agents/deal_risk.py:COLUMN_MISSING:offers.seller_id (used as o.seller_id)
+# (Deal Desk entries removed 2026-04-22 after the feature was activated:
+# migration 20260422_deal_desk_activate.sql created the view + 4 RPCs +
+# offers.seller_id denormalization; E2E flow verified 6/6 green.)

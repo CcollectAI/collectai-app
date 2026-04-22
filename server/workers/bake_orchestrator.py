@@ -94,6 +94,8 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("ticketmaster_events_worker", "pipelines.ticketmaster_events",    "run_once", False),
     # ── SeatGeek Search API → events (2026-04-21, twice-daily) ──
     ("seatgeek_events_worker",  "pipelines.seatgeek_events",          "run_once", False),
+    # ── Deal Desk offer auto-expiry (2026-04-22, hourly) ──
+    ("offer_expiry_worker",     "workers.offer_expiry_worker",        "run_once", True),
 
     # ── Workers with their own scheduler_loop (matview has split intervals) ──
     # matview_refresh uses its own scheduler_loop with demand/supply split
