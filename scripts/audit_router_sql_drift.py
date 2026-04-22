@@ -233,15 +233,51 @@ def audit_file(
     return drift
 
 
+def _load_allowlist(path: Optional[str]) -> set[str]:
+    """Load `<file>:<kind>:<detail>` lines from the allowlist file.
+
+    Lines starting with `#` and blank lines are ignored. Each non-comment
+    line is treated as a literal-match key against the formatted drift
+    entry (e.g. `app/agents/deal_desk_router.py:TABLE_MISSING:v_offer_summary_v1`).
+    """
+    if not path:
+        return set()
+    p = Path(path)
+    if not p.exists():
+        return set()
+    out: set[str] = set()
+    for raw in p.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        out.add(line)
+    return out
+
+
 async def main() -> int:
+    import argparse
+    parser = argparse.ArgumentParser(description="Audit router SQL drift vs live schema.")
+    parser.add_argument(
+        "--strict", action="store_true",
+        help="Exit non-zero when any non-allowlisted drift is found (for preflight gating).",
+    )
+    parser.add_argument(
+        "--allowlist", default=None,
+        help="Path to allowlist file. Each line: '<file>:<KIND>:<detail>' (matches the report key).",
+    )
+    args = parser.parse_args()
+
     dsn = os.environ.get("DB_DSN_DIRECT") or os.environ.get("DB_DSN")
     if not dsn:
         print("ERROR: DB_DSN_DIRECT or DB_DSN must be set", file=sys.stderr)
         return 1
 
     tables, columns, funcs = await fetch_schema(dsn)
+    allow = _load_allowlist(args.allowlist)
 
     file_drift: dict[str, list[tuple[int, str, str]]] = {}
+    blocked: list[str] = []  # entries that are NOT allowlisted, drive --strict exit code
+
     for d in ROUTER_DIRS:
         if not d.exists():
             continue
@@ -249,10 +285,17 @@ async def main() -> int:
             if "__pycache__" in str(f):
                 continue
             entries = audit_file(f, tables, columns, funcs)
-            if entries:
-                # Use repo-relative path for readability
-                key = str(f).replace("/opt/collectors/server/", "")
-                file_drift[key] = sorted(entries)
+            if not entries:
+                continue
+            key = str(f).replace("/opt/collectors/server/", "")
+            file_drift[key] = sorted(entries)
+            for line, kind, detail in entries:
+                # Allowlist key uses the leaf detail (table/RPC name or
+                # `table.col (used as alias.col)`), without the line so a
+                # refactor that moves the offender doesn't silently re-enable.
+                allow_key = f"{key}:{kind}:{detail}"
+                if allow_key not in allow:
+                    blocked.append(allow_key)
 
     # Markdown report
     print("# Router SQL Drift Report")
@@ -260,16 +303,24 @@ async def main() -> int:
     print(f"- Schema source: live DB ({len(tables)} tables/views/matviews, {len(funcs)} public functions)")
     print(f"- Files scanned: {sum(1 for d in ROUTER_DIRS if d.exists() for _ in d.rglob('*.py'))}")
     total = sum(len(v) for v in file_drift.values())
-    print(f"- Total potential drift entries: **{total}** across {len(file_drift)} files")
+    print(f"- Total drift entries: **{total}** across {len(file_drift)} files")
+    if args.allowlist:
+        print(f"- Allowlist: `{args.allowlist}` ({len(allow)} entries)")
+        print(f"- Non-allowlisted (blocking in --strict): **{len(blocked)}**")
     print()
 
-    # Sorted by file path
     for fname in sorted(file_drift):
         entries = file_drift[fname]
         print(f"\n## `{fname}` ({len(entries)})")
         for line, kind, detail in entries:
-            print(f"  - L{line} **{kind}**: `{detail}`")
+            allow_key = f"{fname}:{kind}:{detail}"
+            tag = " (allowlisted)" if allow_key in allow else ""
+            print(f"  - L{line} **{kind}**: `{detail}`{tag}")
 
+    if args.strict and blocked:
+        print()
+        print(f"FAIL: {len(blocked)} non-allowlisted drift entries (preflight gate)", file=sys.stderr)
+        return 2
     return 0
 
 

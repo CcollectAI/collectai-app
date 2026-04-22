@@ -1,0 +1,16 @@
+# Router SQL drift allowlist — entries here do NOT block `audit_router_sql_drift.py --strict`.
+#
+# Format: <repo-relative-file>:<KIND>:<detail>
+#   KIND ∈ {TABLE_MISSING, COLUMN_MISSING, RPC_MISSING}
+#   `detail` matches the script's report exactly (table/RPC name, or
+#   `table.col (used as alias.col)`).
+#
+# Removing a line MUST be paired with fixing the underlying drift.
+# Adding a line is a deliberate "we know this is broken; deferred".
+
+# ── Deal Desk feature sprint (deferred 2026-04-22) ──────────────────────────
+# v_offer_summary_v1 view + 4 RPCs + offers.seller_id need to be designed
+# alongside business decisions about offer state machine. Tracked separately;
+# until then, every site that references them is allowlisted to keep CI green.
+app/agents/deal_desk_router.py:TABLE_MISSING:v_offer_summary_v1
+app/agents/deal_risk.py:COLUMN_MISSING:offers.seller_id (used as o.seller_id)
