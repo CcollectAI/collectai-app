@@ -62,14 +62,21 @@ async def get_my_watchlist(
     if pool is not None:
         try:
             async with pool.acquire() as conn:
+                # 2026-04-22: switched from legacy `watchlist` (bigint id /
+                # query / nk / est_value — wrong shape) to watchlist_items
+                # (the modern RLS-protected table). Routes SELECT/INSERT
+                # both use title as the display field; the 4 router-only
+                # columns (item_id / predicted_value / price_trend /
+                # market_hit_count) were added by migration 20260422.
                 rows = await conn.fetch(
                     """
-                    SELECT id, user_id, item_id, name, category,
+                    SELECT id, user_id::text AS user_id, item_id,
+                           title AS name, category,
                            created_at, predicted_value, currency,
                            last_market_price, last_checked_at,
                            price_trend, market_hit_count
-                    FROM watchlist
-                    WHERE user_id = $1
+                    FROM public.watchlist_items
+                    WHERE user_id = $1::uuid
                     ORDER BY created_at DESC
                     LIMIT $2 OFFSET $3
                     """,
@@ -120,11 +127,15 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
             async with pool.acquire() as conn:
                 await conn.execute(
                     """
-                    INSERT INTO watchlist (id, user_id, item_id, name, category,
-                                           created_at, predicted_value, currency)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    INSERT INTO public.watchlist_items
+                        (id, user_id, item_id, title, category,
+                         created_at, predicted_value, currency)
+                    VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8)
                     """,
-                    item.id, user_id, payload.item_id, payload.name,
+                    item.id, user_id, payload.item_id,
+                    # watchlist_items.title is NOT NULL — fallback keeps INSERTs valid
+                    # even if the mobile client sends an empty name field.
+                    payload.name or "(unnamed)",
                     payload.category, item.created_at,
                     payload.predicted_value, payload.currency,
                 )
@@ -163,7 +174,7 @@ async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_curren
         try:
             async with pool.acquire() as conn:
                 result = await conn.execute(
-                    "DELETE FROM watchlist WHERE id = $1 AND user_id = $2",
+                    "DELETE FROM public.watchlist_items WHERE id = $1::uuid AND user_id = $2::uuid",
                     watch_id, user_id,
                 )
                 if result.endswith(" 0"):
