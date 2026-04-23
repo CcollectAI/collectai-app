@@ -266,7 +266,10 @@ class MercariUSCaller:
                 mercari_us_circuit.record_success()
                 return [_normalize_item(item, is_sold=True) for item in items[:limit]]
 
-            mercari_us_circuit.record_success()
+            # 2026-04-23 silent-failure sweep: non-200 must NOT record success.
+            if resp.status_code in (401, 403, 429) or resp.status_code >= 500:
+                mercari_us_circuit.record_failure()
+                logger.warning("Mercari US sold_comps HTTP %d — circuit failure", resp.status_code)
             return []
 
         except Exception as exc:

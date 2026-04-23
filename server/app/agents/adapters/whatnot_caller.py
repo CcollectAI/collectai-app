@@ -145,11 +145,17 @@ class WhatNotCaller:
                 whatnot_circuit.record_success()
                 return [_normalize_listing(item) for item in items[:limit]]
 
-            # Fallback: scrape search page
+            # Fallback: scrape search page. 2026-04-23 silent-failure sweep —
+            # only record success on 200, otherwise trip the circuit.
             resp = await client.get(
                 WHATNOT_SEARCH_URL,
                 params={"query": query},
             )
+            if resp.status_code != 200:
+                if resp.status_code in (401, 403, 429) or resp.status_code >= 500:
+                    whatnot_circuit.record_failure()
+                    logger.warning("WhatNot fallback HTTP %d — circuit failure", resp.status_code)
+                return []
             whatnot_circuit.record_success()
 
             # Parse listings from HTML/JSON embedded in page
@@ -229,8 +235,11 @@ class WhatNotCaller:
                 whatnot_circuit.record_success()
                 return [_normalize_listing(item, is_sold=True) for item in items[:limit]]
 
-            whatnot_circuit.record_success()
-            # Fallback: return search results marked as sold (WhatNot is auction-based)
+            # 2026-04-23 silent-failure sweep: never record success on non-200.
+            # Fallback re-queries search() which has its own circuit logic.
+            if resp.status_code in (401, 403, 429) or resp.status_code >= 500:
+                whatnot_circuit.record_failure()
+                logger.warning("WhatNot sold_comps HTTP %d — circuit failure", resp.status_code)
             results = await self.search(query, category, limit)
             for r in results:
                 r["is_sold"] = True
