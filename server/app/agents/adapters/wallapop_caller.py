@@ -171,13 +171,11 @@ class WallapopCaller:
                 wallapop_circuit.record_success()
                 return [_normalize_item(item) for item in items[:limit]]
 
-            if resp.status_code in (429, 503):
+            # 2026-04-23 silent-failure sweep: trip the breaker on any
+            # auth/rate/server error. Was special-casing only 429/503.
+            if resp.status_code in (401, 403, 429) or resp.status_code >= 500:
                 wallapop_circuit.record_failure()
-                logger.warning("Wallapop API returned %d", resp.status_code)
-                return []
-
-            # Non-fatal status — still record as success to not trip breaker
-            wallapop_circuit.record_success()
+                logger.warning("Wallapop API HTTP %d — circuit failure", resp.status_code)
             return []
 
         except Exception as exc:

@@ -358,7 +358,10 @@ class Chrono24Caller:
                 chrono24_circuit.record_success()
                 return self._cross_reference_price(hits, existing_hits)
 
-            chrono24_circuit.record_success()
+            # 2026-04-23 silent-failure sweep: never record success on non-200.
+            if resp.status_code in (401, 403, 429) or resp.status_code >= 500:
+                chrono24_circuit.record_failure()
+                logger.warning("Chrono24 sold_comps HTTP %d — circuit failure", resp.status_code)
             return []
 
         except Exception as exc:

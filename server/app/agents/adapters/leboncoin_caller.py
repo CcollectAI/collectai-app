@@ -175,13 +175,13 @@ class LeboncoinCaller:
                 leboncoin_circuit.record_success()
                 return [_normalize_ad(ad) for ad in ads[:limit]]
 
-            if resp.status_code in (429, 503):
+            # 2026-04-23 silent-failure sweep: any non-200 must trip the
+            # breaker. Original code special-cased only 429/503 and recorded
+            # SUCCESS on all other non-2xx (incl. 401/403/451/5xx) so anti-bot
+            # blocks let the worker silently return [] forever.
+            if resp.status_code in (401, 403, 429) or resp.status_code >= 500:
                 leboncoin_circuit.record_failure()
-                logger.warning("Leboncoin API returned %d", resp.status_code)
-                return []
-
-            # Non-fatal status — still record as success to not trip breaker
-            leboncoin_circuit.record_success()
+                logger.warning("Leboncoin API HTTP %d — circuit failure", resp.status_code)
             return []
 
         except Exception as exc:

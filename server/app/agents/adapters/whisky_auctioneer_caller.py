@@ -169,13 +169,13 @@ class WhiskyAuctioneerCaller:
                 params={"q": query},
             )
 
-            if resp.status_code in (429, 503):
-                whisky_auctioneer_circuit.record_failure()
-                logger.warning("Whisky Auctioneer returned %d", resp.status_code)
-                return []
-
+            # 2026-04-23 silent-failure sweep: any auth/rate/server error trips
+            # the circuit. Was special-casing 429/503 + recording SUCCESS on
+            # all other non-200 (incl. 401/403/451/5xx).
             if resp.status_code != 200:
-                whisky_auctioneer_circuit.record_success()
+                if resp.status_code in (401, 403, 429) or resp.status_code >= 500:
+                    whisky_auctioneer_circuit.record_failure()
+                    logger.warning("Whisky Auctioneer HTTP %d — circuit failure", resp.status_code)
                 return []
 
             whisky_auctioneer_circuit.record_success()
@@ -287,12 +287,11 @@ class WhiskyAuctioneerCaller:
                 params={"q": query},
             )
 
-            if resp.status_code in (429, 503):
-                whisky_auctioneer_circuit.record_failure()
-                return []
-
+            # Same fix as aggregate_search above (2026-04-23).
             if resp.status_code != 200:
-                whisky_auctioneer_circuit.record_success()
+                if resp.status_code in (401, 403, 429) or resp.status_code >= 500:
+                    whisky_auctioneer_circuit.record_failure()
+                    logger.warning("Whisky Auctioneer sold_comps HTTP %d — circuit failure", resp.status_code)
                 return []
 
             whisky_auctioneer_circuit.record_success()
