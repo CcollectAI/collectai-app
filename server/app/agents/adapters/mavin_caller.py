@@ -154,7 +154,13 @@ class MavinCaller:
                 mavin_circuit.record_success()
                 return self._parse_search_page(resp.text, query, limit)
 
-            mavin_circuit.record_success()
+            # 2026-04-23: never record success on non-200 — the previous
+            # `record_success + return []` swallowed 403/5xx silently, so
+            # the circuit stayed CLOSED through full outages. Mirror of
+            # the Vinted fix from the same date.
+            if resp.status_code in (401, 403, 429) or resp.status_code >= 500:
+                mavin_circuit.record_failure()
+                logger.warning("Mavin fallback HTTP %d — circuit failure", resp.status_code)
             return []
 
         except Exception as exc:

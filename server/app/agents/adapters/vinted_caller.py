@@ -202,11 +202,27 @@ class VintedCaller:
                 vinted_circuit.record_success()
                 return [_normalize_item(item) for item in items[:limit]]
 
-            # Fallback: scrape search page HTML
+            # 2026-04-23: API call failed (commonly 403 anti-bot). Treat it
+            # as a real failure for the circuit breaker — the original code
+            # fell through to an HTML fallback and ALWAYS recorded success,
+            # so 403 blocks never tripped the breaker and the worker
+            # silently returned empty results for hours. See learnings.md
+            # "Vinted silent 403 loop 2026-04-23".
+            if resp.status_code in (401, 403, 429) or resp.status_code >= 500:
+                vinted_circuit.record_failure()
+                logger.warning("Vinted API HTTP %d — treating as circuit failure", resp.status_code)
+                return []
+
+            # Fallback: scrape search page HTML. Only count success if the
+            # fallback actually came back 2xx.
             resp = await client.get(
                 f"https://{domain}/catalog",
                 params={"search_text": query},
             )
+            if resp.status_code != 200:
+                vinted_circuit.record_failure()
+                logger.warning("Vinted HTML fallback HTTP %d", resp.status_code)
+                return []
             vinted_circuit.record_success()
             return self._parse_search_page(resp.text, query, domain, limit)
 
@@ -289,7 +305,12 @@ class VintedCaller:
                 vinted_circuit.record_success()
                 return [_normalize_item(item, is_sold=True) for item in items[:limit]]
 
-            vinted_circuit.record_success()
+            # 2026-04-23: same pattern as aggregate_search above — never
+            # record success on non-200 so the circuit actually trips on
+            # 403 anti-bot / 5xx outages.
+            if resp.status_code in (401, 403, 429) or resp.status_code >= 500:
+                vinted_circuit.record_failure()
+                logger.warning("Vinted sold_comps HTTP %d — circuit failure", resp.status_code)
             return []
 
         except Exception as exc:
