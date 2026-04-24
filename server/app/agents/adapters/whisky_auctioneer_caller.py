@@ -106,6 +106,17 @@ def _normalize_lot(
     # Condition / details
     condition = lot.get("condition") or lot.get("bottle_size")
 
+    # Per-listing attributes — whiskey specifics that drive price variance
+    listing_attrs: Dict[str, Any] = {}
+    if condition:
+        listing_attrs["condition"] = condition
+    for k_src, k_dst in (("distillery", "distillery"), ("age", "age_years"),
+                         ("abv", "abv"), ("cask_type", "cask_type"),
+                         ("bottle_size", "bottle_size"), ("bottled_year", "bottled_year")):
+        v = lot.get(k_src)
+        if v:
+            listing_attrs[k_dst] = v
+
     return {
         "source": "whisky_auctioneer",
         "raw_id": f"whisky-auc-{lot_id}",
@@ -119,6 +130,7 @@ def _normalize_lot(
         "image_url": image_url,
         "is_sold": is_sold,
         "sold_at": sold_at,
+        "attributes": listing_attrs,
     }
 
 

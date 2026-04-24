@@ -121,6 +121,25 @@ def _normalize_listing(item: Dict[str, Any], is_sold: bool = False) -> Dict[str,
     # Location / dealer info
     location = item.get("location") or item.get("merchantLocation") or item.get("country")
 
+    # Per-listing attributes — watch specifics that drive price variance
+    listing_attrs: Dict[str, Any] = {}
+    if condition:
+        listing_attrs["condition"] = condition
+    if item.get("manufacturer") or item.get("brand"):
+        listing_attrs["brand"] = item.get("manufacturer") or item.get("brand")
+    if item.get("model"):
+        listing_attrs["model"] = item["model"]
+    if item.get("referenceNumber") or item.get("reference_number"):
+        listing_attrs["reference_number"] = item.get("referenceNumber") or item.get("reference_number")
+    if item.get("movement"):
+        listing_attrs["movement"] = item["movement"]
+    if item.get("caseMaterial") or item.get("case_material"):
+        listing_attrs["case_material"] = item.get("caseMaterial") or item.get("case_material")
+    if item.get("year"):
+        listing_attrs["year"] = item["year"]
+    if location:
+        listing_attrs["country"] = location
+
     return {
         "source": "chrono24",
         "raw_id": f"chrono24-{item_id}",
@@ -134,6 +153,7 @@ def _normalize_listing(item: Dict[str, Any], is_sold: bool = False) -> Dict[str,
         "image_url": image_url,
         "is_sold": is_sold,
         "sold_at": item.get("soldAt") or item.get("soldDate") or item.get("endDate") if is_sold else None,
+        "attributes": listing_attrs,
     }
 
 

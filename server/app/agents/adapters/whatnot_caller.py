@@ -70,6 +70,17 @@ def _normalize_listing(item: Dict[str, Any], is_sold: bool = False) -> Dict[str,
     # Condition — WhatNot listings don't always specify condition
     condition = item.get("condition")
 
+    # Per-listing attributes for attribute_aggregation_worker.
+    listing_attrs: Dict[str, Any] = {}
+    if condition:
+        listing_attrs["condition"] = condition
+    if item.get("grade"):
+        listing_attrs["grade"] = item["grade"]
+    if item.get("grader"):
+        listing_attrs["graded_by"] = item["grader"]
+    if item.get("brand"):
+        listing_attrs["brand"] = item["brand"]
+
     return {
         "source": "whatnot",
         "raw_id": f"whatnot-{item_id}",
@@ -83,6 +94,7 @@ def _normalize_listing(item: Dict[str, Any], is_sold: bool = False) -> Dict[str,
         "image_url": image_url,
         "is_sold": is_sold,
         "sold_at": item.get("soldAt") or item.get("endedAt"),
+        "attributes": listing_attrs,
     }
 
 

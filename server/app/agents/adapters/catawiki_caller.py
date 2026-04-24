@@ -85,6 +85,19 @@ def _normalize_lot(lot: Dict[str, Any], is_sold: bool = False) -> Dict[str, Any]
     else:
         url = f"https://www.catawiki.com/en/l/{lot_id}" if lot_id else CATAWIKI_SEARCH_PAGE.format(query="")
 
+    # Per-listing attributes — Catawiki covers 16 categories with rich
+    # metadata; harvest condition + estimate bracket + any expert info.
+    listing_attrs: Dict[str, Any] = {}
+    if condition:
+        listing_attrs["condition"] = condition
+    if lot.get("expert_level") or lot.get("expertLevel"):
+        listing_attrs["expert_level"] = lot.get("expert_level") or lot.get("expertLevel")
+    if lot.get("country") or lot.get("origin_country"):
+        listing_attrs["country"] = lot.get("country") or lot.get("origin_country")
+    if estimate_min and estimate_max:
+        # Expert estimate bracket — useful signal for aggregation
+        listing_attrs["estimate_bracket"] = f"{int(estimate_min)}-{int(estimate_max)}"
+
     return {
         "source": "catawiki",
         "raw_id": f"catawiki-{lot_id}",
@@ -100,6 +113,7 @@ def _normalize_lot(lot: Dict[str, Any], is_sold: bool = False) -> Dict[str, Any]
         "sold_at": sold_at,
         "estimate_min": float(estimate_min) if estimate_min else None,
         "estimate_max": float(estimate_max) if estimate_max else None,
+        "attributes": listing_attrs,
     }
 
 
