@@ -452,6 +452,48 @@
     "condition_guide_desc": "Grading reference for all categories"
   },
 
+  "sponsor_profile": {
+    "company_name": "Company name",
+    "contact_email": "Contact email",
+    "company_logo": "Company Logo",
+    "change_logo_a11y": "Change company logo",
+    "tap_to_change": "Tap to change",
+    "upload_logo": "Upload logo",
+    "website_url": "Website URL",
+    "description_placeholder": "Tell collectors about your brand...",
+    "description_a11y": "Company description",
+    "cancel_a11y": "Cancel editing",
+    "save_a11y": "Save changes",
+    "save_changes": "Save Changes"
+  },
+
+  "projects": {
+    "new_project": "New Project",
+    "select_category_a11y": "Select category",
+    "remove_linked_item": "Remove linked item",
+    "link_to_portfolio_item": "Link to portfolio item",
+    "title_required": "Title *",
+    "title_a11y": "Project title",
+    "create_project": "Create Project",
+    "select_category": "Select Category",
+    "show_all_categories_a11y": "Show all categories",
+    "link_item": "Link Item",
+    "skip_linked_item": "Skip — no linked item",
+    "paint_recipes": "Paint Recipes",
+    "recipe_name_placeholder": "Recipe name (e.g. Base Skin Tone)",
+    "recipe_name_a11y": "Recipe name",
+    "paint_brand_a11y": "Paint brand",
+    "color_name_placeholder": "Color name",
+    "paint_color_a11y": "Paint color",
+    "add_paint_a11y": "Add paint to recipe",
+    "technique_notes_placeholder": "Technique notes (e.g. thin coats, wet blend)",
+    "technique_notes_a11y": "Technique notes",
+    "save_recipe_a11y": "Save recipe",
+    "save_recipe": "Save Recipe",
+    "add_recipe_a11y": "Add a new paint recipe",
+    "add_paint_recipe": "Add Paint Recipe"
+  },
+
   "account": {
     "edit_profile": "Edit Profile",
     "edit_profile_desc": "Change your username and bio",

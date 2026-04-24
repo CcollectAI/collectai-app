@@ -3,6 +3,7 @@
  * Extracted from sponsor/dashboard.tsx for reusability and file-size reduction.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -86,6 +87,7 @@ const SponsorProfileCardInner: React.FC<SponsorProfileCardProps> = ({
   onCancelEdit,
   onSaveEdit,
 }) => {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   return (
     <View style={styles.sectionWrap}>
@@ -163,7 +165,7 @@ const SponsorProfileCardInner: React.FC<SponsorProfileCardProps> = ({
                   value={editName}
                   onChangeText={onEditNameChange}
                   style={[styles.editInput, { color: colors.text }]}
-                  accessibilityLabel="Company name"
+                  accessibilityLabel={t('sponsor_profile.company_name')}
                   returnKeyType="next"
                 />
               </View>
@@ -180,34 +182,34 @@ const SponsorProfileCardInner: React.FC<SponsorProfileCardProps> = ({
                   style={[styles.editInput, { color: colors.text }]}
                   autoCapitalize="none"
                   keyboardType="email-address"
-                  accessibilityLabel="Contact email"
+                  accessibilityLabel={t('sponsor_profile.contact_email')}
                   returnKeyType="next"
                 />
               </View>
             </View>
 
             <View style={styles.editFieldGroup}>
-              <Text style={[styles.editFieldLabel, { color: colors.muted }]}>Company Logo</Text>
+              <Text style={[styles.editFieldLabel, { color: colors.muted }]}>{t('sponsor_profile.company_logo')}</Text>
               <AnimatedPressable
                 onPress={onPickEditLogo}
                 disabled={logoUploading}
                 style={[styles.logoPicker, { borderColor: colors.border, backgroundColor: colors.background }]}
                 accessibilityRole="button"
-                accessibilityLabel="Change company logo"
+                accessibilityLabel={t('sponsor_profile.change_logo_a11y')}
               >
                 {!!logoUploading ? (
                   <ActivityIndicator size="small" color={colors.accent} />
                 ) : !!editLogoPreview ? (
                   <View style={styles.logoPreviewWrap}>
                     <Image source={{ uri: editLogoPreview }} style={styles.logoPreviewImg} />
-                    <Text style={[styles.logoChangeHint, { color: colors.accent }]}>Tap to change</Text>
+                    <Text style={[styles.logoChangeHint, { color: colors.accent }]}>{t('sponsor_profile.tap_to_change')}</Text>
                   </View>
                 ) : (
                   <View style={styles.logoPickerInner}>
                     <View style={[styles.logoPickerCircle, { backgroundColor: colors.accent + '10' }]}>
                       <Ionicons name="camera-outline" size={20} color={colors.accent} />
                     </View>
-                    <Text style={[styles.logoPickerHint, { color: colors.muted }]}>Upload logo</Text>
+                    <Text style={[styles.logoPickerHint, { color: colors.muted }]}>{t('sponsor_profile.upload_logo')}</Text>
                   </View>
                 )}
               </AnimatedPressable>
@@ -224,7 +226,7 @@ const SponsorProfileCardInner: React.FC<SponsorProfileCardProps> = ({
                   keyboardType="url"
                   placeholder="https://yourcompany.com"
                   placeholderTextColor={colors.muted}
-                  accessibilityLabel="Website URL"
+                  accessibilityLabel={t('sponsor_profile.website_url')}
                   returnKeyType="next"
                 />
               </View>
@@ -240,9 +242,9 @@ const SponsorProfileCardInner: React.FC<SponsorProfileCardProps> = ({
                   numberOfLines={4}
                   style={[styles.editTextArea, { color: colors.text }]}
                   textAlignVertical="top"
-                  placeholder="Tell collectors about your brand..."
+                  placeholder={t('sponsor_profile.description_placeholder')}
                   placeholderTextColor={colors.muted}
-                  accessibilityLabel="Company description"
+                  accessibilityLabel={t('sponsor_profile.description_a11y')}
                 />
               </View>
             </View>
@@ -252,7 +254,7 @@ const SponsorProfileCardInner: React.FC<SponsorProfileCardProps> = ({
                 onPress={onCancelEdit}
                 style={[styles.outlineBtn, { borderColor: colors.border, flex: 1 }]}
                 accessibilityRole="button"
-                accessibilityLabel="Cancel editing"
+                accessibilityLabel={t('sponsor_profile.cancel_a11y')}
               >
                 <Text style={[styles.outlineBtnText, { color: colors.muted }]}>Cancel</Text>
               </AnimatedPressable>
@@ -261,12 +263,12 @@ const SponsorProfileCardInner: React.FC<SponsorProfileCardProps> = ({
                 disabled={saving}
                 style={[styles.primaryBtn, { backgroundColor: colors.accent, flex: 1 }]}
                 accessibilityRole="button"
-                accessibilityLabel="Save changes"
+                accessibilityLabel={t('sponsor_profile.save_a11y')}
               >
                 {!!saving ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.primaryBtnText}>Save Changes</Text>
+                  <Text style={styles.primaryBtnText}>{t('sponsor_profile.save_changes')}</Text>
                 )}
               </AnimatedPressable>
             </View>

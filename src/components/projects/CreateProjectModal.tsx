@@ -6,6 +6,7 @@
  * Extracted from app/build-paint-projects.tsx to reduce file size.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -47,6 +48,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
   initialCategoryId = null,
   initialItem = null,
 }: CreateProjectModalProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
 
@@ -161,7 +163,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>New Project</Text>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>{t('projects.new_project')}</Text>
                 <AnimatedPressable onPress={resetAndClose} accessibilityRole="button" accessibilityLabel="Close">
                   <Ionicons name="close" size={24} color={colors.muted} />
                 </AnimatedPressable>
@@ -173,7 +175,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                 onPress={() => setShowCategoryPicker(true)}
                 style={[styles.pickerBtn, { borderColor: colors.border, backgroundColor: colors.background }]}
                 accessibilityRole="button"
-                accessibilityLabel="Select category"
+                accessibilityLabel={t('projects.select_category_a11y')}
               >
                 {selectedCategoryId ? (
                   <View style={styles.pickerSelected}>
@@ -213,7 +215,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                           </Text>
                         )}
                       </View>
-                      <AnimatedPressable onPress={() => setSelectedItem(null)} accessibilityRole="button" accessibilityLabel="Remove linked item">
+                      <AnimatedPressable onPress={() => setSelectedItem(null)} accessibilityRole="button" accessibilityLabel={t('projects.remove_linked_item')}>
                         <Ionicons name="close-circle" size={20} color={colors.muted} />
                       </AnimatedPressable>
                     </View>
@@ -222,7 +224,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                       onPress={() => setShowItemPicker(true)}
                       style={[styles.pickerBtn, { borderColor: colors.border, backgroundColor: colors.background }]}
                       accessibilityRole="button"
-                      accessibilityLabel="Link to portfolio item"
+                      accessibilityLabel={t('projects.link_to_portfolio_item')}
                     >
                       <Text style={[styles.pickerPlaceholder, { color: colors.muted }]}>
                         Link to a portfolio item ({categoryItems.length} items)
@@ -238,13 +240,13 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
               )}
 
               {/* Title */}
-              <Text style={[styles.inputLabel, { color: colors.text, marginTop: 16 }]}>Title *</Text>
+              <Text style={[styles.inputLabel, { color: colors.text, marginTop: 16 }]}>{t('projects.title_required')}</Text>
               <TextInput
                 value={newTitle}
                 onChangeText={setNewTitle}
                 placeholder="e.g., Warhammer Kill Team squad"
                 placeholderTextColor={colors.muted}
-                accessibilityLabel="Project title"
+                accessibilityLabel={t('projects.title_a11y')}
                 style={[
                   styles.textInput,
                   { color: colors.text, borderColor: colors.border, backgroundColor: colors.background },
@@ -303,7 +305,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                 {creating ? (
                   <ActivityIndicator size="small" color={colors.accentText} />
                 ) : (
-                  <Text style={[styles.createBtnText, { color: colors.accentText }]}>Create Project</Text>
+                  <Text style={[styles.createBtnText, { color: colors.accentText }]}>{t('projects.create_project')}</Text>
                 )}
               </AnimatedPressable>
             </ScrollView>
@@ -321,7 +323,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
         <View style={styles.modalOverlay}>
           <View style={[styles.pickerModalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Select Category</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('projects.select_category')}</Text>
               <AnimatedPressable onPress={() => setShowCategoryPicker(false)} accessibilityRole="button" accessibilityLabel="Close">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
@@ -361,7 +363,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                     onPress={() => setShowAllCategories(true)}
                     style={styles.showAllBtn}
                     accessibilityRole="button"
-                    accessibilityLabel="Show all categories"
+                    accessibilityLabel={t('projects.show_all_categories_a11y')}
                   >
                     <Text style={[styles.showAllText, { color: colors.accent }]}>
                       Show All Categories ({CATEGORIES.length - BUILDABLE_CATEGORIES.length} more)
@@ -384,7 +386,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
         <View style={styles.modalOverlay}>
           <View style={[styles.pickerModalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Link Item</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('projects.link_item')}</Text>
               <AnimatedPressable onPress={() => setShowItemPicker(false)} accessibilityRole="button" accessibilityLabel="Close">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
@@ -429,7 +431,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                   accessibilityLabel="Skip"
                 >
                   <Ionicons name="remove-circle-outline" size={20} color={colors.muted} style={{ marginRight: 12 }} />
-                  <Text style={[styles.itemPickerName, { color: colors.muted }]}>Skip — no linked item</Text>
+                  <Text style={[styles.itemPickerName, { color: colors.muted }]}>{t('projects.skip_linked_item')}</Text>
                 </AnimatedPressable>
               }
             />

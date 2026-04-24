@@ -3,6 +3,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
@@ -46,6 +47,7 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
   onSaveRecipes,
   onDeleteRecipe,
 }: PaintRecipesCardProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   // Local form state
@@ -96,7 +98,7 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.cardHeader}>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>Paint Recipes</Text>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>{t('projects.paint_recipes')}</Text>
         <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{paintRecipes.length} recipes</Text>
       </View>
 
@@ -157,10 +159,10 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
           <TextInput
             value={newRecipeName}
             onChangeText={setNewRecipeName}
-            placeholder="Recipe name (e.g. Base Skin Tone)"
+            placeholder={t('projects.recipe_name_placeholder')}
             placeholderTextColor={colors.muted}
             style={[styles.addInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-            accessibilityLabel="Recipe name"
+            accessibilityLabel={t('projects.recipe_name_a11y')}
           />
 
           {/* Paints added so far */}
@@ -195,17 +197,17 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
                 placeholder="Brand"
                 placeholderTextColor={colors.muted}
                 style={[styles.paintInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                accessibilityLabel="Paint brand"
+                accessibilityLabel={t('projects.paint_brand_a11y')}
               />
             </View>
             <View style={{ flex: 1 }}>
               <TextInput
                 value={newPaintColor}
                 onChangeText={setNewPaintColor}
-                placeholder="Color name"
+                placeholder={t('projects.color_name_placeholder')}
                 placeholderTextColor={colors.muted}
                 style={[styles.paintInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                accessibilityLabel="Paint color"
+                accessibilityLabel={t('projects.paint_color_a11y')}
               />
             </View>
           </View>
@@ -252,7 +254,7 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
               },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Add paint to recipe"
+            accessibilityLabel={t('projects.add_paint_a11y')}
           >
             <Ionicons
               name="add"
@@ -273,11 +275,11 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
           <TextInput
             value={newRecipeNotes}
             onChangeText={setNewRecipeNotes}
-            placeholder="Technique notes (e.g. thin coats, wet blend)"
+            placeholder={t('projects.technique_notes_placeholder')}
             placeholderTextColor={colors.muted}
             multiline
             style={[styles.addNoteInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-            accessibilityLabel="Technique notes"
+            accessibilityLabel={t('projects.technique_notes_a11y')}
           />
 
           {/* Save / Cancel */}
@@ -301,12 +303,12 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Save recipe"
+              accessibilityLabel={t('projects.save_recipe_a11y')}
             >
               {savingRecipes ? (
                 <ActivityIndicator size="small" color={colors.accentText} />
               ) : (
-                <Text style={[styles.saveBtnText, { color: colors.accentText }]}>Save Recipe</Text>
+                <Text style={[styles.saveBtnText, { color: colors.accentText }]}>{t('projects.save_recipe')}</Text>
               )}
             </AnimatedPressable>
           </View>
@@ -316,11 +318,11 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
           onPress={() => setAddingRecipe(true)}
           style={[styles.applyTemplateBtn, { backgroundColor: accentColor + "15", borderColor: accentColor }]}
           accessibilityRole="button"
-          accessibilityLabel="Add a new paint recipe"
+          accessibilityLabel={t('projects.add_recipe_a11y')}
         >
           <Ionicons name="add-circle-outline" size={18} color={accentColor} />
           <View style={{ flex: 1, marginLeft: 8 }}>
-            <Text style={[styles.applyTemplateTitle, { color: accentColor }]}>Add Paint Recipe</Text>
+            <Text style={[styles.applyTemplateTitle, { color: accentColor }]}>{t('projects.add_paint_recipe')}</Text>
             <Text style={[styles.applyTemplateHint, { color: colors.muted }]}>
               Track paints, brands, and techniques
             </Text>
