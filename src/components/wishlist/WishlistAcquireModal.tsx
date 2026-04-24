@@ -2,6 +2,7 @@
  * WishlistAcquireModal — "I Got It!" modal for converting watchlist item to collection.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -31,6 +32,7 @@ interface WishlistAcquireModalProps {
 }
 
 export const WishlistAcquireModal = React.memo(function WishlistAcquireModal(props: WishlistAcquireModalProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
 
@@ -47,8 +49,8 @@ export const WishlistAcquireModal = React.memo(function WishlistAcquireModal(pro
       >
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Add to Collection</Text>
-            <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close acquisition form">
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('wishlist.acquire_title')}</Text>
+            <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('wishlist.close_acquire_a11y')}>
               <Ionicons name="close" size={24} color={colors.muted} />
             </AnimatedPressable>
           </View>
@@ -74,13 +76,13 @@ export const WishlistAcquireModal = React.memo(function WishlistAcquireModal(pro
                 placeholderTextColor={colors.muted}
                 keyboardType="numeric"
                 style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                accessibilityLabel="Price paid in euros"
+                accessibilityLabel={t('wishlist.price_paid_a11y')}
               />
               <Text style={[styles.helperText, { color: colors.muted }]}>
                 This helps improve price predictions for everyone
               </Text>
 
-              <Text style={[styles.label, { color: colors.text }]}>Notes (optional)</Text>
+              <Text style={[styles.label, { color: colors.text }]}>{t('wishlist.notes_optional')}</Text>
               <TextInput
                 value={acquireNotes}
                 onChangeText={onAcquireNotesChange}
@@ -89,7 +91,7 @@ export const WishlistAcquireModal = React.memo(function WishlistAcquireModal(pro
                 multiline
                 numberOfLines={2}
                 style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                accessibilityLabel="Acquisition notes"
+                accessibilityLabel={t('wishlist.acquire_notes_a11y')}
               />
 
               <AnimatedPressable
@@ -97,14 +99,14 @@ export const WishlistAcquireModal = React.memo(function WishlistAcquireModal(pro
                 onPress={onConfirm}
                 disabled={acquiring}
                 accessibilityRole="button"
-                accessibilityLabel="Add to my collection"
+                accessibilityLabel={t('wishlist.acquire_button_a11y')}
               >
                 {acquiring ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <>
                     <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                    <Text style={styles.acquireBtnText}>Add to My Collection</Text>
+                    <Text style={styles.acquireBtnText}>{t('wishlist.acquire_button')}</Text>
                   </>
                 )}
               </AnimatedPressable>

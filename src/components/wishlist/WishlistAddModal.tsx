@@ -2,6 +2,7 @@
  * WishlistAddModal — Modal form for adding a new watchlist item.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -33,6 +34,7 @@ interface WishlistAddModalProps {
 }
 
 export const WishlistAddModal = React.memo(function WishlistAddModal(props: WishlistAddModalProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
 
@@ -51,23 +53,23 @@ export const WishlistAddModal = React.memo(function WishlistAddModal(props: Wish
       >
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Add to Watchlist</Text>
-            <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close add to watchlist form">
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('wishlist.add_title')}</Text>
+            <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('wishlist.close_add_a11y')}>
               <Ionicons name="close" size={24} color={colors.muted} />
             </AnimatedPressable>
           </View>
 
-          <Text style={[styles.label, { color: colors.text }]}>Title *</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{t('wishlist.title_required')}</Text>
           <TextInput
             value={formTitle}
             onChangeText={onFormTitleChange}
             placeholder="e.g. Charizard VMAX Rainbow"
             placeholderTextColor={colors.muted}
             style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-            accessibilityLabel="Item title"
+            accessibilityLabel={t('wishlist.item_title_a11y')}
           />
 
-          <Text style={[styles.label, { color: colors.text }]}>Category *</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{t('wishlist.category_required')}</Text>
           <AnimatedPressable
             style={[styles.input, styles.pickerBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
             onPress={onOpenCategoryPicker}
@@ -88,7 +90,7 @@ export const WishlistAddModal = React.memo(function WishlistAddModal(props: Wish
             placeholderTextColor={colors.muted}
             keyboardType="numeric"
             style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-            accessibilityLabel="Target price in euros"
+            accessibilityLabel={t('wishlist.target_price_a11y')}
           />
 
           <Text style={[styles.label, { color: colors.text }]}>Notes</Text>
@@ -108,12 +110,12 @@ export const WishlistAddModal = React.memo(function WishlistAddModal(props: Wish
             onPress={onAdd}
             disabled={saving}
             accessibilityRole="button"
-            accessibilityLabel="Add to watchlist"
+            accessibilityLabel={t('wishlist.add_button_a11y')}
           >
             {saving ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.saveBtnText}>Add to Watchlist</Text>
+              <Text style={styles.saveBtnText}>{t('wishlist.add_title')}</Text>
             )}
           </AnimatedPressable>
         </View>

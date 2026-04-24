@@ -2,6 +2,7 @@
  * WatchlistAddForm — Form to add a new item to the watchlist.
  */
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { View, Text, TextInput, ActivityIndicator, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
@@ -62,18 +63,19 @@ export const WatchlistAddForm = React.memo(function WatchlistAddForm({
   onSave,
   onClose,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={[styles.addFormCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.addFormHeader}>
-        <Text style={[styles.addFormTitle, { color: colors.text }]}>Add to Watchlist</Text>
-        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onClose(); }} style={styles.closeFormBtn} accessibilityRole="button" accessibilityLabel="Close add form">
+        <Text style={[styles.addFormTitle, { color: colors.text }]}>{t('watchlist.add_title')}</Text>
+        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onClose(); }} style={styles.closeFormBtn} accessibilityRole="button" accessibilityLabel={t('watchlist.close_add_a11y')}>
           <Ionicons name="close" size={20} color={colors.muted} />
         </AnimatedPressable>
       </View>
 
       {/* Title Input */}
       <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, { color: colors.text }]}>Item Name *</Text>
+        <Text style={[styles.inputLabel, { color: colors.text }]}>{t('watchlist.item_name_required')}</Text>
         <TextInput
           style={[styles.textInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
           value={newTitle}
@@ -84,7 +86,7 @@ export const WatchlistAddForm = React.memo(function WatchlistAddForm({
           returnKeyType="next"
           onSubmitEditing={() => targetPriceRef.current?.focus()}
           maxLength={100}
-          accessibilityLabel="Item name"
+          accessibilityLabel={t('watchlist.item_name_a11y')}
         />
       </View>
 
@@ -106,7 +108,7 @@ export const WatchlistAddForm = React.memo(function WatchlistAddForm({
             accessibilityLabel={`Target price in ${currency}`}
           />
         </View>
-        <Text style={[styles.inputHint, { color: colors.muted }]}>Get notified when price hits your target</Text>
+        <Text style={[styles.inputHint, { color: colors.muted }]}>{t('watchlist.target_desc')}</Text>
       </View>
 
       {/* Priority Selector */}
@@ -146,13 +148,13 @@ export const WatchlistAddForm = React.memo(function WatchlistAddForm({
 
       {/* Notes Input */}
       <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, { color: colors.text }]}>Notes (optional)</Text>
+        <Text style={[styles.inputLabel, { color: colors.text }]}>{t('watchlist.notes_optional')}</Text>
         <TextInput
           ref={notesRef}
           style={[styles.textInput, styles.textInputMultiline, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
           value={newNotes}
           onChangeText={setNewNotes}
-          placeholder="Any notes about this item..."
+          placeholder={t('watchlist.notes_placeholder')}
           placeholderTextColor={colors.muted}
           multiline
           numberOfLines={2}
@@ -175,7 +177,7 @@ export const WatchlistAddForm = React.memo(function WatchlistAddForm({
         ) : (
           <>
             <Ionicons name="add-circle" size={20} color="#FFFFFF" />
-            <Text style={styles.saveBtnText}>Add to Watchlist</Text>
+            <Text style={styles.saveBtnText}>{t('watchlist.add_button')}</Text>
           </>
         )}
       </AnimatedPressable>

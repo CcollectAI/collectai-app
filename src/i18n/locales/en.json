@@ -494,6 +494,44 @@
     "add_paint_recipe": "Add Paint Recipe"
   },
 
+  "wishlist": {
+    "add_title": "Add to Watchlist",
+    "close_add_a11y": "Close add to watchlist form",
+    "title_required": "Title *",
+    "item_title_a11y": "Item title",
+    "category_required": "Category *",
+    "target_price_a11y": "Target price in euros",
+    "add_button_a11y": "Add to watchlist",
+    "acquire_title": "Add to Collection",
+    "close_acquire_a11y": "Close acquisition form",
+    "price_paid_a11y": "Price paid in euros",
+    "notes_optional": "Notes (optional)",
+    "acquire_notes_a11y": "Acquisition notes",
+    "acquire_button_a11y": "Add to my collection",
+    "acquire_button": "Add to My Collection"
+  },
+
+  "watchlist": {
+    "add_title": "Add to Watchlist",
+    "close_add_a11y": "Close add form",
+    "item_name_required": "Item Name *",
+    "item_name_a11y": "Item name",
+    "target_desc": "Get notified when price hits your target",
+    "notes_optional": "Notes (optional)",
+    "notes_placeholder": "Any notes about this item...",
+    "add_button": "Add to Watchlist"
+  },
+
+  "event_creator": {
+    "close_menu_a11y": "Close menu",
+    "edit_a11y": "Edit event",
+    "edit": "Edit Event",
+    "duplicate_a11y": "Duplicate event",
+    "duplicate": "Duplicate Event",
+    "cancel_a11y": "Cancel event",
+    "cancel": "Cancel Event"
+  },
+
   "account": {
     "edit_profile": "Edit Profile",
     "edit_profile_desc": "Change your username and bio",

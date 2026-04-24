@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, Modal, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -24,6 +25,7 @@ export const EventCreatorMenu = React.memo(function EventCreatorMenu({
   onDuplicate,
   onCancel,
 }: EventCreatorMenuProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
@@ -37,17 +39,17 @@ export const EventCreatorMenu = React.memo(function EventCreatorMenu({
         style={styles.menuOverlay}
         onPress={onClose}
         accessibilityRole="button"
-        accessibilityLabel="Close menu"
+        accessibilityLabel={t('event_creator.close_menu_a11y')}
       >
         <View style={[styles.menuSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <AnimatedPressable
             style={styles.menuItem}
             onPress={onEdit}
             accessibilityRole="button"
-            accessibilityLabel="Edit event"
+            accessibilityLabel={t('event_creator.edit_a11y')}
           >
             <Ionicons name="create-outline" size={20} color={colors.accent} />
-            <Text style={[styles.menuItemText, { color: colors.text }]}>Edit Event</Text>
+            <Text style={[styles.menuItemText, { color: colors.text }]}>{t('event_creator.edit')}</Text>
           </AnimatedPressable>
 
           <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
@@ -56,10 +58,10 @@ export const EventCreatorMenu = React.memo(function EventCreatorMenu({
             style={styles.menuItem}
             onPress={onDuplicate}
             accessibilityRole="button"
-            accessibilityLabel="Duplicate event"
+            accessibilityLabel={t('event_creator.duplicate_a11y')}
           >
             <Ionicons name="copy-outline" size={20} color={colors.accent} />
-            <Text style={[styles.menuItemText, { color: colors.text }]}>Duplicate Event</Text>
+            <Text style={[styles.menuItemText, { color: colors.text }]}>{t('event_creator.duplicate')}</Text>
           </AnimatedPressable>
 
           <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
@@ -68,10 +70,10 @@ export const EventCreatorMenu = React.memo(function EventCreatorMenu({
             style={styles.menuItem}
             onPress={onCancel}
             accessibilityRole="button"
-            accessibilityLabel="Cancel event"
+            accessibilityLabel={t('event_creator.cancel_a11y')}
           >
             <Ionicons name="close-circle-outline" size={20} color={colors.danger} />
-            <Text style={[styles.menuItemText, { color: colors.danger }]}>Cancel Event</Text>
+            <Text style={[styles.menuItemText, { color: colors.danger }]}>{t('event_creator.cancel')}</Text>
           </AnimatedPressable>
 
           <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
