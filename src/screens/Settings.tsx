@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, StyleSheet, Linking } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/components/Toast';
 import Constants from 'expo-constants';
 import { useRouter, type Href } from 'expo-router';
@@ -22,6 +23,7 @@ import { ProfileEditSection } from '@/components/settings/ProfileEditSection';
 import { DevForcePlanSection } from '@/components/settings/DevForcePlanSection';
 
 export default function Settings() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -122,11 +124,11 @@ export default function Settings() {
             router.push('/my-suggestions' as Href);
           }}
           accessibilityRole="link"
-          accessibilityLabel="My Suggestions"
+          accessibilityLabel={t('settings.my_suggestions')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>My Suggestions</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Track items you suggested for the catalog</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.my_suggestions')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('settings.my_suggestions_desc')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -138,12 +140,12 @@ export default function Settings() {
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
             resetFeatureTips();
-            showToast({ message: 'Feature tips reset. They will appear again as you navigate.', type: 'success' });
+            showToast({ message: t('settings.reset_tips_toast'), type: 'success' });
           }}
           accessibilityRole="button"
-          accessibilityLabel="Reset feature tips"
+          accessibilityLabel={t('settings.reset_tips_a11y')}
         >
-          <Text style={[styles.settingLabel, { color: colors.text }]}>Reset Feature Tips</Text>
+          <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.reset_tips')}</Text>
           <Ionicons name="refresh-outline" size={18} color={colors.muted} />
         </AnimatedPressable>
 
@@ -153,10 +155,10 @@ export default function Settings() {
           style={styles.settingRow}
           onPress={() => Linking.openURL('mailto:support@collectai.app')}
           accessibilityRole="link"
-          accessibilityLabel="Report a bug"
+          accessibilityLabel={t('settings.report_bug_a11y')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Report a Bug</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.report_bug')}</Text>
             <Text style={[styles.settingHint, { color: colors.muted }]}>support@collectai.app</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
@@ -168,10 +170,10 @@ export default function Settings() {
           style={styles.settingRow}
           onPress={() => router.push('/legal/privacy-policy')}
           accessibilityRole="link"
-          accessibilityLabel="Privacy Policy"
+          accessibilityLabel={t('settings.privacy_policy')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Privacy Policy</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.privacy_policy')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -182,10 +184,10 @@ export default function Settings() {
           style={styles.settingRow}
           onPress={() => router.push('/legal/terms')}
           accessibilityRole="link"
-          accessibilityLabel="Terms of Service"
+          accessibilityLabel={t('settings.terms_of_service')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Terms of Service</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.terms_of_service')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -196,10 +198,10 @@ export default function Settings() {
           style={styles.settingRow}
           onPress={() => router.push('/legal/user-policy')}
           accessibilityRole="link"
-          accessibilityLabel="User Policy"
+          accessibilityLabel={t('settings.user_policy')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>User Policy</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.user_policy')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -210,10 +212,10 @@ export default function Settings() {
           style={styles.settingRow}
           onPress={() => router.push('/legal/data-processing' as any)}
           accessibilityRole="link"
-          accessibilityLabel="Data Processing"
+          accessibilityLabel={t('settings.data_processing')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Data Processing</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.data_processing')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -224,11 +226,11 @@ export default function Settings() {
           style={styles.settingRow}
           onPress={() => router.push('/condition-guide')}
           accessibilityRole="link"
-          accessibilityLabel="Condition Guide"
+          accessibilityLabel={t('settings.condition_guide')}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Condition Guide</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Grading reference for all categories</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.condition_guide')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('settings.condition_guide_desc')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>

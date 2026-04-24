@@ -436,7 +436,20 @@
     "about": "About",
     "version": "Version",
     "delete_account": "Delete account",
-    "delete_account_confirm": "This will permanently delete your account and all data. This action cannot be undone."
+    "delete_account_confirm": "This will permanently delete your account and all data. This action cannot be undone.",
+    "my_suggestions": "My Suggestions",
+    "my_suggestions_desc": "Track items you suggested for the catalog",
+    "reset_tips": "Reset Feature Tips",
+    "reset_tips_a11y": "Reset feature tips",
+    "reset_tips_toast": "Feature tips reset. They will appear again as you navigate.",
+    "report_bug": "Report a Bug",
+    "report_bug_a11y": "Report a bug",
+    "privacy_policy": "Privacy Policy",
+    "terms_of_service": "Terms of Service",
+    "user_policy": "User Policy",
+    "data_processing": "Data Processing",
+    "condition_guide": "Condition Guide",
+    "condition_guide_desc": "Grading reference for all categories"
   },
 
   "account": {
