@@ -15,7 +15,7 @@ Flow per run:
      a bad export can be reversed by re-copying from Postgres.
 
 Env:
-  DATALAKE_BUCKET   — S3 bucket name (default: collectai-datalake)
+  DATALAKE_BUCKET   — S3 bucket name (default: collectai-warehouse-prod-eu-north-1)
   DATALAKE_REGION   — AWS region   (default: eu-north-1)
   DATALAKE_ENABLED  — 'true' to run; default off so a dev laptop can't export.
 """
@@ -33,7 +33,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-BUCKET = os.getenv("DATALAKE_BUCKET", "collectai-datalake")
+BUCKET = os.getenv("DATALAKE_BUCKET", "collectai-warehouse-prod-eu-north-1")
 REGION = os.getenv("DATALAKE_REGION", "eu-north-1")
 ENABLED = os.getenv("DATALAKE_ENABLED", "false").lower() == "true"
 MANIFEST_KEY = "manifests/exports.jsonl"
@@ -42,6 +42,27 @@ MANIFEST_KEY = "manifests/exports.jsonl"
 def _partition_s3_key(partition_name: str, year: int, month: int) -> str:
     """Returns e.g. market_hits/year=2026/month=04/part-000.snappy.parquet"""
     return f"market_hits/year={year:04d}/month={month:02d}/part-000.snappy.parquet"
+
+
+# 2026-04-24: tables to archive that AREN'T partitioned. Bucketed by month
+# from a timestamp column. Each bucket older than the current month is exported
+# once (manifest dedup); the prune worker (separate) drops the rows after a
+# retention window so a bad export can be reversed.
+TIME_BUCKETED_TABLES = [
+    # (table, time_col, s3_prefix, manifest_partition_format)
+    ("price_predictions", "generated_at", "price_predictions"),
+    ("price_history",     "as_of",        "price_history"),
+]
+
+
+def _bucket_s3_key(s3_prefix: str, year: int, month: int) -> str:
+    return f"{s3_prefix}/year={year:04d}/month={month:02d}/part-000.snappy.parquet"
+
+
+def _bucket_manifest_id(s3_prefix: str, year: int, month: int) -> str:
+    """Stable identifier for the manifest. Mirrors partition naming so dedup
+    works the same way as the market_hits partition path."""
+    return f"{s3_prefix}_y{year:04d}m{month:02d}"
 
 
 async def run_once() -> dict:
@@ -167,6 +188,92 @@ async def run_once() -> dict:
             )
         finally:
             tmp_path.unlink(missing_ok=True)
+
+    # ----------------------------------------------------------------------
+    # 2026-04-24: time-bucketed export for non-partitioned tables.
+    # Same parquet+manifest pattern as the partition path; uses (year, month)
+    # buckets derived from a timestamp column. Skips the current month.
+    # ----------------------------------------------------------------------
+    for table, time_col, s3_prefix in TIME_BUCKETED_TABLES:
+        # Discover all (year, month) buckets that have rows AND are older than
+        # current month. SET operations on millions of rows can be slow; the
+        # GROUP BY truncated month is supported by btree on time_col so it's
+        # cheap on the indexes that already exist.
+        bucket_rows = await conn.fetch(
+            f"""
+            SELECT EXTRACT(YEAR FROM {time_col})::int  AS year,
+                   EXTRACT(MONTH FROM {time_col})::int AS month,
+                   COUNT(*) AS n
+            FROM public.{table}
+            WHERE {time_col} IS NOT NULL
+              AND date_trunc('month', {time_col}) < date_trunc('month', now())
+            GROUP BY 1, 2
+            ORDER BY 1, 2
+            """
+        )
+
+        for r in bucket_rows:
+            year, month, n_rows = int(r["year"]), int(r["month"]), int(r["n"])
+            mid = _bucket_manifest_id(s3_prefix, year, month)
+            if mid in exported:
+                continue
+
+            # Stream this month's rows. Still single-shot SELECT for now; if
+            # any bucket exceeds ~1M rows, switch to a chunked cursor (same
+            # threshold called out in the partition path above).
+            all_rows = await conn.fetch(
+                f"""
+                SELECT * FROM public.{table}
+                WHERE {time_col} >= make_date($1, $2, 1)
+                  AND {time_col} <  (make_date($1, $2, 1) + interval '1 month')
+                """,
+                year, month,
+            )
+            if not all_rows:
+                continue
+
+            table_arrow = pa.Table.from_pylist([dict(row) for row in all_rows])
+            with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as tmp:
+                tmp_path = Path(tmp.name)
+            try:
+                pq.write_table(table_arrow, tmp_path, compression="snappy")
+                size_bytes = tmp_path.stat().st_size
+                sha256 = hashlib.sha256(tmp_path.read_bytes()).hexdigest()
+
+                s3_key = _bucket_s3_key(s3_prefix, year, month)
+                s3.upload_file(str(tmp_path), BUCKET, s3_key)
+
+                manifest_entry = {
+                    "partition": mid,        # stays as 'partition' so reader paths don't fork
+                    "table": table,
+                    "s3_key": s3_key,
+                    "rows": n_rows,
+                    "bytes": size_bytes,
+                    "sha256": sha256,
+                    "exported_at": datetime.now(timezone.utc).isoformat(),
+                }
+                # Same read-modify-write append as above. Refactor to a helper
+                # if a third call site appears.
+                existing_body = b""
+                try:
+                    obj = s3.get_object(Bucket=BUCKET, Key=MANIFEST_KEY)
+                    existing_body = obj["Body"].read()
+                except s3.exceptions.NoSuchKey:
+                    pass
+                new_body = existing_body + (json.dumps(manifest_entry) + "\n").encode("utf-8")
+                s3.put_object(Bucket=BUCKET, Key=MANIFEST_KEY, Body=new_body)
+
+                exported.add(mid)  # so we don't re-export within the same run
+                stats["exported"] += 1
+                stats["rows"] += n_rows
+                stats["bytes"] += size_bytes
+                stats["partitions"].append(mid)
+                logger.info(
+                    "[datalake_export] ✓ %s → s3://%s/%s  (%d rows, %.1f MB)",
+                    mid, BUCKET, s3_key, n_rows, size_bytes / 1024 / 1024,
+                )
+            finally:
+                tmp_path.unlink(missing_ok=True)
 
     await conn.close()
     record_run("datalake_export_worker", "ok", duration_s=0.0)
