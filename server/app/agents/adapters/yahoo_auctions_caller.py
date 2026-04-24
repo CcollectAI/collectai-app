@@ -108,6 +108,15 @@ def _normalize_listing(item: Dict[str, Any], rates: Optional[Dict[str, float]] =
     jpy_rate = (rates or {}).get("JPY", DEFAULT_JPY_TO_EUR)
     price_eur = round(float(price_jpy) * jpy_rate, 2) if price_jpy else 0
 
+    # Per-listing attributes. Yahoo JP listings carry condition text
+    # (e.g. 'used', 'like_new') and seller-type ('store'|'private') —
+    # both feed attribute_aggregation_worker for per-item distributions.
+    attrs: Dict[str, Any] = {}
+    if item.get("condition"):
+        attrs["condition"] = item["condition"]
+    if item.get("seller_type"):
+        attrs["seller_type"] = item["seller_type"]
+
     return {
         "source": "yahoo_auctions_jp",
         "raw_id": f"yahoo-jp-{item_id}",
@@ -124,6 +133,7 @@ def _normalize_listing(item: Dict[str, Any], rates: Optional[Dict[str, float]] =
         "bids": bids,
         "end_time": end_time,
         "seller": item.get("seller"),
+        "attributes": attrs,
     }
 
 

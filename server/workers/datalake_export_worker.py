@@ -65,6 +65,20 @@ def _bucket_manifest_id(s3_prefix: str, year: int, month: int) -> str:
     return f"{s3_prefix}_y{year:04d}m{month:02d}"
 
 
+def _row_to_arrow_safe(row) -> dict:
+    """Convert asyncpg Record -> dict with UUIDs stringified.
+    pyarrow.Table.from_pylist can't auto-infer asyncpg.pgproto.UUID; the
+    cleanest fix is to stringify at the boundary before Arrow conversion.
+    Same for any other non-primitive types we hit later (datetime.date is
+    handled natively by pyarrow)."""
+    import uuid as _uuid
+    d = dict(row)
+    for k, v in d.items():
+        if isinstance(v, _uuid.UUID):
+            d[k] = str(v)
+    return d
+
+
 async def run_once() -> dict:
     """Export eligible partitions. Returns summary stats."""
     from app.worker_registry import record_run
@@ -146,7 +160,7 @@ async def run_once() -> dict:
         if not all_rows:
             continue
 
-        table = pa.Table.from_pylist([dict(r) for r in all_rows])
+        table = pa.Table.from_pylist([_row_to_arrow_safe(r) for r in all_rows])
 
         with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as tmp:
             tmp_path = Path(tmp.name)
@@ -232,7 +246,7 @@ async def run_once() -> dict:
             if not all_rows:
                 continue
 
-            table_arrow = pa.Table.from_pylist([dict(row) for row in all_rows])
+            table_arrow = pa.Table.from_pylist([_row_to_arrow_safe(row) for row in all_rows])
             with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as tmp:
                 tmp_path = Path(tmp.name)
             try:

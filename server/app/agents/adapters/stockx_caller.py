@@ -62,6 +62,19 @@ def _normalize_product(product: Dict[str, Any]) -> Dict[str, Any]:
     # Use last sale as primary, fall back to lowest ask
     price = float(last_sale) if last_sale else float(lowest_ask) if lowest_ask else 0
 
+    # Per-listing attributes for attribute_aggregation_worker. StockX
+    # deadstock-only means condition is fixed; brand + release_year +
+    # retail_price add real per-item variation.
+    listing_attrs: Dict[str, Any] = {"condition": "New"}
+    brand = attrs.get("brand") or product.get("brand")
+    if brand:
+        listing_attrs["brand"] = brand
+    rd = attrs.get("releaseDate")
+    if rd and isinstance(rd, str) and len(rd) >= 4:
+        listing_attrs["release_year"] = rd[:4]
+    if attrs.get("colorway"):
+        listing_attrs["colorway"] = attrs["colorway"]
+
     return {
         "source": "stockx",
         "raw_id": f"stockx-{product_id}",
@@ -80,6 +93,7 @@ def _normalize_product(product: Dict[str, Any]) -> Dict[str, Any]:
         "retail_price": float(attrs.get("retailPrice", 0)) if attrs.get("retailPrice") else None,
         "release_date": attrs.get("releaseDate"),
         "brand": attrs.get("brand") or product.get("brand"),
+        "attributes": listing_attrs,
     }
 
 

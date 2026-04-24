@@ -81,6 +81,17 @@ def _normalize_listing(item: Dict[str, Any]) -> Dict[str, Any]:
     # Condition (not always present)
     condition = item.get("condition") or item.get("itemCondition") or None
 
+    # Per-listing attributes. Marktplaats exposes sparse structured data;
+    # harvest what's reliably there and defer the rest to future passes.
+    listing_attrs: Dict[str, Any] = {}
+    if condition:
+        listing_attrs["condition"] = condition
+    if item.get("brand"):
+        listing_attrs["brand"] = item["brand"]
+    seller = item.get("sellerInformation") or {}
+    if isinstance(seller, dict) and seller.get("sellerType"):
+        listing_attrs["seller_type"] = seller["sellerType"]
+
     return {
         "source": "marktplaats",
         "raw_id": f"marktplaats-{item_id}",
@@ -94,6 +105,7 @@ def _normalize_listing(item: Dict[str, Any]) -> Dict[str, Any]:
         "image_url": image_url,
         "is_sold": False,
         "sold_at": None,
+        "attributes": listing_attrs,
     }
 
 

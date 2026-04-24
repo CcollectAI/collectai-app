@@ -94,6 +94,19 @@ def _normalize_product(product: Dict[str, Any], category: str) -> Dict[str, Any]
     if image and not image.startswith("http"):
         image = f"https://static.cardmarket.com/img/items/{image}"
 
+    # Per-listing attributes for attribute_aggregation_worker. Cardmarket
+    # TREND prices aggregate across all conditions/languages so we can't
+    # capture condition here — but rarity/expansion/number are per-card
+    # and feed the aggregated catalog attributes downstream.
+    attrs: Dict[str, Any] = {}
+    if product.get("rarity"):
+        attrs["rarity"] = product["rarity"]
+    exp_name = (product.get("expansion") or {}).get("enName")
+    if exp_name:
+        attrs["set_name"] = exp_name
+    if product.get("number"):
+        attrs["card_number"] = str(product["number"])
+
     return {
         "source": "cardmarket",
         "raw_id": f"cardmarket-{product.get('idProduct', '')}",
@@ -111,6 +124,7 @@ def _normalize_product(product: Dict[str, Any], category: str) -> Dict[str, Any]
         "quantity_available": product.get("countArticles", None),
         "rarity": product.get("rarity") or None,
         "expansion": product.get("expansion", {}).get("enName") or None,
+        "attributes": attrs,
     }
 
 

@@ -83,6 +83,22 @@ def _normalize_item(item: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(condition, dict):
         condition = condition.get("title") or condition.get("name") or None
 
+    # Per-listing attributes. Wallapop returns a flat object with brand /
+    # size / material under different keys depending on vertical.
+    listing_attrs: Dict[str, Any] = {}
+    if condition:
+        listing_attrs["condition"] = condition
+    if item.get("brand"):
+        listing_attrs["brand"] = item["brand"]
+    if item.get("size"):
+        listing_attrs["size"] = item["size"]
+    if item.get("color"):
+        listing_attrs["color"] = item["color"]
+    if item.get("material"):
+        listing_attrs["material"] = item["material"]
+    if item.get("gender"):
+        listing_attrs["gender"] = item["gender"]
+
     return {
         "source": "wallapop",
         "raw_id": f"wallapop-{item_id}",
@@ -96,6 +112,7 @@ def _normalize_item(item: Dict[str, Any]) -> Dict[str, Any]:
         "image_url": image_url,
         "is_sold": False,
         "sold_at": None,
+        "attributes": listing_attrs,
     }
 
 

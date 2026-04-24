@@ -90,6 +90,8 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("discovery_audit_worker",  "workers.discovery_audit_worker",     "run_once", True),
     # ── R50m datalake export: nightly parquet export of closed market_hits partitions ──
     ("datalake_export_worker",  "workers.datalake_export_worker",     "run_once", True),
+    # ── R50m week-8 deliverable: daily detach+drop of >6mo partitions confirmed in S3 ──
+    ("partition_drop_worker",   "workers.partition_drop_worker",      "run_once", True),
     # ── Ticketmaster Discovery API → events (2026-04-21, twice-daily) ──
     ("ticketmaster_events_worker", "pipelines.ticketmaster_events",    "run_once", False),
     # ── SeatGeek Search API → events (2026-04-21, twice-daily) ──

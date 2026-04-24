@@ -376,6 +376,13 @@ async def run_once() -> None:
         # recording ok for 48h+ while their output tables stayed stale.
         await _check_silent_writers(conn, failing_new)
 
+        # DB-size probe — page when total DB size crosses alert threshold.
+        # Default 6400 MB = 80% of Supabase Pro's 8GB cap. Adjust via
+        # SUPABASE_DB_SIZE_ALERT_MB env var. Added 2026-04-24 because
+        # DATA_SCALING_PLAN.md §7 calls for partition-drop automation that
+        # doesn't yet exist; we want a tripwire if runway gets short.
+        await _check_db_size(conn, failing_new)
+
         if failing_new:
             await _page(failing_new)
             # Persist cooldowns so a restart doesn't reset them.
@@ -487,6 +494,44 @@ async def _check_silent_writers(conn, failing_new: list[dict]) -> None:
                 _last_alerted_at[check_name] = datetime.now(timezone.utc)
         else:
             logger.info("sanity_probe %s: clean", check_name)
+
+
+async def _check_db_size(conn, failing_new: list[dict]) -> None:
+    """Page when total DB size exceeds SUPABASE_DB_SIZE_ALERT_MB (default
+    6400 MB = 80% of Supabase Pro's 8GB cap). Tripwire for partition-drop
+    automation being late (DATA_SCALING_PLAN.md §7 week-8 deliverable).
+    """
+    check_name = "db_size_near_cap"
+    try:
+        size_bytes = await asyncio.wait_for(
+            conn.fetchval("SELECT pg_database_size(current_database())"),
+            timeout=5.0,
+        )
+    except Exception as e:
+        logger.warning("sanity_probe db_size: query failed: %s", e)
+        return
+
+    size_mb = int(size_bytes / 1024 / 1024)
+    cap_mb = int(os.getenv("SUPABASE_DB_SIZE_ALERT_MB", "6400"))
+
+    if size_mb > cap_mb:
+        logger.warning(
+            "SANITY VIOLATION %s: DB %d MB > threshold %d MB",
+            check_name, size_mb, cap_mb,
+        )
+        if _cooldown_expired(check_name):
+            failing_new.append({
+                "name": check_name,
+                "description": (
+                    f"DB size {size_mb} MB exceeds {cap_mb} MB alert threshold. "
+                    "Ship partition-drop worker or raise tier."
+                ),
+                "violators": size_mb,
+                "sample_id": f"{size_mb}MB",
+            })
+            _last_alerted_at[check_name] = datetime.now(timezone.utc)
+    else:
+        logger.info("sanity_probe db_size: %d MB (< %d MB cap)", size_mb, cap_mb)
 
 
 async def main():

@@ -104,6 +104,29 @@ def _normalize_api_ad(ad: Dict[str, Any]) -> Dict[str, Any]:
     if url and not url.startswith("http"):
         url = f"https://www.kleinanzeigen.de{url}"
 
+    # Per-listing attributes. Kleinanzeigen API exposes ad attributes as
+    # a flat list under various keys depending on category.
+    listing_attrs: Dict[str, Any] = {}
+    attrs = ad.get("attributes") or ad.get("ad-attributes") or []
+    if isinstance(attrs, list):
+        for attr in attrs:
+            if not isinstance(attr, dict):
+                continue
+            name = (attr.get("name") or attr.get("key") or "").lower()
+            value = attr.get("value") or attr.get("localized-value")
+            if not name or not value:
+                continue
+            if "zustand" in name or "condition" in name:
+                listing_attrs["condition"] = value
+            elif "marke" in name or "brand" in name:
+                listing_attrs["brand"] = value
+            elif "farbe" in name or "color" in name:
+                listing_attrs["color"] = value
+            elif "groesse" in name or "size" in name:
+                listing_attrs["size"] = value
+            else:
+                listing_attrs.setdefault("attributes_raw", {})[name] = value
+
     return {
         "source": "kleinanzeigen",
         "raw_id": f"kleinanzeigen-{ad_id}",
@@ -113,10 +136,11 @@ def _normalize_api_ad(ad: Dict[str, Any]) -> Dict[str, Any]:
         "source_price": price,
         "source_currency": currency,
         "url": url,
-        "condition": None,
+        "condition": listing_attrs.get("condition"),
         "image_url": image_url,
         "is_sold": False,
         "sold_at": None,
+        "attributes": listing_attrs,
     }
 
 

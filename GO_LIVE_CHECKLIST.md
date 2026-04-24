@@ -1,17 +1,54 @@
 ================================================================================
   COLLECTAI — GO-LIVE CHECKLIST
-  Generated: 2026-02-18 · Status update: 2026-04-07 (Round 42 audit)
+  Generated: 2026-02-18 · Status update: 2026-04-24
 ================================================================================
 
 Use this file as a step-by-step checklist. Work through each section in order.
 Mark items [x] as you complete them.
 
-Status (2026-04-07): All app code, tests, admin dashboard (24 tabs, real data),
-AEO content (103 Q&A pairs), spend monitor, dark mode, and the Atlantis→CollectAI
-rebrand are DONE (3194 backend tests, 476 frontend tests, 0 TS errors). What's
-left here is external/manual setup: domain DNS, Supabase project apply, EAS
-submit creds (Apple Team ID + ASC App ID), DB migration apply on prod, and the
-data bake. See memory3.md → "Pending — Pre-Launch" for the short list.
+--------------------------------------------------------------------------------
+ EXECUTIVE STATUS — 2026-04-24
+--------------------------------------------------------------------------------
+
+CODE: READY. Everything below is passing.
+  * Preflight chain (6 gates): ALL PASS (deps, env, worker imports, RLS check,
+    models, router drift). systemd ExecStartPre refuses to start if any fails.
+  * Postflight HTTP smoke: clean — zero 5xx across the route surface.
+  * Bake: 24 workers running, no phantom errors, all error_repr metadata
+    capturing correctly. attribute_aggregation live (4,869 items populated).
+  * Tests: 3,325 BE + 516 FE pass, 0 TS errors, 58 snapshots current.
+  * Security advisor: 168 of 175 findings cleared. 7 remaining:
+      - 4 extensions-in-public (WARN, deferred — risky post-search_path pin)
+      - 3 public-bucket-allows-listing (WARN, deferred — storage RLS design)
+    PLUS 3 dashboard-only toggles (HIBP, OTP expiry, PG upgrade) awaiting
+    user action.
+  * Data scaling: price_predictions + price_history now partitioned monthly.
+    partition_drop_worker deployed (dry-run default). 1,031 MB reclaimed today.
+    DB now 2,018 MB with 12-month runway per DATA_SCALING_PLAN.md.
+  * Infrastructure: 44 marketplace adapters, 54 categories, 140,671 catalog
+    items, Stripe webhook verified, chat + deal_desk 100% E2E.
+
+BLOCKED ON USER — required before submit:
+  [ ] Apple Developer enrollment (~10 days external wait)
+  [ ] App name decision ("Atlantis" is taken; name-hunt in progress)
+  [ ] eas.json: submit.ios.ascAppId + appleTeamId (needs Apple Dev creds)
+  [ ] Stripe live keys (test keys wired)
+  [ ] Domain DNS
+  [ ] 3 Supabase dashboard toggles (HIBP, OTP expiry, PG upgrade)
+
+ESTIMATED TIME FROM HERE TO SUBMIT: ~10 days external (Apple) + ~3 hours
+of user clicks (name swap, live keys, DNS, dashboard toggles). No code work
+required before submit. Post-submit: 1-3 days App Store review.
+
+--------------------------------------------------------------------------------
+
+Status (2026-04-12, historical): All app code, tests, admin dashboard (24 tabs, real data),
+AEO content (103 Q&A pairs), spend monitor, dark mode, i18n (7 locales), and
+the rebrand are DONE (3262 backend tests, 516 frontend tests, 0 TS errors).
+14-day data bake is LIVE on EC2 t3.medium (51.21.210.195, Elastic IP).
+GitHub Actions secrets configured. CI workflows fixed.
+What's left: domain DNS, EAS submit creds (Apple Team ID + ASC App ID),
+Stripe live keys, and app store submission.
 
 
 ================================================================================
@@ -19,7 +56,7 @@ data bake. See memory3.md → "Pending — Pre-Launch" for the short list.
 ================================================================================
 
 [ ] Buy domain (collectai.app or your chosen domain)
-[ ] Create DNS A record pointing to EC2 IP (3.75.182.41)
+[ ] Create DNS A record pointing to EC2 IP (51.21.210.195)
     - api.collectai.app -> EC2 IP (for backend API)
     - collectai.app -> your website/landing page (optional)
     - www.collectai.app -> same as above
@@ -31,16 +68,15 @@ data bake. See memory3.md → "Pending — Pre-Launch" for the short list.
  2. SUPABASE PROJECT SETUP
 ================================================================================
 
-[ ] Create Supabase project (if not already done)
-    - Region: eu-central-1 (Frankfurt) recommended for EU users
-[ ] Collect these values from Supabase Dashboard > Settings > API:
-    - SUPABASE_URL (e.g. https://xxxx.supabase.co)
-    - SUPABASE_KEY (anon key)
-    - SUPABASE_SERVICE_KEY (service_role key)
-    - SUPABASE_JWT_SECRET
-    - SUPABASE_JWT_ISSUER (e.g. https://xxxx.supabase.co/auth/v1)
-[ ] Collect database connection string from Settings > Database:
-    - DB_DSN (e.g. postgresql://postgres:password@db.xxxx.supabase.co:5432/postgres)
+[x] Create Supabase project (ykqrruipzmrrvjcvwfgp, eu-central-1 Frankfurt)
+[x] Collect these values from Supabase Dashboard > Settings > API:
+    - SUPABASE_URL=https://ykqrruipzmrrvjcvwfgp.supabase.co
+    - SUPABASE_KEY (anon key) — in .env
+    - SUPABASE_SERVICE_KEY (service_role key) — in .env
+    - SUPABASE_JWT_SECRET — in .env
+    - SUPABASE_JWT_ISSUER — in .env
+[x] Collect database connection string from Settings > Database:
+    - DB_DSN — in .env (pooler connection)
 
 --- Run Migrations ---
 
@@ -91,7 +127,7 @@ Apply all SQL migrations in order. Use Supabase SQL Editor or psql:
 [ ] Set email confirmation to REQUIRED
 [ ] Customize email templates (confirm signup, reset password, magic link)
     - Templates at: Authentication > Email Templates
-    - Use your branding (Atlantis, Tiffany Blue #81D8D0)
+    - Use your branding (CollectAI, Tiffany Blue #81D8D0)
 [ ] Set redirect URLs in Authentication > URL Configuration:
     - Site URL: https://collectai.app (or your domain)
     - Redirect URLs: collectai://reset-password, collectai://subscription
@@ -107,7 +143,9 @@ Apply all SQL migrations in order. Use Supabase SQL Editor or psql:
  3. EC2 / SERVER SETUP
 ================================================================================
 
-[ ] Ensure EC2 instance is running (current: 3.75.182.41)
+[x] Ensure EC2 instance is running (Elastic IP: 51.21.210.195, t3.medium, eu-north-1)
+    SSH: ssh -i ~/.ssh/collectai-ec2 ubuntu@51.21.210.195
+[x] Bake running at /opt/collectors (started 2026-04-12, pid tracked in bake.pid)
 [ ] SSH into EC2 and install Docker + Docker Compose:
     sudo apt update && sudo apt install -y docker.io docker-compose-plugin
     sudo systemctl enable docker && sudo systemctl start docker
@@ -213,10 +251,10 @@ Generate secrets with: openssl rand -hex 32
 [ ] Create Stripe account at stripe.com (if not already done)
 [ ] Switch to Live Mode (toggle in Stripe Dashboard top-right)
 [ ] Create Products & Prices:
-    - Product 1: "Atlantis Pro"
+    - Product 1: "CollectAI Pro"
       - Price: EUR 4.99/month, recurring
       - Copy the price_id -> STRIPE_PRICE_ID_PRO
-    - Product 2: "Atlantis Premium"
+    - Product 2: "CollectAI Premium"
       - Price: EUR 9.99/month, recurring
       - Copy the price_id -> STRIPE_PRICE_ID_PREMIUM
 [ ] Set up Webhook endpoint:
@@ -238,9 +276,10 @@ Generate secrets with: openssl rand -hex 32
  6. AWS SETUP
 ================================================================================
 
-[ ] Create IAM user with S3 access:
-    - Policy: AmazonS3FullAccess (or scoped to collectai-* buckets)
-    - Save Access Key ID + Secret
+[x] Create IAM user with S3 + EC2 + EC2InstanceConnect access:
+    - User: collectai-access (arn:aws:iam::425295131811:user/collectai-access)
+    - Policies: AmazonEC2FullAccess, AmazonS3FullAccess, EC2InstanceConnect
+    - Access Key ID in .env (rotated 2026-04-12)
 [ ] Create S3 buckets:
     - collectai-artifacts (for images, exports)
     - collectai-ml-models (for ML model files)
@@ -302,7 +341,7 @@ Generate secrets with: openssl rand -hex 32
 --- Google Play Console ---
 
 [ ] Enroll in Google Play Developer Program ($25 one-time) at play.google.com/console
-[ ] Create app: Atlantis - Collectibles Tracker
+[ ] Create app: CollectAI - Collectibles Tracker
 [ ] Create service account for EAS Submit:
     - Google Cloud Console > IAM > Service Accounts
     - Grant "Service Account User" role
@@ -316,12 +355,10 @@ Generate secrets with: openssl rand -hex 32
  9. SENTRY SETUP
 ================================================================================
 
-[ ] Create Sentry account at sentry.io (free tier: 5K events/month)
-[ ] Create two projects:
-    - collectai-backend (Python / FastAPI)
-      * Copy DSN -> SENTRY_DSN (backend .env)
-    - collectai-mobile (React Native)
-      * Copy DSN -> EXPO_PUBLIC_SENTRY_DSN (frontend .env / EAS secrets)
+[x] Create Sentry account at sentry.io (EU region)
+[x] Create two projects:
+    - collectai-backend (Python / FastAPI) — DSN in .env
+    - collectai-mobile (React Native) — DSN in .env
 [ ] Install @sentry/react-native in the project:
     npm install @sentry/react-native
 [ ] Set SENTRY_ENV=production in backend .env
@@ -398,7 +435,7 @@ Replace placeholder assets before submitting to stores:
 
 [ ] Write App Store description (store in docs/store-description.md)
 [ ] Prepare metadata:
-    - App Name: Atlantis
+    - App Name: CollectAI
     - Subtitle: Smart Collectibles Tracker
     - Category: Lifestyle (primary), Shopping (secondary)
     - Keywords: collectibles, valuation, price tracker, collection manager,
@@ -463,7 +500,7 @@ Replace placeholder assets before submitting to stores:
 [ ] Enable workers when ready:
     - MONITOR_ENABLED=true  (price monitoring)
     - DEAL_DISCOVERY_ENABLED=true  (deal scanning)
-[ ] Set up CI/CD auto-deploy:
+[~] Set up CI/CD auto-deploy (partially done — GH secrets for Supabase set):
     - Add GitHub Secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
       ECR_REGISTRY, EC2_HOST, EC2_USER, EC2_SSH_KEY
     - Create GitHub Environment "production" with required reviewers

@@ -48,6 +48,33 @@ def _convert_usd_to_eur(usd: float, rates: dict[str, float] | None = None) -> fl
     return round(usd * rate, 2)
 
 
+def _tcgplayer_attrs(product: Dict[str, Any], price_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Per-listing attributes for attribute_aggregation_worker.
+
+    subTypeName carries the Normal/Foil axis joined with condition text
+    (e.g. 'Near Mint Foil', '1st Edition Holofoil'). We split naively on
+    known printing keywords so 'condition' and 'printing' aggregate
+    independently downstream.
+    """
+    attrs: Dict[str, Any] = {}
+    sub = (price_data or {}).get("subTypeName") or product.get("subTypeName")
+    if sub:
+        s = str(sub).strip()
+        printing = None
+        for kw in ("Holofoil", "Foil", "Reverse Holofoil", "Normal"):
+            if kw.lower() in s.lower():
+                printing = kw
+                break
+        if printing:
+            attrs["printing"] = printing
+            cond = s.replace(printing, "").strip()
+            if cond:
+                attrs["condition"] = cond
+        else:
+            attrs["condition"] = s
+    return attrs
+
+
 def _normalize_catalog_product(
     product: Dict[str, Any],
     price_map: Optional[Dict[int, Dict[str, Any]]] = None,
@@ -83,6 +110,7 @@ def _normalize_catalog_product(
         "condition": None,
         "image_url": product.get("imageUrl") or product.get("image"),
         "is_sold": False,
+        "attributes": _tcgplayer_attrs(product, price_data),
     }
 
 
@@ -110,6 +138,7 @@ def _normalize_price_entry(
         "condition": condition,
         "image_url": None,
         "is_sold": True,
+        "attributes": _tcgplayer_attrs({}, entry),
     }
 
 

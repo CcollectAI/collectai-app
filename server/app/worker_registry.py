@@ -57,6 +57,7 @@ SCHEDULES = {
     "sanity_probe_worker": 3600,                 # R50l — hourly correctness checks on critical tables
     "discovery_audit_worker": 24 * 3600,         # R50l — daily broad discovery audit (orphan FKs, null rates, flow-through)
     "datalake_export_worker": 24 * 3600,         # R50m — nightly export of closed partitions → S3 parquet
+    "partition_drop_worker": 24 * 3600,          # 2026-04-24 — daily detach+drop of >6mo partitions confirmed in S3 manifest
     "ticketmaster_events_worker": 12 * 3600,     # 2026-04-21 — Ticketmaster Discovery API → events (twice daily)
     "seatgeek_events_worker": 12 * 3600,         # 2026-04-21 — SeatGeek Search API → events (twice daily)
     "offer_expiry_worker": 3600,                 # 2026-04-22 — Deal Desk 48h auto-expire (hourly sweep)

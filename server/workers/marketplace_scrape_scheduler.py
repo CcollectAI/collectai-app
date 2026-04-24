@@ -57,6 +57,22 @@ SKIP_CATEGORIES = {
     "digimon",
 }
 
+# Boost list — thin categories with <1,500 market_hits/30d as of 2026-04-24.
+# A share of every batch goes to these so 48 non-TCG cats don't starve the
+# worst 8. Tuning: this is the "attention quota". If hits_30d climbs above
+# the threshold, remove from this set at the next quarterly audit.
+BOOST_CATEGORIES = {
+    "ghibli",
+    "pens",
+    "whiskey",
+    "pop_fandom",
+    "action_figures",
+    "keycaps",
+    "blind_box",
+    "taylor_swift",
+}
+BOOST_SHARE = 0.25  # 25% of each batch reserved for BOOST_CATEGORIES
+
 _shutdown = False
 _shutdown_event = asyncio.Event()
 _started_at = time.time()
@@ -101,8 +117,31 @@ async def _get_stale_items(conn, batch_size: int):
     # batch_size matching rows — typically still fast.
     skip_list = sorted(SKIP_CATEGORIES)
 
+    # Pass 0: boost — dedicate BOOST_SHARE of the batch to BOOST_CATEGORIES.
+    # Uses NULLS FIRST ordering so unscraped boost items go first, then
+    # oldest-attempted boost items. Without this, the 8 thin categories
+    # share a round-robin queue with 40 healthier ones and never catch up.
+    boost_quota = max(1, int(batch_size * BOOST_SHARE))
+    boost_list = sorted(BOOST_CATEGORIES)
+    boost = await conn.fetch(
+        """
+        SELECT id, item_key, title, category
+        FROM public.category_items
+        WHERE title IS NOT NULL
+          AND category = ANY($2::text[])
+        ORDER BY last_scrape_attempt_at ASC NULLS FIRST
+        LIMIT $1
+        """,
+        boost_quota,
+        boost_list,
+    )
+    out = list(boost)
+    remaining = batch_size - len(out)
+    if remaining <= 0:
+        return out
+
     # Pass 1: items never attempted — uses idx_category_items_scrape_attempt_null
-    out = await conn.fetch(
+    bootstrap = await conn.fetch(
         """
         SELECT id, item_key, title, category
         FROM public.category_items
@@ -111,11 +150,12 @@ async def _get_stale_items(conn, batch_size: int):
           AND category <> ALL($2::text[])
         LIMIT $1
         """,
-        batch_size,
+        remaining,
         skip_list,
     )
+    out.extend(bootstrap)
     if len(out) >= batch_size:
-        return list(out)
+        return out
 
     # Pass 2: fall back to the oldest-attempted when bootstrap is drained
     remaining = batch_size - len(out)
@@ -132,7 +172,7 @@ async def _get_stale_items(conn, batch_size: int):
         remaining,
         skip_list,
     )
-    return list(out) + list(pass2)
+    return out + list(pass2)
 
 
 async def _mark_attempted(conn, item_ids: list) -> None:

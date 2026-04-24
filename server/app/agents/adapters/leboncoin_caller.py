@@ -49,16 +49,33 @@ def _normalize_ad(ad: Dict[str, Any]) -> Dict[str, Any]:
     elif isinstance(price_val, (int, float)):
         price = float(price_val)
 
-    # Attributes (condition, etc.)
+    # Attributes (condition, brand, colour, etc.). Leboncoin returns a flat
+    # list of {key, value_label} pairs — harvest what the aggregator can
+    # normalize downstream.
     condition = None
+    listing_attrs: Dict[str, Any] = {}
     attributes = ad.get("attributes") or []
     if isinstance(attributes, list):
         for attr in attributes:
-            if isinstance(attr, dict):
-                key = attr.get("key") or attr.get("key_label") or ""
-                if key in ("item_condition", "condition", "etat"):
-                    condition = attr.get("value_label") or attr.get("value")
-                    break
+            if not isinstance(attr, dict):
+                continue
+            key = (attr.get("key") or attr.get("key_label") or "").lower()
+            value = attr.get("value_label") or attr.get("value")
+            if not key or not value:
+                continue
+            if key in ("item_condition", "condition", "etat"):
+                condition = value
+                listing_attrs["condition"] = value
+            elif key in ("marque", "brand"):
+                listing_attrs["brand"] = value
+            elif key in ("couleur", "color", "colour"):
+                listing_attrs["color"] = value
+            elif key in ("taille", "size"):
+                listing_attrs["size"] = value
+            elif key in ("annee", "year", "annee_modele"):
+                listing_attrs["year"] = value
+            else:
+                listing_attrs.setdefault("attributes_raw", {})[key] = value
 
     # Images
     image_url = ""
@@ -100,6 +117,7 @@ def _normalize_ad(ad: Dict[str, Any]) -> Dict[str, Any]:
         "image_url": image_url,
         "is_sold": False,
         "sold_at": None,
+        "attributes": listing_attrs,
     }
 
 
