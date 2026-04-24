@@ -101,7 +101,7 @@ async def run_once():
 
         if not rows:
             logger.info("No auctions ending in the next %d minutes", ALERT_WINDOW_MINUTES)
-            record_run("auction_alert_worker", "ok")
+            status = "ok"
             return
 
         logger.info("Found %d auction alerts to send", len(rows))
@@ -172,11 +172,19 @@ async def run_once():
     except Exception as e:
         logger.warning("Auction alert worker error: %s", e, exc_info=True)
         status = "error"
+        # 2026-04-24: capture into a name that survives the finally so the
+        # error_repr lands in worker_runs.metadata. Previously the metadata
+        # was always {} which made these errors loud-but-empty.
+        err_repr = f"{type(e).__name__}: {e!s}"[:500]
     finally:
         await conn.close()
         # Record truthful status — previously always 'ok' even when the
         # whole cycle crashed, masking time-critical auction alert failures.
-        record_run("auction_alert_worker", status if 'status' in locals() else "error")
+        record_run(
+            "auction_alert_worker",
+            status if 'status' in locals() else "error",
+            error_repr=err_repr if 'err_repr' in locals() else None,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -217,7 +225,10 @@ async def scheduler_loop():
             except Exception as e:
                 log_dead_letter("auction_alert_worker", {}, e)
                 logger.exception("Auction alert cycle failed: %r", e)
-                record_run("auction_alert_worker", "error")
+                record_run(
+                    "auction_alert_worker", "error",
+                    error_repr=f"{type(e).__name__}: {e!s}"[:500],
+                )
             finally:
                 _running = False
 

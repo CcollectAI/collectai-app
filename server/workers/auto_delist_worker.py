@@ -68,7 +68,7 @@ async def run_once():
 
         if not recent_sales:
             logger.info("No recent sales found in last %d minutes", LOOKBACK_MINUTES)
-            record_run("auto_delist_worker", "ok")
+            cycle_status = "ok"
             return
 
         logger.info("Found %d recent sales to process", len(recent_sales))
@@ -140,6 +140,10 @@ async def run_once():
 
             except Exception as e:
                 per_sale_failures = per_sale_failures + 1 if "per_sale_failures" in locals() else 1
+                # 2026-04-24: capture last per-sale error so worker_runs.metadata
+                # surfaces a sample. If multiple sales fail, only the last one
+                # is recorded — sufficient for triage.
+                last_sale_err = f"{type(e).__name__}: {e!s}"[:500]
                 logger.warning(
                     "Failed to process sale %s for item %s: %s",
                     sale_id, item_id, e,
@@ -157,14 +161,21 @@ async def run_once():
 
     finally:
         await conn.close()
-        record_run("auto_delist_worker", cycle_status if "cycle_status" in locals() else "error")
+        record_run(
+            "auto_delist_worker",
+            cycle_status if "cycle_status" in locals() else "error",
+            error_repr=last_sale_err if "last_sale_err" in locals() else None,
+        )
 
 
 async def main():
     try:
         await run_once()
     except Exception as e:
-        record_run("auto_delist_worker", "error")
+        record_run(
+            "auto_delist_worker", "error",
+            error_repr=f"{type(e).__name__}: {e!s}"[:500],
+        )
         log_dead_letter("auto_delist_worker", {}, e)
         logger.exception("auto_delist_worker crashed: %r", e)
 

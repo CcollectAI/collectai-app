@@ -164,7 +164,7 @@ async def run_once():
 
         if not rows:
             logger.info("No watchlist items to scan")
-            record_run("watchlist_monitor_worker", "ok")
+            cycle_status = "ok"
             return
 
         logger.info(
@@ -301,6 +301,9 @@ async def run_once():
 
             except Exception as e:
                 per_item_failures += 1
+                # 2026-04-24: capture last per-item error for worker_runs.metadata
+                # so the loud-but-empty pattern is finally surfaced.
+                last_item_err = f"{type(e).__name__}: {e!s}"[:500]
                 logger.warning(
                     "Failed to scan watchlist item %s: %s", str(wl_id), e,
                     exc_info=True,
@@ -322,14 +325,21 @@ async def run_once():
     finally:
         await agent.close()
         await conn.close()
-        record_run("watchlist_monitor_worker", cycle_status if "cycle_status" in locals() else "error")
+        record_run(
+            "watchlist_monitor_worker",
+            cycle_status if "cycle_status" in locals() else "error",
+            error_repr=last_item_err if "last_item_err" in locals() else None,
+        )
 
 
 async def main():
     try:
         await run_once()
     except Exception as e:
-        record_run("watchlist_monitor_worker", "error")
+        record_run(
+            "watchlist_monitor_worker", "error",
+            error_repr=f"{type(e).__name__}: {e!s}"[:500],
+        )
         log_dead_letter("watchlist_monitor_worker", {}, e)
         logger.exception("watchlist_monitor_worker crashed: %r", e)
 
