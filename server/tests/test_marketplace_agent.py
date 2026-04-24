@@ -27,14 +27,19 @@ os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 
 
 def _mock_all_adapters_unconfigured(agent):
-    """Set all adapters on an agent to unconfigured MagicMock instances."""
+    """Set all adapters on an agent to unconfigured MagicMock instances.
+
+    IMPORTANT: this list must stay in sync with the self._<adapter> fields
+    defined in MarketplaceAgent.__init__. Easy drift surface when new
+    adapters land — learnings.md §59.
+    """
     for attr in ("_ebay", "_tcgplayer", "_firecrawl", "_crawl4ai",
                  "_mercari_us", "_whatnot", "_vinted", "_mavin",
-                 "_catawiki", "_whisky_auctioneer", "_mandarake",
+                 "_catawiki", "_whisky_auctioneer", "_suruga_ya",
                  "_bezel", "_chrono24", "_keh", "_mpb",
                  "_drop", "_gouletpens", "_brickeconomy",
-                 "_popmart", "_booth", "_scalemates",
-                 "_ktown4u", "_comicbookrealm", "_masterofmalt",
+                 "_popmart", "_booth", "_scalemates", "_ktown4u",
+                 "_comicbookrealm", "_masterofmalt",
                  "_pricecharting", "_yahoo_auctions", "_stockx",
                  "_discogs", "_cardmarket", "_bricklink",
                  "_scrapedo", "_grailed", "_google_shopping",

@@ -50,7 +50,7 @@ async def test_no_recent_sales(mock_asyncpg, mock_record_run, _clear_dsn):
     from workers.auto_delist_worker import run_once
     await run_once()
 
-    mock_record_run.assert_called_with("auto_delist_worker", "ok")
+    mock_record_run.assert_called_with("auto_delist_worker", "ok", error_repr=None)
     mock_conn.close.assert_awaited_once()
 
 
@@ -74,7 +74,7 @@ async def test_sale_delists_siblings(mock_asyncpg, mock_record_run, _clear_dsn):
     await run_once()
 
     assert mock_conn.execute.await_count == 1
-    mock_record_run.assert_called_with("auto_delist_worker", "ok")
+    mock_record_run.assert_called_with("auto_delist_worker", "ok", error_repr=None)
 
 
 @pytest.mark.asyncio
@@ -95,7 +95,7 @@ async def test_already_delisted_skipped(mock_asyncpg, mock_record_run, _clear_ds
     await run_once()
 
     mock_conn.execute.assert_not_awaited()
-    mock_record_run.assert_called_with("auto_delist_worker", "ok")
+    mock_record_run.assert_called_with("auto_delist_worker", "ok", error_repr=None)
 
 
 @pytest.mark.asyncio
@@ -131,4 +131,4 @@ async def test_multiple_siblings_all_delisted(mock_asyncpg, mock_record_run, _cl
     await run_once()
 
     assert mock_conn.execute.await_count == 2
-    mock_record_run.assert_called_with("auto_delist_worker", "ok")
+    mock_record_run.assert_called_with("auto_delist_worker", "ok", error_repr=None)
