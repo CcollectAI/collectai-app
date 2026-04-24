@@ -3,6 +3,7 @@
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
@@ -42,6 +43,7 @@ export const ProjectHeaderCard = React.memo(function ProjectHeaderCard({
   onSaveProgress,
   onToggleComplete,
 }: ProjectHeaderCardProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const progressBarColor = project.isCompleted ? colors.success : accentColor;
 
@@ -72,7 +74,7 @@ export const ProjectHeaderCard = React.memo(function ProjectHeaderCard({
               }}
               trackColor={{ false: colors.border, true: colors.success }}
               thumbColor={colors.accentText}
-              accessibilityLabel="Mark project as complete"
+              accessibilityLabel={t('project_header.mark_complete_a11y')}
             />
           )}
         </View>
@@ -100,7 +102,7 @@ export const ProjectHeaderCard = React.memo(function ProjectHeaderCard({
             style={[styles.percentBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
             onPress={onDecrease}
             accessibilityRole="button"
-            accessibilityLabel="Decrease progress by 5 percent"
+            accessibilityLabel={t('project_header.decrease_5_a11y')}
           >
             <Text style={[styles.percentBtnText, { color: colors.text }]}>-5</Text>
           </AnimatedPressable>
@@ -108,7 +110,7 @@ export const ProjectHeaderCard = React.memo(function ProjectHeaderCard({
             style={[styles.percentBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
             onPress={onIncrease5}
             accessibilityRole="button"
-            accessibilityLabel="Increase progress by 5 percent"
+            accessibilityLabel={t('project_header.increase_5_a11y')}
           >
             <Text style={[styles.percentBtnText, { color: colors.text }]}>+5</Text>
           </AnimatedPressable>
@@ -116,7 +118,7 @@ export const ProjectHeaderCard = React.memo(function ProjectHeaderCard({
             style={[styles.percentBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
             onPress={onIncrease10}
             accessibilityRole="button"
-            accessibilityLabel="Increase progress by 10 percent"
+            accessibilityLabel={t('project_header.increase_10_a11y')}
           >
             <Text style={[styles.percentBtnText, { color: colors.text }]}>+10</Text>
           </AnimatedPressable>
@@ -131,7 +133,7 @@ export const ProjectHeaderCard = React.memo(function ProjectHeaderCard({
             onPress={onSaveProgress}
             disabled={pendingPercent === project.percent || savingProgress}
             accessibilityRole="button"
-            accessibilityLabel="Save progress"
+            accessibilityLabel={t('project_header.save_progress_a11y')}
           >
             {savingProgress ? (
               <ActivityIndicator size="small" color={colors.accentText} />
@@ -145,7 +147,7 @@ export const ProjectHeaderCard = React.memo(function ProjectHeaderCard({
       {/* Project Notes */}
       {project.notes && (
         <View style={[styles.notesSection, { borderTopColor: colors.border }]}>
-          <Text style={[styles.sectionLabel, { color: colors.muted }]}>Project Notes</Text>
+          <Text style={[styles.sectionLabel, { color: colors.muted }]}>{t('project_header.project_notes')}</Text>
           <Text style={[styles.notesText, { color: colors.text }]}>{project.notes}</Text>
         </View>
       )}

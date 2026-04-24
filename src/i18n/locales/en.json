@@ -532,6 +532,43 @@
     "cancel": "Cancel Event"
   },
 
+  "announcement": {
+    "new_title": "New Announcement",
+    "sending_to": "Sending to",
+    "subject_placeholder": "Optional subject line",
+    "subject_a11y": "Announcement subject",
+    "message_placeholder": "Write your announcement...",
+    "message_a11y": "Announcement message",
+    "send_a11y": "Send announcement"
+  },
+
+  "project_header": {
+    "mark_complete_a11y": "Mark project as complete",
+    "decrease_5_a11y": "Decrease progress by 5 percent",
+    "increase_5_a11y": "Increase progress by 5 percent",
+    "increase_10_a11y": "Increase progress by 10 percent",
+    "save_progress_a11y": "Save progress",
+    "project_notes": "Project Notes"
+  },
+
+  "event_datetime": {
+    "title": "Date & Time",
+    "date_a11y": "Event date",
+    "time_optional": "Time (optional)",
+    "time_a11y": "Event time",
+    "end_date_optional": "End Date (optional, for multi-day)",
+    "end_date_a11y": "Event end date"
+  },
+
+  "category_picker": {
+    "title": "Select Category",
+    "search_placeholder": "Search categories...",
+    "search_a11y": "Search categories",
+    "none": "None (clear selection)",
+    "other": "Other (custom category)",
+    "suggest_new": "Suggest a new category"
+  },
+
   "account": {
     "edit_profile": "Edit Profile",
     "edit_profile_desc": "Change your username and bio",

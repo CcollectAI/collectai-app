@@ -6,6 +6,7 @@
  * Extracted from app/create-event.tsx to reduce file size.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -33,13 +34,14 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
   endDate,
   onEndDateChange,
 }: EventDateTimePickerProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Ionicons name="calendar-outline" size={16} color={colors.accent} />
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Date & Time</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('event_datetime.title')}</Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -57,7 +59,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
               placeholder="YYYY-MM-DD"
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
-              accessibilityLabel="Event date"
+              accessibilityLabel={t('event_datetime.date_a11y')}
               returnKeyType="next"
             />
           </View>
@@ -66,7 +68,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
 
         {/* Time */}
         <View style={styles.fieldBlock}>
-          <Text style={[styles.fieldLabel, { color: colors.text }]}>Time (optional)</Text>
+          <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('event_datetime.time_optional')}</Text>
           <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
             <Ionicons name="time-outline" size={16} color={colors.muted} style={styles.inputIcon} />
             <TextInput
@@ -75,7 +77,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
               placeholder="19:30 CET"
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
-              accessibilityLabel="Event time"
+              accessibilityLabel={t('event_datetime.time_a11y')}
               returnKeyType="next"
             />
           </View>
@@ -83,7 +85,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
 
         {/* End Date */}
         <View style={styles.fieldBlock}>
-          <Text style={[styles.fieldLabel, { color: colors.text }]}>End Date (optional, for multi-day)</Text>
+          <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('event_datetime.end_date_optional')}</Text>
           <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
             <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
             <TextInput
@@ -92,7 +94,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
               placeholder="YYYY-MM-DD"
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
-              accessibilityLabel="Event end date"
+              accessibilityLabel={t('event_datetime.end_date_a11y')}
               returnKeyType="next"
             />
           </View>

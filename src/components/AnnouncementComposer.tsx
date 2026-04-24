@@ -3,6 +3,7 @@
  * Extracted from sponsor/dashboard.tsx for reusability and file-size reduction.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -81,6 +82,7 @@ const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
   onCancel,
   onSend,
 }) => {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   return (
     <View style={[styles.composeCard, { backgroundColor: colors.card, borderColor: colors.accent }, SHADOW_MD]}>
@@ -88,7 +90,7 @@ const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
         <View style={[styles.composeIconCircle, { backgroundColor: colors.accent + '12' }]}>
           <Ionicons name="create-outline" size={14} color={colors.accent} />
         </View>
-        <Text style={[styles.composeTitle, { color: colors.text }]}>New Announcement</Text>
+        <Text style={[styles.composeTitle, { color: colors.text }]}>{t('announcement.new_title')}</Text>
       </View>
 
       <View style={[styles.composeDivider, { backgroundColor: colors.border }]} />
@@ -96,7 +98,7 @@ const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
       {/* Event selector (if multiple events) */}
       {sponsoredEvents.length > 1 && (
         <View style={styles.composeField}>
-          <Text style={[styles.composeLabel, { color: colors.muted }]}>Sending to</Text>
+          <Text style={[styles.composeLabel, { color: colors.muted }]}>{t('announcement.sending_to')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.composeChipsRow}>
             {sponsoredEvents.map((ev) => {
               const isSelected = composeEventId === ev.id;
@@ -131,10 +133,10 @@ const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
         <TextInput
           value={composeTitle}
           onChangeText={onComposeTitleChange}
-          placeholder="Optional subject line"
+          placeholder={t('announcement.subject_placeholder')}
           placeholderTextColor={colors.muted}
           style={[styles.composeInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-          accessibilityLabel="Announcement subject"
+          accessibilityLabel={t('announcement.subject_a11y')}
           returnKeyType="next"
         />
       </View>
@@ -145,14 +147,14 @@ const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
         <TextInput
           value={composeBody}
           onChangeText={onComposeBodyChange}
-          placeholder="Write your announcement..."
+          placeholder={t('announcement.message_placeholder')}
           placeholderTextColor={colors.muted}
           multiline
           numberOfLines={5}
           maxLength={2000}
           style={[styles.composeTextArea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
           textAlignVertical="top"
-          accessibilityLabel="Announcement message"
+          accessibilityLabel={t('announcement.message_a11y')}
         />
         <View style={styles.composeTextAreaFooter}>
           <View style={[styles.composeHint, { backgroundColor: colors.accent + '06' }]}>
@@ -187,7 +189,7 @@ const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
             { backgroundColor: composeBody.trim() ? colors.accent : colors.border, flex: 1 },
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Send announcement"
+          accessibilityLabel={t('announcement.send_a11y')}
         >
           {!!composeSending ? (
             <ActivityIndicator size="small" color="#FFFFFF" />

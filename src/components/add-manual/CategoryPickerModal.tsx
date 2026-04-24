@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, Platform, Keyboard,
 } from 'react-native';
@@ -24,6 +25,7 @@ interface Props {
 export const CategoryPickerModal = React.memo(function CategoryPickerModal({
   visible, selectedCategory, onSelect, onClear, onClose, onSuggestNew,
 }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [search, setSearch] = useState('');
 
@@ -40,7 +42,7 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
       <View style={styles.overlay}>
         <View style={[styles.sheet, { backgroundColor: colors.card }]}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.title, { color: colors.text }]}>Select Category</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{t('category_picker.title')}</Text>
             <TouchableOpacity onPress={handleClose} hitSlop={12}>
               <Ionicons name="close" size={22} color={colors.muted} />
             </TouchableOpacity>
@@ -50,11 +52,11 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
             <TextInput
               value={search}
               onChangeText={setSearch}
-              placeholder="Search categories..."
+              placeholder={t('category_picker.search_placeholder')}
               placeholderTextColor={colors.muted}
               style={[styles.searchInput, { color: colors.text }]}
               autoFocus
-              accessibilityLabel="Search categories"
+              accessibilityLabel={t('category_picker.search_a11y')}
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
@@ -75,7 +77,7 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
                   style={[styles.row, { borderBottomColor: colors.border }]}
                 >
                   <Ionicons name="close-circle-outline" size={18} color={colors.muted} style={{ marginRight: 12 }} />
-                  <Text style={[styles.rowText, { color: colors.muted, fontStyle: 'italic' }]}>None (clear selection)</Text>
+                  <Text style={[styles.rowText, { color: colors.muted, fontStyle: 'italic' }]}>{t('category_picker.none')}</Text>
                 </TouchableOpacity>
               ) : null
             }
@@ -106,7 +108,7 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
                   style={[styles.row, { borderBottomColor: colors.border }]}
                 >
                   <Ionicons name="create-outline" size={18} color={colors.accent} style={{ marginRight: 12 }} />
-                  <Text style={[styles.rowText, { color: colors.accent, fontWeight: '600' }]}>Other (custom category)</Text>
+                  <Text style={[styles.rowText, { color: colors.accent, fontWeight: '600' }]}>{t('category_picker.other')}</Text>
                 </TouchableOpacity>
                 {/* Suggest new category for us to add official support */}
                 <TouchableOpacity
@@ -115,7 +117,7 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
                   style={[styles.row, { borderBottomColor: colors.border }]}
                 >
                   <Ionicons name="add-circle-outline" size={18} color={colors.muted} style={{ marginRight: 12 }} />
-                  <Text style={[styles.rowText, { color: colors.muted }]}>Suggest a new category</Text>
+                  <Text style={[styles.rowText, { color: colors.muted }]}>{t('category_picker.suggest_new')}</Text>
                 </TouchableOpacity>
               </View>
             }
