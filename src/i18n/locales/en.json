@@ -678,6 +678,24 @@
     "enable_2fa": "Enable 2FA"
   },
 
+  "common": {
+    "go_back": "Go back",
+    "go_back_a11y": "Go back",
+    "more_options_a11y": "More options",
+    "close_menu_a11y": "Close menu"
+  },
+
+  "event_detail": {
+    "not_found": "Event not found",
+    "promote_a11y": "Promote this event",
+    "promote_title": "Promote This Event",
+    "promote_subtitle": "Reach more collectors with sponsored placement"
+  },
+
+  "user_profile": {
+    "blocked_user": "You have blocked this user"
+  },
+
   "items_detail": {
     "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates.",
     "enrich_button": "Get fresh comps",

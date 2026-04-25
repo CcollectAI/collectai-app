@@ -5,6 +5,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -74,6 +75,7 @@ const AvatarCircle = React.memo(function AvatarCircle({ name, size = 64 }: { nam
 // Main Screen
 // ─────────────────────────────────────────────────────────────────────────────
 function UserProfileScreen() {
+  const { t } = useTranslation();
   const { userId } = useLocalSearchParams<{ userId?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -329,7 +331,7 @@ function UserProfileScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.centerContainer}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.floatingBack} accessibilityRole="button" accessibilityLabel="Go back">
+          <AnimatedPressable onPress={() => router.back()} style={styles.floatingBack} accessibilityRole="button" accessibilityLabel={t('common.go_back_a11y')}>
             <Ionicons name="chevron-back" size={22} color={colors.text} />
           </AnimatedPressable>
           <Ionicons name="person-outline" size={48} color={colors.muted} />
@@ -343,9 +345,9 @@ function UserProfileScreen() {
             style={[styles.retryBtn, { borderColor: colors.border }]}
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('common.go_back_a11y')}
           >
-            <Text style={[styles.retryBtnText, { color: colors.text }]}>Go back</Text>
+            <Text style={[styles.retryBtnText, { color: colors.text }]}>{t('common.go_back')}</Text>
           </AnimatedPressable>
         </View>
       </SafeAreaView>
@@ -366,7 +368,7 @@ function UserProfileScreen() {
             onPress={() => router.back()}
             style={styles.backRow}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('common.go_back_a11y')}
           >
             <Ionicons name="chevron-back" size={22} color={colors.text} />
             <Text style={[styles.backText, { color: colors.text }]}>Back</Text>
@@ -376,7 +378,7 @@ function UserProfileScreen() {
             onPress={() => setShowMenu(true)}
             style={styles.menuBtn}
             accessibilityRole="button"
-            accessibilityLabel="More options"
+            accessibilityLabel={t('common.more_options_a11y')}
           >
             <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
           </AnimatedPressable>
@@ -386,7 +388,7 @@ function UserProfileScreen() {
         {isUserBlocked && (
           <View style={[styles.blockedBanner, { backgroundColor: colors.danger + '15' }]}>
             <Ionicons name="ban-outline" size={16} color={colors.danger} />
-            <Text style={[styles.blockedBannerText, { color: colors.danger }]}>You have blocked this user</Text>
+            <Text style={[styles.blockedBannerText, { color: colors.danger }]}>{t('user_profile.blocked_user')}</Text>
           </View>
         )}
 
@@ -499,7 +501,7 @@ function UserProfileScreen() {
           style={styles.menuOverlay}
           onPress={() => setShowMenu(false)}
           accessibilityRole="button"
-          accessibilityLabel="Close menu"
+          accessibilityLabel={t('common.close_menu_a11y')}
         >
           <View style={[styles.menuSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <AnimatedPressable

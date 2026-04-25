@@ -11,6 +11,7 @@
  */
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -52,6 +53,7 @@ import {
 } from '@/components/events';
 
 function EventDetailScreen() {
+  const { t } = useTranslation();
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -381,7 +383,7 @@ function EventDetailScreen() {
       <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <View style={styles.emptyContainer}>
           <Ionicons name="calendar-outline" size={48} color={colors.muted} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>Event not found</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('event_detail.not_found')}</Text>
           <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
             This event doesn't exist yet. Try opening it from the Events tab again.
           </Text>
@@ -389,9 +391,9 @@ function EventDetailScreen() {
             onPress={() => router.back()}
             style={[styles.emptyBtn, { borderColor: colors.border }]}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('common.go_back_a11y')}
           >
-            <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
+            <Text style={[styles.emptyBtnText, { color: colors.text }]}>{t('common.go_back')}</Text>
           </AnimatedPressable>
         </View>
       </View>
@@ -414,7 +416,7 @@ function EventDetailScreen() {
               onPress={() => setShowMenu(true)}
               style={styles.menuBtn}
               accessibilityRole="button"
-              accessibilityLabel="More options"
+              accessibilityLabel={t('common.more_options_a11y')}
             >
               <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
             </AnimatedPressable>
@@ -429,12 +431,12 @@ function EventDetailScreen() {
             onPress={() => router.push('/sponsor/dashboard' as Href)}
             style={[styles.promoteCta, { backgroundColor: colors.accent + '10', borderColor: colors.accent + '40' }]}
             accessibilityRole="button"
-            accessibilityLabel="Promote this event"
+            accessibilityLabel={t('event_detail.promote_a11y')}
           >
             <Ionicons name="megaphone-outline" size={18} color={colors.accent} />
             <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={[styles.promoteTitle, { color: colors.text }]}>Promote This Event</Text>
-              <Text style={[styles.promoteSubtitle, { color: colors.muted }]}>Reach more collectors with sponsored placement</Text>
+              <Text style={[styles.promoteTitle, { color: colors.text }]}>{t('event_detail.promote_title')}</Text>
+              <Text style={[styles.promoteSubtitle, { color: colors.muted }]}>{t('event_detail.promote_subtitle')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={colors.accent} />
           </AnimatedPressable>
