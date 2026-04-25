@@ -181,14 +181,28 @@ async def run_once():
         # Ensure tracking column exists
         await _ensure_last_crawled_column(conn)
 
-        # Fetch catalog items, prioritizing:
-        # 1. Never-crawled items (NULL last_crawled_at)
-        # 2. Oldest-crawled items
+        # Fetch catalog items with **per-category fairness**:
+        # ROW_NUMBER() OVER (PARTITION BY category ORDER BY last_crawled_at NULLS FIRST)
+        # then take the lowest rn from every category before moving to the next rn
+        # tier. Without this, the original `ORDER BY last_crawled_at NULLS FIRST`
+        # was monopolised by mega-cats — yugioh (33k NULLs), mtg (24k), pokemon
+        # (19k) ate every batch in heap order and small cats (lorcana 790, digimon
+        # 702, one_piece_tcg 805) got 0 picks per cycle. Lorcana hit a 7-day
+        # drought before this was caught (sanity probe doesn't break down by
+        # category — see learnings.md).
         rows = await conn.fetch(
             """
+            WITH ranked AS (
+                SELECT category, item_key, title,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY category
+                           ORDER BY last_crawled_at ASC NULLS FIRST, item_key
+                       ) AS rn
+                FROM public.category_items
+            )
             SELECT category, item_key, title
-            FROM public.category_items
-            ORDER BY last_crawled_at ASC NULLS FIRST
+            FROM ranked
+            ORDER BY rn ASC, category ASC
             LIMIT $1
             """,
             BATCH_SIZE,
@@ -199,9 +213,21 @@ async def run_once():
             record_run("catalog_crawler_worker", "ok")
             return
 
+        # Per-category attempt log so future starvation is visible without
+        # dropping into the DB. Counts items in this cycle per category — if a
+        # category we expect to be present hits 0 over multiple cycles, that
+        # surfaces here instead of going silent.
+        per_cat: dict[str, int] = {}
+        for r in rows:
+            per_cat[r["category"]] = per_cat.get(r["category"], 0) + 1
+        cat_summary = ", ".join(
+            f"{c}={n}" for c, n in sorted(per_cat.items(), key=lambda x: -x[1])[:10]
+        )
         logger.info(
-            "Crawling %d catalog items (batch=%d, delay=%.1fs, concurrency=%d, sold=%s)",
-            len(rows), BATCH_SIZE, INTER_ITEM_DELAY, CONCURRENCY, INCLUDE_SOLD,
+            "Crawling %d catalog items across %d categories "
+            "(batch=%d, delay=%.1fs, concurrency=%d, sold=%s); top10: %s",
+            len(rows), len(per_cat), BATCH_SIZE, INTER_ITEM_DELAY, CONCURRENCY,
+            INCLUDE_SOLD, cat_summary,
         )
 
         # Process items with bounded concurrency
