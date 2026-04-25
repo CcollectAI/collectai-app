@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 INTERVAL = int(os.getenv("MARKETPLACE_SCRAPE_INTERVAL", "300"))  # 5 min
-BATCH_SIZE = int(os.getenv("MARKETPLACE_SCRAPE_BATCH", "5"))
+BATCH_SIZE = int(os.getenv("MARKETPLACE_SCRAPE_BATCH", "10"))
 MAX_DAYS = int(os.getenv("MARKETPLACE_SCRAPE_MAX_DAYS", "5"))
 
 # Adapters to SKIP (paid per-call)
