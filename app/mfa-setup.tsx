@@ -9,6 +9,7 @@
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -38,6 +39,7 @@ type MFAFactor = {
 };
 
 function MFASetupScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { settings } = useSettings();
   const { showToast } = useToast();
@@ -156,7 +158,7 @@ function MFASetupScreen() {
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={[styles.title, { color: NAVY }]}>Two-Factor Authentication</Text>
+        <Text style={[styles.title, { color: NAVY }]}>{t('mfa.title')}</Text>
         <Text style={[styles.subtitle, { color: MUTED }]}>
           Add an extra layer of security to your account with TOTP authenticator app.
         </Text>
@@ -198,9 +200,9 @@ function MFASetupScreen() {
                 style={[styles.primaryBtn, { backgroundColor: TIFFANY }]}
                 onPress={handleVerify}
                 accessibilityRole="button"
-                accessibilityLabel="Verify code"
+                accessibilityLabel={t('mfa.verify_a11y')}
               >
-                <Text style={styles.primaryBtnText}>Verify & Enable</Text>
+                <Text style={styles.primaryBtnText}>{t('mfa.verify_enable')}</Text>
               </AnimatedPressable>
             )}
 
@@ -212,7 +214,7 @@ function MFASetupScreen() {
                 setTotpCode('');
               }}
               accessibilityRole="button"
-              accessibilityLabel="Cancel enrollment"
+              accessibilityLabel={t('mfa.cancel_a11y')}
             >
               <Text style={[styles.cancelBtnText, { color: MUTED }]}>Cancel</Text>
             </AnimatedPressable>
@@ -239,7 +241,7 @@ function MFASetupScreen() {
                   <AnimatedPressable
                     onPress={() => handleUnenroll(f.id)}
                     accessibilityRole="button"
-                    accessibilityLabel="Remove this factor"
+                    accessibilityLabel={t('mfa.remove_a11y')}
                   >
                     <Text style={[styles.removeText, { color: DANGER }]}>Remove</Text>
                   </AnimatedPressable>
@@ -264,10 +266,10 @@ function MFASetupScreen() {
                 style={[styles.primaryBtn, { backgroundColor: TIFFANY }]}
                 onPress={handleEnroll}
                 accessibilityRole="button"
-                accessibilityLabel="Enable two-factor authentication"
+                accessibilityLabel={t('mfa.enable_a11y')}
               >
                 <Ionicons name="shield-checkmark-outline" size={18} color={colors.accentText} />
-                <Text style={styles.primaryBtnText}>Enable 2FA</Text>
+                <Text style={styles.primaryBtnText}>{t('mfa.enable_2fa')}</Text>
               </AnimatedPressable>
             )}
           </View>

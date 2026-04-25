@@ -658,6 +658,26 @@
     "save_button": "Save Target Price"
   },
 
+  "subscription": {
+    "features_a11y": "Plan features",
+    "current_plan": "Current Plan",
+    "past_due": "Payment past due. Update your payment method to avoid interruption.",
+    "downgrade_pending": "Your plan will be downgraded at the end of the current period.",
+    "coming_soon": "Subscriptions Coming Soon",
+    "manage_a11y": "Manage subscription",
+    "manage": "Manage Subscription"
+  },
+
+  "mfa": {
+    "title": "Two-Factor Authentication",
+    "verify_a11y": "Verify code",
+    "verify_enable": "Verify & Enable",
+    "cancel_a11y": "Cancel enrollment",
+    "remove_a11y": "Remove this factor",
+    "enable_a11y": "Enable two-factor authentication",
+    "enable_2fa": "Enable 2FA"
+  },
+
   "items_detail": {
     "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates.",
     "enrich_button": "Get fresh comps",

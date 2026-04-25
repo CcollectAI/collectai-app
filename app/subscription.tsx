@@ -5,6 +5,7 @@
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -43,6 +44,7 @@ interface PlanCardProps {
 }
 
 function PlanCard({ name, price, features, current, recommended, onSelect, loading, colors }: PlanCardProps) {
+  const { t } = useTranslation();
   return (
     <View
       style={[
@@ -62,7 +64,7 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
       )}
       <Text style={[styles.planName, { color: colors.text }]}>{name}</Text>
       <Text style={[styles.planPrice, { color: colors.muted }]}>{price}</Text>
-      <View style={styles.featureList} accessibilityRole="list" accessibilityLabel="Plan features">
+      <View style={styles.featureList} accessibilityRole="list" accessibilityLabel={t('subscription.features_a11y')}>
         {features.map((f) => (
           <View key={f} style={styles.featureRow} accessibilityLabel={f}>
             <Ionicons name="checkmark-circle" size={18} color={current ? colors.brand.dark : colors.muted} />
@@ -72,7 +74,7 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
       </View>
       {current ? (
         <View style={[styles.currentBadge, { backgroundColor: colors.success + '15' }]}>
-          <Text style={[styles.currentBadgeText, { color: colors.success }]}>Current Plan</Text>
+          <Text style={[styles.currentBadgeText, { color: colors.success }]}>{t('subscription.current_plan')}</Text>
         </View>
       ) : (
         <AnimatedPressable
@@ -100,6 +102,7 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
 }
 
 function SubscriptionScreen() {
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { colors } = useAppTheme();
   const { showToast } = useToast();
@@ -191,14 +194,14 @@ function SubscriptionScreen() {
         {billing?.status === 'past_due' && (
           <View style={[styles.warningBanner, { backgroundColor: colors.warning + '15' }]}>
             <Ionicons name="warning" size={18} color={colors.warning} />
-            <Text style={[styles.warningText, { color: colors.text }]}>Payment past due. Update your payment method to avoid interruption.</Text>
+            <Text style={[styles.warningText, { color: colors.text }]}>{t('subscription.past_due')}</Text>
           </View>
         )}
 
         {billing?.cancel_at_period_end && (
           <View style={[styles.warningBanner, { backgroundColor: colors.warning + '15' }]}>
             <Ionicons name="information-circle" size={18} color={colors.muted} />
-            <Text style={[styles.warningText, { color: colors.text }]}>Your plan will be downgraded at the end of the current period.</Text>
+            <Text style={[styles.warningText, { color: colors.text }]}>{t('subscription.downgrade_pending')}</Text>
           </View>
         )}
 
@@ -250,7 +253,7 @@ function SubscriptionScreen() {
             <View style={[styles.comingSoonIcon, { backgroundColor: colors.accent + '15' }]}>
               <Ionicons name="rocket-outline" size={40} color={colors.accent} />
             </View>
-            <Text style={[styles.comingSoonTitle, { color: colors.text }]}>Subscriptions Coming Soon</Text>
+            <Text style={[styles.comingSoonTitle, { color: colors.text }]}>{t('subscription.coming_soon')}</Text>
             <Text style={[styles.comingSoonText, { color: colors.muted }]}>
               We're setting up premium plans with advanced analytics, deal discovery, and more. Stay tuned!
             </Text>
@@ -303,9 +306,9 @@ function SubscriptionScreen() {
             style={[styles.manageBtn, { borderColor: colors.border }]}
             onPress={handleManage}
             accessibilityRole="button"
-            accessibilityLabel="Manage subscription"
+            accessibilityLabel={t('subscription.manage_a11y')}
           >
-            <Text style={[styles.manageBtnText, { color: colors.brand.dark }]}>Manage Subscription</Text>
+            <Text style={[styles.manageBtnText, { color: colors.brand.dark }]}>{t('subscription.manage')}</Text>
           </AnimatedPressable>
         )}
       </ScrollView>
