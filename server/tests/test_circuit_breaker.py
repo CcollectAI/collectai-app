@@ -245,6 +245,8 @@ class TestAllCircuitStatus:
             "ebay", "tcgplayer", "openai", "cardmarket", "discogs",
             "pricecharting", "stockx", "bricklink", "firecrawl", "crawl4ai",
             "mercari_us", "whatnot", "vinted", "mavin", "catawiki",
+            "whisky_auctioneer", "bezel", "chrono24",
+            # mandarake circuit deleted with the adapter (round 50l-followup)
             "keh", "mpb", "drop", "gouletpens", "brickeconomy",
             "popmart", "booth", "scalemates",
         }

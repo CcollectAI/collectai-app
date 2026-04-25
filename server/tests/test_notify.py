@@ -67,24 +67,29 @@ def _mock_conn(prefs=None, tier="free", daily_count=0):
 # ---------------------------------------------------------------------------
 
 class TestGetUserPrefs:
+    """`_get_user_prefs` was simplified to a no-op stub during the round-2
+    silent-failure sweep (2026-04-20) — `user_settings` has no
+    notification_preferences column, so the function returns {} always
+    and call sites fall through to all-enabled defaults. These tests
+    assert the stub behavior; they're guards that no one accidentally
+    re-introduces a broken DB lookup."""
+
     @pytest.mark.asyncio
-    async def test_returns_dict_when_set(self):
+    async def test_returns_empty_dict_always(self):
         conn = _mock_conn(prefs={"price_alerts": False})
-        result = await _get_user_prefs(conn, TEST_USER)
-        assert result == {"price_alerts": False}
+        assert await _get_user_prefs(conn, TEST_USER) == {}
 
     @pytest.mark.asyncio
     async def test_returns_empty_when_no_row(self):
         conn = _mock_conn(prefs=None)
-        result = await _get_user_prefs(conn, TEST_USER)
-        assert result == {}
+        assert await _get_user_prefs(conn, TEST_USER) == {}
 
     @pytest.mark.asyncio
-    async def test_parses_json_string(self):
-        import json
-        conn = _mock_conn(prefs=json.dumps({"deal_alerts": True}))
-        result = await _get_user_prefs(conn, TEST_USER)
-        assert result == {"deal_alerts": True}
+    async def test_no_db_round_trip(self):
+        # Stub doesn't touch the conn at all
+        conn = _mock_conn(prefs={"deal_alerts": True})
+        await _get_user_prefs(conn, TEST_USER)
+        conn.fetchrow.assert_not_awaited()
 
 
 # ---------------------------------------------------------------------------
@@ -159,11 +164,14 @@ class TestShouldNotify:
         assert allowed is True
 
     @pytest.mark.asyncio
-    async def test_blocked_when_pref_disabled(self):
+    async def test_pref_disabled_no_longer_blocks(self):
+        # Round-2 silent-failure sweep removed the prefs lookup; all
+        # alerts pass the prefs gate now and rely on the daily cap +
+        # alert_trigger_history dedup. Test guards that no one re-adds
+        # the broken prefs filter.
         conn = _mock_conn(prefs={"price_alerts": False}, tier="free", daily_count=0)
-        allowed, reason = await should_notify(conn, TEST_USER, "price_alerts")
-        assert allowed is False
-        assert "disabled" in reason
+        allowed, _ = await should_notify(conn, TEST_USER, "price_alerts")
+        assert allowed is True
 
     @pytest.mark.asyncio
     async def test_blocked_free_cap_reached(self):
@@ -234,12 +242,15 @@ class TestNotifyUser:
         mock_push.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_skips_when_pref_disabled(self):
+    async def test_pref_disabled_no_longer_skips(self):
+        # Prefs filter was removed in the round-2 silent-failure sweep
+        # — notify_user no longer reads notification_preferences. Push
+        # is sent; user can mute via daily-cap or via dedup history.
         conn = _mock_conn(prefs={"price_alerts": False}, tier="free", daily_count=0)
-        with patch("app.push.send_push_to_user", new_callable=AsyncMock) as mock_push:
+        with patch("app.push.send_push_to_user", new_callable=AsyncMock, return_value=1) as mock_push:
             sent = await notify_user(conn, TEST_USER, "Price Alert", "Dropped", category="price_alerts")
-        assert sent == 0
-        mock_push.assert_not_awaited()
+        assert sent == 1
+        mock_push.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_skips_when_daily_cap_reached(self):
@@ -260,14 +271,15 @@ class TestNotifyUser:
         mock_push.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_urgent_still_checks_preference(self):
+    async def test_urgent_sends_regardless_of_pref(self):
+        # Same simplification — prefs filter removed. Urgent always sends.
         conn = _mock_conn(prefs={"price_alerts": False}, tier="free", daily_count=0)
-        with patch("app.push.send_push_to_user", new_callable=AsyncMock) as mock_push:
+        with patch("app.push.send_push_to_user", new_callable=AsyncMock, return_value=1) as mock_push:
             sent = await notify_user(
                 conn, TEST_USER, "URGENT", "Body", category="price_alerts", urgent=True
             )
-        assert sent == 0
-        mock_push.assert_not_awaited()
+        assert sent == 1
+        mock_push.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_passes_data_and_deep_link(self):

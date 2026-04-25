@@ -72,7 +72,9 @@ class TestAlertsWorkerIdempotency:
         """If no alert was fired in last 24h, the batch query returns the item
         and the worker inserts a new alert."""
         price_row = {
-            "item_id": "item-002",
+            # alerts_worker reads `item_ref` (not item_id) per the
+            # canonical-key migration — see _BATCH_QUERY in alerts_worker.py
+            "item_ref": "item-002",
             "q10": 2.0,
             "q50": 7.0,   # below 10
             "q90": 12.0,
