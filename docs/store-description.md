@@ -13,7 +13,7 @@ Track, Value & Grow Your Hobby
 ### Promotional Text (170 chars max)
 
 ```
-CollectAI uses machine learning to value your collectibles in real time. Track 36 categories, discover deals, and never overpay again. Start building your collection today.
+CollectAI uses machine learning to value your collectibles in real time. Track 54 categories, discover deals, and never overpay again. Start building your collection today.
 ```
 
 ### Keywords (100 chars max)
@@ -27,7 +27,10 @@ collectibles,price guide,valuation,pokemon,funko,trading cards,collection,tracke
 ```
 Welcome to CollectAI — the smartest way to manage your collection.
 
-- AI-powered valuations across 36 collectible categories
+- AI-powered valuations across 54 collectible categories
+- 7 languages: English, Dutch, German, French, Spanish, Japanese, Korean
+- On-demand fresh-comp lookups for thin-market items (Pro)
+- Watchlist with auction-ending alerts (15 min before close)
 - Barcode scanning for instant item lookup
 - Photo-based condition scoring
 - Deal discovery agent with custom purchase mandates
@@ -51,7 +54,7 @@ CollectAI is the intelligent collectibles companion built for serious collectors
 
 KNOW WHAT YOUR COLLECTION IS WORTH
 
-CollectAI uses machine learning to deliver accurate price valuations for items across 36 collectible categories, including Pokemon, Funko Pop, trading cards, Warhammer, retro games, manga, sports cards, comics, LEGO, Hot Wheels, vinyl records, stamps, coins, and many more. Every valuation provides low, mid, and high price estimates so you always understand the range. Prices update continuously from live market data, and outlier filtering ensures you see realistic numbers, not anomalies.
+CollectAI uses machine learning to deliver accurate price valuations for items across 54 collectible categories, including Pokemon, Funko Pop, trading cards, Warhammer, retro games, manga, sports cards, comics, LEGO, Hot Wheels, vinyl records, stamps, coins, and many more. Every valuation provides low, mid, and high price estimates so you always understand the range. Prices update continuously from live market data, and outlier filtering ensures you see realistic numbers, not anomalies.
 
 Track price trends over 30 and 90-day windows to understand whether your items are appreciating or declining. View your entire portfolio's value at a glance with detailed analytics broken down by category, condition, and acquisition cost.
 
@@ -112,7 +115,7 @@ CollectAI is the intelligent collectibles companion built for serious collectors
 
 KNOW WHAT YOUR COLLECTION IS WORTH
 
-CollectAI uses machine learning to deliver accurate price valuations for items across 36 collectible categories, including Pokemon, Funko Pop, trading cards, Warhammer, retro games, manga, sports cards, comics, LEGO, Hot Wheels, vinyl records, stamps, coins, and many more. Every valuation provides low, mid, and high price estimates so you always understand the range. Prices update continuously from live market data, and outlier filtering ensures you see realistic numbers, not anomalies.
+CollectAI uses machine learning to deliver accurate price valuations for items across 54 collectible categories, including Pokemon, Funko Pop, trading cards, Warhammer, retro games, manga, sports cards, comics, LEGO, Hot Wheels, vinyl records, stamps, coins, and many more. Every valuation provides low, mid, and high price estimates so you always understand the range. Prices update continuously from live market data, and outlier filtering ensures you see realistic numbers, not anomalies.
 
 Track price trends over 30 and 90-day windows to understand whether your items are appreciating or declining. View your entire portfolio's value at a glance with detailed analytics broken down by category, condition, and acquisition cost.
 
@@ -157,7 +160,7 @@ Terms of Service: https://collectai.app/terms
 ```
 Option A:
   Headline: "Know What Your Collection Is Worth"
-  Subline: "AI-Powered Valuations for 36 Categories"
+  Subline: "AI-Powered Valuations for 54 Categories"
   Background: Tiffany Blue (#81D8D0) gradient
 
 Option B:
