@@ -164,6 +164,7 @@ async def get_personalized_insights(
                     FROM market_hits
                     WHERE created_at >= $1
                       AND price IS NOT NULL
+                      AND (is_listing IS NOT TRUE)
                     GROUP BY normalized_key
                     HAVING COUNT(*) >= 2
                 )

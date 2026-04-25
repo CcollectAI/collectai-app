@@ -35,11 +35,16 @@ def get_ebay_marketplace_id(region: str | None) -> str:
 # True = use this adapter, False = skip
 
 _ADAPTER_POLICY: Dict[str, Dict[str, bool]] = {
-    "americas": {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True, "scrapedo": True, "grailed": True, "google_shopping": True, "mercari_us": True, "whatnot": True, "vinted": False, "mavin": True, "catawiki": False, "whisky_auctioneer": True, "mandarake": False, "bezel": True, "chrono24": True, "keh": True, "mpb": True, "drop": True, "gouletpens": True, "brickeconomy": True, "popmart": True, "booth": False, "scalemates": True, "ktown4u": True, "comicbookrealm": True, "masterofmalt": False, "etsy": True, "comc": True, "reverb": True, "abebooks": True},
-    "europe":   {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "scrapedo": True, "grailed": True, "google_shopping": True, "mercari_us": False, "whatnot": False, "vinted": True, "mavin": True, "catawiki": True, "whisky_auctioneer": True, "mandarake": False, "bezel": False, "chrono24": True, "keh": True, "mpb": True, "drop": True, "gouletpens": False, "brickeconomy": True, "popmart": True, "booth": False, "scalemates": True, "ktown4u": True, "comicbookrealm": True, "masterofmalt": True, "etsy": True, "comc": False, "reverb": True, "abebooks": True},
-    "japan":    {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "scrapedo": True, "grailed": False, "google_shopping": True, "mercari_us": False, "whatnot": False, "vinted": False, "mavin": True, "catawiki": False, "whisky_auctioneer": False, "mandarake": True, "bezel": False, "chrono24": True, "keh": False, "mpb": False, "drop": False, "gouletpens": False, "brickeconomy": True, "popmart": True, "booth": True, "scalemates": True, "ktown4u": False, "comicbookrealm": False, "masterofmalt": False, "etsy": True, "comc": False, "reverb": False, "abebooks": True},
-    "korea":    {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "scrapedo": True, "grailed": False, "google_shopping": True, "mercari_us": False, "whatnot": False, "vinted": False, "mavin": True, "catawiki": False, "whisky_auctioneer": False, "mandarake": True, "bezel": False, "chrono24": True, "keh": False, "mpb": False, "drop": False, "gouletpens": False, "brickeconomy": True, "popmart": True, "booth": True, "scalemates": True, "ktown4u": True, "comicbookrealm": False, "masterofmalt": False, "etsy": True, "comc": False, "reverb": False, "abebooks": True},
-    "other":    {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True, "scrapedo": True, "grailed": True, "google_shopping": True, "mercari_us": True, "whatnot": True, "vinted": True, "mavin": True, "catawiki": True, "whisky_auctioneer": True, "mandarake": False, "bezel": True, "chrono24": True, "keh": True, "mpb": True, "drop": True, "gouletpens": True, "brickeconomy": True, "popmart": True, "booth": False, "scalemates": True, "ktown4u": True, "comicbookrealm": True, "masterofmalt": True, "etsy": True, "comc": True, "reverb": True, "abebooks": True},
+    # NOTE: `firecrawl` is False in every region — Firecrawl is reserved for
+    # the events pipeline (server/pipelines/firecrawl_events.py) which talks
+    # to firecrawl_client directly and does not go through MarketplaceAgent.
+    # It used to fire on every marketplace ingest, which burned the free-tier
+    # quota and added no signal over Crawl4AI + the dedicated adapters.
+    "americas": {"ebay": True, "tcgplayer": True, "firecrawl": False, "crawl4ai": True, "scrapedo": True, "grailed": True, "google_shopping": True, "mercari_us": True, "whatnot": True, "vinted": False, "mavin": True, "catawiki": False, "whisky_auctioneer": True, "bezel": True, "chrono24": True, "keh": True, "mpb": True, "drop": True, "gouletpens": True, "brickeconomy": True, "popmart": True, "booth": False, "scalemates": True, "ktown4u": True, "comicbookrealm": True, "masterofmalt": False, "etsy": True, "comc": True, "reverb": True, "abebooks": True},
+    "europe":   {"ebay": True, "tcgplayer": False, "firecrawl": False, "crawl4ai": True, "scrapedo": True, "grailed": True, "google_shopping": True, "mercari_us": False, "whatnot": False, "vinted": True, "mavin": True, "catawiki": True, "whisky_auctioneer": True, "bezel": False, "chrono24": True, "keh": True, "mpb": True, "drop": True, "gouletpens": False, "brickeconomy": True, "popmart": True, "booth": False, "scalemates": True, "ktown4u": True, "comicbookrealm": True, "masterofmalt": True, "etsy": True, "comc": False, "reverb": True, "abebooks": True},
+    "japan":    {"ebay": True, "tcgplayer": False, "firecrawl": False, "crawl4ai": True, "scrapedo": True, "grailed": False, "google_shopping": True, "mercari_us": False, "whatnot": False, "vinted": False, "mavin": True, "catawiki": False, "whisky_auctioneer": False, "bezel": False, "chrono24": True, "keh": False, "mpb": False, "drop": False, "gouletpens": False, "brickeconomy": True, "popmart": True, "booth": True, "scalemates": True, "ktown4u": False, "comicbookrealm": False, "masterofmalt": False, "etsy": True, "comc": False, "reverb": False, "abebooks": True},
+    "korea":    {"ebay": True, "tcgplayer": False, "firecrawl": False, "crawl4ai": True, "scrapedo": True, "grailed": False, "google_shopping": True, "mercari_us": False, "whatnot": False, "vinted": False, "mavin": True, "catawiki": False, "whisky_auctioneer": False, "bezel": False, "chrono24": True, "keh": False, "mpb": False, "drop": False, "gouletpens": False, "brickeconomy": True, "popmart": True, "booth": True, "scalemates": True, "ktown4u": True, "comicbookrealm": False, "masterofmalt": False, "etsy": True, "comc": False, "reverb": False, "abebooks": True},
+    "other":    {"ebay": True, "tcgplayer": True, "firecrawl": False, "crawl4ai": True, "scrapedo": True, "grailed": True, "google_shopping": True, "mercari_us": True, "whatnot": True, "vinted": True, "mavin": True, "catawiki": True, "whisky_auctioneer": True, "bezel": True, "chrono24": True, "keh": True, "mpb": True, "drop": True, "gouletpens": True, "brickeconomy": True, "popmart": True, "booth": False, "scalemates": True, "ktown4u": True, "comicbookrealm": True, "masterofmalt": True, "etsy": True, "comc": True, "reverb": True, "abebooks": True},
 }
 
 
@@ -122,52 +127,52 @@ _REGION_SITE_TARGETS: Dict[str, Dict[str, List[str]]] = {
         "yugioh":           ["mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp"],
         "lorcana":          ["mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp"],
         # Figures
-        "anime_figures":    ["mandarake.co.jp", "suruga-ya.jp", "amiami.com", "mercari.com/jp"],
-        "hot_toys":         ["mandarake.co.jp", "suruga-ya.jp", "amiami.com"],
-        "designer_toys":    ["mandarake.co.jp", "mercari.com/jp", "suruga-ya.jp"],
+        "anime_figures":    ["suruga-ya.jp", "amiami.com", "mercari.com/jp"],
+        "hot_toys":         ["suruga-ya.jp", "amiami.com"],
+        "designer_toys":    ["mercari.com/jp", "suruga-ya.jp"],
         # Building
         "gunpla":           ["hlj.com", "amiami.com", "suruga-ya.jp", "mercari.com/jp"],
         "lego":             ["bricklink.com", "mercari.com/jp", "yahoo.co.jp/auctions"],
         "warhammer":        ["mercari.com/jp", "suruga-ya.jp", "blacklibrary.com"],
         "scale_models":     ["hlj.com", "suruga-ya.jp", "mercari.com/jp"],
         # Media
-        "manga":            ["mandarake.co.jp", "suruga-ya.jp", "mercari.com/jp"],
-        "comic_books":      ["mandarake.co.jp", "suruga-ya.jp", "mercari.com/jp"],
-        "anime_bluray":     ["mandarake.co.jp", "suruga-ya.jp", "mercari.com/jp"],
-        "bluray_steelbook": ["suruga-ya.jp", "mercari.com/jp", "mandarake.co.jp"],
-        "anime_soundtrack": ["suruga-ya.jp", "mandarake.co.jp", "mercari.com/jp"],
-        "anime_ost_vinyl":  ["suruga-ya.jp", "discogs.com", "mandarake.co.jp"],
+        "manga":            ["suruga-ya.jp", "mercari.com/jp"],
+        "comic_books":      ["suruga-ya.jp", "mercari.com/jp"],
+        "anime_bluray":     ["suruga-ya.jp", "mercari.com/jp"],
+        "bluray_steelbook": ["suruga-ya.jp", "mercari.com/jp"],
+        "anime_soundtrack": ["suruga-ya.jp", "mercari.com/jp"],
+        "anime_ost_vinyl":  ["suruga-ya.jp", "discogs.com"],
         # Gaming
-        "retro_games":      ["suruga-ya.jp", "mandarake.co.jp", "mercari.com/jp"],
-        "retro_handhelds":  ["suruga-ya.jp", "mercari.com/jp", "mandarake.co.jp"],
+        "retro_games":      ["suruga-ya.jp", "mercari.com/jp"],
+        "retro_handhelds":  ["suruga-ya.jp", "mercari.com/jp"],
         # JP Exclusives
-        "bandai_premium":   ["mandarake.co.jp", "amiami.com", "mercari.com/jp"],
-        "jp_magazine":      ["mandarake.co.jp", "suruga-ya.jp", "mercari.com/jp"],
-        "jp_event":         ["mandarake.co.jp", "suruga-ya.jp", "mercari.com/jp"],
+        "bandai_premium":   ["amiami.com", "mercari.com/jp"],
+        "jp_magazine":      ["suruga-ya.jp", "mercari.com/jp"],
+        "jp_event":         ["suruga-ya.jp", "mercari.com/jp"],
         # IP
-        "one_piece":        ["mandarake.co.jp", "suruga-ya.jp", "amiami.com"],
+        "one_piece":        ["suruga-ya.jp", "amiami.com"],
         "vtuber":           ["buyee.jp", "mercari.com/jp", "booth.pm"],
-        "ghibli":           ["mandarake.co.jp", "suruga-ya.jp", "mercari.com/jp"],
+        "ghibli":           ["suruga-ya.jp", "mercari.com/jp"],
         # Nintendo
-        "nintendo_merch":   ["mercari.com/jp", "suruga-ya.jp", "mandarake.co.jp"],
-        "retro_pokemon":    ["mandarake.co.jp", "suruga-ya.jp", "mercari.com/jp"],
+        "nintendo_merch":   ["mercari.com/jp", "suruga-ya.jp"],
+        "retro_pokemon":    ["suruga-ya.jp", "mercari.com/jp"],
         # Fandom
         "kpop_merch":       ["mercari.com/jp", "ktown4u.com", "yahoo.co.jp/auctions"],
         "kpop_lightsticks": ["mercari.com/jp", "ktown4u.com", "yahoo.co.jp/auctions"],
         "taylor_swift":     ["mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp"],
         "pop_fandom":       ["mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp"],
         # Toys
-        "funko":            ["mercari.com/jp", "mandarake.co.jp", "yahoo.co.jp/auctions"],
+        "funko":            ["mercari.com/jp", "yahoo.co.jp/auctions"],
         # Niche
         "keycaps":          ["mercari.com/jp", "yahoo.co.jp/auctions", "booth.pm"],
-        "loungefly":        ["mercari.com/jp", "yahoo.co.jp/auctions", "mandarake.co.jp"],
+        "loungefly":        ["mercari.com/jp", "yahoo.co.jp/auctions"],
         # Disney
-        "disney":           ["mercari.com/jp", "mandarake.co.jp", "yahoo.co.jp/auctions"],
-        "theme_park":       ["mercari.com/jp", "yahoo.co.jp/auctions", "mandarake.co.jp"],
+        "disney":           ["mercari.com/jp", "yahoo.co.jp/auctions"],
+        "theme_park":       ["mercari.com/jp", "yahoo.co.jp/auctions"],
         # Lifestyle
         "blind_box":        ["popmart.com", "mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp"],
         "pens":             ["mercari.com/jp", "yahoo.co.jp/auctions", "kingdomnote.com", "penland-cafe.com"],
-        "plush_collectibles": ["mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp", "mandarake.co.jp"],
+        "plush_collectibles": ["mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp"],
         "vinyl_records":    ["discogs.com", "mercari.com/jp", "suruga-ya.jp"],
         "sneakers":         ["mercari.com/jp", "yahoo.co.jp/auctions", "snkrdunk.com"],
         "vintage_cameras":  ["mercari.com/jp", "yahoo.co.jp/auctions", "japancamerahunter.com", "mapcamera.com"],

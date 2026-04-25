@@ -303,6 +303,14 @@ export async function quickscanSingle(imageUri?: string): Promise<QuickScanResul
           soldAt: (s.sold_at as string) ?? null,
           source: (s.source as string) ?? '',
         })),
+        recentListings: (intake.social_proof.recent_listings ?? []).map((s: any) => ({
+          title: (s.title as string) ?? '',
+          price: (s.price as number) ?? 0,
+          currency: ((s.currency ?? 'USD') as CurrencyCode),
+          seenAt: (s.seen_at as string) ?? null,
+          source: (s.source as string) ?? '',
+          url: (s.url as string) ?? null,
+        })),
         scarcity: {
           listingCount: intake.social_proof.scarcity?.listing_count ?? 0,
           supplyTrend: ((intake.social_proof.scarcity?.supply_trend ?? 'stable') as 'increasing' | 'stable' | 'decreasing'),

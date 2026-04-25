@@ -78,6 +78,14 @@ export type IntakeResultResponse = {
       sold_at: string | null;
       source: string | null;
     }[];
+    recent_listings: {
+      title: string | null;
+      price: number | null;
+      currency: string;
+      seen_at: string | null;
+      source: string | null;
+      url: string | null;
+    }[];
     scarcity: {
       listing_count: number;
       supply_trend: string;

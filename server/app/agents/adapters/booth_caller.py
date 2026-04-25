@@ -22,14 +22,16 @@ from urllib.parse import quote_plus
 
 import httpx
 
+from app.agents.adapters._jp_proxy import configured as jp_proxy_configured
+from app.agents.adapters._jp_proxy import fetch_via_proxy
 from workers.circuit_breaker import booth_circuit, CircuitOpenError
 
 logger = logging.getLogger(__name__)
 
 BOOTH_SOURCE_RELIABILITY = 0.70
 
-# Booth search URL (English version)
-BOOTH_SEARCH_URL = "https://booth.pm/en/items"
+# Booth search uses path-based query: /en/search/{keyword}
+BOOTH_SEARCH_URL = "https://booth.pm/en/search"
 
 # Booth item detail URL
 BOOTH_DETAIL_URL = "https://booth.pm/en/items"
@@ -138,88 +140,77 @@ class BoothCaller:
             return []
 
         try:
-            client = await self._client()
-            resp = await client.get(
-                BOOTH_SEARCH_URL,
-                params={
-                    "keyword": query,
-                },
-            )
-
-            if resp.status_code != 200:
+            url = f"{BOOTH_SEARCH_URL}/{quote_plus(query)}"
+            html = await self._fetch_html(url)
+            if not html:
                 booth_circuit.record_failure()
-                logger.warning("Booth search returned %d", resp.status_code)
                 return []
 
             booth_circuit.record_success()
-            results = self._parse_search_page(resp.text, limit)
-            return results
+            return self._parse_search_page(html, limit)
 
         except Exception as exc:
             booth_circuit.record_failure()
             logger.warning("Booth search error: %s", exc)
             return []
 
-    def _parse_search_page(self, html: str, limit: int) -> List[Dict[str, Any]]:
-        """Parse Booth.pm search results from HTML.
+    async def _fetch_html(self, url: str) -> Optional[str]:
+        """Prefer JP Lambda proxy when configured. From EU IP, Booth is
+        geo-filtered to a login/region gate page."""
+        if jp_proxy_configured():
+            return await fetch_via_proxy(url)
+        client = await self._client()
+        try:
+            resp = await client.get(url)
+            if resp.status_code == 200:
+                return resp.text
+            return None
+        except Exception:
+            return None
 
-        Booth's search page contains item cards with:
-        - Item IDs in links (e.g., /items/1234567)
-        - Titles in heading elements
-        - Prices in JPY (e.g., ¥3,500)
-        - Image URLs from <img> tags
-        - Most items are new/handmade indie goods
+    def _parse_search_page(self, html: str, limit: int) -> List[Dict[str, Any]]:
+        """Parse Booth.pm search results.
+
+        Booth emits each card as a ``<li class="item-card ...">`` with
+        convenient ``data-product-*`` attributes on the list element:
+          data-product-id       — numeric item id
+          data-product-name     — full title
+          data-product-price    — JPY integer (no symbol)
+          data-product-brand    — shop handle
+        Thumbnail + canonical URL come from the inner item-card__title-anchor.
         """
         results: List[Dict[str, Any]] = []
+        try:
+            from bs4 import BeautifulSoup
+        except ImportError:
+            logger.warning("BeautifulSoup not available; booth parsing disabled")
+            return results
 
-        # Pattern to extract item IDs from links — Booth uses /items/NUMERIC_ID
-        item_id_pattern = re.compile(
-            r'/items/(\d+)',
-        )
+        soup = BeautifulSoup(html, "lxml")
+        cards = soup.select("li.item-card")
+        for card in cards[:limit]:
+            item_id = card.get("data-product-id") or ""
+            name = card.get("data-product-name") or ""
+            price_str = card.get("data-product-price") or "0"
 
-        # Price pattern — JPY prices like "¥3,500" or "3,500円"
-        price_pattern = re.compile(
-            r'(?:¥|\\u00a5)?\s*(\d{1,3}(?:,\d{3})*)\s*(?:円)?',
-        )
+            try:
+                jpy_price = float(price_str)
+            except ValueError:
+                jpy_price = 0.0
 
-        # Title pattern — Booth uses class containing "item-card" or "shop-item"
-        title_pattern = re.compile(
-            r'class="[^"]*(?:item-card__title|shop-item-name|item-name|item_card_title)[^"]*"[^>]*>([^<]+)<',
-            re.IGNORECASE,
-        )
+            # Fallback title from the title-anchor text if data-product-name missing
+            if not name:
+                anchor = card.select_one(".item-card__title-anchor")
+                if anchor:
+                    name = anchor.get_text(strip=True)
+            if not item_id or not name:
+                continue
 
-        # Image pattern — Booth image URLs (booth.pm CDN)
-        img_pattern = re.compile(
-            r'<img[^>]+src="(https?://[^"]*(?:booth|s2\.booth)[^"]*\.(jpg|jpeg|png|webp|gif))"',
-            re.IGNORECASE,
-        )
-
-        # Extract unique item IDs
-        item_ids = list(dict.fromkeys(item_id_pattern.findall(html)))[:limit]
-        titles = title_pattern.findall(html)
-        prices = price_pattern.findall(html)
-        images = [m[0] for m in img_pattern.findall(html)]
-
-        for i, item_id in enumerate(item_ids):
-            # Title
-            title = titles[i].strip() if i < len(titles) else f"Booth item {item_id}"
-
-            # Price
-            jpy_price = 0.0
-            if i < len(prices):
-                try:
-                    jpy_price = float(prices[i].replace(",", ""))
-                except (ValueError, TypeError):
-                    pass
-
-            # Image
-            image_url = images[i] if i < len(images) else ""
-
-            # Most Booth items are new (indie/doujin goods)
-            condition = "New"
+            img = card.find("img")
+            image_url = (img.get("src") if img else "") or ""
 
             results.append(
-                _normalize_listing(item_id, title, jpy_price, condition, image_url)
+                _normalize_listing(item_id, name, jpy_price, "New", image_url)
             )
 
         return results

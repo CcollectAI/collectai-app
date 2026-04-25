@@ -21,7 +21,6 @@ import { AnimatedPressable } from '@/motion';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { SkeletonList } from '@/components/Skeleton';
-import { CatalogImage } from '@/components/CatalogImage';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +30,7 @@ const MAX_RECENT_SEARCHES = 10;
 
 type SearchResults = {
   items: { id: string; name: string; category: string; imageUrl?: string | null; price?: number }[];
-  catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; imageUrl?: string | null }[];
+  catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; hasReferenceImage?: boolean }[];
   users: { id: string; displayName: string; handle?: string; avatarUrl?: string | null }[];
   events: { id: string; title: string; startDate?: string; location?: string; category?: string }[];
   categories: { id: string; name: string }[];
@@ -69,13 +68,6 @@ const CatalogSearchResult = React.memo(function CatalogSearchResult({ item, colo
       accessibilityRole="button"
       accessibilityLabel={`View ${item.title} in catalog`}
     >
-      <CatalogImage
-        uri={item.imageUrl}
-        style={resultStyles.resultThumb}
-        fallbackIcon="library-outline"
-        fallbackBackground={colors.accent + '10'}
-        fallbackIconColor={colors.accent}
-      />
       <View style={resultStyles.resultInfo}>
         <Text style={[resultStyles.resultTitle, { color: colors.text }]} numberOfLines={1}>{item.title}</Text>
         <Text style={[resultStyles.resultSubtitle, { color: colors.muted }]}>

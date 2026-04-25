@@ -29,7 +29,7 @@ export const APP_CONFIG = {
 
   // ─── Backend API ───────────────────────────────────────────────────────
   api: {
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE || "http://3.75.182.41:8000",
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE || "http://51.21.210.195:8000",
     opsKey: process.env.NEXT_PUBLIC_OPS_KEY || "",
     adminSecret: process.env.NEXT_PUBLIC_ADMIN_SECRET || "",
   },

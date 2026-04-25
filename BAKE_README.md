@@ -21,7 +21,7 @@ The pre-launch **data bake** runs the backend + workers on EC2 for **7-14 days**
 ## TL;DR — start the bake
 
 ```bash
-ssh ubuntu@3.75.182.41
+ssh ubuntu@51.21.210.195
 cd ~/CcollectAI
 git pull
 ./scripts/bake_start.sh                     # safe default — won't apply migrations or reimport
@@ -86,7 +86,7 @@ After 7-14 days the bake is "done" when `bake_status.sh` shows:
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | `market_hits_24h = 0` after day 2 | All workers crashed or paused | `./scripts/bake_tail.sh 500`, look for stack traces; restart with `./scripts/bake_stop.sh && ./scripts/bake_start.sh` |
-| Spend hit 100% before day 7 | Cold cache hit a paid provider too hard | Telegram circuit breaker already paused it. Bake continues on free sources. Bump budget if needed: `curl -X POST -H "X-Ops-Key: $OPS_API_KEY" http://3.75.182.41:8000/admin/spend-budget -d '{"budget_eur": 250}'` |
+| Spend hit 100% before day 7 | Cold cache hit a paid provider too hard | Telegram circuit breaker already paused it. Bake continues on free sources. Bump budget if needed: `curl -X POST -H "X-Ops-Key: $OPS_API_KEY" http://51.21.210.195:8000/admin/spend-budget -d '{"budget_eur": 250}'` |
 | `catalog_items_total = 0` | Import failed or DB empty | `./scripts/bake_start.sh --force-reimport` |
 | `pool exhausted` in logs | Workers competing for DB connections | Stop bake, edit `.env` → `DB_POOL_MAX=40`, restart |
 | Healthz returns 503 after start | Module import error (e.g. R43-style decorator bug) | `./scripts/bake_tail.sh 200`, fix in code, redeploy |

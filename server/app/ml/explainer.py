@@ -340,6 +340,7 @@ async def generate_evidence_explanation(
             WHERE item_ref = $1
               AND observed_at >= $2
               AND price IS NOT NULL
+              AND (is_listing IS NOT TRUE)
             ORDER BY observed_at DESC
             LIMIT $3
             """,

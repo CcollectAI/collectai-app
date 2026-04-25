@@ -69,6 +69,7 @@ async def get_sell_timing(
             WHERE item_ref = $1
               AND price_eur IS NOT NULL
               AND price_eur > 0
+              AND (is_listing IS NOT TRUE)
             GROUP BY month_num
             ORDER BY month_num
             """,

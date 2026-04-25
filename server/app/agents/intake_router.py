@@ -71,7 +71,12 @@ class FieldConfidence(BaseModel):
 
 
 class CatalogMatchResponse(BaseModel):
-    """A catalog item that matched the scanned item."""
+    """A catalog item that matched the scanned item.
+
+    R50k: image_url removed — catalog reference images are backend-only
+    now. The mobile app doesn't render them. `has_reference_image`
+    exposes presence for UI affordances without leaking the URL.
+    """
     catalog_item_id: Optional[str] = None
     item_key: Optional[str] = None
     title: Optional[str] = None
@@ -79,7 +84,7 @@ class CatalogMatchResponse(BaseModel):
     brand: Optional[str] = None
     rarity: Optional[str] = None
     set_code: Optional[str] = None
-    image_url: Optional[str] = None
+    has_reference_image: bool = False
     match_score: float = 0.0
     match_reason: Optional[str] = None
 
@@ -90,6 +95,16 @@ class SocialProofRecentSold(BaseModel):
     currency: str = "EUR"
     sold_at: Optional[str] = None
     source: Optional[str] = None
+
+
+class SocialProofRecentListing(BaseModel):
+    """Currently-listed asking price (not a sold comp)."""
+    title: Optional[str] = None
+    price: Optional[float] = None
+    currency: str = "USD"
+    seen_at: Optional[str] = None
+    source: Optional[str] = None
+    url: Optional[str] = None
 
 
 class ScarcityInfo(BaseModel):
@@ -103,6 +118,7 @@ class SocialProofResponse(BaseModel):
     is_trending: bool = False
     trend_rank: Optional[int] = None
     recent_sold: list[SocialProofRecentSold] = Field(default_factory=list)
+    recent_listings: list[SocialProofRecentListing] = Field(default_factory=list)
     scarcity: Optional[ScarcityInfo] = None
 
 
@@ -237,7 +253,7 @@ def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
                 brand=alt.get("brand"),
                 rarity=alt.get("rarity"),
                 set_code=alt.get("set_code"),
-                image_url=alt.get("image_url"),
+                has_reference_image=bool(alt.get("image_url")),
                 match_score=alt.get("match_score", 0),
                 match_reason=alt.get("match_reason"),
             ))
@@ -269,6 +285,16 @@ def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
                     sold_at=s.get("sold_at"),
                     source=s.get("source"),
                 ))
+            recent_listings = []
+            for s in result.social_proof.get("recent_listings", []):
+                recent_listings.append(SocialProofRecentListing(
+                    title=s.get("title"),
+                    price=s.get("price"),
+                    currency=s.get("currency", "USD"),
+                    seen_at=s.get("seen_at"),
+                    source=s.get("source"),
+                    url=s.get("url"),
+                ))
             scarcity_data = result.social_proof.get("scarcity")
             scarcity = None
             if scarcity_data:
@@ -282,6 +308,7 @@ def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
                 is_trending=result.social_proof.get("is_trending", False),
                 trend_rank=result.social_proof.get("trend_rank"),
                 recent_sold=recent_sold,
+                recent_listings=recent_listings,
                 scarcity=scarcity,
             )
         except Exception:

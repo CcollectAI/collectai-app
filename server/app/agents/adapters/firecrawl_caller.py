@@ -75,7 +75,7 @@ CATEGORY_SITE_TARGETS: Dict[str, List[str]] = {
     "retro_pokemon": ["ebay.com", "mercari.com", "amiami.com", "buyee.jp"],
     # IP-Specific
     "one_piece": ["myfigurecollection.net", "mercari.com", "amiami.com", "suruga-ya.jp"],
-    "vtuber": ["buyee.jp", "mercari.com", "booth.pm", "mandarake.co.jp"],
+    "vtuber": ["buyee.jp", "mercari.com", "booth.pm"],
     # Niche
     "keycaps": ["reddit.com/r/mechmarket", "drop.com", "ebay.com", "geekhack.org"],
     "loungefly": ["mercari.com", "stockx.com", "ebay.com", "boxlunch.com"],

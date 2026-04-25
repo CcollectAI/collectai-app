@@ -133,7 +133,7 @@ Additional features:
 
 ```env
 NEXT_PUBLIC_ADMIN_PIN=2026
-NEXT_PUBLIC_API_BASE=http://3.75.182.41:8000
+NEXT_PUBLIC_API_BASE=http://51.21.210.195:8000
 NEXT_PUBLIC_OPS_KEY=your-ops-key
 NEXT_PUBLIC_ADMIN_SECRET=your-admin-secret
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co

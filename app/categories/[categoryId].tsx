@@ -465,7 +465,7 @@ function CategoryStoreScreen() {
             categoryId={categoryId}
             onItemPress={(item) => router.push({
               pathname: '/add-manual',
-              params: { name: item.title, category: categoryId, imageUri: item.image_url || '' },
+              params: { name: item.title, category: categoryId },
             })}
           />
         )}
@@ -509,7 +509,7 @@ function CategoryStoreScreen() {
               params: {
                 name: cItem.title,
                 category: categoryId,
-                imageUri: cItem.image_url || '',
+                // R50k: no catalog reference image forwarded to add-manual
               },
             });
           }}

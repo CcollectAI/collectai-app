@@ -12,6 +12,17 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
+# Categories where Discogs asking-price (is_listing=true) data is ingested.
+# For these we surface a separate "list price" section alongside sold comps
+# so users can see current-market asking prices distinctly from transactions.
+LISTING_PRICE_CATEGORIES = {
+    "vinyl_records",
+    "anime_ost_vinyl",
+    "anime_soundtrack",
+    "anime_bluray",
+    "city_pop_vinyl",
+}
+
 
 async def get_social_proof(
     category: Optional[str],
@@ -35,6 +46,7 @@ async def get_social_proof(
         "is_trending": False,
         "trend_rank": None,
         "recent_sold": [],
+        "recent_listings": [],
         "scarcity": {
             "listing_count": 0,
             "supply_trend": "stable",
@@ -91,6 +103,7 @@ async def get_social_proof(
                     WHERE normalized_key ILIKE $1
                       AND price IS NOT NULL
                       AND price > 0
+                      AND (is_listing IS NOT TRUE)
                     ORDER BY ended_at DESC NULLS LAST
                     LIMIT 5
                     """,
@@ -108,6 +121,38 @@ async def get_social_proof(
                 ]
             except Exception as e:
                 logger.debug("Social proof recent sold error: %s", e)
+
+            # Recent listings (asking prices) — only for categories where
+            # Discogs listing-price data is ingested. Uses price_eur (FX-
+            # normalized) so UI doesn't mix currencies.
+            if category in LISTING_PRICE_CATEGORIES:
+                try:
+                    rows = await conn.fetch(
+                        """
+                        SELECT title, price, currency, seen_at, source, url
+                        FROM market_hits
+                        WHERE normalized_key ILIKE $1
+                          AND price IS NOT NULL
+                          AND price > 0
+                          AND is_listing IS TRUE
+                        ORDER BY seen_at DESC NULLS LAST
+                        LIMIT 5
+                        """,
+                        f"%{(item_key or '')[:60]}%",
+                    )
+                    result["recent_listings"] = [
+                        {
+                            "title": r["title"],
+                            "price": float(r["price"]),
+                            "currency": r["currency"] or "USD",
+                            "seen_at": r["seen_at"].isoformat() if r["seen_at"] else None,
+                            "source": r["source"],
+                            "url": r["url"],
+                        }
+                        for r in rows
+                    ]
+                except Exception as e:
+                    logger.debug("Social proof recent listings error: %s", e)
 
             # Scarcity from supply_snapshots
             try:

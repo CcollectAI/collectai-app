@@ -3,14 +3,15 @@ JP-region HTML proxy — AWS Lambda in ap-northeast-1 (Tokyo).
 
 Problem solved:
     EC2 main instance in eu-north-1 (Stockholm) is geo-filtered / served
-    Google-Translate wrapper pages by Buyee (Yahoo Auctions JP proxy) and
-    Mandarake. From a Tokyo IP, those same pages return real content.
+    Google-Translate wrapper pages by Buyee (Yahoo Auctions JP proxy),
+    Suruga-ya, and Booth. From a Tokyo IP, those same pages return real
+    content.
 
 Design:
     Pure HTML passthrough. Takes a target URL in the query string, fetches
     it from the JP region, returns the raw body. No parsing, no state. The
-    existing adapter parsers (yahoo_auctions_caller, mandarake_caller) do
-    the rest.
+    existing adapter parsers (yahoo_auctions_caller, suruga_ya_caller,
+    booth_caller) do the rest.
 
 Auth:
     AWS IAM. Callers invoke via ``lambda.invoke(FunctionName=...)`` using
@@ -28,7 +29,8 @@ Limits:
       expected volume is ~1-5K calls/day → well inside free tier.
     * Lambda max timeout: 15 min. We self-impose 25s so the caller can
       fail fast.
-    * Payload limit: Lambda 6MB response. Buyee/Mandarake HTML is 100-300KB.
+    * Payload limit: Lambda 6MB response. Typical JP marketplace HTML
+      is 100-700KB.
 """
 
 from __future__ import annotations
@@ -50,9 +52,6 @@ ALLOW_HOSTS: set[str] = {
     "www.buyee.jp",
     "auctions.yahoo.co.jp",
     "page.auctions.yahoo.co.jp",
-    "order.mandarake.co.jp",
-    "www.mandarake.co.jp",
-    "ekizo.mandarake.co.jp",
     "suruga-ya.jp",
     "www.suruga-ya.jp",
     "booth.pm",

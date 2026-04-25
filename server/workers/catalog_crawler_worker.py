@@ -94,7 +94,7 @@ async def _crawl_single_item(
             # Persist hits to market_hits (valuation_worker picks these up)
             normalized_key = f"{category}:{item_key}"
             inserted = await agent.persist_comps_to_db(
-                result, normalized_key=normalized_key,
+                result, normalized_key=normalized_key, category=category,
             )
 
             # Extract price stats for supply snapshot

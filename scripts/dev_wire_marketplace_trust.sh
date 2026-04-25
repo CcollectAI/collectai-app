@@ -27,7 +27,7 @@ cat <<'EOF' > "$TARGET"
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 
-const API_BASE = "http://3.75.182.41:8000"; // keep in sync with src/api/config.ts
+const API_BASE = "http://51.21.210.195:8000"; // keep in sync with src/api/config.ts
 
 async function get(path: string) {
   const res = await fetch(\`\${API_BASE}\${path}\`);

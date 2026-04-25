@@ -255,6 +255,12 @@ export type MarketHit = {
   imageUrl?: string | null;
   /** Hash of raw payload for deduplication */
   rawPayloadHash?: string;
+  /**
+   * True when `price` is a current asking/listing price (not a sold comp).
+   * Consumers should label these differently (e.g. "Asking €X" vs "Sold €X")
+   * and avoid using them as sold-comp training signal.
+   */
+  isListing?: boolean;
 };
 
 /**
@@ -827,6 +833,22 @@ export type RecentSold = {
   source: string;
 };
 
+/**
+ * Currently-listed asking price (not a sold comp).
+ *
+ * Surfaced only for categories where Discogs-style listing data is ingested
+ * (vinyl / anime_ost / city_pop etc.). Rendered in Tiffany Blue to visually
+ * distinguish from sold comps.
+ */
+export type RecentListing = {
+  title: string;
+  price: number;
+  currency: CurrencyCode;
+  seenAt: string | null;
+  source: string;
+  url: string | null;
+};
+
 /** Scarcity information from supply snapshots. */
 export type ScarcityInfo = {
   listingCount: number;
@@ -840,6 +862,7 @@ export type SocialProof = {
   isTrending: boolean;
   trendRank: number | null;
   recentSold: RecentSold[];
+  recentListings: RecentListing[];
   scarcity: ScarcityInfo;
 };
 

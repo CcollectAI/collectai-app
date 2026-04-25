@@ -423,6 +423,7 @@ async def get_category_deep_dive(
                 FROM market_hits
                 WHERE normalized_key LIKE $1 || '%'
                   AND created_at >= $2
+                  AND (is_listing IS NOT TRUE)
                 GROUP BY date_trunc('day', created_at)
                 ORDER BY day
                 """,
@@ -455,6 +456,7 @@ async def get_category_deep_dive(
                     FROM market_hits
                     WHERE normalized_key LIKE $1 || '%'
                       AND created_at >= $2
+                      AND (is_listing IS NOT TRUE)
                     GROUP BY normalized_key
                 ),
                 ranked AS (

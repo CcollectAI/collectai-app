@@ -3,7 +3,7 @@ JP-region HTML proxy client.
 
 Routes HTML fetches through an AWS Lambda function in ap-northeast-1
 (Tokyo) so our EU-based EC2 can see JP sites that geo-filter non-JP IPs
-(Buyee, Yahoo JP, Mandarake, Suruga-ya, Booth).
+(Buyee, Yahoo JP, Suruga-ya, Booth).
 
 Invocation uses IAM (EC2 instance role has ``lambda:InvokeFunction`` on
 the function ARN) rather than a public Function URL. Reason: Function

@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.agents.on_demand_enrich import enrich_item
-from app.auth import get_current_user
+from app.auth import get_current_user_id
 from app.lib.db_helpers import get_db_pool
 
 logger = logging.getLogger(__name__)
@@ -70,17 +70,14 @@ async def _check_global_rate_limit(conn) -> None:
 )
 async def enrich_on_demand(
     payload: EnrichRequest,
-    user=Depends(get_current_user),
+    user_id: str = Depends(get_current_user_id),
     pool=Depends(get_db_pool),
 ) -> EnrichResponse:
-    user_id = str(user.get("id") or user.get("user_id") or "")
-    if not user_id:
-        raise HTTPException(401, "Authentication required")
-
     async with pool.acquire() as conn:
-        # Force-bypass is admin-only — refuse for regular users
-        if payload.force and (user.get("role") or "") != "admin":
-            raise HTTPException(403, "force=true requires admin role")
+        # force=true is admin-only. Until we have a role check on user_id,
+        # silently ignore force from unauthenticated callers (treat as false).
+        if payload.force:
+            payload.force = False  # disabled until admin-role wired
 
         await _check_global_rate_limit(conn)
 

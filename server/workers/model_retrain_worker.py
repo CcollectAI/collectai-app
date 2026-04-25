@@ -110,6 +110,7 @@ async def _export_market_hits_to_jsonl(conn, category: str, cutoff: datetime) ->
           AND price IS NOT NULL
           AND price > 0
           AND seen_at >= $2
+          AND (is_listing IS NOT TRUE)
         ORDER BY seen_at DESC
         LIMIT 5000
         """,

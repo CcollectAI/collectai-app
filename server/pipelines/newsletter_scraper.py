@@ -61,6 +61,10 @@ SCRAPER_EMAIL_HOST = os.getenv("SCRAPER_EMAIL_HOST", "imap.gmail.com")
 SCRAPER_EMAIL_USER = os.getenv("SCRAPER_EMAIL_USER", "")
 SCRAPER_EMAIL_PASS = os.getenv("SCRAPER_EMAIL_PASS", "")
 SCRAPER_EMAIL_PORT = int(os.getenv("SCRAPER_EMAIL_PORT", "993"))
+# Gmail label / IMAP folder to scan. Defaults to INBOX for back-compat;
+# recommended setting for prod is a dedicated label like "CollectAI/newsletters"
+# so inbox noise (GitHub notifications, service alerts) is excluded.
+SCRAPER_EMAIL_FOLDER = os.getenv("SCRAPER_EMAIL_FOLDER", "INBOX")
 SCRAPER_EMAIL_USE_SSL = os.getenv("SCRAPER_EMAIL_USE_SSL", "true").lower() in (
     "true",
     "1",
@@ -310,7 +314,10 @@ class EmailConnector:
             self._conn = imaplib.IMAP4(SCRAPER_EMAIL_HOST, SCRAPER_EMAIL_PORT)
 
         self._conn.login(SCRAPER_EMAIL_USER, SCRAPER_EMAIL_PASS)
-        self._conn.select("INBOX")
+        # Gmail nested labels come through IMAP as "Parent/Child" — select()
+        # wants the name quoted when it contains a slash. imaplib adds the
+        # quotes for us when we pass a plain str, so no extra work needed.
+        self._conn.select(SCRAPER_EMAIL_FOLDER)
         log.info("IMAP login successful.")
 
     def fetch_emails(

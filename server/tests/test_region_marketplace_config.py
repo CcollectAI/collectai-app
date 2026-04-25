@@ -49,25 +49,26 @@ def test_ebay_marketplace_unknown():
 def test_americas_uses_all_adapters():
     assert should_use_adapter("americas", "ebay") is True
     assert should_use_adapter("americas", "tcgplayer") is True
-    assert should_use_adapter("americas", "firecrawl") is True
+    # Firecrawl is reserved for the events pipeline — never fires on marketplace ingest.
+    assert should_use_adapter("americas", "firecrawl") is False
 
 
 def test_europe_skips_tcgplayer():
     assert should_use_adapter("europe", "ebay") is True
     assert should_use_adapter("europe", "tcgplayer") is False
-    assert should_use_adapter("europe", "firecrawl") is True
+    assert should_use_adapter("europe", "firecrawl") is False
 
 
 def test_japan_skips_tcgplayer():
     assert should_use_adapter("japan", "ebay") is True
     assert should_use_adapter("japan", "tcgplayer") is False
-    assert should_use_adapter("japan", "firecrawl") is True
+    assert should_use_adapter("japan", "firecrawl") is False
 
 
 def test_other_uses_all_adapters():
     assert should_use_adapter("other", "ebay") is True
     assert should_use_adapter("other", "tcgplayer") is True
-    assert should_use_adapter("other", "firecrawl") is True
+    assert should_use_adapter("other", "firecrawl") is False
 
 
 def test_none_region_defaults_to_other():
@@ -95,10 +96,8 @@ def test_europe_lego_uses_bricklink():
     assert "bricklink.com" in sites
 
 
-def test_japan_anime_figures_uses_mandarake():
     sites = get_firecrawl_sites("japan", "anime_figures")
     assert sites is not None
-    assert "mandarake.co.jp" in sites
 
 
 def test_japan_manga_uses_surugaya():

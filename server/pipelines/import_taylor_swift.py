@@ -457,6 +457,67 @@ def get_curated_catalog() -> list[dict]:
         ("Collaboration", "merch", "Taylor x CoverGirl NatureLuxe Lip Gloss Set (Vintage)", "Vintage", "high", 65),
         ("Collaboration", "merch", "Taylor x Diet Coke Can Set (4 Designs, Sealed)", "Limited", "mid", 45),
 
+        # ── High-Value Apparel & Accessories (eBay-researched, actual resale) ──
+        # Cardigans — the most iconic merch item, multiple versions
+        ("Folklore", "apparel", "Folklore Cardigan (Cream, Patch Stitched, Original July 2020)", "Original Drop", "grail", 120),
+        ("Midnights", "apparel", "Midnights Cardigan (Midnight Blue, Stars Embroidered)", "Midnights Version", "high", 65),
+        ("TTPD", "apparel", "TTPD Cardigan (Black, Tortured Poets Edition)", "TTPD Version", "high", 75),
+        ("Evermore", "apparel", "Evermore Cardigan (Willow Green)", "Evermore Version", "high", 70),
+        ("Folklore", "apparel", "Folklore Cardigan (Re-Release, Holiday 2023)", "Holiday Re-Release", "mid", 55),
+        # Reputation Snake Ring — iconic, high resale
+        ("Reputation", "accessory", "Reputation Official Snake Ring (Silver, Adjustable)", "Official Silver", "high", 95),
+        ("Reputation", "accessory", "Reputation Official Snake Ring (Purple)", "Purple Variant", "grail", 110),
+        ("Reputation", "accessory", "Reputation Official Snake Ring (Gold)", "Gold Variant", "grail", 130),
+        # Eras Tour Bodysuits — era-specific stage outfits
+        ("Eras Tour", "apparel", "Eras Tour Lover Bodysuit (Official, Pink + Blue)", "Lover Era", "grail", 250),
+        ("Eras Tour", "apparel", "Eras Tour Folklore Bodysuit (Champagne)", "Folklore Era", "grail", 180),
+        ("Eras Tour", "apparel", "Eras Tour Reputation Bodysuit (Black + Snake)", "Reputation Era", "grail", 200),
+        ("Eras Tour", "apparel", "Eras Tour Midnights Bodysuit (Midnight Blue)", "Midnights Era", "grail", 190),
+        ("Eras Tour", "apparel", "Eras Tour 1989 Bodysuit (Blue, Sequined)", "1989 Era", "grail", 175),
+        ("Eras Tour", "apparel", "Eras Tour Speak Now Bodysuit (Purple, Ball Gown Style)", "Speak Now Era", "grail", 195),
+        # Eras Tour Jackets & Outerwear
+        ("Eras Tour", "apparel", "Eras Tour Denim Jacket (Custom, Official Merch)", "Official", "high", 85),
+        ("Eras Tour", "apparel", "Eras Tour Bomber Jacket (Black, Tour Dates Back)", "Tour Jacket", "high", 95),
+        # Snow Globes — extremely high resale
+        ("Lover", "collectible", "Lover House Snow Globe (2024 Holiday Drop)", "2024 Edition", "grail", 350),
+        ("Lover", "collectible", "Lover House Snow Globe (2025 Restock)", "2025 Restock", "grail", 300),
+        # Ornaments
+        ("Eras Tour", "collectible", "Enchanted Dress Ornament (I Was Enchanted To Meet You)", "Official", "high", 90),
+        ("Eras Tour", "collectible", "Eras Tour Guitar Ornament (Bejeweled)", "Official", "high", 75),
+        ("Midnights", "collectible", "Midnights Lavender Haze Candle + Ornament Set", "Official", "high", 60),
+        ("Holiday", "collectible", "Taylor Swift 2024 Holiday Stocking (Official Webstore)", "Webstore", "mid", 45),
+        # TTPD Expanded — Manuscript, Anthology, Cassette Sets
+        ("TTPD", "cassette", "TTPD Cassette 4-Version Manuscript Set (Collector Bundle)", "Complete Set", "grail", 130),
+        ("TTPD", "merch", "TTPD Anthology Edition (Hardcover + Bonus Tracks CD)", "Anthology", "high", 80),
+        ("TTPD", "merch", "TTPD Black Dog Eras Tour Exclusive Tee", "Tour Exclusive", "mid", 55),
+        ("TTPD", "merch", "TTPD Fortnight Music Video Prop Replica Clock", "Prop Replica", "high", 95),
+        # Webstore Exclusives (Limited Drops)
+        ("Folklore", "merch", "All Too Well Knit Scarf (Red, Official Webstore)", "Webstore Exclusive", "high", 85),
+        ("Evermore", "merch", "'Tis the Damn Season Candle Set", "Webstore Exclusive", "mid", 40),
+        ("1989", "merch", "1989 Seagull Tote Bag (Official)", "Webstore Exclusive", "mid", 35),
+        ("Lover", "merch", "Lover Heart-Shaped Sunglasses (Official)", "Webstore Exclusive", "mid", 30),
+        ("Lover", "merch", "Lover Diary + Pen Set (Pink Leather)", "Webstore Exclusive", "mid", 45),
+        ("Midnights", "merch", "Midnights Lavender Haze Hoodie (Oversized)", "Webstore Exclusive", "high", 70),
+        ("Midnights", "merch", "Midnights Clock Crewneck Sweatshirt", "Webstore Exclusive", "mid", 60),
+        ("Reputation", "merch", "Reputation Tour Snake Beanie", "Tour Merch", "mid", 45),
+        ("Reputation", "merch", "Reputation Magazine Vol 1 + 2 Set (Sealed)", "Sealed Set", "high", 80),
+        # Eras Tour City Posters — Additional Major Cities
+        ("Eras Tour", "poster", "Eras Tour Poster — Chicago Soldier Field", "City Exclusive", "high", 60),
+        ("Eras Tour", "poster", "Eras Tour Poster — Nashville Nissan Stadium", "City Exclusive", "high", 65),
+        ("Eras Tour", "poster", "Eras Tour Poster — Philadelphia Lincoln Financial", "City Exclusive", "high", 55),
+        ("Eras Tour", "poster", "Eras Tour Poster — Atlanta Mercedes-Benz Stadium", "City Exclusive", "mid", 50),
+        ("Eras Tour", "poster", "Eras Tour Poster — Houston NRG Stadium", "City Exclusive", "mid", 50),
+        ("Eras Tour", "poster", "Eras Tour Poster — Toronto Rogers Centre", "City Exclusive", "mid", 50),
+        ("Eras Tour", "poster", "Eras Tour Poster — Singapore National Stadium", "City Exclusive", "high", 70),
+        ("Eras Tour", "poster", "Eras Tour Poster — Melbourne MCG", "City Exclusive", "high", 65),
+        ("Eras Tour", "poster", "Eras Tour Poster — Edinburgh Murrayfield", "City Exclusive", "high", 60),
+        ("Eras Tour", "poster", "Eras Tour Poster — Madrid Santiago Bernabeu", "City Exclusive", "high", 65),
+        ("Eras Tour", "poster", "Eras Tour Poster — Milan San Siro", "City Exclusive", "high", 60),
+        # Vinyl Accessories (these are the display/storage items collectors search for)
+        ("Accessories", "accessory", "Taylor Swift Vinyl Record Display Frame (Fits All Albums)", "Third-Party Premium", "mid", 35),
+        ("Accessories", "accessory", "Taylor Swift Custom Album Art Turntable Slipmat Set (13 Albums)", "Custom", "mid", 30),
+        ("Accessories", "accessory", "Taylor Swift Era Vinyl Storage Crate (Holds 50+ Records)", "Branded", "mid", 40),
+
         # ── Holiday / Seasonal — Additional ──────────────────────────────
         ("Holiday", "merch", "Taylor Swift Valentine's Day Heart Candle Set", "Limited", "mid", 35),
         ("Holiday", "merch", "Taylor Swift Christmas Tree Farm 7-inch Green Vinyl", "RSD Exclusive", "high", 75),
@@ -1582,7 +1643,7 @@ def item_to_catalog_item(item: dict) -> CatalogItem:
 
     return CatalogItem(
         category=CATEGORY,
-        item_key=slugify(f"{album}-{name}"),
+        item_key=slugify(f"{album}-{name}-{variant}"),
         title=name,
         set_code=slugify(album),
         brand="Taylor Swift",

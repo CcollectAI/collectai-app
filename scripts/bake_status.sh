@@ -4,7 +4,7 @@
 #
 # Usage:
 #   ./scripts/bake_status.sh                              # uses API_HOST + OPS_API_KEY from .env
-#   API_HOST=http://3.75.182.41:8000 ./scripts/bake_status.sh
+#   API_HOST=http://51.21.210.195:8000 ./scripts/bake_status.sh
 #   OPS_API_KEY=xxxx ./scripts/bake_status.sh
 
 set -euo pipefail
@@ -16,7 +16,7 @@ if [ -f "$REPO_ROOT/.env" ]; then
   set -a; . "$REPO_ROOT/.env"; set +a
 fi
 
-API_HOST="${API_HOST:-http://3.75.182.41:8000}"
+API_HOST="${API_HOST:-http://51.21.210.195:8000}"
 KEY="${OPS_API_KEY:-}"
 
 if [ -z "$KEY" ]; then

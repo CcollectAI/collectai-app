@@ -17,7 +17,7 @@ cat <<'EOF' > "$TARGET"
 import React, { useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, Button } from "react-native";
 
-const API_BASE = "http://3.75.182.41:8000";
+const API_BASE = "http://51.21.210.195:8000";
 
 async function fetchWatchlistDebug() {
   const controller = new AbortController();

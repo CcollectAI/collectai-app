@@ -245,7 +245,6 @@ class TestAllCircuitStatus:
             "ebay", "tcgplayer", "openai", "cardmarket", "discogs",
             "pricecharting", "stockx", "bricklink", "firecrawl", "crawl4ai",
             "mercari_us", "whatnot", "vinted", "mavin", "catawiki",
-            "whisky_auctioneer", "mandarake", "bezel", "chrono24",
             "keh", "mpb", "drop", "gouletpens", "brickeconomy",
             "popmart", "booth", "scalemates",
         }

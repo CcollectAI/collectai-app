@@ -467,6 +467,7 @@ async def _lookup_market_price(category: str, title: Optional[str], pool) -> Opt
                 WHERE normalized_key ILIKE $1
                   AND price IS NOT NULL
                   AND price > 0
+                  AND (is_listing IS NOT TRUE)
                 ORDER BY ended_at DESC NULLS LAST
                 LIMIT 20
                 """,

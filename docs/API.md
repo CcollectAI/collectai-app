@@ -1,6 +1,6 @@
 # API Reference
 
-Base URL: `http://localhost:8000` (dev) | `http://3.75.182.41:8000` (production)
+Base URL: `http://localhost:8000` (dev) | `http://51.21.210.195:8000` (production)
 
 ## Authentication
 
