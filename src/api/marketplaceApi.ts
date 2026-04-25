@@ -1,7 +1,7 @@
 /**
  * Marketplace search, listings, accounts, fees, sales, and affiliate API methods.
  */
-import { get, post, del, patch } from "./httpClient";
+import { get, post, del, patch, put } from "./httpClient";
 import { MarketplaceSearchResponseSchema, safeParse } from "./schemas";
 import type { MarketplaceSearchResponse } from "./schemas";
 
@@ -116,3 +116,27 @@ export const enrichOnDemand = (payload: {
   query: string;
   category: string;
 }) => post("/enrich/on-demand", payload as Record<string, unknown>);
+
+// eBay seller-OAuth flow.
+// Step 1: ask backend for the consent URL → open in browser.
+// Step 2: user signs in on ebay.com, eBay redirects to our callback,
+//         backend exchanges code → tokens stored in marketplace_accounts.
+// Step 3: FE polls listMarketplaceAccounts() to detect the new ebay row.
+export const startEbayOauth = () =>
+  get("/marketplace/listings/accounts/oauth/ebay/start") as Promise<{
+    redirect_url: string;
+    state: string;
+  }>;
+
+// Per-account publish defaults — eBay requires categoryId + 3 policy IDs.
+// Without these, /publish returns 412 with the missing-fields list.
+export const getEbayDefaults = () =>
+  get("/marketplace/listings/accounts/defaults/ebay");
+
+export const setEbayDefaults = (payload: {
+  ebay_category_id: string;
+  fulfillment_policy_id: string;
+  payment_policy_id: string;
+  return_policy_id: string;
+  location_key?: string;
+}) => put("/marketplace/listings/accounts/defaults/ebay", payload as Record<string, unknown>);

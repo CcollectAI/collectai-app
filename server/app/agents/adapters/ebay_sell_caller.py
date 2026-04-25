@@ -34,10 +34,20 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-# Production endpoints — sandbox uses different hosts.
-EBAY_AUTH_BASE = "https://auth.ebay.com/oauth2/authorize"
-EBAY_TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
-EBAY_API_BASE = "https://api.ebay.com"
+# Sandbox/production switch via EBAY_SANDBOX env (default: production).
+# Set EBAY_SANDBOX=true on EC2 for first-test runs against sandbox; flip
+# to false (or omit) for real sales. Sandbox + production each have
+# their own client_id/secret in the eBay dev console — set
+# EBAY_CLIENT_ID + EBAY_CLIENT_SECRET appropriately for the chosen env.
+_USE_SANDBOX = os.environ.get("EBAY_SANDBOX", "false").lower() in ("1", "true", "yes")
+if _USE_SANDBOX:
+    EBAY_AUTH_BASE = "https://auth.sandbox.ebay.com/oauth2/authorize"
+    EBAY_TOKEN_URL = "https://api.sandbox.ebay.com/identity/v1/oauth2/token"
+    EBAY_API_BASE = "https://api.sandbox.ebay.com"
+else:
+    EBAY_AUTH_BASE = "https://auth.ebay.com/oauth2/authorize"
+    EBAY_TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
+    EBAY_API_BASE = "https://api.ebay.com"
 
 # Default scopes cover inventory + offer + account. Add fulfillment when
 # we wire shipping policies + order management.

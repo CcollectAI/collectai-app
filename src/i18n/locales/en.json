@@ -632,6 +632,15 @@
     "new_listings": "New Listings"
   },
 
+  "marketplace_connections": {
+    "section_title": "Marketplace Accounts",
+    "connect_ebay": "Connect eBay",
+    "connect_ebay_hint": "Sign in with your eBay account to list items directly",
+    "connect_ebay_a11y": "Connect eBay account",
+    "connect_failed_title": "Couldn't connect to eBay",
+    "connect_failed_body": "Please try again. If this keeps failing, check your internet connection."
+  },
+
   "items_detail": {
     "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates.",
     "enrich_button": "Get fresh comps",
