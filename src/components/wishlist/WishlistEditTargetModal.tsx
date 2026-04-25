@@ -2,6 +2,7 @@
  * WishlistEditTargetModal — Modal for editing target price of a watchlist item.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -29,6 +30,7 @@ interface WishlistEditTargetModalProps {
 }
 
 export const WishlistEditTargetModal = React.memo(function WishlistEditTargetModal(props: WishlistEditTargetModalProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
 
@@ -45,8 +47,8 @@ export const WishlistEditTargetModal = React.memo(function WishlistEditTargetMod
       >
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Set Target Price</Text>
-            <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close target price editor">
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('wishlist_edit_target.title')}</Text>
+            <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('wishlist_edit_target.close_a11y')}>
               <Ionicons name="close" size={24} color={colors.muted} />
             </AnimatedPressable>
           </View>
@@ -73,7 +75,7 @@ export const WishlistEditTargetModal = React.memo(function WishlistEditTargetMod
                 keyboardType="numeric"
                 autoFocus
                 style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                accessibilityLabel="Target price"
+                accessibilityLabel={t('wishlist_edit_target.input_a11y')}
               />
               <Text style={[styles.helperText, { color: colors.muted }]}>
                 A price alert will be created automatically when you set a target price.
@@ -84,12 +86,12 @@ export const WishlistEditTargetModal = React.memo(function WishlistEditTargetMod
                 onPress={onSave}
                 disabled={editTargetSaving}
                 accessibilityRole="button"
-                accessibilityLabel="Save target price"
+                accessibilityLabel={t('wishlist_edit_target.save_a11y')}
               >
                 {editTargetSaving ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.saveBtnText}>Save Target Price</Text>
+                  <Text style={styles.saveBtnText}>{t('wishlist_edit_target.save_button')}</Text>
                 )}
               </AnimatedPressable>
             </>

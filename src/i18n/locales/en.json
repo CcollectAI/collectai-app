@@ -641,6 +641,23 @@
     "connect_failed_body": "Please try again. If this keeps failing, check your internet connection."
   },
 
+  "add_manual_basic": {
+    "title": "Basic Information",
+    "item_name_a11y": "Item name",
+    "custom_category_label": "Custom category name",
+    "custom_category_a11y": "Custom category name",
+    "set_series": "Set / Series",
+    "set_series_a11y": "Set or series"
+  },
+
+  "wishlist_edit_target": {
+    "title": "Set Target Price",
+    "close_a11y": "Close target price editor",
+    "input_a11y": "Target price",
+    "save_a11y": "Save target price",
+    "save_button": "Save Target Price"
+  },
+
   "items_detail": {
     "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates.",
     "enrich_button": "Get fresh comps",

@@ -3,6 +3,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TextInput, TouchableOpacity, Keyboard, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -46,13 +47,14 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
   onClearCategory,
   onSuggestNew,
 }: AddManualBasicInfoSectionProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Basic Information</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('add_manual_basic.title')}</Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -70,7 +72,7 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
               placeholder="e.g. Charizard GX (Alt Art)"
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
-              accessibilityLabel="Item name"
+              accessibilityLabel={t('add_manual_basic.item_name_a11y')}
               testID="name-input"
               returnKeyType="next"
             />
@@ -100,7 +102,7 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
         {/* Custom category free-text input — visible only when "Other" is selected */}
         {category === CUSTOM_CATEGORY_SENTINEL && (
           <View style={styles.fieldBlock}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>Custom category name</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('add_manual_basic.custom_category_label')}</Text>
             <View style={[styles.inputWrap, { borderColor: colors.accent, backgroundColor: colors.background }]}>
               <Ionicons name="create-outline" size={16} color={colors.accent} style={styles.inputIcon} />
               <TextInput
@@ -111,7 +113,7 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
                 style={[styles.input, { color: colors.text }]}
                 autoFocus
                 maxLength={64}
-                accessibilityLabel="Custom category name"
+                accessibilityLabel={t('add_manual_basic.custom_category_a11y')}
                 returnKeyType="next"
               />
             </View>
@@ -132,7 +134,7 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
 
         {/* Game / Series */}
         <View style={styles.fieldBlock}>
-          <Text style={[styles.fieldLabel, { color: colors.text }]}>Set / Series</Text>
+          <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('add_manual_basic.set_series')}</Text>
           <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
             <Ionicons name="albums-outline" size={16} color={colors.muted} style={styles.inputIcon} />
             <TextInput
@@ -141,7 +143,7 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
               placeholder="e.g. Scarlet & Violet, Master Grade"
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
-              accessibilityLabel="Set or series"
+              accessibilityLabel={t('add_manual_basic.set_series_a11y')}
               returnKeyType="next"
             />
           </View>
