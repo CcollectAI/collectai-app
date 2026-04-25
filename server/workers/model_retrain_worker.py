@@ -266,18 +266,129 @@ async def _export_scan_corrections(conn, category: str, cutoff: datetime) -> int
     return count
 
 
-def _retrain_category(category: str) -> dict:
-    """Retrain the Ridge model for a single category using merged data.
+HOLDOUT_FRACTION = float(os.getenv("MODEL_RETRAIN_HOLDOUT_FRAC", "0.20"))
+PROMOTION_TOLERANCE = float(os.getenv("MODEL_RETRAIN_TOLERANCE", "1.05"))  # new MAE allowed up to 5% worse
 
-    Merges: static seed (train.jsonl) + live market data (train_live.jsonl) +
-    ground truth (train_ground_truth.jsonl).
+
+def _score_model_on_holdout(model_artifact: dict, holdout_records: list[dict]) -> float | None:
+    """Score a model artifact's q50 MAE on a list of {features, price} dicts.
+
+    Returns mean abs error in the model's training scale (price units), or None
+    if the artifact is missing required fields. Uses the same standardize +
+    ridge.coef·x + intercept logic as valuation_worker._predict_ridge but with
+    the FULL feature vector (not just the empirical fallback).
+    """
+    try:
+        feats = model_artifact.get("features") or []
+        std_block = model_artifact.get("standardizer") or {}
+        ridge = model_artifact.get("ridge") or {}
+        mean = std_block.get("mean") or []
+        std = std_block.get("std") or []
+        coef = ridge.get("coef") or []
+        intercept = float(ridge.get("intercept") or 0.0)
+        log_scale = bool(model_artifact.get("log_scale"))
+        if not feats or not coef or len(feats) != len(coef):
+            return None
+        import math as _math
+        errors = []
+        for rec in holdout_records:
+            x = [float((rec.get("features") or {}).get(name, 0.0)) for name in feats]
+            x_std = [
+                (x[i] - mean[i]) / std[i] if i < len(std) and std[i] > 0 else 0.0
+                for i in range(len(x))
+            ]
+            pred = sum(x_std[i] * coef[i] for i in range(len(x_std))) + intercept
+            if log_scale:
+                pred = _math.expm1(pred)
+            actual = float(rec.get("price", 0.0))
+            if not _math.isfinite(pred) or pred <= 0 or actual <= 0:
+                continue
+            errors.append(abs(pred - actual))
+        if not errors:
+            return None
+        return sum(errors) / len(errors)
+    except Exception as e:
+        logger.debug("[model_retrain] _score_model_on_holdout failed: %s", e)
+        return None
+
+
+async def _ensure_promotion_log_table() -> None:
+    """Create model_promotion_log on first run (idempotent)."""
+    if not DSN:
+        return
+    conn = await asyncpg.connect(DSN)
+    try:
+        await conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS public.model_promotion_log (
+                id              bigserial PRIMARY KEY,
+                category        text NOT NULL,
+                old_version     text,
+                new_version     text NOT NULL,
+                old_mae         numeric,
+                new_mae         numeric,
+                holdout_n       integer,
+                promoted        boolean NOT NULL,
+                reason          text,
+                decided_at      timestamptz NOT NULL DEFAULT now()
+            )
+            """
+        )
+        await conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_model_promotion_log_decided_at "
+            "ON public.model_promotion_log (decided_at DESC)"
+        )
+    finally:
+        await conn.close()
+
+
+async def _log_promotion(
+    category: str, old_version: str | None, new_version: str,
+    old_mae: float | None, new_mae: float | None, holdout_n: int,
+    promoted: bool, reason: str,
+) -> None:
+    if not DSN:
+        return
+    try:
+        conn = await asyncpg.connect(DSN)
+        try:
+            await conn.execute(
+                """
+                INSERT INTO public.model_promotion_log
+                    (category, old_version, new_version, old_mae, new_mae,
+                     holdout_n, promoted, reason)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                """,
+                category, old_version, new_version, old_mae, new_mae,
+                holdout_n, promoted, reason,
+            )
+        finally:
+            await conn.close()
+    except Exception as e:
+        logger.debug("[model_retrain] _log_promotion failed: %s", e)
+
+
+def _retrain_category(category: str) -> dict:
+    """Retrain Ridge model for `category` with holdout-gated promotion.
+
+    Flow:
+      1. Read all training records from data/{category}/*.jsonl.
+      2. Hold back HOLDOUT_FRACTION of train_ground_truth.jsonl (most recent —
+         these come from verified_sales/price_ground_truths and are the highest-
+         quality reflection of production reality).
+      3. Score the CURRENT artifacts/{category}/active model on the holdout.
+      4. Truncate train_ground_truth.jsonl to non-holdout subset, run
+         train_category — writes new artifact + flips symlink.
+      5. Score the new model on the same holdout.
+      6. If new_mae > old_mae * PROMOTION_TOLERANCE: revert symlink to the
+         previous version (atomic os.replace via _restore_active_symlink).
+      7. Restore train_ground_truth.jsonl to full (so next cycle uses all data).
+      8. Write a row to model_promotion_log for ops visibility.
     """
     cat_dir = DATA_DIR / category
 
-    # Collect all training data
-    all_features = []
-    all_prices = []
-
+    # Collect all training data (for the MIN_SAMPLES gate)
+    all_prices: list[float] = []
     for jsonl_file in ["train.jsonl", "train_live.jsonl", "train_ground_truth.jsonl", "train_corrections.jsonl"]:
         path = cat_dir / jsonl_file
         if not path.exists():
@@ -289,7 +400,6 @@ def _retrain_category(category: str) -> dict:
                     continue
                 try:
                     record = json.loads(line)
-                    all_features.append(record["features"])
                     all_prices.append(float(record["price"]))
                 except (json.JSONDecodeError, KeyError, ValueError):
                     continue
@@ -301,34 +411,135 @@ def _retrain_category(category: str) -> dict:
         )
         return {"category": category, "status": "skipped", "samples": len(all_prices)}
 
-    # Use train_price module for actual training
+    # ── Hold out the most-recent N records from train_ground_truth.jsonl ──
+    gt_path = cat_dir / "train_ground_truth.jsonl"
+    holdout_records: list[dict] = []
+    train_records: list[dict] = []
+    gt_full_lines: list[str] = []
+    if gt_path.exists():
+        with open(gt_path) as f:
+            gt_full_lines = [ln for ln in f if ln.strip()]
+        n_total = len(gt_full_lines)
+        # _export_ground_truths writes newest-first (ORDER BY created_at DESC),
+        # so the LEADING slice is the most-recent.
+        n_holdout = max(0, int(n_total * HOLDOUT_FRACTION))
+        for ln in gt_full_lines[:n_holdout]:
+            try:
+                holdout_records.append(json.loads(ln))
+            except Exception:
+                pass
+        for ln in gt_full_lines[n_holdout:]:
+            try:
+                train_records.append(json.loads(ln))
+            except Exception:
+                pass
+        # Truncate gt file to non-holdout for this train cycle
+        if holdout_records:
+            with open(gt_path, "w") as f:
+                f.writelines(gt_full_lines[n_holdout:])
+
+    # Capture current active version + load it for scoring
+    from app.ml.model_loader import _load_artifact_from_disk, _resolve_artifacts_root
+    artifacts_root = _resolve_artifacts_root()
+    old_version: str | None = None
+    old_mae: float | None = None
+    if artifacts_root:
+        active_link = artifacts_root / category / "active"
+        if active_link.is_symlink():
+            old_version = os.readlink(str(active_link))
+        old_artifact = _load_artifact_from_disk(category, slot="active")
+        if old_artifact and holdout_records:
+            old_mae = _score_model_on_holdout(old_artifact, holdout_records)
+
+    # ── Train new model (writes artifact + flips symlink) ──
+    new_version: str | None = None
+    new_mae: float | None = None
+    promoted = True
+    reason = "promoted"
     try:
         from pipelines.train_price import train_category
-        # R46.21 — train_category(category) reads training data from disk
-        # (train.jsonl + train_live.jsonl), NOT from function args. The old
-        # call passed all_features as `version` and all_prices as `register`
-        # due to a signature mismatch → version string was the entire features
-        # array → "File name too long" on every save. The Phase 1 export
-        # above writes train_live.jsonl which train_category reads.
         result = train_category(category)
+        new_version = result.get("version")
         logger.info(
             "Retrained %s: samples=%d cv_mae=%.2f",
             category, len(all_prices), result.get("cv_mae", -1),
         )
-        return {
-            "category": category,
-            "status": "ok",
-            "samples": len(all_prices),
-            "cv_mae": result.get("cv_mae"),
-            "version": result.get("version"),
-        }
     except ImportError:
         # train_category may not exist as a public function — use CLI fallback
+        if gt_full_lines and holdout_records:
+            with open(gt_path, "w") as f:
+                f.writelines(gt_full_lines)  # restore before bailing
         logger.info("train_category not importable, using CLI fallback for %s", category)
         return _retrain_via_cli(category, len(all_prices))
     except Exception as e:
+        if gt_full_lines and holdout_records:
+            with open(gt_path, "w") as f:
+                f.writelines(gt_full_lines)  # restore before bailing
         logger.warning("Retrain failed for %s: %s", category, e)
         return {"category": category, "status": "error", "error": str(e)[:200]}
+
+    # ── Score new model on the same holdout ──
+    if holdout_records:
+        new_artifact = _load_artifact_from_disk(category, slot="active")
+        if new_artifact:
+            new_mae = _score_model_on_holdout(new_artifact, holdout_records)
+
+    # ── Promotion gate: revert symlink if regression > tolerance ──
+    if (
+        old_mae is not None and new_mae is not None
+        and new_mae > old_mae * PROMOTION_TOLERANCE
+        and old_version
+        and artifacts_root
+    ):
+        try:
+            active_link = artifacts_root / category / "active"
+            if active_link.is_symlink():
+                active_link.unlink()
+            active_link.symlink_to(old_version)
+            promoted = False
+            reason = (
+                f"regression: new_mae={new_mae:.2f} > old_mae={old_mae:.2f}"
+                f" * tol={PROMOTION_TOLERANCE} — reverted to {old_version}"
+            )
+            logger.warning("[model_retrain] %s: %s", category, reason)
+        except Exception as e:
+            logger.warning("[model_retrain] revert symlink failed for %s: %s", category, e)
+            reason = f"regression detected but revert FAILED: {e}"
+    elif old_mae is None or new_mae is None:
+        reason = "no_holdout — first train or empty ground_truth"
+
+    # ── Restore train_ground_truth.jsonl to full so next cycle has all data ──
+    if gt_full_lines and holdout_records:
+        try:
+            with open(gt_path, "w") as f:
+                f.writelines(gt_full_lines)
+        except Exception as e:
+            logger.warning("[model_retrain] restore gt file failed for %s: %s", category, e)
+
+    # ── Async log to model_promotion_log (best-effort) ──
+    try:
+        asyncio.get_event_loop().run_until_complete(
+            _log_promotion(category, old_version, new_version or "?",
+                           old_mae, new_mae, len(holdout_records),
+                           promoted, reason)
+        )
+    except RuntimeError:
+        # No event loop — fire-and-forget via asyncio.run in a thread isn't
+        # worth the complexity here; the log entry is best-effort.
+        pass
+
+    return {
+        "category": category,
+        "status": "ok" if promoted else "skipped_regression",
+        "samples": len(all_prices),
+        "old_version": old_version,
+        "new_version": new_version,
+        "old_mae": old_mae,
+        "new_mae": new_mae,
+        "holdout_n": len(holdout_records),
+        "promoted": promoted,
+        "reason": reason,
+    }
 
 
 def _retrain_via_cli(category: str, sample_count: int) -> dict:
@@ -428,27 +639,41 @@ async def run_once():
     finally:
         await conn.close()
 
-    # Phase 2: Retrain models (doesn't need DB connection)
+    # Phase 2: Retrain models (doesn't need persistent DB connection)
+    # Ensure the promotion log table exists once before per-category loop
+    try:
+        await _ensure_promotion_log_table()
+    except Exception as e:
+        logger.warning("[model_retrain] _ensure_promotion_log_table failed: %s", e)
+
     retrain_results = []
-    ok_count = 0
-    skip_count = 0
+    promoted_count = 0
+    regression_skipped_count = 0
+    insufficient_skip_count = 0
     error_count = 0
 
     for category in ALL_CATEGORIES:
         result = _retrain_category(category)
         retrain_results.append(result)
-        if result["status"] == "ok":
-            ok_count += 1
-        elif result["status"] == "skipped":
-            skip_count += 1
+        st = result["status"]
+        if st == "ok":
+            promoted_count += 1
+        elif st == "skipped_regression":
+            regression_skipped_count += 1
+        elif st == "skipped":
+            insufficient_skip_count += 1
         else:
             error_count += 1
 
     logger.info(
-        "Model retrain cycle complete: ok=%d skipped=%d errors=%d (total=%d categories)",
-        ok_count, skip_count, error_count, len(ALL_CATEGORIES),
+        "Model retrain cycle complete: promoted=%d regression_skipped=%d "
+        "insufficient_data=%d errors=%d (total=%d categories)",
+        promoted_count, regression_skipped_count,
+        insufficient_skip_count, error_count, len(ALL_CATEGORIES),
     )
 
+    # `error` only when an actual exception fired. A regression skip is the
+    # gate working as designed — not an error.
     status = "ok" if error_count == 0 else "error"
     record_run("model_retrain_worker", status)
 

@@ -138,6 +138,63 @@ def _load_artifact_from_s3(s3_key: str) -> dict | None:
         return None
 
 
+# ---------------------------------------------------------------------------
+# Disk fallback — reads `artifacts/{category}/{slot}/model.json` from disk.
+# Required because the live `model_registry` table has an incompatible
+# schema (4 rows, columns: name/version/params/uri/is_canary — no category /
+# model_type / s3_key / artifact_json / is_active). _schema_is_compatible
+# correctly returns False; without this fallback every get_active_model
+# returned None and **valuation_worker silently used empirical quantiles
+# only** despite Ridge models retraining weekly to disk.
+# Discovered 2026-04-25 while planning B2 model A/B work.
+# ---------------------------------------------------------------------------
+
+_ARTIFACTS_ROOT = None
+
+
+def _resolve_artifacts_root():
+    """Find the artifacts/ directory regardless of CWD.
+
+    On EC2: /opt/collectors/server/artifacts.
+    Locally: server/artifacts (CWD-relative).
+    """
+    global _ARTIFACTS_ROOT
+    if _ARTIFACTS_ROOT is not None:
+        return _ARTIFACTS_ROOT
+    import pathlib
+    candidates = [
+        pathlib.Path.cwd() / "artifacts",
+        pathlib.Path("/opt/collectors/server/artifacts"),
+        pathlib.Path(__file__).resolve().parents[2] / "artifacts",
+    ]
+    for c in candidates:
+        if c.exists() and c.is_dir():
+            _ARTIFACTS_ROOT = c
+            logger.info("[model_loader] Using disk artifacts root: %s", c)
+            return c
+    return None
+
+
+def _load_artifact_from_disk(category: str, slot: str = "active") -> dict | None:
+    """Load `artifacts/{category}/{slot}/model.json` from disk.
+
+    `slot` is the symlink name: 'active' for production, 'canary' for A/B.
+    Returns parsed artifact dict or None.
+    """
+    root = _resolve_artifacts_root()
+    if root is None:
+        return None
+    path = root / category / slot / "model.json"
+    if not path.exists():
+        return None
+    try:
+        with open(path, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning("[model_loader] Disk read failed for %s/%s: %s", category, slot, e)
+        return None
+
+
 # Cache for loaded model artifacts (keyed by category)
 # Each entry: {"artifact": dict, "loaded_at": float}
 _model_cache: dict[str, dict] = {}
@@ -188,44 +245,54 @@ def clear_model_cache(category: str | None = None) -> None:
 
 
 async def _load_model_entry(category: str, is_canary: bool = False) -> dict | None:
-    """Load a model (production or canary) from registry."""
+    """Load a model (production or canary) from registry, with disk fallback."""
     cached = _get_cached_model(category, is_canary)
     if cached:
         return cached
 
     entry = await _fetch_model_registry_entry(category, is_canary=is_canary)
-    if not entry:
-        return None
-
     artifact: dict | None = None
 
-    # Try artifact_json first (inline storage)
-    if entry.get("artifact_json"):
-        try:
-            if isinstance(entry["artifact_json"], str):
-                artifact = json.loads(entry["artifact_json"])
-            else:
-                artifact = entry["artifact_json"]
-        except Exception as e:
-            logger.warning(f"Failed to parse artifact_json for {category}: {e}")
+    if entry:
+        # Try artifact_json first (inline storage)
+        if entry.get("artifact_json"):
+            try:
+                if isinstance(entry["artifact_json"], str):
+                    artifact = json.loads(entry["artifact_json"])
+                else:
+                    artifact = entry["artifact_json"]
+            except Exception as e:
+                logger.warning(f"Failed to parse artifact_json for {category}: {e}")
 
-    # Fall back to S3 if no inline artifact
-    if artifact is None and entry.get("s3_key"):
-        artifact = _load_artifact_from_s3(entry["s3_key"])
+        # Fall back to S3 if no inline artifact
+        if artifact is None and entry.get("s3_key"):
+            artifact = _load_artifact_from_s3(entry["s3_key"])
+
+    # FINAL fallback: read directly from disk via the symlink the train
+    # pipeline actually uses (`artifacts/{category}/{active|canary}`).
+    # This is the production path today because the live model_registry
+    # schema is incompatible with this loader (see _schema_is_compatible).
+    if artifact is None:
+        slot = "canary" if is_canary else "active"
+        artifact = _load_artifact_from_disk(category, slot=slot)
+        if artifact is not None:
+            artifact["_loaded_from"] = f"disk:{slot}"
 
     if artifact is None:
         return None
 
     # Enrich with registry metadata
-    artifact["_registry_id"] = entry.get("id")
+    if entry:
+        artifact["_registry_id"] = entry.get("id")
+        if entry.get("uncertainty_scale") is not None:
+            artifact["uncertainty_scale"] = float(entry["uncertainty_scale"])
     artifact["_category"] = category
     artifact["_is_canary"] = is_canary
-    if entry.get("uncertainty_scale") is not None:
-        artifact["uncertainty_scale"] = float(entry["uncertainty_scale"])
 
     _set_cached_model(category, artifact, is_canary)
     label = "canary" if is_canary else "production"
-    logger.info(f"Loaded {label} model for {category}: {artifact.get('model_type', 'unknown')}")
+    src = artifact.get("_loaded_from", "registry")
+    logger.info(f"Loaded {label} model for {category} from {src}: {artifact.get('model_type', 'unknown')}")
     return artifact
 
 

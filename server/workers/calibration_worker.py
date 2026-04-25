@@ -191,6 +191,10 @@ async def run_once():
                 "PASS" if gate_pass else "FAIL",
             )
 
+            # Auto-rollback gate (B2.2): if PICP collapsed > 10pp vs 7-day
+            # median AND gate=FAIL, revert artifacts/{cat}/active one version.
+            await _maybe_rollback_on_picp_collapse(conn, category, picp, gate_pass)
+
         logger.info(
             "Calibration cycle complete: %d snapshots created",
             snapshots_created,
@@ -216,6 +220,87 @@ async def run_once():
     finally:
         await conn.close()
         record_run("calibration_worker", status)
+
+
+# PICP-collapse rollback: if a category's current PICP drops > N pp from
+# its 7-day median AND fails the gate, swap the active model symlink back
+# one version. Default 10 percentage points — anything less is noise on
+# small samples.
+PICP_REGRESSION_THRESHOLD_PP = float(os.getenv("CALIBRATION_PICP_ROLLBACK_PP", "10")) / 100.0
+
+
+async def _maybe_rollback_on_picp_collapse(conn, category: str, current_picp: float, current_gate_pass: bool) -> None:
+    """If today's PICP is materially worse than the trailing median AND fails
+    the gate, revert artifacts/{category}/active to the prior version.
+
+    The prior version is read from the on-disk artifact directory listing —
+    the version directly preceding (lexicographic) what the current symlink
+    points at. Versions are timestamped (YYYYMMDD_HHMMSS) so lex sort = chrono.
+    """
+    if current_gate_pass:
+        return  # gate passed; nothing to roll back
+
+    median_row = await conn.fetchrow(
+        """
+        SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY picp) AS median_picp
+        FROM public.calibration_snapshots
+        WHERE category = $1
+          AND created_at >= now() - interval '7 days'
+          AND created_at < now() - interval '15 minutes'
+        """,
+        category,
+    )
+    median_picp = median_row and median_row["median_picp"]
+    if median_picp is None:
+        return  # no historical baseline yet
+    median_picp = float(median_picp)
+    if current_picp >= median_picp - PICP_REGRESSION_THRESHOLD_PP:
+        return  # within tolerance
+
+    try:
+        from app.ml.model_loader import _resolve_artifacts_root
+        root = _resolve_artifacts_root()
+        if root is None:
+            return
+        cat_dir = root / category
+        active_link = cat_dir / "active"
+        if not active_link.is_symlink():
+            return
+        current_target = os.readlink(str(active_link))
+        # Sort sibling version dirs (excluding 'active' / 'canary') chronologically
+        siblings = sorted(
+            d.name for d in cat_dir.iterdir()
+            if d.is_dir() and d.name not in ("active", "canary")
+        )
+        if current_target not in siblings or len(siblings) < 2:
+            return
+        idx = siblings.index(current_target)
+        if idx == 0:
+            return  # no earlier version to roll back to
+        prior_version = siblings[idx - 1]
+
+        active_link.unlink()
+        active_link.symlink_to(prior_version)
+
+        logger.warning(
+            "[calibration] AUTO-ROLLBACK %s: PICP=%.2f vs 7d-median=%.2f (drop>%.0fpp + gate=FAIL); "
+            "reverted active %s -> %s",
+            category, current_picp, median_picp,
+            PICP_REGRESSION_THRESHOLD_PP * 100,
+            current_target, prior_version,
+        )
+        # Page Telegram so the rollback is visible
+        try:
+            from app.lib.telegram_ops import send_ops_alert
+            await send_ops_alert(
+                f"[calibration] AUTO-ROLLBACK {category}: "
+                f"PICP {current_picp:.2f} vs 7d-median {median_picp:.2f}; "
+                f"active reverted {current_target} -> {prior_version}"
+            )
+        except Exception:
+            pass
+    except Exception as e:
+        logger.warning("[calibration] rollback for %s failed: %s", category, e)
 
 
 async def _check_ground_truth_accuracy(conn) -> None:
