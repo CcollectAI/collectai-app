@@ -333,6 +333,70 @@ async def list_accounts(
         raise error_response(500, "Failed to list accounts", code=ErrorCode.DB_ERROR)
 
 
+# ───────────────────────────────────────────────────────────────────────
+# eBay user-OAuth (Authorization Code flow). Distinct from the app-level
+# Client Credentials flow used by ebay_caller for read-only Browse.
+# Selling needs per-user delegated tokens. Two endpoints:
+#   GET /accounts/oauth/ebay/start    → returns redirect URL
+#   GET /accounts/oauth/ebay/callback → exchanges code, stores token row
+# ───────────────────────────────────────────────────────────────────────
+
+
+class EbayOauthStartResponse(BaseModel):
+    redirect_url: str
+    state: str
+
+
+@router.get("/accounts/oauth/ebay/start", response_model=EbayOauthStartResponse,
+            summary="Start eBay seller OAuth")
+async def ebay_oauth_start(user_id: str = Depends(get_current_user_id)):
+    """Returns the eBay consent URL. Frontend redirects user to it; eBay
+    sends them back to the callback with ?code=...&state=..."""
+    import secrets
+    from app.agents.adapters.ebay_sell_caller import build_oauth_url
+    state = f"{user_id}:{secrets.token_urlsafe(16)}"
+    return {"redirect_url": build_oauth_url(state), "state": state}
+
+
+@router.get("/accounts/oauth/ebay/callback", response_model=AccountResponse,
+            summary="Complete eBay OAuth callback")
+async def ebay_oauth_callback(
+    code: str,
+    state: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Exchange the auth code for tokens, persist to
+    marketplace_accounts. State is `{user_id}:{nonce}`."""
+    if not state.startswith(user_id + ":"):
+        raise error_response(400, "OAuth state mismatch", code=ErrorCode.VALIDATION_ERROR)
+    from app.agents.adapters.ebay_sell_caller import exchange_code_for_token
+    try:
+        tok = await exchange_code_for_token(code)
+    except Exception as e:
+        logger.exception("ebay oauth exchange failed: %s", e)
+        raise error_response(502, "eBay token exchange failed", code=ErrorCode.EXTERNAL_SERVICE_ERROR)
+
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            INSERT INTO marketplace_accounts
+              (user_id, marketplace_id, oauth_token_enc, refresh_token_enc, token_expires_at)
+            VALUES ($1, 'ebay', $2, $3, $4)
+            ON CONFLICT (user_id, marketplace_id) DO UPDATE
+            SET oauth_token_enc = excluded.oauth_token_enc,
+                refresh_token_enc = excluded.refresh_token_enc,
+                token_expires_at = excluded.token_expires_at,
+                updated_at = now()
+            RETURNING *
+            """,
+            user_id, tok["access_token"], tok["refresh_token"], tok["expires_at"],
+        )
+        return _row_to_account(row)
+
+
 # Rate limit: accounts — connect (5/min per user)
 @router.post("/accounts", response_model=AccountResponse, status_code=201, summary="Connect marketplace account")
 async def connect_account(
@@ -871,30 +935,88 @@ async def publish_listing(
     try:
         async with pool.acquire() as conn:
             now = datetime.now(timezone.utc)
-            row = await conn.fetchrow(
+            # Look up the draft + check whether it targets a real upstream
+            # marketplace we know how to publish to.
+            draft = await conn.fetchrow(
                 """
-                UPDATE marketplace_listings
-                SET status = 'active', listed_at = $3, updated_at = $3
-                WHERE id = $1 AND user_id = $2 AND status = 'draft'
-                RETURNING *
+                SELECT * FROM marketplace_listings
+                WHERE id = $1 AND user_id = $2
                 """,
-                listing_id, user_id, now,
+                listing_id, user_id,
             )
-            if not row:
-                # Check why it failed
-                exists = await conn.fetchrow(
-                    "SELECT id, status FROM marketplace_listings WHERE id = $1 AND user_id = $2",
-                    listing_id, user_id,
-                )
-                if not exists:
-                    raise error_response(404, "Listing not found", code=ErrorCode.NOT_FOUND)
+            if not draft:
+                raise error_response(404, "Listing not found", code=ErrorCode.NOT_FOUND)
+            if draft["status"] != "draft":
                 raise error_response(
                     409,
-                    f"Cannot publish a listing with status '{exists['status']}' (must be 'draft')",
+                    f"Cannot publish a listing with status '{draft['status']}' (must be 'draft')",
                     code=ErrorCode.CONFLICT,
                 )
 
-            logger.info("[marketplace-listings] Listing published: listing=%s user=%s", listing_id, user_id)
+            ebay_listing_id: Optional[str] = None
+            if draft["marketplace_id"] == "ebay":
+                # Real publish path: refresh user's eBay token, push the
+                # item via the Sell API (inventory_item → offer → publish),
+                # and stash the resulting eBay listing_id in our row.
+                from app.agents.adapters.ebay_sell_caller import publish_to_ebay
+                account = await conn.fetchrow(
+                    """
+                    SELECT * FROM marketplace_accounts
+                    WHERE user_id = $1 AND marketplace_id = 'ebay'
+                    """,
+                    user_id,
+                )
+                if not account:
+                    raise error_response(
+                        412, "No connected eBay account — complete OAuth first",
+                        code=ErrorCode.CONFLICT,
+                    )
+                try:
+                    publish_result = await publish_to_ebay(
+                        dict(account),
+                        sku=str(draft["id"]),
+                        item={
+                            "title": draft["listing_title"],
+                            "description": (draft.get("listing_description")
+                                            or draft["listing_title"]),
+                            "price": float(draft["price"]),
+                            "currency": draft.get("currency") or "USD",
+                            "condition": draft.get("condition_label") or "USED_EXCELLENT",
+                            # image_urls: pulled from item-images bucket separately
+                            # in a follow-up; eBay accepts up to 12 imageUrls.
+                            "image_urls": [],
+                            "quantity": draft.get("quantity") or 1,
+                            # eBay-specific fields not yet in marketplace_listings:
+                            # category_id + 3 policy IDs need a per-user defaults
+                            # row before this works end-to-end. eBay will 4xx
+                            # without them; that error surfaces back to the user
+                            # cleanly via the EXTERNAL_SERVICE_ERROR path below.
+                            "category_id": "",
+                            "fulfillment_policy_id": "",
+                            "payment_policy_id": "",
+                            "return_policy_id": "",
+                        },
+                    )
+                    ebay_listing_id = publish_result.get("ebay_listing_id")
+                except Exception as e:
+                    logger.exception("eBay publish failed: %s", e)
+                    raise error_response(
+                        502, f"eBay publish failed: {e!s}",
+                        code=ErrorCode.EXTERNAL_SERVICE_ERROR,
+                    )
+
+            row = await conn.fetchrow(
+                """
+                UPDATE marketplace_listings
+                SET status = 'active', listed_at = $3, updated_at = $3,
+                    external_listing_id = COALESCE($4, external_listing_id)
+                WHERE id = $1 AND user_id = $2
+                RETURNING *
+                """,
+                listing_id, user_id, now, ebay_listing_id,
+            )
+            logger.info("[marketplace-listings] Listing published: listing=%s user=%s ebay_id=%s",
+                        listing_id, user_id, ebay_listing_id)
             return _row_to_listing(row)
     except HTTPException:
         raise
