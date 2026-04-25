@@ -397,6 +397,69 @@ async def ebay_oauth_callback(
         return _row_to_account(row)
 
 
+class EbayDefaultsPayload(BaseModel):
+    ebay_category_id: str = Field(..., min_length=1, max_length=32)
+    fulfillment_policy_id: str = Field(..., min_length=1, max_length=64)
+    payment_policy_id: str = Field(..., min_length=1, max_length=64)
+    return_policy_id: str = Field(..., min_length=1, max_length=64)
+    location_key: str = Field(default="default", max_length=64)
+
+
+class EbayDefaultsResponse(EbayDefaultsPayload):
+    updated_at: datetime
+
+
+@router.get("/accounts/defaults/ebay", response_model=Optional[EbayDefaultsResponse],
+            summary="Get eBay publish defaults")
+async def get_ebay_defaults(user_id: str = Depends(get_current_user_id)):
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT ebay_category_id, fulfillment_policy_id, payment_policy_id,
+                   return_policy_id, location_key, updated_at
+            FROM marketplace_account_defaults
+            WHERE user_id = $1 AND marketplace_id = 'ebay'
+            """,
+            user_id,
+        )
+        return dict(row) if row else None
+
+
+@router.put("/accounts/defaults/ebay", response_model=EbayDefaultsResponse,
+            summary="Set eBay publish defaults")
+async def put_ebay_defaults(
+    payload: EbayDefaultsPayload,
+    user_id: str = Depends(get_current_user_id),
+):
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            INSERT INTO marketplace_account_defaults
+              (user_id, marketplace_id, ebay_category_id, fulfillment_policy_id,
+               payment_policy_id, return_policy_id, location_key)
+            VALUES ($1, 'ebay', $2, $3, $4, $5, $6)
+            ON CONFLICT (user_id, marketplace_id) DO UPDATE
+            SET ebay_category_id      = excluded.ebay_category_id,
+                fulfillment_policy_id = excluded.fulfillment_policy_id,
+                payment_policy_id     = excluded.payment_policy_id,
+                return_policy_id      = excluded.return_policy_id,
+                location_key          = excluded.location_key,
+                updated_at            = now()
+            RETURNING ebay_category_id, fulfillment_policy_id, payment_policy_id,
+                      return_policy_id, location_key, updated_at
+            """,
+            user_id, payload.ebay_category_id, payload.fulfillment_policy_id,
+            payload.payment_policy_id, payload.return_policy_id, payload.location_key,
+        )
+        return dict(row)
+
+
 # Rate limit: accounts — connect (5/min per user)
 @router.post("/accounts", response_model=AccountResponse, status_code=201, summary="Connect marketplace account")
 async def connect_account(
@@ -971,6 +1034,46 @@ async def publish_listing(
                         412, "No connected eBay account — complete OAuth first",
                         code=ErrorCode.CONFLICT,
                     )
+                # Pull per-account defaults (eBay category + 3 policies).
+                # Without these eBay's Sell API rejects with 4xx — surface
+                # a friendlier 412 to the user.
+                defaults = await conn.fetchrow(
+                    """
+                    SELECT * FROM marketplace_account_defaults
+                    WHERE user_id = $1 AND marketplace_id = 'ebay'
+                    """,
+                    user_id,
+                ) or {}
+                missing = [k for k in (
+                    "ebay_category_id", "fulfillment_policy_id",
+                    "payment_policy_id", "return_policy_id",
+                ) if not defaults.get(k)]
+                if missing:
+                    raise error_response(
+                        412,
+                        f"Missing eBay defaults: {missing}. "
+                        "Set them via PUT /marketplace/listings/accounts/defaults/ebay",
+                        code=ErrorCode.CONFLICT,
+                    )
+                # Pull image URLs from item_images (max 12 — eBay cap).
+                image_rows = await conn.fetch(
+                    """
+                    SELECT url FROM item_images
+                    WHERE item_id = $1 AND user_id = $2
+                    ORDER BY created_at LIMIT 12
+                    """,
+                    draft["item_id"], user_id,
+                )
+                image_urls = [r["url"] for r in image_rows]
+                # Fall back to the items.image_url primary if nothing in
+                # item_images yet.
+                if not image_urls:
+                    primary = await conn.fetchval(
+                        "SELECT image_url FROM items WHERE id = $1",
+                        draft["item_id"],
+                    )
+                    if primary:
+                        image_urls = [primary]
                 try:
                     publish_result = await publish_to_ebay(
                         dict(account),
@@ -982,19 +1085,13 @@ async def publish_listing(
                             "price": float(draft["price"]),
                             "currency": draft.get("currency") or "USD",
                             "condition": draft.get("condition_label") or "USED_EXCELLENT",
-                            # image_urls: pulled from item-images bucket separately
-                            # in a follow-up; eBay accepts up to 12 imageUrls.
-                            "image_urls": [],
+                            "image_urls": image_urls,
                             "quantity": draft.get("quantity") or 1,
-                            # eBay-specific fields not yet in marketplace_listings:
-                            # category_id + 3 policy IDs need a per-user defaults
-                            # row before this works end-to-end. eBay will 4xx
-                            # without them; that error surfaces back to the user
-                            # cleanly via the EXTERNAL_SERVICE_ERROR path below.
-                            "category_id": "",
-                            "fulfillment_policy_id": "",
-                            "payment_policy_id": "",
-                            "return_policy_id": "",
+                            "category_id": defaults["ebay_category_id"],
+                            "fulfillment_policy_id": defaults["fulfillment_policy_id"],
+                            "payment_policy_id": defaults["payment_policy_id"],
+                            "return_policy_id": defaults["return_policy_id"],
+                            "location_key": defaults.get("location_key") or "default",
                         },
                     )
                     ebay_listing_id = publish_result.get("ebay_listing_id")
