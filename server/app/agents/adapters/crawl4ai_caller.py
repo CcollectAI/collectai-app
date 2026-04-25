@@ -59,7 +59,6 @@ SITE_SEARCH_TEMPLATES: Dict[str, str] = {
     "amiami.com": "https://www.amiami.com/eng/search/list/?s_keywords={query}",
     "solarisjapan.com": "https://solarisjapan.com/search?q={query}",
     "sideshow.com": "https://www.sideshow.com/search?keywords={query}",
-    "mandarake.co.jp": "https://order.mandarake.co.jp/order/listPage/list?keyword={query}",
     "suruga-ya.jp": "https://www.suruga-ya.jp/search?category=&search_word={query}",
     # Building / Models
     "bricklink.com": "https://www.bricklink.com/v2/search.page?q={query}",
@@ -79,6 +78,22 @@ SITE_SEARCH_TEMPLATES: Dict[str, str] = {
     "comc.com": "https://www.comc.com/Cards?key={query}",
     # JP auctions
     "yahoo.co.jp/auctions": "https://auctions.yahoo.co.jp/search/search?p={query}",
+    # ─── (additions below) ───
+    # ─── Added 2026-04-25: dead specialty APIs replaced with public-page scraping
+    # so thin categories (watches, whiskey, lego, scale models) keep getting hits
+    # via Crawl4AI without needing API access we don't have.
+    "chrono24.com": "https://www.chrono24.com/search/index.htm?query={query}",
+    "whiskyauctioneer.com": "https://www.whiskyauctioneer.com/search?q={query}",
+    "masterofmalt.com": "https://www.masterofmalt.com/search/?searchTerm={query}",
+    "brickeconomy.com": "https://www.brickeconomy.com/search?query={query}",
+    "bezel.com": "https://getbezel.com/search?q={query}",
+    "popmart.com": "https://www.popmart.com/search?keyword={query}",
+    "mavin.io": "https://mavin.io/search?q={query}",
+    "etsy.com": "https://www.etsy.com/search?q={query}",
+    "leboncoin.fr": "https://www.leboncoin.fr/recherche?text={query}",
+    "marktplaats.nl": "https://www.marktplaats.nl/q/{query}/",
+    "kleinanzeigen.de": "https://www.kleinanzeigen.de/s-{query}/k0",
+    "wallapop.com": "https://es.wallapop.com/app/search?keywords={query}",
 }
 
 # eBay sold-listing URL suffix
@@ -121,6 +136,42 @@ def _extract_title_from_listing(text: str) -> Optional[str]:
     return None
 
 
+_ATTR_PATTERNS = [
+    # (regex, canonical_key)
+    (r"(?:condition|état|zustand|conditie)\s*[:\-—]\s*([A-Za-z0-9 ]{2,32})", "condition"),
+    (r"(?:brand|marke|marca|marque)\s*[:\-—]\s*([A-Za-z0-9 .&'\-]{2,40})", "brand"),
+    (r"(?:size|größe|talla|taille)\s*[:\-—]\s*([A-Za-z0-9 .]{1,16})", "size"),
+    (r"(?:color|colour|couleur|farbe|colore)\s*[:\-—]\s*([A-Za-z ]{3,24})", "color"),
+    (r"(?:year|année|jahr|año)\s*[:\-—]\s*(\d{4})", "year"),
+    (r"(?:material|matière|materiale|matériau)\s*[:\-—]\s*([A-Za-z ]{3,32})", "material"),
+    # Card-grading: "PSA 10", "BGS 9.5", "CGC 8"
+    (r"\b(PSA|BGS|CGC|SGC)\s*(\d{1,2}(?:\.\d)?)\b", "grade"),
+    # Foil markers — common TCG/collectible printing axis
+    (r"\b(holofoil|reverse holo|foil|normal printing)\b", "printing"),
+]
+
+
+def _extract_attrs_from_text(text: str) -> Dict[str, Any]:
+    """Best-effort regex extraction of common per-listing attribute fields
+    from raw listing markdown. Cheap; per-site precision is low; relies on
+    attribute_normalizer downstream to drop garbage values. Even 20%
+    coverage is a win because crawl4ai currently writes 0% attrs."""
+    attrs: Dict[str, Any] = {}
+    if not text:
+        return attrs
+    snippet = text[:2000]  # cap regex scope — listings markdown is verbose
+    for pattern, key in _ATTR_PATTERNS:
+        m = re.search(pattern, snippet, re.IGNORECASE)
+        if m:
+            value = m.group(1).strip()
+            if key == "grade":
+                # Two-group pattern: grader + score → "PSA 10"
+                value = f"{m.group(1).upper()} {m.group(2)}"
+            if value and key not in attrs:
+                attrs[key] = value
+    return attrs
+
+
 def _extract_url_from_listing(text: str) -> Optional[str]:
     """Extract the first URL from a listing text block."""
     m = re.search(r"\(?(https?://[^\s)]+)", text)
@@ -153,8 +204,11 @@ class Crawl4AICaller:
         if template:
             url = template.replace("{query}", encoded)
         else:
-            # Fallback: Google site-restricted search
-            url = f"https://www.google.com/search?q={encoded}+site%3A{quote_plus(site)}"
+            # Fallback: DuckDuckGo HTML — Google aggressively blocks scrapers
+            # without an API key; DuckDuckGo's /html/ endpoint is scrape-friendly.
+            # site: operator narrows to the target domain so we get its listings,
+            # not generic web results.
+            url = f"https://html.duckduckgo.com/html/?q={encoded}+site%3A{quote_plus(site)}"
 
         # For eBay sold comps, append sold filters
         if sold and "ebay" in site:
@@ -245,6 +299,7 @@ class Crawl4AICaller:
                         "currency": currency,
                         "source_price": source_price,
                         "source_currency": source_currency,
+                        "attributes": _extract_attrs_from_text(listing_text),
                         "sold_at": None,
                         "url": listing_url,
                         "condition": None,
@@ -342,6 +397,7 @@ class Crawl4AICaller:
                         "currency": currency,
                         "source_price": source_price,
                         "source_currency": source_currency,
+                        "attributes": _extract_attrs_from_text(listing_text),
                         "sold_at": None,
                         "url": listing_url,
                         "condition": None,

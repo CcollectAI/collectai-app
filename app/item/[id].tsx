@@ -721,6 +721,26 @@ function ItemDetailScreen() {
               toNum={toNum}
             />
 
+            {/* Thin-category boost prompt — runs above the feedback section
+                for cats with sparse market data so the "tell us what you paid"
+                signal is more visible. List mirrors BOOST_CATEGORIES in the
+                scrape scheduler. */}
+            {!isDraft && id && (() => {
+              const thinCats = new Set([
+                'ghibli','pens','whiskey','pop_fandom','action_figures',
+                'keycaps','blind_box','taylor_swift',
+              ]);
+              if (!thinCats.has(categorySlug)) return null;
+              return (
+                <View style={[styles.thinCatPrompt, { backgroundColor: theme.accent + '14', borderColor: theme.accent }]}>
+                  <Ionicons name="sparkles-outline" size={16} color={theme.accent} />
+                  <Text style={[styles.thinCatPromptText, { color: theme.accent }]}>
+                    {t('items_detail.thin_cat_help')}
+                  </Text>
+                </View>
+              );
+            })()}
+
             {/* Feedback section — shown for saved items */}
             {!isDraft && id && (
               <PriceFeedbackSection
@@ -1009,6 +1029,21 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+  },
+  thinCatPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 12,
+  },
+  thinCatPromptText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
   },
   content: {
     paddingHorizontal: 16,

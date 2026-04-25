@@ -605,6 +605,10 @@
     "select_mode_a11y": "Enter selection mode"
   },
 
+  "items_detail": {
+    "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates."
+  },
+
   "account": {
     "edit_profile": "Edit Profile",
     "edit_profile_desc": "Change your username and bio",
