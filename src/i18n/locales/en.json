@@ -605,6 +605,33 @@
     "select_mode_a11y": "Enter selection mode"
   },
 
+  "empty_state": {
+    "no_items": "No items yet",
+    "watchlist_empty": "Watchlist is empty",
+    "no_results": "No results found",
+    "no_events": "No upcoming events",
+    "no_messages": "No messages",
+    "no_projects": "No projects yet"
+  },
+
+  "dossier": {
+    "valuation_report": "Valuation Report",
+    "retry_a11y": "Retry loading report",
+    "estimated_value": "Estimated Value",
+    "similar_listings": "Similar Listings",
+    "export_pdf_a11y": "Export report as PDF",
+    "export_report": "Export Report"
+  },
+
+  "alert_settings": {
+    "section_a11y": "Alert settings section",
+    "price_drops": "Price Drops",
+    "drop_threshold": "Drop threshold",
+    "price_increases": "Price Increases",
+    "increase_threshold": "Increase threshold",
+    "new_listings": "New Listings"
+  },
+
   "items_detail": {
     "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates.",
     "enrich_button": "Get fresh comps",

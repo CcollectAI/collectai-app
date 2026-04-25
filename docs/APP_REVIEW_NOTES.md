@@ -123,5 +123,5 @@ Terms of Service: https://collectai.app/terms
 - Built with React Native (Expo SDK 54)
 - Backend: FastAPI on AWS EC2 with Docker
 - Database: Supabase (PostgreSQL)
-- 1653 backend tests, 104 frontend tests, 0 TypeScript errors
+- 3,284 backend tests, 516 frontend tests, 0 TypeScript errors
 - OTA updates enabled via expo-updates for non-native patches

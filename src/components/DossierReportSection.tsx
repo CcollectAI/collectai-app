@@ -8,6 +8,7 @@
  * Extracted from app/item/[id].tsx to reduce file size.
  */
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
@@ -73,6 +74,7 @@ export const DossierReportSection = React.memo(function DossierReportSection({
   formatPrice,
   toNum,
 }: DossierReportSectionProps) {
+  const { t } = useTranslation();
   return (
     <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
       <Pressable
@@ -83,7 +85,7 @@ export const DossierReportSection = React.memo(function DossierReportSection({
       >
         <View style={s.sectionHeaderLeft}>
           <Ionicons name="document-text-outline" size={20} color={theme.accent} />
-          <Text style={[s.sectionTitle, { color: theme.text }]}>Valuation Report</Text>
+          <Text style={[s.sectionTitle, { color: theme.text }]}>{t('dossier.valuation_report')}</Text>
         </View>
         {dossierLoading ? (
           <ActivityIndicator size="small" color={theme.accent} />
@@ -104,7 +106,7 @@ export const DossierReportSection = React.memo(function DossierReportSection({
             onPress={onRetry}
             style={[s.retryBtn, { borderColor: theme.accent }]}
             accessibilityRole="button"
-            accessibilityLabel="Retry loading report"
+            accessibilityLabel={t('dossier.retry_a11y')}
           >
             <Text style={{ color: theme.accent, fontSize: 13, fontWeight: "600" }}>Retry</Text>
           </AnimatedPressable>
@@ -115,7 +117,7 @@ export const DossierReportSection = React.memo(function DossierReportSection({
           {/* Valuation summary */}
           {dossierData.valuation?.q50 != null && (
             <View style={[s.dossierCard, { backgroundColor: theme.background }]}>
-              <Text style={[s.dossierLabel, { color: theme.muted }]}>Estimated Value</Text>
+              <Text style={[s.dossierLabel, { color: theme.muted }]}>{t('dossier.estimated_value')}</Text>
               <Text style={[s.dossierValue, { color: theme.text }]}>
                 {formatPrice(toNum(dossierData.valuation.q50 as string | number))}
               </Text>
@@ -129,7 +131,7 @@ export const DossierReportSection = React.memo(function DossierReportSection({
           {/* Market comps count */}
           {dossierData.market_comps?.length > 0 && (
             <View style={s.dossierRow}>
-              <Text style={[s.dossierRowLabel, { color: theme.muted }]}>Similar Listings</Text>
+              <Text style={[s.dossierRowLabel, { color: theme.muted }]}>{t('dossier.similar_listings')}</Text>
               <Text style={[s.dossierRowValue, { color: theme.text }]}>
                 {dossierData.market_comps.length} found
               </Text>
@@ -154,10 +156,10 @@ export const DossierReportSection = React.memo(function DossierReportSection({
             }}
             style={[s.dossierExportBtn, { borderColor: theme.border }]}
             accessibilityRole="button"
-            accessibilityLabel="Export report as PDF"
+            accessibilityLabel={t('dossier.export_pdf_a11y')}
           >
             <Ionicons name="share-outline" size={16} color={theme.accent} />
-            <Text style={[s.dossierExportText, { color: theme.accent }]}>Export Report</Text>
+            <Text style={[s.dossierExportText, { color: theme.accent }]}>{t('dossier.export_report')}</Text>
           </Pressable>
         </View>
       )}

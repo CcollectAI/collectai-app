@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, Switch, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -97,6 +98,7 @@ function ThresholdRow({ label, value, onValueChange, enabled, colors }: Threshol
 }
 
 export function AlertSettings({ preferences, onUpdate }: AlertSettingsProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [prefs, setPrefs] = useState<AlertPreferences>(preferences);
 
@@ -118,14 +120,14 @@ export function AlertSettings({ preferences, onUpdate }: AlertSettingsProps) {
     <View
       style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}
       accessibilityRole="none"
-      accessibilityLabel="Alert settings section"
+      accessibilityLabel={t('alert_settings.section_a11y')}
     >
       <Text style={[styles.sectionTitle, { color: colors.text }]} accessibilityRole="header">
         Alert Types
       </Text>
 
       <SettingRow
-        label="Price Drops"
+        label={t('alert_settings.price_drops')}
         description="Notify when watched items drop in price"
         value={prefs.priceDropEnabled}
         onValueChange={(v) => updatePref('priceDropEnabled', v)}
@@ -133,7 +135,7 @@ export function AlertSettings({ preferences, onUpdate }: AlertSettingsProps) {
       />
 
       <ThresholdRow
-        label="Drop threshold"
+        label={t('alert_settings.drop_threshold')}
         value={prefs.priceDropThreshold}
         onValueChange={(v) => updatePref('priceDropThreshold', v)}
         enabled={prefs.priceDropEnabled}
@@ -143,7 +145,7 @@ export function AlertSettings({ preferences, onUpdate }: AlertSettingsProps) {
       <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
       <SettingRow
-        label="Price Increases"
+        label={t('alert_settings.price_increases')}
         description="Notify when your items increase in value"
         value={prefs.priceIncreaseEnabled}
         onValueChange={(v) => updatePref('priceIncreaseEnabled', v)}
@@ -151,7 +153,7 @@ export function AlertSettings({ preferences, onUpdate }: AlertSettingsProps) {
       />
 
       <ThresholdRow
-        label="Increase threshold"
+        label={t('alert_settings.increase_threshold')}
         value={prefs.priceIncreaseThreshold}
         onValueChange={(v) => updatePref('priceIncreaseThreshold', v)}
         enabled={prefs.priceIncreaseEnabled}
@@ -161,7 +163,7 @@ export function AlertSettings({ preferences, onUpdate }: AlertSettingsProps) {
       <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
       <SettingRow
-        label="New Listings"
+        label={t('alert_settings.new_listings')}
         description="Notify when new listings match your watchlist"
         value={prefs.newListingEnabled}
         onValueChange={(v) => updatePref('newListingEnabled', v)}

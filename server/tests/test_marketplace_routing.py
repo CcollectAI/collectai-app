@@ -27,6 +27,7 @@ os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 from app.agents.marketplace_routing import (
     SOURCE_RELIABILITY,
     ADAPTER_CATEGORY_ROUTING,
+    DISABLED_ADAPTERS,
     adapter_serves_category,
 )
 
@@ -47,7 +48,6 @@ class TestSourceReliability:
     def test_known_adapters_present(self):
         expected_keys = [
             "ebay_sold", "tcgplayer", "mavin", "mercari_us", "whatnot",
-            "vinted", "firecrawl", "crawl4ai", "catawiki", "mandarake",
             "bezel", "chrono24", "keh", "mpb", "drop", "gouletpens",
             "brickeconomy", "popmart", "booth", "scalemates", "ktown4u",
             "comicbookrealm", "masterofmalt", "pricecharting",
@@ -86,7 +86,6 @@ class TestAdapterCategoryRouting:
 
     EXPECTED_ROUTED = {
         "tcgplayer", "whatnot", "catawiki", "whisky_auctioneer",
-        "mandarake", "bezel", "chrono24", "keh", "mpb", "drop",
         "gouletpens", "brickeconomy", "popmart", "booth",
         "scalemates", "ktown4u", "comicbookrealm", "masterofmalt",
         "pricecharting", "yahoo_auctions", "stockx", "discogs",
@@ -95,7 +94,9 @@ class TestAdapterCategoryRouting:
     }
 
     def test_has_all_expected_adapters(self):
-        all_expected = self.EXPECTED_UNRESTRICTED | self.EXPECTED_ROUTED
+        # Some adapters were de-registered 2026-04-25 (DISABLED_ADAPTERS)
+        # and removed from ADAPTER_CATEGORY_ROUTING. Only check live ones.
+        all_expected = (self.EXPECTED_UNRESTRICTED | self.EXPECTED_ROUTED) - DISABLED_ADAPTERS
         for adapter in all_expected:
             assert adapter in ADAPTER_CATEGORY_ROUTING, f"Missing adapter: {adapter}"
 
@@ -106,7 +107,7 @@ class TestAdapterCategoryRouting:
             )
 
     def test_routed_adapters_have_set_categories(self):
-        for adapter in self.EXPECTED_ROUTED:
+        for adapter in self.EXPECTED_ROUTED - DISABLED_ADAPTERS:
             cats = ADAPTER_CATEGORY_ROUTING[adapter]
             assert isinstance(cats, set), f"{adapter} should have a set of categories"
             assert len(cats) > 0, f"{adapter} has empty category set"
@@ -125,8 +126,9 @@ class TestAdapterServesCategory:
     # --- Unrestricted adapters serve any category ---
 
     @pytest.mark.parametrize("adapter", [
-        "ebay", "firecrawl", "crawl4ai", "scrapedo",
-        "google_shopping", "mercari_us", "vinted", "mavin",
+        "ebay", "firecrawl", "crawl4ai", "vinted",
+        # scrapedo, mercari_us, mavin, google_shopping disabled per
+        # DISABLED_ADAPTERS (2026-04-25 audit — zero hits in 7d).
     ])
     def test_unrestricted_serves_any_category(self, adapter):
         assert adapter_serves_category(adapter, "pokemon") is True
@@ -135,30 +137,40 @@ class TestAdapterServesCategory:
 
     # --- Known true pairs ---
 
+    # Only live adapters here — disabled ones tested separately in
+    # test_disabled_adapters_return_false below.
     @pytest.mark.parametrize("adapter,category", [
         ("tcgplayer", "pokemon"),
         ("tcgplayer", "mtg"),
         ("tcgplayer", "yugioh"),
-        ("bezel", "watches"),
-        ("chrono24", "watches"),
-        ("bricklink", "lego"),
-        ("brickeconomy", "lego"),
         ("gouletpens", "pens"),
-        ("keh", "vintage_cameras"),
-        ("whisky_auctioneer", "whiskey"),
-        ("masterofmalt", "whiskey"),
         ("comicbookrealm", "comic_books"),
         ("discogs", "vinyl_records"),
         ("cardmarket", "pokemon"),
-        ("pricecharting", "retro_games"),
-        ("stockx", "sneakers"),
         ("abebooks", "comic_books"),
         ("reverb", "vinyl_records"),
-        ("comc", "sportscards"),
         ("grailed", "sneakers"),
     ])
     def test_known_true_pairs(self, adapter, category):
         assert adapter_serves_category(adapter, category) is True
+
+    # 2026-04-25: 27 adapters de-registered (zero hits in 7d audit).
+    # adapter_serves_category returns False even for their declared cats.
+    @pytest.mark.parametrize("adapter,category", [
+        ("bezel", "watches"),
+        ("chrono24", "watches"),
+        ("bricklink", "lego"),
+        ("brickeconomy", "lego"),
+        ("keh", "vintage_cameras"),
+        ("whisky_auctioneer", "whiskey"),
+        ("masterofmalt", "whiskey"),
+        ("pricecharting", "retro_games"),
+        ("stockx", "sneakers"),
+        ("comc", "sportscards"),
+    ])
+    def test_disabled_adapters_return_false(self, adapter, category):
+        assert adapter in DISABLED_ADAPTERS
+        assert adapter_serves_category(adapter, category) is False
 
     # --- Known false pairs ---
 
@@ -180,8 +192,10 @@ class TestAdapterServesCategory:
 
     def test_none_category_returns_true_for_routed(self):
         assert adapter_serves_category("tcgplayer", None) is True
-        assert adapter_serves_category("bezel", None) is True
-        assert adapter_serves_category("bricklink", None) is True
+        assert adapter_serves_category("cardmarket", None) is True
+        assert adapter_serves_category("discogs", None) is True
+        # bezel/bricklink now in DISABLED_ADAPTERS — return False even for
+        # category=None per the post-2026-04-25 audit.
 
     def test_none_category_returns_true_for_unrestricted(self):
         assert adapter_serves_category("ebay", None) is True
