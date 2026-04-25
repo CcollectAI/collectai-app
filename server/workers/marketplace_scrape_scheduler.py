@@ -215,7 +215,11 @@ async def _scrape_item(agent, item_key: str, title: str, category: str):
 
 async def run_once():
     """Execute a single scrape batch."""
-    dsn = os.getenv("DB_DSN")
+    # Prefer direct DSN — _get_stale_items boost+bootstrap passes scan
+    # category_items (140k rows) and were hitting the pooler 30s cap
+    # consecutively after the BOOST_CATEGORIES change (10+ errors
+    # 2026-04-25 05:25 → 06:50 UTC). Direct DSN removes the cap.
+    dsn = os.getenv("DB_DSN_DIRECT") or os.getenv("DB_DSN")
     if not dsn:
         logger.error("DB_DSN not set")
         return 0
