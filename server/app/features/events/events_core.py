@@ -942,6 +942,22 @@ async def get_event(
                 if event.is_sponsored and background_tasks:
                     background_tasks.add_task(increment_sponsor_impression, conn, event_id)
 
+                # Record demand signal for event view (best-effort).
+                # Pre-fix: events_router did not call record_demand_signal at
+                # all, so /intelligence/top-events could only show follower
+                # counts (event_follows_v1) — never view-count or scan-count.
+                if user_id:
+                    try:
+                        from app.features.data_moat import record_demand_signal
+                        await record_demand_signal(
+                            signal_type="event_viewed",
+                            category=event.category_id or "event",
+                            item_key=event_id,
+                            user_id=user_id,
+                        )
+                    except Exception as ds_e:
+                        logger.debug("[events] demand_signal record failed: %s", ds_e)
+
                 return event
 
         except HTTPException:

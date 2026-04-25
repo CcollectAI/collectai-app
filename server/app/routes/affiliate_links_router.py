@@ -234,3 +234,35 @@ async def tag_affiliate_url(
         affiliate_url=affiliate_url,
         source=affiliate_source or payload.source,
     )
+
+
+class AffiliateClickRequest(BaseModel):
+    source: str  # ebay|tcgplayer|cardmarket|mercari|...
+    query: Optional[str] = None
+    item_key: Optional[str] = None
+    category: Optional[str] = None
+
+
+@router.post("/affiliate-click", dependencies=[Depends(_affiliate_ip_limit)], summary="Record an affiliate-link click for intelligence")
+async def record_affiliate_click(
+    payload: AffiliateClickRequest,
+    user_id: Optional[str] = Depends(get_optional_user_id),
+):
+    """Record that the user actually tapped an affiliate link.
+
+    Click != /affiliate-links request — the FE renders multiple options and
+    the user only opens one. Without this signal we can't tell which
+    marketplaces/queries actually convert. Writes to demand_signals.
+    """
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type="affiliate_click",
+            category=payload.category,
+            item_key=payload.item_key or payload.source,
+            query_text=payload.query,
+            user_id=user_id,
+        )
+    except Exception as e:
+        logger.debug("[affiliate-click] demand_signal record failed: %s", e)
+    return {"ok": True}

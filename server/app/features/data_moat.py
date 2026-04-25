@@ -171,6 +171,10 @@ async def record_demand_signal(
         "price_alert_set", "watchlist_add",
         "item_scanned", "item_added", "catalog_browsed",
         "category_viewed", "collection_viewed",
+        # Added 2026-04-25 — event + affiliate intelligence (previously
+        # silent: events_router never called this, affiliate-link clicks
+        # weren't tracked at all).
+        "event_viewed", "event_followed", "affiliate_click",
     }
     if signal_type not in valid_types:
         logger.warning("[data_moat] Invalid signal type: %s", signal_type)

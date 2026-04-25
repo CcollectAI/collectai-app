@@ -309,6 +309,181 @@ async def top_viewed_items(
     }
 
 
+@router.get("/top-events")
+async def top_events(
+    days: int = Query(14, ge=1, le=90),
+    limit: int = Query(50, ge=1, le=500),
+    _user: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """Most-engaged events: combines event_viewed signals + follows + RSVPs.
+
+    Without this you can only see followers (a thin signal). Most events get
+    viewed many more times than followed; ranking by combined engagement
+    surfaces what's actually drawing attention.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="no_db_pool")
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            WITH views AS (
+                SELECT item_key AS event_id,
+                       COUNT(*) AS view_count,
+                       COUNT(DISTINCT user_id) AS unique_viewers
+                FROM public.demand_signals
+                WHERE signal_type = 'event_viewed'
+                  AND item_key IS NOT NULL
+                  AND created_at >= now() - ($1 || ' days')::interval
+                GROUP BY item_key
+            ),
+            follows AS (
+                SELECT canonical_key AS event_id,
+                       COUNT(DISTINCT user_id) AS follower_count
+                FROM public.event_follows_v1
+                WHERE enabled IS NOT FALSE
+                GROUP BY canonical_key
+            ),
+            rsvps AS (
+                SELECT event_id::text AS event_id,
+                       COUNT(*) AS rsvp_count
+                FROM public.event_attendees
+                GROUP BY event_id
+            )
+            SELECT
+                e.id::text AS event_id,
+                e.title,
+                e.category_id,
+                e.starts_at,
+                COALESCE(v.view_count, 0) AS views,
+                COALESCE(v.unique_viewers, 0) AS unique_viewers,
+                COALESCE(f.follower_count, 0) AS followers,
+                COALESCE(r.rsvp_count, 0) AS rsvps,
+                COALESCE(v.view_count, 0)
+                  + 5 * COALESCE(f.follower_count, 0)
+                  + 10 * COALESCE(r.rsvp_count, 0) AS engagement_score
+            FROM public.events e
+            LEFT JOIN views v ON v.event_id = e.id::text
+            LEFT JOIN follows f ON f.event_id = e.canonical_key
+            LEFT JOIN rsvps r ON r.event_id = e.id::text
+            WHERE COALESCE(v.view_count, 0)
+                + COALESCE(f.follower_count, 0)
+                + COALESCE(r.rsvp_count, 0) > 0
+            ORDER BY engagement_score DESC
+            LIMIT $2
+            """,
+            days, limit,
+        )
+    return {
+        "days": days,
+        "items": [
+            {
+                "event_id": r["event_id"],
+                "title": r["title"],
+                "category_id": r["category_id"],
+                "starts_at": r["starts_at"].isoformat() if r["starts_at"] else None,
+                "views": r["views"],
+                "unique_viewers": r["unique_viewers"],
+                "followers": r["followers"],
+                "rsvps": r["rsvps"],
+                "engagement_score": r["engagement_score"],
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/top-affiliates")
+async def top_affiliates(
+    days: int = Query(30, ge=1, le=180),
+    limit: int = Query(50, ge=1, le=500),
+    _user: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """Most-clicked affiliate-link sources + queries.
+
+    Reads `demand_signals` where signal_type = 'affiliate_click'. Source is
+    encoded in `item_key` (or its prefix), query in `query_text`. Use this
+    to see which marketplaces actually convert and which queries are
+    bouncing users out of the app.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="no_db_pool")
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT
+                COALESCE(item_key, 'unknown') AS source,
+                COALESCE(category, 'unspecified') AS category,
+                COUNT(*) AS clicks,
+                COUNT(DISTINCT user_id) AS unique_users,
+                MAX(created_at) AS last_click_at
+            FROM public.demand_signals
+            WHERE signal_type = 'affiliate_click'
+              AND created_at >= now() - ($1 || ' days')::interval
+            GROUP BY 1, 2
+            ORDER BY clicks DESC
+            LIMIT $2
+            """,
+            days, limit,
+        )
+    return {
+        "days": days,
+        "items": [
+            {
+                "source": r["source"],
+                "category": r["category"],
+                "clicks": r["clicks"],
+                "unique_users": r["unique_users"],
+                "last_click_at": r["last_click_at"].isoformat() if r["last_click_at"] else None,
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/top-chat-connections")
+async def top_chat_connections(
+    limit: int = Query(30, ge=1, le=200),
+    _user: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """Users with the most chat connections (members + DM partners).
+
+    Surfaces high-connector users who often drive community formation.
+    Useful for moderation prioritisation + super-user identification.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="no_db_pool")
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT
+                user_id,
+                COUNT(DISTINCT thread_id) AS thread_count,
+                MAX(created_at) AS last_joined_at
+            FROM public.chat_thread_members_v1
+            GROUP BY user_id
+            ORDER BY thread_count DESC
+            LIMIT $1
+            """,
+            limit,
+        )
+    return {
+        "items": [
+            {
+                "user_id": str(r["user_id"]),
+                "thread_count": r["thread_count"],
+                "last_joined_at": r["last_joined_at"].isoformat() if r["last_joined_at"] else None,
+            }
+            for r in rows
+        ],
+    }
+
+
 @router.get("/health")
 async def intelligence_health(
     _user: str = Depends(get_current_user_id),

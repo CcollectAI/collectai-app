@@ -98,6 +98,10 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("seatgeek_events_worker",  "pipelines.seatgeek_events",          "run_once", False),
     # ── Deal Desk offer auto-expiry (2026-04-22, hourly) ──
     ("offer_expiry_worker",     "workers.offer_expiry_worker",        "run_once", True),
+    # ── Search gap discovery (2026-04-25, 6h) — turns user 0-result searches into category_candidates ──
+    ("search_gap_worker",       "workers.search_gap_worker",          "run_once", True),
+    # ── Demand priority refresher (2026-04-25, 30m) — refresh top-N items by demand_signals ──
+    ("demand_priority_worker",  "workers.demand_priority_worker",     "run_once", True),
 
     # ── Workers with their own scheduler_loop (matview has split intervals) ──
     # matview_refresh uses its own scheduler_loop with demand/supply split
