@@ -24,6 +24,7 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
 from app.lib.db_helpers import get_db_pool
@@ -583,6 +584,244 @@ async def top_chat_connections(
                 "user_id": str(r["user_id"]),
                 "thread_count": r["thread_count"],
                 "last_joined_at": r["last_joined_at"].isoformat() if r["last_joined_at"] else None,
+            }
+            for r in rows
+        ],
+    }
+
+
+class PaywallEventRequest(BaseModel):
+    feature: str = Field(..., max_length=64, description="paywalled feature key")
+    action: str = Field(..., max_length=16, description="viewed|dismissed")
+
+
+@router.post("/paywall-event")
+async def record_paywall_event(
+    payload: PaywallEventRequest,
+    user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """RN client calls this when the paywall is shown / dismissed.
+
+    Without it, paywall conversion funnel is invisible: we know who paid
+    but not how many saw the wall + bounced. Critical pre-launch metric.
+    """
+    if payload.action not in ("viewed", "dismissed"):
+        raise HTTPException(status_code=400, detail="action must be viewed|dismissed")
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type=f"paywall_{payload.action}",
+            item_key=payload.feature,
+            user_id=user_id,
+        )
+    except Exception as e:
+        logger.debug("[intel/paywall-event] failed: %s", e)
+    return {"ok": True}
+
+
+class FeatureAttemptRequest(BaseModel):
+    feature: str = Field(..., max_length=64, description="key of Pro feature attempted")
+
+
+@router.post("/feature-attempt")
+async def record_feature_attempt(
+    payload: FeatureAttemptRequest,
+    user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """RN client calls when free user attempts a Pro-gated action.
+
+    Surfaces which Pro features actually have demand (informs gating
+    decisions + paywall copy).
+    """
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type="feature_gated_attempt",
+            item_key=payload.feature,
+            user_id=user_id,
+        )
+    except Exception as e:
+        logger.debug("[intel/feature-attempt] failed: %s", e)
+    return {"ok": True}
+
+
+@router.get("/top-paywall-rejections")
+async def top_paywall_rejections(
+    days: int = Query(30, ge=1, le=180),
+    limit: int = Query(50, ge=1, le=500),
+    _user: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """Per-feature paywall view + dismissal counts, ordered by dismissal volume."""
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="no_db_pool")
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT
+                item_key AS feature,
+                COUNT(*) FILTER (WHERE signal_type = 'paywall_viewed') AS views,
+                COUNT(*) FILTER (WHERE signal_type = 'paywall_dismissed') AS dismissals,
+                COUNT(DISTINCT user_id) FILTER (WHERE signal_type = 'paywall_viewed') AS unique_viewers,
+                COUNT(DISTINCT user_id) FILTER (WHERE signal_type = 'paywall_dismissed') AS unique_dismissers
+            FROM public.demand_signals
+            WHERE signal_type IN ('paywall_viewed', 'paywall_dismissed')
+              AND item_key IS NOT NULL
+              AND created_at >= now() - ($1 || ' days')::interval
+            GROUP BY item_key
+            ORDER BY dismissals DESC, views DESC
+            LIMIT $2
+            """,
+            days, limit,
+        )
+    return {
+        "days": days,
+        "items": [dict(r) for r in rows],
+    }
+
+
+@router.get("/top-removed-watchlists")
+async def top_removed_watchlists(
+    days: int = Query(30, ge=1, le=180),
+    limit: int = Query(50, ge=1, le=500),
+    _user: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """Items most-frequently removed from watchlists.
+
+    Heavy removals = either users got/gave up the item, or alert was
+    fatigue-inducing. Pair with /top-watchlists to compute net signal.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="no_db_pool")
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT
+                COALESCE(category, 'unspecified') AS category,
+                item_key,
+                COUNT(*) AS removals,
+                COUNT(DISTINCT user_id) AS unique_users,
+                MAX(created_at) AS last_removed_at
+            FROM public.demand_signals
+            WHERE signal_type = 'watchlist_remove'
+              AND item_key IS NOT NULL
+              AND created_at >= now() - ($1 || ' days')::interval
+            GROUP BY 1, 2
+            ORDER BY removals DESC
+            LIMIT $2
+            """,
+            days, limit,
+        )
+    return {
+        "days": days,
+        "items": [
+            {
+                "category": r["category"],
+                "item_key": r["item_key"],
+                "removals": r["removals"],
+                "unique_users": r["unique_users"],
+                "last_removed_at": r["last_removed_at"].isoformat() if r["last_removed_at"] else None,
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/top-deleted-items")
+async def top_deleted_items(
+    days: int = Query(30, ge=1, le=180),
+    limit: int = Query(50, ge=1, le=500),
+    _user: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """Items most-frequently deleted from collections (regret signal).
+
+    High delete rate often indicates the vision/category recommendation
+    was wrong. Feed back into model_retrain weighting.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="no_db_pool")
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT
+                item_key,
+                COUNT(*) FILTER (WHERE signal_type = 'item_deleted') AS deletes,
+                COUNT(*) FILTER (WHERE signal_type = 'item_archived') AS archives,
+                COUNT(DISTINCT user_id) AS unique_users,
+                MAX(created_at) AS last_at
+            FROM public.demand_signals
+            WHERE signal_type IN ('item_deleted', 'item_archived')
+              AND item_key IS NOT NULL
+              AND created_at >= now() - ($1 || ' days')::interval
+            GROUP BY item_key
+            ORDER BY deletes DESC, archives DESC
+            LIMIT $2
+            """,
+            days, limit,
+        )
+    return {
+        "days": days,
+        "items": [
+            {
+                "item_key": r["item_key"],
+                "deletes": r["deletes"],
+                "archives": r["archives"],
+                "unique_users": r["unique_users"],
+                "last_at": r["last_at"].isoformat() if r["last_at"] else None,
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/top-no-results-searches")
+async def top_no_results_searches(
+    days: int = Query(30, ge=1, le=180),
+    limit: int = Query(100, ge=1, le=500),
+    _user: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """Search queries that returned 0 results.
+
+    Highest-priority input for catalog expansion + autocomplete tuning.
+    Companion to /top-searches but filtered to the gap-only subset.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="no_db_pool")
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT
+                lower(trim(query_text)) AS query,
+                COUNT(*) AS searches,
+                COUNT(DISTINCT user_id) AS unique_users,
+                MAX(created_at) AS last_seen_at
+            FROM public.demand_signals
+            WHERE signal_type = 'no_results_search'
+              AND query_text IS NOT NULL
+              AND created_at >= now() - ($1 || ' days')::interval
+            GROUP BY 1
+            ORDER BY searches DESC
+            LIMIT $2
+            """,
+            days, limit,
+        )
+    return {
+        "days": days,
+        "items": [
+            {
+                "query": r["query"],
+                "searches": r["searches"],
+                "unique_users": r["unique_users"],
+                "last_seen_at": r["last_seen_at"].isoformat() if r["last_seen_at"] else None,
             }
             for r in rows
         ],

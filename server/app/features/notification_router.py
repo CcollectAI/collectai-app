@@ -306,6 +306,21 @@ async def update_notification_preferences(
         if isinstance(prefs, str):
             prefs = json.loads(prefs)
         merged = {**DEFAULT_NOTIFICATION_PREFERENCES, **prefs}
+        # Demand signal — capture WHICH preference categories users mute.
+        # The strongest "noisy alert" signal we can collect: a user
+        # explicitly disabling alerts they were getting. Stuff key:value
+        # changes into query_text since demand_signals has no metadata col.
+        try:
+            from app.features.data_moat import record_demand_signal
+            for k, v in updates.items():
+                await record_demand_signal(
+                    signal_type="notification_settings_changed",
+                    item_key=k,
+                    query_text=str(v)[:50],
+                    user_id=user_id,
+                )
+        except Exception:
+            pass
         return {"preferences": merged}
     except asyncpg.PostgresError as e:
         logger.error("[notifications] Error updating preferences: %s", e)

@@ -175,6 +175,19 @@ async def record_demand_signal(
         # silent: events_router never called this, affiliate-link clicks
         # weren't tracked at all).
         "event_viewed", "event_followed", "affiliate_click",
+        # Added 2026-04-25 (later) — full demand-side coverage: negative
+        # signals (cancellation/regret), monetization funnel, marketplace
+        # funnel, engagement quality. See MEMORY.md "Intelligence layer".
+        "watchlist_remove", "price_alert_removed",
+        "item_archived", "item_deleted",
+        "no_results_search",
+        "marketplace_listing_viewed",
+        "ticket_clicked",
+        "subscription_purchased",
+        "paywall_viewed", "paywall_dismissed",
+        "feature_gated_attempt",
+        "event_announcement_read",
+        "notification_settings_changed",
     }
     if signal_type not in valid_types:
         logger.warning("[data_moat] Invalid signal type: %s", signal_type)

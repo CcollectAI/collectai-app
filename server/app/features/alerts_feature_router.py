@@ -226,7 +226,12 @@ async def delete_alert(alert_id: str, user_id: str = Depends(get_current_user_id
             return {"ok": True}
         raise error_response(404, "Alert not found", code="VALIDATION_ERROR")
 
+    removed_meta = None
     async with get_conn() as conn:
+        removed_meta = await conn.fetchrow(
+            "SELECT category, item_id FROM public.user_price_alerts WHERE id = $1 AND user_id = $2",
+            alert_id, user_id,
+        )
         result = await conn.execute(
             """
             UPDATE public.user_price_alerts
@@ -239,6 +244,20 @@ async def delete_alert(alert_id: str, user_id: str = Depends(get_current_user_id
         # result is like "UPDATE 1" or "UPDATE 0"
         if result.endswith(" 0"):
             raise error_response(404, "Alert not found", code="VALIDATION_ERROR")
+
+    # Negative signal — alert removal is an annoyance/satisfaction signal
+    # that feeds the (deferred) alert_quality_worker.
+    if removed_meta:
+        try:
+            from app.features.data_moat import record_demand_signal
+            await record_demand_signal(
+                signal_type="price_alert_removed",
+                category=removed_meta["category"],
+                item_key=removed_meta["item_id"],
+                user_id=user_id,
+            )
+        except Exception:
+            pass
     return {"ok": True}
 
 

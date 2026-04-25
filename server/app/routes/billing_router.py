@@ -482,6 +482,17 @@ async def _handle_checkout_completed(pool: Any, session: dict):
         plan,
     )
     _log.info("User %s subscribed to %s plan", user_id, plan)
+    # Demand signal so subscription cohorts join with other demand data
+    # without needing a Stripe API roundtrip every time.
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type="subscription_purchased",
+            item_key=plan,
+            user_id=user_id,
+        )
+    except Exception:
+        pass
 
 
 async def _handle_subscription_updated(pool: Any, subscription: dict):

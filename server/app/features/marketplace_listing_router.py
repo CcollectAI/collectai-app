@@ -848,7 +848,18 @@ async def get_listing(
             )
             if not row:
                 raise error_response(404, "Listing not found", code=ErrorCode.NOT_FOUND)
-            return _row_to_listing(row)
+            response = _row_to_listing(row)
+        # Demand signal — listing detail viewed (stronger interest than affiliate-link click).
+        try:
+            from app.features.data_moat import record_demand_signal
+            await record_demand_signal(
+                signal_type="marketplace_listing_viewed",
+                item_key=str(row.get("item_id") or listing_id),
+                user_id=user_id,
+            )
+        except Exception:
+            pass
+        return response
     except HTTPException:
         raise
     except Exception as e:

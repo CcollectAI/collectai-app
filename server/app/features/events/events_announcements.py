@@ -376,7 +376,16 @@ async def mark_announcement_read(
                     """,
                     announcement_id, user_id,
                 )
-                return {"success": True}
+            try:
+                from app.features.data_moat import record_demand_signal
+                await record_demand_signal(
+                    signal_type="event_announcement_read",
+                    item_key=event_id,
+                    user_id=user_id,
+                )
+            except Exception:
+                pass
+            return {"success": True}
 
         except HTTPException:
             raise

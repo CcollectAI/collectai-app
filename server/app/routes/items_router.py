@@ -251,7 +251,17 @@ async def batch_archive_items(
                 )
                 count = int(result.split()[-1]) if result else 0
                 logger.info("[items] Batch archived %d items for user=%s", count, user_id)
-                return BatchResponse(success=True, affected_count=count)
+            try:
+                from app.features.data_moat import record_demand_signal
+                for iid in request.item_ids[:50]:  # cap to avoid hammering on bulk archives
+                    await record_demand_signal(
+                        signal_type="item_archived",
+                        item_key=iid,
+                        user_id=user_id,
+                    )
+            except Exception:
+                pass
+            return BatchResponse(success=True, affected_count=count)
         except Exception as e:
             logger.error("[items] DB error batch archiving: %s", e)
             raise error_response(500, "Failed to batch archive", code="DB_ERROR")
@@ -286,7 +296,19 @@ async def batch_delete_items(
                 )
                 count = int(result.split()[-1]) if result else 0
                 logger.info("[items] Batch deleted %d items for user=%s", count, user_id)
-                return BatchResponse(success=True, affected_count=count)
+            # Regret signal — items deleted shortly after add suggest the
+            # vision/category recommendation was wrong. Feed model retraining.
+            try:
+                from app.features.data_moat import record_demand_signal
+                for iid in request.item_ids[:50]:
+                    await record_demand_signal(
+                        signal_type="item_deleted",
+                        item_key=iid,
+                        user_id=user_id,
+                    )
+            except Exception:
+                pass
+            return BatchResponse(success=True, affected_count=count)
         except Exception as e:
             logger.error("[items] DB error batch deleting: %s", e)
             raise error_response(500, "Failed to batch delete", code="DB_ERROR")

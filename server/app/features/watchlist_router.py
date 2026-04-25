@@ -172,13 +172,35 @@ async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_curren
 
     if pool is not None:
         try:
+            removed_meta = None
             async with pool.acquire() as conn:
+                # Capture the row before delete so we can record category +
+                # title in the demand_signal (negative cancellation signal).
+                removed_meta = await conn.fetchrow(
+                    "SELECT category, title, item_id FROM public.watchlist_items WHERE id = $1::uuid AND user_id = $2::uuid",
+                    watch_id, user_id,
+                )
                 result = await conn.execute(
                     "DELETE FROM public.watchlist_items WHERE id = $1::uuid AND user_id = $2::uuid",
                     watch_id, user_id,
                 )
                 if result.endswith(" 0"):
                     raise error_response(404, "Watchlist item not found", code="NOT_FOUND")
+
+            # Negative-signal capture (best-effort, after pool released).
+            if removed_meta:
+                try:
+                    from app.features.data_moat import record_demand_signal
+                    await record_demand_signal(
+                        signal_type="watchlist_remove",
+                        category=removed_meta["category"],
+                        item_key=removed_meta["item_id"] or removed_meta["title"],
+                        user_id=user_id,
+                    )
+                except Exception as ds_e:
+                    logger.debug("[watchlist] demand_signal record failed: %s", ds_e)
+
+            async with pool.acquire() as conn:
 
                 # Return remaining items
                 rows = await conn.fetch(

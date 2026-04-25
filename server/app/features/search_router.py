@@ -165,7 +165,9 @@ async def unified_search(
                 elif hasattr(v, "hex"):
                     row[k] = str(v)
 
-    # Record demand signal with geo enrichment (best-effort)
+    # Record demand signal with geo enrichment (best-effort).
+    # If 0 results across every source, ALSO record a separate
+    # `no_results_search` signal so search_gap_worker can prioritise it.
     try:
         from app.features.data_moat import record_demand_signal, get_user_geo
         region, country = await get_user_geo(user_id)
@@ -176,6 +178,14 @@ async def unified_search(
             region=region,
             country_code=country,
         )
+        if not items and not catalog and not users and not events:
+            await record_demand_signal(
+                signal_type="no_results_search",
+                query_text=q.strip(),
+                user_id=user_id,
+                region=region,
+                country_code=country,
+            )
     except Exception as e:
         logger.debug("[search] demand signal recording failed: %s", e)
 

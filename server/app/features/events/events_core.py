@@ -531,7 +531,16 @@ async def follow_category(
                     category_id,
                 )
                 logger.info("[events] Follow category: user=%s, category=%s", user_id, category_id)
-                return {"success": True, "category_id": category_id}
+            try:
+                from app.features.data_moat import record_demand_signal
+                await record_demand_signal(
+                    signal_type="event_followed",
+                    category=category_id,
+                    user_id=user_id,
+                )
+            except Exception:
+                pass
+            return {"success": True, "category_id": category_id}
 
         except HTTPException:
             raise
@@ -1136,7 +1145,7 @@ async def ticket_checkout(
     try:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT id, title, ticket_price_cents, status, max_attendees FROM events WHERE id = $1",
+                "SELECT id, title, ticket_price_cents, status, max_attendees, category_id FROM events WHERE id = $1",
                 event_id,
             )
             if not row:
@@ -1147,6 +1156,20 @@ async def ticket_checkout(
             ticket_price = row.get("ticket_price_cents") or 0
             if ticket_price <= 0:
                 raise error_response(400, "This event is free — use RSVP instead", code=ErrorCode.VALIDATION_ERROR)
+
+        # Funnel signal — user clicked "buy ticket" (intent, not yet paid;
+        # the actual purchase fires via stripe webhook → subscription_purchased
+        # path). Lets us measure intent→purchase drop-off.
+        try:
+            from app.features.data_moat import record_demand_signal
+            await record_demand_signal(
+                signal_type="ticket_clicked",
+                category=row.get("category_id") or "event",
+                item_key=event_id,
+                user_id=user_id,
+            )
+        except Exception:
+            pass
 
             # Check user hasn't already RSVPd as going
             existing = await conn.fetchrow(
