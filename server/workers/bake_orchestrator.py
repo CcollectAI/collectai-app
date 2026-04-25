@@ -106,6 +106,10 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("vision_quality_worker",   "workers.vision_quality_worker",      "run_once", True),
     # ── Vision text reclassifier (2026-04-25, weekly) — TF-IDF/LogReg on scan_corrections, gated n≥1000 ──
     ("vision_reclassifier_worker", "workers.vision_reclassifier_worker", "run_once", True),
+    # ── Vision regret tracker (2026-04-26, hourly) — per-cat regret rate boosts scan_correction weight ──
+    ("vision_regret_worker",    "workers.vision_regret_worker",       "run_once", True),
+    # ── Event engagement scorer (2026-04-26, 30min) — events.engagement_score from views+follows+RSVPs+ticket_clicks ──
+    ("event_engagement_worker", "workers.event_engagement_worker",    "run_once", True),
 
     # ── Workers with their own scheduler_loop (matview has split intervals) ──
     # matview_refresh uses its own scheduler_loop with demand/supply split

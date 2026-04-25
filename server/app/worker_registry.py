@@ -65,6 +65,8 @@ SCHEDULES = {
     "demand_priority_worker": 1800,              # 2026-04-25 — refreshes top-N items by recent demand_signals (every 30 min)
     "vision_quality_worker": 3600,               # 2026-04-25 — recomputes vision_category_quality from scan_corrections (hourly)
     "vision_reclassifier_worker": 7 * 24 * 3600, # 2026-04-25 — trains TF-IDF + LogReg text reclassifier on scan_corrections (weekly; gated on n>=1000)
+    "vision_regret_worker": 3600,                # 2026-04-26 — per-category regret rate (deletes within 7d of AI-add) → boosts scan_correction weight
+    "event_engagement_worker": 1800,             # 2026-04-26 — recomputes events.engagement_score from views+follows+RSVPs+ticket_clicks (every 30 min)
 }
 
 

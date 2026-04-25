@@ -223,7 +223,12 @@ async def _export_scan_corrections(conn, category: str, cutoff: datetime) -> int
     """Export user scan corrections to training data.
 
     Scan corrections represent user-verified category/condition assignments.
-    They get weighted by user_weight (level >= 10 users get 2x).
+    Weight = user_weight × regret_multiplier where:
+      - user_weight: level≥10 users contribute 2× (existing).
+      - regret_multiplier: from vision_category_regret table — categories
+        with high AI-error rates get up to 3× weight on corrections so the
+        model learns failure modes faster (added 2026-04-26 by
+        vision_regret_worker; falls back to 1.0× when table absent).
     """
     rows = await conn.fetch(
         """
@@ -241,6 +246,19 @@ async def _export_scan_corrections(conn, category: str, cutoff: datetime) -> int
     if not rows:
         return 0
 
+    # Look up the per-category regret multiplier (best-effort; defaults to 1×).
+    # Formula: 1 + regret_rate * 2  → maps [0.0, 1.0] → [1×, 3×].
+    regret_multiplier = 1.0
+    try:
+        row = await conn.fetchrow(
+            "SELECT regret_rate_30d FROM public.vision_category_regret WHERE category = $1",
+            category,
+        )
+        if row and row["regret_rate_30d"] is not None:
+            regret_multiplier = 1.0 + float(row["regret_rate_30d"]) * 2.0
+    except Exception as e:
+        logger.debug("[model_retrain] regret lookup failed for %s: %s", category, e)
+
     cat_dir = DATA_DIR / category
     cat_dir.mkdir(parents=True, exist_ok=True)
 
@@ -252,17 +270,18 @@ async def _export_scan_corrections(conn, category: str, cutoff: datetime) -> int
             condition = row["corrected_condition"]
             user_weight = float(row["user_weight"] or 1.0)
             features = _price_to_features(0, condition, False)
-            # Corrections don't have prices, but they refine category/condition mapping
-            # Write them as feature-only records that reinforce correct categorization
             record = {"features": features, "price": 0, "correction": True}
             line = json.dumps(record) + "\n"
-            # Apply user weight — high-level users' corrections count more
-            repeat = int(user_weight)
+            # Combined weight = user_weight × regret_multiplier
+            repeat = max(1, int(round(user_weight * regret_multiplier)))
             for _ in range(repeat):
                 f.write(line)
                 count += 1
 
-    logger.info("Exported %d scan correction observations for %s", count, category)
+    logger.info(
+        "Exported %d scan correction observations for %s (regret_x=%.2f)",
+        count, category, regret_multiplier,
+    )
     return count
 
 

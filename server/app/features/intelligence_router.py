@@ -781,6 +781,48 @@ async def top_deleted_items(
     }
 
 
+@router.get("/top-regret-categories")
+async def top_regret_categories(
+    limit: int = Query(60, ge=1, le=200),
+    _user: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """Categories where AI-scanned items get deleted/archived shortly after add.
+
+    Read from `vision_category_regret` (populated hourly by
+    vision_regret_worker). High regret_rate = vision is misidentifying
+    that category. The model_retrain_worker uses this to multiply
+    scan_correction weight up to 3× for high-regret categories so the
+    next training cycle learns the failure mode faster.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="no_db_pool")
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT category, regret_rate_30d, items_added,
+                   items_regretted, computed_at
+            FROM public.vision_category_regret
+            ORDER BY regret_rate_30d DESC NULLS LAST, items_regretted DESC
+            LIMIT $1
+            """,
+            limit,
+        )
+    return {
+        "items": [
+            {
+                "category": r["category"],
+                "regret_rate_30d": float(r["regret_rate_30d"]) if r["regret_rate_30d"] is not None else None,
+                "items_added": r["items_added"],
+                "items_regretted": r["items_regretted"],
+                "computed_at": r["computed_at"].isoformat() if r["computed_at"] else None,
+            }
+            for r in rows
+        ],
+    }
+
+
 @router.get("/top-no-results-searches")
 async def top_no_results_searches(
     days: int = Query(30, ge=1, le=180),
