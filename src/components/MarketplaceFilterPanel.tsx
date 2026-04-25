@@ -7,6 +7,7 @@
  * Extracted from app/(tabs)/marketplace.tsx to reduce file size.
  */
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   SafeAreaView,
   View,
@@ -90,6 +91,7 @@ function MarketplaceFilterPanelInner({
   onClose,
   onReset,
 }: MarketplaceFilterPanelProps) {
+  const { t } = useTranslation();
   const toggleSource = (src: string) => {
     const active = filterSources.includes(src);
     onSetFilterSources(
@@ -116,11 +118,11 @@ function MarketplaceFilterPanelInner({
       <SafeAreaView style={[s.filterModal, { backgroundColor: theme.background }]}>
         {/* Header */}
         <View style={[s.filterHeader, { borderBottomColor: theme.border }]}>
-          <TouchableOpacity onPress={onClose} accessibilityLabel="Close filters">
+          <TouchableOpacity onPress={onClose} accessibilityLabel={t('marketplace_filter.close_a11y')}>
             <Ionicons name="close" size={24} color={theme.text} />
           </TouchableOpacity>
           <Text style={[s.filterHeaderTitle, { color: theme.text }]}>Filters</Text>
-          <TouchableOpacity onPress={onReset} accessibilityLabel="Reset all filters">
+          <TouchableOpacity onPress={onReset} accessibilityLabel={t('marketplace_filter.reset_a11y')}>
             <Text style={[s.filterResetText, { color: theme.accent }]}>Reset</Text>
           </TouchableOpacity>
         </View>
@@ -209,7 +211,7 @@ function MarketplaceFilterPanelInner({
                 s.filterPriceInput,
                 { color: theme.text, borderColor: theme.border },
               ]}
-              accessibilityLabel="Minimum price"
+              accessibilityLabel={t('marketplace_filter.min_price_a11y')}
               returnKeyType="done"
               maxLength={10}
             />
@@ -224,7 +226,7 @@ function MarketplaceFilterPanelInner({
                 s.filterPriceInput,
                 { color: theme.text, borderColor: theme.border },
               ]}
-              accessibilityLabel="Maximum price"
+              accessibilityLabel={t('marketplace_filter.max_price_a11y')}
               returnKeyType="done"
               maxLength={10}
             />
@@ -272,9 +274,9 @@ function MarketplaceFilterPanelInner({
             style={[s.filterApplyButton, { backgroundColor: theme.accent }]}
             onPress={onApply}
             accessibilityRole="button"
-            accessibilityLabel="Apply filters"
+            accessibilityLabel={t('marketplace_filter.apply_a11y')}
           >
-            <Text style={s.filterApplyText}>Apply filters</Text>
+            <Text style={s.filterApplyText}>{t('marketplace_filter.apply')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

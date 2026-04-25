@@ -569,6 +569,42 @@
     "suggest_new": "Suggest a new category"
   },
 
+  "social_proof": {
+    "market_context": "Market Context",
+    "recent_sales": "Recent Sales",
+    "sold_price": "Sold price",
+    "currently_listed": "Currently Listed",
+    "list_price_a11y": "List price (current asking price, not a sold comp)",
+    "list_price": "List price"
+  },
+
+  "price_feedback": {
+    "sale_price_placeholder": "Sale price (e.g., 150.00)",
+    "sale_price_a11y": "Sale price",
+    "submit_a11y": "Submit sale price",
+    "cancel_a11y": "Cancel sale price entry",
+    "report_a11y": "Report sale price",
+    "price_off_a11y": "Report price seems off"
+  },
+
+  "marketplace_filter": {
+    "close_a11y": "Close filters",
+    "reset_a11y": "Reset all filters",
+    "min_price_a11y": "Minimum price",
+    "max_price_a11y": "Maximum price",
+    "apply_a11y": "Apply filters",
+    "apply": "Apply filters"
+  },
+
+  "items_list_header": {
+    "search_placeholder": "Search items",
+    "search_a11y": "Search items",
+    "open_filters_a11y": "Open filters",
+    "list_view_a11y": "List view",
+    "gallery_view_a11y": "Gallery view",
+    "select_mode_a11y": "Enter selection mode"
+  },
+
   "account": {
     "edit_profile": "Edit Profile",
     "edit_profile_desc": "Change your username and bio",

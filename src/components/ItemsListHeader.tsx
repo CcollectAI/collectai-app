@@ -5,6 +5,7 @@
  * Extracted from app/(tabs)/items.tsx to reduce file size.
  */
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { View, Text, TextInput, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
@@ -44,6 +45,7 @@ export const ItemsListHeader = React.memo(function ItemsListHeader({
   onEnterMultiSelect,
   isMultiSelectMode,
 }: ItemsListHeaderProps) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Search row */}
@@ -53,9 +55,9 @@ export const ItemsListHeader = React.memo(function ItemsListHeader({
           <TextInput
             value={query}
             onChangeText={onQueryChange}
-            placeholder="Search items"
+            placeholder={t('items_list_header.search_placeholder')}
             placeholderTextColor={theme.muted}
-            accessibilityLabel="Search items"
+            accessibilityLabel={t('items_list_header.search_a11y')}
             style={[s.searchInput, { backgroundColor: theme.card, color: theme.text }]}
           />
         </View>
@@ -65,7 +67,7 @@ export const ItemsListHeader = React.memo(function ItemsListHeader({
           style={[s.filterBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
           onPress={onOpenFilter}
           accessibilityRole="button"
-          accessibilityLabel="Open filters"
+          accessibilityLabel={t('items_list_header.open_filters_a11y')}
         >
           <Ionicons name="options-outline" size={18} color={theme.accent} />
           {hasActiveFilter && (
@@ -86,7 +88,7 @@ export const ItemsListHeader = React.memo(function ItemsListHeader({
             ]}
             onPress={onToggleViewList}
             accessibilityRole="button"
-            accessibilityLabel="List view"
+            accessibilityLabel={t('items_list_header.list_view_a11y')}
             accessibilityState={{ selected: viewMode === "list" }}
           >
             <Ionicons
@@ -103,7 +105,7 @@ export const ItemsListHeader = React.memo(function ItemsListHeader({
             ]}
             onPress={onToggleViewGallery}
             accessibilityRole="button"
-            accessibilityLabel="Gallery view"
+            accessibilityLabel={t('items_list_header.gallery_view_a11y')}
             accessibilityState={{ selected: viewMode === "gallery" }}
           >
             <Ionicons
@@ -123,7 +125,7 @@ export const ItemsListHeader = React.memo(function ItemsListHeader({
             style={s.selectBtn}
             onPress={onEnterMultiSelect}
             accessibilityRole="button"
-            accessibilityLabel="Enter selection mode"
+            accessibilityLabel={t('items_list_header.select_mode_a11y')}
           >
             <Text style={[s.selectText, { color: theme.accent }]}>Select</Text>
           </AnimatedPressable>

@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -17,6 +18,7 @@ type Props = {
 };
 
 export const SocialProofSection = React.memo(function SocialProofSection({ socialProof, currency }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   if (!socialProof) return null;
@@ -26,20 +28,31 @@ export const SocialProofSection = React.memo(function SocialProofSection({ socia
     isTrending = false,
     trendRank,
     recentSold = [],
+    recentListings = [],
     scarcity,
   } = socialProof;
 
   const hasScarcity = scarcity != null && scarcity.scarcityScore > 0;
 
-  if (collectorCount === 0 && !isTrending && recentSold.length === 0 && !hasScarcity) {
+  if (
+    collectorCount === 0 &&
+    !isTrending &&
+    recentSold.length === 0 &&
+    recentListings.length === 0 &&
+    !hasScarcity
+  ) {
     return null;
   }
+
+  // Tiffany Blue for "list price" — visually distinct from the accent/warning
+  // palette used elsewhere so users don't confuse asking prices with sold comps.
+  const TIFFANY = '#81D8D0';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="people-outline" size={18} color={colors.accent} />
-        <Text style={[styles.title, { color: colors.text }]}>Market Context</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('social_proof.market_context')}</Text>
       </View>
 
       {/* Badges row */}
@@ -71,7 +84,12 @@ export const SocialProofSection = React.memo(function SocialProofSection({ socia
       {/* Recent sold */}
       {recentSold.length > 0 && (
         <View style={styles.soldSection}>
-          <Text style={[styles.subTitle, { color: colors.muted }]}>Recent Sales</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.subTitle, { color: colors.muted }]}>{t('social_proof.recent_sales')}</Text>
+            <View style={[styles.kindPill, { backgroundColor: colors.accent + '20' }]}>
+              <Text style={[styles.kindPillText, { color: colors.accent }]}>{t('social_proof.sold_price')}</Text>
+            </View>
+          </View>
           {recentSold.slice(0, 3).map((sold, idx) => (
             <View key={idx} style={styles.soldRow} accessibilityLabel={`Recent sale: ${sold.title ?? 'Unknown'}, ${sold.price != null ? formatPrice(sold.price, currency) : 'price unknown'}`}>
               <View style={[styles.soldDot, { backgroundColor: colors.accent }]} />
@@ -80,6 +98,37 @@ export const SocialProofSection = React.memo(function SocialProofSection({ socia
               </Text>
               <Text style={[styles.soldPrice, { color: colors.text }]}>
                 {sold.price != null ? formatPrice(sold.price, currency) : '—'}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Current listings — asking prices (Discogs-style). Only populated by
+          the backend for categories where listing data is ingested. */}
+      {recentListings.length > 0 && (
+        <View style={styles.listingSection}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.subTitle, { color: colors.muted }]}>{t('social_proof.currently_listed')}</Text>
+            <View
+              style={[styles.kindPill, { backgroundColor: TIFFANY + '33' }]}
+              accessibilityLabel={t('social_proof.list_price_a11y')}
+            >
+              <Text style={[styles.kindPillText, { color: TIFFANY }]}>{t('social_proof.list_price')}</Text>
+            </View>
+          </View>
+          {recentListings.slice(0, 3).map((item, idx) => (
+            <View
+              key={`listing-${idx}`}
+              style={styles.soldRow}
+              accessibilityLabel={`Current listing: ${item.title ?? 'Unknown'}, asking ${item.price != null ? formatPrice(item.price, currency) : 'unknown'}`}
+            >
+              <View style={[styles.soldDot, { backgroundColor: TIFFANY }]} />
+              <Text style={[styles.soldTitle, { color: colors.text }]} numberOfLines={1}>
+                {item.title ?? 'Unknown'}
+              </Text>
+              <Text style={[styles.soldPrice, { color: TIFFANY }]}>
+                {item.price != null ? formatPrice(item.price, currency) : '—'}
               </Text>
             </View>
           ))}
@@ -160,6 +209,27 @@ const styles = StyleSheet.create({
   soldSection: {
     marginTop: 4,
     gap: 6,
+  },
+  listingSection: {
+    marginTop: 12,
+    gap: 6,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  kindPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.xs,
+  },
+  kindPillText: {
+    fontSize: textToken.xs,
+    fontWeight: fw.bold,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   subTitle: {
     fontSize: textToken.sm,

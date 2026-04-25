@@ -7,6 +7,7 @@
  * Extracted from app/item/[id].tsx to reduce file size.
  */
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { View, Text, Pressable, TextInput, StyleSheet } from "react-native";
 
 // ── Props interface ─────────────────────────────────────────────────────
@@ -46,6 +47,7 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
   onPriceDisagree,
   onCancelSalePrice,
 }: PriceFeedbackSectionProps) {
+  const { t } = useTranslation();
   return (
     <View style={[s.feedbackBlock, { borderTopColor: theme.border }]}>
       <Text style={[s.feedbackHeader, { color: theme.text }]} accessibilityRole="header">
@@ -69,13 +71,13 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
                 backgroundColor: theme.background,
               },
             ]}
-            placeholder="Sale price (e.g., 150.00)"
+            placeholder={t('price_feedback.sale_price_placeholder')}
             placeholderTextColor={theme.muted ?? "#64748B"}
             keyboardType="decimal-pad"
             value={salePrice}
             onChangeText={onSalePriceChange}
             autoFocus
-            accessibilityLabel="Sale price"
+            accessibilityLabel={t('price_feedback.sale_price_a11y')}
           />
           <Pressable
             onPress={onSubmitSalePrice}
@@ -85,7 +87,7 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
               { backgroundColor: theme.accent, opacity: submittingFeedback ? 0.7 : 1 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Submit sale price"
+            accessibilityLabel={t('price_feedback.submit_a11y')}
           >
             <Text style={[s.feedbackBtnText, { color: "#FFFFFF" }]}>{/* Button text on brand background */}
               {submittingFeedback ? "..." : "Submit"}
@@ -95,7 +97,7 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
             onPress={onCancelSalePrice}
             style={[s.feedbackCancelBtn, { borderColor: theme.border }]}
             accessibilityRole="button"
-            accessibilityLabel="Cancel sale price entry"
+            accessibilityLabel={t('price_feedback.cancel_a11y')}
           >
             <Text style={[s.feedbackBtnText, { color: theme.muted }]}>
               Cancel
@@ -108,7 +110,7 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
             onPress={() => onShowSalePriceInput(true)}
             style={[s.feedbackBtn, { backgroundColor: theme.accent }]}
             accessibilityRole="button"
-            accessibilityLabel="Report sale price"
+            accessibilityLabel={t('price_feedback.report_a11y')}
           >
             <Text style={s.feedbackBtnTextWhite}>I sold it for...</Text>
           </Pressable>
@@ -120,7 +122,7 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
               { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Report price seems off"
+            accessibilityLabel={t('price_feedback.price_off_a11y')}
           >
             <Text style={[s.feedbackBtnText, { color: theme.text }]}>
               Price seems off
