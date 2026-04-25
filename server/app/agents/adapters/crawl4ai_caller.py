@@ -201,14 +201,14 @@ class Crawl4AICaller:
         encoded = quote_plus(query)
         template = SITE_SEARCH_TEMPLATES.get(site)
 
-        if template:
-            url = template.replace("{query}", encoded)
-        else:
-            # Fallback: DuckDuckGo HTML — Google aggressively blocks scrapers
-            # without an API key; DuckDuckGo's /html/ endpoint is scrape-friendly.
-            # site: operator narrows to the target domain so we get its listings,
-            # not generic web results.
-            url = f"https://html.duckduckgo.com/html/?q={encoded}+site%3A{quote_plus(site)}"
+        if not template:
+            # No template registered → return empty string so the caller
+            # treats it as no-data instead of producing garbage from a
+            # broken fallback. Tried Google + DuckDuckGo (2026-04-25):
+            # both anti-bot us / return HTML our parser doesn't grok.
+            # Add a real per-site template instead of relying on search.
+            return ""
+        url = template.replace("{query}", encoded)
 
         # For eBay sold comps, append sold filters
         if sold and "ebay" in site:
@@ -264,6 +264,10 @@ class Crawl4AICaller:
 
         for site in sites[:3]:  # cap at 3 sites per search
             url = self._build_search_url(query, site)
+            if not url:
+                # No template registered → skip silently rather than
+                # waste a Crawl4AI call on a URL we know won't work.
+                continue
             wait_for = self._get_wait_selector(site)
 
             try:
@@ -364,6 +368,8 @@ class Crawl4AICaller:
             else:
                 sold_query = f"{query} sold"
                 url = self._build_search_url(sold_query, site)
+            if not url:
+                continue
 
             wait_for = self._get_wait_selector(site)
 

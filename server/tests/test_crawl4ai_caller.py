@@ -58,15 +58,16 @@ class TestBuildSearchUrl:
         url = caller._build_search_url("Air Jordan", "stockx.com")
         assert "stockx.com/search" in url
 
-    def test_fallback_duckduckgo_search(self):
-        # Switched from Google to DuckDuckGo /html/ on 2026-04-25 — Google
-        # blocks scrapers without an API key; DDG is scrape-friendly.
+    def test_unknown_site_returns_empty(self):
+        # 2026-04-25: removed search-engine fallback (Google + DDG both
+        # broken in practice — anti-bot + parser mismatch). Unknown sites
+        # now return empty string so the caller treats them as no-data
+        # instead of producing garbage from a broken scrape.
         from app.agents.adapters.crawl4ai_caller import Crawl4AICaller
 
         caller = Crawl4AICaller()
         url = caller._build_search_url("rare item", "unknown-site.com")
-        assert "duckduckgo.com/html" in url
-        assert "unknown-site.com" in url
+        assert url == ""
 
     def test_bricklink_url(self):
         from app.agents.adapters.crawl4ai_caller import Crawl4AICaller
