@@ -444,6 +444,111 @@ async def top_affiliates(
     }
 
 
+@router.get("/top-event-creators")
+async def top_event_creators(
+    days: int = Query(30, ge=1, le=365),
+    limit: int = Query(50, ge=1, le=500),
+    _user: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """Users who create the most events.
+
+    Reads `events.created_by + created_at` directly — no demand_signal
+    needed since event creation is itself a hard signal already stored.
+    Surface high-output organizers for moderation + community health.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="no_db_pool")
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT
+                created_by AS user_id,
+                COUNT(*) AS events_created,
+                COUNT(DISTINCT category_id) AS distinct_categories,
+                MIN(created_at) AS first_event_at,
+                MAX(created_at) AS latest_event_at
+            FROM public.events
+            WHERE created_by IS NOT NULL
+              AND created_at >= now() - ($1 || ' days')::interval
+            GROUP BY created_by
+            ORDER BY events_created DESC
+            LIMIT $2
+            """,
+            days, limit,
+        )
+    return {
+        "days": days,
+        "items": [
+            {
+                "user_id": str(r["user_id"]),
+                "events_created": r["events_created"],
+                "distinct_categories": r["distinct_categories"],
+                "first_event_at": r["first_event_at"].isoformat() if r["first_event_at"] else None,
+                "latest_event_at": r["latest_event_at"].isoformat() if r["latest_event_at"] else None,
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/top-dm-requests")
+async def top_dm_requests(
+    days: int = Query(30, ge=1, le=365),
+    limit: int = Query(50, ge=1, le=500),
+    status: Optional[str] = Query(None, max_length=20, description="filter: pending|accepted|rejected"),
+    _user: str = Depends(get_current_user_id),
+    _rl=Depends(_intel_limit),
+):
+    """Most-requested DM targets (who's getting the most DM requests).
+
+    Reads `chat_dm_requests_v1`. Use to identify potential super-users +
+    detect DM spam (one user sending to many targets).
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="no_db_pool")
+    status_filter = "AND status = $3" if status else ""
+    params: list = [days, limit] + ([status] if status else [])
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            f"""
+            SELECT
+                target_user_id,
+                COUNT(*) AS request_count,
+                COUNT(DISTINCT requester_id) AS unique_requesters,
+                COUNT(*) FILTER (WHERE status = 'accepted') AS accepted_count,
+                COUNT(*) FILTER (WHERE status = 'rejected') AS rejected_count,
+                COUNT(*) FILTER (WHERE status = 'pending') AS pending_count,
+                MAX(created_at) AS latest_request_at
+            FROM public.chat_dm_requests_v1
+            WHERE created_at >= ($1 || ' days')::interval * -1 + now()
+              {status_filter}
+            GROUP BY target_user_id
+            ORDER BY request_count DESC
+            LIMIT $2
+            """,
+            *params,
+        )
+    return {
+        "days": days,
+        "status": status,
+        "items": [
+            {
+                "target_user_id": str(r["target_user_id"]),
+                "request_count": r["request_count"],
+                "unique_requesters": r["unique_requesters"],
+                "accepted_count": r["accepted_count"],
+                "rejected_count": r["rejected_count"],
+                "pending_count": r["pending_count"],
+                "latest_request_at": r["latest_request_at"].isoformat() if r["latest_request_at"] else None,
+            }
+            for r in rows
+        ],
+    }
+
+
 @router.get("/top-chat-connections")
 async def top_chat_connections(
     limit: int = Query(30, ge=1, le=200),

@@ -137,7 +137,23 @@ async def search_events(
 
             rows = await conn.fetch(query_str, *params)
             events = [row_to_event(dict(r)) for r in rows] if rows else []
-            return EventListResponse(events=events, total=total_count or 0)
+
+        # Record event-search demand signal (best-effort, after pool released).
+        # Pre-fix: events /search captured nothing — event-search text was
+        # invisible in the intelligence layer.
+        if q.strip():
+            try:
+                from app.features.data_moat import record_demand_signal
+                await record_demand_signal(
+                    signal_type="search_query",
+                    category=category or "event",
+                    query_text=q.strip()[:200],
+                    user_id=user_id,
+                )
+            except Exception as ds_e:
+                logger.debug("[events/search] demand_signal record failed: %s", ds_e)
+
+        return EventListResponse(events=events, total=total_count or 0)
     except Exception as e:
         if hasattr(e, "status_code"):
             raise e
