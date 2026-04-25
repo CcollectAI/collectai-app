@@ -139,14 +139,16 @@ async def run_once() -> dict:
 
     stats = {"exported": 0, "rows": 0, "bytes": 0, "partitions": []}
 
+    import re as _re
+    _PART_RE = _re.compile(r"y(\d{4})m(\d{2})")
     for part in to_export:
-        # Parse y2026m04 → (2026, 4)
-        try:
-            year = int(part.split("y")[1][:4])
-            month = int(part.split("m")[1][:2])
-        except (IndexError, ValueError):
+        # Parse y2026m04 → (2026, 4). Old split-based parser broke on
+        # any partition name containing 'm' (every market_hits_y* did).
+        m = _PART_RE.search(part)
+        if not m:
             logger.warning("[datalake_export] unparseable partition name: %s", part)
             continue
+        year, month = int(m.group(1)), int(m.group(2))
 
         n_rows = await conn.fetchval(f"SELECT COUNT(*) FROM public.{part}")
         if n_rows == 0:
