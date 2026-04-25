@@ -448,6 +448,24 @@ async def submit_verified_sale(
             },
         )
 
+        # Close the prediction-vs-reality calibration loop. Without this,
+        # verified_sales accumulated user-declared prices but
+        # price_ground_truths stayed empty (verified 2026-04-25: 0 rows)
+        # and the model_retrain pipeline never saw the realized prices.
+        try:
+            from app.features.data_moat import record_price_ground_truth
+            await record_price_ground_truth(
+                item_id=request.item_id,
+                actual_price=request.sale_price,
+                currency=request.currency,
+                source="user_verified_sale",
+            )
+        except Exception as gt_e:
+            logger.warning(
+                "[feedback/verified-sale] ground truth record failed (best-effort): %s",
+                gt_e,
+            )
+
         logger.info(
             "[feedback/verified-sale] Recorded: id=%s, item=%s, %s %s",
             sale_id, request.item_id, request.sale_price, request.currency,

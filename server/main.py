@@ -164,6 +164,8 @@ from app.features import storage_router
 from app.features import taxonomy_router
 from app.features import notification_router
 from app.features import collections_router
+from app.features import intelligence_router
+from app.features import notification_feedback_router
 from app.features import value_summary_router
 from app.features.predict_router import router as predict_router
 
@@ -234,6 +236,8 @@ app.include_router(barcode_lookup_router.router)
 app.include_router(taxonomy_router.router)
 app.include_router(notification_router.router)
 app.include_router(collections_router.router)
+app.include_router(intelligence_router.router)
+app.include_router(notification_feedback_router.router)
 
 # Agent routers
 app.include_router(marketplace_agg_router)
@@ -306,6 +310,8 @@ _v1.include_router(barcode_lookup_router.router)
 _v1.include_router(taxonomy_router.router)
 _v1.include_router(notification_router.router)
 _v1.include_router(collections_router.router)
+_v1.include_router(intelligence_router.router)
+_v1.include_router(notification_feedback_router.router)
 _v1.include_router(marketplace_agg_router)
 _v1.include_router(dossier_router)
 _v1.include_router(intake_router)
