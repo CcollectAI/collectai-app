@@ -165,6 +165,28 @@ async def unregister_push_token(
         raise error_response(500, "Failed to unregister push token", code="DB_ERROR")
 
 
+@router.post("/test-push", summary="Send a test push to your own devices")
+async def send_test_push(
+    user_id: str = Depends(get_current_user_id),
+) -> Dict[str, Any]:
+    """Trigger a test push to all of the caller's registered devices.
+    Use to validate the end-to-end registration → APNS/FCM → device chain
+    on launch day. Bypasses notification_history dedup."""
+    from app.lib.notify import notify_user
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+    async with pool.acquire() as conn:
+        sent = await notify_user(
+            conn, user_id,
+            title="Test push from CollectAI",
+            body="If you're reading this, push notifications work.",
+            category="test",
+            urgent=True,  # bypasses daily cap
+        )
+    return {"sent": sent}
+
+
 @router.get("/tokens", summary="List active push tokens")
 async def list_push_tokens(
     user_id: str = Depends(get_current_user_id),
