@@ -202,25 +202,31 @@ CHECKS: list[dict] = [
         "name": "quantile_outlier_categories",
         "severity": "warning",
         "threshold": 0,
-        # A category trips this when max(q50) is >100× the category average AND
-        # the category has enough rows (>20) AND a non-trivial average (>€100)
-        # AND the max itself is absurd (>€100k). Without these guards, a tiny
-        # category with one legit grail (F.P. Journe watch, Action Comics #1)
-        # pages every day — the 20M clamp already blocks true Ridge blow-ups.
-        "description": "Category with absurd Ridge outlier (>100× avg, max>€100k, n>20)",
+        # 2026-04-25: switched from AVG to MEDIAN denominator — AVG gets
+        # dragged up by the very outlier we're trying to detect, masking
+        # real Ridge blowups while false-firing on grail items. Comic_books
+        # was paging on Incredible Hulk #181 CGC 9.8 @ €140k (legit grail)
+        # because AVG = €1,218 was already inflated by it.
+        # Also raised the absolute floor from €100k → €1M: grail items in
+        # comics/sportscards/watches legitimately reach €100-500k. €1M+ is
+        # almost always a model glitch (the 20M clamp already blocks the
+        # very largest blow-ups).
+        # Median-based: max > 500× median catches Ridge blowups (model
+        # outputs €1M+ when nothing similar has been seen).
+        "description": "Category with absurd Ridge outlier (>500× median, max>€1M, n>20)",
         "sql": """
             SELECT COUNT(*) AS violators FROM (
               SELECT split_part(item_ref, ':', 1) AS category,
                      COUNT(*) AS n,
                      MAX(q50) AS mx,
-                     AVG(q50) AS avg
+                     percentile_cont(0.5) WITHIN GROUP (ORDER BY q50) AS med
               FROM public.price_predictions
               WHERE q50 IS NOT NULL AND generated_at > now() - interval '7 days'
               GROUP BY 1
               HAVING COUNT(*) > 20
-                 AND AVG(q50) > 100
-                 AND MAX(q50) > 100000
-                 AND MAX(q50) / NULLIF(AVG(q50),0) > 100
+                 AND percentile_cont(0.5) WITHIN GROUP (ORDER BY q50) > 100
+                 AND MAX(q50) > 1000000
+                 AND MAX(q50) / NULLIF(percentile_cont(0.5) WITHIN GROUP (ORDER BY q50), 0) > 500
             ) d
         """,
     },
