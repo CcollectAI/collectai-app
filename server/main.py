@@ -201,6 +201,7 @@ from app.features.admin_health_router import router as admin_health_router
 from app.features.sell_timing_router import router as sell_timing_router
 from app.features.enrich_router import router as enrich_router
 from app.features.warm_tier_router import router as warm_tier_router
+from app.features.uploads_router import router as uploads_router
 
 # ---------------------------------------------------------------------------
 # Register routers
@@ -275,6 +276,7 @@ app.include_router(value_summary_router.router)
 app.include_router(sell_timing_router)
 app.include_router(enrich_router)
 app.include_router(warm_tier_router)
+app.include_router(uploads_router)
 
 # Twitch (optional)
 try:
