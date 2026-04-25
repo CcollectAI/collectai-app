@@ -38,6 +38,7 @@ import {
 import { featureFlags } from "@/config/featureFlags";
 import { radius, text, fontWeight, gap, shadow } from "@/theme/tokens";
 import { collectorsApi } from "@/api/collectorsApi";
+import { enrichOnDemand } from "@/api/marketplaceApi";
 import logger from "@/utils/logger";
 import { formatPrice, getCurrencySymbol } from "@/lib/format";
 import type { CurrencyCode } from "@/data/types";
@@ -257,6 +258,33 @@ function ItemDetailScreen() {
   // Provenance + Dossier state managed by useItemMarketplace hook above
 
   const categorySlug = CATEGORY_ID_MAP[editableCategory] || editableCategory.toLowerCase().replace(/[^a-z0-9_]/g, '');
+
+  // ── On-demand enrich state — paid scrape for thin-cat items
+  const [enriching, setEnriching] = useState(false);
+  const [enrichResult, setEnrichResult] = useState<string | null>(null);
+  const onEnrichOnDemand = async () => {
+    if (enriching) return;
+    setEnriching(true);
+    setEnrichResult(null);
+    try {
+      const r: any = await enrichOnDemand({
+        item_ref: `${categorySlug}:${(editableName || '').toLowerCase().replace(/\s+/g, '-').slice(0, 80)}`,
+        query: editableName || '',
+        category: categorySlug,
+      });
+      if (r?.skipped) {
+        if (r.reason === 'cache_fresh') setEnrichResult(t('items_detail.enrich_cache'));
+        else if (r.reason === 'budget_exhausted') setEnrichResult(t('items_detail.enrich_budget'));
+        else setEnrichResult(t('items_detail.enrich_unavailable'));
+      } else {
+        setEnrichResult(t('items_detail.enrich_done', { count: r?.hits_persisted ?? 0 }));
+      }
+    } catch (e) {
+      setEnrichResult(t('items_detail.enrich_error'));
+    } finally {
+      setEnriching(false);
+    }
+  };
 
   // ── Grading service state ────────────────────────────────────────────
   const isGradingEligible = GRADING_ELIGIBLE_CATEGORIES.has(categorySlug);
@@ -734,9 +762,27 @@ function ItemDetailScreen() {
               return (
                 <View style={[styles.thinCatPrompt, { backgroundColor: theme.accent + '14', borderColor: theme.accent }]}>
                   <Ionicons name="sparkles-outline" size={16} color={theme.accent} />
-                  <Text style={[styles.thinCatPromptText, { color: theme.accent }]}>
-                    {t('items_detail.thin_cat_help')}
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.thinCatPromptText, { color: theme.accent }]}>
+                      {t('items_detail.thin_cat_help')}
+                    </Text>
+                    <AnimatedPressable
+                      onPress={onEnrichOnDemand}
+                      disabled={enriching}
+                      style={[styles.enrichBtn, { backgroundColor: theme.accent, opacity: enriching ? 0.6 : 1 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('items_detail.enrich_button_a11y')}
+                    >
+                      {enriching ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={styles.enrichBtnText}>{t('items_detail.enrich_button')}</Text>
+                      )}
+                    </AnimatedPressable>
+                    {enrichResult && (
+                      <Text style={[styles.enrichResultText, { color: theme.muted }]}>{enrichResult}</Text>
+                    )}
+                  </View>
                 </View>
               );
             })()}
@@ -1044,6 +1090,23 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: '600',
+  },
+  enrichBtn: {
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+  },
+  enrichBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  enrichResultText: {
+    marginTop: 6,
+    fontSize: 12,
   },
   content: {
     paddingHorizontal: 16,

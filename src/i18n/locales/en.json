@@ -606,7 +606,14 @@
   },
 
   "items_detail": {
-    "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates."
+    "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates.",
+    "enrich_button": "Get fresh comps",
+    "enrich_button_a11y": "Fetch fresh price comps for this item",
+    "enrich_done": "Got {{count}} fresh comps. Refresh to see updated estimate.",
+    "enrich_cache": "Already have recent comps for this item.",
+    "enrich_budget": "Daily price-fetch budget reached. Try again tomorrow.",
+    "enrich_unavailable": "Live price-fetch is currently unavailable.",
+    "enrich_error": "Couldn't fetch fresh comps. Please try again."
   },
 
   "account": {

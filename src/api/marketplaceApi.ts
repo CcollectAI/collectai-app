@@ -105,3 +105,14 @@ export const listMarketplaceSales = (opts?: { marketplace_id?: string; limit?: n
 
 export const recordMarketplaceSale = (listingId: string, payload: { sale_price: number; buyer_name?: string }) =>
   post(`/marketplace/listings/sales/${encodeURIComponent(listingId)}/record`, payload as Record<string, unknown>);
+
+// On-demand enrichment — fires a paid scrape for one item to get fresh
+// comps. Server-side cache (TTL 14d default, 30d for slow-moving cats).
+// Returns { skipped, reason, hits_persisted, cost_cents }. When the
+// SCRAPEDO_ENABLED env is off on the server, returns
+// reason='scrapedo_disabled' cleanly so the UI can show a graceful state.
+export const enrichOnDemand = (payload: {
+  item_ref: string;
+  query: string;
+  category: string;
+}) => post("/enrich/on-demand", payload as Record<string, unknown>);
