@@ -383,6 +383,13 @@ async def run_once() -> None:
         # doesn't yet exist; we want a tripwire if runway gets short.
         await _check_db_size(conn, failing_new)
 
+        # Category-coverage probe — page when any of the 54 active
+        # categories has 0 hits in the last 7 days. Catches adapter
+        # outages within a week instead of after we notice volume drops
+        # (added 2026-04-25 after the marketplace_scrape_scheduler timeout
+        # chain caused a multi-day silent outage).
+        await _check_coverage_zero(conn, failing_new)
+
         if failing_new:
             await _page(failing_new)
             # Persist cooldowns so a restart doesn't reset them.
@@ -532,6 +539,57 @@ async def _check_db_size(conn, failing_new: list[dict]) -> None:
             _last_alerted_at[check_name] = datetime.now(timezone.utc)
     else:
         logger.info("sanity_probe db_size: %d MB (< %d MB cap)", size_mb, cap_mb)
+
+
+async def _check_coverage_zero(conn, failing_new: list[dict]) -> None:
+    """Page when any active category has zero market_hits in the last 7
+    days. Catches adapter outages within a week (vs. weeks of waiting for
+    someone to notice volume drops in a chart). Threshold tunable via
+    COVERAGE_ZERO_DAYS env var.
+    """
+    check_name = "coverage_zero_categories"
+    days = int(os.getenv("COVERAGE_ZERO_DAYS", "7"))
+    try:
+        rows = await asyncio.wait_for(
+            conn.fetch(
+                f"""
+                SELECT c.category
+                FROM (SELECT DISTINCT category FROM public.category_items
+                      WHERE category IS NOT NULL) c
+                WHERE NOT EXISTS (
+                  SELECT 1 FROM public.market_hits mh
+                  WHERE mh.category = c.category
+                    AND mh.seen_at > now() - interval '{days} days'
+                )
+                ORDER BY c.category
+                """
+            ),
+            timeout=15.0,
+        )
+    except Exception as e:
+        logger.warning("sanity_probe coverage_zero: query failed: %s", e)
+        return
+
+    silent_cats = [r["category"] for r in rows]
+    if not silent_cats:
+        logger.info("sanity_probe coverage_zero: all categories have hits in last %dd", days)
+        return
+
+    logger.warning(
+        "SANITY VIOLATION %s: %d categories have 0 hits in %dd: %s",
+        check_name, len(silent_cats), days, silent_cats[:8],
+    )
+    if _cooldown_expired(check_name):
+        failing_new.append({
+            "name": check_name,
+            "description": (
+                f"{len(silent_cats)} categories have 0 hits in last {days}d. "
+                f"Likely adapter outage. First few: {', '.join(silent_cats[:5])}"
+            ),
+            "violators": len(silent_cats),
+            "sample_id": silent_cats[0] if silent_cats else "",
+        })
+        _last_alerted_at[check_name] = datetime.now(timezone.utc)
 
 
 async def main():
