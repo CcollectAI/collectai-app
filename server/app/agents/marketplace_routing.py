@@ -34,7 +34,7 @@ SOURCE_RELIABILITY: Dict[str, float] = {
     "catawiki_sold": 0.90,
     "whisky_auctioneer": 0.85,
     "whisky_auctioneer_sold": 0.95,
-    "mandarake": 0.75,
+    "suruga_ya": 0.80,
     "bezel": 0.80,
     "bezel_sold": 0.85,
     "chrono24": 0.70,
@@ -130,11 +130,6 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
         "oop_board_games",
     },
     "whisky_auctioneer": {"whiskey"},
-    "mandarake": {
-        "anime_figures", "bandai_premium", "ghibli", "jp_event", "jp_magazine",
-        "hot_toys", "gunpla", "designer_toys", "manga", "vtuber",
-        "nintendo_merch", "one_piece", "digimon", "blind_box", "plush_collectibles",
-    },
     "bezel": {"watches"},
     "chrono24": {"watches"},
     "keh": {"vintage_cameras"},
@@ -186,12 +181,36 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
 }
 
 
+# 2026-04-25 audit: adapters with ZERO hits in last 7 days. Cause is
+# upstream-API issues we can't fix from here:
+#   * TCGPlayer, Cardmarket, StockX, PriceCharting — partner/paid only
+#   * Etsy 403, Mercari US blocked, paid scrapers (Firecrawl/Scrape.do)
+#     have quota kill-switches via env
+#   * Most regional EU classifieds (leboncoin/marktplaats/wallapop/
+#     kleinanzeigen/gumtree) — anti-bot blocking
+#   * Watch/whiskey/lego specialty (bezel/chrono24/whisky_auctioneer/
+#     masterofmalt/brickeconomy/bricklink) — auth or scrape rot
+# Skipping them in `adapter_serves_category` saves circuit-breaker noise,
+# scrape-cycle waste, and false silent-writer alerts. Re-enable case by
+# case as access is restored. Categories still get coverage via the
+# unrestricted live trio (ebay + vinted + crawl4ai).
+DISABLED_ADAPTERS: Set[str] = {
+    "bezel", "booth", "brickeconomy", "bricklink", "chrono24", "comc",
+    "depop", "etsy", "gumtree", "keh", "kleinanzeigen", "ktown4u",
+    "leboncoin", "marktplaats", "masterofmalt", "mavin", "mercari_us",
+    "mpb", "popmart", "pricecharting", "scalemates", "scrapedo",
+    "stockx", "wallapop", "whatnot", "whisky_auctioneer", "130point",
+}
+
+
 def adapter_serves_category(adapter_name: str, category: Optional[str]) -> bool:
     """Return True if *adapter_name* should be queried for *category*.
 
     When *category* is ``None`` (i.e. the caller didn't specify one),
     every adapter is eligible.
     """
+    if adapter_name in DISABLED_ADAPTERS:
+        return False
     cats = ADAPTER_CATEGORY_ROUTING.get(adapter_name)
     if cats is None:
         return True  # unrestricted adapter
