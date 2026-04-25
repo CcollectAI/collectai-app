@@ -102,6 +102,10 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("search_gap_worker",       "workers.search_gap_worker",          "run_once", True),
     # ── Demand priority refresher (2026-04-25, 30m) — refresh top-N items by demand_signals ──
     ("demand_priority_worker",  "workers.demand_priority_worker",     "run_once", True),
+    # ── Vision quality recalibrator (2026-04-25, hourly) — scan_corrections → vision_category_quality ──
+    ("vision_quality_worker",   "workers.vision_quality_worker",      "run_once", True),
+    # ── Vision text reclassifier (2026-04-25, weekly) — TF-IDF/LogReg on scan_corrections, gated n≥1000 ──
+    ("vision_reclassifier_worker", "workers.vision_reclassifier_worker", "run_once", True),
 
     # ── Workers with their own scheduler_loop (matview has split intervals) ──
     # matview_refresh uses its own scheduler_loop with demand/supply split

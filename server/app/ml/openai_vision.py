@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import os
 from typing import Any
 
 import httpx
@@ -115,16 +116,192 @@ _IDENTIFICATION_SCHEMA: dict[str, Any] = {
 
 
 def build_system_prompt(category_hint: str | None = None) -> str:
-    """Build the system prompt, optionally injecting category-specific extraction instructions."""
+    """Build the system prompt, optionally injecting category-specific extraction instructions.
+
+    Also injects a "common confusion" warning derived from
+    `vision_category_quality` (B3.2) when the worker has surfaced a
+    high-frequency misclassification target for the hinted category.
+    """
     if category_hint:
         detail = CATEGORY_PROMPTS.get(category_hint, DEFAULT_CATEGORY_PROMPT)
         detail_block = f"Category hint: {category_hint}\n{detail}"
+        confusion_note = _get_confusion_hint(category_hint)
+        if confusion_note:
+            detail_block += f"\n{confusion_note}"
     else:
         detail_block = (
             "No category hint available. Identify the category first, "
             "then extract relevant attributes."
         )
     return _OPENAI_SYSTEM_PROMPT.format(category_detail=detail_block)
+
+
+# ---------------------------------------------------------------------------
+# Vision-quality cache (B3.1/B3.2) — sync read with TTL so per-scan latency
+# stays low. Worker `vision_quality_worker` repopulates the table hourly.
+# ---------------------------------------------------------------------------
+
+import time as _time
+
+_VQ_CACHE: dict[str, dict] = {}
+_VQ_CACHE_LOADED_AT: float = 0.0
+_VQ_CACHE_TTL_S: float = 600.0  # 10 min — cheap query, frequent enough freshness
+
+
+def _refresh_vision_quality_cache_sync() -> None:
+    """Pull the whole vision_category_quality table into _VQ_CACHE.
+
+    Runs synchronously via psycopg2 to avoid asyncio entanglement at the
+    classification call-site (which is already inside an async client). At
+    ~50 categories the table is tiny; full pull every TTL is fine.
+    """
+    global _VQ_CACHE, _VQ_CACHE_LOADED_AT
+    try:
+        import psycopg2
+        from app.config import DB_DSN_DIRECT, DB_DSN
+        dsn = DB_DSN_DIRECT or DB_DSN
+        if not dsn:
+            return
+        conn = psycopg2.connect(dsn)
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT category, predicted_accuracy_30d, "
+                "confidence_calibration_factor, common_confusion_target, "
+                "common_confusion_secondary, sample_count "
+                "FROM public.vision_category_quality"
+            )
+            new_cache: dict[str, dict] = {}
+            for row in cur.fetchall():
+                cat, acc, factor, c1, c2, n = row
+                new_cache[cat] = {
+                    "accuracy": float(acc) if acc is not None else None,
+                    "confidence_factor": float(factor) if factor is not None else 1.0,
+                    "confusion_1": c1, "confusion_2": c2,
+                    "sample_count": int(n or 0),
+                }
+            _VQ_CACHE = new_cache
+            _VQ_CACHE_LOADED_AT = _time.time()
+        finally:
+            conn.close()
+    except Exception as e:
+        # Cache stays empty / stale; calibration_factor defaults to 1.0
+        logger.debug("[openai_vision] vision_quality cache refresh skipped: %s", e)
+
+
+def _get_vq_entry(category: str) -> dict | None:
+    if _time.time() - _VQ_CACHE_LOADED_AT > _VQ_CACHE_TTL_S:
+        _refresh_vision_quality_cache_sync()
+    return _VQ_CACHE.get(category)
+
+
+def _get_confusion_hint(category: str) -> str | None:
+    entry = _get_vq_entry(category)
+    if not entry:
+        return None
+    targets = [t for t in (entry.get("confusion_1"), entry.get("confusion_2")) if t]
+    if not targets:
+        return None
+    target_str = " or ".join(targets)
+    n = entry.get("sample_count", 0)
+    return (
+        f"Watch for confusion: items predicted as {category} are sometimes "
+        f"actually {target_str} (observed in {n} recent corrections). Re-check "
+        f"diagnostic markers (set logo, edition symbol, card back, packaging "
+        f"language) before committing."
+    )
+
+
+def _apply_confidence_calibration(category: str, raw_confidence: float) -> float:
+    entry = _get_vq_entry(category)
+    if not entry:
+        return raw_confidence
+    factor = entry.get("confidence_factor") or 1.0
+    return max(0.0, min(1.0, raw_confidence * factor))
+
+
+# ---------------------------------------------------------------------------
+# Vision text re-classifier (B3.3) — text classifier trained on
+# scan_corrections that runs AFTER OpenAI vision and overrides the category
+# when it disagrees with high confidence. Loaded lazily; caches the pickle
+# in-process. Set RECLASSIFIER_OVERRIDE_THRESHOLD to tune (default 0.70).
+# ---------------------------------------------------------------------------
+
+import pickle as _pickle
+
+_RECLASSIFIER_PIPELINE = None
+_RECLASSIFIER_LOADED_AT: float = 0.0
+_RECLASSIFIER_TTL_S: float = 3600.0
+_RECLASSIFIER_DIR = "/opt/collectors/server/artifacts/_vision_reclassifier"
+_RECLASSIFIER_OVERRIDE_THRESHOLD = float(os.environ.get("RECLASSIFIER_OVERRIDE_THRESHOLD", "0.70"))
+
+
+def _load_reclassifier():
+    global _RECLASSIFIER_PIPELINE, _RECLASSIFIER_LOADED_AT
+    if (
+        _RECLASSIFIER_PIPELINE is not None
+        and _time.time() - _RECLASSIFIER_LOADED_AT < _RECLASSIFIER_TTL_S
+    ):
+        return _RECLASSIFIER_PIPELINE
+    try:
+        import os as _os
+        path = _os.path.join(_RECLASSIFIER_DIR, "active", "model.pkl")
+        if not _os.path.exists(path):
+            _RECLASSIFIER_PIPELINE = None
+            _RECLASSIFIER_LOADED_AT = _time.time()
+            return None
+        with open(path, "rb") as f:
+            artifact = _pickle.load(f)
+        _RECLASSIFIER_PIPELINE = artifact
+        _RECLASSIFIER_LOADED_AT = _time.time()
+        logger.info("[openai_vision] loaded reclassifier v=%s", artifact.get("version"))
+        return artifact
+    except Exception as e:
+        logger.debug("[openai_vision] reclassifier load failed: %s", e)
+        _RECLASSIFIER_PIPELINE = None
+        _RECLASSIFIER_LOADED_AT = _time.time()
+        return None
+
+
+def _maybe_override_category(predicted_category: str, suggested_name: str | None,
+                             condition: str | None, attributes: dict | None) -> tuple[str, bool, float | None]:
+    """Run the text reclassifier; return (category, overridden, confidence).
+
+    Override only when the classifier's top probability exceeds the
+    threshold AND disagrees with the OpenAI prediction. This way the
+    classifier's high-confidence corrections nudge the system toward
+    user-validated truth without overriding the vision model on every
+    weak signal.
+    """
+    artifact = _load_reclassifier()
+    if not artifact or "pipeline" not in artifact:
+        return predicted_category, False, None
+    try:
+        pipeline = artifact["pipeline"]
+        attrs_text = ""
+        if isinstance(attributes, dict):
+            attrs_text = " ".join(
+                f"{k}:{v}" for k, v in list(attributes.items())[:8]
+                if isinstance(v, (str, int, float))
+            )
+        text = f"{suggested_name or ''} {condition or ''} {attrs_text}".strip()
+        if not text:
+            return predicted_category, False, None
+        proba = pipeline.predict_proba([text])[0]
+        classes = list(pipeline.classes_)
+        idx_max = int(proba.argmax())
+        top_cat = classes[idx_max]
+        top_prob = float(proba[idx_max])
+        if top_cat != predicted_category and top_prob >= _RECLASSIFIER_OVERRIDE_THRESHOLD:
+            logger.info(
+                "[openai_vision] reclassifier override: %s -> %s (p=%.2f)",
+                predicted_category, top_cat, top_prob,
+            )
+            return top_cat, True, top_prob
+        return predicted_category, False, top_prob
+    except Exception as e:
+        logger.debug("[openai_vision] reclassifier override failed: %s", e)
+        return predicted_category, False, None
 
 
 async def classify_openai_vision(
@@ -230,7 +407,24 @@ async def classify_openai_vision(
             else:
                 return None
 
-        confidence = max(0.0, min(1.0, float(parsed.get("category_confidence", 0.7))))
+        raw_confidence = max(0.0, min(1.0, float(parsed.get("category_confidence", 0.7))))
+        # B3.2 — apply per-category calibration learned from scan_corrections
+        confidence = _apply_confidence_calibration(category_id, raw_confidence)
+
+        # B3.3 — text reclassifier override. Runs only when its own
+        # confidence exceeds RECLASSIFIER_OVERRIDE_THRESHOLD. No-op until the
+        # vision_reclassifier_worker has trained a model (gated on
+        # MIN_TRAIN_SAMPLES=1000 scan_corrections).
+        suggested_name_for_classifier = parsed.get("suggested_name")
+        attributes_for_classifier = parsed.get("attributes", {}) or {}
+        new_category, overridden, classifier_prob = _maybe_override_category(
+            category_id, suggested_name_for_classifier,
+            parsed.get("condition"), attributes_for_classifier,
+        )
+        if overridden:
+            category_id = new_category
+            # Use the classifier's probability as the new confidence
+            confidence = float(classifier_prob)
         name_confidence = max(0.0, min(1.0, float(parsed.get("name_confidence", 0.5))))
 
         condition = parsed.get("condition")

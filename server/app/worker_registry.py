@@ -63,6 +63,8 @@ SCHEDULES = {
     "offer_expiry_worker": 3600,                 # 2026-04-22 — Deal Desk 48h auto-expire (hourly sweep)
     "search_gap_worker": 6 * 3600,               # 2026-04-25 — turns 0-result searches into category_candidates
     "demand_priority_worker": 1800,              # 2026-04-25 — refreshes top-N items by recent demand_signals (every 30 min)
+    "vision_quality_worker": 3600,               # 2026-04-25 — recomputes vision_category_quality from scan_corrections (hourly)
+    "vision_reclassifier_worker": 7 * 24 * 3600, # 2026-04-25 — trains TF-IDF + LogReg text reclassifier on scan_corrections (weekly; gated on n>=1000)
 }
 
 
