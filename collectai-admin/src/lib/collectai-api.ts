@@ -231,6 +231,66 @@ export function fetchDemandSummary(): Promise<DemandSummary> {
   return tryFetchJSON("/admin/demand-summary", getDemoDemand());
 }
 
+// ─── Intelligence Summary (real /intelligence/* aggregation) ─────────────────
+
+export interface IntelSummary {
+  days: number;
+  top_searches: { query: string; category: string; searches: number; unique_users: number }[];
+  no_results_searches: { query: string; searches: number; unique_users: number }[];
+  top_watchlists: { title: string; category: string; watchers: number; unique_users: number; avg_target: number | null }[];
+  top_events: { event_id: string; title: string | null; category_id: string | null; starts_at: string | null; engagement_score: number }[];
+  top_regret_categories: { category: string; regret_rate_30d: number | null; items_added: number; items_regretted: number; computed_at: string | null }[];
+  top_affiliates: { source: string; category: string; clicks: number; unique_users: number }[];
+  top_paywall_rejections: { feature: string; views: number; dismissals: number; unique_users: number }[];
+  sources: { source: string; rows: number; latest: string | null }[];
+}
+
+function getDemoIntelSummary(): IntelSummary {
+  return {
+    days: 14,
+    top_searches: [
+      { query: "charizard base set", category: "pokemon", searches: 47, unique_users: 38 },
+      { query: "rolex submariner", category: "watches", searches: 22, unique_users: 18 },
+      { query: "black lotus", category: "mtg", searches: 18, unique_users: 15 },
+    ],
+    no_results_searches: [
+      { query: "vintage transformers g1", searches: 8, unique_users: 7 },
+      { query: "1986 rookie cards", searches: 5, unique_users: 4 },
+    ],
+    top_watchlists: [
+      { title: "Charizard VMAX Alt Art", category: "pokemon", watchers: 34, unique_users: 31, avg_target: 1450 },
+      { title: "Air Jordan 1 Retro High OG", category: "sneakers", watchers: 28, unique_users: 25, avg_target: 220 },
+    ],
+    top_events: [
+      { event_id: "demo-1", title: "Magic: The Gathering Pro Tour", category_id: "mtg", starts_at: daysAgo(-7), engagement_score: 184 },
+      { event_id: "demo-2", title: "Funko HQ Grand Opening", category_id: "funko", starts_at: daysAgo(-3), engagement_score: 92 },
+    ],
+    top_regret_categories: [
+      { category: "designer_toys", regret_rate_30d: 0.18, items_added: 22, items_regretted: 4, computed_at: minutesAgo(30) },
+      { category: "anime_figures", regret_rate_30d: 0.12, items_added: 41, items_regretted: 5, computed_at: minutesAgo(30) },
+    ],
+    top_affiliates: [
+      { source: "ebay", category: "pokemon", clicks: 47, unique_users: 38 },
+      { source: "tcgplayer", category: "mtg", clicks: 22, unique_users: 18 },
+    ],
+    top_paywall_rejections: [
+      { feature: "deal_desk_pro", views: 38, dismissals: 31, unique_users: 24 },
+      { feature: "advanced_analytics", views: 22, dismissals: 18, unique_users: 16 },
+    ],
+    sources: [
+      { source: "demand_signals", rows: 1247, latest: minutesAgo(5) },
+      { source: "watchlist_items", rows: 89, latest: hoursAgo(2) },
+      { source: "notification_impressions", rows: 412, latest: minutesAgo(15) },
+      { source: "notification_interactions", rows: 87, latest: minutesAgo(15) },
+      { source: "notification_outcomes", rows: 12, latest: hoursAgo(1) },
+    ],
+  };
+}
+
+export function fetchIntelSummary(days = 14): Promise<IntelSummary> {
+  return tryFetchJSON(`/ops/dashboard/intel-summary?days=${days}`, getDemoIntelSummary());
+}
+
 // ─── Sponsor Analytics ───────────────────────────────────────────────────────
 
 export interface SponsoredEvent {

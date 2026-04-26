@@ -22,6 +22,7 @@ import { CollectAIOverview } from "@/components/CollectAIOverview";
 import { AdminMLModels } from "@/components/AdminMLModels";
 import { AdminWorkerHealth } from "@/components/AdminWorkerHealth";
 import { AdminDemandSignals } from "@/components/AdminDemandSignals";
+import { AdminIntelligenceData } from "@/components/AdminIntelligenceData";
 import { AdminUserManager } from "@/components/AdminUserManager";
 import { AdminSponsorAnalytics } from "@/components/AdminSponsorAnalytics";
 
@@ -97,6 +98,10 @@ const NAV: NavGroup[] = [
       {
         id: "demand", label: "Demand Signals", shortcut: "6", moduleKey: "demandSignals",
         icon: <svg className={IC} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+      },
+      {
+        id: "intel-data", label: "Intelligence Data", moduleKey: "demandSignals",
+        icon: <svg className={IC} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
       },
       {
         id: "spend", label: "Spend Monitor", shortcut: "7", moduleKey: "spendMonitor",
@@ -367,6 +372,7 @@ export function AdminTabs({ kits: _kits }: AdminTabsProps) {
         {activeTab === "ml-models" && <AdminMLModels />}
         {activeTab === "workers" && <AdminWorkerHealth />}
         {activeTab === "demand" && <AdminDemandSignals />}
+        {activeTab === "intel-data" && <AdminIntelligenceData />}
         {activeTab === "spend" && <AdminSpendMonitor />}
         {activeTab === "content-machine" && <AdminContentMachine />}
         {activeTab === "ugc" && <AdminUGCDashboard />}

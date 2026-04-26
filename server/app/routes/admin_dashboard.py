@@ -246,6 +246,202 @@ async def workers_health(_: bool = Depends(require_ops_key)):
 
 
 # ---------------------------------------------------------------------------
+# Admin intelligence summary — single-shot aggregation of /intelligence/*
+# data for the admin UI. Uses ops-key auth (no JWT) so the Next.js admin
+# can show real demand-side data without a logged-in user context.
+# ---------------------------------------------------------------------------
+
+@router.get("/intel-summary", tags=["Ops"], summary="Aggregate demand-side intelligence for admin UI")
+async def intel_summary(
+    days: int = Query(14, ge=1, le=180),
+    _: bool = Depends(require_ops_key),
+):
+    """One-shot pull of the most actionable demand-side data for admin.
+
+    Mirrors the per-endpoint queries in /intelligence/* but returns
+    everything in a single round-trip so the admin UI doesn't fan out
+    18 fetches. Read-only; ops-key auth.
+    """
+    from app.lib.db_helpers import get_db_pool
+    pool = get_db_pool()
+    if pool is None:
+        return JSONResponse({"error": "no_db_pool"}, status_code=503)
+
+    summary: dict = {"days": days}
+    async with pool.acquire() as conn:
+        # Top searches
+        try:
+            rows = await conn.fetch(
+                """
+                SELECT lower(trim(query_text)) AS query,
+                       COALESCE(category,'unspecified') AS category,
+                       COUNT(*) AS searches,
+                       COUNT(DISTINCT user_id) AS unique_users
+                FROM public.demand_signals
+                WHERE signal_type='search_query' AND query_text IS NOT NULL
+                  AND length(trim(query_text)) > 0
+                  AND created_at >= now() - ($1 || ' days')::interval
+                GROUP BY 1, 2 ORDER BY searches DESC LIMIT 25
+                """,
+                str(days),
+            )
+            summary["top_searches"] = [dict(r) for r in rows]
+        except Exception:
+            summary["top_searches"] = []
+
+        # Top no-result searches (catalog gaps)
+        try:
+            rows = await conn.fetch(
+                """
+                SELECT lower(trim(query_text)) AS query,
+                       COUNT(*) AS searches,
+                       COUNT(DISTINCT user_id) AS unique_users
+                FROM public.demand_signals
+                WHERE signal_type='no_results_search' AND query_text IS NOT NULL
+                  AND created_at >= now() - ($1 || ' days')::interval
+                GROUP BY 1 ORDER BY searches DESC LIMIT 25
+                """,
+                str(days),
+            )
+            summary["no_results_searches"] = [dict(r) for r in rows]
+        except Exception:
+            summary["no_results_searches"] = []
+
+        # Top watchlists
+        try:
+            rows = await conn.fetch(
+                """
+                SELECT title, COALESCE(category,'unspecified') AS category,
+                       COUNT(*) AS watchers,
+                       COUNT(DISTINCT user_id) AS unique_users,
+                       AVG(target_price) FILTER (WHERE target_price IS NOT NULL) AS avg_target
+                FROM public.watchlist_items
+                GROUP BY title, category
+                ORDER BY unique_users DESC LIMIT 25
+                """
+            )
+            summary["top_watchlists"] = [
+                {**dict(r), "avg_target": float(r["avg_target"]) if r["avg_target"] is not None else None}
+                for r in rows
+            ]
+        except Exception:
+            summary["top_watchlists"] = []
+
+        # Top events by engagement
+        try:
+            rows = await conn.fetch(
+                """
+                SELECT id::text AS event_id, title, category_id, starts_at,
+                       COALESCE(engagement_score, 0) AS engagement_score
+                FROM public.events
+                WHERE COALESCE(engagement_score, 0) > 0
+                ORDER BY engagement_score DESC LIMIT 25
+                """
+            )
+            summary["top_events"] = [
+                {
+                    "event_id": r["event_id"],
+                    "title": r["title"],
+                    "category_id": r["category_id"],
+                    "starts_at": r["starts_at"].isoformat() if r["starts_at"] else None,
+                    "engagement_score": float(r["engagement_score"]),
+                }
+                for r in rows
+            ]
+        except Exception:
+            summary["top_events"] = []
+
+        # Top regret categories (vision misclassification rate)
+        try:
+            rows = await conn.fetch(
+                """
+                SELECT category, regret_rate_30d, items_added,
+                       items_regretted, computed_at
+                FROM public.vision_category_regret
+                ORDER BY regret_rate_30d DESC NULLS LAST LIMIT 25
+                """
+            )
+            summary["top_regret_categories"] = [
+                {
+                    "category": r["category"],
+                    "regret_rate_30d": float(r["regret_rate_30d"]) if r["regret_rate_30d"] is not None else None,
+                    "items_added": r["items_added"],
+                    "items_regretted": r["items_regretted"],
+                    "computed_at": r["computed_at"].isoformat() if r["computed_at"] else None,
+                }
+                for r in rows
+            ]
+        except Exception:
+            summary["top_regret_categories"] = []
+
+        # Top affiliate clicks
+        try:
+            rows = await conn.fetch(
+                """
+                SELECT COALESCE(item_key, 'unknown') AS source,
+                       COALESCE(category, 'unspecified') AS category,
+                       COUNT(*) AS clicks,
+                       COUNT(DISTINCT user_id) AS unique_users
+                FROM public.demand_signals
+                WHERE signal_type='affiliate_click'
+                  AND created_at >= now() - ($1 || ' days')::interval
+                GROUP BY 1, 2 ORDER BY clicks DESC LIMIT 25
+                """,
+                str(days),
+            )
+            summary["top_affiliates"] = [dict(r) for r in rows]
+        except Exception:
+            summary["top_affiliates"] = []
+
+        # Top paywall rejections
+        try:
+            rows = await conn.fetch(
+                """
+                SELECT item_key AS feature,
+                       COUNT(*) FILTER (WHERE signal_type='paywall_viewed') AS views,
+                       COUNT(*) FILTER (WHERE signal_type='paywall_dismissed') AS dismissals,
+                       COUNT(DISTINCT user_id) AS unique_users
+                FROM public.demand_signals
+                WHERE signal_type IN ('paywall_viewed', 'paywall_dismissed')
+                  AND item_key IS NOT NULL
+                  AND created_at >= now() - ($1 || ' days')::interval
+                GROUP BY item_key ORDER BY dismissals DESC, views DESC LIMIT 25
+                """,
+                str(days),
+            )
+            summary["top_paywall_rejections"] = [dict(r) for r in rows]
+        except Exception:
+            summary["top_paywall_rejections"] = []
+
+        # Health snapshot — row counts of every demand-input table
+        try:
+            sources = []
+            for table, col in [
+                ("demand_signals", "created_at"),
+                ("watchlist_items", "created_at"),
+                ("event_follows_v1", "created_at"),
+                ("user_category_follows", "created_at"),
+                ("notification_impressions", "first_seen_at"),
+                ("notification_interactions", "occurred_at"),
+                ("notification_outcomes", "acted_at"),
+                ("price_ground_truths", "recorded_at"),
+            ]:
+                row = await conn.fetchrow(
+                    f"SELECT COUNT(*) AS c, MAX({col}) AS latest FROM public.{table}"
+                )
+                sources.append({
+                    "source": table,
+                    "rows": int(row["c"] or 0),
+                    "latest": row["latest"].isoformat() if row["latest"] else None,
+                })
+            summary["sources"] = sources
+        except Exception:
+            summary["sources"] = []
+
+    return JSONResponse(summary)
+
+
+# ---------------------------------------------------------------------------
 # Main dashboard HTML
 # ---------------------------------------------------------------------------
 
