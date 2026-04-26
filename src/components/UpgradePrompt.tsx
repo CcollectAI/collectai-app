@@ -3,7 +3,7 @@
  * Shows when a feature requires a higher plan tier.
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
+import { recordPaywallEvent, recordFeatureAttempt } from '@/api/intelligenceApi';
 
 type Props = {
   feature: string;
@@ -22,6 +23,16 @@ export const UpgradePrompt = React.memo(function UpgradePrompt({ feature, requir
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { t } = useTranslation();
+
+  // Demand-side intelligence: render = "user hit a Pro gate AND saw the
+  // upgrade prompt", which is BOTH a paywall view AND a feature-gated
+  // attempt. Track once on mount; the two signal types let us measure
+  // gate hits separately from paywall conversion in /intelligence.
+  useEffect(() => {
+    recordPaywallEvent({ feature, action: 'viewed' });
+    recordFeatureAttempt(feature);
+  }, [feature]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.warningBg, borderColor: colors.warning + '40' }]}>
       <View style={styles.row}>

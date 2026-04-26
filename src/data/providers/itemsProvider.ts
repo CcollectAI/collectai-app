@@ -89,9 +89,21 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
 
   const row = data as Record<string, unknown>;
   const images = row.images as string[] | null;
+  const itemId = row.id as string;
+
+  // Push-engagement loop: if the user added this item shortly after
+  // tapping a notification (e.g. drop alert → "I got it"), attribute the
+  // outcome back. emitOutcome no-ops when no recent tap exists.
+  try {
+    // Lazy import to keep this provider tree-shakeable.
+    const { emitOutcome } = await import('@/lib/notificationOutcomeTracker');
+    emitOutcome('added', { item_id: itemId });
+  } catch {
+    // Tracker import failed — best-effort, ignore.
+  }
 
   return {
-    id: row.id as string,
+    id: itemId,
     name: (row.title as string | null) ?? input.name,
     category: (row.category as string | null) ?? input.category,
     price: 0,

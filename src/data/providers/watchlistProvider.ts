@@ -67,6 +67,15 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
     throw new Error('No data returned from RPC');
   }
 
+  // Push-engagement loop: attribute outcome if a recent push tap led
+  // here (e.g. drop alert → "follow this item"). No-ops when no tap.
+  try {
+    const { emitOutcome } = await import('@/lib/notificationOutcomeTracker');
+    emitOutcome('followed', { watchlist_id: r.id, title: input.title });
+  } catch {
+    // best-effort
+  }
+
   return {
     id: typeof r.id === 'string' ? r.id : String(r.id ?? ''),
     title: typeof r.title === 'string' ? r.title : String(r.title ?? ''),

@@ -1,7 +1,37 @@
 import { Linking } from 'react-native';
 import { track } from '@/analytics/track';
+import { recordAffiliateClick } from '@/api/intelligenceApi';
 
 type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
+
+// Map common hostnames → marketplace source slugs the backend understands.
+// Best-effort; falls through to the raw hostname when no match.
+const HOSTNAME_TO_SOURCE: Record<string, string> = {
+  'www.ebay.com': 'ebay',
+  'ebay.com': 'ebay',
+  'www.tcgplayer.com': 'tcgplayer',
+  'tcgplayer.com': 'tcgplayer',
+  'www.cardmarket.com': 'cardmarket',
+  'cardmarket.com': 'cardmarket',
+  'www.mercari.com': 'mercari',
+  'mercari.com': 'mercari',
+  'www.discogs.com': 'discogs',
+  'discogs.com': 'discogs',
+  'stockx.com': 'stockx',
+  'www.stockx.com': 'stockx',
+  'www.bricklink.com': 'bricklink',
+  'www.vinted.fr': 'vinted',
+  'www.vinted.com': 'vinted',
+  'vinted.com': 'vinted',
+  'www.grailed.com': 'grailed',
+  'grailed.com': 'grailed',
+  'www.depop.com': 'depop',
+  'depop.com': 'depop',
+};
+
+function hostnameToSource(hostname: string): string {
+  return HOSTNAME_TO_SOURCE[hostname.toLowerCase()] ?? hostname.toLowerCase();
+}
 
 const FALLBACK_EBAY_SEARCH = 'https://www.ebay.com/sch/i.html?_nkw=';
 
@@ -45,7 +75,10 @@ export function buildItemAffiliateUrl(
   }
 }
 
-export function openAffiliateUrl(url: string): void {
+export function openAffiliateUrl(
+  url: string,
+  context?: { query?: string; item_key?: string; category?: string },
+): void {
   // Only open HTTP(S) URLs
   let hostname = '';
   try {
@@ -56,5 +89,15 @@ export function openAffiliateUrl(url: string): void {
     return;
   }
   track({ name: 'affiliate_link_opened', properties: { domain: hostname } });
+  // Demand-side intelligence: record affiliate-click with marketplace source.
+  // 7+ components route through this helper, so adding tracking here
+  // propagates everywhere automatically. context is optional — call sites
+  // that have query/item/category should pass them for richer signal.
+  recordAffiliateClick({
+    source: hostnameToSource(hostname),
+    query: context?.query,
+    item_key: context?.item_key,
+    category: context?.category,
+  });
   Linking.openURL(url).catch(() => {});
 }

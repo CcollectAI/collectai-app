@@ -45,6 +45,15 @@ jest.mock('expo-notifications', () => ({
 
 const mockRegisterPushToken = jest.fn().mockResolvedValue({});
 
+jest.mock('../../src/api/intelligenceApi', () => ({
+  recordPushImpression: jest.fn(),
+  recordPushInteraction: jest.fn(),
+}));
+
+jest.mock('../../src/lib/notificationOutcomeTracker', () => ({
+  trackTap: jest.fn(),
+}));
+
 jest.mock('../../src/api/collectorsApi', () => ({
   collectorsApi: {
     registerPushToken: (...args: unknown[]) => mockRegisterPushToken(...args),
