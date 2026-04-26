@@ -99,20 +99,24 @@ async def _persist_notification(
     notification_type: str = "push",
     data: Optional[dict[str, Any]] = None,
     deep_link: Optional[str] = None,
-) -> None:
+) -> Optional[str]:
     """
     Best-effort INSERT into notification_history table.
 
     Never raises — errors are logged and swallowed so push delivery
-    is not blocked by persistence failures.
+    is not blocked by persistence failures. Returns the new row id
+    (uuid str) so the caller can echo it into the push data payload —
+    that's how the RN client correlates impression/interaction reports
+    back to the row this push came from. Returns None on failure.
     """
     try:
         import json as _json
 
-        await conn.execute(
+        row = await conn.fetchrow(
             """
             INSERT INTO notification_history (user_id, type, title, body, data, deep_link)
             VALUES ($1, $2, $3, $4, $5::jsonb, $6)
+            RETURNING id
             """,
             user_id,
             notification_type,
@@ -121,8 +125,10 @@ async def _persist_notification(
             _json.dumps(data) if data else "{}",
             deep_link,
         )
+        return str(row["id"]) if row else None
     except Exception as exc:
         logger.warning("[push] Failed to persist notification for user %s: %s", user_id, exc)
+        return None
 
 
 async def send_push_to_user(
@@ -142,8 +148,11 @@ async def send_push_to_user(
 
     Returns the number of successfully sent notifications.
     """
-    # Best-effort persistence to notification_history
-    await _persist_notification(
+    # Best-effort persistence to notification_history. Capture the new row's
+    # id so we can inject it into the data payload below — the RN client
+    # echoes this id back via /notifications/feedback/{impression,interaction}
+    # so we can join the engagement events to the source row.
+    notification_id = await _persist_notification(
         conn,
         user_id,
         title,
@@ -161,9 +170,18 @@ async def send_push_to_user(
     if not rows:
         return 0
 
+    # Add notification_id to the payload so the RN client can echo it back
+    # in feedback calls (impression/interaction). Don't mutate the caller's
+    # dict — copy.
+    if notification_id:
+        send_data = dict(data or {})
+        send_data["notification_id"] = notification_id
+    else:
+        send_data = data
+
     sent = 0
     for row in rows:
-        ok = await send_push(row["push_token"], title, body, data=data)
+        ok = await send_push(row["push_token"], title, body, data=send_data)
         if ok:
             sent += 1
 
