@@ -75,15 +75,13 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("aggregate_catalog_attributes", "workers.aggregate_catalog_attributes", "run_once", False),
     # ── Feedback loop (label_events → catalog) ──
     ("feedback_loop_worker",    "workers.feedback_loop_worker",       "run_once", True),
-    # ── tcgcsv + discogs: REMOVED FROM MANIFEST 2026-04-19.
-    # PostgREST ?on_conflict=provider,listing_id stopped working after
-    # market_hits was partitioned (42P10 "no matching unique constraint" —
-    # Postgres requires partition-key columns in unique indexes on partitioned
-    # tables). Re-enable after writing a Supabase RPC `upsert_market_hit` that
-    # does WHERE NOT EXISTS server-side. See DATA_SCALING_PLAN.md §10 +
-    # learnings.md.
-    # ("tcgcsv_worker",           "pipelines.import_tcgcsv",  "run_once", True),
-    # ("discogs_worker",          "pipelines.import_discogs", "run_once", True),
+    # ── tcgcsv + discogs: RE-ENABLED 2026-04-26 after upsert_market_hits_batch
+    # RPC shipped (commit pending; supabase/migrations/20260426_*.sql).
+    # The RPC does INSERT ... WHERE NOT EXISTS server-side, replacing the
+    # broken PostgREST ?on_conflict route that stopped working when
+    # market_hits was partitioned 2026-04-19. See DATA_SCALING_PLAN.md §10.
+    ("tcgcsv_worker",           "pipelines.import_tcgcsv",  "run_once", True),
+    ("discogs_worker",          "pipelines.import_discogs", "run_once", True),
     # ── R50l sanity probe: hourly correctness checks on critical tables ──
     ("sanity_probe_worker",     "workers.sanity_probe_worker",        "run_once", True),
     # ── R50l discovery audit: daily broad sweep for orphaned/stale/drift data ──

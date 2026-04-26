@@ -199,8 +199,16 @@ def upsert_hits_batched(
     stats: IngestStats,
     batch_size: int = 200,
 ) -> int:
-    """POST hits to market_hits with on_conflict=provider,listing_id so
-    daily re-runs update prices instead of 409'ing."""
+    """POST hits to market_hits via the upsert_market_hits_batch RPC.
+
+    Background: PostgREST `?on_conflict=provider,listing_id` stopped
+    working after market_hits was partitioned (2026-04-19) — Postgres
+    requires unique constraints on partitioned tables to include the
+    partition key (seen_at), but seen_at = now() defeats dedup. The RPC
+    does INSERT ... WHERE NOT EXISTS server-side using the
+    (provider, listing_id, seen_at) composite index. See
+    supabase/migrations/20260426_upsert_market_hits_batch_rpc.sql.
+    """
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         logger.warning("SUPABASE env not set — skipping upsert")
         return 0
@@ -208,8 +216,8 @@ def upsert_hits_batched(
         return 0
 
     client = get_http_client()
-    url = f"{SUPABASE_URL}/rest/v1/market_hits?on_conflict=provider,listing_id"
-    headers = {**_headers(), "Prefer": "resolution=merge-duplicates,return=minimal"}
+    url = f"{SUPABASE_URL}/rest/v1/rpc/upsert_market_hits_batch"
+    headers = {**_headers(), "Content-Type": "application/json"}
 
     total = 0
     # R50l: FX conversion — all tcgcsv prices are USD. Mixed-currency rows in
@@ -258,13 +266,24 @@ def upsert_hits_batched(
                 "image_url": h.image_url,
             })
         try:
-            resp = client.post(url, headers=headers, json=rows)
+            # RPC body shape: {"rows": [...]}  (the function takes one jsonb arg
+            # named `rows`). Returns the count of newly-inserted rows as an int.
+            resp = client.post(url, headers=headers, json={"rows": rows})
         except Exception as e:
             stats.market_hits_errors += 1
-            logger.error("Batch %d-%d upsert failed: %s", i, i + len(batch), e)
+            logger.error("Batch %d-%d upsert RPC failed: %s", i, i + len(batch), e)
             continue
         if resp.status_code in (200, 201, 204):
-            total += len(batch)
+            try:
+                inserted = int(resp.text or "0")
+            except (TypeError, ValueError):
+                inserted = len(batch)
+            total += inserted
+            if inserted < len(batch):
+                logger.debug(
+                    "Batch %d-%d: %d/%d new (rest deduped)",
+                    i, i + len(batch), inserted, len(batch),
+                )
         else:
             stats.market_hits_errors += 1
             logger.error(

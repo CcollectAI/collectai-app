@@ -264,13 +264,19 @@ def _release_stats(client: httpx.Client, release_id: int) -> Optional[dict]:
 
 
 def _upsert(hits: list[MarketHit], stats: IngestStats) -> int:
+    """POST hits via the upsert_market_hits_batch RPC.
+
+    Replaces the broken `?on_conflict=provider,listing_id` route which
+    stopped working after market_hits was partitioned (2026-04-19). See
+    supabase/migrations/20260426_upsert_market_hits_batch_rpc.sql.
+    """
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         return 0
     if not hits:
         return 0
     client = get_http_client()
-    url = f"{SUPABASE_URL}/rest/v1/market_hits?on_conflict=provider,listing_id"
-    headers = {**_headers(), "Prefer": "resolution=merge-duplicates,return=minimal"}
+    url = f"{SUPABASE_URL}/rest/v1/rpc/upsert_market_hits_batch"
+    headers = {**_headers(), "Content-Type": "application/json"}
 
     # R50l: FX conversion — discogs price comes back in the user's configured
     # currency, usually USD. Training on mixed currency corrupts the model
@@ -324,13 +330,17 @@ def _upsert(hits: list[MarketHit], stats: IngestStats) -> int:
     for i in range(0, len(rows), 100):
         batch = rows[i:i + 100]
         try:
-            r = client.post(url, headers=headers, json=batch)
+            r = client.post(url, headers=headers, json={"rows": batch})
         except Exception as e:
             stats.market_hits_errors += 1
-            logger.error("upsert failed: %s", e)
+            logger.error("upsert RPC failed: %s", e)
             continue
         if r.status_code in (200, 201, 204):
-            total += len(batch)
+            try:
+                inserted = int(r.text or "0")
+            except (TypeError, ValueError):
+                inserted = len(batch)
+            total += inserted
         else:
             stats.market_hits_errors += 1
             logger.error("upsert HTTP %d: %s", r.status_code, r.text[:300])
