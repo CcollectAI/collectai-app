@@ -20,6 +20,8 @@ import { AppState, Linking, Platform, type AppStateStatus } from "react-native";
 import * as Notifications from "expo-notifications";
 import { useRouter, type Href } from "expo-router";
 import { collectorsApi } from "@/api/collectorsApi";
+import { recordPushImpression, recordPushInteraction } from "@/api/intelligenceApi";
+import { trackTap } from "@/lib/notificationOutcomeTracker";
 
 // ---------------------------------------------------------------------------
 // Configure how notifications appear when the app is in the foreground
@@ -133,7 +135,24 @@ export function usePushNotifications(userId: string | null) {
 
     // 4. Listener: notification received while app is foregrounded
     notificationListener.current =
-      Notifications.addNotificationReceivedListener(async (_notification) => {
+      Notifications.addNotificationReceivedListener(async (notification) => {
+        // Push-engagement loop: record impression with the backend so
+        // notification_impressions starts collecting. notification_id was
+        // injected into the data payload by send_push_to_user (commit
+        // 93ea969).
+        const data = notification.request.content.data as
+          | Record<string, unknown>
+          | undefined;
+        const notificationId =
+          (typeof data?.notification_id === "string" && data.notification_id) || null;
+        if (notificationId) {
+          recordPushImpression(notificationId, {
+            appState: AppState.currentState,
+            platform: Platform.OS,
+            receivedAt: new Date().toISOString(),
+          });
+        }
+
         // Update badge count when notification received in foreground
         try {
           const badgeCount = await Notifications.getBadgeCountAsync();
@@ -149,6 +168,25 @@ export function usePushNotifications(userId: string | null) {
         const data = response.notification.request.content.data as
           | Record<string, unknown>
           | undefined;
+
+        // Push-engagement loop: record interaction + arm the outcome
+        // tracker so subsequent user actions can be attributed back to
+        // this notification (see notificationOutcomeTracker.ts).
+        const notificationId =
+          (typeof data?.notification_id === "string" && data.notification_id) || null;
+        if (notificationId) {
+          const isDefault =
+            response.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER;
+          const isDismiss =
+            response.actionIdentifier === "expo.modules.notifications.actions.DISMISS";
+          const kind = isDefault ? "open" : isDismiss ? "dismiss" : "action";
+          recordPushInteraction(notificationId, kind, {
+            action_id: response.actionIdentifier,
+          });
+          if (kind === "open" || kind === "action") {
+            trackTap(notificationId);
+          }
+        }
 
         if (!data) return;
 
