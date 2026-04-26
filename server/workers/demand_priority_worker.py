@@ -73,7 +73,7 @@ async def run_once() -> dict[str, int]:
             ORDER BY sig_count DESC
             LIMIT $2
             """,
-            LOOKBACK_DAYS, TOP_N,
+            str(LOOKBACK_DAYS), TOP_N,
         )
 
         if not rows:

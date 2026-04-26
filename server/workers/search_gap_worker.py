@@ -89,7 +89,7 @@ async def run_once() -> dict[str, int]:
             ORDER BY q.searches DESC
             LIMIT 200
             """,
-            LOOKBACK_DAYS, MIN_SEARCHES, MIN_USERS,
+            str(LOOKBACK_DAYS), MIN_SEARCHES, MIN_USERS,
         )
 
         if not rows:
