@@ -395,7 +395,22 @@ class EbayCaller:
 
         Returns a list of normalized MarketHit dicts with is_sold=True.
         *marketplace_id* maps to the Finding API GLOBAL-ID param.
+
+        2026-04-26: eBay revoked our Finding API access. Verified by direct
+        OAuth probe: Browse API returns 200 with our credentials, but
+        Finding API returns HTTP 500 with errorId 11002 "Authentication
+        failed: Invalid Application". The legacy Finding API was
+        deprecated by eBay in 2024-25; our app's access has been pulled.
+        Short-circuit the whole code path so the circuit breaker stops
+        flapping and the orchestrator stops wasting cycle time on doomed
+        calls. Migrate to Marketplace Insights API for real sold-comps;
+        until then, sold_comps returns []. The Browse API search() path
+        for active listings is unaffected and still works normally.
         """
+        return []
+        # Dead code below kept for reference — the Finding API will return
+        # immediately when re-implemented or migrated to Marketplace Insights.
+        # ----- begin dead -----
         if not self.configured:
             logger.warning("[EbayCaller] Not configured (missing EBAY_CLIENT_ID/SECRET)")
             return []
