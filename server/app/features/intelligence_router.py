@@ -50,7 +50,7 @@ async def top_searches(
     if pool is None:
         raise HTTPException(status_code=503, detail="no_db_pool")
     cat_filter = "AND category = $3" if category else ""
-    params: list = [days, limit] + ([category] if category else [])
+    params: list = [str(days), limit] + ([category] if category else [])
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             f"""
@@ -271,7 +271,7 @@ async def top_viewed_items(
     if pool is None:
         raise HTTPException(status_code=503, detail="no_db_pool")
     cat_filter = "AND category = $3" if category else ""
-    params: list = [days, limit] + ([category] if category else [])
+    params: list = [str(days), limit] + ([category] if category else [])
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             f"""
@@ -374,7 +374,7 @@ async def top_events(
             ORDER BY engagement_score DESC
             LIMIT $2
             """,
-            days, limit,
+            str(days), limit,
         )
     return {
         "days": days,
@@ -428,7 +428,7 @@ async def top_affiliates(
             ORDER BY clicks DESC
             LIMIT $2
             """,
-            days, limit,
+            str(days), limit,
         )
     return {
         "days": days,
@@ -477,7 +477,7 @@ async def top_event_creators(
             ORDER BY events_created DESC
             LIMIT $2
             """,
-            days, limit,
+            str(days), limit,
         )
     return {
         "days": days,
@@ -511,7 +511,7 @@ async def top_dm_requests(
     if pool is None:
         raise HTTPException(status_code=503, detail="no_db_pool")
     status_filter = "AND status = $3" if status else ""
-    params: list = [days, limit] + ([status] if status else [])
+    params: list = [str(days), limit] + ([status] if status else [])
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             f"""
@@ -675,7 +675,7 @@ async def top_paywall_rejections(
             ORDER BY dismissals DESC, views DESC
             LIMIT $2
             """,
-            days, limit,
+            str(days), limit,
         )
     return {
         "days": days,
@@ -715,7 +715,7 @@ async def top_removed_watchlists(
             ORDER BY removals DESC
             LIMIT $2
             """,
-            days, limit,
+            str(days), limit,
         )
     return {
         "days": days,
@@ -764,7 +764,7 @@ async def top_deleted_items(
             ORDER BY deletes DESC, archives DESC
             LIMIT $2
             """,
-            days, limit,
+            str(days), limit,
         )
     return {
         "days": days,
@@ -854,7 +854,7 @@ async def top_no_results_searches(
             ORDER BY searches DESC
             LIMIT $2
             """,
-            days, limit,
+            str(days), limit,
         )
     return {
         "days": days,
