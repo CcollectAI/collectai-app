@@ -21,6 +21,7 @@ import { PrivacySettingsSection } from '@/components/settings/PrivacySettingsSec
 import { AppearanceSection } from '@/components/settings/AppearanceSection';
 import { ProfileEditSection } from '@/components/settings/ProfileEditSection';
 import { DevForcePlanSection } from '@/components/settings/DevForcePlanSection';
+import { MarketplaceConnectionsSection } from '@/components/settings/MarketplaceConnectionsSection';
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -97,6 +98,9 @@ export default function Settings() {
 
       {/* Account Section (profile, password, sign out, billing, etc.) */}
       <ProfileEditSection />
+
+      {/* Marketplace connections (eBay OAuth, defaults, listing chain) */}
+      <MarketplaceConnectionsSection />
 
       {/* Dev-only: Force subscription tier (for previewing paid views) */}
       <DevForcePlanSection />
