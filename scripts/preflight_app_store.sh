@@ -93,10 +93,13 @@ fi
 # ---------------------------------------------------------------------------
 section "Backend health (api.* response)"
 
-if curl -sf -o /dev/null -m 5 http://51.21.210.195:8000/healthz 2>/dev/null; then
-    pass "EC2 :8000/healthz responding (HTTP)"
+# EC2 :8000 should NOT be externally reachable in production — UFW correctly
+# blocks it. The API surface must be reached via nginx :443 (post-SSL).
+# Verify the bake is healthy from inside the instance instead.
+if ssh -o BatchMode=yes -o ConnectTimeout=5 collectai 'curl -sf -o /dev/null -m 3 http://localhost:8000/healthz' 2>/dev/null; then
+    pass "EC2 bake healthy on internal :8000 (UFW correctly blocks external 8000 — this is intentional)"
 else
-    fail "EC2 :8000/healthz NOT responding"
+    fail "EC2 bake NOT responding on internal :8000 — service down"
 fi
 
 DOMAIN_TARGET="${API_DOMAIN:-api.collectai.app}"
@@ -104,7 +107,7 @@ if dig +short "$DOMAIN_TARGET" 2>/dev/null | grep -q .; then
     if curl -sf -o /dev/null -m 5 "https://$DOMAIN_TARGET/healthz" 2>/dev/null; then
         pass "$DOMAIN_TARGET /healthz responding via HTTPS"
     else
-        pend "$DOMAIN_TARGET resolves but HTTPS not yet — run scripts/setup_ssl.sh"
+        pend "$DOMAIN_TARGET resolves but HTTPS not yet — run scripts/setup_ssl.sh on EC2"
     fi
 else
     pend "$DOMAIN_TARGET DNS not configured (need to buy domain + point A record at 51.21.210.195)"
