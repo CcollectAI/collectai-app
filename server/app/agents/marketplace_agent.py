@@ -501,7 +501,7 @@ class MarketplaceAgent:
         Returns the number of rows inserted.
         """
         try:
-            from app.db import get_conn, db_configured
+            from app.db import db_configured
         except ImportError:
             logger.warning("[MarketplaceAgent] DB module not available")
             return 0
@@ -517,6 +517,17 @@ class MarketplaceAgent:
             normalize_attributes = None
 
         inserted = 0
+        # Use DB_DSN_DIRECT instead of the pooler to bypass the 30s
+        # statement timeout. The per-row INSERT ... WHERE NOT EXISTS has to
+        # probe across all market_hits partitions; with growing partition
+        # count + occasionally stale stats, even a single hit can exceed the
+        # pooler cap and silently fail (verified 2026-04-27 — every row in
+        # a 152s marketplace_scrape cycle hit TimeoutError, leading to
+        # `Persisted 0/N` on every batch and tripping the silent-writer probe).
+        # Same pattern marketplace_scrape_scheduler adopted on 2026-04-25.
+        import asyncpg as _asyncpg
+        import os as _os
+        _direct_dsn = _os.getenv("DB_DSN_DIRECT") or _os.getenv("DB_DSN")
         try:
             # Import FX conversion — all prices stored as EUR
             try:
@@ -524,7 +535,8 @@ class MarketplaceAgent:
             except ImportError:
                 convert_to_eur = None
 
-            async with get_conn() as conn:
+            conn = await _asyncpg.connect(_direct_dsn)
+            try:
                 # Writer-side sanity filter — reject crawler garbage BEFORE it
                 # pollutes market_hits. Seen 2026-04-20: 289 rows of Crawl4AI
                 # scraping "Site Statistics" pages on LEGO category pages and
@@ -666,6 +678,11 @@ class MarketplaceAgent:
                             hit.get("source"), hit.get("raw_id"),
                             exc_info=True,
                         )
+            finally:
+                try:
+                    await conn.close()
+                except Exception:
+                    pass
         except RuntimeError as e:
             logger.warning("[MarketplaceAgent] DB connection error: %s", e)
         except Exception:
