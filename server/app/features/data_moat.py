@@ -612,7 +612,7 @@ async def detect_scarcity(
                 ORDER BY d.recent_signals DESC
                 LIMIT 20
                 """,
-                days,
+                str(days),
                 min_demand_signals,
                 min_supply_decline_pct,
             )
@@ -670,7 +670,9 @@ async def demand_heat_by_region(
     try:
         async with pool.acquire() as conn:
             cat_filter = ""
-            params: list = [days]
+            # str(days) — the query below uses ($1 || ' days')::interval which
+            # requires text. See learning_asyncpg_interval_str_cast.md.
+            params: list = [str(days)]
             if category:
                 cat_filter = "AND category = $2"
                 params.append(category)
