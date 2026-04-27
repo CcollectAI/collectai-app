@@ -63,9 +63,9 @@ SCHEDULES = {
     "offer_expiry_worker": 3600,                 # 2026-04-22 — Deal Desk 48h auto-expire (hourly sweep)
     "search_gap_worker": 6 * 3600,               # 2026-04-25 — turns 0-result searches into category_candidates
     "demand_priority_worker": 1800,              # 2026-04-25 — refreshes top-N items by recent demand_signals (every 30 min)
-    "vision_quality_worker": 3600,               # 2026-04-25 — recomputes vision_category_quality from scan_corrections (hourly)
+    "vision_quality_worker": 6 * 3600,           # 2026-04-25 — recomputes vision_category_quality from scan_corrections (6h; was hourly but no data → no signal until users accrue scan_corrections)
     "vision_reclassifier_worker": 7 * 24 * 3600, # 2026-04-25 — trains TF-IDF + LogReg text reclassifier on scan_corrections (weekly; gated on n>=1000)
-    "vision_regret_worker": 3600,                # 2026-04-26 — per-category regret rate (deletes within 7d of AI-add) → boosts scan_correction weight
+    "vision_regret_worker": 6 * 3600,            # 2026-04-26 — per-category regret rate (deletes within 7d of AI-add); was hourly, dropped to 6h until items.source signals accrue
     "event_engagement_worker": 1800,             # 2026-04-26 — recomputes events.engagement_score from views+follows+RSVPs+ticket_clicks (every 30 min)
 }
 

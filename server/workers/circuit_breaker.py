@@ -187,9 +187,9 @@ stockx_circuit = CircuitBreaker("stockx", max_failures=5, cooldown_seconds=60)
 bricklink_circuit = CircuitBreaker("bricklink", max_failures=5, cooldown_seconds=60)
 firecrawl_circuit = CircuitBreaker("firecrawl", max_failures=5, cooldown_seconds=120)
 crawl4ai_circuit = CircuitBreaker("crawl4ai", max_failures=5, cooldown_seconds=120)
-mercari_us_circuit = CircuitBreaker("mercari_us", max_failures=5, cooldown_seconds=60)
+mercari_us_circuit = CircuitBreaker("mercari_us", max_failures=5, cooldown_seconds=21600)  # 6h — bot-blocked, see vinted note
 whatnot_circuit = CircuitBreaker("whatnot", max_failures=5, cooldown_seconds=60)
-vinted_circuit = CircuitBreaker("vinted", max_failures=5, cooldown_seconds=60)
+vinted_circuit = CircuitBreaker("vinted", max_failures=5, cooldown_seconds=21600)  # 6h — vinted aggressively bot-detects (HTTP 403 on every call); 60s retry just produces flap noise + Telegram alarms. Bot bans don't lift in 60s; if they ever lift the 6h test will catch it.
 mavin_circuit = CircuitBreaker("mavin", max_failures=5, cooldown_seconds=60)
 catawiki_circuit = CircuitBreaker("catawiki", max_failures=5, cooldown_seconds=60)
 whisky_auctioneer_circuit = CircuitBreaker("whisky_auctioneer", max_failures=5, cooldown_seconds=60)
@@ -207,7 +207,7 @@ scalemates_circuit = CircuitBreaker("scalemates", max_failures=5, cooldown_secon
 ktown4u_circuit = CircuitBreaker("ktown4u", max_failures=5, cooldown_seconds=60)
 comicbookrealm_circuit = CircuitBreaker("comicbookrealm", max_failures=5, cooldown_seconds=60)
 masterofmalt_circuit = CircuitBreaker("masterofmalt", max_failures=5, cooldown_seconds=60)
-yahoo_auctions_circuit = CircuitBreaker("yahoo_auctions", max_failures=5, cooldown_seconds=60)
+yahoo_auctions_circuit = CircuitBreaker("yahoo_auctions", max_failures=5, cooldown_seconds=21600)  # 6h — same anti-bot pattern as vinted
 scrapedo_circuit = CircuitBreaker("scrapedo", max_failures=5, cooldown_seconds=120)
 grailed_circuit = CircuitBreaker("grailed", max_failures=5, cooldown_seconds=120)
 google_shopping_circuit = CircuitBreaker("google_shopping", max_failures=5, cooldown_seconds=60)
