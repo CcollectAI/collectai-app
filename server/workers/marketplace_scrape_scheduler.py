@@ -290,20 +290,29 @@ async def run_once():
         except Exception as e:
             logger.warning("Failed to mark items attempted: %s", e)
 
-        # WARN when the whole batch produced nothing — usually a sign that
-        # adapter circuits are clustered-open. Appears in grep for "Batch
-        # unproductive" so ops can triage quickly.
+        # WARN + report worker error when the whole batch produced nothing.
+        # Pre-2026-04-27 this logged a warning but reported `ok`, leaving the
+        # silent_writer probe (6h staleness threshold) as the only signal.
+        # Today's persist_comps TimeoutError outage silently produced
+        # `Persisted 0/N` for hours before the table-staleness probe caught
+        # it. Recording `error` here lets the orchestrator's
+        # consecutive-error Telegram alert fire after 3 unproductive batches
+        # (~45 min at 15-min intervals) instead of waiting 6h for table
+        # staleness. False positives possible if the picked items genuinely
+        # have no marketplace coverage — but 3 in a row from random items
+        # is an extremely strong signal of upstream failure.
         if total_hits == 0 and len(items) > 0:
             logger.warning(
                 "Batch unproductive: 0 hits from %d items — check adapter circuit state",
                 len(items),
             )
+            record_run("marketplace_scrape_worker", "error")
         else:
             logger.info(
                 "Batch complete: %d items, %d total hits, %d items with 0 hits",
                 len(items), total_hits, zero_hit_items,
             )
-        record_run("marketplace_scrape_worker", "ok")
+            record_run("marketplace_scrape_worker", "ok")
         return total_hits
 
     finally:
