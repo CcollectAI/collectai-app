@@ -2,13 +2,14 @@
 # setup_ssl.sh — idempotent nginx + certbot SSL setup for collectai-bake.
 #
 # Run this on the EC2 box (ssh collectai) AFTER you have:
-#   1. Bought a domain (e.g., collectai.app)
+#   1. Bought a real domain. NOTE: collectai.app is owned by someone else;
+#      use whatever domain you actually registered.
 #   2. Pointed an A record at the EC2 Elastic IP (51.21.210.195)
-#   3. Confirmed DNS has propagated (`dig +short api.collectai.app` returns the IP)
+#   3. Confirmed DNS has propagated (`dig +short api.yourdomain.tld` returns the IP)
 #
 # Usage:
 #   ssh collectai
-#   sudo bash /opt/collectors/scripts/setup_ssl.sh api.collectai.app
+#   sudo bash /opt/collectors/scripts/setup_ssl.sh api.yourdomain.tld
 #
 # What it does:
 #   - Replaces /etc/nginx/sites-enabled/collectors-merge with a config that
@@ -28,7 +29,7 @@ set -euo pipefail
 DOMAIN="${1:-}"
 if [[ -z "$DOMAIN" ]]; then
   echo "Usage: sudo bash $0 <domain>" >&2
-  echo "Example: sudo bash $0 api.collectai.app" >&2
+  echo "Example: sudo bash $0 api.yourdomain.tld" >&2
   exit 1
 fi
 

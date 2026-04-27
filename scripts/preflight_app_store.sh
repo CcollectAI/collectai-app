@@ -102,15 +102,17 @@ else
     fail "EC2 bake NOT responding on internal :8000 — service down"
 fi
 
-DOMAIN_TARGET="${API_DOMAIN:-api.collectai.app}"
-if dig +short "$DOMAIN_TARGET" 2>/dev/null | grep -q .; then
+DOMAIN_TARGET="${API_DOMAIN:-}"
+if [[ -z "$DOMAIN_TARGET" ]]; then
+    pend "API_DOMAIN env var unset — set it to your real domain when buying one (e.g. \`API_DOMAIN=api.yourdomain.tld bash $0\`). Domain purchase + DNS still pending."
+elif dig +short "$DOMAIN_TARGET" 2>/dev/null | grep -q .; then
     if curl -sf -o /dev/null -m 5 "https://$DOMAIN_TARGET/healthz" 2>/dev/null; then
         pass "$DOMAIN_TARGET /healthz responding via HTTPS"
     else
         pend "$DOMAIN_TARGET resolves but HTTPS not yet — run scripts/setup_ssl.sh on EC2"
     fi
 else
-    pend "$DOMAIN_TARGET DNS not configured (need to buy domain + point A record at 51.21.210.195)"
+    pend "$DOMAIN_TARGET DNS not configured (need to point A record at 51.21.210.195)"
 fi
 
 # ---------------------------------------------------------------------------
