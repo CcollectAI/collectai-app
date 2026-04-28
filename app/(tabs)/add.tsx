@@ -1,10 +1,18 @@
-import { Linking ,
+import {
+  Linking,
+  Platform,
   View,
   Text,
   StyleSheet,
   ScrollView,
   Animated,
 } from 'react-native';
+// expo-file-system v19 moved the legacy API (cacheDirectory, downloadAsync)
+// to a `/legacy` submodule. The v19 default export uses a new `File`-based
+// class API. Sticking with legacy here keeps the existing pattern simple
+// and matches what other CollectAI helpers use.
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { router } from 'expo-router';
 import { AddImportCard } from '@/components/AddImportCard';
 import { API_BASE } from '@/api/config';
@@ -67,13 +75,47 @@ const AddScreen: React.FC = () => {
   
 
 
-  const handleDownloadImportTemplate = () => {
+  const handleDownloadImportTemplate = async () => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     const templateUrl = `${API_BASE}/api/imports/template`;
-    Linking.openURL(templateUrl).catch((err) => {
-      logger.error("[Add] Failed to open template URL", err);
-      showToast({ message: "Could not open template. Please try again later.", type: 'error' });
-    });
+
+    // On web, Linking.openURL triggers a real browser download.
+    // On iOS/Android, mobile browsers display CSV inline as text rather
+    // than downloading — that was the original bug. Download to a temp
+    // file then open the OS share sheet so the user can save to Files /
+    // email it / send to AirDrop.
+    if (Platform.OS === 'web') {
+      Linking.openURL(templateUrl).catch((err) => {
+        logger.error('[Add] Failed to open template URL', err);
+        showToast({ message: 'Could not open template. Please try again later.', type: 'error' });
+      });
+      return;
+    }
+
+    try {
+      const dest = `${FileSystem.cacheDirectory}collectai_import_template.csv`;
+      const { uri, status } = await FileSystem.downloadAsync(templateUrl, dest);
+      if (status !== 200) {
+        throw new Error(`HTTP ${status}`);
+      }
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'text/csv',
+          dialogTitle: 'Save CollectAI import template',
+          UTI: 'public.comma-separated-values-text',
+        });
+      } else {
+        // Sharing unavailable (rare on mobile) — show the file path in the
+        // toast so power users can find it manually.
+        showToast({ message: `Template saved to ${uri}`, type: 'success' });
+      }
+    } catch (err) {
+      logger.error('[Add] Failed to download import template', err);
+      showToast({
+        message: 'Could not download template. Check your connection and try again.',
+        type: 'error',
+      });
+    }
   };
 
 const handleImportCollectionFile = async () => {

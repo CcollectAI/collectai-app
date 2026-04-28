@@ -232,8 +232,10 @@ function ThreadDetailScreen() {
     setInputText(newText);
     if (!threadId || !newText.trim()) return;
 
-    // Broadcast typing=true via presence (debounced to every 3s)
-    if (!typingTimeoutRef.current && presenceChannelRef.current) {
+    // Broadcast typing=true via presence (debounced to every 3s).
+    // Defensive: track() may be missing on some Supabase mock channels;
+    // skip silently rather than crashing the keystroke handler.
+    if (!typingTimeoutRef.current && typeof presenceChannelRef.current?.track === 'function') {
       presenceChannelRef.current.track({ typing: true }).catch(() => {});
       typingTimeoutRef.current = setTimeout(() => {
         typingTimeoutRef.current = null;
@@ -243,7 +245,9 @@ function ThreadDetailScreen() {
     // Clear typing after 3s of inactivity
     if (typingClearRef.current) clearTimeout(typingClearRef.current);
     typingClearRef.current = setTimeout(() => {
-      presenceChannelRef.current?.track({ typing: false }).catch(() => {});
+      if (typeof presenceChannelRef.current?.track === 'function') {
+        presenceChannelRef.current.track({ typing: false }).catch(() => {});
+      }
     }, 3000);
   }, [threadId]);
 
@@ -256,9 +260,12 @@ function ThreadDetailScreen() {
     setInputText('');
     setSending(true);
 
-    // Clear typing indicator via presence
+    // Clear typing indicator via presence (defensive — track may be missing
+    // on Supabase mock channels; see makeChannel in src/lib/supabase.ts).
     if (typingClearRef.current) clearTimeout(typingClearRef.current);
-    presenceChannelRef.current?.track({ typing: false }).catch(() => {});
+    if (typeof presenceChannelRef.current?.track === 'function') {
+      presenceChannelRef.current.track({ typing: false }).catch(() => {});
+    }
 
     // Optimistic: add message with 'sending' status
     const optimisticMsg: LocalMessage = {

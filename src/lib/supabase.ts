@@ -42,12 +42,19 @@ function makeMock(): SupabaseClient<any, any, any> {
 
   // Mock channel for Supabase Realtime — `supabase.channel('x').on(...).subscribe()`
   // Inbox + any other realtime-subscriber screen would crash if this was absent.
+  // 2026-04-28: presence API methods (track/untrack/presenceState) added after
+  // chat thread crash on `presenceChannelRef.current.track is not a function`
+  // when the app fell back to mock mode. Keep this in sync with the real
+  // RealtimeChannel surface that any screen actually calls.
   const makeChannel = () => {
     const ch: any = {};
     ch.on = () => ch;
     ch.subscribe = () => ch;
     ch.unsubscribe = async () => ({ error: null });
     ch.send = async () => ({ status: "ok" });
+    ch.track = async () => ({ status: "ok" });
+    ch.untrack = async () => ({ status: "ok" });
+    ch.presenceState = () => ({});
     return ch;
   };
 
