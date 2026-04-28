@@ -147,7 +147,13 @@ class MarketplaceAgent:
             "crawl4ai": self._crawl4ai,
             "mercari_us": self._mercari_us,
             "whatnot": self._whatnot,
-            "vinted": self._vinted,
+            # "vinted": self._vinted,  # DE-REGISTERED 2026-04-28 — circuit
+            # OPEN >24h, structurally bot-blocked (HTTP 403 every call). Cooldown
+            # was bumped to 6h on 2026-04-27 (commit 0571fa6) to stop flap noise,
+            # but the OPEN-monitor still pages at 24h. Removing from the adapter
+            # map stops dispatch entirely. Re-enable if Vinted's bot detection
+            # ever lifts our IP block — verify by `curl https://www.vinted.fr/api/v2/catalog/items?search_text=test`
+            # and only un-comment when that returns 200.
             "mavin": self._mavin,
             "catawiki": self._catawiki,
             "whisky_auctioneer": self._whisky_auctioneer,

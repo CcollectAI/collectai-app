@@ -149,10 +149,16 @@ WORKER_OUTPUTS: dict[str, WorkerOutput] = {
     #     ),
     # ),
     # value_change_worker writes to alert_trigger_history, not alerts_outbox.
+    # max_staleness_hours bumped 96h → 720h (30d) on 2026-04-28: pre-launch
+    # state has 2 items + 0 real users, so no value-change events trigger
+    # writes. The 96h threshold paged silently every 4 days. Re-tighten to
+    # ~96h once active users + items > ~50 (probe correctly fires when there
+    # IS input but the worker stops writing). The input_exists_sql gate
+    # doesn't help here because the 2 demo items count as "input present".
     "value_change_worker": WorkerOutput(
         table="alert_trigger_history",
         timestamp_column="created_at",
-        max_staleness_hours=96.0,
+        max_staleness_hours=720.0,
         where_clause="trigger_type IN ('value_change','item_value_change')",
         input_exists_sql=(
             "SELECT COUNT(*) AS cnt FROM public.items"
