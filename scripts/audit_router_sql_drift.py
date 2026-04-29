@@ -117,12 +117,20 @@ async def fetch_schema(dsn: str) -> tuple[set[str], dict[str, set[str]], set[str
         )
         tables = {r["n"] for r in rows}
 
-        # Columns per public table
+        # Columns per public table — pg_attribute covers tables + views +
+        # matviews + foreign tables. information_schema.columns excludes
+        # matviews, which produced false-positive BARE_COLUMN_MISSING for
+        # every column of every mv_* used by routers/workers.
         col_rows = await conn.fetch(
             """
-            SELECT table_name AS t, column_name AS c
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
+            SELECT c.relname AS t, a.attname AS c
+            FROM pg_attribute a
+            JOIN pg_class c ON a.attrelid = c.oid
+            JOIN pg_namespace n ON c.relnamespace = n.oid
+            WHERE n.nspname = 'public'
+              AND a.attnum > 0
+              AND NOT a.attisdropped
+              AND c.relkind IN ('r','p','v','m','f')
             """
         )
         columns: dict[str, set[str]] = {}
@@ -247,6 +255,50 @@ def audit_file(
                 continue
             if col not in columns[table] and col not in SQL_KEYWORDS:
                 drift.append((line, "COLUMN_MISSING", f"{table}.{col} (used as {alias}.{col})"))
+
+        # Bare-column form: `SELECT a, b, c FROM events` where `events`
+        # is the only FROM target. If the query has a single FROM and
+        # no JOINs, every bare column in the SELECT list must belong
+        # to that table. Catches the events-helpers bug class:
+        # `SELECT attendee_count FROM events` (col exists on the view,
+        # not the table).
+        from_tables = []
+        for m in re.finditer(r"\bFROM\s+(?:(?:auth|public|information_schema|pg_catalog)\.)?([a-z_][a-z0-9_]*)", sql, re.IGNORECASE):
+            t = m.group(1).lower()
+            if t.startswith("pg_") or t in SQL_KEYWORDS or t in ctes:
+                continue
+            if t in tables:
+                from_tables.append(t)
+        has_join = bool(re.search(r"\bJOIN\b", sql, re.IGNORECASE))
+        if len(set(from_tables)) == 1 and not has_join:
+            tbl = from_tables[0]
+            tbl_cols = columns.get(tbl, set())
+            # Extract the SELECT list — only a single SELECT clause; we
+            # don't try to follow nested SELECTs.
+            sel_match = re.search(r"\bSELECT\b\s+(.*?)\s+\bFROM\b", sql, re.IGNORECASE | re.DOTALL)
+            if sel_match:
+                sel_text = sel_match.group(1)
+                # Tokenize: split by commas at the OUTER paren depth = 0.
+                tokens, buf, depth = [], "", 0
+                for ch in sel_text + ",":
+                    if ch == "(": depth += 1; buf += ch
+                    elif ch == ")": depth -= 1; buf += ch
+                    elif ch == "," and depth == 0:
+                        tokens.append(buf.strip()); buf = ""
+                    else:
+                        buf += ch
+                for tok in tokens:
+                    # Drop AS aliases and casts before extracting the column.
+                    bare = re.split(r"\s+AS\s+", tok, 1, re.IGNORECASE)[0].strip()
+                    bare = re.split(r"::", bare, 1)[0].strip()
+                    # Only flag plain identifiers, skip expressions / *
+                    if not re.fullmatch(r"[a-z_][a-z0-9_]*", bare, re.IGNORECASE):
+                        continue
+                    name = bare.lower()
+                    if name in SQL_KEYWORDS:
+                        continue
+                    if name not in tbl_cols:
+                        drift.append((line, "BARE_COLUMN_MISSING", f"{tbl}.{name}"))
 
     return drift
 

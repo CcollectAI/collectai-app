@@ -33,3 +33,58 @@ workers/signal_alerts_worker.py:TABLE_MISSING:users
 # active manifest. vision_queue table never created — would need a
 # migration before reactivating.
 workers/vision_ingest_worker.py:TABLE_MISSING:vision_queue
+
+# 2026-04-29 — bare-column-from-wrong-table check added (catches the
+# class of bug where SQL `SELECT a, b, c FROM events` selects view-only
+# columns from a bare table). 42 pre-existing entries below; each is a
+# real silent-failure (endpoint 500's or returns empty). Investigate +
+# fix per file. Removing a line means the file is verified clean.
+#
+# Highest user impact:
+#   collections_router.py — entire collections feature broken
+#   watchlist_router.py:206 — server-side same as the FE wrong-table bug
+#   item_images_router.py:139 — image upload list broken
+#
+app/agents/intake/helpers.py:BARE_COLUMN_MISSING:taxonomy_corrections.from_category
+app/agents/intake/helpers.py:BARE_COLUMN_MISSING:taxonomy_corrections.to_category
+app/agents/intake_duplicate_check.py:BARE_COLUMN_MISSING:items.normalized_key
+app/agents/intake_social_proof.py:BARE_COLUMN_MISSING:mv_demand_heat.heat_score
+app/agents/intake_social_proof.py:BARE_COLUMN_MISSING:mv_demand_heat.rank
+app/agents/intake_social_proof.py:BARE_COLUMN_MISSING:supply_snapshots.scarcity_score
+app/agents/intake_social_proof.py:BARE_COLUMN_MISSING:supply_snapshots.supply_trend
+app/features/collections_router.py:BARE_COLUMN_MISSING:collections.category
+app/features/collections_router.py:BARE_COLUMN_MISSING:collections.collection_key
+app/features/collections_router.py:BARE_COLUMN_MISSING:collections.display_name
+app/features/collections_router.py:BARE_COLUMN_MISSING:collections.image_url
+app/features/collections_router.py:BARE_COLUMN_MISSING:collections.notes
+app/features/collections_router.py:BARE_COLUMN_MISSING:collections.release_date
+app/features/collections_router.py:BARE_COLUMN_MISSING:collections.total_items
+app/features/data_moat.py:BARE_COLUMN_MISSING:price_predictions.asof
+app/features/events/events_core.py:BARE_COLUMN_MISSING:events.attendee_count
+app/features/events/events_core.py:BARE_COLUMN_MISSING:events.going_count
+app/features/events/events_core.py:BARE_COLUMN_MISSING:events.interested_count
+app/features/insights_router.py:BARE_COLUMN_MISSING:items.normalized_key
+app/features/item_images_router.py:BARE_COLUMN_MISSING:item_images.image_url
+app/features/item_images_router.py:BARE_COLUMN_MISSING:item_images.label
+app/features/item_images_router.py:BARE_COLUMN_MISSING:item_images.position
+app/features/predict_router.py:BARE_COLUMN_MISSING:price_predictions.asof
+app/features/search_router.py:BARE_COLUMN_MISSING:events.start_date
+app/features/search_router.py:BARE_COLUMN_MISSING:items.price
+app/features/social_router.py:BARE_COLUMN_MISSING:user_public_profiles.avatar_color
+app/features/trends_and_deepdive_router.py:BARE_COLUMN_MISSING:price_predictions.asof
+app/features/watchlist_router.py:BARE_COLUMN_MISSING:watchlist.currency
+app/features/watchlist_router.py:BARE_COLUMN_MISSING:watchlist.item_id
+app/features/watchlist_router.py:BARE_COLUMN_MISSING:watchlist.last_checked_at
+app/features/watchlist_router.py:BARE_COLUMN_MISSING:watchlist.last_market_price
+app/features/watchlist_router.py:BARE_COLUMN_MISSING:watchlist.market_hit_count
+app/features/watchlist_router.py:BARE_COLUMN_MISSING:watchlist.name
+app/features/watchlist_router.py:BARE_COLUMN_MISSING:watchlist.predicted_value
+app/features/watchlist_router.py:BARE_COLUMN_MISSING:watchlist.price_trend
+app/routes/pipeline_status_router.py:BARE_COLUMN_MISSING:model_registry.category
+app/routes/pipeline_status_router.py:BARE_COLUMN_MISSING:model_registry.is_active
+app/routes/pipeline_status_router.py:BARE_COLUMN_MISSING:model_registry.mae
+app/routes/pipeline_status_router.py:BARE_COLUMN_MISSING:model_registry.train_size
+pipelines/export_feedback.py:BARE_COLUMN_MISSING:items.attributes_json
+workers/price_monitor_worker.py:BARE_COLUMN_MISSING:items.normalized_key
+workers/vision_ingest_worker.py:BARE_COLUMN_MISSING:vision_predict_log.image_url
+
