@@ -944,5 +944,550 @@
       "p_notes",
       "p_target_price_eur"
     ]
+  },
+  "required": {
+    "rpc_add_missing_to_wishlist_v1": [
+      "p_checklist_item_id"
+    ],
+    "rpc_add_pricing_trace_v1": [
+      "p_item_id",
+      "p_stage",
+      "p_summary",
+      "p_user_id"
+    ],
+    "rpc_admin_read_user_items_v1": [
+      "p_user_id"
+    ],
+    "rpc_alert_attempt_finish": [
+      "p_id",
+      "p_ok"
+    ],
+    "rpc_alerts_feed_for_user": [
+      "p_user_id"
+    ],
+    "rpc_alerts_mark_delivered": [
+      "p_ids"
+    ],
+    "rpc_api_key_check": [
+      "p_key_plain"
+    ],
+    "rpc_apply_cap_to_item_v1": [
+      "p_item_id"
+    ],
+    "rpc_apply_item_extractions_dev_v1": [
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_apply_item_extractions_v1": [
+      "p_item_id"
+    ],
+    "rpc_block_user_v1": [
+      "p_target_id"
+    ],
+    "rpc_cancel_offer_v1": [
+      "p_actor_id",
+      "p_offer_id"
+    ],
+    "rpc_category_item_status_user_v1": [
+      "p_user_id"
+    ],
+    "rpc_claim_job": [
+      "p_source",
+      "p_worker"
+    ],
+    "rpc_clear_typing_v1": [
+      "p_thread_id"
+    ],
+    "rpc_complete_deal_v1": [
+      "p_comment",
+      "p_offer_id",
+      "p_stars"
+    ],
+    "rpc_complete_ingest_job_v1": [
+      "p_job_id",
+      "p_status"
+    ],
+    "rpc_complete_job": [
+      "p_items_found",
+      "p_job_id"
+    ],
+    "rpc_complete_job_ret": [
+      "p_items_found",
+      "p_job_id"
+    ],
+    "rpc_complete_task_v1": [
+      "p_task_id"
+    ],
+    "rpc_compute_notification_outcomes_v1": [
+      "p_user_id"
+    ],
+    "rpc_compute_notification_outcomes_v2": [
+      "p_user_id"
+    ],
+    "rpc_confirm_item_identity_v1": [
+      "p_item_id"
+    ],
+    "rpc_confirm_item_price_dev_v1": [
+      "p_item_id",
+      "p_price_eur",
+      "p_user_id"
+    ],
+    "rpc_confirm_item_price_v1": [
+      "p_item_id",
+      "p_price_eur"
+    ],
+    "rpc_confirm_item_suggestion_dev_v1": [
+      "p_field",
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_confirm_item_suggestion_v1": [
+      "p_field",
+      "p_item_id"
+    ],
+    "rpc_counter_offer_v1": [
+      "p_actor_id",
+      "p_amount",
+      "p_message",
+      "p_offer_id"
+    ],
+    "rpc_create_build_paint_project_v1": [
+      "p_title"
+    ],
+    "rpc_create_project_v1": [
+      "p_title"
+    ],
+    "rpc_decide_dm_request_v1": [
+      "p_approve",
+      "p_request_id"
+    ],
+    "rpc_dismiss_notification_v1": [
+      "p_notification_id"
+    ],
+    "rpc_emit_event_notifications_v1": [
+      "p_user_id"
+    ],
+    "rpc_emit_event_reminders_dev_v1": [
+      "p_user_id"
+    ],
+    "rpc_emit_next_best_add_v1": [
+      "p_user_id"
+    ],
+    "rpc_emit_progress_guidance_v1": [
+      "p_user_id"
+    ],
+    "rpc_emit_smart_guidance_v1": [
+      "p_user_id"
+    ],
+    "rpc_enqueue_market_ingest_v1": [
+      "p_item_id"
+    ],
+    "rpc_enqueue_market_promote_v1": [
+      "p_item_id"
+    ],
+    "rpc_enqueue_push_v1": [
+      "p_body",
+      "p_title"
+    ],
+    "rpc_enqueue_quantile_rebuild_v1": [
+      "p_item_id"
+    ],
+    "rpc_enqueue_task_v1": [
+      "p_task_type"
+    ],
+    "rpc_execute_fixit_action_v1": [
+      "p_action_id",
+      "p_item_id"
+    ],
+    "rpc_fail_job": [
+      "p_error",
+      "p_job_id"
+    ],
+    "rpc_fail_task_v1": [
+      "p_error",
+      "p_task_id"
+    ],
+    "rpc_feedback_log_v1": [
+      "p_event_type",
+      "p_payload",
+      "p_user_id"
+    ],
+    "rpc_get_batch_presence_v1": [
+      "p_user_ids"
+    ],
+    "rpc_get_calendar_agenda_dev_v1": [
+      "p_user_id"
+    ],
+    "rpc_get_calendar_agenda_with_watch_dev_v1": [
+      "p_user_id"
+    ],
+    "rpc_get_calendar_agenda_with_watch_merged_dev_v1": [
+      "p_user_id"
+    ],
+    "rpc_get_calendar_feed_dev_v1": [
+      "p_date_from",
+      "p_date_to",
+      "p_user_id"
+    ],
+    "rpc_get_chat_thread_v1": [
+      "p_thread_id"
+    ],
+    "rpc_get_event_detail_dev_v1": [
+      "p_event_id",
+      "p_user_id"
+    ],
+    "rpc_get_event_detail_v1": [
+      "p_event_id"
+    ],
+    "rpc_get_item_detail": [
+      "p_item_ref"
+    ],
+    "rpc_get_presence_v1": [
+      "p_user_id"
+    ],
+    "rpc_get_quickscan_draft_from_event_dev_v1": [
+      "p_event_id",
+      "p_user_id"
+    ],
+    "rpc_get_quickscan_prefill_dev_v1": [
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_get_quickscan_prefill_dev_v2": [
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_get_quickscan_prefill_v1": [
+      "p_item_id"
+    ],
+    "rpc_get_quickscan_prefill_v2_dev_v1": [
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_get_quickscan_prefill_v3_dev_v1": [
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_get_quickscan_ui_state_dev_v1": [
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_get_quickscan_ui_state_dev_v2": [
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_get_quickscan_ui_state_v2": [
+      "p_item_id"
+    ],
+    "rpc_get_quickscan_ui_state_v2_badges": [
+      "p_item_id"
+    ],
+    "rpc_get_quickscan_ui_state_v2_polished": [
+      "p_item_id"
+    ],
+    "rpc_get_quickscan_v2_dev_v1": [
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_get_task_status_v1": [
+      "p_task_id"
+    ],
+    "rpc_get_typing_v1": [
+      "p_thread_id"
+    ],
+    "rpc_get_user_activity_v1": [
+      "p_user_id"
+    ],
+    "rpc_get_what_matters_now_dev_v1": [
+      "p_user_id"
+    ],
+    "rpc_home_feed": [
+      "p_user_id"
+    ],
+    "rpc_ingest_event_dev_v1": [
+      "p_event_type",
+      "p_source",
+      "p_starts_at",
+      "p_title"
+    ],
+    "rpc_ingest_event_v1": [
+      "p_event_type",
+      "p_source",
+      "p_starts_at",
+      "p_title"
+    ],
+    "rpc_ingest_events_batch_dev_v1": [
+      "p_payload"
+    ],
+    "rpc_ingest_events_batch_gated_dev_v1": [
+      "p_payload",
+      "p_user_id"
+    ],
+    "rpc_ingest_hit": [
+      "p_category",
+      "p_condition",
+      "p_currency",
+      "p_image_url",
+      "p_item_ref",
+      "p_price",
+      "p_seen_at",
+      "p_seller_rating",
+      "p_source",
+      "p_title",
+      "p_tx_id",
+      "p_url"
+    ],
+    "rpc_ingest_hits_bulk": [
+      "p_payload"
+    ],
+    "rpc_ingest_market_hits": [
+      "p_hits"
+    ],
+    "rpc_insert_market_hit_safe_v1": [
+      "p_category",
+      "p_currency",
+      "p_image_url",
+      "p_item_ref",
+      "p_marketplace",
+      "p_observed_at",
+      "p_price",
+      "p_source",
+      "p_title",
+      "p_url",
+      "p_user_id"
+    ],
+    "rpc_insert_market_observation_v1": [
+      "p_category",
+      "p_condition",
+      "p_currency",
+      "p_image_url",
+      "p_is_sold",
+      "p_observed_at",
+      "p_price",
+      "p_price_eur",
+      "p_provider",
+      "p_raw",
+      "p_source_id",
+      "p_title",
+      "p_url"
+    ],
+    "rpc_is_blocked_v1": [
+      "p_other_id"
+    ],
+    "rpc_item_timeseries_90d": [
+      "p_item_ref"
+    ],
+    "rpc_join_category_chat_v1": [
+      "p_category"
+    ],
+    "rpc_lease_agent_job": [
+      "p_job_type"
+    ],
+    "rpc_lease_ingest_job_v1": [
+      "p_worker_id"
+    ],
+    "rpc_lock_item_identity_v1": [
+      "p_item_id"
+    ],
+    "rpc_log_activity_v1": [
+      "p_activity_type",
+      "p_title"
+    ],
+    "rpc_log_notification_impression": [
+      "p_notification_id"
+    ],
+    "rpc_log_notification_interaction": [
+      "p_kind",
+      "p_notification_id"
+    ],
+    "rpc_map_prediction_to_item": [
+      "p_item_id",
+      "p_nk",
+      "p_user_id"
+    ],
+    "rpc_mark_category_item_owned_v1": [
+      "p_category_item_id"
+    ],
+    "rpc_mark_notification_read_v1": [
+      "p_notification_id"
+    ],
+    "rpc_mark_shipped_v1": [
+      "p_offer_id",
+      "p_tracking_info"
+    ],
+    "rpc_mark_thread_read_v1": [
+      "p_thread_id"
+    ],
+    "rpc_maybe_enqueue_enrich_v1": [
+      "p_item_id"
+    ],
+    "rpc_maybe_enqueue_quantiles_v1": [
+      "p_item_id"
+    ],
+    "rpc_maybe_upgrade_confidence_v1": [
+      "p_item_id"
+    ],
+    "rpc_portfolio_snapshot_upsert_v1": [
+      "p_user_id"
+    ],
+    "rpc_post_ingest_actions_v1": [
+      "p_item_id"
+    ],
+    "rpc_predict_quick_for_item_v1": [
+      "p_item_id"
+    ],
+    "rpc_pricing_next_actions_v1": [
+      "p_item_id"
+    ],
+    "rpc_propose_offer_v1": [
+      "p_amount",
+      "p_buyer_id",
+      "p_item_id",
+      "p_message"
+    ],
+    "rpc_quickscan_apply_extractions_dev_v1": [
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_quickscan_apply_extractions_v1": [
+      "p_item_id"
+    ],
+    "rpc_quickscan_autofill_v1": [
+      "p_item_id"
+    ],
+    "rpc_quickscan_confirm_all_suggestions_dev_v1": [
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_quickscan_confirm_all_suggestions_v1": [
+      "p_item_id"
+    ],
+    "rpc_quickscan_confirm_price_dev_v1": [
+      "p_item_id",
+      "p_price_eur",
+      "p_user_id"
+    ],
+    "rpc_quickscan_confirm_price_v1": [
+      "p_item_id",
+      "p_price_eur"
+    ],
+    "rpc_quickscan_confirm_suggestions_and_state_v1": [
+      "p_item_id"
+    ],
+    "rpc_quickscan_finalize_draft_to_item_v1": [
+      "p_draft_id"
+    ],
+    "rpc_quickscan_get_ui_state_v1": [
+      "p_item_id"
+    ],
+    "rpc_quickscan_one_tap_dev_v1": [
+      "p_user_id"
+    ],
+    "rpc_quickscan_seed_extraction_from_title_dev_v1": [
+      "p_item_id",
+      "p_user_id"
+    ],
+    "rpc_quickscan_seed_extraction_from_title_v1": [
+      "p_item_id"
+    ],
+    "rpc_rebuild_pricing_for_item_v1": [
+      "p_item_id"
+    ],
+    "rpc_register_push_device_v1": [
+      "p_token"
+    ],
+    "rpc_request_dm_v1": [
+      "p_target_user_id"
+    ],
+    "rpc_respond_offer_v1": [
+      "p_accept",
+      "p_actor_id",
+      "p_message",
+      "p_offer_id"
+    ],
+    "rpc_run_daily_guidance_v1": [
+      "p_user_id"
+    ],
+    "rpc_search_items": [
+      "p_q"
+    ],
+    "rpc_send_message_v1": [
+      "p_body",
+      "p_thread_id",
+      "p_user_id"
+    ],
+    "rpc_set_typing_v1": [
+      "p_thread_id"
+    ],
+    "rpc_submit_purchase_price_v1": [
+      "p_item_ref",
+      "p_price_eur"
+    ],
+    "rpc_toggle_reaction_v1": [
+      "p_emoji",
+      "p_message_id"
+    ],
+    "rpc_trace_cycle_summary_v1": [
+      "p_item_id"
+    ],
+    "rpc_trace_judgment_v1": [
+      "p_item_id"
+    ],
+    "rpc_trace_pricing_state_v1": [
+      "p_item_id"
+    ],
+    "rpc_trace_wait_reason_v1": [
+      "p_item_id"
+    ],
+    "rpc_training_items_upsert_v1": [
+      "p_canonical_key",
+      "p_category_slug"
+    ],
+    "rpc_unblock_user_v1": [
+      "p_target_id"
+    ],
+    "rpc_unmark_category_item_owned_v1": [
+      "p_category_item_id"
+    ],
+    "rpc_upsert_item_metadata_by_nk": [
+      "p_nk"
+    ],
+    "rpc_user_inbox_v1": [
+      "p_user_id"
+    ],
+    "rpc_user_relevant_events_v1": [
+      "p_user_id"
+    ],
+    "rpc_watch_event_dev_v1": [
+      "p_event_id",
+      "p_user_id"
+    ],
+    "rpc_watch_event_v1": [
+      "p_event_id"
+    ],
+    "rpc_watchlist_add_by_nk": [
+      "p_nk",
+      "p_user_id"
+    ],
+    "rpc_watchlist_add_by_ref": [
+      "p_item_ref",
+      "p_user_id"
+    ],
+    "rpc_watchlist_remove": [
+      "p_item_ref",
+      "p_user_id"
+    ],
+    "rpc_wishlist_compute_alerts_dev_v1": [
+      "p_user_id"
+    ],
+    "rpc_wishlist_compute_availability_alerts_dev_v1": [
+      "p_user_id"
+    ],
+    "rpc_wishlist_disable_v1": [
+      "p_canonical_key"
+    ],
+    "rpc_wishlist_upsert_v1": [
+      "p_canonical_key"
+    ]
   }
 }

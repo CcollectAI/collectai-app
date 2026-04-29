@@ -32,3 +32,9 @@ jobs:
       # scripts/rpc_drift_allowlist.txt.
       - name: FE Supabase rpc-drift check
         run: python3 scripts/audit_fe_rpc_drift.py
+      # FE EC2 API drift gate — diffs every (get|post|put|patch|del)('/path')
+      # call against scripts/api.lock.json (FastAPI route table snapshot).
+      # Same class as the schema/rpc gates: catches a route rename or a
+      # caller-side typo before it ships as a silent 404.
+      - name: FE EC2 api-drift check
+        run: python3 scripts/audit_fe_api_drift.py

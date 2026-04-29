@@ -1,0 +1,32 @@
+# API drift allowlist. Each non-comment line matches a finding from
+# `scripts/audit_fe_api_drift.py` literally:
+#
+#   <file>:<METHOD> <path>
+#
+# Removing a line MUST be paired with fixing the underlying drift
+# (either by deploying the route server-side or by deleting the FE
+# caller). Adding a line is a deliberate "we know this is broken;
+# deferred".
+
+# ─────────────────────────────────────────────────────────────────────
+# 2026-04-29 — initial sweep. Three entries below are FE→server wires
+# where the FE caller was written ahead of the server route landing.
+# Each is currently dead code (no screen invokes it) but still
+# discoverable through wrapper modules. Decide whether to deploy the
+# route or delete the wrapper before un-allowlisting.
+# ─────────────────────────────────────────────────────────────────────
+
+# predict v2 quantile API — wrapper present but no screen calls it.
+# If a v2 valuation flow is shipped, deploy the route and remove this.
+src/api/predictApi.ts:POST /predict_v2
+
+# alertsClient legacy module — alertsApi.ts has the working DELETE
+# /alerts/mine/{id} path. These two endpoints were a parallel design
+# that never landed.
+src/services/alertsClient.ts:GET /alerts
+src/services/alertsClient.ts:POST /alerts
+
+# anti-fraud event logger — explicitly silent-by-design (try/catch +
+# logger.warn). Endpoint never deployed; placeholder for a future
+# fraud-event firehose.
+src/services/antiFraudClient.ts:POST /anti-fraud/events

@@ -13,7 +13,9 @@ export const getPortfolioOverview = async (): Promise<PortfolioSnapshot> => {
 export const getPortfolioTimeseries = (range?: string) =>
   get(`/portfolio/timeseries${range ? `?range=${encodeURIComponent(range)}` : ""}`);
 
-export const getPortfolioCategoryBreakdown = () => get("/portfolio/category-breakdown");
+// Lives under /analytics on the server (trends_and_deepdive_router has
+// prefix=/analytics). Earlier path was missing the prefix and 404'd.
+export const getPortfolioCategoryBreakdown = () => get("/analytics/portfolio/category-breakdown");
 
 export const getPortfolioCategoryStats = () => get("/portfolio/category-stats");
 

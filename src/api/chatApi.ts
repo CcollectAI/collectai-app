@@ -49,8 +49,10 @@ export const markChatThreadRead = (threadId: string) =>
 export const deleteChatMessage = (messageId: string) =>
   del<{ success: boolean }>(`/chat/messages/${messageId}`);
 
+// Server route is PATCH /chat/messages/{id} (chat_router.py:452); this
+// previously sent PUT and 404'd silently for any user editing a message.
 export const editChatMessage = (messageId: string, text: string) =>
-  put<{ id: string; text: string; edited_at: string }>(
+  patch<{ id: string; text: string; edited_at: string }>(
     `/chat/messages/${messageId}`,
     { text },
   );

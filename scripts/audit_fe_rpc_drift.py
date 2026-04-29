@@ -51,6 +51,7 @@ def main():
         sys.exit(2)
     payload = json.loads(LOCK.read_text())
     funcs = {k: set(v) for k, v in payload["functions"].items()}
+    required = {k: set(v) for k, v in payload.get("required", {}).items()}
 
     # Load allowlist: each non-comment line is `<file>:<KIND>:<detail>`,
     # matching the report format below. Use this to defer pre-existing
@@ -79,14 +80,25 @@ def main():
                 findings.append((str(f.relative_to(ROOT)), line, name, "MISSING_FN", ""))
                 continue
             sig = funcs[name]
-            for key in KEY_RE.findall(block):
+            keys_passed = set(KEY_RE.findall(block))
+            for key in keys_passed:
                 if key not in sig:
                     findings.append((str(f.relative_to(ROOT)), line, name, "BAD_PARAM", key))
+            # Required-param check — every non-DEFAULT signature param
+            # must appear in the call site. (Reuses the same regex
+            # KEY_RE — handles bare object literals, not spread/dynamic.)
+            for need in required.get(name, set()):
+                if need not in keys_passed:
+                    findings.append((str(f.relative_to(ROOT)), line, name, "MISSING_REQUIRED", need))
     blocking: list = []
     informational: list = []
     for entry in findings:
         path, line, fn, kind, detail = entry
-        key = f"{path}:{kind}:{fn}" if kind == "MISSING_FN" else f"{path}:{kind}:{fn}:{detail}"
+        key = (
+            f"{path}:{kind}:{fn}"
+            if kind == "MISSING_FN"
+            else f"{path}:{kind}:{fn}:{detail}"
+        )
         if key in allowed:
             informational.append(entry)
         else:
@@ -107,6 +119,8 @@ def main():
                 last_file = path
             if kind == "MISSING_FN":
                 print(f"  L{line} {kind}: rpc('{fn}') — function not in lock")
+            elif kind == "MISSING_REQUIRED":
+                print(f"  L{line} {kind}: rpc('{fn}') — required param '{detail}' not passed at call site")
             else:
                 print(f"  L{line} {kind}: rpc('{fn}') — param '{detail}' not in signature")
 
