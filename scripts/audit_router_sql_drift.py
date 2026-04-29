@@ -30,11 +30,16 @@ from typing import Iterable
 import asyncpg
 
 
-# Router directories to scan
+# Directories to scan. Originally just routers, hence the file name —
+# now also covers pipelines + workers because seed_beta_users.py (in
+# pipelines/) and several bake workers also write SQL against the same
+# schema, and a column-rename slipped through silently in 2026-04-29.
 ROUTER_DIRS = [
     Path("/opt/collectors/server/app/routes"),
     Path("/opt/collectors/server/app/features"),
     Path("/opt/collectors/server/app/agents"),
+    Path("/opt/collectors/server/pipelines"),
+    Path("/opt/collectors/server/workers"),
 ]
 
 # Match SQL strings passed to asyncpg call sites only — eliminates the
@@ -206,6 +211,19 @@ def audit_file(
             name = m.group(2).lower()
             # Skip cross-schema references — we only audit `public.*`.
             if schema in {"auth", "information_schema", "pg_catalog"}:
+                continue
+            # Bare references to pg_catalog tables (pg_inherits, pg_stat_*,
+            # pg_class, etc.) are valid SQL — Postgres resolves them
+            # without the schema prefix. Don't flag them.
+            if name.startswith("pg_"):
+                continue
+            # Regex false positives: `FROM public.{f_string}` backtracks
+            # to "public" as the table; `FOR UPDATE SKIP LOCKED` and
+            # peers grab "skip"/"nowait"/"share" etc.
+            if name in {
+                "public", "auth", "information_schema", "pg_catalog",
+                "skip", "nowait", "share", "key", "no",
+            }:
                 continue
             if name in SQL_KEYWORDS or name in ctes:
                 continue

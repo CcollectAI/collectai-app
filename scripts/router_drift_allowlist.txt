@@ -11,3 +11,25 @@
 # (Deal Desk entries removed 2026-04-22 after the feature was activated:
 # migration 20260422_deal_desk_activate.sql created the view + 4 RPCs +
 # offers.seller_id denormalization; E2E flow verified 6/6 green.)
+
+# 2026-04-29 — pipelines + workers added to scan scope. The 11 entries
+# below are pre-existing dormant code paths, allowlisted with explanation.
+# Remove an entry only when the underlying file is fixed or the worker
+# is reactivated.
+
+# pipelines/export_feedback.py: one-off feedback-export script that
+# references pre-rename columns on user_feedback_events_v1
+# (was feedback_type/value_json/incorporated_at; now event_type/payload/status).
+# Script is not on a cron; runs on-demand. Fix when next exporting feedback.
+pipelines/export_feedback.py:COLUMN_MISSING:user_feedback_events_v1.feedback_type (used as f.feedback_type)
+pipelines/export_feedback.py:COLUMN_MISSING:user_feedback_events_v1.incorporated_at (used as f.incorporated_at)
+pipelines/export_feedback.py:COLUMN_MISSING:user_feedback_events_v1.value_json (used as f.value_json)
+
+# workers/signal_alerts_worker.py: de-registered in the bake manifest
+# (commented out 2026-04-21, 3 stacked bugs). SQL drift here is dormant.
+workers/signal_alerts_worker.py:TABLE_MISSING:users
+
+# workers/vision_ingest_worker.py: on-demand only (interval=0), not in
+# active manifest. vision_queue table never created — would need a
+# migration before reactivating.
+workers/vision_ingest_worker.py:TABLE_MISSING:vision_queue
