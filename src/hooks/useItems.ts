@@ -12,13 +12,24 @@ export type ItemRow = {
 
 async function fetchItems(): Promise<ItemRow[]> {
   if (!supabase) return demo();
+  // items has no `value` column — estimated_value is the user's manual
+  // figure; the q50 prediction lives on price_predictions and is joined
+  // by SupabaseDataProvider.listItems where needed. This hook is a thin
+  // SWR wrapper for ItemCard, so estimated_value alone is enough.
   const { data, error } = await supabase
     .from("items")
-    .select("id,title,image_url,category,value,updated_at")
+    .select("id,title,image_url,category,estimated_value,updated_at")
     .order("updated_at", { ascending: false })
     .limit(200);
   if (error) throw error;
-  return (data ?? []) as ItemRow[];
+  return ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({
+    id: r.id as string,
+    title: (r.title as string) ?? '',
+    image_url: (r.image_url as string | undefined) ?? undefined,
+    category: (r.category as string | undefined) ?? undefined,
+    value: (r.estimated_value as number | undefined) ?? undefined,
+    updated_at: (r.updated_at as string | undefined) ?? undefined,
+  }));
 }
 
 export default function useItems() {

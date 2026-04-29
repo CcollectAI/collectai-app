@@ -37,15 +37,16 @@ export async function fetchCollectionItems(): Promise<CollectionItem[]> {
     ];
   }
 
+  // items has no `value` column — read estimated_value (user-entered or
+  // backfilled) and surface that.
   const { data, error } = await supabase
     .from("items")
-    .select("id,title,image_url,category,value,updated_at")
+    .select("id,title,image_url,category,estimated_value,updated_at")
     .order("updated_at", { ascending: false })
     .limit(200);
 
   if (error) {
     storeLogger.error("fetchCollectionItems error", error);
-    // return empty so the UI can fall back to its own mocks if needed
     return [];
   }
 
@@ -55,7 +56,7 @@ export async function fetchCollectionItems(): Promise<CollectionItem[]> {
       title: string;
       image_url?: string | null;
       category?: string | null;
-      value?: number | null;
+      estimated_value?: number | null;
       updated_at?: string | null;
     }[];
 
@@ -63,8 +64,8 @@ export async function fetchCollectionItems(): Promise<CollectionItem[]> {
     id: r.id,
     name: r.title,
     category: r.category || "Uncategorized",
-    collectionName: undefined, // can be extended later
-    value: typeof r.value === "number" ? r.value : 0,
+    collectionName: undefined,
+    value: typeof r.estimated_value === "number" ? r.estimated_value : 0,
     // condition/notes can be extended later (e.g. from another table or JSON)
     condition: undefined,
     notes: r.updated_at

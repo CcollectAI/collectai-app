@@ -11,10 +11,15 @@ import type {
 import { supabase } from '../../lib/supabase';
 import logger from '../../utils/logger';
 
+// v_chat_inbox_v1 columns (verified 2026-04-29 against live schema):
+// thread_id, user_id, other_user_id, other_avatar_url, other_display_name,
+// last_message_body, last_message_at, unread_count, created_at, updated_at.
+// Status + is_incoming live in chat_dm_requests_v1, queried separately.
+
 export async function listInboxThreads(): Promise<DmThread[]> {
   const { data, error } = await supabase
     .from('v_chat_inbox_v1')
-    .select('id, thread_id, other_user_id, other_user_name, other_user_handle, other_user_avatar_url, other_user_avatar_color, last_message_at, last_message_preview, unread_count, status, is_incoming')
+    .select('thread_id, other_user_id, other_avatar_url, other_display_name, last_message_at, last_message_body, unread_count')
     .order('last_message_at', { ascending: false });
 
   if (error) {
@@ -25,27 +30,30 @@ export async function listInboxThreads(): Promise<DmThread[]> {
   if (!data) return [];
 
   return (data as Record<string, unknown>[]).map((row) => ({
-    id: (row.id ?? row.thread_id) as string,
-    otherUserId: (row.other_user_id ?? row.otherUserId) as string,
-    otherUserName: (row.other_user_name ?? row.otherUserName ?? 'Unknown') as string,
-    otherUserHandle: (row.other_user_handle ?? row.otherUserHandle ?? null) as string | null,
-    otherUserAvatarUrl: (row.other_user_avatar_url ?? row.otherUserAvatarUrl ?? null) as string | null,
-    otherUserAvatarColor: (row.other_user_avatar_color ?? '#6b7280') as string,
-    status: ((row.status ?? 'accepted') as string) as DmThreadStatus,
-    lastMessagePreview: (row.last_message_preview ?? row.lastMessagePreview ?? null) as string | null,
-    lastMessageAt: (row.last_message_at ?? row.lastMessageAt ?? null) as string | null,
-    unreadCount: (row.unread_count ?? row.unreadCount ?? 0) as number,
-    isIncoming: (row.is_incoming ?? row.isIncoming ?? false) as boolean,
+    id: row.thread_id as string,
+    otherUserId: row.other_user_id as string,
+    otherUserName: (row.other_display_name ?? 'Unknown') as string,
+    otherUserHandle: null,
+    otherUserAvatarUrl: (row.other_avatar_url ?? null) as string | null,
+    otherUserAvatarColor: '#6b7280',
+    status: 'accepted' as DmThreadStatus,
+    lastMessagePreview: (row.last_message_body ?? null) as string | null,
+    lastMessageAt: (row.last_message_at ?? null) as string | null,
+    unreadCount: (row.unread_count ?? 0) as number,
+    isIncoming: false,
   }));
 }
 
 export async function listIncomingRequests(): Promise<DmRequest[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data, error } = await supabase
-    .from('v_chat_inbox_v1')
-    .select('id, thread_id, other_user_id, other_user_name, other_user_handle, other_user_avatar_url, other_user_avatar_color, last_message_at, last_message_preview, status, is_incoming')
+    .from('chat_dm_requests_v1')
+    .select('id, thread_id, requester_id, context, created_at')
+    .eq('target_user_id', user.id)
     .eq('status', 'pending')
-    .eq('is_incoming', true)
-    .order('last_message_at', { ascending: false });
+    .order('created_at', { ascending: false });
 
   if (error) {
     logger.warn('[SupabaseDataProvider] listIncomingRequests error:', error);
@@ -55,14 +63,14 @@ export async function listIncomingRequests(): Promise<DmRequest[]> {
   if (!data) return [];
 
   return (data as Record<string, unknown>[]).map((row) => ({
-    threadId: (row.id ?? row.thread_id) as string,
-    fromUserId: (row.other_user_id ?? row.otherUserId) as string,
-    fromUserName: (row.other_user_name ?? row.otherUserName ?? 'Unknown') as string,
-    fromUserHandle: (row.other_user_handle ?? row.otherUserHandle ?? null) as string | null,
-    fromUserAvatarUrl: (row.other_user_avatar_url ?? row.otherUserAvatarUrl ?? null) as string | null,
-    fromUserAvatarColor: (row.other_user_avatar_color ?? '#6b7280') as string,
-    requestMessage: (row.last_message_preview ?? row.lastMessagePreview ?? null) as string | null,
-    requestedAt: (row.last_message_at ?? row.lastMessageAt ?? new Date().toISOString()) as string,
+    threadId: (row.thread_id ?? row.id) as string,
+    fromUserId: row.requester_id as string,
+    fromUserName: 'Unknown',
+    fromUserHandle: null,
+    fromUserAvatarUrl: null,
+    fromUserAvatarColor: '#6b7280',
+    requestMessage: (row.context ?? null) as string | null,
+    requestedAt: (row.created_at ?? new Date().toISOString()) as string,
   }));
 }
 
@@ -104,9 +112,12 @@ export async function markThreadRead(threadId: string): Promise<void> {
 }
 
 export async function getThreadMessages(threadId: string): Promise<DmMessage[]> {
+  // chat_messages_v1 columns: id, thread_id, user_id, body, created_at,
+  // edited_at, deleted_at. Per-message read tracking lives on
+  // chat_thread_reads_v1 (thread-level last_read_at), not the message row.
   const { data, error } = await supabase
     .from('chat_messages_v1')
-    .select('id, thread_id, author_user_id, text, created_at, read_at')
+    .select('id, thread_id, user_id, body, created_at')
     .eq('thread_id', threadId)
     .order('created_at', { ascending: true });
 
@@ -120,10 +131,10 @@ export async function getThreadMessages(threadId: string): Promise<DmMessage[]> 
   return (data as Record<string, unknown>[]).map((row) => ({
     id: row.id as string,
     threadId: (row.thread_id as string | null) ?? threadId,
-    authorUserId: (row.author_user_id ?? row.authorUserId) as string,
-    text: (row.text as string | null) ?? '',
-    createdAt: (row.created_at ?? row.createdAt ?? new Date().toISOString()) as string,
-    readAt: (row.read_at as string | null) ?? null,
+    authorUserId: row.user_id as string,
+    text: (row.body as string | null) ?? '',
+    createdAt: (row.created_at ?? new Date().toISOString()) as string,
+    readAt: null,
   }));
 }
 
@@ -189,43 +200,50 @@ export async function isOtherUserTyping(threadId: string): Promise<boolean> {
 }
 
 export async function getDmStatus(otherUserId: string): Promise<'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined'> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 'none';
+
+  // Status lives on chat_dm_requests_v1, not on the inbox view. Look up
+  // the most recent request between this pair in either direction.
   const { data, error } = await supabase
-    .from('v_chat_inbox_v1')
-    .select('status, is_incoming')
-    .eq('other_user_id', otherUserId)
+    .from('chat_dm_requests_v1')
+    .select('status, requester_id, target_user_id, created_at')
+    .or(`and(requester_id.eq.${user.id},target_user_id.eq.${otherUserId}),and(requester_id.eq.${otherUserId},target_user_id.eq.${user.id})`)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
 
-  if (error || !data) {
-    return 'none';
-  }
+  if (error || !data) return 'none';
 
-  const row = data as { status: string; is_incoming: boolean };
+  const row = data as { status: string; requester_id: string; target_user_id: string };
   if (row.status === 'accepted') return 'accepted';
   if (row.status === 'declined') return 'declined';
   if (row.status === 'pending') {
-    return row.is_incoming ? 'pending_incoming' : 'pending_outgoing';
+    return row.target_user_id === user.id ? 'pending_incoming' : 'pending_outgoing';
   }
   return 'none';
 }
 
 export async function getInboxUnreadCount(): Promise<number> {
-  const { data, error } = await supabase
+  // accepted threads — sum the per-thread unread_count from the inbox view.
+  const { data: threads } = await supabase
     .from('v_chat_inbox_v1')
-    .select('unread_count, status, is_incoming');
-
-  if (error || !data) {
-    return 0;
-  }
-
-  const rows = data as { unread_count: number; status: string; is_incoming: boolean }[];
-
+    .select('unread_count');
   let total = 0;
-  for (const row of rows) {
-    if (row.status === 'accepted') {
-      total += row.unread_count ?? 0;
-    } else if (row.status === 'pending' && row.is_incoming) {
-      total += 1;
-    }
+  for (const row of (threads ?? []) as { unread_count: number | null }[]) {
+    total += row.unread_count ?? 0;
   }
+
+  // pending incoming requests count as 1 each.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { count } = await supabase
+      .from('chat_dm_requests_v1')
+      .select('id', { count: 'exact', head: true })
+      .eq('target_user_id', user.id)
+      .eq('status', 'pending');
+    total += count ?? 0;
+  }
+
   return total;
 }

@@ -105,9 +105,13 @@ function mapSponsorCompany(r: Record<string, unknown>): SponsorCompany {
 // ── Events CRUD ────────────────────────────────────────────────────────────────
 
 export async function getEventById(eventId: string): Promise<CollectorsEvent | null> {
+  // v_events_with_attendees_v1 columns verified 2026-04-29 against live
+  // schema. is_attending / my_rsvp_status are not on the view; mapEventRow
+  // defaults them. organizer_id → created_by; cover_image_url → image_url;
+  // event_date → date; venue_name → location.
   const { data, error } = await supabase
     .from('v_events_with_attendees_v1')
-    .select('id, title, description, category_id, event_date, end_date, location, venue_name, cover_image_url, organizer_id, organizer_name, status, capacity, attendee_count, is_attending, tags, sponsor_tier, created_at')
+    .select('id, title, kind, description, category_id, date, time, end_date, ends_at, starts_at, location, online_url, image_url, created_by, status, max_attendees, attendee_count, going_count, interested_count, is_full, is_public, is_sponsored, format, latitude, longitude, source, source_url, sponsor_name, sponsor_logo_url, sponsor_tier, created_at, updated_at')
     .eq('id', eventId)
     .maybeSingle();
 

@@ -208,13 +208,14 @@ export class SupabaseDataProvider implements DataProvider {
 
     if (dmStatus === 'accepted') {
       const { supabase } = await import('../lib/supabase');
+      // v_chat_inbox_v1 only surfaces accepted threads — no status column,
+      // and the thread id lives in `thread_id` not `id`.
       const { data } = await supabase
         .from('v_chat_inbox_v1')
-        .select('id')
+        .select('thread_id')
         .eq('other_user_id', recipientUserId)
-        .eq('status', 'accepted')
         .maybeSingle();
-      threadId = (data as Record<string, unknown> | null)?.id as string;
+      threadId = (data as Record<string, unknown> | null)?.thread_id as string;
       if (!threadId) {
         throw new Error('Could not find existing DM thread');
       }

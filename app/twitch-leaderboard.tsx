@@ -57,10 +57,12 @@ const TwitchLeaderboardScreen: React.FC = () => {
           return;
         }
 
+        // No score_30d column on twitch_creators — order by total
+        // viewer-hours, the closest "popularity" signal we track.
         const { data, error } = await supabase
           .from("twitch_creators")
           .select("*")
-          .order("score_30d", { ascending: false })
+          .order("total_viewer_hours", { ascending: false })
           .limit(100);
 
         if (error) {

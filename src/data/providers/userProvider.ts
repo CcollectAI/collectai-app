@@ -17,22 +17,17 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
     return profileCache.get(userId) ?? null;
   }
 
-  const profileCols = 'user_id, id, username, display_name, avatar_url, avatar_color, bio, level, total_xp, items_count, created_at';
-  let { data, error } = await supabase
+  // user_public_profile_v1 columns: user_id, display_handle,
+  // avatar_url, created_at, updated_at. Earlier code selected display_name,
+  // username, bio, level, total_xp etc. that don't exist on the view —
+  // they 400'd silently. The mapper falls back gracefully when a field
+  // isn't present.
+  const profileCols = 'user_id, display_handle, avatar_url, created_at';
+  const { data, error } = await supabase
     .from('user_public_profile_v1')
     .select(profileCols)
     .eq('user_id', userId)
     .maybeSingle();
-
-  if (!data && !error) {
-    const alt = await supabase
-      .from('user_public_profile_v1')
-      .select(profileCols)
-      .eq('id', userId)
-      .maybeSingle();
-    data = alt.data;
-    error = alt.error;
-  }
 
   if (error) {
     if (error.code === 'PGRST116') {
@@ -51,14 +46,14 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
   const row = data as Record<string, unknown>;
 
   const profile: PublicUserProfile = {
-    id: (row.id ?? row.user_id ?? userId) as string,
-    displayName: (row.display_name ?? row.displayName ?? row.username ?? row.name ?? 'Unknown') as string,
-    handle: (row.handle ?? row.username ?? null) as string | null,
-    avatarUrl: (row.avatar_url ?? row.avatarUrl ?? null) as string | null,
-    bio: (row.bio ?? row.about ?? row.description ?? null) as string | null,
-    interests: (row.interests ?? null) as string[] | null,
-    collectionCount: (row.collection_count ?? row.total_items ?? row.item_count ?? null) as number | null,
-    collectionValueEur: (row.collection_value_eur ?? row.total_value_eur ?? row.portfolio_value ?? null) as number | null,
+    id: (row.user_id ?? userId) as string,
+    displayName: (row.display_handle ?? 'Unknown') as string,
+    handle: (row.display_handle ?? null) as string | null,
+    avatarUrl: (row.avatar_url ?? null) as string | null,
+    bio: null,
+    interests: null,
+    collectionCount: null,
+    collectionValueEur: null,
   };
 
   profileCache.set(userId, profile);

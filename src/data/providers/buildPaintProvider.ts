@@ -25,7 +25,9 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
   const [projectsRes, sessionsRes, twitchRes] = await Promise.allSettled([
     supabase.from('build_paint_projects').select('id, status').limit(API_LIMITS.BATCH_PROJECTS),
     supabase.from('build_paint_sessions').select('minutes').limit(API_LIMITS.BATCH_LARGE),
-    supabase.from('twitch_creators').select('id, is_live').limit(API_LIMITS.BATCH_PROJECTS),
+    // twitch_creators has no is_live column — use last_seen_live_at
+    // (recent timestamp = "currently live", < 15 min threshold).
+    supabase.from('twitch_creators').select('id, last_seen_live_at').limit(API_LIMITS.BATCH_PROJECTS),
   ]);
 
   if (projectsRes.status === 'fulfilled') {
@@ -58,7 +60,11 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
     const { data, error } = twitchRes.value;
     if (!error && Array.isArray(data)) {
       twitchCreatorsTracked = data.length;
-      twitchCreatorsLive = data.filter((row: { id: string; is_live?: boolean }) => row.is_live === true).length;
+      const liveThreshold = Date.now() - 15 * 60 * 1000; // 15 min window
+      twitchCreatorsLive = data.filter((row: { id: string; last_seen_live_at?: string | null }) => {
+        const t = row.last_seen_live_at ? Date.parse(row.last_seen_live_at) : 0;
+        return t > liveThreshold;
+      }).length;
     }
   }
 
@@ -74,11 +80,15 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
 }
 
 export async function listBuildPaintProjects(): Promise<BuildPaintProject[]> {
-  const bpCols = 'id, title, name, category, category_id, item_id, item_name, item_images, status, percent_complete, is_completed, cover_image_url, paint_recipes, created_at, updated_at';
+  // build_paint_projects real columns: name (no separate title), image_url
+  // (no cover_image_url), last_updated (no updated_at), progress_pct (no
+  // percent_complete). paint_recipes never existed on the table — recipes
+  // live elsewhere if/when reintroduced.
+  const bpCols = 'id, name, category, category_id, item_id, status, progress_pct, image_url, notes, created_at, last_updated';
   const { data, error } = await supabase
     .from('build_paint_projects')
     .select(bpCols)
-    .order('updated_at', { ascending: false })
+    .order('last_updated', { ascending: false })
     .limit(200);
 
   if (error) {
@@ -88,20 +98,20 @@ export async function listBuildPaintProjects(): Promise<BuildPaintProject[]> {
 
   return (data ?? []).map((row: Record<string, unknown>) => ({
     id: row.id as string,
-    title: (row.title as string) || 'Untitled',
+    title: (row.name as string) || 'Untitled',
     category: row.category as string | undefined,
     categoryId: (row.category_id as string) ?? undefined,
     itemId: (row.item_id as string) ?? undefined,
-    itemName: (row.item_name as string) ?? undefined,
-    itemImageUrl: (row.item_images as string[])?.[0] ?? undefined,
+    itemName: undefined,
+    itemImageUrl: undefined,
     status: row.status as string | undefined,
-    percent: (row.percent_complete as number) ?? 0,
-    isCompleted: (row.is_completed as boolean) ?? false,
+    percent: (row.progress_pct as number) ?? 0,
+    isCompleted: ['finished', 'completed', 'displayed'].includes(((row.status as string) || '').toLowerCase()),
     notes: row.notes as string | undefined,
     imageUrl: (row.image_url as string) ?? undefined,
-    paintRecipes: (row.paint_recipes as PaintRecipe[]) ?? [],
+    paintRecipes: [],
     createdAt: (row.created_at as string) ?? new Date().toISOString(),
-    updatedAt: (row.updated_at as string) ?? new Date().toISOString(),
+    updatedAt: (row.last_updated as string) ?? new Date().toISOString(),
   }));
 }
 
@@ -271,9 +281,9 @@ export async function addBuildPaintNote(projectId: string, body: string): Promis
 export async function listBuildPaintProjectsByCategory(categoryId: string): Promise<BuildPaintProject[]> {
   const { data, error } = await supabase
     .from('build_paint_projects')
-    .select('id, name, status, category_id, item_id, cover_image_url, paint_recipes, created_at, updated_at')
+    .select('id, name, status, category_id, item_id, image_url, created_at, last_updated')
     .eq('category_id', categoryId)
-    .order('updated_at', { ascending: false });
+    .order('last_updated', { ascending: false });
 
   if (error) {
     logger.warn('[SupabaseDataProvider] listBuildPaintProjectsByCategory error:', error);
@@ -286,21 +296,21 @@ export async function listBuildPaintProjectsByCategory(categoryId: string): Prom
     status: (r.status as string) ?? 'in_progress',
     categoryId: (r.category_id as string | null) ?? undefined,
     itemId: (r.item_id as string | null) ?? undefined,
-    imageUrl: (r.cover_image_url as string | null) ?? undefined,
+    imageUrl: (r.image_url as string | null) ?? undefined,
     percent: 0,
     isCompleted: ['finished', 'completed', 'displayed'].includes(((r.status as string) || '').toLowerCase()),
-    paintRecipes: (r.paint_recipes as PaintRecipe[]) ?? [],
+    paintRecipes: [],
     createdAt: (r.created_at as string | null) ?? new Date().toISOString(),
-    updatedAt: (r.updated_at as string | null) ?? new Date().toISOString(),
+    updatedAt: (r.last_updated as string | null) ?? new Date().toISOString(),
   }));
 }
 
 export async function listBuildPaintProjectsByItem(itemId: string): Promise<BuildPaintProject[]> {
   const { data, error } = await supabase
     .from('build_paint_projects')
-    .select('id, name, status, category_id, item_id, cover_image_url, paint_recipes, created_at, updated_at')
+    .select('id, name, status, category_id, item_id, image_url, created_at, last_updated')
     .eq('item_id', itemId)
-    .order('updated_at', { ascending: false });
+    .order('last_updated', { ascending: false });
 
   if (error) {
     logger.warn('[SupabaseDataProvider] listBuildPaintProjectsByItem error:', error);
@@ -313,12 +323,12 @@ export async function listBuildPaintProjectsByItem(itemId: string): Promise<Buil
     status: (r.status as string) ?? 'in_progress',
     categoryId: (r.category_id as string | null) ?? undefined,
     itemId: (r.item_id as string | null) ?? undefined,
-    imageUrl: (r.cover_image_url as string | null) ?? undefined,
+    imageUrl: (r.image_url as string | null) ?? undefined,
     percent: 0,
     isCompleted: ['finished', 'completed', 'displayed'].includes(((r.status as string) || '').toLowerCase()),
-    paintRecipes: (r.paint_recipes as PaintRecipe[]) ?? [],
+    paintRecipes: [],
     createdAt: (r.created_at as string | null) ?? new Date().toISOString(),
-    updatedAt: (r.updated_at as string | null) ?? new Date().toISOString(),
+    updatedAt: (r.last_updated as string | null) ?? new Date().toISOString(),
   }));
 }
 

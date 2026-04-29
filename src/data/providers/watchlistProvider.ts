@@ -93,13 +93,17 @@ export async function updateWatchlistItem(id: string, updates: { targetPrice?: n
   const updatePayload: Record<string, unknown> = {};
   if (updates.targetPrice !== undefined) updatePayload.target_price = updates.targetPrice;
   if (updates.notes !== undefined) updatePayload.notes = updates.notes;
-  if (updates.sortOrder !== undefined) updatePayload.sort_order = updates.sortOrder;
+  // sort_order isn't a column on watchlist_items — accept the param for
+  // API compatibility but ignore it. (Older builds shipped this; the
+  // table never gained the column.)
 
+  // Real table is `watchlist_items` (the legacy `watchlist` table has a
+  // different shape and was returning 400 on every call).
   const { data, error } = await supabase
-    .from('watchlist')
+    .from('watchlist_items')
     .update(updatePayload)
     .eq('id', id)
-    .select('id, title, priority, owned, target_price, currency, category, notes, created_at, sort_order')
+    .select('id, title, priority, owned, target_price, currency, category, notes, created_at')
     .single();
 
   if (error) {

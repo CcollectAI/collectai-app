@@ -45,11 +45,13 @@ function useTwitchStats(): { stats: TwitchStats; loading: boolean } {
         if (cancelled) return;
         if (totalErr) return; // table likely doesn't exist
 
-        // Fetch live creators count
+        // Fetch "live" creators — table has no is_live column, so define
+        // live = last_seen_live_at within the last 15 minutes.
+        const liveSince = new Date(Date.now() - 15 * 60 * 1000).toISOString();
         const { count: liveCount, error: liveErr } = await supabase
           .from("twitch_creators")
           .select("id", { count: "exact", head: true })
-          .eq("is_live", true);
+          .gte("last_seen_live_at", liveSince);
 
         if (cancelled) return;
 
