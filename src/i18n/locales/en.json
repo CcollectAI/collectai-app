@@ -1,37 +1,18 @@
 {
   "common": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "done": "Done",
-    "ok": "OK",
-    "close": "Close",
-    "back": "Back",
-    "next": "Next",
-    "continue": "Continue",
-    "skip": "Skip",
-    "retry": "Retry",
-    "refresh": "Refresh",
-    "loading": "Loading…",
-    "error": "Something went wrong",
-    "empty": "Nothing here yet",
-    "search": "Search",
-    "filter": "Filter",
-    "sort": "Sort",
-    "share": "Share",
-    "export": "Export",
-    "yes": "Yes",
-    "no": "No",
-    "optional": "Optional",
-    "required": "Required",
     "go_back": "Go back",
+    "go_back_a11y": "Go back",
+    "more_options_a11y": "More options",
+    "close_menu_a11y": "Close menu",
+    "back": "Back",
     "clear": "Clear",
     "clear_search": "Clear search",
-    "clear_recent": "Clear recent searches",
+    "clear_recent": "Clear recent",
+    "close": "Close",
+    "no": "No",
+    "yes": "Yes",
     "retry_action": "Retry"
   },
-
   "add_tab": {
     "subtitle": "Fast, camera-first flow.",
     "quickscan_ai": "QuickScan AI",
@@ -44,36 +25,44 @@
     "add_manually": "Add manually",
     "add_manually_a11y": "Add item manually"
   },
-
   "wishlist": {
-    "empty_title": "Start your watchlist",
-    "add_first_a11y": "Add your first watchlist item",
-    "add_first": "Add your first item",
-    "feature_price_drops": "Price drop alerts",
-    "feature_target_price": "Target price tracking",
-    "feature_restock": "Restock notifications",
-    "add_to_watchlist": "Add to Watchlist",
-    "close_add_form_a11y": "Close add to watchlist form",
+    "add_title": "Add to Watchlist",
+    "close_add_a11y": "Close add to watchlist form",
     "title_required": "Title *",
-    "title_a11y": "Item title",
+    "item_title_a11y": "Item title",
     "category_required": "Category *",
-    "add_to_watchlist_a11y": "Add to watchlist",
-    "close_category_picker_a11y": "Close category picker",
-    "select_category": "Select Category",
-    "add_to_collection": "Add to Collection",
-    "close_acquisition_a11y": "Close acquisition form",
+    "target_price_a11y": "Target price in euros",
+    "add_button_a11y": "Add to watchlist",
+    "acquire_title": "Add to Collection",
+    "close_acquire_a11y": "Close acquisition form",
     "price_paid_a11y": "Price paid in euros",
     "notes_optional": "Notes (optional)",
-    "notes_a11y": "Acquisition notes",
-    "add_to_my_collection": "Add to My Collection",
-    "add_to_my_collection_a11y": "Add to my collection",
-    "set_target_price": "Set Target Price",
+    "acquire_notes_a11y": "Acquisition notes",
+    "acquire_button_a11y": "Add to my collection",
+    "acquire_button": "Add to My Collection",
+    "empty_title": "No items in your wishlist yet",
+    "add_first": "Add your first wishlist item",
+    "add_first_a11y": "Add your first wishlist item",
+    "feature_price_drops": "Get notified on price drops",
+    "feature_target_price": "Set target prices",
+    "feature_restock": "Track restocks",
+    "add_to_watchlist": "Add to watchlist",
+    "add_to_watchlist_a11y": "Add this item to your watchlist",
+    "close_add_form_a11y": "Close add form",
+    "title_a11y": "Wishlist",
+    "close_category_picker_a11y": "Close category picker",
+    "select_category": "Select a category",
+    "add_to_collection": "Add to my collection",
+    "close_acquisition_a11y": "Close acquisition form",
+    "notes_a11y": "Notes",
+    "add_to_my_collection": "Add to my collection",
+    "add_to_my_collection_a11y": "Add this item to my collection",
+    "set_target_price": "Set target price",
     "close_target_edit_a11y": "Close target price editor",
     "target_price_input_a11y": "Target price",
     "save_target_a11y": "Save target price",
-    "save_target_button": "Save Target Price"
+    "save_target_button": "Save target"
   },
-
   "events": {
     "reminder_a11y": "Set reminder for event",
     "create_event": "Create Event",
@@ -89,7 +78,6 @@
     "empty_title": "No nearby events",
     "empty_body": "No events found within 50km of your location"
   },
-
   "marketplace": {
     "find_collectors": "Find Collectors",
     "find_collectors_a11y": "Find collectors",
@@ -98,7 +86,6 @@
     "search_users_placeholder": "Search by name or handle...",
     "search_users_a11y": "Search users by name or handle"
   },
-
   "search": {
     "placeholder": "Search items, collectors, events...",
     "input_a11y": "Search input",
@@ -106,24 +93,20 @@
     "retry_a11y": "Retry search",
     "no_results": "No results found"
   },
-
   "item_detail": {
     "valuation_a11y": "Item valuation and details",
     "save_a11y": "Save to collection",
     "save": "Save to Collection"
   },
-
   "onboarding": {
     "skip_a11y": "Skip to category selection",
     "change_region_a11y": "Change region",
     "confirm_age_a11y": "Confirm age requirement",
     "select_region": "Select Region"
   },
-
   "quickscan_screen": {
     "gallery_a11y": "Scan from gallery or screenshot"
   },
-
   "add_manual": {
     "discard_draft_a11y": "Discard draft",
     "condition_value_title": "Condition & Value",
@@ -149,7 +132,6 @@
     "add_custom_field_a11y": "Add custom field",
     "add_field": "Add field"
   },
-
   "items_empty": {
     "quickscan_ai": "QuickScan AI",
     "quickscan_ai_a11y": "QuickScan AI",
@@ -158,7 +140,6 @@
     "scan_barcode": "Scan Barcode",
     "scan_barcode_a11y": "Scan a barcode"
   },
-
   "barcode": {
     "product_found": "Product Found",
     "estimated_price": "Estimated Price",
@@ -168,7 +149,6 @@
     "add_watchlist_a11y": "Add to watchlist instead",
     "add_watchlist_btn": "Add to Watchlist Instead"
   },
-
   "filters": {
     "close_a11y": "Close filters",
     "sort_by": "Sort By",
@@ -181,7 +161,6 @@
     "preset_name_a11y": "Preset name",
     "save_preset_btn_a11y": "Save preset"
   },
-
   "grading": {
     "lookup_a11y": "Look up grading certificate",
     "look_up_certificate": "Look Up Certificate",
@@ -195,7 +174,6 @@
     "lookup_cert_a11y": "Look up certificate",
     "look_up": "Look Up"
   },
-
   "auth": {
     "sign_in": "Sign in",
     "sign_up": "Sign up",
@@ -278,7 +256,6 @@
       "reset_failed": "Reset failed. Unknown error."
     }
   },
-
   "nav": {
     "home": "Home",
     "items": "Items",
@@ -289,7 +266,6 @@
     "settings": "Settings",
     "profile": "Profile"
   },
-
   "home": {
     "portfolio_value": "Portfolio value",
     "portfolio_title": "Portfolio",
@@ -327,7 +303,6 @@
     "deal_agent_open_a11y": "Open Deal Agent",
     "deal_agent_upgrade_a11y": "Upgrade to unlock Deal Agent"
   },
-
   "items": {
     "title": "Items",
     "all": "All",
@@ -351,7 +326,6 @@
     "archive_a11y": "Archive selected items",
     "delete_a11y": "Delete selected items"
   },
-
   "scan": {
     "title": "QuickScan",
     "capture": "Tap to capture",
@@ -410,7 +384,6 @@
       "keep_b_a11y": "Keep item B"
     }
   },
-
   "settings": {
     "title": "Settings",
     "account": "Account",
@@ -451,7 +424,6 @@
     "condition_guide": "Condition Guide",
     "condition_guide_desc": "Grading reference for all categories"
   },
-
   "sponsor_profile": {
     "company_name": "Company name",
     "contact_email": "Contact email",
@@ -466,7 +438,6 @@
     "save_a11y": "Save changes",
     "save_changes": "Save Changes"
   },
-
   "projects": {
     "new_project": "New Project",
     "select_category_a11y": "Select category",
@@ -493,24 +464,6 @@
     "add_recipe_a11y": "Add a new paint recipe",
     "add_paint_recipe": "Add Paint Recipe"
   },
-
-  "wishlist": {
-    "add_title": "Add to Watchlist",
-    "close_add_a11y": "Close add to watchlist form",
-    "title_required": "Title *",
-    "item_title_a11y": "Item title",
-    "category_required": "Category *",
-    "target_price_a11y": "Target price in euros",
-    "add_button_a11y": "Add to watchlist",
-    "acquire_title": "Add to Collection",
-    "close_acquire_a11y": "Close acquisition form",
-    "price_paid_a11y": "Price paid in euros",
-    "notes_optional": "Notes (optional)",
-    "acquire_notes_a11y": "Acquisition notes",
-    "acquire_button_a11y": "Add to my collection",
-    "acquire_button": "Add to My Collection"
-  },
-
   "watchlist": {
     "add_title": "Add to Watchlist",
     "close_add_a11y": "Close add form",
@@ -521,7 +474,6 @@
     "notes_placeholder": "Any notes about this item...",
     "add_button": "Add to Watchlist"
   },
-
   "event_creator": {
     "close_menu_a11y": "Close menu",
     "edit_a11y": "Edit event",
@@ -531,7 +483,6 @@
     "cancel_a11y": "Cancel event",
     "cancel": "Cancel Event"
   },
-
   "announcement": {
     "new_title": "New Announcement",
     "sending_to": "Sending to",
@@ -541,7 +492,6 @@
     "message_a11y": "Announcement message",
     "send_a11y": "Send announcement"
   },
-
   "project_header": {
     "mark_complete_a11y": "Mark project as complete",
     "decrease_5_a11y": "Decrease progress by 5 percent",
@@ -550,7 +500,6 @@
     "save_progress_a11y": "Save progress",
     "project_notes": "Project Notes"
   },
-
   "event_datetime": {
     "title": "Date & Time",
     "date_a11y": "Event date",
@@ -559,7 +508,6 @@
     "end_date_optional": "End Date (optional, for multi-day)",
     "end_date_a11y": "Event end date"
   },
-
   "category_picker": {
     "title": "Select Category",
     "search_placeholder": "Search categories...",
@@ -568,7 +516,6 @@
     "other": "Other (custom category)",
     "suggest_new": "Suggest a new category"
   },
-
   "social_proof": {
     "market_context": "Market Context",
     "recent_sales": "Recent Sales",
@@ -577,7 +524,6 @@
     "list_price_a11y": "List price (current asking price, not a sold comp)",
     "list_price": "List price"
   },
-
   "price_feedback": {
     "sale_price_placeholder": "Sale price (e.g., 150.00)",
     "sale_price_a11y": "Sale price",
@@ -586,7 +532,6 @@
     "report_a11y": "Report sale price",
     "price_off_a11y": "Report price seems off"
   },
-
   "marketplace_filter": {
     "close_a11y": "Close filters",
     "reset_a11y": "Reset all filters",
@@ -595,7 +540,6 @@
     "apply_a11y": "Apply filters",
     "apply": "Apply filters"
   },
-
   "items_list_header": {
     "search_placeholder": "Search items",
     "search_a11y": "Search items",
@@ -604,7 +548,6 @@
     "gallery_view_a11y": "Gallery view",
     "select_mode_a11y": "Enter selection mode"
   },
-
   "empty_state": {
     "no_items": "No items yet",
     "watchlist_empty": "Watchlist is empty",
@@ -613,7 +556,6 @@
     "no_messages": "No messages",
     "no_projects": "No projects yet"
   },
-
   "dossier": {
     "valuation_report": "Valuation Report",
     "retry_a11y": "Retry loading report",
@@ -622,7 +564,6 @@
     "export_pdf_a11y": "Export report as PDF",
     "export_report": "Export Report"
   },
-
   "alert_settings": {
     "section_a11y": "Alert settings section",
     "price_drops": "Price Drops",
@@ -631,7 +572,6 @@
     "increase_threshold": "Increase threshold",
     "new_listings": "New Listings"
   },
-
   "marketplace_connections": {
     "section_title": "Marketplace Accounts",
     "connect_ebay": "Connect eBay",
@@ -640,7 +580,6 @@
     "connect_failed_title": "Couldn't connect to eBay",
     "connect_failed_body": "Please try again. If this keeps failing, check your internet connection."
   },
-
   "add_manual_basic": {
     "title": "Basic Information",
     "item_name_a11y": "Item name",
@@ -649,7 +588,6 @@
     "set_series": "Set / Series",
     "set_series_a11y": "Set or series"
   },
-
   "wishlist_edit_target": {
     "title": "Set Target Price",
     "close_a11y": "Close target price editor",
@@ -657,7 +595,6 @@
     "save_a11y": "Save target price",
     "save_button": "Save Target Price"
   },
-
   "subscription": {
     "features_a11y": "Plan features",
     "current_plan": "Current Plan",
@@ -667,7 +604,6 @@
     "manage_a11y": "Manage subscription",
     "manage": "Manage Subscription"
   },
-
   "mfa": {
     "title": "Two-Factor Authentication",
     "verify_a11y": "Verify code",
@@ -677,25 +613,15 @@
     "enable_a11y": "Enable two-factor authentication",
     "enable_2fa": "Enable 2FA"
   },
-
-  "common": {
-    "go_back": "Go back",
-    "go_back_a11y": "Go back",
-    "more_options_a11y": "More options",
-    "close_menu_a11y": "Close menu"
-  },
-
   "event_detail": {
     "not_found": "Event not found",
     "promote_a11y": "Promote this event",
     "promote_title": "Promote This Event",
     "promote_subtitle": "Reach more collectors with sponsored placement"
   },
-
   "user_profile": {
     "blocked_user": "You have blocked this user"
   },
-
   "items_detail": {
     "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates.",
     "enrich_button": "Get fresh comps",
@@ -706,7 +632,6 @@
     "enrich_unavailable": "Live price-fetch is currently unavailable.",
     "enrich_error": "Couldn't fetch fresh comps. Please try again."
   },
-
   "account": {
     "edit_profile": "Edit Profile",
     "edit_profile_desc": "Change your username and bio",
@@ -742,7 +667,6 @@
     "confirm_new_password": "Confirm New Password",
     "confirm_new_password_placeholder": "Confirm new password"
   },
-
   "billing": {
     "free": "Free",
     "pro": "Pro",
@@ -758,14 +682,12 @@
     "feature_requires_plan": "{{feature}} requires {{plan}}",
     "unlock_feature": "Upgrade to unlock this feature"
   },
-
   "set_completion": {
     "title": "Set progress",
     "subtitle": "Auto-detected from your items",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
     "no_sets": "No sets in progress yet"
   },
-
   "ads": {
     "sponsored": "Sponsored",
     "ad": "Ad"

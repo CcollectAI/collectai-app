@@ -38,3 +38,9 @@ jobs:
       # caller-side typo before it ships as a silent 404.
       - name: FE EC2 api-drift check
         run: python3 scripts/audit_fe_api_drift.py
+      # FE i18n key drift gate — every t('foo.bar') must exist in
+      # src/i18n/locales/en.json (the canonical locale). A missing key
+      # falls back to the literal key string at runtime — silent UX
+      # failure across all six locales.
+      - name: FE i18n drift check
+        run: python3 scripts/audit_fe_i18n_drift.py
