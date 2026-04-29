@@ -1,5 +1,9 @@
 /**
  * ItemsListItem — Single item row in the collection SectionList.
+ *
+ * Swipe-left reveals Archive + Delete actions when not in multi-select.
+ * In multi-select mode the swipe is suppressed so it doesn't fight with
+ * tap-to-toggle.
  */
 import React from 'react';
 import { View, Text, Image, Animated, StyleSheet } from 'react-native';
@@ -11,6 +15,7 @@ import { CategoryPill } from '@/components/CategoryPill';
 import { formatPrice } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
+import { SwipeableRow, SwipeActions, type SwipeAction } from '@/components/SwipeableRow';
 
 interface Item {
   id: string;
@@ -30,6 +35,9 @@ interface ItemsListItemProps {
   staggerStyle?: object;
   onPress: (item: Item) => void;
   onLongPress: (itemId: string) => void;
+  /** Optional swipe-action callbacks. When omitted the row isn't swipeable. */
+  onArchive?: (itemId: string) => void;
+  onDelete?: (itemId: string) => void;
 }
 
 export const ItemsListItem = React.memo(function ItemsListItem({
@@ -39,13 +47,14 @@ export const ItemsListItem = React.memo(function ItemsListItem({
   staggerStyle,
   onPress,
   onLongPress,
+  onArchive,
+  onDelete,
 }: ItemsListItemProps) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
 
-  return (
-    <Animated.View style={staggerStyle}>
-      <AnimatedPressable
+  const card = (
+    <AnimatedPressable
         style={[
           styles.itemRow,
           { borderColor: colors.border },
@@ -120,8 +129,34 @@ export const ItemsListItem = React.memo(function ItemsListItem({
           </Text>
         </View>
       </AnimatedPressable>
-    </Animated.View>
   );
+
+  const swipeable = !isMultiSelectMode && (onArchive || onDelete);
+  const wrapped = swipeable ? (
+    <SwipeableRow
+      rightActions={[
+        ...(onArchive
+          ? [
+              {
+                key: 'archive',
+                label: 'Archive',
+                icon: 'archive-outline' as const,
+                color: '#f59e0b',
+                onPress: () => onArchive(item.id),
+              } satisfies SwipeAction,
+            ]
+          : []),
+        ...(onDelete ? [SwipeActions.delete(() => onDelete(item.id))] : []),
+      ]}
+      enableHaptics={settings.hapticsEnabled}
+    >
+      {card}
+    </SwipeableRow>
+  ) : (
+    card
+  );
+
+  return <Animated.View style={staggerStyle}>{wrapped}</Animated.View>;
 });
 
 const styles = StyleSheet.create({

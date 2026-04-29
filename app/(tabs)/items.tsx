@@ -30,6 +30,8 @@ import { AnimatedPressable, useEnterReveal, useStaggerReveal } from "@/motion";
 import { ItemGalleryGrid } from "@/components/ItemGalleryGrid";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import {
+  useOptimisticArchive,
+  useOptimisticDelete,
   useOptimisticBulkArchive,
   useOptimisticBulkDelete,
 } from "@/hooks/useOptimisticItems";
@@ -236,6 +238,44 @@ const ItemsScreen: React.FC = () => {
   // Optimistic mutation hooks for bulk operations (generic over item shape)
   const optimisticBulkArchive = useOptimisticBulkArchive(setProviderItems, stableReload);
   const optimisticBulkDelete = useOptimisticBulkDelete(setProviderItems, stableReload);
+
+  // Single-item versions used by swipe-to-archive / swipe-to-delete in the row
+  const optimisticArchive = useOptimisticArchive(setProviderItems, stableReload);
+  const optimisticDelete = useOptimisticDelete(setProviderItems, stableReload);
+
+  const handleSwipeArchive = useCallback(async (id: string) => {
+    try {
+      await optimisticArchive.mutate(id);
+      showToast({ message: 'Archived', type: 'success', duration: 2000 });
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+    } catch (err: unknown) {
+      showToast({ message: (err as Error)?.message || 'Failed to archive', type: 'error' });
+      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+    }
+  }, [optimisticArchive, showToast, settings.hapticsEnabled]);
+
+  const handleSwipeDelete = useCallback((id: string) => {
+    Alert.alert(
+      'Delete Item',
+      'Permanently delete this item? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await optimisticDelete.mutate(id);
+              fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+            } catch (err: unknown) {
+              showToast({ message: (err as Error)?.message || 'Failed to delete', type: 'error' });
+              fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+            }
+          },
+        },
+      ]
+    );
+  }, [optimisticDelete, showToast, settings.hapticsEnabled]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -849,6 +889,8 @@ const ItemsScreen: React.FC = () => {
               staggerStyle={getStaggerStyle(staggerIndexMap.current.get(item.id) ?? 0)}
               onPress={handleItemPress}
               onLongPress={handleLongPress}
+              onArchive={handleSwipeArchive}
+              onDelete={handleSwipeDelete}
             />
           )}
           renderSectionFooter={({ section }) => (

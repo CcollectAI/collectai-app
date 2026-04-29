@@ -26,8 +26,8 @@ type IdSetter<T extends { id: string }> = React.Dispatch<React.SetStateAction<T[
  * @param setItems - State setter for the items array
  * @param reloadItems - Function to reload items from server (used as rollback)
  */
-export function useOptimisticArchive(
-  setItems: ItemListSetter,
+export function useOptimisticArchive<T extends { id: string }>(
+  setItems: IdSetter<T>,
   reloadItems: () => void,
 ) {
   return useOptimisticMutation<string>({
@@ -50,8 +50,8 @@ export function useOptimisticArchive(
  * @param setItems - State setter for the items array
  * @param reloadItems - Function to reload items from server (used as rollback)
  */
-export function useOptimisticDelete(
-  setItems: ItemListSetter,
+export function useOptimisticDelete<T extends { id: string }>(
+  setItems: IdSetter<T>,
   reloadItems: () => void,
 ) {
   return useOptimisticMutation<string>({
