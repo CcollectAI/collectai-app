@@ -1,14 +1,22 @@
 """Scan TS/TSX for `supabase.from('table').select(...)` /update/insert
-patterns and cross-check column names against a live schema dump.
+patterns and cross-check column names against scripts/schema.lock.json
+(the frozen schema snapshot). Run in CI to block PRs that introduce
+column drift before they ship.
 
 Limited but pragmatic — handles literal selects, literal filters, and
 literal update payload keys. Skips dynamic patches and template-literal
 column lists.
+
+Exit codes:
+  0 — no drift
+  1 — drift found
+  2 — lock file missing or unreadable
 """
 import json, re, sys
 from pathlib import Path
 
-ROOT = Path("/Users/merle/GitHub/CcollectAI")
+ROOT = Path(__file__).resolve().parent.parent
+LOCK = ROOT / "scripts" / "schema.lock.json"
 SCAN_DIRS = [ROOT / "src", ROOT / "app"]
 EXCLUDE = {"node_modules", ".expo", ".next", "dist", "build", "ios", "web"}
 
@@ -45,9 +53,13 @@ def parse_columns(select_str: str):
     return out
 
 def main():
-    cols = json.loads(Path("/tmp/schema.json").read_text())
-    cols = {k: set(v) for k, v in cols.items()}
-    print(f"loaded schema: {len(cols)} tables")
+    if not LOCK.exists():
+        print(f"ERROR: schema lock not found at {LOCK}", file=sys.stderr)
+        print("Run scripts/regen_schema_lock.py to create it.", file=sys.stderr)
+        sys.exit(2)
+    payload = json.loads(LOCK.read_text())
+    cols = {k: set(v) for k, v in payload["tables"].items()}
+    print(f"loaded schema lock: {len(cols)} tables")
     findings = []
     n_files = 0
     for f in walk_files():
@@ -75,11 +87,14 @@ def main():
     print(f"scanned: {n_files} TS/TSX files")
     print(f"findings: {len(findings)}")
     findings.sort()
+    if not findings:
+        sys.exit(0)
     last_file = None
     for path, line, table, kind, col in findings:
         if path != last_file:
             print(f"\n## {path}")
             last_file = path
         print(f"  L{line} {kind} on `{table}`: column `{col}` not on table")
+    sys.exit(1)
 
 main()

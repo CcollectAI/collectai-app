@@ -18,3 +18,11 @@ jobs:
           CI: "true"
           RATE_LIMIT_ENABLED: "false"
         continue-on-error: true
+      # FE column-drift gate — diffs every supabase.from('table').select(...)
+      # call in src/ + app/ against scripts/schema.lock.json. Reads the
+      # lock file from the repo, so no DB access is needed in CI.
+      # If a PR drifts (renames a column, queries a non-existent column),
+      # this fails — saving us from "the listing returned [] silently for
+      # weeks" bugs. See scripts/audit_fe_supabase_drift.py.
+      - name: FE Supabase column-drift check
+        run: python3 scripts/audit_fe_supabase_drift.py
