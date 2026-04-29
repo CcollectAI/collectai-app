@@ -9,6 +9,7 @@ import type {
   Item,
 } from '../types';
 import { supabase } from '../../lib/supabase';
+import { collectorsApi } from '../../api/collectorsApi';
 import logger from '../../utils/logger';
 
 export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
@@ -49,22 +50,25 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
 }
 
 export async function addWatchlistItem(input: CreateWatchlistInput): Promise<WatchlistItem> {
-  const { data, error } = await supabase.rpc('rpc_add_watchlist_item_v1', {
-    p_title: input.title,
-    p_category: input.category,
-    p_target_price: input.targetPrice ?? null,
-    p_notes: input.notes ?? null,
-    p_priority: input.priority || 'medium',
-  });
-
-  if (error) {
-    logger.error('[SupabaseDataProvider] addWatchlistItem RPC error:', error);
-    throw new Error(error.message || 'Failed to add watchlist item');
+  // Lives on EC2 at POST /watchlist/mine. The Supabase RPC
+  // rpc_add_watchlist_item_v1 was never deployed; calls used to throw
+  // "Could not find the function" silently.
+  let r: Record<string, unknown>;
+  try {
+    const data = await collectorsApi.post<Record<string, unknown>>('/watchlist/mine', {
+      title: input.title,
+      category: input.category,
+      target_price: input.targetPrice ?? null,
+      notes: input.notes ?? null,
+      priority: input.priority || 'medium',
+    });
+    r = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  } catch (e) {
+    logger.error('[SupabaseDataProvider] addWatchlistItem error:', e);
+    throw e instanceof Error ? e : new Error('Failed to add watchlist item');
   }
-
-  const r = (Array.isArray(data) ? data[0] : data) as Record<string, unknown>;
-  if (!r) {
-    throw new Error('No data returned from RPC');
+  if (!r || !r.id) {
+    throw new Error('No data returned from /watchlist/mine');
   }
 
   // Push-engagement loop: attribute outcome if a recent push tap led
@@ -127,13 +131,12 @@ export async function updateWatchlistItem(id: string, updates: { targetPrice?: n
 }
 
 export async function removeWatchlistItem(id: string): Promise<void> {
-  const { error } = await supabase.rpc('rpc_remove_watchlist_item_v1', {
-    p_id: id,
-  });
-
-  if (error) {
-    logger.error('[SupabaseDataProvider] removeWatchlistItem RPC error:', error);
-    throw new Error(error.message || 'Failed to remove watchlist item');
+  // Lives on EC2 at DELETE /watchlist/mine/{watch_id}.
+  try {
+    await collectorsApi.delete(`/watchlist/mine/${encodeURIComponent(id)}`);
+  } catch (e) {
+    logger.error('[SupabaseDataProvider] removeWatchlistItem error:', e);
+    throw e instanceof Error ? e : new Error('Failed to remove watchlist item');
   }
 }
 

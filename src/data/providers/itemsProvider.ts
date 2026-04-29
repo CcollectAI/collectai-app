@@ -77,21 +77,23 @@ export async function listItems(pagination?: PaginationParams): Promise<Item[]> 
 }
 
 export async function createItem(input: CreateItemInput): Promise<Item> {
-  const { data, error } = await supabase.rpc('rpc_create_item_v1', {
-    p_title: input.name,
-    p_category: input.category,
-    p_image_url: input.imageUrl ?? null,
-    p_attributes: {},
-    p_notes: null,
-  });
-
-  if (error) {
-    logger.error('[SupabaseDataProvider] createItem RPC error:', error);
-    throw new Error(error.message || 'Failed to create item');
+  // Lives on EC2 at POST /items. The Supabase RPC rpc_create_item_v1
+  // was never deployed; the FE silently failed every "Save scan" /
+  // "Add to collection" tap until 2026-04-29.
+  let row: Record<string, unknown>;
+  try {
+    row = await collectorsApi.post<Record<string, unknown>>('/items', {
+      title: input.name,
+      category: input.category,
+      image_url: input.imageUrl ?? null,
+      attrs: {},
+      notes: null,
+    });
+  } catch (e) {
+    logger.error('[SupabaseDataProvider] createItem error:', e);
+    throw e instanceof Error ? e : new Error('Failed to create item');
   }
-
-  const row = data as Record<string, unknown>;
-  const images = row.images as string[] | null;
+  const images = (row.images as string[] | null) ?? null;
   const itemId = row.id as string;
 
   // Push-engagement loop: if the user added this item shortly after
@@ -185,22 +187,22 @@ export async function unarchiveItem(itemId: string): Promise<void> {
 }
 
 export async function persistQuickscanDraft(input: QuickscanDraft): Promise<PersistedItem> {
-  const { data, error } = await supabase.rpc('rpc_create_item_v1', {
-    p_title: input.title ?? 'Untitled Scan',
-    p_category: input.categoryId ?? 'uncategorized',
-    p_image_url: input.photoUri ?? null,
-    p_attributes: input.attributes ?? {},
-    p_notes: input.notes ?? null,
-  });
-
-  if (error) {
-    logger.error('[SupabaseDataProvider] persistQuickscanDraft RPC error:', error);
-    throw new Error(error.message || 'Failed to persist QuickScan draft');
+  // Quickscan persist goes through POST /items on the EC2 backend
+  // (rpc_create_item_v1 was never deployed). Same path as createItem.
+  let row: Record<string, unknown>;
+  try {
+    row = await collectorsApi.post<Record<string, unknown>>('/items', {
+      title: input.title ?? 'Untitled Scan',
+      category: input.categoryId ?? 'uncategorized',
+      image_url: input.photoUri ?? null,
+      attrs: input.attributes ?? {},
+      notes: input.notes ?? null,
+    });
+  } catch (e) {
+    logger.error('[SupabaseDataProvider] persistQuickscanDraft error:', e);
+    throw e instanceof Error ? e : new Error('Failed to persist QuickScan draft');
   }
-
-  const row = data as Record<string, unknown>;
-  const images = row.images as string[] | null;
-
+  const images = (row.images as string[] | null) ?? null;
   return {
     id: row.id as string,
     title: (row.title as string | null) ?? input.title ?? 'Untitled Scan',

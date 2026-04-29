@@ -155,13 +155,23 @@ export async function createBuildPaintProject(input: CreateBuildPaintProjectInpu
   };
 }
 
-export async function setBuildPaintProgress(projectId: string, percent: number, status?: string): Promise<void> {
-  const { error } = await supabase.rpc('rpc_set_build_paint_progress_v1', {
-    p_project_id: projectId,
-    p_percent: percent,
-    p_status: status || null,
-  });
+// All five mutations were calling Supabase RPCs that were never
+// deployed (rpc_set_build_paint_progress_v1 etc.) — every "set
+// progress", "add step", "toggle step", "add note" silently failed.
+// The two list functions queried views (v_build_paint_project_steps_v1
+// + v_build_paint_project_notes_v1) that don't exist either, so reads
+// returned [] silently. Rewritten 2026-04-29 to hit real tables under
+// RLS (insert_/select_/update_own_build_projects + the steps/notes
+// tables' own policies). Real tables: build_paint_projects,
+// build_paint_steps (status text), build_paint_notes (content text).
 
+export async function setBuildPaintProgress(projectId: string, percent: number, status?: string): Promise<void> {
+  const patch: Record<string, unknown> = { progress_pct: percent };
+  if (status) patch.status = status;
+  const { error } = await supabase
+    .from('build_paint_projects')
+    .update(patch)
+    .eq('id', projectId);
   if (error) {
     logger.warn('[SupabaseDataProvider] setBuildPaintProgress error:', error);
     throw new Error(error.message || 'Failed to set progress');
@@ -169,11 +179,13 @@ export async function setBuildPaintProgress(projectId: string, percent: number, 
 }
 
 export async function markBuildPaintProjectComplete(projectId: string, isCompleted: boolean): Promise<void> {
-  const { error } = await supabase.rpc('rpc_mark_build_paint_project_complete_v1', {
-    p_project_id: projectId,
-    p_is_completed: isCompleted,
-  });
-
+  const { error } = await supabase
+    .from('build_paint_projects')
+    .update({
+      status: isCompleted ? 'finished' : 'in_progress',
+      progress_pct: isCompleted ? 100 : null,
+    })
+    .eq('id', projectId);
   if (error) {
     logger.warn('[SupabaseDataProvider] markBuildPaintProjectComplete error:', error);
     throw new Error(error.message || 'Failed to mark complete');
@@ -182,55 +194,60 @@ export async function markBuildPaintProjectComplete(projectId: string, isComplet
 
 export async function listBuildPaintSteps(projectId: string): Promise<BuildPaintStep[]> {
   const { data, error } = await supabase
-    .from('v_build_paint_project_steps_v1')
-    .select('id, project_id, title, is_done, sort_order, created_at')
+    .from('build_paint_steps')
+    .select('id, project_id, title, status, step_order, created_at')
     .eq('project_id', projectId)
-    .order('sort_order', { ascending: true });
+    .order('step_order', { ascending: true });
 
   if (error) {
     logger.warn('[SupabaseDataProvider] listBuildPaintSteps error:', error);
     return [];
   }
-
-  type StepRow = { id: string; project_id: string; title: string; is_done?: boolean; sort_order?: number; created_at?: string };
+  type StepRow = { id: string; project_id: string; title: string; status?: string | null; step_order?: number | null; created_at?: string | null };
   return (data ?? []).map((row: StepRow) => ({
     id: row.id,
     projectId: row.project_id,
     title: row.title,
-    isDone: row.is_done ?? false,
-    sortOrder: row.sort_order ?? 0,
+    isDone: (row.status ?? '').toLowerCase() === 'done',
+    sortOrder: row.step_order ?? 0,
     createdAt: row.created_at ?? new Date().toISOString(),
   }));
 }
 
 export async function addBuildPaintStep(projectId: string, title: string): Promise<BuildPaintStep> {
-  const { data, error } = await supabase.rpc('rpc_add_build_paint_step_v1', {
-    p_project_id: projectId,
-    p_title: title,
-  });
-
-  if (error) {
+  // step_order defaults to (max+1) per project so steps stay ordered.
+  const { data: maxRow } = await supabase
+    .from('build_paint_steps')
+    .select('step_order')
+    .eq('project_id', projectId)
+    .order('step_order', { ascending: false })
+    .limit(1);
+  const nextOrder = ((maxRow?.[0]?.step_order as number | undefined) ?? 0) + 1;
+  const { data, error } = await supabase
+    .from('build_paint_steps')
+    .insert({ project_id: projectId, title, status: 'todo', step_order: nextOrder })
+    .select('id, project_id, title, status, step_order, created_at')
+    .single();
+  if (error || !data) {
     logger.warn('[SupabaseDataProvider] addBuildPaintStep error:', error);
-    throw new Error(error.message || 'Failed to add step');
+    throw new Error(error?.message || 'Failed to add step');
   }
-
   const row = data as Record<string, unknown>;
   return {
     id: row.id as string,
     projectId: row.project_id as string,
     title: row.title as string,
-    isDone: (row.is_done as boolean | null) ?? false,
-    sortOrder: (row.sort_order as number | null) ?? 0,
+    isDone: ((row.status as string | null) ?? '').toLowerCase() === 'done',
+    sortOrder: (row.step_order as number | null) ?? nextOrder,
     createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
   };
 }
 
 export async function toggleBuildPaintStep(stepId: string, isDone: boolean): Promise<void> {
-  const { error } = await supabase.rpc('rpc_toggle_build_paint_step_v1', {
-    p_step_id: stepId,
-    p_is_done: isDone,
-  });
-
+  const { error } = await supabase
+    .from('build_paint_steps')
+    .update({ status: isDone ? 'done' : 'todo' })
+    .eq('id', stepId);
   if (error) {
     logger.warn('[SupabaseDataProvider] toggleBuildPaintStep error:', error);
     throw new Error(error.message || 'Failed to toggle step');
@@ -239,41 +256,40 @@ export async function toggleBuildPaintStep(stepId: string, isDone: boolean): Pro
 
 export async function listBuildPaintNotes(projectId: string): Promise<BuildPaintNote[]> {
   const { data, error } = await supabase
-    .from('v_build_paint_project_notes_v1')
-    .select('id, project_id, body, created_at')
+    .from('build_paint_notes')
+    .select('id, project_id, content, created_at')
     .eq('project_id', projectId)
     .order('created_at', { ascending: false });
-
   if (error) {
     logger.warn('[SupabaseDataProvider] listBuildPaintNotes error:', error);
     return [];
   }
-
-  type NoteRow = { id: string; project_id: string; body: string; created_at?: string };
+  type NoteRow = { id: string; project_id: string; content: string; created_at?: string | null };
   return (data ?? []).map((row: NoteRow) => ({
     id: row.id,
     projectId: row.project_id,
-    body: row.body,
+    body: row.content,
     createdAt: row.created_at ?? new Date().toISOString(),
   }));
 }
 
 export async function addBuildPaintNote(projectId: string, body: string): Promise<BuildPaintNote> {
-  const { data, error } = await supabase.rpc('rpc_add_build_paint_note_v1', {
-    p_project_id: projectId,
-    p_body: body,
-  });
-
-  if (error) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  const { data, error } = await supabase
+    .from('build_paint_notes')
+    .insert({ project_id: projectId, content: body, user_id: user.id })
+    .select('id, project_id, content, created_at')
+    .single();
+  if (error || !data) {
     logger.warn('[SupabaseDataProvider] addBuildPaintNote error:', error);
-    throw new Error(error.message || 'Failed to add note');
+    throw new Error(error?.message || 'Failed to add note');
   }
-
   const row = data as Record<string, unknown>;
   return {
     id: row.id as string,
     projectId: row.project_id as string,
-    body: row.body as string,
+    body: (row.content as string) ?? body,
     createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
   };
 }

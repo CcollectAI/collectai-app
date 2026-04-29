@@ -130,44 +130,55 @@ export async function markCategoryItemOwned(
   return { success: true };
 }
 
+// Category follow/unfollow lives on the EC2 backend at
+// /events/categories/{id}/follow (POST/DELETE) and
+// /events/categories/followed (GET) and
+// /events/categories/{id}/following (GET). The earlier Supabase RPC
+// path (rpc_follow_category_v1 etc.) was never deployed; calls 404'd
+// silently because errors are caught and the provider returned
+// false / [] / void. Fix: route through collectorsApi.
+
 export async function followCategory(categoryId: string): Promise<void> {
-  const { error } = await supabase.rpc('rpc_follow_category_v1', {
-    p_category_id: categoryId,
-  });
-  if (error) {
-    logger.error('[SupabaseDataProvider] followCategory error:', error);
-    throw new Error(error.message || 'Failed to follow category');
+  try {
+    await collectorsApi.post(`/events/categories/${encodeURIComponent(categoryId)}/follow`, {});
+  } catch (e) {
+    logger.error('[SupabaseDataProvider] followCategory error:', e);
+    throw e instanceof Error ? e : new Error('Failed to follow category');
   }
 }
 
 export async function unfollowCategory(categoryId: string): Promise<void> {
-  const { error } = await supabase.rpc('rpc_unfollow_category_v1', {
-    p_category_id: categoryId,
-  });
-  if (error) {
-    logger.error('[SupabaseDataProvider] unfollowCategory error:', error);
-    throw new Error(error.message || 'Failed to unfollow category');
+  try {
+    await collectorsApi.delete(`/events/categories/${encodeURIComponent(categoryId)}/follow`);
+  } catch (e) {
+    logger.error('[SupabaseDataProvider] unfollowCategory error:', e);
+    throw e instanceof Error ? e : new Error('Failed to unfollow category');
   }
 }
 
 export async function listFollowedCategories(): Promise<string[]> {
-  const { data, error } = await supabase.rpc('rpc_list_followed_categories_v1');
-  if (error) {
-    logger.warn('[SupabaseDataProvider] listFollowedCategories error:', error);
+  try {
+    const data = await collectorsApi.get<{ categories?: { category_id: string }[] }>(
+      '/events/categories/followed',
+    );
+    const rows = (data?.categories ?? []) as { category_id: string }[];
+    return rows.map((r) => r.category_id);
+  } catch (e) {
+    logger.warn('[SupabaseDataProvider] listFollowedCategories error:', e);
     return [];
   }
-  return (data ?? []).map((row: { category_id: string }) => row.category_id);
 }
 
 export async function isFollowingCategory(categoryId: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc('rpc_is_following_category_v1', {
-    p_category_id: categoryId,
-  });
-  if (error) {
-    logger.warn('[SupabaseDataProvider] isFollowingCategory error:', error);
+  try {
+    const data = await collectorsApi.get<{ following?: boolean }>(
+      `/events/categories/${encodeURIComponent(categoryId)}/following`,
+    );
+    return Boolean(data?.following);
+  } catch (e) {
+    logger.warn('[SupabaseDataProvider] isFollowingCategory error:', e);
     return false;
   }
-  return data === true;
 }
 
 export async function getCategoryDeepDive(categoryId: string, days?: number): Promise<Record<string, unknown>> {

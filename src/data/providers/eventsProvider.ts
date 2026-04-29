@@ -123,68 +123,66 @@ export async function getEventById(eventId: string): Promise<CollectorsEvent | n
   return mapEventRow(data);
 }
 
+// Events CRUD lives on the EC2 backend under /events/*. The Supabase
+// RPC counterparts (rpc_create_event_v1, rpc_rsvp_event_v1 etc.)
+// were never deployed; calls used to fail silently. mapEventApiResponse
+// maps the EC2-shaped response (with user_rsvp_status etc.) instead of
+// the view-shaped row.
+
 export async function listEvents(pagination?: PaginationParams): Promise<CollectorsEvent[]> {
   const limit = pagination?.limit ?? API_LIMITS.ALERTS_DEFAULT;
   const offset = pagination?.offset ?? 0;
-  const { data, error } = await supabase.rpc('rpc_list_personalized_events_v1', {
-    p_category_id: null,
-    p_include_past: false,
-  });
-
-  if (error) {
-    logger.warn('[SupabaseDataProvider] listEvents error:', error);
-    throw new Error(error.message || 'Failed to load events');
+  try {
+    const data = await collectorsApi.get<{ events?: Record<string, unknown>[] } | Record<string, unknown>[]>(
+      '/events',
+    );
+    const rows = Array.isArray(data) ? data : ((data as { events?: Record<string, unknown>[] })?.events ?? []);
+    return rows.slice(offset, offset + limit).map(mapEventApiResponse);
+  } catch (e) {
+    logger.warn('[SupabaseDataProvider] listEvents error:', e);
+    throw e instanceof Error ? e : new Error('Failed to load events');
   }
-
-  const all = (data ?? []).map((row: Record<string, unknown>) => mapEventRow(row));
-  return all.slice(offset, offset + limit);
 }
 
 export async function createEvent(input: CreateEventInput): Promise<CollectorsEvent> {
-  const { data, error } = await supabase.rpc('rpc_create_event_v1', {
-    p_title: input.title,
-    p_kind: input.kind,
-    p_category_id: input.categoryId ?? null,
-    p_date: input.date,
-    p_time: input.time ?? null,
-    p_end_date: input.endDate ?? null,
-    p_location: input.location ?? null,
-    p_online_url: input.onlineUrl ?? null,
-    p_description: input.description,
-    p_format: input.format ?? null,
-    p_is_public: input.isPublic ?? null,
-    p_latitude: input.latitude ?? null,
-    p_longitude: input.longitude ?? null,
-  });
-
-  if (error) {
-    logger.error('[SupabaseDataProvider] createEvent error:', error);
-    throw new Error(error.message || 'Failed to create event');
+  try {
+    const data = await collectorsApi.post<Record<string, unknown>>('/events', {
+      title: input.title,
+      kind: input.kind,
+      category_id: input.categoryId ?? null,
+      date: input.date,
+      time: input.time ?? null,
+      end_date: input.endDate ?? null,
+      location: input.location ?? null,
+      online_url: input.onlineUrl ?? null,
+      description: input.description,
+      format: input.format ?? null,
+      is_public: input.isPublic ?? null,
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
+    });
+    return mapEventApiResponse(data);
+  } catch (e) {
+    logger.error('[SupabaseDataProvider] createEvent error:', e);
+    throw e instanceof Error ? e : new Error('Failed to create event');
   }
-
-  return mapEventRow(data);
 }
 
 export async function rsvpEvent(eventId: string, status: string = 'going'): Promise<void> {
-  const { error } = await supabase.rpc('rpc_rsvp_event_v1', {
-    p_event_id: eventId,
-    p_status: status,
-  });
-
-  if (error) {
-    logger.error('[SupabaseDataProvider] rsvpEvent error:', error);
-    throw new Error(error.message || 'Failed to RSVP');
+  try {
+    await collectorsApi.post(`/events/${encodeURIComponent(eventId)}/rsvp`, { status });
+  } catch (e) {
+    logger.error('[SupabaseDataProvider] rsvpEvent error:', e);
+    throw e instanceof Error ? e : new Error('Failed to RSVP');
   }
 }
 
 export async function unrsvpEvent(eventId: string): Promise<void> {
-  const { error } = await supabase.rpc('rpc_unrsvp_event_v1', {
-    p_event_id: eventId,
-  });
-
-  if (error) {
-    logger.error('[SupabaseDataProvider] unrsvpEvent error:', error);
-    throw new Error(error.message || 'Failed to un-RSVP');
+  try {
+    await collectorsApi.delete(`/events/${encodeURIComponent(eventId)}/rsvp`);
+  } catch (e) {
+    logger.error('[SupabaseDataProvider] unrsvpEvent error:', e);
+    throw e instanceof Error ? e : new Error('Failed to un-RSVP');
   }
 }
 

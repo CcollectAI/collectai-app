@@ -8,39 +8,16 @@
 # Adding a line is a deliberate "we know this is broken; deferred".
 
 # ─────────────────────────────────────────────────────────────────────
-# 2026-04-29 — initial sweep. The 17 entries below are FE→server RPC
-# wires that were written against a planned API but the server-side
-# functions were never deployed (or were dropped). For each, the
-# corresponding UI action either uses the EC2 backend instead
-# (collectorsApi.*) or is dead code from a feature that didn't ship.
-# Decide whether to migrate the function or delete the FE caller
-# before un-allowlisting any of these.
+# 2026-04-29 — initial sweep allowlist trimmed: most entries previously
+# parked here were FE callers wired to non-existent Supabase RPCs.
+# The providers were redirected to working EC2 routes (/watchlist/mine,
+# /events/*, /events/categories/*/follow, /items, etc.) so most
+# allowlist lines were removable. The two below remain because they
+# need server-side work before the FE wire makes sense.
 # ─────────────────────────────────────────────────────────────────────
 
-# build/paint mutations — feature ships read-only; mutations dead.
-src/data/providers/buildPaintProvider.ts:MISSING_FN:rpc_set_build_paint_progress_v1
-src/data/providers/buildPaintProvider.ts:MISSING_FN:rpc_mark_build_paint_project_complete_v1
-src/data/providers/buildPaintProvider.ts:MISSING_FN:rpc_add_build_paint_step_v1
-src/data/providers/buildPaintProvider.ts:MISSING_FN:rpc_toggle_build_paint_step_v1
-src/data/providers/buildPaintProvider.ts:MISSING_FN:rpc_add_build_paint_note_v1
-
-# category follow/unfollow — UI uses collectorsApi.* through EC2.
-src/data/providers/categoryProvider.ts:MISSING_FN:rpc_follow_category_v1
-src/data/providers/categoryProvider.ts:MISSING_FN:rpc_unfollow_category_v1
-src/data/providers/categoryProvider.ts:MISSING_FN:rpc_list_followed_categories_v1
-src/data/providers/categoryProvider.ts:MISSING_FN:rpc_is_following_category_v1
-
-# events CRUD — UI uses collectorsApi.* through EC2.
-src/data/providers/eventsProvider.ts:MISSING_FN:rpc_list_personalized_events_v1
-src/data/providers/eventsProvider.ts:MISSING_FN:rpc_create_event_v1
-src/data/providers/eventsProvider.ts:MISSING_FN:rpc_rsvp_event_v1
-src/data/providers/eventsProvider.ts:MISSING_FN:rpc_unrsvp_event_v1
-
-# items create — quickscan persist goes through collectorsApi.* (the
-# Supabase rpc path was a planned alternative that never landed).
-src/data/providers/itemsProvider.ts:MISSING_FN:rpc_create_item_v1
-
-# watchlist mutations — UI uses collectorsApi.* through EC2.
-src/data/providers/watchlistProvider.ts:MISSING_FN:rpc_add_watchlist_item_v1
-src/data/providers/watchlistProvider.ts:MISSING_FN:rpc_remove_watchlist_item_v1
+# convert-watchlist-to-item: no equivalent EC2 route or Supabase RPC.
+# UI button still shows; tapping it throws "Could not find the function".
+# Decide: drop the button OR add a server endpoint that creates an item
+# from a watchlist row + deletes the watchlist row in one transaction.
 src/data/providers/watchlistProvider.ts:MISSING_FN:rpc_convert_watchlist_to_item_v1

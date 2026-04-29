@@ -642,22 +642,30 @@ class MarketplaceAgent:
                         # uses the (provider, listing_id, seen_at) composite
                         # index for a fast existence probe that works across
                         # partitions.
+                        # source + marketplace mirror provider so downstream
+                        # filters ("show me only ebay") and intelligence
+                        # queries don't silently match nothing. Both were
+                        # NULL on every row for weeks until 2026-04-29.
+                        adapter_id = hit.get("source", "") or ""
                         await conn.execute(
                             """
                             INSERT INTO market_hits
-                                (provider, listing_id, title, price, currency,
+                                (provider, source, marketplace,
+                                 listing_id, title, price, currency,
                                  price_eur,
                                  condition, ended_at, url, normalized_key, item_ref,
                                  category,
                                  features_json,
                                  attrs)
-                            SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+                            SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
                             WHERE NOT EXISTS (
                               SELECT 1 FROM market_hits
-                              WHERE provider = $1 AND listing_id = $2
+                              WHERE provider = $1 AND listing_id = $4
                             )
                             """,
-                            hit.get("source", ""),
+                            adapter_id,          # provider (canonical adapter id)
+                            adapter_id,          # source (mirror — analytics filter on this)
+                            adapter_id,          # marketplace (mirror — customer-facing facet)
                             hit.get("raw_id", ""),
                             hit.get("title", ""),
                             raw_price,           # original price in original currency
