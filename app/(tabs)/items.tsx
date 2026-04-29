@@ -274,7 +274,7 @@ const ItemsScreen: React.FC = () => {
       const filePath = `${FileSystem.documentDirectory}${filename}`;
       await FileSystem.writeAsStringAsync(filePath, csv_inline);
 
-      // Check if sharing is available
+      const itemsLabel = itemCount === 1 ? '1 item' : `${itemCount} items`;
       const sharingAvailable = await Sharing.isAvailableAsync();
       if (sharingAvailable) {
         await Sharing.shareAsync(filePath, {
@@ -282,9 +282,10 @@ const ItemsScreen: React.FC = () => {
           dialogTitle: 'Export Collection',
           UTI: 'public.comma-separated-values-text',
         });
-        setExportStatus('Exported successfully');
+        showToast({ message: `Exported ${itemsLabel}`, type: 'success', duration: 3000 });
+        setExportStatus(`Exported ${itemsLabel}`);
       } else {
-        showToast({ message: `Saved to ${filename}`, type: 'info', duration: 4000 });
+        showToast({ message: `Saved ${itemsLabel} to ${filename}`, type: 'info', duration: 4000 });
         setExportStatus('Saved (sharing unavailable)');
       }
     } catch (err: unknown) {
