@@ -15,6 +15,7 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
+  Alert,
   Linking,
   RefreshControl,
 } from 'react-native';
@@ -36,6 +37,8 @@ import { timeAgo } from '@/lib/timeAgo';
 import { MS_PER_WEEK } from '@/constants/time';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { SwipeableRow, SwipeActions } from '@/components/SwipeableRow';
+import { useToast } from '@/components/Toast';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -134,6 +137,7 @@ function AlertsScreen() {
 
   const {
     items: alerts,
+    setItems: setAlerts,
     isLoading: alertsLoading,
     isLoadingMore: alertsLoadingMore,
     hasMore: alertsHasMore,
@@ -141,6 +145,37 @@ function AlertsScreen() {
     loadMore: alertsLoadMore,
     refresh: alertsRefresh,
   } = usePaginatedList<AlertFeedItem>(alertsFetcher, { pageSize: 20 });
+
+  const { showToast } = useToast();
+
+  // Optimistic delete for an alert rule. Hits DELETE /alerts/mine/{id}
+  // and rolls back the row if the request fails.
+  const handleDeleteAlert = useCallback((alertId: string) => {
+    Alert.alert(
+      'Delete Alert',
+      'Stop receiving notifications for this alert?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const snapshot = alerts;
+            setAlerts((prev) => prev.filter((a) => a.id !== alertId));
+            try {
+              await collectorsApi.deleteAlert(alertId);
+              fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+              showToast({ message: 'Alert deleted', type: 'success', duration: 2000 });
+            } catch (err: unknown) {
+              setAlerts(snapshot);
+              showToast({ message: (err as Error)?.message || 'Failed to delete alert', type: 'error' });
+              fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+            }
+          },
+        },
+      ],
+    );
+  }, [alerts, setAlerts, showToast, settings.hapticsEnabled]);
 
   // -----------------------------------------------------------------------
   // Trigger history loading (not paginated — comes from API endpoint)
@@ -331,7 +366,7 @@ function AlertsScreen() {
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
 
-    return (
+    const card = (
       <View
         style={[
           styles.card,
@@ -367,6 +402,15 @@ function AlertsScreen() {
           {formatRelativeTime(item.createdAt)}
         </Text>
       </View>
+    );
+
+    return (
+      <SwipeableRow
+        rightActions={[SwipeActions.delete(() => handleDeleteAlert(item.id))]}
+        enableHaptics={settings.hapticsEnabled}
+      >
+        {card}
+      </SwipeableRow>
     );
   };
 
