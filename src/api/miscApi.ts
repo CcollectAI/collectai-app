@@ -52,8 +52,13 @@ export const detectRegion = () =>
     country_code: string | null;
   }>("/geo/detect");
 
-// Items Export
-export const exportItemsOverview = () => get("/items-export/overview");
+// Items Export — returns the canonical 12-col CSV inline.
+// Matches /api/imports/template so users can export, edit in
+// Excel/Numbers, and re-import without column drift.
+export const exportItemsOverview = () =>
+  get<{ download_url: string | null; csv_inline: string }>(
+    "/items-export/overview",
+  );
 
 // Insurance Valuation Export
 export const getInsuranceReportUrl = (format: 'html' | 'json' = 'html', currency?: string) => {

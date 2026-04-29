@@ -49,6 +49,7 @@ import {
   type CategoryBreakdownItem,
 } from '@/components/home/CategoryBreakdownSection';
 import { collectorsApi } from '@/api/collectorsApi';
+import { exportItemsOverview } from '@/api/miscApi';
 import { formatPrice } from '@/lib/format';
 import { getCategoryById, getCategoryByName } from '@/data/categories';
 import { radius, text, fontWeight } from '@/theme/tokens';
@@ -243,41 +244,26 @@ const ItemsScreen: React.FC = () => {
     setRefreshing(false);
   }, [paginatedRefresh, settings.hapticsEnabled]);
 
-  // Export all items to CSV
+  // Export all items to CSV via the backend's canonical 12-col overview
+  // (same column set as the import template, so round-trips work).
   const handleExportCSV = useCallback(async () => {
     setExporting(true);
     setExportStatus(null);
 
     try {
-      // Fetch all items via DataProvider
-      const items = await dataProvider.listItems();
+      const { csv_inline } = await exportItemsOverview();
+      // Backend returns header-only CSV when there are no items.
+      const lineCount = csv_inline.trim().split('\n').length;
+      const itemCount = Math.max(0, lineCount - 1);
 
-      if (items.length === 0) {
+      if (itemCount === 0) {
         setExportStatus('No items to export');
         setExporting(false);
         return;
       }
 
-      // Generate CSV content
-      const headers = ['id', 'name', 'category', 'price', 'imageUrl'];
-      const csvRows = [
-        headers.join(','),
-        ...items.map((item) => {
-          const row = [
-            `"${(item.id || '').replace(/"/g, '""')}"`,
-            `"${(item.name || '').replace(/"/g, '""')}"`,
-            `"${(item.category || '').replace(/"/g, '""')}"`,
-            item.price?.toString() || '0',
-            `"${(item.imageUrl || '').replace(/"/g, '""')}"`,
-          ];
-          return row.join(',');
-        }),
-      ];
-      const csvContent = csvRows.join('\n');
-
-      // Generate filename with date
       const dateStr = new Date().toISOString().split('T')[0];
-      const filename = `CollectAI_Collection_${dateStr}.csv`;
+      const filename = `CollectAI_Collection_${dateStr}_${itemCount}items.csv`;
 
       if (!FileSystem.documentDirectory) {
         showToast({ message: 'File storage not available on this platform', type: 'error' });
@@ -286,9 +272,7 @@ const ItemsScreen: React.FC = () => {
       }
 
       const filePath = `${FileSystem.documentDirectory}${filename}`;
-
-      // Write file
-      await FileSystem.writeAsStringAsync(filePath, csvContent);
+      await FileSystem.writeAsStringAsync(filePath, csv_inline);
 
       // Check if sharing is available
       const sharingAvailable = await Sharing.isAvailableAsync();
