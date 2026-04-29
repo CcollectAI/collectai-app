@@ -188,17 +188,17 @@ async def get_active_learning_prompts(
             # For now, generate prompts based on session pattern
             row = await conn.fetchrow(
                 """
-                SELECT attributes_json
+                SELECT attrs
                 FROM items
-                WHERE attributes_json::text LIKE $1
+                WHERE attrs::text LIKE $1
                 LIMIT 1
                 """,
                 f"%{session_id}%",
             )
 
-            if row and row["attributes_json"]:
+            if row and row["attrs"]:
                 import json
-                attrs = json.loads(row["attributes_json"]) if isinstance(row["attributes_json"], str) else row["attributes_json"]
+                attrs = json.loads(row["attrs"]) if isinstance(row["attrs"], str) else row["attrs"]
                 name_conf = attrs.get("name_confidence", 1.0)
 
                 if 0.5 <= name_conf <= 0.7:

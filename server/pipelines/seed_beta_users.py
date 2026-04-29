@@ -344,24 +344,26 @@ async def _seed_one_user(
         persona.locale,
     )
 
-    # 5. Personal items
+    # 5. Personal items — items has no `sealed` or `attributes_json`
+    # columns; sealed + grade/graded_by all live in attrs jsonb.
     for item in persona.items:
         attrs: dict = {}
         if item.get("grade"):
             attrs["grade"] = item["grade"]
         if item.get("graded_by"):
             attrs["graded_by"] = item["graded_by"]
+        if item.get("sealed"):
+            attrs["sealed"] = item.get("sealed", "").lower() == "true"
 
         await conn.execute(
             """
-            INSERT INTO items (user_id, category, title, condition, sealed, attributes_json)
-            VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+            INSERT INTO items (user_id, category, title, condition, attrs)
+            VALUES ($1, $2, $3, $4, $5::jsonb)
             """,
             uuid.UUID(user_id),
             item["category"],
             item["title"],
             item.get("condition"),
-            item.get("sealed", "").lower() == "true",
             json.dumps(attrs) if attrs else "{}",
         )
 

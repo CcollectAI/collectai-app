@@ -330,53 +330,40 @@ class UpdateItemAttributesRequest(BaseModel):
     size_system: Optional[str] = Field(None, pattern=r"^(us|eu|uk|cm|mm)$")
 
 
-@router.patch("/items/{item_id}/attributes", summary="Update item attributes", description="Merge additional attributes into the item's attributes_json and optionally set size fields.")
+@router.patch("/items/{item_id}/attributes", summary="Update item attributes", description="Merge additional attributes into the item's attrs jsonb. Size fields are folded into the same jsonb under item_size / size_system keys.")
 async def update_item_attributes(
     item_id: str,
     payload: UpdateItemAttributesRequest,
     user_id: str = Depends(get_current_user_id),
 ):
-    """Merge attributes_json and optionally set item_size/size_system."""
+    """Merge into items.attrs (jsonb). The items table has no dedicated
+    item_size / size_system columns — they live in the attrs jsonb so
+    callers can read them back with attrs->>'item_size' etc."""
     pool = get_db_pool()
 
     if pool is None:
         return {"ok": True, "item_id": item_id}
 
+    merged: Dict[str, Any] = dict(payload.attributes or {})
+    if payload.item_size is not None:
+        merged["item_size"] = payload.item_size
+    if payload.size_system is not None:
+        merged["size_system"] = payload.size_system
+
+    if not merged:
+        return {"ok": True, "item_id": item_id}
+
     try:
         async with pool.acquire() as conn:
-            # Build SET clauses dynamically
-            set_parts = []
-            params: list = [user_id, item_id]
-            idx = 3  # next placeholder index
-
-            if payload.attributes:
-                set_parts.append(
-                    f"attributes_json = COALESCE(attributes_json, '{{}}'::jsonb) || ${idx}::jsonb"
-                )
-                params.append(json.dumps(payload.attributes))
-                idx += 1
-
-            if payload.item_size is not None:
-                set_parts.append(f"item_size = ${idx}")
-                params.append(payload.item_size)
-                idx += 1
-
-            if payload.size_system is not None:
-                set_parts.append(f"size_system = ${idx}")
-                params.append(payload.size_system)
-                idx += 1
-
-            if not set_parts:
-                return {"ok": True, "item_id": item_id}
-
-            set_parts.append("updated_at = NOW()")
-
-            query = f"""
+            await conn.execute(
+                """
                 UPDATE items
-                SET {', '.join(set_parts)}
+                SET attrs = COALESCE(attrs, '{}'::jsonb) || $3::jsonb,
+                    updated_at = NOW()
                 WHERE id = $2::uuid AND user_id = $1::uuid
-            """
-            await conn.execute(query, *params)
+                """,
+                user_id, item_id, json.dumps(merged),
+            )
             logger.info("[items] Updated attributes for item=%s, user=%s", item_id, user_id)
             return {"ok": True, "item_id": item_id}
     except Exception as e:

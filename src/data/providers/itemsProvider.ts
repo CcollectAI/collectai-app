@@ -23,7 +23,10 @@ type ItemRow = {
   title?: string | null;
   category?: string | null;
   updated_at?: string | null;
-  attributes_json?: Record<string, unknown> | null;
+  // items.attrs (jsonb) — exposed to the FE as `attributesJson` for
+  // historical reasons; the DB column was renamed but the public name
+  // wasn't, so callers don't need to change.
+  attrs?: Record<string, unknown> | null;
   taxonomy_version?: string | null;
   subtype_id?: string | null;
   collections?: string[] | null;
@@ -44,7 +47,7 @@ function mapItemRow(r: ItemRow): Item {
     subtypeId: r.subtype_id ?? undefined,
     taxonomyVersion: r.taxonomy_version ?? undefined,
     collections: r.collections ?? undefined,
-    attributesJson: r.attributes_json ?? undefined,
+    attributesJson: r.attrs ?? undefined,
     price: latest?.q50 ?? 0,
     priceBand: latest
       ? { q10: latest.q10 ?? 0, q50: latest.q50 ?? 0, q90: latest.q90 ?? 0, confidence: latest.conf_score ?? 0, currency: 'EUR' }
@@ -54,7 +57,7 @@ function mapItemRow(r: ItemRow): Item {
   };
 }
 
-const ITEMS_SELECT = 'id, title, category, updated_at, attributes_json, taxonomy_version, subtype_id, collections, images, price_predictions(q10, q50, q90, conf_score, asof)';
+const ITEMS_SELECT = 'id, title, category, updated_at, attrs, taxonomy_version, subtype_id, collections, images, price_predictions(q10, q50, q90, conf_score, asof)';
 
 export async function listItems(pagination?: PaginationParams): Promise<Item[]> {
   const limit = pagination?.limit ?? API_LIMITS.ITEMS_DEFAULT;
@@ -154,56 +157,30 @@ export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name
   };
 }
 
+// items.archived is a dedicated boolean column; flip it directly under
+// RLS. (The earlier RPC + jsonb-stuffing fallback referenced columns
+// that don't exist on this table — see commit fixing items.attrs.)
 export async function archiveItem(itemId: string): Promise<void> {
-  const { error } = await supabase.rpc('rpc_archive_item_v1', {
-    p_item_id: itemId,
-  });
+  const { error } = await supabase
+    .from('items')
+    .update({ archived: true })
+    .eq('id', itemId);
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] archiveItem RPC unavailable, trying direct update:', error);
-    const { data: current } = await supabase
-      .from('items')
-      .select('attributes_json')
-      .eq('id', itemId)
-      .single();
-
-    const attrs = (current?.attributes_json as Record<string, unknown>) ?? {};
-    const { error: updateError } = await supabase
-      .from('items')
-      .update({ attributes_json: { ...attrs, _archived: true } })
-      .eq('id', itemId);
-
-    if (updateError) {
-      logger.error('[SupabaseDataProvider] archiveItem error:', updateError);
-      throw new Error(updateError.message || 'Failed to archive item');
-    }
+    logger.error('[SupabaseDataProvider] archiveItem error:', error);
+    throw new Error(error.message || 'Failed to archive item');
   }
 }
 
 export async function unarchiveItem(itemId: string): Promise<void> {
-  const { error } = await supabase.rpc('rpc_unarchive_item_v1', {
-    p_item_id: itemId,
-  });
+  const { error } = await supabase
+    .from('items')
+    .update({ archived: false })
+    .eq('id', itemId);
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] unarchiveItem RPC unavailable, trying direct update:', error);
-    const { data: current } = await supabase
-      .from('items')
-      .select('attributes_json')
-      .eq('id', itemId)
-      .single();
-
-    const attrs = { ...((current?.attributes_json as Record<string, unknown>) ?? {}) };
-    delete attrs._archived;
-    const { error: updateError } = await supabase
-      .from('items')
-      .update({ attributes_json: attrs })
-      .eq('id', itemId);
-
-    if (updateError) {
-      logger.error('[SupabaseDataProvider] unarchiveItem error:', updateError);
-      throw new Error(updateError.message || 'Failed to unarchive item');
-    }
+    logger.error('[SupabaseDataProvider] unarchiveItem error:', error);
+    throw new Error(error.message || 'Failed to unarchive item');
   }
 }
 
