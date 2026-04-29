@@ -26,3 +26,9 @@ jobs:
       # weeks" bugs. See scripts/audit_fe_supabase_drift.py.
       - name: FE Supabase column-drift check
         run: python3 scripts/audit_fe_supabase_drift.py
+      # FE RPC drift gate — diffs every supabase.rpc('rpc_*', { p_x: ... })
+      # call against scripts/rpc.lock.json. Catches param renames and
+      # missing functions. Allowlist for known-deferred entries lives in
+      # scripts/rpc_drift_allowlist.txt.
+      - name: FE Supabase rpc-drift check
+        run: python3 scripts/audit_fe_rpc_drift.py

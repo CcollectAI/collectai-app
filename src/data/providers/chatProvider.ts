@@ -62,22 +62,30 @@ export async function listIncomingRequests(): Promise<DmRequest[]> {
 
   if (!data) return [];
 
-  return (data as Record<string, unknown>[]).map((row) => ({
-    threadId: (row.thread_id ?? row.id) as string,
-    fromUserId: row.requester_id as string,
-    fromUserName: 'Unknown',
-    fromUserHandle: null,
-    fromUserAvatarUrl: null,
-    fromUserAvatarColor: '#6b7280',
-    requestMessage: (row.context ?? null) as string | null,
-    requestedAt: (row.created_at ?? new Date().toISOString()) as string,
-  }));
+  return (data as Record<string, unknown>[]).map((row) => {
+    const ctx = (row.context ?? null) as Record<string, unknown> | null;
+    return {
+      threadId: (row.thread_id ?? row.id) as string,
+      fromUserId: row.requester_id as string,
+      fromUserName: 'Unknown',
+      fromUserHandle: null,
+      fromUserAvatarUrl: null,
+      fromUserAvatarColor: '#6b7280',
+      requestMessage: (ctx?.message as string | null) ?? null,
+      requestedAt: (row.created_at ?? new Date().toISOString()) as string,
+    };
+  });
 }
 
+// rpc_request_dm_v1 returns { request_id, status:'pending' } — NOT a
+// thread_id. A thread is only created when the target approves via
+// rpc_decide_dm_request_v1. The function takes a jsonb `context`; we
+// fold the optional plain-string `message` into that under a single
+// "message" key so the caller's existing signature still works.
 export async function requestDm(toUserId: string, message?: string): Promise<string> {
   const { data, error } = await supabase.rpc('rpc_request_dm_v1', {
-    p_to_user_id: toUserId,
-    p_message: message ?? null,
+    p_target_user_id: toUserId,
+    p_context: message ? { message } : {},
   });
 
   if (error) {
@@ -85,14 +93,18 @@ export async function requestDm(toUserId: string, message?: string): Promise<str
     throw new Error(error.message || 'Failed to send DM request');
   }
 
-  const result = data as Record<string, unknown> | string | null;
-  return (typeof result === 'object' && result !== null ? (result.thread_id as string) : result) ?? '';
+  const result = data as Record<string, unknown> | null;
+  return (result?.request_id as string) ?? '';
 }
 
-export async function decideDmRequest(threadId: string, accept: boolean): Promise<void> {
+// p_request_id matches chat_dm_requests_v1.id (NOT thread_id — the thread
+// doesn't exist yet for pending requests). listIncomingRequests already
+// maps `id` into the `threadId` field for backwards compat, so callers
+// passing what they call "threadId" are in fact passing the right value.
+export async function decideDmRequest(requestId: string, accept: boolean): Promise<void> {
   const { error } = await supabase.rpc('rpc_decide_dm_request_v1', {
-    p_thread_id: threadId,
-    p_accept: accept,
+    p_request_id: requestId,
+    p_approve: accept,
   });
 
   if (error) {
@@ -139,12 +151,17 @@ export async function getThreadMessages(threadId: string): Promise<DmMessage[]> 
 }
 
 export async function sendMessage(threadId: string, body: string): Promise<DmMessage> {
+  // rpc_send_message_v1 requires p_user_id explicitly (the function is
+  // designed to be callable from non-auth-context paths too). It returns
+  // the inserted chat_messages_v1 row using its real columns: user_id
+  // (not author_user_id) and body (not text).
   const { data: { user } } = await supabase.auth.getUser();
-  const currentUserId = user?.id ?? 'unknown';
+  if (!user) throw new Error('Not authenticated');
 
   const { data, error } = await supabase.rpc('rpc_send_message_v1', {
     p_thread_id: threadId,
-    p_text: body,
+    p_user_id: user.id,
+    p_body: body,
   });
 
   if (error) {
@@ -155,10 +172,10 @@ export async function sendMessage(threadId: string, body: string): Promise<DmMes
   if (data && typeof data === 'object') {
     const row = data as Record<string, unknown>;
     return {
-      id: (row.id ?? row.message_id ?? `msg-${Date.now()}`) as string,
+      id: (row.id ?? `msg-${Date.now()}`) as string,
       threadId: (row.thread_id as string | null) ?? threadId,
-      authorUserId: (row.author_user_id as string | null) ?? currentUserId,
-      text: (row.text as string | null) ?? body,
+      authorUserId: (row.user_id as string | null) ?? user.id,
+      text: (row.body as string | null) ?? body,
       createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
     };
   }
@@ -166,7 +183,7 @@ export async function sendMessage(threadId: string, body: string): Promise<DmMes
   return {
     id: `msg-${Date.now()}`,
     threadId,
-    authorUserId: currentUserId,
+    authorUserId: user.id,
     text: body,
     createdAt: new Date().toISOString(),
   };

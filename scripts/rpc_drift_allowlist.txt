@@ -1,0 +1,46 @@
+# RPC drift allowlist. Each non-comment line is matched literally
+# against entries from `scripts/audit_fe_rpc_drift.py`:
+#
+#   MISSING_FN:  <file>:MISSING_FN:<rpc_name>
+#   BAD_PARAM:   <file>:BAD_PARAM:<rpc_name>:<param>
+#
+# Removing a line MUST be paired with fixing the underlying drift.
+# Adding a line is a deliberate "we know this is broken; deferred".
+
+# ─────────────────────────────────────────────────────────────────────
+# 2026-04-29 — initial sweep. The 17 entries below are FE→server RPC
+# wires that were written against a planned API but the server-side
+# functions were never deployed (or were dropped). For each, the
+# corresponding UI action either uses the EC2 backend instead
+# (collectorsApi.*) or is dead code from a feature that didn't ship.
+# Decide whether to migrate the function or delete the FE caller
+# before un-allowlisting any of these.
+# ─────────────────────────────────────────────────────────────────────
+
+# build/paint mutations — feature ships read-only; mutations dead.
+src/data/providers/buildPaintProvider.ts:MISSING_FN:rpc_set_build_paint_progress_v1
+src/data/providers/buildPaintProvider.ts:MISSING_FN:rpc_mark_build_paint_project_complete_v1
+src/data/providers/buildPaintProvider.ts:MISSING_FN:rpc_add_build_paint_step_v1
+src/data/providers/buildPaintProvider.ts:MISSING_FN:rpc_toggle_build_paint_step_v1
+src/data/providers/buildPaintProvider.ts:MISSING_FN:rpc_add_build_paint_note_v1
+
+# category follow/unfollow — UI uses collectorsApi.* through EC2.
+src/data/providers/categoryProvider.ts:MISSING_FN:rpc_follow_category_v1
+src/data/providers/categoryProvider.ts:MISSING_FN:rpc_unfollow_category_v1
+src/data/providers/categoryProvider.ts:MISSING_FN:rpc_list_followed_categories_v1
+src/data/providers/categoryProvider.ts:MISSING_FN:rpc_is_following_category_v1
+
+# events CRUD — UI uses collectorsApi.* through EC2.
+src/data/providers/eventsProvider.ts:MISSING_FN:rpc_list_personalized_events_v1
+src/data/providers/eventsProvider.ts:MISSING_FN:rpc_create_event_v1
+src/data/providers/eventsProvider.ts:MISSING_FN:rpc_rsvp_event_v1
+src/data/providers/eventsProvider.ts:MISSING_FN:rpc_unrsvp_event_v1
+
+# items create — quickscan persist goes through collectorsApi.* (the
+# Supabase rpc path was a planned alternative that never landed).
+src/data/providers/itemsProvider.ts:MISSING_FN:rpc_create_item_v1
+
+# watchlist mutations — UI uses collectorsApi.* through EC2.
+src/data/providers/watchlistProvider.ts:MISSING_FN:rpc_add_watchlist_item_v1
+src/data/providers/watchlistProvider.ts:MISSING_FN:rpc_remove_watchlist_item_v1
+src/data/providers/watchlistProvider.ts:MISSING_FN:rpc_convert_watchlist_to_item_v1
