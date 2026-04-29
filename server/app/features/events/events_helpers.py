@@ -219,8 +219,10 @@ def build_event_conditions(
     param_idx = 1
 
     if not include_past:
+        # asyncpg binds Python `date` objects to PG date columns; an
+        # ISO string raises "'str' has no attribute 'toordinal'".
         conditions.append(f"date >= ${param_idx}")
-        params.append(date.today().isoformat())
+        params.append(date.today())
         param_idx += 1
 
     if category_id:
@@ -241,11 +243,27 @@ def build_event_conditions(
 async def fetch_events_basic(
     conn: Any, category_id: Optional[str], include_past: bool, limit: int = 50, offset: int = 0,
 ) -> list[dict]:
-    """Fetch events from the events table with optional filters."""
+    """Fetch events with optional filters.
+
+    Queries the bare `events` table for speed (the
+    v_events_with_attendees_v1 view joins event_attendees and runs
+    >30s under load). attendee_count / going_count / interested_count
+    are COALESCEd to 0 here — accurate counts come from the dedicated
+    GET /events/{id} endpoint that does the per-event subquery.
+    """
     conditions, params, param_idx = build_event_conditions(category_id, include_past)
     where = f"WHERE {' AND '.join(conditions)}"
+    # Inline COALESCE the count columns so the view isn't needed.
+    select_cols = (
+        "id, title, kind, category_id, date, time, end_date, location, "
+        "online_url, image_url, description, format, status, is_public, "
+        "latitude, longitude, created_by, source, "
+        "0 AS attendee_count, 0 AS going_count, 0 AS interested_count, "
+        "max_attendees, created_at, "
+        "is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at"
+    )
     query = (
-        f"SELECT {EVENT_COLUMNS} FROM events {where} "
+        f"SELECT {select_cols} FROM events {where} "
         f"ORDER BY (is_sponsored AND (sponsor_expires_at IS NULL OR sponsor_expires_at > now())) DESC, "
         f"date ASC "
         f"LIMIT ${param_idx} OFFSET ${param_idx + 1}"
@@ -258,7 +276,10 @@ async def fetch_events_basic(
 async def count_events_basic(
     conn: Any, category_id: Optional[str], include_past: bool, user_id: Optional[str] = None,
 ) -> int:
-    """Count total events matching filters (without LIMIT/OFFSET)."""
+    """Count total events matching filters (without LIMIT/OFFSET).
+
+    Bare events table — same reasoning as fetch_events_basic.
+    """
     conditions, params, _ = build_event_conditions(category_id, include_past, user_id)
     where = f"WHERE {' AND '.join(conditions)}"
     result = await conn.fetchval(f"SELECT count(*) FROM events {where}", *params)

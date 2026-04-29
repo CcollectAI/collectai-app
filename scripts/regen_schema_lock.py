@@ -36,11 +36,23 @@ async def main():
         await conn.execute("SET statement_timeout = 0")
         col_rows = await conn.fetch(
             """
-            SELECT table_name, column_name, data_type, udt_name,
-                   is_nullable, column_default
-            FROM information_schema.columns
-            WHERE table_schema='public'
-            ORDER BY table_name, ordinal_position
+            SELECT c.relname     AS table_name,
+                   a.attname     AS column_name,
+                   t.typname     AS udt_name,
+                   t.typname     AS data_type,
+                   CASE WHEN a.attnotnull THEN 'NO' ELSE 'YES' END AS is_nullable,
+                   pg_get_expr(ad.adbin, ad.adrelid) AS column_default,
+                   a.attnum
+            FROM pg_attribute a
+            JOIN pg_class c     ON a.attrelid = c.oid
+            JOIN pg_namespace n ON c.relnamespace = n.oid
+            JOIN pg_type t      ON a.atttypid = t.oid
+            LEFT JOIN pg_attrdef ad ON ad.adrelid = c.oid AND ad.adnum = a.attnum
+            WHERE n.nspname = 'public'
+              AND a.attnum > 0
+              AND NOT a.attisdropped
+              AND c.relkind IN ('r','p','v','m','f')
+            ORDER BY c.relname, a.attnum
             """
         )
         # Unique constraints AND unique indexes (upserts use both)

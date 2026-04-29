@@ -45,11 +45,23 @@ async def fetch_live() -> dict:
     conn = await asyncpg.connect(dsn)
     try:
         await conn.execute("SET statement_timeout = 0")
+        # pg_attribute join is much faster than information_schema.columns
+        # on a heavily partitioned DB (information_schema does a 7-way join
+        # through views and stalls 2+ minutes during preflight).
         col_rows = await conn.fetch(
             """
-            SELECT table_name, column_name, udt_name, is_nullable
-            FROM information_schema.columns
-            WHERE table_schema='public'
+            SELECT c.relname     AS table_name,
+                   a.attname     AS column_name,
+                   t.typname     AS udt_name,
+                   CASE WHEN a.attnotnull THEN 'NO' ELSE 'YES' END AS is_nullable
+            FROM pg_attribute a
+            JOIN pg_class c     ON a.attrelid = c.oid
+            JOIN pg_namespace n ON c.relnamespace = n.oid
+            JOIN pg_type t      ON a.atttypid = t.oid
+            WHERE n.nspname = 'public'
+              AND a.attnum > 0
+              AND NOT a.attisdropped
+              AND c.relkind IN ('r','p','v','m','f')
             """
         )
         unique_rows = await conn.fetch(

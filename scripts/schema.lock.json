@@ -3607,6 +3607,22 @@
       "nullable": true,
       "type": "int8"
     },
+    "category_daily_medians.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "category_daily_medians.day_bucket": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "category_daily_medians.med_mkt": {
+      "nullable": true,
+      "type": "float8"
+    },
+    "category_daily_medians.n_obs": {
+      "nullable": true,
+      "type": "int8"
+    },
     "category_item_variants.category_item_id": {
       "nullable": false,
       "type": "uuid"
@@ -9309,15 +9325,15 @@
     },
     "meta_training_items_columns.column_name": {
       "nullable": true,
-      "type": "name"
+      "type": "sql_identifier"
     },
     "meta_training_items_columns.data_type": {
       "nullable": true,
-      "type": "varchar"
+      "type": "character_data"
     },
     "meta_training_items_columns.is_nullable": {
       "nullable": true,
-      "type": "varchar"
+      "type": "yes_or_no"
     },
     "meta_training_items_indexes.indexdef": {
       "nullable": true,
@@ -9709,6 +9725,166 @@
     },
     "model_training_runs.version": {
       "nullable": false,
+      "type": "text"
+    },
+    "mv_category_summaries_v1.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_category_summaries_v1.completion_pct": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_category_summaries_v1.missing_count": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "mv_category_summaries_v1.owned_count": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "mv_category_summaries_v1.total_count": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "mv_category_summaries_v1.user_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "mv_daily_median_price.canonical_category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_daily_median_price.d": {
+      "nullable": true,
+      "type": "date"
+    },
+    "mv_daily_median_price.n_hits": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "mv_daily_median_price.p50_eur": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_daily_median_price.wave": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_demand_heat.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_demand_heat.item_key": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_demand_heat.last_signal_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "mv_demand_heat.signal_count": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "mv_demand_heat.signal_type": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_demand_heat.unique_users": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "mv_item_best_comp.hit_id": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "mv_item_best_comp.item_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "mv_item_best_comp.seen_at": {
+      "nullable": true,
+      "type": "timestamp"
+    },
+    "mv_item_best_comp_canon.hit_id": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "mv_item_best_comp_canon.item_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "mv_supply_trend.avg_listings": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "mv_supply_trend.avg_price": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_supply_trend.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_supply_trend.item_key": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_supply_trend.sample_count": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "mv_supply_trend.snap_date": {
+      "nullable": true,
+      "type": "date"
+    },
+    "mv_top_movers.brand": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_top_movers.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_top_movers.delta_pct_vs_30d": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_top_movers.delta_pct_vs_7d": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_top_movers.item_ref": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "mv_top_movers.language": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_top_movers.last_day": {
+      "nullable": true,
+      "type": "date"
+    },
+    "mv_top_movers.last_median_price": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_top_movers.median_30d": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_top_movers.median_7d": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_top_movers.set_name": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_top_movers.variant": {
+      "nullable": true,
       "type": "text"
     },
     "normalized_listings.category": {
@@ -12436,6 +12612,54 @@
       "type": "numeric"
     },
     "price_samples_clamped_item_v1.volume_lift": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_samples_clamped_mv_v1.base_weight": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_samples_clamped_mv_v1.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "price_samples_clamped_mv_v1.currency": {
+      "nullable": true,
+      "type": "text"
+    },
+    "price_samples_clamped_mv_v1.effective_weight": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_samples_clamped_mv_v1.iqr": {
+      "nullable": true,
+      "type": "float8"
+    },
+    "price_samples_clamped_mv_v1.is_iqr_outlier": {
+      "nullable": true,
+      "type": "bool"
+    },
+    "price_samples_clamped_mv_v1.price": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_samples_clamped_mv_v1.q1": {
+      "nullable": true,
+      "type": "float8"
+    },
+    "price_samples_clamped_mv_v1.q3": {
+      "nullable": true,
+      "type": "float8"
+    },
+    "price_samples_clamped_mv_v1.source": {
+      "nullable": true,
+      "type": "text"
+    },
+    "price_samples_clamped_mv_v1.time_decay": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_samples_clamped_mv_v1.volume_lift": {
       "nullable": true,
       "type": "numeric"
     },
@@ -15587,6 +15811,54 @@
       "type": "int4"
     },
     "v0_3_category_summary.ts": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "v0_3_category_summary_mv.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "v0_3_category_summary_mv.clamped_sources_pct": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "v0_3_category_summary_mv.drift_abs_pct": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "v0_3_category_summary_mv.kept_pct": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "v0_3_category_summary_mv.kept_samples": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "v0_3_category_summary_mv.kept_weight_mass": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "v0_3_category_summary_mv.median_cap_pct": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "v0_3_category_summary_mv.q50": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "v0_3_category_summary_mv.snap_ts": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "v0_3_category_summary_mv.sources_clamped": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "v0_3_category_summary_mv.sources_total": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "v0_3_category_summary_mv.ts": {
       "nullable": true,
       "type": "timestamptz"
     },
@@ -21879,6 +22151,12 @@
       "n_pred",
       "n_mkt"
     ],
+    "category_daily_medians": [
+      "category",
+      "day_bucket",
+      "med_mkt",
+      "n_obs"
+    ],
     "category_item_variants": [
       "id",
       "category_item_id",
@@ -23577,6 +23855,60 @@
       "params_json",
       "artifact_etag"
     ],
+    "mv_category_summaries_v1": [
+      "category",
+      "total_count",
+      "owned_count",
+      "missing_count",
+      "completion_pct",
+      "user_id"
+    ],
+    "mv_daily_median_price": [
+      "wave",
+      "canonical_category",
+      "d",
+      "p50_eur",
+      "n_hits"
+    ],
+    "mv_demand_heat": [
+      "category",
+      "item_key",
+      "signal_type",
+      "signal_count",
+      "unique_users",
+      "last_signal_at"
+    ],
+    "mv_item_best_comp": [
+      "item_id",
+      "hit_id",
+      "seen_at"
+    ],
+    "mv_item_best_comp_canon": [
+      "item_id",
+      "hit_id"
+    ],
+    "mv_supply_trend": [
+      "category",
+      "item_key",
+      "snap_date",
+      "avg_listings",
+      "avg_price",
+      "sample_count"
+    ],
+    "mv_top_movers": [
+      "item_ref",
+      "category",
+      "brand",
+      "variant",
+      "set_name",
+      "language",
+      "last_day",
+      "last_median_price",
+      "median_7d",
+      "median_30d",
+      "delta_pct_vs_7d",
+      "delta_pct_vs_30d"
+    ],
     "normalized_listings": [
       "id",
       "raw_id",
@@ -24311,6 +24643,20 @@
     "price_samples_clamped_item_v1": [
       "category",
       "item_ref",
+      "price",
+      "currency",
+      "source",
+      "base_weight",
+      "time_decay",
+      "volume_lift",
+      "effective_weight",
+      "q1",
+      "q3",
+      "iqr",
+      "is_iqr_outlier"
+    ],
+    "price_samples_clamped_mv_v1": [
+      "category",
       "price",
       "currency",
       "source",
@@ -25206,6 +25552,20 @@
       "kept_pct"
     ],
     "v0_3_category_summary": [
+      "category",
+      "kept_samples",
+      "kept_weight_mass",
+      "sources_total",
+      "sources_clamped",
+      "clamped_sources_pct",
+      "median_cap_pct",
+      "drift_abs_pct",
+      "q50",
+      "ts",
+      "kept_pct"
+    ],
+    "v0_3_category_summary_mv": [
+      "snap_ts",
       "category",
       "kept_samples",
       "kept_weight_mass",
