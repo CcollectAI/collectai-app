@@ -19,20 +19,24 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
   const category = getCategoryById(categoryId);
   if (!category) return null;
 
+  // items columns are `name`, `title`, `image_url` (not `images`). The
+  // earlier query referenced a nonexistent `images` array, which made
+  // PostgREST 400 with column-not-found and the catch silently returned
+  // [] — categories opened to an empty store every time.
   const { data: itemsData } = await supabase
     .from('items')
-    .select('id, title, category, updated_at, images')
+    .select('id, name, title, category, updated_at, image_url')
     .eq('category', categoryId)
     .order('updated_at', { ascending: false })
     .limit(20);
 
-  type CatItemRow = { id: string; title?: string | null; category?: string | null; updated_at?: string | null; images?: string[] | null };
+  type CatItemRow = { id: string; name?: string | null; title?: string | null; category?: string | null; updated_at?: string | null; image_url?: string | null };
   const items: Item[] = (itemsData ?? []).map((r: CatItemRow) => ({
     id: r.id,
-    name: r.title ?? 'Untitled',
+    name: r.name ?? r.title ?? 'Untitled',
     category: r.category ?? categoryId,
     price: 0,
-    imageUrl: r.images?.[0] ?? undefined,
+    imageUrl: r.image_url ?? undefined,
     updatedAt: r.updated_at ?? new Date().toISOString(),
   }));
 
@@ -158,11 +162,14 @@ export async function unfollowCategory(categoryId: string): Promise<void> {
 
 export async function listFollowedCategories(): Promise<string[]> {
   try {
-    const data = await collectorsApi.get<{ categories?: { category_id: string }[] }>(
+    // Server returns `{categories: string[]}` (events_core.py:500). The
+    // earlier `{category_id: string}[]` shape was wishful thinking — the
+    // map(r.category_id) produced [undefined,...] whenever the user had
+    // any follows.
+    const data = await collectorsApi.get<{ categories?: string[] }>(
       '/events/categories/followed',
     );
-    const rows = (data?.categories ?? []) as { category_id: string }[];
-    return rows.map((r) => r.category_id);
+    return data?.categories ?? [];
   } catch (e) {
     logger.warn('[SupabaseDataProvider] listFollowedCategories error:', e);
     return [];
