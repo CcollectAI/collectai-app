@@ -350,12 +350,17 @@ def row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventRes
         kind=row.get("kind", ""),
         category_id=row.get("category_id"),
         date=str(row.get("date", "")),
-        time=row.get("time"),
+        # asyncpg returns time columns as datetime.time; EventResponse.time
+        # is typed Optional[str], so coerce here (same pattern as `date`).
+        time=str(row["time"]) if row.get("time") is not None else None,
         end_date=str(row["end_date"]) if row.get("end_date") else None,
         location=row.get("location"),
         online_url=row.get("online_url"),
         image_url=row.get("image_url"),
-        description=row.get("description", ""),
+        # Coalesce NULL → "" because EventResponse.description is required str.
+        # row.get(k, "") returns None when value is None — it only returns
+        # the default when the key is MISSING. Use `or ""` to also catch None.
+        description=(row.get("description") or ""),
         format=row.get("format", "in_person"),
         status=row.get("status", "published"),
         is_public=row.get("is_public", True),

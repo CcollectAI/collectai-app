@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
 from app.db import db_configured, get_conn
+from app.lib.db_helpers import get_db_pool
 from app.errors import error_response
 from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit

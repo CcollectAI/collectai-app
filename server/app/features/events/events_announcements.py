@@ -176,10 +176,12 @@ async def get_unread_announcement_count(
                     """
                     SELECT COUNT(*) AS cnt
                     FROM event_announcements ea
-                    JOIN event_attendees att ON att.event_id = ea.event_id
-                        AND att.user_id = $1 AND att.status IN ('going', 'interested')
+                    JOIN event_attendees att
+                      ON att.event_id::uuid = ea.event_id
+                     AND att.user_id = $1::uuid
+                     AND att.status IN ('going', 'interested')
                     LEFT JOIN event_announcement_reads ear
-                        ON ear.announcement_id = ea.id AND ear.user_id = $1
+                      ON ear.announcement_id = ea.id AND ear.user_id = $1::uuid
                     WHERE ear.user_id IS NULL
                     """,
                     user_id,

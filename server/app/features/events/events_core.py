@@ -416,7 +416,7 @@ async def list_nearby_events(
 
                 rows = await conn.fetch(
                     """
-                    SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at,
+                    SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, 0 AS attendee_count, 0 AS going_count, 0 AS interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at,
                         (6371 * acos(LEAST(1.0, GREATEST(-1.0,
                             cos(radians($1)) * cos(radians(latitude))
                             * cos(radians(longitude) - radians($2))
@@ -831,7 +831,7 @@ async def create_template(
         try:
             async with pool.acquire() as conn:
                 ev_row = await conn.fetchrow(
-                    "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1 AND created_by = $2",
+                    "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, 0 AS attendee_count, 0 AS going_count, 0 AS interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1 AND created_by = $2",
                     request.from_event_id, user_id,
                 )
                 if not ev_row:
@@ -931,13 +931,15 @@ async def get_event(
                 # Try the view with attendee info first
                 try:
                     row = await conn.fetchrow(
-                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at, attendees FROM v_events_with_attendees_v1 WHERE id = $1",
+                        # `attendees` was non-existent; view exposes
+                        # attendee_count / going_count / interested_count.
+                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM v_events_with_attendees_v1 WHERE id = $1",
                         event_id,
                     )
                 except Exception as view_err:
                     logger.warning("[events] View query failed, falling back to events table: %s", view_err)
                     row = await conn.fetchrow(
-                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1",
+                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, 0 AS attendee_count, 0 AS going_count, 0 AS interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1",
                         event_id,
                     )
 
@@ -1038,7 +1040,7 @@ async def update_event(
             async with pool.acquire() as conn:
                 # Verify ownership
                 row = await conn.fetchrow(
-                    "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1 AND created_by = $2",
+                    "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, 0 AS attendee_count, 0 AS going_count, 0 AS interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1 AND created_by = $2",
                     event_id, user_id,
                 )
                 if not row:
@@ -1250,7 +1252,7 @@ async def duplicate_event(
         try:
             async with pool.acquire() as conn:
                 row = await conn.fetchrow(
-                    "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1 AND created_by = $2",
+                    "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, 0 AS attendee_count, 0 AS going_count, 0 AS interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1 AND created_by = $2",
                     event_id, user_id,
                 )
                 if not row:

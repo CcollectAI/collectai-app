@@ -73,6 +73,10 @@ async def delete_account(
                 # Frozen allowlist — only these tables can be cleaned.
                 # The table names are used directly in SQL, so we MUST
                 # guarantee they are from this hardcoded set.
+                # Per-user tables only. category_items + price_predictions
+                # are global catalog data with no user_id column —
+                # including them here threw `column "user_id" does not
+                # exist` and aborted the entire deletion transaction.
                 _ALLOWED_TABLES = frozenset({
                     "mandate_deals",
                     "purchase_mandates",
@@ -80,9 +84,7 @@ async def delete_account(
                     "user_price_alerts",
                     "item_provenance_events",
                     "watchlist",
-                    "price_predictions",
                     "market_hits",
-                    "category_items",
                     "user_settings",
                     "user_category_follows",
                     "event_attendees",

@@ -25,7 +25,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DSN = os.getenv("DB_DSN")
+# Prefer direct DSN for the heavy partitioned-table joins below
+# (price_history × items × watchlist_items). The pooler 30s cap was
+# silently killing every cycle.
+DSN = os.getenv("DB_DSN_DIRECT") or os.getenv("DB_DSN")
 
 # Anomaly detection configuration
 Z_SCORE_THRESHOLD = float(os.getenv("ANOMALY_Z_THRESHOLD", "2.0"))
@@ -572,6 +575,7 @@ async def run_once():
         return
 
     conn = await asyncpg.connect(DSN)
+    await conn.execute("SET statement_timeout = 0")
     logger.info("Connected to DB — starting price monitor cycle")
     status = "ok"
     try:

@@ -36,13 +36,23 @@ async def run_once() -> dict[str, int]:
 
     Returns a dict with counts of actions taken.
     """
-    from app.db import get_pool
+    # Use a direct asyncpg connection (not the pool) so we can disable
+    # the pooler's 30s statement_timeout — the consensus aggregation
+    # query over catalog_suggestions hits the cap on busy days. This
+    # mirrors marketplace_scrape_scheduler / persist_comps_to_db.
+    import os
+    import asyncpg
 
-    pool = get_pool()
-    if pool is None:
-        logger.warning("[catalog-learning-worker] No DB pool, skipping")
+    dsn = os.getenv("DB_DSN_DIRECT") or os.getenv("DB_DSN")
+    if not dsn:
+        logger.warning("[catalog-learning-worker] DB_DSN not set, skipping")
         record_run("catalog_learning_worker", "error")
         return {"auto_mapped": 0, "candidates_updated": 0, "promoted": 0}
+
+    conn = await asyncpg.connect(dsn)
+    await conn.execute("SET statement_timeout = 0")
+    # Make the existing `pool.X` call sites work unchanged by aliasing.
+    pool = conn
 
     auto_mapped = 0
     candidates_updated = 0
@@ -86,8 +96,11 @@ async def run_once() -> dict[str, int]:
             )
 
             if existing_cat:
-                # Auto-map: update all these suggestions to 'mapped'
-                async with pool.acquire() as conn:
+                # Auto-map: update all these suggestions to 'mapped'.
+                # We're on a direct asyncpg.Connection (no pool), so use
+                # its transaction() directly. The original `pool.acquire()`
+                # block is unnecessary here.
+                if True:
                     async with conn.transaction():
                         # Lock rows to prevent concurrent updates
                         locked = await conn.fetch(
@@ -253,7 +266,16 @@ async def run_once() -> dict[str, int]:
     except Exception as exc:
         logger.error("[catalog-learning-worker] Cycle failed: %s", exc, exc_info=True)
         record_run("catalog_learning_worker", "error")
+        try:
+            await conn.close()
+        except Exception:
+            pass
         raise
+
+    try:
+        await conn.close()
+    except Exception:
+        pass
 
     result = {
         "auto_mapped": auto_mapped,

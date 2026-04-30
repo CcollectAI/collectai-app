@@ -49,6 +49,10 @@ async def run_once():
     # query actually has time to complete. 2026-04-20.
     probe_dsn = os.getenv("DB_DSN_DIRECT") or DSN
     conn = await asyncpg.connect(probe_dsn)
+    # The ILIKE join across 528K+ market_hits + watchlist_items is heavy.
+    # Direct DSN already, but Supabase still imposes a default
+    # statement_timeout for the role — disable per-session.
+    await conn.execute("SET statement_timeout = 0")
     alerts_sent = 0
 
     try:
