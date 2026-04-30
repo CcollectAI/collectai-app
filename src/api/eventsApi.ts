@@ -79,9 +79,11 @@ export const listMyDropAlerts = () =>
   }[]>("/events/my-alerts");
 
 export const getNearbyEvents = (lat?: number, lng?: number, radiusKm = 50) => {
+  // Server query param is `lon` (events_core.py), not `lng`. Caller
+  // signature keeps lng for FE clarity; we map at the boundary.
   const sp = new URLSearchParams();
   if (lat != null) sp.set("lat", String(lat));
-  if (lng != null) sp.set("lng", String(lng));
+  if (lng != null) sp.set("lon", String(lng));
   sp.set("radius_km", String(radiusKm));
   return get(`/events/nearby?${sp.toString()}`);
 };

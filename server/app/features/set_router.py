@@ -313,6 +313,126 @@ async def list_my_progress(
 # ---------------------------------------------------------------------------
 
 
+# Models for /auto-progress, hoisted above the handler because the
+# handler was moved up to dodge route shadowing by /{set_id}.
+class AutoSetEntry(BaseModel):
+    """One auto-detected set the user is collecting."""
+    category: str
+    set_name: str
+    owned_count: int
+    catalog_total: int
+    completion_pct: float
+    sample_owned_titles: List[str] = Field(default_factory=list)
+
+
+class AutoSetsResponse(BaseModel):
+    sets: List[AutoSetEntry]
+    total_categories: int
+    total_sets: int
+
+
+@router.get(
+    "/auto-progress",
+    response_model=AutoSetsResponse,
+    summary="Auto-computed set completion from structured attributes",
+    description=(
+        "Walks the user's items and the catalog, joining on "
+        "`attributes_json->>'set_name'` to compute set completion automatically. "
+        "No manual set tracking needed — this is the modern attribute-driven path."
+    ),
+)
+async def get_auto_set_progress(
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_set_progress_limit),
+    category: Optional[str] = Query(None, description="Filter to a single category"),
+    min_owned: int = Query(2, ge=1, le=100, description="Min items to surface a set"),
+):
+    """
+    Compute set completion using:
+      - User's items.attrs->>'set_name'
+      - category_items.attrs->>'set_name' for the catalog total
+    """
+    if not db_configured():
+        return AutoSetsResponse(sets=[], total_categories=0, total_sets=0)
+
+    try:
+        async with get_conn() as conn:
+            # Build category filter
+            cat_clause = ""
+            params: list = [user_id, min_owned]
+            if category:
+                cat_clause = "AND items.category = $3"
+                params.append(category)
+
+            rows = await conn.fetch(
+                f"""
+                WITH user_sets AS (
+                    SELECT
+                        items.category,
+                        items.attrs ->> 'set_name' AS set_name,
+                        COUNT(*) AS owned_count,
+                        ARRAY_AGG(items.title ORDER BY items.created_at DESC) AS titles
+                    FROM items
+                    WHERE items.user_id = $1
+                      AND items.attrs ->> 'set_name' IS NOT NULL
+                      AND items.attrs ->> 'set_name' != ''
+                      {cat_clause}
+                    GROUP BY items.category, items.attrs ->> 'set_name'
+                    HAVING COUNT(*) >= $2
+                ),
+                catalog_totals AS (
+                    SELECT
+                        category,
+                        attributes_json ->> 'set_name' AS set_name,
+                        COUNT(*) AS catalog_total
+                    FROM category_items
+                    WHERE attributes_json ->> 'set_name' IS NOT NULL
+                      AND attributes_json ->> 'set_name' != ''
+                    GROUP BY category, attributes_json ->> 'set_name'
+                )
+                SELECT
+                    us.category,
+                    us.set_name,
+                    us.owned_count,
+                    COALESCE(ct.catalog_total, us.owned_count) AS catalog_total,
+                    us.titles
+                FROM user_sets us
+                LEFT JOIN catalog_totals ct
+                    ON ct.category = us.category
+                    AND ct.set_name = us.set_name
+                ORDER BY us.owned_count DESC
+                LIMIT 100
+                """,
+                *params,
+            )
+
+            sets: list[AutoSetEntry] = []
+            for row in rows:
+                catalog_total = row["catalog_total"] or 1
+                owned = row["owned_count"]
+                pct = round(100.0 * owned / catalog_total, 1) if catalog_total > 0 else 0.0
+                titles = list(row["titles"] or [])[:3]
+                sets.append(AutoSetEntry(
+                    category=row["category"],
+                    set_name=row["set_name"],
+                    owned_count=owned,
+                    catalog_total=catalog_total,
+                    completion_pct=min(100.0, pct),
+                    sample_owned_titles=titles,
+                ))
+
+            categories = len({s.category for s in sets})
+            return AutoSetsResponse(
+                sets=sets,
+                total_categories=categories,
+                total_sets=len(sets),
+            )
+
+    except asyncpg.PostgresError as e:
+        logger.error("[sets] auto-progress query error: %s", e)
+        raise error_response(500, "Failed to compute set progress", code=ErrorCode.DB_ERROR)
+
+
 @router.get("/{set_id}")
 async def get_set_detail(set_id: str) -> dict:
     """Get a set with its full list of set_items."""
@@ -563,124 +683,8 @@ async def update_set_progress(
         raise error_response(500, "Failed to update progress", code=ErrorCode.DB_ERROR)
 
 
-# ---------------------------------------------------------------------------
-# Auto-completion from structured attributes (no manual set tracking)
-# ---------------------------------------------------------------------------
+# Auto-completion handler + its models were moved earlier in the file
+# (right before /{set_id}) so the fixed-path /auto-progress route is
+# registered before the parameterized /{set_id} that would otherwise
+# shadow it. Models are hoisted alongside.
 
-
-class AutoSetEntry(BaseModel):
-    """One auto-detected set the user is collecting."""
-    category: str
-    set_name: str
-    owned_count: int
-    catalog_total: int
-    completion_pct: float
-    sample_owned_titles: List[str] = Field(default_factory=list)
-
-
-class AutoSetsResponse(BaseModel):
-    sets: List[AutoSetEntry]
-    total_categories: int
-    total_sets: int
-
-
-@router.get(
-    "/auto-progress",
-    response_model=AutoSetsResponse,
-    summary="Auto-computed set completion from structured attributes",
-    description=(
-        "Walks the user's items and the catalog, joining on "
-        "`attributes_json->>'set_name'` to compute set completion automatically. "
-        "No manual set tracking needed — this is the modern attribute-driven path."
-    ),
-)
-async def get_auto_set_progress(
-    user_id: str = Depends(get_current_user_id),
-    _rl: None = Depends(_set_progress_limit),
-    category: Optional[str] = Query(None, description="Filter to a single category"),
-    min_owned: int = Query(2, ge=1, le=100, description="Min items to surface a set"),
-):
-    """
-    Compute set completion using:
-      - User's items.attrs->>'set_name'
-      - category_items.attrs->>'set_name' for the catalog total
-    """
-    if not db_configured():
-        return AutoSetsResponse(sets=[], total_categories=0, total_sets=0)
-
-    try:
-        async with get_conn() as conn:
-            # Build category filter
-            cat_clause = ""
-            params: list = [user_id, min_owned]
-            if category:
-                cat_clause = "AND items.category = $3"
-                params.append(category)
-
-            rows = await conn.fetch(
-                f"""
-                WITH user_sets AS (
-                    SELECT
-                        items.category,
-                        items.attrs ->> 'set_name' AS set_name,
-                        COUNT(*) AS owned_count,
-                        ARRAY_AGG(items.title ORDER BY items.created_at DESC) AS titles
-                    FROM items
-                    WHERE items.user_id = $1
-                      AND items.attrs ->> 'set_name' IS NOT NULL
-                      AND items.attrs ->> 'set_name' != ''
-                      {cat_clause}
-                    GROUP BY items.category, items.attrs ->> 'set_name'
-                    HAVING COUNT(*) >= $2
-                ),
-                catalog_totals AS (
-                    SELECT
-                        category,
-                        attributes_json ->> 'set_name' AS set_name,
-                        COUNT(*) AS catalog_total
-                    FROM category_items
-                    WHERE attributes_json ->> 'set_name' IS NOT NULL
-                      AND attributes_json ->> 'set_name' != ''
-                    GROUP BY category, attributes_json ->> 'set_name'
-                )
-                SELECT
-                    us.category,
-                    us.set_name,
-                    us.owned_count,
-                    COALESCE(ct.catalog_total, us.owned_count) AS catalog_total,
-                    us.titles
-                FROM user_sets us
-                LEFT JOIN catalog_totals ct
-                    ON ct.category = us.category
-                    AND ct.set_name = us.set_name
-                ORDER BY us.owned_count DESC
-                LIMIT 100
-                """,
-                *params,
-            )
-
-            sets: list[AutoSetEntry] = []
-            for row in rows:
-                catalog_total = row["catalog_total"] or 1
-                owned = row["owned_count"]
-                pct = round(100.0 * owned / catalog_total, 1) if catalog_total > 0 else 0.0
-                titles = list(row["titles"] or [])[:3]
-                sets.append(AutoSetEntry(
-                    category=row["category"],
-                    set_name=row["set_name"],
-                    owned_count=owned,
-                    catalog_total=catalog_total,
-                    completion_pct=min(100.0, pct),
-                    sample_owned_titles=titles,
-                ))
-
-            categories = len({s.category for s in sets})
-            return AutoSetsResponse(
-                sets=sets,
-                total_categories=categories,
-                total_sets=len(sets),
-            )
-
-    except asyncpg.PostgresError as e:
-        logger.error("[sets] auto-progress query error: %s", e)
-        raise error_response(500, "Failed to compute set progress", code=ErrorCode.DB_ERROR)
