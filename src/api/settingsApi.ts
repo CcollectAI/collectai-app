@@ -1,14 +1,34 @@
 /**
  * Settings, preferences, and taxonomy API methods.
  */
-import { get, put, patch } from "./httpClient";
+import { get, put, patch, post, del } from "./httpClient";
 
-// Onboarding / User Settings
-export const saveFollowedCategories = (categories: string[]) =>
-  put("/settings", { followed_categories: categories });
+// Onboarding / category-follow state.
+// PUT /settings only accepts {currency, region, locale} (user_settings_router.py)
+// — `followed_categories` was silently dropped, so onboarding's "save my picks"
+// did nothing and the home tab showed no follows. Wire to /events/categories/*
+// which is the real follow store. Fanned-out PUT-style helper so the
+// onboarding caller doesn't need to compute the diff itself.
+export const saveFollowedCategories = async (categories: string[]) => {
+  // Snapshot current follows, diff, then converge.
+  const cur = await getFollowedCategories();
+  const have = new Set(cur.followed_categories);
+  const want = new Set(categories);
+  const toAdd = [...want].filter((c) => !have.has(c));
+  const toRemove = [...have].filter((c) => !want.has(c));
+  await Promise.all([
+    ...toAdd.map((c) => post(`/events/categories/${encodeURIComponent(c)}/follow`, {})),
+    ...toRemove.map((c) => del(`/events/categories/${encodeURIComponent(c)}/follow`)),
+  ]);
+  return { followed_categories: categories };
+};
 
-export const getFollowedCategories = () =>
-  get<{ followed_categories: string[] }>("/settings");
+export const getFollowedCategories = async (): Promise<{ followed_categories: string[] }> => {
+  // events_core.py:486 returns {categories: string[]}. Map to the legacy
+  // shape this module has always advertised so callers don't break.
+  const r = await get<{ categories?: string[] }>("/events/categories/followed");
+  return { followed_categories: r?.categories ?? [] };
+};
 
 export const getAlertPreferences = () =>
   get<{
