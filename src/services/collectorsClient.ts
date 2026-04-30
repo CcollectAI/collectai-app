@@ -182,24 +182,9 @@ export interface ItemDetail {
 export function getItemDetail(id: string): Promise<ItemDetail> {
   return request<ItemDetail>(`/items/${encodeURIComponent(id)}/detail`);
 }
-export async function createAlert(body: Record<string, unknown>) {
-  const res = await fetch(`${API_BASE_URL}/alerts`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-API-Key": API_KEY },
-    body: JSON.stringify(body),
-  });
-  return res.json();
-}
-
-export async function getAlerts(userId: string) {
-  const res = await fetch(`${API_BASE_URL}/alerts?user_id=${userId}`, {
-    method: "GET",
-    headers: { "X-API-Key": API_KEY },
-  });
-  return res.json();
-}
-
 // --- CollectAI: portfolio & trends extensions --- //
+// (Removed createAlert/getAlerts here — they hit /alerts which was never
+// deployed. The active wire is alertsApi.createAlert → POST /alerts/mine.)
 
 export type PortfolioTrendPoint = {
   ts: string;
@@ -550,7 +535,7 @@ export async function getCollectionsLeaderboard(): Promise<CollectionLeaderboard
   return (Array.isArray(raw) ? raw : []) as CollectionLeaderboardEntry[];
 }
 
-// Default export: lightweight HTTP client used by alertsClient, antiFraudClient, etc.
+// Default export: lightweight HTTP client.
 const client = {
   async get(path: string) {
     const data = await request<unknown>(path);

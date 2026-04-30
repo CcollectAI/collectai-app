@@ -8,25 +8,10 @@
 # caller). Adding a line is a deliberate "we know this is broken;
 # deferred".
 
-# ─────────────────────────────────────────────────────────────────────
-# 2026-04-29 — initial sweep. Three entries below are FE→server wires
-# where the FE caller was written ahead of the server route landing.
-# Each is currently dead code (no screen invokes it) but still
-# discoverable through wrapper modules. Decide whether to deploy the
-# route or delete the wrapper before un-allowlisting.
-# ─────────────────────────────────────────────────────────────────────
-
-# predict v2 quantile API — wrapper present but no screen calls it.
-# If a v2 valuation flow is shipped, deploy the route and remove this.
-src/api/predictApi.ts:POST /predict_v2
-
-# alertsClient legacy module — alertsApi.ts has the working DELETE
-# /alerts/mine/{id} path. These two endpoints were a parallel design
-# that never landed.
-src/services/alertsClient.ts:GET /alerts
-src/services/alertsClient.ts:POST /alerts
-
-# anti-fraud event logger — explicitly silent-by-design (try/catch +
-# logger.warn). Endpoint never deployed; placeholder for a future
-# fraud-event firehose.
-src/services/antiFraudClient.ts:POST /anti-fraud/events
+# 2026-04-30 — sweep that resolved every previously-deferred item:
+#   - predictV2 → FE function deleted (commit 95c0c97-ish), no callers.
+#   - alertsClient.ts (GET/POST /alerts) → file deleted, no callers.
+#   - antiFraudClient.ts → file deleted, no callers.
+# Allowlist is now empty by design. If the audit reports a new entry,
+# decide between "wire the server route" and "delete the FE caller"
+# before adding a line back.

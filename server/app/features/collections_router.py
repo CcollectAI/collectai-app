@@ -121,66 +121,16 @@ async def list_collections(
     offset: int = Query(default=0, ge=0),
     _rl=Depends(_collections_list_limit),
 ):
-    """List all available collections, optionally filtered by category."""
-    # See module docstring above — SQL targets a non-existent shape.
-    # Return empty until the catalog-of-sets aggregation is built.
+    """List all available collections, optionally filtered by category.
+
+    The catalog-of-sets aggregation that this endpoint was originally
+    designed for never landed (see module docstring). Returns empty
+    until that aggregation exists. Earlier the body kept ~70 lines of
+    unreachable SQL against a `collections` table shape that doesn't
+    exist — removed so audit_router_sql_drift stops flagging
+    `collections.collection_key`/`display_name`/etc. (7 entries).
+    """
     return CollectionListResponse(collections=[], total=0)
-    # Original SQL kept below for context but unreachable.
-    if category:
-        if not is_valid_category(category):
-            raise error_response(400, f"Unknown category: {category}")
-    pool = get_db_pool()
-
-    if pool is not None:
-        try:
-            async with pool.acquire() as conn:
-                if category:
-                    rows = await conn.fetch(
-                        """
-                        SELECT id, category, collection_key, display_name,
-                               release_date::text, total_items, image_url, notes
-                        FROM public.collections
-                        WHERE category = $1
-                        ORDER BY release_date DESC NULLS LAST
-                        LIMIT $2 OFFSET $3
-                        """,
-                        category, limit, offset,
-                    )
-                    count_row = await conn.fetchrow(
-                        "SELECT count(*) AS cnt FROM public.collections WHERE category = $1",
-                        category,
-                    )
-                else:
-                    rows = await conn.fetch(
-                        """
-                        SELECT id, category, collection_key, display_name,
-                               release_date::text, total_items, image_url, notes
-                        FROM public.collections
-                        ORDER BY release_date DESC NULLS LAST
-                        LIMIT $1 OFFSET $2
-                        """,
-                        limit, offset,
-                    )
-                    count_row = await conn.fetchrow(
-                        "SELECT count(*) AS cnt FROM public.collections"
-                    )
-                total = count_row["cnt"] if count_row else 0
-                items = [CollectionSummary(**dict(r)) for r in rows]
-                return CollectionListResponse(collections=items, total=total)
-        except Exception as exc:
-            logger.error("Failed to list collections: %s", exc)
-            raise error_response(500, "Failed to list collections")
-
-    # In-memory fallback
-    filtered = _mem_collections
-    if category:
-        filtered = [c for c in filtered if c.get("category") == category]
-    total = len(filtered)
-    page = filtered[offset:offset + limit]
-    return CollectionListResponse(
-        collections=[CollectionSummary(**c) for c in page],
-        total=total,
-    )
 
 
 @router.get("/user/progress", response_model=UserProgressResponse)
@@ -272,113 +222,10 @@ async def get_collection_detail(
     offset: int = Query(default=0, ge=0),
     _rl=Depends(per_user_rate_limit(30, window_seconds=60, scope="collections")),
 ):
-    """Get a specific collection with its items and user ownership status."""
+    """Get a specific collection — stub. Catalog-of-sets aggregation not built."""
     if not _UUID_RE.match(collection_id):
         raise error_response(400, "Invalid collection_id format", code=ErrorCode.INVALID_UUID)
-    # See module docstring — collections detail SQL targets the wrong
-    # table shape. Return 404 until the catalog-of-sets aggregation
-    # is built.
     raise error_response(404, "Collection not found", code=ErrorCode.NOT_FOUND)
-
-    pool = get_db_pool()
-
-    if pool is not None:
-        try:
-            cid = _to_uuid_or_none(collection_id)
-            if cid is None:
-                raise error_response(404, "Collection not found", code="NOT_FOUND")
-
-            uid = _to_uuid_or_none(user_id)
-
-            async with pool.acquire() as conn:
-                row = await conn.fetchrow(
-                    """
-                    SELECT id, category, collection_key, display_name,
-                           release_date::text, total_items, image_url, notes
-                    FROM public.collections
-                    WHERE id = $1
-                    """,
-                    cid,
-                )
-                if not row:
-                    raise error_response(404, "Collection not found", code="NOT_FOUND")
-
-                if uid is not None:
-                    item_rows = await conn.fetch(
-                        """
-                        SELECT
-                            ci2.item_key,
-                            ci2.title,
-                            ci.sequence_number,
-                            ci2.image_url,
-                            CASE WHEN uco.id IS NOT NULL THEN true ELSE false END AS owned
-                        FROM public.collection_items ci
-                        JOIN public.category_items ci2 ON ci2.id = ci.category_item_id
-                        LEFT JOIN public.user_category_ownership uco
-                            ON uco.category_item_id = ci.category_item_id
-                            AND uco.user_id = $1
-                        WHERE ci.collection_id = $2
-                        ORDER BY ci.sequence_number ASC NULLS LAST, ci2.title ASC
-                        LIMIT $3 OFFSET $4
-                        """,
-                        uid, cid, limit, offset,
-                    )
-                else:
-                    item_rows = await conn.fetch(
-                        """
-                        SELECT
-                            ci2.item_key,
-                            ci2.title,
-                            ci.sequence_number,
-                            ci2.image_url,
-                            false AS owned
-                        FROM public.collection_items ci
-                        JOIN public.category_items ci2 ON ci2.id = ci.category_item_id
-                        WHERE ci.collection_id = $1
-                        ORDER BY ci.sequence_number ASC NULLS LAST, ci2.title ASC
-                        LIMIT $2 OFFSET $3
-                        """,
-                        cid, limit, offset,
-                    )
-
-                items = [
-                    CollectionItemInfo(
-                        item_key=ir["item_key"],
-                        title=ir["title"],
-                        sequence_number=ir["sequence_number"],
-                        image_url=ir["image_url"],
-                        owned=ir["owned"],
-                    )
-                    for ir in item_rows
-                ]
-
-                # Record demand signal with geo enrichment (best-effort)
-                try:
-                    from app.features.data_moat import record_demand_signal, get_user_geo
-                    region, country = await get_user_geo(user_id)
-                    await record_demand_signal(
-                        signal_type="collection_viewed",
-                        category=row["category"],
-                        item_key=row["collection_key"],
-                        user_id=user_id,
-                        region=region,
-                        country_code=country,
-                    )
-                except Exception as e:
-                    logger.debug("Demand signal recording failed (best-effort): %s", e)
-
-                return CollectionDetail(**dict(row), items=items)
-        except HTTPException:
-            raise
-        except Exception as exc:
-            logger.error("Failed to get collection detail: %s", exc)
-            raise error_response(500, "Failed to get collection detail")
-
-    # In-memory fallback
-    for c in _mem_collections:
-        if c.get("id") == collection_id:
-            return CollectionDetail(**c, items=[])
-    raise error_response(404, "Collection not found", code="NOT_FOUND")
 
 
 @router.get("/{collection_id}/progress", response_model=UserCollectionProgress)
@@ -387,85 +234,10 @@ async def get_collection_progress(
     user_id: str = Depends(get_current_user_id),
     _rl=Depends(per_user_rate_limit(30, window_seconds=60, scope="collections")),
 ):
-    """Get user's completion progress for a specific collection, including missing items."""
+    """Per-collection progress — stub for the same reason as detail above."""
     if not _UUID_RE.match(collection_id):
         raise error_response(400, "Invalid collection_id format", code=ErrorCode.INVALID_UUID)
-    # See module docstring — collections progress SQL targets the
-    # wrong table shape. Return 404 until the catalog-of-sets
-    # aggregation is built.
     raise error_response(404, "Collection not found", code=ErrorCode.NOT_FOUND)
-
-    pool = get_db_pool()
-
-    if pool is not None:
-        try:
-            cid = _to_uuid_or_none(collection_id)
-            if cid is None:
-                raise error_response(404, "Collection not found", code="NOT_FOUND")
-
-            uid = _to_uuid_or_none(user_id)
-            if uid is None:
-                raise error_response(404, "Collection not found", code="NOT_FOUND")
-
-            async with pool.acquire() as conn:
-                coll = await conn.fetchrow(
-                    """
-                    SELECT id, collection_key, display_name, category, total_items
-                    FROM public.collections WHERE id = $1
-                    """,
-                    cid,
-                )
-                if not coll:
-                    raise error_response(404, "Collection not found", code="NOT_FOUND")
-
-                missing_rows = await conn.fetch(
-                    """
-                    SELECT ci2.title
-                    FROM public.collection_items ci
-                    JOIN public.category_items ci2 ON ci2.id = ci.category_item_id
-                    LEFT JOIN public.user_category_ownership uco
-                        ON uco.category_item_id = ci.category_item_id
-                        AND uco.user_id = $1
-                    WHERE ci.collection_id = $2
-                      AND uco.id IS NULL
-                    ORDER BY ci.sequence_number ASC NULLS LAST
-                    """,
-                    uid, cid,
-                )
-                missing = [r["title"] for r in missing_rows]
-
-                owned_row = await conn.fetchrow(
-                    """
-                    SELECT count(*) AS cnt
-                    FROM public.collection_items ci
-                    JOIN public.user_category_ownership uco
-                        ON uco.category_item_id = ci.category_item_id
-                        AND uco.user_id = $1
-                    WHERE ci.collection_id = $2
-                    """,
-                    uid, cid,
-                )
-                owned = int(owned_row["cnt"]) if owned_row else 0
-                total = int(coll["total_items"]) if coll["total_items"] else 0
-                pct = round(100.0 * owned / total, 1) if total > 0 else 0.0
-
-                return UserCollectionProgress(
-                    collection_id=str(coll["id"]),
-                    collection_key=coll["collection_key"],
-                    display_name=coll["display_name"],
-                    category=coll["category"],
-                    total_items=total,
-                    owned_count=owned,
-                    completion_pct=pct,
-                    missing_items=missing[:100],
-                )
-        except HTTPException:
-            raise
-        except Exception as exc:
-            logger.error("Failed to get collection progress: %s", exc)
-            raise error_response(500, "Failed to get collection progress")
-
-    raise error_response(404, "Collection not found", code="NOT_FOUND")
 
 
 # ---------------------------------------------------------------------------

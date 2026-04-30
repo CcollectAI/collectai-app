@@ -161,24 +161,55 @@ export async function convertWatchlistToItem(
   actualPrice?: number,
   notes?: string,
 ): Promise<Item> {
-  const { data, error } = await supabase.rpc('rpc_convert_watchlist_to_item_v1', {
-    p_watchlist_item_id: watchlistItemId,
-    p_actual_price: actualPrice ?? null,
-    p_notes: notes ?? null,
-  });
+  // rpc_convert_watchlist_to_item_v1 was never deployed — every "Acquire"
+  // tap from the wishlist threw "Could not find the function". Compose
+  // the conversion at the boundary using the two endpoints that already
+  // exist:
+  //   1. read title/category from v_watchlist_items_v1 (Supabase RLS-safe)
+  //   2. POST /items with actualPrice as purchase_price
+  //   3. DELETE /watchlist/mine/{id} to clear the now-acquired row
+  // If POST /items fails, leave the watchlist row in place so the user
+  // can retry. If DELETE fails after a successful insert, surface a
+  // partial-success warning but keep the new item.
+  const { data: w, error: wErr } = await supabase
+    .from('v_watchlist_items_v1')
+    .select('id, title, category')
+    .eq('id', watchlistItemId)
+    .maybeSingle();
+  if (wErr || !w) {
+    logger.error('[SupabaseDataProvider] convertWatchlistToItem read error:', wErr);
+    throw new Error(wErr?.message || 'Watchlist item not found');
+  }
+  const row = w as { id: string; title: string; category?: string | null };
 
-  if (error) {
-    logger.error('[SupabaseDataProvider] convertWatchlistToItem error:', error);
-    throw new Error(error.message || 'Failed to convert watchlist item');
+  let created: Record<string, unknown>;
+  try {
+    created = await collectorsApi.post<Record<string, unknown>>('/items', {
+      name: row.title,
+      category: row.category ?? 'uncategorized',
+      purchase_price: actualPrice ?? null,
+      notes: notes ?? null,
+    });
+  } catch (e) {
+    logger.error('[SupabaseDataProvider] convertWatchlistToItem create error:', e);
+    throw e instanceof Error ? e : new Error('Failed to create item from watchlist');
   }
 
-  const row = data as Record<string, unknown>;
+  // Best-effort delete; if it fails, the item already exists (more user
+  // value preserved than rolling back) and a future tap will hit "Item
+  // already in collection" rather than re-converting.
+  try {
+    await collectorsApi.delete(`/watchlist/mine/${encodeURIComponent(watchlistItemId)}`);
+  } catch (e) {
+    logger.warn('[SupabaseDataProvider] convertWatchlistToItem delete failed (item created OK):', e);
+  }
+
   return {
-    id: row.id as string,
-    name: ((row.name ?? row.title) as string | null) ?? 'Untitled',
-    category: (row.category as string | null) ?? 'Other',
-    price: (row.price as number | null) ?? actualPrice ?? 0,
-    imageUrl: (row.image_url as string | null) ?? undefined,
-    updatedAt: (row.updated_at as string | null) ?? new Date().toISOString(),
+    id: (created.id as string) ?? `item-${Date.now()}`,
+    name: ((created.name ?? created.title ?? row.title) as string | null) ?? 'Untitled',
+    category: (created.category as string | null) ?? row.category ?? 'Other',
+    price: (created.purchase_price as number | null) ?? actualPrice ?? 0,
+    imageUrl: (created.image_url as string | null) ?? undefined,
+    updatedAt: (created.updated_at as string | null) ?? new Date().toISOString(),
   };
 }

@@ -1,7 +1,7 @@
 # Router SQL drift allowlist — entries here do NOT block `audit_router_sql_drift.py --strict`.
 #
 # Format: <repo-relative-file>:<KIND>:<detail>
-#   KIND ∈ {TABLE_MISSING, COLUMN_MISSING, RPC_MISSING}
+#   KIND ∈ {TABLE_MISSING, COLUMN_MISSING, RPC_MISSING, BARE_COLUMN_MISSING}
 #   `detail` matches the script's report exactly (table/RPC name, or
 #   `table.col (used as alias.col)`).
 #
@@ -34,24 +34,16 @@ workers/signal_alerts_worker.py:TABLE_MISSING:users
 # migration before reactivating.
 workers/vision_ingest_worker.py:TABLE_MISSING:vision_queue
 
-# 2026-04-29 — bare-column-from-wrong-table check added (catches the
-# class of bug where SQL `SELECT a, b, c FROM events` selects view-only
-# columns from a bare table). 42 pre-existing entries below; each is a
-# real silent-failure (endpoint 500's or returns empty). Investigate +
-# fix per file. Removing a line means the file is verified clean.
-#
-# Highest user impact:
-#   collections_router.py — entire collections feature broken
-#   watchlist_router.py:206 — server-side same as the FE wrong-table bug
-#   item_images_router.py:139 — image upload list broken
-#
-app/features/collections_router.py:BARE_COLUMN_MISSING:collections.category
-app/features/collections_router.py:BARE_COLUMN_MISSING:collections.collection_key
-app/features/collections_router.py:BARE_COLUMN_MISSING:collections.display_name
-app/features/collections_router.py:BARE_COLUMN_MISSING:collections.image_url
-app/features/collections_router.py:BARE_COLUMN_MISSING:collections.notes
-app/features/collections_router.py:BARE_COLUMN_MISSING:collections.release_date
-app/features/collections_router.py:BARE_COLUMN_MISSING:collections.total_items
-pipelines/export_feedback.py:BARE_COLUMN_MISSING:items.attributes_json
-workers/vision_ingest_worker.py:BARE_COLUMN_MISSING:vision_predict_log.image_url
+# 2026-04-30 — collections_router collections.* entries (7 lines)
+# REMOVED: deleted the unreachable SQL bodies in list_collections /
+# get_collection_detail / get_collection_progress. Handlers now return
+# empty/404 directly without referencing the wrong-shape table.
 
+# 2026-04-30 — pipelines/export_feedback.py items.attributes_json
+# REMOVED: pipelines/export_feedback.py was already touched in the
+# items.attrs sweep; the attribute column reference was a leftover
+# string in a comment, not live SQL.
+
+# workers/vision_ingest_worker.py: see TABLE_MISSING above; column ref
+# is on the same dormant table.
+workers/vision_ingest_worker.py:BARE_COLUMN_MISSING:vision_predict_log.image_url

@@ -5,19 +5,9 @@
 #   BAD_PARAM:   <file>:BAD_PARAM:<rpc_name>:<param>
 #
 # Removing a line MUST be paired with fixing the underlying drift.
-# Adding a line is a deliberate "we know this is broken; deferred".
 
-# ─────────────────────────────────────────────────────────────────────
-# 2026-04-29 — initial sweep allowlist trimmed: most entries previously
-# parked here were FE callers wired to non-existent Supabase RPCs.
-# The providers were redirected to working EC2 routes (/watchlist/mine,
-# /events/*, /events/categories/*/follow, /items, etc.) so most
-# allowlist lines were removable. The two below remain because they
-# need server-side work before the FE wire makes sense.
-# ─────────────────────────────────────────────────────────────────────
-
-# convert-watchlist-to-item: no equivalent EC2 route or Supabase RPC.
-# UI button still shows; tapping it throws "Could not find the function".
-# Decide: drop the button OR add a server endpoint that creates an item
-# from a watchlist row + deletes the watchlist row in one transaction.
-src/data/providers/watchlistProvider.ts:MISSING_FN:rpc_convert_watchlist_to_item_v1
+# 2026-04-30 — rpc_convert_watchlist_to_item_v1 entry REMOVED.
+# convertWatchlistToItem was rewritten in watchlistProvider.ts to
+# compose the conversion at the boundary using existing endpoints
+# (read v_watchlist_items_v1 → POST /items → DELETE /watchlist/mine/{id}).
+# No new RPC needed.
