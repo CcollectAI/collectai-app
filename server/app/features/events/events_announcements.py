@@ -300,13 +300,21 @@ async def list_announcements(
     if pool is not None:
         try:
             async with pool.acquire() as conn:
-                # Verify caller is attendee or host
+                # Verify caller is attendee or host. Explicit ::uuid casts —
+                # the str params from URL/JWT can't bind to a uuid column
+                # through a UNION ALL on this pg/asyncpg combo (the planner
+                # picks a different param type per branch). Other handlers
+                # in this file work because their auth query is a single
+                # UNION over the events table only; this one mixes
+                # event_attendees and events.
                 access_row = await conn.fetchrow(
                     """
-                    SELECT 1 FROM event_attendees WHERE event_id = $1 AND user_id = $2
-                        AND status IN ('going', 'interested')
+                    SELECT 1 FROM event_attendees
+                        WHERE event_id = $1::uuid AND user_id = $2::uuid
+                            AND status IN ('going', 'interested')
                     UNION ALL
-                    SELECT 1 FROM events WHERE id = $1 AND created_by = $2
+                    SELECT 1 FROM events
+                        WHERE id = $1::uuid AND created_by = $2::uuid
                     """,
                     event_id, user_id,
                 )
@@ -319,8 +327,8 @@ async def list_announcements(
                            (ear.user_id IS NOT NULL) AS is_read
                     FROM event_announcements ea
                     LEFT JOIN event_announcement_reads ear
-                        ON ear.announcement_id = ea.id AND ear.user_id = $2
-                    WHERE ea.event_id = $1
+                        ON ear.announcement_id = ea.id AND ear.user_id = $2::uuid
+                    WHERE ea.event_id = $1::uuid
                     ORDER BY ea.created_at DESC
                     LIMIT $3 OFFSET $4
                     """,
