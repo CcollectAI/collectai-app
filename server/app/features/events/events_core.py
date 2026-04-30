@@ -126,8 +126,8 @@ async def search_events(
                        date, time, end_date, location, online_url, image_url,
                        created_by, status, format, is_public, max_attendees,
                        created_at,
-                       (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going') AS going_count,
-                       (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'interested') AS interested_count
+                       (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id::uuid = e.id AND ea.status = 'going') AS going_count,
+                       (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id::uuid = e.id AND ea.status = 'interested') AS interested_count
                 FROM events e
                 WHERE {where}
                 ORDER BY date ASC

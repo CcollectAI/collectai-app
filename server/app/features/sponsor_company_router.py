@@ -626,7 +626,7 @@ async def get_sponsor_analytics(
                 COALESCE(sa.clicks, 0) AS clicks,
                 COALESCE(sa.rsvps, 0) AS rsvps,
                 (SELECT COUNT(*) FROM event_attendees ea
-                 WHERE ea.event_id = e.id AND ea.status = 'going') AS total_attendees
+                 WHERE ea.event_id::uuid = e.id AND ea.status = 'going') AS total_attendees
             FROM events e
             LEFT JOIN event_sponsor_analytics sa ON sa.event_id = e.id
             WHERE e.sponsor_company_id = $1
