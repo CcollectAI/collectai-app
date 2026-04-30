@@ -828,6 +828,288 @@ async def create_listing(
         raise error_response(500, "Failed to create listing", code=ErrorCode.DB_ERROR)
 
 
+# ===========================================================================================
+# SALES + FEES endpoints — registered BEFORE /{listing_id} so the parameterized
+# route doesn't catch /sales and /fees as listing_id="sales"/"fees" (FastAPI
+# matches in declaration order). Same shadowing class as the events router's
+# /auto-progress vs /{set_id} fix from the sets work.
+# ===========================================================================================
+
+@router.get("/sales", response_model=SalesListResponse, summary="List completed sales")
+async def list_sales(
+    user_id: str = Depends(get_current_user_id),
+    pagination: tuple[int, int] = Depends(pagination_params),
+    _rl: None = Depends(_listing_read_limit),
+):
+    """List the current user's completed sales with pagination."""
+    limit, offset = pagination
+
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
+
+    try:
+        async with pool.acquire() as conn:
+            count_row = await conn.fetchrow(
+                "SELECT count(*) AS cnt FROM marketplace_sales WHERE user_id = $1",
+                user_id,
+            )
+            total_count = count_row["cnt"] if count_row else 0
+
+            rows = await conn.fetch(
+                """
+                SELECT id, listing_id, user_id, buyer_name,
+                       buyer_marketplace_id, buyer_rating, sale_price,
+                       currency, shipping_cost_actual, platform_fee,
+                       payment_processing_fee, net_proceeds,
+                       tracking_number, carrier, shipped_at, delivered_at,
+                       status, sold_at, created_at, updated_at
+                FROM marketplace_sales
+                WHERE user_id = $1
+                ORDER BY sold_at DESC
+                LIMIT $2 OFFSET $3
+                """,
+                user_id, limit, offset,
+            )
+            sales = [
+                SaleResponse(
+                    id=str(r["id"]),
+                    listing_id=str(r["listing_id"]),
+                    user_id=str(r["user_id"]),
+                    buyer_name=r.get("buyer_name"),
+                    buyer_marketplace_id=r.get("buyer_marketplace_id"),
+                    buyer_rating=float(r["buyer_rating"]) if r.get("buyer_rating") is not None else None,
+                    sale_price=float(r["sale_price"]),
+                    currency=r.get("currency", "EUR"),
+                    shipping_cost_actual=float(r["shipping_cost_actual"]) if r.get("shipping_cost_actual") is not None else 0,
+                    platform_fee=float(r["platform_fee"]) if r.get("platform_fee") is not None else 0,
+                    payment_processing_fee=float(r["payment_processing_fee"]) if r.get("payment_processing_fee") is not None else 0,
+                    net_proceeds=float(r["net_proceeds"]),
+                    tracking_number=r.get("tracking_number"),
+                    carrier=r.get("carrier"),
+                    shipped_at=r.get("shipped_at"),
+                    delivered_at=r.get("delivered_at"),
+                    status=r.get("status", "pending"),
+                    sold_at=r.get("sold_at"),
+                    created_at=r.get("created_at"),
+                    updated_at=r.get("updated_at"),
+                )
+                for r in rows
+            ]
+            return SalesListResponse(sales=sales, total_count=total_count)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[marketplace-listings] DB error listing sales: %s", e)
+        raise error_response(500, "Failed to list sales", code=ErrorCode.DB_ERROR)
+
+
+# Rate limit: record sale (10/min per user)
+@router.post("/sales/{listing_id}/record", response_model=SaleResponse, status_code=201, summary="Record a completed sale")
+async def record_sale(
+    listing_id: str,
+    payload: SaleRecord,
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_listing_write_limit),
+):
+    """Record a completed sale for a listing. Marks the listing as 'sold'."""
+    listing_id = _validate_uuid(listing_id, "listing_id")
+
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
+
+    # Calculate net proceeds
+    total_fees = (payload.platform_fee or 0) + (payload.payment_processing_fee or 0)
+    net_proceeds = payload.sale_price - total_fees - (payload.shipping_cost_actual or 0)
+
+    now = datetime.now(timezone.utc)
+
+    try:
+        async with pool.acquire() as conn:
+            # Verify listing exists and belongs to user
+            listing_row = await conn.fetchrow(
+                "SELECT id, status FROM marketplace_listings WHERE id = $1 AND user_id = $2",
+                listing_id, user_id,
+            )
+            if not listing_row:
+                raise error_response(404, "Listing not found", code=ErrorCode.NOT_FOUND)
+            if listing_row["status"] == "sold":
+                raise error_response(409, "Sale already recorded for this listing", code=ErrorCode.CONFLICT)
+
+            # Insert sale record
+            sale_row = await conn.fetchrow(
+                """
+                INSERT INTO marketplace_sales
+                    (listing_id, user_id, buyer_name, buyer_marketplace_id,
+                     buyer_rating, sale_price, currency,
+                     shipping_cost_actual, platform_fee, payment_processing_fee,
+                     net_proceeds, tracking_number, carrier,
+                     status, sold_at, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+                        'pending', $14, $14, $14)
+                RETURNING *
+                """,
+                listing_id, user_id, payload.buyer_name,
+                payload.buyer_marketplace_id, payload.buyer_rating,
+                payload.sale_price, payload.currency,
+                payload.shipping_cost_actual or 0, payload.platform_fee or 0,
+                payload.payment_processing_fee or 0,
+                net_proceeds, payload.tracking_number, payload.carrier,
+                now,
+            )
+
+            # Mark listing as sold
+            await conn.execute(
+                """
+                UPDATE marketplace_listings
+                SET status = 'sold', sold_at = $3, updated_at = $3
+                WHERE id = $1 AND user_id = $2
+                """,
+                listing_id, user_id, now,
+            )
+
+            logger.info(
+                "[marketplace-listings] Sale recorded: listing=%s user=%s net=%.2f",
+                listing_id, user_id, net_proceeds,
+            )
+            return SaleResponse(
+                id=str(sale_row["id"]),
+                listing_id=str(sale_row["listing_id"]),
+                user_id=str(sale_row["user_id"]),
+                buyer_name=sale_row.get("buyer_name"),
+                buyer_marketplace_id=sale_row.get("buyer_marketplace_id"),
+                buyer_rating=float(sale_row["buyer_rating"]) if sale_row.get("buyer_rating") is not None else None,
+                sale_price=float(sale_row["sale_price"]),
+                currency=sale_row.get("currency", "EUR"),
+                shipping_cost_actual=float(sale_row["shipping_cost_actual"]) if sale_row.get("shipping_cost_actual") is not None else 0,
+                platform_fee=float(sale_row["platform_fee"]) if sale_row.get("platform_fee") is not None else 0,
+                payment_processing_fee=float(sale_row["payment_processing_fee"]) if sale_row.get("payment_processing_fee") is not None else 0,
+                net_proceeds=float(sale_row["net_proceeds"]),
+                tracking_number=sale_row.get("tracking_number"),
+                carrier=sale_row.get("carrier"),
+                shipped_at=sale_row.get("shipped_at"),
+                delivered_at=sale_row.get("delivered_at"),
+                status=sale_row.get("status", "pending"),
+                sold_at=sale_row.get("sold_at"),
+                created_at=sale_row.get("created_at"),
+                updated_at=sale_row.get("updated_at"),
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[marketplace-listings] DB error recording sale: %s", e)
+        raise error_response(500, "Failed to record sale", code=ErrorCode.DB_ERROR)
+
+
+@router.get("/fees", response_model=List[FeeScheduleResponse], summary="Get fee schedules")
+async def list_fee_schedules() -> list[FeeScheduleResponse]:
+    """Get all marketplace fee schedules (public, no auth required)."""
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
+
+    try:
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT marketplace_id, display_name, base_fee_pct,
+                       payment_processing_pct, fixed_fee, currency,
+                       min_fee, max_fee, notes
+                FROM marketplace_fee_schedules
+                ORDER BY marketplace_id
+                """
+            )
+            return [
+                FeeScheduleResponse(
+                    marketplace_id=r["marketplace_id"],
+                    display_name=r["display_name"],
+                    base_fee_pct=float(r["base_fee_pct"]),
+                    payment_processing_pct=float(r["payment_processing_pct"]),
+                    fixed_fee=float(r["fixed_fee"]),
+                    currency=r.get("currency", "EUR"),
+                    min_fee=float(r["min_fee"]) if r.get("min_fee") is not None else 0,
+                    max_fee=float(r["max_fee"]) if r.get("max_fee") is not None else None,
+                    notes=r.get("notes"),
+                )
+                for r in rows
+            ]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[marketplace-listings] DB error listing fee schedules: %s", e)
+        raise error_response(500, "Failed to list fee schedules", code=ErrorCode.DB_ERROR)
+
+
+@router.post("/fees/calculate", response_model=FeeCalculateResponse, summary="Calculate estimated fees")
+async def calculate_fees(payload: FeeCalculateRequest) -> FeeCalculateResponse:
+    """Calculate estimated fees and net proceeds for a price/marketplace combination (public)."""
+    if payload.marketplace_id not in VALID_MARKETPLACES:
+        raise error_response(
+            400,
+            f"Invalid marketplace_id: {payload.marketplace_id}",
+            code=ErrorCode.VALIDATION_ERROR,
+        )
+
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
+
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT base_fee_pct, payment_processing_pct, fixed_fee,
+                       min_fee, max_fee
+                FROM marketplace_fee_schedules
+                WHERE marketplace_id = $1
+                """,
+                payload.marketplace_id,
+            )
+            if not row:
+                raise error_response(
+                    404,
+                    f"No fee schedule found for marketplace: {payload.marketplace_id}",
+                    code=ErrorCode.NOT_FOUND,
+                )
+
+            base_fee_pct = float(row["base_fee_pct"])
+            processing_pct = float(row["payment_processing_pct"])
+            fixed_fee = float(row["fixed_fee"])
+            min_fee = float(row["min_fee"]) if row["min_fee"] is not None else 0
+            max_fee = float(row["max_fee"]) if row["max_fee"] is not None else None
+
+            # Calculate fees
+            base_fee = round(payload.price * (base_fee_pct / 100), 2)
+            processing_fee = round(payload.price * (processing_pct / 100), 2)
+            total_fees = base_fee + processing_fee + fixed_fee
+
+            # Apply min/max caps
+            if total_fees < min_fee:
+                total_fees = min_fee
+            if max_fee is not None and total_fees > max_fee:
+                total_fees = max_fee
+
+            total_fees = round(total_fees, 2)
+            estimated_net = round(payload.price - total_fees - payload.shipping_cost, 2)
+
+            return FeeCalculateResponse(
+                marketplace_id=payload.marketplace_id,
+                price=payload.price,
+                base_fee=base_fee,
+                payment_processing_fee=processing_fee,
+                fixed_fee=fixed_fee,
+                total_fees=total_fees,
+                shipping_cost=payload.shipping_cost,
+                estimated_net=estimated_net,
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[marketplace-listings] DB error calculating fees: %s", e)
+        raise error_response(500, "Failed to calculate fees", code=ErrorCode.DB_ERROR)
+
+
 @router.get("/{listing_id}", response_model=ListingResponse, summary="Get listing detail")
 async def get_listing(
     listing_id: str,
@@ -1143,286 +1425,3 @@ async def publish_listing(
     except Exception as e:
         logger.error("[marketplace-listings] DB error publishing listing: %s", e)
         raise error_response(500, "Failed to publish listing", code=ErrorCode.DB_ERROR)
-
-
-# ===========================================================================================
-# SALES endpoints
-# ===========================================================================================
-
-@router.get("/sales", response_model=SalesListResponse, summary="List completed sales")
-async def list_sales(
-    user_id: str = Depends(get_current_user_id),
-    pagination: tuple[int, int] = Depends(pagination_params),
-    _rl: None = Depends(_listing_read_limit),
-):
-    """List the current user's completed sales with pagination."""
-    limit, offset = pagination
-
-    pool = get_db_pool()
-    if pool is None:
-        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
-
-    try:
-        async with pool.acquire() as conn:
-            count_row = await conn.fetchrow(
-                "SELECT count(*) AS cnt FROM marketplace_sales WHERE user_id = $1",
-                user_id,
-            )
-            total_count = count_row["cnt"] if count_row else 0
-
-            rows = await conn.fetch(
-                """
-                SELECT id, listing_id, user_id, buyer_name,
-                       buyer_marketplace_id, buyer_rating, sale_price,
-                       currency, shipping_cost_actual, platform_fee,
-                       payment_processing_fee, net_proceeds,
-                       tracking_number, carrier, shipped_at, delivered_at,
-                       status, sold_at, created_at, updated_at
-                FROM marketplace_sales
-                WHERE user_id = $1
-                ORDER BY sold_at DESC
-                LIMIT $2 OFFSET $3
-                """,
-                user_id, limit, offset,
-            )
-            sales = [
-                SaleResponse(
-                    id=str(r["id"]),
-                    listing_id=str(r["listing_id"]),
-                    user_id=str(r["user_id"]),
-                    buyer_name=r.get("buyer_name"),
-                    buyer_marketplace_id=r.get("buyer_marketplace_id"),
-                    buyer_rating=float(r["buyer_rating"]) if r.get("buyer_rating") is not None else None,
-                    sale_price=float(r["sale_price"]),
-                    currency=r.get("currency", "EUR"),
-                    shipping_cost_actual=float(r["shipping_cost_actual"]) if r.get("shipping_cost_actual") is not None else 0,
-                    platform_fee=float(r["platform_fee"]) if r.get("platform_fee") is not None else 0,
-                    payment_processing_fee=float(r["payment_processing_fee"]) if r.get("payment_processing_fee") is not None else 0,
-                    net_proceeds=float(r["net_proceeds"]),
-                    tracking_number=r.get("tracking_number"),
-                    carrier=r.get("carrier"),
-                    shipped_at=r.get("shipped_at"),
-                    delivered_at=r.get("delivered_at"),
-                    status=r.get("status", "pending"),
-                    sold_at=r.get("sold_at"),
-                    created_at=r.get("created_at"),
-                    updated_at=r.get("updated_at"),
-                )
-                for r in rows
-            ]
-            return SalesListResponse(sales=sales, total_count=total_count)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("[marketplace-listings] DB error listing sales: %s", e)
-        raise error_response(500, "Failed to list sales", code=ErrorCode.DB_ERROR)
-
-
-# Rate limit: record sale (10/min per user)
-@router.post("/sales/{listing_id}/record", response_model=SaleResponse, status_code=201, summary="Record a completed sale")
-async def record_sale(
-    listing_id: str,
-    payload: SaleRecord,
-    user_id: str = Depends(get_current_user_id),
-    _rl: None = Depends(_listing_write_limit),
-):
-    """Record a completed sale for a listing. Marks the listing as 'sold'."""
-    listing_id = _validate_uuid(listing_id, "listing_id")
-
-    pool = get_db_pool()
-    if pool is None:
-        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
-
-    # Calculate net proceeds
-    total_fees = (payload.platform_fee or 0) + (payload.payment_processing_fee or 0)
-    net_proceeds = payload.sale_price - total_fees - (payload.shipping_cost_actual or 0)
-
-    now = datetime.now(timezone.utc)
-
-    try:
-        async with pool.acquire() as conn:
-            # Verify listing exists and belongs to user
-            listing_row = await conn.fetchrow(
-                "SELECT id, status FROM marketplace_listings WHERE id = $1 AND user_id = $2",
-                listing_id, user_id,
-            )
-            if not listing_row:
-                raise error_response(404, "Listing not found", code=ErrorCode.NOT_FOUND)
-            if listing_row["status"] == "sold":
-                raise error_response(409, "Sale already recorded for this listing", code=ErrorCode.CONFLICT)
-
-            # Insert sale record
-            sale_row = await conn.fetchrow(
-                """
-                INSERT INTO marketplace_sales
-                    (listing_id, user_id, buyer_name, buyer_marketplace_id,
-                     buyer_rating, sale_price, currency,
-                     shipping_cost_actual, platform_fee, payment_processing_fee,
-                     net_proceeds, tracking_number, carrier,
-                     status, sold_at, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-                        'pending', $14, $14, $14)
-                RETURNING *
-                """,
-                listing_id, user_id, payload.buyer_name,
-                payload.buyer_marketplace_id, payload.buyer_rating,
-                payload.sale_price, payload.currency,
-                payload.shipping_cost_actual or 0, payload.platform_fee or 0,
-                payload.payment_processing_fee or 0,
-                net_proceeds, payload.tracking_number, payload.carrier,
-                now,
-            )
-
-            # Mark listing as sold
-            await conn.execute(
-                """
-                UPDATE marketplace_listings
-                SET status = 'sold', sold_at = $3, updated_at = $3
-                WHERE id = $1 AND user_id = $2
-                """,
-                listing_id, user_id, now,
-            )
-
-            logger.info(
-                "[marketplace-listings] Sale recorded: listing=%s user=%s net=%.2f",
-                listing_id, user_id, net_proceeds,
-            )
-            return SaleResponse(
-                id=str(sale_row["id"]),
-                listing_id=str(sale_row["listing_id"]),
-                user_id=str(sale_row["user_id"]),
-                buyer_name=sale_row.get("buyer_name"),
-                buyer_marketplace_id=sale_row.get("buyer_marketplace_id"),
-                buyer_rating=float(sale_row["buyer_rating"]) if sale_row.get("buyer_rating") is not None else None,
-                sale_price=float(sale_row["sale_price"]),
-                currency=sale_row.get("currency", "EUR"),
-                shipping_cost_actual=float(sale_row["shipping_cost_actual"]) if sale_row.get("shipping_cost_actual") is not None else 0,
-                platform_fee=float(sale_row["platform_fee"]) if sale_row.get("platform_fee") is not None else 0,
-                payment_processing_fee=float(sale_row["payment_processing_fee"]) if sale_row.get("payment_processing_fee") is not None else 0,
-                net_proceeds=float(sale_row["net_proceeds"]),
-                tracking_number=sale_row.get("tracking_number"),
-                carrier=sale_row.get("carrier"),
-                shipped_at=sale_row.get("shipped_at"),
-                delivered_at=sale_row.get("delivered_at"),
-                status=sale_row.get("status", "pending"),
-                sold_at=sale_row.get("sold_at"),
-                created_at=sale_row.get("created_at"),
-                updated_at=sale_row.get("updated_at"),
-            )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("[marketplace-listings] DB error recording sale: %s", e)
-        raise error_response(500, "Failed to record sale", code=ErrorCode.DB_ERROR)
-
-
-# ===========================================================================================
-# FEES endpoints
-# ===========================================================================================
-
-@router.get("/fees", response_model=List[FeeScheduleResponse], summary="Get fee schedules")
-async def list_fee_schedules() -> list[FeeScheduleResponse]:
-    """Get all marketplace fee schedules (public, no auth required)."""
-    pool = get_db_pool()
-    if pool is None:
-        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
-
-    try:
-        async with pool.acquire() as conn:
-            rows = await conn.fetch(
-                """
-                SELECT marketplace_id, display_name, base_fee_pct,
-                       payment_processing_pct, fixed_fee, currency,
-                       min_fee, max_fee, notes
-                FROM marketplace_fee_schedules
-                ORDER BY marketplace_id
-                """
-            )
-            return [
-                FeeScheduleResponse(
-                    marketplace_id=r["marketplace_id"],
-                    display_name=r["display_name"],
-                    base_fee_pct=float(r["base_fee_pct"]),
-                    payment_processing_pct=float(r["payment_processing_pct"]),
-                    fixed_fee=float(r["fixed_fee"]),
-                    currency=r.get("currency", "EUR"),
-                    min_fee=float(r["min_fee"]) if r.get("min_fee") is not None else 0,
-                    max_fee=float(r["max_fee"]) if r.get("max_fee") is not None else None,
-                    notes=r.get("notes"),
-                )
-                for r in rows
-            ]
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("[marketplace-listings] DB error listing fee schedules: %s", e)
-        raise error_response(500, "Failed to list fee schedules", code=ErrorCode.DB_ERROR)
-
-
-@router.post("/fees/calculate", response_model=FeeCalculateResponse, summary="Calculate estimated fees")
-async def calculate_fees(payload: FeeCalculateRequest) -> FeeCalculateResponse:
-    """Calculate estimated fees and net proceeds for a price/marketplace combination (public)."""
-    if payload.marketplace_id not in VALID_MARKETPLACES:
-        raise error_response(
-            400,
-            f"Invalid marketplace_id: {payload.marketplace_id}",
-            code=ErrorCode.VALIDATION_ERROR,
-        )
-
-    pool = get_db_pool()
-    if pool is None:
-        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
-
-    try:
-        async with pool.acquire() as conn:
-            row = await conn.fetchrow(
-                """
-                SELECT base_fee_pct, payment_processing_pct, fixed_fee,
-                       min_fee, max_fee
-                FROM marketplace_fee_schedules
-                WHERE marketplace_id = $1
-                """,
-                payload.marketplace_id,
-            )
-            if not row:
-                raise error_response(
-                    404,
-                    f"No fee schedule found for marketplace: {payload.marketplace_id}",
-                    code=ErrorCode.NOT_FOUND,
-                )
-
-            base_fee_pct = float(row["base_fee_pct"])
-            processing_pct = float(row["payment_processing_pct"])
-            fixed_fee = float(row["fixed_fee"])
-            min_fee = float(row["min_fee"]) if row["min_fee"] is not None else 0
-            max_fee = float(row["max_fee"]) if row["max_fee"] is not None else None
-
-            # Calculate fees
-            base_fee = round(payload.price * (base_fee_pct / 100), 2)
-            processing_fee = round(payload.price * (processing_pct / 100), 2)
-            total_fees = base_fee + processing_fee + fixed_fee
-
-            # Apply min/max caps
-            if total_fees < min_fee:
-                total_fees = min_fee
-            if max_fee is not None and total_fees > max_fee:
-                total_fees = max_fee
-
-            total_fees = round(total_fees, 2)
-            estimated_net = round(payload.price - total_fees - payload.shipping_cost, 2)
-
-            return FeeCalculateResponse(
-                marketplace_id=payload.marketplace_id,
-                price=payload.price,
-                base_fee=base_fee,
-                payment_processing_fee=processing_fee,
-                fixed_fee=fixed_fee,
-                total_fees=total_fees,
-                shipping_cost=payload.shipping_cost,
-                estimated_net=estimated_net,
-            )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("[marketplace-listings] DB error calculating fees: %s", e)
-        raise error_response(500, "Failed to calculate fees", code=ErrorCode.DB_ERROR)
