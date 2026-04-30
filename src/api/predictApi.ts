@@ -1,18 +1,7 @@
 /**
  * Price prediction and evidence API methods.
  */
-import { get, post } from "./httpClient";
-
-export const predictV2 = (payload: {
-  item_id: string;
-  category?: string;
-  attributes?: Record<string, unknown>;
-}) => post<{
-  q10: number;
-  q50: number;
-  q90: number;
-  asof: string;
-}>("/predict_v2", payload);
+import { get } from "./httpClient";
 
 // Path fixed 2026-04-19: backend is /predict/trend/{item_id}, not
 // /predict/{item_id}/trend. Pre-fix the call 404'd so paid users saw

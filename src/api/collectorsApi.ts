@@ -87,7 +87,6 @@ export const collectorsApi = {
   marketSearch: marketplaceApi.marketSearch,
 
   // Price prediction
-  predictV2: predictApi.predictV2,
   getItemPriceTrend: predictApi.getItemPriceTrend,
   getPriceEvidence: predictApi.getPriceEvidence,
 
