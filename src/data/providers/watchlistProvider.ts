@@ -55,12 +55,14 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
   // "Could not find the function" silently.
   let r: Record<string, unknown>;
   try {
+    // Server contract (WatchlistCreate): name, category, item_id?,
+    // predicted_value?, currency?. Sending `title` was wrong; the
+    // server reads `name` and stores it as watchlist_items.title.
+    // E2E-verified against POST /watchlist/mine 2026-04-30.
     const data = await collectorsApi.post<Record<string, unknown>>('/watchlist/mine', {
-      title: input.title,
+      name: input.title,
       category: input.category,
-      target_price: input.targetPrice ?? null,
-      notes: input.notes ?? null,
-      priority: input.priority || 'medium',
+      currency: 'EUR',
     });
     r = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
   } catch (e) {

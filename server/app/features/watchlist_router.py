@@ -84,9 +84,13 @@ async def get_my_watchlist(
                 )
                 items = [
                     WatchlistItem(
+                        # asyncpg returns uuid columns as UUID objects;
+                        # WatchlistItem.user_id is typed Optional[str], so
+                        # coerce here. Same reason `id` is already wrapped
+                        # in str() above.
                         id=str(r["id"]),
-                        user_id=r["user_id"],
-                        item_id=r["item_id"],
+                        user_id=str(r["user_id"]) if r["user_id"] else None,
+                        item_id=str(r["item_id"]) if r["item_id"] else None,
                         name=r["name"],
                         category=r["category"],
                         created_at=r["created_at"],
@@ -220,9 +224,13 @@ async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_curren
                 )
                 items = [
                     WatchlistItem(
+                        # asyncpg returns uuid columns as UUID objects;
+                        # WatchlistItem.user_id is typed Optional[str], so
+                        # coerce here. Same reason `id` is already wrapped
+                        # in str() above.
                         id=str(r["id"]),
-                        user_id=r["user_id"],
-                        item_id=r["item_id"],
+                        user_id=str(r["user_id"]) if r["user_id"] else None,
+                        item_id=str(r["item_id"]) if r["item_id"] else None,
                         name=r["name"],
                         category=r["category"],
                         created_at=r["created_at"],

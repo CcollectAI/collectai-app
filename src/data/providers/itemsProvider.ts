@@ -77,17 +77,16 @@ export async function listItems(pagination?: PaginationParams): Promise<Item[]> 
 }
 
 export async function createItem(input: CreateItemInput): Promise<Item> {
-  // Lives on EC2 at POST /items. The Supabase RPC rpc_create_item_v1
-  // was never deployed; the FE silently failed every "Save scan" /
-  // "Add to collection" tap until 2026-04-29.
+  // Server contract (ItemCreateRequest): name, category?, collection_name?,
+  // estimated_value?, notes?. Sending `title` (the DB column name) was
+  // wrong — server expects `name` (the API field) and stores it as
+  // items.title internally. Image URLs are NOT a body field; images are
+  // attached separately via POST /items/{id}/images.
   let row: Record<string, unknown>;
   try {
     row = await collectorsApi.post<Record<string, unknown>>('/items', {
-      title: input.name,
+      name: input.name,
       category: input.category,
-      image_url: input.imageUrl ?? null,
-      attrs: {},
-      notes: null,
     });
   } catch (e) {
     logger.error('[SupabaseDataProvider] createItem error:', e);
@@ -108,8 +107,9 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
   }
 
   return {
+    // Server's ItemResponse returns `name` (API field), not `title`.
     id: itemId,
-    name: (row.title as string | null) ?? input.name,
+    name: (row.name as string | null) ?? input.name,
     category: (row.category as string | null) ?? input.category,
     price: 0,
     imageUrl: images?.[0] ?? undefined,
@@ -187,21 +187,36 @@ export async function unarchiveItem(itemId: string): Promise<void> {
 }
 
 export async function persistQuickscanDraft(input: QuickscanDraft): Promise<PersistedItem> {
-  // Quickscan persist goes through POST /items on the EC2 backend
-  // (rpc_create_item_v1 was never deployed). Same path as createItem.
+  // Server contract: ItemCreateRequest takes `name` (not `title`),
+  // category, collection_name, estimated_value, notes. attributes go
+  // through a follow-up PATCH /items/{id}/attributes; images via
+  // POST /items/{id}/images. Sending `title`/`image_url`/`attrs` here
+  // was rejected with 422 (missing `name`).
   let row: Record<string, unknown>;
   try {
     row = await collectorsApi.post<Record<string, unknown>>('/items', {
-      title: input.title ?? 'Untitled Scan',
+      name: input.title ?? 'Untitled Scan',
       category: input.categoryId ?? 'uncategorized',
-      image_url: input.photoUri ?? null,
-      attrs: input.attributes ?? {},
       notes: input.notes ?? null,
     });
   } catch (e) {
     logger.error('[SupabaseDataProvider] persistQuickscanDraft error:', e);
     throw e instanceof Error ? e : new Error('Failed to persist QuickScan draft');
   }
+  const itemId = row.id as string;
+
+  // Land any captured attributes onto items.attrs via the PATCH
+  // endpoint (the server's POST /items doesn't accept attrs).
+  if (input.attributes && Object.keys(input.attributes).length > 0) {
+    try {
+      await collectorsApi.patch(`/items/${encodeURIComponent(itemId)}/attributes`, {
+        attributes: input.attributes,
+      });
+    } catch (e) {
+      logger.warn('[SupabaseDataProvider] persistQuickscanDraft attrs PATCH failed (non-fatal):', e);
+    }
+  }
+
   const images = (row.images as string[] | null) ?? null;
   return {
     id: row.id as string,
