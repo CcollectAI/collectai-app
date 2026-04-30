@@ -126,22 +126,29 @@ async def _get_thread_participant(
     thread_id: str,
     user_id: str,
 ) -> Optional[str]:
-    """Return the other participant's user_id if user_id is a member, else None."""
+    """Return the other participant's user_id if user_id is a member, else None.
+
+    Reads from chat_threads_v1 (kind='dm', dm_user_a/dm_user_b). The
+    earlier query targeted `dm_threads` — an empty legacy table — so
+    every send_message call returned None and the EC2 handler 404'd
+    "Thread not found". Same bug class as the v_chat_inbox_v1 fix.
+    """
     row = await conn.fetchrow(
         """
-        SELECT requester_id, responder_id
-        FROM dm_threads
+        SELECT dm_user_a, dm_user_b
+        FROM chat_threads_v1
         WHERE id = $1::uuid
-          AND (requester_id = $2::uuid OR responder_id = $2::uuid)
+          AND kind = 'dm'
+          AND (dm_user_a = $2::uuid OR dm_user_b = $2::uuid)
         """,
         thread_id,
         user_id,
     )
     if not row:
         return None
-    if str(row["requester_id"]) == user_id:
-        return str(row["responder_id"])
-    return str(row["requester_id"])
+    if str(row["dm_user_a"]) == user_id:
+        return str(row["dm_user_b"])
+    return str(row["dm_user_a"])
 
 
 # ---------------------------------------------------------------------------

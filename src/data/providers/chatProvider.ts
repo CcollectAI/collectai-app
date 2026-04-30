@@ -151,41 +151,19 @@ export async function getThreadMessages(threadId: string): Promise<DmMessage[]> 
 }
 
 export async function sendMessage(threadId: string, body: string): Promise<DmMessage> {
-  // rpc_send_message_v1 requires p_user_id explicitly (the function is
-  // designed to be callable from non-auth-context paths too). It returns
-  // the inserted chat_messages_v1 row using its real columns: user_id
-  // (not author_user_id) and body (not text).
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  const { data, error } = await supabase.rpc('rpc_send_message_v1', {
-    p_thread_id: threadId,
-    p_user_id: user.id,
-    p_body: body,
-  });
-
-  if (error) {
-    logger.error('[SupabaseDataProvider] sendMessage RPC error:', error);
-    throw new Error(error.message || 'Failed to send message');
-  }
-
-  if (data && typeof data === 'object') {
-    const row = data as Record<string, unknown>;
-    return {
-      id: (row.id ?? `msg-${Date.now()}`) as string,
-      threadId: (row.thread_id as string | null) ?? threadId,
-      authorUserId: (row.user_id as string | null) ?? user.id,
-      text: (row.body as string | null) ?? body,
-      createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
-    };
-  }
-
+  // Goes through EC2 (POST /chat/threads/{id}/messages) instead of calling
+  // rpc_send_message_v1 directly: the EC2 handler fires `_notify_new_message`,
+  // which is what makes the message pop up like WhatsApp/iMessage when the
+  // recipient's app is closed. The RPC path inserts the row but skips push.
+  const { sendChatMessage } = await import('../../api/chatApi');
+  const resp = await sendChatMessage(threadId, body);
+  const row = resp.message;
   return {
-    id: `msg-${Date.now()}`,
-    threadId,
-    authorUserId: user.id,
-    text: body,
-    createdAt: new Date().toISOString(),
+    id: row.id,
+    threadId: row.thread_id ?? threadId,
+    authorUserId: row.sender_id,
+    text: row.body ?? body,
+    createdAt: row.created_at ?? new Date().toISOString(),
   };
 }
 

@@ -34,14 +34,23 @@ export const getChatMessages = (
     `/chat/threads/${threadId}/messages${params ? `?limit=${params.limit ?? 50}&offset=${params.offset ?? 0}` : ""}`,
   );
 
+// EC2 POST /chat/threads/{id}/messages takes `content` (SendMessageRequest at
+// chat_router.py:48-49) and returns `{ message: { id, thread_id, sender_id,
+// body, created_at, edited_at, deleted_at } }`. Calling EC2 (instead of
+// supabase.rpc('rpc_send_message_v1', ...)) is what fires `_notify_new_message`
+// → push notification to the recipient. RPC path bypasses push entirely.
 export const sendChatMessage = (threadId: string, text: string) =>
   post<{
-    id: string;
-    thread_id: string;
-    author_user_id: string;
-    text: string;
-    created_at: string;
-  }>(`/chat/threads/${threadId}/messages`, { text });
+    message: {
+      id: string;
+      thread_id: string;
+      sender_id: string;
+      body: string;
+      created_at: string;
+      edited_at: string | null;
+      deleted_at: string | null;
+    };
+  }>(`/chat/threads/${threadId}/messages`, { content: text });
 
 export const markChatThreadRead = (threadId: string) =>
   patch<{ success: boolean }>(`/chat/threads/${threadId}/read`, {});
@@ -49,12 +58,14 @@ export const markChatThreadRead = (threadId: string) =>
 export const deleteChatMessage = (messageId: string) =>
   del<{ success: boolean }>(`/chat/messages/${messageId}`);
 
-// Server route is PATCH /chat/messages/{id} (chat_router.py:452); this
-// previously sent PUT and 404'd silently for any user editing a message.
+// Server route is PATCH /chat/messages/{id} (chat_router.py:452); the
+// EditMessageRequest model takes `content` (not `text`). FE callers
+// keep the `text` arg name for ergonomic continuity; we map at the
+// boundary. Verified end-to-end 2026-04-30.
 export const editChatMessage = (messageId: string, text: string) =>
   patch<{ id: string; text: string; edited_at: string }>(
     `/chat/messages/${messageId}`,
-    { text },
+    { content: text },
   );
 
 export const getChatUnreadCount = () =>
