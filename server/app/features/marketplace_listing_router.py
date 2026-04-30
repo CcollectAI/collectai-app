@@ -355,7 +355,19 @@ async def ebay_oauth_start(user_id: str = Depends(get_current_user_id)):
     import secrets
     from app.agents.adapters.ebay_sell_caller import build_oauth_url
     state = f"{user_id}:{secrets.token_urlsafe(16)}"
-    return {"redirect_url": build_oauth_url(state), "state": state}
+    try:
+        redirect_url = build_oauth_url(state)
+    except RuntimeError as e:
+        # build_oauth_url raises when EBAY_REDIRECT_URI / client id is unset.
+        # Bubble a clear 503 so the FE can show "Connect eBay later" instead
+        # of a generic "Internal server error".
+        logger.warning("[ebay-oauth] start failed: %s", e)
+        raise error_response(
+            503,
+            "eBay OAuth is not yet configured on this environment.",
+            code=ErrorCode.EXTERNAL_SERVICE_ERROR,
+        )
+    return {"redirect_url": redirect_url, "state": state}
 
 
 @router.get("/accounts/oauth/ebay/callback", response_model=AccountResponse,
