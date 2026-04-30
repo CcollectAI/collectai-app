@@ -1,0 +1,7674 @@
+{
+  "_about": "FE/BE column-flow matrix derived from regex scan.",
+  "tables": {
+    "achievements": {
+      "be_read_files": [
+        "server/app/features/gamification_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "category": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "description": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "icon": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sort_order": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "threshold": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "tier": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "xp_reward": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "unlocked_at",
+        "progress"
+      ]
+    },
+    "activity_feed": {
+      "be_read_files": [
+        "server/app/features/activity_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/activity_router.py"
+      ],
+      "columns": {
+        "activity_type": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "description": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "is_public": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "metadata": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "alert_trigger_history": {
+      "be_read_files": [
+        "server/app/features/alerts_feature_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/alerts_feature_router.py"
+      ],
+      "columns": {
+        "alert_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "message": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "read": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "trigger_type": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "trigger_value": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "beta_signups": {
+      "be_read_files": [
+        "server/app/routes/beta_signup_router.py"
+      ],
+      "be_write_files": [
+        "server/app/routes/beta_signup_router.py"
+      ],
+      "columns": {
+        "email": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "ip_address": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "referral_source": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "signed_up_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "build_paint_notes": {
+      "be_read_files": [],
+      "be_write_files": [],
+      "columns": {
+        "content": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": true
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "project_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": true
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": true
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/buildPaintProvider.ts"
+      ],
+      "fe_write_files": [
+        "src/data/providers/buildPaintProvider.ts"
+      ],
+      "stray": []
+    },
+    "build_paint_projects": {
+      "be_read_files": [],
+      "be_write_files": [],
+      "columns": {
+        "category": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "last_updated": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "line": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "name": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "progress_pct": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": true
+        },
+        "stage": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": true
+        },
+        "target_date": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/buildPaintProvider.ts"
+      ],
+      "fe_write_files": [
+        "src/data/providers/buildPaintProvider.ts"
+      ],
+      "stray": [
+        "title",
+        "step_order",
+        "last_seen_live_at",
+        "minutes",
+        "project_id"
+      ]
+    },
+    "build_paint_sessions": {
+      "be_read_files": [],
+      "be_write_files": [],
+      "columns": {
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "minutes": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "project_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "session_date": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/buildPaintProvider.ts"
+      ],
+      "fe_write_files": [],
+      "stray": [
+        "last_seen_live_at"
+      ]
+    },
+    "build_paint_steps": {
+      "be_read_files": [],
+      "be_write_files": [],
+      "columns": {
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "description": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "project_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": true
+        },
+        "status": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": true
+        },
+        "step_order": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": true
+        },
+        "title": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": true
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/buildPaintProvider.ts"
+      ],
+      "fe_write_files": [
+        "src/data/providers/buildPaintProvider.ts"
+      ],
+      "stray": [
+        "content"
+      ]
+    },
+    "calibration_snapshots": {
+      "be_read_files": [
+        "server/app/ml/model_loader.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "ace": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "gate_pass": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "gate_reasons": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "mae": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "picp": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "samples": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "catalog_suggestions": {
+      "be_read_files": [
+        "server/app/features/admin_health_router.py",
+        "server/app/features/catalog_learning_router.py"
+      ],
+      "be_write_files": [
+        "server/app/agents/intake/helpers.py",
+        "server/app/features/catalog_learning_router.py"
+      ],
+      "columns": {
+        "confidence": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "input_data": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "mapped_item_key": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "matched_category": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "suggested_category": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "suggested_name": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "category_candidates": {
+      "be_read_files": [
+        "server/app/features/admin_health_router.py",
+        "server/app/features/catalog_learning_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/catalog_learning_router.py"
+      ],
+      "columns": {
+        "admin_notes": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "description": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "first_seen": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_seen": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "proposed_name": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "proposed_slug": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "signal_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "unique_users": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "category_items": {
+      "be_read_files": [
+        "server/app/agents/intake/catalog_matching.py",
+        "server/app/agents/intake/enrichment.py",
+        "server/app/features/barcode_lookup_router.py",
+        "server/app/features/catalog_browser_router.py",
+        "server/app/features/search_router.py",
+        "server/app/features/set_router.py",
+        "server/app/routes/pipeline_status_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "attributes_json": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "barcode": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "brand": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "external_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_key": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_crawled_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_scrape_attempt_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "rarity": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "set_code": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "verified": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "price_eur"
+      ]
+    },
+    "challenges": {
+      "be_read_files": [
+        "server/app/features/gamification_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "active": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "challenge_type": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "description": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "end_date": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "start_date": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "target_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "xp_reward": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "completed",
+        "current_count",
+        "completed_at"
+      ]
+    },
+    "chat_dm_requests_v1": {
+      "be_read_files": [
+        "server/app/features/intelligence_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "context": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "decided_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "decided_by": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "requester_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "target_user_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "thread_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/chatProvider.ts"
+      ],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "chat_messages_v1": {
+      "be_read_files": [
+        "server/app/features/chat_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/chat_router.py",
+        "server/app/features/events/events_announcements.py"
+      ],
+      "columns": {
+        "body": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "deleted_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "edited_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "thread_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/chatProvider.ts"
+      ],
+      "fe_write_files": [],
+      "stray": [
+        "so"
+      ]
+    },
+    "chat_thread_members_v1": {
+      "be_read_files": [
+        "server/app/features/intelligence_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "role": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "thread_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "chat_thread_reads_v1": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/features/chat_router.py"
+      ],
+      "columns": {
+        "last_read_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "thread_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "chat_threads_v1": {
+      "be_read_files": [
+        "server/app/features/chat_router.py",
+        "server/app/features/intelligence_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "category": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_by": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "dm_user_a": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "dm_user_b": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "kind": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "visibility": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "collections": {
+      "be_read_files": [
+        "server/app/features/collections_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "name": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "optionally",
+        "below"
+      ]
+    },
+    "demand_signals": {
+      "be_read_files": [
+        "server/app/features/data_moat.py",
+        "server/app/features/intelligence_router.py",
+        "server/app/routes/admin_dashboard.py"
+      ],
+      "be_write_files": [
+        "server/app/features/data_moat.py"
+      ],
+      "columns": {
+        "category": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "country_code": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_key": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "query_text": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "region": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "signal_type": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "dm_threads": {
+      "be_read_files": [
+        "server/app/features/events/events_announcements.py"
+      ],
+      "be_write_files": [
+        "server/app/features/events/events_announcements.py",
+        "server/app/features/social_router.py"
+      ],
+      "columns": {
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "requester_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "responder_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "event_announcement_reads": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/features/events/events_announcements.py"
+      ],
+      "columns": {
+        "announcement_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "read_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "event_announcements": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/features/events/events_announcements.py"
+      ],
+      "columns": {
+        "author_user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "body": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "event_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "event_attendees": {
+      "be_read_files": [
+        "server/app/features/events/events_announcements.py",
+        "server/app/features/events/events_core.py",
+        "server/app/features/sponsor_company_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/events/events_rsvp.py",
+        "server/app/routes/billing_router.py"
+      ],
+      "columns": {
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "event_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "image_url",
+        "kind",
+        "title",
+        "sponsor_paid_at",
+        "sponsor_expires_at",
+        "max_attendees",
+        "end_date",
+        "time",
+        "category_id",
+        "date",
+        "description",
+        "is_public",
+        "online_url",
+        "location",
+        "created_by",
+        "sponsor_tier",
+        "format"
+      ]
+    },
+    "event_follows_v1": {
+      "be_read_files": [
+        "server/app/features/intelligence_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "canonical_key": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "enabled": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "event_sponsor_analytics": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/features/events/events_helpers.py",
+        "server/app/routes/billing_router.py"
+      ],
+      "columns": {
+        "clicks": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "event_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "impressions": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "rsvps": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "event_templates": {
+      "be_read_files": [
+        "server/app/features/events/events_core.py"
+      ],
+      "be_write_files": [
+        "server/app/features/events/events_core.py"
+      ],
+      "columns": {
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "name": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "template_data": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "use_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "event_tickets": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/routes/billing_router.py"
+      ],
+      "columns": {
+        "amount_cents": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "event_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "fee_cents": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "stripe_session_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "events": {
+      "be_read_files": [
+        "server/app/features/events/events_announcements.py",
+        "server/app/features/events/events_core.py",
+        "server/app/features/events/events_rsvp.py",
+        "server/app/features/intelligence_router.py",
+        "server/app/features/search_router.py",
+        "server/app/features/sponsor_router.py",
+        "server/app/routes/admin_dashboard.py",
+        "server/app/routes/billing_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/events/events_core.py",
+        "server/app/features/sponsor_company_router.py",
+        "server/app/routes/billing_router.py"
+      ],
+      "columns": {
+        "canonical_key": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_by": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "date": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "description": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "end_date": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "ends_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "engagement_score": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "event_type": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "format": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "franchise_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "is_public": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "is_sponsored": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "kind": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "latitude": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "location": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "longitude": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "max_attendees": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "online_url": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "payload": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "quality_score": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source_url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sponsor_company_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sponsor_expires_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sponsor_logo_url": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sponsor_name": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sponsor_paid_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sponsor_tier": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "starts_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "ticket_price_cents": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "time": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "trust_tier": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "visibility": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "feedback": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/features/feedback_router.py"
+      ],
+      "columns": {
+        "accepted_price": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "features": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "graded": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "input": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "label_value_eur": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "model": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "suggestion_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "ts": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "version": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "label",
+        "observed_at",
+        "item_id",
+        "user_id"
+      ]
+    },
+    "item_images": {
+      "be_read_files": [
+        "server/app/features/item_images_router.py",
+        "server/app/features/marketplace_listing_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/item_images_router.py"
+      ],
+      "columns": {
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "url": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "image_url",
+        "label",
+        "position"
+      ]
+    },
+    "item_provenance_events": {
+      "be_read_files": [
+        "server/app/agents/dossier_agent.py",
+        "server/app/features/provenance_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/feedback_router.py",
+        "server/app/features/provenance_router.py"
+      ],
+      "columns": {
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "event_type": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "metadata": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "note": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "items": {
+      "be_read_files": [
+        "server/app/agents/deal_risk.py",
+        "server/app/agents/dossier_agent.py",
+        "server/app/agents/intake_duplicate_check.py",
+        "server/app/agents/intake_feedback_router.py",
+        "server/app/features/catalog_browser_router.py",
+        "server/app/features/data_moat.py",
+        "server/app/features/export_router.py",
+        "server/app/features/feedback_router.py",
+        "server/app/features/insights_router.py",
+        "server/app/features/item_images_router.py",
+        "server/app/features/items_export_router.py",
+        "server/app/features/marketplace_listing_router.py",
+        "server/app/features/predict_router.py",
+        "server/app/features/search_router.py",
+        "server/app/features/set_router.py",
+        "server/app/features/trends_and_deepdive_router.py",
+        "server/app/features/value_summary_router.py",
+        "server/app/routes/items_router.py",
+        "server/app/routes/portfolio_router.py"
+      ],
+      "be_write_files": [
+        "server/app/agents/deal_desk_router.py",
+        "server/app/agents/intake_router.py",
+        "server/app/features/import_router.py",
+        "server/app/routes/items_router.py"
+      ],
+      "columns": {
+        "acquired_condition": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "acquired_from": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "acquisition_price": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "actual_price_eur": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "ai_estimate_usd": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "ai_label": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "archived": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": true
+        },
+        "asking_currency": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "asking_price": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "attrs": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "authenticity_score": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "brand": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "build_notes": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "build_state": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "canonical_key": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "checklist_item_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "collection_name": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "condition": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "condition_grade": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "condition_notes": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "confidence_score": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "cost_basis": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "date_completed": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "date_started": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "description": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "edition_label": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "estimated_value": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "for_sale": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "fraud_details": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "fraud_flags": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "fts": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "identity_locked": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "identity_locked_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "image_path": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "is_first_edition": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "is_limited_edition": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "latest_forecast": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "limited_edition_number": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "limited_edition_total": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "manual_name": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "model_version": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "name": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "owner": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "paint_state": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "predicted_price_eur": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "prediction_confidence": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "purchase_currency": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "purchase_date": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "purchase_notes": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "purchase_price": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "purchase_price_eur": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "purchased_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "quantity": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "serial_number": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "series": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sku": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "tags": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "variant_key": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "verified_date": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "verified_price": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "year": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/categoryProvider.ts",
+        "src/data/providers/itemsProvider.ts",
+        "src/data/providers/portfolioProvider.ts",
+        "src/hooks/useItemDetail.ts",
+        "src/hooks/useItems.ts",
+        "src/store/collectionStore.ts"
+      ],
+      "fe_write_files": [
+        "src/data/providers/itemsProvider.ts"
+      ],
+      "stray": [
+        "progress_status",
+        "q50",
+        "progress_pct",
+        "taxonomy_version",
+        "images",
+        "progress_notes",
+        "normalized_key",
+        "attributes_json",
+        "subtype_id"
+      ]
+    },
+    "mandate_deals": {
+      "be_read_files": [
+        "server/app/agents/deal_discovery_agent.py"
+      ],
+      "be_write_files": [
+        "server/app/agents/deal_discovery_agent.py",
+        "server/app/agents/purchase_router.py"
+      ],
+      "columns": {
+        "added_item_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "affiliate_click": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "affiliate_source": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "affiliate_url": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "clicked_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "confirmed_price": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "deal_score": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "discovered_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "estimated_commission": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_condition": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_currency": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_ended": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_image_url": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_price": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_seller": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_source": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_title": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_url": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "mandate_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notified_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "policy_passed": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "policy_reasons": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "predicted_q10": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "predicted_q50": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "predicted_q90": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price_vs_q50_pct": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "provenance_score": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "purchased_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "market_hits": {
+      "be_read_files": [
+        "server/app/agents/dossier_agent.py",
+        "server/app/agents/intake/enrichment.py",
+        "server/app/agents/intake_social_proof.py",
+        "server/app/features/barcode_lookup_router.py",
+        "server/app/features/catalog_browser_router.py",
+        "server/app/features/insights_router.py",
+        "server/app/features/trends_and_deepdive_router.py",
+        "server/app/ml/explainer.py"
+      ],
+      "be_write_files": [
+        "server/app/agents/deal_discovery_agent.py",
+        "server/app/agents/marketplace_agent.py",
+        "server/app/agents/marketplace_router.py"
+      ],
+      "columns": {
+        "attrs": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "condition": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "condition_grade": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "currency": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "ended_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "features_json": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "graded": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "is_listing": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_ref": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "marketplace": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "normalized_key": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "observed_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price_eur": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "processed": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "provider": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "seen_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "seller_rating": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "seller_score": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "shipping": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "tx_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "url": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "url_hash": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "domestic_only",
+        "ships_from"
+      ]
+    },
+    "marketplace_account_defaults": {
+      "be_read_files": [
+        "server/app/features/marketplace_listing_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/marketplace_listing_router.py"
+      ],
+      "columns": {
+        "ebay_category_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "extra": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "fulfillment_policy_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "location_key": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "marketplace_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "payment_policy_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "return_policy_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "marketplace_accounts": {
+      "be_read_files": [
+        "server/app/features/marketplace_listing_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/marketplace_listing_router.py"
+      ],
+      "columns": {
+        "connected_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "is_active": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_sync_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "marketplace_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "oauth_token_enc": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "refresh_token_enc": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "scopes": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "seller_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "seller_name": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "token_expires_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "marketplace_fee_schedules": {
+      "be_read_files": [
+        "server/app/features/marketplace_listing_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "base_fee_pct": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "currency": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "display_name": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "fixed_fee": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "marketplace_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "max_fee": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "min_fee": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "payment_processing_pct": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "marketplace_listings": {
+      "be_read_files": [
+        "server/app/features/marketplace_listing_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/marketplace_listing_router.py"
+      ],
+      "columns": {
+        "account_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "auction_duration_days": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "auction_start_price": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "buy_it_now_price": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "condition_label": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "condition_notes": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "currency": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "estimated_fees": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "estimated_net": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "expires_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "external_listing_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "fee_percentage": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "format": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listed_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_description": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_title": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_url": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "marketplace_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "offers_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "original_price": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "quantity": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "returns_accepted": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "returns_days": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "shipping_cost": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "shipping_method": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "ships_international": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sold_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status_message": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "synced_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "views_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "watchers_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "marketplace_sales": {
+      "be_read_files": [
+        "server/app/features/marketplace_listing_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/marketplace_listing_router.py"
+      ],
+      "columns": {
+        "buyer_marketplace_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "buyer_name": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "buyer_rating": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "carrier": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "currency": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "delivered_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "net_proceeds": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "payment_processing_fee": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "platform_fee": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sale_price": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "shipped_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "shipping_cost_actual": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sold_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "tracking_number": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "model_registry": {
+      "be_read_files": [
+        "server/app/ml/model_loader.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "is_canary": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "name": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "params": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "uri": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "version": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "category",
+        "uncertainty_scale",
+        "model_type",
+        "s3_key",
+        "is_active",
+        "artifact_json"
+      ]
+    },
+    "mv_demand_heat": {
+      "be_read_files": [
+        "server/app/agents/intake_social_proof.py",
+        "server/app/features/data_moat.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "category": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_key": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_signal_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "signal_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "signal_type": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "unique_users": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "mv_supply_trend": {
+      "be_read_files": [
+        "server/app/features/data_moat.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "avg_listings": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "avg_price": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_key": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sample_count": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "snap_date": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "notification_history": {
+      "be_read_files": [
+        "server/app/features/notification_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/notification_router.py",
+        "server/app/push.py"
+      ],
+      "columns": {
+        "body": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "data": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "deep_link": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "read_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "type": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "notification_impressions": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/features/notification_feedback_router.py"
+      ],
+      "columns": {
+        "client_context": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "first_seen_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_seen_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notification_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "seen_count": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "notification_interactions": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/features/notification_feedback_router.py"
+      ],
+      "columns": {
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "kind": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "meta": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notification_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "occurred_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "notification_outcomes": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/features/notification_feedback_router.py"
+      ],
+      "columns": {
+        "acted_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "action_ref": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "action_type": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "computed_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "latency_seconds": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notification_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "outcome": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "object_pointers": {
+      "be_read_files": [
+        "server/app/agents/dossier_agent.py",
+        "server/app/features/storage_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/storage_router.py"
+      ],
+      "columns": {
+        "bucket": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "content_hash": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "content_type": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_by": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "deleted_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "metadata": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "object_type": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "related_category": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "related_item_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "s3_key": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "size_bytes": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "offer_events": {
+      "be_read_files": [
+        "server/app/agents/deal_desk_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "actor_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "event_type": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "message": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "metadata": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "offer_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "offer_evidence": {
+      "be_read_files": [
+        "server/app/agents/deal_desk_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "dossier_json": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "market_comps": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "offer_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "offers": {
+      "be_read_files": [
+        "server/app/agents/deal_completion.py",
+        "server/app/agents/deal_risk.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "amount": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "buyer_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "counter_count": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "expires_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "message": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "seller_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "item_id",
+        "currency"
+      ]
+    },
+    "on_demand_lookups": {
+      "be_read_files": [
+        "server/app/agents/on_demand_enrich.py"
+      ],
+      "be_write_files": [
+        "server/app/agents/on_demand_enrich.py"
+      ],
+      "columns": {
+        "category": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "cost_cents": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "fetch_count": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "hit_count": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_ref": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_error": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_fetched_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_provider": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "portfolio_values": {
+      "be_read_files": [],
+      "be_write_files": [],
+      "columns": {
+        "at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "value": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/portfolioProvider.ts",
+        "src/store/collectionStore.ts"
+      ],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "prediction_sessions": {
+      "be_read_files": [],
+      "be_write_files": [],
+      "columns": {
+        "category": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "comps": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "confidence": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "features": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price_high_eur": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "price_low_eur": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "price_mid_eur": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/app/(admin)/review.tsx"
+      ],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "price_ground_truths": {
+      "be_read_files": [
+        "server/app/features/data_moat.py"
+      ],
+      "be_write_files": [
+        "server/app/features/data_moat.py"
+      ],
+      "columns": {
+        "actual_price": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "currency": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "error_pct": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "prediction_q50": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "recorded_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "price_history": {
+      "be_read_files": [
+        "server/app/agents/dossier_agent.py",
+        "server/app/features/predict_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "as_of": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "currency": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_ref": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price_q10": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price_q50": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price_q90": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "snapshot_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "price_predictions": {
+      "be_read_files": [
+        "server/app/agents/deal_discovery_agent.py",
+        "server/app/agents/dossier_agent.py",
+        "server/app/agents/intake/enrichment.py",
+        "server/app/features/data_moat.py",
+        "server/app/features/export_router.py",
+        "server/app/features/insights_router.py",
+        "server/app/features/items_export_router.py",
+        "server/app/features/predict_router.py",
+        "server/app/features/trends_and_deepdive_router.py",
+        "server/app/features/value_summary_router.py",
+        "server/app/routes/portfolio_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "category": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "comps_count": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "conf_score": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "confidence": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "evidence_hit_ids": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "evidence_summary": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "explanation": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "generated_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "head": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_ref": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "model_version": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "nk": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "q10": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "q50": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "q90": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "raw": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "training_data_asof": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "ts": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "processed_webhook_events": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/routes/billing_router.py"
+      ],
+      "columns": {
+        "event_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "event_type": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "processed_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "profiles": {
+      "be_read_files": [],
+      "be_write_files": [],
+      "columns": {
+        "avatar_color": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "avatar_url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "display_name": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": true
+        },
+        "username": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": true
+        }
+      },
+      "fe_read_files": [
+        "src/hooks/useAuth.ts",
+        "src/providers/AuthProvider.tsx"
+      ],
+      "fe_write_files": [
+        "app/(auth)/register.tsx"
+      ],
+      "stray": []
+    },
+    "purchase_mandates": {
+      "be_read_files": [
+        "server/app/agents/purchase_router.py"
+      ],
+      "be_write_files": [
+        "server/app/agents/deal_discovery_agent.py",
+        "server/app/agents/purchase_router.py"
+      ],
+      "columns": {
+        "allowed_sources": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "condition_filter": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "cooldown_hours": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "deals_found": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "deals_purchased": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "exclude_keywords": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "expires_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_deal_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_scan_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "max_price": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "max_total_budget": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "min_trust_score": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "name": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "region": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "search_query": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "spent_total": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "affiliate_source",
+        "estimated_commission",
+        "discovered_at",
+        "notified_at",
+        "affiliate_click",
+        "raising",
+        "deal_score",
+        "mandate_id",
+        "listing_ended",
+        "provenance_score",
+        "policy_passed",
+        "added_item_id",
+        "listing_url",
+        "affiliate_url",
+        "listing_seller",
+        "listing_condition",
+        "predicted_q50",
+        "predicted_q90",
+        "listing_currency",
+        "predicted_q10",
+        "listing_source",
+        "clicked_at",
+        "listing_price"
+      ]
+    },
+    "scan_corrections": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/agents/intake_feedback_router.py"
+      ],
+      "columns": {
+        "corrected_category": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "corrected_condition": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "corrected_name": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "scan_session_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_weight": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "set_items": {
+      "be_read_files": [
+        "server/app/features/set_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "external_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "metadata": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "name": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "position": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "rarity": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "set_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "set_registry": {
+      "be_read_files": [
+        "server/app/features/insights_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "category_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "items_json": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "set_name": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "total_items": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "sets": {
+      "be_read_files": [
+        "server/app/features/collections_router.py",
+        "server/app/features/set_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "category_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "description": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "external_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "metadata": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "name": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "release_date": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "total_items": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "spend_events": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/lib/spend_tracker.py"
+      ],
+      "columns": {
+        "cost_eur": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "metadata": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "month_key": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "provider": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "ts": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "sponsor_companies": {
+      "be_read_files": [
+        "server/app/features/sponsor_company_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/sponsor_company_router.py"
+      ],
+      "columns": {
+        "admin_user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "contact_email": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "description": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "is_verified": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "logo_url": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "name": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "stripe_customer_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "website_url": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "sponsor_subscriptions": {
+      "be_read_files": [
+        "server/app/routes/billing_router.py"
+      ],
+      "be_write_files": [
+        "server/app/routes/billing_router.py"
+      ],
+      "columns": {
+        "company_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "current_period_end": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "stripe_customer_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "stripe_subscription_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "tier": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "subscriptions": {
+      "be_read_files": [
+        "server/app/routes/admin_dashboard.py",
+        "server/app/routes/billing_router.py",
+        "server/app/subscription.py"
+      ],
+      "be_write_files": [
+        "server/app/routes/billing_router.py"
+      ],
+      "columns": {
+        "cancel_at_period_end": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "current_period_end": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "current_period_start": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "plan": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "stripe_customer_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "stripe_subscription_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "supply_snapshots": {
+      "be_read_files": [
+        "server/app/agents/intake_social_proof.py",
+        "server/app/features/data_moat.py"
+      ],
+      "be_write_files": [
+        "server/app/features/data_moat.py"
+      ],
+      "columns": {
+        "avg_price_eur": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_key": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "listing_count": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "max_price_eur": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "metadata": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "min_price_eur": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "snapshot_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "task_queue": {
+      "be_read_files": [
+        "server/app/features/task_queue_router.py",
+        "server/app/lib/task_worker.py"
+      ],
+      "be_write_files": [
+        "server/app/features/task_queue_router.py",
+        "server/app/lib/task_worker.py"
+      ],
+      "columns": {
+        "attempts": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "completed_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_by": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "error_message": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "max_attempts": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "payload": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "priority": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "result": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "scheduled_for": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "started_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "task_type": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "taxonomy_corrections": {
+      "be_read_files": [
+        "server/app/agents/intake/helpers.py"
+      ],
+      "be_write_files": [
+        "server/app/features/feedback_router.py"
+      ],
+      "columns": {
+        "corrected_category": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "corrected_subtype": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "original_category": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "original_subtype": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "taxonomy_version": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "taxonomy_registry": {
+      "be_read_files": [
+        "server/app/features/taxonomy_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "categories": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_by": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "deprecated_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "effective_from": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "mapping_rules": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "migration_from": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "migration_rules": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "version": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "training_items": {
+      "be_read_files": [
+        "server/app/features/feedback_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "attributes": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "corrected_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "corrected_attributes": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "corrected_by": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "corrected_category": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "corrected_condition": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "corrected_price_eur": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "corrected_title": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "correction_notes": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "estimated_value": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "idem_key": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "quality": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "raw_condition": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "raw_price_eur": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "raw_title": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "reviewed_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "reviewed_by": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "session_uuid": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source_link": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "subcategory": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "version": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "twitch_creators": {
+      "be_read_files": [],
+      "be_write_files": [],
+      "columns": {
+        "category_tags": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "display_name": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "is_affiliate": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "is_partner": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_seen_live_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "last_stream_category": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_stream_title": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "profile_image_url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "total_stream_hours": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "total_viewer_hours": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "twitch_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "twitch_login": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "app/twitch.tsx",
+        "src/data/providers/buildPaintProvider.ts"
+      ],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "user_achievements": {
+      "be_read_files": [
+        "server/app/features/gamification_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/gamification_router.py"
+      ],
+      "columns": {
+        "achievement_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "progress": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "unlocked_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "title",
+        "category",
+        "sort_order",
+        "icon",
+        "description",
+        "xp_reward",
+        "id",
+        "threshold",
+        "tier"
+      ]
+    },
+    "user_alert_preferences": {
+      "be_read_files": [
+        "server/app/routes/user_settings_router.py"
+      ],
+      "be_write_files": [
+        "server/app/routes/user_settings_router.py"
+      ],
+      "columns": {
+        "frequency": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "milestone_enabled": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "new_listing_enabled": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price_drop_enabled": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price_drop_threshold": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price_increase_enabled": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price_increase_threshold": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "user_blocks": {
+      "be_read_files": [
+        "server/app/features/social_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/social_router.py"
+      ],
+      "columns": {
+        "blocked_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "blocker_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "user_category_follows": {
+      "be_read_files": [
+        "server/app/features/events/events_core.py",
+        "server/app/features/intelligence_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/events/events_core.py"
+      ],
+      "columns": {
+        "category_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "user_drop_alerts": {
+      "be_read_files": [
+        "server/app/features/events/events_core.py"
+      ],
+      "be_write_files": [
+        "server/app/features/events/events_core.py"
+      ],
+      "columns": {
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "event_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notify_before_hours": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "user_gamification": {
+      "be_read_files": [
+        "server/app/agents/intake_feedback_router.py",
+        "server/app/features/gamification_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/gamification_router.py"
+      ],
+      "columns": {
+        "current_streak": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_activity_date": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "level": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "longest_streak": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "monthly_xp": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "total_xp": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "weekly_xp": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "avatar_url",
+        "display_name",
+        "avatar_color"
+      ]
+    },
+    "user_price_alerts": {
+      "be_read_files": [
+        "server/app/features/alerts_feature_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/alerts_feature_router.py"
+      ],
+      "columns": {
+        "active": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "direction": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_triggered_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "metadata": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "threshold_value": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "trigger_type": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "user_privacy_settings": {
+      "be_read_files": [],
+      "be_write_files": [],
+      "columns": {
+        "allow_discovery": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "show_collection_value": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "show_item_count": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "show_online_status": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": true
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": true
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [
+        "src/components/settings/PrivacySettingsSection.tsx"
+      ],
+      "stray": []
+    },
+    "user_public_profiles": {
+      "be_read_files": [
+        "server/app/features/chat_router.py",
+        "server/app/features/search_router.py",
+        "server/app/features/social_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "avatar_url": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "bio": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "display_name": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "handle": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "interests": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "location": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/userProvider.ts"
+      ],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "user_push_tokens": {
+      "be_read_files": [
+        "server/app/features/notification_router.py",
+        "server/app/push.py"
+      ],
+      "be_write_files": [
+        "server/app/features/notification_router.py"
+      ],
+      "columns": {
+        "active": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "device_name": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "platform": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "push_token": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "user_set_progress": {
+      "be_read_files": [
+        "server/app/features/set_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/set_router.py"
+      ],
+      "columns": {
+        "completion_pct": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "owned_count": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "owned_item_ids": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "set_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": [
+        "image_url",
+        "name",
+        "category_id",
+        "total_items"
+      ]
+    },
+    "user_settings": {
+      "be_read_files": [
+        "server/app/features/data_moat.py",
+        "server/app/features/notification_router.py",
+        "server/app/features/value_summary_router.py",
+        "server/app/lib/notify.py",
+        "server/app/routes/user_settings_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/notification_router.py",
+        "server/app/routes/user_settings_router.py"
+      ],
+      "columns": {
+        "created_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "currency": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "locale": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notification_preferences": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "region": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "subscription_tier": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "v_category_missing_items_v1": {
+      "be_read_files": [],
+      "be_write_files": [],
+      "columns": {
+        "brand": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "category_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "rarity": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/categoryProvider.ts"
+      ],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "v_category_summaries_v1": {
+      "be_read_files": [],
+      "be_write_files": [],
+      "columns": {
+        "completion_pct": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "missing_count": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "name": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "owned_count": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "total_count": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/categoryProvider.ts"
+      ],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "v_chat_inbox_v1": {
+      "be_read_files": [
+        "server/app/features/chat_router.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_message_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "last_message_body": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "other_avatar_url": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "other_display_name": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "other_user_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "thread_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "unread_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/SupabaseDataProvider.ts",
+        "src/data/providers/chatProvider.ts"
+      ],
+      "fe_write_files": [],
+      "stray": [
+        "id"
+      ]
+    },
+    "v_events_with_attendees_v1": {
+      "be_read_files": [
+        "server/app/features/events/events_core.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "attendee_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "canonical_key": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "category_id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "created_by": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "date": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "description": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "end_date": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "ends_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "event_type": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "format": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "going_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "interested_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "is_full": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "is_public": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "is_sponsored": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "kind": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "latitude": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "location": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "longitude": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "max_attendees": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "online_url": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "payload": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "source": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "source_url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "sponsor_expires_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sponsor_logo_url": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "sponsor_name": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "sponsor_paid_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sponsor_tier": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "starts_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "time": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "visibility": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/categoryProvider.ts",
+        "src/data/providers/eventsProvider.ts"
+      ],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "verified_sales": {
+      "be_read_files": [
+        "server/app/features/feedback_router.py"
+      ],
+      "be_write_files": [
+        "server/app/features/feedback_router.py"
+      ],
+      "columns": {
+        "category": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "condition": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "currency": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "platform": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sale_price": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "sold_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "verified": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "vision_category_regret": {
+      "be_read_files": [
+        "server/app/features/intelligence_router.py",
+        "server/app/routes/admin_dashboard.py"
+      ],
+      "be_write_files": [],
+      "columns": {
+        "category": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "computed_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "items_added": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "items_regretted": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "regret_rate_30d": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "watchlist_items": {
+      "be_read_files": [
+        "server/app/features/intelligence_router.py",
+        "server/app/features/watchlist_router.py",
+        "server/app/routes/admin_dashboard.py"
+      ],
+      "be_write_files": [
+        "server/app/features/watchlist_router.py"
+      ],
+      "columns": {
+        "category": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "created_at": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "currency": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "image_url": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "item_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_checked_at": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "last_market_price": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "market_hit_count": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "notes": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "owned": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "predicted_value": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "price_trend": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "priority": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "target_price": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "title": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": true,
+          "fe_w": false
+        },
+        "updated_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "user_id": {
+          "be_r": true,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [
+        "src/data/providers/watchlistProvider.ts"
+      ],
+      "fe_write_files": [],
+      "stray": []
+    },
+    "worker_runs": {
+      "be_read_files": [],
+      "be_write_files": [
+        "server/app/worker_registry.py"
+      ],
+      "columns": {
+        "finished_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "id": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "metadata": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "started_at": {
+          "be_r": false,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "status": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "worker_name": {
+          "be_r": false,
+          "be_w": true,
+          "fe_r": false,
+          "fe_w": false
+        }
+      },
+      "fe_read_files": [],
+      "fe_write_files": [],
+      "stray": []
+    }
+  }
+}
