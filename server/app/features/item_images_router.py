@@ -136,13 +136,17 @@ async def list_item_images(
                 raise error_response(404, "Item not found", code=ErrorCode.NOT_FOUND)
 
             async with pool.acquire() as conn:
+                # item_images real columns: id, user_id, item_id, url,
+                # created_at. label/position never existed; image_url is
+                # `url`. The original query 500'd on every call.
                 rows = await conn.fetch(
                     """
-                    SELECT id, item_id, image_url, label, position,
+                    SELECT id, item_id, url AS image_url,
+                           NULL::text AS label, NULL::int AS position,
                            created_at::text
                     FROM public.item_images
                     WHERE item_id = $1
-                    ORDER BY position ASC, created_at ASC
+                    ORDER BY created_at ASC
                     """,
                     iid,
                 )

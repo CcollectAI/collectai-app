@@ -81,6 +81,8 @@ async def search_users(
 
     try:
         async with pool.acquire() as conn:
+            # user_public_profiles has no avatar_color column; default
+            # to NULL so the FE falls back to its tinted-initials placeholder.
             rows = await conn.fetch(
                 """
                 SELECT
@@ -88,7 +90,7 @@ async def search_users(
                     display_name,
                     handle,
                     avatar_url,
-                    avatar_color
+                    NULL::text AS avatar_color
                 FROM user_public_profiles
                 WHERE (
                     display_name ILIKE $1

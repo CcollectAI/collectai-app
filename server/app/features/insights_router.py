@@ -217,10 +217,11 @@ async def get_personalized_insights(
                     if not set_keys:
                         continue
 
-                    # Check user's owned items in this category
+                    # items has no `normalized_key` column — canonical_key
+                    # is the equivalent collection-key field.
                     owned_rows = await conn.fetch(
                         """
-                        SELECT normalized_key, title FROM items
+                        SELECT canonical_key AS normalized_key, title FROM items
                         WHERE user_id = $1 AND category = $2
                         """,
                         user_id, sr["category_id"],

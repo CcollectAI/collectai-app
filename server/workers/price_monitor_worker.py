@@ -468,10 +468,12 @@ async def check_set_completions(conn):
         for user_row in users:
             user_id = user_row["user_id"]
 
-            # Find which set items this user owns (match by normalized_key or title)
+            # Find which set items this user owns. items has no
+            # `normalized_key` column — canonical_key is the equivalent
+            # collection-key field; alias for downstream code stability.
             owned_rows = await conn.fetch(
                 """
-                SELECT normalized_key, title
+                SELECT canonical_key AS normalized_key, title
                 FROM public.items
                 WHERE user_id = $1
                   AND category = $2

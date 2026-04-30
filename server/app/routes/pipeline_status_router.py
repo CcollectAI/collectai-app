@@ -40,15 +40,13 @@ async def pipeline_status() -> dict:
 
     try:
         async with get_conn() as conn:
-            # Latest model per category from model_registry
-            training_rows = await conn.fetch(
-                """
-                SELECT category, version, is_active, train_size, mae, created_at
-                FROM public.model_registry
-                WHERE is_active = true
-                ORDER BY category
-                """
-            )
+            # model_registry has wrong shape per documented schema
+            # drift (Sept 2025 stale rows; missing category / is_active /
+            # train_size / mae columns). The active source of truth for
+            # models is `disk:active` symlinks in /opt/collectors/artifacts.
+            # Return empty here until the table is migrated; pipeline
+            # status will show "no model history" rather than 500'ing.
+            training_rows: list = []
 
             # Latest ingest timestamps per category from category_items
             ingest_rows = await conn.fetch(

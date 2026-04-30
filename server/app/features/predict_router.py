@@ -106,14 +106,18 @@ async def get_price_evidence(
             if owner_check is None:
                 raise error_response(404, "Item not found")
 
-            # Fetch latest prediction
+            # Fetch latest prediction. price_predictions has no `asof`
+            # column; the equivalent is generated_at. price_predictions
+            # also doesn't have item_id — it has item_ref (the canonical
+            # key), so this lookup needs the item's canonical_key first.
             pred = await conn.fetchrow(
                 """
                 SELECT q10, q50, q90, conf_score, explanation,
-                       evidence_summary, evidence_hit_ids, asof
+                       evidence_summary, evidence_hit_ids,
+                       generated_at AS asof
                 FROM public.price_predictions
-                WHERE item_id = $1::uuid
-                ORDER BY asof DESC
+                WHERE item_ref = (SELECT canonical_key FROM items WHERE id = $1::uuid)
+                ORDER BY generated_at DESC
                 LIMIT 1
                 """,
                 item_id,

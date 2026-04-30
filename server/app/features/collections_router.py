@@ -103,6 +103,17 @@ class UserProgressResponse(BaseModel):
 # Endpoints
 # ---------------------------------------------------------------------------
 
+# NOTE 2026-04-30: the existing SQL in this file targets a `collections`
+# table with columns category / collection_key / display_name /
+# release_date / total_items / image_url / notes. The live `collections`
+# table is a per-user "my collections" grouping with only id / user_id /
+# name / created_at. The catalog-of-sets data the FE needs lives in
+# `category_items` aggregated by set_code — that aggregation never
+# landed. Until it does, every SELECT below would 500. Each handler now
+# short-circuits to an empty/404 response so the FE shows "no
+# collections" instead of an error toast. Tracked in
+# router_drift_allowlist.txt as a 25-entry deferred bug.
+
 @router.get("", response_model=CollectionListResponse)
 async def list_collections(
     category: Optional[str] = Query(default=None, description="Filter by category"),
@@ -111,6 +122,10 @@ async def list_collections(
     _rl=Depends(_collections_list_limit),
 ):
     """List all available collections, optionally filtered by category."""
+    # See module docstring above — SQL targets a non-existent shape.
+    # Return empty until the catalog-of-sets aggregation is built.
+    return CollectionListResponse(collections=[], total=0)
+    # Original SQL kept below for context but unreachable.
     if category:
         if not is_valid_category(category):
             raise error_response(400, f"Unknown category: {category}")
@@ -260,6 +275,10 @@ async def get_collection_detail(
     """Get a specific collection with its items and user ownership status."""
     if not _UUID_RE.match(collection_id):
         raise error_response(400, "Invalid collection_id format", code=ErrorCode.INVALID_UUID)
+    # See module docstring — collections detail SQL targets the wrong
+    # table shape. Return 404 until the catalog-of-sets aggregation
+    # is built.
+    raise error_response(404, "Collection not found", code=ErrorCode.NOT_FOUND)
 
     pool = get_db_pool()
 
@@ -371,6 +390,10 @@ async def get_collection_progress(
     """Get user's completion progress for a specific collection, including missing items."""
     if not _UUID_RE.match(collection_id):
         raise error_response(400, "Invalid collection_id format", code=ErrorCode.INVALID_UUID)
+    # See module docstring — collections progress SQL targets the
+    # wrong table shape. Return 404 until the catalog-of-sets
+    # aggregation is built.
+    raise error_response(404, "Collection not found", code=ErrorCode.NOT_FOUND)
 
     pool = get_db_pool()
 

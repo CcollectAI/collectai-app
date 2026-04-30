@@ -105,9 +105,11 @@ async def unified_search(
 
     try:
         async with pool.acquire() as conn:
-            # Search items (user's own collection)
+            # Search items (user's own collection). items has no `price`
+            # column — `estimated_value` is the FE-facing field.
             item_rows = await conn.fetch(
-                """SELECT id, name, category, image_url, price
+                """SELECT id, name, category, image_url,
+                          estimated_value AS price
                    FROM items
                    WHERE user_id = $1 AND name ILIKE $2
                    LIMIT $3""",
@@ -142,9 +144,10 @@ async def unified_search(
             )
             users = [dict(r) for r in user_rows] if user_rows else []
 
-            # Search events
+            # Search events. events has no `start_date`; the FE-facing
+            # date is `date` (and the precise timestamp is `starts_at`).
             event_rows = await conn.fetch(
-                """SELECT id, title, start_date, location, category, status
+                """SELECT id, title, date AS start_date, location, category, status
                    FROM events
                    WHERE title ILIKE $1 AND status != 'cancelled'
                    LIMIT $2""",

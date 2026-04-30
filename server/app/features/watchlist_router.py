@@ -202,14 +202,17 @@ async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_curren
 
             async with pool.acquire() as conn:
 
-                # Return remaining items
+                # Return remaining items. Real table is watchlist_items;
+                # the legacy `watchlist` table doesn't have these columns,
+                # so this query 500'd with column-not-found.
+                # Mapping: watchlist_items.title → name (alias).
                 rows = await conn.fetch(
                     """
-                    SELECT id, user_id, item_id, name, category,
+                    SELECT id, user_id, item_id, title AS name, category,
                            created_at, predicted_value, currency,
                            last_market_price, last_checked_at,
                            price_trend, market_hit_count
-                    FROM watchlist
+                    FROM watchlist_items
                     WHERE user_id = $1
                     ORDER BY created_at DESC
                     """,

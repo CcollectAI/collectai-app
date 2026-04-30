@@ -182,16 +182,19 @@ async def _lookup_taxonomy_corrections(
 
     try:
         async with pool.acquire() as conn:
+            # taxonomy_corrections columns are original_category /
+            # corrected_category (not from_/to_). Aliasing back to the
+            # caller-facing names so the response shape stays stable.
             rows = await conn.fetch(
                 """
                 SELECT
-                    from_category,
-                    to_category,
+                    original_category AS from_category,
+                    corrected_category AS to_category,
                     COUNT(*) AS frequency,
                     COUNT(DISTINCT user_id) AS user_count
                 FROM taxonomy_corrections
-                WHERE from_category = $1
-                GROUP BY from_category, to_category
+                WHERE original_category = $1
+                GROUP BY original_category, corrected_category
                 HAVING COUNT(*) >= $2
                 ORDER BY COUNT(*) DESC
                 LIMIT 5

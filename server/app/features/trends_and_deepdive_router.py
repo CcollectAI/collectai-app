@@ -233,13 +233,15 @@ async def get_item_trends(
 
     try:
         async with pool.acquire() as conn:
+            # price_predictions has no `asof` or `item_id` — use
+            # generated_at + item_ref (= items.canonical_key).
             rows = await conn.fetch(
                 """
-                SELECT asof, q50, conf_score
+                SELECT generated_at AS asof, q50, conf_score
                 FROM price_predictions
-                WHERE item_id = $1
-                  AND asof >= $2
-                ORDER BY asof
+                WHERE item_ref = (SELECT canonical_key FROM items WHERE id = $1::uuid)
+                  AND generated_at >= $2
+                ORDER BY generated_at
                 """,
                 item_id,
                 cutoff,

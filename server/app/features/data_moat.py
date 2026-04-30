@@ -439,13 +439,14 @@ async def record_price_ground_truth(
 
     try:
         async with pool.acquire() as conn:
-            # Fetch latest prediction for this item
+            # price_predictions: column is generated_at, not asof; lookup
+            # joins via item_ref = items.canonical_key (no item_id col).
             pred = await conn.fetchrow(
                 """
-                SELECT q50, q10, q90, conf_score, asof
+                SELECT q50, q10, q90, conf_score, generated_at AS asof
                 FROM price_predictions
-                WHERE item_id = $1::uuid
-                ORDER BY asof DESC
+                WHERE item_ref = (SELECT canonical_key FROM items WHERE id = $1::uuid)
+                ORDER BY generated_at DESC
                 LIMIT 1
                 """,
                 item_id,

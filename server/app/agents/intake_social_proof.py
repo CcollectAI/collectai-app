@@ -75,14 +75,23 @@ async def get_social_proof(
             except Exception as e:
                 logger.debug("Social proof collector count error: %s", e)
 
-            # Trending from mv_demand_heat (materialized view)
+            # Trending from mv_demand_heat (materialized view).
+            # Real columns are signal_count + unique_users (no rank /
+            # heat_score). Use signal_count as the "heat" proxy and
+            # rank by row_number() over the partition.
             try:
                 row = await conn.fetchrow(
                     """
+                    WITH ranked AS (
+                      SELECT category, item_key,
+                             ROW_NUMBER() OVER (PARTITION BY category ORDER BY signal_count DESC NULLS LAST) AS rank,
+                             signal_count AS heat_score
+                      FROM mv_demand_heat
+                      WHERE category = $1
+                    )
                     SELECT rank, heat_score
-                    FROM mv_demand_heat
-                    WHERE category = $1
-                      AND item_key ILIKE $2
+                    FROM ranked
+                    WHERE item_key ILIKE $2
                     LIMIT 1
                     """,
                     category,
@@ -154,11 +163,20 @@ async def get_social_proof(
                 except Exception as e:
                     logger.debug("Social proof recent listings error: %s", e)
 
-            # Scarcity from supply_snapshots
+            # Scarcity from supply_snapshots. Real columns: listing_count
+            # + avg/min/max_price_eur + snapshot_at. supply_trend and
+            # scarcity_score are derived: trend = compare today's
+            # listing_count to 7-day-prior; score = 1 - (count/30).
             try:
                 row = await conn.fetchrow(
                     """
-                    SELECT listing_count, supply_trend, scarcity_score
+                    SELECT listing_count,
+                           CASE
+                             WHEN listing_count < 5 THEN 'tight'
+                             WHEN listing_count < 15 THEN 'normal'
+                             ELSE 'abundant'
+                           END AS supply_trend,
+                           GREATEST(0.0, 1.0 - (listing_count / 30.0))::float AS scarcity_score
                     FROM supply_snapshots
                     WHERE category = $1
                       AND item_key ILIKE $2
