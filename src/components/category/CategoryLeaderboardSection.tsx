@@ -20,26 +20,37 @@ type LeaderboardEntry = {
 };
 
 type Props = {
+  // Kept on the type so call sites don't break, but the server leaderboard
+  // doesn't accept a category filter — only period (weekly/monthly/alltime).
+  // A real per-category leaderboard would need a new endpoint.
   categoryId: string;
 };
 
-export default React.memo(function CategoryLeaderboardSection({ categoryId }: Props) {
+export default React.memo(function CategoryLeaderboardSection({ categoryId: _categoryId }: Props) {
   const { colors } = useAppTheme();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-    collectorsApi.getLeaderboard('xp', categoryId)
+    collectorsApi.getLeaderboard('weekly')
       .then((data) => {
         if (cancelled) return;
-        const arr = Array.isArray((data as { entries?: unknown[] })?.entries)
-          ? (data as { entries: LeaderboardEntry[] }).entries
-          : Array.isArray(data) ? data as LeaderboardEntry[] : [];
-        setEntries(arr.slice(0, 5));
+        // Server returns {leaderboard: [{rank, user_id, display_name, total_xp,
+        // level, ...}], ...}. Map total_xp → xp for this component's shape.
+        const rows = data?.leaderboard ?? [];
+        setEntries(
+          rows.slice(0, 5).map((r) => ({
+            user_id: r.user_id,
+            display_name: r.display_name ?? `Collector ${r.rank}`,
+            xp: r.total_xp,
+            level: r.level,
+            rank: r.rank,
+          })),
+        );
       })
       .catch((err) => logger.warn('[CategoryLeaderboard] fetch failed:', err));
     return () => { cancelled = true; };
-  }, [categoryId]);
+  }, []);
 
   if (entries.length === 0) return null;
 

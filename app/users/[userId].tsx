@@ -227,9 +227,11 @@ function UserProfileScreen() {
       // Fetch full gamification data for authenticated user
       collectorsApi.getAchievements()
         .then((data) => {
+          // Server returns achievements with `unlocked` / `unlocked_at` (not
+          // `earned` / `earned_at`). Mapping at the boundary.
           if (data?.achievements?.length) {
             setApiAchievements(data.achievements.map((a) => ({
-              id: a.id, title: a.title, tier: a.tier, earned: a.earned,
+              id: a.id, title: a.title, tier: a.tier, earned: a.unlocked,
             })));
           }
         })
@@ -237,7 +239,12 @@ function UserProfileScreen() {
 
       collectorsApi.getGamificationProfile()
         .then((data) => {
-          if (data?.level != null) setGamProfile({ xp: data.xp, level: data.level, streak_days: data.streak_days });
+          // Server wraps the payload in {profile: {...}} and uses `total_xp`
+          // / `current_streak` (not `xp` / `streak_days`).
+          const p = data?.profile;
+          if (p && p.level != null) {
+            setGamProfile({ xp: p.total_xp, level: p.level, streak_days: p.current_streak });
+          }
         })
         .catch((err) => logger.info('[UserProfile] API fallback:', err));
 

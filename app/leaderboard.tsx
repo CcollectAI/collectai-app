@@ -61,8 +61,19 @@ const LeaderboardScreen: React.FC = () => {
     try {
       const data = await collectorsApi.getLeaderboard();
       if (guard.cancelled) return;
-      if (data?.entries?.length) {
-        setApiEntries(data.entries);
+      // gamification_router returns {leaderboard:[...], period, user_rank, total_count}.
+      // Each entry has total_xp / level / current_streak (no `xp` field).
+      if (data?.leaderboard?.length) {
+        setApiEntries(
+          data.leaderboard.map((r) => ({
+            rank: r.rank,
+            user_id: r.user_id,
+            display_name: r.display_name ?? `Collector ${r.rank}`,
+            xp: r.total_xp,
+            level: r.level,
+            avatar_url: r.avatar_url,
+          })),
+        );
       }
     } catch (err) {
       if (guard.cancelled) return;
