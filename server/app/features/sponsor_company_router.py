@@ -601,13 +601,16 @@ async def get_sponsor_analytics(
         raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
     async with pool.acquire() as conn:
-        # Verify ownership
+        # Verify ownership. asyncpg returns admin_user_id as a UUID object;
+        # user_id from the JWT is a str. UUID('x') != 'x' even when the
+        # textual value matches, so analytics 403'd for the actual owner.
+        # Other handlers in this file already cast — line 289, 232, 326.
         owner = await conn.fetchval(
             "SELECT admin_user_id FROM sponsor_companies WHERE id = $1", company_id
         )
         if not owner:
             raise error_response(404, "Company not found", code=ErrorCode.NOT_FOUND)
-        if owner != user_id:
+        if str(owner) != user_id:
             raise error_response(403, "Not the company admin", code=ErrorCode.FORBIDDEN)
 
         # Aggregate analytics across all sponsored events
