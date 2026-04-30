@@ -240,10 +240,13 @@ async def batch_archive_items(
     if pool is not None:
         try:
             async with pool.acquire() as conn:
+                # items has a dedicated `archived` boolean column.
+                # Earlier path stuffed _archived:true into a non-existent
+                # `attributes_json` jsonb; UPDATE returned 0 every time.
                 result = await conn.execute(
                     """
                     UPDATE items
-                    SET attributes_json = COALESCE(attributes_json, '{}'::jsonb) || '{"_archived": true}'::jsonb
+                    SET archived = true
                     WHERE id = ANY($1::uuid[])
                       AND user_id = $2::uuid
                     """,
