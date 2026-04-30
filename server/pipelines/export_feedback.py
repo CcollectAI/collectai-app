@@ -152,7 +152,7 @@ async def _process_feedback(
             batch = item_ids[i : i + 200]
             item_rows = await conn.fetch(
                 """
-                SELECT id, category, condition, attributes_json
+                SELECT id, category, condition, attrs AS attributes_json
                 FROM public.items
                 WHERE id = ANY($1::text[])
                 """,

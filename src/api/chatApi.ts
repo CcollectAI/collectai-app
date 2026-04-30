@@ -36,9 +36,9 @@ export const getChatMessages = (
 
 // EC2 POST /chat/threads/{id}/messages takes `content` (SendMessageRequest at
 // chat_router.py:48-49) and returns `{ message: { id, thread_id, sender_id,
-// body, created_at, edited_at, deleted_at } }`. Calling EC2 (instead of
-// supabase.rpc('rpc_send_message_v1', ...)) is what fires `_notify_new_message`
-// → push notification to the recipient. RPC path bypasses push entirely.
+// body, created_at, edited_at, deleted_at } }`. Calling EC2 (instead of the
+// equivalent Supabase RPC) is what fires `_notify_new_message` → push
+// notification to the recipient. RPC path bypasses push entirely.
 export const sendChatMessage = (threadId: string, text: string) =>
   post<{
     message: {
