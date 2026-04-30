@@ -300,17 +300,16 @@ async def list_announcements(
     if pool is not None:
         try:
             async with pool.acquire() as conn:
-                # Verify caller is attendee or host. Explicit ::uuid casts —
-                # the str params from URL/JWT can't bind to a uuid column
-                # through a UNION ALL on this pg/asyncpg combo (the planner
-                # picks a different param type per branch). Other handlers
-                # in this file work because their auth query is a single
-                # UNION over the events table only; this one mixes
-                # event_attendees and events.
+                # Verify caller is attendee or host. event_attendees.event_id
+                # is TEXT (legacy schema mismatch — the rest of the system
+                # uses uuid), while events.id is UUID. Cast both sides on the
+                # event_attendees branch so it doesn't fail with
+                # "operator does not exist: text = uuid". Other handlers in
+                # this file only query `events`, so they don't hit this.
                 access_row = await conn.fetchrow(
                     """
                     SELECT 1 FROM event_attendees
-                        WHERE event_id = $1::uuid AND user_id = $2::uuid
+                        WHERE event_id::uuid = $1::uuid AND user_id = $2::uuid
                             AND status IN ('going', 'interested')
                     UNION ALL
                     SELECT 1 FROM events
