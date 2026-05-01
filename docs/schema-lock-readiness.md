@@ -27,11 +27,11 @@ Tables with stray refs (code references columns not in schema)
 
 | table | total cols | LOCKED | FE_DRIFT | strays | next E2E step |
 |---|---|---|---|---|---|
-| `build_paint_projects` | 15 | 0 | 9 | `project_id, minutes, last_seen_live_at...` | Fix strays: ['project_id', 'minutes', 'last_seen_live_at'] (rename in code OR add column) |
-| `build_paint_steps` | 9 | 0 | 6 | `content` | Fix strays: ['content'] (rename in code OR add column) |
-| `build_paint_sessions` | 7 | 0 | 2 | `last_seen_live_at` | Fix strays: ['last_seen_live_at'] (rename in code OR add column) |
 | `items` | 70 | 8 | 2 | `images, subtype_id, progress_pct...` | Fix strays: ['images', 'subtype_id', 'progress_pct'] (rename in code OR add column) |
 | `achievements` | 10 | 0 | 0 | `unlocked_at, progress` | Fix strays: ['unlocked_at', 'progress'] (rename in code OR add column) |
+| `build_paint_projects` | 15 | 0 | 0 | `project_id, minutes, last_seen_live_at...` | Fix strays: ['project_id', 'minutes', 'last_seen_live_at'] (rename in code OR add column) |
+| `build_paint_sessions` | 7 | 0 | 0 | `last_seen_live_at` | Fix strays: ['last_seen_live_at'] (rename in code OR add column) |
+| `build_paint_steps` | 9 | 0 | 0 | `content` | Fix strays: ['content'] (rename in code OR add column) |
 | `category_items` | 18 | 0 | 0 | `price_eur` | Fix strays: ['price_eur'] (rename in code OR add column) |
 | `challenges` | 11 | 0 | 0 | `completed_at, current_count, completed` | Fix strays: ['completed_at', 'current_count', 'completed'] (rename in code OR add column) |
 | `chat_messages_v1` | 7 | 5 | 0 | `so` | Fix strays: ['so'] (rename in code OR add column) |
@@ -48,28 +48,20 @@ Tables with stray refs (code references columns not in schema)
 | `user_set_progress` | 7 | 0 | 0 | `image_url, name, category_id...` | Fix strays: ['image_url', 'name', 'category_id'] (rename in code OR add column) |
 | `v_chat_inbox_v1` | 10 | 7 | 0 | `id` | Fix strays: ['id'] (rename in code OR add column) |
 
-## ⚠️ partial lock — 12 tables
+## ⚠️ partial lock — 4 tables
 
-Tables with FE_DRIFT — some columns broken contract
+Tables with FE_DRIFT — FE column referenced but the SAME table has BE handlers that ignore it (likely real bug)
 
 | table | total cols | LOCKED | FE_DRIFT | strays | next E2E step |
 |---|---|---|---|---|---|
-| `prediction_sessions` | 13 | 0 | 9 | — | BE read-handler for: ['category', 'confidence', 'created_at'] |
 | `chat_dm_requests_v1` | 9 | 1 | 6 | — | BE read-handler for: ['context', 'created_at', 'id'] |
-| `v_category_summaries_v1` | 6 | 0 | 6 | — | BE read-handler for: ['completion_pct', 'id', 'missing_count'] |
 | `v_events_with_attendees_v1` | 42 | 26 | 6 | — | BE read-handler for: ['ends_at', 'is_full', 'source_url'] |
-| `build_paint_notes` | 5 | 0 | 5 | — | BE write-handler for: ['content', 'project_id', 'user_id']; BE read-handler for: ['content', 'created_at', 'id'] |
-| `v_category_missing_items_v1` | 7 | 0 | 5 | — | BE read-handler for: ['brand', 'category_id', 'id'] |
 | `watchlist_items` | 18 | 5 | 4 | — | BE read-handler for: ['notes', 'owned', 'priority'] |
-| `profiles` | 6 | 0 | 3 | — | BE write-handler for: ['id', 'username']; BE read-handler for: ['created_at', 'id', 'username'] |
-| `portfolio_values` | 3 | 0 | 2 | — | BE read-handler for: ['at', 'value'] |
-| `twitch_creators` | 16 | 0 | 2 | — | BE read-handler for: ['id', 'last_seen_live_at'] |
-| `user_privacy_settings` | 6 | 0 | 2 | — | BE write-handler for: ['updated_at', 'user_id'] |
 | `user_public_profiles` | 9 | 4 | 2 | — | BE read-handler for: ['bio', 'interests'] |
 
 ## 🔧 needs round-trip wiring — 62 tables
 
-Tables wired in only one direction
+Tables wired in only one direction (server-only or FE-only with no opposite link)
 
 | table | total cols | LOCKED | FE_DRIFT | strays | next E2E step |
 |---|---|---|---|---|---|
@@ -135,4 +127,19 @@ Tables wired in only one direction
 | `verified_sales` | 12 | 0 | 0 | — | FE read needed for: ['created_at', 'id']; FE write needed for: ['category', 'condition', 'currency'] |
 | `vision_category_regret` | 5 | 0 | 0 | — | FE read needed for: ['category', 'computed_at', 'items_added'] |
 | `worker_runs` | 6 | 0 | 0 | — | FE write needed for: ['metadata', 'status', 'worker_name'] |
+
+## 🔓 RLS-direct (intentional, no BE handler) — 8 tables
+
+Tables FE accesses directly via Supabase REST + RLS — no BE handler exists for the table at all. Intentional pattern.
+
+| table | total cols | LOCKED | FE_DRIFT | strays | next E2E step |
+|---|---|---|---|---|---|
+| `build_paint_notes` | 5 | 0 | 0 | — | consider locking |
+| `portfolio_values` | 3 | 0 | 0 | — | consider locking |
+| `prediction_sessions` | 13 | 0 | 0 | — | consider locking |
+| `profiles` | 6 | 0 | 0 | — | consider locking |
+| `twitch_creators` | 16 | 0 | 0 | — | consider locking |
+| `user_privacy_settings` | 6 | 0 | 0 | — | consider locking |
+| `v_category_missing_items_v1` | 7 | 0 | 0 | — | consider locking |
+| `v_category_summaries_v1` | 6 | 0 | 0 | — | consider locking |
 

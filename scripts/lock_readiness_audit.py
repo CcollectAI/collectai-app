@@ -28,18 +28,41 @@ MATRIX = ROOT / "docs" / "schema-lock-matrix.json"
 SCHEMA = ROOT / "scripts" / "schema.lock.json"
 OUT = ROOT / "docs" / "schema-lock-readiness.md"
 
-def classify(col_state: dict) -> str:
+def classify(col_state: dict, table_state: dict) -> str:
+    """Classify a single column.
+
+    table_state has the per-table aggregate counters used to detect when
+    a table is FE-direct-only (RLS-protected) vs has BE handlers that
+    the FE inconsistently bypasses.
+    """
     fr, fw, br, bw = col_state["fe_r"], col_state["fe_w"], col_state["be_r"], col_state["be_w"]
+    has_any_be_read = table_state["be_read_total"] > 0
+    has_any_be_write = table_state["be_write_total"] > 0
+
     if (fw and bw) or (fr and br):
         return "LOCKED"
-    if fw and not bw:
-        return "FE_DRIFT"  # FE writes column server doesn't write
-    if fr and not br:
-        return "FE_DRIFT"  # FE reads column server doesn't read
+
+    # If FE writes a column and the BE has NO writes on this table at all,
+    # this is RLS-direct write — intentional, the table is protected by
+    # row-level security and the FE writes through Supabase REST. Same for
+    # reads. Not a bug.
+    if fw and not bw and not has_any_be_write:
+        return "RLS_DIRECT_WRITE"
+    if fr and not br and not has_any_be_read:
+        return "RLS_DIRECT_READ"
+
+    # If the BE DOES write/read this table but not this specific column,
+    # it's a real contract gap — FE references something the BE handler
+    # doesn't acknowledge.
+    if fw and not bw and has_any_be_write:
+        return "FE_DRIFT"
+    if fr and not br and has_any_be_read:
+        return "FE_DRIFT"
+
     if bw and not fw:
-        return "WRITE_ONLY"  # server writes, FE doesn't (compute/audit cols)
+        return "WRITE_ONLY"
     if br and not fr:
-        return "READ_ONLY"  # server reads, FE doesn't expose
+        return "READ_ONLY"
     return "SCHEMA_ONLY"
 
 def status_emoji(stats: dict, has_strays: bool) -> str:
@@ -47,6 +70,9 @@ def status_emoji(stats: dict, has_strays: bool) -> str:
         return "🚨 fix strays first"
     if stats["FE_DRIFT"] > 0:
         return "⚠️ partial lock"
+    rls_direct = stats["RLS_DIRECT_WRITE"] + stats["RLS_DIRECT_READ"]
+    if rls_direct > 0 and stats["LOCKED"] == 0:
+        return "🔓 RLS-direct (intentional, no BE handler)"
     if stats["LOCKED"] == 0 and (stats["READ_ONLY"] + stats["WRITE_ONLY"]) > 0:
         return "🔧 needs round-trip wiring"
     if stats["LOCKED"] > 0 and stats["FE_DRIFT"] == 0:
@@ -88,7 +114,12 @@ def main():
     for table_name in sorted(matrix["tables"].keys()):
         t = matrix["tables"][table_name]
         cols = t["columns"]
-        stats = Counter(classify(s) for s in cols.values())
+        # Aggregate: does BE touch this table at all?
+        table_state = {
+            "be_read_total": sum(1 for s in cols.values() if s["be_r"]),
+            "be_write_total": sum(1 for s in cols.values() if s["be_w"]),
+        }
+        stats = Counter(classify(s, table_state) for s in cols.values())
         strays = t["stray"]
         status = status_emoji(stats, bool(strays))
         n_total = len(cols)
@@ -99,8 +130,9 @@ def main():
     # Bucket by status emoji
     BUCKETS = [
         ("🚨 fix strays first", "Tables with stray refs (code references columns not in schema)"),
-        ("⚠️ partial lock", "Tables with FE_DRIFT — some columns broken contract"),
-        ("🔧 needs round-trip wiring", "Tables wired in only one direction"),
+        ("⚠️ partial lock", "Tables with FE_DRIFT — FE column referenced but the SAME table has BE handlers that ignore it (likely real bug)"),
+        ("🔧 needs round-trip wiring", "Tables wired in only one direction (server-only or FE-only with no opposite link)"),
+        ("🔓 RLS-direct (intentional, no BE handler)", "Tables FE accesses directly via Supabase REST + RLS — no BE handler exists for the table at all. Intentional pattern."),
         ("✅ ready to lock", "Tables fully verified, ready to lock"),
         ("· no FE-side activity", "Tables touched only by server (admin / worker / internal)"),
     ]
@@ -119,7 +151,11 @@ def main():
             stray_str = f"`{', '.join(strays[:3])}{'...' if len(strays) > 3 else ''}`" if strays else "—"
             # Suggest the next E2E step for this table
             cols = t["columns"]
-            drift_cols = [c for c, s in cols.items() if classify(s) == "FE_DRIFT"]
+            table_state = {
+                "be_read_total": sum(1 for s in cols.values() if s["be_r"]),
+                "be_write_total": sum(1 for s in cols.values() if s["be_w"]),
+            }
+            drift_cols = [c for c, s in cols.items() if classify(s, table_state) == "FE_DRIFT"]
             if strays:
                 step = f"Fix strays: {strays[:3]} (rename in code OR add column)"
             elif drift_cols:
@@ -131,8 +167,8 @@ def main():
                 step = "; ".join(parts) or "review FE_DRIFT cols"
             elif stats["LOCKED"] == 0:
                 # Round-trip needed
-                ro = [c for c, s in cols.items() if classify(s) == "READ_ONLY"]
-                wo = [c for c, s in cols.items() if classify(s) == "WRITE_ONLY"]
+                ro = [c for c, s in cols.items() if classify(s, table_state) == "READ_ONLY"]
+                wo = [c for c, s in cols.items() if classify(s, table_state) == "WRITE_ONLY"]
                 parts = []
                 if ro: parts.append(f"FE read needed for: {ro[:3]}")
                 if wo: parts.append(f"FE write needed for: {wo[:3]}")
