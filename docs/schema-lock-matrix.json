@@ -70,10 +70,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "unlocked_at",
-        "progress"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "activity_feed": {
       "be_read_files": [
@@ -134,7 +132,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "alert_trigger_history": {
       "be_read_files": [
@@ -201,7 +200,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "beta_signups": {
       "be_read_files": [
@@ -244,7 +244,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "build_paint_notes": {
       "be_read_files": [],
@@ -287,7 +288,8 @@
       "fe_write_files": [
         "src/data/providers/buildPaintProvider.ts"
       ],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "build_paint_projects": {
       "be_read_files": [],
@@ -390,13 +392,8 @@
       "fe_write_files": [
         "src/data/providers/buildPaintProvider.ts"
       ],
-      "stray": [
-        "project_id",
-        "minutes",
-        "last_seen_live_at",
-        "step_order",
-        "title"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "build_paint_sessions": {
       "be_read_files": [],
@@ -449,9 +446,8 @@
         "src/data/providers/buildPaintProvider.ts"
       ],
       "fe_write_files": [],
-      "stray": [
-        "last_seen_live_at"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "build_paint_steps": {
       "be_read_files": [],
@@ -503,7 +499,7 @@
           "be_r": false,
           "be_w": false,
           "fe_r": true,
-          "fe_w": true
+          "fe_w": false
         },
         "updated_at": {
           "be_r": false,
@@ -518,9 +514,8 @@
       "fe_write_files": [
         "src/data/providers/buildPaintProvider.ts"
       ],
-      "stray": [
-        "content"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "calibration_snapshots": {
       "be_read_files": [
@@ -585,7 +580,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "catalog_suggestions": {
       "be_read_files": [
@@ -672,7 +668,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "category_candidates": {
       "be_read_files": [
@@ -746,7 +743,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "category_items": {
       "be_read_files": [
@@ -871,9 +869,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "price_eur"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "challenges": {
       "be_read_files": [
@@ -950,11 +947,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "completed_at",
-        "current_count",
-        "completed"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "chat_dm_requests_v1": {
       "be_read_files": [
@@ -1021,7 +1015,8 @@
         "src/data/providers/chatProvider.ts"
       ],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "chat_messages_v1": {
       "be_read_files": [
@@ -1079,9 +1074,8 @@
         "src/data/providers/chatProvider.ts"
       ],
       "fe_write_files": [],
-      "stray": [
-        "so"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "chat_thread_members_v1": {
       "be_read_files": [
@@ -1116,7 +1110,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "chat_thread_reads_v1": {
       "be_read_files": [],
@@ -1151,7 +1146,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "chat_threads_v1": {
       "be_read_files": [
@@ -1217,45 +1213,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
-    },
-    "collections": {
-      "be_read_files": [
-        "server/app/features/collections_router.py"
-      ],
-      "be_write_files": [],
-      "columns": {
-        "created_at": {
-          "be_r": false,
-          "be_w": false,
-          "fe_r": false,
-          "fe_w": false
-        },
-        "id": {
-          "be_r": false,
-          "be_w": false,
-          "fe_r": false,
-          "fe_w": false
-        },
-        "name": {
-          "be_r": false,
-          "be_w": false,
-          "fe_r": false,
-          "fe_w": false
-        },
-        "user_id": {
-          "be_r": false,
-          "be_w": false,
-          "fe_r": false,
-          "fe_w": false
-        }
-      },
-      "fe_read_files": [],
-      "fe_write_files": [],
-      "stray": [
-        "below",
-        "optionally"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "demand_signals": {
       "be_read_files": [
@@ -1324,7 +1283,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "dm_threads": {
       "be_read_files": [
@@ -1374,7 +1334,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "event_announcement_reads": {
       "be_read_files": [],
@@ -1403,7 +1364,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "event_announcements": {
       "be_read_files": [],
@@ -1456,7 +1418,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "event_attendees": {
       "be_read_files": [
@@ -1502,25 +1465,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "max_attendees",
-        "sponsor_tier",
-        "location",
-        "is_public",
-        "sponsor_expires_at",
-        "title",
-        "created_by",
-        "online_url",
-        "description",
-        "end_date",
-        "sponsor_paid_at",
-        "kind",
-        "category_id",
-        "time",
-        "date",
-        "format",
-        "image_url"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "event_follows_v1": {
       "be_read_files": [
@@ -1573,7 +1519,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "event_sponsor_analytics": {
       "be_read_files": [],
@@ -1627,7 +1574,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "event_templates": {
       "be_read_files": [
@@ -1676,7 +1624,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "event_tickets": {
       "be_read_files": [],
@@ -1735,7 +1684,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "events": {
       "be_read_files": [
@@ -2021,7 +1971,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "feedback": {
       "be_read_files": [],
@@ -2110,12 +2061,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "label",
-        "item_id",
-        "user_id",
-        "observed_at"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "item_images": {
       "be_read_files": [
@@ -2159,11 +2106,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "label",
-        "position",
-        "image_url"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "item_provenance_events": {
       "be_read_files": [
@@ -2206,7 +2150,7 @@
           "fe_w": false
         },
         "note": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
@@ -2226,7 +2170,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "items": {
       "be_read_files": [
@@ -2563,6 +2508,24 @@
           "fe_r": false,
           "fe_w": false
         },
+        "progress_notes": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "progress_pct": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
+        "progress_status": {
+          "be_r": true,
+          "be_w": false,
+          "fe_r": false,
+          "fe_w": false
+        },
         "purchase_currency": {
           "be_r": false,
           "be_w": true,
@@ -2689,16 +2652,9 @@
       "fe_write_files": [
         "src/data/providers/itemsProvider.ts"
       ],
-      "stray": [
-        "images",
-        "subtype_id",
-        "progress_pct",
-        "normalized_key",
-        "progress_notes",
-        "q50",
-        "taxonomy_version",
-        "attributes_json",
-        "progress_status"
+      "stray": [],
+      "stray_allowlisted": [
+        "images"
       ]
     },
     "mandate_deals": {
@@ -2905,7 +2861,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "market_hits": {
       "be_read_files": [
@@ -3107,10 +3064,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "domestic_only",
-        "ships_from"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "marketplace_account_defaults": {
       "be_read_files": [
@@ -3177,7 +3132,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "marketplace_accounts": {
       "be_read_files": [
@@ -3274,7 +3230,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "marketplace_fee_schedules": {
       "be_read_files": [
@@ -3345,7 +3302,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "marketplace_listings": {
       "be_read_files": [
@@ -3586,7 +3544,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "marketplace_sales": {
       "be_read_files": [
@@ -3719,7 +3678,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "model_registry": {
       "be_read_files": [
@@ -3772,13 +3732,11 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "s3_key",
-        "is_active",
+      "stray": [],
+      "stray_allowlisted": [
+        "artifact_json",
         "model_type",
-        "category",
-        "uncertainty_scale",
-        "artifact_json"
+        "uncertainty_scale"
       ]
     },
     "mv_demand_heat": {
@@ -3827,7 +3785,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "mv_supply_trend": {
       "be_read_files": [
@@ -3874,7 +3833,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "notification_history": {
       "be_read_files": [
@@ -3942,7 +3902,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "notification_impressions": {
       "be_read_files": [],
@@ -3995,7 +3956,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "notification_interactions": {
       "be_read_files": [],
@@ -4042,7 +4004,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "notification_outcomes": {
       "be_read_files": [],
@@ -4107,7 +4070,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "object_pointers": {
       "be_read_files": [
@@ -4199,7 +4163,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "offer_events": {
       "be_read_files": [
@@ -4258,7 +4223,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "offer_evidence": {
       "be_read_files": [
@@ -4299,7 +4265,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "offers": {
       "be_read_files": [
@@ -4377,10 +4344,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "item_id",
-        "currency"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "on_demand_lookups": {
       "be_read_files": [
@@ -4441,7 +4406,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "portfolio_values": {
       "be_read_files": [],
@@ -4450,7 +4416,7 @@
         "at": {
           "be_r": false,
           "be_w": false,
-          "fe_r": true,
+          "fe_r": false,
           "fe_w": false
         },
         "user_id": {
@@ -4471,7 +4437,8 @@
         "src/store/collectionStore.ts"
       ],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "prediction_sessions": {
       "be_read_files": [],
@@ -4560,7 +4527,8 @@
         "src/app/(admin)/review.tsx"
       ],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "price_ground_truths": {
       "be_read_files": [
@@ -4621,7 +4589,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "price_history": {
       "be_read_files": [
@@ -4699,7 +4668,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "price_predictions": {
       "be_read_files": [
@@ -4846,7 +4816,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "processed_webhook_events": {
       "be_read_files": [],
@@ -4875,7 +4846,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "profiles": {
       "be_read_files": [],
@@ -4925,7 +4897,8 @@
       "fe_write_files": [
         "app/(auth)/register.tsx"
       ],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "purchase_mandates": {
       "be_read_files": [
@@ -4943,49 +4916,49 @@
           "fe_w": false
         },
         "category": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
         },
         "condition_filter": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
         },
         "cooldown_hours": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
         },
         "created_at": {
-          "be_r": true,
+          "be_r": false,
           "be_w": false,
           "fe_r": false,
           "fe_w": false
         },
         "deals_found": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
         },
         "deals_purchased": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
         },
         "exclude_keywords": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
         },
         "expires_at": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
@@ -5003,13 +4976,13 @@
           "fe_w": false
         },
         "last_scan_at": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
         },
         "max_price": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
@@ -5027,19 +5000,19 @@
           "fe_w": false
         },
         "name": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
         },
         "region": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
         },
         "search_query": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
@@ -5051,19 +5024,19 @@
           "fe_w": false
         },
         "status": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
         },
         "updated_at": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
         },
         "user_id": {
-          "be_r": true,
+          "be_r": false,
           "be_w": true,
           "fe_r": false,
           "fe_w": false
@@ -5071,31 +5044,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "listing_source",
-        "clicked_at",
-        "listing_currency",
-        "added_item_id",
-        "predicted_q10",
-        "discovered_at",
-        "affiliate_click",
-        "policy_passed",
-        "predicted_q50",
-        "notified_at",
-        "estimated_commission",
-        "listing_ended",
-        "affiliate_source",
-        "predicted_q90",
-        "mandate_id",
-        "listing_url",
-        "provenance_score",
-        "listing_seller",
-        "affiliate_url",
-        "deal_score",
-        "listing_condition",
-        "listing_price",
-        "raising"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "scan_corrections": {
       "be_read_files": [],
@@ -5160,7 +5110,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "set_items": {
       "be_read_files": [
@@ -5225,7 +5176,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "set_registry": {
       "be_read_files": [
@@ -5284,7 +5236,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "sets": {
       "be_read_files": [
@@ -5362,7 +5315,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "spend_events": {
       "be_read_files": [],
@@ -5409,7 +5363,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "sponsor_companies": {
       "be_read_files": [
@@ -5488,7 +5443,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "sponsor_subscriptions": {
       "be_read_files": [
@@ -5561,7 +5517,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "subscriptions": {
       "be_read_files": [
@@ -5642,7 +5599,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "supply_snapshots": {
       "be_read_files": [
@@ -5716,7 +5674,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "task_queue": {
       "be_read_files": [
@@ -5815,7 +5774,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "taxonomy_corrections": {
       "be_read_files": [
@@ -5888,7 +5848,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "taxonomy_registry": {
       "be_read_files": [
@@ -5953,7 +5914,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "training_items": {
       "be_read_files": [
@@ -6144,7 +6106,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "twitch_creators": {
       "be_read_files": [],
@@ -6252,7 +6215,8 @@
         "src/data/providers/buildPaintProvider.ts"
       ],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_achievements": {
       "be_read_files": [
@@ -6289,17 +6253,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "tier",
-        "id",
-        "icon",
-        "title",
-        "xp_reward",
-        "threshold",
-        "category",
-        "sort_order",
-        "description"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_alert_preferences": {
       "be_read_files": [
@@ -6366,7 +6321,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_blocks": {
       "be_read_files": [
@@ -6403,7 +6359,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_category_follows": {
       "be_read_files": [
@@ -6435,7 +6392,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_drop_alerts": {
       "be_read_files": [
@@ -6472,7 +6430,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_gamification": {
       "be_read_files": [
@@ -6540,11 +6499,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "avatar_url",
-        "avatar_color",
-        "display_name"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_price_alerts": {
       "be_read_files": [
@@ -6623,7 +6579,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_privacy_settings": {
       "be_read_files": [],
@@ -6670,7 +6627,8 @@
       "fe_write_files": [
         "src/components/settings/PrivacySettingsSection.tsx"
       ],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_public_profiles": {
       "be_read_files": [
@@ -6739,7 +6697,8 @@
         "src/data/providers/userProvider.ts"
       ],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_push_tokens": {
       "be_read_files": [
@@ -6801,7 +6760,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_set_progress": {
       "be_read_files": [
@@ -6856,12 +6816,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": [
-        "image_url",
-        "name",
-        "category_id",
-        "total_items"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "user_settings": {
       "be_read_files": [
@@ -6927,7 +6883,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "v_category_missing_items_v1": {
       "be_read_files": [],
@@ -6980,7 +6937,8 @@
         "src/data/providers/categoryProvider.ts"
       ],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "v_category_summaries_v1": {
       "be_read_files": [],
@@ -7027,7 +6985,8 @@
         "src/data/providers/categoryProvider.ts"
       ],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "v_chat_inbox_v1": {
       "be_read_files": [
@@ -7101,9 +7060,8 @@
         "src/data/providers/chatProvider.ts"
       ],
       "fe_write_files": [],
-      "stray": [
-        "id"
-      ]
+      "stray": [],
+      "stray_allowlisted": []
     },
     "v_events_with_attendees_v1": {
       "be_read_files": [
@@ -7369,7 +7327,8 @@
         "src/data/providers/eventsProvider.ts"
       ],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "verified_sales": {
       "be_read_files": [
@@ -7454,7 +7413,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "vision_category_regret": {
       "be_read_files": [
@@ -7496,7 +7456,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "watchlist_items": {
       "be_read_files": [
@@ -7621,7 +7582,8 @@
         "src/data/providers/watchlistProvider.ts"
       ],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     },
     "worker_runs": {
       "be_read_files": [],
@@ -7668,7 +7630,8 @@
       },
       "fe_read_files": [],
       "fe_write_files": [],
-      "stray": []
+      "stray": [],
+      "stray_allowlisted": []
     }
   }
 }

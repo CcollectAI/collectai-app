@@ -11,9 +11,22 @@ Three-tier subscription model, fully wired end-to-end.
 | Purchase mandates | 3 | 10 | 50 |
 | Deal discovery | No | Yes | Yes |
 | Dossier PDF export | No | Yes | Yes |
-| Advanced analytics | No | No | Yes |
+| Condition Grading (item card) | No | Yes | Yes |
+| Set Completion (sets-to-complete) | No | Yes | Yes |
+| Advanced analytics (price trend, item history, market prices) | No | No | Yes |
 | Basic valuation | Yes | Yes | Yes |
 | Community events | Yes | Yes | Yes |
+| Ads | Yes | No | No |
+
+### FE↔BE limits contract
+
+`GET /billing/status` returns a `limits` dict whose keys MUST match the
+shape consumed by the FE in `src/hooks/useBillingLimits.ts`. Required
+keys (as of 2026-05-01): `max_mandates`, `deal_discovery`, `dossier_pdf`,
+`advanced_analytics`, `condition_grading`, `set_completion`, `show_ads`.
+Any missing key is `undefined` → falsy on the FE → silently locked UI for
+paid users. The contract is pinned by `scripts/e2e_paid_features_billing.py`,
+which fails loudly on either-side drift.
 
 ### What's Built
 

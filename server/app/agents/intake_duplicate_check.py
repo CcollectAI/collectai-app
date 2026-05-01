@@ -78,11 +78,11 @@ async def check_user_duplicates(
                         fuzzy_pattern = f"%{' '.join(tokens)}%"
                         rows = await conn.fetch(
                             """
-                            SELECT id, title, normalized_key
+                            SELECT id, title, canonical_key AS normalized_key
                             FROM items
                             WHERE user_id = $1::uuid
                               AND category = $2
-                              AND normalized_key ILIKE $3
+                              AND canonical_key ILIKE $3
                             LIMIT 3
                             """,
                             user_id,

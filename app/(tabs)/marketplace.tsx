@@ -32,6 +32,7 @@ import { useTranslation } from "react-i18next";
 import { CATEGORIES } from "@/data/categories";
 import { collectorsApi } from "@/api/collectorsApi";
 import { dataProvider, type Item as DataItem, type PublicUserProfile } from "@/data";
+import { COMMUNITY_GATED } from "@/config/featureFlags";
 import { getJSON, setJSON } from "@/lib/storage";
 import { useToast } from "@/components/Toast";
 import { fireHaptic, HapticIntent } from "@/haptics";
@@ -603,8 +604,11 @@ const SearchScreen: React.FC = () => {
         {/* Ad slot — invisible until FEATURE_ADS is enabled */}
         <AdBanner placement="marketplace_banner" />
 
-        {/* Find Collectors button */}
-        {!trimmedQuery && (
+        {/* Find Collectors button — gated until community has density.
+            With <50 public profiles, the modal returns 0 results for any
+            non-trivial query and looks broken. Hidden via COMMUNITY_GATED;
+            modal still mounts via deep-link if a future entry surfaces it. */}
+        {!trimmedQuery && !COMMUNITY_GATED && (
           <AnimatedPressable
             style={[styles.findCollectorsButton, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
             onPress={openUserSearch}

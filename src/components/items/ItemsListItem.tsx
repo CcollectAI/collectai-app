@@ -26,6 +26,11 @@ interface Item {
   condition?: string;
   notes?: string;
   imageUrl?: string;
+  // Purchase data — surfaced 2026-05-01. null = item has no purchase price
+  // recorded (most QuickScan-only items); undefined = field not on the row
+  // (older callers that haven't been updated). Either case → suppress display.
+  purchasePriceEur?: number | null;
+  purchasedAt?: string | null;
 }
 
 interface ItemsListItemProps {
@@ -127,6 +132,34 @@ export const ItemsListItem = React.memo(function ItemsListItem({
           <Text style={[styles.itemValue, { color: colors.text }]}>
             {formatPrice(item.value)}
           </Text>
+          {/* Paid-for line + P/L delta. Hidden when no purchase data, when
+              the user added the item without a price, or when the predicted
+              price is 0 (no model available yet — comparison is meaningless). */}
+          {typeof item.purchasePriceEur === 'number' && item.purchasePriceEur > 0 ? (
+            <>
+              <Text style={[styles.itemPaid, { color: colors.muted }]} numberOfLines={1}>
+                Paid {formatPrice(item.purchasePriceEur)}
+              </Text>
+              {item.value > 0 ? (
+                (() => {
+                  const delta = item.value - item.purchasePriceEur;
+                  const pct = (delta / item.purchasePriceEur) * 100;
+                  const positive = delta >= 0;
+                  const sign = positive ? '+' : '−';
+                  const color = positive ? colors.success : colors.danger;
+                  return (
+                    <Text
+                      style={[styles.itemPL, { color }]}
+                      numberOfLines={1}
+                      accessibilityLabel={`${positive ? 'Up' : 'Down'} ${Math.abs(pct).toFixed(0)} percent versus purchase price`}
+                    >
+                      {sign}{formatPrice(Math.abs(delta))} ({sign}{Math.abs(pct).toFixed(0)}%)
+                    </Text>
+                  );
+                })()
+              ) : null}
+            </>
+          ) : null}
         </View>
       </AnimatedPressable>
   );
@@ -216,6 +249,15 @@ const styles = StyleSheet.create({
   itemValue: {
     fontSize: 13,
     fontWeight: '700',
+  },
+  itemPaid: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  itemPL: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 1,
   },
   checkboxContainer: {
     marginRight: 12,

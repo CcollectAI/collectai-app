@@ -29,7 +29,7 @@ enumerated and are reported as notes.
 | `sort_order` | · | · | ✓ | · |  |
 | `created_at` | · | · | · | · |  |
 
-**Stray refs** (not in schema): `progress, unlocked_at`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `progress, unlocked_at`
 
 ## `activity_feed`
 
@@ -98,7 +98,7 @@ enumerated and are reported as notes.
 | `item_id` | ✓ | · | · | · |  |
 | `image_url` | ✓ | · | · | · |  |
 
-**Stray refs** (not in schema): `last_seen_live_at, minutes, project_id, step_order, title`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `last_seen_live_at, minutes, project_id, step_order, title`
 
 ## `build_paint_sessions`
 
@@ -112,7 +112,7 @@ enumerated and are reported as notes.
 | `created_at` | · | · | · | · |  |
 | `user_id` | · | · | · | · |  |
 
-**Stray refs** (not in schema): `last_seen_live_at`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `last_seen_live_at`
 
 ## `build_paint_steps`
 
@@ -121,14 +121,14 @@ enumerated and are reported as notes.
 | `id` | ✓ | · | · | · |  |
 | `project_id` | ✓ | ✓ | · | · |  |
 | `step_order` | ✓ | ✓ | · | · |  |
-| `title` | ✓ | ✓ | · | · |  |
+| `title` | ✓ | · | · | · |  |
 | `description` | · | · | · | · |  |
 | `status` | ✓ | ✓ | · | · |  |
 | `image_url` | · | · | · | · |  |
 | `created_at` | ✓ | · | · | · |  |
 | `updated_at` | · | · | · | · |  |
 
-**Stray refs** (not in schema): `content`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `content`
 
 ## `calibration_snapshots`
 
@@ -199,7 +199,7 @@ enumerated and are reported as notes.
 | `last_crawled_at` | · | · | · | · |  |
 | `last_scrape_attempt_at` | · | · | · | · |  |
 
-**Stray refs** (not in schema): `price_eur`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `price_eur`
 
 ## `challenges`
 
@@ -217,7 +217,7 @@ enumerated and are reported as notes.
 | `active` | · | · | · | · |  |
 | `created_at` | · | · | · | · |  |
 
-**Stray refs** (not in schema): `completed, completed_at, current_count`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `completed, completed_at, current_count`
 
 ## `chat_dm_requests_v1`
 
@@ -244,8 +244,6 @@ enumerated and are reported as notes.
 | `created_at` | ✓ | · | ✓ | · | 🔒 |
 | `edited_at` | · | · | ✓ | ✓ |  |
 | `deleted_at` | · | · | ✓ | ✓ |  |
-
-**Stray refs** (not in schema): `so`
 
 ## `chat_thread_members_v1`
 
@@ -278,17 +276,6 @@ enumerated and are reported as notes.
 | `dm_user_a` | · | · | ✓ | · |  |
 | `dm_user_b` | · | · | ✓ | · |  |
 | `visibility` | · | · | · | · |  |
-
-## `collections`
-
-| column | FE_R | FE_W | BE_R | BE_W | locked? |
-|---|---|---|---|---|---|
-| `id` | · | · | · | · |  |
-| `user_id` | · | · | · | · |  |
-| `name` | · | · | · | · |  |
-| `created_at` | · | · | · | · |  |
-
-**Stray refs** (not in schema): `below, optionally`
 
 ## `demand_signals`
 
@@ -345,7 +332,7 @@ enumerated and are reported as notes.
 | `status` | · | · | ✓ | ✓ |  |
 | `created_at` | · | · | ✓ | · |  |
 
-**Stray refs** (not in schema): `category_id, created_by, date, description, end_date, format, image_url, is_public, kind, location, max_attendees, online_url, sponsor_expires_at, sponsor_paid_at, sponsor_tier, time, title`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `category_id, created_by, date, description, end_date, format, image_url, is_public, kind, location, max_attendees, online_url, sponsor_expires_at, sponsor_paid_at, sponsor_tier, time, title`
 
 ## `event_follows_v1`
 
@@ -462,7 +449,7 @@ enumerated and are reported as notes.
 | `graded` | · | · | · | · |  |
 | `features` | · | · | · | · |  |
 
-**Stray refs** (not in schema): `item_id, label, observed_at, user_id`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `item_id, label, observed_at, user_id`
 
 ## `item_images`
 
@@ -474,7 +461,7 @@ enumerated and are reported as notes.
 | `url` | · | · | ✓ | · |  |
 | `created_at` | · | · | · | · |  |
 
-**Stray refs** (not in schema): `image_url, label, position`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `image_url, label, position`
 
 ## `item_provenance_events`
 
@@ -484,7 +471,7 @@ enumerated and are reported as notes.
 | `item_id` | · | · | ✓ | ✓ |  |
 | `user_id` | · | · | ✓ | ✓ |  |
 | `event_type` | · | · | ✓ | ✓ |  |
-| `note` | · | · | ✓ | ✓ |  |
+| `note` | · | · | · | ✓ |  |
 | `source` | · | · | ✓ | ✓ |  |
 | `metadata` | · | · | ✓ | ✓ |  |
 | `created_at` | · | · | ✓ | · |  |
@@ -563,8 +550,13 @@ enumerated and are reported as notes.
 | `collection_name` | · | · | ✓ | ✓ |  |
 | `estimated_value` | ✓ | · | ✓ | ✓ | 🔒 |
 | `updated_at` | ✓ | · | ✓ | ✓ | 🔒 |
+| `progress_status` | · | · | ✓ | · |  |
+| `progress_pct` | · | · | ✓ | · |  |
+| `progress_notes` | · | · | ✓ | · |  |
 
-**Stray refs** (not in schema): `attributes_json, images, normalized_key, progress_notes, progress_pct, progress_status, q50, subtype_id, taxonomy_version`
+**Allowlisted strays** (gated/dormant — see `scripts/stray_drift_allowlist.txt`): `images`
+
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `attributes_json, normalized_key, q50, subtype_id, taxonomy_version`
 
 ## `mandate_deals`
 
@@ -637,8 +629,6 @@ enumerated and are reported as notes.
 | `graded` | · | · | · | · |  |
 | `price_eur` | · | · | ✓ | ✓ |  |
 | `is_listing` | · | · | · | · |  |
-
-**Stray refs** (not in schema): `domestic_only, ships_from`
 
 ## `marketplace_account_defaults`
 
@@ -768,7 +758,9 @@ enumerated and are reported as notes.
 | `uri` | · | · | · | · |  |
 | `is_canary` | · | · | ✓ | · |  |
 
-**Stray refs** (not in schema): `artifact_json, category, is_active, model_type, s3_key, uncertainty_scale`
+**Allowlisted strays** (gated/dormant — see `scripts/stray_drift_allowlist.txt`): `artifact_json, model_type, uncertainty_scale`
+
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `category, is_active, s3_key`
 
 ## `mv_demand_heat`
 
@@ -900,7 +892,7 @@ enumerated and are reported as notes.
 | `expires_at` | · | · | · | · |  |
 | `updated_at` | · | · | · | · |  |
 
-**Stray refs** (not in schema): `currency, item_id`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `currency, item_id`
 
 ## `on_demand_lookups`
 
@@ -920,7 +912,7 @@ enumerated and are reported as notes.
 | column | FE_R | FE_W | BE_R | BE_W | locked? |
 |---|---|---|---|---|---|
 | `user_id` | · | · | · | · |  |
-| `at` | ✓ | · | · | · |  |
+| `at` | · | · | · | · |  |
 | `value` | ✓ | · | · | · |  |
 
 ## `prediction_sessions`
@@ -1020,29 +1012,27 @@ enumerated and are reported as notes.
 | column | FE_R | FE_W | BE_R | BE_W | locked? |
 |---|---|---|---|---|---|
 | `id` | · | · | · | · |  |
-| `user_id` | · | · | ✓ | ✓ |  |
-| `name` | · | · | ✓ | ✓ |  |
-| `status` | · | · | ✓ | ✓ |  |
-| `search_query` | · | · | ✓ | ✓ |  |
-| `category` | · | · | ✓ | ✓ |  |
-| `condition_filter` | · | · | ✓ | ✓ |  |
+| `user_id` | · | · | · | ✓ |  |
+| `name` | · | · | · | ✓ |  |
+| `status` | · | · | · | ✓ |  |
+| `search_query` | · | · | · | ✓ |  |
+| `category` | · | · | · | ✓ |  |
+| `condition_filter` | · | · | · | ✓ |  |
 | `min_trust_score` | · | · | · | ✓ |  |
-| `max_price` | · | · | ✓ | ✓ |  |
+| `max_price` | · | · | · | ✓ |  |
 | `max_total_budget` | · | · | ✓ | ✓ |  |
 | `spent_total` | · | · | ✓ | ✓ |  |
-| `cooldown_hours` | · | · | ✓ | ✓ |  |
+| `cooldown_hours` | · | · | · | ✓ |  |
 | `allowed_sources` | · | · | · | ✓ |  |
-| `region` | · | · | ✓ | ✓ |  |
-| `expires_at` | · | · | ✓ | ✓ |  |
-| `last_scan_at` | · | · | ✓ | ✓ |  |
+| `region` | · | · | · | ✓ |  |
+| `expires_at` | · | · | · | ✓ |  |
+| `last_scan_at` | · | · | · | ✓ |  |
 | `last_deal_at` | · | · | · | ✓ |  |
-| `deals_found` | · | · | ✓ | ✓ |  |
-| `deals_purchased` | · | · | ✓ | ✓ |  |
-| `created_at` | · | · | ✓ | · |  |
-| `updated_at` | · | · | ✓ | ✓ |  |
-| `exclude_keywords` | · | · | ✓ | ✓ |  |
-
-**Stray refs** (not in schema): `added_item_id, affiliate_click, affiliate_source, affiliate_url, clicked_at, deal_score, discovered_at, estimated_commission, listing_condition, listing_currency, listing_ended, listing_price, listing_seller, listing_source, listing_url, mandate_id, notified_at, policy_passed, predicted_q10, predicted_q50, predicted_q90, provenance_score, raising`
+| `deals_found` | · | · | · | ✓ |  |
+| `deals_purchased` | · | · | · | ✓ |  |
+| `created_at` | · | · | · | · |  |
+| `updated_at` | · | · | · | ✓ |  |
+| `exclude_keywords` | · | · | · | ✓ |  |
 
 ## `scan_corrections`
 
@@ -1289,7 +1279,7 @@ enumerated and are reported as notes.
 | `unlocked_at` | · | · | ✓ | · |  |
 | `progress` | · | · | ✓ | ✓ |  |
 
-**Stray refs** (not in schema): `category, description, icon, id, sort_order, threshold, tier, title, xp_reward`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `category, description, icon, id, sort_order, threshold, tier, title, xp_reward`
 
 ## `user_alert_preferences`
 
@@ -1345,7 +1335,7 @@ enumerated and are reported as notes.
 | `monthly_xp` | · | · | ✓ | ✓ |  |
 | `updated_at` | · | · | · | ✓ |  |
 
-**Stray refs** (not in schema): `avatar_color, avatar_url, display_name`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `avatar_color, avatar_url, display_name`
 
 ## `user_price_alerts`
 
@@ -1415,7 +1405,7 @@ enumerated and are reported as notes.
 | `notes` | · | · | ✓ | · |  |
 | `updated_at` | · | · | ✓ | ✓ |  |
 
-**Stray refs** (not in schema): `category_id, image_url, name, total_items`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `category_id, image_url, name, total_items`
 
 ## `user_settings`
 
@@ -1460,15 +1450,15 @@ enumerated and are reported as notes.
 | `thread_id` | ✓ | · | ✓ | · | 🔒 |
 | `user_id` | · | · | ✓ | · |  |
 | `other_user_id` | ✓ | · | ✓ | · | 🔒 |
-| `other_display_name` | ✓ | · | ✓ | · | 🔒 |
+| `created_at` | · | · | ✓ | · |  |
+| `updated_at` | · | · | ✓ | · |  |
 | `other_avatar_url` | ✓ | · | ✓ | · | 🔒 |
+| `other_display_name` | ✓ | · | ✓ | · | 🔒 |
 | `last_message_at` | ✓ | · | ✓ | · | 🔒 |
 | `last_message_body` | ✓ | · | ✓ | · | 🔒 |
 | `unread_count` | ✓ | · | ✓ | · | 🔒 |
-| `created_at` | · | · | ✓ | · |  |
-| `updated_at` | · | · | ✓ | · |  |
 
-**Stray refs** (not in schema): `id`
+**JOIN/FK refs** (col exists on another table — likely from a JOIN): `id`
 
 ## `v_events_with_attendees_v1`
 
@@ -1693,6 +1683,7 @@ Schema-known but no FE/BE code touches them. Often legacy or admin-only:
 - `collectai_ground_truth_sales` (9 cols)
 - `collectai_item_categories` (4 cols)
 - `collection_items` (3 cols)
+- `collections` (4 cols)
 - `collector_events_v1` (21 cols)
 - `comps` (12 cols)
 - `condition_grade_weights_v1` (2 cols)
@@ -1814,7 +1805,6 @@ Schema-known but no FE/BE code touches them. Often legacy or admin-only:
 - `price_prediction_comps` (17 cols)
 - `price_prediction_runs` (14 cols)
 - `price_predictions_default` (21 cols)
-- `price_predictions_y2025m11` (21 cols)
 - `price_predictions_y2025m12` (21 cols)
 - `price_predictions_y2026m01` (21 cols)
 - `price_predictions_y2026m02` (21 cols)

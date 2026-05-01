@@ -16,48 +16,87 @@ import { supabase } from '../../lib/supabase';
 import { collectorsApi } from '../../api/collectorsApi';
 import logger from '../../utils/logger';
 
-// Shared row types used by listItems and searchItems
-type PredRow = { q10: number | null; q50: number | null; q90: number | null; conf_score: number | null; asof: string | null };
+// Shared row types used by listItems and searchItems.
+// items has the columns id/title/category/updated_at/attrs/image_url/
+// collection_name. The earlier shape referenced `images` (plural array),
+// `collections` (plural), `taxonomy_version`, `subtype_id` — none of which
+// exist on the items table. PostgREST returned a 400 on every listItems
+// call and the catch silently returned []. Found by audit_full_chain.py
+// 2026-05-01. subtype_id and taxonomy_version live in items.attrs (jsonb)
+// when present, so we read them out of attrs in mapItemRow instead of
+// asking PostgREST for them as bare columns.
+// quick_predictions is the per-item-id prediction table. It IS FK-linked to
+// items.id, so PostgREST can resolve the embed. The richer price_predictions
+// table joins by item_ref/canonical_key with no FK and can't be embedded —
+// PostgREST returned PGRST200 "Could not find a relationship" for months,
+// silently making listItems return []. Confirmed via live probe 2026-05-01.
+// q10/q90/asof aren't available here; the list view only consumes q50, so
+// the loss is invisible. Detail screens that need the band query
+// price_predictions separately by canonical_key.
+type PredRow = { q50_eur: number | null; confidence: number | null; created_at: string | null };
 type ItemRow = {
   id: string;
   title?: string | null;
   category?: string | null;
   updated_at?: string | null;
-  // items.attrs (jsonb) — exposed to the FE as `attributesJson` for
-  // historical reasons; the DB column was renamed but the public name
-  // wasn't, so callers don't need to change.
   attrs?: Record<string, unknown> | null;
-  taxonomy_version?: string | null;
-  subtype_id?: string | null;
-  collections?: string[] | null;
-  images?: string[] | null;
-  price_predictions?: PredRow[];
+  collection_name?: string | null;
+  image_url?: string | null;
+  // Acquisition columns. Schema-lock-confirmed (scripts/schema.lock.json):
+  // items has both purchase_price (raw, in purchase_currency) and
+  // purchase_price_eur (FX-normalized for analytics). We only need the EUR
+  // form on the list row; raw + currency are kept for the future detail view.
+  purchase_price_eur?: number | null;
+  purchase_currency?: string | null;
+  purchased_at?: string | null;
+  purchase_notes?: string | null;
+  quick_predictions?: PredRow[];
 };
 
 function mapItemRow(r: ItemRow): Item {
-  const preds = (r.price_predictions ?? []).sort(
-    (a, b) => (b.asof ?? '').localeCompare(a.asof ?? ''),
+  // Prefer the most recently generated quick_prediction. created_at is an
+  // ISO string so a string compare gives the right order.
+  const preds = (r.quick_predictions ?? []).sort(
+    (a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''),
   );
   const latest = preds[0];
+  const attrs = r.attrs ?? undefined;
+  // subtype_id + taxonomy_version were originally bare columns; they now
+  // live inside the attrs jsonb when set. Fall back to undefined when missing.
+  const attrsObj = (attrs as Record<string, unknown> | undefined) ?? undefined;
+  const subtypeId = (attrsObj?.subtype_id as string | undefined) ?? undefined;
+  const taxonomyVersion = (attrsObj?.taxonomy_version as string | undefined) ?? undefined;
+  // The collection_name column is a single string; the FE type expects an
+  // array `collections`. Wrap when present.
+  const collections = r.collection_name ? [r.collection_name] : undefined;
 
   return {
     id: r.id,
     name: r.title ?? 'Untitled',
     category: r.category || 'Uncategorized',
-    subtypeId: r.subtype_id ?? undefined,
-    taxonomyVersion: r.taxonomy_version ?? undefined,
-    collections: r.collections ?? undefined,
-    attributesJson: r.attrs ?? undefined,
-    price: latest?.q50 ?? 0,
-    priceBand: latest
-      ? { q10: latest.q10 ?? 0, q50: latest.q50 ?? 0, q90: latest.q90 ?? 0, confidence: latest.conf_score ?? 0, currency: 'EUR' }
+    subtypeId,
+    taxonomyVersion,
+    collections,
+    attributesJson: attrs,
+    price: latest?.q50_eur ?? 0,
+    // quick_predictions only stores a single point estimate (q50_eur), not
+    // a quantile band. Synthesize a degenerate band from q50 alone so
+    // downstream consumers that check `priceBand?.confidence` still work.
+    // Detail screens needing the real band fetch from price_predictions
+    // by canonical_key separately.
+    priceBand: latest && typeof latest.q50_eur === 'number'
+      ? { q10: latest.q50_eur, q50: latest.q50_eur, q90: latest.q50_eur, confidence: latest.confidence ?? 0, currency: 'EUR' }
       : undefined,
-    imageUrl: r.images?.[0] ?? undefined,
+    imageUrl: r.image_url ?? undefined,
     updatedAt: r.updated_at ?? undefined,
+    purchasePriceEur: r.purchase_price_eur ?? null,
+    purchaseCurrency: (r.purchase_currency as Item['purchaseCurrency']) ?? null,
+    purchasedAt: r.purchased_at ?? null,
+    purchaseNotes: r.purchase_notes ?? null,
   };
 }
 
-const ITEMS_SELECT = 'id, title, category, updated_at, attrs, taxonomy_version, subtype_id, collections, images, price_predictions(q10, q50, q90, conf_score, asof)';
+const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
 
 export async function listItems(pagination?: PaginationParams): Promise<Item[]> {
   const limit = pagination?.limit ?? API_LIMITS.ITEMS_DEFAULT;
@@ -92,7 +131,9 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
     logger.error('[SupabaseDataProvider] createItem error:', e);
     throw e instanceof Error ? e : new Error('Failed to create item');
   }
-  const images = (row.images as string[] | null) ?? null;
+  // Server's ItemResponse returns `image_url` (singular). The earlier
+  // `images` array was never populated; readers got `undefined`.
+  const imageUrl = (row.image_url as string | null) ?? null;
   const itemId = row.id as string;
 
   // Push-engagement loop: if the user added this item shortly after
@@ -112,7 +153,7 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
     name: (row.name as string | null) ?? input.name,
     category: (row.category as string | null) ?? input.category,
     price: 0,
-    imageUrl: images?.[0] ?? undefined,
+    imageUrl: imageUrl ?? undefined,
     updatedAt: (row.updated_at as string | null) ?? undefined,
   };
 }
@@ -133,13 +174,15 @@ export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name
   const updatePayload: Record<string, unknown> = {};
   if (patch.name !== undefined) updatePayload.title = patch.name;
   if (patch.category !== undefined) updatePayload.category = patch.category;
-  if (patch.imageUrl !== undefined) updatePayload.images = patch.imageUrl ? [patch.imageUrl] : [];
+  // items has `image_url` (singular text), not `images` (array). The earlier
+  // shape wrote `images: [url]` which silently failed on every save.
+  if (patch.imageUrl !== undefined) updatePayload.image_url = patch.imageUrl ?? null;
 
   const { data, error } = await supabase
     .from('items')
     .update(updatePayload)
     .eq('id', itemId)
-    .select('id, title, category, updated_at, images')
+    .select('id, title, category, updated_at, image_url')
     .single();
 
   if (error || !data) {
@@ -147,14 +190,12 @@ export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name
     throw new Error(error?.message || 'Failed to update item');
   }
 
-  const images = (data as Record<string, unknown>).images as string[] | null;
-
   return {
     id: data.id,
     name: (data as Record<string, unknown>).title as string ?? 'Untitled',
     category: data.category,
     price: 0,
-    imageUrl: images?.[0] ?? (data as Record<string, unknown>).image_url as string ?? undefined,
+    imageUrl: ((data as Record<string, unknown>).image_url as string | null) ?? undefined,
     updatedAt: (data as Record<string, unknown>).updated_at as string,
   };
 }

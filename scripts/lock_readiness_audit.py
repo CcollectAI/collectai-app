@@ -137,6 +137,31 @@ def main():
         ("· no FE-side activity", "Tables touched only by server (admin / worker / internal)"),
     ]
 
+    # Allowlisted strays — gated/dormant references kept out of the
+    # "fix strays first" bucket per scripts/stray_drift_allowlist.txt.
+    # Surfaced separately so they don't disappear from sight.
+    allow_rows = []
+    for table_name in sorted(matrix["tables"].keys()):
+        t = matrix["tables"][table_name]
+        allow = t.get("stray_allowlisted") or []
+        if allow:
+            allow_rows.append((table_name, allow))
+    if allow_rows:
+        lines.append("## 📎 allowlisted strays — gated/dormant")
+        lines.append("")
+        lines.append(
+            "Stray refs intentionally kept out of the fix-list because the call "
+            "chain proves they can't fire at runtime. See `scripts/stray_drift_allowlist.txt` "
+            "for the per-entry trace. Removing an entry from the allowlist requires "
+            "either fixing the underlying code or deleting the dead reference."
+        )
+        lines.append("")
+        lines.append("| table | columns |")
+        lines.append("|---|---|")
+        for table_name, cols in allow_rows:
+            lines.append(f"| `{table_name}` | `{', '.join(cols)}` |")
+        lines.append("")
+
     for status_label, blurb in BUCKETS:
         bucket = [s for s in table_summaries if s[0] == status_label]
         if not bucket:

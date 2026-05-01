@@ -7,6 +7,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { COMMUNITY_GATED } from '@/config/featureFlags';
 
 interface AttendeeUser {
   id: string;
@@ -42,6 +43,13 @@ export const EventAttendeesSection = React.memo(function EventAttendeesSection({
   onConnectPress,
 }: EventAttendeesSectionProps) {
   const { colors } = useAppTheme();
+
+  // When community is gated and there are 0 attendees, hide the whole
+  // section. Every event showing "no one attending" reads as ghost town;
+  // when real RSVPs land the section reappears automatically.
+  if (COMMUNITY_GATED && attendees.length === 0) {
+    return null;
+  }
 
   return (
     <View style={styles.section}>

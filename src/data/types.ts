@@ -80,6 +80,15 @@ export type Item = {
   priceBand?: PriceBand;        // q10/q50/q90 price estimates
   imageUrl?: string;
   updatedAt?: string;
+  // Acquisition / "what I paid" fields. Captured at add-manual time and stored
+  // in the items table; until 2026-05-01 they were never read back into the
+  // Item shape, so the items screen showed predicted price only and the user's
+  // actual cost was invisible. Optional: items added before this surface
+  // existed, or added via QuickScan without a price entered, will be undefined.
+  purchasePriceEur?: number | null;     // EUR-normalized cost basis
+  purchaseCurrency?: CurrencyCode | null;  // currency at time of purchase (display only)
+  purchasedAt?: string | null;          // ISO date string of acquisition
+  purchaseNotes?: string | null;        // free-text receipt/memo
 };
 
 export type WatchlistItem = {

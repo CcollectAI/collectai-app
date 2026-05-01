@@ -516,6 +516,19 @@ class DealDiscoveryAgent:
             # can split on it (matches the convention in marketplace_scrape_scheduler).
             normalized_key = f"{category}:{query[:100]}" if (category and query) else None
 
+            # market_hits has `shipping` (jsonb) but no `ships_from`/`domestic_only`
+            # columns. Earlier code tried to INSERT all three; the INSERT silently
+            # failed every batch (try/except swallowed the column-missing error)
+            # which is why mandate_deals.discovered_at was perpetually stale even
+            # though the worker reported `ok`. Roll the per-listing shipping
+            # metadata into a single jsonb on the `shipping` column so we keep
+            # the geo info for downstream policy filtering — region-of-origin
+            # decisions look at hits.shipping->>'ships_from' etc.
+            shipping_json = {
+                "cost": hit.get("shipping_cost"),
+                "ships_from": hit.get("ships_from"),
+                "domestic_only": bool(hit.get("domestic_only", False)),
+            }
             rows.append((
                 source,
                 listing_id,
@@ -527,9 +540,7 @@ class DealDiscoveryAgent:
                 normalized_key,
                 normalized_key,  # item_ref mirrors normalized_key for the valuation worker
                 category,
-                hit.get("shipping_cost"),
-                hit.get("ships_from"),
-                hit.get("domestic_only", False),
+                json.dumps(shipping_json),
             ))
 
         if not rows:
@@ -541,15 +552,15 @@ class DealDiscoveryAgent:
                 INSERT INTO public.market_hits
                     (provider, listing_id, title, price, currency, condition, url,
                      normalized_key, item_ref, category,
-                     shipping, ships_from, domestic_only)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                     shipping)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
                 ON CONFLICT (provider, listing_id) DO NOTHING
                 """,
                 rows,
             )
             logger.info("[DealDiscovery] Fed %d listings into market_hits", len(rows))
         except Exception as exc:
-            logger.debug("[DealDiscovery] market_hits feed failed (non-critical): %s", exc)
+            logger.warning("[DealDiscovery] market_hits feed failed: %s", exc)
 
     async def _cache_deal_images(
         self, conn, batch_rows: List[tuple], category: Optional[str]

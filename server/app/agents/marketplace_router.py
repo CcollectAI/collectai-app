@@ -325,21 +325,28 @@ async def _persist_hits(scored_hits: list, user_id: str) -> None:
     """Write scored market hits into the market_hits table.
 
     Schema columns: provider, listing_id, title, price, currency,
-    condition, ended_at, url, normalized_key, features_json,
-    shipping, ships_from, domestic_only.
+    condition, ended_at, url, normalized_key, features_json, shipping.
+    Per-listing ships_from / domestic_only / shipping_cost fold into the
+    single jsonb `shipping` column — bare ships_from / domestic_only
+    columns do not exist (same drift fixed in deal_discovery_agent).
     """
     async with get_conn() as conn:
         async with conn.transaction():
             for sh in scored_hits[:50]:  # cap to 50 per request
                 h = sh.hit
+                shipping_json = {
+                    "cost": h.get("shipping_cost"),
+                    "ships_from": h.get("ships_from"),
+                    "domestic_only": bool(h.get("domestic_only", False)),
+                }
                 await conn.execute(
                     """
                     INSERT INTO public.market_hits
                         (provider, listing_id, title, price, currency,
                          condition, ended_at, url, normalized_key, features_json,
-                         shipping, ships_from, domestic_only)
+                         shipping)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb,
-                            $11, $12, $13)
+                            $11::jsonb)
                     ON CONFLICT (provider, listing_id) DO NOTHING
                     """,
                     h.get("source", "unknown"),
@@ -352,7 +359,5 @@ async def _persist_hits(scored_hits: list, user_id: str) -> None:
                     (h.get("url", "") or "")[:1000],
                     (h.get("normalized_key", "") or "")[:255],
                     json.dumps({"image_url": h.get("image_url"), "user_id": user_id}),
-                    h.get("shipping_cost"),
-                    h.get("ships_from"),
-                    h.get("domestic_only", False),
+                    json.dumps(shipping_json),
                 )

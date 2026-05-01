@@ -25,8 +25,25 @@ from collections import defaultdict
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_LOCK = ROOT / "scripts" / "schema.lock.json"
+STRAY_ALLOWLIST = ROOT / "scripts" / "stray_drift_allowlist.txt"
 OUT_MD = ROOT / "docs" / "schema-lock.md"
 OUT_JSON = ROOT / "docs" / "schema-lock-matrix.json"
+
+
+def load_stray_allowlist() -> set[tuple[str, str]]:
+    """Parse stray_drift_allowlist.txt → {(table, col), ...}. Entries here
+    are gated/dormant references — see learning_dont_allowlist_dead_assert_dead.md
+    for the rule that every entry must trace a call chain in its comment block."""
+    entries: set[tuple[str, str]] = set()
+    if not STRAY_ALLOWLIST.exists():
+        return entries
+    for line in STRAY_ALLOWLIST.read_text().splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line or ":" not in line:
+            continue
+        tbl, col = line.split(":", 1)
+        entries.add((tbl.strip(), col.strip()))
+    return entries
 
 FE_DIRS = [ROOT / "src", ROOT / "app"]
 BE_DIRS = [ROOT / "server" / "app"]
@@ -39,9 +56,24 @@ FE_FROM_RE = re.compile(r"""\.from\(\s*['"]([a-z_][a-z0-9_]*)['"]\s*\)""")
 # or following whitespace). We pull from the entire statement up to a sentinel.
 FE_SELECT_RE = re.compile(r"""\.select\(\s*['"]([^'"]+)['"]""")
 # .insert({col: ..., col: ...}) / .update({...}) / .upsert({...}). Capture body.
-FE_BODY_RE = re.compile(r"""\.(insert|update|upsert)\(\s*\{([^}]*)\}""", re.DOTALL)
-# Body key extractor: `key:` or `key,` (shorthand).
-FE_KEY_RE = re.compile(r"""(?:^|,|\{)\s*([a-z_][a-z0-9_]*)\s*[,:]""")
+# NOT DOTALL — body must end on the same logical statement, otherwise we sweep
+# up trailing `// foo, so bar:` comment text and treat words as column keys.
+FE_BODY_RE = re.compile(r"""\.(insert|update|upsert)\(\s*\{([^}]*)\}""")
+# Body key extractor: `key:` or `key,` (shorthand). Anchored to whitespace+`:`
+# so we don't match prose like "foo, so bar:" — only the `:` form is a real
+# JS object key.
+FE_KEY_RE = re.compile(r"""(?:^|,|\{|\s)\s*([a-z_][a-z0-9_]*)\s*:""")
+
+# Common English / JS stop-words that show up in comments and prose. If a
+# regex thinks one of these is a column name, it's almost certainly noise.
+# Real column names use snake_case multi-letter; single-word english stops are
+# excluded outright.
+PROSE_STOPWORDS = frozenset({
+    "so", "optionally", "below", "above", "note", "todo", "eg", "ie", "as",
+    "to", "from", "is", "be", "of", "in", "on", "at", "or", "and", "the",
+    "a", "an", "this", "that", "these", "those", "but", "if", "no", "not",
+    "via", "vs", "etc", "ok", "x",
+})
 
 # --- BE patterns (best-effort) ---
 # INSERT INTO table(col, col, col)  /  INTO public.table(col, col, col)
@@ -70,6 +102,19 @@ def iter_files(dirs, suffixes):
             if p.is_file() and p.suffix in suffixes:
                 yield p
 
+
+# Strip Python `#` line comments. Without this, BE_SELECT_RE happily matches
+# inside `# Explicit column lists for SELECT (avoid SELECT *)` and then sweeps
+# (DOTALL) across hundreds of lines until the next real `FROM <table>` —
+# pulling docstring words like "raising" into the column list as bogus strays.
+# Replace each `# ...` tail with same-length whitespace so file offsets stay
+# stable for any callers that rely on them.
+_PY_COMMENT_RE = re.compile(r"(^|\s)#[^\n]*")
+
+
+def _strip_py_comments(text: str) -> str:
+    return _PY_COMMENT_RE.sub(lambda m: m.group(1) + " " * (len(m.group(0)) - len(m.group(1))), text)
+
 def parse_columns_from_select_clause(s: str) -> list[str]:
     """Split a SELECT col list, drop aliases / fn calls / *, return bare cols."""
     cols = []
@@ -84,6 +129,9 @@ def parse_columns_from_select_clause(s: str) -> list[str]:
             continue
         # Drop schema/table prefix
         bare = tok_no_alias.split(".")[-1].strip().strip('"')
+        # Filter prose/stop-words and 1-char tokens (always noise; real cols ≥2 chars).
+        if bare in PROSE_STOPWORDS or len(bare) < 2:
+            continue
         if re.fullmatch(r"[a-z_][a-z0-9_]*", bare):
             cols.append(bare)
     return cols
@@ -123,9 +171,16 @@ def main():
             window = text[m.end(): m.end() + 600]
             for sm in FE_SELECT_RE.finditer(window):
                 if sm.start() > 600: break
-                for col in [c.strip() for c in sm.group(1).split(",") if c.strip()]:
+                # Strip nested-select bodies: select('id, profiles(name, avatar)')
+                # shouldn't introduce profiles' inner cols as parent-table cols.
+                clause = re.sub(r"\([^()]*\)", "", sm.group(1))
+                for col in [c.strip() for c in clause.split(",") if c.strip()]:
                     bare = col.split(".")[-1].split(":")[0].strip()
-                    if re.fullmatch(r"[a-z_][a-z0-9_]*", bare):
+                    # Skip prose stop-words and FE relation refs that have
+                    # paren-children we already stripped (would leave dangling tokens).
+                    if bare in PROSE_STOPWORDS:
+                        continue
+                    if re.fullmatch(r"[a-z_][a-z0-9_]*", bare) and len(bare) >= 2:
                         fe_read[table].add((bare, rel))
                     elif bare == "*":
                         notes[table].append(f"{rel}: select('*') — full row, can't enumerate")
@@ -133,7 +188,9 @@ def main():
                 body = bm.group(2)
                 for km in FE_KEY_RE.finditer(body):
                     bare = km.group(1)
-                    if re.fullmatch(r"[a-z_][a-z0-9_]*", bare):
+                    if bare in PROSE_STOPWORDS:
+                        continue
+                    if re.fullmatch(r"[a-z_][a-z0-9_]*", bare) and len(bare) >= 2:
                         fe_write[table].add((bare, rel))
                 # Detect spread / dynamic insert
                 if "..." in body:
@@ -145,6 +202,7 @@ def main():
             text = path.read_text(errors="ignore")
         except Exception:
             continue
+        text = _strip_py_comments(text)
         rel = str(path.relative_to(ROOT))
         for m in BE_INSERT_RE.finditer(text):
             table, cols_str = m.group(1), m.group(2)
@@ -190,6 +248,15 @@ def main():
         "",
     ]
 
+    # Build a set of all known column names across the schema; used below to
+    # filter out JOIN-introduced "strays" (columns that exist on a *different*
+    # table — almost always a foreign-relation reference, not real drift).
+    all_schema_cols: set[str] = set()
+    for tbl_cols in tables.values():
+        all_schema_cols.update(tbl_cols)
+
+    stray_allowlist = load_stray_allowlist()
+
     # Sort: tables that have any activity first, then untouched.
     touched = []
     untouched = []
@@ -222,11 +289,33 @@ def main():
             md_lines.append(f"| `{col}` | {tag_fr} | {tag_fw} | {tag_br} | {tag_bw} | {locked} |")
             per_col[col] = {"fe_r": col in fr, "fe_w": col in fw,
                             "be_r": col in br, "be_w": col in bw}
-        # Stray columns referenced in code but NOT in schema (drift signal)
-        stray = [c for c in all_seen_cols if c not in cols]
+        # Stray columns referenced in code but NOT in schema (drift signal).
+        # Filter out:
+        # - cols that exist on ANY OTHER table — those are JOIN/FK references
+        #   the regex picked up from a Supabase nested-select or BE JOIN
+        # - 1-character tokens (always noise; real cols are 2+ chars)
+        # - entries in scripts/stray_drift_allowlist.txt — gated/dormant refs
+        #   that pass the "default-live" sniff test in their comment block.
+        raw_stray = [c for c in all_seen_cols if c not in cols]
+        candidate_stray = [
+            c for c in raw_stray
+            if len(c) >= 2 and c not in all_schema_cols
+        ]
+        stray = [c for c in candidate_stray if (table, c) not in stray_allowlist]
+        allowlisted = sorted(set(candidate_stray) - set(stray))
+        join_likely = sorted(set(raw_stray) - set(candidate_stray))
         if stray:
             md_lines.append("")
-            md_lines.append(f"**Stray refs** (not in schema): `{', '.join(sorted(stray))}`")
+            md_lines.append(f"**Stray refs** (not in any schema table): `{', '.join(sorted(stray))}`")
+        if allowlisted:
+            md_lines.append("")
+            md_lines.append(
+                f"**Allowlisted strays** (gated/dormant — see `scripts/stray_drift_allowlist.txt`): "
+                f"`{', '.join(allowlisted)}`"
+            )
+        if join_likely:
+            md_lines.append("")
+            md_lines.append(f"**JOIN/FK refs** (col exists on another table — likely from a JOIN): `{', '.join(join_likely)}`")
         if notes.get(table):
             md_lines.append("")
             md_lines.append(f"**Notes:** {'; '.join(sorted(set(notes[table])))}")
@@ -234,6 +323,7 @@ def main():
         out_json["tables"][table] = {
             "columns": per_col,
             "stray": stray,
+            "stray_allowlisted": allowlisted,
             "fe_read_files": sorted({f for _, f in fe_read.get(table, set())}),
             "fe_write_files": sorted({f for _, f in fe_write.get(table, set())}),
             "be_read_files": sorted({f for _, f in be_read.get(table, set())}),

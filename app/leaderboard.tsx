@@ -13,7 +13,7 @@ import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import logger from '@/utils/logger';
 import { MEDAL_COLORS, TWITCH_PURPLE } from '@/constants/colors';
-import { BETA_MODE } from '@/config/featureFlags';
+import { BETA_MODE, COMMUNITY_GATED } from '@/config/featureFlags';
 
 const AvatarCircle = React.memo<{ name: string; color: string }>(({ name, color }) => {
   const initials =
@@ -136,8 +136,8 @@ const LeaderboardScreen: React.FC = () => {
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
 
-        {/* Twitch Creators link */}
-        {!BETA_MODE && (
+        {/* Twitch Creators link — gated until twitch_creators table is populated */}
+        {!BETA_MODE && !COMMUNITY_GATED && (
           <AnimatedPressable
             onPress={() => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });

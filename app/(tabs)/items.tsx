@@ -79,6 +79,11 @@ type Item = {
   imageUrl?: string;
   source?: string;         // 'ai' | 'scan' | 'manual' — R48
   isManual?: boolean;      // derived: true when source='manual' and no AI predictions
+  // Acquisition fields surfaced 2026-05-01 (was captured in add-manual but
+  // never read back). null = no purchase data on this item, undefined = not
+  // available in the underlying provider response.
+  purchasePriceEur?: number | null;
+  purchasedAt?: string | null;
 };
 
 const VIEW_MODE_KEY = '@collectai/items_view_mode';
@@ -114,6 +119,8 @@ const ItemsScreen: React.FC = () => {
         imageUrl: it.imageUrl,
         source: (it as Record<string, unknown>).source as string | undefined,
         isManual: (it as Record<string, unknown>).source === 'manual' && !it.priceBand,
+        purchasePriceEur: it.purchasePriceEur ?? null,
+        purchasedAt: it.purchasedAt ?? null,
       }));
     },
     [],

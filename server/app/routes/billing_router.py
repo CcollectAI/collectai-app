@@ -106,10 +106,49 @@ def _resolve_price_id(plan: str, interval: str = "monthly") -> str | None:
         return None
     return intervals.get(interval) or intervals.get("monthly") or None
 
+# Per-plan feature limits.
+# Keys MUST match the BillingStatus['limits'] shape consumed by the FE in
+# src/hooks/useBillingLimits.ts. The earlier dict was missing
+# `condition_grading` and `set_completion`, so for every real paid user
+# the FE read those as `undefined` (falsy) and showed locked UI on grading
+# + sets-to-complete despite payment. Fixed 2026-05-01 to match the FE's
+# DEFAULT_LIMITS / FORCED_LIMITS shape exactly.
+#
+# Tier breakdown (mirrors FORCED_LIMITS in src/hooks/useBillingLimits.ts):
+#   free     : caps at 3 mandates, ads on, no premium features
+#   pro      : 10 mandates, dossier_pdf, deal_discovery, condition_grading,
+#              set_completion, no ads. NO advanced_analytics — that's the
+#              Premium upsell hook (matches the marketing copy on
+#              app/subscription.tsx).
+#   premium  : 50 mandates + everything Pro has + advanced_analytics.
 PLAN_LIMITS = {
-    "free": {"max_mandates": 3, "deal_discovery": False, "dossier_pdf": False, "advanced_analytics": False, "show_ads": True},
-    "pro": {"max_mandates": 10, "deal_discovery": True, "dossier_pdf": True, "advanced_analytics": False, "show_ads": False},
-    "premium": {"max_mandates": 50, "deal_discovery": True, "dossier_pdf": True, "advanced_analytics": True, "show_ads": False},
+    "free": {
+        "max_mandates": 3,
+        "deal_discovery": False,
+        "dossier_pdf": False,
+        "advanced_analytics": False,
+        "condition_grading": False,
+        "set_completion": False,
+        "show_ads": True,
+    },
+    "pro": {
+        "max_mandates": 10,
+        "deal_discovery": True,
+        "dossier_pdf": True,
+        "advanced_analytics": False,
+        "condition_grading": True,
+        "set_completion": True,
+        "show_ads": False,
+    },
+    "premium": {
+        "max_mandates": 50,
+        "deal_discovery": True,
+        "dossier_pdf": True,
+        "advanced_analytics": True,
+        "condition_grading": True,
+        "set_completion": True,
+        "show_ads": False,
+    },
 }
 
 # ---------------------------------------------------------------------------

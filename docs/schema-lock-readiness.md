@@ -21,34 +21,16 @@ Per table:
 - 🔧 **needs round-trip wiring** — only one direction wired
 - 🚨 **fix strays first** — code references columns not in schema
 
-## 🚨 fix strays first — 20 tables
+## 📎 allowlisted strays — gated/dormant
 
-Tables with stray refs (code references columns not in schema)
+Stray refs intentionally kept out of the fix-list because the call chain proves they can't fire at runtime. See `scripts/stray_drift_allowlist.txt` for the per-entry trace. Removing an entry from the allowlist requires either fixing the underlying code or deleting the dead reference.
 
-| table | total cols | LOCKED | FE_DRIFT | strays | next E2E step |
-|---|---|---|---|---|---|
-| `items` | 70 | 8 | 2 | `images, subtype_id, progress_pct...` | Fix strays: ['images', 'subtype_id', 'progress_pct'] (rename in code OR add column) |
-| `achievements` | 10 | 0 | 0 | `unlocked_at, progress` | Fix strays: ['unlocked_at', 'progress'] (rename in code OR add column) |
-| `build_paint_projects` | 15 | 0 | 0 | `project_id, minutes, last_seen_live_at...` | Fix strays: ['project_id', 'minutes', 'last_seen_live_at'] (rename in code OR add column) |
-| `build_paint_sessions` | 7 | 0 | 0 | `last_seen_live_at` | Fix strays: ['last_seen_live_at'] (rename in code OR add column) |
-| `build_paint_steps` | 9 | 0 | 0 | `content` | Fix strays: ['content'] (rename in code OR add column) |
-| `category_items` | 18 | 0 | 0 | `price_eur` | Fix strays: ['price_eur'] (rename in code OR add column) |
-| `challenges` | 11 | 0 | 0 | `completed_at, current_count, completed` | Fix strays: ['completed_at', 'current_count', 'completed'] (rename in code OR add column) |
-| `chat_messages_v1` | 7 | 5 | 0 | `so` | Fix strays: ['so'] (rename in code OR add column) |
-| `collections` | 4 | 0 | 0 | `below, optionally` | Fix strays: ['below', 'optionally'] (rename in code OR add column) |
-| `event_attendees` | 5 | 0 | 0 | `max_attendees, sponsor_tier, location...` | Fix strays: ['max_attendees', 'sponsor_tier', 'location'] (rename in code OR add column) |
-| `feedback` | 13 | 0 | 0 | `label, item_id, user_id...` | Fix strays: ['label', 'item_id', 'user_id'] (rename in code OR add column) |
-| `item_images` | 5 | 0 | 0 | `label, position, image_url` | Fix strays: ['label', 'position', 'image_url'] (rename in code OR add column) |
-| `market_hits` | 30 | 0 | 0 | `domestic_only, ships_from` | Fix strays: ['domestic_only', 'ships_from'] (rename in code OR add column) |
-| `model_registry` | 7 | 0 | 0 | `s3_key, is_active, model_type...` | Fix strays: ['s3_key', 'is_active', 'model_type'] (rename in code OR add column) |
-| `offers` | 11 | 0 | 0 | `item_id, currency` | Fix strays: ['item_id', 'currency'] (rename in code OR add column) |
-| `purchase_mandates` | 22 | 0 | 0 | `listing_source, clicked_at, listing_currency...` | Fix strays: ['listing_source', 'clicked_at', 'listing_currency'] (rename in code OR add column) |
-| `user_achievements` | 4 | 0 | 0 | `tier, id, icon...` | Fix strays: ['tier', 'id', 'icon'] (rename in code OR add column) |
-| `user_gamification` | 9 | 0 | 0 | `avatar_url, avatar_color, display_name` | Fix strays: ['avatar_url', 'avatar_color', 'display_name'] (rename in code OR add column) |
-| `user_set_progress` | 7 | 0 | 0 | `image_url, name, category_id...` | Fix strays: ['image_url', 'name', 'category_id'] (rename in code OR add column) |
-| `v_chat_inbox_v1` | 10 | 7 | 0 | `id` | Fix strays: ['id'] (rename in code OR add column) |
+| table | columns |
+|---|---|
+| `items` | `images` |
+| `model_registry` | `artifact_json, model_type, uncertainty_scale` |
 
-## ⚠️ partial lock — 4 tables
+## ⚠️ partial lock — 5 tables
 
 Tables with FE_DRIFT — FE column referenced but the SAME table has BE handlers that ignore it (likely real bug)
 
@@ -57,20 +39,24 @@ Tables with FE_DRIFT — FE column referenced but the SAME table has BE handlers
 | `chat_dm_requests_v1` | 9 | 1 | 6 | — | BE read-handler for: ['context', 'created_at', 'id'] |
 | `v_events_with_attendees_v1` | 42 | 26 | 6 | — | BE read-handler for: ['ends_at', 'is_full', 'source_url'] |
 | `watchlist_items` | 18 | 5 | 4 | — | BE read-handler for: ['notes', 'owned', 'priority'] |
+| `items` | 73 | 8 | 2 | — | BE read-handler for: ['asking_price', 'for_sale'] |
 | `user_public_profiles` | 9 | 4 | 2 | — | BE read-handler for: ['bio', 'interests'] |
 
-## 🔧 needs round-trip wiring — 62 tables
+## 🔧 needs round-trip wiring — 75 tables
 
 Tables wired in only one direction (server-only or FE-only with no opposite link)
 
 | table | total cols | LOCKED | FE_DRIFT | strays | next E2E step |
 |---|---|---|---|---|---|
+| `achievements` | 10 | 0 | 0 | — | FE read needed for: ['category', 'description', 'icon'] |
 | `activity_feed` | 8 | 0 | 0 | — | FE read needed for: ['created_at', 'id']; FE write needed for: ['activity_type', 'description', 'is_public'] |
 | `alert_trigger_history` | 9 | 0 | 0 | — | FE read needed for: ['alert_id', 'created_at', 'id']; FE write needed for: ['read'] |
 | `beta_signups` | 5 | 0 | 0 | — | FE read needed for: ['id', 'signed_up_at']; FE write needed for: ['email', 'ip_address', 'referral_source'] |
 | `calibration_snapshots` | 9 | 0 | 0 | — | FE read needed for: ['ace', 'created_at', 'gate_pass'] |
 | `catalog_suggestions` | 12 | 0 | 0 | — | FE read needed for: ['confidence', 'created_at']; FE write needed for: ['id', 'input_data', 'mapped_item_key'] |
 | `category_candidates` | 10 | 0 | 0 | — | FE read needed for: ['description', 'first_seen', 'id']; FE write needed for: ['admin_notes', 'status'] |
+| `category_items` | 18 | 0 | 0 | — | FE read needed for: ['attributes_json', 'brand', 'category'] |
+| `challenges` | 11 | 0 | 0 | — | FE read needed for: ['category', 'challenge_type', 'description'] |
 | `chat_thread_members_v1` | 4 | 0 | 0 | — | FE read needed for: ['user_id'] |
 | `chat_thread_reads_v1` | 4 | 0 | 0 | — | FE write needed for: ['last_read_at', 'thread_id', 'updated_at'] |
 | `chat_threads_v1` | 9 | 0 | 0 | — | FE read needed for: ['category', 'dm_user_a', 'dm_user_b'] |
@@ -78,18 +64,23 @@ Tables wired in only one direction (server-only or FE-only with no opposite link
 | `dm_threads` | 6 | 0 | 0 | — | FE read needed for: ['id']; FE write needed for: ['requester_id', 'responder_id', 'status'] |
 | `event_announcement_reads` | 3 | 0 | 0 | — | FE write needed for: ['announcement_id', 'user_id'] |
 | `event_announcements` | 7 | 0 | 0 | — | FE write needed for: ['author_user_id', 'body', 'event_id'] |
+| `event_attendees` | 5 | 0 | 0 | — | FE read needed for: ['created_at', 'id']; FE write needed for: ['event_id', 'status', 'user_id'] |
 | `event_follows_v1` | 7 | 0 | 0 | — | FE read needed for: ['canonical_key', 'category'] |
 | `event_sponsor_analytics` | 7 | 0 | 0 | — | FE write needed for: ['event_id', 'impressions', 'rsvps'] |
 | `event_templates` | 6 | 0 | 0 | — | FE read needed for: ['created_at', 'id', 'use_count']; FE write needed for: ['name', 'template_data', 'user_id'] |
 | `event_tickets` | 8 | 0 | 0 | — | FE write needed for: ['amount_cents', 'event_id', 'fee_cents'] |
 | `events` | 44 | 0 | 0 | — | FE read needed for: ['category', 'created_at', 'id']; FE write needed for: ['category_id', 'created_by', 'date'] |
+| `feedback` | 13 | 0 | 0 | — | FE write needed for: ['notes'] |
+| `item_images` | 5 | 0 | 0 | — | FE read needed for: ['id', 'url']; FE write needed for: ['item_id'] |
 | `item_provenance_events` | 8 | 0 | 0 | — | FE read needed for: ['created_at', 'id']; FE write needed for: ['event_type', 'item_id', 'metadata'] |
 | `mandate_deals` | 32 | 0 | 0 | — | FE write needed for: ['affiliate_click', 'affiliate_source', 'affiliate_url'] |
+| `market_hits` | 30 | 0 | 0 | — | FE read needed for: ['id', 'observed_at', 'seen_at']; FE write needed for: ['attrs', 'category', 'condition'] |
 | `marketplace_account_defaults` | 9 | 0 | 0 | — | FE read needed for: ['updated_at']; FE write needed for: ['ebay_category_id', 'fulfillment_policy_id', 'location_key'] |
 | `marketplace_accounts` | 14 | 0 | 0 | — | FE read needed for: ['id', 'last_sync_at']; FE write needed for: ['connected_at', 'created_at', 'is_active'] |
 | `marketplace_fee_schedules` | 10 | 0 | 0 | — | FE read needed for: ['base_fee_pct', 'currency', 'display_name'] |
 | `marketplace_listings` | 38 | 0 | 0 | — | FE read needed for: ['estimated_fees', 'estimated_net', 'expires_at']; FE write needed for: ['account_id', 'auction_duration_days', 'auction_start_price'] |
 | `marketplace_sales` | 20 | 0 | 0 | — | FE read needed for: ['delivered_at', 'id', 'shipped_at']; FE write needed for: ['buyer_marketplace_id', 'buyer_name', 'buyer_rating'] |
+| `model_registry` | 7 | 0 | 0 | — | FE read needed for: ['created_at', 'id', 'is_canary'] |
 | `mv_demand_heat` | 6 | 0 | 0 | — | FE read needed for: ['category', 'item_key', 'last_signal_at'] |
 | `mv_supply_trend` | 6 | 0 | 0 | — | FE read needed for: ['avg_listings', 'avg_price', 'snap_date'] |
 | `notification_history` | 9 | 0 | 0 | — | FE read needed for: ['created_at', 'id']; FE write needed for: ['body', 'data', 'deep_link'] |
@@ -99,11 +90,13 @@ Tables wired in only one direction (server-only or FE-only with no opposite link
 | `object_pointers` | 13 | 0 | 0 | — | FE read needed for: ['content_hash', 'size_bytes']; FE write needed for: ['bucket', 'content_type', 'created_at'] |
 | `offer_events` | 8 | 0 | 0 | — | FE read needed for: ['actor_id', 'created_at', 'event_type'] |
 | `offer_evidence` | 5 | 0 | 0 | — | FE read needed for: ['created_at', 'dossier_json', 'id'] |
+| `offers` | 11 | 0 | 0 | — | FE read needed for: ['amount', 'buyer_id', 'id'] |
 | `on_demand_lookups` | 8 | 0 | 0 | — | FE write needed for: ['category', 'cost_cents', 'fetch_count'] |
 | `price_ground_truths` | 8 | 0 | 0 | — | FE write needed for: ['actual_price', 'currency', 'error_pct'] |
 | `price_history` | 11 | 0 | 0 | — | FE read needed for: ['price_q10', 'price_q50', 'price_q90'] |
 | `price_predictions` | 21 | 0 | 0 | — | FE read needed for: ['category', 'conf_score', 'evidence_hit_ids'] |
 | `processed_webhook_events` | 3 | 0 | 0 | — | FE write needed for: ['event_id', 'event_type'] |
+| `purchase_mandates` | 22 | 0 | 0 | — | FE write needed for: ['allowed_sources', 'category', 'condition_filter'] |
 | `scan_corrections` | 9 | 0 | 0 | — | FE write needed for: ['corrected_category', 'corrected_condition', 'corrected_name'] |
 | `set_items` | 9 | 0 | 0 | — | FE read needed for: ['created_at', 'external_id', 'id'] |
 | `set_registry` | 8 | 0 | 0 | — | FE read needed for: ['category_id', 'id', 'items_json'] |
@@ -117,24 +110,30 @@ Tables wired in only one direction (server-only or FE-only with no opposite link
 | `taxonomy_corrections` | 10 | 0 | 0 | — | FE write needed for: ['corrected_category', 'item_id', 'original_category'] |
 | `taxonomy_registry` | 9 | 0 | 0 | — | FE read needed for: ['categories', 'created_by', 'deprecated_at'] |
 | `training_items` | 30 | 0 | 0 | — | FE read needed for: ['category', 'corrected_at', 'corrected_attributes'] |
+| `user_achievements` | 4 | 0 | 0 | — | FE read needed for: ['unlocked_at']; FE write needed for: ['achievement_id', 'progress', 'user_id'] |
 | `user_alert_preferences` | 9 | 0 | 0 | — | FE write needed for: ['frequency', 'milestone_enabled', 'new_listing_enabled'] |
 | `user_blocks` | 4 | 0 | 0 | — | FE read needed for: ['created_at']; FE write needed for: ['blocked_id', 'blocker_id'] |
 | `user_category_follows` | 3 | 0 | 0 | — | FE write needed for: ['category_id', 'user_id'] |
 | `user_drop_alerts` | 4 | 0 | 0 | — | FE read needed for: ['created_at']; FE write needed for: ['event_id', 'notify_before_hours', 'user_id'] |
+| `user_gamification` | 9 | 0 | 0 | — | FE read needed for: ['current_streak', 'longest_streak']; FE write needed for: ['last_activity_date', 'level', 'monthly_xp'] |
 | `user_price_alerts` | 11 | 0 | 0 | — | FE read needed for: ['last_triggered_at']; FE write needed for: ['active', 'category', 'created_at'] |
 | `user_push_tokens` | 8 | 0 | 0 | — | FE read needed for: ['created_at']; FE write needed for: ['active', 'device_name', 'platform'] |
+| `user_set_progress` | 7 | 0 | 0 | — | FE read needed for: ['notes']; FE write needed for: ['completion_pct', 'owned_count', 'owned_item_ids'] |
 | `user_settings` | 8 | 0 | 0 | — | FE read needed for: ['subscription_tier']; FE write needed for: ['currency', 'locale', 'notification_preferences'] |
 | `verified_sales` | 12 | 0 | 0 | — | FE read needed for: ['created_at', 'id']; FE write needed for: ['category', 'condition', 'currency'] |
 | `vision_category_regret` | 5 | 0 | 0 | — | FE read needed for: ['category', 'computed_at', 'items_added'] |
 | `worker_runs` | 6 | 0 | 0 | — | FE write needed for: ['metadata', 'status', 'worker_name'] |
 
-## 🔓 RLS-direct (intentional, no BE handler) — 8 tables
+## 🔓 RLS-direct (intentional, no BE handler) — 11 tables
 
 Tables FE accesses directly via Supabase REST + RLS — no BE handler exists for the table at all. Intentional pattern.
 
 | table | total cols | LOCKED | FE_DRIFT | strays | next E2E step |
 |---|---|---|---|---|---|
 | `build_paint_notes` | 5 | 0 | 0 | — | consider locking |
+| `build_paint_projects` | 15 | 0 | 0 | — | consider locking |
+| `build_paint_sessions` | 7 | 0 | 0 | — | consider locking |
+| `build_paint_steps` | 9 | 0 | 0 | — | consider locking |
 | `portfolio_values` | 3 | 0 | 0 | — | consider locking |
 | `prediction_sessions` | 13 | 0 | 0 | — | consider locking |
 | `profiles` | 6 | 0 | 0 | — | consider locking |
@@ -142,4 +141,13 @@ Tables FE accesses directly via Supabase REST + RLS — no BE handler exists for
 | `user_privacy_settings` | 6 | 0 | 0 | — | consider locking |
 | `v_category_missing_items_v1` | 7 | 0 | 0 | — | consider locking |
 | `v_category_summaries_v1` | 6 | 0 | 0 | — | consider locking |
+
+## ✅ ready to lock — 2 tables
+
+Tables fully verified, ready to lock
+
+| table | total cols | LOCKED | FE_DRIFT | strays | next E2E step |
+|---|---|---|---|---|---|
+| `chat_messages_v1` | 7 | 5 | 0 | — | lock candidate |
+| `v_chat_inbox_v1` | 10 | 7 | 0 | — | lock candidate |
 

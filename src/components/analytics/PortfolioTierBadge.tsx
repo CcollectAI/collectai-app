@@ -13,7 +13,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { ScoreExplanationSheet } from '@/components/ScoreExplanationSheet';
 import type { PortfolioTierSummary } from '@/analytics/portfolioMetrics';
-import { BETA_MODE } from '@/config/featureFlags';
+import { BETA_MODE, COMMUNITY_GATED } from '@/config/featureFlags';
 import { radius, text, fontWeight, shadow } from '@/theme/tokens';
 
 // Colors now sourced from useAppTheme() — see component body
@@ -53,30 +53,49 @@ function PortfolioTierBadgeInner({ tierSummary }: Props) {
           <Text style={[styles.cardTitle, { color: colors.text }]}>Portfolio Tier</Text>
         </View>
 
-        <AnimatedPressable
-          style={styles.tierBadgeContainer}
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); if (!BETA_MODE) router.push('/leaderboard'); }}
-          accessibilityRole="button"
-          accessibilityLabel={`${tierSummary.tier} tier — view leaderboard`}
-        >
-          <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[tierSummary.tier] + '20' }]}>
-            <Ionicons
-              name={TIER_ICONS[tierSummary.tier]}
-              size={28}
-              color={TIER_COLORS[tierSummary.tier]}
-            />
-            <Text style={[styles.tierLabel, { color: TIER_COLORS[tierSummary.tier] }]}>
-              {tierSummary.tier}
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={TIER_COLORS[tierSummary.tier]}
-              style={{ marginLeft: 4 }}
-            />
+        {/* When BETA_MODE or COMMUNITY_GATED, the leaderboard is hidden
+            (1-entry leaderboard looks like a ghost town). Render as a
+            non-tappable badge so we don't dangle a tap hint that does
+            nothing. Routes remain reachable by deep link. */}
+        {(BETA_MODE || COMMUNITY_GATED) ? (
+          <View style={styles.tierBadgeContainer}>
+            <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[tierSummary.tier] + '20' }]}>
+              <Ionicons
+                name={TIER_ICONS[tierSummary.tier]}
+                size={28}
+                color={TIER_COLORS[tierSummary.tier]}
+              />
+              <Text style={[styles.tierLabel, { color: TIER_COLORS[tierSummary.tier] }]}>
+                {tierSummary.tier}
+              </Text>
+            </View>
           </View>
-          <Text style={[styles.tierTapHint, { color: colors.muted }]}>Tap to view leaderboard</Text>
-        </AnimatedPressable>
+        ) : (
+          <AnimatedPressable
+            style={styles.tierBadgeContainer}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push('/leaderboard'); }}
+            accessibilityRole="button"
+            accessibilityLabel={`${tierSummary.tier} tier — view leaderboard`}
+          >
+            <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[tierSummary.tier] + '20' }]}>
+              <Ionicons
+                name={TIER_ICONS[tierSummary.tier]}
+                size={28}
+                color={TIER_COLORS[tierSummary.tier]}
+              />
+              <Text style={[styles.tierLabel, { color: TIER_COLORS[tierSummary.tier] }]}>
+                {tierSummary.tier}
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={TIER_COLORS[tierSummary.tier]}
+                style={{ marginLeft: 4 }}
+              />
+            </View>
+            <Text style={[styles.tierTapHint, { color: colors.muted }]}>Tap to view leaderboard</Text>
+          </AnimatedPressable>
+        )}
 
         <View style={styles.scoresRow}>
           <View style={styles.scoreItem}>

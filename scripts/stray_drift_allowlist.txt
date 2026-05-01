@@ -1,0 +1,47 @@
+# Schema-lock scanner stray-ref allowlist. Entries here are dropped
+# from the "🚨 fix strays first" bucket in docs/schema-lock-readiness.md
+# and listed under a separate "Allowlisted strays" section in
+# docs/schema-lock.md.
+#
+# Format: <table>:<column>
+# Each entry MUST be preceded by a comment block tracing the call
+# chain that proves the reference is gated, dormant, or otherwise
+# can't fire at runtime. Default assumption is "live and silently
+# broken" — see learning_dont_allowlist_dead_assert_dead.md.
+#
+# Removing a line MUST be paired with either fixing the drift in code
+# or deleting the dead reference outright.
+
+# items.images
+# Only writer is services/collectors_merge/api/routes.py (3 INSERTs
+# at lines 242, 967, 1308). That FastAPI service is launched only by
+# deploy/run_uvicorn.sh → services.collectors_merge.api.main:app on
+# port 8080 via the `collectors-merge.service` systemd unit.
+# - On EC2 the unit is INACTIVE (`sudo systemctl is-active
+#   collectors-merge.service` returned `inactive` 2026-05-01).
+# - nginx (deploy/nginx.conf) only routes api.collectai.app to the
+#   `collectai_api` upstream — the live server/app FastAPI on :8000.
+# - The Pydantic schema in services/collectors_merge/core/schemas/items.py:17
+#   still defines `images: list[str]` for the legacy contract.
+# - server/tests/test_routes_predict.py imports helpers from this
+#   service for unit tests but mocks the DB and never executes the
+#   INSERT.
+# Reactivating the service requires rewriting these INSERTs to the
+# modern `image_url` column first.
+items:images
+
+# model_registry.{artifact_json, model_type, uncertainty_scale}
+# Only reader is server/app/ml/model_loader.py:88-101 in
+# `_fetch_model_registry_entry`, gated by `_schema_is_compatible(conn)`
+# at line 44. That probe checks information_schema.columns for
+# {category, model_type, is_active} on public.model_registry — the
+# live table has columns id/name/version/params/created_at/uri/is_canary,
+# so the probe returns False on first call, caches it, and the SELECT
+# is never issued. Runtime path is `_load_artifact_from_disk`
+# (line 178), which reads artifacts/{category}/active/model.json from
+# /opt/collectors/server/artifacts on EC2.
+# Drift will resolve when model_registry is migrated forward to the
+# loader's expected shape (planned, no date).
+model_registry:artifact_json
+model_registry:model_type
+model_registry:uncertainty_scale

@@ -13,6 +13,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { COMMUNITY_GATED } from '@/config/featureFlags';
 
 type Props = {
   /** Icon color — falls back to theme text color */
@@ -54,6 +55,14 @@ export const InboxHeaderButton: React.FC<Props> = ({
       clearInterval(interval);
     };
   }, []);
+
+  // When COMMUNITY_GATED, hide the icon unless the user has unread DMs.
+  // The /inbox route stays reachable by deep link / push notification, so
+  // any real DM that arrives surfaces the icon and lets the user navigate.
+  // For solo-founder day-1, with no DMs, no inbox button appears at all.
+  if (COMMUNITY_GATED && unreadCount === 0) {
+    return null;
+  }
 
   return (
     <AnimatedPressable

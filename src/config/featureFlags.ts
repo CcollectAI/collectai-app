@@ -1,6 +1,19 @@
 /** When true, hides non-core screens (events, build & paint, sell, gamification, sponsor, twitch) */
 export const BETA_MODE = false;
 
+/**
+ * When true, social-density UI is hidden because we don't have enough public
+ * users yet. Surfaces affected: leaderboard, inbox/DMs, twitch hub, marketplace
+ * "Find Collectors" search, event attendee lists. Routes remain reachable by
+ * deep link so existing share links don't 404.
+ *
+ * Flip to false once we cross ~50 active public profiles. Keeping it true at
+ * launch avoids the "1 entry on the leaderboard" / "0 attendees on every
+ * event" ghost-town look. Future: wire to a runtime public-user-count probe
+ * via PostHog remote flag.
+ */
+export const COMMUNITY_GATED = true;
+
 export const featureFlags = {
   darkMode: false,
   FEATURE_HAPTICS_MICRO_ANIMATIONS: true,
