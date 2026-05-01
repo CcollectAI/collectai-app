@@ -27,24 +27,24 @@ Tables with stray refs (code references columns not in schema)
 
 | table | total cols | LOCKED | FE_DRIFT | strays | next E2E step |
 |---|---|---|---|---|---|
-| `build_paint_projects` | 15 | 0 | 9 | `title, step_order, last_seen_live_at...` | Fix strays: ['title', 'step_order', 'last_seen_live_at'] (rename in code OR add column) |
+| `build_paint_projects` | 15 | 0 | 9 | `project_id, minutes, last_seen_live_at...` | Fix strays: ['project_id', 'minutes', 'last_seen_live_at'] (rename in code OR add column) |
 | `build_paint_steps` | 9 | 0 | 6 | `content` | Fix strays: ['content'] (rename in code OR add column) |
 | `build_paint_sessions` | 7 | 0 | 2 | `last_seen_live_at` | Fix strays: ['last_seen_live_at'] (rename in code OR add column) |
-| `items` | 70 | 8 | 2 | `progress_status, q50, progress_pct...` | Fix strays: ['progress_status', 'q50', 'progress_pct'] (rename in code OR add column) |
+| `items` | 70 | 8 | 2 | `images, subtype_id, progress_pct...` | Fix strays: ['images', 'subtype_id', 'progress_pct'] (rename in code OR add column) |
 | `achievements` | 10 | 0 | 0 | `unlocked_at, progress` | Fix strays: ['unlocked_at', 'progress'] (rename in code OR add column) |
 | `category_items` | 18 | 0 | 0 | `price_eur` | Fix strays: ['price_eur'] (rename in code OR add column) |
-| `challenges` | 11 | 0 | 0 | `completed, current_count, completed_at` | Fix strays: ['completed', 'current_count', 'completed_at'] (rename in code OR add column) |
+| `challenges` | 11 | 0 | 0 | `completed_at, current_count, completed` | Fix strays: ['completed_at', 'current_count', 'completed'] (rename in code OR add column) |
 | `chat_messages_v1` | 7 | 5 | 0 | `so` | Fix strays: ['so'] (rename in code OR add column) |
-| `collections` | 4 | 0 | 0 | `optionally, below` | Fix strays: ['optionally', 'below'] (rename in code OR add column) |
-| `event_attendees` | 5 | 0 | 0 | `image_url, kind, title...` | Fix strays: ['image_url', 'kind', 'title'] (rename in code OR add column) |
-| `feedback` | 13 | 0 | 0 | `label, observed_at, item_id...` | Fix strays: ['label', 'observed_at', 'item_id'] (rename in code OR add column) |
-| `item_images` | 5 | 0 | 0 | `image_url, label, position` | Fix strays: ['image_url', 'label', 'position'] (rename in code OR add column) |
+| `collections` | 4 | 0 | 0 | `below, optionally` | Fix strays: ['below', 'optionally'] (rename in code OR add column) |
+| `event_attendees` | 5 | 0 | 0 | `max_attendees, sponsor_tier, location...` | Fix strays: ['max_attendees', 'sponsor_tier', 'location'] (rename in code OR add column) |
+| `feedback` | 13 | 0 | 0 | `label, item_id, user_id...` | Fix strays: ['label', 'item_id', 'user_id'] (rename in code OR add column) |
+| `item_images` | 5 | 0 | 0 | `label, position, image_url` | Fix strays: ['label', 'position', 'image_url'] (rename in code OR add column) |
 | `market_hits` | 30 | 0 | 0 | `domestic_only, ships_from` | Fix strays: ['domestic_only', 'ships_from'] (rename in code OR add column) |
-| `model_registry` | 7 | 0 | 0 | `category, uncertainty_scale, model_type...` | Fix strays: ['category', 'uncertainty_scale', 'model_type'] (rename in code OR add column) |
+| `model_registry` | 7 | 0 | 0 | `s3_key, is_active, model_type...` | Fix strays: ['s3_key', 'is_active', 'model_type'] (rename in code OR add column) |
 | `offers` | 11 | 0 | 0 | `item_id, currency` | Fix strays: ['item_id', 'currency'] (rename in code OR add column) |
-| `purchase_mandates` | 22 | 0 | 0 | `affiliate_source, estimated_commission, discovered_at...` | Fix strays: ['affiliate_source', 'estimated_commission', 'discovered_at'] (rename in code OR add column) |
-| `user_achievements` | 4 | 0 | 0 | `title, category, sort_order...` | Fix strays: ['title', 'category', 'sort_order'] (rename in code OR add column) |
-| `user_gamification` | 9 | 0 | 0 | `avatar_url, display_name, avatar_color` | Fix strays: ['avatar_url', 'display_name', 'avatar_color'] (rename in code OR add column) |
+| `purchase_mandates` | 22 | 0 | 0 | `listing_source, clicked_at, listing_currency...` | Fix strays: ['listing_source', 'clicked_at', 'listing_currency'] (rename in code OR add column) |
+| `user_achievements` | 4 | 0 | 0 | `tier, id, icon...` | Fix strays: ['tier', 'id', 'icon'] (rename in code OR add column) |
+| `user_gamification` | 9 | 0 | 0 | `avatar_url, avatar_color, display_name` | Fix strays: ['avatar_url', 'avatar_color', 'display_name'] (rename in code OR add column) |
 | `user_set_progress` | 7 | 0 | 0 | `image_url, name, category_id...` | Fix strays: ['image_url', 'name', 'category_id'] (rename in code OR add column) |
 | `v_chat_inbox_v1` | 10 | 7 | 0 | `id` | Fix strays: ['id'] (rename in code OR add column) |
 

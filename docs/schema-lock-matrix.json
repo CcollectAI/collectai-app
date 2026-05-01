@@ -391,11 +391,11 @@
         "src/data/providers/buildPaintProvider.ts"
       ],
       "stray": [
-        "title",
-        "step_order",
-        "last_seen_live_at",
+        "project_id",
         "minutes",
-        "project_id"
+        "last_seen_live_at",
+        "step_order",
+        "title"
       ]
     },
     "build_paint_sessions": {
@@ -951,9 +951,9 @@
       "fe_read_files": [],
       "fe_write_files": [],
       "stray": [
-        "completed",
+        "completed_at",
         "current_count",
-        "completed_at"
+        "completed"
       ]
     },
     "chat_dm_requests_v1": {
@@ -1253,8 +1253,8 @@
       "fe_read_files": [],
       "fe_write_files": [],
       "stray": [
-        "optionally",
-        "below"
+        "below",
+        "optionally"
       ]
     },
     "demand_signals": {
@@ -1503,23 +1503,23 @@
       "fe_read_files": [],
       "fe_write_files": [],
       "stray": [
-        "image_url",
-        "kind",
-        "title",
-        "sponsor_paid_at",
-        "sponsor_expires_at",
         "max_attendees",
-        "end_date",
-        "time",
-        "category_id",
-        "date",
-        "description",
-        "is_public",
-        "online_url",
-        "location",
-        "created_by",
         "sponsor_tier",
-        "format"
+        "location",
+        "is_public",
+        "sponsor_expires_at",
+        "title",
+        "created_by",
+        "online_url",
+        "description",
+        "end_date",
+        "sponsor_paid_at",
+        "kind",
+        "category_id",
+        "time",
+        "date",
+        "format",
+        "image_url"
       ]
     },
     "event_follows_v1": {
@@ -2112,9 +2112,9 @@
       "fe_write_files": [],
       "stray": [
         "label",
-        "observed_at",
         "item_id",
-        "user_id"
+        "user_id",
+        "observed_at"
       ]
     },
     "item_images": {
@@ -2160,9 +2160,9 @@
       "fe_read_files": [],
       "fe_write_files": [],
       "stray": [
-        "image_url",
         "label",
-        "position"
+        "position",
+        "image_url"
       ]
     },
     "item_provenance_events": {
@@ -2690,15 +2690,15 @@
         "src/data/providers/itemsProvider.ts"
       ],
       "stray": [
-        "progress_status",
-        "q50",
-        "progress_pct",
-        "taxonomy_version",
         "images",
-        "progress_notes",
+        "subtype_id",
+        "progress_pct",
         "normalized_key",
+        "progress_notes",
+        "q50",
+        "taxonomy_version",
         "attributes_json",
-        "subtype_id"
+        "progress_status"
       ]
     },
     "mandate_deals": {
@@ -3773,11 +3773,11 @@
       "fe_read_files": [],
       "fe_write_files": [],
       "stray": [
-        "category",
-        "uncertainty_scale",
-        "model_type",
         "s3_key",
         "is_active",
+        "model_type",
+        "category",
+        "uncertainty_scale",
         "artifact_json"
       ]
     },
@@ -5072,29 +5072,29 @@
       "fe_read_files": [],
       "fe_write_files": [],
       "stray": [
-        "affiliate_source",
-        "estimated_commission",
-        "discovered_at",
-        "notified_at",
-        "affiliate_click",
-        "raising",
-        "deal_score",
-        "mandate_id",
-        "listing_ended",
-        "provenance_score",
-        "policy_passed",
-        "added_item_id",
-        "listing_url",
-        "affiliate_url",
-        "listing_seller",
-        "listing_condition",
-        "predicted_q50",
-        "predicted_q90",
-        "listing_currency",
-        "predicted_q10",
         "listing_source",
         "clicked_at",
-        "listing_price"
+        "listing_currency",
+        "added_item_id",
+        "predicted_q10",
+        "discovered_at",
+        "affiliate_click",
+        "policy_passed",
+        "predicted_q50",
+        "notified_at",
+        "estimated_commission",
+        "listing_ended",
+        "affiliate_source",
+        "predicted_q90",
+        "mandate_id",
+        "listing_url",
+        "provenance_score",
+        "listing_seller",
+        "affiliate_url",
+        "deal_score",
+        "listing_condition",
+        "listing_price",
+        "raising"
       ]
     },
     "scan_corrections": {
@@ -6290,15 +6290,15 @@
       "fe_read_files": [],
       "fe_write_files": [],
       "stray": [
+        "tier",
+        "id",
+        "icon",
         "title",
+        "xp_reward",
+        "threshold",
         "category",
         "sort_order",
-        "icon",
-        "description",
-        "xp_reward",
-        "id",
-        "threshold",
-        "tier"
+        "description"
       ]
     },
     "user_alert_preferences": {
@@ -6542,8 +6542,8 @@
       "fe_write_files": [],
       "stray": [
         "avatar_url",
-        "display_name",
-        "avatar_color"
+        "avatar_color",
+        "display_name"
       ]
     },
     "user_price_alerts": {

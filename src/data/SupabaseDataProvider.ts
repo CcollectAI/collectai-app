@@ -91,35 +91,36 @@ export class SupabaseDataProvider implements DataProvider {
 
   // ─── Alerts ─────────────────────────────────────────────────────────────────
   async listAlertsFeed(pagination?: PaginationParams): Promise<AlertFeedItem[]> {
-    // Kept inline — small single-method domain, not worth a separate file
+    // The view `v_alerts_feed_v1` was never deployed — every call to this
+    // returned [] silently because the .from() failed and the catch
+    // returned []. The active server source of truth is GET
+    // /alerts/trigger-history (alerts_feature_router.py:269), which reads
+    // alert_trigger_history with the right RLS scoping. Found by
+    // audit_full_chain.py 2026-05-01.
     const { API_LIMITS } = await import('@/constants/apiLimits');
-    const { supabase } = await import('../lib/supabase');
+    const { collectorsApi } = await import('../api/collectorsApi');
     const logger = (await import('../utils/logger')).default;
 
     const limit = pagination?.limit ?? API_LIMITS.ALERTS_DEFAULT;
     const offset = pagination?.offset ?? 0;
-    const { data, error } = await supabase
-      .from('v_alerts_feed_v1')
-      .select('id, type, alert_type, title, body, category, item_id, item_ref, created_at, read, trigger_value')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (error) {
-      logger.warn('[SupabaseDataProvider] listAlertsFeed error:', error);
+    try {
+      const data = await collectorsApi.getAlertTriggerHistory();
+      const triggers = (data?.triggers ?? []).slice(offset, offset + limit);
+      return triggers.map((t) => ({
+        id: t.id,
+        // Server returns trigger_type (e.g. 'price_drop', 'milestone'); the
+        // FE display used `type` or `alert_type` interchangeably.
+        type: t.trigger_type ?? 'unknown',
+        title: t.message ?? '',
+        body: null,
+        createdAt: t.created_at ?? new Date().toISOString(),
+        itemId: t.item_id ?? null,
+        watchlistItemId: null,
+      }));
+    } catch (err) {
+      logger.warn('[SupabaseDataProvider] listAlertsFeed error:', err);
       return [];
     }
-
-    if (!data) return [];
-
-    return (data as Record<string, unknown>[]).map((row) => ({
-      id: row.id as string,
-      type: (row.type ?? row.alert_type ?? 'unknown') as string,
-      title: (row.title as string | null) ?? '',
-      body: (row.body as string | null) ?? null,
-      createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
-      itemId: (row.item_id as string | null) ?? null,
-      watchlistItemId: (row.watchlist_item_id as string | null) ?? null,
-    }));
   }
 
   // ─── Chat / DM ──────────────────────────────────────────────────────────────

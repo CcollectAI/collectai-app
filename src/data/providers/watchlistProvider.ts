@@ -13,9 +13,15 @@ import { collectorsApi } from '../../api/collectorsApi';
 import logger from '../../utils/logger';
 
 export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
+  // The view `v_watchlist_items_v1` was never deployed (despite the
+  // `_v1` naming convention used elsewhere). The data lives directly in
+  // `watchlist_items`, which RLS scopes to the current user. Bare-table
+  // read is fine. Also drop `sort_order` — the column doesn't exist on
+  // the table; downstream code falls back to `priority`-based ordering.
+  // Found by audit_full_chain.py 2026-05-01.
   const { data, error } = await supabase
-    .from('v_watchlist_items_v1')
-    .select('id,title,priority,owned,target_price,currency,category,notes,created_at,sort_order');
+    .from('watchlist_items')
+    .select('id,title,priority,owned,target_price,currency,category,notes,created_at');
 
   if (error) {
     logger.warn('[SupabaseDataProvider] listWatchlist error:', error);
@@ -32,7 +38,6 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     category?: string | null;
     notes?: string | null;
     created_at?: string | null;
-    sort_order?: number | null;
   }[];
 
   return rows.map((r) => ({
@@ -45,7 +50,7 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     category: r.category ?? undefined,
     notes: r.notes ?? undefined,
     createdAt: r.created_at ?? undefined,
-    sortOrder: r.sort_order ?? 0,
+    sortOrder: 0, // sort_order column doesn't exist on watchlist_items; UI sorts by priority
   }));
 }
 
@@ -165,14 +170,15 @@ export async function convertWatchlistToItem(
   // tap from the wishlist threw "Could not find the function". Compose
   // the conversion at the boundary using the two endpoints that already
   // exist:
-  //   1. read title/category from v_watchlist_items_v1 (Supabase RLS-safe)
+  //   1. read title/category from watchlist_items (Supabase RLS-safe;
+  //      the v_watchlist_items_v1 view referenced earlier was never deployed)
   //   2. POST /items with actualPrice as purchase_price
   //   3. DELETE /watchlist/mine/{id} to clear the now-acquired row
   // If POST /items fails, leave the watchlist row in place so the user
   // can retry. If DELETE fails after a successful insert, surface a
   // partial-success warning but keep the new item.
   const { data: w, error: wErr } = await supabase
-    .from('v_watchlist_items_v1')
+    .from('watchlist_items')
     .select('id, title, category')
     .eq('id', watchlistItemId)
     .maybeSingle();
