@@ -75,7 +75,14 @@ WORKER_OUTPUTS: dict[str, WorkerOutput] = {
         max_staleness_hours=12.0,
     ),
     "catalog_learning_worker": WorkerOutput(
-        table="category_items",
+        # The worker reads catalog_suggestions and writes category_candidates
+        # (and updates catalog_suggestions.status). It does NOT write
+        # category_items — that's catalog_crawler_worker's job. Earlier the
+        # probe was pointed at category_items.updated_at, which never moved
+        # when this worker ran, so SILENT WRITER kept paging despite the
+        # worker doing its actual job correctly. Track category_candidates
+        # instead — that's what this worker actually populates / promotes.
+        table="category_candidates",
         timestamp_column="updated_at",
         max_staleness_hours=24.0,
         # Only flag if there are pending catalog_suggestions to process.
