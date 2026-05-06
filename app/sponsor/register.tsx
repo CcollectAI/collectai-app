@@ -166,7 +166,7 @@ const SponsorRegisterScreen: React.FC = () => {
                 <Ionicons name="megaphone" size={36} color={colors.accent} />
               </View>
               <Text style={[styles.heroTitle, { color: colors.text }]}>
-                Sponsor on CollectAI
+                Sponsor on Sparrow Collect
               </Text>
               <Text style={[styles.heroSubtitle, { color: colors.muted }]}>
                 Reach passionate collectors, announce exclusive drops, and grow your brand with the community that loves what you make.

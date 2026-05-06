@@ -42,7 +42,8 @@ FROM public.items
 WHERE user_id IS NOT NULL
 """
 
-# Current portfolio value for a user
+# Current portfolio value for a user.
+# Partition prune: latest predictions are always within the last 60 days.
 _CURRENT_VALUE_QUERY = """
 SELECT COALESCE(SUM(lp.q50), 0)::numeric AS total_value
 FROM (
@@ -52,11 +53,13 @@ FROM (
     JOIN public.items i ON i.canonical_key = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
+      AND pp.generated_at > now() - interval '60 days'
     ORDER BY pp.item_ref, pp.generated_at DESC
 ) lp
 """
 
-# Historical portfolio value
+# Historical portfolio value.
+# Partition prune: bound both edges so the planner picks one partition.
 _HISTORICAL_VALUE_QUERY = """
 SELECT COALESCE(SUM(hp.q50), 0)::numeric AS total_value
 FROM (
@@ -66,6 +69,7 @@ FROM (
     JOIN public.items i ON i.canonical_key = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
+      AND pp.generated_at > $2 - interval '30 days'
       AND pp.generated_at <= $2
     ORDER BY pp.item_ref, pp.generated_at DESC
 ) hp
@@ -82,6 +86,8 @@ WITH current_vals AS (
     JOIN public.items i ON i.canonical_key = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
+      -- Partition prune: latest predictions are always within last 60d.
+      AND pp.generated_at > now() - interval '60 days'
     ORDER BY pp.item_ref, pp.generated_at DESC
 ),
 historical_vals AS (

@@ -25,7 +25,7 @@ import { radius, text, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 
-const RECENT_SEARCHES_KEY = '@collectai/recent_searches';
+const RECENT_SEARCHES_KEY = '@sparrowcollect/recent_searches';
 const MAX_RECENT_SEARCHES = 10;
 
 type SearchResults = {

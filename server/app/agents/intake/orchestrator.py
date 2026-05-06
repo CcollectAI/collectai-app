@@ -31,6 +31,22 @@ from .condition_grading import apply_condition_grading
 logger = logging.getLogger(__name__)
 
 
+async def _user_has_paid_plan(user_id: Optional[str]) -> bool:
+    """True if user is on pro/premium. Free users skip paid intake steps.
+
+    Inline import keeps this resilient if subscription module fails to load
+    in degraded mode — we just default to free (skip paid steps).
+    """
+    if not user_id:
+        return False
+    try:
+        from app.subscription import get_user_plan
+        plan = await get_user_plan(user_id)
+        return plan in ("pro", "premium")
+    except Exception:
+        return False
+
+
 async def process_intake(
     image_bytes: Optional[bytes] = None,
     barcode: Optional[str] = None,
@@ -155,7 +171,10 @@ async def process_intake(
                     result.suggested_grade = vision_result.get("suggested_grade")
 
                     # Enrich with condition_grader if defects present but no grade
-                    apply_condition_grading(result, vision_cat)
+                    # Paid feature (Pro+) — skip for free users so the FE
+                    # paywall lines up with server-side gating.
+                    if await _user_has_paid_plan(user_id):
+                        apply_condition_grading(result, vision_cat)
 
                     result.rationale.append(
                         f"Vision classified as {vision_cat} via {vision_method} "

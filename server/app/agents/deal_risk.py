@@ -123,6 +123,11 @@ async def compute_risk_flags(conn: Any, offer_id: str, user_id: str) -> dict[str
                 FROM public.market_hits
                 WHERE item_ref = $1 AND price_eur IS NOT NULL
                   AND (is_listing IS NOT TRUE)
+                  -- Partition prune: 180d window — risk flags compare
+                  -- offer prices against recent sold distribution.
+                  -- Older comps drift in value and would skew the
+                  -- mean/stddev anyway.
+                  AND seen_at > now() - interval '180 days'
                 """,
                 item_row["canonical_key"],
             )

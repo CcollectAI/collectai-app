@@ -148,10 +148,13 @@ async def generate_dossier(
     # have and default the rest so the dossier renders.
     # items column names on this schema: attrs (jsonb, not attributes_json),
     # no updated_at. Selecting what actually exists so the query doesn't crash.
+    # cost_basis + purchase_price + purchase_currency + purchased_at are
+    # what the user paid for the item (added to dossier 2026-05-02).
     item_row = await conn.fetchrow(
         """
         SELECT id, user_id, title, category, condition, attrs AS attributes_json,
-               canonical_key, created_at, image_url
+               canonical_key, created_at, image_url,
+               cost_basis, purchase_price, purchase_currency, purchased_at
         FROM public.items
         WHERE id = $1::uuid AND user_id = $2::uuid
         """,
@@ -175,6 +178,30 @@ async def generate_dossier(
     # fields for back-compat with the response schema).
     attrs_dict = attributes if isinstance(attributes, dict) else {}
 
+    # Purchase price block — what the user paid (separate from valuation).
+    # Two sources in priority order:
+    #   1. items.purchase_price + items.purchase_currency (collector entered
+    #      both an amount and a currency at intake time)
+    #   2. items.cost_basis (legacy column; assume EUR)
+    # Both can be NULL when the user didn't record their purchase.
+    raw_purchase_price = item_row.get("purchase_price")
+    raw_cost_basis = item_row.get("cost_basis")
+    purchase_block: Optional[Dict[str, Any]] = None
+    if raw_purchase_price is not None:
+        purchase_block = {
+            "amount": float(raw_purchase_price),
+            "currency": (item_row.get("purchase_currency") or "EUR").upper(),
+            "purchased_at": _ts(item_row.get("purchased_at")) or None,
+            "source": "user_recorded",
+        }
+    elif raw_cost_basis is not None:
+        purchase_block = {
+            "amount": float(raw_cost_basis),
+            "currency": "EUR",
+            "purchased_at": _ts(item_row.get("purchased_at")) or None,
+            "source": "cost_basis_legacy",
+        }
+
     identity = {
         "name": item_row["title"],
         "category": item_row["category"],
@@ -186,6 +213,7 @@ async def generate_dossier(
         "taxonomy_version": attrs_dict.get("taxonomy_version"),
         "attributes": attributes or {},
         "image_url": first_image_url,
+        "purchase": purchase_block,
         "created_at": _ts(item_row.get("created_at")),
         "updated_at": _ts(item_row.get("updated_at")) if item_row.get("updated_at") else None,
     }
@@ -286,6 +314,11 @@ async def generate_dossier(
             SELECT price_q50, price_q10, price_q90, source, snapshot_at
             FROM public.price_history
             WHERE item_ref = $1
+              -- Partition prune: dossier shows a 90-day trend chart, so
+              -- match the read window to what the FE actually renders.
+              -- Without this filter the planner walks all monthly
+              -- partitions of the 686K-row table on every dossier view.
+              AND snapshot_at > now() - interval '90 days'
             ORDER BY snapshot_at ASC
             """,
             canonical_key,
@@ -316,6 +349,11 @@ async def generate_dossier(
             FROM public.market_hits
             WHERE normalized_key ILIKE $1
               AND (is_listing IS NOT TRUE)
+              -- Partition prune: dossier only needs recent comps; the
+              -- model decay half-life is 30d so 180d covers the whole
+              -- meaningful window. Without this the planner walks all
+              -- monthly partitions on every dossier render.
+              AND seen_at > now() - interval '180 days'
             ORDER BY ended_at DESC NULLS LAST
             LIMIT 10
             """,

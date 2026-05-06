@@ -1849,6 +1849,121 @@ exports[`ProfileEditSection matches snapshot 1`] = `
     }
   />
   <View
+    accessibilityLabel="My Listings and Offers"
+    accessibilityRole="link"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        My Listings & Offers
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Manage items for sale and P2P offers
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#64748B",
+            "fontSize": 16,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
     accessibilityLabel="Blocked Users"
     accessibilityRole="link"
     accessibilityState={
@@ -2063,6 +2178,121 @@ exports[`ProfileEditSection matches snapshot 1`] = `
       }
     >
       
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    accessibilityLabel="Download full inventory as CSV"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": false,
+        "checked": undefined,
+        "disabled": false,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Download full inventory (CSV)
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Comprehensive 30-column snapshot — every detail of every item, in your currency. For insurance, accountants, or full collection records.
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#81D8D0",
+            "fontSize": 16,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
     </Text>
   </View>
   <View

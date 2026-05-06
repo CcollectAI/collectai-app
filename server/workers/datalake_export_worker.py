@@ -95,7 +95,8 @@ async def run_once() -> dict:
 
     dsn = os.environ.get("DB_DSN_DIRECT") or os.environ["DB_DSN"]
     conn = await asyncpg.connect(dsn, timeout=60)
-    await conn.execute("SET statement_timeout = 0")
+    # Bounded 2026-05-04 (was 0/unbounded). 30 min headroom for bulk parquet export.
+    await conn.execute("SET statement_timeout = '1800s'")
 
     # What partitions exist on market_hits, sorted oldest first, excluding
     # the default and the current month (never export the open month).

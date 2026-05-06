@@ -82,9 +82,9 @@ async def run_once() -> dict[str, int]:
         return {"updated": 0}
 
     conn = await asyncpg.connect(DSN)
-    # The engagement aggregation joins demand_signals + event_attendees +
-    # follows under load the default 30s statement_timeout cuts it off.
-    await conn.execute("SET statement_timeout = 0")
+    # Bounded 2026-05-04 (was 0/unbounded). 5 min headroom for the join.
+    # Default pooler 30s cuts it off; 300s is generous without being unbounded.
+    await conn.execute("SET statement_timeout = '300s'")
     try:
         await _ensure_engagement_column(conn)
 

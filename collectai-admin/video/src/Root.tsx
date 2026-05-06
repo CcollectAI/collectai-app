@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// CollectAI Video — Remotion Root (registers all 5 collector-native compositions)
+// Sparrow Collect Video — Remotion Root (registers all 5 collector-native compositions)
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React from "react";

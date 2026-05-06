@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// CollectAI Video Hook Library — collector-native hooks per template
+// Sparrow Collect Video Hook Library — collector-native hooks per template
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface Hook {

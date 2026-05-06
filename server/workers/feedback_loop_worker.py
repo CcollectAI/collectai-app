@@ -318,7 +318,11 @@ async def run_once():
         record_run("feedback_loop_worker", "error")
         return
 
-    conn = await asyncpg.connect(DSN)
+    # Tagged via application_name for the ExecStop cancel hook.
+    conn = await asyncpg.connect(
+        DSN,
+        server_settings={"application_name": "collectai-bake-feedback_loop_worker"},
+    )
     try:
         # Ensure schema is ready
         await _ensure_processed_at_column(conn)

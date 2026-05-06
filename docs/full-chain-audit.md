@@ -5,15 +5,15 @@ For every frontend call, traces the full chain: FE call site → BE handler
 
 ## Summary
 
-- **FE httpClient calls** (get/post/put/patch/del/postMultipart): 223
+- **FE httpClient calls** (get/post/put/patch/del/postMultipart): 224
 - **FE Supabase RPC calls** (supabase.rpc): 17
-- **FE Supabase REST reads** (.from().select): 40
-- **FE Supabase REST writes** (.from().insert/update/upsert/delete): 15
+- **FE Supabase REST reads** (.from().select): 42
+- **FE Supabase REST writes** (.from().insert/update/upsert/delete): 16
 - **BE routes registered** (api.lock): 303
 - **BE Supabase RPCs** (rpc.lock): 190
-- **DB tables in schema.lock**: 540
+- **DB tables in schema.lock**: 539
 - **DB tables touched by BE writes**: 56
-- **DB tables touched by BE reads**: 70
+- **DB tables touched by BE reads**: 69
 
 ## FE httpClient → BE route resolution
 
@@ -146,6 +146,7 @@ For each unique (method, path) called from the FE: does a BE handler exist?
 | POST | `/barcode/lookup` | `server/app/features/barcode_lookup_router.py:502` | ✓ |
 | POST | `/billing/checkout-session` | `server/app/routes/billing_router.py:257` | ✓ |
 | POST | `/billing/portal-session` | `server/app/routes/billing_router.py:321` | ✓ |
+| POST | `/catalog/match` | `—` | ✗ NO HANDLER |
 | POST | `/catalog/suggest` | `server/app/features/catalog_learning_router.py:128` | ✓ |
 | POST | `/chat/threads/*/messages` | `server/app/features/chat_router.py:276` | ✓ |
 | POST | `/deals/*/cancel` | `server/app/agents/deal_desk_router.py:255` | ✓ |
@@ -251,10 +252,10 @@ Direct .from(table).select / .from(table).insert/update/upsert/delete calls.
 | update | `build_paint_steps` | 1 | ✓ |
 | select | `chat_dm_requests_v1` | 3 | ✓ |
 | select | `chat_messages_v1` | 1 | ✓ |
-| select | `items` | 7 | ✓ |
+| select | `items` | 9 | ✓ |
 | delete | `items` | 1 | ✓ |
 | insert | `items` | 1 | ✓ |
-| update | `items` | 4 | ✓ |
+| update | `items` | 5 | ✓ |
 | select | `portfolio_values` | 2 | ✓ |
 | select | `prediction_sessions` | 1 | ✓ |
 | select | `profiles` | 2 | ✓ |

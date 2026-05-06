@@ -396,9 +396,12 @@ async def export_insurance_report(
                 LEFT JOIN LATERAL (
                     -- price_predictions canonical join columns are item_ref
                     -- + generated_at, not item_id + asof (learnings.md §42).
+                    -- Partition prune: latest prediction is always within
+                    -- the last 60 days; LATERAL fires once per item.
                     SELECT q50
                     FROM price_predictions
                     WHERE item_ref = i.canonical_key
+                      AND generated_at > now() - interval '60 days'
                     ORDER BY generated_at DESC
                     LIMIT 1
                 ) pp ON true

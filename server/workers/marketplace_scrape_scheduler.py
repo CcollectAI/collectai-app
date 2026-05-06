@@ -238,7 +238,11 @@ async def run_once():
             record_run("marketplace_scrape_worker", "ok")
             return 0
 
-    conn = await asyncpg.connect(dsn)
+    # Tagged via application_name for the ExecStop cancel hook.
+    conn = await asyncpg.connect(
+        dsn,
+        server_settings={"application_name": "collectai-bake-marketplace_scrape_worker"},
+    )
     try:
         items = await _get_stale_items(conn, BATCH_SIZE)
         if not items:

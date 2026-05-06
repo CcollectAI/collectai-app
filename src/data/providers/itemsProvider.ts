@@ -229,16 +229,19 @@ export async function unarchiveItem(itemId: string): Promise<void> {
 
 export async function persistQuickscanDraft(input: QuickscanDraft): Promise<PersistedItem> {
   // Server contract: ItemCreateRequest takes `name` (not `title`),
-  // category, collection_name, estimated_value, notes. attributes go
-  // through a follow-up PATCH /items/{id}/attributes; images via
-  // POST /items/{id}/images. Sending `title`/`image_url`/`attrs` here
-  // was rejected with 422 (missing `name`).
+  // category, collection_name, estimated_value, notes, canonical_key.
+  // attributes go through a follow-up PATCH /items/{id}/attributes;
+  // images via POST /items/{id}/images. Sending `title`/`image_url`/`attrs`
+  // here was rejected with 422 (missing `name`).
+  // canonical_key (catalog-match key) is forwarded so downstream Premium
+  // JOINs (price_trend, item_history, dossier) can find the catalog row.
   let row: Record<string, unknown>;
   try {
     row = await collectorsApi.post<Record<string, unknown>>('/items', {
       name: input.title ?? 'Untitled Scan',
       category: input.categoryId ?? 'uncategorized',
       notes: input.notes ?? null,
+      canonical_key: input.canonicalKey ?? null,
     });
   } catch (e) {
     logger.error('[SupabaseDataProvider] persistQuickscanDraft error:', e);

@@ -14,7 +14,10 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
 } from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -48,6 +51,76 @@ function ProfileEditSectionInner() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
+
+  const [exportingFullInventory, setExportingFullInventory] = useState(false);
+
+  const handleDownloadFullInventory = async () => {
+    if (exportingFullInventory) return;
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setExportingFullInventory(true);
+    try {
+      const { csv_inline } = await collectorsApi.exportItemsFull(settings.currency);
+      const lineCount = csv_inline.trim().split('\n').length;
+      const itemCount = Math.max(0, lineCount - 1);
+      if (itemCount === 0) {
+        showToast({ message: 'No items to export', type: 'info' });
+        return;
+      }
+      if (!FileSystem.documentDirectory) {
+        showToast({ message: 'File storage not available on this platform', type: 'error' });
+        return;
+      }
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `Sparrow_Collect_Full_Inventory_${dateStr}_${itemCount}items.csv`;
+      const filePath = `${FileSystem.documentDirectory}${filename}`;
+      await FileSystem.writeAsStringAsync(filePath, csv_inline);
+
+      if (Platform.OS !== 'web' && (await Sharing.isAvailableAsync())) {
+        await Sharing.shareAsync(filePath, {
+          mimeType: 'text/csv',
+          dialogTitle: 'Save Sparrow Collect inventory',
+          UTI: 'public.comma-separated-values-text',
+        });
+        showToast({
+          message: `Exported ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`,
+          type: 'success',
+          duration: 3000,
+        });
+      } else {
+        showToast({ message: `Saved ${filename}`, type: 'info', duration: 4000 });
+      }
+    } catch (e) {
+      logger.warn('[Settings] full inventory export failed:', e);
+      showToast({ message: 'Failed to export inventory', type: 'error' });
+    } finally {
+      setExportingFullInventory(false);
+    }
+  };
+
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const canConfirmDelete = deleteConfirmText.trim() === 'DELETE';
+
+  const handleConfirmDelete = async () => {
+    if (!canConfirmDelete || deletingAccount) return;
+    setDeletingAccount(true);
+    try {
+      await deleteAccount();
+      setDeleteModalVisible(false);
+      setDeleteConfirmText('');
+      await signOut();
+      Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
+    } catch (e) {
+      Alert.alert(
+        'Error',
+        e instanceof Error ? e.message : 'Failed to delete account. Please try again.',
+      );
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
 
   const handleSaveProfile = async () => {
     setSavingProfile(true);
@@ -283,32 +356,34 @@ function ProfileEditSectionInner() {
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         <AnimatedPressable
+          style={styles.settingRow}
+          onPress={handleDownloadFullInventory}
+          accessibilityRole="button"
+          accessibilityLabel="Download full inventory as CSV"
+          accessibilityState={{ busy: exportingFullInventory }}
+          disabled={exportingFullInventory}
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Download full inventory (CSV)</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>
+              Comprehensive 30-column snapshot — every detail of every item, in your currency. For insurance, accountants, or full collection records.
+            </Text>
+          </View>
+          {exportingFullInventory ? (
+            <ActivityIndicator size="small" color={colors.accent} />
+          ) : (
+            <Ionicons name="download-outline" size={16} color={colors.accent} />
+          )}
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
           style={styles.signOutBtn}
           onPress={() => {
             fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
-            Alert.alert(
-              t('account.delete_account'),
-              'This will permanently delete your account and all your data. This action cannot be undone.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: t('account.delete_account'),
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      await deleteAccount();
-                      await signOut();
-                      Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
-                    } catch (e) {
-                      Alert.alert(
-                        'Error',
-                        e instanceof Error ? e.message : 'Failed to delete account. Please try again.',
-                      );
-                    }
-                  },
-                },
-              ],
-            );
+            setDeleteConfirmText('');
+            setDeleteModalVisible(true);
           }}
           accessibilityRole="button"
           accessibilityLabel={t('account.delete_account_a11y')}
@@ -417,6 +492,79 @@ function ProfileEditSectionInner() {
                 returnKeyType="done"
               />
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Account — typed-confirmation modal. Backend requires a
+          ?confirm=DELETE_MY_ACCOUNT query param; this modal is the UX
+          gate that ensures a deliberate action. */}
+      <Modal
+        visible={deleteModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          if (deletingAccount) return;
+          setDeleteModalVisible(false);
+          setDeleteConfirmText('');
+        }}
+      >
+        <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+            <TouchableOpacity
+              onPress={() => {
+                if (deletingAccount) return;
+                setDeleteModalVisible(false);
+                setDeleteConfirmText('');
+              }}
+              accessibilityLabel="Close"
+              disabled={deletingAccount}
+            >
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('account.delete_account')}</Text>
+            <TouchableOpacity
+              onPress={handleConfirmDelete}
+              disabled={!canConfirmDelete || deletingAccount}
+              accessibilityLabel="Confirm delete account"
+              accessibilityState={{ disabled: !canConfirmDelete || deletingAccount }}
+            >
+              {deletingAccount ? (
+                <ActivityIndicator size="small" color={colors.danger} />
+              ) : (
+                <Text
+                  style={[{
+                    fontSize: textToken.lg,
+                    fontWeight: fw.semibold,
+                    color: canConfirmDelete ? colors.danger : colors.muted,
+                  }]}
+                >
+                  Delete
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          <View style={{ padding: 16, gap: 16 }}>
+            <Text style={[{ color: colors.text, fontSize: textToken.md, lineHeight: 22 }]}>
+              This will permanently delete your account and all your data. This action cannot be undone.
+            </Text>
+            <Text style={[{ color: colors.muted, fontSize: textToken.sm }]}>
+              Type <Text style={{ fontWeight: fw.semibold, color: colors.text }}>DELETE</Text> to confirm.
+            </Text>
+            <TextInput
+              style={[styles.profileInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
+              value={deleteConfirmText}
+              onChangeText={setDeleteConfirmText}
+              placeholder="DELETE"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              autoFocus
+              editable={!deletingAccount}
+              returnKeyType="done"
+              onSubmitEditing={handleConfirmDelete}
+              accessibilityLabel="Type DELETE to confirm"
+            />
           </View>
         </View>
       </Modal>

@@ -29,7 +29,7 @@ export interface NichePlaybook {
   communityHubs: Array<{ platform: string; name: string; size: string }>;
   /** What competitors miss about this niche — our content gap to fill */
   competitorGaps: string[];
-  /** Specific CollectAI features most relevant to this niche */
+  /** Specific Sparrow Collect features most relevant to this niche */
   bestFeatures: string[];
   /** Content formats that work best for this niche */
   bestFormats: string[];
@@ -458,7 +458,7 @@ export const NICHE_PLAYBOOKS: NichePlaybook[] = [
     competitorGaps: [
       'Chrono24 is great for buying but terrible for portfolio tracking',
       'No app scans a watch and identifies the reference + current market value',
-      'Insurance valuations are done annually at best — CollectAI tracks daily',
+      'Insurance valuations are done annually at best — Sparrow Collect tracks daily',
       'Watch market is notoriously opaque — price transparency is the gap',
     ],
     bestFeatures: ['quickscan', 'portfolio', 'alerts', 'marketplace'],

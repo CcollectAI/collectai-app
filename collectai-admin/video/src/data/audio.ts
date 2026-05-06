@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// CollectAI Video Audio Library — niche-appropriate track mapping
+// Sparrow Collect Video Audio Library — niche-appropriate track mapping
 // Tracks stored in S3: s3://collectai-video-assets/audio/
 //
 // Moods: hype (sneakers, TCGs), chill (watches, vinyl), dramatic (reveals, alerts),
@@ -26,7 +26,7 @@ export const AUDIO_LIBRARY: AudioTrack[] = [
   {
     id: "audio-hype-01",
     title: "Pull Energy",
-    artist: "CollectAI Beats",
+    artist: "Sparrow Collect Beats",
     s3Key: "audio/hype-pull-energy.mp3",
     durationMs: 21000,
     bpm: 140,
@@ -36,7 +36,7 @@ export const AUDIO_LIBRARY: AudioTrack[] = [
   {
     id: "audio-hype-02",
     title: "Drop Alert",
-    artist: "CollectAI Beats",
+    artist: "Sparrow Collect Beats",
     s3Key: "audio/hype-drop-alert.mp3",
     durationMs: 18000,
     bpm: 130,
@@ -48,7 +48,7 @@ export const AUDIO_LIBRARY: AudioTrack[] = [
   {
     id: "audio-dramatic-01",
     title: "The Reveal",
-    artist: "CollectAI Beats",
+    artist: "Sparrow Collect Beats",
     s3Key: "audio/dramatic-the-reveal.mp3",
     durationMs: 21000,
     bpm: 90,
@@ -58,7 +58,7 @@ export const AUDIO_LIBRARY: AudioTrack[] = [
   {
     id: "audio-dramatic-02",
     title: "Market Shift",
-    artist: "CollectAI Beats",
+    artist: "Sparrow Collect Beats",
     s3Key: "audio/dramatic-market-shift.mp3",
     durationMs: 18000,
     bpm: 85,
@@ -70,7 +70,7 @@ export const AUDIO_LIBRARY: AudioTrack[] = [
   {
     id: "audio-cinematic-01",
     title: "The Hunt",
-    artist: "CollectAI Beats",
+    artist: "Sparrow Collect Beats",
     s3Key: "audio/cinematic-the-hunt.mp3",
     durationMs: 21000,
     bpm: 100,
@@ -82,7 +82,7 @@ export const AUDIO_LIBRARY: AudioTrack[] = [
   {
     id: "audio-chill-01",
     title: "Collection Calm",
-    artist: "CollectAI Beats",
+    artist: "Sparrow Collect Beats",
     s3Key: "audio/chill-collection-calm.mp3",
     durationMs: 21000,
     bpm: 75,
@@ -94,7 +94,7 @@ export const AUDIO_LIBRARY: AudioTrack[] = [
   {
     id: "audio-upbeat-01",
     title: "Flex Mode",
-    artist: "CollectAI Beats",
+    artist: "Sparrow Collect Beats",
     s3Key: "audio/upbeat-flex-mode.mp3",
     durationMs: 21000,
     bpm: 120,
@@ -106,7 +106,7 @@ export const AUDIO_LIBRARY: AudioTrack[] = [
   {
     id: "audio-lofi-01",
     title: "Cozy Shelf",
-    artist: "CollectAI Beats",
+    artist: "Sparrow Collect Beats",
     s3Key: "audio/lofi-cozy-shelf.mp3",
     durationMs: 21000,
     bpm: 70,

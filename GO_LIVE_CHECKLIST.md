@@ -1,7 +1,17 @@
 ================================================================================
-  COLLECTAI — GO-LIVE CHECKLIST
-  Generated: 2026-02-18 · Status update: 2026-04-24
+  SPARROW COLLECT — GO-LIVE CHECKLIST (renamed from CollectAI 2026-05-04)
+  Generated: 2026-02-18 · Status update: 2026-05-04
 ================================================================================
+
+  Brand: Sparrow Collect (formal) / Sparrow (colloquial)
+  Domain: sparrowcollect.com (Cloudflare, purchased 2026-05-04)
+  Bundle ID: com.sparrowcollect.app
+  Deep-link scheme: sparrow://
+  Brand color: #81D8D0 (Tiffany Blue, retained)
+
+  All in-flight rebrand steps + tomorrow's user actions are documented in
+  docs/SPARROW_LAUNCH_TOMORROW.md — that's the single source of truth for
+  the next launch push.
 
 Use this file as a step-by-step checklist. Work through each section in order.
 Mark items [x] as you complete them.
@@ -30,11 +40,32 @@ CODE: READY. Everything below is passing.
 
 BLOCKED ON USER — required before submit:
   [ ] Apple Developer enrollment (~10 days external wait)
-  [ ] App name decision ("Atlantis" is taken; name-hunt in progress)
+  [x] App name decision — Sparrow Collect (formal) / Sparrow (colloquial), 2026-05-04
+  [ ] Brand rename sweep (app.json, src/, web/, assets — see app-store-aso.md)
   [ ] eas.json: submit.ios.ascAppId + appleTeamId (needs Apple Dev creds)
   [ ] Stripe live keys (test keys wired)
-  [ ] Domain DNS
+  [ ] Domain DNS — purchase decision pending
   [ ] 3 Supabase dashboard toggles (HIBP, OTP expiry, PG upgrade)
+  [ ] Phase 3 query rewrites + auction_alert_worker re-enable
+      (see docs/PHASE_3_QUERY_REWRITES.md)
+
+PRE-LAUNCH BAKE POSTURE (2026-05-04):
+  Bake manifest cut from 33 → 10 active workers. Disabled workers will
+  be re-enabled in waves AFTER launch. Order:
+    Wave 1 (week 1 post-launch): alerts_worker, watchlist_monitor_worker,
+      auction_alert_worker (after Phase 3), value_change_worker.
+    Wave 2 (after first paid users): deal_discovery, offer_expiry_worker,
+      price_monitor, scarcity_monitor_worker, auto_delist_worker.
+    Wave 3 (after events feature ships): event_scraper_worker,
+      ticketmaster_events_worker, seatgeek_events_worker,
+      event_engagement_worker.
+    Wave 4 (after enough scan_corrections accumulate): vision_quality_worker,
+      vision_reclassifier_worker, vision_regret_worker.
+    Wave 5 (post-scale ops): partition_drop_worker, datalake_export_worker,
+      discovery_audit_worker, search_gap_worker, demand_priority_worker,
+      catalog_crawler_worker.
+  Each wave gets a one-week soak between waves so any new fragility
+  surfaces in isolation.
 
 ESTIMATED TIME FROM HERE TO SUBMIT: ~10 days external (Apple) + ~3 hours
 of user clicks (name swap, live keys, DNS, dashboard toggles). No code work

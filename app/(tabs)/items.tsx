@@ -86,7 +86,7 @@ type Item = {
   purchasedAt?: string | null;
 };
 
-const VIEW_MODE_KEY = '@collectai/items_view_mode';
+const VIEW_MODE_KEY = '@sparrowcollect/items_view_mode';
 
 const ITEMS_PAGE_SIZE = 20;
 const STAGGER_MS = 40;
@@ -310,7 +310,7 @@ const ItemsScreen: React.FC = () => {
       }
 
       const dateStr = new Date().toISOString().split('T')[0];
-      const filename = `CollectAI_Collection_${dateStr}_${itemCount}items.csv`;
+      const filename = `Sparrow Collect_Collection_${dateStr}_${itemCount}items.csv`;
 
       if (!FileSystem.documentDirectory) {
         showToast({ message: 'File storage not available on this platform', type: 'error' });
@@ -370,7 +370,7 @@ const ItemsScreen: React.FC = () => {
       const csvContent = csvRows.join('\n');
 
       const dateStr = new Date().toISOString().split('T')[0];
-      const filename = `CollectAI_Selected_${selectedCount}_${dateStr}.csv`;
+      const filename = `Sparrow Collect_Selected_${selectedCount}_${dateStr}.csv`;
       const filePath = `${FileSystem.documentDirectory}${filename}`;
 
       await FileSystem.writeAsStringAsync(filePath, csvContent);

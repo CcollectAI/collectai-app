@@ -76,6 +76,9 @@ import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
 import { ItemEditBar } from '@/components/item/ItemEditBar';
 import { ItemPriceSection } from '@/components/item/ItemPriceSection';
 import { ItemNotesEditor } from '@/components/item/ItemNotesEditor';
+import { ItemAttributesSection } from '@/components/ItemAttributesSection';
+import { ItemCatalogRefresh } from '@/components/item/ItemCatalogRefresh';
+import { supabase } from '@/lib/supabase';
 import { PriceTrendChart } from '@/components/PriceTrendChart';
 import { SellTimingBadge } from '@/components/SellTimingBadge';
 // Pull from single source of truth — all 36 categories
@@ -136,6 +139,10 @@ function ItemDetailScreen() {
     confidence?: string;
     explanation?: string;
     attributesJson?: string;
+    // Catalog match key from QuickScan (passed via app/quickscan.tsx as
+    // `catalogKey`). Forwarded to persistQuickscanDraft so the new item
+    // gets its items.canonical_key populated for downstream JOINs.
+    catalogKey?: string;
   }>();
 
   const {
@@ -154,6 +161,7 @@ function ItemDetailScreen() {
     confidence,
     explanation,
     attributesJson: initialAttributesJson,
+    catalogKey,
   } = params;
 
   const isDraft = id === 'draft' || draft === '1';
@@ -162,7 +170,9 @@ function ItemDetailScreen() {
   // ── Resolve category slug early — needed by grading, build, size, progress sections ──
   const categorySlugRaw = CATEGORY_ID_MAP[category] || category.toLowerCase().replace(/[^a-z0-9_]/g, '');
 
-  // Parse extracted attributes from QuickScan (passed as JSON string)
+  // Parse extracted attributes from QuickScan (passed as JSON string).
+  // For SAVED items (non-draft), the items list doesn't pass attrs as a route
+  // param, so we lazy-fetch them below for ItemAttributesSection display.
   const initialAttributes = useMemo(() => {
     if (!initialAttributesJson) return null;
     try {
@@ -172,6 +182,41 @@ function ItemDetailScreen() {
     }
   }, [initialAttributesJson]);
 
+  // Persisted-item attrs + collection_name fetched lazily for the
+  // ItemAttributesSection presentation (set_name, year, brand, rarity,
+  // grade, etc). For drafts the data already lives in initialAttributes
+  // via the QuickScan route param. For saved items we hit Supabase REST
+  // (RLS-safe) once on mount.
+  const [savedAttrs, setSavedAttrs] = useState<Record<string, unknown> | null>(null);
+  const [savedCollectionName, setSavedCollectionName] = useState<string | null>(null);
+  const [savedSubtypeId, setSavedSubtypeId] = useState<string | null>(null);
+  const [savedCanonicalKey, setSavedCanonicalKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (isDraft || !id) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('items')
+        .select('attrs, collection_name, canonical_key')
+        .eq('id', id)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      const row = data as { attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null };
+      setSavedAttrs(row.attrs ?? null);
+      setSavedCollectionName(row.collection_name ?? null);
+      setSavedCanonicalKey(row.canonical_key ?? null);
+      // subtype_id was renamed into items.attrs jsonb (see itemsProvider.ts).
+      const sub = (row.attrs as Record<string, unknown> | null | undefined)?.subtype_id;
+      setSavedSubtypeId(typeof sub === 'string' ? sub : null);
+    })();
+    return () => { cancelled = true; };
+  }, [id, isDraft]);
+
+  // Pick whichever source has data. Drafts use the route-param attrs;
+  // saved items use the lazily-fetched attrs.
+  const displayAttributes = isDraft ? initialAttributes : savedAttrs;
+  const displayCollections = savedCollectionName ? [savedCollectionName] : undefined;
+
   // ── Consolidated local state (useItemDetail hook) ──────────────────────
   const detail = useItemDetail({
     id, isDraft,
@@ -179,6 +224,7 @@ function ItemDetailScreen() {
     initialCondition: condition, initialValue: value, initialNotes: initialNotes,
     imageUri, categorySlug: categorySlugRaw, q50,
     initialAttributes,
+    catalogKey,
   });
   const {
     isEditing, setIsEditing,
@@ -818,6 +864,53 @@ function ItemDetailScreen() {
                 paywalled sections to edit their own data. Pro-gated sections
                 moved below. */}
 
+            {/* Captured attributes — set_name / year / brand / rarity / grade / etc.
+                Was a silent capture-without-consume bug: items.attrs jsonb has
+                been populated by QuickScan + add-manual for months, but the
+                presentation component was never mounted. Renders nothing when
+                attrs is empty, so safe to always include. Uses
+                displayAttributes which switches between draft route-params
+                and the lazily-fetched saved-item row. */}
+            <ItemAttributesSection
+              attributes={displayAttributes}
+              category={categorySlug}
+              subtypeId={savedSubtypeId ?? undefined}
+              collections={displayCollections}
+            />
+
+            {/* Re-match against catalog (post-save user-initiated). Helps
+                older items that were created before the catalog had this
+                entry, or before the canonical_key writer was wired. */}
+            {!isDraft && id && (
+              <ItemCatalogRefresh
+                itemId={id}
+                itemTitle={editableName}
+                itemCategory={categorySlug}
+                currentAttrs={savedAttrs}
+                currentCanonicalKey={savedCanonicalKey}
+                onUpdated={() => {
+                  // Re-fetch so the just-applied attrs + canonical_key render
+                  // immediately on the same screen without a navigation cycle.
+                  (async () => {
+                    const { data } = await supabase
+                      .from('items')
+                      .select('attrs, collection_name, canonical_key')
+                      .eq('id', id)
+                      .maybeSingle();
+                    const row = data as { attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null } | null;
+                    if (row) {
+                      setSavedAttrs(row.attrs ?? null);
+                      setSavedCollectionName(row.collection_name ?? null);
+                      setSavedCanonicalKey(row.canonical_key ?? null);
+                      const sub = (row.attrs as Record<string, unknown> | null | undefined)?.subtype_id;
+                      setSavedSubtypeId(typeof sub === 'string' ? sub : null);
+                    }
+                  })();
+                }}
+              />
+            )}
+
+
             {/* Notes (editable) — top priority per user feedback */}
             <ItemNotesEditor
               notes={notes}
@@ -864,62 +957,38 @@ function ItemDetailScreen() {
               <ItemShopSection affiliateLinks={affiliateLinks} />
             )}
 
-            {/* Sell Timing Badge — lightweight, keep near the top */}
-            {!isDraft && id && (
-              <SellTimingBadge itemId={id} />
+            {/* Sell Timing Badge — Premium-only. Needs canonical_key
+                (`category:item_key`) to query market_hits — won't render
+                for items that haven't been catalog-matched yet. */}
+            {!isDraft && savedCanonicalKey && (
+              <SellTimingBadge itemRef={savedCanonicalKey} />
             )}
 
-            {/* Grading Section — category-specific, kept mid-stack */}
-            {!isDraft && id && isGradingEligible && !limits.condition_grading && (
-              <UpgradePrompt feature="Condition Grading" requiredPlan="Pro" />
-            )}
-            {!isDraft && id && isGradingEligible && limits.condition_grading && (
-              <GradingSection
-                theme={theme}
-                hapticsEnabled={settings.hapticsEnabled}
-                gradingExpanded={gradingExpanded}
-                onToggleExpanded={() => {
-                  if (!gradingExpanded) {
-                    loadGradingServices();
-                    if (!gradingPopulation) loadGradingPopulation();
-                  }
-                  setGradingExpanded(!gradingExpanded);
-                }}
-                gradingLookupResult={gradingLookupResult}
-                gradingPopulation={gradingPopulation}
-                gradingPopLoading={gradingPopLoading}
-                gradingServices={gradingServices}
-                gradingModalVisible={gradingModalVisible}
-                onSetGradingModalVisible={setGradingModalVisible}
-                gradingCertInput={gradingCertInput}
-                onSetGradingCertInput={setGradingCertInput}
-                gradingServicePick={gradingServicePick}
-                onSetGradingServicePick={setGradingServicePick}
-                gradingLookupLoading={gradingLookupLoading}
-                onGradingLookup={handleGradingLookup}
-              />
-            )}
+            {/* Condition Grading — SHELVED 2026-05-02.
+                Other apps (PSA app, CGC app) do this well already; charging
+                for it without a real PSA/CGC API integration would break
+                trust. The /grading/* BE endpoints stay (server-gated to
+                Pro+) so we can flip the FE back on once a real API is
+                wired. The condition_grading limit flag and the
+                useItemGrading hook are intentionally untouched. */}
 
             {/* ═══════════════ PRO FEATURES (bottom) ═══════════════ */}
             {/* Paywall-gated analytics features — shown last with realistic
                 mock previews so free users see what they'd unlock. */}
 
-            {/* Price Trend Chart */}
-            {!isDraft && id && (
-              limits.advanced_analytics ? (
-                <PriceTrendChart itemId={id} />
-              ) : (
-                <LockedPreviewSection
-                  title="Price Trend"
-                  subtitle="See the q10–q90 confidence band and 90-day price history with Pro."
-                  previewType="chart"
-                />
-              )
-            )}
+            {/* Price Trend Chart — SHELVED 2026-05-02.
+                Coverage is uneven across the 54 categories: big-3 TCG cats
+                (mtg/pokemon/yugioh) have rich price_history but tail cats
+                (whiskey 16/wk, ghibli 19/wk, designer_toys 40/wk) render
+                "not enough data" for most items. Charging Pro for a
+                feature that visibly fails on entire categories is unfair.
+                The /predict/trend/{id} BE endpoint stays — flip this back
+                on (or per-category gate) once the bake feeds enough
+                comps to every cat. */}
 
             {/* Item History */}
             {!isDraft && id && (
-              limits.advanced_analytics ? (
+              limits.detailed_valuation ? (
                 <ProvenanceHistorySection
                   theme={theme}
                   hapticsEnabled={settings.hapticsEnabled}
@@ -940,7 +1009,7 @@ function ItemDetailScreen() {
 
             {/* Valuation Report (Dossier) */}
             {!isDraft && id && (
-              limits.advanced_analytics ? (
+              limits.detailed_valuation ? (
                 <DossierReportSection
                   theme={theme}
                   dossierData={dossierData}
@@ -967,7 +1036,7 @@ function ItemDetailScreen() {
 
             {/* Market Prices */}
             {!isDraft && id && (
-              limits.advanced_analytics ? (
+              limits.detailed_valuation ? (
                 <MarketplacePricesSection
                   theme={theme}
                   marketResults={marketResults}

@@ -1,5 +1,5 @@
 /**
- * Privacy Policy screen — displays CollectAI privacy policy.
+ * Privacy Policy screen — displays Sparrow Collect privacy policy.
  * Uses static text as the primary source; when a hosted URL becomes
  * available, this can be replaced with a WebView.
  */
@@ -38,7 +38,7 @@ function PrivacyPolicyScreenInner() {
         <Text style={[styles.updated, { color: colors.muted }]}>Last updated: {LAST_UPDATED}</Text>
 
         <Text style={[styles.body, { color: colors.text }]}>
-          CollectAI ("we", "our", "us") operates the CollectAI mobile application (the "Service"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.
+          Sparrow Collect ("we", "our", "us") operates the Sparrow Collect mobile application (the "Service"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>1. Information We Collect</Text>
@@ -270,7 +270,7 @@ function PrivacyPolicyScreenInner() {
           {'\u2022'} Object to processing{'\n'}
           {'\u2022'} Withdraw consent at any time{'\n'}
           {'\u2022'} Lodge a complaint with a supervisory authority{'\n\n'}
-          To exercise these rights, use the account settings in the app or contact us at privacy@collectai.app. We will respond within 30 days.
+          To exercise these rights, use the account settings in the app or contact us at privacy@sparrowcollect.com. We will respond within 30 days.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>16. Data Retention</Text>
@@ -295,7 +295,7 @@ function PrivacyPolicyScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>20. Advertising (Future Activation)</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          CollectAI is a freemium product. The free tier may, in the future, include non-intrusive advertising in certain placements (e.g., banner ads at the bottom of catalog browse screens, occasional interstitial ads after significant actions). Ad infrastructure is currently installed in the app but <Text style={styles.bold}>dark</Text> — no ads are shown to any user as of this policy's "Last updated" date.
+          Sparrow Collect is a freemium product. The free tier may, in the future, include non-intrusive advertising in certain placements (e.g., banner ads at the bottom of catalog browse screens, occasional interstitial ads after significant actions). Ad infrastructure is currently installed in the app but <Text style={styles.bold}>dark</Text> — no ads are shown to any user as of this policy's "Last updated" date.
           {'\n\n'}
           <Text style={styles.bold}>When ads are enabled, the following applies:</Text>{'\n'}
           {'\u2022'} Ads will be served via a third-party mediation network (planned: AppLovin MAX). The exact provider will be disclosed here prior to activation.{'\n'}
@@ -315,9 +315,9 @@ function PrivacyPolicyScreenInner() {
         <Text style={[styles.heading, { color: colors.text }]}>22. Contact Us</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           If you have questions about this privacy policy, please contact us at:{'\n'}
-          privacy@collectai.app{'\n\n'}
-          CollectAI{'\n'}
-          The Netherlands
+          privacy@sparrowcollect.com{'\n\n'}
+          Sparrow Collect{'\n'}
+          Ertskade 74, 1019 BB Amsterdam{'\n'}The Netherlands{'\n'}KvK: 99596326
         </Text>
 
         <View style={{ height: 40 }} />

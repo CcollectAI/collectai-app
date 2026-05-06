@@ -48,19 +48,35 @@ class EnrichResponse(BaseModel):
     cost_cents: int
 
 
-async def _check_global_rate_limit(conn) -> None:
-    """Raise 429 if global daily on-demand cap is hit. Per-user limits
-    will land in a follow-up once we wire user-scoped tracking; for v1
-    a global daily cap is enough to prevent runaway spend."""
+async def _check_per_user_daily_cap(conn, user_id: str) -> tuple[int, int]:
+    """Enforce the documented per-tier daily caps (5/50/200 by plan).
+
+    Pre-2026-05-02 only a global 5000/day cap was enforced — a single
+    Pro user could lock the whole org out. Now: count this user's
+    rows in `on_demand_lookups_audit` over the last 24h and reject if
+    above the tier cap.
+
+    Returns (used, cap) so the caller can include the headroom in
+    response headers / FE quota indicators if it wants to.
+    """
+    from app.subscription import get_user_plan
+    plan = await get_user_plan(user_id)
+    cap = int(RATE_LIMITS_BY_TIER.get(plan, RATE_LIMITS_BY_TIER["free"]))
     used = await conn.fetchval(
         """
-        SELECT COUNT(*) FROM public.on_demand_lookups
-        WHERE last_fetched_at > now() - interval '1 day'
-        """
+        SELECT COUNT(*) FROM public.on_demand_lookups_audit
+        WHERE user_id = $1::uuid
+          AND fetched_at > now() - interval '1 day'
+        """,
+        user_id,
     ) or 0
-    cap = int(RATE_LIMITS_BY_TIER.get("free", 5)) * 1000  # 5,000/day global
     if used >= cap:
-        raise HTTPException(429, "Daily on-demand quota exceeded — try again tomorrow")
+        raise HTTPException(
+            429,
+            f"Daily on-demand quota exceeded ({used}/{cap} for {plan} tier). "
+            f"Resets in 24h.",
+        )
+    return used, cap
 
 
 @router.post(
@@ -79,7 +95,7 @@ async def enrich_on_demand(
         if payload.force:
             payload.force = False  # disabled until admin-role wired
 
-        await _check_global_rate_limit(conn)
+        await _check_per_user_daily_cap(conn, user_id)
 
         result = await enrich_item(
             conn,
@@ -88,4 +104,24 @@ async def enrich_on_demand(
             category=payload.category,
             force=payload.force,
         )
+
+        # Audit row — count it ONLY when the call did real work
+        # (cache hits don't count against the tier cap, since they're
+        # free and we want to encourage cache reuse).
+        if not result.get("skipped"):
+            try:
+                await conn.execute(
+                    """
+                    INSERT INTO public.on_demand_lookups_audit
+                        (user_id, item_ref, cost_cents, provider)
+                    VALUES ($1::uuid, $2, $3, $4)
+                    """,
+                    user_id,
+                    payload.item_ref,
+                    int(result.get("cost_cents", 0)),
+                    result.get("provider", "unknown"),
+                )
+            except Exception as e:  # noqa: BLE001
+                logger.warning("[enrich] audit insert failed: %s", e)
+
         return EnrichResponse(**result)

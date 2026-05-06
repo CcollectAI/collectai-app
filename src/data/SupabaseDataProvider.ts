@@ -229,7 +229,7 @@ export class SupabaseDataProvider implements DataProvider {
     const message =
       `\u{1F3AB} Check out this event: ${event.title}\n` +
       `\u{1F4C5} ${event.date}${event.time ? ' ' + event.time : ''}\n` +
-      `\u{1F449} collectai://events/${eventId}`;
+      `\u{1F449} sparrow://events/${eventId}`;
 
     await this.sendMessage(threadId, message);
   }

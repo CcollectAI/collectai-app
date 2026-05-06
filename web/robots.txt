@@ -1,4 +1,4 @@
-# CollectAI — robots.txt
+# Sparrow Collect — robots.txt
 # Allow all crawlers including AI answer engines
 
 User-agent: *
@@ -26,4 +26,4 @@ Allow: /
 User-agent: Amazonbot
 Allow: /
 
-Sitemap: https://collectai.app/sitemap.xml
+Sitemap: https://sparrowcollect.com/sitemap.xml

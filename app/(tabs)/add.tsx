@@ -10,7 +10,7 @@ import {
 // expo-file-system v19 moved the legacy API (cacheDirectory, downloadAsync)
 // to a `/legacy` submodule. The v19 default export uses a new `File`-based
 // class API. Sticking with legacy here keeps the existing pattern simple
-// and matches what other CollectAI helpers use.
+// and matches what other Sparrow Collect helpers use.
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { router } from 'expo-router';
@@ -101,7 +101,7 @@ const AddScreen: React.FC = () => {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           mimeType: 'text/csv',
-          dialogTitle: 'Save CollectAI import template',
+          dialogTitle: 'Save Sparrow Collect import template',
           UTI: 'public.comma-separated-values-text',
         });
       } else {

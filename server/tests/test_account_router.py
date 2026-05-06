@@ -104,7 +104,7 @@ class TestDeleteAccount:
         mock_admin.auth.admin.delete_user = MagicMock()
         mock_get_admin.return_value = mock_admin
 
-        resp = client.delete("/account")
+        resp = client.delete("/account?confirm=DELETE_MY_ACCOUNT")
         assert resp.status_code == 200
         data = resp.json()
         assert data["success"] is True
@@ -121,7 +121,7 @@ class TestDeleteAccount:
         """When DB is not available, return 503."""
         mock_get_pool.return_value = None
 
-        resp = client.delete("/account")
+        resp = client.delete("/account?confirm=DELETE_MY_ACCOUNT")
         assert resp.status_code == 503
 
     @patch("app.routes.account_router._get_supabase_admin")
@@ -137,7 +137,7 @@ class TestDeleteAccount:
         )
         mock_get_admin.return_value = mock_admin
 
-        resp = client.delete("/account")
+        resp = client.delete("/account?confirm=DELETE_MY_ACCOUNT")
         assert resp.status_code == 200
         assert resp.json()["success"] is True
 
@@ -149,7 +149,7 @@ class TestDeleteAccount:
         mock_get_pool.return_value = pool
         mock_get_admin.return_value = None
 
-        resp = client.delete("/account")
+        resp = client.delete("/account?confirm=DELETE_MY_ACCOUNT")
         assert resp.status_code == 200
         assert resp.json()["success"] is True
 
@@ -158,15 +158,18 @@ class TestDeleteAccount:
     def test_undefined_table_skipped(self, mock_get_pool, mock_get_admin):
         """Tables that don't exist should be silently skipped."""
         pool, conn = _mock_pool()
-        # First call throws UndefinedTableError, rest succeed
+        # First execute is `SET LOCAL statement_timeout` — must succeed.
+        # Then the first real DELETE throws UndefinedTableError (table missing
+        # in this env), and the remaining DELETEs all succeed.
         conn.execute = AsyncMock(
-            side_effect=[asyncpg.UndefinedTableError("table not found")]
-            + [None] * 20  # Enough for remaining tables
+            side_effect=[None]
+            + [asyncpg.UndefinedTableError("table not found")]
+            + [None] * 20
         )
         mock_get_pool.return_value = pool
         mock_get_admin.return_value = None
 
-        resp = client.delete("/account")
+        resp = client.delete("/account?confirm=DELETE_MY_ACCOUNT")
         assert resp.status_code == 200
 
     @patch("app.routes.account_router._get_supabase_admin")
@@ -184,7 +187,7 @@ class TestDeleteAccount:
         mock_get_pool.return_value = pool
         mock_get_admin.return_value = None
 
-        resp = client.delete("/account")
+        resp = client.delete("/account?confirm=DELETE_MY_ACCOUNT")
         assert resp.status_code == 500
 
     def test_unauthenticated_returns_401(self):
@@ -212,6 +215,50 @@ class TestDeleteAccountV1:
         mock_get_pool.return_value = pool
         mock_get_admin.return_value = None
 
-        resp = client.delete("/v1/account")
+        resp = client.delete("/v1/account?confirm=DELETE_MY_ACCOUNT")
         assert resp.status_code == 200
         assert resp.json()["success"] is True
+
+
+class TestDeleteAccountConfirmation:
+    """DELETE /account confirmation guard.
+
+    Pre-2026-05-03 the endpoint deleted on a bare DELETE call. The guard
+    requires ?confirm=DELETE_MY_ACCOUNT and returns 400/CONFIRMATION_REQUIRED
+    otherwise — protects against accidental destructive client calls.
+    """
+
+    def setup_method(self):
+        _auth_override()
+
+    def teardown_method(self):
+        _clear_overrides()
+
+    @patch("app.routes.account_router._get_supabase_admin")
+    @patch("app.routes.account_router.get_db_pool")
+    def test_missing_confirm_returns_400(self, mock_get_pool, mock_get_admin):
+        """No confirm param → 400, no DB or auth side effects."""
+        pool, conn = _mock_pool()
+        mock_get_pool.return_value = pool
+        mock_admin = MagicMock()
+        mock_get_admin.return_value = mock_admin
+
+        resp = client.delete("/account")
+        assert resp.status_code == 400
+        # The guard must run BEFORE any deletion happens.
+        assert conn.execute.await_count == 0
+        mock_admin.auth.admin.delete_user.assert_not_called()
+
+    @patch("app.routes.account_router._get_supabase_admin")
+    @patch("app.routes.account_router.get_db_pool")
+    def test_wrong_confirm_returns_400(self, mock_get_pool, mock_get_admin):
+        """Wrong confirm phrase → 400, no side effects."""
+        pool, conn = _mock_pool()
+        mock_get_pool.return_value = pool
+        mock_admin = MagicMock()
+        mock_get_admin.return_value = mock_admin
+
+        resp = client.delete("/account?confirm=yes")
+        assert resp.status_code == 400
+        assert conn.execute.await_count == 0
+        mock_admin.auth.admin.delete_user.assert_not_called()

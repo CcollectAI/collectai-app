@@ -20,7 +20,11 @@ async def run_once():
         record_run("category_map_worker", "error")
         return
 
-    conn = await asyncpg.connect(DSN)
+    # Tagged via application_name for the ExecStop cancel hook.
+    conn = await asyncpg.connect(
+        DSN,
+        server_settings={"application_name": "collectai-bake-category_map_worker"},
+    )
 
     try:
         rows = await conn.fetch("""

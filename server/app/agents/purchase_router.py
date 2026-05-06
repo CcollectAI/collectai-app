@@ -20,7 +20,7 @@ from app.rate_limit import per_user_rate_limit
 from app.errors import error_response
 from app.db import db_configured, get_conn
 from app.features.pagination import pagination_params
-from app.subscription import get_user_mandate_limit
+from app.subscription import get_user_mandate_limit, require_plan
 
 logger = logging.getLogger(__name__)
 
@@ -502,8 +502,9 @@ async def list_deals(
     user_id: str = Depends(get_current_user_id),
     pagination: tuple[int, int] = Depends(pagination_params),
     status: Optional[str] = Query(None, description="Filter by deal status"),
+    _plan: str = Depends(require_plan("pro")),
 ):
-    """List deals across all mandates for the current user."""
+    """List deals across all mandates for the current user. Pro+."""
     _require_db()
     limit, offset = pagination
     uid = uuid.UUID(user_id) if _is_uuid(user_id) else user_id
@@ -550,8 +551,9 @@ async def list_deals(
 async def get_deal(
     deal_id: str,
     user_id: str = Depends(get_current_user_id),
+    _plan: str = Depends(require_plan("pro")),
 ):
-    """Get a single deal by ID."""
+    """Get a single deal by ID. Pro+."""
     _require_db()
 
     async with get_conn() as conn:

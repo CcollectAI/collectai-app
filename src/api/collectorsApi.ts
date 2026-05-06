@@ -244,6 +244,7 @@ export const collectorsApi = {
 
   // Items Export
   exportItemsOverview: miscApi.exportItemsOverview,
+  exportItemsFull: miscApi.exportItemsFull,
 
   // Insurance Valuation Export
   getInsuranceReportUrl: miscApi.getInsuranceReportUrl,

@@ -446,6 +446,11 @@ async def record_price_ground_truth(
                 SELECT q50, q10, q90, conf_score, generated_at AS asof
                 FROM price_predictions
                 WHERE item_ref = (SELECT canonical_key FROM items WHERE id = $1::uuid)
+                  -- Partition prune: latest predictions are always
+                  -- within the last 60 days. Without this filter the
+                  -- planner walks all monthly partitions on every
+                  -- ground-truth feedback submission.
+                  AND generated_at > now() - interval '60 days'
                 ORDER BY generated_at DESC
                 LIMIT 1
                 """,
@@ -521,6 +526,11 @@ async def prediction_accuracy(
                 LEFT JOIN LATERAL (
                     SELECT q10, q90 FROM price_predictions pp2
                     WHERE pp2.item_ref = i.canonical_key
+                      -- Partition prune: latest prediction is always in the
+                      -- last 60 days. The LATERAL fires once per ground-truth
+                      -- row, so without this filter we walk all monthly
+                      -- partitions per row → quadratic cost on accuracy reports.
+                      AND pp2.generated_at > now() - interval '60 days'
                     ORDER BY pp2.generated_at DESC LIMIT 1
                 ) pp ON true
                 WHERE gt.recorded_at >= now() - make_interval(days => $1)

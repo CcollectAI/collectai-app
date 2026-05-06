@@ -58,11 +58,18 @@ async def get_sell_timing(
         raise HTTPException(503, "Database unavailable")
 
     async with pool.acquire() as conn:
-        # Query market_hits grouped by month
+        # Query market_hits grouped by month.
+        # Pre-2026-05-02 this used `EXTRACT(MONTH FROM created_at)` but
+        # market_hits has no `created_at` column — the endpoint 500'd on
+        # every call. Use COALESCE(observed_at, seen_at) to match the
+        # readers in valuation_worker / explainer (legacy rows have
+        # observed_at NULL, fall back to seen_at).
+        # 2-year window = 24 monthly partitions max; partition prune
+        # via seen_at keeps the planner from walking everything.
         rows = await conn.fetch(
             """
             SELECT
-                EXTRACT(MONTH FROM created_at)::int AS month_num,
+                EXTRACT(MONTH FROM COALESCE(observed_at, seen_at))::int AS month_num,
                 AVG(price_eur) AS avg_price,
                 COUNT(*) AS cnt
             FROM public.market_hits
@@ -70,6 +77,7 @@ async def get_sell_timing(
               AND price_eur IS NOT NULL
               AND price_eur > 0
               AND (is_listing IS NOT TRUE)
+              AND seen_at > now() - interval '2 years'
             GROUP BY month_num
             ORDER BY month_num
             """,

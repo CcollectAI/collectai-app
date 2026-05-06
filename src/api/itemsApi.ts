@@ -161,3 +161,30 @@ export const reorderItemImages = (itemId: string, imageIds: string[]) =>
 // Toggle item for sale
 export const toggleItemForSale = (itemId: string, payload: { for_sale: boolean; asking_price?: number }) =>
   put(`/items/${encodeURIComponent(itemId)}/for-sale`, payload as Record<string, unknown>);
+
+// Catalog match — returns best item_key for (title, category) so manual-add
+// can populate items.canonical_key. Without this, manually-added items ship
+// with canonical_key=null and every Premium JOIN returns empty for them.
+export type CatalogMatchHit = {
+  item_key: string | null;
+  catalog_item_id: string | null;
+  title: string | null;
+  match_score: number;
+  brand: string | null;
+  set_code: string | null;
+  rarity: string | null;
+  image_url: string | null;
+};
+
+export type CatalogMatchResponse = {
+  best: CatalogMatchHit | null;
+  alternatives: CatalogMatchHit[];
+};
+
+export const matchCatalog = (title: string, category: string, opts?: { brand?: string; set_code?: string }) =>
+  post<CatalogMatchResponse>("/catalog/match", {
+    title,
+    category,
+    ...(opts?.brand ? { brand: opts.brand } : {}),
+    ...(opts?.set_code ? { set_code: opts.set_code } : {}),
+  });

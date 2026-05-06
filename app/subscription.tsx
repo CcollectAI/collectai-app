@@ -230,7 +230,15 @@ function SubscriptionScreen() {
               <PlanCard
                 name="Pro"
                 price={`${settings.currency} 4.99/mo`}
-                features={['10 purchase mandates', 'Deal discovery', 'Dossier PDF export', 'Priority support']}
+                features={[
+                  '10 purchase mandates',
+                  'Deal discovery',
+                  'Dossier PDF export',
+                  'Condition grading',
+                  'Set completion tracker',
+                  'No ads',
+                  'Priority support',
+                ]}
                 current={false}
                 recommended
                 onSelect={() => handleUpgrade('pro')}
@@ -240,7 +248,16 @@ function SubscriptionScreen() {
               <PlanCard
                 name="Premium"
                 price={`${settings.currency} 9.99/mo`}
-                features={['50 purchase mandates', 'Deal discovery', 'Dossier PDF export', 'Advanced analytics', 'Priority support']}
+                features={[
+                  '50 purchase mandates',
+                  'Deal discovery',
+                  'Dossier PDF export',
+                  'Condition grading',
+                  'Set completion tracker',
+                  'Advanced analytics',
+                  'No ads',
+                  'Priority support',
+                ]}
                 current={false}
                 onSelect={() => handleUpgrade('premium')}
                 loading={upgrading === 'premium'}
@@ -274,6 +291,9 @@ function SubscriptionScreen() {
                 '10 purchase mandates',
                 'Deal discovery',
                 'Dossier PDF export',
+                'Condition grading',
+                'Set completion tracker',
+                'No ads',
                 'Priority support',
               ]}
               current={currentPlan === 'pro'}
@@ -289,7 +309,10 @@ function SubscriptionScreen() {
                 '50 purchase mandates',
                 'Deal discovery',
                 'Dossier PDF export',
+                'Condition grading',
+                'Set completion tracker',
                 'Advanced analytics',
+                'No ads',
                 'Priority support',
               ]}
               current={currentPlan === 'premium'}

@@ -98,7 +98,7 @@ if (featureFlags.FEATURE_ANALYTICS) {
 // Keep splash screen visible while auth loads
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-const ONBOARDING_KEY = '@collectai/onboarding_complete';
+const ONBOARDING_KEY = '@sparrowcollect/onboarding_complete';
 
 function SettingsHeaderButton() {
   const router = useRouter();

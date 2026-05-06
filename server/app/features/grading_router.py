@@ -26,6 +26,7 @@ from app.auth import get_current_user_id
 from app.db import db_configured
 from app.errors import error_response
 from app.rate_limit import per_user_rate_limit
+from app.subscription import require_plan
 
 logger = logging.getLogger(__name__)
 
@@ -306,6 +307,7 @@ async def grading_lookup(
     cert_number: str = Query(..., min_length=1, max_length=20, description="Certification number"),
     service: str = Query(..., pattern="^(psa|cgc|bgs|beckett)$", description="Grading service"),
     user_id: str = Depends(get_current_user_id),
+    _plan: str = Depends(require_plan("pro")),
     _rl: None = Depends(_lookup_limit),
 ) -> GradingLookupResponse:
     """
@@ -346,6 +348,7 @@ async def grading_population(
     category: str = Query(..., description="Category ID"),
     service: str = Query(default="psa", pattern="^(psa|cgc|bgs|beckett)$", description="Grading service"),
     user_id: str = Depends(get_current_user_id),
+    _plan: str = Depends(require_plan("pro")),
     _rl: None = Depends(_lookup_limit),
 ) -> PopulationReportResponse:
     """
@@ -380,6 +383,7 @@ async def grading_population(
 async def list_grading_services(
     category: Optional[str] = Query(default=None, description="Filter services by category"),
     user_id: str = Depends(get_current_user_id),
+    _plan: str = Depends(require_plan("pro")),
 ) -> GradingServicesResponse:
     """
     List available grading services with submission links.

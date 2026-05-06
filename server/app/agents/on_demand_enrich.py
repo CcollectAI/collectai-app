@@ -82,34 +82,74 @@ async def enrich_item(
     if not force and await _is_cache_fresh(conn, item_ref, category):
         return {"skipped": True, "reason": "cache_fresh", "hits_persisted": 0, "cost_cents": 0}
 
-    # 2. Spend gate
-    try:
-        from app.lib.spend_tracker import SpendTracker, BudgetExceededError
-        tracker = SpendTracker.instance() if hasattr(SpendTracker, "instance") else SpendTracker()
-        tracker.check("scrapedo")
-    except Exception as e:  # noqa: BLE001 — covers BudgetExceededError + import failures
-        logger.warning("on_demand_enrich budget gate failed: %s", e)
-        return {"skipped": True, "reason": "budget_exhausted", "hits_persisted": 0, "cost_cents": 0}
-
-    # 3. Fire the paid call
-    from app.agents.adapters.scrapedo_caller import ScrapedoCaller
-    caller = ScrapedoCaller()
-    if not getattr(caller, "configured", False):
-        return {"skipped": True, "reason": "scrapedo_disabled", "hits_persisted": 0, "cost_cents": 0}
-
+    # 2. Try Scrape.do first (real comps > synthetic estimate). Falls
+    # through to the Claude estimator on any of:
+    #   - SpendTracker budget exhausted
+    #   - ScrapedoCaller not configured (SCRAPEDO_ENABLED=false / no key)
+    #   - Scrape.do call returns 0 hits
     last_error: Optional[str] = None
     hits = []
-    try:
-        hits = await caller.search(query, category=category, limit=20) or []
-    except Exception as e:  # noqa: BLE001
-        last_error = f"{type(e).__name__}: {e!s}"[:300]
-        logger.warning("on_demand_enrich scrape failed for %s: %s", item_ref, e)
+    cost_cents = 0
+    last_provider = "scrapedo"
+    scrapedo_available = False
 
-    cost_cents = int(COST_PER_CALL_EUR * 100)
     try:
-        tracker.record("scrapedo", cost_eur=COST_PER_CALL_EUR)
-    except Exception:
-        pass
+        from app.lib.spend_tracker import SpendTracker, BudgetExceededError  # noqa: F401
+        tracker = SpendTracker.instance() if hasattr(SpendTracker, "instance") else SpendTracker()
+        tracker.check("scrapedo")
+        scrapedo_available = True
+    except Exception as e:  # noqa: BLE001
+        logger.info("on_demand_enrich scrapedo budget unavailable: %s", e)
+
+    if scrapedo_available:
+        from app.agents.adapters.scrapedo_caller import ScrapedoCaller
+        caller = ScrapedoCaller()
+        if getattr(caller, "configured", False):
+            try:
+                hits = await caller.search(query, category=category, limit=20) or []
+                cost_cents = int(COST_PER_CALL_EUR * 100)
+                try:
+                    tracker.record("scrapedo", cost_eur=COST_PER_CALL_EUR)
+                except Exception:
+                    pass
+            except Exception as e:  # noqa: BLE001
+                last_error = f"scrapedo: {type(e).__name__}: {e!s}"[:300]
+                logger.warning("on_demand_enrich scrape failed for %s: %s", item_ref, e)
+        else:
+            scrapedo_available = False
+
+    # 3. Claude fallback — only when Scrape.do produced nothing usable.
+    # Synthesises a single q10/q50/q90 row tagged source='claude_estimate'.
+    # See claude_estimator.py for the cost-cap and prompt-cache details.
+    if not hits:
+        try:
+            from app.agents.claude_estimator import (
+                estimate_thin_cat_price, to_market_hit,
+            )
+            estimate = await estimate_thin_cat_price(
+                category=category,
+                title=query,
+                attrs=None,
+            )
+            if estimate.get("ok"):
+                synth = to_market_hit(
+                    estimate,
+                    category=category,
+                    item_ref=item_ref,
+                    listing_id=f"claude:{item_ref}",
+                )
+                if synth is not None:
+                    hits = [synth]
+                    cost_cents += int(estimate["cost_eur"] * 100)
+                    last_provider = "claude_estimate"
+            else:
+                # Surface the reason in the cache row for ops visibility.
+                last_error = (last_error + "; " if last_error else "") + (
+                    f"claude_estimate: {estimate.get('reason', 'unknown')}"
+                )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("on_demand_enrich claude fallback failed for %s: %s", item_ref, e)
+            last_error = (last_error + "; " if last_error else "") + f"claude_estimate: {e!s}"[:200]
 
     # 4. Persist hits to market_hits (delegates to existing writer so all
     # the normalization/category-prefixing/attrs flow happens uniformly).
@@ -124,13 +164,22 @@ async def enrich_item(
             logger.exception("on_demand_enrich persist failed: %s", e)
             last_error = (last_error or "") + f"; persist: {e!s}"[:200]
 
+    # If neither Scrape.do nor Claude produced anything, surface that.
+    if not scrapedo_available and not hits:
+        return {
+            "skipped": True,
+            "reason": "no_provider_available",
+            "hits_persisted": 0,
+            "cost_cents": 0,
+        }
+
     # 5. Upsert cache row
     await conn.execute(
         """
         INSERT INTO public.on_demand_lookups
           (item_ref, category, last_fetched_at, fetch_count, hit_count,
            cost_cents, last_provider, last_error)
-        VALUES ($1, $2, now(), 1, $3, $4, 'scrapedo', $5)
+        VALUES ($1, $2, now(), 1, $3, $4, $5, $6)
         ON CONFLICT (item_ref) DO UPDATE
         SET last_fetched_at = excluded.last_fetched_at,
             fetch_count    = on_demand_lookups.fetch_count + 1,
@@ -139,7 +188,7 @@ async def enrich_item(
             last_provider  = excluded.last_provider,
             last_error     = excluded.last_error
         """,
-        item_ref, category, persisted, cost_cents, last_error,
+        item_ref, category, persisted, cost_cents, last_provider, last_error,
     )
 
     return {
@@ -147,4 +196,5 @@ async def enrich_item(
         "reason": "ok" if not last_error else "error",
         "hits_persisted": persisted,
         "cost_cents": cost_cents,
+        "provider": last_provider,
     }

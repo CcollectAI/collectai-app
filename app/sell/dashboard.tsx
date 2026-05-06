@@ -56,7 +56,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 const MARKETPLACE_CONFIG: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
-  collectai: { label: 'CollectAI P2P', icon: 'people-outline', color: MARKETPLACE_BRAND_COLORS.collectai.color },
+  collectai: { label: 'Sparrow Collect P2P', icon: 'people-outline', color: MARKETPLACE_BRAND_COLORS.collectai.color },
   ebay: { label: 'eBay', icon: 'cart-outline', color: MARKETPLACE_BRAND_COLORS.ebay.color },
   mercari: { label: 'Mercari', icon: 'storefront-outline', color: MARKETPLACE_BRAND_COLORS.mercari.color },
   cardmarket: { label: 'Cardmarket', icon: 'card-outline', color: MARKETPLACE_BRAND_COLORS.cardmarket.color },

@@ -44,6 +44,10 @@ WHERE pp.q50 IS NOT NULL
   AND pp.q50 < 10
   AND pp.item_ref IS NOT NULL
   AND i.user_id IS NOT NULL
+  -- Partition prune: only the latest prediction per item matters for
+  -- alerting, and predictions regenerate weekly. Without this the
+  -- planner walks all monthly partitions on every alert cycle.
+  AND pp.generated_at > now() - interval '30 days'
   AND NOT EXISTS (
       SELECT 1 FROM public.alert_trigger_history ath
       WHERE ath.user_id = i.user_id

@@ -1,5 +1,5 @@
 /**
- * Data Processing Agreement screen — displays CollectAI data processing terms.
+ * Data Processing Agreement screen — displays Sparrow Collect data processing terms.
  */
 
 import React from 'react';
@@ -36,15 +36,15 @@ function DataProcessingScreenInner() {
         <Text style={[styles.updated, { color: colors.muted }]}>Last updated: {LAST_UPDATED}</Text>
 
         <Text style={[styles.body, { color: colors.text }]}>
-          This Data Processing Agreement ("DPA") describes how CollectAI ("we", "our", "us") processes personal data in connection with the CollectAI mobile application (the "Service"). This DPA supplements our Privacy Policy and Terms of Service.
+          This Data Processing Agreement ("DPA") describes how Sparrow Collect ("we", "our", "us") processes personal data in connection with the Sparrow Collect mobile application (the "Service"). This DPA supplements our Privacy Policy and Terms of Service.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>1. Data Controller</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          <Text style={styles.bold}>Controller:</Text> CollectAI{'\n'}
-          <Text style={styles.bold}>Location:</Text> The Netherlands{'\n'}
-          <Text style={styles.bold}>Contact:</Text> dpo@collectai.app{'\n\n'}
-          CollectAI acts as the data controller for all personal data processed through the Service. We determine the purposes and means of processing personal data as described in this DPA.
+          <Text style={styles.bold}>Controller:</Text> Sparrow Collect{'\n'}
+          <Text style={styles.bold}>Location:</Text> Amsterdam, The Netherlands{'\n'}
+          <Text style={styles.bold}>Contact:</Text> dpo@sparrowcollect.com{'\n\n'}
+          Sparrow Collect acts as the data controller for all personal data processed through the Service. We determine the purposes and means of processing personal data as described in this DPA.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>2. Types of Data Processed</Text>
@@ -94,7 +94,7 @@ function DataProcessingScreenInner() {
           {'\u2022'} We assess the data protection laws of recipient countries and implement supplementary measures where necessary{'\n'}
           {'\u2022'} Sub-processors in the United States operate under data processing agreements that include SCCs{'\n'}
           {'\u2022'} Data transfers are limited to what is strictly necessary for the processing purpose{'\n\n'}
-          You may request a copy of the applicable transfer safeguards by contacting dpo@collectai.app.
+          You may request a copy of the applicable transfer safeguards by contacting dpo@sparrowcollect.com.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>6. Security Measures</Text>
@@ -135,7 +135,7 @@ function DataProcessingScreenInner() {
           {'\u2022'} <Text style={styles.bold}>Right to Data Portability</Text> — Receive your data in a structured, machine-readable format (CSV export available in the app){'\n'}
           {'\u2022'} <Text style={styles.bold}>Right to Restriction</Text> — Request that we restrict the processing of your personal data in certain circumstances{'\n'}
           {'\u2022'} <Text style={styles.bold}>Right to Object</Text> — Object to processing of your personal data for specific purposes, including direct marketing{'\n\n'}
-          To exercise any of these rights, use the account settings in the app or contact our Data Protection Officer at dpo@collectai.app. We will respond to your request within 30 days.
+          To exercise any of these rights, use the account settings in the app or contact our Data Protection Officer at dpo@sparrowcollect.com. We will respond to your request within 30 days.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>9. Retention Periods</Text>
@@ -149,9 +149,8 @@ function DataProcessingScreenInner() {
         <Text style={[styles.heading, { color: colors.text }]}>10. Contact</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           For questions about this Data Processing Agreement or to exercise your data subject rights, contact our Data Protection Officer:{'\n\n'}
-          dpo@collectai.app{'\n\n'}
-          CollectAI{'\n'}
-          The Netherlands
+          dpo@sparrowcollect.com{'\n\n'}
+          Sparrow Collect{'\n'}          Ertskade 74, 1019 BB Amsterdam{'\n'}          The Netherlands{'\n'}          KvK: 99596326
         </Text>
 
         <View style={{ height: 40 }} />

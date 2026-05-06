@@ -49,8 +49,13 @@ async def run_once() -> dict[str, int]:
         record_run("catalog_learning_worker", "error")
         return {"auto_mapped": 0, "candidates_updated": 0, "promoted": 0}
 
-    conn = await asyncpg.connect(dsn)
-    await conn.execute("SET statement_timeout = 0")
+    # Tagged via application_name for the ExecStop cancel hook.
+    conn = await asyncpg.connect(
+        dsn,
+        server_settings={"application_name": "collectai-bake-catalog_learning_worker"},
+    )
+    # Bounded 2026-05-04 (was 0/unbounded). Aggregations across catalog_suggestions.
+    await conn.execute("SET statement_timeout = '600s'")
     # Make the existing `pool.X` call sites work unchanged by aliasing.
     pool = conn
 

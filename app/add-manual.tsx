@@ -24,6 +24,7 @@ import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
 import CatalogSuggestionModal from "@/components/CatalogSuggestionModal";
+import { matchCatalog } from "@/api/itemsApi";
 import { checkDuplicate } from "@/lib/duplicateCheck";
 import { dataProvider } from "@/data";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
@@ -166,6 +167,49 @@ const ManualAddScreen: React.FC = () => {
   }, [category, isCustomCategory, customCategoryText]);
   const categoryFields = useMemo(() => getCategoryFields(categorySlug), [categorySlug]);
 
+  // Catalog auto-fill: when the user has typed a title + chosen a category
+  // and we get a strong (>=0.75) catalog match, populate empty
+  // category-specific fields (brand / set_code / rarity / year-shaped keys)
+  // from the matched catalog row. Never overrides what the user has already
+  // typed — only fills genuinely-empty fields. Debounced 600ms so it doesn't
+  // fire on every keystroke. Same /catalog/match endpoint used by the
+  // canonical_key writer at handleSubmit.
+  const [autoFilledFromCatalog, setAutoFilledFromCatalog] = useState<string | null>(null);
+  useEffect(() => {
+    const t = nameField.value.trim();
+    const c = categorySlug || category.trim();
+    if (!t || !c || t.length < 3) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const m = await matchCatalog(t, c);
+        if (cancelled) return;
+        const best = m.best;
+        if (!best || (best.match_score ?? 0) < 0.75) return;
+        // Merge into categoryAttrs only on keys we have AND that are empty.
+        setCategoryAttrs((prev) => {
+          const next = { ...prev };
+          const fillKeys: Array<[string, string | null | undefined]> = [
+            ['brand', best.brand],
+            ['set_code', best.set_code],
+            ['set_name', best.set_code],  // some categories label it set_name
+            ['rarity', best.rarity],
+          ];
+          for (const [k, v] of fillKeys) {
+            if (v && (!prev[k] || prev[k] === '')) {
+              next[k] = v;
+            }
+          }
+          return next;
+        });
+        if (best.title) setAutoFilledFromCatalog(best.title);
+      } catch {
+        // Best-effort enrichment — silent on failure.
+      }
+    }, 600);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [nameField.value, categorySlug, category]);
+
   const canSubmit = nameField.value.trim().length > 0 && saveState !== "saving" && !photoUploading && !nameField.error && !purchasePriceField.error && !estimatedValueField.error;
 
   const handlePhotoUpload = async (src: "camera" | "gallery") => {
@@ -220,11 +264,35 @@ const ManualAddScreen: React.FC = () => {
 
       const qty = parseInt(quantity, 10);
 
+      // Match against the catalog so this manually-added item gets a
+      // canonical_key — the JOIN key that links it to price_predictions /
+      // price_history / valuation pipelines. Without this, every Premium
+      // feature (price_trend, item_history, dossier, market_prices) is dark
+      // for manually-added items. Same writer story as QuickScan, just
+      // happening at save-time instead of via a route param. Silent fallback
+      // to canonical_key=null when no strong match — the item still saves,
+      // Premium features just stay dark for it (matching today's behavior).
+      // Threshold 0.6 mirrors orchestrator.py's "probable match" cutoff.
+      let canonicalKey: string | null = null;
+      const trimmedTitle = nameField.value.trim();
+      const effectiveCat = categorySlug || category.trim();
+      if (trimmedTitle && effectiveCat) {
+        try {
+          const m = await matchCatalog(trimmedTitle, effectiveCat);
+          if (m.best && (m.best.match_score ?? 0) >= 0.6 && m.best.item_key) {
+            canonicalKey = m.best.item_key;
+          }
+        } catch (e) {
+          logger.warn("[ManualAdd] catalog match failed (saving without canonical_key):", e);
+        }
+      }
+
       const { error } = await supabase.from("items").insert([
         {
           user_id: (await supabase.auth.getUser()).data.user?.id ?? null,
-          title: nameField.value.trim(),
-          category: categorySlug || category.trim() || null,
+          title: trimmedTitle,
+          category: effectiveCat || null,
+          canonical_key: canonicalKey,
           condition_grade: conditionGrade.trim() || null,
           condition: conditionGrade.trim() || null,
           purchase_price_eur: Number.isNaN(purchase as number) ? null : purchase,

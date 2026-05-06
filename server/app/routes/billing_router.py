@@ -117,15 +117,24 @@ def _resolve_price_id(plan: str, interval: str = "monthly") -> str | None:
 # Tier breakdown (mirrors FORCED_LIMITS in src/hooks/useBillingLimits.ts):
 #   free     : caps at 3 mandates, ads on, no premium features
 #   pro      : 10 mandates, dossier_pdf, deal_discovery, condition_grading,
-#              set_completion, no ads. NO advanced_analytics — that's the
-#              Premium upsell hook (matches the marketing copy on
-#              app/subscription.tsx).
+#              set_completion, detailed_valuation, no ads.
 #   premium  : 50 mandates + everything Pro has + advanced_analytics.
+#
+# Flag semantics:
+#   detailed_valuation : Trend chart, item history, dossier display, market
+#                        prices. The "consumer-pricing-app" feature pack.
+#                        Pro+. Pre-2026-05-02 these gated on advanced_analytics
+#                        (Premium-only) which made Pro feel underwater since
+#                        the marketing copy said "with Pro".
+#   advanced_analytics : True predictive features — sell timing, future
+#                        per-cat calibration depth, model-version history.
+#                        Premium-only.
 PLAN_LIMITS = {
     "free": {
         "max_mandates": 3,
         "deal_discovery": False,
         "dossier_pdf": False,
+        "detailed_valuation": False,
         "advanced_analytics": False,
         "condition_grading": False,
         "set_completion": False,
@@ -135,6 +144,7 @@ PLAN_LIMITS = {
         "max_mandates": 10,
         "deal_discovery": True,
         "dossier_pdf": True,
+        "detailed_valuation": True,
         "advanced_analytics": False,
         "condition_grading": True,
         "set_completion": True,
@@ -144,6 +154,7 @@ PLAN_LIMITS = {
         "max_mandates": 50,
         "deal_discovery": True,
         "dossier_pdf": True,
+        "detailed_valuation": True,
         "advanced_analytics": True,
         "condition_grading": True,
         "set_completion": True,
@@ -412,10 +423,21 @@ async def get_billing_status(
     plan = sub.get("plan", "free")
     limits = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])
 
+    # current_period_end comes back from asyncpg as a datetime; FastAPI's
+    # default JSONResponse encoder doesn't know how to serialize that and
+    # 500s with `Object of type datetime is not JSON serializable`.
+    # Pre-2026-05-02 this was masked because the only existing
+    # subscription row had period_end IS NULL, but as soon as a paid
+    # user appeared the entire FE billing flow broke. Coerce to ISO-8601
+    # string here and let the FE parse if needed.
+    period_end = sub.get("current_period_end")
+    if hasattr(period_end, "isoformat"):
+        period_end = period_end.isoformat()
+
     return JSONResponse({
         "plan": plan,
         "status": sub.get("status", "active"),
-        "current_period_end": sub.get("current_period_end", None),
+        "current_period_end": period_end,
         "cancel_at_period_end": sub.get("cancel_at_period_end", False),
         "limits": limits,
     })
@@ -451,6 +473,17 @@ async def stripe_webhook(
     except stripe_mod.error.StripeError as exc:
         _log.exception("Stripe error during webhook event construction: %s", exc)
         return JSONResponse({"error": "Webhook processing error"}, status_code=400)
+
+    # Stripe SDK 15.x returns StripeObject from construct_event; .get()
+    # is missing on Mapping subclasses. Convert the whole event tree to
+    # plain dicts so every downstream .get(...) call works without
+    # `AttributeError: get`. Replaces the per-handler conversion that
+    # was done below — once at the entry is cleaner. See incident
+    # 2026-05-02 — webhook 500'd on subscription.updated/deleted before.
+    if hasattr(event, "to_dict_recursive"):
+        event = event.to_dict_recursive()
+    elif hasattr(event, "to_dict"):
+        event = event.to_dict()
 
     event_id = event.get("id", "")
     event_type = event["type"]

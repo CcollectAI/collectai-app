@@ -330,7 +330,7 @@ function PortfolioScreen() {
   useEffect(() => {
     let cancelled = false;
     // Try local storage first (faster), then backend
-    AsyncStorage.getItem('@collectai/followed_categories')
+    AsyncStorage.getItem('@sparrowcollect/followed_categories')
       .then((raw) => {
         if (cancelled) return;
         if (raw) {

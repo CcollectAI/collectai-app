@@ -2259,7 +2259,7 @@
         "attrs": {
           "be_r": true,
           "be_w": true,
-          "fe_r": false,
+          "fe_r": true,
           "fe_w": false
         },
         "authenticity_score": {
@@ -2288,8 +2288,8 @@
         },
         "canonical_key": {
           "be_r": true,
-          "be_w": false,
-          "fe_r": false,
+          "be_w": true,
+          "fe_r": true,
           "fe_w": false
         },
         "category": {
@@ -2307,7 +2307,7 @@
         "collection_name": {
           "be_r": true,
           "be_w": true,
-          "fe_r": false,
+          "fe_r": true,
           "fe_w": false
         },
         "condition": {
@@ -2642,6 +2642,7 @@
         }
       },
       "fe_read_files": [
+        "app/item/[id].tsx",
         "src/data/providers/categoryProvider.ts",
         "src/data/providers/itemsProvider.ts",
         "src/data/providers/portfolioProvider.ts",

@@ -302,3 +302,104 @@ async def get_item_progress(
         progress_pct=row["progress_pct"],
         progress_notes=row["progress_notes"],
     )
+
+
+# ---------------------------------------------------------------------------
+# POST /catalog/match — match a user-supplied (title, category) against the
+# catalog and return the best-scoring item_key. Used by app/add-manual.tsx
+# so manually-added items can populate items.canonical_key the same way
+# QuickScan-added items do (via the catalog_match_key route param). Without
+# this, manual items ship with canonical_key=null and every Premium JOIN
+# (price_trend, item_history, dossier) returns empty for them. Wired
+# 2026-05-02 to close the second leg of the canonical_key writer story.
+# ---------------------------------------------------------------------------
+
+_catalog_match_limit = per_user_rate_limit(30, window_seconds=60, scope="catalog_match")
+
+
+class CatalogMatchRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=500)
+    category: str = Field(..., min_length=1, max_length=64)
+    # Optional hints from the FE form to improve match accuracy
+    brand: Optional[str] = Field(None, max_length=128)
+    set_code: Optional[str] = Field(None, max_length=64)
+
+
+class CatalogMatchHit(BaseModel):
+    item_key: Optional[str] = None
+    catalog_item_id: Optional[str] = None
+    title: Optional[str] = None
+    match_score: float = 0.0
+    brand: Optional[str] = None
+    set_code: Optional[str] = None
+    rarity: Optional[str] = None
+    image_url: Optional[str] = None
+
+
+class CatalogMatchResponse(BaseModel):
+    # Top match — the FE writes this to canonical_key when match_score >= 0.6.
+    # null when no match (FE writes canonical_key=null).
+    best: Optional[CatalogMatchHit] = None
+    alternatives: list[CatalogMatchHit] = Field(default_factory=list)
+
+
+@router.post(
+    "/catalog/match",
+    response_model=CatalogMatchResponse,
+    dependencies=[Depends(_catalog_match_limit)],
+    summary="Match a manual item entry against the catalog",
+)
+async def match_catalog(
+    payload: CatalogMatchRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Match (title, category) against category_items via the same
+    catalog-matching pipeline that QuickScan uses. Returns the best hit
+    plus up to 4 alternatives. Score >= 0.75 = strong, >= 0.6 = probable."""
+    pool = get_pool()
+    if pool is None:
+        return CatalogMatchResponse()
+
+    try:
+        # Lazy import — catalog_matching pulls in heavy intake dependencies.
+        from app.agents.intake.catalog_matching import _match_catalog_items
+    except Exception as e:
+        logger.warning("[catalog_match] import failed: %s", e)
+        return CatalogMatchResponse()
+
+    try:
+        matches = await _match_catalog_items(
+            category_id=payload.category,
+            suggested_name=payload.title,
+            search_keywords=[],
+            brand=payload.brand,
+            set_code=payload.set_code,
+            pool=pool,
+            extracted_attributes=None,
+        )
+    except Exception as e:
+        # Don't fail the form save just because matching errored. The FE
+        # falls back to canonical_key=null gracefully (Premium features
+        # remain dark for that item until it's matched another way).
+        logger.warning("[catalog_match] match call failed: %s", e)
+        return CatalogMatchResponse()
+
+    if not matches:
+        return CatalogMatchResponse()
+
+    def _to_hit(m: dict) -> CatalogMatchHit:
+        return CatalogMatchHit(
+            item_key=m.get("item_key"),
+            catalog_item_id=m.get("catalog_item_id"),
+            title=m.get("title"),
+            match_score=float(m.get("match_score", 0.0)),
+            brand=m.get("brand"),
+            set_code=m.get("set_code"),
+            rarity=m.get("rarity"),
+            image_url=m.get("image_url"),
+        )
+
+    return CatalogMatchResponse(
+        best=_to_hit(matches[0]),
+        alternatives=[_to_hit(m) for m in matches[1:5]],
+    )

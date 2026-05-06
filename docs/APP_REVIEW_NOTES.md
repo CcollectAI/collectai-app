@@ -5,8 +5,8 @@ Notes for Apple App Store Review and Google Play Review teams.
 ## Demo Account
 
 ```
-Email:    reviewer@collectai.app
-Password: CollectAI-Review-2026!
+Email:    reviewer@sparrowcollect.com
+Password: Sparrow Collect-Review-2026!
 ```
 
 This account is pre-loaded with:
@@ -71,7 +71,7 @@ This account is pre-loaded with:
 
 ## Marketplace Affiliate Links
 
-CollectAI shows marketplace prices from multiple sources. When users tap a marketplace link, they are taken to the external marketplace via affiliate URLs. This is standard practice and is disclosed:
+Sparrow Collect shows marketplace prices from multiple sources. When users tap a marketplace link, they are taken to the external marketplace via affiliate URLs. This is standard practice and is disclosed:
 
 - **eBay**: eBay Partner Network (EPN)
 - **TCGPlayer**: TCGPlayer affiliate program
@@ -85,7 +85,7 @@ No purchases happen within the app. All marketplace transactions occur on the re
 
 ## Subscription Model
 
-CollectAI uses Apple/Google in-app subscriptions (StoreKit / Play Billing):
+Sparrow Collect uses Apple/Google in-app subscriptions (StoreKit / Play Billing):
 
 | Tier | Price | Features |
 |------|-------|----------|
@@ -108,8 +108,8 @@ CollectAI uses Apple/Google in-app subscriptions (StoreKit / Play Billing):
 - **Camera**: Used for barcode scanning and item photos only
 - **No third-party advertising or tracking SDKs**
 
-Privacy Policy: https://collectai.app/privacy
-Terms of Service: https://collectai.app/terms
+Privacy Policy: https://sparrowcollect.com/privacy
+Terms of Service: https://sparrowcollect.com/terms
 
 ## Age Verification
 

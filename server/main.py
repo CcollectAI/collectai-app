@@ -1,5 +1,5 @@
 """
-CollectAI — Collectors Merge Service entry point.
+Sparrow Collect — Collectors Merge Service entry point.
 
 This module creates the FastAPI app, installs middleware, registers all
 routers, and defines the lifespan (startup / shutdown) hooks.

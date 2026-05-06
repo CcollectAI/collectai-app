@@ -76,7 +76,7 @@ function ForgotPasswordScreen() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: 'collectai://reset-password',
+        redirectTo: 'sparrow://reset-password',
       });
       if (error) throw error;
       setSent(true);

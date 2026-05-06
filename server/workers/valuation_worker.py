@@ -123,6 +123,34 @@ async def _check_gate_pass(conn, category: str) -> bool:
         return False
 
 
+async def _get_latest_picp(conn, category: str) -> float | None:
+    """Latest PICP value for a category (None when no snapshot exists).
+
+    PICP = Prediction Interval Coverage Probability — fraction of actual
+    sale prices that fall inside the predicted [q10, q90] band. Target
+    is 0.80; values 0.70–0.90 are normal in production.
+
+    Used by the conf_score formula to boost categories whose intervals
+    have been validated against real sales, and to penalise ones where
+    the model is over- or under-confident.
+    """
+    try:
+        row = await conn.fetchrow(
+            """
+            SELECT picp FROM public.calibration_snapshots
+            WHERE category = $1
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            category,
+        )
+        if row and row["picp"] is not None:
+            return float(row["picp"])
+        return None
+    except Exception:
+        return None
+
+
 def _predict_ridge(model: dict, item_ref: str, fallback_q50: float) -> float | None:
     """Run Ridge model inference to get a q50 prediction.
 
@@ -175,20 +203,38 @@ async def run_once():
         logging.error("DB_DSN not set in environment")
         return
 
-    conn = await asyncpg.connect(DSN)
+    # Tagged via application_name so the ExecStop cancel hook
+    # (scripts/cancel_bake_queries.py) can identify our backend.
+    conn = await asyncpg.connect(
+        DSN,
+        server_settings={"application_name": "collectai-bake-valuation_worker"},
+    )
     logging.info("Connected to DB")
     try:
         # -------------------------------------------------------------------
         # Fetch unprocessed market hits with full detail for evidence building
         # -------------------------------------------------------------------
+        # COALESCE(observed_at, seen_at) covers historical rows where
+        # writers (pre-2026-05-02) left observed_at NULL. Going forward,
+        # both writer paths (marketplace_agent.py + upsert_market_hits_batch
+        # RPC) populate observed_at directly. Without this fallback,
+        # temporal-decay weighting collapses to a uniform 0.368 weight on
+        # ~800K legacy rows.
         hit_rows = await conn.fetch("""
-            SELECT id, item_ref, source, COALESCE(price_eur, price)::numeric AS price, observed_at
+            SELECT id, item_ref, source,
+                   COALESCE(price_eur, price)::numeric AS price,
+                   COALESCE(observed_at, seen_at) AS observed_at
             FROM public.market_hits
             WHERE processed = false
+              -- Partition prune: anything still unprocessed after 90 days
+              -- is stale by valuation standards (model retrains weekly,
+              -- decay half-life is 30d). The previous query walked all
+              -- monthly partitions of the 1.4M-row table on every cycle.
+              AND seen_at > now() - interval '90 days'
               AND price IS NOT NULL
               AND item_ref IS NOT NULL
               AND (is_listing IS NOT TRUE)  -- exclude asking-price rows (Discogs listings)
-            ORDER BY item_ref, observed_at
+            ORDER BY item_ref, COALESCE(observed_at, seen_at)
         """)
 
         if not hit_rows:
@@ -279,14 +325,57 @@ async def run_once():
                 logging.debug("Model blending skipped for %s: %s", item_ref, e)
 
             # ── Confidence score ──────────────────────────────────────────
-            # conf = min(1.0, source_count/5) × source_diversity × recency
+            # 4 multiplicative factors (all in [0, 1+]):
+            #   1. count_factor      — sigmoid in n: 1 - exp(-n/5)
+            #                          gives 0.18@n=1, 0.55@n=4, 0.86@n=10.
+            #                          Old min(1, n/5) was too punitive on
+            #                          tail cats with 1-3 comps (0.2-0.6).
+            #   2. diversity_factor  — min(1, unique_sources/2). Old /3
+            #                          ceiling was unfair to single-source
+            #                          cats (e.g. MTG via tcgplayer alone
+            #                          got max 0.33).
+            #   3. recency_factor    — average decay weight. Pre-2026-05-02
+            #                          observed_at was NULL on all rows so
+            #                          this collapsed to exp(-1)=0.368
+            #                          everywhere. With the writer fix +
+            #                          COALESCE reader, fresh comps push
+            #                          this toward 1.0.
+            #   4. picp_boost        — clamp(picp/0.8, 0.5, 1.2). Categories
+            #                          whose intervals are validated against
+            #                          real sales get up to +20%; mis-
+            #                          calibrated cats get capped to 0.5.
+            #                          NULL when no snapshot → boost=1.0.
             unique_sources = len({h["source"] for h in hits if h["source"]})
-            source_diversity = min(1.0, unique_sources / 3)
-            source_count_factor = min(1.0, n / 5)
-            # Recency: average weight (closer to 1.0 = more recent data)
+            count_factor = 1.0 - math.exp(-n / 5.0)
+            diversity_factor = min(1.0, unique_sources / 2.0) if unique_sources > 0 else 0.5
             avg_weight = total_weight / n if n > 0 else 0.5
             recency_factor = min(1.0, avg_weight)
-            confidence_score = round(source_count_factor * source_diversity * recency_factor, 4)
+
+            cat_for_picp = item_ref.split(":")[0] if ":" in item_ref else item_ref
+            picp = await _get_latest_picp(conn, cat_for_picp)
+            if picp is None:
+                picp_boost = 1.0
+            else:
+                picp_boost = max(0.5, min(1.2, picp / 0.8))
+
+            confidence_score = round(
+                count_factor * diversity_factor * recency_factor * picp_boost,
+                4,
+            )
+            # Cap at 1.0 — picp_boost can push the product above 1.0 for
+            # well-calibrated cats with lots of recent diverse comps, but
+            # the FE displays this as a percentage so > 1.0 is confusing.
+            confidence_score = min(1.0, confidence_score)
+
+            # Synthetic-comp penalty: if every comp for this item is a
+            # Claude estimate (no real marketplace data), cap confidence
+            # at 0.4. This drives the FE to render an "early access" /
+            # "estimate only" badge rather than treating a hallucinated
+            # number as a high-confidence prediction. As soon as a single
+            # real comp lands (Scrape.do top-up, organic crawl), the cap
+            # lifts.
+            if all(h.get("source") == "claude_estimate" for h in hits):
+                confidence_score = min(confidence_score, 0.4)
 
             # Build evidence artifacts
             evidence_hit_ids, evidence_summary, explanation_text = _build_evidence(hits)

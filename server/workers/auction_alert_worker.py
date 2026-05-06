@@ -52,7 +52,12 @@ async def run_once():
     # The ILIKE join across 528K+ market_hits + watchlist_items is heavy.
     # Direct DSN already, but Supabase still imposes a default
     # statement_timeout for the role — disable per-session.
-    await conn.execute("SET statement_timeout = 0")
+    # Bounded 2026-05-04: was unbounded (= 0), which let pathological
+    # query plans run for 3+ hours and orphan on bake restart. 600s is the
+    # tolerance: a healthy auction_alert cycle is 30-50s, so 10 min is 12x
+    # headroom. Above this it's structural — the cycle should fail fast
+    # so the supervisor logs error and the next cycle retries cleanly.
+    await conn.execute("SET statement_timeout = '600s'")
     alerts_sent = 0
 
     try:
@@ -85,6 +90,11 @@ async def run_once():
                     )
                 )
             WHERE mh.provider IN ('ebay', 'yahoo_auctions', 'catawiki')
+              -- Partition prune: alerts only care about recent auctions,
+              -- so bound seen_at to the same window the bake crawls.
+              -- Without this filter the planner walks all monthly
+              -- partitions on every alert tick.
+              AND mh.seen_at > now() - interval '14 days'
               AND mh.ended_at IS NOT NULL
               AND mh.ended_at > $1
               AND mh.ended_at <= $2

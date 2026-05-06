@@ -303,7 +303,12 @@ async def bake_summary(request: Request) -> JSONResponse:
                 # market_hits has `seen_at` (legacy) instead of created_at on this prod DB
                 "market_hits_24h": "SELECT count(*) FROM public.market_hits WHERE seen_at > now() - interval '24 hours'",
                 "price_predictions_total": "SELECT count(*) FROM public.price_predictions",
-                "price_predictions_24h": "SELECT count(*) FROM public.price_predictions WHERE created_at > now() - interval '24 hours'",
+                # generated_at is the partition key; using created_at
+                # works (column exists) but skips partition prune so the
+                # planner walks every monthly partition on every admin
+                # health-check tick. generated_at + the time filter
+                # gives Subplans Removed > 0 in EXPLAIN.
+                "price_predictions_24h": "SELECT count(*) FROM public.price_predictions WHERE generated_at > now() - interval '24 hours'",
                 "mandate_deals_total": "SELECT count(*) FROM public.mandate_deals",
                 "alert_history_24h": "SELECT count(*) FROM public.alert_trigger_history WHERE created_at > now() - interval '24 hours'",
             }

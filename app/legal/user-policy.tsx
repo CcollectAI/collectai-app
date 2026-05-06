@@ -1,5 +1,5 @@
 /**
- * Acceptable Use Policy screen — displays CollectAI community guidelines
+ * Acceptable Use Policy screen — displays Sparrow Collect community guidelines
  * and acceptable use rules.
  */
 
@@ -37,12 +37,12 @@ function UserPolicyScreenInner() {
         <Text style={[styles.updated, { color: colors.muted }]}>Last updated: {LAST_UPDATED}</Text>
 
         <Text style={[styles.body, { color: colors.text }]}>
-          This Acceptable Use Policy ("Policy") governs your conduct when using the CollectAI mobile application (the "Service"). By using the Service, you agree to follow these guidelines. This Policy supplements our Terms of Service and Privacy Policy.
+          This Acceptable Use Policy ("Policy") governs your conduct when using the Sparrow Collect mobile application (the "Service"). By using the Service, you agree to follow these guidelines. This Policy supplements our Terms of Service and Privacy Policy.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>1. Community Guidelines</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          CollectAI is a community of collectors. We expect all users to:{'\n'}
+          Sparrow Collect is a community of collectors. We expect all users to:{'\n'}
           {'\u2022'} Treat other users with respect and courtesy{'\n'}
           {'\u2022'} Engage in good faith when buying, selling, or trading{'\n'}
           {'\u2022'} Provide accurate information about items, conditions, and valuations{'\n'}
@@ -53,11 +53,11 @@ function UserPolicyScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>2. Prohibited Content</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          The following content is strictly prohibited on CollectAI:{'\n\n'}
+          The following content is strictly prohibited on Sparrow Collect:{'\n\n'}
           <Text style={styles.bold}>Illegal Content:</Text> Any content that violates applicable laws, including but not limited to stolen goods, counterfeit items, illegal weapons, controlled substances, or items that violate import/export restrictions.{'\n\n'}
           <Text style={styles.bold}>Counterfeit & Fraudulent Items:</Text> Listing, promoting, or knowingly selling counterfeit, replica, or bootleg items as authentic. If you are selling reproductions or custom items, they must be clearly labeled as such.{'\n\n'}
           <Text style={styles.bold}>Offensive Content:</Text> Content that promotes hate, violence, discrimination, or harassment based on race, ethnicity, gender, sexual orientation, religion, disability, or any other protected characteristic.{'\n\n'}
-          <Text style={styles.bold}>Explicit Content:</Text> Sexually explicit material, graphic violence, or content unsuitable for a general audience. CollectAI is intended for users aged 13+ (16+ in the EU).{'\n\n'}
+          <Text style={styles.bold}>Explicit Content:</Text> Sexually explicit material, graphic violence, or content unsuitable for a general audience. Sparrow Collect is intended for users aged 13+ (16+ in the EU).{'\n\n'}
           <Text style={styles.bold}>Private Information:</Text> Posting other people's personal information (doxxing), including real names, addresses, phone numbers, or financial information without their consent.
         </Text>
 
@@ -88,7 +88,7 @@ function UserPolicyScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>5. Marketplace Listing Guidelines</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          When listing items for sale through CollectAI's multi-marketplace selling feature:{'\n\n'}
+          When listing items for sale through Sparrow Collect's multi-marketplace selling feature:{'\n\n'}
           <Text style={styles.bold}>Accuracy:</Text> Item descriptions, photos, and condition grades must accurately represent the item being sold. Do not use AI-generated condition grades as a substitute for honest assessment.{'\n\n'}
           <Text style={styles.bold}>Pricing:</Text> Prices must reflect genuine asking prices. Artificially inflated prices intended to manipulate valuation data or market signals are prohibited.{'\n\n'}
           <Text style={styles.bold}>Availability:</Text> Only list items you actually possess and intend to sell. Phantom listings (listing items you do not have) are prohibited.{'\n\n'}
@@ -136,7 +136,7 @@ function UserPolicyScreenInner() {
           If you encounter content or behavior that violates this Policy:{'\n'}
           {'\u2022'} Use the in-app reporting feature on the relevant content, user profile, listing, or message{'\n'}
           {'\u2022'} Block users who are harassing you — blocking is immediate and mutual{'\n'}
-          {'\u2022'} Contact us at support@collectai.app for issues not covered by in-app reporting{'\n'}
+          {'\u2022'} Contact us at support@sparrowcollect.com for issues not covered by in-app reporting{'\n'}
           {'\u2022'} Provide as much context as possible (screenshots, message history, item links) to help us investigate{'\n\n'}
           We review all reports and take appropriate action. False or malicious reports intended to harm other users are themselves a violation of this Policy.
         </Text>
@@ -155,7 +155,7 @@ function UserPolicyScreenInner() {
         <Text style={[styles.heading, { color: colors.text }]}>11. Appeals Process</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           If you believe an enforcement action was applied in error, you may appeal:{'\n'}
-          {'\u2022'} Send an appeal to support@collectai.app within 30 days of the action{'\n'}
+          {'\u2022'} Send an appeal to support@sparrowcollect.com within 30 days of the action{'\n'}
           {'\u2022'} Include your username, the action taken, and your explanation of why you believe it was in error{'\n'}
           {'\u2022'} Appeals are reviewed by a different team member than the one who issued the original action{'\n'}
           {'\u2022'} You will receive a response within 14 business days{'\n'}
@@ -171,9 +171,9 @@ function UserPolicyScreenInner() {
         <Text style={[styles.heading, { color: colors.text }]}>13. Contact</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           For questions about this Policy or to report violations, contact us at:{'\n'}
-          support@collectai.app{'\n\n'}
-          CollectAI{'\n'}
-          The Netherlands
+          support@sparrowcollect.com{'\n\n'}
+          Sparrow Collect{'\n'}
+          Ertskade 74, 1019 BB Amsterdam{'\n'}The Netherlands{'\n'}KvK: 99596326
         </Text>
 
         <View style={{ height: 40 }} />

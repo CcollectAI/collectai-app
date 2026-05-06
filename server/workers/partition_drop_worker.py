@@ -115,7 +115,9 @@ async def run_once() -> dict:
 
     dsn = os.environ.get("DB_DSN_DIRECT") or os.environ["DB_DSN"]
     conn = await asyncpg.connect(dsn, timeout=60)
-    await conn.execute("SET statement_timeout = 0")
+    # Bounded 2026-05-04 (was 0/unbounded). 30 min headroom — DETACH PARTITION
+    # + S3 verification can be long, but never indefinite.
+    await conn.execute("SET statement_timeout = '1800s'")
 
     s3 = boto3.client("s3", region_name=REGION)
     exported = _load_manifest(s3)

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// CollectAI Video Branding Components
+// Sparrow Collect Video Branding Components
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React from "react";
@@ -154,7 +154,7 @@ export const NicheBadge: React.FC<{
 
 export const EndCard: React.FC<{
   ctaText?: string;
-}> = ({ ctaText = "Download CollectAI — Free" }) => {
+}> = ({ ctaText = "Download Sparrow Collect — Free" }) => {
   const frame = useCurrentFrame();
   const logoScale = interpolate(frame, [0, 15], [0, 1], {
     extrapolateRight: "clamp",

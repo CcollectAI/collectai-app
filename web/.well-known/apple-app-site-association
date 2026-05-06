@@ -4,7 +4,7 @@
     "details": [
       {
         "appIDs": [
-          "TEAM_ID.com.collectai.app"
+          "TEAM_ID.com.sparrowcollect.app"
         ],
         "paths": [
           "/item/*",
@@ -18,7 +18,7 @@
   },
   "webcredentials": {
     "apps": [
-      "TEAM_ID.com.collectai.app"
+      "TEAM_ID.com.sparrowcollect.app"
     ]
   }
 }

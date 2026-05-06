@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// CollectAI Video Theme — Tiffany Blue brand identity
+// Sparrow Collect Video Theme — Tiffany Blue brand identity
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const Colors = {

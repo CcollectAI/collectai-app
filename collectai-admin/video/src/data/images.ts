@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// CollectAI Video Image Library — catalog image overlays per niche
+// Sparrow Collect Video Image Library — catalog image overlays per niche
 // Images sourced from catalog_items table via S3 or CDN.
 //
 // Used by: PullReveal, WhatsItWorth, HiddenGem templates

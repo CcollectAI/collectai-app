@@ -512,7 +512,7 @@ enumerated and are reported as notes.
 | `acquisition_price` | · | · | · | · |  |
 | `image_path` | · | · | · | · |  |
 | `archived` | · | ✓ | · | ✓ | 🔒 |
-| `attrs` | · | · | ✓ | ✓ |  |
+| `attrs` | ✓ | · | ✓ | ✓ | 🔒 |
 | `build_state` | · | · | · | · |  |
 | `paint_state` | · | · | · | · |  |
 | `build_notes` | · | · | · | · |  |
@@ -526,7 +526,7 @@ enumerated and are reported as notes.
 | `purchase_date` | · | · | ✓ | ✓ |  |
 | `acquired_from` | · | · | · | · |  |
 | `acquired_condition` | · | · | · | · |  |
-| `canonical_key` | · | · | ✓ | · |  |
+| `canonical_key` | ✓ | · | ✓ | ✓ | 🔒 |
 | `checklist_item_id` | · | · | · | · |  |
 | `identity_locked` | · | · | · | · |  |
 | `identity_locked_at` | · | · | · | · |  |
@@ -547,7 +547,7 @@ enumerated and are reported as notes.
 | `asking_currency` | · | · | · | ✓ |  |
 | `source` | · | · | · | · |  |
 | `quantity` | · | · | · | · |  |
-| `collection_name` | · | · | ✓ | ✓ |  |
+| `collection_name` | ✓ | · | ✓ | ✓ | 🔒 |
 | `estimated_value` | ✓ | · | ✓ | ✓ | 🔒 |
 | `updated_at` | ✓ | · | ✓ | ✓ | 🔒 |
 | `progress_status` | · | · | ✓ | · |  |

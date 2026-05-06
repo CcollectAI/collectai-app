@@ -335,13 +335,15 @@ async def generate_evidence_explanation(
 
         rows = await conn.fetch(
             """
-            SELECT id, source, price, observed_at
+            -- COALESCE for legacy rows (pre-2026-05-02) where observed_at
+            -- was left NULL by the writers; falls back to seen_at.
+            SELECT id, source, price, COALESCE(observed_at, seen_at) AS observed_at
             FROM public.market_hits
             WHERE item_ref = $1
-              AND observed_at >= $2
+              AND COALESCE(observed_at, seen_at) >= $2
               AND price IS NOT NULL
               AND (is_listing IS NOT TRUE)
-            ORDER BY observed_at DESC
+            ORDER BY COALESCE(observed_at, seen_at) DESC
             LIMIT $3
             """,
             item_ref,

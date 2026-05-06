@@ -1,5 +1,5 @@
 /**
- * Terms of Service screen — displays CollectAI terms.
+ * Terms of Service screen — displays Sparrow Collect terms.
  */
 
 import React from 'react';
@@ -36,7 +36,7 @@ function TermsOfServiceScreenInner() {
         <Text style={[styles.updated, { color: colors.muted }]}>Last updated: {LAST_UPDATED}</Text>
 
         <Text style={[styles.body, { color: colors.text }]}>
-          Please read these Terms of Service ("Terms") carefully before using the CollectAI mobile application (the "Service") operated by CollectAI ("we", "our", "us").
+          Please read these Terms of Service ("Terms") carefully before using the Sparrow Collect mobile application (the "Service") operated by Sparrow Collect ("we", "our", "us").
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>1. Acceptance of Terms</Text>
@@ -81,14 +81,14 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>5. Price Estimates & Valuations</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          Price estimates provided by CollectAI are for informational purposes only. They are generated using machine learning models (Ridge regression with q10/q50/q90 quantile predictions) and aggregated marketplace data from 37 sources across 54 collectible categories. These estimates should not be relied upon as financial advice, appraisals, or insurance valuations. Actual market prices may differ significantly. We make no guarantees about the accuracy of any valuation.{'\n\n'}
+          Price estimates provided by Sparrow Collect are for informational purposes only. They are generated using machine learning models (Ridge regression with q10/q50/q90 quantile predictions) and aggregated marketplace data from 37 sources across 54 collectible categories. These estimates should not be relied upon as financial advice, appraisals, or insurance valuations. Actual market prices may differ significantly. We make no guarantees about the accuracy of any valuation.{'\n\n'}
           Scarcity scores, demand heat signals, and social proof indicators (collector counts, trending status) are derived from aggregated data and are for informational purposes only. They should not be the sole basis for purchasing or selling decisions.{'\n\n'}
           Currency conversions are approximate and based on exchange rates refreshed every 8 hours. Shipping cost estimates are approximations and may differ from actual shipping costs.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>6. Marketplace Integration & Affiliate Links</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          CollectAI aggregates data from 37 third-party marketplace sources for reference and price comparison, including but not limited to: eBay, TCGPlayer, Cardmarket, Discogs, StockX, BrickLink, BrickEconomy, Mercari, PriceCharting, Yahoo Auctions JP, AmiAmi, WhatNot, Vinted, Catawiki, Mandarake, Bezel, Chrono24, WhiskyAuctioneer, MasterOfMalt, KEH, MPB, PopMart, Booth.pm, ScaleMates, Drop, GouletPens, KTown4U, ComicBookRealm, Firecrawl, Crawl4AI, Mavin.io, Scrape.do, Google Shopping, and Etsy. We are not responsible for:{'\n'}
+          Sparrow Collect aggregates data from 37 third-party marketplace sources for reference and price comparison, including but not limited to: eBay, TCGPlayer, Cardmarket, Discogs, StockX, BrickLink, BrickEconomy, Mercari, PriceCharting, Yahoo Auctions JP, AmiAmi, WhatNot, Vinted, Catawiki, Mandarake, Bezel, Chrono24, WhiskyAuctioneer, MasterOfMalt, KEH, MPB, PopMart, Booth.pm, ScaleMates, Drop, GouletPens, KTown4U, ComicBookRealm, Firecrawl, Crawl4AI, Mavin.io, Scrape.do, Google Shopping, and Etsy. We are not responsible for:{'\n'}
           {'\u2022'} Transactions conducted on these platforms{'\n'}
           {'\u2022'} The accuracy of third-party listing information{'\n'}
           {'\u2022'} Disputes between buyers and sellers{'\n'}
@@ -99,10 +99,10 @@ function TermsOfServiceScreenInner() {
         <Text style={[styles.heading, { color: colors.text }]}>7. Multi-Marketplace Selling</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           The Service allows you to create listings to sell items from your collection across multiple marketplaces. By creating a listing, you acknowledge that:{'\n'}
-          {'\u2022'} CollectAI facilitates listing creation but is not a party to any sale transaction{'\n'}
+          {'\u2022'} Sparrow Collect facilitates listing creation but is not a party to any sale transaction{'\n'}
           {'\u2022'} You are solely responsible for the accuracy of your listing information, including item description, condition, photos, and pricing{'\n'}
           {'\u2022'} You are responsible for fulfilling orders, handling shipping, and resolving disputes with buyers{'\n'}
-          {'\u2022'} Marketplace-specific rules and fees apply in addition to CollectAI terms{'\n'}
+          {'\u2022'} Marketplace-specific rules and fees apply in addition to Sparrow Collect terms{'\n'}
           {'\u2022'} A platform fee may apply to sales facilitated through the Service — current fee schedules are displayed at listing creation{'\n'}
           {'\u2022'} We reserve the right to modify fee structures with 30 days advance notice{'\n\n'}
           We are not liable for failed transactions, shipping issues, buyer disputes, or any losses arising from peer-to-peer sales. The Deal Desk feature facilitates offers and counteroffers between users but does not guarantee completion of any transaction.
@@ -202,7 +202,7 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>20. Intellectual Property</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          The Service, including its design, features, machine learning models, AI classifiers, CLIP embeddings, category taxonomy, and underlying technology, is owned by CollectAI. The CollectAI name, logo, and brand elements are our trademarks. You may not copy, modify, distribute, or create derivative works of any part of the Service without our written consent.{'\n\n'}
+          The Service, including its design, features, machine learning models, AI classifiers, CLIP embeddings, category taxonomy, and underlying technology, is owned by Sparrow Collect. The Sparrow Collect name, logo, and brand elements are our trademarks. You may not copy, modify, distribute, or create derivative works of any part of the Service without our written consent.{'\n\n'}
           Collectible product names, images, and trademarks referenced within the Service belong to their respective owners and are used for identification purposes only.
         </Text>
 
@@ -222,7 +222,7 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>22. Indemnification</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          You agree to indemnify and hold harmless CollectAI from any claims, damages, or expenses arising from your use of the Service, your violation of these Terms, your marketplace listings or sales, or your infringement of any third-party rights.
+          You agree to indemnify and hold harmless Sparrow Collect from any claims, damages, or expenses arising from your use of the Service, your violation of these Terms, your marketplace listings or sales, or your infringement of any third-party rights.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>23. Automatic Set Completion</Text>
@@ -237,7 +237,7 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>24. Advertising</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          CollectAI is a freemium product. The free tier may, in the future, display non-intrusive advertising in the app. As of this Terms' "Last updated" date, <Text style={styles.bold}>advertising infrastructure is installed but inactive</Text> — no ads are shown to any user.
+          Sparrow Collect is a freemium product. The free tier may, in the future, display non-intrusive advertising in the app. As of this Terms' "Last updated" date, <Text style={styles.bold}>advertising infrastructure is installed but inactive</Text> — no ads are shown to any user.
           {'\n\n'}
           When ads are activated:{'\n'}
           {'\u2022'} Ads will only appear for users on the free tier. Paid subscribers (Pro, Premium) receive an ad-free experience as a benefit of their subscription.{'\n'}
@@ -266,9 +266,9 @@ function TermsOfServiceScreenInner() {
         <Text style={[styles.heading, { color: colors.text }]}>28. Contact</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           For questions about these Terms, contact us at:{'\n'}
-          legal@collectai.app{'\n\n'}
-          CollectAI{'\n'}
-          The Netherlands
+          legal@sparrowcollect.com{'\n\n'}
+          Sparrow Collect{'\n'}
+          Ertskade 74, 1019 BB Amsterdam{'\n'}The Netherlands{'\n'}KvK: 99596326
         </Text>
 
         <View style={{ height: 40 }} />

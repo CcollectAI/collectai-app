@@ -7,7 +7,7 @@
 - Docker (for containerized deployment)
 - Supabase project with PostgreSQL
 - AWS account (for S3 image storage and EC2 hosting)
-- Domain name pointing to EC2 (e.g. `api.collectai.app`)
+- Domain name pointing to EC2 (e.g. `api.sparrowcollect.com`)
 
 ## Environment Variables
 
@@ -38,8 +38,8 @@ cp .env.example .env
 |----------|---------|-------------|
 | `DEV_MODE` | `false` | **Must be false in production** |
 | `DB_ENABLED` | `true` | Enable database connections |
-| `CORS_ORIGINS` | `https://app.collectai.io,https://collectai.app` | Comma-separated allowed origins |
-| `TRUSTED_HOSTS` | `api.collectai.app,collectai.app` | Comma-separated trusted host headers |
+| `CORS_ORIGINS` | `https://app.sparrowcollect.com,https://sparrowcollect.com` | Comma-separated allowed origins |
+| `TRUSTED_HOSTS` | `api.sparrowcollect.com,sparrowcollect.com` | Comma-separated trusted host headers |
 
 ### Optional Variables
 
@@ -84,6 +84,49 @@ npx tsc --noEmit
 
 ## Production Deployment
 
+### 0. Deploying server-code changes (rsync flow)
+
+> ⚠️ **The bake's systemd unit has `WorkingDirectory=/opt/collectors/server`.**
+> Python imports `app.*` resolve to `/opt/collectors/server/app/*` — NOT to
+> `/opt/collectors/app/*`. Always rsync to `/opt/collectors/server/`.
+
+**Use the wrapper script.** Don't rsync by hand:
+
+```bash
+scripts/deploy_to_ec2.sh                    # diff vs HEAD~1, dry-run preview, no restart
+scripts/deploy_to_ec2.sh --restart          # rsync + restart bake + tail journal
+scripts/deploy_to_ec2.sh --files paths.txt --restart   # explicit file list
+```
+
+The script:
+1. Refuses to run if `server/` has uncommitted changes (override with `--dirty`).
+2. Computes the file list from `git diff HEAD~1 HEAD -- server/` if `--files` not given.
+3. Shows a dry-run preview, requires interactive `y` confirmation.
+4. rsyncs to `collectai:/opt/collectors/server/`.
+5. With `--restart`: triggers `systemctl restart collectai-bake.service`,
+   waits up to 20s for `is-active`, dumps recent journal warnings.
+
+**Manual rsync fallback** (only when the script can't be used):
+
+```bash
+# CORRECT — note both trailing slashes and the /server/ at the end
+rsync -av --files-from=files.txt /Users/me/repo/server/ collectai:/opt/collectors/server/
+
+# WRONG — files end up in a parallel tree the bake never imports from
+rsync -av --files-from=files.txt /Users/me/repo/server/ collectai:/opt/collectors/
+```
+
+**Incident memo (2026-05-02)**: a full day of "successful" deploys went to
+`/opt/collectors/` (one level too high). All preflight gates passed,
+postflight smoke passed, the bake came up cleanly — but it kept running
+old code because every `import app.*` resolved against the canonical
+`/opt/collectors/server/app/*` while my new files sat in a parallel
+`/opt/collectors/app/*` tree. Surfaced only by a live E2E that exercised
+a freshly-added paywall gate and got HTTP 200 instead of 403. Cleanup
+removed the parallel `/opt/collectors/{app,workers,tests}/` trees
+(backed up to `/tmp/duplicate_trees_20260502_173101.tar.gz` on EC2 in
+case revert is needed).
+
 ### 1. HTTPS Setup with nginx
 
 The backend runs behind nginx with SSL termination via Let's Encrypt.
@@ -99,7 +142,7 @@ sudo ln -s /etc/nginx/sites-available/collectai /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 
 # Get SSL certificate (ensure DNS A record points to this server first)
-sudo certbot --nginx -d api.collectai.app
+sudo certbot --nginx -d api.sparrowcollect.com
 
 # Verify and reload
 sudo nginx -t && sudo systemctl reload nginx
@@ -125,7 +168,7 @@ docker build -t collectai .
 docker compose up -d
 
 # Check health
-curl -sf https://api.collectai.app/healthz
+curl -sf https://api.sparrowcollect.com/healthz
 ```
 
 ### 3. Deploy to EC2
@@ -259,7 +302,7 @@ psql $DATABASE_URL -f supabase/migrations/20260322_build_paint_status_pipeline.s
 ## Beta Landing Page
 
 The landing page at `web/index.html` (with `web/icon.png`) collects beta signups
-at `collectai.app`. It posts to `POST /api/beta-signup` on the backend. Deploy the
+at `sparrowcollect.com`. It posts to `POST /api/beta-signup` on the backend. Deploy the
 entire `web/` directory — the page loads the icon image and Roboto font from Google Fonts.
 
 ### Deploying the Landing Page
@@ -285,10 +328,10 @@ location /legal/ {
 **Option B: Serve via CDN (Cloudflare Pages, Netlify, etc.)**
 
 1. Upload `web/index.html` and `web/icon.png` to the static hosting provider
-2. Set the domain to `collectai.app`
+2. Set the domain to `sparrowcollect.com`
 3. Edit the `API_BASE` variable in the HTML to point to the backend:
    ```javascript
-   var API_BASE = "https://api.collectai.app";
+   var API_BASE = "https://api.sparrowcollect.com";
    ```
 
 ### Beta Signup API
@@ -302,7 +345,7 @@ Rate limited to 5 signups per IP per hour (in-memory).
 
 ## OTA Updates (expo-updates)
 
-Atlantis supports over-the-air updates via `expo-updates`. This allows pushing
+Sparrow Collect supports over-the-air updates via `expo-updates`. This allows pushing
 JavaScript/asset changes without a full store resubmission.
 
 ### Configuration
@@ -439,7 +482,7 @@ Before going live:
 - [ ] DNS A record pointing to EC2 IP
 - [ ] Supabase keys rotated (if previously exposed)
 - [ ] Database migrations applied (all files in `supabase/migrations/`)
-- [ ] Health check passing: `curl https://api.collectai.app/healthz`
+- [ ] Health check passing: `curl https://api.sparrowcollect.com/healthz`
 - [ ] Sentry DSN configured for error monitoring
 - [ ] Rate limiting enabled
 - [ ] Docker resource limits verified

@@ -1,4 +1,4 @@
-# CollectAI — Data Bake Playbook
+# Sparrow Collect — Data Bake Playbook
 
 > Single-page operator guide. If you read nothing else, read this.
 

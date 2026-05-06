@@ -197,3 +197,33 @@ Original bucket `collectai-datalake` was renamed to `collectai-warehouse-prod-eu
 ### Writer bugs hide in INSERT column lists
 
 After partitioning, a `null_category_rate` audit alarm fired — 58,995 market_hits rows had NULL category in the last 7 days, all with recoverable `category:` prefix in `item_ref`. Root cause: `persist_comps_to_db` accepted `category` as a kwarg but never included it in the INSERT column list. Adding to the list + backfilling fixed it, but the broader lesson is **every kwarg a writer accepts should have a CI test asserting the resulting row has that column populated**. The R50l essay's "post-write assertion at the writer" rule would have caught this on day 1.
+
+### Within-batch dedup is also required (appended 2026-05-02)
+
+Follow-up to the partitioned-table ON CONFLICT issue above. The
+`upsert_market_hits_batch` RPC shipped in `20260426_upsert_market_hits_batch_rpc.sql`
+deduplicates against `market_hits` (across batches via `WHERE NOT EXISTS`)
+but did NOT deduplicate within a single input batch.
+
+If a batch contains the same `(provider, listing_id)` more than once
+(which the discogs pipeline does on retries / pagination overlap):
+
+1. Both duplicate input rows pass `WHERE NOT EXISTS` (table is empty for them)
+2. Both get the same `now()` (one statement → one timestamp evaluation)
+3. The unique constraint on `(provider, listing_id, seen_at)` rejects the second
+4. Postgres rolls back the entire INSERT — **all 100 rows in the batch are lost**
+
+Caught 2026-05-02 when the user reported "ingest stalled, no market_hits in 30
+minutes". `bake.log` showed `Persisted 0/N hits` over and over for `discogs_listing`.
+Verified: every 23505'd `listing_id` was missing from `market_hits` — the
+duplicate rejection cascaded to the rest of the batch via atomic rollback.
+
+Fix in `20260502_upsert_market_hits_batch_dedup_within_batch.sql` —
+adds `DISTINCT ON (provider, listing_id)` to the input CTE so duplicates
+inside a batch are collapsed to one row before INSERT. Pure RPC body
+change, no schema migration, no bake restart.
+
+**Generalizable rule:** any RPC or batch-INSERT path with `WHERE NOT EXISTS`
+must also `DISTINCT ON` the input by the columns participating in the
+unique key. Defense in depth — even if the caller "should" dedup. The
+atomic-rollback amplification (one bad row → 100 lost) is too costly.

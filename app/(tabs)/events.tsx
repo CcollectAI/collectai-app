@@ -210,7 +210,7 @@ function EventsScreen() {
             title: event.title,
             startDate: eventDate,
             location: event.location,
-            notes: `CollectAI Event: ${KIND_LABEL[event.kind]}`,
+            notes: `Sparrow Collect Event: ${KIND_LABEL[event.kind]}`,
           });
         } catch (calErr) {
           // Calendar add is non-critical; don't fail the RSVP for this

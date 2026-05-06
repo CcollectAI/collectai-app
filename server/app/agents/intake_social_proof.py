@@ -113,6 +113,11 @@ async def get_social_proof(
                       AND price IS NOT NULL
                       AND price > 0
                       AND (is_listing IS NOT TRUE)
+                      -- Partition prune: social proof shows recent sold;
+                      -- 180d covers the window where prices are still
+                      -- relevant. Without this filter every intake call
+                      -- walks all monthly partitions of market_hits.
+                      AND seen_at > now() - interval '180 days'
                     ORDER BY ended_at DESC NULLS LAST
                     LIMIT 5
                     """,

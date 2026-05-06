@@ -40,7 +40,7 @@ export interface CollectorPersona {
     why: string;
     bestAngle: string;
   }>;
-  /** Objections to using CollectAI — and how to overcome them */
+  /** Objections to using Sparrow Collect — and how to overcome them */
   objections: Array<{
     objection: string;
     reframe: string;
@@ -111,7 +111,7 @@ export const COLLECTOR_PERSONAS: CollectorPersona[] = [
       {
         objection: '"I can just Google it"',
         reframe: 'Try Googling the exact variant, condition, and current market price for 20 items at a garage sale',
-        proofPoint: 'Side-by-side: Google search (30s per item, vague results) vs. CollectAI scan (3s, exact price)',
+        proofPoint: 'Side-by-side: Google search (30s per item, vague results) vs. Sparrow Collect scan (3s, exact price)',
       },
       {
         objection: '"Free apps already do this"',
@@ -186,12 +186,12 @@ export const COLLECTOR_PERSONAS: CollectorPersona[] = [
       {
         objection: '"My spreadsheet works fine"',
         reframe: 'Your spreadsheet doesn\'t auto-update prices daily, alert you to market moves, or scan new items in 3 seconds',
-        proofPoint: '"I deleted my 200-row spreadsheet after day 1 — CollectAI does it better AND keeps prices current"',
+        proofPoint: '"I deleted my 200-row spreadsheet after day 1 — Sparrow Collect does it better AND keeps prices current"',
       },
       {
         objection: '"I don\'t trust AI pricing — I know my niche better"',
         reframe: 'We pull from the same sources you check manually — eBay, TCGPlayer, Cardmarket — just all at once',
-        proofPoint: 'Show CollectAI price vs. recently sold comp on eBay → within 5%',
+        proofPoint: 'Show Sparrow Collect price vs. recently sold comp on eBay → within 5%',
       },
       {
         objection: '"Is my data private? I don\'t want people knowing what I own"',
@@ -260,7 +260,7 @@ export const COLLECTOR_PERSONAS: CollectorPersona[] = [
     objections: [
       {
         objection: '"I\'m not a serious enough collector for this"',
-        reframe: 'If you own 5 things you care about, you\'re a collector. CollectAI works whether you have 5 or 5,000.',
+        reframe: 'If you own 5 things you care about, you\'re a collector. Sparrow Collect works whether you have 5 or 5,000.',
         proofPoint: 'Show someone scanning just 3 items and seeing a $200+ total value',
       },
       {
@@ -330,13 +330,13 @@ export const COLLECTOR_PERSONAS: CollectorPersona[] = [
     objections: [
       {
         objection: '"Does it track specific sets and show what I\'m missing?"',
-        reframe: 'Yes — CollectAI has 46,500 catalog items across 54 categories. Mark what you own, see what\'s left.',
+        reframe: 'Yes — Sparrow Collect has 46,500 catalog items across 54 categories. Mark what you own, see what\'s left.',
         proofPoint: 'Show set completion screen: "Base Set: 98/102 — 4 cards remaining" with missing items listed',
       },
       {
         objection: '"I already use [niche-specific tool]"',
         reframe: 'We connect the collection tracking with real-time pricing across 37 marketplaces — so you know what your gaps will cost',
-        proofPoint: '"My missing 4 cards will cost me $2,340 total based on current market — CollectAI told me that in 2 seconds"',
+        proofPoint: '"My missing 4 cards will cost me $2,340 total based on current market — Sparrow Collect told me that in 2 seconds"',
       },
     ],
     conversionPath: {

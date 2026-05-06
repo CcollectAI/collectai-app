@@ -345,8 +345,17 @@ class DealDiscoveryAgent:
                 """
                 SELECT q10, q50, q90
                 FROM public.price_predictions
-                WHERE normalized_key ILIKE $1
-                ORDER BY asof DESC
+                -- Pre-2026-05-02 this used `normalized_key ILIKE` but
+                -- price_predictions has no normalized_key column (only
+                -- market_hits does). Every call 42703-errored, so deal
+                -- discovery silently fell through to the category-median
+                -- fallback. Use item_ref — the canonical `category:slug`
+                -- key — which is what's actually populated.
+                WHERE item_ref ILIKE $1
+                  -- Partition prune via generated_at (60d covers the
+                  -- latest prediction per item; bake regenerates weekly).
+                  AND generated_at > now() - interval '60 days'
+                ORDER BY generated_at DESC
                 LIMIT 1
                 """,
                 f"%{escaped_q}%",
@@ -370,10 +379,14 @@ class DealDiscoveryAgent:
                         percentile_cont(0.50) WITHIN GROUP (ORDER BY q50) AS cat_q50,
                         percentile_cont(0.90) WITHIN GROUP (ORDER BY q50) AS cat_q90
                     FROM public.price_predictions
-                    WHERE normalized_key ILIKE $1
+                    -- Same fix as above: normalized_key isn't on this
+                    -- table. Use category column directly — it's the
+                    -- bare slug ('mtg', 'pokemon', etc.).
+                    WHERE category = $1
                       AND q50 IS NOT NULL
+                      AND generated_at > now() - interval '90 days'
                     """,
-                    f"%{category}%",
+                    category,
                 )
                 if row and row["cat_q50"] is not None:
                     logger.debug(

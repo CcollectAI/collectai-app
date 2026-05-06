@@ -1,6 +1,6 @@
 # App Store Submission Guide
 
-Step-by-step guide for submitting CollectAI to the iOS App Store and Google Play Store.
+Step-by-step guide for submitting Sparrow Collect to the iOS App Store and Google Play Store.
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ This populates `expo.owner` and `expo.extra.eas.projectId` in `app.json`.
 ### Set EAS Secrets (env vars for production builds)
 
 ```bash
-eas secret:create --name EXPO_PUBLIC_API_BASE_URL --value https://api.collectai.app
+eas secret:create --name EXPO_PUBLIC_API_BASE_URL --value https://api.sparrowcollect.com
 eas secret:create --name EXPO_PUBLIC_SUPABASE_URL --value https://<project>.supabase.co
 eas secret:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon-key>
 eas secret:create --name EXPO_PUBLIC_SUPABASE_MODE --value strict
@@ -142,6 +142,79 @@ Declare in App Store Connect under App Privacy:
 
 **Purpose**: App Functionality, Analytics
 
+## 5a. Inventory Export
+
+Two CSV exports for users:
+
+**`/items-export/overview` (round-trip CSV — 12 columns)** — symmetrical with
+`/api/imports/template`. Lets users export → edit in Excel/Numbers → re-import
+without column drift. Surfaced from the **Items tab → Export CSV** button.
+Currency-aware: respects `user_settings.currency`, accepts `?currency=USD/GBP/...`
+override, FX-converts `estimated_value` from EUR storage to display currency
+via `app.lib.fx_service.get_rates_from_eur()` (Frankfurter ECB-backed). Round-trip
+preserved because re-imported values are stored back in EUR by the import handler.
+
+**`/items-export/full` (comprehensive snapshot — 30 columns)** — for insurance,
+accountants, full collection records. NOT round-trip with import. Surfaced from
+**Settings → Download full inventory (CSV)**. Adds beyond the 12-col schema:
+- `item_id` (canonical_key for cross-reference)
+- `brand`, `set_or_series`, `rarity`, `variant`, `serial_number` from `items.attrs`
+- `edition`, `is_limited_edition` (collapsed `"23 / 1000"` format), `is_first_edition`
+- `quantity`, `for_sale`, `asking_price`, `asking_currency`
+- `estimated_value_low` (q10) and `estimated_value_high` (q90) from `price_predictions`
+- `collection_name`, `created_at`, `updated_at`
+
+Photo URLs deliberately excluded — CSV isn't the right delivery for images.
+
+Both endpoints rate-limited (5/min per user via `per_user_rate_limit`). FE
+wiring at `src/api/miscApi.ts:exportItemsOverview` / `exportItemsFull`,
+`src/components/settings/ProfileEditSection.tsx` and
+`app/(tabs)/items.tsx:handleExportCSV`.
+
+## 5b. In-App Account Deletion
+
+Apple App Store guideline **5.1.1(v)** and Google Play's User Data policy
+both require that apps offering account creation also offer in-app account
+deletion. Sparrow Collect satisfies this end-to-end:
+
+**FE entry point** — Settings → "Delete Account" (`src/components/settings/ProfileEditSection.tsx`).
+Tapping the row opens a typed-confirmation modal: the user must type the
+literal string `DELETE` before the destructive button enables. The modal
+also blocks dismissal while the deletion request is in flight.
+
+**FE → BE call** — `deleteAccount()` in `src/api/miscApi.ts` issues
+`DELETE /account?confirm=DELETE_MY_ACCOUNT`. The query-string token is the
+second guard (the modal is the first); the BE refuses any DELETE call that
+doesn't carry it.
+
+**BE handler** — `server/app/routes/account_router.py`:
+- Rejects with `400 / CONFIRMATION_REQUIRED` when `?confirm` is missing or wrong.
+- Rate-limited to 3 attempts/hour per user (`per_user_rate_limit`).
+- Wraps deletion in a transaction; sets `statement_timeout = 15s` per
+  statement and bounds the whole transaction with `asyncio.wait_for(60s)`.
+- Deletes from a frozen allowlist of per-user tables: `mandate_deals`,
+  `purchase_mandates`, `alert_trigger_history`, `user_price_alerts`,
+  `item_provenance_events`, `watchlist`, `user_settings`,
+  `user_category_follows`, `event_attendees`, plus `profiles` and
+  `user_public_profiles`. Tables that don't exist in a given env are
+  silently skipped (`UndefinedTableError`).
+- Deletes the Supabase Auth user via `supabase_admin.auth.admin.delete_user`
+  as a best-effort step **after** DB rows are gone — if Supabase fails the
+  request still returns 200 because the user's data is already gone; the
+  orphaned auth row is cleaned up out-of-band.
+
+**Tables explicitly NOT touched**:
+- `category_items`, `price_predictions` — global catalog, no `user_id`
+  column. Including them aborted the transaction with "column does not
+  exist" prior to 2026-04 and is now blocked by the allowlist.
+- `market_hits` — anonymous crawl data, partitioned by month, no index on
+  `user_id`. A DELETE there would scan every partition and time out.
+
+**Tests** — `server/tests/test_account_router.py` covers: success path,
+offline-mode 503, Supabase-failure-doesn't-block, no-Supabase-admin,
+undefined-table-skipped, DB error 500, V1 endpoint, **missing-confirm 400**,
+**wrong-confirm 400**.
+
 ## 6. Common Rejection Reasons & Mitigations
 
 | Rejection Reason | How We Address It |
@@ -151,8 +224,10 @@ Declare in App Store Connect under App Privacy:
 | 3.1.1 In-App Purchase | All subscriptions use StoreKit/Play Billing (no external payment for digital goods) |
 | 3.1.2 Subscriptions | Clearly display pricing, auto-renewal terms, and cancellation instructions |
 | 5.1.1 Data Collection | Privacy policy linked, nutrition labels filled, data use is transparent |
+| 5.1.1(v) Account Deletion | In-app deletion in Settings with typed-confirmation modal — see §5b |
 | 5.1.2 Data Use and Sharing | No third-party data sharing. Sentry for crash reporting only. |
 | 4.0 Design (web views) | All features are native — no wrapped web views for core functionality |
+| **4.8 Sign in with Apple** | **Required because we offer Google Sign In.** Service ID `com.sparrowcollect.app.auth` configured in Apple Developer; Supabase Auth → Providers → Apple wired with Team ID + Key ID + .p8. FE login screen shows the Apple Sign In button at-or-above the Google Sign In button per HIG. |
 | Affiliate Links | Clearly labeled as marketplace links, standard affiliate programs |
 
 ## 7. Submit to Stores

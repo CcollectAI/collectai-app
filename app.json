@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Atlantis",
-    "slug": "collectai",
+    "name": "Sparrow Collect",
+    "slug": "sparrowcollect",
     "version": "1.0.0",
     "runtimeVersion": {
       "policy": "appVersion"
     },
-    "scheme": "collectai",
+    "scheme": "sparrow",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -35,13 +35,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "CollectAI needs camera access to scan and photograph your collectibles."
+          "cameraPermission": "Sparrow needs camera access to scan and photograph your collectibles."
         }
       ],
       [
         "expo-calendar",
         {
-          "calendarPermission": "CollectAI needs access to your calendar to add collection events and drops."
+          "calendarPermission": "Sparrow needs access to your calendar to add collection events and drops."
         }
       ],
       [
@@ -60,13 +60,13 @@
       "color": "#81D8D0"
     },
     "ios": {
-      "bundleIdentifier": "com.collectai.app",
+      "bundleIdentifier": "com.sparrowcollect.com",
       "buildNumber": "1",
       "supportsTablet": true,
       "usesAppleSignIn": true,
       "associatedDomains": [
-        "applinks:collectai.app",
-        "applinks:www.collectai.app"
+        "applinks:sparrowcollect.com",
+        "applinks:www.sparrowcollect.com"
       ],
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
@@ -105,6 +105,22 @@
             ]
           },
           {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeName",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeUserID",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePhotos",
             "NSPrivacyCollectedDataTypeLinked": true,
             "NSPrivacyCollectedDataTypeTracking": false,
@@ -113,7 +129,7 @@
             ]
           },
           {
-            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePreciseLocation",
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeCoarseLocation",
             "NSPrivacyCollectedDataTypeLinked": false,
             "NSPrivacyCollectedDataTypeTracking": false,
             "NSPrivacyCollectedDataTypePurposes": [
@@ -137,7 +153,15 @@
             ]
           },
           {
-            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePaymentInfo",
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePerformanceData",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePurchaseHistory",
             "NSPrivacyCollectedDataTypeLinked": true,
             "NSPrivacyCollectedDataTypeTracking": false,
             "NSPrivacyCollectedDataTypePurposes": [
@@ -148,16 +172,16 @@
         "NSPrivacyTracking": false
       },
       "infoPlist": {
-        "NSCalendarsUsageDescription": "CollectAI needs access to your calendar to add collection events, drops, and meetups.",
-        "NSRemindersUsageDescription": "CollectAI needs access to reminders to notify you about upcoming events.",
-        "NSCameraUsageDescription": "CollectAI needs camera access to scan and photograph your collectibles.",
-        "NSLocationWhenInUseUsageDescription": "CollectAI needs your location to find nearby collector events and meetups.",
-        "NSPhotoLibraryUsageDescription": "CollectAI needs access to your photo library to add item photos and analyze screenshots.",
-        "NSUserTrackingUsageDescription": "CollectAI uses anonymous analytics to improve the app experience. No personal data is shared with advertisers."
+        "NSCalendarsUsageDescription": "Sparrow needs access to your calendar to add collection events, drops, and meetups.",
+        "NSRemindersUsageDescription": "Sparrow needs access to reminders to notify you about upcoming events.",
+        "NSCameraUsageDescription": "Sparrow needs camera access to scan and photograph your collectibles.",
+        "NSLocationWhenInUseUsageDescription": "Sparrow needs your location to find nearby collector events and meetups.",
+        "NSPhotoLibraryUsageDescription": "Sparrow needs access to your photo library to add item photos and analyze screenshots.",
+        "NSUserTrackingUsageDescription": "Sparrow uses anonymous analytics to improve the app experience. No personal data is shared with advertisers."
       }
     },
     "android": {
-      "package": "com.collectai.app",
+      "package": "com.sparrowcollect.com",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#81D8D0"
@@ -179,52 +203,52 @@
           "data": [
             {
               "scheme": "https",
-              "host": "collectai.app",
+              "host": "sparrowcollect.com",
               "pathPrefix": "/item"
             },
             {
               "scheme": "https",
-              "host": "collectai.app",
+              "host": "sparrowcollect.com",
               "pathPrefix": "/events"
             },
             {
               "scheme": "https",
-              "host": "collectai.app",
+              "host": "sparrowcollect.com",
               "pathPrefix": "/categories"
             },
             {
               "scheme": "https",
-              "host": "collectai.app",
+              "host": "sparrowcollect.com",
               "pathPrefix": "/purchase"
             },
             {
               "scheme": "https",
-              "host": "collectai.app",
+              "host": "sparrowcollect.com",
               "pathPrefix": "/users"
             },
             {
               "scheme": "https",
-              "host": "www.collectai.app",
+              "host": "www.sparrowcollect.com",
               "pathPrefix": "/item"
             },
             {
               "scheme": "https",
-              "host": "www.collectai.app",
+              "host": "www.sparrowcollect.com",
               "pathPrefix": "/events"
             },
             {
               "scheme": "https",
-              "host": "www.collectai.app",
+              "host": "www.sparrowcollect.com",
               "pathPrefix": "/categories"
             },
             {
               "scheme": "https",
-              "host": "www.collectai.app",
+              "host": "www.sparrowcollect.com",
               "pathPrefix": "/purchase"
             },
             {
               "scheme": "https",
-              "host": "www.collectai.app",
+              "host": "www.sparrowcollect.com",
               "pathPrefix": "/users"
             }
           ],
@@ -246,6 +270,6 @@
         "projectId": "28c7e9b0-8aa2-4fc7-8080-32bda9bdf282"
       }
     },
-    "owner": "collectai"
+    "owner": "sparrowcollect"
   }
 }

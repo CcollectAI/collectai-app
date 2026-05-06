@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // Template 2: "What's It Worth?" — Price Reveal / Valuation
-// Curiosity gap format. Ties directly to CollectAI QuickScan.
+// Curiosity gap format. Ties directly to Sparrow Collect QuickScan.
 // Structure: Show item blurred price (2s) → Wrong guess (3s) → Real price + marketplace data (4s)
 //            → "37 marketplaces" proof (3s) → CTA (2s) → End (2s)
 // ═══════════════════════════════════════════════════════════════════════════

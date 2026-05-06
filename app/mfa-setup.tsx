@@ -86,7 +86,7 @@ function MFASetupScreen() {
     try {
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
-        friendlyName: 'CollectAI Authenticator',
+        friendlyName: 'Sparrow Collect Authenticator',
       });
       if (error) throw error;
       setQrUri(data.totp.qr_code);

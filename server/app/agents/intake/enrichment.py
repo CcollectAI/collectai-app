@@ -56,6 +56,11 @@ async def _estimate_price(
                   AND price IS NOT NULL
                   AND price > 0
                   AND (is_listing IS NOT TRUE)
+                  -- Partition prune: intake price-estimate from market
+                  -- hits only needs recent comps; 180d matches the
+                  -- model decay tail. Without this filter every intake
+                  -- without a barcode walks all monthly partitions.
+                  AND seen_at > now() - interval '180 days'
                 ORDER BY ended_at DESC NULLS LAST
                 LIMIT 20
                 """,

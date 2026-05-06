@@ -1,4 +1,4 @@
-# CollectAI
+# Sparrow Collect
 
 Collectibles tracking, valuation, and smart deal discovery platform. Track your collection, get AI-powered price estimates, find deals across marketplaces, and never miss a collector event.
 

@@ -7,11 +7,14 @@ Endpoints:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+
+from fastapi import Query
 
 from app.auth import get_current_user_id
 from app.errors import error_response
@@ -20,6 +23,11 @@ from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/account", tags=["Account"])
 logger = logging.getLogger(__name__)
+
+# Mandatory confirmation phrase to prevent accidental account deletion.
+# Pre-2026-05-03 the endpoint deleted on the bare DELETE call with no body
+# check — a single accidental client request wiped the account.
+_DELETE_CONFIRM_PHRASE = "DELETE_MY_ACCOUNT"
 
 
 def _get_supabase_admin():
@@ -35,17 +43,87 @@ def _get_supabase_admin():
         return None
 
 
+# Per-user tables only. category_items + price_predictions are global
+# catalog data with no user_id column. market_hits is anonymous crawl
+# data (no index on user_id; DELETE scans all monthly partitions and
+# times out — leave it).
+_ALLOWED_TABLES = (
+    "mandate_deals",
+    "purchase_mandates",
+    "alert_trigger_history",
+    "user_price_alerts",
+    "item_provenance_events",
+    "watchlist",
+    "user_settings",
+    "user_category_follows",
+    "event_attendees",
+)
+
+
+async def _do_account_delete(conn: asyncpg.Connection, user_id: str) -> None:
+    async with conn.transaction():
+        # Cap any single statement so a stray row-lock or saturated IO
+        # can't stall the whole HTTP request indefinitely. Higher than
+        # 5s because bake's market_hits readers can saturate disk IO.
+        await conn.execute("SET LOCAL statement_timeout = '15s'")
+
+        for table in _ALLOWED_TABLES:
+            assert table.isidentifier(), f"Invalid table name: {table}"
+            try:
+                await conn.execute(
+                    f'DELETE FROM "{table}" WHERE user_id = $1',
+                    user_id,
+                )
+            except asyncpg.UndefinedTableError:
+                pass
+
+        try:
+            await conn.execute("DELETE FROM profiles WHERE id = $1", user_id)
+        except asyncpg.UndefinedTableError:
+            pass
+
+        try:
+            await conn.execute(
+                "DELETE FROM user_public_profiles WHERE user_id = $1",
+                user_id,
+            )
+        except asyncpg.UndefinedTableError:
+            pass
+
+
 class AccountDeleteResponse(BaseModel):
     """Response from account deletion."""
     success: bool
     message: str
 
 
-@router.delete("", response_model=AccountDeleteResponse, summary="Delete user account", description="Soft-deletes user data and removes Supabase auth. Required by App Store and Play Store policies.")
+@router.delete(
+    "",
+    response_model=AccountDeleteResponse,
+    summary="Delete user account",
+    description=(
+        "Soft-deletes user data and removes Supabase auth. Required by App "
+        "Store and Play Store policies. **REQUIRES** "
+        "`?confirm=DELETE_MY_ACCOUNT` query param — without it, returns 400. "
+        "This guards against accidental destructive calls; the FE wraps the "
+        "call in a typed-confirmation modal."
+    ),
+)
 async def delete_account(
     user_id: str = Depends(get_current_user_id),
+    confirm: str = Query(
+        "",
+        description=f"Must equal '{_DELETE_CONFIRM_PHRASE}' to proceed",
+    ),
     _rl=Depends(per_user_rate_limit(3, 3600, scope="account_delete")),
 ):
+    if confirm != _DELETE_CONFIRM_PHRASE:
+        raise error_response(
+            400,
+            f"Account deletion requires explicit confirmation. Pass "
+            f"?confirm={_DELETE_CONFIRM_PHRASE} as a query parameter.",
+            code="CONFIRMATION_REQUIRED",
+        )
     """
     Delete the current user's account.
 
@@ -56,7 +134,6 @@ async def delete_account(
     Required by Apple App Store and Google Play Store policies.
     """
     pool = get_db_pool()
-
     if pool is None:
         raise error_response(
             503,
@@ -64,65 +141,23 @@ async def delete_account(
             code="SERVICE_UNAVAILABLE",
         )
 
+    # Pooled API path. Each DELETE has its own short statement_timeout
+    # (set inside the txn) so a stuck row-lock can't stall the request,
+    # and the whole transaction is wrapped in asyncio.wait_for to bound
+    # total time end-to-end.
     try:
         async with pool.acquire() as conn:
-            async with conn.transaction():
-                # Delete user-owned data in dependency order
-                # Tables with user_id FK to auth.users will cascade,
-                # but we explicitly clean up to be safe.
-                # Frozen allowlist — only these tables can be cleaned.
-                # The table names are used directly in SQL, so we MUST
-                # guarantee they are from this hardcoded set.
-                # Per-user tables only. category_items + price_predictions
-                # are global catalog data with no user_id column —
-                # including them here threw `column "user_id" does not
-                # exist` and aborted the entire deletion transaction.
-                _ALLOWED_TABLES = frozenset({
-                    "mandate_deals",
-                    "purchase_mandates",
-                    "alert_trigger_history",
-                    "user_price_alerts",
-                    "item_provenance_events",
-                    "watchlist",
-                    "market_hits",
-                    "user_settings",
-                    "user_category_follows",
-                    "event_attendees",
-                })
-
-                for table in _ALLOWED_TABLES:
-                    assert table.isidentifier(), f"Invalid table name: {table}"
-                    try:
-                        await conn.execute(
-                            f'DELETE FROM "{table}" WHERE user_id = $1',
-                            user_id,
-                        )
-                    except asyncpg.UndefinedTableError:
-                        # Table may not exist in all environments
-                        pass
-
-                # Delete profile
-                try:
-                    await conn.execute(
-                        "DELETE FROM profiles WHERE id = $1",
-                        user_id,
-                    )
-                except asyncpg.UndefinedTableError:
-                    pass
-
-                # Delete public profile
-                try:
-                    await conn.execute(
-                        "DELETE FROM user_public_profiles WHERE user_id = $1",
-                        user_id,
-                    )
-                except asyncpg.UndefinedTableError:
-                    pass
-
+            await asyncio.wait_for(
+                _do_account_delete(conn, user_id),
+                timeout=60.0,
+            )
         logger.info("[account] Deleted database data for user=%s", user_id)
 
     except HTTPException:
         raise
+    except asyncio.TimeoutError:
+        logger.error("[account] Deletion exceeded 60s for user=%s", user_id)
+        raise error_response(500, "Failed to delete account data", code="DB_ERROR")
     except asyncpg.PostgresError as e:
         logger.error("[account] DB error during deletion for user=%s: %s", user_id, e)
         raise error_response(500, "Failed to delete account data", code="DB_ERROR")

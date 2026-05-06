@@ -61,6 +61,10 @@ WITH latest_predictions AS (
     WHERE pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
       AND i.user_id IS NOT NULL
+      -- Partition prune: bake regenerates predictions weekly, so a
+      -- 60-day window always contains the latest per-item row. Without
+      -- this filter the DISTINCT ON walks all 8 monthly partitions.
+      AND pp.generated_at > now() - interval '60 days'
     ORDER BY pp.item_ref, pp.generated_at DESC
 )
 SELECT
@@ -102,6 +106,8 @@ WITH current_vals AS (
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
+      -- Partition prune: latest predictions are always in the last 60d.
+      AND pp.generated_at > now() - interval '60 days'
     ORDER BY pp.item_ref, pp.generated_at DESC
 ),
 historical_vals AS (
@@ -113,6 +119,9 @@ historical_vals AS (
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
+      -- Partition prune: bound the upper edge ($2) AND the lower edge
+      -- 30 days back so the planner can pick a single partition.
+      AND pp.generated_at > $2 - interval '30 days'
       AND pp.generated_at <= $2
     ORDER BY pp.item_ref, pp.generated_at DESC
 )
@@ -259,13 +268,19 @@ async def run_once():
             if not _is_value_changes_enabled(prefs_row):
                 continue
 
-            # Plan gate: portfolio value notifications are Pro/Premium only
+            # Plan gate: portfolio value notifications are Pro/Premium only.
+            # Pre-2026-05-02 this read user_settings.subscription_tier
+            # which is never populated — every Pro/Premium user came
+            # back as 'free' and was silently skipped. Use the canonical
+            # subscriptions.plan source.
             try:
                 tier_row = await conn.fetchrow(
-                    "SELECT subscription_tier FROM public.user_settings WHERE user_id = $1",
+                    "SELECT plan FROM public.subscriptions "
+                    "WHERE user_id = $1::uuid AND status IN ('active', 'trialing') "
+                    "LIMIT 1",
                     user_id,
                 )
-                tier = (tier_row["subscription_tier"] if tier_row and tier_row["subscription_tier"] else "free")
+                tier = tier_row["plan"] if tier_row else "free"
                 if tier == "free":
                     continue
             except Exception:

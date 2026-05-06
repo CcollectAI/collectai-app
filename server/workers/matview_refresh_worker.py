@@ -93,7 +93,11 @@ async def run_once():
 
     import asyncpg
 
-    conn = await asyncpg.connect(DSN)
+    # Tagged via application_name for the ExecStop cancel hook.
+    conn = await asyncpg.connect(
+        DSN,
+        server_settings={"application_name": "collectai-bake-matview_refresh"},
+    )
     try:
         refreshed = 0
         for view_name in MATVIEWS:
@@ -131,7 +135,11 @@ async def _refresh_view(view_name: str) -> bool:
     if not DSN:
         return False
     import asyncpg
-    conn = await asyncpg.connect(DSN)
+    # Tagged via application_name for the ExecStop cancel hook.
+    conn = await asyncpg.connect(
+        DSN,
+        server_settings={"application_name": "collectai-bake-matview_refresh"},
+    )
     try:
         try:
             await conn.execute(

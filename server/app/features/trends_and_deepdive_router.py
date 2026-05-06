@@ -425,20 +425,24 @@ async def get_category_deep_dive(
         async with pool.acquire() as conn:
             # ------- combined daily stats: avg price, volume, and overall avg -------
             # Single scan of market_hits instead of 3 separate queries.
+            # Pre-2026-05-02 this used `created_at` but market_hits has
+            # no created_at column — endpoint 500'd. COALESCE matches the
+            # rest of the readers (legacy NULL observed_at → seen_at).
+            # The cutoff filter on seen_at also enables partition prune.
             daily_rows = await conn.fetch(
                 """
                 SELECT
-                    date_trunc('day', created_at)                    AS day,
-                    AVG(price) FILTER (WHERE price IS NOT NULL)      AS avg_price,
-                    COUNT(*)                                         AS cnt,
-                    SUM(COUNT(*)) OVER ()                            AS grand_count,
+                    date_trunc('day', COALESCE(observed_at, seen_at))   AS day,
+                    AVG(price) FILTER (WHERE price IS NOT NULL)         AS avg_price,
+                    COUNT(*)                                            AS cnt,
+                    SUM(COUNT(*)) OVER ()                               AS grand_count,
                     SUM(SUM(CASE WHEN price IS NOT NULL THEN price ELSE 0 END)) OVER ()
-                        / NULLIF(SUM(COUNT(price)) OVER (), 0)      AS overall_avg
+                        / NULLIF(SUM(COUNT(price)) OVER (), 0)         AS overall_avg
                 FROM market_hits
                 WHERE normalized_key LIKE $1 || '%'
-                  AND created_at >= $2
+                  AND seen_at >= $2
                   AND (is_listing IS NOT TRUE)
-                GROUP BY date_trunc('day', created_at)
+                GROUP BY date_trunc('day', COALESCE(observed_at, seen_at))
                 ORDER BY day
                 """,
                 category.lower(),

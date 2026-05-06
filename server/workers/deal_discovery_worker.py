@@ -48,14 +48,21 @@ async def _get_user_deal_alert_count_today(conn, user_id: str) -> int:
 
 
 async def _get_user_tier(conn, user_id: str) -> str:
-    """Get user subscription tier."""
+    """Get user subscription tier from the canonical subscriptions table.
+
+    Pre-2026-05-02 this read user_settings.subscription_tier — but that
+    column is never populated (canonical source is `subscriptions.plan`,
+    written by the Stripe webhook). Result: every user came back as
+    'free', and every paid user was capped at 1 deal alert/day instead
+    of the documented unlimited.
+    """
     row = await conn.fetchrow(
-        "SELECT subscription_tier FROM public.user_settings WHERE user_id = $1",
+        "SELECT plan FROM public.subscriptions "
+        "WHERE user_id = $1::uuid AND status IN ('active', 'trialing') "
+        "LIMIT 1",
         user_id,
     )
-    if row and row["subscription_tier"]:
-        return row["subscription_tier"]
-    return "free"
+    return row["plan"] if row else "free"
 
 
 async def _check_watchlist_snipes(conn) -> int:

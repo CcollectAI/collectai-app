@@ -55,13 +55,17 @@ interface UseItemDetailParams {
   q50: string | undefined;
   /** Structured attributes extracted by QuickScan vision pipeline */
   initialAttributes?: Record<string, unknown> | null;
+  /** Catalog match key from QuickScan (intake.catalog_match_key). When set,
+   * persistQuickscanDraft writes it to items.canonical_key so downstream
+   * Premium JOINs (price_trend, item_history, dossier) work. */
+  catalogKey?: string;
 }
 
 export function useItemDetail(params: UseItemDetailParams) {
   const {
     id, isDraft, initialName, initialCategory, initialCollection,
     initialCondition, initialValue, initialNotes, imageUri, categorySlug, q50,
-    initialAttributes,
+    initialAttributes, catalogKey,
   } = params;
 
   const { settings } = useSettings();
@@ -215,6 +219,7 @@ export function useItemDetail(params: UseItemDetailParams) {
         title: editableName,
         notes: notes || undefined,
         attributes: initialAttributes ?? undefined,
+        canonicalKey: catalogKey ?? null,
       });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Item saved to collection', type: 'success' });
@@ -237,7 +242,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     } finally {
       setSavingDraft(false);
     }
-  }, [isDraft, imageUri, editableCategory, editableName, notes, editableCollection, editableCondition, editableValue, q50, initialValue, settings.hapticsEnabled, showToast, initialAttributes]);
+  }, [isDraft, imageUri, editableCategory, editableName, notes, editableCollection, editableCondition, editableValue, q50, initialValue, settings.hapticsEnabled, showToast, initialAttributes, catalogKey]);
 
   // ── Save edits handler ─────────────────────────────────────────────────
   const onSaveEdits = useCallback(async () => {

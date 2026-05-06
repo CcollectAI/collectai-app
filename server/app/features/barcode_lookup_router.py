@@ -468,6 +468,10 @@ async def _lookup_market_price(category: str, title: Optional[str], pool) -> Opt
                   AND price IS NOT NULL
                   AND price > 0
                   AND (is_listing IS NOT TRUE)
+                  -- Partition prune: barcode lookups only need recent
+                  -- comps; without this the planner walks all monthly
+                  -- partitions of the 1.4M-row table on every scan.
+                  AND seen_at > now() - interval '180 days'
                 ORDER BY ended_at DESC NULLS LAST
                 LIMIT 20
                 """,

@@ -26,7 +26,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DSN = os.getenv("DB_DSN")
+# Use DB_DSN_DIRECT (port 5432) to escape the Supabase pooler 30s statement
+# cap. The per-category DISTINCT-ON over partitioned price_predictions plus
+# the market_hits actuals fetches add up across 54 categories — even though
+# each individual query is sub-second, the cumulative single-connection
+# transaction was hitting 30s on a busy bake. Same fix family as
+# marketplace_agent.persist_comps_to_db (commit 50cefd3, 2026-04-27).
+# See learning_use_direct_dsn_for_partitioned_writes.md.
+DSN = os.getenv("DB_DSN_DIRECT") or os.getenv("DB_DSN")
 
 # Minimum predictions + actuals needed to compute meaningful metrics.
 # Lowered from 5 → 2 in R50l because post-clamp many categories had <5
@@ -50,7 +57,11 @@ async def run_once():
         record_run("calibration_worker", "error")
         return
 
-    conn = await asyncpg.connect(DSN)
+    # Tagged via application_name for the ExecStop cancel hook.
+    conn = await asyncpg.connect(
+        DSN,
+        server_settings={"application_name": "collectai-bake-calibration_worker"},
+    )
     logger.info("Connected to DB — starting calibration cycle")
 
     status = "ok"
@@ -79,6 +90,10 @@ async def run_once():
 
             # For each item_ref in this category, get the latest prediction.
             # Filter by the indexed `category` column, not by item_ref LIKE.
+            # The generated_at filter triggers partition pruning (Subplans
+            # Removed: 1 in EXPLAIN) and drops planning time from 160ms to
+            # 3ms — verified 2026-05-02. Calibration only needs recent
+            # predictions to compute PICP/MAE so 90 days is plenty.
             predictions = await conn.fetch(
                 """
                 SELECT DISTINCT ON (pp.item_ref)
@@ -89,6 +104,7 @@ async def run_once():
                 FROM public.price_predictions pp
                 WHERE pp.category = $1
                   AND pp.item_ref IS NOT NULL
+                  AND pp.generated_at > now() - interval '90 days'
                 ORDER BY pp.item_ref, pp.generated_at DESC
                 """,
                 category,
@@ -115,6 +131,12 @@ async def run_once():
                   AND price IS NOT NULL
                   AND price > 0
                   AND seen_at > now() - ($2 || ' days')::interval
+                  -- Exclude synthetic Claude estimates from PICP. We must
+                  -- measure the model against REAL sold prices, not
+                  -- against our own LLM fallback. Otherwise calibration
+                  -- becomes "how well does Claude match Claude" and
+                  -- gate_pass passes for the wrong reason.
+                  AND (source IS NULL OR source <> 'claude_estimate')
                 """,
                 item_refs,
                 str(SOLD_LOOKBACK_DAYS),

@@ -16,6 +16,7 @@ Usage from main.py lifespan:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import os
 import time
@@ -31,124 +32,237 @@ logger = logging.getLogger("bake_orchestrator")
 # function_name  — async callable inside that module (usually "run_once")
 # needs_db_dsn   — if True, skip when DB_DSN is not set
 
+# ── Pre-launch worker triage (2026-05-04) ───────────────────────────────
+# Background: 2 weeks of patching the bake one worker at a time. Each fix
+# was real but the rate of new fragility kept pace. App is pre-launch (no
+# users), so most "live" workers are doing real work for nobody.
+#
+# Posture for pre-launch: keep ONLY the workers that produce data the
+# App Store demo / launch readiness depends on. Disable the rest. Re-enable
+# in waves post-launch as features ship.
+#
+# KEEP (10): valuation, marketplace_scrape, catalog_learning, calibration,
+#   tcgcsv, discogs, category_map, feedback_loop, aggregate_catalog_attributes,
+#   sanity_probe.
+# DISABLE: everything else, with a per-worker reason inline.
+#
+# Combined with:
+#   - single-slot semaphore on _HEAVY_WORKERS (cap concurrent DB pressure)
+#   - bounded `statement_timeout` per worker (cap orphan-on-restart blast radius)
+# ─────────────────────────────────────────────────────────────────────────
 _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
-    # ── Critical: valuation (market_hits → price_predictions) ──
+    # ── KEEP — pre-launch core ──
+    # Predictions are the core product surface.
     ("valuation_worker",        "workers.valuation_worker",           "run_once", True),
-    # ── Marketplace scrape (catalog → market_hits) ──
+    # Marketplace ingest feeds market_hits, which feeds predictions.
     ("marketplace_scrape_worker", "workers.marketplace_scrape_scheduler", "run_once", True),
-    # ── Catalog crawler (nightly full crawl) ──
-    ("catalog_crawler_worker",  "workers.catalog_crawler_worker",     "run_once", True),
-    # ── Deal discovery ──
-    ("deal_discovery",          "workers.deal_discovery_worker",      "run_once", True),
-    # ── Price monitor (anomaly detection + threshold alerts) ──
-    ("price_monitor",           "workers.price_monitor_worker",       "run_once", True),
-    # ── Alerts worker (low-value alerts) ──
-    ("alerts_worker",           "workers.alerts_worker",              "run_once", True),
-    # ── Calibration (prediction accuracy measurement) ──
+    # Calibration measures prediction accuracy. Required for App Store demo.
     ("calibration_worker",      "workers.calibration_worker",         "run_once", True),
-    # ── Catalog learning (suggestion aggregation + auto-mapping) ──
+    # Catalog learning: vision-label → catalog mapping. Required for QuickScan flow.
     ("catalog_learning_worker", "workers.catalog_learning_worker",    "run_once", False),
-    # ── Scarcity monitor ──
-    ("scarcity_monitor_worker", "workers.scarcity_monitor_worker",    "run_once", True),
-    # ── Watchlist monitor ──
-    ("watchlist_monitor_worker", "workers.watchlist_monitor_worker",  "run_once", True),
-    # ── Auto-delist (cross-marketplace inventory sync) ──
-    ("auto_delist_worker",      "workers.auto_delist_worker",         "run_once", True),
-    # ── Event scraper ──
-    ("event_scraper_worker",    "workers.event_scraper_scheduler",    "run_once", False),
-    # ── Value change (daily portfolio notifications) ──
-    ("value_change_worker",     "workers.value_change_worker",        "run_once", True),
-    # ── Category map (vision label → taxonomy) ──
+    # Vision label → taxonomy mapper. Required for QuickScan flow.
     ("category_map_worker",     "workers.category_map_worker",        "run_once", True),
-    # ── Signal alerts: DISABLED 2026-04-21. v_item_signal returned 0 rows
-    # below the €15 threshold (catalog skews higher), and the INSERT path
-    # references public.users which doesn't exist in Supabase (users live
-    # in auth.users / profiles). Worker reported `ok` every cycle while
-    # writing 0 alerts — classic silent-writer pattern. Re-enable only
-    # after rewriting the threshold logic (e.g. %-drop vs prior q50) and
-    # pointing the INSERT at the correct user table. Also commented out
-    # of app/lib/worker_output_registry.py so sanity_probe stops paging.
-    # ("signal_alerts_worker",    "workers.signal_alerts_worker",       "run_once", True),
-    # ── Auction end-time alerts ──
-    ("auction_alert_worker",    "workers.auction_alert_worker",       "run_once", True),
-    # ── Aggregate catalog attributes (data flywheel) ──
-    ("aggregate_catalog_attributes", "workers.aggregate_catalog_attributes", "run_once", False),
-    # ── Feedback loop (label_events → catalog) ──
+    # Feedback loop: scan corrections → catalog. Improves QuickScan accuracy.
     ("feedback_loop_worker",    "workers.feedback_loop_worker",       "run_once", True),
-    # ── tcgcsv + discogs: RE-ENABLED 2026-04-26 after upsert_market_hits_batch
-    # RPC shipped (commit pending; supabase/migrations/20260426_*.sql).
-    # The RPC does INSERT ... WHERE NOT EXISTS server-side, replacing the
-    # broken PostgREST ?on_conflict route that stopped working when
-    # market_hits was partitioned 2026-04-19. See DATA_SCALING_PLAN.md §10.
+    # Catalog attribute aggregation — feeds FE attribute display.
+    ("aggregate_catalog_attributes", "workers.aggregate_catalog_attributes", "run_once", False),
+    # tcgcsv + discogs: bulk catalog growth. RE-ENABLED 2026-04-26 with
+    # upsert_market_hits_batch RPC. Required for non-skewed catalog at launch.
     ("tcgcsv_worker",           "pipelines.import_tcgcsv",  "run_once", True),
     ("discogs_worker",          "pipelines.import_discogs", "run_once", True),
-    # ── R50l sanity probe: hourly correctness checks on critical tables ──
+    # Sanity probe — must stay. Observability. If this is off, we're flying blind.
     ("sanity_probe_worker",     "workers.sanity_probe_worker",        "run_once", True),
-    # ── R50l discovery audit: daily broad sweep for orphaned/stale/drift data ──
-    ("discovery_audit_worker",  "workers.discovery_audit_worker",     "run_once", True),
-    # ── R50m datalake export: nightly parquet export of closed market_hits partitions ──
-    ("datalake_export_worker",  "workers.datalake_export_worker",     "run_once", True),
-    # ── R50m week-8 deliverable: daily detach+drop of >6mo partitions confirmed in S3 ──
-    ("partition_drop_worker",   "workers.partition_drop_worker",      "run_once", True),
-    # ── Ticketmaster Discovery API → events (2026-04-21, twice-daily) ──
-    ("ticketmaster_events_worker", "pipelines.ticketmaster_events",    "run_once", False),
-    # ── SeatGeek Search API → events (2026-04-21, twice-daily) ──
-    ("seatgeek_events_worker",  "pipelines.seatgeek_events",          "run_once", False),
-    # ── Deal Desk offer auto-expiry (2026-04-22, hourly) ──
-    ("offer_expiry_worker",     "workers.offer_expiry_worker",        "run_once", True),
-    # ── Search gap discovery (2026-04-25, 6h) — turns user 0-result searches into category_candidates ──
-    ("search_gap_worker",       "workers.search_gap_worker",          "run_once", True),
-    # ── Demand priority refresher (2026-04-25, 30m) — refresh top-N items by demand_signals ──
-    ("demand_priority_worker",  "workers.demand_priority_worker",     "run_once", True),
-    # ── Vision quality recalibrator (2026-04-25, hourly) — scan_corrections → vision_category_quality ──
-    ("vision_quality_worker",   "workers.vision_quality_worker",      "run_once", True),
-    # ── Vision text reclassifier (2026-04-25, weekly) — TF-IDF/LogReg on scan_corrections, gated n≥1000 ──
-    ("vision_reclassifier_worker", "workers.vision_reclassifier_worker", "run_once", True),
-    # ── Vision regret tracker (2026-04-26, hourly) — per-cat regret rate boosts scan_correction weight ──
-    ("vision_regret_worker",    "workers.vision_regret_worker",       "run_once", True),
-    # ── Event engagement scorer (2026-04-26, 30min) — events.engagement_score from views+follows+RSVPs+ticket_clicks ──
-    ("event_engagement_worker", "workers.event_engagement_worker",    "run_once", True),
 
-    # ── Workers with their own scheduler_loop (matview has split intervals) ──
-    # matview_refresh uses its own scheduler_loop with demand/supply split
-    # so we delegate to it directly rather than calling run_once in a loop.
+    # ── DISABLED — post-launch features (no users yet) ──
+    # ("catalog_crawler_worker",  "workers.catalog_crawler_worker",     "run_once", True),
+    #   Nightly full crawl. Catalog imports (tcgcsv/discogs) cover pre-launch needs.
+    # ("deal_discovery",          "workers.deal_discovery_worker",      "run_once", True),
+    #   Paid-tier feature. No paid users.
+    # ("price_monitor",           "workers.price_monitor_worker",       "run_once", True),
+    #   Anomaly detection for user portfolios. No portfolios.
+    # ("alerts_worker",           "workers.alerts_worker",              "run_once", True),
+    #   User-facing low-value alerts. No users.
+    # ("scarcity_monitor_worker", "workers.scarcity_monitor_worker",    "run_once", True),
+    #   Scarcity feature for users. No users.
+    # ("watchlist_monitor_worker", "workers.watchlist_monitor_worker",  "run_once", True),
+    #   Watchlist alerts. 9 watchlist items in DB, all dev/seed.
+    # ("auto_delist_worker",      "workers.auto_delist_worker",         "run_once", True),
+    #   Cross-marketplace listing sync. No connected sellers.
+    # ("event_scraper_worker",    "workers.event_scraper_scheduler",    "run_once", False),
+    #   Events feature for users. No users.
+    # ("value_change_worker",     "workers.value_change_worker",        "run_once", True),
+    #   Daily portfolio notifications. No portfolios.
+    # ("auction_alert_worker",    "workers.auction_alert_worker",       "run_once", True),
+    #   Disabled 2026-05-04 due to partition-pruning planner regression
+    #   (see learning_partition_pruning_planning_cost.md). Re-enable after
+    #   query rewrite. Even before this incident: user-facing alerts, no users.
+    # ("signal_alerts_worker",    "workers.signal_alerts_worker",       "run_once", True),
+    #   Disabled 2026-04-21: silent-writer pattern + wrong table reference.
+    # ("discovery_audit_worker",  "workers.discovery_audit_worker",     "run_once", True),
+    #   Daily broad data sweep. Useful post-scale, not load-bearing pre-launch.
+    # ("datalake_export_worker",  "workers.datalake_export_worker",     "run_once", True),
+    #   Nightly parquet export to S3. Storage cost optimization, post-launch.
+    # ("partition_drop_worker",   "workers.partition_drop_worker",      "run_once", True),
+    #   Drops >6mo partitions. We don't have >6mo data yet.
+    # ("ticketmaster_events_worker", "pipelines.ticketmaster_events",    "run_once", False),
+    # ("seatgeek_events_worker",  "pipelines.seatgeek_events",          "run_once", False),
+    #   Events ingest. Events feature gated post-launch.
+    # ("offer_expiry_worker",     "workers.offer_expiry_worker",        "run_once", True),
+    #   Deal Desk offers. No deals.
+    # ("search_gap_worker",       "workers.search_gap_worker",          "run_once", True),
+    #   Turns user 0-result searches into category candidates. No users searching.
+    # ("demand_priority_worker",  "workers.demand_priority_worker",     "run_once", True),
+    #   Refresh top-N items by demand_signals. No demand signals from users.
+    # ("vision_quality_worker",   "workers.vision_quality_worker",      "run_once", True),
+    # ("vision_reclassifier_worker", "workers.vision_reclassifier_worker", "run_once", True),
+    # ("vision_regret_worker",    "workers.vision_regret_worker",       "run_once", True),
+    #   Vision learning loop. Needs scan_corrections from real users to be useful.
+    # ("event_engagement_worker", "workers.event_engagement_worker",    "run_once", True),
+    #   events.engagement_score from views+RSVPs. No engagement.
 
-    # ── Skipped / on-demand workers ──
-    # vision_ingest            — on-demand only (interval=0)
-    # model_retrain_worker     — handled by nightly GHA workflow
-    # insights_digest_worker   — weekly, interval=604800, very long; include below
-    # task_worker              — polls every 5s, handled separately in main.py
+    # ── Workers with their own scheduler_loop ──
+    # matview_refresh — handled in start_all_workers() below.
+
+    # ── Skipped / on-demand ──
+    # vision_ingest — on-demand only (interval=0)
+    # model_retrain_worker — handled by nightly GHA workflow
+    # task_worker — polls every 5s, handled separately in main.py
 ]
 
-# Weekly workers — included but gated by their long intervals
+# Weekly workers — disabled for pre-launch. Re-enable post-launch.
 _WEEKLY_WORKERS: list[tuple[str, str, str, bool]] = [
-    ("insights_digest_worker", "workers.insights_digest_worker", "run_once", True),
+    # ("insights_digest_worker", "workers.insights_digest_worker", "run_once", True),
+    #   Weekly digest email. No users.
 ]
 
 
 # ── Per-worker error tracking for health summary ─────────────────────────
 _worker_errors: dict[str, int] = {}
 _worker_last_ok: dict[str, float] = {}
+# When the current error streak started (epoch s). Reset to None on any ok run.
+# Used by `_health_summary_loop` to page on "erroring for >N minutes straight"
+# in addition to the count-based ALERT_THRESHOLD. Catches slow-cycling workers
+# (interval 1h+) that never hit the count threshold but are still degraded.
+_worker_first_error_at: dict[str, float] = {}
+# How long a worker can be in an error streak before it gets a sustained-error
+# Telegram page. Independent of ALERT_THRESHOLD's count-based path.
+SUSTAINED_ERROR_PAGE_AFTER_S = float(
+    os.getenv("BAKE_SUSTAINED_ERROR_PAGE_AFTER_S", "1800")  # 30 min default
+)
+# Workers we've already sustained-error-paged this streak. Reset on first ok.
+_sustained_error_alerted: set[str] = set()
+
+# ── Supabase circuit breaker ─────────────────────────────────────────────
+# Sliding-window counter of DB-side errors (statement_timeout, REST 503,
+# Postgres 57014). When the rate crosses the degraded threshold, light
+# workers skip cycles instead of piling onto an already-saturated pool.
+# Heavy workers still run (gated by `_HEAVY_LOCK` to one at a time) — they
+# represent real work the bake exists to do; lights can be deferred.
+#
+# 2026-05-04 incident: 14 workers stayed in error state for 30+ min
+# because every retry slammed into the same saturated Supabase. The
+# breaker turns those retries into yields, letting the DB recover.
+import collections as _collections
+_db_error_window: "_collections.deque[float]" = _collections.deque(maxlen=500)
+DB_DEGRADED_THRESHOLD = int(os.getenv("BAKE_DB_DEGRADED_THRESHOLD", "5"))
+DB_DEGRADED_WINDOW_S = float(os.getenv("BAKE_DB_DEGRADED_WINDOW_S", "300"))
+_db_degraded_alerted = False
+
+
+def _register_db_error(error_repr: str) -> bool:
+    """Record a DB-level error if the error_repr looks DB-related.
+
+    Returns True if the error was recorded (i.e., counts toward circuit-breaker).
+    Idempotent: callers can pass any error_repr without filtering.
+    """
+    s = (error_repr or "").lower()
+    if (
+        "statement_timeout" in s
+        or "canceling statement" in s
+        or "57014" in s
+        or "querycanceled" in s
+        or "the read operation timed out" in s
+        or "http 500" in s and "57014" in s  # belt-and-braces
+    ):
+        _db_error_window.append(time.time())
+        return True
+    return False
+
+
+def _is_db_degraded() -> bool:
+    """True if the DB-error rate is above the degraded threshold."""
+    if len(_db_error_window) < DB_DEGRADED_THRESHOLD:
+        return False
+    cutoff = time.time() - DB_DEGRADED_WINDOW_S
+    recent = sum(1 for t in _db_error_window if t > cutoff)
+    return recent >= DB_DEGRADED_THRESHOLD
 # Track which workers are mid-cycle so light workers can yield when heavy
 # ones are doing full-table scans / partition reads. Added 2026-04-19 after
 # R4 audit showed probe queries repeatedly timing out during concurrent
 # valuation_worker runs.
 _in_flight: set[str] = set()
 
-# "Heavy" workers do long-running full-table reads or writes and monopolise
-# DB CPU when active. Light workers (probes/audits) should skip cycles when
-# any heavy worker is in flight — the next hourly probe still catches new
-# violations without fighting for resources.
+# "Heavy" workers do long-running full-table reads or writes that
+# monopolise Supabase pool capacity when active. Two separate mechanisms
+# protect against this:
+#   1. Light workers (probes/audits) skip cycles when any heavy worker is
+#      mid-cycle (`_LIGHT_YIELDING_WORKERS` × `_in_flight` check below).
+#   2. Heavy workers themselves take a single global `_HEAVY_LOCK` so only
+#      ONE heavy worker can hit the DB at a time. Without this the bake
+#      ran 3+ heavy queries concurrently on 2026-05-04, saturated the
+#      pooler, and every other worker timed out at 30s. The lock caps the
+#      worst-case concurrent DB pressure to one heavy + N lights.
 _HEAVY_WORKERS: frozenset[str] = frozenset({
     "valuation_worker",
     "aggregate_catalog_attributes",
     "model_retrain_worker",
     "catalog_crawler_worker",
+    # Added 2026-05-04: bulk Supabase REST RPC writes saturate the pooler
+    # the same way the asyncpg-direct heavies do. Treat them as heavy too.
+    "marketplace_scrape_worker",
+    "tcgcsv_worker",
+    "discogs_worker",
 })
 _LIGHT_YIELDING_WORKERS: frozenset[str] = frozenset({
     "sanity_probe_worker",
     "discovery_audit_worker",
 })
+# Single-slot semaphore for heavy workers. Initialized lazily on first
+# acquire because asyncio.Lock() requires a running loop in Python 3.10+.
+_HEAVY_LOCK: asyncio.Lock | None = None
+
+
+def _get_heavy_lock() -> asyncio.Lock:
+    """Lazily create the single-slot heavy-worker lock on first use."""
+    global _HEAVY_LOCK
+    if _HEAVY_LOCK is None:
+        _HEAVY_LOCK = asyncio.Lock()
+    return _HEAVY_LOCK
+
+
+@contextlib.asynccontextmanager
+async def _heavy_gate(name: str):
+    """Single-slot gate: heavy workers acquire the global lock; lights pass through.
+
+    Heavy workers serialize through `_HEAVY_LOCK` so at most ONE heavy
+    worker hits Supabase at a time. Lights are unaffected.
+
+    Logs a one-line wait warning if a heavy worker had to queue >1s — that's
+    the signal that the gate is doing real work.
+    """
+    if name not in _HEAVY_WORKERS:
+        yield
+        return
+    lock = _get_heavy_lock()
+    wait_start = time.monotonic()
+    async with lock:
+        waited = time.monotonic() - wait_start
+        if waited > 1.0:
+            logger.info(
+                "[bake_orchestrator] %s waited %.1fs for heavy gate",
+                name, waited,
+            )
+        yield
 _worker_import_failures: dict[str, str] = {}
 # Workers we've already paged Telegram for — avoids re-paging every health tick
 _alerted_workers: set[str] = set()
@@ -174,6 +288,100 @@ async def _send_telegram_alert(message: str) -> None:
     except Exception as e:
         logger.warning("[bake_orchestrator] Telegram alert failed: %s", e)
 _active_tasks: dict[str, asyncio.Task] = {}
+
+
+async def _supervised(
+    coro_factory,
+    name: str,
+    *,
+    initial_delay: float = 5.0,
+    max_delay: float = 300.0,
+    alert_first_n_restarts: int = 3,
+) -> None:
+    """Respawn-on-exit wrapper for monitor loops.
+
+    The 2026-04-20 fix added supervision *for workers* (`_health_summary_loop`
+    re-spawns dead worker tasks). The monitor loops themselves were left
+    unsupervised. On 2026-05-03 17:48:05 the health summary loop went silent
+    for 39+ hours — `sanity_probe_worker` got cancelled at 19:30:47 and was
+    never respawned because nothing was watching the watcher.
+
+    Loop behaviour:
+      - If the inner coro returns normally (it's an infinite loop, so this
+        is a bug — log + respawn).
+      - If it raises Exception — log + respawn with exponential backoff.
+      - If it raises CancelledError mid-flight while the orchestrator is
+        still alive (current task not being torn down) — respawn.
+      - If our parent task is being cancelled (orchestrator shutdown) —
+        re-raise CancelledError to let shutdown proceed.
+      - KeyboardInterrupt / SystemExit always propagate.
+
+    Telegram-pages on the first N restarts (default 3) so a wedged monitor
+    surfaces in minutes, not days.
+    """
+    delay = initial_delay
+    restart_count = 0
+    while True:
+        restart_count += 1
+        crashed_repr: str | None = None
+        try:
+            await coro_factory()
+            crashed_repr = "returned cleanly (should be infinite)"
+            logger.warning(
+                "[supervisor] %s %s — respawning #%d after %.0fs",
+                name, crashed_repr, restart_count, delay,
+            )
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except asyncio.CancelledError:
+            current = asyncio.current_task()
+            # asyncio.Task.cancelling() is 3.11+. If we're being torn down
+            # by the orchestrator, propagate. Otherwise treat as a stray
+            # mid-flight cancel and respawn.
+            cancelling = (
+                current.cancelling() if current is not None
+                and hasattr(current, "cancelling") else 0
+            )
+            if cancelling > 0:
+                raise
+            crashed_repr = "cancelled mid-flight"
+            logger.warning(
+                "[supervisor] %s %s — respawning #%d after %.0fs",
+                name, crashed_repr, restart_count, delay,
+            )
+        except BaseException as e:
+            crashed_repr = f"{type(e).__name__}: {e!s}"[:200]
+            logger.exception(
+                "[supervisor] %s crashed (%s) — respawning #%d after %.0fs",
+                name, crashed_repr, restart_count, delay,
+            )
+
+        if restart_count <= alert_first_n_restarts:
+            try:
+                await _send_telegram_alert(
+                    f"🔧 Supervisor respawning <b>{name}</b> (#{restart_count}) — "
+                    f"reason: {crashed_repr}. Check bake.log."
+                )
+            except Exception:
+                pass
+
+        # Backoff sleep — but if the supervisor itself is being cancelled
+        # (orchestrator shutdown), let the cancel propagate. Without this
+        # check the wrapper would swallow the shutdown cancel and return
+        # cleanly, which is fine in production but breaks deterministic
+        # cancel-propagation in tests.
+        try:
+            await asyncio.sleep(delay)
+        except asyncio.CancelledError:
+            current = asyncio.current_task()
+            cancelling = (
+                current.cancelling() if current is not None
+                and hasattr(current, "cancelling") else 0
+            )
+            if cancelling > 0:
+                raise
+            return
+        delay = min(max_delay, delay * 2)
 
 
 async def _run_worker_loop(
@@ -214,6 +422,24 @@ async def _run_worker_loop(
     await asyncio.sleep(stagger)
 
     while True:
+        # Circuit breaker: when Supabase is in a DB-degraded window, *all*
+        # light (non-heavy) workers skip the cycle. Heavies still run (gated
+        # by _HEAVY_LOCK to one at a time) because they represent the real
+        # ingest work; lights pile on retries with nothing useful to do.
+        # 2026-05-04: prevents the cascade where every worker hammers a
+        # saturated pool, keeping it saturated forever.
+        if name not in _HEAVY_WORKERS and _is_db_degraded():
+            logger.info(
+                "[bake_orchestrator] %s skipping cycle — circuit breaker (DB degraded)",
+                name,
+            )
+            record_run(name, "ok", duration_s=0.0)
+            try:
+                await asyncio.sleep(interval_s)
+                continue
+            except asyncio.CancelledError:
+                return
+
         # Light workers yield when heavy workers are mid-cycle — prevents
         # probes / audits from fighting valuation_worker for DB bandwidth.
         if name in _LIGHT_YIELDING_WORKERS:
@@ -230,54 +456,72 @@ async def _run_worker_loop(
                 except asyncio.CancelledError:
                     return
 
-        t0 = time.monotonic()
-        _in_flight.add(name)
-        try:
-            # Some run_once() functions accept keyword args — call with no args
-            # since the orchestrator always uses the default signature.
-            # Special case: aggregate_catalog_attributes.run_once(dry_run=True)
-            if name == "aggregate_catalog_attributes":
-                await run_fn(dry_run=False)
-            else:
-                await run_fn()
-
-            duration = time.monotonic() - t0
-            record_run(name, "ok", duration_s=duration)
-            _worker_last_ok[name] = time.time()
-            _worker_errors.pop(name, None)
-            logger.info(
-                "[bake_orchestrator] %s completed in %.1fs", name, duration,
-            )
-        except asyncio.CancelledError:
-            logger.info("[bake_orchestrator] %s cancelled", name)
-            return
-        except Exception as e:
-            duration = time.monotonic() - t0
-            _worker_errors[name] = _worker_errors.get(name, 0) + 1
-            # Capture exception type + message + the worker-frame in the
-            # traceback so worker_runs.metadata.error_repr is populated
-            # (was {} before 2026-04-22 — every loud error stayed opaque,
-            # see learnings round 2 + 6/7).
-            import traceback as _tb
-            tb_frames = _tb.extract_tb(e.__traceback__)
-            worker_frame = next(
-                (f for f in reversed(tb_frames) if "/server/" in f.filename),
-                tb_frames[-1] if tb_frames else None,
-            )
-            frame_str = (
-                f" @ {worker_frame.filename.rsplit('/', 1)[-1]}:{worker_frame.lineno}"
-                if worker_frame else ""
-            )
-            error_repr = f"{type(e).__name__}: {e!s}{frame_str}"[:500]
+        # Gate heavy workers through a single-slot lock — caps concurrent
+        # DB pressure to at most one heavy + N lights. Lights pass through
+        # the gate as a no-op. Wait time happens BEFORE t0 so the recorded
+        # duration measures actual work, not queue wait.
+        async with _heavy_gate(name):
+            t0 = time.monotonic()
+            _in_flight.add(name)
             try:
-                record_run(name, "error", duration_s=duration, error_repr=error_repr)
-            except Exception:
-                pass
-            logger.exception(
-                "[bake_orchestrator] %s failed after %.1fs: %s", name, duration, e,
-            )
-        finally:
-            _in_flight.discard(name)
+                # Some run_once() functions accept keyword args — call with no args
+                # since the orchestrator always uses the default signature.
+                # Special case: aggregate_catalog_attributes.run_once(dry_run=True)
+                if name == "aggregate_catalog_attributes":
+                    await run_fn(dry_run=False)
+                else:
+                    await run_fn()
+
+                duration = time.monotonic() - t0
+                record_run(name, "ok", duration_s=duration)
+                _worker_last_ok[name] = time.time()
+                _worker_errors.pop(name, None)
+                _worker_first_error_at.pop(name, None)
+                _sustained_error_alerted.discard(name)
+                logger.info(
+                    "[bake_orchestrator] %s completed in %.1fs", name, duration,
+                )
+            except asyncio.CancelledError:
+                logger.info("[bake_orchestrator] %s cancelled", name)
+                _in_flight.discard(name)
+                return
+            except Exception as e:
+                duration = time.monotonic() - t0
+                _worker_errors[name] = _worker_errors.get(name, 0) + 1
+                # Mark when this error streak started — used by
+                # _health_summary_loop to page on sustained errors regardless
+                # of cycle count (catches slow-cycling workers that never
+                # hit the count-based ALERT_THRESHOLD before someone notices).
+                if name not in _worker_first_error_at:
+                    _worker_first_error_at[name] = time.time()
+                # Capture exception type + message + the worker-frame in the
+                # traceback so worker_runs.metadata.error_repr is populated
+                # (was {} before 2026-04-22 — every loud error stayed opaque,
+                # see learnings round 2 + 6/7).
+                import traceback as _tb
+                tb_frames = _tb.extract_tb(e.__traceback__)
+                worker_frame = next(
+                    (f for f in reversed(tb_frames) if "/server/" in f.filename),
+                    tb_frames[-1] if tb_frames else None,
+                )
+                frame_str = (
+                    f" @ {worker_frame.filename.rsplit('/', 1)[-1]}:{worker_frame.lineno}"
+                    if worker_frame else ""
+                )
+                error_repr = f"{type(e).__name__}: {e!s}{frame_str}"[:500]
+                try:
+                    record_run(name, "error", duration_s=duration, error_repr=error_repr)
+                except Exception:
+                    pass
+                # Feed circuit breaker: DB-side errors (statement_timeout,
+                # REST 57014) increment the breaker counter; if rate crosses
+                # threshold, light workers will skip their next cycle.
+                _register_db_error(error_repr)
+                logger.exception(
+                    "[bake_orchestrator] %s failed after %.1fs: %s", name, duration, e,
+                )
+            finally:
+                _in_flight.discard(name)
 
         # Sleep until next cycle
         try:
@@ -289,33 +533,75 @@ async def _run_worker_loop(
 
 async def _health_summary_loop(interval_s: float = 1800.0) -> None:
     """Log a health summary every 30 minutes."""
+    global _db_degraded_alerted
     while True:
         await asyncio.sleep(interval_s)
         try:
             alive = sum(1 for t in _active_tasks.values() if not t.done())
             dead = sum(1 for t in _active_tasks.values() if t.done())
             errored = len(_worker_errors)
+            db_degraded = _is_db_degraded()
 
             logger.info(
-                "[bake_orchestrator] HEALTH: %d/%d workers alive, %d dead, %d with recent errors",
-                alive, alive + dead, dead, errored,
+                "[bake_orchestrator] HEALTH: %d/%d workers alive, %d dead, %d with recent errors, db_degraded=%s",
+                alive, alive + dead, dead, errored, db_degraded,
             )
 
+            # Page once on degradation transition, page once on recovery.
+            if db_degraded and not _db_degraded_alerted:
+                _db_degraded_alerted = True
+                await _send_telegram_alert(
+                    "🚨 Bake circuit breaker OPEN — Supabase rate of "
+                    "statement_timeout / 57014 above threshold. Light workers "
+                    "are skipping cycles until the DB recovers. Check bake.log."
+                )
+            elif not db_degraded and _db_degraded_alerted:
+                _db_degraded_alerted = False
+                await _send_telegram_alert(
+                    "✅ Bake circuit breaker CLOSED — DB recovered, "
+                    "lights resuming."
+                )
+
             if _worker_errors:
+                now_s = time.time()
                 for wname, count in sorted(_worker_errors.items()):
+                    streak_started = _worker_first_error_at.get(wname)
+                    streak_age_s = (now_s - streak_started) if streak_started else 0.0
                     logger.warning(
-                        "[bake_orchestrator]   %s: %d consecutive errors", wname, count,
+                        "[bake_orchestrator]   %s: %d consecutive errors (streak %.0fs)",
+                        wname, count, streak_age_s,
                     )
+                    # Count-based threshold (fast-cycling workers).
                     if count >= ALERT_THRESHOLD and wname not in _alerted_workers:
                         _alerted_workers.add(wname)
                         await _send_telegram_alert(
                             f"⚠️ Bake worker {wname} has failed {count}× consecutively — "
                             f"check bake.log on collectai EC2."
                         )
+                    # Duration-based threshold (slow-cycling workers): catches
+                    # the case where a 1-6h interval worker is erroring every
+                    # cycle but never hits count >= 3 before someone notices.
+                    # Independent alert key so this doesn't conflict with the
+                    # count-based one above.
+                    sustained_key = f"sustained:{wname}"
+                    if (
+                        streak_age_s >= SUSTAINED_ERROR_PAGE_AFTER_S
+                        and sustained_key not in _sustained_error_alerted
+                    ):
+                        _sustained_error_alerted.add(sustained_key)
+                        await _send_telegram_alert(
+                            f"⚠️ Bake worker {wname} has been erroring for "
+                            f"{streak_age_s/60:.0f} min straight ({count} cycles) — "
+                            f"sustained failure, structural cause likely."
+                        )
                 # Clear alert flag once a worker recovers
                 for wname in list(_alerted_workers):
                     if wname not in _worker_errors:
                         _alerted_workers.discard(wname)
+                for sk in list(_sustained_error_alerted):
+                    wname = sk.removeprefix("sustained:")
+                    if wname not in _worker_errors:
+                        _sustained_error_alerted.discard(sk)
 
             if _worker_import_failures:
                 for wname, err in sorted(_worker_import_failures.items()):
@@ -654,10 +940,22 @@ async def start_all_workers() -> None:
         except Exception as e:
             logger.warning("[bake_orchestrator] Failed to start task worker: %s", e)
 
-    # Health summary loop
-    asyncio.create_task(_health_summary_loop(), name="orchestrator:health_summary")
-    asyncio.create_task(_circuit_breaker_monitor(), name="orchestrator:cb_monitor")
-    asyncio.create_task(_instance_health_monitor(), name="orchestrator:instance_health")
+    # Monitor loops — wrapped in `_supervised` so a stray cancel or
+    # uncaught exception inside the loop doesn't permanently disable the
+    # supervisor (2026-05-03 incident: health summary went silent for 39h
+    # and sanity_probe_worker was never respawned).
+    asyncio.create_task(
+        _supervised(_health_summary_loop, "health_summary"),
+        name="orchestrator:health_summary",
+    )
+    asyncio.create_task(
+        _supervised(_circuit_breaker_monitor, "circuit_breaker_monitor"),
+        name="orchestrator:cb_monitor",
+    )
+    asyncio.create_task(
+        _supervised(_instance_health_monitor, "instance_health_monitor"),
+        name="orchestrator:instance_health",
+    )
 
     logger.info(
         "[bake_orchestrator] === STARTED %d workers, skipped %d ===",

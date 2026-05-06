@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from app.config import SERPAPI_API_KEY
+from app.config import SERPAPI_API_KEY, SERPAPI_ENABLED
 from app.lib.spend_tracker import spend_tracker, BudgetExceededError
 from workers.circuit_breaker import google_shopping_circuit, CircuitOpenError
 
@@ -76,6 +76,16 @@ async def search(
     """
     if not configured():
         logger.debug("[GoogleShopping] Not configured (no SERPAPI_API_KEY)")
+        return []
+
+    # Killswitch — flip SERPAPI_ENABLED=false on EC2 when quota is
+    # exhausted (Free tier = 250/mo, paid = pay-per-search). Without
+    # this gate, every query goes through to SerpAPI, hits 429, gets
+    # caught, and returns [] silently — no signal to the caller that
+    # Google Shopping is offline. Mirror of FIRECRAWL_ENABLED /
+    # SCRAPEDO_ENABLED. Confirmed needed 2026-05-01 (250/250 used).
+    if not SERPAPI_ENABLED:
+        logger.info("[GoogleShopping] disabled via SERPAPI_ENABLED=false")
         return []
 
     try:

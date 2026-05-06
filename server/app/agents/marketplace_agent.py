@@ -656,8 +656,23 @@ class MarketplaceAgent:
                                  condition, ended_at, url, normalized_key, item_ref,
                                  category,
                                  features_json,
-                                 attrs)
-                            SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+                                 attrs,
+                                 observed_at,
+                                 is_listing)
+                            -- observed_at = sold_at when present, else now() — readers
+                            -- (valuation_worker, explainer, train_price) order/decay on
+                            -- this column. Pre-2026-05-02 it was NULL on every row →
+                            -- temporal-decay weighting collapsed to a constant.
+                            -- is_listing = (no sold_at) — listings are asking prices,
+                            -- sold rows have ended_at populated. Pre-2026-05-02 this
+                            -- was NULL on every per-row INSERT (only the bulk RPC set
+                            -- it), so valuation_worker filter `is_listing IS NOT TRUE`
+                            -- treated all NULLs as sold. Mostly harmless but
+                            -- semantically wrong; downstream `_build_evidence`
+                            -- couldn't distinguish.
+                            SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+                                   COALESCE($10, now()),
+                                   ($10 IS NULL)
                             WHERE NOT EXISTS (
                               SELECT 1 FROM market_hits
                               WHERE provider = $1 AND listing_id = $4

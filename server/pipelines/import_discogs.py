@@ -166,7 +166,11 @@ def _get_stale_items_pg(dsn: str, category: str, limit: Optional[int]) -> list[d
     import asyncpg
 
     async def _run():
-        c = await asyncpg.connect(dsn)
+        # Tagged via application_name for the ExecStop cancel hook.
+        c = await asyncpg.connect(
+            dsn,
+            server_settings={"application_name": "collectai-bake-discogs_worker"},
+        )
         try:
             q = """
               SELECT ci.category, ci.item_key, ci.title

@@ -39,7 +39,7 @@ Tables with FE_DRIFT — FE column referenced but the SAME table has BE handlers
 | `chat_dm_requests_v1` | 9 | 1 | 6 | — | BE read-handler for: ['context', 'created_at', 'id'] |
 | `v_events_with_attendees_v1` | 42 | 26 | 6 | — | BE read-handler for: ['ends_at', 'is_full', 'source_url'] |
 | `watchlist_items` | 18 | 5 | 4 | — | BE read-handler for: ['notes', 'owned', 'priority'] |
-| `items` | 73 | 8 | 2 | — | BE read-handler for: ['asking_price', 'for_sale'] |
+| `items` | 73 | 11 | 2 | — | BE read-handler for: ['asking_price', 'for_sale'] |
 | `user_public_profiles` | 9 | 4 | 2 | — | BE read-handler for: ['bio', 'interests'] |
 
 ## 🔧 needs round-trip wiring — 75 tables

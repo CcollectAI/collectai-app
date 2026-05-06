@@ -206,22 +206,36 @@ CHECKS: list[dict] = [
         # check trips when last 1h hits fall below 20% of the trailing 24h
         # average AND the worker has been recording ok runs — meaning the
         # worker's still trying but the adapters are degraded.
-        "name": "market_hits.volume_drop_vs_24h_avg",
+        "name": "market_hits.volume_drop_vs_7d_median",
+        # 2026-05-06 rewrite. The original 24h-mean baseline was broken: bulk
+        # importers (tcgcsv pulling Scryfall/TCGPlayer/Cardmarket catalogs)
+        # dump 50-130k rows in a 1-2h window each day, pushing the mean to
+        # ~5500/hr. Organic marketplace_scrape runs at 60-300/hr → 60/5500
+        # = 1% < 20% threshold → probe fires 24h/day.
+        # Median over a 7-day rolling window is naturally robust to those
+        # bulk spikes — only outliers affect mean, not median. With 168
+        # hourly buckets in 7 days and ~7 of them being bulk, median tracks
+        # the organic baseline.
         "sql": """
-            WITH recent AS (
-                SELECT COUNT(*)::float AS n1h
+            WITH hourly_baseline AS (
+                SELECT date_trunc('hour', seen_at) AS hr, count(*) AS n
+                FROM public.market_hits
+                WHERE seen_at BETWEEN now() - interval '8 days'
+                                  AND now() - interval '1 hour'
+                GROUP BY 1
+            ),
+            stats AS (
+                SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY n) AS median_per_hour
+                FROM hourly_baseline
+            ),
+            recent AS (
+                SELECT count(*)::float AS n1h
                 FROM public.market_hits
                 WHERE seen_at > now() - interval '1 hour'
-            ),
-            baseline AS (
-                SELECT COUNT(*)::float / 24.0 AS avg_per_hour
-                FROM public.market_hits
-                WHERE seen_at BETWEEN now() - interval '25 hours'
-                                  AND now() - interval '1 hour'
             )
             SELECT CASE
-                WHEN baseline.avg_per_hour >= 100
-                 AND recent.n1h < baseline.avg_per_hour * 0.20
+                WHEN stats.median_per_hour >= 100
+                 AND recent.n1h < stats.median_per_hour * 0.20
                  AND (SELECT COUNT(*) FROM public.worker_runs
                        WHERE worker_name = 'marketplace_scrape_worker'
                          AND status = 'ok'
@@ -229,9 +243,9 @@ CHECKS: list[dict] = [
                 THEN 1 ELSE 0
             END AS violators,
             NULL::text AS sample_id
-            FROM recent, baseline
+            FROM stats, recent
         """,
-        "description": "marketplace ingest last 1h < 20% of 24h-trailing average (likely external adapter outage)",
+        "description": "organic marketplace ingest last 1h < 20% of 7-day hourly median (likely external adapter outage)",
     },
 ]
 
@@ -319,7 +333,11 @@ async def run_once() -> None:
     # when not configured. Direct connection is slightly slower to establish
     # (~9s vs ~1s for pooler) but allows a realistic 20s per-query timeout.
     probe_dsn = os.getenv("DB_DSN_DIRECT") or DSN
-    conn = await asyncpg.connect(probe_dsn, timeout=20)
+    # Tagged via application_name for the ExecStop cancel hook.
+    conn = await asyncpg.connect(
+        probe_dsn, timeout=20,
+        server_settings={"application_name": "collectai-bake-sanity_probe_worker"},
+    )
     # Server-side query timeout on top of asyncio.wait_for — cuts runaway
     # plans at Postgres layer too.
     try:

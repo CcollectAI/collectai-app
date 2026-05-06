@@ -201,6 +201,12 @@ SEATGEEK_ENABLED: bool = os.getenv("SEATGEEK_ENABLED", "true").lower() in ("1", 
 # ---------------------------------------------------------------------------
 
 SERPAPI_API_KEY: str = os.getenv("SERPAPI_API_KEY", "")
+# Killswitch flag mirroring FIRECRAWL_ENABLED / SCRAPEDO_ENABLED. Without
+# this, every Google Shopping query went through to SerpAPI even after
+# the Free-tier 250/mo quota was exhausted, returning 429 → caught →
+# empty list. Added 2026-05-01 after live-probe found 250/250 used and
+# no graceful gate. Set SERPAPI_ENABLED=false on EC2 until quota resets.
+SERPAPI_ENABLED: bool = os.getenv("SERPAPI_ENABLED", "true").lower() in ("1", "true", "yes")
 
 # ---------------------------------------------------------------------------
 # FX rates (shared across marketplace adapters)

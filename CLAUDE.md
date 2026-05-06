@@ -1,7 +1,7 @@
-# CollectAI - Project Memory
+# Sparrow Collect - Project Memory
 
 ## Overview
-CollectAI is a collector app for tracking collectibles (Pokemon, MTG, Funko, Warhammer, etc.) with AI-powered scanning and valuation.
+Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funko, Warhammer, etc.) with AI-powered scanning and valuation.
 
 ## Tech Stack
 - **Frontend:** Expo (React Native) with Expo Router

@@ -1,5 +1,5 @@
 /**
- * CollectAI Brand Guide — Single Source of Truth
+ * Sparrow Collect Brand Guide — Single Source of Truth
  *
  * This file feeds every script, brief, and learning evaluation.
  * Nothing ships without passing through this context.
@@ -10,12 +10,12 @@
 // ---------------------------------------------------------------------------
 
 export const BRAND_IDENTITY = {
-  name: 'CollectAI',
+  name: 'Sparrow Collect',
   tagline: 'Track. Value. Collect.',
   oneLinePitch:
     'The AI-powered app that tells you what your collectibles are actually worth — across 37 marketplaces, 54 categories, in real time.',
   elevatorPitch:
-    'CollectAI uses computer vision and machine learning to scan, identify, and price any collectible in seconds. ' +
+    'Sparrow Collect uses computer vision and machine learning to scan, identify, and price any collectible in seconds. ' +
     'It tracks your portfolio value over time, alerts you to market moves, and connects you with a community of ' +
     'serious collectors. Think Shazam for collectibles meets a Bloomberg terminal for your shelf.',
   missionStatement:
@@ -32,7 +32,7 @@ export const BRAND_IDENTITY = {
 
 export const BRAND_VOICE = {
   /**
-   * Core personality traits — the "character" of CollectAI content.
+   * Core personality traits — the "character" of Sparrow Collect content.
    * Every piece of content should feel like it comes from this person.
    */
   personality: {
@@ -240,7 +240,7 @@ export const PRODUCT_CONTEXT = {
   },
 
   /**
-   * Differentiators — what makes CollectAI different from alternatives.
+   * Differentiators — what makes Sparrow Collect different from alternatives.
    */
   differentiators: [
     {
@@ -256,12 +256,12 @@ export const PRODUCT_CONTEXT = {
     {
       vs: 'Price guide websites',
       advantage: 'AI vision scan in 3 seconds vs. manually searching and comparing',
-      contentProof: 'Race: CollectAI scan vs. typing into price guide. CollectAI wins.',
+      contentProof: 'Race: Sparrow Collect scan vs. typing into price guide. Sparrow Collect wins.',
     },
     {
       vs: 'No tracking at all',
       advantage: 'Most collectors have no idea what their collection is worth until they sell',
-      contentProof: '"I thought my collection was worth $500. CollectAI says $2,847."',
+      contentProof: '"I thought my collection was worth $500. Sparrow Collect says $2,847."',
     },
   ] as const,
 } as const;
@@ -288,12 +288,12 @@ export const CTA_SYSTEM = {
       text: 'Check what yours is worth',
       subtext: 'Free on iOS & Android',
       bestFor: ['whats_it_worth', 'market_alert'],
-      conversionPath: 'video → search App Store "CollectAI" → install → scan',
+      conversionPath: 'video → search App Store "Sparrow Collect" → install → scan',
     },
     {
       id: 'track_portfolio',
       text: 'Start tracking your collection',
-      subtext: 'CollectAI — link in bio',
+      subtext: 'Sparrow Collect — link in bio',
       bestFor: ['collection_flex', 'market_alert'],
       conversionPath: 'video → profile → link → App Store → install → add items',
     },
@@ -448,7 +448,7 @@ export const CONTENT_ANGLES = [
       'Best {niche} deal I\'ve ever found',
     ],
     bestTemplates: ['hidden_gem'],
-    exampleScript: 'Hook: "Garage sale. $3 bin." → Show item → Scan → Reveal: $890 → "Thank you, CollectAI" → CTA',
+    exampleScript: 'Hook: "Garage sale. $3 bin." → Show item → Scan → Reveal: $890 → "Thank you, Sparrow Collect" → CTA',
   },
   {
     id: 'portfolio_flex',
@@ -474,7 +474,7 @@ export const CONTENT_ANGLES = [
       'This {niche} category is up {X}% this month',
     ],
     bestTemplates: ['market_alert'],
-    exampleScript: 'Hook: "Funko just vaulted 12 figures." → List them → Show price charts → "Set up alerts so you never miss this — CollectAI"',
+    exampleScript: 'Hook: "Funko just vaulted 12 figures." → List them → Show price charts → "Set up alerts so you never miss this — Sparrow Collect"',
   },
   {
     id: 'ai_magic',
@@ -500,7 +500,7 @@ export const CONTENT_ANGLES = [
       'Why your {item} isn\'t worth what you think',
     ],
     bestTemplates: ['whats_it_worth', 'market_alert'],
-    exampleScript: 'Hook: "3 things that tank a card\'s value" → Show each with examples → "Check yours with CollectAI" → CTA',
+    exampleScript: 'Hook: "3 things that tank a card\'s value" → Show each with examples → "Check yours with Sparrow Collect" → CTA',
   },
   {
     id: 'community',
@@ -513,7 +513,7 @@ export const CONTENT_ANGLES = [
       'The {niche} community needs to talk about this',
     ],
     bestTemplates: ['collection_flex', 'market_alert'],
-    exampleScript: 'Hook: "Hot take: PSA is overrated." → Explain → Show CollectAI grading → "What do you think? Comment below"',
+    exampleScript: 'Hook: "Hot take: PSA is overrated." → Explain → Show Sparrow Collect grading → "What do you think? Comment below"',
   },
 ] as const;
 

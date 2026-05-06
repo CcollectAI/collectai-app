@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// CollectAI Category Niches — maps to 54 app categories + 8 pods
+// Sparrow Collect Category Niches — maps to 54 app categories + 8 pods
 // ═══════════════════════════════════════════════════════════════════════════
 
 export type NicheId = string;

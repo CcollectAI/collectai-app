@@ -130,7 +130,7 @@ function LoginScreen() {
 
   function handleDemoLogin() {
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-    AsyncStorage.setItem('@collectai/onboarding_complete', 'true').catch(() => {});
+    AsyncStorage.setItem('@sparrowcollect/onboarding_complete', 'true').catch(() => {});
     signInDemo();
     track({ name: 'user_logged_in', properties: { method: 'demo' } });
     router.replace('/(tabs)');
@@ -208,7 +208,7 @@ function LoginScreen() {
                 )}
               </View>
               <Text style={[styles.brandTitle, { color: colors.text, fontFamily: fonts.bold }]}>
-                CollectAI
+                Sparrow Collect
               </Text>
               <Text style={[styles.brandSubtitle, { color: colors.muted }]}>{t('auth.welcome_back')}</Text>
             </Animated.View>

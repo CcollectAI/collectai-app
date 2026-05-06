@@ -37,6 +37,13 @@ class ItemCreateRequest(BaseModel):
     collection_name: Optional[str] = Field(None, max_length=255)
     estimated_value: Optional[float] = None
     notes: Optional[str] = Field(None, max_length=5000)
+    # Catalog-match key from QuickScan / intake (passed as catalog_match_key
+    # in the intake response). Stored as items.canonical_key — the JOIN key
+    # that links a user's item to the catalog's price_predictions /
+    # price_history / valuation pipelines. Without this, every Premium
+    # surface that JOINs items → catalog returns empty for paid users.
+    # Format example: 'pokemon:base-set-charizard-4-102'.
+    canonical_key: Optional[str] = Field(None, max_length=255)
 
 
 class ItemResponse(ItemCreateRequest):
@@ -88,13 +95,16 @@ async def create_item(
                 item_id = str(uuid4())
                 await conn.execute(
                     """
-                    INSERT INTO items (id, user_id, title, category, notes, collection_name, estimated_value)
-                    VALUES ($1, $2::uuid, $3, $4, $5, $6, $7)
+                    INSERT INTO items (id, user_id, title, category, notes, collection_name, estimated_value, canonical_key)
+                    VALUES ($1, $2::uuid, $3, $4, $5, $6, $7, $8)
                     """,
                     item_id, user_id, payload.name, payload.category, payload.notes,
-                    payload.collection_name, payload.estimated_value,
+                    payload.collection_name, payload.estimated_value, payload.canonical_key,
                 )
-                logger.info("[items] Created item: id=%s, user=%s", item_id, user_id)
+                logger.info(
+                    "[items] Created item: id=%s, user=%s, canonical_key=%s",
+                    item_id, user_id, payload.canonical_key or "(none)",
+                )
 
                 # Award XP for adding item (best-effort)
                 try:
@@ -123,6 +133,7 @@ async def create_item(
                     collection_name=payload.collection_name,
                     estimated_value=payload.estimated_value,
                     notes=payload.notes,
+                    canonical_key=payload.canonical_key,
                 )
         except HTTPException:
             raise
@@ -139,6 +150,7 @@ async def create_item(
         collection_name=payload.collection_name,
         estimated_value=payload.estimated_value,
         notes=payload.notes,
+        canonical_key=payload.canonical_key,
     )
     _DEMO_ITEMS.append(item)
     return item

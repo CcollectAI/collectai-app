@@ -461,6 +461,12 @@ export type QuickscanDraft = {
   title?: string | null;
   attributes?: Record<string, unknown> | null;
   notes?: string | null;
+  // Catalog match key from the intake response (catalog_match_key). When set,
+  // POST /items writes it to items.canonical_key so downstream JOINs against
+  // price_predictions / price_history / valuation pipelines can find the
+  // matched catalog row. Without this, every Premium feature that JOINs
+  // items → catalog returns empty for paid users. Added 2026-05-02.
+  canonicalKey?: string | null;
 };
 
 /**

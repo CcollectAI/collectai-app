@@ -41,7 +41,7 @@ import { track } from '@/analytics/track';
 import { GradientBackground } from '@/components/auth/GradientBackground';
 import { fonts } from '@/theme/tokens';
 
-const ONBOARDING_KEY = '@collectai/onboarding_complete';
+const ONBOARDING_KEY = '@sparrowcollect/onboarding_complete';
 
 type Slide = {
   id: string;
@@ -315,7 +315,7 @@ function OnboardingScreen() {
       try {
         await collectorsApi.saveFollowedCategories(Array.from(selectedCategories));
       } catch {}
-      await AsyncStorage.setItem('@collectai/followed_categories', JSON.stringify(Array.from(selectedCategories)));
+      await AsyncStorage.setItem('@sparrowcollect/followed_categories', JSON.stringify(Array.from(selectedCategories)));
     }
 
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');

@@ -120,12 +120,17 @@ async def check_threshold_alerts(conn):
         if alert_id in fired_alert_set:
             continue
 
-        # Get the latest price prediction for this item
+        # Get the latest price prediction for this item.
+        # Partition prune via generated_at — predictions regenerate
+        # frequently so a 60-day window always contains the latest row;
+        # without this filter the planner walks all monthly partitions
+        # of the 682K-row table on every alert tick.
         pred = await conn.fetchrow(
             """
             SELECT q50, q10, q90
             FROM public.price_predictions
             WHERE item_ref = $1
+              AND generated_at > now() - interval '60 days'
             ORDER BY generated_at DESC
             LIMIT 1
             """,
@@ -251,12 +256,16 @@ async def detect_anomalies(conn):
     for row in item_refs:
         item_ref = row["item_ref"]
 
-        # Get the last HISTORY_WINDOW snapshots
+        # Get the last HISTORY_WINDOW snapshots.
+        # Partition prune via snapshot_at — anomaly detection only needs
+        # recent history, and HISTORY_WINDOW is small (default 30).
+        # Without this filter the planner walks all monthly partitions.
         snapshots = await conn.fetch(
             """
             SELECT price_q50
             FROM public.price_history
             WHERE item_ref = $1
+              AND snapshot_at > now() - interval '90 days'
             ORDER BY snapshot_at DESC
             LIMIT $2
             """,
@@ -577,7 +586,8 @@ async def run_once():
         return
 
     conn = await asyncpg.connect(DSN)
-    await conn.execute("SET statement_timeout = 0")
+    # Bounded 2026-05-04 (was 0/unbounded). 5 min headroom for anomaly scan.
+    await conn.execute("SET statement_timeout = '300s'")
     logger.info("Connected to DB — starting price monitor cycle")
     status = "ok"
     try:

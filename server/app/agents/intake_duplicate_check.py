@@ -95,25 +95,34 @@ async def check_user_duplicates(
                 except Exception as e:
                     logger.debug("Duplicate variant detection error: %s", e)
 
-            # Set completion: how many items in this category does user own vs total catalog
+            # Set completion: paid feature (Pro+). Free users get
+            # set_completion=None so the FE paywall renders consistently
+            # with the server-side gating on dossier/sell-timing.
             try:
-                owned_count = await conn.fetchval(
-                    "SELECT COUNT(*) FROM items WHERE user_id = $1::uuid AND category = $2",
-                    user_id,
-                    category_id,
-                )
-                total_count = await conn.fetchval(
-                    "SELECT COUNT(*) FROM category_items WHERE category = $1",
-                    category_id,
-                )
-                if total_count and total_count > 0:
-                    result["set_completion"] = {
-                        "owned": owned_count or 0,
-                        "total": total_count,
-                        "pct": round((owned_count or 0) / total_count * 100, 1),
-                    }
-            except Exception as e:
-                logger.debug("Duplicate set completion error: %s", e)
+                from app.subscription import get_user_plan
+                plan = await get_user_plan(user_id)
+            except Exception:
+                plan = "free"
+
+            if plan in ("pro", "premium"):
+                try:
+                    owned_count = await conn.fetchval(
+                        "SELECT COUNT(*) FROM items WHERE user_id = $1::uuid AND category = $2",
+                        user_id,
+                        category_id,
+                    )
+                    total_count = await conn.fetchval(
+                        "SELECT COUNT(*) FROM category_items WHERE category = $1",
+                        category_id,
+                    )
+                    if total_count and total_count > 0:
+                        result["set_completion"] = {
+                            "owned": owned_count or 0,
+                            "total": total_count,
+                            "pct": round((owned_count or 0) / total_count * 100, 1),
+                        }
+                except Exception as e:
+                    logger.debug("Duplicate set completion error: %s", e)
 
     except Exception as e:
         logger.warning("Duplicate check error: %s", e)

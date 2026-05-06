@@ -55,9 +55,24 @@ export const detectRegion = () =>
 // Items Export — returns the canonical 12-col CSV inline.
 // Matches /api/imports/template so users can export, edit in
 // Excel/Numbers, and re-import without column drift.
-export const exportItemsOverview = () =>
+//
+// Currency: defaults to user_settings.currency. Pass `?currency=USD`
+// (etc.) to override. estimated_value is FX-converted; purchase_price
+// stays in its own purchase_currency (historical purchase price).
+export const exportItemsOverview = (currency?: string) =>
   get<{ download_url: string | null; csv_inline: string }>(
-    "/items-export/overview",
+    `/items-export/overview${currency ? `?currency=${encodeURIComponent(currency)}` : ""}`,
+  );
+
+// Items Export — comprehensive 30-col inventory snapshot.
+// NOT round-trip with import (extra columns won't survive re-import).
+// Use for insurance, accountants, full collection records. Surfaces
+// brand/set/rarity from attrs, q10/q90 price range, ownership flags
+// (for_sale, asking_price), collection grouping, timestamps. Photo URLs
+// intentionally excluded per product decision.
+export const exportItemsFull = (currency?: string) =>
+  get<{ download_url: string | null; csv_inline: string }>(
+    `/items-export/full${currency ? `?currency=${encodeURIComponent(currency)}` : ""}`,
   );
 
 // Insurance Valuation Export
@@ -101,8 +116,11 @@ export const getItemTrends = (itemId: string) =>
   get(`/analytics/items/${encodeURIComponent(itemId)}/trends`);
 
 // Account Management
+// Backend requires ?confirm=DELETE_MY_ACCOUNT to guard against accidental
+// destructive calls. The FE confirms via a typed-confirmation modal in
+// ProfileEditSection before invoking this.
 export async function deleteAccount(): Promise<{ success: boolean; message: string }> {
-  return del("/account");
+  return del("/account?confirm=DELETE_MY_ACCOUNT");
 }
 
 // Billing / Subscriptions

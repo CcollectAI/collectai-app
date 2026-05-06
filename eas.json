@@ -33,12 +33,12 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "ccollect.ai@gmail.com",
-        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "YOUR_APPLE_TEAM_ID"
+        "appleId": "apple@sparrowcollect.com",
+        "ascAppId": "TODO_FILL_AFTER_APP_STORE_CONNECT_RECORD_CREATED",
+        "appleTeamId": "TODO_FILL_FROM_DEVELOPER_PORTAL_TOP_RIGHT"
       },
       "android": {
-        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "serviceAccountKeyPath": "./sparrow-play-service-account.json",
         "track": "internal",
         "releaseStatus": "draft"
       }
