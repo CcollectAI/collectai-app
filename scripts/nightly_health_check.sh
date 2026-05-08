@@ -11,6 +11,18 @@ fail() { FAILURES+=("$1"); echo "FAIL: $1"; }
 warn() { WARNINGS+=("$1"); echo "WARN: $1"; }
 pass() { echo "PASS: $1"; }
 
+# Helper: extract count from Supabase's Content-Range header. Returns "" on miss.
+# Wraps the curl|grep|sed pipeline so set -euo pipefail can't silently kill the
+# script when grep finds nothing (which happens on 401, 504, or any non-2xx).
+sb_count() {
+  local url="$1"
+  curl -sI "$url" \
+    -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+    -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+    -H "Prefer: count=exact" \
+    -H "Range: 0-0" 2>/dev/null | grep -i content-range | sed 's/.*\///;s/\r//' || true
+}
+
 # ── 1. Required env vars ─────────────────────────────────────────────────
 echo "=== ENV VAR CHECK ==="
 for var in SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY TEST_EMAIL TEST_PASSWORD; do
@@ -41,11 +53,7 @@ fi
 echo ""
 echo "=== DB ROW COUNTS ==="
 for table in category_items market_hits price_predictions; do
-  COUNT=$(curl -sI "${SUPABASE_URL}/rest/v1/${table}?select=id" \
-    -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
-    -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-    -H "Prefer: count=exact" \
-    -H "Range: 0-0" 2>/dev/null | grep -i content-range | sed 's/.*\///;s/\r//')
+  COUNT=$(sb_count "${SUPABASE_URL}/rest/v1/${table}?select=id")
 
   if [ -z "$COUNT" ] || [ "$COUNT" = "0" ]; then
     fail "$table has 0 or unknown rows"
@@ -91,11 +99,7 @@ fi
 # ── 5. Market hits freshness — new hits in last 24h ──────────────────────
 echo ""
 echo "=== MARKET HITS FRESHNESS ==="
-RECENT_HITS=$(curl -sI "${SUPABASE_URL}/rest/v1/market_hits?select=id&seen_at=gte.$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-24H +%Y-%m-%dT%H:%M:%S 2>/dev/null)" \
-  -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Prefer: count=exact" \
-  -H "Range: 0-0" 2>/dev/null | grep -i content-range | sed 's/.*\///;s/\r//')
+RECENT_HITS=$(sb_count "${SUPABASE_URL}/rest/v1/market_hits?select=id&seen_at=gte.$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-24H +%Y-%m-%dT%H:%M:%S 2>/dev/null)")
 
 if [ -z "$RECENT_HITS" ] || [ "$RECENT_HITS" = "0" ]; then
   warn "No new market_hits in last 24h (ingest may be stalled)"
@@ -120,11 +124,7 @@ fi
 echo ""
 echo "=== EVENT SOURCES ==="
 # Fetch events count from last 24h to verify event scraper is working
-EVENTS_24H=$(curl -sI "${SUPABASE_URL}/rest/v1/events?select=id&created_at=gte.$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-24H +%Y-%m-%dT%H:%M:%S 2>/dev/null)" \
-  -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Prefer: count=exact" \
-  -H "Range: 0-0" 2>/dev/null | grep -i content-range | sed 's/.*\///;s/\r//')
+EVENTS_24H=$(sb_count "${SUPABASE_URL}/rest/v1/events?select=id&created_at=gte.$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-24H +%Y-%m-%dT%H:%M:%S 2>/dev/null)")
 
 if [ -z "$EVENTS_24H" ] || [ "$EVENTS_24H" = "0" ]; then
   warn "No new events in last 24h (event scraper may be stalled)"
@@ -133,11 +133,7 @@ else
 fi
 
 # Total events count
-EVENTS_TOTAL=$(curl -sI "${SUPABASE_URL}/rest/v1/events?select=id" \
-  -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Prefer: count=exact" \
-  -H "Range: 0-0" 2>/dev/null | grep -i content-range | sed 's/.*\///;s/\r//')
+EVENTS_TOTAL=$(sb_count "${SUPABASE_URL}/rest/v1/events?select=id")
 
 if [ -z "$EVENTS_TOTAL" ] || [ "$EVENTS_TOTAL" = "0" ]; then
   fail "events table is empty"
@@ -149,11 +145,7 @@ fi
 # ── 8. NULL item_ref check (catches the bug we fixed today) ──────────────
 echo ""
 echo "=== DATA INTEGRITY ==="
-NULL_REFS=$(curl -sI "${SUPABASE_URL}/rest/v1/market_hits?select=id&item_ref=is.null&processed=is.false" \
-  -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Prefer: count=exact" \
-  -H "Range: 0-0" 2>/dev/null | grep -i content-range | sed 's/.*\///;s/\r//')
+NULL_REFS=$(sb_count "${SUPABASE_URL}/rest/v1/market_hits?select=id&item_ref=is.null&processed=is.false")
 
 if [ -n "$NULL_REFS" ] && [ "$NULL_REFS" -gt 100 ] 2>/dev/null; then
   warn "$NULL_REFS unprocessed market_hits with NULL item_ref"
