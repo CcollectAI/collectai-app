@@ -60,7 +60,7 @@
       "color": "#81D8D0"
     },
     "ios": {
-      "bundleIdentifier": "com.sparrowcollect.com",
+      "bundleIdentifier": "io.sparrowcollect.app",
       "buildNumber": "1",
       "supportsTablet": true,
       "usesAppleSignIn": true,
@@ -181,7 +181,7 @@
       }
     },
     "android": {
-      "package": "com.sparrowcollect.com",
+      "package": "io.sparrowcollect.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#81D8D0"
