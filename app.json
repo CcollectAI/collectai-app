@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Sparrow Collect",
-    "slug": "sparrowcollect",
+    "slug": "collectai",
     "version": "1.0.0",
     "runtimeVersion": {
       "policy": "appVersion"
