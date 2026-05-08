@@ -19,7 +19,7 @@ export const MEDAL_COLORS = {
 
 /** Marketplace brand colors for multi-marketplace UI (sell dashboard, etc.). */
 export const MARKETPLACE_BRAND_COLORS: Record<string, { label: string; color: string }> = {
-  collectai: { label: 'CollectAI P2P', color: '#81D8D0' },
+  collectai: { label: 'Sparrow P2P', color: '#81D8D0' },
   ebay: { label: 'eBay', color: '#E53238' },
   mercari: { label: 'Mercari', color: '#4DC8F0' },
   cardmarket: { label: 'Cardmarket', color: '#1A3C7D' },

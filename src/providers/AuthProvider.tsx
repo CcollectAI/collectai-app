@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const demoUser = {
       id: 'demo-user-00000000-0000-0000-0000-000000000000',
-      email: 'demo@collectai.app',
+      email: 'demo@sparrowcollect.com',
       app_metadata: {},
       user_metadata: { username: 'DemoCollector' },
       aud: 'authenticated',

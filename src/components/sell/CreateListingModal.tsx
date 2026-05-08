@@ -25,7 +25,7 @@ import type { useFormField } from '@/hooks/useFormField';
 import type { MarketplaceId, MarketplaceFeeSchedule, CurrencyCode } from '@/data/types';
 
 const MARKETPLACE_CONFIG: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
-  collectai: { label: 'CollectAI P2P', icon: 'people-outline', color: '#81D8D0' },
+  collectai: { label: 'Sparrow P2P', icon: 'people-outline', color: '#81D8D0' },
   ebay: { label: 'eBay', icon: 'cart-outline', color: '#E53238' },
   mercari: { label: 'Mercari', icon: 'storefront-outline', color: '#4DC8F0' },
   cardmarket: { label: 'Cardmarket', icon: 'card-outline', color: '#1A3C7D' },

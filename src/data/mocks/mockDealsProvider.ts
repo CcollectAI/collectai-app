@@ -154,7 +154,7 @@ export async function listMarketplaceSales(): Promise<MarketplaceSale[]> {
 
 export async function getMarketplaceFeeSchedules(): Promise<MarketplaceFeeSchedule[]> {
   return [
-    { marketplaceId: 'collectai', displayName: 'CollectAI P2P', baseFeePct: 0, paymentProcessingPct: 0, fixedFee: 0, currency: 'EUR', notes: 'Free P2P trading' },
+    { marketplaceId: 'collectai', displayName: 'Sparrow P2P', baseFeePct: 0, paymentProcessingPct: 0, fixedFee: 0, currency: 'EUR', notes: 'Free P2P trading' },
     { marketplaceId: 'ebay', displayName: 'eBay', baseFeePct: 12.9, paymentProcessingPct: 2.9, fixedFee: 0.30, currency: 'EUR', notes: 'Final value fee + payment processing' },
     { marketplaceId: 'mercari', displayName: 'Mercari', baseFeePct: 10.0, paymentProcessingPct: 0, fixedFee: 0, currency: 'EUR', notes: 'Flat 10% seller fee' },
     { marketplaceId: 'cardmarket', displayName: 'Cardmarket', baseFeePct: 5.0, paymentProcessingPct: 0, fixedFee: 0, currency: 'EUR', notes: '5% commission' },

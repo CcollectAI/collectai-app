@@ -28,7 +28,7 @@ export const ItemRefreshBar = React.memo(function ItemRefreshBar({ predictionAt,
         <Text style={[styles.refreshBarLabel, { color: theme.muted }]}>
           {predictionAt
             ? `Last analyzed ${relativeTime(predictionAt)}`
-            : 'Powered by CcollectAI'}
+            : 'Powered by Sparrow Collect'}
         </Text>
       </View>
       <Pressable

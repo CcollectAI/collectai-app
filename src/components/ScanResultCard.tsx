@@ -566,24 +566,26 @@ function ScanResultCardInner({
         </View>
       </View>
 
-      {/* Off-screen share card for ViewShot capture */}
-      <View style={styles.offScreen} pointerEvents="none">
-        <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 1 }}>
-          <ShareCard
-            itemName={scanResult.prediction.name || t('scan.unknown_item')}
-            category={scanResult.attributes.category}
-            condition={scanResult.attributes.conditionGuess ?? ''}
-            priceMid={priceBandMid}
-            priceLow={priceBandLow}
-            priceHigh={priceBandHigh}
-            currency={currency}
-            imageUri={capturedUri}
-            confidence={
-              fc ? (fc.name + fc.category + fc.condition) / 3 : scanResult.prediction.confidence
-            }
-          />
-        </ViewShot>
-      </View>
+      {/* Share card suppressed for v1 launch — re-enable after launch by uncommenting. */}
+      {false && (
+        <View style={styles.offScreen} pointerEvents="none">
+          <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 1 }}>
+            <ShareCard
+              itemName={scanResult.prediction.name || t('scan.unknown_item')}
+              category={scanResult.attributes.category}
+              condition={scanResult.attributes.conditionGuess ?? ''}
+              priceMid={priceBandMid}
+              priceLow={priceBandLow}
+              priceHigh={priceBandHigh}
+              currency={currency}
+              imageUri={capturedUri}
+              confidence={
+                fc ? (fc.name + fc.category + fc.condition) / 3 : scanResult.prediction.confidence
+              }
+            />
+          </ViewShot>
+        </View>
+      )}
     </View>
   );
 }

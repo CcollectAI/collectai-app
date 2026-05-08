@@ -108,7 +108,7 @@ function CatalogSuggestionModalInner({
       });
 
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-      showToast({ message: "Thanks for helping improve CollectAI!", type: "success" });
+      showToast({ message: "Thanks for helping improve Sparrow Collect!", type: "success" });
     } catch (err) {
       logger.warn("[CatalogSuggestion] Submit failed:", err);
       // Still dismiss — don't block the user
@@ -155,7 +155,7 @@ function CatalogSuggestionModalInner({
                 We don't recognize this item yet
               </Text>
               <Text style={[styles.subtitle, { color: colors.muted }]}>
-                Help us improve CollectAI by telling us what this is.
+                Help us improve Sparrow Collect by telling us what this is.
               </Text>
             </View>
           </View>

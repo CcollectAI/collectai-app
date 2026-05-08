@@ -124,7 +124,7 @@ export function SplashScreen({ onReady }: Props) {
           { opacity: textOpacity, transform: [{ translateY: textTranslateY }] },
         ]}
       >
-        CollectAI
+        Sparrow Collect
       </Animated.Text>
 
       <Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>

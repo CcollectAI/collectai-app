@@ -157,13 +157,13 @@ export default function Settings() {
 
         <AnimatedPressable
           style={styles.settingRow}
-          onPress={() => Linking.openURL('mailto:support@collectai.app')}
+          onPress={() => Linking.openURL('mailto:support@sparrowcollect.com')}
           accessibilityRole="link"
           accessibilityLabel={t('settings.report_bug_a11y')}
         >
           <View style={styles.settingInfo}>
             <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.report_bug')}</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>support@collectai.app</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>support@sparrowcollect.com</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>

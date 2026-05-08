@@ -66,7 +66,7 @@ function getSavingsMessage(
       return {
         headline: 'Duplicate caught!',
         subline: hasMoney
-          ? `CollectAI has saved you ${formatPrice(data.total_money_saved, currency)} overall`
+          ? `Sparrow Collect has saved you ${formatPrice(data.total_money_saved, currency)} overall`
           : `${data.total_items_tracked} items tracked, no doubles`,
       };
     default: {

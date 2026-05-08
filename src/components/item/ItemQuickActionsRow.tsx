@@ -34,7 +34,7 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
     setBusy(true);
     try {
       await Share.share({
-        message: `Check out ${editableName}${toNum(editableValue) ? ` - valued at ${formatPrice(toNum(editableValue))}` : ''} on CollectAI`,
+        message: `Check out ${editableName}${toNum(editableValue) ? ` - valued at ${formatPrice(toNum(editableValue))}` : ''} on Sparrow Collect`,
       });
     } catch {
       // User cancelled

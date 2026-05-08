@@ -38,7 +38,7 @@ export const EventActionBar = React.memo(function EventActionBar({
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
     try {
       await Share.share({
-        message: `${event.title}\n${event.date}${event.time ? ` at ${event.time}` : ''}${event.location ? `\n${event.location}` : ''}\n\nCheck it out on CollectAI!`,
+        message: `${event.title}\n${event.date}${event.time ? ` at ${event.time}` : ''}${event.location ? `\n${event.location}` : ''}\n\nCheck it out on Sparrow Collect!`,
         title: event.title,
       });
     } catch {
