@@ -961,7 +961,7 @@ function ItemDetailScreen() {
                 (`category:item_key`) to query market_hits — won't render
                 for items that haven't been catalog-matched yet. */}
             {!isDraft && savedCanonicalKey && (
-              <SellTimingBadge itemRef={savedCanonicalKey} />
+              <SellTimingBadge itemId={savedCanonicalKey} />
             )}
 
             {/* Condition Grading — SHELVED 2026-05-02.
@@ -988,7 +988,7 @@ function ItemDetailScreen() {
 
             {/* Item History */}
             {!isDraft && id && (
-              limits.detailed_valuation ? (
+              limits.advanced_analytics ? (
                 <ProvenanceHistorySection
                   theme={theme}
                   hapticsEnabled={settings.hapticsEnabled}
@@ -1009,7 +1009,7 @@ function ItemDetailScreen() {
 
             {/* Valuation Report (Dossier) */}
             {!isDraft && id && (
-              limits.detailed_valuation ? (
+              limits.advanced_analytics ? (
                 <DossierReportSection
                   theme={theme}
                   dossierData={dossierData}
@@ -1036,7 +1036,7 @@ function ItemDetailScreen() {
 
             {/* Market Prices */}
             {!isDraft && id && (
-              limits.detailed_valuation ? (
+              limits.advanced_analytics ? (
                 <MarketplacePricesSection
                   theme={theme}
                   marketResults={marketResults}

@@ -579,9 +579,7 @@ function ScanResultCardInner({
               priceHigh={priceBandHigh}
               currency={currency}
               imageUri={capturedUri}
-              confidence={
-                fc ? (fc.name + fc.category + fc.condition) / 3 : scanResult.prediction.confidence
-              }
+              confidence={scanResult.prediction.confidence}
             />
           </ViewShot>
         </View>
