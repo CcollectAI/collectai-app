@@ -12,21 +12,23 @@ import {
   ActivityIndicator,
   StyleSheet,
   ScrollView,
+  Linking,
+  Platform,
 } from 'react-native';
-// SafeAreaView removed — Stack header handles safe area
 import { Ionicons } from '@expo/vector-icons';
-import * as WebBrowser from 'expo-web-browser';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import {
-  ApiError,
-  getBillingStatus,
-  createCheckoutSession,
-  createPortalSession,
-  type BillingStatus,
-} from '@/api/collectorsApi';
+  getOfferings,
+  purchasePackage,
+  restorePurchases,
+  planFromCustomerInfo,
+  isPurchasesAvailable,
+} from '@/lib/purchases';
+import { useBillingLimits } from '@/hooks/useBillingLimits';
+import type { PurchasesPackage } from 'react-native-purchases';
 import { useToast } from '@/components/Toast';
 import { track } from '@/analytics/track';
 
@@ -101,180 +103,164 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
   );
 }
 
+type Offerings = Awaited<ReturnType<typeof getOfferings>>;
+
 function SubscriptionScreen() {
   const { t } = useTranslation();
   const { settings } = useSettings();
   const { colors } = useAppTheme();
   const { showToast } = useToast();
-  const [billing, setBilling] = useState<BillingStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [billingUnavailable, setBillingUnavailable] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [upgrading, setUpgrading] = useState<string | null>(null);
+  const { plan: currentPlan, loading: planLoading } = useBillingLimits();
 
-  function fetchBilling() {
+  const [offerings, setOfferings] = useState<Offerings>(null);
+  const [loading, setLoading] = useState(true);
+  const [iapUnavailable, setIapUnavailable] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [upgrading, setUpgrading] = useState<'monthly' | 'yearly' | null>(null);
+  const [restoring, setRestoring] = useState(false);
+
+  function fetchOfferings() {
     setLoading(true);
     setFetchError(null);
-    setBillingUnavailable(false);
-    getBillingStatus()
-      .then(setBilling)
-      .catch((err: unknown) => {
-        // 404 or 501 means billing is not configured yet — show "Coming Soon"
-        if (err instanceof ApiError && (err.status === 404 || err.status === 501)) {
-          setBillingUnavailable(true);
+    setIapUnavailable(false);
+    if (!isPurchasesAvailable()) {
+      setIapUnavailable(true);
+      setLoading(false);
+      return;
+    }
+    getOfferings()
+      .then((data) => {
+        if (!data?.current) {
+          setIapUnavailable(true);
         } else {
-          setFetchError(
-            err instanceof Error ? err.message : 'Could not load subscription info.',
-          );
+          setOfferings(data);
         }
+      })
+      .catch((err: unknown) => {
+        setFetchError(err instanceof Error ? err.message : 'Could not load plans.');
       })
       .finally(() => setLoading(false));
   }
 
   useEffect(() => {
     track({ name: 'subscription_screen_viewed' });
-    fetchBilling();
-     
+    fetchOfferings();
   }, []);
 
-  function isValidUrl(url: unknown): url is string {
-    if (typeof url !== 'string' || !url) return false;
-    try {
-      const parsed = new URL(url);
-      return parsed.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  }
+  const monthlyPkg: PurchasesPackage | undefined = offerings?.current?.monthly ?? undefined;
+  const yearlyPkg: PurchasesPackage | undefined =
+    offerings?.current?.annual ?? offerings?.current?.threeMonth ?? undefined;
 
-  async function handleUpgrade(plan: 'pro' | 'premium') {
+  async function handlePurchase(period: 'monthly' | 'yearly') {
+    const pkg = period === 'monthly' ? monthlyPkg : yearlyPkg;
+    if (!pkg) {
+      showToast({
+        message: 'This plan is not available right now. Please try again later.',
+        type: 'error',
+      });
+      return;
+    }
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-    setUpgrading(plan);
+    setUpgrading(period);
     try {
-      const { url } = await createCheckoutSession(plan);
-      if (!isValidUrl(url)) {
-        showToast({ message: 'Invalid checkout URL received.', type: 'error' });
-        return;
+      const result = await purchasePackage(pkg);
+      if (result.ok) {
+        const newPlan = planFromCustomerInfo(result.customerInfo);
+        track({
+          name: 'subscription_upgrade_completed',
+          properties: { plan: newPlan, period },
+        });
+        showToast({ message: 'Welcome to Pro!', type: 'success' });
+      } else if (result.cancelled) {
+        // User cancelled — silent.
+      } else {
+        showToast({ message: result.message, type: 'error' });
       }
-      await WebBrowser.openBrowserAsync(url);
-      track({ name: 'subscription_upgrade_initiated', properties: { plan } });
-      // Refresh status after returning from Stripe
-      const updated = await getBillingStatus();
-      setBilling(updated);
-    } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : 'Upgrade failed. Please try again.', type: 'error' });
     } finally {
       setUpgrading(null);
     }
   }
 
-  async function handleManage() {
+  async function handleRestore() {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setRestoring(true);
     try {
-      const { url } = await createPortalSession();
-      if (!isValidUrl(url)) {
-        showToast({ message: 'Invalid portal URL received.', type: 'error' });
+      const info = await restorePurchases();
+      if (!info) {
+        showToast({ message: 'Restore unavailable. Please try again.', type: 'error' });
         return;
       }
-      await WebBrowser.openBrowserAsync(url);
-      const updated = await getBillingStatus();
-      setBilling(updated);
-    } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : 'Could not open billing portal.', type: 'error' });
+      const restoredPlan = planFromCustomerInfo(info);
+      if (restoredPlan === 'free') {
+        showToast({ message: 'No previous purchases found.', type: 'info' });
+      } else {
+        showToast({ message: `Restored — you're on ${restoredPlan}.`, type: 'success' });
+        track({ name: 'subscription_restored', properties: { plan: restoredPlan } });
+      }
+    } finally {
+      setRestoring(false);
     }
   }
 
-  const currentPlan = billing?.plan ?? 'free';
+  function handleManage() {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    const url =
+      Platform.OS === 'ios'
+        ? 'https://apps.apple.com/account/subscriptions'
+        : 'https://play.google.com/store/account/subscriptions';
+    Linking.openURL(url).catch(() => {
+      showToast({ message: 'Could not open subscriptions page.', type: 'error' });
+    });
+  }
+
+  const isPaid = currentPlan !== 'free';
+  const screenLoading = loading || planLoading;
+
+  const PRO_FEATURES = [
+    '10 purchase mandates',
+    'Deal discovery',
+    'Dossier PDF export',
+    'Condition grading',
+    'Set completion tracker',
+    'Advanced analytics',
+    'No ads',
+    'Priority support',
+  ];
+
+  const monthlyPriceLabel = monthlyPkg?.product.priceString ?? `${settings.currency} 4.99/mo`;
+  const yearlyPriceLabel = yearlyPkg?.product.priceString ?? `${settings.currency} 39.99/yr`;
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={[styles.title, { color: colors.text }]}>Subscription</Text>
 
-        {billing?.status === 'past_due' && (
-          <View style={[styles.warningBanner, { backgroundColor: colors.warning + '15' }]}>
-            <Ionicons name="warning" size={18} color={colors.warning} />
-            <Text style={[styles.warningText, { color: colors.text }]}>{t('subscription.past_due')}</Text>
-          </View>
-        )}
-
-        {billing?.cancel_at_period_end && (
-          <View style={[styles.warningBanner, { backgroundColor: colors.warning + '15' }]}>
-            <Ionicons name="information-circle" size={18} color={colors.muted} />
-            <Text style={[styles.warningText, { color: colors.text }]}>{t('subscription.downgrade_pending')}</Text>
-          </View>
-        )}
-
-        {loading ? (
+        {screenLoading ? (
           <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
-        ) : fetchError ? (
-          // Degraded mode: backend billing fetch failed, but we still render
-          // the plan cards so the user can see the UI (2026-04-19 UX change
-          // — was blocking the whole page with an error card previously).
-          <>
-            <View style={[styles.warningBanner, { backgroundColor: colors.warning + '15' }]}>
-              <Ionicons name="warning-outline" size={18} color={colors.warning} />
-              <Text style={[styles.warningText, { color: colors.text }]}>
-                Couldn't load your current plan. Showing plans in preview mode.{' '}
-                <Text style={{ color: colors.accent }} onPress={fetchBilling}>Retry</Text>
-              </Text>
-            </View>
-            <View style={styles.plans}>
-              <PlanCard
-                name="Free"
-                price={`${settings.currency} 0/mo`}
-                features={['3 purchase mandates', 'Basic valuation', 'Community access']}
-                current={true}
-                colors={colors}
-              />
-              <PlanCard
-                name="Pro"
-                price={`${settings.currency} 4.99/mo`}
-                features={[
-                  '10 purchase mandates',
-                  'Deal discovery',
-                  'Dossier PDF export',
-                  'Condition grading',
-                  'Set completion tracker',
-                  'No ads',
-                  'Priority support',
-                ]}
-                current={false}
-                recommended
-                onSelect={() => handleUpgrade('pro')}
-                loading={upgrading === 'pro'}
-                colors={colors}
-              />
-              <PlanCard
-                name="Premium"
-                price={`${settings.currency} 9.99/mo`}
-                features={[
-                  '50 purchase mandates',
-                  'Deal discovery',
-                  'Dossier PDF export',
-                  'Condition grading',
-                  'Set completion tracker',
-                  'Advanced analytics',
-                  'No ads',
-                  'Priority support',
-                ]}
-                current={false}
-                onSelect={() => handleUpgrade('premium')}
-                loading={upgrading === 'premium'}
-                colors={colors}
-              />
-            </View>
-          </>
-        ) : billingUnavailable ? (
+        ) : iapUnavailable ? (
           <View style={styles.comingSoonSection}>
             <View style={[styles.comingSoonIcon, { backgroundColor: colors.accent + '15' }]}>
               <Ionicons name="rocket-outline" size={40} color={colors.accent} />
             </View>
-            <Text style={[styles.comingSoonTitle, { color: colors.text }]}>{t('subscription.coming_soon')}</Text>
+            <Text style={[styles.comingSoonTitle, { color: colors.text }]}>
+              {t('subscription.coming_soon')}
+            </Text>
             <Text style={[styles.comingSoonText, { color: colors.muted }]}>
-              We're setting up premium plans with advanced analytics, deal discovery, and more. Stay tuned!
+              We're finishing the Pro tier setup. Check back shortly!
             </Text>
           </View>
+        ) : fetchError ? (
+          <>
+            <View style={[styles.warningBanner, { backgroundColor: colors.warning + '15' }]}>
+              <Ionicons name="warning-outline" size={18} color={colors.warning} />
+              <Text style={[styles.warningText, { color: colors.text }]}>
+                Couldn't load plans.{' '}
+                <Text style={{ color: colors.accent }} onPress={fetchOfferings}>
+                  Retry
+                </Text>
+              </Text>
+            </View>
+          </>
         ) : (
           <View style={styles.plans}>
             <PlanCard
@@ -285,55 +271,79 @@ function SubscriptionScreen() {
               colors={colors}
             />
             <PlanCard
-              name="Pro"
-              price={`${settings.currency} 4.99/mo`}
-              features={[
-                '10 purchase mandates',
-                'Deal discovery',
-                'Dossier PDF export',
-                'Condition grading',
-                'Set completion tracker',
-                'No ads',
-                'Priority support',
-              ]}
-              current={currentPlan === 'pro'}
-              recommended={currentPlan === 'free'}
-              onSelect={() => handleUpgrade('pro')}
-              loading={upgrading === 'pro'}
+              name="Pro Monthly"
+              price={monthlyPriceLabel}
+              features={PRO_FEATURES}
+              current={isPaid}
+              recommended={false}
+              onSelect={() => handlePurchase('monthly')}
+              loading={upgrading === 'monthly'}
               colors={colors}
             />
             <PlanCard
-              name="Premium"
-              price={`${settings.currency} 9.99/mo`}
-              features={[
-                '50 purchase mandates',
-                'Deal discovery',
-                'Dossier PDF export',
-                'Condition grading',
-                'Set completion tracker',
-                'Advanced analytics',
-                'No ads',
-                'Priority support',
-              ]}
-              current={currentPlan === 'premium'}
-              recommended={currentPlan === 'pro'}
-              onSelect={() => handleUpgrade('premium')}
-              loading={upgrading === 'premium'}
+              name="Pro Yearly"
+              price={`${yearlyPriceLabel} · save ~33%`}
+              features={PRO_FEATURES}
+              current={false}
+              recommended={!isPaid}
+              onSelect={() => handlePurchase('yearly')}
+              loading={upgrading === 'yearly'}
               colors={colors}
             />
           </View>
         )}
 
-        {billing && currentPlan !== 'free' && (
+        <View style={styles.actionsRow}>
           <AnimatedPressable
-            style={[styles.manageBtn, { borderColor: colors.border }]}
-            onPress={handleManage}
+            style={[styles.secondaryBtn, { borderColor: colors.border }]}
+            onPress={handleRestore}
             accessibilityRole="button"
-            accessibilityLabel={t('subscription.manage_a11y')}
+            accessibilityLabel="Restore previous purchases"
           >
-            <Text style={[styles.manageBtnText, { color: colors.brand.dark }]}>{t('subscription.manage')}</Text>
+            {restoring ? (
+              <ActivityIndicator size="small" color={colors.brand.dark} />
+            ) : (
+              <Text style={[styles.secondaryBtnText, { color: colors.brand.dark }]}>
+                Restore Purchases
+              </Text>
+            )}
           </AnimatedPressable>
-        )}
+
+          {isPaid && (
+            <AnimatedPressable
+              style={[styles.secondaryBtn, { borderColor: colors.border }]}
+              onPress={handleManage}
+              accessibilityRole="button"
+              accessibilityLabel={t('subscription.manage_a11y')}
+            >
+              <Text style={[styles.secondaryBtnText, { color: colors.brand.dark }]}>
+                {t('subscription.manage')}
+              </Text>
+            </AnimatedPressable>
+          )}
+        </View>
+
+        <Text style={[styles.legalText, { color: colors.muted }]}>
+          Subscriptions auto-renew until cancelled. Cancel any time in your{' '}
+          {Platform.OS === 'ios' ? 'Apple ID' : 'Google Play'} subscriptions. Payment is
+          charged to your{' '}
+          {Platform.OS === 'ios' ? 'Apple ID' : 'Google Play'} account on confirmation. By
+          subscribing you agree to our{' '}
+          <Text
+            style={{ color: colors.accent }}
+            onPress={() => Linking.openURL('https://sparrowcollect.com/terms.html')}
+          >
+            Terms
+          </Text>{' '}
+          and{' '}
+          <Text
+            style={{ color: colors.accent }}
+            onPress={() => Linking.openURL('https://sparrowcollect.com/privacy.html')}
+          >
+            Privacy Policy
+          </Text>
+          .
+        </Text>
       </ScrollView>
       <QuickNavBar />
     </View>
@@ -437,16 +447,27 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  manageBtn: {
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 12,
     marginTop: 24,
+  },
+  secondaryBtn: {
+    flex: 1,
     borderWidth: 1,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
-  manageBtnText: {
+  secondaryBtnText: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  legalText: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 20,
+    textAlign: 'center',
   },
   comingSoonSection: {
     alignItems: 'center',

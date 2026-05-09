@@ -41,7 +41,9 @@ type DealEvent =
 
 type SubscriptionEvent =
   | { name: 'subscription_screen_viewed' }
-  | { name: 'subscription_upgrade_initiated'; properties: { plan: string } };
+  | { name: 'subscription_upgrade_initiated'; properties: { plan: string } }
+  | { name: 'subscription_upgrade_completed'; properties: { plan: string; period: 'monthly' | 'yearly' } }
+  | { name: 'subscription_restored'; properties: { plan: string } };
 
 type SponsorEvent =
   | { name: 'sponsor_dashboard_viewed' }

@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBillingStatus, type BillingStatus } from '@/api/collectorsApi';
 import { logger } from '@/lib/logger';
+import {
+  addCustomerInfoUpdateListener,
+  getCustomerInfo,
+  isPurchasesAvailable,
+  planFromCustomerInfo,
+} from '@/lib/purchases';
 
 // Dev override — two ways to flip to a paid tier without real billing:
 //   1. EXPO_PUBLIC_FORCE_PLAN=pro|premium in .env (needs Metro restart)
@@ -81,9 +87,22 @@ export function useBillingLimits() {
   useEffect(() => {
     let mounted = true;
 
+    // RevenueCat is the source of truth for plan tier on iOS/Android.
+    // We subscribe to live entitlement updates and fall back to the BE
+    // billing endpoint when RevenueCat is unconfigured (web, dev without keys).
+    const unsubscribe = addCustomerInfoUpdateListener((info) => {
+      if (!mounted) return;
+      const rcPlan = planFromCustomerInfo(info);
+      if (rcPlan === 'free') return; // don't downgrade FE if BE says otherwise
+      setPlan(rcPlan);
+      setLimits(FORCED_LIMITS[rcPlan]);
+      setLoading(false);
+      setIsForced(false);
+    });
+
     // Check AsyncStorage for a runtime override (native path).
     AsyncStorage.getItem(FORCE_PLAN_KEY)
-      .then((stored) => {
+      .then(async (stored) => {
         if (!mounted) return;
         const asyncVal = (stored || '').toLowerCase();
         const forced = resolveForced(ENV_FORCE_PLAN, asyncVal, getWebLocalStorageOverride());
@@ -94,7 +113,23 @@ export function useBillingLimits() {
           setLoading(false);
           return;
         }
-        // No override → do the real billing fetch
+
+        // RevenueCat customer info first — instant + offline-friendly.
+        if (isPurchasesAvailable()) {
+          const info = await getCustomerInfo();
+          if (!mounted) return;
+          const rcPlan = planFromCustomerInfo(info);
+          if (rcPlan !== 'free') {
+            setPlan(rcPlan);
+            setLimits(FORCED_LIMITS[rcPlan]);
+            setLoading(false);
+            return;
+          }
+          // RevenueCat says free — still hit BE in case the webhook
+          // hasn't fired yet (rare race), or the user paid via a path
+          // we don't yet recognize.
+        }
+
         getBillingStatus()
           .then((status) => {
             if (!mounted) return;
@@ -113,7 +148,10 @@ export function useBillingLimits() {
         if (mounted) setLoading(false);
       });
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   return { plan, limits, loading, isForced };

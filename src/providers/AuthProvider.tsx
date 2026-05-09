@@ -12,6 +12,10 @@ import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
 import { identifyUser, resetAnalytics, track } from '@/analytics/track';
+import {
+  initPurchases,
+  identifyUser as identifyPurchasesUser,
+} from '@/lib/purchases';
 
 /* ---------- Sentry (guarded) ---------- */
 import type { SentryModule } from '@/../types/api';
@@ -66,6 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true;
 
+    initPurchases();
+
     (async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -79,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         if (data.session?.user) {
           identifyUser(data.session.user.id);
+          void identifyPurchasesUser(data.session.user.id);
         }
         await loadProfile(data.session?.user ?? null);
       } catch (e) {
@@ -99,6 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       if (newSession?.user) {
         identifyUser(newSession.user.id);
+        void identifyPurchasesUser(newSession.user.id);
+      } else {
+        void identifyPurchasesUser(null);
       }
       await loadProfile(newSession?.user ?? null);
     });
