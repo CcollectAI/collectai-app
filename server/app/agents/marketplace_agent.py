@@ -261,6 +261,16 @@ class MarketplaceAgent:
                 if adapter_name == "ebay":
                     total_sources += 1
                     tasks.append(("ebay_sold", inst.sold_comps(**kw)))
+                    # eBay Finding API revoked 2026-04-26 — sold_comps now
+                    # returns []. Browse API (search) is still authorised and
+                    # gives active listings, which are the best available
+                    # eBay signal until Marketplace Insights is approved.
+                    # is_sold=False on these rows keeps them distinguishable
+                    # from real sold comps downstream. Without this fallback
+                    # every category bled eBay coverage (2,086→0 for
+                    # action_figures, etc.) for ~14 days.
+                    total_sources += 1
+                    tasks.append(("ebay_listed", inst.search(**kw)))
                 elif adapter_name == "google_shopping":
                     # Google Shopping has no sold comps — skip
                     continue

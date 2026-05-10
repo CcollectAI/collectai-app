@@ -194,12 +194,22 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
 # scrape-cycle waste, and false silent-writer alerts. Re-enable case by
 # case as access is restored. Categories still get coverage via the
 # unrestricted live trio (ebay + vinted + crawl4ai).
+#
+# 2026-05-10 additions (verified dead via live curl probes):
+#   * catawiki — Akamai WAF returns HTTP 403 on buyer API. Was the workhorse
+#     for whiskey/diecast/pens/oop_board_games/vintage_cameras (91/76/95/
+#     186/86 hits per 30d) until ~14 days ago. WAF-level block; not fixable
+#     from our side.
+#   * abebooks — HTTP 200 on search page but prices are now JS-rendered.
+#     Crawl4AI static markdown extraction sees 33 ISBNs + 0 price tokens.
+#     Was 96 comic_books / 30d before going silent.
 DISABLED_ADAPTERS: Set[str] = {
-    "bezel", "booth", "brickeconomy", "bricklink", "chrono24", "comc",
-    "depop", "etsy", "gumtree", "keh", "kleinanzeigen", "ktown4u",
-    "leboncoin", "marktplaats", "masterofmalt", "mavin", "mercari_us",
-    "mpb", "popmart", "pricecharting", "scalemates", "scrapedo",
-    "stockx", "wallapop", "whatnot", "whisky_auctioneer", "130point",
+    "abebooks", "bezel", "booth", "brickeconomy", "bricklink", "catawiki",
+    "chrono24", "comc", "depop", "etsy", "gumtree", "keh", "kleinanzeigen",
+    "ktown4u", "leboncoin", "marktplaats", "masterofmalt", "mavin",
+    "mercari_us", "mpb", "popmart", "pricecharting", "scalemates",
+    "scrapedo", "stockx", "wallapop", "whatnot", "whisky_auctioneer",
+    "130point",
 }
 
 

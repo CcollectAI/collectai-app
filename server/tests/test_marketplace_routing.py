@@ -147,14 +147,13 @@ class TestAdapterServesCategory:
         ("comicbookrealm", "comic_books"),
         ("discogs", "vinyl_records"),
         ("cardmarket", "pokemon"),
-        ("abebooks", "comic_books"),
         ("reverb", "vinyl_records"),
         ("grailed", "sneakers"),
     ])
     def test_known_true_pairs(self, adapter, category):
         assert adapter_serves_category(adapter, category) is True
 
-    # 2026-04-25: 27 adapters de-registered (zero hits in 7d audit).
+    # 2026-04-25 + 2026-05-10: adapters de-registered after live probes.
     # adapter_serves_category returns False even for their declared cats.
     @pytest.mark.parametrize("adapter,category", [
         ("bezel", "watches"),
@@ -167,6 +166,11 @@ class TestAdapterServesCategory:
         ("pricecharting", "retro_games"),
         ("stockx", "sneakers"),
         ("comc", "sportscards"),
+        # 2026-05-10: catawiki Akamai WAF (HTTP 403),
+        # abebooks JS-rendered prices (0 price tokens in HTML).
+        ("catawiki", "whiskey"),
+        ("catawiki", "diecast"),
+        ("abebooks", "comic_books"),
     ])
     def test_disabled_adapters_return_false(self, adapter, category):
         assert adapter in DISABLED_ADAPTERS
