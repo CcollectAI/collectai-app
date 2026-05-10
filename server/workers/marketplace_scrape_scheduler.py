@@ -125,6 +125,12 @@ async def _get_stale_items(conn, batch_size: int):
     # took 286/1060 attempts/24h while action_figures/blind_box/ghibli/pens/
     # keycaps/pop_fandom (0 NULLs left) got 0 attempts for 8-14 days.
     # Same bug we hit in catalog_crawler 2026-04-25 (lorcana drought).
+    #
+    # Tiebreaker uses random() — with batch_size=20 and 8 BOOST cats the
+    # quota is 5, so ORDER BY rn, category alphabetical would always pick
+    # the first 5 (action_figures..pens) and never the last 3 (pop_fandom,
+    # taylor_swift, whiskey). random() rotates the 5-of-8 selection across
+    # cycles; over a day all 8 get roughly equal exposure.
     boost_quota = max(1, int(batch_size * BOOST_SHARE))
     boost_list = sorted(BOOST_CATEGORIES)
     boost = await conn.fetch(
@@ -140,7 +146,7 @@ async def _get_stale_items(conn, batch_size: int):
             WHERE title IS NOT NULL
               AND category = ANY($2::text[])
         ) ranked
-        ORDER BY rn, category
+        ORDER BY rn, random()
         LIMIT $1
         """,
         boost_quota,
