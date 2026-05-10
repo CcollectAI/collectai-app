@@ -118,18 +118,29 @@ async def _get_stale_items(conn, batch_size: int):
     skip_list = sorted(SKIP_CATEGORIES)
 
     # Pass 0: boost — dedicate BOOST_SHARE of the batch to BOOST_CATEGORIES.
-    # Uses NULLS FIRST ordering so unscraped boost items go first, then
-    # oldest-attempted boost items. Without this, the 8 thin categories
-    # share a round-robin queue with 40 healthier ones and never catch up.
+    # Round-robin per category via ROW_NUMBER() PARTITION BY so all 8 cats
+    # share the boost slots fairly. Plain `ORDER BY last_scrape_attempt_at
+    # ASC NULLS FIRST LIMIT N` packs NULL rows together with no tiebreaker,
+    # so heap order picks one cat over the rest — on 2026-05-10 taylor_swift
+    # took 286/1060 attempts/24h while action_figures/blind_box/ghibli/pens/
+    # keycaps/pop_fandom (0 NULLs left) got 0 attempts for 8-14 days.
+    # Same bug we hit in catalog_crawler 2026-04-25 (lorcana drought).
     boost_quota = max(1, int(batch_size * BOOST_SHARE))
     boost_list = sorted(BOOST_CATEGORIES)
     boost = await conn.fetch(
         """
         SELECT id, item_key, title, category
-        FROM public.category_items
-        WHERE title IS NOT NULL
-          AND category = ANY($2::text[])
-        ORDER BY last_scrape_attempt_at ASC NULLS FIRST
+        FROM (
+            SELECT id, item_key, title, category,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY category
+                       ORDER BY last_scrape_attempt_at ASC NULLS FIRST
+                   ) AS rn
+            FROM public.category_items
+            WHERE title IS NOT NULL
+              AND category = ANY($2::text[])
+        ) ranked
+        ORDER BY rn, category
         LIMIT $1
         """,
         boost_quota,
