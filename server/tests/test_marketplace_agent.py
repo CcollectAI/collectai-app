@@ -458,6 +458,9 @@ class TestMarketplaceAgentSoldComps:
             agent._ebay = MagicMock()
             agent._ebay.configured = True
             agent._ebay.sold_comps = AsyncMock(return_value=mock_sold)
+            # Sold-mode now also calls ebay.search() as a fallback (Finding
+            # API revoked 2026-04-26 — Browse remains authorised).
+            agent._ebay.search = AsyncMock(return_value=[])
 
             result = await agent.find_sold_comps("Pokemon Card", category="pokemon")
 
