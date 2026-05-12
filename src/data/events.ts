@@ -155,7 +155,7 @@ export const EVENTS: CollectorsEvent[] = [
   },
   {
     id: 'event-sponsor-demo-1',
-    title: 'CollectAI Launch Party — Sponsored Showcase',
+    title: 'Sparrow Collect Launch Party — Sponsored Showcase',
     kind: 'meetup',
     date: '2026-03-15',
     time: '18:00 CET',
@@ -166,7 +166,7 @@ export const EVENTS: CollectorsEvent[] = [
     hostUserId: 'collector-aurora',
     attendeeIds: ['collector-aurora', 'collector-rune', 'collector-mini'],
     isSponsored: true,
-    sponsorName: 'CollectAI Demo Sponsor',
+    sponsorName: 'Sparrow Collect Demo Sponsor',
     sponsorCompanyId: 'sponsor-demo-1',
   },
 ];

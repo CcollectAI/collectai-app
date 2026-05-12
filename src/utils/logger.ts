@@ -7,7 +7,7 @@
  *   logging service (e.g. Sentry, Datadog) without touching call sites.
  */
 
-const TAG = '[CollectAI]';
+const TAG = '[Sparrow]';
 
 const logger = {
   debug: (...args: unknown[]) => {

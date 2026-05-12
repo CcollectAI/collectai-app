@@ -176,8 +176,7 @@
         "NSRemindersUsageDescription": "Sparrow needs access to reminders to notify you about upcoming events.",
         "NSCameraUsageDescription": "Sparrow needs camera access to scan and photograph your collectibles.",
         "NSLocationWhenInUseUsageDescription": "Sparrow needs your location to find nearby collector events and meetups.",
-        "NSPhotoLibraryUsageDescription": "Sparrow needs access to your photo library to add item photos and analyze screenshots.",
-        "NSUserTrackingUsageDescription": "Sparrow uses anonymous analytics to improve the app experience. No personal data is shared with advertisers."
+        "NSPhotoLibraryUsageDescription": "Sparrow needs access to your photo library to add item photos and analyze screenshots."
       }
     },
     "android": {
