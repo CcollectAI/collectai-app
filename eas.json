@@ -28,6 +28,14 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_MODE": "strict"
       }
+    },
+    "store": {
+      "extends": "production",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_MODE": "strict",
+        "EXPO_PUBLIC_BETA_UNLOCK_ALL": "false"
+      }
     }
   },
   "submit": {
