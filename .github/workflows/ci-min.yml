@@ -44,3 +44,16 @@ jobs:
       # failure across all six locales.
       - name: FE i18n drift check
         run: python3 scripts/audit_fe_i18n_drift.py
+      # Bake worker preflight — same gate that runs as ExecStartPre on
+      # collectai-bake.service. Three checks:
+      #   1. Every worker in _WORKER_MANIFEST imports cleanly (catches
+      #      deploy-side import errors before bake refuses to start).
+      #   2. Every manifest entry has a SCHEDULES row with interval > 0
+      #      (catches the marketplace_scrape_worker silent-skip bug from
+      #      2026-04-17).
+      #   3. Every WORKER_OUTPUTS[*].timestamp_column exists in
+      #      schema.lock.json (catches the catalog_learning_worker
+      #      silent_writer probe bug from 2026-05-01, where the probe
+      #      referenced a non-existent column for 10 days).
+      - name: Bake worker preflight (imports + SCHEDULES + WORKER_OUTPUTS)
+        run: .venv/bin/python scripts/preflight_worker_imports.py

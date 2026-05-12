@@ -1,0 +1,8 @@
+# fastlane Appfile — Sparrow Collect Android
+#
+# Used by `fastlane supply` to push metadata + APK/AAB to Google Play.
+# These constants are non-secret. Service-account key path is loaded
+# from JSON_KEY_FILE env (see Fastfile + scripts/setup_play_store.sh).
+
+json_key_file ENV["FASTLANE_PLAY_JSON_KEY"] || "../sparrow-play-service-account.json"
+package_name  "io.sparrowcollect.app"

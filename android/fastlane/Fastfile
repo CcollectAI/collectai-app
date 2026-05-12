@@ -1,0 +1,64 @@
+# fastlane Fastfile — Sparrow Collect Android
+#
+# Lanes:
+#   internal — upload to Play Console Internal Testing track
+#   beta     — promote internal build to Closed Testing (beta)
+#   metadata — push only the listing copy + screenshots + feature graphic
+#              from android/fastlane/metadata/, no APK
+#
+# Pre-reqs:
+#   1. Google Play Console enrolment ($25 one-time)
+#   2. Service account JSON downloaded from GCP (see scripts/setup_play_store.sh)
+#   3. App created in Play Console with package io.sparrowcollect.app
+#
+# EAS handles the build step. Fastlane is only used for `supply` (upload).
+# Don't call lanes that build APKs locally — EAS is the single source of
+# truth for builds (matches iOS flow).
+
+default_platform(:android)
+
+platform :android do
+  desc "Upload latest EAS AAB to Internal Testing"
+  lane :internal do |options|
+    aab_path = options[:aab] || ENV["AAB_PATH"]
+    unless aab_path && File.exist?(aab_path)
+      UI.user_error!("Pass aab:path or set AAB_PATH. Download with `eas build:download --platform android --latest`.")
+    end
+    upload_to_play_store(
+      aab: aab_path,
+      track: "internal",
+      release_status: "draft",
+      skip_upload_metadata: false,
+      skip_upload_changelogs: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      validate_only: false
+    )
+  end
+
+  desc "Promote Internal build to Closed Testing (beta)"
+  lane :beta do
+    upload_to_play_store(
+      track: "internal",
+      track_promote_to: "beta",
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+  end
+
+  desc "Push metadata (listing + screenshots + feature graphic) without uploading a build"
+  lane :metadata do
+    upload_to_play_store(
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: false,
+      skip_upload_changelogs: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+    )
+  end
+end
