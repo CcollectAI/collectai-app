@@ -1,4 +1,25 @@
-# Sparrow Collect — Tomorrow's User Actions
+# Sparrow Collect — Tomorrow's User Actions  [PARTIALLY DEPRECATED 2026-05-12]
+
+> ⚠️ **Most of this doc has been superseded.** Use **[`docs/PUBLIC_LAUNCH_CHECKLIST.md`](./PUBLIC_LAUNCH_CHECKLIST.md)** as the canonical launch reference.
+>
+> Status of each section as of 2026-05-12:
+> - Section 1 (Cloudflare DNS) — ✅ DONE (`api.sparrowcollect.com` live with SSL)
+> - Section 2 (EC2 SSL + nginx) — ✅ DONE (Certbot, nginx, .env updated)
+> - Section 3 (Apple Developer enrolment) — ✅ DONE 2026-05-07 (Individual / eenmanszaak, NOT Organization as this doc suggested)
+> - Section 4 (ASC record) — ✅ DONE (App ID `6767359453`)
+> - Section 5 (Sign in with Apple service ID) — ⏭️ DEFERRED (not required for v1 beta; email/password auth)
+> - Section 6 (Google Cloud OAuth) — ⏭️ DEFERRED (email/password for beta)
+> - Section 7 (Play Console enrolment) — ⏭️ DEFERRED (iOS-first; Play scaffolded in `android/fastlane/` for phase 2)
+> - Section 8 (Stripe Live Mode) — ❌ OBSOLETE (RevenueCat replaced Stripe 2026-05-09; even RC deferred for beta via `EXPO_PUBLIC_BETA_UNLOCK_ALL=true`). Section already flagged HISTORICAL below.
+> - Section 9 (Supabase Auth) — ⏭️ Partial; redirect URLs sufficient for v1
+> - Section 10 (Supabase hardening) — ⏭️ Pending but not blocking
+> - Section 11 (EAS Secrets) — ✅ DONE (5 vars in EAS production env per `docs/PUBLIC_LAUNCH_CHECKLIST.md`)
+> - Section 12 (eas.json submit creds) — ✅ DONE
+> - Section 13 (App Store metadata) — ✅ DONE (`docs/app-store-aso.md` paste-ready, screenshots rendered)
+>
+> Kept for historical context. New launch work goes in PUBLIC_LAUNCH_CHECKLIST.md.
+
+---
 
 Generated 2026-05-04. Code-side rebrand is in this commit; the rest is on
 you. Steps are ordered so each one unblocks the next. Do them in order.

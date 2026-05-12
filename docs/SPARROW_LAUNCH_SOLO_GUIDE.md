@@ -1,4 +1,19 @@
-# Sparrow Collect — Solo Launch Guide
+# Sparrow Collect — Solo Launch Guide  [DEPRECATED 2026-05-12]
+
+> ⚠️ **This doc is HISTORICAL.** The launch path pivoted significantly between
+> 2026-05-06 (when this was written) and 2026-05-12. Don't follow these
+> steps as-is. Use **[`docs/PUBLIC_LAUNCH_CHECKLIST.md`](./PUBLIC_LAUNCH_CHECKLIST.md)** instead.
+>
+> **Why deprecated:**
+> - TASK 1 (Stripe Live Mode) — **OBSOLETE**. RevenueCat replaced Stripe for IAP on 2026-05-09 (commit `652230a`). For v1 beta, even RevenueCat is deferred (`EXPO_PUBLIC_BETA_UNLOCK_ALL=true`).
+> - TASK 4-7 (D-U-N-S + Apple Dev Organization enrolment) — **WRONG PATH**. Merle enrolled as **Individual** on 2026-05-07 (see memory `project_apple_developer_individual.md`); D-U-N-S is irrelevant for an eenmanszaak.
+> - TASK 2 (Google OAuth) — **DEFERRED** for beta; email/password auth only.
+> - TASK 3 (Google Play) — **DEFERRED**; iOS-first launch, Android ships 1-2 weeks after.
+> - Status block below was accurate for 2026-05-06 but most "waiting on KvK" items resolved 2026-05-07.
+>
+> The content is preserved in case future-you needs the original step-by-step (e.g., a second app under the same KvK might want the D-U-N-S walkthrough). For Sparrow Collect's actual launch, the canonical doc is **[`docs/PUBLIC_LAUNCH_CHECKLIST.md`](./PUBLIC_LAUNCH_CHECKLIST.md)**.
+
+---
 
 **Self-contained step-by-step. Don't need to check in with Claude between steps.**
 
