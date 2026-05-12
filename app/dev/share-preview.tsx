@@ -56,7 +56,20 @@ const SAMPLES = [
   },
 ];
 
-export default function ShareCardPreview() {
+// Production builds: render a 404-style placeholder so an Apple reviewer who
+// somehow deep-links here doesn't see internal scaffolding UI. __DEV__ is
+// inlined at build time by Metro, so the hooks-order rule isn't violated.
+const IS_DEV = typeof __DEV__ !== 'undefined' && __DEV__;
+
+function NotFound() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Not found</Text>
+    </View>
+  );
+}
+
+function DevShareCardPreview() {
   const [idx, setIdx] = useState(0);
   const sample = SAMPLES[idx];
   return (
@@ -81,6 +94,8 @@ export default function ShareCardPreview() {
     </ScrollView>
   );
 }
+
+export default IS_DEV ? DevShareCardPreview : NotFound;
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: '#F1F5F9' },
