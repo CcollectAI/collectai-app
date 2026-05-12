@@ -5,7 +5,7 @@
  * catalog alternatives, and action buttons (retake / add to collection).
  */
 
-import React, { useRef, useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,6 @@ import {
   Platform,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import ViewShot from 'react-native-view-shot';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
@@ -31,7 +30,6 @@ import { useTranslation } from 'react-i18next';
 import { ScanFeedbackPanel } from '@/components/quickscan/ScanFeedbackPanel';
 import { ScanSocialProof } from '@/components/quickscan/ScanSocialProof';
 import { ConditionGradeSelector } from '@/components/quickscan/ConditionGradeSelector';
-import { ShareCard } from '@/components/quickscan/ShareCard';
 import type { QuickScanResult, CatalogAlternative, CurrencyCode } from '@/data/types';
 import logger from '@/utils/logger';
 
@@ -143,7 +141,6 @@ function ScanResultCardInner({
 }: ScanResultCardProps) {
   const { colors } = useAppTheme();
   const { t } = useTranslation();
-  const shareCardRef = useRef<ViewShot>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [showCorrection, setShowCorrection] = useState(false);
 
@@ -153,22 +150,6 @@ function ScanResultCardInner({
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
 
     try {
-      // Try image share first via ViewShot
-      if (shareCardRef.current?.capture) {
-        const uri = await shareCardRef.current.capture();
-        const Sharing = await import('expo-sharing');
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(uri, {
-            mimeType: 'image/png',
-            dialogTitle: t('scan.share_dialog_title'),
-            UTI: 'public.png',
-          });
-          track({ name: 'scan_result_shared', properties: { method: 'image', category: scanResult.attributes.category } });
-          setIsSharing(false);
-          return;
-        }
-      }
-      // Fallback: text share
       const name = scanResult.prediction.name || t('scan.unknown_item');
       const price = scanResult.prediction.estimatedMid;
       const suffix = price > 0 ? t('scan.valued_at', { price: formatPrice(price, currency) }) : '';
@@ -566,24 +547,6 @@ function ScanResultCardInner({
         </View>
       </View>
 
-      {/* Share card suppressed for v1 launch — re-enable after launch by uncommenting. */}
-      {false && (
-        <View style={styles.offScreen} pointerEvents="none">
-          <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 1 }}>
-            <ShareCard
-              itemName={scanResult.prediction.name || t('scan.unknown_item')}
-              category={scanResult.attributes.category}
-              condition={scanResult.attributes.conditionGuess ?? ''}
-              priceMid={priceBandMid}
-              priceLow={priceBandLow}
-              priceHigh={priceBandHigh}
-              currency={currency}
-              imageUri={capturedUri}
-              confidence={scanResult.prediction.confidence}
-            />
-          </ViewShot>
-        </View>
-      )}
     </View>
   );
 }

@@ -744,16 +744,6 @@ function PortfolioScreen() {
 
         {/* Bottom spacing */}
         <View style={{ height: Platform.OS === "ios" ? 24 : 18 }} />
-
-        {/* DEV ONLY: ShareCard preview link — DELETE before production */}
-        {__DEV__ && (
-          <AnimatedPressable
-            onPress={() => router.push('/preview-share-card' as never)}
-            style={{ alignSelf: 'center', marginBottom: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#EF444420', borderRadius: 8 }}
-          >
-            <Text style={{ fontSize: 12, color: '#EF4444', fontWeight: '600' }}>DEV: Preview ShareCard</Text>
-          </AnimatedPressable>
-        )}
         </Animated.View>
       </ScrollView>
 
