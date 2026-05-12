@@ -79,26 +79,32 @@ eas env:create --environment production --variable-name SENTRY_AUTH_TOKEN \
 eas env:delete --environment production --variable-name SENTRY_DISABLE_AUTO_UPLOAD \
   --non-interactive 2>/dev/null || true
 
-# Generate the sentry.properties file the React Native plugin looks for.
-# This stays out of git because it can contain the auth token in some
-# integrations; ours uses env vars but the file's still required.
-SENTRY_PROPS="$(pwd)/ios/sentry.properties"
-cat > "$SENTRY_PROPS" <<EOF
-defaults.url=https://sentry.io/
-defaults.org=$SENTRY_ORG
-defaults.project=$SENTRY_PROJECT
-auth.token=$SENTRY_AUTH_TOKEN
-EOF
-chmod 600 "$SENTRY_PROPS"
-echo
-echo "Wrote $SENTRY_PROPS (chmod 600 — keep out of git)."
-
-# Make sure sentry.properties is gitignored
+# NOTE — we deliberately do NOT write ios/sentry.properties here anymore.
+# eas-build-post-install.sh (in the repo root) generates that file at
+# build time on EAS servers from the same env vars. That keeps secrets
+# out of your local working tree and avoids drift between dev + CI.
+#
+# Make sure sentry.properties is gitignored so any stray local file (e.g.
+# from a previous run of this script) doesn't end up committed.
 if ! grep -q "^ios/sentry.properties$" .gitignore 2>/dev/null; then
   echo "ios/sentry.properties" >> .gitignore
   echo "Added ios/sentry.properties to .gitignore."
 fi
+if ! grep -q "^android/sentry.properties$" .gitignore 2>/dev/null; then
+  echo "android/sentry.properties" >> .gitignore
+fi
 
 echo
-echo "Done. Next EAS build will upload source maps to Sentry."
-echo "Verify after first build: sentry.io → your project → Releases → look for the version."
+echo "Done. Next steps:"
+echo
+echo "1. The next \`eas build\` will trigger eas-build-post-install.sh,"
+echo "   which generates ios/sentry.properties from these env vars on"
+echo "   the build VM. Source maps then upload during the build."
+echo
+echo "2. For commit→release tagging, also add the same secrets to GitHub"
+echo "   Actions: Settings → Secrets and variables → Actions → New repository"
+echo "   secret. Add SENTRY_ORG, SENTRY_PROJECT, SENTRY_AUTH_TOKEN."
+echo "   The .github/workflows/sentry-release.yml workflow will then auto-tag"
+echo "   a Sentry release on each push to main / feature/all-enhancements."
+echo
+echo "3. Verify after first build: sentry.io → your project → Releases."

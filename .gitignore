@@ -75,3 +75,5 @@ _archive/
 # Patch files
 *.patch
 bake.pid
+ios/sentry.properties
+android/sentry.properties
