@@ -22,6 +22,14 @@ const ENV_FORCE_PLAN = (
   (typeof process !== 'undefined' && (process as { env?: Record<string, string | undefined> }).env?.EXPO_PUBLIC_FORCE_PLAN) || ''
 ).toLowerCase();
 
+// Beta-unlock mode — distinct from FORCE_PLAN. When set, every user gets Pro
+// limits and the subscription UI advertises beta access instead of paid plans.
+// Flip with EXPO_PUBLIC_BETA_UNLOCK_ALL=true in EAS env. Off-switch is a single
+// env var change + rebuild — no code edits needed when monetisation goes live.
+export const BETA_UNLOCK_ALL = (
+  (typeof process !== 'undefined' && (process as { env?: Record<string, string | undefined> }).env?.EXPO_PUBLIC_BETA_UNLOCK_ALL) || ''
+).toLowerCase() === 'true';
+
 function getWebLocalStorageOverride(): string {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
@@ -76,15 +84,21 @@ function resolveForced(envVal: string, storageVal: string, webVal: string): 'pro
 }
 
 export function useBillingLimits() {
+  // Beta-unlock short-circuit. Pro limits + 'pro' tier for every install, no
+  // RevenueCat / BE calls. Distinct from FORCE_PLAN so beta builds can ship
+  // without inheriting the dev-override semantics or storage lookups.
   const initialForced = resolveForced(ENV_FORCE_PLAN, '', getWebLocalStorageOverride());
-  const [plan, setPlan] = useState<BillingStatus['plan']>(initialForced ?? 'free');
-  const [limits, setLimits] = useState<BillingStatus['limits']>(
-    initialForced ? FORCED_LIMITS[initialForced] : DEFAULT_LIMITS,
+  const [plan, setPlan] = useState<BillingStatus['plan']>(
+    BETA_UNLOCK_ALL ? 'pro' : (initialForced ?? 'free'),
   );
-  const [loading, setLoading] = useState(!initialForced);
+  const [limits, setLimits] = useState<BillingStatus['limits']>(
+    BETA_UNLOCK_ALL ? FORCED_LIMITS.pro : (initialForced ? FORCED_LIMITS[initialForced] : DEFAULT_LIMITS),
+  );
+  const [loading, setLoading] = useState(BETA_UNLOCK_ALL ? false : !initialForced);
   const [isForced, setIsForced] = useState(Boolean(initialForced));
 
   useEffect(() => {
+    if (BETA_UNLOCK_ALL) return; // beta = no RevenueCat / BE listeners
     let mounted = true;
 
     // RevenueCat is the source of truth for plan tier on iOS/Android.
@@ -154,5 +168,5 @@ export function useBillingLimits() {
     };
   }, []);
 
-  return { plan, limits, loading, isForced };
+  return { plan, limits, loading, isForced, isBetaUnlocked: BETA_UNLOCK_ALL };
 }

@@ -45,6 +45,10 @@ OPTIONAL=(
   EXPO_PUBLIC_SENTRY_DSN
   EXPO_PUBLIC_REVENUECAT_IOS_KEY
   EXPO_PUBLIC_REVENUECAT_ANDROID_KEY
+  # Set to "true" for beta builds — every install gets Pro features for free
+  # and the paywall renders as a beta info card. Off-switch is unsetting this
+  # var. See src/hooks/useBillingLimits.ts:BETA_UNLOCK_ALL.
+  EXPO_PUBLIC_BETA_UNLOCK_ALL
 )
 
 echo "=== Required EXPO_PUBLIC_* vars ==="

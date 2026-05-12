@@ -10,7 +10,7 @@
 
 ### App Name (30 chars max)
 ```
-Sparrow Collect: Collection Tracker
+Sparrow Collect
 ```
 
 ### Subtitle (30 chars max)
@@ -100,7 +100,7 @@ Fresh updates to make your collection tracking even smoother:
 
 ### App Name (30 chars max)
 ```
-Sparrow Collect - Price & Value Guide
+Sparrow Collect
 ```
 
 ### Short Description (80 chars max)
@@ -185,9 +185,11 @@ Words indexed from title + subtitle + keywords combined:
 
 | Source | Words Indexed |
 |--------|--------------|
-| Title | Sparrow Collect, Collection, Tracker |
+| Title | Sparrow, Collect |
 | Subtitle | Scan, Value, Track |
 | Keywords | collectibles, cards, TCG, funko, lego, vinyl, watch, identify, appraisal, hobby, portfolio, grading, price, guide |
+
+Note: shortened title to 15 chars dropped "Collection" and "Tracker" from the indexed bag. "Track" still comes via the subtitle. If category search rank suffers post-launch, replace `hobby` with `tracker` in keywords (still ≤100 chars).
 
 **Apple combines these to match searches like:**
 - "collectibles tracker" ✓
@@ -612,3 +614,159 @@ For the opening line of both iOS and Google Play descriptions, lead with a factu
 > Sparrow Collect is an AI-powered app that scans and values collectibles across 54 categories using 37 marketplace data sources. Snap a photo — get instant identification, condition grading, and real-time market value.
 
 This helps Apple Intelligence / Google on-device AI surface the app when users ask "is there an app that values collectibles."
+
+---
+
+## App Privacy Nutrition Label (ASC → App Information → App Privacy)
+
+> Answer Apple's questionnaire honestly. Values below are derived from the actual code: PostHog analytics (`src/analytics/track.ts`), Sentry crash reports, Supabase auth + storage, camera/photo capture, optional location for nearby events, optional calendar/reminders.
+
+### Section 1: Do you collect data from this app?
+**Yes.**
+
+### Section 2: Data Types collected
+
+For each row: ✅ collected, what it's linked to, used for what, used to track you across apps (Y/N).
+
+| Data type | Linked to user | Used for | Used to track | Notes |
+|---|---|---|---|---|
+| **Email Address** | Yes | App Functionality, Account | No | Supabase auth account creation |
+| **Name** | Yes | App Functionality | No | Optional display name |
+| **User ID** | Yes | App Functionality, Analytics | No | Supabase UUID + PostHog distinct_id |
+| **Photos** | Yes | App Functionality | No | User-captured collectible photos, stored in Supabase Storage |
+| **Camera** | Yes | App Functionality | No | Live scan flow (not stored unless user saves) |
+| **Coarse Location** | Yes | App Functionality | No | Optional — only when user opts in to "find nearby events" |
+| **Purchase History** | Yes | App Functionality, Analytics | No | RevenueCat entitlements. Empty during beta-unlock. |
+| **Product Interaction** | Yes | Analytics, Product Personalization | No | PostHog events (`quickscan_started`, item adds, etc.) |
+| **Crash Data** | Yes | App Functionality | No | Sentry |
+| **Performance Data** | Yes | App Functionality | No | Sentry |
+| **Diagnostics** | Yes | App Functionality | No | Sentry |
+| **Device ID** | No (anonymous) | Analytics | No | PostHog distinct_id, NOT IDFA. App does not request ATT. |
+
+### Section 3: NOT collected
+
+Explicitly DO NOT collect — answer "No" if Apple asks:
+- Health & Fitness
+- Financial Info (no payment data — Apple handles via IAP)
+- Contacts
+- Browsing History
+- Search History (out of app)
+- Audio / Voice
+- Sensitive Info
+- Other Diagnostic Data beyond Sentry
+
+### Section 4: Tracking
+
+**Are users tracked across apps and websites owned by other companies?** **No.**
+- App does NOT integrate IDFA / third-party ad SDKs
+- No `expo-tracking-transparency` calls (no ATT prompt needed)
+- The `NSUserTrackingUsageDescription` string in app.json is defensive boilerplate from Expo defaults — safe to leave, but the answer is still "No"
+
+### Section 5: Privacy policy URL
+
+```
+https://sparrowcollect.com/privacy.html
+```
+
+---
+
+## App Review Information (ASC → App Review Information)
+
+### Demo account (Apple's reviewer logs in with this)
+
+Create this account in Supabase BEFORE submitting:
+
+```
+Email:    apple-review@sparrowcollect.com
+Password: SparrowReview2026!
+```
+
+Set up steps:
+1. Supabase Dashboard → Authentication → Users → "Add user" → Create new user
+2. Enter email + password above
+3. Set `email_confirmed_at` to now (or click "Send Magic Link" then confirm)
+4. (Optional) In the `auth.users` row, set `raw_user_meta_data` to `{"full_name": "Apple Reviewer"}`
+5. Verify you can sign in via TestFlight build with these credentials
+
+### Contact information
+
+| Field | Value |
+|---|---|
+| First name | Merle |
+| Last name | Slendebroek |
+| Phone | (use the number on your Apple Developer account) |
+| Email | apple@sparrowcollect.com |
+
+### Notes for reviewer (free-text box)
+
+```
+Sparrow Collect is currently in private beta. To simplify review, every install
+of this build receives full Pro feature access — there is no paywall, no
+in-app purchase flow, and no payment data collection. The RevenueCat
+integration in the codebase is configured but not active in this build (controlled
+by the EXPO_PUBLIC_BETA_UNLOCK_ALL environment flag).
+
+To test core flows:
+1. Sign in with apple-review@sparrowcollect.com / SparrowReview2026!
+2. The home screen shows your collection (seeded with 3 demo items).
+3. Tap "Quick Scan" to test the camera-based item identification flow.
+   Any collectible photo (cards, figures, vinyl, watches) will be processed
+   by our AI vision model and matched against our 140K-item catalog.
+4. Tap any item to see the price prediction view (low/mid/high range pulled
+   from 37 marketplace data sources).
+5. The "Subscription" tab in Settings displays a beta-mode info card
+   instead of plan selection — this is intentional during the beta.
+
+If the AI identification times out, the app falls back to a manual category
+picker — both paths are exercised in the demo flow. Contact us at
+apple@sparrowcollect.com if you need a different test path.
+```
+
+### Attachment
+
+Apple sometimes asks for a 30-60 second demo video of the scan flow. If they do:
+- Record screen on a TestFlight build
+- Show: launch → scan → identify → save → portfolio view
+- Upload as MP4 or MOV
+
+---
+
+## Legal Entity & Trade Representative (ASC → App Information)
+
+> Apple requires a real business address for the App Store listing. Memory notes flag the current placeholder.
+
+| Field | Value to enter |
+|---|---|
+| Legal entity name | Merle Slendebroek (KvK 99596326) — eenmanszaak / sole proprietor |
+| Country/region | Netherlands |
+| Address line 1 | Ertskade 74 |
+| Address line 2 | — |
+| City | Amsterdam |
+| Province | Noord-Holland |
+| Postal code | 1019 BB |
+| Phone | (same as Apple Developer account) |
+| Trade representative contact email | `apple@sparrowcollect.com` |
+
+These match the values already published in `web/privacy.html`, `web/terms.html`,
+and `web/user-policy.html` (all show `Sparrow Collect, Ertskade 74, 1019 BB
+Amsterdam, The Netherlands, KvK: 99596326`). No updates needed on the web side.
+TestFlight does NOT require any of this — only public App Store submission does.
+
+---
+
+## Summary: Pre-submission checklist for Phase 2 (public App Store launch)
+
+| Item | Source of truth | Status |
+|---|---|---|
+| App name (≤30 chars) | `Sparrow Collect` (above) | ✅ Ready |
+| Subtitle | `Scan, Value & Track` | ✅ Ready |
+| Keywords | line 23 of this doc | ✅ Ready |
+| Promo text | line 28 of this doc | ✅ Ready |
+| Description | line 33 of this doc | ✅ Ready |
+| Screenshots ×6 | `collectai-admin/video/out/screenshots/` | ✅ Ready |
+| Paywall mock screenshot | `~/Desktop/sparrow_paywall_1290x2796.png` | ✅ Ready |
+| App Privacy nutrition labels | this doc, "App Privacy Nutrition Label" section | ✅ Drafted |
+| Demo reviewer account | Create in Supabase: `apple-review@sparrowcollect.com` | ⏳ User to create before submit |
+| Reviewer notes text | this doc, "Notes for reviewer" section | ✅ Drafted |
+| Legal entity address | this doc, "Legal Entity" table | ✅ Ready (Ertskade 74, 1019 BB Amsterdam, KvK 99596326) |
+| Web legal pages with real address | `web/privacy.html`, `web/terms.html`, `web/user-policy.html` | ✅ Already correct |

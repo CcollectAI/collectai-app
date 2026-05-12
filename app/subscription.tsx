@@ -110,7 +110,7 @@ function SubscriptionScreen() {
   const { settings } = useSettings();
   const { colors } = useAppTheme();
   const { showToast } = useToast();
-  const { plan: currentPlan, loading: planLoading } = useBillingLimits();
+  const { plan: currentPlan, loading: planLoading, isBetaUnlocked } = useBillingLimits();
 
   const [offerings, setOfferings] = useState<Offerings>(null);
   const [loading, setLoading] = useState(true);
@@ -237,6 +237,20 @@ function SubscriptionScreen() {
 
         {screenLoading ? (
           <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
+        ) : isBetaUnlocked ? (
+          <View style={styles.comingSoonSection}>
+            <View style={[styles.comingSoonIcon, { backgroundColor: colors.accent + '15' }]}>
+              <Ionicons name="sparkles-outline" size={40} color={colors.accent} />
+            </View>
+            <Text style={[styles.comingSoonTitle, { color: colors.text }]}>
+              You're in the Sparrow beta
+            </Text>
+            <Text style={[styles.comingSoonText, { color: colors.muted }]}>
+              Every Pro feature is unlocked for free while we're testing.
+              Pricing arrives after the beta — you'll get a heads-up before
+              anything changes.
+            </Text>
+          </View>
         ) : iapUnavailable ? (
           <View style={styles.comingSoonSection}>
             <View style={[styles.comingSoonIcon, { backgroundColor: colors.accent + '15' }]}>
@@ -293,36 +307,39 @@ function SubscriptionScreen() {
           </View>
         )}
 
-        <View style={styles.actionsRow}>
-          <AnimatedPressable
-            style={[styles.secondaryBtn, { borderColor: colors.border }]}
-            onPress={handleRestore}
-            accessibilityRole="button"
-            accessibilityLabel="Restore previous purchases"
-          >
-            {restoring ? (
-              <ActivityIndicator size="small" color={colors.brand.dark} />
-            ) : (
-              <Text style={[styles.secondaryBtnText, { color: colors.brand.dark }]}>
-                Restore Purchases
-              </Text>
-            )}
-          </AnimatedPressable>
-
-          {isPaid && (
+        {!isBetaUnlocked && (
+          <View style={styles.actionsRow}>
             <AnimatedPressable
               style={[styles.secondaryBtn, { borderColor: colors.border }]}
-              onPress={handleManage}
+              onPress={handleRestore}
               accessibilityRole="button"
-              accessibilityLabel={t('subscription.manage_a11y')}
+              accessibilityLabel="Restore previous purchases"
             >
-              <Text style={[styles.secondaryBtnText, { color: colors.brand.dark }]}>
-                {t('subscription.manage')}
-              </Text>
+              {restoring ? (
+                <ActivityIndicator size="small" color={colors.brand.dark} />
+              ) : (
+                <Text style={[styles.secondaryBtnText, { color: colors.brand.dark }]}>
+                  Restore Purchases
+                </Text>
+              )}
             </AnimatedPressable>
-          )}
-        </View>
 
+            {isPaid && (
+              <AnimatedPressable
+                style={[styles.secondaryBtn, { borderColor: colors.border }]}
+                onPress={handleManage}
+                accessibilityRole="button"
+                accessibilityLabel={t('subscription.manage_a11y')}
+              >
+                <Text style={[styles.secondaryBtnText, { color: colors.brand.dark }]}>
+                  {t('subscription.manage')}
+                </Text>
+              </AnimatedPressable>
+            )}
+          </View>
+        )}
+
+        {!isBetaUnlocked && (
         <Text style={[styles.legalText, { color: colors.muted }]}>
           Subscriptions auto-renew until cancelled. Cancel any time in your{' '}
           {Platform.OS === 'ios' ? 'Apple ID' : 'Google Play'} subscriptions. Payment is
@@ -344,6 +361,7 @@ function SubscriptionScreen() {
           </Text>
           .
         </Text>
+        )}
       </ScrollView>
       <QuickNavBar />
     </View>

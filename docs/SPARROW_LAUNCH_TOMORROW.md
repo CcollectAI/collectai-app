@@ -169,7 +169,16 @@ Create a **service account** for `eas submit`:
 
 ---
 
-## 8. Stripe Live Mode (~30 min)
+## 8. ~~Stripe Live Mode~~ — OBSOLETE 2026-05-11
+
+> **DO NOT FOLLOW THIS SECTION.** Stripe is no longer the IAP path. The app
+> shipped RevenueCat StoreKit integration on 2026-05-09 (commit `652230a`),
+> and the beta build uses `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` to skip the
+> paywall entirely. Sections 8 and 11's Google client-ID pushes are also
+> deferred for beta. See `docs/app-store-aso.md` for the current launch
+> checklist. Leaving the original text below for historical reference only.
+
+### Stripe Live Mode (~30 min) [HISTORICAL — DO NOT FOLLOW]
 
 stripe.com/dashboard → toggle to **Live Mode** (top-right).
 
