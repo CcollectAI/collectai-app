@@ -239,6 +239,20 @@ ASC → App Information → **App Review Information**.
 
 ---
 
+### Phase 7.5 — Pre-flight validation (~30s, run before submit)
+
+Catch length-limit violations + bundle-size issues BEFORE Apple does:
+
+```bash
+cd /Users/merle/GitHub/CcollectAI
+node scripts/check-asc-listing.mjs   # validates app-store-aso.md fields
+node scripts/analyze-bundle.mjs --cached  # bundle weight check
+```
+
+The listing checker caught a real bug (Play Short Description 83/80 chars) when first run on 2026-05-12. If either script exits non-zero, fix before Phase 8.
+
+---
+
 ### Phase 8 — Submit for review
 
 ASC → **App Store** tab → Prepare for Submission → at the bottom click **"Add for Review"** → confirm.

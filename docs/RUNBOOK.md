@@ -203,6 +203,24 @@ eas build:list --limit 1 --json --non-interactive | grep -i profile
 3. Reply IN ASC, not via email — Apple's review queue requires their thread
 4. Re-submit (no new build needed for metadata fixes; new build for code fixes)
 
+### Pre-submission verification
+
+Run BEFORE pasting metadata into ASC. Catches length-limit violations
+that would cause an immediate auto-rejection:
+
+```bash
+node scripts/check-asc-listing.mjs
+# Validates docs/app-store-aso.md against Apple + Play caps.
+# Exit 0 if all good, 1 if any field is over-limit or missing.
+```
+
+Bundle size sanity check (Apple warns at 100 MB, WiFi-only-install at 200 MB):
+
+```bash
+node scripts/analyze-bundle.mjs --cached
+# Or omit --cached to do a fresh `expo export` first.
+```
+
 ---
 
 ## 7. Slowness
