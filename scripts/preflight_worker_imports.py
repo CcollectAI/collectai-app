@@ -82,6 +82,60 @@ def check_manifest_vs_schedules(manifest: list[tuple[str, str, str]]) -> list[di
     return issues
 
 
+def check_worker_outputs_vs_schema_lock() -> list[dict]:
+    """Each WORKER_OUTPUTS entry must reference a (table, timestamp_column)
+    that exists in schema.lock.json.
+
+    Catches the bug class that wasted 10 days of silent_writer probe runs
+    starting 2026-05-01: the probe SQL referenced category_candidates.updated_at
+    which doesn't exist, so the probe errored every cycle with a harmless-looking
+    WARNING — masking real silent-writer signal behind a config typo. The
+    catalog_learning_worker probe never actually checked anything.
+
+    Expression columns (anything with non-identifier characters) are skipped
+    here — they're impossible to validate against a flat column list, and the
+    only one we have (aggregate_catalog_attributes' JSONB watermark expression)
+    is exercised inside run_once via the probe SQL anyway.
+    """
+    import json
+    from pathlib import Path
+
+    issues: list[dict] = []
+    try:
+        from app.lib.worker_output_registry import WORKER_OUTPUTS
+    except Exception as e:
+        return [{"name": "<import>", "ok": False,
+                 "error": f"cannot import WORKER_OUTPUTS: {e}"}]
+
+    lock_path = Path(REPO_ROOT) / "scripts" / "schema.lock.json"
+    try:
+        lock = json.loads(lock_path.read_text())
+    except Exception as e:
+        return [{"name": "<schema.lock>", "ok": False,
+                 "error": f"cannot read schema.lock.json: {e}"}]
+
+    tables = lock.get("tables") or {}
+
+    for worker_name, out in WORKER_OUTPUTS.items():
+        col = out.timestamp_column
+        # Skip expressions — they don't map to a single column name.
+        if not col.replace("_", "").isalnum():
+            continue
+        cols = tables.get(out.table)
+        if cols is None:
+            issues.append({
+                "name": worker_name, "ok": False,
+                "error": f"WORKER_OUTPUTS table '{out.table}' missing from schema.lock",
+            })
+            continue
+        if col not in cols:
+            issues.append({
+                "name": worker_name, "ok": False,
+                "error": f"WORKER_OUTPUTS '{out.table}.{col}' — column not in schema.lock",
+            })
+    return issues
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="Bake worker import pre-flight")
     p.add_argument("--json", action="store_true", help="emit JSON")
@@ -106,13 +160,20 @@ def main() -> int:
         schedule_issues = [{"name": "<all>", "ok": False,
                             "error": f"cannot import SCHEDULES: {e}"}]
 
+    try:
+        output_issues = check_worker_outputs_vs_schema_lock()
+    except Exception as e:
+        output_issues = [{"name": "<all>", "ok": False,
+                          "error": f"cannot validate WORKER_OUTPUTS: {e}"}]
+
     if args.json:
         print(json.dumps({
-            "ok": not failed and not schedule_issues,
+            "ok": not failed and not schedule_issues and not output_issues,
             "total": len(results),
             "failed": len(failed),
             "workers": results,
             "schedule_issues": schedule_issues,
+            "output_issues": output_issues,
         }, indent=2))
     else:
         print("─" * 72)
@@ -138,10 +199,19 @@ def main() -> int:
             print()
             print("Add a row to SCHEDULES in server/app/worker_registry.py.")
             print("─" * 72)
-        print(f"  verdict: {'PASS' if (not failed and not schedule_issues) else 'FAIL'}")
+        if output_issues:
+            print(f"❌ WORKER_OUTPUTS↔schema.lock drift ({len(output_issues)}):")
+            for s in output_issues:
+                print(f"  ✗ {s['name']:<35} {s['error']}")
+            print()
+            print("Fix the WorkerOutput entry in server/app/lib/worker_output_registry.py")
+            print("or regen schema.lock.json if the column was renamed/added.")
+            print("─" * 72)
+        verdict_pass = not failed and not schedule_issues and not output_issues
+        print(f"  verdict: {'PASS' if verdict_pass else 'FAIL'}")
         print("─" * 72)
 
-    return 0 if (not failed and not schedule_issues) else 1
+    return 0 if (not failed and not schedule_issues and not output_issues) else 1
 
 
 if __name__ == "__main__":

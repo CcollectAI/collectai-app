@@ -82,13 +82,32 @@ WORKER_OUTPUTS: dict[str, WorkerOutput] = {
         # when this worker ran, so SILENT WRITER kept paging despite the
         # worker doing its actual job correctly. Track category_candidates
         # instead — that's what this worker actually populates / promotes.
+        # `category_candidates` has no `updated_at`; the writer bumps
+        # `last_seen` on every ON CONFLICT update, so that's the column the
+        # probe must read. Pre-fix the probe SQL errored every cycle with
+        # `column "updated_at" does not exist`, masking real silent-writer
+        # signal behind a harmless-looking warning.
         table="category_candidates",
-        timestamp_column="updated_at",
+        timestamp_column="last_seen",
         max_staleness_hours=24.0,
-        # Only flag if there are pending catalog_suggestions to process.
+        # Worker Step 2 only writes when ≥2 pending suggestions exist for a
+        # *new* category (one not already in category_items). Without those
+        # two conditions, 0 candidate rows is the correct outcome. Earlier
+        # gate just counted any pending row, which fired a false-positive
+        # silent_writer alert pre-launch with 1 demo suggestion.
         input_exists_sql=(
-            "SELECT COUNT(*) AS cnt FROM public.catalog_suggestions "
-            "WHERE status IN ('pending','new_category')"
+            "SELECT COUNT(*) AS cnt FROM ("
+            "  SELECT suggested_category"
+            "    FROM public.catalog_suggestions"
+            "   WHERE status IN ('pending','new_category')"
+            "     AND suggested_category IS NOT NULL"
+            "     AND suggested_category NOT IN ("
+            "       SELECT DISTINCT category FROM public.category_items"
+            "        WHERE category IS NOT NULL"
+            "     )"
+            "   GROUP BY suggested_category"
+            "  HAVING count(*) >= 2"
+            ") t"
         ),
     ),
     "catalog_crawler_worker": WorkerOutput(
