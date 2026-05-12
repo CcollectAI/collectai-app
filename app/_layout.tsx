@@ -75,6 +75,8 @@ try {
 }
 
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
+import { scrubSentryEvent, scrubSentryBreadcrumb } from '@/lib/sentryScrub';
+
 let Sentry: { init: (opts: Record<string, unknown>) => void; wrap: (component: React.ComponentType) => React.ComponentType } | null = null;
 try {
   Sentry = require("@sentry/react-native");
@@ -87,6 +89,30 @@ if (Sentry && SENTRY_DSN) {
   Sentry.init({
     dsn: SENTRY_DSN,
     tracesSampleRate: 0.1,
+    // PII scrubbing — strip emails, tokens, auth headers from any captured
+    // event before it leaves the device. Privacy nutrition labels declare
+    // we don't share PII for tracking; the beforeSend hook enforces it.
+    // Whitelist approach: only user.id is kept (set in AuthProvider.tsx
+    // via Sentry.setUser({ id })); everything else gets pattern-scrubbed.
+    beforeSend: (event: Record<string, any>) => {
+      try {
+        return scrubSentryEvent(event);
+      } catch {
+        // If scrubbing itself throws, drop the event — better to lose
+        // a crash report than ship raw PII.
+        return null;
+      }
+    },
+    beforeBreadcrumb: (breadcrumb: Record<string, any>) => {
+      try {
+        return scrubSentryBreadcrumb(breadcrumb);
+      } catch {
+        return null;
+      }
+    },
+    // Block Sentry SDK from auto-attaching user agent / IP. We override
+    // user via setUser({id}) explicitly in AuthProvider.
+    sendDefaultPii: false,
   });
 }
 

@@ -105,7 +105,7 @@ Sparrow Collect
 
 ### Short Description (80 chars max)
 ```
-Scan any collectible with AI. Instant identification, pricing & portfolio tracking.
+Scan any collectible. AI-powered pricing, identification & portfolio tracking.
 ```
 
 ### Full Description (4000 chars max)

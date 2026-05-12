@@ -21,6 +21,7 @@ import { PrivacySettingsSection } from '@/components/settings/PrivacySettingsSec
 import { AppearanceSection } from '@/components/settings/AppearanceSection';
 import { ProfileEditSection } from '@/components/settings/ProfileEditSection';
 import { DevForcePlanSection } from '@/components/settings/DevForcePlanSection';
+import { DevSentryCrashSection } from '@/components/settings/DevSentryCrashSection';
 import { MarketplaceConnectionsSection } from '@/components/settings/MarketplaceConnectionsSection';
 
 export default function Settings() {
@@ -104,6 +105,9 @@ export default function Settings() {
 
       {/* Dev-only: Force subscription tier (for previewing paid views) */}
       <DevForcePlanSection />
+
+      {/* Dev-only: Sentry test buttons (verify PII scrubbing pipeline) */}
+      <DevSentryCrashSection />
 
       {/* About Section */}
       <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
