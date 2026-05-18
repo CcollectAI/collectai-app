@@ -69,7 +69,7 @@ function handleConnectivityChange(online: boolean): void {
 export async function isDeviceOnline(): Promise<boolean> {
   try {
     const state = await Network.getNetworkStateAsync();
-    return state.isInternetReachable ?? state.isConnected ?? true;
+    return state.isConnected !== false;
   } catch {
     return true; // optimistic fallback
   }
@@ -86,11 +86,14 @@ export function useNetworkStatus(): NetworkStatus {
   useEffect(() => {
     let mounted = true;
 
+    // isConnected only — isInternetReachable returns false transiently on iOS mid-probe (TestFlight #9 false-positive).
+    const computeOnline = (state: Network.NetworkState) => state.isConnected !== false;
+
     // Initial check
     Network.getNetworkStateAsync()
       .then((state) => {
         if (mounted) {
-          const online = state.isInternetReachable ?? state.isConnected ?? true;
+          const online = computeOnline(state);
           setIsOnline(online);
           handleConnectivityChange(online);
           prevOnline.current = online;
@@ -98,17 +101,15 @@ export function useNetworkStatus(): NetworkStatus {
       })
       .catch((err) => {
         logger.warn('[useNetworkStatus] initial check failed:', err);
-        // Assume online on error
         if (mounted) setIsOnline(true);
       });
 
     // Periodic polling (expo-network does not expose a subscription listener)
-    // Poll every 10 seconds to detect connectivity changes.
     const interval = setInterval(async () => {
       try {
         const state = await Network.getNetworkStateAsync();
         if (mounted) {
-          const online = state.isInternetReachable ?? state.isConnected ?? true;
+          const online = computeOnline(state);
           setIsOnline(online);
           handleConnectivityChange(online);
           prevOnline.current = online;

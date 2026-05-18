@@ -104,14 +104,27 @@ export function classifyOnDevice(
 /**
  * Get the user's category distribution from their collection.
  * Call once and cache.
+ *
+ * When `followedCategories` is supplied (from onboarding picks), each followed
+ * category receives a small synthetic count so it acts as a prior for new
+ * users with an empty collection — otherwise their followed picks would be
+ * ignored by the edge classifier on the very first scan.
  */
 export function buildCategoryDistribution(
   items: { category: string }[],
+  followedCategories?: string[],
 ): UserCategoryDistribution {
   const dist: UserCategoryDistribution = {};
   for (const item of items) {
     if (item.category) {
       dist[item.category] = (dist[item.category] || 0) + 1;
+    }
+  }
+  if (followedCategories) {
+    // Synthetic prior: 1 per followed category. Real items dominate this for
+    // active collectors; for a first-scan user this is the only signal.
+    for (const slug of followedCategories) {
+      dist[slug] = (dist[slug] || 0) + 1;
     }
   }
   return dist;

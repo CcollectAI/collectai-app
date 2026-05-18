@@ -48,7 +48,8 @@ function RegisterScreen() {
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
-  const { getItemStyle } = useStaggerReveal({ count: 6, staggerMs: 60 });
+  // Stagger animation disabled 2026-05-17 — caused untappable password field on real device.
+  const { getItemStyle } = useStaggerReveal({ count: 6, staggerMs: 60, enabled: false });
 
   // Animated checkbox
   const checkScale = useRef(new Animated.Value(0)).current;
@@ -127,12 +128,32 @@ function RegisterScreen() {
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
+        options: {
+          // Deep-link back into the app after the user taps the confirmation link.
+          // Supabase client has detectSessionInUrl: true (src/lib/supabase.ts) so the
+          // session is created automatically when the app re-opens via this URL.
+          // sparrow:// is registered in app.json scheme.
+          emailRedirectTo: 'sparrow://',
+        },
       });
       if (error) throw error;
 
       const user = data.user;
       if (!user) {
         showToast({ message: t('auth.errors.sign_up_no_user'), type: 'error' });
+        return;
+      }
+
+      // Supabase silently fakes a "successful" signUp when the email is already
+      // registered (security: doesn't leak whether an email exists). The tell:
+      // identities is an empty array. Without this guard, the user is routed to
+      // verify-email and waits forever for an email that never arrives.
+      if (Array.isArray(user.identities) && user.identities.length === 0) {
+        showToast({
+          message: t('auth.errors.email_already_registered'),
+          type: 'warning',
+        });
+        router.replace('/(auth)/login');
         return;
       }
 

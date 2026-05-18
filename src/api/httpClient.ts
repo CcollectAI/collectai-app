@@ -5,6 +5,7 @@
  */
 import { API_BASE } from "./config";
 import { supabase } from "@/lib/supabase";
+import { popSellerAgeGate } from "./sellerAgeGate";
 
 // Default: 45 s. Covers the slowest legitimate call today — marketplace_search
 // live-aggregates across 44 adapters and can take 40+ s. Everything else
@@ -98,18 +99,55 @@ export async function parseErrorResponse(method: string, path: string, res: Resp
   }
 }
 
+/**
+ * Detects the seller-age-verification gate (412 with a structured detail)
+ * and pops the global confirm modal. Returns true if the user confirmed and
+ * the server-side verification succeeded; the caller should then retry the
+ * original request once.
+ */
+async function maybeHandleSellerAgeGate(res: Response): Promise<boolean> {
+  if (res.status !== 412) return false;
+  try {
+    const body = await res.clone().json();
+    const detail = body?.detail;
+    if (
+      detail &&
+      typeof detail === "object" &&
+      (detail as { error?: string }).error === "seller_age_verification_required"
+    ) {
+      return await popSellerAgeGate();
+    }
+  } catch {
+    // Body wasn't JSON or didn't match — fall through.
+  }
+  return false;
+}
+
+async function runOnce(method: string, path: string, init: RequestInit): Promise<Response> {
+  return fetchWithRetry(`${API_BASE}${path}`, init);
+}
+
+async function runWithGate(method: string, path: string, init: RequestInit): Promise<Response> {
+  const res = await runOnce(method, path, init);
+  if (res.ok) return res;
+  const gated = await maybeHandleSellerAgeGate(res);
+  if (gated) {
+    // User confirmed + server marked age verified; retry the original request once.
+    return runOnce(method, path, init);
+  }
+  return res;
+}
+
 export async function get<T = unknown>(path: string): Promise<T> {
   const auth = await getAuthHeaders();
-  const res = await fetchWithRetry(`${API_BASE}${path}`, {
-    headers: { ...auth },
-  });
+  const res = await runWithGate("GET", path, { headers: { ...auth } });
   if (!res.ok) throw await parseErrorResponse("GET", path, res);
   return res.json() as Promise<T>;
 }
 
 export async function post<T = unknown>(path: string, body: Record<string, unknown> = {}): Promise<T> {
   const auth = await getAuthHeaders();
-  const res = await fetchWithRetry(`${API_BASE}${path}`, {
+  const res = await runWithGate("POST", path, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify(body),
@@ -120,10 +158,7 @@ export async function post<T = unknown>(path: string, body: Record<string, unkno
 
 export async function del<T = unknown>(path: string): Promise<T> {
   const auth = await getAuthHeaders();
-  const res = await fetchWithRetry(`${API_BASE}${path}`, {
-    method: "DELETE",
-    headers: { ...auth },
-  });
+  const res = await runWithGate("DELETE", path, { method: "DELETE", headers: { ...auth } });
   if (!res.ok) throw await parseErrorResponse("DELETE", path, res);
   if (res.status === 204) return {} as T;
   return res.json() as Promise<T>;
@@ -131,7 +166,7 @@ export async function del<T = unknown>(path: string): Promise<T> {
 
 export async function patch<T = unknown>(path: string, body: Record<string, unknown> = {}): Promise<T> {
   const auth = await getAuthHeaders();
-  const res = await fetchWithRetry(`${API_BASE}${path}`, {
+  const res = await runWithGate("PATCH", path, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify(body),
@@ -142,7 +177,7 @@ export async function patch<T = unknown>(path: string, body: Record<string, unkn
 
 export async function put<T = unknown>(path: string, body: Record<string, unknown> = {}): Promise<T> {
   const auth = await getAuthHeaders();
-  const res = await fetchWithRetry(`${API_BASE}${path}`, {
+  const res = await runWithGate("PUT", path, {
     method: "PUT",
     headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify(body),

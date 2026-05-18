@@ -212,7 +212,6 @@ function OnboardingScreen() {
   const [detectedRegion, setDetectedRegion] = useState<Region>('europe');
   const [detecting, setDetecting] = useState(false);
   const [regionPickerVisible, setRegionPickerVisible] = useState(false);
-  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const { showToast } = useToast();
 
@@ -304,10 +303,8 @@ function OnboardingScreen() {
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   async function completeOnboarding() {
-    if (!ageConfirmed) {
-      showToast({ message: 'You must confirm your age to continue.', type: 'warning' });
-      return;
-    }
+    // Age confirmation moved to a point-of-sale gate (2026-05-18 rework) —
+    // App Store Age Rating covers the consumer/collection use case.
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
     await confirmRegion(detectedRegion);
 
@@ -342,10 +339,13 @@ function OnboardingScreen() {
   const isLast = currentIndex === SLIDES.length - 1;
   const showSkip = currentIndex <= 2;
 
-  const handleSkip = useCallback(() => {
+  const handleSkip = useCallback(async () => {
     track({ name: 'onboarding_skipped', properties: { skip_slide: currentIndex } });
-    flatListRef.current?.scrollToIndex({ index: 3 });
-  }, [currentIndex]);
+    // Persist defaults so we don't strand the user with no region/currency.
+    await confirmRegion(detectedRegion);
+    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    router.replace('/(tabs)/add');
+  }, [currentIndex, confirmRegion, detectedRegion, router]);
 
   // Slide text entrance animations
   const slideOpacities = useRef(SLIDES.map(() => new Animated.Value(0))).current;
@@ -406,7 +406,7 @@ function OnboardingScreen() {
                   {/* Gradient ring */}
                   <View style={[styles.iconRing, { borderColor: colors.brand.base + '40' }]}>
                     {item.icon === 'diamond-outline' ? (
-                      <Image source={require('../../assets/images/logo.png')} style={{ width: 64, height: 64 }} resizeMode="contain" />
+                      <Image source={require('../../assets/icon.png')} style={{ width: 64, height: 64 }} resizeMode="contain" />
                     ) : (
                       <Ionicons name={item.icon} size={48} color={colors.brand.dark} />
                     )}
@@ -511,30 +511,6 @@ function OnboardingScreen() {
                     </>
                   )}
 
-                  {/* Age confirmation */}
-                  <TouchableOpacity
-                    style={styles.ageRow}
-                    onPress={() => setAgeConfirmed(!ageConfirmed)}
-                    activeOpacity={0.7}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: ageConfirmed }}
-                    accessibilityLabel={t('onboarding.confirm_age_a11y')}
-                  >
-                    <View
-                      style={[
-                        styles.ageCheckbox,
-                        {
-                          borderColor: ageConfirmed ? colors.brand.base : colors.border,
-                          backgroundColor: ageConfirmed ? colors.brand.base : 'transparent',
-                        },
-                      ]}
-                    >
-                      {ageConfirmed && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
-                    </View>
-                    <Text style={[styles.ageText, { color: colors.muted }]}>
-                      I confirm I am at least 13 years old (16 in the EU)
-                    </Text>
-                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -770,27 +746,6 @@ const styles = StyleSheet.create({
   regionPickerRowText: {
     fontSize: 16,
     fontWeight: '500',
-  },
-  ageRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    marginTop: 20,
-    paddingHorizontal: 4,
-  },
-  ageCheckbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
-  },
-  ageText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 20,
   },
   categoryScrollView: {
     marginTop: 20,

@@ -540,6 +540,11 @@ async def follow_category(
                 )
             except Exception:
                 pass
+            try:
+                from app.agents.intake.orchestrator import invalidate_followed_categories_cache
+                await invalidate_followed_categories_cache(user_id)
+            except Exception:
+                pass
             return {"success": True, "category_id": category_id}
 
         except HTTPException:
@@ -574,7 +579,12 @@ async def unfollow_category(
                     category_id,
                 )
                 logger.info("[events] Unfollow category: user=%s, category=%s", user_id, category_id)
-                return {"success": True, "message": "Category unfollowed"}
+            try:
+                from app.agents.intake.orchestrator import invalidate_followed_categories_cache
+                await invalidate_followed_categories_cache(user_id)
+            except Exception:
+                pass
+            return {"success": True, "message": "Category unfollowed"}
 
         except HTTPException:
             raise

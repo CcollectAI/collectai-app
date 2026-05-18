@@ -252,6 +252,7 @@
       "sign_up_no_user": "Sign up failed — no user returned.",
       "username_taken": "Username taken. Please choose another.",
       "sign_up_failed": "Sign up failed. Unknown error.",
+      "email_already_registered": "That email is already registered. Try signing in instead.",
       "reset_email_required": "Enter your email address to reset your password.",
       "reset_failed": "Reset failed. Unknown error."
     }

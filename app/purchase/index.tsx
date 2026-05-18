@@ -28,6 +28,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { formatPrice } from "@/lib/format";
 import { collectorsApi } from "@/api/collectorsApi";
 import { QuickNavBar } from "@/components/QuickNavBar";
+import { useFollowedCategories } from "@/hooks/useFollowedCategories";
 import type { PurchaseMandate, MandateDeal } from "@/data/types";
 
 const DEALS_PAGE_SIZE = 10;
@@ -91,6 +92,30 @@ function AgentHubScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreDeals, setHasMoreDeals] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Default: only deals from mandates whose category the user follows.
+  // Toggle flips to "all" when the user explicitly broadens the view.
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const { followed } = useFollowedCategories();
+
+  // mandates → category lookup so we can filter deals (deals carry mandateId
+  // but not category). Recomputed whenever mandates change.
+  const mandateCategory = useMemo(() => {
+    const m = new Map<string, string>();
+    mandates.forEach((mn) => {
+      if (mn.category) m.set(mn.id, mn.category);
+    });
+    return m;
+  }, [mandates]);
+
+  const filteredDeals = useMemo(() => {
+    if (showAllCategories || followed.size === 0) return deals;
+    return deals.filter((d) => {
+      const cat = mandateCategory.get(d.mandateId);
+      // Keep deals from un-categorized mandates (so we don't black-hole them).
+      if (!cat) return true;
+      return followed.has(cat);
+    });
+  }, [deals, mandateCategory, followed, showAllCategories]);
 
   // Force re-render once a minute so the "Last scan: X min ago" label
   // stays current without remounting the screen.
@@ -464,19 +489,47 @@ function AgentHubScreen() {
         )}
 
         {/* Recent Deals */}
-        <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>What Sparrow spotted</Text>
+        <View style={styles.dealsHeaderRow}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>What Sparrow spotted</Text>
+          {followed.size > 0 && deals.length > 0 && (
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                setShowAllCategories((v) => !v);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={showAllCategories ? 'Show only my categories' : 'Show all categories'}
+              style={[styles.toggleChip, { borderColor: colors.border, backgroundColor: colors.card }]}
+            >
+              <Ionicons
+                name={showAllCategories ? 'filter-outline' : 'globe-outline'}
+                size={14}
+                color={colors.muted}
+              />
+              <Text style={[styles.toggleChipText, { color: colors.muted }]}>
+                {showAllCategories ? 'My categories' : 'Show all'}
+              </Text>
+            </AnimatedPressable>
+          )}
+        </View>
 
-        {deals.length === 0 ? (
+        {filteredDeals.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Ionicons name="pricetag-outline" size={32} color={colors.muted} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Nothing spotted yet</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              {deals.length > 0 && !showAllCategories
+                ? 'Nothing in your categories'
+                : 'Nothing spotted yet'}
+            </Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-              Sparrow will leave deals here as it spots them.
+              {deals.length > 0 && !showAllCategories
+                ? 'Tap "Show all" to see deals from other categories.'
+                : 'Sparrow will leave deals here as it spots them.'}
             </Text>
           </View>
         ) : (
           <View style={[styles.dealsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {deals.map((deal, idx) => {
+            {filteredDeals.map((deal, idx) => {
               const badge = dealStatusBadge(deal.status);
               return (
                 <AnimatedPressable
@@ -641,6 +694,27 @@ const styles = StyleSheet.create({
   scanStatusSub: { fontSize: 12, marginTop: 2 },
 
   sectionTitle: { fontSize: 16, fontWeight: "800", marginBottom: 10 },
+  dealsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 24,
+    marginBottom: 4,
+  },
+  toggleChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  toggleChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
 
   // Empty state
   emptyCard: {

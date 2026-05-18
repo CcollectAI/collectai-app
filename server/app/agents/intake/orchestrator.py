@@ -47,6 +47,61 @@ async def _user_has_paid_plan(user_id: Optional[str]) -> bool:
         return False
 
 
+_FOLLOWED_CACHE_TTL_S = 300  # 5 min — followed cats rarely change after onboarding
+
+
+async def _get_followed_categories_safe(user_id: Optional[str]) -> set[str]:
+    """Best-effort lookup of the user's followed categories for the
+    catalog-match tiebreaker. Returns an empty set on any error so a flaky
+    DB connection never blocks intake.
+
+    Cached for 5 minutes per user_id via app.cache (Redis-backed in prod,
+    in-process dict fallback). Followed categories only mutate when the user
+    edits them in Settings or completes onboarding; a 5-min stale read at
+    worst gives one scan the previous ranking, which is harmless for a +0.02
+    score nudge."""
+    if not user_id:
+        return set()
+    cache_key = f"followed_cats:v1:{user_id}"
+    try:
+        from app.cache import cache_get, cache_set
+        cached = cache_get(cache_key)
+        if cached is not None:
+            # cache stores JSON-serializable list; rehydrate to set
+            return set(cached) if isinstance(cached, (list, tuple)) else set()
+
+        from app.lib.db_helpers import get_db_pool
+        pool = get_db_pool()
+        if pool is None:
+            return set()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT category_id FROM user_category_follows WHERE user_id = $1",
+                user_id,
+            )
+        result = {r["category_id"] for r in rows}
+        # Store as list so the JSON-serialising Redis backend handles it.
+        cache_set(cache_key, list(result), ttl=_FOLLOWED_CACHE_TTL_S)
+        return result
+    except Exception as e:
+        logger.debug("[orchestrator] followed-category lookup failed (non-fatal): %s", e)
+        return set()
+
+
+async def invalidate_followed_categories_cache(user_id: str) -> None:
+    """Invalidate the cached followed-categories set for a user. Call from
+    the follow/unfollow endpoints so the tiebreaker sees changes immediately
+    instead of waiting up to 5 minutes for the TTL."""
+    if not user_id:
+        return
+    try:
+        from app.cache import cache_delete
+        cache_delete(f"followed_cats:v1:{user_id}")
+    except Exception:
+        # Cache miss / delete error is harmless — TTL will expire shortly.
+        pass
+
+
 async def process_intake(
     image_bytes: Optional[bytes] = None,
     barcode: Optional[str] = None,
@@ -236,7 +291,20 @@ async def process_intake(
                         f"Probable catalog match (score={best_score:.2f}): '{best['title']}'"
                     )
 
-                # Build alternatives list (top 3)
+                # Build alternatives list (top 3) — apply a small followed-
+                # category boost so picks the user made during onboarding act
+                # as a tiebreaker when scores are close. +0.02 is below the
+                # 0.06 "probable match" threshold, so it never promotes a
+                # low-score guess but does flip near-ties.
+                followed = await _get_followed_categories_safe(user_id)
+                if followed:
+                    for m in catalog_matches:
+                        if m.get("category") in followed:
+                            m["match_score"] = float(m.get("match_score", 0.0)) + 0.02
+                    catalog_matches.sort(
+                        key=lambda m: float(m.get("match_score", 0.0)),
+                        reverse=True,
+                    )
                 result.alternatives = catalog_matches[:3]
 
             else:

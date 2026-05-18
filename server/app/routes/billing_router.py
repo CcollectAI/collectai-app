@@ -29,7 +29,9 @@ from app.config import (
     STRIPE_PRICE_PREMIUM_MONTHLY,
     STRIPE_PRICE_PREMIUM_YEARLY,
     STRIPE_PRICE_PRO_MONTHLY,
+    STRIPE_PRICE_PRO_MONTHLY_WEB,
     STRIPE_PRICE_PRO_YEARLY,
+    STRIPE_PRICE_PRO_YEARLY_WEB,
     STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET,
     SUPABASE_URL,
@@ -398,6 +400,68 @@ async def create_portal_session(
     except Exception as exc:
         _log.exception("Unexpected error during portal session creation")
         raise error_response(500, "Failed to create portal session")
+
+
+# ---------------------------------------------------------------------------
+# POST /billing/web/checkout-session  (web-only hybrid subscription)
+# ---------------------------------------------------------------------------
+# Web subscribers pay via Stripe directly (no Apple cut). The iOS app reads
+# the same `subscriptions` table — a row with status='active' unlocks Pro
+# regardless of whether the purchase came from IAP or web. Apple's Guideline
+# 3.1.3 allows the unlock; we just cannot promote this URL inside the iOS app.
+# See docs/HYBRID_WEB_SUBSCRIPTION_PLAN.md.
+
+@router.post("/web/checkout-session", summary="Create web Stripe checkout session")
+async def create_web_checkout_session(
+    request: Request,
+    user_id: str = Depends(get_current_user_id),
+    _rl=Depends(per_user_rate_limit(10, scope="billing_web")),
+):
+    """Create a Stripe Checkout session for the WEB pricing tier (5% off iOS)."""
+    stripe_mod = _get_stripe()
+    if not stripe_mod or not STRIPE_SECRET_KEY:
+        raise error_response(503, "Billing not configured")
+    if not DB_ENABLED:
+        raise error_response(503, "Database not available")
+
+    body = await request.json()
+    interval = (body.get("interval") or "monthly").lower()
+    if interval not in ("monthly", "yearly"):
+        raise error_response(400, "interval must be 'monthly' or 'yearly'")
+
+    price_id = STRIPE_PRICE_PRO_MONTHLY_WEB if interval == "monthly" else STRIPE_PRICE_PRO_YEARLY_WEB
+    if not price_id:
+        raise error_response(
+            503,
+            f"Web Stripe Price ID not configured for pro/{interval}. "
+            f"Set STRIPE_PRICE_PRO_{'MONTHLY' if interval == 'monthly' else 'YEARLY'}_WEB.",
+        )
+
+    # Block duplicate checkout if user already has active Pro
+    existing = await _get_subscription(user_id)
+    if existing and existing.get("status") in ("active", "trialing"):
+        raise error_response(409, "You are already subscribed")
+
+    try:
+        customer_id = await _get_or_create_stripe_customer(user_id, stripe_mod)
+        session = await asyncio.to_thread(
+            stripe_mod.checkout.Session.create,
+            customer=customer_id,
+            line_items=[{"price": price_id, "quantity": 1}],
+            mode="subscription",
+            success_url="https://sparrowcollect.com/pro/success?session_id={CHECKOUT_SESSION_ID}",
+            cancel_url="https://sparrowcollect.com/pro/cancel",
+            allow_promotion_codes=True,
+            metadata={"user_id": user_id, "plan": "pro", "source": "web"},
+            subscription_data={"metadata": {"user_id": user_id, "source": "web"}},
+        )
+        return JSONResponse({"url": session.url, "session_id": session.id})
+    except stripe_mod.error.StripeError as exc:
+        _log.exception("Stripe API error during web checkout: %s", exc)
+        raise error_response(502, "Payment provider error")
+    except Exception:
+        _log.exception("Unexpected error during web checkout session creation")
+        raise error_response(500, "Failed to create checkout session")
 
 
 # ---------------------------------------------------------------------------

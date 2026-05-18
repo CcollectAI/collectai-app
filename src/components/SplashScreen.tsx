@@ -111,7 +111,7 @@ export function SplashScreen({ onReady }: Props) {
       >
         <View style={styles.logoCircle}>
           <Image
-            source={require('../../assets/images/logo.png')}
+            source={require('../../assets/icon.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />

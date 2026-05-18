@@ -37,6 +37,24 @@ describe('edgeClassifier', () => {
     expect(dist.lego).toBe(1);
   });
 
+  it('buildCategoryDistribution adds synthetic prior for followed categories', () => {
+    // New user with empty collection but onboarding-picked categories.
+    const dist = buildCategoryDistribution([], ['warhammer', 'lego']);
+    expect(dist.warhammer).toBe(1);
+    expect(dist.lego).toBe(1);
+  });
+
+  it('buildCategoryDistribution: real items dominate followed prior', () => {
+    const items = [
+      { category: 'pokemon' },
+      { category: 'pokemon' },
+      { category: 'pokemon' },
+    ];
+    const dist = buildCategoryDistribution(items, ['lego']);
+    expect(dist.pokemon).toBe(3);
+    expect(dist.lego).toBe(1);
+  });
+
   it('returns aspect ratio hint for square images', () => {
     const result = classifyOnDevice({ width: 500, height: 500 }, null);
     expect(result.method).toBe('aspect_ratio');

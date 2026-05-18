@@ -59,7 +59,9 @@ function LoginScreen() {
   const [appleAvailable, setAppleAvailable] = useState(false);
   const passwordRef = useRef<TextInput>(null);
 
-  const { getItemStyle } = useStaggerReveal({ count: 7, staggerMs: 60, fromY: 16 });
+  // 2026-05-17: disabled stagger animation — caused invisible top items + untappable
+  // password field after navigating in from verify-email. UX > polish.
+  const { getItemStyle } = useStaggerReveal({ count: 7, staggerMs: 60, fromY: 16, enabled: false });
 
   useEffect(() => {
     if (Platform.OS === 'ios') {
@@ -199,11 +201,11 @@ function LoginScreen() {
               <View style={[styles.iconCircleOuter, { backgroundColor: colors.brand.base + '15' }]}>
                 {Platform.OS === 'ios' ? (
                   <BlurView intensity={40} tint={isDark ? 'dark' : 'light'} style={styles.iconCircle}>
-                    <Image source={require('../../assets/images/logo.png')} style={{ width: 68, height: 68 }} resizeMode="contain" />
+                    <Image source={require('../../assets/icon.png')} style={{ width: 68, height: 68 }} resizeMode="contain" />
                   </BlurView>
                 ) : (
                   <View style={[styles.iconCircle, { backgroundColor: colors.brand.base + '25' }]}>
-                    <Image source={require('../../assets/images/logo.png')} style={{ width: 68, height: 68 }} resizeMode="contain" />
+                    <Image source={require('../../assets/icon.png')} style={{ width: 68, height: 68 }} resizeMode="contain" />
                   </View>
                 )}
               </View>
@@ -371,20 +373,23 @@ function LoginScreen() {
               )}
             </Animated.View>
 
-            {/* Footer */}
+            {/* Sign-up CTA — prominent outlined button */}
             <Animated.View style={getItemStyle(6)}>
+              <Text style={[styles.signUpHint, { color: colors.muted }]}>
+                {t('auth.no_account')}
+              </Text>
               <AnimatedPressable
-                style={styles.footer}
+                style={[styles.signUpBtn, { borderColor: colors.brand.dark, backgroundColor: colors.brand.base + '10' }]}
                 onPress={() => {
                   fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                   router.push('/(auth)/register');
                 }}
-                accessibilityRole="link"
+                accessibilityRole="button"
                 accessibilityLabel={t('auth.create_account')}
               >
-                <Text style={[styles.footerText, { color: colors.muted }]}>
-                  {t('auth.no_account')}{' '}
-                  <Text style={{ color: colors.brand.dark, fontWeight: '600' }}>{t('auth.sign_up')}</Text>
+                <Ionicons name="person-add-outline" size={18} color={colors.brand.dark} />
+                <Text style={[styles.signUpBtnText, { color: colors.brand.dark }]}>
+                  {t('auth.create_account')}
                 </Text>
               </AnimatedPressable>
             </Animated.View>
@@ -415,7 +420,7 @@ const styles = StyleSheet.create({
   },
   brandSection: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 56,
   },
   iconCircleOuter: {
     width: 88,
@@ -522,11 +527,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 16,
+  signUpHint: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 24,
+    marginBottom: 10,
   },
-  footerText: {
-    fontSize: 14,
+  signUpBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    minHeight: 52,
+  },
+  signUpBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

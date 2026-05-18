@@ -307,6 +307,9 @@ STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 STRIPE_PRICE_ID_PRO: str = os.getenv("STRIPE_PRICE_ID_PRO", "")  # legacy/default
 STRIPE_PRICE_PRO_MONTHLY: str = os.getenv("STRIPE_PRICE_PRO_MONTHLY", "")  # e.g. price_xxx
 STRIPE_PRICE_PRO_YEARLY: str = os.getenv("STRIPE_PRICE_PRO_YEARLY", "")   # e.g. price_yyy
+# Web-only Pro prices (5% off iOS — €4.74/mo, €37.99/yr). Used by /billing/web/* only.
+STRIPE_PRICE_PRO_MONTHLY_WEB: str = os.getenv("STRIPE_PRICE_PRO_MONTHLY_WEB", "")
+STRIPE_PRICE_PRO_YEARLY_WEB: str = os.getenv("STRIPE_PRICE_PRO_YEARLY_WEB", "")
 # Premium plan
 STRIPE_PRICE_ID_PREMIUM: str = os.getenv("STRIPE_PRICE_ID_PREMIUM", "")  # legacy/default
 STRIPE_PRICE_PREMIUM_MONTHLY: str = os.getenv("STRIPE_PRICE_PREMIUM_MONTHLY", "")  # e.g. price_xxx

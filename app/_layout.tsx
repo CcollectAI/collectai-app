@@ -22,7 +22,9 @@ import { usePresenceHeartbeat } from "@/hooks/usePresenceHeartbeat";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { useAuthContext } from "@/providers/useAuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { SellerAgeGateProvider } from "@/components/sell/SellerAgeGate";
 import { initOfflineQueue } from "@/data/OfflineDataProvider";
 import { SplashScreen as BrandedSplash } from "@/components/SplashScreen";
 import { recordActiveDay } from "@/hooks/useStoreReview";
@@ -158,27 +160,12 @@ function useProtectedRoute() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
 
-  // Check onboarding status once auth resolves
-  useEffect(() => {
-    if (loading) return;
-    if (!user) {
-      setOnboardingChecked(true);
-      return;
-    }
-    AsyncStorage.getItem(ONBOARDING_KEY)
-      .then((val) => setOnboardingComplete(val === 'true'))
-      .catch(() => setOnboardingComplete(false))
-      .finally(() => setOnboardingChecked(true));
-  }, [loading, user]);
-
-  // Hide splash once we know auth + onboarding state (with fade transition)
   const splashFade = useRef(new RNAnimated.Value(1)).current;
   const [splashHidden, setSplashHidden] = useState(false);
 
   useEffect(() => {
     if (!loading && onboardingChecked) {
       SplashScreen.hideAsync().catch(() => {});
-      // Animate the loading overlay out with a fade
       RNAnimated.timing(splashFade, {
         toValue: 0,
         duration: 350,
@@ -187,23 +174,38 @@ function useProtectedRoute() {
     }
   }, [loading, onboardingChecked]);
 
-  // Redirect based on auth state — runs AFTER the Stack is mounted
+  // Combined auth + onboarding gate. Re-reads AsyncStorage on every route
+  // change so onboarding completion is picked up immediately after the user
+  // finishes the flow (without this, the stale `false` value redirects the
+  // user right back into onboarding — the infinite-loop bug reported 2026-05-18).
+  const segPath = segments.join('/');
   useEffect(() => {
-    if (loading || !onboardingChecked) return;
+    if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const onOnboardingScreen = (segments as string[])[1] === 'onboarding';
 
-    if (!user && !inAuthGroup) {
-      // Not signed in and not on an auth screen — go to login
-      router.replace('/(auth)/login');
-    } else if (user && !onboardingComplete && (segments as string[])[1] !== 'onboarding') {
-      // Signed in but hasn't completed onboarding
-      router.replace('/(auth)/onboarding');
-    } else if (user && onboardingComplete && inAuthGroup) {
-      // Signed in + onboarded but still on auth screen — go to tabs
-      router.replace('/(tabs)');
+    if (!user) {
+      setOnboardingComplete(false);
+      setOnboardingChecked(true);
+      if (!inAuthGroup) router.replace('/(auth)/login');
+      return;
     }
-  }, [loading, onboardingChecked, user, onboardingComplete, segments]);
+
+    AsyncStorage.getItem(ONBOARDING_KEY)
+      .then((val) => {
+        const complete = val === 'true';
+        setOnboardingComplete(complete);
+        setOnboardingChecked(true);
+
+        if (!complete && !onOnboardingScreen) {
+          router.replace('/(auth)/onboarding');
+        } else if (complete && inAuthGroup) {
+          router.replace('/(tabs)');
+        }
+      })
+      .catch(() => setOnboardingChecked(true));
+  }, [loading, user, segPath]);
 
   return { loading, onboardingChecked, splashFade, splashHidden };
 }
@@ -368,16 +370,20 @@ function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <SettingsProvider>
-        <AuthProvider>
-          <FeatureTourProvider>
-            <ToastProvider>
-              <RootStack />
-              <OfflineBanner />
-            </ToastProvider>
-          </FeatureTourProvider>
-        </AuthProvider>
-      </SettingsProvider>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <SettingsProvider>
+          <AuthProvider>
+            <FeatureTourProvider>
+              <ToastProvider>
+                <SellerAgeGateProvider>
+                  <RootStack />
+                  <OfflineBanner />
+                </SellerAgeGateProvider>
+              </ToastProvider>
+            </FeatureTourProvider>
+          </AuthProvider>
+        </SettingsProvider>
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }

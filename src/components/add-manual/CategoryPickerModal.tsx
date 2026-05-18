@@ -7,8 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
+import { useFollowedCategories } from '@/hooks/useFollowedCategories';
 
 const CATEGORY_OPTIONS = ALL_CATS.map((c) => ({ label: c.name, slug: c.slug }));
+
+type Row =
+  | { kind: 'category'; label: string; slug: string }
+  | { kind: 'header'; key: string; text: string };
 
 /** Sentinel value passed to onSelect when user taps "Other (custom)". */
 export const CUSTOM_CATEGORY_SENTINEL = '__custom__';
@@ -28,12 +33,32 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
   const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [search, setSearch] = useState('');
+  const { followed } = useFollowedCategories();
 
-  const filtered = useMemo(() => {
+  // When searching, flatten with no headers (search across the full list).
+  // When idle, surface followed categories on top with a "Your collections"
+  // header so the picks the user made during onboarding are one tap away.
+  const rows = useMemo<Row[]>(() => {
     const q = search.toLowerCase().trim();
-    if (!q) return CATEGORY_OPTIONS;
-    return CATEGORY_OPTIONS.filter((c) => c.label.toLowerCase().includes(q));
-  }, [search]);
+    if (q) {
+      return CATEGORY_OPTIONS
+        .filter((c) => c.label.toLowerCase().includes(q))
+        .map<Row>((c) => ({ kind: 'category', ...c }));
+    }
+    const followedRows: Row[] = CATEGORY_OPTIONS
+      .filter((c) => followed.has(c.slug))
+      .map<Row>((c) => ({ kind: 'category', ...c }));
+    const restRows: Row[] = CATEGORY_OPTIONS
+      .filter((c) => !followed.has(c.slug))
+      .map<Row>((c) => ({ kind: 'category', ...c }));
+    if (followedRows.length === 0) return restRows;
+    return [
+      { kind: 'header', key: 'h-followed', text: t('category_picker.your_collections', { defaultValue: 'Your collections' }) },
+      ...followedRows,
+      { kind: 'header', key: 'h-all', text: t('category_picker.all_categories', { defaultValue: 'All categories' }) },
+      ...restRows,
+    ];
+  }, [search, followed, t]);
 
   const handleClose = () => { setSearch(''); onClose(); };
 
@@ -65,8 +90,8 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
             )}
           </View>
           <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.slug}
+            data={rows}
+            keyExtractor={(item) => item.kind === 'header' ? item.key : item.slug}
             keyboardShouldPersistTaps="handled"
             style={styles.list}
             ListHeaderComponent={
@@ -82,6 +107,13 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
               ) : null
             }
             renderItem={({ item }) => {
+              if (item.kind === 'header') {
+                return (
+                  <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+                    <Text style={[styles.sectionHeaderText, { color: colors.muted }]}>{item.text}</Text>
+                  </View>
+                );
+              }
               const isSelected = selectedCategory === item.label;
               return (
                 <TouchableOpacity
@@ -148,6 +180,16 @@ const styles = StyleSheet.create({
     paddingVertical: 14, paddingHorizontal: 20, borderBottomWidth: StyleSheet.hairlineWidth,
   },
   rowText: { flex: 1, fontSize: 15, fontWeight: '500' },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  sectionHeaderText: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
   empty: { paddingVertical: 32, alignItems: 'center' },
   emptyText: { fontSize: 14 },
 });

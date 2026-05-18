@@ -39,7 +39,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from app.auth import get_current_user_id
+from app.auth import get_current_user_id, require_seller_age_verified
 from app.cache import cache_get, cache_set
 from app.errors import error_response
 from app.features.pagination import pagination_params
@@ -349,7 +349,7 @@ class EbayOauthStartResponse(BaseModel):
 
 @router.get("/accounts/oauth/ebay/start", response_model=EbayOauthStartResponse,
             summary="Start eBay seller OAuth")
-async def ebay_oauth_start(user_id: str = Depends(get_current_user_id)):
+async def ebay_oauth_start(user_id: str = Depends(require_seller_age_verified)):
     """Returns the eBay consent URL. Frontend redirects user to it; eBay
     sends them back to the callback with ?code=...&state=..."""
     import secrets
@@ -375,7 +375,7 @@ async def ebay_oauth_start(user_id: str = Depends(get_current_user_id)):
 async def ebay_oauth_callback(
     code: str,
     state: str,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_seller_age_verified),
 ):
     """Exchange the auth code for tokens, persist to
     marketplace_accounts. State is `{user_id}:{nonce}`."""
@@ -444,7 +444,7 @@ async def get_ebay_defaults(user_id: str = Depends(get_current_user_id)):
             summary="Set eBay publish defaults")
 async def put_ebay_defaults(
     payload: EbayDefaultsPayload,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_seller_age_verified),
 ):
     pool = get_db_pool()
     if pool is None:
@@ -476,7 +476,7 @@ async def put_ebay_defaults(
 @router.post("/accounts", response_model=AccountResponse, status_code=201, summary="Connect marketplace account")
 async def connect_account(
     payload: AccountCreate,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_seller_age_verified),
     _rl: None = Depends(_listing_write_limit),
 ):
     """Connect a new marketplace account (store OAuth credentials)."""
@@ -578,6 +578,65 @@ async def disconnect_account(
     except Exception as e:
         logger.error("[marketplace-listings] DB error disconnecting account: %s", e)
         raise error_response(500, "Failed to disconnect account", code=ErrorCode.DB_ERROR)
+
+
+# ===========================================================================================
+# AGE VERIFICATION — gate flipper for seller-side features
+# ===========================================================================================
+# Stamps profiles.seller_age_verified_at so subsequent /marketplace/listings/*
+# mutating endpoints stop returning 412. Replaces the onboarding-time checkbox
+# with a point-of-sale gate (2026-05-18 onboarding rework).
+
+class SellerAgeVerifyPayload(BaseModel):
+    confirmed: bool = Field(..., description="User attests they are of legal selling age (18+ default).")
+
+
+class SellerAgeVerifyResponse(BaseModel):
+    seller_age_verified_at: datetime
+
+
+@router.post(
+    "/age-verify",
+    response_model=SellerAgeVerifyResponse,
+    summary="Confirm seller age",
+)
+async def seller_age_verify(
+    payload: SellerAgeVerifyPayload,
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_listing_write_limit),
+):
+    """One-time attestation that the user is of legal age to sell. Idempotent:
+    re-submitting refreshes the timestamp but does not error."""
+    if not payload.confirmed:
+        raise error_response(
+            400,
+            "You must confirm you are of legal selling age to continue.",
+            code=ErrorCode.VALIDATION_ERROR,
+        )
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
+    now = datetime.now(timezone.utc)
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE profiles
+                SET seller_age_verified_at = $2
+                WHERE id = $1
+                RETURNING seller_age_verified_at
+                """,
+                user_id, now,
+            )
+            if row is None:
+                raise error_response(404, "Profile not found", code=ErrorCode.NOT_FOUND)
+            logger.info("[marketplace-listings] Seller age verified: user=%s", user_id)
+            return SellerAgeVerifyResponse(seller_age_verified_at=row["seller_age_verified_at"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[marketplace-listings] DB error setting seller age: %s", e)
+        raise error_response(500, "Failed to record age verification", code=ErrorCode.DB_ERROR)
 
 
 # ===========================================================================================
@@ -726,7 +785,7 @@ async def list_listings(
 @router.post("", response_model=ListingResponse, status_code=201, summary="Create a listing")
 async def create_listing(
     payload: ListingCreate,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_seller_age_verified),
     _rl: None = Depends(_listing_write_limit),
 ):
     """Create a new listing (draft or active)."""
@@ -909,7 +968,7 @@ async def list_sales(
 async def record_sale(
     listing_id: str,
     payload: SaleRecord,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_seller_age_verified),
     _rl: None = Depends(_listing_write_limit),
 ):
     """Record a completed sale for a listing. Marks the listing as 'sold'."""
@@ -1165,7 +1224,7 @@ async def get_listing(
 async def update_listing(
     listing_id: str,
     payload: ListingUpdate,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_seller_age_verified),
     _rl: None = Depends(_listing_write_limit),
 ):
     """Update a listing's fields (price, status, description, etc.)."""
@@ -1290,7 +1349,7 @@ async def delete_listing(
 @router.post("/{listing_id}/publish", response_model=ListingResponse, summary="Publish a draft listing")
 async def publish_listing(
     listing_id: str,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_seller_age_verified),
     _rl: None = Depends(_listing_write_limit),
 ):
     """Publish a draft listing — sets status to 'active' and records listed_at."""

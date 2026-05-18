@@ -64,7 +64,24 @@ describe('useNetworkStatus', () => {
     });
   });
 
-  it('reports offline when network is unreachable', async () => {
+  it('reports offline when isConnected is false', async () => {
+    // We now consult isConnected ONLY (isInternetReachable returns false
+    // transiently on iOS mid-probe and was producing TestFlight #9 false-
+    // positives). See src/hooks/useNetworkStatus.ts.
+    mockGetNetworkStateAsync.mockResolvedValue({
+      isConnected: false,
+      isInternetReachable: false,
+    });
+
+    const { result } = renderHook(() => useNetworkStatus());
+
+    await waitFor(() => {
+      expect(result.current.isOnline).toBe(false);
+    });
+  });
+
+  it('reports online when isInternetReachable is transiently false but isConnected is true', async () => {
+    // iOS transient — we intentionally do NOT trust isInternetReachable.
     mockGetNetworkStateAsync.mockResolvedValue({
       isConnected: true,
       isInternetReachable: false,
@@ -73,7 +90,7 @@ describe('useNetworkStatus', () => {
     const { result } = renderHook(() => useNetworkStatus());
 
     await waitFor(() => {
-      expect(result.current.isOnline).toBe(false);
+      expect(result.current.isOnline).toBe(true);
     });
   });
 

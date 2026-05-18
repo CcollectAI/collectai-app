@@ -140,3 +140,12 @@ export const setEbayDefaults = (payload: {
   return_policy_id: string;
   location_key?: string;
 }) => put("/marketplace/listings/accounts/defaults/ebay", payload as Record<string, unknown>);
+
+// Seller age verification — one-time gate replacing the onboarding checkbox.
+// Backend mutating /marketplace/listings/* endpoints return 412 with
+// detail.error === 'seller_age_verification_required' until this fires once.
+export const verifySellerAge = () =>
+  post<{ seller_age_verified_at: string }>(
+    "/marketplace/listings/age-verify",
+    { confirmed: true } as Record<string, unknown>,
+  );

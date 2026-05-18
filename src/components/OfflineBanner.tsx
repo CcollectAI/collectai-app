@@ -6,26 +6,36 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, Platform } from 'react-native';
+import { Animated, StyleSheet, Text, Platform, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { getQueueLength } from '@/lib/mutationQueue';
 
+// Visible banner content height (icon + text + vertical padding). The full
+// rendered height is this value + the safe-area top inset (status bar / notch).
+const BANNER_BODY_HEIGHT = 36;
+
 export function OfflineBanner() {
   const { isOnline } = useNetworkStatus();
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const translateY = useRef(new Animated.Value(-60)).current;
+  // Start fully off-screen \u2014 actual hidden offset is computed below once insets resolve.
+  const translateY = useRef(new Animated.Value(-200)).current;
   const [queueCount, setQueueCount] = useState(0);
 
-  // Re-read the queue length whenever the online status changes (or periodically)
+  const topInset =
+    insets.top || (Platform.OS === 'ios' ? 47 : StatusBar.currentHeight ?? 24);
+  // Pull the banner fully above the screen edge, including the status-bar area
+  // it paints over when shown. The +12 is a small over-slide so the bottom edge
+  // doesn't peek past the notch during the spring overshoot.
+  const hiddenY = -(topInset + BANNER_BODY_HEIGHT + 12);
+
   useEffect(() => {
     setQueueCount(getQueueLength());
 
     if (!isOnline) {
-      // Poll queue length while offline so the count stays fresh
       const interval = setInterval(() => {
         setQueueCount(getQueueLength());
       }, 2_000);
@@ -35,12 +45,12 @@ export function OfflineBanner() {
 
   useEffect(() => {
     Animated.spring(translateY, {
-      toValue: isOnline ? -60 : 0,
+      toValue: isOnline ? hiddenY : 0,
       useNativeDriver: true,
       damping: 20,
       stiffness: 200,
     }).start();
-  }, [isOnline, translateY]);
+  }, [isOnline, hiddenY, translateY]);
 
   const queueSuffix =
     queueCount > 0
@@ -60,7 +70,7 @@ export function OfflineBanner() {
       style={[
         styles.container,
         {
-          top: insets.top + (Platform.OS === 'android' ? 0 : 0),
+          paddingTop: topInset + 8,
           backgroundColor: colors.offlineBanner,
           transform: [{ translateY }],
         },
@@ -77,12 +87,13 @@ export function OfflineBanner() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
+    top: 0,
     left: 0,
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingBottom: 8,
     paddingHorizontal: 16,
     zIndex: 9998,
     gap: 8,

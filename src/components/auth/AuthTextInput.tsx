@@ -2,7 +2,7 @@
  * AuthTextInput — Themed input with floating label, icon prefix, and animated focus state.
  */
 
-import React, { forwardRef, useRef, useState } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import {
   Animated,
   StyleSheet,
@@ -45,6 +45,14 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(
     const [showPassword, setShowPassword] = useState(false);
     const hasValue = !!value && value.length > 0;
 
+    // Internal ref so we can focus the input when the user taps anywhere on
+    // the surrounding row (icon, padding, or the floating label). Exposed via
+    // useImperativeHandle so external refs (e.g. for "Next → focus password")
+    // still work.
+    const innerRef = useRef<TextInput>(null);
+    useImperativeHandle(ref, () => innerRef.current as TextInput, []);
+    const focusInput = () => innerRef.current?.focus();
+
     // Floating label animation
     const labelAnim = useRef(new Animated.Value(hasValue ? 1 : 0)).current;
 
@@ -70,7 +78,7 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(
 
     const labelTranslateY = labelAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, -20],
+      outputRange: [0, -16],
     });
     const labelFontSize = labelAnim.interpolate({
       inputRange: [0, 1],
@@ -81,7 +89,11 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(
     const iconColor = focused ? colors.brand.dark : colors.muted;
 
     return (
-      <View
+      <Pressable
+        onPress={focusInput}
+        // Disable the default pressable visual feedback so the row keeps
+        // looking like a static text field.
+        android_disableSound
         style={[
           styles.container,
           {
@@ -100,21 +112,25 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(
         <Ionicons name={icon} size={20} color={iconColor} style={styles.icon} />
 
         <View style={styles.inputArea}>
-          <Animated.Text
-            style={[
-              styles.label,
-              {
-                color: focused ? colors.brand.dark : colors.muted,
-                transform: [{ translateY: labelTranslateY }],
-                fontSize: labelFontSize,
-              },
-            ]}
-            pointerEvents="none"
-          >
-            {label}
-          </Animated.Text>
+          {/* Wrap the floating label in a View with pointerEvents="none" —
+              RN's pointerEvents prop on <Animated.Text> is unreliable on iOS
+              and was eating taps in the label region, blocking focus. */}
+          <View pointerEvents="none" style={styles.labelWrap}>
+            <Animated.Text
+              style={[
+                styles.label,
+                {
+                  color: focused ? colors.brand.dark : colors.muted,
+                  transform: [{ translateY: labelTranslateY }],
+                  fontSize: labelFontSize,
+                },
+              ]}
+            >
+              {label}
+            </Animated.Text>
+          </View>
           <TextInput
-            ref={ref}
+            ref={innerRef}
             style={[styles.input, { color: colors.text }]}
             value={value}
             onChangeText={onChangeText}
@@ -144,7 +160,7 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(
             />
           </Pressable>
         )}
-      </View>
+      </Pressable>
     );
   },
 );
@@ -166,9 +182,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: '100%',
   },
-  label: {
+  labelWrap: {
     position: 'absolute',
     left: 0,
+    right: 0,
+    top: 0,
+  },
+  label: {
+    // The animated translateY moves this around inside labelWrap.
   },
   input: {
     fontSize: 16,

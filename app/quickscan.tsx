@@ -28,6 +28,7 @@ import { classifyOnDevice, buildCategoryDistribution } from '@/lib/edgeClassifie
 import type { EdgeClassification } from '@/lib/edgeClassifier';
 import { multiDetect, collectorsApi } from '@/api/collectorsApi';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
@@ -168,17 +169,29 @@ function QuickScanScreen() {
     }
   }, [permission?.granted]);
 
-  // M9: Load user's category distribution once for edge classification (with cancellation)
+  // M9: Load user's category distribution once for edge classification (with cancellation).
+  // Includes the followed-category onboarding picks as a synthetic prior so
+  // brand-new users (empty collection) still get a useful classifier hint.
   useEffect(() => {
     if (!featureFlags.FEATURE_EDGE_CLASSIFICATION) return;
     let cancelled = false;
-    dataProvider.listItems({ limit: 500, offset: 0 })
-      .then((items) => {
-        if (!cancelled && items?.length) {
-          setUserCategoryDist(buildCategoryDistribution(items));
+    Promise.all([
+      dataProvider.listItems({ limit: 500, offset: 0 }).catch(() => []),
+      AsyncStorage.getItem('@sparrowcollect/followed_categories').catch(() => null),
+    ])
+      .then(([items, followedRaw]) => {
+        if (cancelled) return;
+        let followed: string[] | undefined;
+        if (typeof followedRaw === 'string') {
+          try {
+            const parsed = JSON.parse(followedRaw);
+            if (Array.isArray(parsed)) followed = parsed;
+          } catch {/* ignore */}
         }
-      })
-      .catch(() => {/* best-effort */});
+        const list = items ?? [];
+        if (list.length === 0 && !followed?.length) return;
+        setUserCategoryDist(buildCategoryDistribution(list, followed));
+      });
     return () => { cancelled = true; };
   }, []);
 

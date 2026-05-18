@@ -81,6 +81,46 @@ async def get_optional_user_id(request: Request) -> str | None:
         return None
 
 
+async def require_seller_age_verified(
+    user_id: str = Depends(get_current_user_id),
+) -> str:
+    """
+    Reject the request if the user has not attested to being of legal selling
+    age (profiles.seller_age_verified_at IS NULL).
+
+    Use on every mutating /marketplace/listings/* endpoint (connect account,
+    create listing, publish). Replaces the onboarding-time age checkbox with
+    a point-of-sale gate — see docs/HYBRID_WEB_SUBSCRIPTION_PLAN.md style
+    rationale and the 2026-05-18 onboarding rework.
+
+    Returns the user_id (passing it through) so callers can chain:
+        Depends(require_seller_age_verified)
+    in place of Depends(get_current_user_id) when both auth and gate are needed.
+    """
+    from app.lib.db_helpers import get_db_pool
+    from app.errors import error_response
+
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable")
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT seller_age_verified_at FROM profiles WHERE id = $1",
+            user_id,
+        )
+    if row is None or row["seller_age_verified_at"] is None:
+        # 412 Precondition Failed — the FE knows to surface the age confirm modal
+        # for this status code on any seller-side request.
+        raise HTTPException(
+            status_code=412,
+            detail={
+                "error": "seller_age_verification_required",
+                "message": "You must confirm you are of legal age to sell in your region before using marketplace features.",
+            },
+        )
+    return user_id
+
+
 async def require_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> bool:
     """
     Inter-service shared-secret guard.

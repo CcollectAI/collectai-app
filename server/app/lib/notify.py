@@ -110,6 +110,22 @@ async def should_notify(
     return True, "ok"
 
 
+async def _user_follows_category(conn, user_id: str, category_slug: str) -> bool:
+    """True if the user follows this collectible category. Used to scope
+    discovery-style notifications (deal_alerts, weekly_digest) so we don't
+    push noise from categories the user explicitly told us they don't care
+    about during onboarding. Fail-open: any DB error returns True so we
+    don't silently swallow notifications during outages."""
+    try:
+        row = await conn.fetchrow(
+            "SELECT 1 FROM public.user_category_follows WHERE user_id = $1 AND category_id = $2",
+            user_id, category_slug,
+        )
+        return row is not None
+    except Exception:
+        return True
+
+
 async def notify_user(
     conn,
     user_id: str,
@@ -119,6 +135,7 @@ async def notify_user(
     data: Optional[dict[str, Any]] = None,
     deep_link: Optional[str] = None,
     urgent: bool = False,
+    collectible_category: Optional[str] = None,
 ) -> int:
     """
     Send a preference-aware, frequency-capped push notification.
@@ -132,8 +149,14 @@ async def notify_user(
         data: custom data payload for the push
         deep_link: optional deep link URL
         urgent: if True, skip frequency cap (but still check preference)
+        collectible_category: optional collectible category slug (e.g. 'pokemon',
+            'lego'). When set AND the user has at least one followed category
+            on record, the push is dropped if the slug isn't in the follow list.
+            This scopes discovery notifications to onboarding picks without
+            affecting "user owns this item" notifications, which already gate
+            on item ownership upstream and should leave this argument unset.
 
-    Returns: number of pushes sent (0 if blocked by pref/cap)
+    Returns: number of pushes sent (0 if blocked by pref/cap/follow filter)
     """
     try:
         # Check preference (always)
@@ -141,6 +164,24 @@ async def notify_user(
         if not prefs.get(category, True):
             logger.debug("[notify] Skipped: user %s disabled %s", user_id[:8], category)
             return 0
+
+        # Discovery-style notifications honor the user's followed categories
+        # so onboarding picks actually drive what they see. Skipped when caller
+        # doesn't pass a slug (= notification is about something the user
+        # already owns / explicitly tracks).
+        if collectible_category:
+            row = await conn.fetchrow(
+                "SELECT count(*)::int AS c FROM public.user_category_follows WHERE user_id = $1",
+                user_id,
+            )
+            has_any_follows = bool(row and row["c"] > 0)
+            if has_any_follows:
+                if not await _user_follows_category(conn, user_id, collectible_category):
+                    logger.debug(
+                        "[notify] Skipped: user %s does not follow category %s",
+                        user_id[:8], collectible_category,
+                    )
+                    return 0
 
         # Check frequency cap (skip for urgent)
         if not urgent:

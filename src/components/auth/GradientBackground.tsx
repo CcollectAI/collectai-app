@@ -26,6 +26,7 @@ export function GradientBackground({ children }: Props) {
       />
       {/* Decorative ambient circles */}
       <View
+        pointerEvents="none"
         style={[
           styles.ambientCircle,
           styles.circleTopRight,
@@ -33,6 +34,7 @@ export function GradientBackground({ children }: Props) {
         ]}
       />
       <View
+        pointerEvents="none"
         style={[
           styles.ambientCircle,
           styles.circleBottomLeft,
