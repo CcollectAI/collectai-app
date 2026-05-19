@@ -137,7 +137,16 @@ async def _fetch_groups(conn, category_filter: Optional[str], limit_per_item: in
 
     Returns an async iterator of (category, item_key, [attrs, ...]).
     """
-    where = "WHERE mh.item_ref IS NOT NULL AND mh.attrs IS NOT NULL AND mh.attrs <> '{}'::jsonb"
+    # seen_at > now() - 90 days enables partition pruning on market_hits.
+    # Without it the JOIN walks every monthly partition + split_part'd item_ref
+    # and hangs (verified 2026-05-19 via EXPLAIN ANALYZE — mtg hung the
+    # connection; with the filter mtg runs in 8.4s). Recent attrs are also
+    # the relevant ones for market_observed summaries.
+    where = (
+        "WHERE mh.item_ref IS NOT NULL "
+        "AND mh.attrs IS NOT NULL AND mh.attrs <> '{}'::jsonb "
+        "AND mh.seen_at > now() - interval '90 days'"
+    )
     params: list[Any] = []
     if category_filter:
         where += " AND ci.category = $1"
