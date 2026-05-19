@@ -123,6 +123,11 @@ async def run_once():
             # Also include listings as a fallback when the bake has few ended auctions:
             # a rough-cut PICP from listings is better than no signal at all.
             item_refs = [pred["item_ref"] for pred in predictions]
+            # LIMIT 10000 caps per-category work. For high-cardinality categories
+            # (mtg: 186K item_refs / 1.35M actuals; yugioh: 75K) the planner falls
+            # to Seq Scan and the unbounded fetch hit the 2min statement_timeout
+            # under bake IO load — see 2026-05-19 EXPLAIN ANALYZE. PICP is a
+            # statistical estimate; 10K samples gives <0.5% precision at 95% conf.
             all_actuals = await conn.fetch(
                 """
                 SELECT item_ref, price::float AS price
@@ -137,6 +142,7 @@ async def run_once():
                   -- becomes "how well does Claude match Claude" and
                   -- gate_pass passes for the wrong reason.
                   AND (source IS NULL OR source <> 'claude_estimate')
+                LIMIT 10000
                 """,
                 item_refs,
                 str(SOLD_LOOKBACK_DAYS),
