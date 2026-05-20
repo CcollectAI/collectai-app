@@ -1,6 +1,48 @@
 # Sparrow Collect — Public App Store Launch Checklist
 
-> Generated 2026-05-12. Replaces the scattered guidance in `SPARROW_LAUNCH_TOMORROW.md` (sections 8/11 obsolete) and `SPARROW_LAUNCH_SOLO_GUIDE.md`. This is the single source of truth for getting from "TestFlight beta works" → "App Store live with paid IAP".
+> Generated 2026-05-12 · Last refreshed 2026-05-20. Replaces the scattered guidance in `SPARROW_LAUNCH_TOMORROW.md` (sections 8/11 obsolete) and `SPARROW_LAUNCH_SOLO_GUIDE.md`. This is the single source of truth for getting from "TestFlight beta works" → "App Store live with paid IAP".
+
+---
+
+## Session log — what's shipped since this doc was generated
+
+**2026-05-20** (3 commits, all bake-side perf + CI hygiene):
+
+| Commit | What |
+|---|---|
+| `9350dae` | `nightly-sanity`: `count=exact` → `count=planned` (fixes false-FAIL on market_hits count timeout); switched healthz to `https://api.sparrowcollect.com/healthz`; events checks gated behind `PRE_LAUNCH_MODE=true` (default on) |
+| `091c377` | `aggregate_catalog_attributes`: added `seen_at > now() - 90 days` partition filter — mtg went from hanging to 8.4s; full live run 15.3s for 14K groups |
+| `c6e83fc` | `calibration_worker`: added `LIMIT 10000` to bound per-category work — was hitting 2min `statement_timeout` under bake IO load (mtg query was 8.6s at idle, blew up under load); now caps at ~85ms per category |
+
+Both EC2 fixes deployed via `scripts/deploy_to_ec2.sh --restart --dirty`. Bake restarted twice, both clean. Zero worker errors in the 22h since the second restart. Verified live: full calibration cycle 156s, aggregate cycle 15.3s.
+
+**Git auth note**: `gh` was authenticated as `vascoapp` (active account). Fixed via `gh auth switch -u CcollectAI` (the org account was already in the keyring). Also reverted the remote URL from SSH back to HTTPS (was changed mid-session; no SSH key registered on GitHub). All 15+ commits pushed to `origin/feature/all-enhancements`.
+
+**2026-05-12 → 2026-05-19** (8 days, ~12 commits on `feature/all-enhancements`):
+
+| Date | Commit | What |
+|---|---|---|
+| 2026-05-12 | `20ac609` | Beta-unlock flag wired; ASO metadata gaps closed |
+| 2026-05-12 | `1f430e1` | Production-ready submission infra + `store` EAS build profile |
+| 2026-05-12 | `aac8e53` | Dev/share-preview gated behind `__DEV__` |
+| 2026-05-12 | `69c4224` | ShareCard ripped out entirely |
+| 2026-05-12 | `9db6065` | Closed 4 post-launch follow-up gaps |
+| 2026-05-12 | `8c9a170` | Brand sweep (13 files) + permission cleanup + dep prune |
+| 2026-05-12 | `9f536ec` | RUNBOOK + deprecation banners on superseded launch guides |
+| 2026-05-12 | `dadbe0d` | Privacy scrubbing + dev sentry tooling + listing/bundle checkers + auth tests |
+| 2026-05-12 | `8d7a24d` | Wired pre-submission checkers into RUNBOOK + this checklist |
+| 2026-05-12 | `d327294` | Sentry EAS build hook + GitHub Actions release workflow |
+| 2026-05-18 | `d0c4713` | Onboarding rework: age→seller-gate (412 + auto-modal in httpClient + retry); followed-categories drive add-flow sort / scan classifier prior / catalog-match tiebreaker / home empty state / Deal Hub filter; auth bug fixes (OfflineBanner status-bar bleed, AuthTextInput tap-eating label, onboarding completion loop, Skip-button bypass) |
+| 2026-05-19 | uncommitted | `eas.json` gained a `store` submit profile mirroring `production` (the `--profile store --auto-submit` flag from Phase 3 needed it) |
+
+**Build history (`appVersionSource: remote`, auto-incremented):**
+- Build #3 (buildNumber 9, ID `6ea51914`) — uploaded to ASC 2026-05-12
+- Builds #10–12 — local iterations
+- **Build #13 — building right now (2026-05-19)** on EAS via `eas build --profile store --platform ios --auto-submit`. Track at https://expo.dev/accounts/collectai/projects/collectai/builds/
+
+**What's NOT changed since 2026-05-12:** Phases 1-9 below. The path is identical; the user-action checklist is unchanged.
+
+---
 
 **Prerequisites assumed done** (already checked off this session):
 - ✅ Apple Developer enrolment paid + approved (Team `3DX8FBF7S6`)

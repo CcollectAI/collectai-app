@@ -1,16 +1,33 @@
 # Sparrow Collect - Project Memory
 
+> Renamed from CollectAI 2026-05-04 · Last refreshed 2026-05-19
+
 ## Overview
-Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funko, Warhammer, etc.) with AI-powered scanning and valuation.
+Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funko, Warhammer, K-pop, etc.) with AI-powered scanning and valuation. **54 categories**, ~140K curated catalog items, **44 marketplace adapters**.
 
 ## Tech Stack
-- **Frontend:** Expo (React Native) with Expo Router
-- **Backend:** FastAPI (Python) with Supabase/PostgreSQL
-- **ML:** Ridge regression models for price prediction
-- **Theme:** Tiffany Blue (#81D8D0) accent, EUR currency
+- **Frontend:** Expo SDK 54 (React Native 0.81) with Expo Router, TypeScript
+- **Backend:** FastAPI (Python 3.12) with Supabase/PostgreSQL, asyncpg, partitioned monthly
+- **ML:** 36 Ridge regression models (log-scale for high-variance categories), CLIP vision, OpenAI fallback
+- **Payments:** RevenueCat (iOS IAP, shipped 2026-05-09); Stripe dormant for future web/Android
+- **Theme:** Tiffany Blue (#81D8D0) accent, EUR currency, Roboto font
+
+## Current launch state (2026-05-20)
+- **TestFlight build #13** built on EAS (id `6609f91e-d09a-4d62-a1a6-90ca80de9688`, commit `d0c4713`). IPA ready but **NOT yet on TestFlight** — ASC API key `VT5SJZ3AUH` returned 401 NOT_AUTHORIZED on submit. Needs regenerate in ASC → Integrations → API → Generate, then `eas credentials`, then resubmit.
+- **Apple Developer:** Individual enrollment approved 2026-05-07 (Team `3DX8FBF7S6`, KvK 99596326).
+- **App Store Connect:** App ID `6767359453`, bundle `io.sparrowcollect.app`, name "Sparrow Collect".
+- **Domain:** [sparrowcollect.com](https://sparrowcollect.com) live with SSL via Cloudflare DNS-only + Vercel (fixed 2026-05-08).
+- **IAP:** RevenueCat code shipped (Free + Pro €4.99/mo, €39.99/yr). Dashboard config pending — see `docs/PUBLIC_LAUNCH_CHECKLIST.md` Phases 1–2.
+- **Beta override:** `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` on `production` EAS profile, `false` on `store` profile (App Store submission).
+- **Onboarding rework** shipped 2026-05-18: age→seller-gate (412 + auto-modal), followed-categories drive add-flow / scan / catalog-match / home / Deal Hub, auth bug fixes.
+- **2026-05-19/20 bake fixes (deployed + verified live):**
+  - `calibration_worker.py:131` — added `LIMIT 10000` to bound per-category `market_hits` fetch. Was hitting 2min `statement_timeout` for high-card categories (mtg has 186K item_refs / 1.35M actuals). Now 85ms/category. Commit `c6e83fc`.
+  - `aggregate_catalog_attributes.py:_fetch_groups` — added `seen_at > now() - 90 days` partition-pruning filter. Was hanging on full-table JOIN. Now 15.3s/cycle. Commit `091c377`.
+  - `nightly_health_check.sh` — silenced false-positive Telegram pages: `count=planned` instead of `exact`, healthz via domain not IP, events gated behind `PRE_LAUNCH_MODE`. Commit `9350dae`.
+- **Active branch:** `feature/all-enhancements` (pushed through `9350dae` to origin as of 2026-05-20).
 
 ## Key Files
-- `app/(tabs)/_layout.tsx` - Main tab navigation (5 tabs: Portfolio, Items, Add, Events, Marketplace)
+- `app/(tabs)/_layout.tsx` - Main tab navigation (5 visible tabs: Home, Items, Add, Events, Marketplace; wishlist + search are hidden routes)
 - `app/(tabs)/index.tsx` - Portfolio dashboard with line chart
 - `app/(tabs)/items.tsx` - Item list with search/filter, multi-select, bulk operations
 - `app/(tabs)/add.tsx` - QuickScan and manual add entry

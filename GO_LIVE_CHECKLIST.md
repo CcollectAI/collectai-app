@@ -1,565 +1,259 @@
 ================================================================================
-  SPARROW COLLECT — GO-LIVE CHECKLIST (renamed from CollectAI 2026-05-04)
-  Generated: 2026-02-18 · Status update: 2026-05-04
+  SPARROW COLLECT — GO-LIVE CHECKLIST
+  Generated: 2026-02-18 · Last refreshed: 2026-05-20
 ================================================================================
+
+> **For the current launch path, use [`docs/PUBLIC_LAUNCH_CHECKLIST.md`](docs/PUBLIC_LAUNCH_CHECKLIST.md)** — it's the single source of truth from "TestFlight beta" → "App Store live with paid IAP".
+>
+> This file is the historical infra/setup checklist (DNS, EC2, .env, Supabase migrations, EAS secrets). Most of it is now done — see status below. Kept for reference if you need to rebuild any layer from scratch.
 
   Brand: Sparrow Collect (formal) / Sparrow (colloquial)
-  Domain: sparrowcollect.com (Cloudflare, purchased 2026-05-04)
-  Bundle ID: com.sparrowcollect.app
+  Domain: sparrowcollect.com (Cloudflare, purchased 2026-05-04, SSL fixed 2026-05-08)
+  Bundle ID: io.sparrowcollect.app (com.sparrowcollect.* was rejected by Apple)
   Deep-link scheme: sparrow://
-  Brand color: #81D8D0 (Tiffany Blue, retained)
-
-  All in-flight rebrand steps + tomorrow's user actions are documented in
-  docs/SPARROW_LAUNCH_TOMORROW.md — that's the single source of truth for
-  the next launch push.
-
-Use this file as a step-by-step checklist. Work through each section in order.
-Mark items [x] as you complete them.
+  Brand color: #81D8D0 (Tiffany Blue)
+  App Store Connect App ID: 6767359453
+  Apple Team ID: 3DX8FBF7S6 (Individual enrolment, NL eenmanszaak, KvK 99596326)
 
 --------------------------------------------------------------------------------
- EXECUTIVE STATUS — 2026-04-24
+ EXECUTIVE STATUS — 2026-05-20
 --------------------------------------------------------------------------------
 
-CODE: READY. Everything below is passing.
-  * Preflight chain (6 gates): ALL PASS (deps, env, worker imports, RLS check,
-    models, router drift). systemd ExecStartPre refuses to start if any fails.
-  * Postflight HTTP smoke: clean — zero 5xx across the route surface.
-  * Bake: 24 workers running, no phantom errors, all error_repr metadata
-    capturing correctly. attribute_aggregation live (4,869 items populated).
-  * Tests: 3,325 BE + 516 FE pass, 0 TS errors, 58 snapshots current.
-  * Security advisor: 168 of 175 findings cleared. 7 remaining:
-      - 4 extensions-in-public (WARN, deferred — risky post-search_path pin)
-      - 3 public-bucket-allows-listing (WARN, deferred — storage RLS design)
-    PLUS 3 dashboard-only toggles (HIBP, OTP expiry, PG upgrade) awaiting
-    user action.
-  * Data scaling: price_predictions + price_history now partitioned monthly.
-    partition_drop_worker deployed (dry-run default). 1,031 MB reclaimed today.
-    DB now 2,018 MB with 12-month runway per DATA_SCALING_PLAN.md.
-  * Infrastructure: 44 marketplace adapters, 54 categories, 140,671 catalog
-    items, Stripe webhook verified, chat + deal_desk 100% E2E.
+CODE: SHIPPING. TestFlight build #13 is built (EAS id 6609f91e), pending
+resubmit once ASC API key VT5SJZ3AUH is regenerated (401 NOT_AUTHORIZED).
+Three bake/CI hardening commits landed 2026-05-19/20 (c6e83fc, 091c377,
+9350dae) — calibration_worker no longer times out, aggregate_catalog_attributes
+no longer hangs, nightly sanity no longer false-FAILs on count timeouts.
+  * Preflight chain (6 gates): ALL PASS (deps, env, worker imports, schema drift,
+    RLS check, models). systemd ExecStartPre refuses to start if any fails.
+  * Bake monitors: 3 in-process monitors live (sustained-error paging, circuit
+    breaker stuck-OPEN page, instance health — disk/RSS/ingest stall/matview stall).
+  * Tests: 3,325 BE + 516 FE pass, 0 TS errors in shipped code, 58 snapshots.
+    (Pre-existing TS errors in `app/item/[id].tsx` not blocking EAS build.)
+  * Security advisor: 7 remaining WARN-level (4 extension_in_public, 3 dashboard-only).
+  * Data scaling: market_hits + price_predictions + price_history partitioned monthly.
+    pg_cron job id=32 auto-creates next-month partition on the 25th @ 02:00 UTC.
+  * Infrastructure: 44 marketplace adapters, 54 categories, ~140K catalog items,
+    528K market_hits, 99K+ price_predictions, 36 Ridge models, data lake on S3.
 
-BLOCKED ON USER — required before submit:
-  [ ] Apple Developer enrollment (~10 days external wait)
-  [x] App name decision — Sparrow Collect (formal) / Sparrow (colloquial), 2026-05-04
-  [ ] Brand rename sweep (app.json, src/, web/, assets — see app-store-aso.md)
-  [ ] eas.json: submit.ios.ascAppId + appleTeamId (needs Apple Dev creds)
-  [ ] Stripe live keys (test keys wired)
-  [ ] Domain DNS — purchase decision pending
-  [ ] 3 Supabase dashboard toggles (HIBP, OTP expiry, PG upgrade)
-  [ ] Phase 3 query rewrites + auction_alert_worker re-enable
-      (see docs/PHASE_3_QUERY_REWRITES.md)
+USER ACTIONS DONE (since launch push started 2026-05-04):
+  [x] Apple Developer enrolment — Individual, paid + approved 2026-05-07
+  [x] App name decision — Sparrow Collect (formal) / Sparrow (colloquial)
+  [x] Brand rename sweep — app.json, src/, web/, locales (7), legal copy
+  [x] eas.json submit creds — ASC App ID 6767359453, Team ID 3DX8FBF7S6
+  [x] Domain purchase + DNS — sparrowcollect.com live via Cloudflare + Vercel (SSL OK)
+  [x] EC2 SSL — Let's Encrypt on api.sparrowcollect.com
+  [x] App Store Connect record created — bundle `io.sparrowcollect.app`
+  [x] EAS store profile (BETA_UNLOCK_ALL=false) — eas.json:32
+  [x] RevenueCat IAP — Free + Pro shipped 2026-05-09 (commit `652230a`)
+  [x] Onboarding rework — age→seller-gate + followed-cat surfaces (commit `d0c4713`, 2026-05-18)
 
-PRE-LAUNCH BAKE POSTURE (2026-05-04):
-  Bake manifest cut from 33 → 10 active workers. Disabled workers will
-  be re-enabled in waves AFTER launch. Order:
-    Wave 1 (week 1 post-launch): alerts_worker, watchlist_monitor_worker,
-      auction_alert_worker (after Phase 3), value_change_worker.
-    Wave 2 (after first paid users): deal_discovery, offer_expiry_worker,
-      price_monitor, scarcity_monitor_worker, auto_delist_worker.
-    Wave 3 (after events feature ships): event_scraper_worker,
-      ticketmaster_events_worker, seatgeek_events_worker,
-      event_engagement_worker.
-    Wave 4 (after enough scan_corrections accumulate): vision_quality_worker,
-      vision_reclassifier_worker, vision_regret_worker.
-    Wave 5 (post-scale ops): partition_drop_worker, datalake_export_worker,
-      discovery_audit_worker, search_gap_worker, demand_priority_worker,
-      catalog_crawler_worker.
-  Each wave gets a one-week soak between waves so any new fragility
-  surfaces in isolation.
+USER ACTIONS REMAINING (before App Store submission):
+  [ ] RevenueCat dashboard configuration — see PUBLIC_LAUNCH_CHECKLIST.md Phase 2
+        (revenuecat.com account, iOS app + .p8 + Key ID/Issuer ID, products,
+         `pro` entitlement, default offering with `$rc_monthly` + `$rc_annual`)
+  [ ] App Store Connect IAP products — sparrow_pro_monthly (€4.99/mo),
+        sparrow_pro_yearly (€39.99/yr) — Phase 1 of PUBLIC_LAUNCH_CHECKLIST.md
+  [ ] Sandbox tester for purchase QA — ASC → Users → Sandbox → Testers
+  [ ] Demo user for Apple reviewer — apple-review@sparrowcollect.com in Supabase
+  [ ] App privacy nutrition labels — ASC questionnaire (answers in
+        docs/app-store-aso.md lines 620-672)
+  [ ] App Review Information — demo creds + contact + reviewer notes
+  [ ] Submit for review — Phase 8 of PUBLIC_LAUNCH_CHECKLIST.md
+  [ ] Supabase dashboard toggles — HIBP, OTP expiry, Postgres upgrade (post-launch)
 
-ESTIMATED TIME FROM HERE TO SUBMIT: ~10 days external (Apple) + ~3 hours
-of user clicks (name swap, live keys, DNS, dashboard toggles). No code work
-required before submit. Post-submit: 1-3 days App Store review.
+DEFERRED (NOT required for v1):
+  - Stripe Live keys — replaced by RevenueCat for iOS IAP (Stripe code path
+    remains in `server/app/billing_router.py` for future web/Android billing).
+  - Google OAuth (web/iOS/Android client IDs) — beta uses email/password.
+  - Google Play submission — iOS first; Android ships 1-2 weeks later.
+  - Apple Sign-In service ID / .p8 key — not required for App Store approval.
+
+ESTIMATED TIME TO SUBMIT: ~3-4 hours of dashboard clicks once TestFlight
+build #13 lands (RevenueCat dashboard config + IAP setup + ASC metadata +
+nutrition labels + reviewer info). Apple review: 1-3 days.
 
 --------------------------------------------------------------------------------
 
-Status (2026-04-12, historical): All app code, tests, admin dashboard (24 tabs, real data),
-AEO content (103 Q&A pairs), spend monitor, dark mode, i18n (7 locales), and
-the rebrand are DONE (3262 backend tests, 516 frontend tests, 0 TS errors).
-14-day data bake is LIVE on EC2 t3.medium (51.21.210.195, Elastic IP).
-GitHub Actions secrets configured. CI workflows fixed.
-What's left: domain DNS, EAS submit creds (Apple Team ID + ASC App ID),
-Stripe live keys, and app store submission.
-
-
 ================================================================================
- 1. DOMAIN & DNS
+ 1. DOMAIN & DNS  ✅ DONE
 ================================================================================
 
-[ ] Buy domain (collectai.app or your chosen domain)
-[ ] Create DNS A record pointing to EC2 IP (51.21.210.195)
-    - api.collectai.app -> EC2 IP (for backend API)
-    - collectai.app -> your website/landing page (optional)
-    - www.collectai.app -> same as above
-[ ] Create CNAME for www -> collectai.app (if using www)
-[ ] Wait for DNS propagation (check with: dig api.collectai.app)
-
-
-================================================================================
- 2. SUPABASE PROJECT SETUP
-================================================================================
-
-[x] Create Supabase project (ykqrruipzmrrvjcvwfgp, eu-central-1 Frankfurt)
-[x] Collect these values from Supabase Dashboard > Settings > API:
-    - SUPABASE_URL=https://ykqrruipzmrrvjcvwfgp.supabase.co
-    - SUPABASE_KEY (anon key) — in .env
-    - SUPABASE_SERVICE_KEY (service_role key) — in .env
-    - SUPABASE_JWT_SECRET — in .env
-    - SUPABASE_JWT_ISSUER — in .env
-[x] Collect database connection string from Settings > Database:
-    - DB_DSN — in .env (pooler connection)
-
---- Run Migrations ---
-
-Apply all SQL migrations in order. Use Supabase SQL Editor or psql:
-
-[ ] 2025-10-01_collectors_core.sql        (core tables)
-[ ] 2025-10-01_rls_policies.sql           (row-level security)
-[ ] 2025-10-02_alert_rules_fix.sql
-[ ] All 20250919_* and 20250920_* migrations (label events, UUID, training items)
-[ ] All 20250921_* migrations (metrics, market cache, model registry, feature flags)
-[ ] 20260202_category_completion.sql
-[ ] 20260202_ingest_pipeline_tables.sql
-[ ] 20260202_user_price_alerts.sql
-[ ] 20260206_model_registry_expand.sql
-[ ] 20260206_beta_tables.sql
-[ ] 20260206_events_system.sql
-[ ] 20260206_events_enhance.sql
-[ ] 20260209_canary_and_matviews.sql
-[ ] 20260209_missing_indexes.sql
-[ ] 20260210_evidence_native.sql          (evidence layer: 9 schema additions)
-[ ] 20260210_taxonomy_registry.sql        (taxonomy tables)
-[ ] 20260210_object_pointers.sql          (S3 object pointers)
-[ ] 20260211_push_tokens.sql              (push notification tokens)
-[ ] 20260212_performance_indexes_and_user_settings.sql
-[ ] 20260212_alert_history_batch_index.sql
-[ ] 20260212_vision_queue_status_index.sql
-[ ] 20260212_rls_enforcement.sql
-[ ] 20260212_canonical_item_registry.sql
-[ ] 20260213_smart_deal_agent.sql         (purchase mandates + deals)
-[ ] 20260218_subscriptions.sql            (Stripe subscription tracking)
-[ ] 20260218_beta_signups.sql             (beta signup table)
-[ ] 20260219_portfolio_attributes.sql     (portfolio attributes)
-[ ] 20260219_bugfix_audit.sql             (bugfix audit)
-[ ] 20260220_catalog_learning.sql         (catalog suggestions + candidates)
-[ ] 20260221_user_blocks.sql              (user blocks + RLS)
-[ ] 20260222_currency_geo_shipping.sql    (currencies, geo, shipping)
-[ ] 20260222_events_improvements.sql      (event templates, sponsors, RSVP)
-[ ] 20260222_build_paint_improvements.sql (build & paint projects)
-[ ] 20260223_add_performance_indexes.sql  (performance indexes)
-[ ] 20260322_build_paint_status_pipeline.sql (category-specific status pipelines)
-[ ] 20260323_events_enrich.sql              (franchise_id + lat/lon on events)
-[ ] 20260224_user_privacy_settings.sql    (privacy settings + RLS)
-[ ] 20260224_add_indexes_v2.sql           (category_follows + events indexes)
-
---- Supabase Auth Configuration ---
-
-[ ] Enable email/password sign-up (Authentication > Providers > Email)
-[ ] Set email confirmation to REQUIRED
-[ ] Customize email templates (confirm signup, reset password, magic link)
-    - Templates at: Authentication > Email Templates
-    - Use your branding (CollectAI, Tiffany Blue #81D8D0)
-[ ] Set redirect URLs in Authentication > URL Configuration:
-    - Site URL: https://collectai.app (or your domain)
-    - Redirect URLs: collectai://reset-password, collectai://subscription
-[ ] Enable Apple OAuth provider:
-    - Authentication > Providers > Apple > Enable
-    - Requires Apple Developer account (see Section 7)
-[ ] Enable Google OAuth provider:
-    - Authentication > Providers > Google > Enable
-    - Requires Google Cloud OAuth credentials (see Section 8)
-
+[x] Buy sparrowcollect.com (purchased 2026-05-04)
+[x] Cloudflare DNS configured:
+    - api.sparrowcollect.com -> 51.21.210.195 (DNS-only, grey cloud)
+    - sparrowcollect.com -> Vercel (proxied)
+    - www.sparrowcollect.com -> CNAME sparrowcollect.com (proxied)
+[x] DNS propagation verified (`dig api.sparrowcollect.com +short`)
+[x] Vercel project linked: collectais-projects/sparrowcollect
 
 ================================================================================
- 3. EC2 / SERVER SETUP
+ 2. SUPABASE PROJECT SETUP  ✅ DONE
 ================================================================================
 
-[x] Ensure EC2 instance is running (Elastic IP: 51.21.210.195, t3.medium, eu-north-1)
-    SSH: ssh -i ~/.ssh/collectai-ec2 ubuntu@51.21.210.195
-[x] Bake running at /opt/collectors (started 2026-04-12, pid tracked in bake.pid)
-[ ] SSH into EC2 and install Docker + Docker Compose:
-    sudo apt update && sudo apt install -y docker.io docker-compose-plugin
-    sudo systemctl enable docker && sudo systemctl start docker
-    sudo usermod -aG docker $USER
-[ ] Install nginx and certbot:
-    sudo apt install -y nginx certbot python3-certbot-nginx
-[ ] Copy nginx config:
-    sudo cp deploy/nginx.conf /etc/nginx/sites-available/collectai
-    sudo ln -s /etc/nginx/sites-available/collectai /etc/nginx/sites-enabled/
-    sudo rm -f /etc/nginx/sites-enabled/default
-[ ] Get SSL certificate (DNS must be pointing to EC2 first!):
-    sudo certbot --nginx -d api.collectai.app
-[ ] Verify nginx:
-    sudo nginx -t && sudo systemctl reload nginx
-[ ] Verify auto-renewal:
-    sudo certbot renew --dry-run
-[ ] Create app directory:
-    sudo mkdir -p /opt/collectai && cd /opt/collectai
-[ ] Copy docker-compose.yml to /opt/collectai/
-[ ] Create production .env file (see Section 4)
-
+[x] Project: ykqrruipzmrrvjcvwfgp (eu-central-1 Frankfurt)
+[x] All env values in .env (SUPABASE_URL, KEY, SERVICE_KEY, JWT_SECRET, JWT_ISSUER, DB_DSN)
+[x] All migrations applied through 2026-05-19 (~70 migrations, see supabase/migrations/)
+[x] RLS enforced on all user-data tables
+[x] Auth: email/password + email confirmation REQUIRED
+[x] Auth redirect URLs: sparrow://reset-password, sparrow://subscription
+[ ] Apple OAuth provider — DEFERRED (email/password is sufficient for v1)
+[ ] Google OAuth provider — DEFERRED (post-launch)
 
 ================================================================================
- 4. PRODUCTION .ENV FILE
+ 3. EC2 / SERVER SETUP  ✅ DONE
 ================================================================================
 
-Create /opt/collectai/.env on the EC2 instance with these values.
-Generate secrets with: openssl rand -hex 32
-
---- REQUIRED (app will not start without these) ---
-
-[ ] DEV_MODE=false
-[ ] DB_ENABLED=true
-[ ] DB_DSN=postgresql://postgres:<password>@db.<project>.supabase.co:5432/postgres
-[ ] SUPABASE_URL=https://<project>.supabase.co
-[ ] SUPABASE_KEY=<anon-key>
-[ ] SUPABASE_SERVICE_KEY=<service-role-key>
-[ ] SUPABASE_JWT_SECRET=<jwt-secret>
-[ ] SUPABASE_JWT_ISSUER=https://<project>.supabase.co/auth/v1
-[ ] OPS_API_KEY=<generate-with-openssl-rand-hex-32>
-[ ] API_SHARED_SECRET=<generate-with-openssl-rand-hex-32>
-
---- SECURITY ---
-
-[ ] CORS_ORIGINS=https://collectai.app,https://www.collectai.app,https://api.collectai.app
-[ ] TRUSTED_HOSTS=api.collectai.app,collectai.app,www.collectai.app
-[ ] RATE_LIMIT_ENABLED=true
-[ ] RATE_LIMIT_RPM=60
-[ ] DEBUG=false
-[ ] DB_SSL_ALLOW_SELF_SIGNED=0
-
---- STRIPE (required for subscriptions) ---
-
-[ ] STRIPE_SECRET_KEY=sk_live_...          (from stripe.com/dashboard/apikeys)
-[ ] STRIPE_WEBHOOK_SECRET=whsec_...        (from Stripe webhook setup)
-[ ] STRIPE_PRICE_ID_PRO=price_...          (from Stripe product setup)
-[ ] STRIPE_PRICE_ID_PREMIUM=price_...      (from Stripe product setup)
-
---- AWS / S3 (required for image storage) ---
-
-[ ] AWS_ACCESS_KEY_ID=AKIA...
-[ ] AWS_SECRET_ACCESS_KEY=...
-[ ] AWS_REGION=eu-west-1
-[ ] CATALOG_IMAGES_S3_BUCKET=collectai-artifacts
-[ ] USER_UPLOADS_S3_BUCKET=collectai-artifacts
-[ ] ML_MODELS_S3_BUCKET=collectai-ml-models
-
---- SENTRY (strongly recommended) ---
-
-[ ] SENTRY_DSN=https://...@sentry.io/...   (from sentry.io project)
-[ ] SENTRY_ENV=production
-[ ] SENTRY_TRACES_RATE=0.1
-
---- ML / VISION (optional — features degrade gracefully without) ---
-
-[ ] OPENAI_API_KEY=sk-...                   (for vision classification fallback)
-[ ] FAL_KEY=...                             (for CLIP image embeddings)
-
---- MARKETPLACE APIs (optional — marketplace features degrade without) ---
-
-[ ] EBAY_CLIENT_ID=...
-[ ] EBAY_CLIENT_SECRET=...
-[ ] TCGPLAYER_BEARER_TOKEN=...
-[ ] EBAY_AFFILIATE_CAMPAIGN_ID=...
-[ ] TCGPLAYER_AFFILIATE_ID=...
-[ ] CARDMARKET_AFFILIATE_ID=...
-
---- FIRECRAWL (optional — URL import degrades without) ---
-
-[ ] FIRECRAWL_API_KEY=...
-
---- WORKERS (enable when ready) ---
-
-[ ] MONITOR_ENABLED=false                   (set true to enable price monitor)
-[ ] DEAL_DISCOVERY_ENABLED=false            (set true to enable deal scanner)
-[ ] AUCTION_ALERT_ENABLED=false             (set true to enable auction end-time alerts)
-
+[x] EC2: 51.21.210.195, t3.medium, eu-north-1, Elastic IP
+[x] SSH: `ssh collectai` (key at ~/.ssh/collectai-ec2)
+[x] systemd service: `collectai-bake.service` runs `bake_orchestrator.py`
+    from `/opt/collectors/server/` (NOT `/opt/collectors/`)
+[x] Bake preflight gates (6) wired into ExecStartPre
+[x] nginx + Certbot for SSL on api.sparrowcollect.com (renewal verified)
+[x] CORS_ORIGINS + TRUSTED_HOSTS updated for sparrowcollect.com
+[x] Deploy: `scripts/deploy_to_ec2.sh` (rsyncs to `/opt/collectors/server/`)
 
 ================================================================================
- 5. STRIPE SETUP
+ 4. PRODUCTION .ENV FILE  ✅ DONE
 ================================================================================
 
-[ ] Create Stripe account at stripe.com (if not already done)
-[ ] Switch to Live Mode (toggle in Stripe Dashboard top-right)
-[ ] Create Products & Prices:
-    - Product 1: "CollectAI Pro"
-      - Price: EUR 4.99/month, recurring
-      - Copy the price_id -> STRIPE_PRICE_ID_PRO
-    - Product 2: "CollectAI Premium"
-      - Price: EUR 9.99/month, recurring
-      - Copy the price_id -> STRIPE_PRICE_ID_PREMIUM
-[ ] Set up Webhook endpoint:
-    - URL: https://api.collectai.app/billing/webhook
-    - Events to listen for:
-      * checkout.session.completed
-      * customer.subscription.updated
-      * customer.subscription.deleted
-      * invoice.payment_failed
-    - Copy the Signing secret -> STRIPE_WEBHOOK_SECRET
-[ ] Configure Customer Portal:
-    - Settings > Billing > Customer Portal
-    - Enable: Cancel subscription, Switch plans, Update payment method
-    - Set return URL: collectai://settings
-[ ] Test with Stripe test mode first (sk_test_...) before going live
-
+[x] All required vars set in /opt/collectors/.env on EC2
+[x] CORS_ORIGINS=https://sparrowcollect.com,https://www.sparrowcollect.com
+[x] TRUSTED_HOSTS=api.sparrowcollect.com,sparrowcollect.com,www.sparrowcollect.com
+[x] RATE_LIMIT_ENABLED=true, DEBUG=false, DB_SSL_ALLOW_SELF_SIGNED=0
+[x] Sentry: backend + mobile DSNs in .env
+[x] AWS S3: collectai-warehouse-prod-eu-north-1 (data lake, lifecycle rules)
+[x] Marketplace API creds: eBay, TCGPlayer (closed), Cardmarket (restricted),
+    PriceCharting (paid only). 9 unrestricted sources active.
+[x] Paid-scraper kill switches: FIRECRAWL_ENABLED=false, SCRAPEDO_ENABLED=false
+    (both quota-exhausted 2026-04-21; not blocking)
 
 ================================================================================
- 6. AWS SETUP
+ 5. PAYMENTS — RevenueCat (PRIMARY)  ⏳ DASHBOARD PENDING
 ================================================================================
 
-[x] Create IAM user with S3 + EC2 + EC2InstanceConnect access:
-    - User: collectai-access (arn:aws:iam::425295131811:user/collectai-access)
-    - Policies: AmazonEC2FullAccess, AmazonS3FullAccess, EC2InstanceConnect
-    - Access Key ID in .env (rotated 2026-04-12)
-[ ] Create S3 buckets:
-    - collectai-artifacts (for images, exports)
-    - collectai-ml-models (for ML model files)
-    - Region: eu-west-1
-    - Block all public access (use presigned URLs)
-[ ] Optional: Create CloudFront distribution for collectai-artifacts
-    - Origin: collectai-artifacts.s3.eu-west-1.amazonaws.com
-    - Copy distribution URL -> CATALOG_IMAGES_CDN_URL, USER_UPLOADS_CDN_URL
+> Stripe was the original plan but RevenueCat replaced it for iOS IAP on
+> 2026-05-09 (commit `652230a`). Stripe code stays in `server/app/billing_router.py`
+> for future web/Android billing; do NOT activate Stripe Live Mode for v1.
 
+Code side ✅ DONE:
+[x] `react-native-purchases` SDK installed + initialised in `src/lib/purchases.ts`
+[x] PRO_ENTITLEMENT_ID = 'pro' (lowercase, must match RC dashboard)
+[x] Subscription screen reads `offerings?.current?.monthly` and `.annual` (app/subscription.tsx:151)
+[x] FE source of truth: RevenueCat customerInfo (BE billing endpoints vestigial)
+[x] EXPO_PUBLIC_REVENUECAT_IOS_KEY plumbing via EAS env
 
-================================================================================
- 7. APPLE DEVELOPER SETUP
-================================================================================
-
-[ ] Enroll in Apple Developer Program ($99/year) at developer.apple.com
-[ ] Create App ID:
-    - Identifier: com.collectai.app
-    - Capabilities: Sign In with Apple, Push Notifications, Associated Domains
-[ ] Configure Sign In with Apple:
-    - Service IDs > Create new > identifier: com.collectai.app.auth
-    - Enable Sign In with Apple
-    - Return URL: https://<project>.supabase.co/auth/v1/callback
-[ ] Set up in Supabase:
-    - Authentication > Providers > Apple
-    - Enter Service ID, Team ID, Key ID, and private key (.p8)
-[ ] Create App Store Connect record:
-    - App name: Atlantis
-    - Primary language: English
-    - Bundle ID: com.collectai.app
-    - SKU: collectai-1
-[ ] Fill in eas.json submit credentials:
-    - appleId: your Apple ID email
-    - ascAppId: App Store Connect app ID (numeric)
-    - appleTeamId: your Team ID
-
+Dashboard side ⏳ PENDING (user action — see PUBLIC_LAUNCH_CHECKLIST.md Phases 1-2):
+[ ] revenuecat.com account + Sparrow project
+[ ] ASC: create `sparrow_pro_monthly` (€4.99/mo) + `sparrow_pro_yearly` (€39.99/yr)
+[ ] ASC: generate In-App Purchase Key (.p8) — Key ID + Issuer ID
+[ ] RC: paste .p8 + Key ID + Issuer ID, copy public app-specific API key
+[ ] `eas env:create` to push `EXPO_PUBLIC_REVENUECAT_IOS_KEY` to production env
+[ ] RC: import products from App Store
+[ ] RC: create `pro` entitlement, attach both products
+[ ] RC: configure `default` offering with `$rc_monthly` + `$rc_annual` packages
+[ ] ASC: create sandbox tester for purchase QA
 
 ================================================================================
- 8. GOOGLE CLOUD / PLAY SETUP
+ 6. AWS SETUP  ✅ DONE
 ================================================================================
 
---- Google OAuth (for Google Sign In) ---
-
-[ ] Go to console.cloud.google.com > APIs & Services > Credentials
-[ ] Create OAuth 2.0 Client IDs:
-    - Web application:
-      * Authorized redirect URIs: https://<project>.supabase.co/auth/v1/callback
-      * Copy Client ID -> EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
-    - iOS:
-      * Bundle ID: com.collectai.app
-      * Copy Client ID -> EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
-    - Android:
-      * Package name: com.collectai.app
-      * SHA-1 fingerprint (from your signing key)
-      * Copy Client ID -> EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID
-[ ] Set up in Supabase:
-    - Authentication > Providers > Google
-    - Enter Web Client ID and Client Secret
-
---- Google Play Console ---
-
-[ ] Enroll in Google Play Developer Program ($25 one-time) at play.google.com/console
-[ ] Create app: CollectAI - Collectibles Tracker
-[ ] Create service account for EAS Submit:
-    - Google Cloud Console > IAM > Service Accounts
-    - Grant "Service Account User" role
-    - Create JSON key -> save path for eas.json serviceAccountKeyPath
-[ ] Fill eas.json Android submit credentials:
-    - serviceAccountKeyPath: path to service account JSON key
-    - track: "internal" (for testing), then "production" for release
-
+[x] IAM user `collectai-access` with S3 + EC2 access
+[x] S3 buckets: collectai-artifacts (images), collectai-warehouse-prod-eu-north-1 (data lake)
+[x] Data lake lifecycle: 180d → Glacier IR → 730d → Deep Archive (versioned, AES-256)
+[x] DuckDB readback verified
 
 ================================================================================
- 9. SENTRY SETUP
+ 7. APPLE DEVELOPER + APP STORE CONNECT  ✅ DONE
 ================================================================================
 
-[x] Create Sentry account at sentry.io (EU region)
-[x] Create two projects:
-    - collectai-backend (Python / FastAPI) — DSN in .env
-    - collectai-mobile (React Native) — DSN in .env
-[ ] Install @sentry/react-native in the project:
-    npm install @sentry/react-native
-[ ] Set SENTRY_ENV=production in backend .env
-
-
-================================================================================
- 10. DEPLOY BACKEND
-================================================================================
-
-[ ] Copy .env and docker-compose.yml to EC2 /opt/collectai/
-[ ] Build and start Docker containers:
-    cd /opt/collectai
-    docker compose up -d --build
-[ ] Verify health check:
-    curl -sf https://api.collectai.app/healthz
-    Expected: {"ok":true,"db_configured":true,"db":"up","db_ms":...}
-[ ] Verify version:
-    curl https://api.collectai.app/version
-[ ] Check admin dashboard:
-    curl -H "X-Ops-Key: <your-ops-key>" https://api.collectai.app/ops/dashboard/stats
-[ ] Check logs for errors:
-    docker compose logs -f api
-[ ] Test Stripe webhook (use Stripe CLI):
-    stripe listen --forward-to https://api.collectai.app/billing/webhook
-
+[x] Apple Developer enrolment — Individual (NL eenmanszaak, KvK 99596326)
+    paid + approved 2026-05-07
+[x] App ID: io.sparrowcollect.app (com.sparrowcollect.* was rejected)
+[x] App Store Connect record: App ID 6767359453, name "Sparrow Collect"
+[x] eas.json submit creds: appleId, ascAppId, appleTeamId all filled
+[x] Distribution cert + provisioning profile auto-managed by EAS (valid → 2027-05-12)
+[ ] Sign In with Apple service ID + .p8 key — DEFERRED (v1 uses email/password)
 
 ================================================================================
- 11. MOBILE APP — FRONTEND .ENV
+ 8. GOOGLE CLOUD / PLAY  ⏭️ DEFERRED
 ================================================================================
 
-Create a local .env for the frontend (or use EAS Secrets for builds):
-
-[ ] EXPO_PUBLIC_API_URL=https://api.collectai.app
-[ ] EXPO_PUBLIC_API_BASE_URL=https://api.collectai.app
-[ ] EXPO_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-[ ] EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-[ ] EXPO_PUBLIC_SUPABASE_MODE=strict
-[ ] EXPO_PUBLIC_SENTRY_DSN=<sentry-dsn-for-mobile>
-[ ] EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=<google-web-client-id>
-[ ] EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=<google-ios-client-id>
-[ ] EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=<google-android-client-id>
-
+iOS-first launch. Play Console scaffolded in `android/fastlane/` for phase 2
+(1-2 weeks post-iOS). Google OAuth client IDs not wired — email/password for v1.
 
 ================================================================================
- 12. APP ASSETS (DESIGN)
+ 9. SENTRY  ✅ DONE
 ================================================================================
 
-Replace placeholder assets before submitting to stores:
-
-[ ] App icon: assets/icon.png (1024x1024, no transparency, no rounded corners)
-[ ] Splash screen: assets/splash.png (use Tiffany Blue #81D8D0 background)
-[ ] Adaptive icon: assets/adaptive-icon.png (512x512 foreground, safe zone)
-[ ] Feature graphic (Google Play): 1024x500 banner image
-[ ] App Store screenshots (6-10 per device size):
-    - iPhone 6.9" (1320x2868)  — required
-    - iPhone 6.7" (1290x2796)  — required
-    - iPhone 6.5" (1242x2688)  — if supporting older devices
-    - iPad Pro 13" (2064x2752) — if supportsTablet: true
-
-    Recommended screenshots:
-    1. Collection overview (portfolio grid with values)
-    2. Item detail (price evidence + provenance)
-    3. QuickScan (camera scanning)
-    4. Price intelligence (valuation breakdown)
-    5. Deal discovery (mandates + matched deals)
-    6. Events calendar
-    7. Category browser (36 categories)
-    8. Analytics dashboard
-
+[x] Sentry EU region account
+[x] Two projects: collectai-backend (Python/FastAPI) + collectai-mobile (RN)
+[x] DSNs in backend .env + EAS env vars
+[x] EAS build hook for release tracking (commit `d327294`)
+[x] GitHub Actions release workflow
 
 ================================================================================
- 13. APP STORE METADATA
+ 10. DEPLOY BACKEND  ✅ DONE
 ================================================================================
 
-[ ] Write App Store description (store in docs/store-description.md)
-[ ] Prepare metadata:
-    - App Name: CollectAI
-    - Subtitle: Smart Collectibles Tracker
-    - Category: Lifestyle (primary), Shopping (secondary)
-    - Keywords: collectibles, valuation, price tracker, collection manager,
-                funko, pokemon, trading cards, barcode scanner
-    - Privacy URL: https://collectai.app/privacy
-    - Support URL: https://collectai.app/support
-    - Marketing URL: https://collectai.app
-    - Content Rating: Everyone / 4+
-[ ] Google Play specific:
-    - Short description: Track, value, and discover collectibles with AI
-    - Full description: same as iOS but can be longer
-    - Category: Lifestyle
-    - Content rating questionnaire: complete in Play Console
-
+[x] systemd service running, ExecStartPre preflight gates enforced
+[x] Health check: https://api.sparrowcollect.com/healthz returns {ok:true, db:up}
+[x] Bake orchestrator supervises 17 in-process workers + 3 monitor loops
+[x] CRAWL4AI_MAX_CONCURRENT=1, circuit breakers on all 44 adapters
 
 ================================================================================
- 14. BUILD & SUBMIT
+ 11. MOBILE APP — EAS ENV VARS  ✅ DONE
 ================================================================================
 
-[ ] Install EAS CLI: npm install -g eas-cli
-[ ] Login: eas login
-[ ] Set EAS Secrets (env vars for build):
-    eas secret:create --name EXPO_PUBLIC_API_URL --value https://api.collectai.app
-    eas secret:create --name EXPO_PUBLIC_SUPABASE_URL --value https://<project>.supabase.co
-    eas secret:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon-key>
-    eas secret:create --name EXPO_PUBLIC_SUPABASE_MODE --value strict
-    (... repeat for all EXPO_PUBLIC_* vars)
+[x] EXPO_PUBLIC_API_BASE_URL=https://api.sparrowcollect.com (in EAS production)
+[x] EXPO_PUBLIC_SUPABASE_URL + ANON_KEY (in EAS production)
+[x] EXPO_PUBLIC_SUPABASE_MODE=strict (set per-profile in eas.json)
+[x] EXPO_PUBLIC_BETA_UNLOCK_ALL — true on `production` profile, false on `store`
+[x] EXPO_PUBLIC_REVENUECAT_IOS_KEY (sensitive, pending RC dashboard setup)
+[x] SENTRY_DISABLE_AUTO_UPLOAD plumbed
 
-[ ] Build iOS:
-    eas build --platform ios --profile production
+================================================================================
+ 12. APP ASSETS  ✅ DONE
+================================================================================
 
-[ ] Build Android:
-    eas build --platform android --profile production
+[x] App icon: assets/icon.png (1024x1024, Tiffany Blue gradient, no transparency)
+[x] Splash + adaptive icon refreshed for Sparrow brand
+[x] App Store screenshots: 6 compositions rendered via Remotion 5
+    (collectai-admin/video/out/screenshots/, iPhone 16 Pro Max 1290x2796)
+[x] Paywall screenshot: ~/Desktop/sparrow_paywall_1290x2796.png
 
-[ ] Test builds on real devices before submitting!
+================================================================================
+ 13. APP STORE METADATA  ✅ READY TO PASTE
+================================================================================
 
-[ ] Submit iOS:
-    eas submit --platform ios --profile production
+All copy lives in **`docs/app-store-aso.md`**. Paste each section into the
+matching ASC field per **`docs/PUBLIC_LAUNCH_CHECKLIST.md` Phase 5**.
 
-[ ] Submit Android:
-    eas submit --platform android --profile production
+================================================================================
+ 14. BUILD & SUBMIT  ⏳ IN-FLIGHT
+================================================================================
 
-[ ] Monitor review status in App Store Connect and Google Play Console
-
+[x] EAS CLI installed, logged in as collectai (slendebroekmerle@gmail.com)
+[x] Build #3 (buildNumber 9, ID 6ea51914) uploaded to ASC 2026-05-12
+[~] Build #13 (auto-incremented from #12) — BUILDING on EAS 2026-05-19,
+    track at https://expo.dev/accounts/collectai/projects/collectai/builds/
+[x] Submit profile `store` added to eas.json 2026-05-19 (mirrors `production`)
+[ ] App Store submission — pending RevenueCat dashboard + ASC metadata
 
 ================================================================================
  15. POST-LAUNCH
 ================================================================================
 
-[ ] Verify Stripe webhooks are firing correctly (Stripe Dashboard > Webhooks > logs)
-[ ] Monitor Sentry for errors (both backend and mobile)
-[ ] Monitor health check: set up uptime monitoring (e.g. UptimeRobot, Better Uptime)
-    - URL: https://api.collectai.app/healthz
-    - Interval: 5 minutes
-    - Alert: email/Slack on failure
-[ ] Set up log rotation on EC2 (Docker logs can grow large)
-[ ] Schedule database backups (Supabase does daily backups on Pro plan)
-[ ] Secret rotation: rotate all exposed tokens (see docs/DEPLOYMENT.md > Secret Rotation)
-    - Run git filter-repo to remove .env from git history
-    - Rotate Supabase keys if they were ever committed
-    - Generate new OPS_API_KEY and API_SHARED_SECRET
-[ ] Enable workers when ready:
-    - MONITOR_ENABLED=true  (price monitoring)
-    - DEAL_DISCOVERY_ENABLED=true  (deal scanning)
-[~] Set up CI/CD auto-deploy (partially done — GH secrets for Supabase set):
-    - Add GitHub Secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
-      ECR_REGISTRY, EC2_HOST, EC2_USER, EC2_SSH_KEY
-    - Create GitHub Environment "production" with required reviewers
-    - In ci.yml: change `if: false && github.ref == ...` to `if: github.ref == ...`
-[ ] Landing page / website at collectai.app with:
-    - Privacy Policy (must match in-app version)
-    - Terms of Service (must match in-app version)
-    - Support / Contact page
-    - App Store & Google Play download badges
-
+[x] Sentry monitoring live (backend + mobile)
+[x] PostHog analytics (31+ events) wired
+[x] CI workflows: ci-min, Sanity, Sanity E2E, Nightly Training, Nightly Eval
+    (Nightly Sanity fixed 2026-05-09 after 16-day silent fail, commit `cfd32c1`)
+[ ] Pre-launch bake manifest cut to 10 workers (2026-05-04). Re-enable disabled
+    workers in 5 waves post-launch — see Pre-Launch Bake Posture above.
+[x] Spend Monitor: €150/mo budget cap, Telegram alerts at 75/90/100%
+[ ] Apply for eBay Marketplace Insights API (sold-comps data; Finding API
+    revoked 2026-04-26)
 
 ================================================================================
- QUICK REFERENCE — SECRETS TO GENERATE
-================================================================================
-
-  openssl rand -hex 32    # OPS_API_KEY
-  openssl rand -hex 32    # API_SHARED_SECRET
-
-  From Supabase Dashboard: SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_KEY,
-                           SUPABASE_JWT_SECRET, DB_DSN
-  From Stripe Dashboard:   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
-                           STRIPE_PRICE_ID_PRO, STRIPE_PRICE_ID_PREMIUM
-  From AWS Console:        AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-  From Google Cloud:       GOOGLE_WEB/IOS/ANDROID_CLIENT_ID
-  From Sentry:             SENTRY_DSN (backend), EXPO_PUBLIC_SENTRY_DSN (mobile)
-  From Apple Developer:    Team ID, Key ID, .p8 key (for Sign In with Apple)
-
-
-================================================================================
- END OF CHECKLIST
+ END OF CHECKLIST — see docs/PUBLIC_LAUNCH_CHECKLIST.md for active launch path
 ================================================================================
