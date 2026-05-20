@@ -1,22 +1,30 @@
 # Sparrow Collect — Data Bake Playbook
 
-> Single-page operator guide. If you read nothing else, read this.
+> Single-page operator guide. If you read nothing else, read this. · Renamed from CollectAI 2026-05-04 · Last refreshed 2026-05-19
 
-The pre-launch **data bake** runs the backend + workers on EC2 for **7-14 days** so the database accumulates marketplace hits, price predictions, and model calibration data. By the time the app goes to TestFlight / App Store, every scan returns real, calibrated values from day one instead of cold-cache placeholders.
+The pre-launch **data bake** ran on EC2 from 2026-04-12 to seed the database with marketplace hits, price predictions, and model calibration data. The bake is now **continuous production load** — every scan returns real, calibrated values from day one. Code lives at `/opt/collectors/server/` on EC2 (NOT `/opt/collectors/` — bake's `WorkingDirectory=server/`).
 
 ---
 
-## Status (2026-04-09)
-- ✅ Catalog **already loaded**: 87,511 `category_items` rows across 37 categories
-- ✅ market_hits: 79,449 rows (79,448 with `item_ref` backfilled from `normalized_key` — R46.20)
-- ✅ **price_predictions: 3,469 rows / 2,211 distinct items** (valuation pipeline verified live)
-- ✅ **price_history: 2,198 rows** (newly populated)
-- ✅ Schema drift check (`scripts/schema_drift_check.py`) PASS — 10 critical tables, 98 columns
-- ✅ All 20 R46.x bake-blocker fixes applied (R46.3 → R46.20, see `memory3.md`)
-- ✅ Valuation pipeline verified end-to-end: market_hits → valuation_worker → price_predictions
-- ⏳ EC2 host not yet provisioned — once it exists, run `bake_start.sh` to start the workers
-- ⏳ mtg + retro_pokemon import retry (2/39 pipelines failed during bulk run)
-- ⚠️ **trg_price_history_latest is DISABLED** for the bake (would write nulls into item_latest_price_mat which has a NOT NULL primary key on item_id). Re-enable after first real users sign up. See R46.19 in memory3.md.
+## Status (2026-05-19)
+- ✅ **EC2 live**: t3.medium, eu-north-1, Elastic IP `51.21.210.195` (`ssh collectai`)
+- ✅ Catalog: **~140K category_items** across **54 categories** (was 87,511 / 37 cats on 2026-04-09)
+- ✅ market_hits: **528K rows, monthly-partitioned** by `recorded_at` (pg_cron job id=32 auto-creates next-month partition on the 25th @ 02:00 UTC)
+- ✅ price_predictions: **99K+ rows** (also monthly-partitioned)
+- ✅ price_history: monthly-partitioned; partition_drop_worker deployed (dry-run default)
+- ✅ Schema drift check (`scripts/schema_drift_check.py`) PASS — wired into preflight
+- ✅ **Bake preflight (6 gates, ExecStartPre)**: deps → env → worker imports → schema drift → RLS check → models. Hard-fails refuse service start.
+- ✅ **Bake monitors (3 in-process)**: sustained worker error paging (≥3 consecutive), stuck-OPEN circuit breaker (>24h), instance health (disk>80%, RSS>3GB, ingest stall >60m, worker_runs stall >15m, matview_demand stall >60m, matview_supply stall >180m).
+- ✅ **Pre-launch bake manifest CUT 2026-05-04**: 33 → 10 active workers. Disabled workers re-enable in 5 waves post-launch — see `GO_LIVE_CHECKLIST.md` "Pre-Launch Bake Posture".
+- ✅ Valuation pipeline E2E: market_hits → valuation_worker → price_predictions (36 Ridge models live, 54 artifact directories)
+- ✅ Data lake exports: `datalake_export_worker.py` runs daily to `s3://collectai-warehouse-prod-eu-north-1` (lifecycle 180d→Glacier IR→730d→Deep Archive, DuckDB readback verified)
+- ✅ 44 marketplace adapters with circuit breakers; FX-normalized to EUR; zero-price filter
+- ✅ tcgcsv + discogs re-enabled 2026-04-26 via `upsert_market_hits_batch` RPC (commit `3efe759`)
+- ✅ Bake hardening 2026-05-04 (7-layer overhaul): supervisor, manifest cut, heavy gate, bounded timeouts, ExecStop cancel hook, sustained-error paging, circuit breaker
+- ⚠️ **trg_price_history_latest still DISABLED** (would write nulls into item_latest_price_mat NOT NULL PK). Re-enable post-launch once we have user-driven price_history rows.
+- ⚠️ **eBay Finding API revoked 2026-04-26**; `sold_comps` returns []. Marketplace Insights API application pending.
+- ⚠️ **Firecrawl + Scrape.do** quota-exhausted 2026-04-21; kill-switches `FIRECRAWL_ENABLED=false`, `SCRAPEDO_ENABLED=false` on EC2.
+- 🔁 **Phase 3 query rewrites** queued in `docs/PHASE_3_QUERY_REWRITES.md` (blocks auction_alert_worker re-enable).
 
 ## TL;DR — start the bake
 

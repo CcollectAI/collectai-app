@@ -1,50 +1,59 @@
-# CollectAI Monetization Strategy
+# Sparrow Collect Monetization Strategy
 
-## 1. Current System — Stripe Subscriptions (BUILT)
+> Last refreshed 2026-05-19. Renamed from CollectAI 2026-05-04. **iOS IAP via RevenueCat replaced Stripe on 2026-05-09** (commit `652230a`); Stripe code path is preserved for future web/Android billing.
 
-Three-tier subscription model, fully wired end-to-end.
+## 1. Current System — RevenueCat IAP (PRIMARY, SHIPPED 2026-05-09)
+
+Two-tier model (was three-tier on Stripe; Premium folded into Pro).
 
 ### Plans
 
-| | Free | Pro (EUR 4.99/mo) | Premium (EUR 9.99/mo) |
-|--|------|-------------------|----------------------|
-| Purchase mandates | 3 | 10 | 50 |
-| Deal discovery | No | Yes | Yes |
-| Dossier PDF export | No | Yes | Yes |
-| Condition Grading (item card) | No | Yes | Yes |
-| Set Completion (sets-to-complete) | No | Yes | Yes |
-| Advanced analytics (price trend, item history, market prices) | No | No | Yes |
-| Basic valuation | Yes | Yes | Yes |
-| Community events | Yes | Yes | Yes |
-| Ads | Yes | No | No |
+| | Free | Pro (€4.99/mo or €39.99/yr) |
+|--|------|-----------------------------|
+| Purchase mandates | 3 | Unlimited |
+| Deal discovery | No | Yes |
+| Dossier PDF export | No | Yes |
+| Condition Grading (item card) | No | Yes |
+| Set Completion (sets-to-complete) | No | Yes |
+| Advanced analytics (price trend, history, market prices) | No | Yes |
+| Basic valuation | Yes | Yes |
+| Community events | Yes | Yes |
+| Ads | Yes | No |
 
-### FE↔BE limits contract
+### RevenueCat ↔ FE contract
 
-`GET /billing/status` returns a `limits` dict whose keys MUST match the
-shape consumed by the FE in `src/hooks/useBillingLimits.ts`. Required
-keys (as of 2026-05-01): `max_mandates`, `deal_discovery`, `dossier_pdf`,
-`advanced_analytics`, `condition_grading`, `set_completion`, `show_ads`.
-Any missing key is `undefined` → falsy on the FE → silently locked UI for
-paid users. The contract is pinned by `scripts/e2e_paid_features_billing.py`,
-which fails loudly on either-side drift.
+- Entitlement identifier: **`pro`** (lowercase) — must match `PRO_ENTITLEMENT_ID` in `src/lib/purchases.ts:5`.
+- Offering: **`default`** with packages `$rc_monthly` (linked to `sparrow_pro_monthly`) and `$rc_annual` (linked to `sparrow_pro_yearly`). `app/subscription.tsx:151` reads these exact identifiers — other names produce a "Coming soon" UI.
+- **FE source of truth: `Purchases.getCustomerInfo()`** from `react-native-purchases`. Backend `/billing/status` endpoint is vestigial for iOS — kept for future web/Android.
+- Beta override: `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` (set on `production` build profile) bypasses RC entirely for TestFlight testing. The `store` build profile sets it `false` for App Store submission.
 
 ### What's Built
 
 | Component | File(s) | Status |
 |-----------|---------|--------|
-| Stripe Checkout + Portal + Webhook | `billing_router.py` | Done |
-| Subscription gating dependency | `subscription.py` (`require_plan()`) | Done |
-| Dynamic mandate limits per plan | `subscription.py` (`get_user_mandate_limit()`) | Done |
-| Subscriptions DB table + RLS | `20260218_subscriptions.sql` | Done |
-| Frontend plan selection screen | `app/subscription.tsx` | Done |
-| API client (status/checkout/portal) | `collectorsApi.ts` | Done |
-| Settings link to subscription | `Settings.tsx` | Done |
-| Webhook idempotency + error hardening | `billing_router.py` | Done |
-| 25 tests (14 billing + 11 subscription) | `test_billing.py`, `test_subscription.py` | Done |
+| `react-native-purchases` SDK + init | `src/lib/purchases.ts` | Done |
+| Plan selection + restore flow | `app/subscription.tsx` | Done |
+| Entitlement gating hook | `src/hooks/useBillingLimits.ts` | Done |
+| Beta-unlock flag override | `EXPO_PUBLIC_BETA_UNLOCK_ALL` (eas.json) | Done |
+| EAS env var plumbing | `EXPO_PUBLIC_REVENUECAT_IOS_KEY` | Done |
+| Stripe Checkout + Portal + Webhook (dormant) | `server/app/billing_router.py` | Done, NOT wired for iOS |
 
-### To Activate
+### To Activate (dashboard side — see `docs/PUBLIC_LAUNCH_CHECKLIST.md` Phases 1–2)
 
-Set 4 env vars on the backend server:
+1. **ASC** → Monetization → Subscriptions → create `sparrow_pro_monthly` (€4.99/mo) and `sparrow_pro_yearly` (€39.99/yr) in a `Pro` group.
+2. **ASC** → Users and Access → Integrations → In-App Purchase Keys → generate `.p8`. Note Key ID + Issuer ID.
+3. **revenuecat.com** → Apps → Add iOS app `io.sparrowcollect.app` → upload `.p8` + Key ID + Issuer ID.
+4. **EAS** → `eas env:create --environment production --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value 'appl_...' --visibility sensitive`.
+5. **RC** → Product catalog → import products, create `pro` entitlement, configure `default` offering with `$rc_monthly` + `$rc_annual`.
+
+## 2. Stripe (DORMANT — kept for future web/Android)
+
+Three-tier code path (Free / Pro €4.99 / Premium €9.99) remains in `server/app/billing_router.py` with 25 passing tests. **Do NOT activate Stripe Live Mode for v1 iOS submission** — it duplicates RevenueCat and complicates compliance review. Revisit when:
+
+- Building a web sign-up flow (`web/` Vercel site has no payments today).
+- Submitting Android version (Google Play allows external billing in some markets but Stripe is simpler than Play Billing for our scale).
+
+To re-activate later, set these env vars on EC2 `.env`:
 
 ```
 STRIPE_SECRET_KEY=sk_live_...
@@ -52,6 +61,8 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_ID_PRO=price_...
 STRIPE_PRICE_ID_PREMIUM=price_...
 ```
+
+The Premium tier was deprecated when the model collapsed to Free + Pro — Pro now includes advanced analytics that Premium previously gated.
 
 ---
 

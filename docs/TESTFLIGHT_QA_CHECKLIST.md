@@ -1,7 +1,8 @@
 # TestFlight QA Checklist — Sparrow Collect
 
-> Run this the moment the TestFlight build (buildNumber 9, ID `6ea51914`)
-> lands on your iPhone. Each section is independent — start with the
+> **Use this for every new TestFlight build.** Most recent build at time of
+> last refresh: **build #13** (eas auto-increment, 2026-05-19, profile `store`,
+> `BETA_UNLOCK_ALL=false`). Each section is independent — start with the
 > golden path, then loop the others. Anything red or behaving weird,
 > note it and we fix before submitting for App Store review.
 >
@@ -11,10 +12,19 @@
 
 - [ ] TestFlight app installed on iPhone
 - [ ] You appear in App Store Connect → TestFlight → Internal Testing
-- [ ] Build (buildNumber 9) shows "Ready to Test" in TestFlight app (not "Processing")
+- [ ] Latest build shows "Ready to Test" in TestFlight app (not "Processing")
 - [ ] Install button visible in TestFlight; tap it
 - [ ] App icon (Sparrow logo, Tiffany Blue gradient) appears on Home Screen
 - [ ] Launching the app shows the splash screen, not a black-screen-of-death
+
+## What changed since the previous build (build #3, buildNumber 9 — 2026-05-12)
+
+Build #13 includes the **2026-05-18 onboarding rework** (commit `d0c4713`):
+- Age checkbox → point-of-sale seller gate (HTTP 412 from BE + auto-modal in `httpClient` + retry)
+- Followed categories now drive: add-flow sort, scan classifier prior, AI catalog-match tiebreaker, home empty state, Deal Hub filter
+- Auth bug fixes: OfflineBanner status-bar bleed; AuthTextInput tap-eating label; onboarding completion loop; Skip-button bypass
+
+When running through QA, give those flows extra attention — see Section 1 (auth) and any new "Followed categories" surface.
 
 If splash → main app transition takes >5 seconds, something's slow. Note the time.
 
