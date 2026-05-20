@@ -172,6 +172,7 @@
         "NSPrivacyTracking": false
       },
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
         "NSCalendarsUsageDescription": "Sparrow needs access to your calendar to add collection events, drops, and meetups.",
         "NSRemindersUsageDescription": "Sparrow needs access to reminders to notify you about upcoming events.",
         "NSCameraUsageDescription": "Sparrow needs camera access to scan and photograph your collectibles.",
