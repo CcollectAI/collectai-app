@@ -19,8 +19,14 @@
  EXECUTIVE STATUS — 2026-05-20
 --------------------------------------------------------------------------------
 
-CODE: SHIPPING. TestFlight build #13 is built (EAS id 6609f91e), pending
-resubmit once ASC API key VT5SJZ3AUH is regenerated (401 NOT_AUTHORIZED).
+CODE: SHIPPING. TestFlight build #13 (id 6609f91e) submitted successfully
+via new ASC API Key AM32RK7DAY. Build #14 (id 76b78c81) building with new
+RevenueCat key + auto-submit. RevenueCat fully wired end-to-end this
+evening: ASC products created (sparrow_pro_monthly €4.99/mo + sparrow_pro_yearly
+€39.99/yr), In-App Purchase Key 3LX4HL24FM uploaded, entitlement `pro`
+attached, offering `default` with $rc_monthly + $rc_annual packages.
+Sandbox tester + Apple reviewer demo account both created.
+
 Three bake/CI hardening commits landed 2026-05-19/20 (c6e83fc, 091c377,
 9350dae) — calibration_worker no longer times out, aggregate_catalog_attributes
 no longer hangs, nightly sanity no longer false-FAILs on count timeouts.

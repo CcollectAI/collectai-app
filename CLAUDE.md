@@ -12,19 +12,30 @@ Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funk
 - **Payments:** RevenueCat (iOS IAP, shipped 2026-05-09); Stripe dormant for future web/Android
 - **Theme:** Tiffany Blue (#81D8D0) accent, EUR currency, Roboto font
 
-## Current launch state (2026-05-20)
-- **TestFlight build #13** built on EAS (id `6609f91e-d09a-4d62-a1a6-90ca80de9688`, commit `d0c4713`). IPA ready but **NOT yet on TestFlight** — ASC API key `VT5SJZ3AUH` returned 401 NOT_AUTHORIZED on submit. Needs regenerate in ASC → Integrations → API → Generate, then `eas credentials`, then resubmit.
+## Current launch state (2026-05-20 evening)
+- **TestFlight build #13** successfully on TestFlight (build id `6609f91e-d09a-4d62-a1a6-90ca80de9688`, commit `d0c4713`). Submitted via ASC API Key `AM32RK7DAY` (regenerated after `VT5SJZ3AUH` returned 401 NOT_AUTHORIZED). General app QA works against #13, but **paywall test won't work** on it — was built before the new RevenueCat key.
+- **TestFlight build #14** building right now (build id `76b78c81-0273-4a95-a245-0d39f6704cca`, auto-submit set). Picks up the new `EXPO_PUBLIC_REVENUECAT_IOS_KEY`. ETA ~30-50 min from kickoff.
 - **Apple Developer:** Individual enrollment approved 2026-05-07 (Team `3DX8FBF7S6`, KvK 99596326).
 - **App Store Connect:** App ID `6767359453`, bundle `io.sparrowcollect.app`, name "Sparrow Collect".
+  - ASC API Key (EAS Submit): `AM32RK7DAY` (active)
+  - In-App Purchase Key: `3LX4HL24FM` (active, named `RevenueCat`)
+  - Issuer ID: `215c3feb-76f3-4399-a0bb-d2385003e1b1`
 - **Domain:** [sparrowcollect.com](https://sparrowcollect.com) live with SSL via Cloudflare DNS-only + Vercel (fixed 2026-05-08).
-- **IAP:** RevenueCat code shipped (Free + Pro €4.99/mo, €39.99/yr). Dashboard config pending — see `docs/PUBLIC_LAUNCH_CHECKLIST.md` Phases 1–2.
+- **IAP — RevenueCat wired end-to-end (2026-05-20 evening):**
+  - ASC subscription group `Pro` with `sparrow_pro_monthly` (€4.99/mo) + `sparrow_pro_yearly` (€39.99/yr), both `Ready to Submit`.
+  - RevenueCat project `Sparrow`, App Store-type app pointing to `io.sparrowcollect.app`, `SubscriptionKey_3LX4HL24FM.p8` uploaded.
+  - Entitlement `pro` (lowercase, matches `PRO_ENTITLEMENT_ID` in `src/lib/purchases.ts:5`) attached to both products.
+  - Offering `default` with packages `$rc_monthly` → `sparrow_pro_monthly` and `$rc_annual` → `sparrow_pro_yearly` (swap was corrected mid-session — mappings were inverted initially).
+  - `EXPO_PUBLIC_REVENUECAT_IOS_KEY` updated in EAS `production` env. Active in build #14, NOT in build #13.
+- **Sandbox tester:** `sandbox-merle@sparrowcollect.com` created in ASC Sandbox. Sign into Settings → App Store → Sandbox Account on iPhone before testing IAP flow.
+- **Apple reviewer demo account:** `apple-review@sparrowcollect.com` created in Supabase with Auto-Confirm. To be pasted into ASC App Review Information.
 - **Beta override:** `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` on `production` EAS profile, `false` on `store` profile (App Store submission).
 - **Onboarding rework** shipped 2026-05-18: age→seller-gate (412 + auto-modal), followed-categories drive add-flow / scan / catalog-match / home / Deal Hub, auth bug fixes.
 - **2026-05-19/20 bake fixes (deployed + verified live):**
   - `calibration_worker.py:131` — added `LIMIT 10000` to bound per-category `market_hits` fetch. Was hitting 2min `statement_timeout` for high-card categories (mtg has 186K item_refs / 1.35M actuals). Now 85ms/category. Commit `c6e83fc`.
   - `aggregate_catalog_attributes.py:_fetch_groups` — added `seen_at > now() - 90 days` partition-pruning filter. Was hanging on full-table JOIN. Now 15.3s/cycle. Commit `091c377`.
   - `nightly_health_check.sh` — silenced false-positive Telegram pages: `count=planned` instead of `exact`, healthz via domain not IP, events gated behind `PRE_LAUNCH_MODE`. Commit `9350dae`.
-- **Active branch:** `feature/all-enhancements` (pushed through `9350dae` to origin as of 2026-05-20).
+- **Active branch:** `feature/all-enhancements` (pushed through `04c4039` to origin as of 2026-05-20).
 
 ## Key Files
 - `app/(tabs)/_layout.tsx` - Main tab navigation (5 visible tabs: Home, Items, Add, Events, Marketplace; wishlist + search are hidden routes)

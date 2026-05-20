@@ -6,7 +6,34 @@
 
 ## Session log — what's shipped since this doc was generated
 
-**2026-05-20** (3 commits, all bake-side perf + CI hygiene):
+**2026-05-20 evening** (RevenueCat + TestFlight unblocked, no commits — all ASC/RC dashboard work):
+
+| Step | Result |
+|---|---|
+| ASC API Key regenerated | Old `VT5SJZ3AUH` revoked. New key `AM32RK7DAY` (Admin role) generated + downloaded + registered via `eas credentials` (uses `gh auth switch -u CcollectAI` since `vascoapp` was the active gh account). |
+| Build #13 → TestFlight | Resubmitted via `eas submit --profile store --platform ios --id 6609f91e-d09a-4d62-a1a6-90ca80de9688` → ✅ "Submitted your app to Apple App Store Connect!" — processing on ASC. |
+| ASC subscription products | Created subscription group `Pro` with localization `Sparrow Pro`. Two products: `sparrow_pro_monthly` (€4.99/mo, 1 month) + `sparrow_pro_yearly` (€39.99/yr, 1 year). Both at `Ready to Submit` status. |
+| ASC In-App Purchase Key | Confirmed existing key `RevenueCat` / `3LX4HL24FM` active. `SubscriptionKey_3LX4HL24FM.p8` found at `~/Documents/Sparrow/Keys/RevCat/` (had to rename — file had a literal `*` in the name that RC's regex rejected). |
+| RevenueCat App Store app | Created under `Sparrow` project. Uploaded `.p8`, Key ID, Issuer ID, App ID `6767359453`, Bundle ID `io.sparrowcollect.app`. Validation green. |
+| RC entitlement `pro` | Created (lowercase, matches `PRO_ENTITLEMENT_ID = 'pro'` in `src/lib/purchases.ts:5`). Attached both products. |
+| RC offering `default` | Created with packages `$rc_monthly` and `$rc_annual`. **Initial setup had swapped mappings** (would have charged users wrong price); corrected to `$rc_monthly → sparrow_pro_monthly`, `$rc_annual → sparrow_pro_yearly`. |
+| EAS env `EXPO_PUBLIC_REVENUECAT_IOS_KEY` | Updated to new RC public app-specific iOS key via `eas env:create --force --visibility sensitive`. |
+| Build #14 kickoff | `eas build --profile store --platform ios --auto-submit` — picks up the new RC key. Build id `76b78c81-0273-4a95-a245-0d39f6704cca`. In Free-tier queue → building → auto-submit on success. |
+| Sandbox tester | `sandbox-merle@sparrowcollect.com` created in ASC Sandbox. To use: iPhone Settings → App Store → Sandbox Account, sign in before testing IAP. |
+| Apple reviewer demo account | `apple-review@sparrowcollect.com` created in Supabase project `ykqrruipzmrrvjcvwfgp` with Auto-Confirm + `raw_user_meta_data.full_name = "Apple Reviewer"`. To be pasted into ASC App Review Information before submit. |
+
+**Phases now complete (from sections below):**
+- ✅ Phase 1 — ASC IAP products
+- ✅ Phase 2 — RevenueCat wiring
+- ⏳ Phase 3 — In flight: store-profile binary build (#14, rebuild required for new RC key to land)
+- ⏳ Phase 4 — Demo account ready, just needs ASC App Review Info paste
+- ☐ Phase 5 — ASC metadata (paste from `docs/app-store-aso.md`)
+- ☐ Phase 6 — App Privacy nutrition labels
+- ☐ Phase 7 — App Review Information
+- ☐ Phase 7.5 — Run `node scripts/check-asc-listing.mjs` + `node scripts/analyze-bundle.mjs --cached`
+- ☐ Phase 8 — Submit for review
+
+**2026-05-20 morning** (3 commits, all bake-side perf + CI hygiene):
 
 | Commit | What |
 |---|---|
