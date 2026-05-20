@@ -14,13 +14,29 @@ pass() { echo "PASS: $1"; }
 # Helper: extract count from Supabase's Content-Range header. Returns "" on miss.
 # Wraps the curl|grep|sed pipeline so set -euo pipefail can't silently kill the
 # script when grep finds nothing (which happens on 401, 504, or any non-2xx).
+#
+# Uses count=planned (planner stats, ~ms) instead of count=exact (full COUNT,
+# 30s+ on 500K-row partitioned tables → pooler timeout → empty header → script
+# reads as "0 or unknown rows" and false-FAILs). Accuracy ±5% is fine for
+# "is this table populated" checks. Fixed 2026-05-20.
 sb_count() {
   local url="$1"
   curl -sI "$url" \
     -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
     -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-    -H "Prefer: count=exact" \
+    -H "Prefer: count=planned" \
     -H "Range: 0-0" 2>/dev/null | grep -i content-range | sed 's/.*\///;s/\r//' || true
+}
+
+# Helper: count rows in a small bounded query without using count=planned/exact.
+# Use for "is there ≥1 row in the last 24h" style checks where we want existence,
+# not magnitude. Returns body count (0..N) — N capped by the &limit= in the URL.
+sb_recent_rows() {
+  local url="$1"
+  curl -sS "$url" \
+    -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+    -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" 2>/dev/null \
+    | jq 'length' 2>/dev/null || echo "0"
 }
 
 # ── 1. Required env vars ─────────────────────────────────────────────────
@@ -99,47 +115,56 @@ fi
 # ── 5. Market hits freshness — new hits in last 24h ──────────────────────
 echo ""
 echo "=== MARKET HITS FRESHNESS ==="
-RECENT_HITS=$(sb_count "${SUPABASE_URL}/rest/v1/market_hits?select=id&seen_at=gte.$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-24H +%Y-%m-%dT%H:%M:%S 2>/dev/null)")
+# Use a body GET with limit=1 instead of count=planned/exact. We only need
+# "is there at least one recent hit", not the magnitude. Avoids any COUNT
+# work on the partitioned table.
+SINCE_24H=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-24H +%Y-%m-%dT%H:%M:%S 2>/dev/null)
+RECENT_HITS_COUNT=$(sb_recent_rows "${SUPABASE_URL}/rest/v1/market_hits?select=id&seen_at=gte.${SINCE_24H}&limit=1")
 
-if [ -z "$RECENT_HITS" ] || [ "$RECENT_HITS" = "0" ]; then
+if [ -z "$RECENT_HITS_COUNT" ] || [ "$RECENT_HITS_COUNT" = "0" ]; then
   warn "No new market_hits in last 24h (ingest may be stalled)"
 else
-  pass "$RECENT_HITS new market_hits in last 24h"
+  pass "market_hits has fresh data in last 24h (≥1 row visible)"
 fi
 
-# ── 6. EC2 health check (warning only — GH Actions can't reach private EC2) ──
+# ── 6. EC2 health check via the public domain (CI can reach this; the raw
+# IP:8000 is correctly blocked by the security group) ──────────────────
 echo ""
 echo "=== EC2 HEALTH ==="
-EC2_HOST="${EC2_HOST:-http://51.21.210.195:8000}"
+EC2_HOST="${EC2_HOST:-https://api.sparrowcollect.com}"
 EC2_HEALTH=$(curl -sS --connect-timeout 5 --max-time 10 "${EC2_HOST}/healthz" 2>&1) || true
 
 if echo "$EC2_HEALTH" | jq -e '.ok == true' >/dev/null 2>&1; then
   DB_MS=$(echo "$EC2_HEALTH" | jq -r '.db_ms // "?"')
   pass "EC2 healthz OK (db_ms: ${DB_MS})"
 else
-  warn "EC2 healthz unreachable from CI (expected — private network): $(echo "$EC2_HEALTH" | head -c 120)"
+  fail "EC2 healthz unreachable: $(echo "$EC2_HEALTH" | head -c 120)"
 fi
 
-# ── 7. Event sources health (RSS feeds + APIs reachability) ──────────────
+# ── 7. Event sources health (gated behind PRE_LAUNCH_MODE) ───────────────
+# Event workers (event_scraper, ticketmaster, seatgeek) are intentionally
+# disabled in the pre-launch bake manifest (Wave 3 of post-launch re-enable
+# per GO_LIVE_CHECKLIST.md). Don't FAIL on disabled features.
 echo ""
 echo "=== EVENT SOURCES ==="
-# Fetch events count from last 24h to verify event scraper is working
-EVENTS_24H=$(sb_count "${SUPABASE_URL}/rest/v1/events?select=id&created_at=gte.$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-24H +%Y-%m-%dT%H:%M:%S 2>/dev/null)")
-
-if [ -z "$EVENTS_24H" ] || [ "$EVENTS_24H" = "0" ]; then
-  warn "No new events in last 24h (event scraper may be stalled)"
+if [ "${PRE_LAUNCH_MODE:-true}" = "true" ]; then
+  pass "events checks skipped (PRE_LAUNCH_MODE=true; event workers in Wave 3 re-enable)"
 else
-  pass "$EVENTS_24H new events in last 24h"
-fi
+  EVENTS_24H_COUNT=$(sb_recent_rows "${SUPABASE_URL}/rest/v1/events?select=id&created_at=gte.${SINCE_24H}&limit=1")
 
-# Total events count
-EVENTS_TOTAL=$(sb_count "${SUPABASE_URL}/rest/v1/events?select=id")
+  if [ -z "$EVENTS_24H_COUNT" ] || [ "$EVENTS_24H_COUNT" = "0" ]; then
+    warn "No new events in last 24h (event scraper may be stalled)"
+  else
+    pass "events table has fresh data in last 24h"
+  fi
 
-if [ -z "$EVENTS_TOTAL" ] || [ "$EVENTS_TOTAL" = "0" ]; then
-  fail "events table is empty"
-else
-  pass "events total: $EVENTS_TOTAL rows"
-  [ "$EVENTS_TOTAL" -lt 100 ] 2>/dev/null && warn "events total below 100 threshold"
+  EVENTS_TOTAL=$(sb_count "${SUPABASE_URL}/rest/v1/events?select=id")
+  if [ -z "$EVENTS_TOTAL" ] || [ "$EVENTS_TOTAL" = "0" ]; then
+    fail "events table is empty"
+  else
+    pass "events total: $EVENTS_TOTAL rows"
+    [ "$EVENTS_TOTAL" -lt 100 ] 2>/dev/null && warn "events total below 100 threshold"
+  fi
 fi
 
 # ── 8. NULL item_ref check (catches the bug we fixed today) ──────────────
