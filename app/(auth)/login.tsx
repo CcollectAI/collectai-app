@@ -196,16 +196,16 @@ function LoginScreen() {
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Brand */}
+            {/* Brand — minimal 1cm-ish logo per 2026-05-22 design pass */}
             <Animated.View style={[styles.brandSection, getItemStyle(0)]}>
               <View style={[styles.iconCircleOuter, { backgroundColor: colors.brand.base + '15' }]}>
                 {Platform.OS === 'ios' ? (
                   <BlurView intensity={40} tint={isDark ? 'dark' : 'light'} style={styles.iconCircle}>
-                    <Image source={require('../../assets/icon.png')} style={{ width: 68, height: 68 }} resizeMode="contain" />
+                    <Image source={require('../../assets/icon.png')} style={{ width: 32, height: 32 }} resizeMode="contain" />
                   </BlurView>
                 ) : (
                   <View style={[styles.iconCircle, { backgroundColor: colors.brand.base + '25' }]}>
-                    <Image source={require('../../assets/icon.png')} style={{ width: 68, height: 68 }} resizeMode="contain" />
+                    <Image source={require('../../assets/icon.png')} style={{ width: 32, height: 32 }} resizeMode="contain" />
                   </View>
                 )}
               </View>
@@ -423,17 +423,17 @@ const styles = StyleSheet.create({
     marginBottom: 56,
   },
   iconCircleOuter: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   iconCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

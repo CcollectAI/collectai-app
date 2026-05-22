@@ -68,11 +68,19 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
             <View style={[styles.newBadge, { backgroundColor: colors.accent + '18' }]}>
               <Text style={[styles.newBadgeText, { color: colors.accent }]}>NEW</Text>
             </View>
-            <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={3}>
+            <Text
+              style={[styles.itemTitle, { color: colors.text }]}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {item.title}
             </Text>
             {item.estimated_price != null && (
-              <Text style={[styles.price, { color: colors.accent }]}>
+              <Text
+                style={[styles.price, { color: colors.accent }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {currency === 'EUR' ? '€' : '$'}{item.estimated_price.toFixed(0)}
               </Text>
             )}
@@ -89,13 +97,17 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '700' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   card: {
-    width: '30%',
+    flexBasis: '31%',
+    flexGrow: 0,
+    flexShrink: 0,
+    minWidth: 96,
     borderRadius: 10,
     borderWidth: 1,
     paddingVertical: 12,
     paddingHorizontal: 8,
     alignItems: 'flex-start',
     gap: 6,
+    minHeight: 88,
   },
   newBadge: {
     paddingHorizontal: 6,
