@@ -67,7 +67,14 @@ export type { DataProvider } from './DataProvider';
 
 /**
  * Determine which provider to use based on environment variable.
- * Default is "mock" — real Supabase only when explicitly set to "real".
+ *
+ * Mock provider: when mode is missing, `mock`, or `off`.
+ * Real Supabase provider: any other value (canonical: `real`, also accepts
+ * `strict` since `src/api/config.ts` uses that term and `eas.json` ships
+ * the `store`/`production`/`preview` build profiles with `strict`).
+ *
+ * Until 2026-05-22 this only matched `real` exactly, so every production
+ * build that obeyed config.ts's guidance (`strict`) silently ran on mock.
  *
  * The selected provider is always wrapped in a CachedDataProvider that adds
  * a SQLite offline cache with stale-while-revalidate semantics.  The cache
@@ -78,12 +85,11 @@ function selectProvider(): DataProvider {
 
   let inner: DataProvider;
 
-  if (mode === 'real') {
-    dataLogger.info('Using SupabaseDataProvider (real mode)');
+  if (mode !== 'mock' && mode !== 'off') {
+    dataLogger.info(`Using SupabaseDataProvider (mode=${mode})`);
     inner = supabaseDataProvider;
   } else {
-    // Default: mock, off, or any other value → use mock
-    dataLogger.info('Using MockDataProvider (mock mode)');
+    dataLogger.info(`Using MockDataProvider (mode=${mode})`);
     inner = mockDataProvider;
   }
 

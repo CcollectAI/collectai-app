@@ -59,9 +59,11 @@ import { ValueSavedBanner } from "@/components/ValueSavedBanner";
 import { useValueSummary } from "@/hooks/useValueSummary";
 import { radius, spacing, text, fontWeight, gap, shadow } from '@/theme/tokens';
 
-// Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
-const SUPABASE_MODE = process.env.EXPO_PUBLIC_SUPABASE_MODE ?? "mock";
-const USE_REAL_BACKEND = SUPABASE_MODE === "real";
+// Real backend whenever mode is not "mock" / "off". `eas.json` ships
+// production builds with mode=`strict` (per src/api/config.ts guidance);
+// the old `=== "real"` check silently dropped them onto MockDataProvider.
+const SUPABASE_MODE = (process.env.EXPO_PUBLIC_SUPABASE_MODE ?? "mock").toLowerCase();
+const USE_REAL_BACKEND = SUPABASE_MODE !== "mock" && SUPABASE_MODE !== "off";
 
 // Keep imports conservative and optional.
 let analyticsApi: { fetchPortfolioSnapshot?: () => Promise<unknown>; [k: string]: unknown } | null = null;
