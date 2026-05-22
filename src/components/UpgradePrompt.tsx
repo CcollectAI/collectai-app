@@ -33,10 +33,13 @@ export const UpgradePrompt = React.memo(function UpgradePrompt({ feature, requir
     recordFeatureAttempt(feature);
   }, [feature]);
 
+  // 2026-05-22: ditched warningBg (#78350F brown in dark mode looked jarring
+  // and mis-categorised — a locked premium feature reads as "premium gate"
+  // not "warning"). Use Tiffany Blue tint for on-brand "premium" framing.
   return (
-    <View style={[styles.container, { backgroundColor: colors.warningBg, borderColor: colors.warning + '40' }]}>
+    <View style={[styles.container, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}>
       <View style={styles.row}>
-        <Ionicons name="lock-closed-outline" size={18} color={colors.warning} />
+        <Ionicons name="lock-closed-outline" size={18} color={colors.accent} />
         <View style={styles.text}>
           <Text style={[styles.title, { color: colors.text }]}>
             {t('billing.feature_requires_plan', { feature, plan: requiredPlan })}
