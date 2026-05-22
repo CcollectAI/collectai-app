@@ -9,11 +9,6 @@
     "scheme": "sparrow",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#81D8D0"
-    },
     "userInterfaceStyle": "automatic",
     "updates": {
       "enabled": true,
@@ -26,6 +21,15 @@
         "expo-router",
         {
           "root": "./app"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 64,
+          "backgroundColor": "#81D8D0",
+          "resizeMode": "contain"
         }
       ],
       "expo-font",
