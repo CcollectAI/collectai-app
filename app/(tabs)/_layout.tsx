@@ -4,7 +4,6 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { fireHaptic, HapticIntent } from "@/haptics";
 import { BETA_MODE } from "@/config/featureFlags";
 
 export default function TabsLayout() {
@@ -12,6 +11,11 @@ export default function TabsLayout() {
   const { colors } = useAppTheme();
   const { t } = useTranslation();
 
+  // 2026-05-23: removed screenListeners.tabPress (haptic side-call) and
+  // accessibilityElementsHidden on icons. Build #14-17 had tab bar
+  // unresponsive — taps not registered at all. Stripping back to default
+  // tab-bar behavior to eliminate the only non-default config as a
+  // suspect for the regression.
   return (
     <Tabs
       screenOptions={{
@@ -31,11 +35,6 @@ export default function TabsLayout() {
           borderTopColor: colors.border,
         },
       }}
-      screenListeners={{
-        tabPress: () => {
-          fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-        },
-      }}
     >
       <Tabs.Screen
         name="index"
@@ -48,7 +47,6 @@ export default function TabsLayout() {
               name={focused ? "pie-chart" : "pie-chart-outline"}
               size={Math.max(18, size - 4)}
               color={color}
-              accessibilityElementsHidden
             />
           ),
         }}
@@ -65,7 +63,6 @@ export default function TabsLayout() {
               name={focused ? "albums" : "albums-outline"}
               size={Math.max(18, size - 4)}
               color={color}
-              accessibilityElementsHidden
             />
           ),
         }}
@@ -82,7 +79,6 @@ export default function TabsLayout() {
               name={focused ? "add-circle" : "add-circle-outline"}
               size={Math.max(22, size)}
               color={color}
-              accessibilityElementsHidden
             />
           ),
         }}
@@ -100,7 +96,6 @@ export default function TabsLayout() {
               name={focused ? "calendar" : "calendar-outline"}
               size={Math.max(18, size - 4)}
               color={color}
-              accessibilityElementsHidden
             />
           ),
         }}
@@ -121,7 +116,6 @@ export default function TabsLayout() {
               name={focused ? "search" : "search-outline"}
               size={Math.max(18, size - 4)}
               color={color}
-              accessibilityElementsHidden
             />
           ),
         }}
