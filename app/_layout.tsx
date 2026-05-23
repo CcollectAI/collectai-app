@@ -170,7 +170,13 @@ function useProtectedRoute() {
         toValue: 0,
         duration: 350,
         useNativeDriver: true,
-      }).start(() => setSplashHidden(true));
+      }).start();
+      // Fallback unmount — Animated end-callbacks can be dropped under
+      // first-login load (auth + onboarding check + tabs mount in the same
+      // frame). Without this, the transparent overlay can keep swallowing
+      // taps until the user interacts, blocking the tab bar.
+      const t = setTimeout(() => setSplashHidden(true), 400);
+      return () => clearTimeout(t);
     }
   }, [loading, onboardingChecked]);
 
@@ -320,8 +326,11 @@ function RootStack() {
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
             zIndex: 100,
             opacity: splashFade,
+            // pointerEvents in style (RN 0.81+) — the legacy prop on
+            // Animated.View is deprecated and can be silently ignored,
+            // leaving the transparent overlay catching taps.
+            pointerEvents: loading || !onboardingChecked ? 'auto' : 'none',
           }}
-          pointerEvents={loading || !onboardingChecked ? 'auto' : 'none'}
         >
           <BrandedSplash />
         </RNAnimated.View>

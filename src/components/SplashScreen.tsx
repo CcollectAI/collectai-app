@@ -148,18 +148,18 @@ const styles = StyleSheet.create({
   },
   glowRing: {
     position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     backgroundColor: 'rgba(255,255,255,0.15)',
   },
   logoContainer: {
     marginBottom: 24,
   },
   logoCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -171,8 +171,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   logoImage: {
-    width: 100,
-    height: 100,
+    width: 60,
+    height: 60,
   },
   appName: {
     fontSize: 36,
