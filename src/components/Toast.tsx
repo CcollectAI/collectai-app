@@ -169,13 +169,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       {toast && cfg && (
         <Animated.View
-          pointerEvents="box-none"
           style={[
             styles.container,
             {
               top: insets.top + (Platform.OS === 'android' ? 8 : 4),
               transform: [{ translateY }],
               opacity,
+              // pointerEvents in style (RN 0.81+) — legacy prop on
+              // Animated.View can be silently ignored, swallowing taps
+              // to whatever sits behind the toast strip.
+              pointerEvents: 'box-none',
             },
           ]}
         >

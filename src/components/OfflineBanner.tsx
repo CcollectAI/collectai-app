@@ -59,7 +59,6 @@ export function OfflineBanner() {
 
   return (
     <Animated.View
-      pointerEvents="none"
       accessibilityRole="alert"
       accessibilityLabel={
         isOnline
@@ -73,6 +72,10 @@ export function OfflineBanner() {
           paddingTop: topInset + 8,
           backgroundColor: colors.offlineBanner,
           transform: [{ translateY }],
+          // pointerEvents in style (RN 0.81+) — legacy prop on
+          // Animated.View can be silently ignored, blocking taps to the
+          // top of every screen while offline.
+          pointerEvents: 'none',
         },
       ]}
     >
