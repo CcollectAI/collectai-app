@@ -1,47 +1,105 @@
 import React from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tabs } from "expo-router";
+import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { BETA_MODE } from "@/config/featureFlags";
+import { fireHaptic, HapticIntent } from "@/haptics";
 
-export default function TabsLayout() {
+// Routes registered in (tabs)/ that should NOT render in the bar.
+// Wishlist and search are accessed from inside other screens, not as tabs.
+const HIDDEN_ROUTES = new Set(["wishlist", "search"]);
+
+function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
-  const { t } = useTranslation();
+  const bottomPadding = Math.max(insets.bottom, 10);
 
-  // 2026-05-23: removed screenListeners.tabPress (haptic side-call) and
-  // accessibilityElementsHidden on icons. Build #14-17 had tab bar
-  // unresponsive — taps not registered at all. Stripping back to default
-  // tab-bar behavior to eliminate the only non-default config as a
-  // suspect for the regression.
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: true,
-        tabBarLabelPosition: "below-icon",
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
-        tabBarIconStyle: { marginTop: 2 },
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: {
-          height: 58 + Math.max(insets.bottom, 10),
-          paddingTop: 8,
-          paddingBottom: Math.max(insets.bottom, 10),
+    <View
+      style={[
+        styles.bar,
+        {
+          height: 58 + bottomPadding,
+          paddingBottom: bottomPadding,
           backgroundColor: colors.card,
-          borderTopWidth: 1,
           borderTopColor: colors.border,
         },
-      }}
+      ]}
+      accessibilityRole="tablist"
+      accessibilityLabel="Main navigation"
+    >
+      {state.routes.map((route, index) => {
+        if (HIDDEN_ROUTES.has(route.name)) return null;
+        if (route.name === "events" && BETA_MODE) return null;
+
+        const descriptor = descriptors[route.key];
+        const { options } = descriptor;
+        const isFocused = state.index === index;
+        const color = isFocused ? colors.accent : colors.muted;
+
+        const label =
+          typeof options.tabBarLabel === "string"
+            ? options.tabBarLabel
+            : options.title ?? route.name;
+
+        const icon = options.tabBarIcon
+          ? options.tabBarIcon({ focused: isFocused, color, size: 22 })
+          : null;
+
+        const onPress = () => {
+          console.log("[TAB] press fired", route.name, "focused=", isFocused);
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+          const event = navigation.emit({
+            type: "tabPress",
+            target: route.key,
+            canPreventDefault: true,
+          });
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name as never, route.params as never);
+          }
+        };
+
+        return (
+          <Pressable
+            key={route.key}
+            onPress={onPress}
+            style={styles.tab}
+            accessibilityRole="tab"
+            accessibilityLabel={options.tabBarAccessibilityLabel ?? String(label)}
+            accessibilityState={{ selected: isFocused }}
+          >
+            {icon}
+            <Text style={[styles.label, { color }]}>{String(label)}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+export default function TabsLayout() {
+  const { t } = useTranslation();
+
+  // 2026-05-25: native @react-navigation/bottom-tabs bar dropped touches from
+  // build #14+ in production despite stripping all non-default config (commit
+  // 7e11687) and disabling new architecture (build #27). Replaced with a plain
+  // Pressable-based bar — same code path as QuickNavBar, which has always
+  // worked on non-tab screens.
+  return (
+    <Tabs
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: t('nav.home'),
-          tabBarLabel: t('nav.home'),
-          tabBarAccessibilityLabel: t('nav.home'),
+          title: t("nav.home"),
+          tabBarLabel: t("nav.home"),
+          tabBarAccessibilityLabel: t("nav.home"),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "pie-chart" : "pie-chart-outline"}
@@ -55,9 +113,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="items"
         options={{
-          title: t('nav.items'),
-          tabBarLabel: t('nav.items'),
-          tabBarAccessibilityLabel: t('nav.items'),
+          title: t("nav.items"),
+          tabBarLabel: t("nav.items"),
+          tabBarAccessibilityLabel: t("nav.items"),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "albums" : "albums-outline"}
@@ -71,9 +129,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="add"
         options={{
-          title: t('nav.add'),
-          tabBarLabel: t('nav.add'),
-          tabBarAccessibilityLabel: t('nav.add'),
+          title: t("nav.add"),
+          tabBarLabel: t("nav.add"),
+          tabBarAccessibilityLabel: t("nav.add"),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "add-circle" : "add-circle-outline"}
@@ -101,16 +159,14 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* Hide wishlist from tabs - accessible via Items screen only */}
       <Tabs.Screen name="wishlist" options={{ href: null }} />
 
-      {/* IMPORTANT: Search tab uses the real Search UI living in marketplace.tsx */}
       <Tabs.Screen
         name="marketplace"
         options={{
-          title: t('nav.search'),
-          tabBarLabel: t('nav.search'),
-          tabBarAccessibilityLabel: t('nav.search'),
+          title: t("nav.search"),
+          tabBarLabel: t("nav.search"),
+          tabBarAccessibilityLabel: t("nav.search"),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "search" : "search-outline"}
@@ -121,8 +177,25 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* Hide stub route so it doesn't appear as an extra tab */}
       <Tabs.Screen name="search" options={{ href: null }} />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  bar: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    paddingTop: 8,
+  },
+  tab: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+});

@@ -23,7 +23,16 @@ import { AuthProvider } from "@/providers/AuthProvider";
 import { useAuthContext } from "@/providers/useAuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { enableFreeze } from "react-native-screens";
 import { OfflineBanner } from "@/components/OfflineBanner";
+
+// Disable react-native-screens "freeze on blur" globally. Builds #14-29 had
+// a bug where the bottom tab bar dropped all touches on first launch and
+// only started responding after the user navigated to a non-tab screen.
+// That signature matches RNS freezing the tab navigator's initial state.
+// 2026-05-25.
+enableFreeze(false);
 import { SellerAgeGateProvider } from "@/components/sell/SellerAgeGate";
 import { initOfflineQueue } from "@/data/OfflineDataProvider";
 import { SplashScreen as BrandedSplash } from "@/components/SplashScreen";
@@ -179,6 +188,19 @@ function useProtectedRoute() {
       return () => clearTimeout(t);
     }
   }, [loading, onboardingChecked]);
+
+  // Hard ceiling — if AuthProvider.getSession() or AsyncStorage.getItem hang
+  // for any reason (flaky network, Keychain weirdness, killed in background),
+  // the gates above never fire and the overlay sits with pointerEvents:'auto'
+  // forever, blocking the entire UI. Force the splash off after 5s no matter
+  // what; the app underneath will show its own loading/error state if needed.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+      setSplashHidden(true);
+    }, 5000);
+    return () => clearTimeout(t);
+  }, []);
 
   // Combined auth + onboarding gate. Re-reads AsyncStorage on every route
   // change so onboarding completion is picked up immediately after the user
@@ -378,6 +400,7 @@ function RootLayout() {
   }
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <ErrorBoundary>
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <SettingsProvider>
@@ -394,6 +417,7 @@ function RootLayout() {
         </SettingsProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }
 
