@@ -26,6 +26,7 @@ import { dataProvider } from '@/data';
 import type { CollectorsEvent } from '@/data/events';
 import { useOptimisticRsvpList } from '@/hooks/useOptimisticRsvp';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
+import { useFollowedCategories } from '@/hooks/useFollowedCategories';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -68,6 +69,11 @@ function EventsScreen() {
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState(false);
   const [kindFilter, setKindFilter] = useState<string | null>(null);
+  // Default-on filter to the user's onboarded categories — falls back to "show
+  // all" automatically when the user follows zero categories so the events
+  // tab is never blank just because of the filter.
+  const [myCategoriesOnly, setMyCategoriesOnly] = useState<boolean>(true);
+  const { followed: followedCategoryIds } = useFollowedCategories();
   // Paginated data fetching
   const eventFetcher = useCallback(
     async (limit: number, offset: number): Promise<CollectorsEvent[]> => {
@@ -96,14 +102,22 @@ function EventsScreen() {
     }, []),
   );
 
-  // Search + kind filter
+  // Strict filter: when "My Categories" is on, only events whose categoryId
+  // is in the user's followed set are shown. If the user follows zero
+  // categories the result is intentionally empty — the empty-state CTA
+  // below tells them to pick favourites in onboarding/profile.
+  const followedFilterActive = myCategoriesOnly;
+  const noFollowedCategories = myCategoriesOnly && followedCategoryIds.size === 0;
+
+  // Search + kind + followed-category filter
   const searchFiltered = useMemo(
     () => events.filter((e) => {
       if (searchQuery && !e.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (kindFilter && e.kind !== kindFilter) return false;
+      if (followedFilterActive && (!e.categoryId || !followedCategoryIds.has(e.categoryId))) return false;
       return true;
     }),
-    [events, searchQuery, kindFilter],
+    [events, searchQuery, kindFilter, followedFilterActive, followedCategoryIds],
   );
 
   // Unique event kinds for filter chips
@@ -495,13 +509,40 @@ function EventsScreen() {
       </View>
 
       {/* Kind filter chips */}
-      {availableKinds.length > 1 && (
+      {(availableKinds.length > 1 || followedCategoryIds.size > 0) && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.kindFilterRow}
           contentContainerStyle={styles.kindFilterContent}
         >
+          {followedCategoryIds.size > 0 && (
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                setMyCategoriesOnly((v) => !v);
+              }}
+              style={[
+                styles.kindChip,
+                {
+                  backgroundColor: myCategoriesOnly ? colors.accent : colors.card,
+                  borderColor: myCategoriesOnly ? colors.accent : colors.border,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Filter to your followed categories"
+              accessibilityState={{ selected: myCategoriesOnly }}
+            >
+              <Ionicons
+                name="heart"
+                size={13}
+                color={myCategoriesOnly ? colors.accentText : colors.muted}
+              />
+              <Text style={[styles.kindChipText, { color: myCategoriesOnly ? colors.accentText : colors.text }]}>
+                My Categories
+              </Text>
+            </AnimatedPressable>
+          )}
           <AnimatedPressable
             onPress={handleKindFilterAll}
             style={[
@@ -601,6 +642,35 @@ function EventsScreen() {
       <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
         Pull down to retry.
       </Text>
+    </View>
+  ) : !loading && noFollowedCategories ? (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="heart-outline" size={48} color={colors.muted} />
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+        Pick your favourite categories
+      </Text>
+      <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+        Follow the categories you collect to see relevant events here.
+      </Text>
+      <AnimatedPressable
+        onPress={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          router.push('/categories');
+        }}
+        style={{
+          marginTop: 16,
+          paddingHorizontal: 20,
+          paddingVertical: 10,
+          borderRadius: radius.md,
+          backgroundColor: colors.accent,
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Follow categories"
+      >
+        <Text style={{ color: colors.accentText, fontWeight: fontWeight.bold }}>
+          Follow categories
+        </Text>
+      </AnimatedPressable>
     </View>
   ) : !loading ? (
     <View style={styles.emptyContainer}>

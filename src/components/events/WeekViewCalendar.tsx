@@ -87,14 +87,18 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
   }, []);
 
   const eventBlocks = useMemo(() => {
-    const blocks: {
+    type Block = {
       event: CollectorsEvent;
       dayIndex: number;
       topOffset: number;
       height: number;
       startTime: string;
-    }[] = [];
+      lane: number;
+      laneCount: number;
+    };
 
+    // 1. Build raw blocks per day
+    const perDay: Record<number, Omit<Block, "lane" | "laneCount">[]> = {};
     for (const evt of events) {
       if (!evt.date) continue;
       const start = parseEventDate(evt.date, evt.time);
@@ -111,9 +115,50 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
         ? (new Date(evt.endDate).getTime() - start.getTime()) / (1000 * 60 * 60)
         : 1;
       const height = Math.max(Math.min(durationHrs, TOTAL_HOURS) * HOUR_HEIGHT, 28);
-      const startTime = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const startTime = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-      blocks.push({ event: evt, dayIndex: dayDiff, topOffset, height, startTime });
+      (perDay[dayDiff] ??= []).push({
+        event: evt,
+        dayIndex: dayDiff,
+        topOffset,
+        height,
+        startTime,
+      });
+    }
+
+    // 2. Per day, assign each event to a horizontal lane so overlapping events
+    //    sit side-by-side instead of stacking on top of each other.
+    const blocks: Block[] = [];
+    for (const dayKey of Object.keys(perDay)) {
+      const dayEvents = perDay[Number(dayKey)]!.sort((a, b) => a.topOffset - b.topOffset);
+      // Greedy lane assignment: for each event, place it in the first lane
+      // whose previous event has already ended.
+      const laneEnds: number[] = []; // bottom Y of the last event placed in each lane
+      const assigned: Block[] = [];
+      for (const e of dayEvents) {
+        let lane = laneEnds.findIndex((end) => end <= e.topOffset);
+        if (lane === -1) {
+          lane = laneEnds.length;
+          laneEnds.push(0);
+        }
+        laneEnds[lane] = e.topOffset + e.height;
+        assigned.push({ ...e, lane, laneCount: 0 });
+      }
+      // Compute the max simultaneous lanes for sizing.
+      // For accuracy, recompute per-event laneCount as the max lanes that
+      // overlap with it; cheap pass since N is small per day.
+      for (const e of assigned) {
+        let overlapping = 0;
+        for (const other of assigned) {
+          const aTop = e.topOffset;
+          const aBot = e.topOffset + e.height;
+          const bTop = other.topOffset;
+          const bBot = other.topOffset + other.height;
+          if (aTop < bBot && bTop < aBot) overlapping++;
+        }
+        e.laneCount = Math.max(overlapping, e.lane + 1);
+        blocks.push(e);
+      }
     }
     return blocks;
   }, [events, weekStart]);
@@ -234,33 +279,36 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
               </View>
             ))}
 
-            {/* Event blocks */}
-            {eventBlocks.map(({ event, dayIndex, topOffset, height, startTime }) => (
-              <AnimatedPressable
-                key={event.id}
-                style={[
-                  styles.eventBlock,
-                  {
-                    left: dayIndex * COL_WIDTH + 1,
-                    top: topOffset,
-                    height,
-                    width: COL_WIDTH - 3,
-                    backgroundColor: colors.accent + '20',
-                    borderLeftColor: colors.accent,
-                  },
-                ]}
-                onPress={() => onEventPress?.(event)}
-                accessibilityLabel={`${event.title}, ${startTime}`}
-                accessibilityRole="button"
-              >
-                <Text style={[styles.eventBlockTime, { color: colors.accent }]} numberOfLines={1}>
-                  {startTime}
-                </Text>
-                <Text style={[styles.eventBlockTitle, { color: colors.text }]} numberOfLines={2}>
-                  {event.title}
-                </Text>
-              </AnimatedPressable>
-            ))}
+            {/* Event blocks — overlapping events split horizontally into lanes */}
+            {eventBlocks.map(({ event, dayIndex, topOffset, height, startTime, lane, laneCount }) => {
+              const laneWidth = (COL_WIDTH - 3) / laneCount;
+              return (
+                <AnimatedPressable
+                  key={event.id}
+                  style={[
+                    styles.eventBlock,
+                    {
+                      left: dayIndex * COL_WIDTH + 1 + lane * laneWidth,
+                      top: topOffset,
+                      height,
+                      width: laneWidth - 1,
+                      backgroundColor: colors.accent + '20',
+                      borderLeftColor: colors.accent,
+                    },
+                  ]}
+                  onPress={() => onEventPress?.(event)}
+                  accessibilityLabel={`${event.title}, ${startTime}`}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.eventBlockTime, { color: colors.accent }]} numberOfLines={1}>
+                    {startTime}
+                  </Text>
+                  <Text style={[styles.eventBlockTitle, { color: colors.text }]} numberOfLines={laneCount > 1 ? 1 : 2}>
+                    {event.title}
+                  </Text>
+                </AnimatedPressable>
+              );
+            })}
 
             {/* Current time indicator */}
             {nowTop >= 0 && (
