@@ -1,22 +1,41 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter, type Href } from "expo-router";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { BETA_MODE } from "@/config/featureFlags";
 import { fireHaptic, HapticIntent } from "@/haptics";
+import { pushDebugLog } from "@/lib/debugLog";
+
+// Map react-navigation route name → expo-router href. Using expo-router's
+// router.replace (same code path as QuickNavBar, which has always worked)
+// instead of react-navigation's navigation.navigate.
+const ROUTE_TO_HREF: Record<string, string> = {
+  index: "/(tabs)",
+  items: "/(tabs)/items",
+  add: "/(tabs)/add",
+  events: "/(tabs)/events",
+  marketplace: "/(tabs)/marketplace",
+};
 
 // Routes registered in (tabs)/ that should NOT render in the bar.
 // Wishlist and search are accessed from inside other screens, not as tabs.
 const HIDDEN_ROUTES = new Set(["wishlist", "search"]);
 
-function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
+  const router = useRouter();
   const bottomPadding = Math.max(insets.bottom, 10);
+
+  React.useEffect(() => {
+    const msg = `bar mounted routes=${state.routes.length} idx=${state.index} replace=${typeof router.replace}`;
+    console.log("[TAB]", msg);
+    pushDebugLog(`[TAB] ${msg}`);
+  }, [state.routes, state.index, router.replace]);
 
   return (
     <View
@@ -31,6 +50,12 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       ]}
       accessibilityRole="tablist"
       accessibilityLabel="Main navigation"
+      onTouchStart={(e) => {
+        const t = e.nativeEvent.touches?.[0];
+        const msg = `outer touchStart x=${t?.locationX?.toFixed(0)} y=${t?.locationY?.toFixed(0)}`;
+        console.log("[TAB]", msg);
+        pushDebugLog(`[TAB] ${msg}`);
+      }}
     >
       {state.routes.map((route, index) => {
         if (HIDDEN_ROUTES.has(route.name)) return null;
@@ -51,15 +76,13 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           : null;
 
         const onPress = () => {
-          console.log("[TAB] press fired", route.name, "focused=", isFocused);
+          const msg = `press fired ${route.name} focused=${isFocused}`;
+          console.log("[TAB]", msg);
+          pushDebugLog(`[TAB] ${msg}`);
           fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-          const event = navigation.emit({
-            type: "tabPress",
-            target: route.key,
-            canPreventDefault: true,
-          });
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name as never, route.params as never);
+          const href = ROUTE_TO_HREF[route.name];
+          if (href && !isFocused) {
+            router.replace(href as Href);
           }
         };
 

@@ -26,6 +26,12 @@ import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-c
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { enableFreeze } from "react-native-screens";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { DebugOverlay } from "@/components/DebugOverlay";
+
+// Flip to false to hide the on-screen [TAB] debug log. Ships ON for the
+// build that's diagnosing the tab-bar tap regression. See
+// memory/project_tab_bar_bug_saga.md.
+const DEBUG_TAB_BAR = true;
 
 // Disable react-native-screens "freeze on blur" globally. Builds #14-29 had
 // a bug where the bottom tab bar dropped all touches on first launch and
@@ -340,6 +346,8 @@ function RootStack() {
         <Stack.Screen name="legal/user-policy" options={{ headerShown: false }} />
         <Stack.Screen name="legal/data-processing" options={{ headerShown: false }} />
       </Stack>
+
+      {DEBUG_TAB_BAR && <DebugOverlay />}
 
       {/* Branded splash overlay — covers content while auth is resolving, fades out */}
       {!splashHidden && (
