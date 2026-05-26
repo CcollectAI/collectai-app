@@ -27,6 +27,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { enableFreeze } from "react-native-screens";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { DebugOverlay } from "@/components/DebugOverlay";
+import { ExternalTabBar } from "@/components/ExternalTabBar";
 import { pushDebugLog } from "@/lib/debugLog";
 
 // Flip to false to hide the on-screen [TAB] debug log. Ships ON for the
@@ -357,6 +358,11 @@ function RootStack() {
       </Stack>
 
       {DEBUG_TAB_BAR && <DebugOverlay />}
+
+      {/* External tab bar — rendered as sibling of Stack to bypass the
+          dead-tab-bar bug inside the bottom-tabs navigator. Only visible
+          on (tabs) routes. See memory/project_tab_bar_bug_saga.md. */}
+      <ExternalTabBar />
 
       {/* Branded splash overlay — covers content while auth is resolving, fades out */}
       {!splashHidden && (

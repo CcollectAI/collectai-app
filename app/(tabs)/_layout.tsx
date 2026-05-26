@@ -112,15 +112,20 @@ export default function TabsLayout() {
   // 7e11687) and disabling new architecture (build #27). Replaced with a plain
   // Pressable-based bar — same code path as QuickNavBar, which has always
   // worked on non-tab screens.
+  // 2026-05-26: bar moved to <ExternalTabBar /> in app/_layout.tsx. The
+  // bottom-tabs navigator's own bar is suppressed (tabBar returns null,
+  // tabBarStyle display:none removes the reserved space). The Tabs.Screen
+  // entries below still register the routes with expo-router; we just
+  // render the bar elsewhere. CustomTabBar above is kept for one build
+  // in case we need to revert. lazy:false kept as a safety net.
   return (
     <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
-      // lazy:false forces every tab route to mount immediately when the
-      // navigator mounts, instead of on first focus. Hypothesis: dead-on-launch
-      // taps are caused by the bottom-tab navigator not finishing native layout
-      // until at least one screen has fully mounted; forcing all routes up front
-      // closes that race. See memory/project_tab_bar_bug_saga.md "not yet tried".
-      screenOptions={{ headerShown: false, lazy: false }}
+      tabBar={() => null}
+      screenOptions={{
+        headerShown: false,
+        lazy: false,
+        tabBarStyle: { display: "none" },
+      }}
     >
       <Tabs.Screen
         name="index"
