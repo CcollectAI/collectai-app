@@ -27,6 +27,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { enableFreeze } from "react-native-screens";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { DebugOverlay } from "@/components/DebugOverlay";
+import { pushDebugLog } from "@/lib/debugLog";
 
 // Flip to false to hide the on-screen [TAB] debug log. Ships ON for the
 // build that's diagnosing the tab-bar tap regression. See
@@ -272,7 +273,15 @@ function RootStack() {
   // Show loading overlay while auth resolves, but ALWAYS render the Stack
   // so Expo Router can register all routes
   return (
-    <View style={{ flex: 1 }}>
+    <View
+      style={{ flex: 1 }}
+      onTouchStart={DEBUG_TAB_BAR ? (e) => {
+        const t = e.nativeEvent.touches?.[0];
+        if (t) {
+          pushDebugLog(`[ROOT] touch y=${t.pageY?.toFixed(0)} x=${t.pageX?.toFixed(0)}`);
+        }
+      } : undefined}
+    >
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{

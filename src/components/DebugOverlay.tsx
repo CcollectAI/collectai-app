@@ -13,22 +13,26 @@ export function DebugOverlay() {
   return (
     <View
       pointerEvents="box-none"
-      style={[styles.wrap, { top: insets.top + 4 }]}
+      style={[styles.wrap, { top: insets.top + 50 }]}
     >
       <View style={styles.row} pointerEvents="box-none">
-        <Pressable
-          onPress={() => setCollapsed((c) => !c)}
-          style={styles.btn}
-          hitSlop={6}
-        >
-          <Text style={styles.btnText}>
-            {collapsed ? `▼ TAB DBG (${lines.length})` : "▲ HIDE"}
-          </Text>
-        </Pressable>
-        {!collapsed && (
-          <Pressable onPress={() => clearDebugLog()} style={styles.btn} hitSlop={6}>
-            <Text style={styles.btnText}>CLR</Text>
+        {collapsed ? (
+          <Pressable
+            onPress={() => setCollapsed(false)}
+            style={styles.btnSmall}
+            hitSlop={8}
+          >
+            <Text style={styles.btnText}>DBG·{lines.length}</Text>
           </Pressable>
+        ) : (
+          <>
+            <Pressable onPress={() => setCollapsed(true)} style={styles.btn} hitSlop={8}>
+              <Text style={styles.btnText}>▲</Text>
+            </Pressable>
+            <Pressable onPress={() => clearDebugLog()} style={styles.btn} hitSlop={8}>
+              <Text style={styles.btnText}>CLR</Text>
+            </Pressable>
+          </>
         )}
       </View>
       {!collapsed && (
@@ -36,7 +40,7 @@ export function DebugOverlay() {
           {lines.length === 0 ? (
             <Text style={styles.line}>(no events yet — tap a tab)</Text>
           ) : (
-            lines.slice(-12).map((line, i) => (
+            lines.slice(-14).map((line, i) => (
               <Text key={`${i}-${line}`} style={styles.line} numberOfLines={1}>
                 {line}
               </Text>
@@ -51,10 +55,11 @@ export function DebugOverlay() {
 const styles = StyleSheet.create({
   wrap: {
     position: "absolute",
-    left: 4,
     right: 4,
+    width: 220,
     zIndex: 9999,
     elevation: 9999,
+    alignItems: "flex-end",
   },
   row: {
     flexDirection: "row",
@@ -64,6 +69,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.78)",
     paddingHorizontal: 8,
     paddingVertical: 3,
+    borderRadius: 4,
+  },
+  btnSmall: {
+    backgroundColor: "rgba(0,0,0,0.78)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 4,
   },
   btnText: {
@@ -76,6 +87,7 @@ const styles = StyleSheet.create({
     padding: 5,
     marginTop: 2,
     borderRadius: 4,
+    alignSelf: "stretch",
   },
   line: {
     color: "#0f0",

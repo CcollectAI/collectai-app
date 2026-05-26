@@ -115,7 +115,12 @@ export default function TabsLayout() {
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
+      // lazy:false forces every tab route to mount immediately when the
+      // navigator mounts, instead of on first focus. Hypothesis: dead-on-launch
+      // taps are caused by the bottom-tab navigator not finishing native layout
+      // until at least one screen has fully mounted; forcing all routes up front
+      // closes that race. See memory/project_tab_bar_bug_saga.md "not yet tried".
+      screenOptions={{ headerShown: false, lazy: false }}
     >
       <Tabs.Screen
         name="index"
