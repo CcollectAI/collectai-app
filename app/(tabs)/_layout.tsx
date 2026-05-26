@@ -8,7 +8,6 @@ import { useTranslation } from "react-i18next";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { BETA_MODE } from "@/config/featureFlags";
 import { fireHaptic, HapticIntent } from "@/haptics";
-import { pushDebugLog } from "@/lib/debugLog";
 
 // Map react-navigation route name → expo-router href. Using expo-router's
 // router.replace (same code path as QuickNavBar, which has always worked)
@@ -32,9 +31,12 @@ function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
   const bottomPadding = Math.max(insets.bottom, 10);
 
   React.useEffect(() => {
-    const msg = `bar mounted routes=${state.routes.length} idx=${state.index} replace=${typeof router.replace}`;
-    console.log("[TAB]", msg);
-    pushDebugLog(`[TAB] ${msg}`);
+    console.log(
+      "[TAB] bar mounted routes=",
+      state.routes.length,
+      "idx=",
+      state.index,
+    );
   }, [state.routes, state.index, router.replace]);
 
   return (
@@ -52,9 +54,7 @@ function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
       accessibilityLabel="Main navigation"
       onTouchStart={(e) => {
         const t = e.nativeEvent.touches?.[0];
-        const msg = `outer touchStart x=${t?.locationX?.toFixed(0)} y=${t?.locationY?.toFixed(0)}`;
-        console.log("[TAB]", msg);
-        pushDebugLog(`[TAB] ${msg}`);
+        console.log("[TAB] outer touchStart x=", t?.locationX, "y=", t?.locationY);
       }}
     >
       {state.routes.map((route, index) => {
@@ -76,9 +76,7 @@ function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
           : null;
 
         const onPress = () => {
-          const msg = `press fired ${route.name} focused=${isFocused}`;
-          console.log("[TAB]", msg);
-          pushDebugLog(`[TAB] ${msg}`);
+          console.log("[TAB] press fired", route.name, "focused=", isFocused);
           fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
           const href = ROUTE_TO_HREF[route.name];
           if (href && !isFocused) {

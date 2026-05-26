@@ -30,10 +30,10 @@ import { DebugOverlay } from "@/components/DebugOverlay";
 import { ExternalTabBar } from "@/components/ExternalTabBar";
 import { pushDebugLog } from "@/lib/debugLog";
 
-// Flip to false to hide the on-screen [TAB] debug log. Ships ON for the
-// build that's diagnosing the tab-bar tap regression. See
-// memory/project_tab_bar_bug_saga.md.
-const DEBUG_TAB_BAR = true;
+// Flip to true to re-enable the on-screen [TAB] debug log if the tab bar
+// regression resurfaces. Off by default for launch.
+// See memory/project_tab_bar_bug_saga.md.
+const DEBUG_TAB_BAR = false;
 
 // Disable react-native-screens "freeze on blur" globally. Builds #14-29 had
 // a bug where the bottom tab bar dropped all touches on first launch and
@@ -274,15 +274,7 @@ function RootStack() {
   // Show loading overlay while auth resolves, but ALWAYS render the Stack
   // so Expo Router can register all routes
   return (
-    <View
-      style={{ flex: 1 }}
-      onTouchStart={DEBUG_TAB_BAR ? (e) => {
-        const t = e.nativeEvent.touches?.[0];
-        if (t) {
-          pushDebugLog(`[ROOT] touch y=${t.pageY?.toFixed(0)} x=${t.pageX?.toFixed(0)}`);
-        }
-      } : undefined}
-    >
+    <View style={{ flex: 1 }}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
