@@ -1,11 +1,12 @@
 /**
  * Marketplace search, listings, accounts, fees, sales, and affiliate API methods.
  */
-import { get, post, del, patch, put } from "./httpClient";
+import { get, post, del, patch, put, LONG_REQUEST_TIMEOUT_MS } from "./httpClient";
 import { MarketplaceSearchResponseSchema, safeParse } from "./schemas";
 import type { MarketplaceSearchResponse } from "./schemas";
 
-// Marketplace search (legacy + aggregation)
+// Marketplace search (legacy + aggregation) — live-aggregates across 44
+// adapters server-side; can take 40+ s legitimately.
 export const marketSearch = (query: string, opts?: {
   category_id?: string;
   subtype_id?: string;
@@ -14,7 +15,7 @@ export const marketSearch = (query: string, opts?: {
   sold_only?: boolean;
   min_price?: number;
   max_price?: number;
-}) => post("/marketplace/search", { query, ...opts });
+}) => post("/marketplace/search", { query, ...opts }, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 
 export const marketplaceSearch = async (query: string, opts?: {
   category?: string;
@@ -26,12 +27,12 @@ export const marketplaceSearch = async (query: string, opts?: {
   max_price?: number;
   sort?: string;
 }): Promise<MarketplaceSearchResponse> => {
-  const raw = await post("/marketplace/search", { query, ...opts });
+  const raw = await post("/marketplace/search", { query, ...opts }, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
   return safeParse(MarketplaceSearchResponseSchema, raw, { results: [], hits: [] });
 };
 
 export const marketplaceComps = (itemRef: string, category?: string, region?: string) =>
-  post(`/marketplace/comps/${encodeURIComponent(itemRef)}`, { category, region });
+  post(`/marketplace/comps/${encodeURIComponent(itemRef)}`, { category, region }, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 
 // Affiliate links
 export const getAffiliateLinks = (query: string, category?: string, limit = 6, region?: string) =>
@@ -115,7 +116,7 @@ export const enrichOnDemand = (payload: {
   item_ref: string;
   query: string;
   category: string;
-}) => post("/enrich/on-demand", payload as Record<string, unknown>);
+}) => post("/enrich/on-demand", payload as Record<string, unknown>, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 
 // eBay seller-OAuth flow.
 // Step 1: ask backend for the consent URL → open in browser.

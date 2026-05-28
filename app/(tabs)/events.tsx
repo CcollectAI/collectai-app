@@ -102,12 +102,12 @@ function EventsScreen() {
     }, []),
   );
 
-  // Strict filter: when "My Categories" is on, only events whose categoryId
-  // is in the user's followed set are shown. If the user follows zero
-  // categories the result is intentionally empty — the empty-state CTA
-  // below tells them to pick favourites in onboarding/profile.
-  const followedFilterActive = myCategoriesOnly;
-  const noFollowedCategories = myCategoriesOnly && followedCategoryIds.size === 0;
+  // Loosened filter: when "My Categories" is on AND the user actually
+  // follows ≥1 category, only events whose categoryId is in the followed
+  // set are shown. If the user follows zero categories the filter
+  // silently no-ops and all events render — the tab is never blank just
+  // because of the filter.
+  const followedFilterActive = myCategoriesOnly && followedCategoryIds.size > 0;
 
   // Search + kind + followed-category filter
   const searchFiltered = useMemo(
@@ -642,35 +642,6 @@ function EventsScreen() {
       <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
         Pull down to retry.
       </Text>
-    </View>
-  ) : !loading && noFollowedCategories ? (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="heart-outline" size={48} color={colors.muted} />
-      <Text style={[styles.emptyTitle, { color: colors.text }]}>
-        Pick your favourite categories
-      </Text>
-      <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-        Follow the categories you collect to see relevant events here.
-      </Text>
-      <AnimatedPressable
-        onPress={() => {
-          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-          router.push('/categories');
-        }}
-        style={{
-          marginTop: 16,
-          paddingHorizontal: 20,
-          paddingVertical: 10,
-          borderRadius: radius.md,
-          backgroundColor: colors.accent,
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Follow categories"
-      >
-        <Text style={{ color: colors.accentText, fontWeight: fontWeight.bold }}>
-          Follow categories
-        </Text>
-      </AnimatedPressable>
     </View>
   ) : !loading ? (
     <View style={styles.emptyContainer}>

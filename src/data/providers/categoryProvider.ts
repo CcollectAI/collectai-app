@@ -13,7 +13,10 @@ import type {
 import { getCategoryById } from '../categories';
 import { supabase } from '../../lib/supabase';
 import { collectorsApi } from '../../api/collectorsApi';
+import { withTimeout, TimeoutError } from '../../lib/withTimeout';
 import logger from '../../utils/logger';
+
+const SUPABASE_READ_TIMEOUT_MS = 5_000;
 
 export async function getCategoryStore(categoryId: string): Promise<CategoryStoreData | null> {
   const category = getCategoryById(categoryId);
@@ -23,15 +26,30 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
   // earlier query referenced a nonexistent `images` array, which made
   // PostgREST 400 with column-not-found and the catch silently returned
   // [] — categories opened to an empty store every time.
-  const { data: itemsData } = await supabase
-    .from('items')
-    .select('id, name, title, category, updated_at, image_url')
-    .eq('category', categoryId)
-    .order('updated_at', { ascending: false })
-    .limit(20);
-
   type CatItemRow = { id: string; name?: string | null; title?: string | null; category?: string | null; updated_at?: string | null; image_url?: string | null };
-  const items: Item[] = (itemsData ?? []).map((r: CatItemRow) => ({
+  let itemsData: CatItemRow[] | null = null;
+  try {
+    const res = await withTimeout(
+      supabase
+        .from('items')
+        .select('id, name, title, category, updated_at, image_url')
+        .eq('category', categoryId)
+        .order('updated_at', { ascending: false })
+        .limit(20),
+      SUPABASE_READ_TIMEOUT_MS,
+      'getCategoryStore.items',
+    );
+    itemsData = res.data as CatItemRow[] | null;
+  } catch (e) {
+    if (e instanceof TimeoutError) {
+      logger.warn('[SupabaseDataProvider] getCategoryStore.items timed out');
+      itemsData = null;
+    } else {
+      throw e;
+    }
+  }
+
+  const items: Item[] = (itemsData ?? []).map((r) => ({
     id: r.id,
     name: r.name ?? r.title ?? 'Untitled',
     category: r.category ?? categoryId,
@@ -40,16 +58,31 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
     updatedAt: r.updated_at ?? new Date().toISOString(),
   }));
 
-  const { data: eventsData } = await supabase
-    .from('v_events_with_attendees_v1')
-    .select('id, title, kind, date, time')
-    .eq('category_id', categoryId)
-    .gte('date', new Date().toISOString().split('T')[0])
-    .order('date', { ascending: true })
-    .limit(5);
-
   type EventRow = { id: string; title: string; kind: string; date: string; time?: string };
-  const upcomingEvents = (eventsData ?? []).map((e: EventRow) => ({
+  let eventsData: EventRow[] | null = null;
+  try {
+    const res = await withTimeout(
+      supabase
+        .from('v_events_with_attendees_v1')
+        .select('id, title, kind, date, time')
+        .eq('category_id', categoryId)
+        .gte('date', new Date().toISOString().split('T')[0])
+        .order('date', { ascending: true })
+        .limit(5),
+      SUPABASE_READ_TIMEOUT_MS,
+      'getCategoryStore.events',
+    );
+    eventsData = res.data as EventRow[] | null;
+  } catch (e) {
+    if (e instanceof TimeoutError) {
+      logger.warn('[SupabaseDataProvider] getCategoryStore.events timed out');
+      eventsData = null;
+    } else {
+      throw e;
+    }
+  }
+
+  const upcomingEvents = (eventsData ?? []).map((e) => ({
     id: e.id,
     title: e.title,
     kind: e.kind as 'collection_drop' | 'meetup' | 'stream',
@@ -95,18 +128,34 @@ export async function listCategorySummaries(): Promise<CategorySummary[]> {
 }
 
 export async function listCategoryMissing(categoryId: string): Promise<CategoryMissingItem[]> {
-  const { data, error } = await supabase
-    .from('v_category_missing_items_v1')
-    .select('id, category_id, title, brand, notes')
-    .eq('category_id', categoryId);
+  type MissingRow = { id: string; category_id: string; title: string; brand?: string; notes?: string };
+  let data: MissingRow[] | null = null;
+  let error: unknown = null;
+  try {
+    const res = await withTimeout(
+      supabase
+        .from('v_category_missing_items_v1')
+        .select('id, category_id, title, brand, notes')
+        .eq('category_id', categoryId),
+      SUPABASE_READ_TIMEOUT_MS,
+      'listCategoryMissing',
+    );
+    data = res.data as MissingRow[] | null;
+    error = res.error;
+  } catch (e) {
+    if (e instanceof TimeoutError) {
+      logger.warn('[SupabaseDataProvider] listCategoryMissing timed out');
+      return [];
+    }
+    throw e;
+  }
 
   if (error) {
     logger.warn('[SupabaseDataProvider] listCategoryMissing error:', error);
     return [];
   }
 
-  type MissingRow = { id: string; category_id: string; title: string; brand?: string; notes?: string };
-  return (data ?? []).map((row: MissingRow) => ({
+  return (data ?? []).map((row) => ({
     id: row.id,
     categoryId: row.category_id,
     title: row.title,

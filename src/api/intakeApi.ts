@@ -1,24 +1,29 @@
 /**
  * Intake, QuickScan, and catalog suggestion API methods.
  */
-import { get, post, postMultipart, getAuthHeaders, fetchWithRetry, parseErrorResponse, API_BASE, REQUEST_TIMEOUT_MS } from "./httpClient";
+import { get, post, postMultipart, getAuthHeaders, parseErrorResponse, API_BASE, LONG_REQUEST_TIMEOUT_MS } from "./httpClient";
 import type { IntakeResultResponse } from "./types";
 
+// Intake/QuickScan pipelines run OCR + CLIP + GPT-4o-mini + catalog match
+// server-side and can legitimately take 30-60 s. Use the long timeout to
+// avoid client-side aborts on slow but valid calls.
+
 // QuickScan
-export const quickscanSingle = () => post("/quickscan-advanced/single");
+export const quickscanSingle = () =>
+  post("/quickscan-advanced/single", {}, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 
 // Intake — image-only (vision pipeline: CLIP + GPT-4o-mini + heuristic)
 export const intakeImageOnly = (imageUri: string) => {
   const formData = new FormData();
   const filename = imageUri.split("/").pop() || "scan.jpg";
   // React Native's FormData accepts this shape for file uploads
-   
+
   formData.append("file", { uri: imageUri, name: filename, type: "image/jpeg" } as any);
-  return postMultipart<IntakeResultResponse>("/intake/image-only", formData);
+  return postMultipart<IntakeResultResponse>("/intake/image-only", formData, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 };
 
 export const quickscanBatch = (image_ids: string[]) =>
-  post("/quickscan-advanced/batch", { image_ids });
+  post("/quickscan-advanced/batch", { image_ids }, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 
 // URL Import (via Firecrawl)
 export const processIntakeUrl = (
@@ -28,7 +33,7 @@ export const processIntakeUrl = (
   post<IntakeResultResponse>("/intake/url", {
     url,
     ...(hints ?? {}),
-  });
+  }, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 
 // Intake Agent
 export const processIntake = (
@@ -40,7 +45,7 @@ export const processIntake = (
     barcode: barcode ?? "",
     barcode_type: barcodeType,
     ...(hints ?? {}),
-  });
+  }, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 
 // Save intake result to collection
 export const intakeSave = (payload: {
@@ -64,7 +69,7 @@ export const intakeSave = (payload: {
 export const processIntakeWithImage = async (formData: FormData): Promise<IntakeResultResponse> => {
   const auth = await getAuthHeaders();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), LONG_REQUEST_TIMEOUT_MS);
   try {
     const res = await fetch(`${API_BASE}/intake/process`, {
       method: "POST",

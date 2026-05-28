@@ -22,6 +22,7 @@ import {
   FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
@@ -110,6 +111,7 @@ const RECENT_SEARCHES_KEY = "collectai_recent_searches";
 const BROWSE_CATEGORIES = CATEGORIES.map((cat) => ({
   id: cat.id,
   name: cat.name,
+  imageUrl: cat.bannerImageUrl,
 }));
 
 const FALLBACK_TRENDING = [
@@ -142,10 +144,36 @@ const SearchScreen: React.FC = () => {
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  // Escalating status copy for the live aggregation. Marketplace search
+  // hits 44 adapters server-side and can legitimately take 30-60 s. A
+  // silent skeleton at that length feels broken, so the status text
+  // updates at 0 / 6 / 20 / 45 s.
+  const [searchStatus, setSearchStatus] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
   const [marketplaceResults, setMarketplaceResults] = useState<SearchResult[]>([]);
   const [collectionResults, setCollectionResults] = useState<SearchResult[]>([]);
   const searchIdRef = useRef(0);
+
+  // Escalating status copy while marketplace search is running. The server
+  // live-aggregates across 44 adapters; 30-60s is common for rare items.
+  // We update the visible status text at 0 / 6 / 20 / 45 s so the spinner
+  // never feels frozen. Timers are cleared as soon as `searchLoading` flips
+  // back to false.
+  useEffect(() => {
+    if (!searchLoading) {
+      setSearchStatus('');
+      return;
+    }
+    setSearchStatus('Searching marketplaces…');
+    const t1 = setTimeout(() => setSearchStatus('Aggregating across 44 sources…'), 6_000);
+    const t2 = setTimeout(() => setSearchStatus('Still searching — this can take up to 90s for rare items.'), 20_000);
+    const t3 = setTimeout(() => setSearchStatus('Almost there…'), 45_000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [searchLoading]);
 
   // User search state
   const [userSearchVisible, openUserSearch, closeUserSearch] = useModal();
@@ -674,9 +702,6 @@ const SearchScreen: React.FC = () => {
                   const bg = isDark
                     ? darkTileColors[ci]
                     : colors.tileScale[ci];
-                  const textColor = isDark
-                    ? colors.accentText
-                    : ci >= 2 ? colors.accentText : colors.text;
                   return (
                     <AnimatedPressable
                       style={[styles.categoryTile, { backgroundColor: bg }]}
@@ -684,8 +709,18 @@ const SearchScreen: React.FC = () => {
                       accessibilityRole="button"
                       accessibilityLabel={`Browse ${cat.name}`}
                     >
+                      {cat.imageUrl ? (
+                        <Image
+                          source={{ uri: cat.imageUrl }}
+                          style={styles.categoryTileImage}
+                          contentFit="cover"
+                          cachePolicy="memory-disk"
+                          transition={150}
+                        />
+                      ) : null}
+                      <View style={styles.categoryTileOverlay} />
                       <Text
-                        style={[styles.categoryTileText, { color: textColor }]}
+                        style={styles.categoryTileText}
                         numberOfLines={2}
                         ellipsizeMode="tail"
                       >
@@ -869,7 +904,17 @@ const SearchScreen: React.FC = () => {
         {trimmedQuery ? (
           <View style={styles.section}>
             {searchLoading ? (
-              <SkeletonList count={6} type="card" />
+              <>
+                {searchStatus ? (
+                  <View style={styles.searchStatusRow}>
+                    <ActivityIndicator size="small" color={colors.accent} />
+                    <Text style={[styles.searchStatusText, { color: colors.muted }]}>
+                      {searchStatus}
+                    </Text>
+                  </View>
+                ) : null}
+                <SkeletonList count={6} type="card" />
+              </>
             ) : (
               <>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -1005,6 +1050,19 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 6,
   },
+  searchStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    marginBottom: 4,
+  },
+  searchStatusText: {
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
   // (chip styles moved to RecentSearchesSection component)
   categoryGrid: {
     flexDirection: "row",
@@ -1021,10 +1079,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     justifyContent: "flex-end",
+    overflow: "hidden",
+  },
+  categoryTileImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  categoryTileOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.42)",
   },
   categoryTileText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "800",
+    color: "#FFFFFF",
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   // (resultRow, resultIcon, resultTitle, resultMeta, resultValue, resultSecondary, resultShipping, domesticBadge, domesticBadgeText moved to MarketplaceResultCard)
   crossBorderDisclaimer: {

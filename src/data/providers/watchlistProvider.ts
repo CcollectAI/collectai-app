@@ -10,7 +10,10 @@ import type {
 } from '../types';
 import { supabase } from '../../lib/supabase';
 import { collectorsApi } from '../../api/collectorsApi';
+import { withTimeout, TimeoutError } from '../../lib/withTimeout';
 import logger from '../../utils/logger';
+
+const SUPABASE_READ_TIMEOUT_MS = 5_000;
 
 export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
   // The view `v_watchlist_items_v1` was never deployed (despite the
@@ -19,9 +22,25 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
   // read is fine. Also drop `sort_order` — the column doesn't exist on
   // the table; downstream code falls back to `priority`-based ordering.
   // Found by audit_full_chain.py 2026-05-01.
-  const { data, error } = await supabase
-    .from('watchlist_items')
-    .select('id,title,priority,owned,target_price,currency,category,notes,created_at');
+  let data: unknown;
+  let error: unknown;
+  try {
+    const res = await withTimeout(
+      supabase
+        .from('watchlist_items')
+        .select('id,title,priority,owned,target_price,currency,category,notes,created_at'),
+      SUPABASE_READ_TIMEOUT_MS,
+      'listWatchlist',
+    );
+    data = res.data;
+    error = res.error;
+  } catch (e) {
+    if (e instanceof TimeoutError) {
+      logger.warn('[SupabaseDataProvider] listWatchlist timed out — returning empty list');
+      return [];
+    }
+    throw e;
+  }
 
   if (error) {
     logger.warn('[SupabaseDataProvider] listWatchlist error:', error);
