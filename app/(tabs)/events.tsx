@@ -69,10 +69,11 @@ function EventsScreen() {
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState(false);
   const [kindFilter, setKindFilter] = useState<string | null>(null);
-  // Default-on filter to the user's onboarded categories — falls back to "show
-  // all" automatically when the user follows zero categories so the events
-  // tab is never blank just because of the filter.
-  const [myCategoriesOnly, setMyCategoriesOnly] = useState<boolean>(true);
+  // Default OFF — events tab shows ALL events on first visit. The
+  // "My Categories" chip is opt-IN. Historical default-on caused empty
+  // screens when the events backend had cats the user didn't follow
+  // (e.g. K-pop / anime cons only, user follows Pokemon).
+  const [myCategoriesOnly, setMyCategoriesOnly] = useState<boolean>(false);
   const { followed: followedCategoryIds } = useFollowedCategories();
   // Paginated data fetching
   const eventFetcher = useCallback(

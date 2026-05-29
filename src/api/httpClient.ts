@@ -23,10 +23,24 @@ export type ReqOpts = { timeoutMs?: number };
 
 export { API_BASE };
 
+// Hard cap on supabase.auth.getSession(). Normally returns from cached
+// storage in <50 ms; can occasionally trigger an auto-refresh that hits
+// the network, and supabase-js does not have its own per-call timeout on
+// that refresh path. Without this cap, a stuck refresh would silently
+// freeze every authenticated HTTP call (and therefore every screen's
+// loading state) until the OS killed the socket. 2 s lets a normal call
+// land while refusing to wait on a hung one.
+const AUTH_HEADER_TIMEOUT_MS = 2_000;
+
 export async function getAuthHeaders(): Promise<Record<string, string>> {
   try {
-    const { data } = await supabase.auth.getSession();
-    const token = data?.session?.access_token;
+    const session = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise<{ data: { session: null } }>((resolve) =>
+        setTimeout(() => resolve({ data: { session: null } }), AUTH_HEADER_TIMEOUT_MS),
+      ),
+    ]);
+    const token = session.data?.session?.access_token;
     if (token) {
       return { Authorization: `Bearer ${token}` };
     }
