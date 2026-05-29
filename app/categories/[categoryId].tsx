@@ -20,7 +20,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { isBuildableCategory } from '@/constants/buildStepTemplates';
-import { BETA_MODE } from '@/config/featureFlags';
+import { BETA_MODE, COMMUNITY_GATED } from '@/config/featureFlags';
 import logger from '@/utils/logger';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
@@ -459,7 +459,10 @@ function CategoryStoreScreen() {
           colors={colors}
         />
 
-        {/* 2.5. New Releases */}
+        {/* 2.5. New Releases — bake-populated catalog feed. Visible even
+            when the user has zero items in the category so new collectors
+            have a discovery path. The "New in Catalog" header in the
+            component labels it as catalog content, not user items. */}
         {categoryId && (
           <NewReleasesSection
             categoryId={categoryId}
@@ -483,7 +486,11 @@ function CategoryStoreScreen() {
           colors={colors}
         />
 
-        {/* 3.25. Browse Catalog */}
+        {/* 3.25. Browse Catalog — bake-populated catalog table
+            (category_items, ~140k rows). Visible regardless of whether the
+            user owns anything in this category, since this is the
+            discovery path for new collectors. The "Browse Catalog" header
+            inside the component labels it clearly as catalog content. */}
         <CatalogBrowseSection
           catalogExpanded={catalogExpanded}
           onToggleExpanded={() => {
@@ -581,7 +588,7 @@ function CategoryStoreScreen() {
         />
 
         {/* 5.5. Category Leaderboard (hidden in beta) */}
-        {!BETA_MODE && categoryId && <CategoryLeaderboardSection categoryId={categoryId} />}
+        {!BETA_MODE && !COMMUNITY_GATED && categoryId && <CategoryLeaderboardSection categoryId={categoryId} />}
 
         {/* 6. External Marketplace Links */}
         {categoryMeta && (

@@ -7,9 +7,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { API_BASE } from '@/api/config';
+import { get } from '@/api/httpClient';
 import { logger } from '@/lib/logger';
-import { supabase } from '@/lib/supabase';
 
 export type AutoSetEntry = {
   category: string;
@@ -42,33 +41,28 @@ export function useAutoSetProgress(category?: string): UseAutoSetProgressReturn 
     setLoading(true);
     setError(null);
 
+    // Route via httpClient.get so the 5 s fetchWithTimeout, 2 s auth-header
+    // race, and retry policy all apply. Previously this hook used bare
+    // fetch + bare supabase.auth.getSession(), so a hung token refresh or
+    // stalled network left the home-tab spinner spinning forever.
     (async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (!token) {
-          if (mounted) {
-            setSets([]);
-            setLoading(false);
-          }
-          return;
-        }
-
-        const url = new URL(`${API_BASE}/sets/auto-progress`);
-        if (category) url.searchParams.set('category', category);
-
-        const resp = await fetch(url.toString(), {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!resp.ok) {
-          throw new Error(`HTTP ${resp.status}`);
-        }
-
-        const data = await resp.json();
+        const qs = category ? `?category=${encodeURIComponent(category)}` : '';
+        const data = await get<{
+          sets?: {
+            category: string;
+            set_name: string;
+            owned_count: number;
+            catalog_total: number;
+            completion_pct: number;
+            sample_owned_titles?: string[];
+          }[];
+          total_categories?: number;
+          total_sets?: number;
+        }>(`/sets/auto-progress${qs}`);
         if (!mounted) return;
 
-        const mapped: AutoSetEntry[] = (data.sets ?? []).map((s: any) => ({
+        const mapped: AutoSetEntry[] = (data.sets ?? []).map((s) => ({
           category: s.category,
           setName: s.set_name,
           ownedCount: s.owned_count,
