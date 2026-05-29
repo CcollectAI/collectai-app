@@ -27,27 +27,58 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
   // PostgREST 400 with column-not-found and the catch silently returned
   // [] — categories opened to an empty store every time.
   type CatItemRow = { id: string; name?: string | null; title?: string | null; category?: string | null; updated_at?: string | null; image_url?: string | null };
-  let itemsData: CatItemRow[] | null = null;
-  try {
-    const res = await withTimeout(
-      supabase
-        .from('items')
-        .select('id, name, title, category, updated_at, image_url')
-        .eq('category', categoryId)
-        .order('updated_at', { ascending: false })
-        .limit(20),
-      SUPABASE_READ_TIMEOUT_MS,
-      'getCategoryStore.items',
-    );
-    itemsData = res.data as CatItemRow[] | null;
-  } catch (e) {
-    if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] getCategoryStore.items timed out');
-      itemsData = null;
-    } else {
+  type EventRow = { id: string; title: string; kind: string; date: string; time?: string };
+
+  // The two queries are independent — fire them in parallel so cellular
+  // round-trip latency stacks once, not twice. Each keeps its own timeout
+  // and treats a TimeoutError as "return null" (the same semantics as the
+  // previous sequential version). Non-timeout errors still propagate.
+  const itemsP = (async (): Promise<CatItemRow[] | null> => {
+    try {
+      const res = await withTimeout(
+        supabase
+          .from('items')
+          .select('id, name, title, category, updated_at, image_url')
+          .eq('category', categoryId)
+          .order('updated_at', { ascending: false })
+          .limit(20),
+        SUPABASE_READ_TIMEOUT_MS,
+        'getCategoryStore.items',
+      );
+      return res.data as CatItemRow[] | null;
+    } catch (e) {
+      if (e instanceof TimeoutError) {
+        logger.warn('[SupabaseDataProvider] getCategoryStore.items timed out');
+        return null;
+      }
       throw e;
     }
-  }
+  })();
+
+  const eventsP = (async (): Promise<EventRow[] | null> => {
+    try {
+      const res = await withTimeout(
+        supabase
+          .from('v_events_with_attendees_v1')
+          .select('id, title, kind, date, time')
+          .eq('category_id', categoryId)
+          .gte('date', new Date().toISOString().split('T')[0])
+          .order('date', { ascending: true })
+          .limit(5),
+        SUPABASE_READ_TIMEOUT_MS,
+        'getCategoryStore.events',
+      );
+      return res.data as EventRow[] | null;
+    } catch (e) {
+      if (e instanceof TimeoutError) {
+        logger.warn('[SupabaseDataProvider] getCategoryStore.events timed out');
+        return null;
+      }
+      throw e;
+    }
+  })();
+
+  const [itemsData, eventsData] = await Promise.all([itemsP, eventsP]);
 
   const items: Item[] = (itemsData ?? []).map((r) => ({
     id: r.id,
@@ -57,30 +88,6 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
     imageUrl: r.image_url ?? undefined,
     updatedAt: r.updated_at ?? new Date().toISOString(),
   }));
-
-  type EventRow = { id: string; title: string; kind: string; date: string; time?: string };
-  let eventsData: EventRow[] | null = null;
-  try {
-    const res = await withTimeout(
-      supabase
-        .from('v_events_with_attendees_v1')
-        .select('id, title, kind, date, time')
-        .eq('category_id', categoryId)
-        .gte('date', new Date().toISOString().split('T')[0])
-        .order('date', { ascending: true })
-        .limit(5),
-      SUPABASE_READ_TIMEOUT_MS,
-      'getCategoryStore.events',
-    );
-    eventsData = res.data as EventRow[] | null;
-  } catch (e) {
-    if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] getCategoryStore.events timed out');
-      eventsData = null;
-    } else {
-      throw e;
-    }
-  }
 
   const upcomingEvents = (eventsData ?? []).map((e) => ({
     id: e.id,
