@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { useModal } from '@/hooks/useModal';
+import { useHasEverHadItems } from '@/hooks/useHasEverHadItems';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
@@ -159,6 +160,10 @@ const ItemsScreen: React.FC = () => {
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
+  const { hasEverHadItems, markHasItems } = useHasEverHadItems();
+  useEffect(() => {
+    if (providerItems.length > 0) markHasItems();
+  }, [providerItems.length, markHasItems]);
 
   // Category breakdown (moved from home tab 2026-04-18)
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdownItem[]>([]);
@@ -674,8 +679,21 @@ const ItemsScreen: React.FC = () => {
     }
   };
 
-  // Loading state with skeleton
+  // Loading state. For users who have never had items, skip the grey
+  // skeleton entirely and render the hero CTA so they see "Add Your First
+  // Item" from frame 1 instead of silhouettes. While the AsyncStorage flag
+  // is still being read (null), also show the hero — better than a flash
+  // of skeleton for new users.
   if (loading) {
+    if (hasEverHadItems !== true) {
+      return (
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <ItemsEmptyState />
+          </View>
+        </SafeAreaView>
+      );
+    }
     return <ItemsLoadingState viewMode={viewMode} />;
   }
 
@@ -689,6 +707,42 @@ const ItemsScreen: React.FC = () => {
           paginatedRefresh();
         }}
       />
+    );
+  }
+
+  // First-run / zero-items state: show only the hero CTA, no skeletons,
+  // no breakdown preview, no search bar. Triggers when the user has nothing
+  // saved AND isn't actively searching/filtering.
+  const hasActiveAdvancedFilter =
+    advancedFilter.categories.length > 0 ||
+    advancedFilter.conditions.length > 0 ||
+    advancedFilter.priceMin !== null ||
+    advancedFilter.priceMax !== null;
+  const isFirstRun =
+    providerItems.length === 0 &&
+    !query.trim() &&
+    !filterCategory &&
+    !categoryParam &&
+    !collectionParam &&
+    !hasActiveAdvancedFilter;
+
+  if (isFirstRun) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.accent}
+              colors={[colors.accent]}
+            />
+          }
+        >
+          <ItemsEmptyState />
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 

@@ -43,7 +43,7 @@ import { TopItemsList, type ItemRow } from "@/components/home/TopItemsList";
 import { FollowedCategoriesCarousel } from "@/components/home/FollowedCategoriesCarousel";
 import { usePortfolioInsights } from "@/hooks/usePortfolioInsights";
 import { useAlertsFeed } from "@/hooks/useAlertsFeed";
-import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { useTranslation } from "react-i18next";
@@ -164,7 +164,12 @@ function PortfolioScreen() {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const { limits } = useBillingLimits();
-  const { animatedStyle } = useEnterReveal({ delay: 50 });
+  // useEnterReveal removed 2026-05-25 — its translateY animation with
+  // useNativeDriver:true was leaving the home tab's hit area desynced from
+  // the rendered position on first mount, blocking taps on the bottom tab
+  // bar until the user scrolled (which forced a re-layout). Symptom only
+  // showed on the Portfolio tab because it was the only one using this hook
+  // with a translateY. Pure cosmetic loss, no functional impact.
 
   const valueSummary = useValueSummary();
   const [range, setRange] = useState<RangeKey>("7D");
@@ -486,7 +491,7 @@ function PortfolioScreen() {
           />
         }
       >
-        <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
+        <View>
         {/* Header */}
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
@@ -773,9 +778,10 @@ function PortfolioScreen() {
           hapticsEnabled={settings.hapticsEnabled}
         />
 
-        {/* Bottom spacing */}
-        <View style={{ height: Platform.OS === "ios" ? 24 : 18 }} />
-        </Animated.View>
+        {/* Bottom spacing — extra padding so content doesn't render behind
+            the bottom tab bar (~88px on iPhone with home indicator). */}
+        <View style={{ height: Platform.OS === "ios" ? 100 : 80 }} />
+        </View>
       </ScrollView>
 
       <AddMenuModal visible={addMenuOpen} onClose={() => setAddMenuOpen(false)} />

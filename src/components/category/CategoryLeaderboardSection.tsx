@@ -1,5 +1,5 @@
 /**
- * CategoryLeaderboardSection — Top collectors for a category.
+ * CategoryLeaderboardSection — auto-rotating carousel of top collectors.
  * Fetches from gamification leaderboard with category filter.
  */
 
@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
 import { collectorsApi } from '@/api/collectorsApi';
 import { MEDAL_COLORS } from '@/constants/colors';
 import logger from '@/utils/logger';
@@ -22,7 +23,6 @@ type LeaderboardEntry = {
 type Props = {
   // Kept on the type so call sites don't break, but the server leaderboard
   // doesn't accept a category filter — only period (weekly/monthly/alltime).
-  // A real per-category leaderboard would need a new endpoint.
   categoryId: string;
 };
 
@@ -35,8 +35,6 @@ export default React.memo(function CategoryLeaderboardSection({ categoryId: _cat
     collectorsApi.getLeaderboard('weekly')
       .then((data) => {
         if (cancelled) return;
-        // Server returns {leaderboard: [{rank, user_id, display_name, total_xp,
-        // level, ...}], ...}. Map total_xp → xp for this component's shape.
         const rows = data?.leaderboard ?? [];
         setEntries(
           rows.slice(0, 5).map((r) => ({
@@ -54,8 +52,6 @@ export default React.memo(function CategoryLeaderboardSection({ categoryId: _cat
 
   if (entries.length === 0) return null;
 
-  const medalColors = [MEDAL_COLORS.gold, MEDAL_COLORS.silver, MEDAL_COLORS.bronze];
-
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
@@ -63,25 +59,34 @@ export default React.memo(function CategoryLeaderboardSection({ categoryId: _cat
         <Text style={[styles.title, { color: colors.text }]}>Top Collectors</Text>
       </View>
 
-      {entries.map((entry, idx) => (
-        <View key={entry.user_id} style={[styles.row, { borderBottomColor: colors.border }]} accessibilityLabel={`Rank ${idx + 1}: ${entry.display_name || `Collector ${entry.rank}`}, Level ${entry.level}, ${entry.xp} XP`}>
-          <View style={styles.rankWrap}>
-            {idx < 3 ? (
-              <Ionicons name="medal-outline" size={16} color={medalColors[idx]} />
-            ) : (
-              <Text style={[styles.rankText, { color: colors.muted }]}>{idx + 1}</Text>
-            )}
-          </View>
-          <View style={styles.info}>
-            <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
-              {entry.display_name || `Collector ${entry.rank}`}
-            </Text>
-            <Text style={[styles.meta, { color: colors.muted }]}>
-              Level {entry.level} · {entry.xp.toLocaleString()} XP
-            </Text>
-          </View>
-        </View>
-      ))}
+      <AutoRotatingCarousel intervalMs={5500} horizontalInset={30}>
+        {entries.map((entry, idx) => {
+          const medalColor = idx < 3 ? [MEDAL_COLORS.gold, MEDAL_COLORS.silver, MEDAL_COLORS.bronze][idx] : null;
+          return (
+            <View
+              key={entry.user_id}
+              style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}
+              accessibilityLabel={`Rank ${idx + 1}: ${entry.display_name}, Level ${entry.level}, ${entry.xp} XP`}
+            >
+              <View style={styles.rankWrap}>
+                {medalColor ? (
+                  <Ionicons name="medal" size={36} color={medalColor} />
+                ) : (
+                  <Text style={[styles.rankBig, { color: colors.muted }]}>#{idx + 1}</Text>
+                )}
+              </View>
+              <View style={styles.info}>
+                <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+                  {entry.display_name}
+                </Text>
+                <Text style={[styles.meta, { color: colors.muted }]}>
+                  Level {entry.level} · {entry.xp.toLocaleString()} XP
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+      </AutoRotatingCarousel>
     </View>
   );
 });
@@ -103,30 +108,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  row: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    gap: 16,
+    minHeight: 90,
   },
   rankWrap: {
-    width: 28,
+    width: 44,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  rankText: {
-    fontSize: 13,
-    fontWeight: '700',
+  rankBig: {
+    fontSize: 22,
+    fontWeight: '800',
   },
   info: {
     flex: 1,
-    marginLeft: 8,
   },
   name: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   meta: {
-    fontSize: 11,
-    marginTop: 2,
+    fontSize: 13,
+    marginTop: 4,
   },
 });

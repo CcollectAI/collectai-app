@@ -133,6 +133,10 @@
     "add_field": "Add field"
   },
   "items_empty": {
+    "hero_title": "Start your collection",
+    "hero_subtitle": "Add your first item to track its value, build sets and unlock insights.",
+    "add_first": "Add Your First Item",
+    "add_first_a11y": "Add your first item",
     "quickscan_ai": "QuickScan AI",
     "quickscan_ai_a11y": "QuickScan AI",
     "add_manually": "Add Item Manually",

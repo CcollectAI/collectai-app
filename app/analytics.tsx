@@ -27,6 +27,8 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { SkeletonList } from "@/components/Skeleton";
+import { useHasEverHadItems } from "@/hooks/useHasEverHadItems";
+import { ItemsEmptyState } from "@/components/items";
 import { formatPrice } from "@/lib/format";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useAsync } from "@/hooks/useAsync";
@@ -83,6 +85,7 @@ function AnalyticsScreen() {
   const { limits, isForced } = useBillingLimits();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { hasEverHadItems, markHasItems } = useHasEverHadItems();
 
   const [collectionTrends, setCollectionTrends] = useState<Record<string, unknown> | null>(null);
   const [predictionAccuracy, setPredictionAccuracy] = useState<{ category: string; mae: number; mape: number; r2: number }[] | null>(null);
@@ -230,21 +233,27 @@ function AnalyticsScreen() {
 
   // When dev plan is forced AND real snapshot produced no useful data, swap
   // in MOCK_SNAPSHOT so the Pro-tier Analytics layout renders end-to-end.
+  // Gated behind __DEV__ so a stale AsyncStorage force_plan value can never
+  // leak fake Pokemon/LEGO/Hot Toys data into a production TestFlight build.
   const effectiveSnapshot = useMemo(() => {
     const real = snapshot;
     const realHasData = real && ((real.items?.length ?? 0) > 0 || real.pl);
-    if (isForced && !realHasData) return MOCK_SNAPSHOT;
+    if (__DEV__ && isForced && !realHasData) return MOCK_SNAPSHOT;
     return real;
   }, [snapshot, isForced, MOCK_SNAPSHOT]);
 
   const effectiveCategories = useMemo(() => {
-    if (isForced && (!categorySummaries || categorySummaries.length === 0)) {
+    if (__DEV__ && isForced && (!categorySummaries || categorySummaries.length === 0)) {
       return MOCK_CATEGORIES;
     }
     return categorySummaries;
   }, [categorySummaries, isForced, MOCK_CATEGORIES]);
 
-  const isPreview = isForced && (effectiveSnapshot === MOCK_SNAPSHOT);
+  // Show the preview banner whenever sample/mock data is on screen, even if
+  // the user isn't on a forced plan. Previously gated on `isForced`, which
+  // meant real users seeing the mock fallback (empty portfolio in dev) had no
+  // visual cue that the numbers weren't theirs.
+  const isPreview = effectiveSnapshot === MOCK_SNAPSHOT;
 
   // M4: Memoize derived snapshot data to avoid recomputing on every render
   const { pl, allocations, winnersLosers, tierSummary, items } = useMemo(() => effectiveSnapshot ?? {
@@ -274,12 +283,44 @@ function AnalyticsScreen() {
       .sort((a, b) => b.completionPct - a.completionPct);
   }, [effectiveCategories]);
 
+  // Flip the persistent flag once we know the user actually has items.
+  useEffect(() => {
+    const itemCount = effectiveSnapshot?.items?.length ?? 0;
+    if (itemCount > 0 && !isPreview) markHasItems();
+  }, [effectiveSnapshot, isPreview, markHasItems]);
+
   if (loading) {
+    // First-run users skip the skeleton entirely and see the hero CTA so
+    // they're prompted to add their first item instead of staring at grey
+    // silhouettes. Returning users (hasEverHadItems === true) keep the
+    // skeleton because real data is on its way.
+    if (hasEverHadItems !== true) {
+      return (
+        <View style={[styles.safe, { backgroundColor: colors.background }]}>
+          <Stack.Screen options={{ headerTitle: 'Analytics' }} />
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <ItemsEmptyState />
+          </View>
+        </View>
+      );
+    }
     return (
       <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <Stack.Screen options={{ headerTitle: 'Analytics' }} />
         <View style={styles.loadingContainer}>
           <SkeletonList count={3} type="analytics" />
+        </View>
+      </View>
+    );
+  }
+
+  // Loaded with no items: also short-circuit to the hero CTA.
+  if (!isPreview && (effectiveSnapshot?.items?.length ?? 0) === 0) {
+    return (
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
+        <Stack.Screen options={{ headerTitle: 'Analytics' }} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <ItemsEmptyState />
         </View>
       </View>
     );
@@ -313,7 +354,7 @@ function AnalyticsScreen() {
           <View style={[styles.errorBanner, { backgroundColor: colors.accent + '18' }]}>
             <Ionicons name="construct-outline" size={16} color={colors.accent} />
             <Text style={[styles.errorText, { color: colors.text }]}>
-              Dev preview — sample analytics data. Add real items for live numbers.
+              Preview — these are sample numbers. Add items to your portfolio to see your real analytics.
             </Text>
           </View>
         )}

@@ -151,6 +151,10 @@
   },
 
   "items_empty": {
+    "hero_title": "Empieza tu colección",
+    "hero_subtitle": "Añade tu primer artículo para seguir su valor, completar sets y desbloquear estadísticas.",
+    "add_first": "Añade tu primer artículo",
+    "add_first_a11y": "Añade tu primer artículo",
     "quickscan_ai": "QuickScan IA",
     "quickscan_ai_a11y": "QuickScan IA",
     "add_manually": "Añadir manualmente",

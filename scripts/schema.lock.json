@@ -121,12 +121,6 @@
     "market_hits_y2026m03.price_eur": [
       "CHECK ((((price IS NULL) OR (price <= (20000000)::numeric)) AND ((price_eur IS NULL) OR (price_eur <= (20000000)::numeric))))"
     ],
-    "market_hits_y2026m04.price": [
-      "CHECK ((((price IS NULL) OR (price <= (20000000)::numeric)) AND ((price_eur IS NULL) OR (price_eur <= (20000000)::numeric))))"
-    ],
-    "market_hits_y2026m04.price_eur": [
-      "CHECK ((((price IS NULL) OR (price <= (20000000)::numeric)) AND ((price_eur IS NULL) OR (price_eur <= (20000000)::numeric))))"
-    ],
     "market_hits_y2026m05.price": [
       "CHECK ((((price IS NULL) OR (price <= (20000000)::numeric)) AND ((price_eur IS NULL) OR (price_eur <= (20000000)::numeric))))"
     ],
@@ -254,15 +248,6 @@
       "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
     ],
     "price_predictions_y2026m03.q90": [
-      "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
-    ],
-    "price_predictions_y2026m04.q10": [
-      "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
-    ],
-    "price_predictions_y2026m04.q50": [
-      "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
-    ],
-    "price_predictions_y2026m04.q90": [
       "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
     ],
     "price_predictions_y2026m05.q10": [
@@ -8057,132 +8042,6 @@
       "nullable": true,
       "type": "uuid"
     },
-    "market_hits_y2026m04.attrs": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "market_hits_y2026m04.category": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.condition": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.condition_grade": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.currency": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.ended_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "market_hits_y2026m04.features_json": {
-      "default": "'{}'::jsonb",
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "market_hits_y2026m04.graded": {
-      "default": "false",
-      "nullable": true,
-      "type": "bool"
-    },
-    "market_hits_y2026m04.id": {
-      "default": "nextval('market_hits_id_seq'::regclass)",
-      "nullable": false,
-      "type": "int8"
-    },
-    "market_hits_y2026m04.image_url": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.is_listing": {
-      "default": "false",
-      "nullable": true,
-      "type": "bool"
-    },
-    "market_hits_y2026m04.item_ref": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.listing_id": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.marketplace": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.normalized_key": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.observed_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "market_hits_y2026m04.price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "market_hits_y2026m04.price_eur": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "market_hits_y2026m04.processed": {
-      "default": "false",
-      "nullable": true,
-      "type": "bool"
-    },
-    "market_hits_y2026m04.provider": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.seen_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "market_hits_y2026m04.seller_rating": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "market_hits_y2026m04.seller_score": {
-      "nullable": true,
-      "type": "float8"
-    },
-    "market_hits_y2026m04.shipping": {
-      "nullable": true,
-      "type": "float8"
-    },
-    "market_hits_y2026m04.source": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.title": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.tx_id": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.url": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.url_hash": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m04.user_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
     "market_hits_y2026m05.attrs": {
       "nullable": true,
       "type": "jsonb"
@@ -10320,6 +10179,33 @@
       "nullable": true,
       "type": "text"
     },
+    "on_demand_lookups_audit.cost_cents": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "on_demand_lookups_audit.fetched_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "on_demand_lookups_audit.id": {
+      "default": "nextval('on_demand_lookups_audit_id_seq'::regclass)",
+      "nullable": false,
+      "type": "int8"
+    },
+    "on_demand_lookups_audit.item_ref": {
+      "nullable": false,
+      "type": "text"
+    },
+    "on_demand_lookups_audit.provider": {
+      "nullable": true,
+      "type": "text"
+    },
+    "on_demand_lookups_audit.user_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
     "ops_drift_heartbeat_v1.category": {
       "nullable": true,
       "type": "text"
@@ -11251,53 +11137,6 @@
       "nullable": false,
       "type": "text"
     },
-    "price_history_y2026m04.as_of": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "price_history_y2026m04.currency": {
-      "default": "'EUR'::text",
-      "nullable": true,
-      "type": "text"
-    },
-    "price_history_y2026m04.id": {
-      "nullable": false,
-      "type": "int8"
-    },
-    "price_history_y2026m04.item_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "price_history_y2026m04.item_ref": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_history_y2026m04.price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_history_y2026m04.price_q10": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_history_y2026m04.price_q50": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_history_y2026m04.price_q90": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_history_y2026m04.snapshot_at": {
-      "default": "now()",
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "price_history_y2026m04.source": {
-      "nullable": false,
-      "type": "text"
-    },
     "price_history_y2026m05.as_of": {
       "default": "now()",
       "nullable": false,
@@ -12107,97 +11946,6 @@
       "type": "timestamptz"
     },
     "price_predictions_y2026m03.ts": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "price_predictions_y2026m04.category": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m04.comps_count": {
-      "nullable": true,
-      "type": "int4"
-    },
-    "price_predictions_y2026m04.conf_score": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_predictions_y2026m04.confidence": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_predictions_y2026m04.created_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "price_predictions_y2026m04.evidence_hit_ids": {
-      "default": "'{}'::text[]",
-      "nullable": true,
-      "type": "_text"
-    },
-    "price_predictions_y2026m04.evidence_summary": {
-      "default": "'{}'::jsonb",
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "price_predictions_y2026m04.explanation": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m04.generated_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "price_predictions_y2026m04.head": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m04.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
-      "type": "uuid"
-    },
-    "price_predictions_y2026m04.item_ref": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m04.model_version": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m04.nk": {
-      "default": "(gen_random_uuid())::text",
-      "nullable": false,
-      "type": "text"
-    },
-    "price_predictions_y2026m04.q10": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_predictions_y2026m04.q50": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_predictions_y2026m04.q90": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_predictions_y2026m04.raw": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "price_predictions_y2026m04.source": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m04.training_data_asof": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "price_predictions_y2026m04.ts": {
       "default": "now()",
       "nullable": false,
       "type": "timestamptz"
@@ -23327,38 +23075,6 @@
       "price_eur",
       "is_listing"
     ],
-    "market_hits_y2026m04": [
-      "id",
-      "user_id",
-      "title",
-      "url",
-      "price",
-      "currency",
-      "image_url",
-      "marketplace",
-      "seen_at",
-      "item_ref",
-      "category",
-      "source",
-      "observed_at",
-      "condition_grade",
-      "tx_id",
-      "seller_rating",
-      "url_hash",
-      "processed",
-      "attrs",
-      "provider",
-      "listing_id",
-      "condition",
-      "normalized_key",
-      "ended_at",
-      "seller_score",
-      "features_json",
-      "shipping",
-      "graded",
-      "price_eur",
-      "is_listing"
-    ],
     "market_hits_y2026m05": [
       "id",
       "user_id",
@@ -23944,6 +23660,14 @@
       "last_provider",
       "last_error"
     ],
+    "on_demand_lookups_audit": [
+      "id",
+      "user_id",
+      "item_ref",
+      "fetched_at",
+      "cost_cents",
+      "provider"
+    ],
     "ops_drift_heartbeat_v1": [
       "category",
       "drift_abs_pct",
@@ -24215,19 +23939,6 @@
       "price_q90",
       "snapshot_at"
     ],
-    "price_history_y2026m04": [
-      "id",
-      "item_id",
-      "source",
-      "price",
-      "currency",
-      "as_of",
-      "item_ref",
-      "price_q10",
-      "price_q50",
-      "price_q90",
-      "snapshot_at"
-    ],
     "price_history_y2026m05": [
       "id",
       "item_id",
@@ -24418,29 +24129,6 @@
       "conf_score"
     ],
     "price_predictions_y2026m03": [
-      "id",
-      "nk",
-      "q10",
-      "q50",
-      "q90",
-      "confidence",
-      "comps_count",
-      "model_version",
-      "source",
-      "training_data_asof",
-      "created_at",
-      "item_ref",
-      "category",
-      "raw",
-      "ts",
-      "head",
-      "generated_at",
-      "evidence_hit_ids",
-      "evidence_summary",
-      "explanation",
-      "conf_score"
-    ],
-    "price_predictions_y2026m04": [
       "id",
       "nk",
       "q10",
@@ -27975,17 +27663,6 @@
         "seen_at"
       ]
     ],
-    "market_hits_y2026m04": [
-      [
-        "id",
-        "seen_at"
-      ],
-      [
-        "provider",
-        "listing_id",
-        "seen_at"
-      ]
-    ],
     "market_hits_y2026m05": [
       [
         "id",
@@ -28261,6 +27938,11 @@
         "item_ref"
       ]
     ],
+    "on_demand_lookups_audit": [
+      [
+        "id"
+      ]
+    ],
     "portfolio_items": [
       [
         "id"
@@ -28384,12 +28066,6 @@
         "as_of"
       ]
     ],
-    "price_history_y2026m04": [
-      [
-        "id",
-        "as_of"
-      ]
-    ],
     "price_history_y2026m05": [
       [
         "id",
@@ -28449,12 +28125,6 @@
       ]
     ],
     "price_predictions_y2026m03": [
-      [
-        "id",
-        "generated_at"
-      ]
-    ],
-    "price_predictions_y2026m04": [
       [
         "id",
         "generated_at"

@@ -38,7 +38,6 @@ export type AuthContextValue = {
   profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
-  signInDemo: () => void;
 };
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -133,33 +132,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const signInDemo = useCallback(() => {
-    if (!__DEV__) {
-      logger.warn('[AuthProvider] signInDemo blocked in production build');
-      return;
-    }
-
-    const demoUser = {
-      id: 'demo-user-00000000-0000-0000-0000-000000000000',
-      email: 'demo@sparrowcollect.com',
-      app_metadata: {},
-      user_metadata: { username: 'DemoCollector' },
-      aud: 'authenticated',
-      created_at: new Date().toISOString(),
-    } as unknown as User;
-
-    setUser(demoUser);
-    setSession(null);
-    setProfile({
-      id: demoUser.id,
-      username: 'DemoCollector',
-      created_at: new Date().toISOString(),
-    });
-    setLoading(false);
-  }, []);
-
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut, signInDemo }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

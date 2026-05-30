@@ -151,6 +151,10 @@
   },
 
   "items_empty": {
+    "hero_title": "Commencez votre collection",
+    "hero_subtitle": "Ajoutez votre premier objet pour suivre sa valeur, compléter des sets et débloquer des analyses.",
+    "add_first": "Ajouter votre premier objet",
+    "add_first_a11y": "Ajouter votre premier objet",
     "quickscan_ai": "QuickScan IA",
     "quickscan_ai_a11y": "QuickScan IA",
     "add_manually": "Ajouter manuellement",

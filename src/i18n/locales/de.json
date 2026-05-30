@@ -151,6 +151,10 @@
   },
 
   "items_empty": {
+    "hero_title": "Starte deine Sammlung",
+    "hero_subtitle": "Füge dein erstes Objekt hinzu, um den Wert zu verfolgen, Sets aufzubauen und Insights freizuschalten.",
+    "add_first": "Erstes Objekt hinzufügen",
+    "add_first_a11y": "Erstes Objekt hinzufügen",
     "quickscan_ai": "QuickScan AI",
     "quickscan_ai_a11y": "QuickScan AI",
     "add_manually": "Manuell hinzufügen",

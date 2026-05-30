@@ -12,6 +12,7 @@ import {
   Text,
   TextInput,
   ActivityIndicator,
+  Image,
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,8 +30,9 @@ export type CatalogItemData = {
   brand: string | null;
   rarity: string | null;
   notes: string | null;
-  // R50k: catalog reference images are backend-only
   has_reference_image?: boolean;
+  // Canonical card-CDN thumbnail; null when the catalog row has none.
+  image_url?: string | null;
   external_id: string | null;
   set_code: string | null;
   estimated_price: number | null;
@@ -155,6 +157,20 @@ function CatalogBrowseSectionInner({
                   key={cItem.id}
                   style={[s.catalogItemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 >
+                  {/* Reference thumbnail (canonical card CDN); placeholder when absent */}
+                  {cItem.image_url ? (
+                    <Image
+                      source={{ uri: cItem.image_url }}
+                      style={s.catalogItemThumb}
+                      resizeMode="contain"
+                      accessibilityIgnoresInvertColors
+                    />
+                  ) : (
+                    <View style={[s.catalogItemThumb, s.catalogItemThumbPlaceholder, { backgroundColor: accentColor + '12' }]}>
+                      <Ionicons name="image-outline" size={18} color={accentColor} />
+                    </View>
+                  )}
+
                   {/* Item info */}
                   <View style={s.catalogItemInfo}>
                     <Text style={[s.catalogItemTitle, { color: colors.text }]} numberOfLines={1}>

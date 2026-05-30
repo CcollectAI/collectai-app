@@ -148,8 +148,10 @@ export const browseCatalogItems = (categoryId: string, opts?: {
       brand: string | null;
       rarity: string | null;
       notes: string | null;
-      // R50k: catalog reference images backend-only
       has_reference_image?: boolean;
+      // Canonical card-CDN thumbnail (Scryfall / ygoprodeck / pokemontcg.io).
+      // null when the catalog row has no reference image.
+      image_url?: string | null;
       external_id: string | null;
       set_code: string | null;
       estimated_price: number | null;

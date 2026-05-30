@@ -24,21 +24,22 @@ export function GradientBackground({ children }: Props) {
         locations={[0, 0.4, 1]}
         style={StyleSheet.absoluteFill}
       />
-      {/* Decorative ambient circles */}
+      {/* Decorative ambient circles — pointerEvents in STYLE (RN 0.81+).
+          The legacy prop is deprecated and was getting silently ignored,
+          letting these 300×300 circles overlap the Sign In + Continue with
+          Apple buttons in the lower-left quadrant and swallow their taps. */}
       <View
-        pointerEvents="none"
         style={[
           styles.ambientCircle,
           styles.circleTopRight,
-          { backgroundColor: colors.brand.base + '08' },
+          { backgroundColor: colors.brand.base + '08', pointerEvents: 'none' },
         ]}
       />
       <View
-        pointerEvents="none"
         style={[
           styles.ambientCircle,
           styles.circleBottomLeft,
-          { backgroundColor: colors.brand.base + '08' },
+          { backgroundColor: colors.brand.base + '08', pointerEvents: 'none' },
         ]}
       />
       {children}

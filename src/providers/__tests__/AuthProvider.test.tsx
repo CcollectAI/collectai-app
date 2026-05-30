@@ -5,7 +5,6 @@
  *   - Initial mount: loading=true, then resolves to session-or-null
  *   - onAuthStateChange propagates to context state
  *   - signOut clears state + calls Supabase + resets analytics
- *   - signInDemo works in __DEV__ (skipped — module-level branch)
  *   - Profile loads from `profiles` table on user mount
  *   - Sentry.setUser receives only the id (PII scrub contract)
  *   - RevenueCat identifyUser fires on session change
@@ -333,39 +332,6 @@ describe('AuthProvider — signOut', () => {
   });
 });
 
-describe('AuthProvider — signInDemo', () => {
-  it('exposes signInDemo via context', async () => {
-    mockGetSession.mockResolvedValueOnce({ data: { session: null }, error: null });
-    let ctxValue: any = null;
-    render(
-      <AuthProvider>
-        <Consumer onValue={(v) => (ctxValue = v)} />
-      </AuthProvider>,
-    );
-    await waitFor(() => expect(ctxValue?.loading).toBe(false));
-    expect(typeof ctxValue.signInDemo).toBe('function');
-  });
-
-  it('sets a demo user when called in __DEV__', async () => {
-    mockGetSession.mockResolvedValueOnce({ data: { session: null }, error: null });
-    let ctxValue: any = null;
-    render(
-      <AuthProvider>
-        <Consumer onValue={(v) => (ctxValue = v)} />
-      </AuthProvider>,
-    );
-    await waitFor(() => expect(ctxValue?.loading).toBe(false));
-
-    act(() => {
-      ctxValue.signInDemo();
-    });
-
-    await waitFor(() => {
-      expect(ctxValue?.user?.email).toBe('demo@sparrowcollect.com');
-      expect(ctxValue?.profile?.username).toBe('DemoCollector');
-    });
-  });
-});
 
 describe('AuthProvider — profile load failure', () => {
   it('leaves profile null without throwing when profiles row missing', async () => {

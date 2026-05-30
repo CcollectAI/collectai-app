@@ -151,6 +151,10 @@
   },
 
   "items_empty": {
+    "hero_title": "컬렉션을 시작하세요",
+    "hero_subtitle": "첫 아이템을 추가하여 가치를 추적하고, 세트를 완성하고, 인사이트를 잠금 해제하세요.",
+    "add_first": "첫 아이템 추가하기",
+    "add_first_a11y": "첫 아이템 추가하기",
     "quickscan_ai": "QuickScan AI",
     "quickscan_ai_a11y": "QuickScan AI",
     "add_manually": "수동으로 추가",

@@ -310,7 +310,13 @@ function SubscriptionScreen() {
         {!isBetaUnlocked && (
           <View style={styles.actionsRow}>
             <AnimatedPressable
-              style={[styles.secondaryBtn, { borderColor: colors.border }]}
+              style={[
+                styles.secondaryBtn,
+                {
+                  borderColor: colors.brand.dark,
+                  backgroundColor: colors.brand.base + '18',
+                },
+              ]}
               onPress={handleRestore}
               accessibilityRole="button"
               accessibilityLabel="Restore previous purchases"
@@ -326,7 +332,13 @@ function SubscriptionScreen() {
 
             {isPaid && (
               <AnimatedPressable
-                style={[styles.secondaryBtn, { borderColor: colors.border }]}
+                style={[
+                  styles.secondaryBtn,
+                  {
+                    borderColor: colors.brand.dark,
+                    backgroundColor: colors.brand.base + '18',
+                  },
+                ]}
                 onPress={handleManage}
                 accessibilityRole="button"
                 accessibilityLabel={t('subscription.manage_a11y')}
@@ -467,19 +479,22 @@ const styles = StyleSheet.create({
   },
   actionsRow: {
     flexDirection: 'row',
+    justifyContent: 'center',
     gap: 12,
     marginTop: 24,
   },
   secondaryBtn: {
     flex: 1,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   secondaryBtnText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   legalText: {
     fontSize: 11,

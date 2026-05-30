@@ -44,7 +44,12 @@ class CatalogItem(BaseModel):
     brand: Optional[str] = None
     rarity: Optional[str] = None
     notes: Optional[str] = None
-    has_reference_image: bool = False  # R50k: image_url kept backend-only for intake/QuickScan matching
+    has_reference_image: bool = False  # retained for back-compat with older clients
+    # image_url is a canonical card-CDN reference (Scryfall / ygoprodeck /
+    # pokemontcg.io). Re-exposed to the app so catalog browse + New-in-Catalog
+    # can render thumbnails. ~61% of the catalog is populated; null otherwise
+    # (clients fall back to a placeholder).
+    image_url: Optional[str] = None
     external_id: Optional[str] = None
     set_code: Optional[str] = None
     estimated_price: Optional[float] = None
@@ -143,16 +148,27 @@ async def browse_catalog_items(
                 -- canonical comp source (~900K rows). category_items has
                 -- (category, item_key); market_hits.item_ref is the
                 -- `category:item_key` concatenation.
+                --
+                -- The `seen_at` floor is load-bearing: market_hits is
+                -- partitioned by month, so without a partition-key predicate
+                -- the planner Merge-Appends across every monthly partition for
+                -- each item_key (~1.4s for 30 items). The 180-day floor lets
+                -- it prune to recent partitions only (~96ms). The category
+                -- filter both prevents item_key collisions across categories
+                -- and narrows the ci scan.
                 SELECT ci.item_key, mp.price_eur AS price
                 FROM category_items ci
                 JOIN LATERAL (
                     SELECT price_eur FROM market_hits mh
                     WHERE mh.item_ref = (ci.category || ':' || ci.item_key)
+                      AND mh.seen_at > now() - interval '180 days'
                     ORDER BY mh.seen_at DESC
                     LIMIT 1
                 ) mp ON TRUE
-                WHERE ci.item_key = ANY($1)
+                WHERE ci.category = $1
+                  AND ci.item_key = ANY($2)
                 """,
+                category_id,
                 item_keys,
             )
             for pr in price_rows:
@@ -170,6 +186,7 @@ async def browse_catalog_items(
             rarity=r["rarity"],
             notes=r["notes"],
             has_reference_image=bool(r["image_url"]),
+            image_url=r["image_url"],
             external_id=r["external_id"],
             set_code=r["set_code"],
             estimated_price=price_map.get(r["item_key"]),

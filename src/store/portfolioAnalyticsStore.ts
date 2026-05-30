@@ -330,9 +330,12 @@ export async function fetchPortfolioPL(): Promise<PortfolioPLSummary> {
  * Returns category allocations (value and weights) from items.
  */
 export async function fetchPortfolioAllocations(): Promise<CategoryAllocation[]> {
+  // __DEV__ gate added 2026-05-25: in production, empty backend → empty
+  // snapshot. The DEMO_ITEMS fallback was leaking fake Pokemon/LEGO/Hot Toys
+  // portfolio data into TestFlight for any user with 0 items.
   const items =
     (await loadItemsFromBackend()) ??
-    DEMO_ITEMS;
+    (__DEV__ ? DEMO_ITEMS : []);
 
   return computeAllocationsFromItems(items);
 }
@@ -345,9 +348,12 @@ export async function fetchPortfolioWinnersLosers(): Promise<{
   losers: PortfolioItemSnapshot[];
   neutral: PortfolioItemSnapshot[];
 }> {
+  // __DEV__ gate added 2026-05-25: in production, empty backend → empty
+  // snapshot. The DEMO_ITEMS fallback was leaking fake Pokemon/LEGO/Hot Toys
+  // portfolio data into TestFlight for any user with 0 items.
   const items =
     (await loadItemsFromBackend()) ??
-    DEMO_ITEMS;
+    (__DEV__ ? DEMO_ITEMS : []);
 
   return computeWinnersAndLosers(items);
 }
@@ -359,7 +365,7 @@ export async function fetchPortfolioWinnersLosers(): Promise<{
 export async function fetchPortfolioSnapshot(): Promise<PortfolioSnapshot> {
   const [series, items, sets] = await Promise.all([
     fetchPortfolioSeries(),
-    (async () => (await loadItemsFromBackend()) ?? DEMO_ITEMS)(),
+    (async () => (await loadItemsFromBackend()) ?? (__DEV__ ? DEMO_ITEMS : []))(),
     loadSetsFromBackend(),
   ]);
 

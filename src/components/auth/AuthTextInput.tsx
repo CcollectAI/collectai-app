@@ -2,7 +2,7 @@
  * AuthTextInput — Themed input with floating label, icon prefix, and animated focus state.
  */
 
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   Animated,
   StyleSheet,
@@ -53,32 +53,29 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(
     useImperativeHandle(ref, () => innerRef.current as TextInput, []);
     const focusInput = () => innerRef.current?.focus();
 
-    // Floating label animation
+    // Floating label animation. Drive from a single effect that watches both
+    // focus and hasValue so autofill / programmatic value changes also animate
+    // the label out of the way (otherwise the label sits on top of the typed
+    // value when the field was prefilled before first focus).
     const labelAnim = useRef(new Animated.Value(hasValue ? 1 : 0)).current;
 
-    const handleFocus = () => {
-      setFocused(true);
+    useEffect(() => {
       Animated.timing(labelAnim, {
-        toValue: 1,
+        toValue: focused || hasValue ? 1 : 0,
         duration: 150,
         useNativeDriver: false,
       }).start();
-    };
+    }, [focused, hasValue, labelAnim]);
 
-    const handleBlur = () => {
-      setFocused(false);
-      if (!hasValue) {
-        Animated.timing(labelAnim, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: false,
-        }).start();
-      }
-    };
+    const handleFocus = () => setFocused(true);
+    const handleBlur = () => setFocused(false);
 
+    // labelWrap is full-height + justified center, so translateY 0 puts the
+    // label at vertical center (placeholder position). At 1, slide it up so
+    // it sits above the typed text near the top of the field.
     const labelTranslateY = labelAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, -16],
+      outputRange: [0, -14],
     });
     const labelFontSize = labelAnim.interpolate({
       inputRange: [0, 1],
@@ -187,13 +184,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
+    bottom: 0,
+    justifyContent: 'center',
   },
   label: {
-    // The animated translateY moves this around inside labelWrap.
+    // translateY 0 = centered (placeholder); translateY -14 = floated above text
   },
   input: {
     fontSize: 16,
-    paddingTop: 8,
+    paddingTop: 14,
     height: '100%',
   },
   eyeBtn: {

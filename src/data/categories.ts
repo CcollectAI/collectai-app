@@ -144,7 +144,7 @@ export const CATEGORIES: Category[] = [
     name: 'Pokémon Cards',
     tagline: 'Modern & vintage Pokémon TCG, tracked like a real portfolio.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/7708408/pexels-photo-7708408.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/7708408/pexels-photo-7708408.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#FFD700',
     iconName: 'flash',
     collections: [
@@ -185,7 +185,7 @@ export const CATEGORIES: Category[] = [
     name: 'Magic: The Gathering',
     tagline: 'Reserve list, modern staples, and Commander all-stars.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/16321207/pexels-photo-16321207.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/16321207/pexels-photo-16321207.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#4B0082',
     iconName: 'flame',
     collections: [
@@ -216,7 +216,7 @@ export const CATEGORIES: Category[] = [
     name: 'Yu-Gi-Oh!',
     tagline: 'First editions, ghost rares, and competitive staples.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/9661252/pexels-photo-9661252.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/9661252/pexels-photo-9661252.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#8B4513',
     iconName: 'triangle',
     collections: [
@@ -247,7 +247,7 @@ export const CATEGORIES: Category[] = [
     name: 'Disney Lorcana',
     tagline: 'Storyborn, Dreamborn, and Enchanted foils.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/13321546/pexels-photo-13321546.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/13321546/pexels-photo-13321546.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#6A5ACD',
     iconName: 'sparkles',
     collections: [
@@ -278,7 +278,7 @@ export const CATEGORIES: Category[] = [
     name: 'Funko Pops',
     tagline: 'Vaulted Pops, con exclusives, and chase variants.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/4061668/pexels-photo-4061668.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/4061668/pexels-photo-4061668.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#FF6B35',
     iconName: 'happy',
     collections: [
@@ -314,7 +314,7 @@ export const CATEGORIES: Category[] = [
     name: 'Designer & Art Toys',
     tagline: 'Limited drops, sofubi, and collab runs.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/31872745/pexels-photo-31872745.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/31872745/pexels-photo-31872745.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#E91E63',
     iconName: 'color-palette',
     collections: [
@@ -340,7 +340,7 @@ export const CATEGORIES: Category[] = [
     name: 'Anime Figures',
     tagline: 'Scale figures, nendoroids, and limited edition statues.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/15964921/pexels-photo-15964921.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/15964921/pexels-photo-15964921.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#FF69B4',
     iconName: 'body',
     collections: [
@@ -371,7 +371,7 @@ export const CATEGORIES: Category[] = [
     name: 'Hot Toys',
     tagline: 'Premium 1/6 scale collectibles from Marvel, Star Wars & more.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/17505082/pexels-photo-17505082.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/17505082/pexels-photo-17505082.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#C41E3A',
     iconName: 'shield',
     collections: [
@@ -397,7 +397,7 @@ export const CATEGORIES: Category[] = [
     name: 'Action Figures',
     tagline: 'From shelf to grail — every line, every wave, every exclusive.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/3661193/pexels-photo-3661193.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/3661193/pexels-photo-3661193.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#1565C0',
     iconName: 'man',
     collections: [
@@ -416,7 +416,7 @@ export const CATEGORIES: Category[] = [
     name: 'Vintage Toys',
     tagline: 'Kenner, Hasbro, and TOMY treasures from the golden age.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/3662630/pexels-photo-3662630.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/3662630/pexels-photo-3662630.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#D4A017',
     iconName: 'time',
     collections: [
@@ -435,7 +435,7 @@ export const CATEGORIES: Category[] = [
     name: 'Marvel Legends',
     tagline: 'Every wave, every BAF, every chase — assemble the collection.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/4588065/pexels-photo-4588065.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/4588065/pexels-photo-4588065.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#ED1D24',
     iconName: 'shield-half',
     collections: [
@@ -454,7 +454,7 @@ export const CATEGORIES: Category[] = [
     name: 'LEGO',
     tagline: 'UCS sets, retired exclusives, and minifigure collections.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/298825/pexels-photo-298825.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/298825/pexels-photo-298825.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#FFC107',
     iconName: 'cube',
     collections: [
@@ -495,7 +495,7 @@ export const CATEGORIES: Category[] = [
     name: 'Gunpla & Model Kits',
     tagline: 'HG, MG, PG builds tracked like art pieces.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/185725/pexels-photo-185725.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/185725/pexels-photo-185725.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#1E88E5',
     iconName: 'rocket',
     collections: [
@@ -526,7 +526,7 @@ export const CATEGORIES: Category[] = [
     name: 'Scale Models',
     tagline: 'Aircraft, tanks, ships, and automotive scale kits.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/2249429/pexels-photo-2249429.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/2249429/pexels-photo-2249429.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#607D8B',
     iconName: 'car-sport',
     collections: [
@@ -552,7 +552,7 @@ export const CATEGORIES: Category[] = [
     name: 'Warhammer Minis',
     tagline: 'Painted squads with provenance and pedigree.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/69378/pexels-photo-69378.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/69378/pexels-photo-69378.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#8D0226',
     iconName: 'skull',
     collections: [
@@ -583,7 +583,7 @@ export const CATEGORIES: Category[] = [
     name: 'Retro Games',
     tagline: 'Sealed classics, graded cartridges, and CIB treasures.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/1373100/pexels-photo-1373100.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/1373100/pexels-photo-1373100.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#9C27B0',
     iconName: 'game-controller',
     collections: [
@@ -615,7 +615,7 @@ export const CATEGORIES: Category[] = [
     name: 'Manga',
     tagline: 'First prints, box sets, and out-of-print volumes.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/18848524/pexels-photo-18848524.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/18848524/pexels-photo-18848524.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#2196F3',
     iconName: 'book',
     collections: [
@@ -641,7 +641,7 @@ export const CATEGORIES: Category[] = [
     name: 'Blu-ray Steelbooks',
     tagline: 'Zavvi exclusives, 4K upgrades, and numbered collector editions.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/276005/pexels-photo-276005.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/276005/pexels-photo-276005.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#37474F',
     iconName: 'disc',
     collections: [
@@ -672,7 +672,7 @@ export const CATEGORIES: Category[] = [
     name: 'Anime Blu-rays',
     tagline: 'Aniplex exclusives, Japanese imports, and rare box sets worth the hunt.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/2249224/pexels-photo-2249224.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/2249224/pexels-photo-2249224.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#00BCD4',
     iconName: 'film',
     collections: [
@@ -698,7 +698,7 @@ export const CATEGORIES: Category[] = [
     name: 'Anime Soundtracks',
     tagline: 'Hisaishi scores, character song CDs, and first-press OSTs with bonus tracks.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/4734714/pexels-photo-4734714.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/4734714/pexels-photo-4734714.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#F06292',
     iconName: 'musical-notes',
     collections: [
@@ -724,7 +724,7 @@ export const CATEGORIES: Category[] = [
     name: 'Anime OST Vinyl',
     tagline: 'Tiger Lab, Milan Records pressings, and color-splatter anime wax.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/164853/pexels-photo-164853.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/164853/pexels-photo-164853.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#AB47BC',
     iconName: 'vinyl',
     collections: [
@@ -750,7 +750,7 @@ export const CATEGORIES: Category[] = [
     name: 'K-pop Merch',
     tagline: 'Photocards, signed albums, and Weverse exclusives that sell out in seconds.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#FF69B4',
     iconName: 'heart',
     collections: [
@@ -776,7 +776,7 @@ export const CATEGORIES: Category[] = [
     name: 'Taylor Swift',
     tagline: 'Signed CDs, Eras Tour exclusives, and colored vinyl variants that define fandom.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#E040FB',
     iconName: 'mic',
     collections: [
@@ -807,7 +807,7 @@ export const CATEGORIES: Category[] = [
     name: 'Pop Fandom',
     tagline: 'Concert posters, signed setlists, and limited artist drops that tell a story.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/1047442/pexels-photo-1047442.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/1047442/pexels-photo-1047442.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#FF7043',
     iconName: 'star',
     collections: [
@@ -838,7 +838,7 @@ export const CATEGORIES: Category[] = [
     name: 'K-pop Lightsticks',
     tagline: 'ARMY Bombs, Ocean Sticks, and every gen lightstick that glows in the crowd.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/2167381/pexels-photo-2167381.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/2167381/pexels-photo-2167381.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#FFD54F',
     iconName: 'flashlight',
     collections: [
@@ -864,7 +864,7 @@ export const CATEGORIES: Category[] = [
     name: 'Disney Collectibles',
     tagline: 'Pin trading grails, WDCC sculptures, and castle-exclusive merch.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/17978912/pexels-photo-17978912.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/17978912/pexels-photo-17978912.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#1565C0',
     iconName: 'planet',
     collections: [
@@ -900,7 +900,7 @@ export const CATEGORIES: Category[] = [
     name: 'Theme Park Collectibles',
     tagline: 'Haunted Mansion memorabilia, vintage pennants, and ride vehicle replicas.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/1336429/pexels-photo-1336429.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/1336429/pexels-photo-1336429.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#4CAF50',
     iconName: 'ticket',
     collections: [
@@ -931,7 +931,7 @@ export const CATEGORIES: Category[] = [
     name: 'Studio Ghibli',
     tagline: 'Museum-exclusive cels, Donguri Republic goods, and Miyazaki art books.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/245914/pexels-photo-245914.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/245914/pexels-photo-245914.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#66BB6A',
     iconName: 'leaf',
     collections: [
@@ -957,7 +957,7 @@ export const CATEGORIES: Category[] = [
     name: 'Bandai Premium',
     tagline: 'P-Bandai web-shop exclusives, limited Gundam kits, and SHF reissues.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/4502978/pexels-photo-4502978.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/4502978/pexels-photo-4502978.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#E53935',
     iconName: 'diamond',
     collections: [
@@ -983,7 +983,7 @@ export const CATEGORIES: Category[] = [
     name: 'Japanese Magazines',
     tagline: 'Mooks with exclusive figures, vintage issues, and appendix-heavy collector editions.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/6664/pexels-photo-6664.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/6664/pexels-photo-6664.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#FF8A65',
     iconName: 'newspaper',
     collections: [
@@ -1009,7 +1009,7 @@ export const CATEGORIES: Category[] = [
     name: 'Japan Event Exclusives',
     tagline: 'Comiket circle goods, Wonder Festival garage kits, and event-day-only drops.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/29901247/pexels-photo-29901247.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/29901247/pexels-photo-29901247.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#EF5350',
     iconName: 'calendar',
     collections: [
@@ -1035,7 +1035,7 @@ export const CATEGORIES: Category[] = [
     name: 'Nintendo Merchandise',
     tagline: 'Amiibo waves, Nintendo Tokyo exclusives, and Club Nintendo relics.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/17122728/pexels-photo-17122728.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/17122728/pexels-photo-17122728.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#E53935',
     iconName: 'logo-nintendo',
     collections: [
@@ -1071,7 +1071,7 @@ export const CATEGORIES: Category[] = [
     name: 'Retro Pokémon Merchandise',
     tagline: 'TOMY figures, Pokémon Center originals, and 90s promo treasures.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/9343494/pexels-photo-9343494.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/9343494/pexels-photo-9343494.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#FBC02D',
     iconName: 'time',
     collections: [
@@ -1097,7 +1097,7 @@ export const CATEGORIES: Category[] = [
     name: 'One Piece',
     tagline: 'Portrait of Pirates statues, Ichiban Kuji prizes, and Grand Ship collection kits.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/31089960/pexels-photo-31089960.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/31089960/pexels-photo-31089960.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#D32F2F',
     iconName: 'boat',
     collections: [
@@ -1123,7 +1123,7 @@ export const CATEGORIES: Category[] = [
     name: 'VTuber Merchandise',
     tagline: 'Hololive birthday merch, Nijisanji voice packs, and Booth.pm indie drops.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/29901237/pexels-photo-29901237.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/29901237/pexels-photo-29901237.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#7C4DFF',
     iconName: 'videocam',
     collections: [
@@ -1149,7 +1149,7 @@ export const CATEGORIES: Category[] = [
     name: 'Custom Keycaps',
     tagline: 'Jelly Key artisans, GMK group buys, and resin sculpts that turn keyboards into art.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/18382824/pexels-photo-18382824.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/18382824/pexels-photo-18382824.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#78909C',
     iconName: 'keypad',
     collections: [
@@ -1175,7 +1175,7 @@ export const CATEGORIES: Category[] = [
     name: 'Loungefly',
     tagline: 'Convention exclusives, Disney collabs, and vaulted bags that sell for triple.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/174662/pexels-photo-174662.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/174662/pexels-photo-174662.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#F48FB1',
     iconName: 'bag',
     collections: [
@@ -1206,7 +1206,7 @@ export const CATEGORIES: Category[] = [
     name: 'Diecast & Model Cars',
     tagline: '1:64, 1:24, and premium diecast with real comps.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/15679405/pexels-photo-15679405.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/15679405/pexels-photo-15679405.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#546E7A',
     iconName: 'speedometer',
     collections: [
@@ -1241,7 +1241,7 @@ export const CATEGORIES: Category[] = [
     name: 'Sports Cards',
     tagline: 'PSA 10 rookies, vintage Topps, and wax-era investment-grade slabs.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/5184684/pexels-photo-5184684.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/5184684/pexels-photo-5184684.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#43A047',
     iconName: 'trophy',
     collections: [
@@ -1272,7 +1272,7 @@ export const CATEGORIES: Category[] = [
     name: 'Retro Handhelds',
     tagline: 'Boxed Game Boys, modded GBAs, and limited-color PSP editions.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/2263816/pexels-photo-2263816.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/2263816/pexels-photo-2263816.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#7E57C2',
     iconName: 'phone-portrait',
     collections: [
@@ -1298,7 +1298,7 @@ export const CATEGORIES: Category[] = [
     name: 'Comic Books & Graphic Novels',
     tagline: 'CGC-slabbed key issues, first appearances, and indie gems worth discovering.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/20085947/pexels-photo-20085947.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/20085947/pexels-photo-20085947.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#E53E3E',
     iconName: 'book-outline',
     collections: [
@@ -1329,7 +1329,7 @@ export const CATEGORIES: Category[] = [
     name: 'Vinyl Records',
     tagline: 'OG pressings, limited color splatter runs, and MoFi audiophile gold.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/6862361/pexels-photo-6862361.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/6862361/pexels-photo-6862361.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#6B46C1',
     iconName: 'disc',
     collections: [
@@ -1355,7 +1355,7 @@ export const CATEGORIES: Category[] = [
     name: 'Digimon TCG',
     tagline: 'Alternate arts, secret rares, and competitive staples.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/7708411/pexels-photo-7708411.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/7708411/pexels-photo-7708411.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#3B82F6',
     iconName: 'flash',
     collections: [
@@ -1386,7 +1386,7 @@ export const CATEGORIES: Category[] = [
     name: 'One Piece TCG',
     tagline: 'Leader cards, manga art parallels, and tournament promos.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/26891742/pexels-photo-26891742.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/26891742/pexels-photo-26891742.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#DC2626',
     iconName: 'boat',
     collections: [
@@ -1417,7 +1417,7 @@ export const CATEGORIES: Category[] = [
     name: 'Blind Box Figures',
     tagline: 'Pop Mart, Sonny Angel, and chase-worthy mystery pulls.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/1007533/pexels-photo-1007533.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/1007533/pexels-photo-1007533.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#EC4899',
     iconName: 'gift',
     collections: [
@@ -1448,7 +1448,7 @@ export const CATEGORIES: Category[] = [
     name: 'Whiskey & Spirits',
     tagline: 'Single cask bottlings, allocated bourbons, and Japanese whisky that appreciates like fine art.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/5359005/pexels-photo-5359005.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/5359005/pexels-photo-5359005.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#B45309',
     iconName: 'wine',
     collections: [
@@ -1479,7 +1479,7 @@ export const CATEGORIES: Category[] = [
     name: 'Vintage Cameras',
     tagline: 'Leica rangefinders, Hasselblad medium format, and Nikon F bodies built to last forever.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/2268843/pexels-photo-2268843.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/2268843/pexels-photo-2268843.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#78716C',
     iconName: 'camera',
     collections: [
@@ -1510,7 +1510,7 @@ export const CATEGORIES: Category[] = [
     name: 'Plush Collectibles',
     tagline: 'Retired Squishmallows, Jellycat bashfuls, and con-exclusive plush that hug back in value.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/1860160/pexels-photo-1860160.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/1860160/pexels-photo-1860160.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#F472B6',
     iconName: 'heart-circle',
     collections: [
@@ -1541,7 +1541,7 @@ export const CATEGORIES: Category[] = [
     name: 'Fountain Pens & Writing',
     tagline: 'Montblanc limited editions, Pelikan Souverans, and vintage flex nibs worth writing home about.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/51326/pexels-photo-51326.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/51326/pexels-photo-51326.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#065F46',
     iconName: 'create',
     collections: [
@@ -1567,7 +1567,7 @@ export const CATEGORIES: Category[] = [
     name: 'Watches',
     tagline: 'Rolex sports models, Grand Seiko snowflakes, and vintage chronographs that only gain time.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/3490349/pexels-photo-3490349.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/3490349/pexels-photo-3490349.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#92400E',
     iconName: 'watch',
     collections: [
@@ -1598,7 +1598,7 @@ export const CATEGORIES: Category[] = [
     name: 'Sneakers & Kicks',
     tagline: 'Off-White collabs, Travis Scott drops, and Jordan OGs that never lose their sole.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/19294576/pexels-photo-19294576.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/19294576/pexels-photo-19294576.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#1D4ED8',
     iconName: 'footsteps',
     collections: [
@@ -1629,7 +1629,7 @@ export const CATEGORIES: Category[] = [
     name: 'OOP Board Games & KS Exclusives',
     tagline: 'Grail-tier Kickstarters, out-of-print euros, and sealed legacy games that only climb in value.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/776654/pexels-photo-776654.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/776654/pexels-photo-776654.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#6D4C41',
     iconName: 'dice',
     collections: [
@@ -1660,7 +1660,7 @@ export const CATEGORIES: Category[] = [
     name: 'City Pop & Future Funk Vinyl',
     tagline: 'OG Japanese pressings, City Pop reissues, and future funk wax from the neon-lit golden age.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/1389429/pexels-photo-1389429.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/1389429/pexels-photo-1389429.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#E040FB',
     iconName: 'musical-note',
     collections: [
@@ -1691,7 +1691,7 @@ export const CATEGORIES: Category[] = [
     name: 'Fragrances',
     tagline: 'Track your fragrance collection — from designer classics to niche houses worth savoring.',
     bannerImageUrl:
-      'https://images.pexels.com/photos/965989/pexels-photo-965989.jpeg?auto=compress&cs=tinysrgb&w=400',
+      'https://images.pexels.com/photos/965989/pexels-photo-965989.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#CE93D8',
     iconName: 'rose',
     collections: [

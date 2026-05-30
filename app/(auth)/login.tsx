@@ -21,12 +21,10 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '@/lib/supabase';
-import { useAuthContext } from '@/providers/useAuthContext';
 import { AnimatedPressable } from '@/motion';
 import { useStaggerReveal } from '@/motion/useStaggerReveal';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -52,7 +50,6 @@ function LoginScreen() {
   const { settings } = useSettings();
   const { colors, isDark } = useAppTheme();
   const { showToast } = useToast();
-  const { signInDemo } = useAuthContext();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -102,40 +99,60 @@ function LoginScreen() {
 
   async function handleAppleSignIn() {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    let credential: AppleAuthentication.AppleAuthenticationCredential | null = null;
     try {
-      const credential = await AppleAuthentication.signInAsync({
+      credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-      if (!credential.identityToken) {
-        showToast({ message: t('auth.errors.no_identity_token'), type: 'error' });
-        return;
-      }
-      setLoading(true);
+    } catch (e: unknown) {
+      const code = (e as { code?: string })?.code;
+      if (code === 'ERR_REQUEST_CANCELED') return;
+      // signInAsync failed before getting a credential — usually means the
+      // native capability is missing from the installed build, the bundle ID
+      // isn't registered for Sign in with Apple, or the device is in a state
+      // where Apple's sheet won't open. Surface it loudly so it isn't
+      // mistaken for "the button does nothing".
+      console.error('[apple-signin] AppleAuthentication.signInAsync failed', e);
+      showToast({
+        message: `Apple sign-in unavailable: ${e instanceof Error ? e.message : 'unknown error'}`,
+        type: 'error',
+      });
+      return;
+    }
+
+    if (!credential.identityToken) {
+      console.error('[apple-signin] no identityToken on credential', credential);
+      showToast({ message: t('auth.errors.no_identity_token'), type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
       const { error } = await supabase.auth.signInWithIdToken({
         provider: 'apple',
         token: credential.identityToken,
       });
-      if (error) throw error;
+      if (error) {
+        console.error('[apple-signin] Supabase rejected identityToken', error);
+        // Most common cause: Apple provider not enabled / misconfigured in
+        // the Supabase project (Authentication > Providers > Apple).
+        showToast({
+          message: `Sign-in failed: ${error.message}. Check Supabase Apple provider config.`,
+          type: 'error',
+        });
+        return;
+      }
       track({ name: 'user_logged_in', properties: { method: 'apple' } });
       router.replace('/(tabs)');
     } catch (e: unknown) {
-      const code = (e as { code?: string })?.code;
-      if (code === 'ERR_REQUEST_CANCELED') return;
+      console.error('[apple-signin] unexpected error after credential exchange', e);
       showToast({ message: e instanceof Error ? e.message : t('auth.errors.apple_sign_in_failed'), type: 'error' });
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleDemoLogin() {
-    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-    AsyncStorage.setItem('@sparrowcollect/onboarding_complete', 'true').catch(() => {});
-    signInDemo();
-    track({ name: 'user_logged_in', properties: { method: 'demo' } });
-    router.replace('/(tabs)');
   }
 
   async function handleSignIn() {
@@ -352,25 +369,6 @@ function LoginScreen() {
                 </AnimatedPressable>
               )}
 
-              {/* Demo Login — dev builds only */}
-              {__DEV__ && (
-              <AnimatedPressable
-                style={[
-                  styles.demoBtn,
-                  {
-                    borderColor: colors.brand.base,
-                    backgroundColor: colors.brand.base + '10',
-                    marginTop: (appleAvailable || googleEnabled) ? 16 : 0,
-                  },
-                ]}
-                onPress={handleDemoLogin}
-                accessibilityRole="button"
-                accessibilityLabel={t('auth.try_demo_mode')}
-              >
-                <Ionicons name="play-circle-outline" size={20} color={colors.brand.dark} />
-                <Text style={[styles.demoBtnText, { color: colors.brand.dark }]}>{t('auth.try_demo_mode')}</Text>
-              </AnimatedPressable>
-              )}
             </Animated.View>
 
             {/* Sign-up CTA — prominent outlined button */}
@@ -512,20 +510,6 @@ const styles = StyleSheet.create({
   socialBtnText: {
     fontSize: 15,
     fontWeight: '600',
-  },
-  demoBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderWidth: 2,
-    borderRadius: 16,
-    marginBottom: 8,
-  },
-  demoBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
   },
   signUpHint: {
     fontSize: 13,
