@@ -4,13 +4,13 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
 import { collectorsApi } from '@/api/collectorsApi';
-import type { CategoryCollection } from '@/data/categories';
+import { getCategoryById, type CategoryCollection } from '@/data/categories';
 import logger from '@/utils/logger';
 
 type CollectionProgress = {
@@ -30,6 +30,11 @@ type Props = {
 export default React.memo(function FeaturedCollectionsSection({ collections, categoryId, onCollectionPress }: Props) {
   const { colors } = useAppTheme();
   const [progress, setProgress] = useState<Record<string, CollectionProgress>>({});
+  // Real catalog thumbnails for this category, used as collection cover art so
+  // the cards aren't blank. Falls back to the category banner when the catalog
+  // has no reference images for the category (coverage varies by category).
+  const [covers, setCovers] = useState<string[]>([]);
+  const bannerFallback = getCategoryById(categoryId)?.bannerImageUrl;
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +54,21 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
     return () => { cancelled = true; };
   }, [categoryId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    collectorsApi.browseCatalogItems(categoryId, { limit: 12 })
+      .then((data) => {
+        if (cancelled) return;
+        const arr = Array.isArray(data?.items) ? data.items : [];
+        const urls = arr
+          .map((i) => i.image_url)
+          .filter((u): u is string => typeof u === 'string' && u.length > 0);
+        setCovers(urls);
+      })
+      .catch((err) => logger.warn('[FeaturedCollections] cover fetch failed:', err));
+    return () => { cancelled = true; };
+  }, [categoryId]);
+
   if (collections.length === 0) return null;
 
   return (
@@ -59,13 +79,16 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
       </View>
 
       <AutoRotatingCarousel intervalMs={6000} horizontalInset={30}>
-        {collections.map((col) => {
+        {collections.map((col, idx) => {
           const prog = progress[col.name.toLowerCase().replace(/\s+/g, '_')];
           const owned = prog?.owned_count ?? 0;
           const total = col.itemCount || prog?.total_items || 0;
           const pct = prog?.completion_pct ?? 0;
           const hasProgress = total > 0 && pct > 0;
           const isComplete = pct >= 100;
+          // Vary the cover per card when the catalog has images; otherwise the
+          // category banner stands in so no card is ever blank.
+          const coverUri = covers.length > 0 ? covers[idx % covers.length] : bannerFallback;
 
           return (
             <AnimatedPressable
@@ -75,6 +98,14 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
               accessibilityRole="button"
               accessibilityLabel={`Collection: ${col.name}`}
             >
+              {coverUri ? (
+                <Image
+                  source={{ uri: coverUri }}
+                  style={styles.cover}
+                  resizeMode="cover"
+                  accessibilityIgnoresInvertColors
+                />
+              ) : null}
               <View style={styles.cardTop}>
                 <Ionicons name="library-outline" size={20} color={colors.accent} />
                 {hasProgress && (
@@ -138,6 +169,13 @@ const styles = StyleSheet.create({
     minHeight: 150,
     justifyContent: 'space-between',
     gap: 10,
+    overflow: 'hidden',
+  },
+  cover: {
+    width: '100%',
+    height: 80,
+    borderRadius: 8,
+    marginBottom: 2,
   },
   cardTop: {
     flexDirection: 'row',

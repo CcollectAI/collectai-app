@@ -23,6 +23,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { dataProvider } from '@/data';
+import { primeEventCache } from '@/data/CachedDataProvider';
 import type { CollectorsEvent } from '@/data/events';
 import { useOptimisticRsvpList } from '@/hooks/useOptimisticRsvp';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
@@ -266,9 +267,12 @@ function EventsScreen() {
   };
 
   // Navigation handlers (useCallback to avoid re-creating closures in render)
-  const handleEventPress = useCallback((eventId: string) => {
+  const handleEventPress = useCallback((event: CollectorsEvent) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push(`/events/${encodeURIComponent(eventId)}`);
+    // Seed the detail-screen cache with the row we already have so it renders
+    // instantly instead of blocking on a fresh fetch.
+    primeEventCache(event);
+    router.push(`/events/${encodeURIComponent(event.id)}`);
   }, [router, settings.hapticsEnabled]);
 
   const handleCreateEvent = useCallback(() => {
@@ -317,7 +321,7 @@ function EventsScreen() {
     return (
       <AnimatedPressable
         key={event.id}
-        onPress={() => handleEventPress(event.id)}
+        onPress={() => handleEventPress(event)}
         style={[
           styles.eventCard,
           {

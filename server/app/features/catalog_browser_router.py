@@ -93,43 +93,115 @@ async def browse_catalog_items(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     rarity: Optional[str] = Query(None, description="Filter by rarity tier"),
+    priced_only: bool = Query(
+        False,
+        description=(
+            "Only return items that have a recent (<=180d) market comp in "
+            "market_hits. Used by the New-in-Catalog carousel so it never "
+            "renders price-less items."
+        ),
+    ),
 ):
     """Browse items in the category_items catalog for a given category."""
     pool = get_pool()
     if pool is None:
         raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
 
-    # Build query conditions
-    conditions = ["category = $1"]
+    # Build query conditions (all qualified with the `ci` alias so the
+    # priced_only branch below can join market_hits on the same predicate set).
+    conditions = ["ci.category = $1"]
     params: list[Any] = [category_id]
     idx = 2
 
     if q and q.strip():
-        conditions.append(f"title ILIKE ${idx}")
+        conditions.append(f"ci.title ILIKE ${idx}")
         params.append(f"%{q.strip()}%")
         idx += 1
 
     if rarity and rarity.strip():
-        conditions.append(f"rarity = ${idx}")
+        conditions.append(f"ci.rarity = ${idx}")
         params.append(rarity.strip())
         idx += 1
 
     where = " AND ".join(conditions)
 
+    if priced_only:
+        # INNER-join the latest-comp lateral so ONLY items with a price within
+        # 180d are returned — the price becomes a filter, not a post-fetch
+        # decoration. LIMIT lets the planner short-circuit the scan. The
+        # seen_at floor + category filter keep partition pruning intact (see
+        # the price-map query below). Exact total is intentionally skipped:
+        # the only caller (New-in-Catalog) does not paginate, so total just
+        # reflects the returned page.
+        rows = await pool.fetch(
+            f"""
+            SELECT ci.id, ci.category, ci.item_key, ci.title, ci.brand,
+                   ci.rarity, ci.notes, ci.image_url, ci.external_id,
+                   ci.set_code, mp.price_eur AS estimated_price
+            FROM category_items ci
+            JOIN LATERAL (
+                SELECT price_eur FROM market_hits mh
+                WHERE mh.item_ref = (ci.category || ':' || ci.item_key)
+                  AND mh.seen_at > now() - interval '180 days'
+                ORDER BY mh.seen_at DESC
+                LIMIT 1
+            ) mp ON TRUE
+            WHERE {where}
+            ORDER BY ci.title ASC
+            LIMIT ${idx} OFFSET ${idx + 1}
+            """,
+            *params,
+            limit,
+            offset,
+        )
+        items = [
+            CatalogItem(
+                id=str(r["id"]),
+                category=r["category"],
+                item_key=r["item_key"],
+                title=r["title"],
+                brand=r["brand"],
+                rarity=r["rarity"],
+                notes=r["notes"],
+                has_reference_image=bool(r["image_url"]),
+                image_url=r["image_url"],
+                external_id=r["external_id"],
+                set_code=r["set_code"],
+                estimated_price=float(r["estimated_price"]),
+            )
+            for r in rows
+        ]
+        try:
+            from app.features.data_moat import record_demand_signal
+            await record_demand_signal(
+                signal_type="catalog_browsed",
+                category=category_id,
+                query_text=q,
+            )
+        except Exception as e:
+            logger.debug("[catalog_browser] demand signal recording failed: %s", e)
+        return CatalogBrowseResponse(
+            items=items,
+            total=offset + len(items),
+            limit=limit,
+            offset=offset,
+            category_id=category_id,
+        )
+
     # Count total matching
     total = await pool.fetchval(
-        f"SELECT count(*) FROM category_items WHERE {where}",
+        f"SELECT count(*) FROM category_items ci WHERE {where}",
         *params,
     ) or 0
 
     # Fetch page
     rows = await pool.fetch(
         f"""
-        SELECT id, category, item_key, title, brand, rarity, notes,
-               image_url, external_id, set_code
-        FROM category_items
+        SELECT ci.id, ci.category, ci.item_key, ci.title, ci.brand, ci.rarity,
+               ci.notes, ci.image_url, ci.external_id, ci.set_code
+        FROM category_items ci
         WHERE {where}
-        ORDER BY title ASC
+        ORDER BY ci.title ASC
         LIMIT ${idx} OFFSET ${idx + 1}
         """,
         *params,

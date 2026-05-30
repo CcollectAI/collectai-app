@@ -32,16 +32,25 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
 
   useEffect(() => {
     let cancelled = false;
-    collectorsApi.browseCatalogItems(categoryId, { limit: 6 })
+    // pricedOnly => backend only returns items with a recent market comp, so
+    // the carousel never shows a price-less "New in Catalog" card. Over-fetch
+    // a little and keep a FE price filter as a guard in case an older backend
+    // ignores the flag.
+    collectorsApi.browseCatalogItems(categoryId, { limit: 12, pricedOnly: true })
       .then((data) => {
         if (cancelled) return;
         const arr = Array.isArray(data?.items) ? data.items : [];
-        setItems(arr.slice(0, 6).map((i) => ({
-          id: i.id,
-          title: i.title,
-          estimated_price: i.estimated_price ?? undefined,
-          imageUrl: i.image_url ?? undefined,
-        })));
+        setItems(
+          arr
+            .filter((i) => i.estimated_price != null)
+            .slice(0, 6)
+            .map((i) => ({
+              id: i.id,
+              title: i.title,
+              estimated_price: i.estimated_price ?? undefined,
+              imageUrl: i.image_url ?? undefined,
+            })),
+        );
       })
       .catch((err) => logger.warn('[NewReleases] fetch failed:', err));
     return () => { cancelled = true; };

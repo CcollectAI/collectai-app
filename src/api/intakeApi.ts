@@ -132,12 +132,15 @@ export const browseCatalogItems = (categoryId: string, opts?: {
   limit?: number;
   offset?: number;
   rarity?: string;
+  /** Only return items that have a recent market comp (used by New-in-Catalog). */
+  pricedOnly?: boolean;
 }) => {
   const sp = new URLSearchParams();
   if (opts?.q) sp.set('q', opts.q);
   if (opts?.limit) sp.set('limit', String(opts.limit));
   if (opts?.offset) sp.set('offset', String(opts.offset));
   if (opts?.rarity) sp.set('rarity', opts.rarity);
+  if (opts?.pricedOnly) sp.set('priced_only', 'true');
   const query = sp.toString();
   return get<{
     items: {

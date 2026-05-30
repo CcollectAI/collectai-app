@@ -464,12 +464,15 @@ export class CachedDataProvider implements DataProvider {
     return this.inner.isFollowingCategory(categoryId);
   }
 
-  // Events — single item lookup (cached)
+  // Events — single item lookup (cached). TTL_LONG because event rows rarely
+  // change and SWR revalidates in the background on every open anyway; a long
+  // TTL keeps re-opens instant. First open is primed via primeEventCache()
+  // from the list so the detail screen skips its blocking skeleton entirely.
   getEventById(eventId: string): Promise<CollectorsEvent | null> {
     return swr(
       `${CK.EVENT_BY_ID}:${eventId}`,
       () => this.inner.getEventById(eventId),
-      TTL_SHORT,
+      TTL_LONG,
     );
   }
 
@@ -651,4 +654,18 @@ export class CachedDataProvider implements DataProvider {
   listMarketplaceAccounts(): Promise<import('./types').MarketplaceAccount[]> { return this.inner.listMarketplaceAccounts(); }
   listMarketplaceSales(): Promise<import('./types').MarketplaceSale[]> { return this.inner.listMarketplaceSales(); }
   getMarketplaceFeeSchedules(): Promise<import('./types').MarketplaceFeeSchedule[]> { return this.inner.getMarketplaceFeeSchedules(); }
+}
+
+/**
+ * Seed the event-detail cache with an event the caller already holds (e.g. the
+ * events list row that was just tapped). The detail screen's getEventById then
+ * hits this cached value immediately and renders without its blocking
+ * skeleton, while SWR revalidates the authoritative row in the background.
+ * Fire-and-forget; safe to call regardless of which provider is active.
+ */
+export function primeEventCache(event: CollectorsEvent): void {
+  if (!event?.id) return;
+  void cacheSet(`${CK.EVENT_BY_ID}:${event.id}`, event, TTL_LONG).catch((err) =>
+    logger.warn('[CachedDataProvider] primeEventCache failed:', err),
+  );
 }
