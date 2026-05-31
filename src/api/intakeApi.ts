@@ -165,3 +165,17 @@ export const browseCatalogItems = (categoryId: string, opts?: {
     category_id: string;
   }>(`/catalog/${encodeURIComponent(categoryId)}/items${query ? `?${query}` : ''}`);
 };
+
+// Catalog Collections — discovery "Featured Collections" for a category,
+// grouped by set_code from the curated catalog (NOT user ownership).
+export const getCatalogCollections = (categoryId: string, limit?: number) =>
+  get<{
+    collections: {
+      collection_key: string;
+      display_name: string;
+      total_items: number;
+      cover_image?: string | null;
+    }[];
+    total: number;
+    category_id: string;
+  }>(`/catalog/${encodeURIComponent(categoryId)}/collections${limit ? `?limit=${limit}` : ''}`);

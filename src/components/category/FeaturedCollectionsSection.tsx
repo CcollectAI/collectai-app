@@ -1,6 +1,11 @@
 /**
- * FeaturedCollectionsSection — auto-rotating landscape carousel of pre-defined
- * collections for a category. Pulls completion progress from the backend.
+ * FeaturedCollectionsSection — auto-rotating landscape carousel of the
+ * category's catalog collections (grouped by set_code on the backend).
+ *
+ * DISCOVERY view: collections + counts come from the curated catalog
+ * (GET /catalog/{id}/collections), NOT the signed-in user's ownership —
+ * category pages are exploratory by design, so a fresh user still sees
+ * real collections like "Gundam Wing · 87 items" instead of "0 items".
  */
 
 import React, { useEffect, useState } from 'react';
@@ -13,15 +18,16 @@ import { collectorsApi } from '@/api/collectorsApi';
 import { getCategoryById, type CategoryCollection } from '@/data/categories';
 import logger from '@/utils/logger';
 
-type CollectionProgress = {
-  collection_id: string;
-  collection_key?: string;
-  owned_count: number;
+type CatalogCollection = {
+  collection_key: string;
+  display_name: string;
   total_items: number;
-  completion_pct: number;
+  cover_image?: string | null;
 };
 
 type Props = {
+  // Retained for back-compat with the parent; used only as a last-resort
+  // fallback if the catalog endpoint returns nothing.
   collections: CategoryCollection[];
   categoryId: string;
   onCollectionPress?: (name: string) => void;
@@ -29,47 +35,38 @@ type Props = {
 
 export default React.memo(function FeaturedCollectionsSection({ collections, categoryId, onCollectionPress }: Props) {
   const { colors } = useAppTheme();
-  const [progress, setProgress] = useState<Record<string, CollectionProgress>>({});
-  // Real catalog thumbnails for this category, used as collection cover art so
-  // the cards aren't blank. Falls back to the category banner when the catalog
-  // has no reference images for the category (coverage varies by category).
-  const [covers, setCovers] = useState<string[]>([]);
+  const [items, setItems] = useState<CatalogCollection[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  // Category banner stands in when a collection has no catalog cover image
+  // (image coverage varies widely by category) so no card is ever blank.
   const bannerFallback = getCategoryById(categoryId)?.bannerImageUrl;
 
   useEffect(() => {
     let cancelled = false;
-    collectorsApi.getUserCollectionProgress(categoryId)
+    collectorsApi.getCatalogCollections(categoryId, 12)
       .then((data) => {
         if (cancelled) return;
-        const items = Array.isArray((data as { progress?: unknown[] })?.progress)
-          ? (data as { progress: CollectionProgress[] }).progress
-          : [];
-        const map: Record<string, CollectionProgress> = {};
-        for (const p of items) {
-          if (p.collection_key) map[p.collection_key] = p;
-        }
-        setProgress(map);
+        const arr = Array.isArray(data?.collections) ? data.collections : [];
+        setItems(arr);
       })
-      .catch((err) => logger.warn('[FeaturedCollections] progress fetch failed:', err));
+      .catch((err) => logger.warn('[FeaturedCollections] catalog fetch failed:', err))
+      .finally(() => { if (!cancelled) setLoaded(true); });
     return () => { cancelled = true; };
   }, [categoryId]);
 
-  useEffect(() => {
-    let cancelled = false;
-    collectorsApi.browseCatalogItems(categoryId, { limit: 12 })
-      .then((data) => {
-        if (cancelled) return;
-        const arr = Array.isArray(data?.items) ? data.items : [];
-        const urls = arr
-          .map((i) => i.image_url)
-          .filter((u): u is string => typeof u === 'string' && u.length > 0);
-        setCovers(urls);
-      })
-      .catch((err) => logger.warn('[FeaturedCollections] cover fetch failed:', err));
-    return () => { cancelled = true; };
-  }, [categoryId]);
+  // Fall back to the static category collections only if the catalog has none.
+  const display: CatalogCollection[] = items.length > 0
+    ? items
+    : (loaded
+        ? collections.map((c) => ({
+            collection_key: c.id,
+            display_name: c.name,
+            total_items: c.itemCount ?? 0,
+          }))
+        : []);
 
-  if (collections.length === 0) return null;
+  if (loaded && display.length === 0) return null;
+  if (display.length === 0) return null;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -79,24 +76,18 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
       </View>
 
       <AutoRotatingCarousel intervalMs={6000} horizontalInset={30}>
-        {collections.map((col, idx) => {
-          const prog = progress[col.name.toLowerCase().replace(/\s+/g, '_')];
-          const owned = prog?.owned_count ?? 0;
-          const total = col.itemCount || prog?.total_items || 0;
-          const pct = prog?.completion_pct ?? 0;
-          const hasProgress = total > 0 && pct > 0;
-          const isComplete = pct >= 100;
-          // Vary the cover per card when the catalog has images; otherwise the
-          // category banner stands in so no card is ever blank.
-          const coverUri = covers.length > 0 ? covers[idx % covers.length] : bannerFallback;
+        {display.map((col) => {
+          const coverUri = (col.cover_image && col.cover_image.length > 0)
+            ? col.cover_image
+            : bannerFallback;
 
           return (
             <AnimatedPressable
-              key={col.name}
+              key={col.collection_key}
               style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}
-              onPress={() => onCollectionPress?.(col.name)}
+              onPress={() => onCollectionPress?.(col.display_name)}
               accessibilityRole="button"
-              accessibilityLabel={`Collection: ${col.name}`}
+              accessibilityLabel={`Collection: ${col.display_name}`}
             >
               {coverUri ? (
                 <Image
@@ -108,33 +99,13 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
               ) : null}
               <View style={styles.cardTop}>
                 <Ionicons name="library-outline" size={20} color={colors.accent} />
-                {hasProgress && (
-                  <View style={[styles.badge, { backgroundColor: isComplete ? colors.success + '20' : colors.accent + '18' }]}>
-                    <Text style={[styles.badgeText, { color: isComplete ? colors.success : colors.accent }]}>
-                      {Math.round(pct)}%
-                    </Text>
-                  </View>
-                )}
               </View>
               <Text style={[styles.collName, { color: colors.text }]} numberOfLines={2}>
-                {col.name}
+                {col.display_name}
               </Text>
               <Text style={[styles.collMeta, { color: colors.muted }]} numberOfLines={1}>
-                {total > 0 ? `${owned} of ${total} owned` : `${col.itemCount} items`}
+                {col.total_items > 0 ? `${col.total_items} items` : 'Explore'}
               </Text>
-              {hasProgress && (
-                <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        backgroundColor: isComplete ? colors.success : colors.accent,
-                        width: `${Math.min(100, Math.round(pct))}%`,
-                      },
-                    ]}
-                  />
-                </View>
-              )}
             </AnimatedPressable>
           );
         })}
@@ -182,15 +153,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
   collName: {
     fontSize: 18,
     fontWeight: '800',
@@ -199,14 +161,5 @@ const styles = StyleSheet.create({
   collMeta: {
     fontSize: 12,
     fontWeight: '500',
-  },
-  progressTrack: {
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
   },
 });

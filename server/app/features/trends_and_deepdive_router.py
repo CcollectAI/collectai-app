@@ -441,7 +441,6 @@ async def get_category_deep_dive(
                 FROM market_hits
                 WHERE normalized_key LIKE $1 || '%'
                   AND seen_at >= $2
-                  AND (is_listing IS NOT TRUE)
                 GROUP BY date_trunc('day', COALESCE(observed_at, seen_at))
                 ORDER BY day
                 """,
@@ -468,13 +467,12 @@ async def get_category_deep_dive(
                         normalized_key,
                         COALESCE(MAX(title), normalized_key) AS name,
                         COUNT(*)                             AS trades,
-                        (ARRAY_AGG(price ORDER BY created_at ASC)  FILTER (WHERE price IS NOT NULL))[1]  AS first_price,
-                        (ARRAY_AGG(price ORDER BY created_at DESC) FILTER (WHERE price IS NOT NULL))[1] AS last_price,
+                        (ARRAY_AGG(price ORDER BY COALESCE(observed_at, seen_at) ASC)  FILTER (WHERE price IS NOT NULL))[1]  AS first_price,
+                        (ARRAY_AGG(price ORDER BY COALESCE(observed_at, seen_at) DESC) FILTER (WHERE price IS NOT NULL))[1] AS last_price,
                         COUNT(price)                         AS price_cnt
                     FROM market_hits
                     WHERE normalized_key LIKE $1 || '%'
-                      AND created_at >= $2
-                      AND (is_listing IS NOT TRUE)
+                      AND seen_at >= $2
                     GROUP BY normalized_key
                 ),
                 ranked AS (

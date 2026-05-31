@@ -63,6 +63,20 @@ class CatalogBrowseResponse(BaseModel):
     category_id: str
 
 
+class CatalogCollection(BaseModel):
+    # collection_key is the raw set_code; display_name is humanized for the UI.
+    collection_key: str
+    display_name: str
+    total_items: int = 0
+    cover_image: Optional[str] = None
+
+
+class CatalogCollectionsResponse(BaseModel):
+    collections: list[CatalogCollection]
+    total: int
+    category_id: str
+
+
 class ProgressUpdateRequest(BaseModel):
     progress_status: Optional[str] = Field(
         None,
@@ -282,6 +296,71 @@ async def browse_catalog_items(
         total=total,
         limit=limit,
         offset=offset,
+        category_id=category_id,
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /catalog/{category_id}/collections — discovery "Featured Collections"
+# ---------------------------------------------------------------------------
+
+def _humanize_set_code(set_code: str) -> str:
+    """gundam-wing -> Gundam Wing; base-set-2 -> Base Set 2."""
+    return " ".join(w.capitalize() for w in set_code.replace("_", "-").split("-") if w)
+
+
+@router.get(
+    "/catalog/{category_id}/collections",
+    response_model=CatalogCollectionsResponse,
+)
+async def browse_catalog_collections(
+    category_id: str,
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Catalog-derived collections for a category, grouped by set_code.
+
+    Drives the category page's "Featured Collections" rail. This is a
+    DISCOVERY view computed from the curated catalog (category_items),
+    NOT from any single user's ownership — category pages are
+    exploratory by design. Counts are live item counts; cover_image is
+    the first available reference image in the set (may be null for
+    categories without catalog images).
+    """
+    pool = get_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+
+    rows = await pool.fetch(
+        """
+        SELECT set_code,
+               COUNT(*) AS total_items,
+               (ARRAY_AGG(image_url) FILTER (
+                   WHERE image_url IS NOT NULL AND image_url <> ''
+               ))[1] AS cover_image
+        FROM category_items
+        WHERE category = $1
+          AND set_code IS NOT NULL
+          AND set_code <> ''
+        GROUP BY set_code
+        ORDER BY COUNT(*) DESC, set_code
+        LIMIT $2
+        """,
+        category_id,
+        limit,
+    )
+
+    collections = [
+        CatalogCollection(
+            collection_key=r["set_code"],
+            display_name=_humanize_set_code(r["set_code"]),
+            total_items=int(r["total_items"]),
+            cover_image=r["cover_image"],
+        )
+        for r in rows
+    ]
+    return CatalogCollectionsResponse(
+        collections=collections,
+        total=len(collections),
         category_id=category_id,
     )
 
