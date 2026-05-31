@@ -139,11 +139,16 @@ export async function listCategoryMissing(categoryId: string): Promise<CategoryM
   let data: MissingRow[] | null = null;
   let error: unknown = null;
   try {
+    // Cap the payload: this view returns the ENTIRE missing-items set for the
+    // category (e.g. ~3,400 rows for lego, ~900ms + a multi-MB JSON transfer on
+    // cellular) and it blocks the category-screen skeleton. The checklist UI
+    // only surfaces a handful, so 150 is plenty and keeps the page snappy.
     const res = await withTimeout(
       supabase
         .from('v_category_missing_items_v1')
         .select('id, category_id, title, brand, notes')
-        .eq('category_id', categoryId),
+        .eq('category_id', categoryId)
+        .limit(150),
       SUPABASE_READ_TIMEOUT_MS,
       'listCategoryMissing',
     );

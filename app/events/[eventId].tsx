@@ -117,6 +117,12 @@ function EventDetailScreen() {
     }
   }, [event?.myRsvpStatus]);
 
+  // Announcements only make sense for events created inside the app by a user
+  // or organizer. Scraped/external events (concerts, brand drops — source
+  // 'scraper'/'rss'/'ticketmaster'/'newsletter' etc.) have no one in our
+  // network to post updates, so the announcements card is hidden for them.
+  const isCommunityEvent = !!event && (event.source === 'user' || event.source === 'admin');
+
   // Load drop alert status for this event
   useEffect(() => {
     if (!eventId || !currentUserId) return;
@@ -131,9 +137,10 @@ function EventDetailScreen() {
     return () => { cancelled = true; };
   }, [eventId, currentUserId]);
 
-  // Load announcement unread count
+  // Load announcement unread count — only for community (app-created) events;
+  // scraped events never have announcements so we skip the call entirely.
   useEffect(() => {
-    if (!eventId) return;
+    if (!eventId || !isCommunityEvent) return;
     let cancelled = false;
     dataProvider.listEventAnnouncements(eventId)
       .then((announcements) => {
@@ -143,7 +150,7 @@ function EventDetailScreen() {
       })
       .catch(() => { if (!cancelled) setUnreadAnnouncementCount(0); });
     return () => { cancelled = true; };
-  }, [eventId]);
+  }, [eventId, isCommunityEvent]);
 
   /* ---- derived values ---- */
   const isCreator = !!(
@@ -458,12 +465,14 @@ function EventDetailScreen() {
           onToggleStreamFollow={handleToggleStreamFollow}
         />
 
-        <EventAnnouncementsCard
-          eventId={event.id}
-          unreadCount={unreadAnnouncementCount}
-          isCreator={isCreator}
-          onNavigate={handleNavigate}
-        />
+        {isCommunityEvent && (
+          <EventAnnouncementsCard
+            eventId={event.id}
+            unreadCount={unreadAnnouncementCount}
+            isCreator={isCreator}
+            onNavigate={handleNavigate}
+          />
+        )}
 
         {/* Related category */}
         {relatedCategory && (

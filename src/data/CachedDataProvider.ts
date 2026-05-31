@@ -581,9 +581,15 @@ export class CachedDataProvider implements DataProvider {
     return this.inner.getUnreadAnnouncementCount();
   }
 
-  // Category deep dive — pass through
+  // Category deep dive — cached (market aggregates change slowly; the backend
+  // also caches this, but SWR keeps re-opens instant instead of paying a
+  // round-trip + heavy market_hits scan every time the category opens).
   getCategoryDeepDive(categoryId: string, days?: number): Promise<Record<string, unknown>> {
-    return this.inner.getCategoryDeepDive(categoryId, days);
+    return swr(
+      `category:deepdive:${categoryId}:${days ?? 'def'}`,
+      () => this.inner.getCategoryDeepDive(categoryId, days),
+      TTL_LONG,
+    );
   }
 
   // Barcode / market — pass through (results vary per query)

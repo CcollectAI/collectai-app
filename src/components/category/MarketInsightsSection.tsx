@@ -10,77 +10,88 @@ type Props = {
   colors: AppTheme['colors'];
 };
 
-const MarketInsightsSection: React.FC<Props> = ({ deepDive, deepDiveLoading, colors }) => (
+const MarketInsightsSection: React.FC<Props> = ({ deepDive, deepDiveLoading, colors }) => {
+  // Backend contract (GET /analytics/categories/{cat}/deep-dive):
+  //   avg_market_price: number
+  //   value_distribution: { ts, value }[]   (daily avg-price timeseries)
+  //   top_traded_items:   { item_id, name, trades }[]
+  //   top_movers:         { item_id, name, change_pct }[]
+  // This component previously read `average_market_price` / `value_distribution.trend`
+  // / `trade_count` — none of which the backend emits — so real data rendered blank.
+  const avgPrice = typeof deepDive?.avg_market_price === 'number' ? (deepDive.avg_market_price as number) : 0;
+  const dist = Array.isArray(deepDive?.value_distribution)
+    ? (deepDive!.value_distribution as { value?: number }[])
+    : [];
+  // Derive a trend from the first vs last non-zero point of the price timeseries.
+  const firstVal = Number(dist.find((p) => Number(p?.value) > 0)?.value ?? 0);
+  const lastVal = Number([...dist].reverse().find((p) => Number(p?.value) > 0)?.value ?? 0);
+  const trend: 'up' | 'down' | 'flat' =
+    firstVal > 0 && lastVal > 0
+      ? lastVal > firstVal * 1.02
+        ? 'up'
+        : lastVal < firstVal * 0.98
+        ? 'down'
+        : 'flat'
+      : 'flat';
+  const topTraded = Array.isArray(deepDive?.top_traded_items)
+    ? (deepDive!.top_traded_items as Record<string, unknown>[])
+    : [];
+  const topMovers = Array.isArray(deepDive?.top_movers)
+    ? (deepDive!.top_movers as Record<string, unknown>[])
+    : [];
+  const hasAnyData = avgPrice > 0 || dist.length > 0 || topTraded.length > 0 || topMovers.length > 0;
+
+  return (
   <View style={styles.section}>
     <Text style={[styles.sectionTitle, { color: colors.text }]}>Market Insights</Text>
     {deepDiveLoading ? (
       <ActivityIndicator size="small" color={colors.accent} style={{ marginVertical: 12 }} />
-    ) : deepDive ? (
+    ) : deepDive && hasAnyData ? (
       <>
         {/* Average Market Price */}
-        {typeof deepDive.average_market_price === 'number' && deepDive.average_market_price > 0 && (
+        {avgPrice > 0 && (
           <View style={[styles.insightCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.insightLabel, { color: colors.muted }]}>Average Market Price</Text>
             <Text style={[styles.insightValue, { color: colors.text }]}>
-              {formatPrice(deepDive.average_market_price as number)}
+              {formatPrice(avgPrice)}
             </Text>
           </View>
         )}
 
         {/* Price Trend */}
-        {deepDive.value_distribution && typeof deepDive.value_distribution === 'object' && (
+        {dist.length > 0 && (
           <View style={[styles.insightCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.insightLabel, { color: colors.muted }]}>Price Trend</Text>
             <View style={styles.trendRow}>
               <Ionicons
-                name={
-                  (deepDive.value_distribution as Record<string, unknown>).trend === 'up'
-                    ? 'trending-up'
-                    : (deepDive.value_distribution as Record<string, unknown>).trend === 'down'
-                    ? 'trending-down'
-                    : 'remove-outline'
-                }
+                name={trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'remove-outline'}
                 size={18}
-                color={
-                  (deepDive.value_distribution as Record<string, unknown>).trend === 'up'
-                    ? colors.success
-                    : (deepDive.value_distribution as Record<string, unknown>).trend === 'down'
-                    ? colors.error
-                    : colors.muted
-                }
+                color={trend === 'up' ? colors.success : trend === 'down' ? colors.error : colors.muted}
               />
               <Text style={[styles.trendText, {
-                color: (deepDive.value_distribution as Record<string, unknown>).trend === 'up'
-                  ? colors.success
-                  : (deepDive.value_distribution as Record<string, unknown>).trend === 'down'
-                  ? colors.error
-                  : colors.muted,
+                color: trend === 'up' ? colors.success : trend === 'down' ? colors.error : colors.muted,
               }]}>
-                {(deepDive.value_distribution as Record<string, unknown>).trend === 'up'
-                  ? 'Prices trending up'
-                  : (deepDive.value_distribution as Record<string, unknown>).trend === 'down'
-                  ? 'Prices trending down'
-                  : 'Prices stable'}
+                {trend === 'up' ? 'Prices trending up' : trend === 'down' ? 'Prices trending down' : 'Prices stable'}
               </Text>
             </View>
           </View>
         )}
 
         {/* Top Traded Items */}
-        {Array.isArray(deepDive.top_traded_items) && (deepDive.top_traded_items as Record<string, unknown>[]).length > 0 && (
+        {topTraded.length > 0 && (
           <View style={styles.insightSubSection}>
             <Text style={[styles.insightSubTitle, { color: colors.text }]}>Top Traded Items</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topTradedRow}>
-              {(deepDive.top_traded_items as Record<string, unknown>[]).map((item, idx) => (
+              {topTraded.map((item, idx) => (
                 <View
-                  key={String(item.id ?? idx)}
+                  key={String(item.item_id ?? item.id ?? idx)}
                   style={[styles.topTradedCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 >
                   <Text style={[styles.topTradedName, { color: colors.text }]} numberOfLines={2}>
                     {String(item.name ?? item.title ?? 'Unknown')}
                   </Text>
                   <Text style={[styles.topTradedCount, { color: colors.muted }]}>
-                    {String(item.trade_count ?? item.tradeCount ?? 0)} trades
+                    {String(item.trades ?? item.trade_count ?? 0)} trades
                   </Text>
                 </View>
               ))}
@@ -89,15 +100,15 @@ const MarketInsightsSection: React.FC<Props> = ({ deepDive, deepDiveLoading, col
         )}
 
         {/* Top Movers */}
-        {Array.isArray(deepDive.top_movers) && (deepDive.top_movers as Record<string, unknown>[]).length > 0 && (
+        {topMovers.length > 0 && (
           <View style={styles.insightSubSection}>
             <Text style={[styles.insightSubTitle, { color: colors.text }]}>Top Movers</Text>
-            {(deepDive.top_movers as Record<string, unknown>[]).map((mover, idx) => {
-              const changePct = Number(mover.change_pct ?? mover.changePct ?? 0);
+            {topMovers.map((mover, idx) => {
+              const changePct = Number(mover.change_pct ?? mover.changePct ?? 0) * 100;
               const isPositive = changePct >= 0;
               return (
                 <View
-                  key={String(mover.id ?? idx)}
+                  key={String(mover.item_id ?? mover.id ?? idx)}
                   style={[styles.moverRow, { borderBottomColor: colors.border }]}
                 >
                   <Text style={[styles.moverName, { color: colors.text }]} numberOfLines={1}>
@@ -118,7 +129,8 @@ const MarketInsightsSection: React.FC<Props> = ({ deepDive, deepDiveLoading, col
       </Text>
     )}
   </View>
-);
+  );
+};
 
 export default React.memo(MarketInsightsSection);
 

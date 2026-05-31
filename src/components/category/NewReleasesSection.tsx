@@ -1,6 +1,8 @@
 /**
- * NewReleasesSection — auto-rotating carousel of recently added catalog items
- * for a category. Fetches from catalog browse endpoint sorted by newest.
+ * NewReleasesSection — auto-rotating "Featured in Catalog" carousel of catalog
+ * items for a category. Fetches priced items from the catalog browse endpoint
+ * (priced_only) so every card has a real market comp. Labelled "Featured"
+ * rather than "New" since ordering is not strictly recency-based.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -64,7 +66,7 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="sparkles-outline" size={18} color={colors.accent} />
-        <Text style={[styles.title, { color: colors.text }]}>New in Catalog</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Featured in Catalog</Text>
       </View>
 
       <AutoRotatingCarousel intervalMs={5000} horizontalInset={30}>
@@ -82,11 +84,15 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
             {item.imageUrl ? (
               <Image
                 source={{ uri: item.imageUrl }}
-                style={styles.thumb}
+                style={[styles.thumb, { backgroundColor: colors.card }]}
                 resizeMode="contain"
                 accessibilityIgnoresInvertColors
               />
-            ) : null}
+            ) : (
+              <View style={[styles.thumb, styles.thumbPlaceholder, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name="image-outline" size={26} color={colors.muted} />
+              </View>
+            )}
             <Text
               style={[styles.itemTitle, { color: colors.text }]}
               numberOfLines={2}
@@ -128,6 +134,7 @@ const styles = StyleSheet.create({
   },
   newBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   thumb: { width: '100%', height: 90, borderRadius: 8 },
+  thumbPlaceholder: { alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   itemTitle: { fontSize: 16, fontWeight: '700', lineHeight: 20 },
   price: { fontSize: 18, fontWeight: '800' },
 });
