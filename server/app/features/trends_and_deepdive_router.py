@@ -459,42 +459,66 @@ async def get_category_deep_dive(
             ]
 
             # ------- top traded + top movers in a single query -------
-            # Uses one CTE scan to compute both rankings.
+            # Traded + movers are computed from SOLD comps only
+            # (is_listing IS NOT TRUE) — the daily/avg/trend stats above keep
+            # listings for a fuller discovery chart, but rankings must be
+            # honest. Movers use a median-of-first-half vs median-of-second-half
+            # split (robust to outliers / placeholder prices) instead of a raw
+            # first-vs-last delta, which produced absurd swings (e.g. a single
+            # €0.01 placeholder → -100%, a one-off mispriced listing → +387200%).
+            # The half-split point is the midpoint of the requested window.
+            half = cutoff + (datetime.now(timezone.utc) - cutoff) / 2
             combo_rows = await conn.fetch(
                 """
                 WITH per_key AS (
                     SELECT
                         normalized_key,
                         COALESCE(MAX(title), normalized_key) AS name,
-                        COUNT(*)                             AS trades,
-                        (ARRAY_AGG(price ORDER BY COALESCE(observed_at, seen_at) ASC)  FILTER (WHERE price IS NOT NULL))[1]  AS first_price,
-                        (ARRAY_AGG(price ORDER BY COALESCE(observed_at, seen_at) DESC) FILTER (WHERE price IS NOT NULL))[1] AS last_price,
-                        COUNT(price)                         AS price_cnt
+                        COUNT(*) AS trades,
+                        percentile_cont(0.5) WITHIN GROUP (ORDER BY price)
+                            FILTER (WHERE price IS NOT NULL AND price >= 1
+                                    AND COALESCE(observed_at, seen_at) <  $3) AS med_old,
+                        percentile_cont(0.5) WITHIN GROUP (ORDER BY price)
+                            FILTER (WHERE price IS NOT NULL AND price >= 1
+                                    AND COALESCE(observed_at, seen_at) >= $3) AS med_new,
+                        COUNT(price) FILTER (WHERE price IS NOT NULL AND price >= 1
+                                    AND COALESCE(observed_at, seen_at) <  $3) AS cnt_old,
+                        COUNT(price) FILTER (WHERE price IS NOT NULL AND price >= 1
+                                    AND COALESCE(observed_at, seen_at) >= $3) AS cnt_new
                     FROM market_hits
                     WHERE normalized_key LIKE $1 || '%'
                       AND seen_at >= $2
+                      AND (is_listing IS NOT TRUE)
                     GROUP BY normalized_key
                 ),
                 ranked AS (
                     SELECT
-                        normalized_key, name, trades, first_price, last_price, price_cnt,
-                        CASE WHEN first_price > 0 AND price_cnt >= 2
-                             THEN (last_price - first_price) / first_price
-                             ELSE 0
+                        normalized_key, name, trades, med_old, med_new, cnt_old, cnt_new,
+                        CASE WHEN med_old > 0 AND cnt_old >= 2 AND cnt_new >= 2
+                             THEN (med_new - med_old) / med_old
+                             ELSE NULL
                         END AS change_pct,
-                        ROW_NUMBER() OVER (ORDER BY trades DESC)                                                                        AS trade_rank,
-                        ROW_NUMBER() OVER (ORDER BY ABS(CASE WHEN first_price > 0 AND price_cnt >= 2
-                                                             THEN (last_price - first_price) / first_price
-                                                             ELSE 0 END) DESC)                                                          AS mover_rank
+                        ROW_NUMBER() OVER (ORDER BY trades DESC) AS trade_rank
                     FROM per_key
+                ),
+                mover_ranked AS (
+                    SELECT *,
+                        ROW_NUMBER() OVER (ORDER BY ABS(change_pct) DESC) AS mover_rank
+                    FROM ranked
+                    -- clamp to <=300%: anything larger is noise, not a real move
+                    WHERE change_pct IS NOT NULL AND ABS(change_pct) <= 3.0
                 )
-                SELECT normalized_key, name, trades, first_price, last_price,
-                       price_cnt, change_pct, trade_rank, mover_rank
-                FROM ranked
-                WHERE trade_rank <= 10 OR mover_rank <= 10
+                SELECT normalized_key, name, trades, change_pct, trade_rank,
+                       NULL::bigint AS mover_rank
+                FROM ranked WHERE trade_rank <= 10
+                UNION ALL
+                SELECT normalized_key, name, trades, change_pct, NULL::bigint AS trade_rank,
+                       mover_rank
+                FROM mover_ranked WHERE mover_rank <= 10
                 """,
                 category.lower(),
                 cutoff,
+                half,
             )
 
             top_traded_items = sorted(
@@ -505,7 +529,7 @@ async def get_category_deep_dive(
                         "trades": row["trades"],
                     }
                     for row in combo_rows
-                    if row["trade_rank"] <= 10
+                    if row["trade_rank"] is not None and row["trade_rank"] <= 10
                 ],
                 key=lambda x: x["trades"],
                 reverse=True,
@@ -518,7 +542,7 @@ async def get_category_deep_dive(
                         "change_pct": round(float(row["change_pct"] or 0), 4),
                     }
                     for row in combo_rows
-                    if row["mover_rank"] <= 10
+                    if row["mover_rank"] is not None and row["mover_rank"] <= 10
                 ],
                 key=lambda x: abs(x["change_pct"]),
                 reverse=True,
