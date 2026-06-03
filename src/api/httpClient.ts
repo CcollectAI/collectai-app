@@ -31,21 +31,38 @@ export { API_BASE };
 // loading state) until the OS killed the socket. 2 s lets a normal call
 // land while refusing to wait on a hung one.
 const AUTH_HEADER_TIMEOUT_MS = 2_000;
+// When the fast path above times out, getSession() is almost always mid
+// network refresh (expired access token). Firing the request unauthenticated
+// here means a protected route rejects it with 401 — which is exactly the
+// Delete-Account failure users hit. So before giving up we wait out the
+// in-flight refresh with a longer budget. This slower path runs ONLY after
+// the 2 s fast path already failed, so normal calls are never delayed.
+const AUTH_HEADER_REFRESH_TIMEOUT_MS = 8_000;
+
+async function readAccessToken(timeoutMs: number): Promise<string | null> {
+  const session = await Promise.race([
+    supabase.auth.getSession(),
+    new Promise<{ data: { session: null } }>((resolve) =>
+      setTimeout(() => resolve({ data: { session: null } }), timeoutMs),
+    ),
+  ]);
+  return session.data?.session?.access_token ?? null;
+}
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
   try {
-    const session = await Promise.race([
-      supabase.auth.getSession(),
-      new Promise<{ data: { session: null } }>((resolve) =>
-        setTimeout(() => resolve({ data: { session: null } }), AUTH_HEADER_TIMEOUT_MS),
-      ),
-    ]);
-    const token = session.data?.session?.access_token;
+    // Fast path: cached session returns from storage in <50 ms.
+    let token = await readAccessToken(AUTH_HEADER_TIMEOUT_MS);
+    if (!token) {
+      // Fast path timed out mid-refresh — wait it out rather than send the
+      // request unauthenticated (→ 401 on protected routes like DELETE /account).
+      token = await readAccessToken(AUTH_HEADER_REFRESH_TIMEOUT_MS);
+    }
     if (token) {
       return { Authorization: `Bearer ${token}` };
     }
   } catch {
-    // Supabase mock mode or no session — proceed without auth
+    // Supabase mock mode or genuinely no session — proceed without auth.
   }
   return {};
 }

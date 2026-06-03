@@ -127,15 +127,20 @@ export function statusToPercent(categoryId: string | null | undefined, statusId:
   return Math.round((idx / (pipeline.length - 1)) * 100);
 }
 
-/** Categories that support build/paint projects */
+/**
+ * Categories that support build/paint projects.
+ *
+ * Only genuine assemble-and/or-paint hobbies belong here. Pre-manufactured
+ * collectibles (designer_toys like Pop Mart/Xxray, diecast cars) are bought
+ * already finished, so a "Build & Paint Projects" section makes no sense on
+ * those category pages and was removed.
+ */
 export const BUILDABLE_CATEGORIES = [
   'warhammer',
   'gunpla',
   'scale_models',
   'lego',
   'keycaps',
-  'designer_toys',
-  'diecast',
 ] as const;
 
 export type BuildableCategoryId = (typeof BUILDABLE_CATEGORIES)[number];

@@ -104,6 +104,17 @@ function CategoryStoreScreen() {
     if (offset === 0) setCatalogLoading(true);
     else setCatalogLoadingMore(true);
 
+    // Safety net: browseCatalogItems is already bounded by the httpClient
+    // request timeout, but if anything upstream ever fails to settle (hung
+    // socket, stalled auth refresh) we must never leave the spinner stuck on.
+    // The watchdog force-clears the loading state and logs so we can see it.
+    const watchdog = setTimeout(() => {
+      logger.warn('[CategoryStore] catalog load watchdog fired — forcing spinner off', categoryId);
+      setCatalogLoading(false);
+      setCatalogLoadingMore(false);
+      setCatalogLoaded(true);
+    }, 15_000);
+
     try {
       const result = await collectorsApi.browseCatalogItems(categoryId, {
         q: search || undefined,
@@ -120,6 +131,7 @@ function CategoryStoreScreen() {
     } catch (err: unknown) {
       logger.warn('[CategoryStore] catalog browse error:', err);
     } finally {
+      clearTimeout(watchdog);
       setCatalogLoading(false);
       setCatalogLoadingMore(false);
       setCatalogLoaded(true);

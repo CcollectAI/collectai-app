@@ -15,7 +15,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
 import { collectorsApi } from '@/api/collectorsApi';
-import { getCategoryById, type CategoryCollection } from '@/data/categories';
+import { type CategoryCollection } from '@/data/categories';
 import logger from '@/utils/logger';
 
 type CatalogCollection = {
@@ -37,9 +37,6 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
   const { colors } = useAppTheme();
   const [items, setItems] = useState<CatalogCollection[]>([]);
   const [loaded, setLoaded] = useState(false);
-  // Category banner stands in when a collection has no catalog cover image
-  // (image coverage varies widely by category) so no card is ever blank.
-  const bannerFallback = getCategoryById(categoryId)?.bannerImageUrl;
 
   useEffect(() => {
     let cancelled = false;
@@ -77,9 +74,14 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
 
       <AutoRotatingCarousel intervalMs={6000} horizontalInset={30}>
         {display.map((col) => {
+          // Only show a cover when this collection has its OWN distinct image.
+          // We deliberately do NOT fall back to the category banner — that made
+          // every coverless collection render the same image, which read as
+          // cluttered, repeated, low-quality art. Coverless collections get a
+          // clean icon-led card instead.
           const coverUri = (col.cover_image && col.cover_image.length > 0)
             ? col.cover_image
-            : bannerFallback;
+            : null;
 
           return (
             <AnimatedPressable

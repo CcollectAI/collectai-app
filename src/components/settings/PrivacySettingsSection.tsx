@@ -40,7 +40,12 @@ function PrivacySettingsSectionInner() {
     let cancelled = false;
     const loadPrivacySettings = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        // getSession() reads the cached session from local storage (instant);
+        // getUser() hits the auth server over the network with no timeout and
+        // hangs the whole load — and therefore this spinner — forever on a bad
+        // connection. We only need the user id, so the local session is enough.
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         if (cancelled) return;
         if (!user) {
           setLoadingPrivacy(false);
@@ -51,7 +56,7 @@ function PrivacySettingsSectionInner() {
           .from('user_privacy_settings')
           .select('*')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (cancelled) return;
         if (data && !error) {
@@ -80,7 +85,8 @@ function PrivacySettingsSectionInner() {
     setSavingPrivacy(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) {
         setSavingPrivacy(false);
         return;
