@@ -439,7 +439,14 @@ async def get_category_deep_dive(
                     SUM(SUM(CASE WHEN price IS NOT NULL THEN price ELSE 0 END)) OVER ()
                         / NULLIF(SUM(COUNT(price)) OVER (), 0)         AS overall_avg
                 FROM market_hits
-                WHERE normalized_key LIKE $1 || '%'
+                -- FIX: filter on the dedicated `category` column, not
+                -- `normalized_key LIKE 'cat%'`. normalized_key is the bare item
+                -- SLUG (e.g. 'dsc-197-scute-swarm') with NO category prefix, so
+                -- the LIKE matched only items whose slug happened to start with
+                -- the category name — missing ~97% of pokemon/mtg data (empty
+                -- insights) AND doing a slow leading-LIKE scan. category= uses
+                -- the (category, seen_at) partition index.
+                WHERE category = $1
                   AND seen_at >= $2
                 GROUP BY date_trunc('day', COALESCE(observed_at, seen_at))
                 ORDER BY day
@@ -486,7 +493,9 @@ async def get_category_deep_dive(
                         COUNT(price) FILTER (WHERE price IS NOT NULL AND price >= 1
                                     AND COALESCE(observed_at, seen_at) >= $3) AS cnt_new
                     FROM market_hits
-                    WHERE normalized_key LIKE $1 || '%'
+                    -- Same fix as the daily query: filter by category, not a
+                    -- leading-LIKE on the slug-only normalized_key.
+                    WHERE category = $1
                       AND seen_at >= $2
                       AND (is_listing IS NOT TRUE)
                     GROUP BY normalized_key

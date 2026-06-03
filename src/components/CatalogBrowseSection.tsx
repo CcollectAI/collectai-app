@@ -209,23 +209,18 @@ function CatalogBrowseSectionInner({
                     </View>
                   </View>
 
-                  {/* Action buttons */}
+                  {/* Action: single "add to want list" button. The category
+                      page is a catalog of what EXISTS, so the action here is
+                      "I want this" (watchlist), not "I own this" (collection).
+                      Previously there were duplicate plus + heart buttons. */}
                   <View style={s.catalogItemActions}>
                     <AnimatedPressable
                       style={[s.catalogActionBtn, { backgroundColor: accentColor }]}
-                      onPress={() => onAddToCollection(cItem)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Add ${cItem.title} to collection`}
-                    >
-                      <Ionicons name="add" size={16} color="#fff" />
-                    </AnimatedPressable>
-                    <AnimatedPressable
-                      style={[s.catalogActionBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: accentColor }]}
                       onPress={() => onAddToWatchlist(cItem)}
                       accessibilityRole="button"
                       accessibilityLabel={`Add ${cItem.title} to want list`}
                     >
-                      <Ionicons name="heart-outline" size={14} color={accentColor} />
+                      <Ionicons name="heart-outline" size={16} color="#fff" />
                     </AnimatedPressable>
                   </View>
                 </View>
