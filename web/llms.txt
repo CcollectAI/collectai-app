@@ -1,0 +1,30 @@
+# Sparrow Collect
+
+> Sparrow Collect is an AI-powered mobile app (iOS & Android) that scans, identifies, and values collectibles across 54 categories. It pulls real-time pricing from leading marketplaces — eBay, TCGPlayer, StockX, Cardmarket, and Discogs — so collectors can track portfolio value, compare prices, set watchlist alerts, and decide when to buy or sell. One app for trading cards, figures, vinyl, watches, LEGO, sneakers, comics, and more.
+
+## What it does
+
+- **Scan & identify**: Point your camera at an item; AI identifies it and extracts structured attributes (brand, set, edition, condition).
+- **Value**: Real-time market valuations with low/median/high price quantiles, sourced from live marketplace data and normalized to your currency.
+- **Track**: Build a collection portfolio and watch its total value change over time.
+- **Alerts**: Set watchlist price alerts and get notified on market moves.
+- **Deal Hub**: Surface buying opportunities across marketplaces against your interests.
+
+## Pricing
+
+- **Free**: Download and track your collection with core features.
+- **Sparrow Pro — €4.99/month or €39.99/year**: Unlimited items, AI scans, market alerts, and advanced valuations.
+
+## Pages
+
+- [Home](https://sparrowcollect.com/): Product overview, features, and what Sparrow Collect does.
+- [Categories](https://sparrowcollect.com/categories.html): The 54 collectible categories covered (trading cards, figures, vinyl, watches, LEGO, sneakers, comics, and more).
+- [Guides](https://sparrowcollect.com/guides.html): In-depth collector guides and 100+ answered questions on identifying, grading, and valuing collectibles.
+- [Sparrow Pro](https://sparrowcollect.com/pro): Pro subscription features and web checkout.
+
+## Support & policies
+
+- [Support](https://sparrowcollect.com/support.html): Help and contact.
+- [Privacy Policy](https://sparrowcollect.com/privacy.html)
+- [Terms of Service](https://sparrowcollect.com/terms.html)
+- [User Content Policy](https://sparrowcollect.com/user-policy.html)

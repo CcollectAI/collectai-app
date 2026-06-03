@@ -93,13 +93,44 @@
         "applicationCategory": "LifestyleApplication",
         "operatingSystem": "iOS, Android",
         "datePublished": "2026-01-01",
-        "dateModified": "2026-05-06",
-        "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD",
-            "description": "Free to download with optional Pro subscription"
-        },
+        "dateModified": "2026-06-03",
+        "offers": [
+            {
+                "@type": "Offer",
+                "name": "Free",
+                "price": "0",
+                "priceCurrency": "EUR",
+                "description": "Free to download — track your collection with core features"
+            },
+            {
+                "@type": "Offer",
+                "name": "Sparrow Pro (Monthly)",
+                "price": "4.99",
+                "priceCurrency": "EUR",
+                "description": "Unlimited items, AI scans, market alerts, and advanced valuations",
+                "priceSpecification": {
+                    "@type": "UnitPriceSpecification",
+                    "price": "4.99",
+                    "priceCurrency": "EUR",
+                    "billingIncrement": 1,
+                    "unitCode": "MON"
+                }
+            },
+            {
+                "@type": "Offer",
+                "name": "Sparrow Pro (Annual)",
+                "price": "39.99",
+                "priceCurrency": "EUR",
+                "description": "Sparrow Pro billed annually — best value",
+                "priceSpecification": {
+                    "@type": "UnitPriceSpecification",
+                    "price": "39.99",
+                    "priceCurrency": "EUR",
+                    "billingIncrement": 1,
+                    "unitCode": "ANN"
+                }
+            }
+        ],
         "featureList": [
             "AI-powered collectible scanning and identification from photos",
             "Structured attribute extraction (brand, set name, card number, reference number, year, material)",
