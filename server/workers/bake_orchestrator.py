@@ -231,6 +231,22 @@ _LIGHT_YIELDING_WORKERS: frozenset[str] = frozenset({
 # acquire because asyncio.Lock() requires a running loop in Python 3.10+.
 _HEAVY_LOCK: asyncio.Lock | None = None
 
+# Who currently holds the heavy gate, and the monotonic time they acquired it.
+# Read by _instance_health_monitor to tell apart a benign ingest pause (the
+# producer, marketplace_scrape_worker, is simply queued behind a long heavy
+# run like valuation_worker's ~2.7h cycle) from a genuine producer death.
+# None when the gate is free. Same-process module global — the monitor loop
+# and the gate run in the orchestrator process, so a direct read is safe.
+_HEAVY_HOLDER: tuple[str, float] | None = None
+
+# Longest a heavy worker may legitimately hold the gate before a stalled
+# ingest is treated as a real problem rather than benign queueing. The
+# worst observed valuation_worker run is ~2.75h (9896s); 3h gives headroom.
+# Past this, the holder is assumed wedged and we page despite the gate.
+_HEAVY_GATE_SANE_CAP_S: float = float(
+    os.getenv("BAKE_HEAVY_GATE_SANE_CAP_S", str(3 * 3600))
+)
+
 
 def _get_heavy_lock() -> asyncio.Lock:
     """Lazily create the single-slot heavy-worker lock on first use."""
@@ -262,7 +278,12 @@ async def _heavy_gate(name: str):
                 "[bake_orchestrator] %s waited %.1fs for heavy gate",
                 name, waited,
             )
-        yield
+        global _HEAVY_HOLDER
+        _HEAVY_HOLDER = (name, time.monotonic())
+        try:
+            yield
+        finally:
+            _HEAVY_HOLDER = None
 _worker_import_failures: dict[str, str] = {}
 # Workers we've already paged Telegram for — avoids re-paging every health tick
 _alerted_workers: set[str] = set()
@@ -737,10 +758,38 @@ async def _instance_health_monitor(
                             str(ingest_stale_minutes),
                         )
                         if mh_recent == 0:
-                            issues.append((
-                                "ingest_stalled",
-                                f"no market_hits inserted in last {ingest_stale_minutes}min",
-                            ))
+                            # Distinguish a benign pause from a real outage.
+                            # The producer (marketplace_scrape_worker) is a
+                            # heavy worker, so it queues behind _HEAVY_LOCK.
+                            # When another heavy worker holds the gate (e.g.
+                            # valuation_worker's periodic ~2.7h run), ingest
+                            # legitimately idles and recovers on its own — that
+                            # fired a daily false page. Only alert when the gate
+                            # is FREE (genuine producer death) or has been held
+                            # absurdly long (the heavy worker itself is wedged).
+                            holder = _HEAVY_HOLDER
+                            held_s = (
+                                time.monotonic() - holder[1] if holder else 0.0
+                            )
+                            if holder is None or held_s > _HEAVY_GATE_SANE_CAP_S:
+                                extra = (
+                                    f" (heavy gate held by {holder[0]} for "
+                                    f"{held_s/60:.0f}min — likely wedged)"
+                                    if holder else ""
+                                )
+                                issues.append((
+                                    "ingest_stalled",
+                                    f"no market_hits inserted in last "
+                                    f"{ingest_stale_minutes}min{extra}",
+                                ))
+                            else:
+                                logger.info(
+                                    "[bake_orchestrator] ingest idle "
+                                    "%dmin but heavy gate held by %s for "
+                                    "%.0fmin — benign, not paging",
+                                    ingest_stale_minutes, holder[0],
+                                    held_s / 60,
+                                )
                         wr_recent = await conn.fetchval(
                             "SELECT count(*) FROM public.worker_runs "
                             "WHERE started_at > now() - ($1 || ' minutes')::interval",
