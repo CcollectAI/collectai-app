@@ -171,8 +171,16 @@ function AgentHubScreen() {
       const initialDeals = dealData?.deals ?? [];
       setDeals(initialDeals);
       if (initialDeals.length < DEALS_PAGE_SIZE) setHasMoreDeals(false);
-    } catch {
-      setError('Could not load deals. Pull to refresh.');
+    } catch (e) {
+      // D8: a 403 here means the user isn't on a plan that includes deal
+      // discovery — surface that as an upgrade prompt rather than a generic
+      // "couldn't load" error that reads like a bug.
+      const status = (e as { status?: number } | null)?.status;
+      if (status === 403) {
+        setError('Deal discovery is a Sparrow Pro feature. Upgrade to let Sparrow hunt deals for you.');
+      } else {
+        setError('Could not load deals. Pull to refresh.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
