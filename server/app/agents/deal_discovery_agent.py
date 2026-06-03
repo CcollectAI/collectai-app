@@ -137,10 +137,22 @@ class DealDiscoveryAgent:
             if hit_url and hit_url in existing_urls:
                 continue
 
-            # Inject provenance score from ScoredMarketHit into the hit dict
+            # Inject provenance score from ScoredMarketHit into the hit dict.
+            # D6: also surface the inputs the policy engine's recency/scarcity
+            # factors need so they aren't silently stuck at the 0.5 default.
+            # Prefer a real listing timestamp from the adapter; fall back to
+            # "discovered now" (a freshly-scraped active listing IS fresh).
             hit_with_provenance = {
                 **hit,
                 "provenance_score": scored_hit.provenance_score,
+                "discovered_at": (
+                    hit.get("listed_at") or hit.get("created_at")
+                    or hit.get("date") or datetime.now(timezone.utc).isoformat()
+                ),
+                "quantity_available": (
+                    hit.get("quantity_available") or hit.get("quantity")
+                    or hit.get("available")
+                ),
             }
 
             # 4. Run policy engine
@@ -177,12 +189,27 @@ class DealDiscoveryAgent:
                     "listing_url": hit_url,
                     "affiliate_url": affiliate_url,
                     "deal_score": verdict.deal_score,
-                    "price_vs_q50_pct": verdict.price_vs_q50_pct,
+                    # D2: suppress the precise discount for category-fallback
+                    # predictions (consistent with what's persisted).
+                    "price_vs_q50_pct": (
+                        None if (prediction and prediction.get("basis") == "category")
+                        else verdict.price_vs_q50_pct
+                    ),
                 })
 
-        # 6b. Batch persist all deals at once
+        # 6b. Batch persist all deals at once. D5: if the persist FAILS, do NOT
+        # report these as new deals — otherwise the worker push-notifies the
+        # user about deals that aren't in the DB and tapping them 404s. Counters
+        # also must not advance on a failed write.
         if batch_rows:
-            await self._persist_deals_batch(conn, batch_rows)
+            persisted = await self._persist_deals_batch(conn, batch_rows)
+            if not persisted:
+                logger.warning(
+                    "[DealDiscovery] persist failed for mandate %s — "
+                    "suppressing %d unsaved deals from notification",
+                    mandate_id, len(new_deals),
+                )
+                return []
 
         # 6c. Cache listing images to S3 (non-blocking, best-effort)
         if batch_rows:
@@ -233,30 +260,38 @@ class DealDiscoveryAgent:
     # Maximum mandates processed per scan cycle to prevent OOM / runaway queries
     MAX_MANDATES_PER_CYCLE = 50
 
-    async def scan_all_active(self, conn) -> List[Dict[str, Any]]:
+    async def scan_all_active(self, pool) -> List[Dict[str, Any]]:
         """Fetch active mandates due for scan (bounded) and process each.
 
         Only scans mandates belonging to users on pro or premium plans
         (deal_discovery is a paid feature).
 
+        D1/D4: takes the POOL (not a single connection) and acquires a fresh
+        connection PER MANDATE. Each mandate's scan is network-bound (multi-
+        source marketplace scrape + S3 image caching) and can take many seconds;
+        holding one pooled connection idle across all 50 serial mandates tied up
+        a connection for the whole cycle. Acquiring per mandate releases it back
+        to the pool between mandates.
+
         Returns a flat list of all new deals across all mandates.
         """
-        rows = await conn.fetch(
-            """
-            SELECT pm.*
-            FROM public.purchase_mandates pm
-            -- Both subscriptions.user_id and purchase_mandates.user_id are uuid;
-            -- the previous ::text cast caused "operator does not exist: uuid = text" (R46.11)
-            JOIN public.subscriptions s ON s.user_id = pm.user_id
-            WHERE pm.status = 'active'
-              AND (pm.expires_at IS NULL OR pm.expires_at > now())
-              AND s.plan IN ('pro', 'premium')
-              AND s.status IN ('active', 'trialing')
-            ORDER BY pm.last_scan_at ASC NULLS FIRST
-            LIMIT $1
-            """,
-            self.MAX_MANDATES_PER_CYCLE,
-        )
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT pm.*
+                FROM public.purchase_mandates pm
+                -- Both subscriptions.user_id and purchase_mandates.user_id are uuid;
+                -- the previous ::text cast caused "operator does not exist: uuid = text" (R46.11)
+                JOIN public.subscriptions s ON s.user_id = pm.user_id
+                WHERE pm.status = 'active'
+                  AND (pm.expires_at IS NULL OR pm.expires_at > now())
+                  AND s.plan IN ('pro', 'premium')
+                  AND s.status IN ('active', 'trialing')
+                ORDER BY pm.last_scan_at ASC NULLS FIRST
+                LIMIT $1
+                """,
+                self.MAX_MANDATES_PER_CYCLE,
+            )
 
         if not rows:
             logger.info("[DealDiscovery] No active mandates to scan")
@@ -269,7 +304,8 @@ class DealDiscoveryAgent:
         for row in rows:
             mandate = dict(row)
             try:
-                new_deals = await self.scan_mandate(mandate, conn)
+                async with pool.acquire() as conn:
+                    new_deals = await self.scan_mandate(mandate, conn)
                 all_new_deals.extend(new_deals)
             except Exception as exc:
                 logger.error(
@@ -366,6 +402,9 @@ class DealDiscoveryAgent:
                     "q10": float(row["q10"]) if row["q10"] else None,
                     "q50": float(row["q50"]),
                     "q90": float(row["q90"]) if row["q90"] else None,
+                    # D2: an item-specific match — the "% below market" badge is
+                    # meaningful against this q50.
+                    "basis": "item",
                 }
         except Exception as exc:
             logger.debug("[DealDiscovery] Prediction lookup failed: %s", exc)
@@ -398,6 +437,10 @@ class DealDiscoveryAgent:
                         "q10": float(row["cat_q10"]) if row["cat_q10"] else None,
                         "q50": float(row["cat_q50"]),
                         "q90": float(row["cat_q90"]) if row["cat_q90"] else None,
+                        # D2: this is a CATEGORY aggregate, not this item. The
+                        # precise "% below market" badge would be misleading, so
+                        # it's suppressed downstream (price_vs_q50_pct → NULL).
+                        "basis": "category",
                     }
             except Exception as exc:
                 logger.debug("[DealDiscovery] Category median fallback failed: %s", exc)
@@ -456,6 +499,12 @@ class DealDiscoveryAgent:
         affiliate_source: str,
     ) -> tuple:
         """Build a tuple of values for batch insert."""
+        # D2: only claim a precise "% below market" when the prediction was an
+        # item-specific match. For a category-aggregate fallback, store NULL so
+        # the FE badge doesn't present a category median as this item's value.
+        price_vs = verdict.price_vs_q50_pct
+        if prediction and prediction.get("basis") == "category":
+            price_vs = None
         return (
             uuid.UUID(deal_id),
             uuid.UUID(mandate_id),
@@ -471,7 +520,7 @@ class DealDiscoveryAgent:
             hit.get("seller"),
             scored_hit.provenance_score,
             verdict.deal_score,
-            verdict.price_vs_q50_pct,
+            price_vs,
             prediction.get("q50") if prediction else None,
             prediction.get("q10") if prediction else None,
             prediction.get("q90") if prediction else None,
@@ -480,8 +529,13 @@ class DealDiscoveryAgent:
             affiliate_source or None,
         )
 
-    async def _persist_deals_batch(self, conn, rows: List[tuple]) -> None:
-        """Batch INSERT all deal rows in a single executemany call."""
+    async def _persist_deals_batch(self, conn, rows: List[tuple]) -> bool:
+        """Batch INSERT all deal rows. Returns True on success, False on failure.
+
+        D5: the caller relies on this return value — a failed persist must not
+        be reported as new deals (no phantom push notifications) nor advance the
+        mandate counters.
+        """
         try:
             await conn.executemany(
                 """
@@ -507,8 +561,10 @@ class DealDiscoveryAgent:
                 """,
                 rows,
             )
+            return True
         except Exception as exc:
             logger.warning("[DealDiscovery] Batch persist failed: %s", exc)
+            return False
 
     async def _feed_market_hits(self, conn, hits, query: str, category: Optional[str]) -> None:
         """Persist deal discoveries into market_hits for future price predictions.

@@ -120,6 +120,11 @@ class DealResponse(BaseModel):
     policy_reasons: list = Field(default_factory=list)
     affiliate_source: Optional[str] = None
     affiliate_click: bool = False
+    # D3: deliberately left unpopulated (always None) pre-launch. Real
+    # commission comes from per-network conversion reconciliation, which
+    # docs/AFFILIATE_SWITCH_ON.md explicitly DEFERS until volume justifies it
+    # ("reconcile manually from each network's dashboard"). Kept as a NULL
+    # placeholder rather than fabricating a number; the FE renders null as "—".
     estimated_commission: Optional[float] = None
     confirmed_price: Optional[float] = None
     added_item_id: Optional[str] = None
@@ -627,6 +632,13 @@ async def confirm_deal(
         if not row:
             raise error_response(404, "Deal not found or already purchased/declined")
 
+        # D3: a price of 0 (allowed by the ge=0 model bound) would inflate the
+        # "saved vs market" stat by the full predicted q50. Reject explicitly —
+        # a real purchase has a positive price; omit the field to default to the
+        # listing price instead.
+        if body.confirmed_price is not None and body.confirmed_price <= 0:
+            raise error_response(400, "confirmed_price must be greater than 0")
+
         confirmed_price = body.confirmed_price if body.confirmed_price is not None else float(row["listing_price"])
 
         # Atomically set deal as purchased (idempotent via status gate above)
@@ -733,9 +745,12 @@ async def get_stats(
                 count(*) AS total_found,
                 count(*) FILTER (WHERE affiliate_click = true) AS total_clicked,
                 count(*) FILTER (WHERE status = 'purchased') AS total_purchased,
+                -- D3: clamp per-deal savings at 0 with GREATEST so a bad buy
+                -- (paid ABOVE predicted q50) can't subtract from the headline
+                -- "saved vs market" stat — only genuine savings sum in.
                 coalesce(sum(
                     CASE WHEN status = 'purchased' AND predicted_q50 IS NOT NULL
-                    THEN predicted_q50 - coalesce(confirmed_price, listing_price)
+                    THEN GREATEST(0, predicted_q50 - coalesce(confirmed_price, listing_price))
                     ELSE 0 END
                 ), 0) AS saved_vs_q50
             FROM public.mandate_deals

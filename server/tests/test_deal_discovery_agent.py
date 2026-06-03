@@ -26,6 +26,26 @@ os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 from app.agents.marketplace_agent import ScoredMarketHit, AggregationResult
 
 
+def _mock_pool(conn):
+    """Wrap a mock connection in a mock asyncpg pool.
+
+    scan_all_active now takes a pool and does `async with pool.acquire() as
+    conn` per mandate (D1/D4). This returns a pool whose acquire() yields the
+    given mock conn each time.
+    """
+    pool = MagicMock()
+
+    class _Acq:
+        async def __aenter__(self):
+            return conn
+
+        async def __aexit__(self, *exc):
+            return False
+
+    pool.acquire = lambda: _Acq()
+    return pool
+
+
 def _mock_hit(price=350, source="ebay", url="https://ebay.com/itm/1", title="Test Item"):
     return ScoredMarketHit(
         hit={
@@ -173,7 +193,7 @@ class TestScanAllActive:
         mock_conn.fetch = AsyncMock(return_value=[])
 
         with patch.object(agent._marketplace, "close", new=AsyncMock()):
-            deals = await agent.scan_all_active(mock_conn)
+            deals = await agent.scan_all_active(_mock_pool(mock_conn))
 
         assert len(deals) == 0
 
@@ -198,7 +218,7 @@ class TestScanAllActive:
 
         with patch.object(agent._marketplace, "aggregate_search", new=AsyncMock(return_value=result)):
             with patch.object(agent._marketplace, "close", new=AsyncMock()):
-                deals = await agent.scan_all_active(mock_conn)
+                deals = await agent.scan_all_active(_mock_pool(mock_conn))
 
         assert len(deals) == 2
 
@@ -550,7 +570,7 @@ class TestBoundedScan:
         mock_conn.fetch = AsyncMock(return_value=[])
 
         with patch.object(agent._marketplace, "close", new=AsyncMock()):
-            await agent.scan_all_active(mock_conn)
+            await agent.scan_all_active(_mock_pool(mock_conn))
 
         mock_conn.fetch.assert_awaited_once()
         call_args = mock_conn.fetch.call_args

@@ -209,8 +209,9 @@ async def run_once():
 
         agent = DealDiscoveryAgent()
         try:
-            async with pool.acquire() as conn:
-                new_deals = await agent.scan_all_active(conn)
+            # D1/D4: pass the pool so the agent acquires a connection per mandate
+            # rather than holding one for the entire 50-mandate serial cycle.
+            new_deals = await agent.scan_all_active(pool)
         finally:
             await agent.close()
 

@@ -118,9 +118,15 @@ def evaluate(
                 hours_ago = elapsed.total_seconds() / 3600
                 reasons.append(f"cooldown OK: last deal {hours_ago:.0f}h ago >= {cooldown_hours}h")
             else:
+                # D7: this mandate-level blanket cooldown used to FAIL every deal
+                # for N hours after ANY single deal — so finding one deal hid all
+                # OTHER (different-item) deals for the rest of the window. That's
+                # over-suppression. Per-listing cooldown is enforced correctly in
+                # the agent (_get_existing_urls + _get_user_recent_deal_urls) and
+                # notification rate is capped in the worker, so this is now
+                # advisory only and no longer blocks the verdict.
                 hours_left = (cooldown_td - elapsed).total_seconds() / 3600
-                reasons.append(f"FAIL: cooldown — {hours_left:.1f}h remaining")
-                failed = True
+                reasons.append(f"cooldown note: mandate last deal {hours_left:.1f}h ago (per-listing cooldown still applies)")
 
     # ── Check 4: Trust score ───────────────────────────────────────────────
     if provenance >= min_trust:

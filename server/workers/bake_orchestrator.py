@@ -73,11 +73,16 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     # Sanity probe — must stay. Observability. If this is off, we're flying blind.
     ("sanity_probe_worker",     "workers.sanity_probe_worker",        "run_once", True),
 
+    # ── Deal agent — ENABLED 2026-06-03 (turn the buy-side on) ──
+    # Discovery scans active mandates every 30m (SCHEDULES) and populates
+    # mandate_deals. Heavy (marketplace scrape + S3), gated by _HEAVY_LOCK.
+    ("deal_discovery",          "workers.deal_discovery_worker",      "run_once", True),
+    # Daily portfolio/item value-change notifications.
+    ("value_change_worker",     "workers.value_change_worker",        "run_once", True),
+
     # ── DISABLED — post-launch features (no users yet) ──
     # ("catalog_crawler_worker",  "workers.catalog_crawler_worker",     "run_once", True),
     #   Nightly full crawl. Catalog imports (tcgcsv/discogs) cover pre-launch needs.
-    # ("deal_discovery",          "workers.deal_discovery_worker",      "run_once", True),
-    #   Paid-tier feature. No paid users.
     # ("price_monitor",           "workers.price_monitor_worker",       "run_once", True),
     #   Anomaly detection for user portfolios. No portfolios.
     # ("alerts_worker",           "workers.alerts_worker",              "run_once", True),
@@ -90,8 +95,6 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   Cross-marketplace listing sync. No connected sellers.
     # ("event_scraper_worker",    "workers.event_scraper_scheduler",    "run_once", False),
     #   Events feature for users. No users.
-    # ("value_change_worker",     "workers.value_change_worker",        "run_once", True),
-    #   Daily portfolio notifications. No portfolios.
     # ("auction_alert_worker",    "workers.auction_alert_worker",       "run_once", True),
     #   Disabled 2026-05-04 due to partition-pruning planner regression
     #   (see learning_partition_pruning_planning_cost.md). Re-enable after
@@ -222,6 +225,9 @@ _HEAVY_WORKERS: frozenset[str] = frozenset({
     "marketplace_scrape_worker",
     "tcgcsv_worker",
     "discogs_worker",
+    # Deal discovery scrapes marketplaces + bulk-writes market_hits, same DB
+    # pressure profile as the other heavies — serialize it through the gate.
+    "deal_discovery",
 })
 _LIGHT_YIELDING_WORKERS: frozenset[str] = frozenset({
     "sanity_probe_worker",
