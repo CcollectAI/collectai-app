@@ -576,7 +576,13 @@ function CategoryStoreScreen() {
           <FeaturedCollectionsSection
             collections={categoryMeta.collections}
             categoryId={categoryId}
-            onCollectionPress={(name) => router.push({ pathname: '/(tabs)/items', params: { collection: name } })}
+            onCollectionPress={(name) => router.push({
+              // The category page is a catalog "museum" of what EXISTS, not the
+              // user's collection. Tapping a featured collection must open the
+              // CATALOG browse for it — never the user's own items tab.
+              pathname: '/category-browse',
+              params: { categoryId: String(categoryId), collection: name },
+            })}
           />
         )}
 

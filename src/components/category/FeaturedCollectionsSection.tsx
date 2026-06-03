@@ -52,7 +52,10 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
   }, [categoryId]);
 
   // Fall back to the static category collections only if the catalog has none.
-  const display: CatalogCollection[] = items.length > 0
+  // Cap at 10 — big categories (e.g. pokemon) have 50+ sets, which made the
+  // collections carousel an overwhelming, never-ending scroll.
+  const MAX_COLLECTIONS = 10;
+  const display: CatalogCollection[] = (items.length > 0
     ? items
     : (loaded
         ? collections.map((c) => ({
@@ -60,7 +63,7 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
             display_name: c.name,
             total_items: c.itemCount ?? 0,
           }))
-        : []);
+        : [])).slice(0, MAX_COLLECTIONS);
 
   if (loaded && display.length === 0) return null;
   if (display.length === 0) return null;
