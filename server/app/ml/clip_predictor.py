@@ -8,7 +8,11 @@ of all category descriptions for zero-shot category matching.
 from __future__ import annotations
 
 import base64
+import hashlib
+import json
 import logging
+import os
+import tempfile
 from typing import Any
 
 import httpx
@@ -24,18 +28,74 @@ from app.ml.vision_helpers import (
 
 logger = logging.getLogger(__name__)
 
-# Cached text embeddings for category descriptions.  Populated once on first
-# CLIP classification call, then reused for all subsequent calls.  This avoids
-# 37+ fal.ai API calls per scan — only 1 (image) is needed after warm-up.
+# Cached text embeddings for category descriptions.  Populated once (ideally at
+# startup, out of the request path — see warm_clip_text_embeddings), then reused
+# for all subsequent calls.  Without this every scan would make 40+ fal.ai
+# calls. S3: also persisted to disk, keyed by a hash of the descriptions, so a
+# bake restart reloads instantly instead of re-paying the 40-call warm-up on
+# the first user's scan.
 _clip_text_embeddings: dict[str, list[float]] = {}
 _clip_text_embeddings_loaded: bool = False
 
+# Disk cache. /tmp survives process restarts (the case we care about); the hash
+# in the filename invalidates the cache automatically if CATEGORY_DESCRIPTIONS
+# changes, so stale embeddings can't silently persist across a deploy.
+_DESC_HASH = hashlib.sha1(
+    json.dumps(
+        {c: CATEGORY_DESCRIPTIONS.get(c, c) for c in sorted(ALL_CATEGORIES)},
+        sort_keys=True,
+    ).encode()
+).hexdigest()[:12]
+_CLIP_CACHE_PATH = os.getenv(
+    "CLIP_EMB_CACHE_PATH",
+    os.path.join(tempfile.gettempdir(), f"clip_text_embeddings_{_DESC_HASH}.json"),
+)
+
+
+def _load_clip_cache_from_disk() -> bool:
+    """Populate the in-process cache from the disk cache. Returns True on hit."""
+    global _clip_text_embeddings, _clip_text_embeddings_loaded
+    try:
+        if not os.path.exists(_CLIP_CACHE_PATH):
+            return False
+        with open(_CLIP_CACHE_PATH) as f:
+            data = json.load(f)
+        if isinstance(data, dict) and data:
+            _clip_text_embeddings = {k: v for k, v in data.items() if v}
+            _clip_text_embeddings_loaded = True
+            logger.info(
+                "CLIP: loaded %d text embeddings from disk cache",
+                len(_clip_text_embeddings),
+            )
+            return True
+    except Exception as e:
+        logger.warning("CLIP: disk cache load failed: %s", e)
+    return False
+
+
+def _save_clip_cache_to_disk() -> None:
+    try:
+        tmp = f"{_CLIP_CACHE_PATH}.tmp"
+        with open(tmp, "w") as f:
+            json.dump(_clip_text_embeddings, f)
+        os.replace(tmp, _CLIP_CACHE_PATH)  # atomic
+    except Exception as e:
+        logger.warning("CLIP: disk cache save failed: %s", e)
+
 
 async def _ensure_clip_text_embeddings(client: httpx.AsyncClient) -> dict[str, list[float]]:
-    """Fetch and cache text embeddings for all category descriptions (once)."""
+    """Return cached text embeddings, loading from disk or fetching once.
+
+    Order: in-process cache → disk cache → fetch-and-persist. The fetch path
+    is the slow ~40-call warm-up; in steady state it runs once at startup
+    (warm_clip_text_embeddings) or once after a deploy that changed the
+    descriptions, never on a normal user scan.
+    """
     global _clip_text_embeddings_loaded
 
     if _clip_text_embeddings_loaded and _clip_text_embeddings:
+        return _clip_text_embeddings
+    if _load_clip_cache_from_disk():
         return _clip_text_embeddings
 
     logger.info("CLIP: warming up text embeddings for %d categories", len(ALL_CATEGORIES))
@@ -62,7 +122,29 @@ async def _ensure_clip_text_embeddings(client: httpx.AsyncClient) -> dict[str, l
 
     _clip_text_embeddings_loaded = True
     logger.info("CLIP: cached %d/%d text embeddings", len(_clip_text_embeddings), len(ALL_CATEGORIES))
+    if _clip_text_embeddings:
+        _save_clip_cache_to_disk()
     return _clip_text_embeddings
+
+
+async def warm_clip_text_embeddings() -> int:
+    """Pre-warm the CLIP text-embedding cache OUT of the request path.
+
+    Call once at app startup (fire-and-forget). Uses its own generous-timeout
+    client because the warm-up makes ~40 sequential fal.ai calls — that cost
+    belongs at boot, not on the first user's scan. No-op if FAL_KEY is unset or
+    the cache is already warm (in-process or on disk).
+    """
+    if not FAL_KEY:
+        return 0
+    if (_clip_text_embeddings_loaded and _clip_text_embeddings) or _load_clip_cache_from_disk():
+        return len(_clip_text_embeddings)
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            await _ensure_clip_text_embeddings(client)
+    except Exception as e:
+        logger.warning("CLIP: startup warm-up failed (will lazy-warm on first scan): %s", e)
+    return len(_clip_text_embeddings)
 
 
 async def classify_clip(image_bytes: bytes, filename: str) -> ClassificationResult | None:

@@ -29,24 +29,20 @@ def classify_heuristic(image_bytes: bytes, filename: str) -> ClassificationResul
 
     text_to_match = filename.lower() if filename else ""
 
-    # Try EXIF data for additional text clues
-    exif_text = ""
+    # S5: detect EXIF *presence* only — do NOT decode raw EXIF bytes into the
+    # text we category-match on. The old code scanned 2KB of arbitrary bytes
+    # after the "Exif" marker and fed the decoded ASCII into the pattern
+    # matcher, which was both unreliable (camera make/model spuriously matches
+    # patterns) and an injection vector (a crafted EXIF blob could nudge the
+    # category). The presence flag is harmless; the raw-text scan is gone.
+    has_exif = False
     try:
-        # Check for EXIF in JPEG
-        if image_bytes[:2] == b"\xff\xd8":
-            # Simple EXIF extraction: look for ASCII text after Exif marker
-            exif_marker = image_bytes.find(b"Exif")
-            if exif_marker > 0:
-                # Extract a chunk of bytes and decode what we can
-                chunk = image_bytes[exif_marker:exif_marker + 2048]
-                # Filter to printable ASCII
-                exif_text = "".join(
-                    chr(b) if 32 <= b < 127 else " " for b in chunk
-                )
+        if image_bytes[:2] == b"\xff\xd8" and image_bytes.find(b"Exif") > 0:
+            has_exif = True
     except Exception:
         pass
 
-    combined_text = f"{text_to_match} {exif_text}".strip()
+    combined_text = text_to_match
 
     # Match against heuristic patterns
     best_cat: str | None = None
@@ -86,12 +82,12 @@ def classify_heuristic(image_bytes: bytes, filename: str) -> ClassificationResul
     attributes: dict[str, Any] = {}
     if barcode_info:
         attributes["barcode"] = barcode_info
-    if exif_text.strip():
+    if has_exif:
         attributes["has_exif"] = True
 
     logger.info(
-        "Heuristic classification: category=%s confidence=%.4f source=%s",
-        best_cat, best_score, "filename" if not exif_text else "filename+exif",
+        "Heuristic classification: category=%s confidence=%.4f source=filename",
+        best_cat, best_score,
     )
 
     return ClassificationResult(

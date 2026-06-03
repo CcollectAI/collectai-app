@@ -34,6 +34,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import type { QuickScanResult, CatalogAlternative, DetectedMultiItem } from '@/data/types';
 import logger from '@/utils/logger';
+import { prepareImageForUpload } from '@/lib/prepareImageForUpload';
 import { track } from '@/analytics/track';
 import { useInterstitial } from '@/ads';
 import { radius } from '@/theme/tokens';
@@ -336,6 +337,12 @@ function QuickScanScreen() {
         return;
       }
 
+      // S2: downscale to ~1568px before any upload — cuts payload ~5–10x,
+      // reducing latency, mobile upload failures, and OpenAI token cost.
+      // Falls back to the original URI on any failure. Display keeps the
+      // original photo for a crisp preview.
+      const uploadUri = await prepareImageForUpload(photo.uri);
+
       setCapturedUri(photo.uri);
       setAnalysisStepIndex(0);
       track({ name: 'quickscan_photo_taken' });
@@ -354,7 +361,7 @@ function QuickScanScreen() {
       if (multiMode && featureFlags.FEATURE_MULTI_ITEM_SCAN) {
         setPhase('multi_detect');
         try {
-          const result = await multiDetect(photo.uri);
+          const result = await multiDetect(uploadUri);
           if (result.items.length > 0) {
             setDetectedMultiItems(result.items.map((it) => ({
               itemIndex: it.itemIndex,
@@ -382,7 +389,7 @@ function QuickScanScreen() {
       // F8: Comparison mode — first or second capture
       if (compareMode && featureFlags.FEATURE_COMPARISON_SCAN) {
         setPhase('analyzing');
-        const sr = await dataProvider.quickscanSingle(photo.uri);
+        const sr = await dataProvider.quickscanSingle(uploadUri);
         if (!comparisonA) {
           setComparisonA({ result: sr, uri: photo.uri });
           fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -400,7 +407,7 @@ function QuickScanScreen() {
       setPhase('analyzing');
 
       // Run AI analysis
-      const sr = await dataProvider.quickscanSingle(photo.uri);
+      const sr = await dataProvider.quickscanSingle(uploadUri);
 
       // R48.4 — Low-confidence fallback: if the AI can't identify the item,
       // offer "Add Manually" instead of showing a garbage guess.

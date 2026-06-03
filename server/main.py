@@ -87,6 +87,15 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logging.getLogger("uvicorn").debug("[startup] spend hydrate skipped: %s", e)
 
+    # Pre-warm the CLIP category text-embedding cache OUT of the request path
+    # (S3). Fire-and-forget so it never blocks startup; the first user's scan
+    # then hits a warm cache instead of paying the ~40-call fal.ai warm-up.
+    try:
+        from app.ml.clip_predictor import warm_clip_text_embeddings
+        asyncio.create_task(warm_clip_text_embeddings())
+    except Exception as e:
+        logging.getLogger("uvicorn").debug("[startup] CLIP warm-up skipped: %s", e)
+
     # ── Bake Orchestrator — unified worker scheduling ──────────────────
     # Replaces all individual scheduler starts (price_monitor, deal_discovery,
     # catalog_learning, matview, valuation, etc.) with a single orchestrator

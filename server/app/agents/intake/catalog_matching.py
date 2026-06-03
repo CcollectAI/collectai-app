@@ -17,6 +17,26 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# Catalog-match scoring constants (S4)
+# Previously these were magic numbers scattered inline. Each strategy's score
+# is now derived from text similarity where possible, clamped to a documented
+# floor/ceiling reflecting how much signal that strategy actually carries.
+# ---------------------------------------------------------------------------
+_KEY_MATCH_FLOOR = 0.70   # item_key ILIKE: strong but partial — scale UP with title sim
+_KEY_MATCH_CEIL = 0.95
+_KEYWORD_FLOOR = 0.30     # keyword ILIKE: weak signal
+_BRAND_SET_FLOOR = 0.50   # brand+set_code ILIKE: medium signal
+
+# S8 (index policy, DATA_SCALING_PLAN §6): the strategy queries below all use
+# leading-wildcard `ILIKE '%...%'`, which a btree index CANNOT serve — adding
+# one would be dead weight. A real speedup needs a `pg_trgm` GIN index, which
+# is a schema change that per index policy requires EXPLAIN ANALYZE evidence +
+# a write-path benchmark first. Deferred deliberately, not forgotten: at 140k
+# category_items the sequential ILIKE is acceptable; revisit when the catalog
+# grows or scan latency regresses. Do NOT add a btree index here.
+
+
+# ---------------------------------------------------------------------------
 # Catalog matching helpers (RAG step)
 # ---------------------------------------------------------------------------
 
@@ -176,6 +196,17 @@ async def _match_catalog_items(
                         rid = str(row["id"])
                         if rid not in seen_ids:
                             seen_ids.add(rid)
+                            # S4: don't hardcode 0.9. An item_key ILIKE is a
+                            # strong but partial signal — scale it by how well
+                            # the suggested name actually matches the row's
+                            # title/key, so a weak prefix hit can't outscore a
+                            # near-perfect title match.
+                            sim = _text_similarity(
+                                suggested_name,
+                                row["title"] or row["item_key"] or "",
+                            )
+                            score = min(_KEY_MATCH_CEIL,
+                                        _KEY_MATCH_FLOOR + (1.0 - _KEY_MATCH_FLOOR) * sim)
                             matches.append({
                                 "catalog_item_id": rid,
                                 "item_key": row["item_key"],
@@ -185,7 +216,7 @@ async def _match_catalog_items(
                                 "rarity": row["rarity"],
                                 "set_code": row["set_code"],
                                 "image_url": row["image_url"],
-                                "match_score": 0.9,
+                                "match_score": round(score, 4),
                                 "match_reason": "item_key_match",
                             })
 
@@ -257,7 +288,7 @@ async def _match_catalog_items(
                             "rarity": row["rarity"],
                             "set_code": row["set_code"],
                             "image_url": row["image_url"],
-                            "match_score": round(max(0.3, sim), 4),
+                            "match_score": round(max(_KEYWORD_FLOOR, sim), 4),
                             "match_reason": f"keyword:{kw_clean}",
                         })
 
@@ -293,12 +324,16 @@ async def _match_catalog_items(
                             "rarity": row["rarity"],
                             "set_code": row["set_code"],
                             "image_url": row["image_url"],
-                            "match_score": round(max(0.5, sim), 4),
+                            "match_score": round(max(_BRAND_SET_FLOOR, sim), 4),
                             "match_reason": "brand_set_match",
                         })
 
     except Exception as e:
-        logger.debug("Catalog matching error: %s", e)
+        # S1: this used to swallow at debug — a schema drift on category_items
+        # or a DB blip silently returned zero catalog matches for every scan
+        # with no operator signal. Make it loud and counted.
+        from app.ml.openai_vision import record_scan_degradation
+        record_scan_degradation("catalog_match", "match_query_error", detail=str(e))
         return []
 
     # Sort by match_score descending, return top 5
