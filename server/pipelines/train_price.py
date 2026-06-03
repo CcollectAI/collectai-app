@@ -353,14 +353,15 @@ def load_verified_sales(category: str) -> tuple[list[dict], list[float]]:
                     for item in items_resp.json():
                         items_by_id[item["id"]] = item
 
-        # EUR conversion rates (approximate)
-        fx_to_eur = {"EUR": 1.0, "USD": 0.92, "GBP": 1.17, "JPY": 0.006}
+        # V5: use the central fx_service fallback table instead of a private
+        # hardcoded {USD:0.92, GBP:1.17, JPY:0.006} that drifted from the rest
+        # of the app. convert_to_eur_sync is the sanctioned sync entry point for
+        # batch jobs (no event loop) and shares one source of truth for rates.
+        from app.lib.fx_service import convert_to_eur_sync
 
         for sale in sales:
-            price_eur = float(sale["sale_price"])
             currency = sale.get("currency", "EUR")
-            if currency != "EUR":
-                price_eur *= fx_to_eur.get(currency, 1.0)
+            price_eur = convert_to_eur_sync(float(sale["sale_price"]), currency)
 
             if price_eur <= 0:
                 continue
@@ -808,6 +809,20 @@ def register_model_to_supabase(model: RidgeModelPack, model_path: Path) -> bool:
     Returns True if successful, False otherwise.
     """
     import httpx
+
+    # V7: the live model_registry table schema is INCOMPATIBLE with the columns
+    # below (see model_loader._schema_is_compatible — it lacks category/
+    # model_type/artifact_json/is_active), and serving loads artifacts from
+    # DISK, not this table. So this POST silently 4xx-fails and the row is never
+    # read. Disabled by default to stop emitting misleading "registration
+    # failed" error logs; only flip MODEL_REGISTRY_WRITE_ENABLED=1 after
+    # migrating the table to match these columns.
+    if os.getenv("MODEL_REGISTRY_WRITE_ENABLED", "false").lower() not in ("1", "true", "yes"):
+        logger.info(
+            "[train_price] model_registry write disabled (disk is source of "
+            "truth); skipping %s/%s", model.category, model.version,
+        )
+        return False
 
     supabase_url = os.getenv("SUPABASE_URL", "")
     supabase_key = os.getenv("SUPABASE_SERVICE_KEY", "")

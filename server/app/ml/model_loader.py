@@ -175,6 +175,56 @@ def _resolve_artifacts_root():
     return None
 
 
+def stale_model_categories(max_age_days: float = 21.0) -> list[tuple[str, float]]:
+    """Return [(category, age_days)] for active models older than max_age_days.
+
+    V4: serve-time staleness detection. The retrain worker runs weekly; if it
+    silently fails (or a category's training errors repeatedly), the old
+    artifact keeps serving forever with no signal. This reads each category's
+    `active` model age from its version-stamped directory name (YYYYMMDD_HHMMSS),
+    falling back to the model.json mtime, and surfaces anything older than the
+    threshold. Default 21d = 3x the weekly retrain interval, so a single missed
+    cycle doesn't false-alarm.
+    """
+    import datetime as _dt
+    import os as _os
+    root = _resolve_artifacts_root()
+    if root is None:
+        return []
+    now = _dt.datetime.now(_dt.timezone.utc)
+    stale: list[tuple[str, float]] = []
+    try:
+        for cat_dir in root.iterdir():
+            try:
+                if not cat_dir.is_dir():
+                    continue
+                active = cat_dir / "active"
+                if not active.exists():
+                    continue
+                ts: _dt.datetime | None = None
+                if active.is_symlink():
+                    ver = _os.path.basename(_os.readlink(str(active)))
+                    try:
+                        ts = _dt.datetime.strptime(ver[:15], "%Y%m%d_%H%M%S").replace(
+                            tzinfo=_dt.timezone.utc)
+                    except Exception:
+                        ts = None
+                if ts is None:
+                    mj = active / "model.json"
+                    if mj.exists():
+                        ts = _dt.datetime.fromtimestamp(mj.stat().st_mtime, _dt.timezone.utc)
+                if ts is None:
+                    continue
+                age = (now - ts).total_seconds() / 86400.0
+                if age > max_age_days:
+                    stale.append((cat_dir.name, round(age, 1)))
+            except Exception:
+                continue
+    except Exception:
+        return []
+    return sorted(stale, key=lambda x: -x[1])
+
+
 def _load_artifact_from_disk(category: str, slot: str = "active") -> dict | None:
     """Load `artifacts/{category}/{slot}/model.json` from disk.
 

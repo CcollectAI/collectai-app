@@ -151,46 +151,55 @@ async def _get_latest_picp(conn, category: str) -> float | None:
         return None
 
 
-def _predict_ridge(model: dict, item_ref: str, fallback_q50: float) -> float | None:
-    """Run Ridge model inference to get a q50 prediction.
+# Minimum real comps before we trust the item-level model features enough to
+# blend, and before a prediction is treated as more than "estimate only" (V6).
+_MIN_COMPS_FOR_MODEL = 3
+_MIN_COMPS_RELIABLE = 3
+_LOW_COMP_CONF_CAP = 0.5
 
-    Uses the model artifact's standardizer and ridge coefficients.
-    Returns predicted value or None on failure.
+
+def _predict_quantile(model: dict, feature_values: dict, coef_key: str = "ridge") -> float | None:
+    """Run one Ridge (or quantile-Ridge) head against a REAL feature vector.
+
+    V1: the feature vector is built from the item's actual attributes via the
+    shared extractor (`build_feature_vector`), in the artifact's own feature
+    order — NOT the old hack of stuffing the empirical median into slot 0.
+    V3: `coef_key` selects which head — "ridge" (q50), "ridge_q10", or
+    "ridge_q90" — so the trained quantile models are actually consumed instead
+    of computed-then-ignored.
+
+    Returns the predicted price in EUR, or None on any failure / out-of-range.
     """
     try:
+        sub = model.get(coef_key)
+        if not sub or "coef" not in sub:
+            return None
         standardizer = model["standardizer"]
-        ridge = model["ridge"]
         features = model.get("features", [])
         mean = standardizer["mean"]
         std = standardizer["std"]
-        coef = ridge["coef"]
-        intercept = ridge["intercept"]
+        coef = sub["coef"]
+        intercept = sub["intercept"]
 
-        # Build a simple feature vector using the empirical q50 as the primary feature
-        # The Ridge model expects standardized features
-        x = [fallback_q50] + [0.0] * (len(features) - 1)
+        from app.ml.valuation_features import build_feature_vector
+        x = build_feature_vector(features, feature_values)
         if len(x) != len(mean) or len(x) != len(coef):
+            # Dimension mismatch (e.g. an older 3-feature artifact vs a newer
+            # schema) — skip the model, empirical wins. Safe by construction.
             return None
 
-        # Standardize
+        # Standardize. std==0 (a feature that was constant in training, e.g. a
+        # legacy artifact's rarity/edition) zeroes that term — so feeding it a
+        # real value can't destabilize an old model; it just gets ignored.
         x_std = [(x[i] - mean[i]) / std[i] if std[i] > 0 else 0.0 for i in range(len(x))]
-
-        # Predict
         prediction = sum(x_std[i] * coef[i] for i in range(len(x_std))) + intercept
 
-        # If model was trained on log-scale, convert back to EUR
-        # (math is imported at module level — do NOT re-import here, as a local
-        # `import math` makes the name function-local and shadows module-level
-        # for the non-log path, triggering UnboundLocalError).
+        # math is module-level — do NOT re-import (local import would shadow it
+        # and trigger UnboundLocalError on the non-log path).
         if model.get("log_scale"):
-            prediction = math.expm1(prediction)  # exp(x) - 1, inverse of log1p
+            prediction = math.expm1(prediction)  # inverse of log1p
 
-        if not math.isfinite(prediction):
-            return None
-        if prediction <= 0:
-            return None
-        if prediction > _MAX_SANE_PRICE_EUR:
-            # Log-space blow-up or feature NaN — drop model, empirical wins
+        if not math.isfinite(prediction) or prediction <= 0 or prediction > _MAX_SANE_PRICE_EUR:
             return None
         return float(prediction)
     except Exception:
@@ -223,7 +232,8 @@ async def run_once():
         hit_rows = await conn.fetch("""
             SELECT id, item_ref, source,
                    COALESCE(price_eur, price)::numeric AS price,
-                   COALESCE(observed_at, seen_at) AS observed_at
+                   COALESCE(observed_at, seen_at) AS observed_at,
+                   condition, attrs
             FROM public.market_hits
             WHERE processed = false
               -- Partition prune: anything still unprocessed after 90 days
@@ -250,6 +260,8 @@ async def run_once():
                 "source": row["source"],
                 "price": row["price"],
                 "observed_at": row["observed_at"],
+                "condition": row["condition"],
+                "attrs": row["attrs"],
             })
 
         logging.info("Found %d item_ref groups to process", len(groups))
@@ -298,28 +310,59 @@ async def run_once():
             n = len(weighted_prices)
 
             # ── Model blending ────────────────────────────────────────────
-            # Try to blend with Ridge model prediction if available
+            # Blend the empirical quantiles with the Ridge model when (a) the
+            # category's calibration gate passes AND (b) we have enough real
+            # comps to trust the item-level feature aggregation (V6). The model
+            # is fed REAL features built from the comps' attrs (V1) and its
+            # trained q10/q90 heads are actually used (V3).
             model_used = False
             try:
                 from app.ml.model_loader import get_active_model
+                from app.ml.valuation_features import extract_core_features
                 category = item_ref.split(":")[0] if ":" in item_ref else item_ref
                 model = await get_active_model(category, routing_key=item_ref)
-                if model and model.get("ridge") and model.get("standardizer"):
-                    # Check calibration gate_pass
+                if (
+                    model and model.get("ridge") and model.get("standardizer")
+                    and n >= _MIN_COMPS_FOR_MODEL
+                ):
                     gate_pass = await _check_gate_pass(conn, category)
                     alpha = _MODEL_BLEND_ALPHA if gate_pass else 0.0
                     if alpha > 0:
-                        model_q50 = _predict_ridge(model, item_ref, q50)
-                        if model_q50 is not None:
-                            blended = alpha * model_q50 + (1 - alpha) * q50
-                            if math.isfinite(blended) and 0 < blended <= _MAX_SANE_PRICE_EUR:
-                                # Clamp into [q10, q90] so the CHECK constraint
-                                # `q10 <= q50 <= q90` on price_predictions can't
-                                # be violated. Without this, a model prediction
-                                # outside the empirical range (e.g. extrapolating
-                                # beyond observed comps) silently breaks every
-                                # INSERT in the cycle. Seen 2026-04-20.
-                                q50 = max(q10, min(q90, blended))
+                        # V1: build real feature values from the item's comps.
+                        # rarity/edition are item-level (same across listings) →
+                        # merge attrs; condition is listing-level → use the most
+                        # recent comp's condition as representative.
+                        merged_attrs: dict = {}
+                        for h in hits:
+                            a = h.get("attrs")
+                            if isinstance(a, dict):
+                                for k, v in a.items():
+                                    merged_attrs.setdefault(k, v)
+                        rep_condition = next(
+                            (h.get("condition") for h in reversed(hits) if h.get("condition")),
+                            None,
+                        )
+                        fv = extract_core_features(rep_condition, merged_attrs)
+
+                        m50 = _predict_quantile(model, fv, "ridge")
+                        if m50 is not None:
+                            # V3: blend each quantile head with its empirical
+                            # counterpart; fall back to empirical per-head when a
+                            # head is missing/invalid.
+                            m10 = _predict_quantile(model, fv, "ridge_q10")
+                            m90 = _predict_quantile(model, fv, "ridge_q90")
+                            b50 = alpha * m50 + (1 - alpha) * q50
+                            b10 = alpha * m10 + (1 - alpha) * q10 if m10 is not None else q10
+                            b90 = alpha * m90 + (1 - alpha) * q90 if m90 is not None else q90
+                            # Enforce monotonicity so the q10<=q50<=q90 CHECK
+                            # constraint on price_predictions can't be violated,
+                            # even if a head extrapolates out of order.
+                            b10, b50, b90 = sorted((b10, b50, b90))
+                            if (
+                                all(math.isfinite(v) for v in (b10, b50, b90))
+                                and 0 < b10 and b90 <= _MAX_SANE_PRICE_EUR
+                            ):
+                                q10, q50, q90 = b10, b50, b90
                                 model_used = True
             except Exception as e:
                 logging.debug("Model blending skipped for %s: %s", item_ref, e)
@@ -376,6 +419,13 @@ async def run_once():
             # lifts.
             if all(h.get("source") == "claude_estimate" for h in hits):
                 confidence_score = min(confidence_score, 0.4)
+
+            # V6: minimum-comp floor. With fewer than _MIN_COMPS_RELIABLE real
+            # comps the quantiles are essentially a point estimate (1 comp →
+            # q10=q50=q90), so cap confidence to flag it as "estimate only"
+            # rather than letting a thin sample look authoritative.
+            if n < _MIN_COMPS_RELIABLE:
+                confidence_score = min(confidence_score, _LOW_COMP_CONF_CAP)
 
             # Build evidence artifacts
             evidence_hit_ids, evidence_summary, explanation_text = _build_evidence(hits)

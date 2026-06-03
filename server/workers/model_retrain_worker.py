@@ -21,6 +21,7 @@ import asyncio
 import json
 import logging
 import os
+from typing import Any
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -61,37 +62,18 @@ ALL_CATEGORIES = [
 DATA_DIR = Path("data")
 
 
-def _price_to_features(price: float, condition: str | None, is_sold: bool) -> dict:
+def _price_to_features(price: float, condition: str | None, is_sold: bool,
+                       attrs: Any = None) -> dict:
     """Convert a market_hit row into training features.
 
-    Uses heuristic scoring since market_hits don't have granular feature scores.
-    The key insight: sold prices are the ground truth we're training on.
+    V2: rarity_score and edition_score used to be hardcoded to 0.5 for EVERY
+    row, so the model could only ever learn from condition_score (3 of 3
+    features were 2/3 constant). Now they're derived from the row's `attrs`
+    via the SAME shared extractor the serving path uses (app.ml.valuation_features),
+    so train-time and serve-time features stay in lockstep.
     """
-    # Condition score heuristic (order matters — check specific before general)
-    cond = (condition or "").lower()
-    if any(k in cond for k in ("like new", "near mint", "nm")):
-        condition_score = 0.85
-    elif any(k in cond for k in ("new", "sealed", "mint")):
-        condition_score = 0.95
-    elif any(k in cond for k in ("good", "very good", "vg", "excellent")):
-        condition_score = 0.70
-    elif any(k in cond for k in ("fair", "acceptable", "played")):
-        condition_score = 0.45
-    elif any(k in cond for k in ("poor", "damaged", "heavy")):
-        condition_score = 0.20
-    else:
-        condition_score = 0.70  # Default to "good" if unknown
-
-    # Rarity/edition scores are harder to infer from market data alone
-    # Use price percentile relative to category as a proxy
-    rarity_score = 0.50  # Neutral default
-    edition_score = 0.50
-
-    return {
-        "condition_score": round(condition_score, 2),
-        "rarity_score": round(rarity_score, 2),
-        "edition_score": round(edition_score, 2),
-    }
+    from app.ml.valuation_features import extract_core_features
+    return extract_core_features(condition, attrs)
 
 
 async def _export_market_hits_to_jsonl(conn, category: str, cutoff: datetime) -> int:
@@ -146,7 +128,7 @@ async def _export_market_hits_to_jsonl(conn, category: str, cutoff: datetime) ->
                 except (json.JSONDecodeError, TypeError):
                     pass
 
-            features = _price_to_features(price, condition, is_sold)
+            features = _price_to_features(price, condition, is_sold, attrs)
             record = {"features": features, "price": round(price, 2)}
             f.write(json.dumps(record) + "\n")
             count += 1
@@ -387,6 +369,43 @@ async def _log_promotion(
         logger.debug("[model_retrain] _log_promotion failed: %s", e)
 
 
+def _log_promotion_sync(
+    category: str, old_version: str | None, new_version: str,
+    old_mae: float | None, new_mae: float | None, holdout_n: int,
+    promoted: bool, reason: str,
+) -> None:
+    """Synchronous promotion-log write.
+
+    V9: the old code called `asyncio.get_event_loop().run_until_complete(...)`
+    from inside `_retrain_category`, which runs DIRECTLY in the worker's already
+    -running event loop — so it raised RuntimeError every time and the promotion
+    log was NEVER written. _retrain_category is sync, so write synchronously via
+    psycopg2 (same pattern as the vision_quality cache) instead.
+    """
+    if not DSN:
+        return
+    try:
+        import psycopg2
+        conn = psycopg2.connect(DSN)
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO public.model_promotion_log
+                    (category, old_version, new_version, old_mae, new_mae,
+                     holdout_n, promoted, reason)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (category, old_version, new_version, old_mae, new_mae,
+                 holdout_n, promoted, reason),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.debug("[model_retrain] _log_promotion_sync failed: %s", e)
+
+
 def _retrain_category(category: str) -> dict:
     """Retrain Ridge model for `category` with holdout-gated promotion.
 
@@ -457,95 +476,92 @@ def _retrain_category(category: str) -> dict:
             with open(gt_path, "w") as f:
                 f.writelines(gt_full_lines[n_holdout:])
 
+    # V10: the gt file is now truncated. Guarantee it is restored to full no
+    # matter how the rest of this cycle exits (success, early return, or an
+    # uncaught exception in scoring/promotion) via try/finally. The old code
+    # only restored on the train try/except + success path, so a crash in
+    # between left the holdout permanently deleted from training data.
+    def _restore_gt() -> None:
+        if gt_full_lines and holdout_records:
+            try:
+                with open(gt_path, "w") as f:
+                    f.writelines(gt_full_lines)
+            except Exception as e:
+                logger.warning("[model_retrain] restore gt file failed for %s: %s", category, e)
+
     # Capture current active version + load it for scoring
     from app.ml.model_loader import _load_artifact_from_disk, _resolve_artifacts_root
     artifacts_root = _resolve_artifacts_root()
     old_version: str | None = None
     old_mae: float | None = None
-    if artifacts_root:
-        active_link = artifacts_root / category / "active"
-        if active_link.is_symlink():
-            old_version = os.readlink(str(active_link))
-        old_artifact = _load_artifact_from_disk(category, slot="active")
-        if old_artifact and holdout_records:
-            old_mae = _score_model_on_holdout(old_artifact, holdout_records)
-
-    # ── Train new model (writes artifact + flips symlink) ──
     new_version: str | None = None
     new_mae: float | None = None
     promoted = True
     reason = "promoted"
     try:
-        from pipelines.train_price import train_category
-        result = train_category(category)
-        new_version = result.get("version")
-        logger.info(
-            "Retrained %s: samples=%d cv_mae=%.2f",
-            category, len(all_prices), result.get("cv_mae", -1),
-        )
-    except ImportError:
-        # train_category may not exist as a public function — use CLI fallback
-        if gt_full_lines and holdout_records:
-            with open(gt_path, "w") as f:
-                f.writelines(gt_full_lines)  # restore before bailing
-        logger.info("train_category not importable, using CLI fallback for %s", category)
-        return _retrain_via_cli(category, len(all_prices))
-    except Exception as e:
-        if gt_full_lines and holdout_records:
-            with open(gt_path, "w") as f:
-                f.writelines(gt_full_lines)  # restore before bailing
-        logger.warning("Retrain failed for %s: %s", category, e)
-        return {"category": category, "status": "error", "error": str(e)[:200]}
-
-    # ── Score new model on the same holdout ──
-    if holdout_records:
-        new_artifact = _load_artifact_from_disk(category, slot="active")
-        if new_artifact:
-            new_mae = _score_model_on_holdout(new_artifact, holdout_records)
-
-    # ── Promotion gate: revert symlink if regression > tolerance ──
-    if (
-        old_mae is not None and new_mae is not None
-        and new_mae > old_mae * PROMOTION_TOLERANCE
-        and old_version
-        and artifacts_root
-    ):
-        try:
+        if artifacts_root:
             active_link = artifacts_root / category / "active"
             if active_link.is_symlink():
-                active_link.unlink()
-            active_link.symlink_to(old_version)
-            promoted = False
-            reason = (
-                f"regression: new_mae={new_mae:.2f} > old_mae={old_mae:.2f}"
-                f" * tol={PROMOTION_TOLERANCE} — reverted to {old_version}"
-            )
-            logger.warning("[model_retrain] %s: %s", category, reason)
-        except Exception as e:
-            logger.warning("[model_retrain] revert symlink failed for %s: %s", category, e)
-            reason = f"regression detected but revert FAILED: {e}"
-    elif old_mae is None or new_mae is None:
-        reason = "no_holdout — first train or empty ground_truth"
+                old_version = os.readlink(str(active_link))
+            old_artifact = _load_artifact_from_disk(category, slot="active")
+            if old_artifact and holdout_records:
+                old_mae = _score_model_on_holdout(old_artifact, holdout_records)
 
-    # ── Restore train_ground_truth.jsonl to full so next cycle has all data ──
-    if gt_full_lines and holdout_records:
+        # ── Train new model (writes artifact + flips symlink) ──
         try:
-            with open(gt_path, "w") as f:
-                f.writelines(gt_full_lines)
+            from pipelines.train_price import train_category
+            result = train_category(category)
+            new_version = result.get("version")
+            logger.info(
+                "Retrained %s: samples=%d cv_mae=%.2f",
+                category, len(all_prices), result.get("cv_mae", -1),
+            )
+        except ImportError:
+            logger.info("train_category not importable, using CLI fallback for %s", category)
+            return _retrain_via_cli(category, len(all_prices))
         except Exception as e:
-            logger.warning("[model_retrain] restore gt file failed for %s: %s", category, e)
+            logger.warning("Retrain failed for %s: %s", category, e)
+            return {"category": category, "status": "error", "error": str(e)[:200]}
 
-    # ── Async log to model_promotion_log (best-effort) ──
-    try:
-        asyncio.get_event_loop().run_until_complete(
-            _log_promotion(category, old_version, new_version or "?",
-                           old_mae, new_mae, len(holdout_records),
-                           promoted, reason)
-        )
-    except RuntimeError:
-        # No event loop — fire-and-forget via asyncio.run in a thread isn't
-        # worth the complexity here; the log entry is best-effort.
-        pass
+        # ── Score new model on the same holdout ──
+        if holdout_records:
+            new_artifact = _load_artifact_from_disk(category, slot="active")
+            if new_artifact:
+                new_mae = _score_model_on_holdout(new_artifact, holdout_records)
+
+        # ── Promotion gate: revert symlink if regression > tolerance ──
+        if (
+            old_mae is not None and new_mae is not None
+            and new_mae > old_mae * PROMOTION_TOLERANCE
+            and old_version
+            and artifacts_root
+        ):
+            try:
+                active_link = artifacts_root / category / "active"
+                if active_link.is_symlink():
+                    active_link.unlink()
+                active_link.symlink_to(old_version)
+                promoted = False
+                reason = (
+                    f"regression: new_mae={new_mae:.2f} > old_mae={old_mae:.2f}"
+                    f" * tol={PROMOTION_TOLERANCE} — reverted to {old_version}"
+                )
+                logger.warning("[model_retrain] %s: %s", category, reason)
+            except Exception as e:
+                logger.warning("[model_retrain] revert symlink failed for %s: %s", category, e)
+                reason = f"regression detected but revert FAILED: {e}"
+        elif old_mae is None or new_mae is None:
+            reason = "no_holdout — first train or empty ground_truth"
+    finally:
+        _restore_gt()
+
+    # ── Log to model_promotion_log (best-effort, synchronous) ──
+    # V9: was run_until_complete() on the already-running loop → always raised
+    # → log never written. Synchronous psycopg2 write works from this sync fn.
+    _log_promotion_sync(
+        category, old_version, new_version or "?",
+        old_mae, new_mae, len(holdout_records), promoted, reason,
+    )
 
     return {
         "category": category,
@@ -690,6 +706,23 @@ async def run_once():
         promoted_count, regression_skipped_count,
         insufficient_skip_count, error_count, len(ALL_CATEGORIES),
     )
+
+    # V4: surface any active models that are now stale (retrain silently
+    # failing / a category stuck below MIN_SAMPLES for weeks). Logged greppably
+    # as MODEL_STALE rather than paged, to avoid alarm fatigue on legitimately
+    # low-data categories. Runs weekly with the retrain cycle — the right
+    # cadence to notice a model that stopped refreshing.
+    try:
+        from app.ml.model_loader import stale_model_categories
+        stale = stale_model_categories(max_age_days=21.0)
+        if stale:
+            logger.warning(
+                "MODEL_STALE %d categories with active model >21d old: %s",
+                len(stale),
+                ", ".join(f"{c}={age}d" for c, age in stale[:15]),
+            )
+    except Exception as e:
+        logger.debug("[model_retrain] staleness check failed: %s", e)
 
     # `error` only when an actual exception fired. A regression skip is the
     # gate working as designed — not an error.
