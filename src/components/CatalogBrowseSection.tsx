@@ -63,6 +63,8 @@ export interface CatalogBrowseSectionProps {
   onAddToCollection: (item: CatalogItemData) => void;
   /** Called when user taps "Add to Watchlist" on a catalog item */
   onAddToWatchlist: (item: CatalogItemData) => void;
+  /** Called when user taps the card body — opens the catalog "museum" detail */
+  onItemPress?: (item: CatalogItemData) => void;
   /** Accent color for the category */
   accentColor: string;
   /** Theme colors */
@@ -89,6 +91,7 @@ function CatalogBrowseSectionInner({
   onLoadMore,
   onAddToCollection,
   onAddToWatchlist,
+  onItemPress,
   accentColor,
   colors,
 }: CatalogBrowseSectionProps) {
@@ -153,9 +156,12 @@ function CatalogBrowseSectionInner({
           ) : (
             <>
               {catalogItems.map((cItem) => (
-                <View
+                <AnimatedPressable
                   key={cItem.id}
                   style={[s.catalogItemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  onPress={() => onItemPress?.(cItem)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${cItem.title}`}
                 >
                   {/* Reference thumbnail (canonical card CDN); placeholder when absent */}
                   {cItem.image_url ? (
@@ -223,7 +229,7 @@ function CatalogBrowseSectionInner({
                       <Ionicons name="heart-outline" size={16} color="#fff" />
                     </AnimatedPressable>
                   </View>
-                </View>
+                </AnimatedPressable>
               ))}
 
               {/* Load more / infinite scroll trigger */}

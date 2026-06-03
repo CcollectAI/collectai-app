@@ -479,9 +479,17 @@ function CategoryStoreScreen() {
           <NewReleasesSection
             categoryId={categoryId}
             onItemPress={(item) => router.push({
-              pathname: '/add-manual',
-              params: { name: item.title, category: categoryId },
-            })}
+              // Museum: tapping a catalog item opens the read-only catalog
+              // detail, NOT the add-manual form.
+              pathname: '/catalog-item/[key]',
+              params: {
+                key: String((item as { id?: string }).id ?? item.title),
+                category: categoryId,
+                title: item.title,
+                image_url: (item as { imageUrl?: string }).imageUrl ?? '',
+                estimated_price: item.estimated_price != null ? String(item.estimated_price) : '',
+              },
+            } as unknown as Href)}
           />
         )}
 
@@ -545,6 +553,19 @@ function CategoryStoreScreen() {
               showToast({ message: "Couldn't add to watchlist — try again", type: 'error' });
             }
           }}
+          onItemPress={(cItem) => router.push({
+            pathname: '/catalog-item/[key]',
+            params: {
+              key: cItem.item_key,
+              category: cItem.category,
+              title: cItem.title,
+              image_url: cItem.image_url ?? '',
+              rarity: cItem.rarity ?? '',
+              set_code: cItem.set_code ?? '',
+              brand: cItem.brand ?? '',
+              estimated_price: cItem.estimated_price != null ? String(cItem.estimated_price) : '',
+            },
+          } as unknown as Href)}
           accentColor={accentColor}
           colors={colors}
         />
