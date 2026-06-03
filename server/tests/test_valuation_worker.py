@@ -45,6 +45,8 @@ def _make_hit_row(
     source="ebay",
     price=150.0,
     observed_at=None,
+    condition=None,
+    attrs=None,
 ):
     if observed_at is None:
         observed_at = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=5)
@@ -54,6 +56,8 @@ def _make_hit_row(
         source=source,
         price=price,
         observed_at=observed_at,
+        condition=condition,
+        attrs=attrs,
     )
 
 
@@ -265,40 +269,40 @@ def test_build_evidence_structure():
 # ---------------------------------------------------------------------------
 # 9. _predict_ridge returns prediction when model is valid
 # ---------------------------------------------------------------------------
-def test_predict_ridge_valid_model():
-    """_predict_ridge should return a positive prediction for a valid model."""
-    from workers.valuation_worker import _predict_ridge
+def test_predict_quantile_valid_model():
+    """_predict_quantile should return a positive prediction for a valid model."""
+    from workers.valuation_worker import _predict_quantile
 
     model = {
-        "standardizer": {"mean": [100.0], "std": [10.0]},
+        "standardizer": {"mean": [0.5], "std": [0.2]},
         "ridge": {"coef": [1.5], "intercept": 100.0},
-        "features": ["price"],
+        "features": ["condition_score"],
     }
 
-    result = _predict_ridge(model, "watches:rolex", 150.0)
+    result = _predict_quantile(model, {"condition_score": 0.7}, "ridge")
     assert result is not None
     assert result > 0
 
 
-def test_predict_ridge_mismatched_dimensions():
-    """_predict_ridge should return None when dimensions don't match."""
-    from workers.valuation_worker import _predict_ridge
+def test_predict_quantile_mismatched_dimensions():
+    """_predict_quantile should return None when dimensions don't match."""
+    from workers.valuation_worker import _predict_quantile
 
     model = {
-        "standardizer": {"mean": [100.0, 50.0], "std": [10.0, 5.0]},
+        "standardizer": {"mean": [0.5, 0.5], "std": [0.2, 0.2]},
         "ridge": {"coef": [1.5], "intercept": 100.0},  # coef has 1, mean has 2
-        "features": ["price", "extra"],
+        "features": ["condition_score", "rarity_score"],
     }
 
-    result = _predict_ridge(model, "watches:rolex", 150.0)
+    result = _predict_quantile(model, {"condition_score": 0.7}, "ridge")
     assert result is None
 
 
-def test_predict_ridge_broken_model():
-    """_predict_ridge should return None for a broken model dict."""
-    from workers.valuation_worker import _predict_ridge
+def test_predict_quantile_broken_model():
+    """_predict_quantile should return None for a broken/missing-head model dict."""
+    from workers.valuation_worker import _predict_quantile
 
-    result = _predict_ridge({}, "watches:rolex", 150.0)
+    result = _predict_quantile({}, {"condition_score": 0.7}, "ridge")
     assert result is None
 
 

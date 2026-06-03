@@ -100,11 +100,15 @@ class TestCooldown:
         assert v.passed
         assert any("cooldown OK" in r for r in v.reasons)
 
-    def test_cooldown_not_passed(self):
+    def test_cooldown_within_window_is_advisory_not_blocking(self):
+        # D7: the mandate-level blanket cooldown is now advisory only — it no
+        # longer fails the verdict (it used to hide ALL other deals for N hours
+        # after any single deal). Per-listing cooldown is enforced in the agent.
         recent = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
         v = evaluate(_base_mandate(last_deal_at=recent, cooldown_hours=24), _base_hit())
-        assert not v.passed
-        assert any("FAIL" in r and "cooldown" in r for r in v.reasons)
+        assert v.passed
+        assert any("cooldown note" in r for r in v.reasons)
+        assert not any("FAIL" in r and "cooldown" in r for r in v.reasons)
 
 
 class TestTrustScore:
