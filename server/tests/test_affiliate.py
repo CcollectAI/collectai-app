@@ -27,7 +27,20 @@ class TestEbayAffiliate:
 
             url, source = build_affiliate_url("https://www.ebay.com/itm/12345", "ebay")
             assert "campid=CAMP123" in url
-            assert "customid=collectai_deal" in url
+            assert "customid=sparrow" in url
+            assert source == "ebay_partner_network"
+
+    def test_ebay_subid_attribution(self):
+        with patch("app.lib.affiliate.EBAY_AFFILIATE_CAMPAIGN_ID", "CAMP123"):
+            from app.lib.affiliate import build_affiliate_url
+
+            url, source = build_affiliate_url(
+                "https://www.ebay.com/itm/12345", "ebay", subid="deal-abc-123"
+            )
+            # Per-click sub-ID rides in customid so a conversion report can be
+            # joined back to the originating deal/user.
+            assert "customid=deal-abc-123" in url
+            assert "customid=sparrow" not in url
             assert source == "ebay_partner_network"
 
     def test_ebay_no_credentials(self):
@@ -54,8 +67,18 @@ class TestTcgplayerAffiliate:
 
             url, source = build_affiliate_url("https://www.tcgplayer.com/product/12345", "tcgplayer")
             assert "partner=PARTNER456" in url
-            assert "utm_source=collectai" in url
+            assert "utm_source=sparrow" in url
             assert source == "tcgplayer_affiliate"
+
+    def test_tcgplayer_subid_in_utm_content(self):
+        with patch("app.lib.affiliate.TCGPLAYER_AFFILIATE_ID", "PARTNER456"):
+            from app.lib.affiliate import build_affiliate_url
+
+            url, _ = build_affiliate_url(
+                "https://www.tcgplayer.com/product/12345", "tcgplayer", subid="deal-xyz"
+            )
+            # Non-eBay networks carry the sub-ID in utm_content.
+            assert "utm_content=deal-xyz" in url
 
     def test_tcgplayer_no_credentials(self):
         with patch("app.lib.affiliate.TCGPLAYER_AFFILIATE_ID", ""):

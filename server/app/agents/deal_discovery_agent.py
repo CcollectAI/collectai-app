@@ -146,12 +146,13 @@ class DealDiscoveryAgent:
             # 4. Run policy engine
             verdict = policy_evaluate(mandate, hit_with_provenance, prediction)
 
-            # 5. Build affiliate URL
+            # 5. Build affiliate URL — subid=deal_id ties any future conversion
+            #    report back to this exact deal (and thus user) for reconciliation.
+            deal_id = str(uuid.uuid4())
             source = hit.get("source", "")
-            affiliate_url, affiliate_source = build_affiliate_url(hit_url, source)
+            affiliate_url, affiliate_source = build_affiliate_url(hit_url, source, subid=deal_id)
 
             # 6. Prepare deal row for batch insert
-            deal_id = str(uuid.uuid4())
             batch_rows.append(self._build_deal_row(
                 deal_id=deal_id,
                 mandate_id=mandate_id,
