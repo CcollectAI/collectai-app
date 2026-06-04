@@ -50,6 +50,8 @@ import {
   CrossCategorySection,
   CategoryGradingGuide,
   NewReleasesSection,
+  CategoryOverviewRail,
+  CategoryBrandHeader,
 } from '@/components/category';
 
 function CategoryStoreScreen() {
@@ -462,115 +464,33 @@ function CategoryStoreScreen() {
         {/* 1.7. Grading Standards */}
         {categoryId && <CategoryGradingGuide categoryId={categoryId} />}
 
-        {/* 2. Spotlight Carousel */}
-        <SpotlightCarousel
-          slides={data.spotlightSlides}
-          spotlightIndex={spotlightIndex}
-          spotlightRef={spotlightRef}
-          onScrollEnd={setSpotlightIndex}
-          colors={colors}
-        />
+        {/* Brand header — lit up only when a category has a sponsor (stub today). */}
+        <CategoryBrandHeader sponsor={null} colors={colors} />
 
-        {/* 2.5. New Releases — bake-populated catalog feed. Visible even
-            when the user has zero items in the category so new collectors
-            have a discovery path. The "New in Catalog" header in the
-            component labels it as catalog content, not user items. */}
+        {/* THE single category overview rail → museum → affiliate "Where to buy".
+            Replaces Spotlight / New Releases / Items in Category / Browse Catalog /
+            Featured Collections. A browsable gallery of what EXISTS in the
+            category, with sort chips; every tap opens the catalog museum detail. */}
         {categoryId && (
-          <NewReleasesSection
+          <CategoryOverviewRail
             categoryId={categoryId}
-            onItemPress={(item) => router.push({
-              // Museum: tapping a catalog item opens the read-only catalog
-              // detail, NOT the add-manual form.
+            accentColor={accentColor}
+            colors={colors}
+            onSeeAll={() => router.push({
+              pathname: '/category-browse',
+              params: { categoryId: String(categoryId) },
+            } as unknown as Href)}
+            onItemPress={(it) => router.push({
               pathname: '/catalog-item/[key]',
               params: {
-                key: String((item as { id?: string }).id ?? item.title),
-                category: categoryId,
-                title: item.title,
-                image_url: (item as { imageUrl?: string }).imageUrl ?? '',
-                estimated_price: item.estimated_price != null ? String(item.estimated_price) : '',
+                key: it.item_key, category: it.category, title: it.title,
+                image_url: it.image_url ?? '', rarity: it.rarity ?? '',
+                set_code: it.set_code ?? '', brand: it.brand ?? '',
+                estimated_price: it.estimated_price != null ? String(it.estimated_price) : '',
               },
             } as unknown as Href)}
           />
         )}
-
-        {/* 3. Items in this Category */}
-        <CategoryItemsList
-          {...categoryItemsProps}
-        />
-
-        {/* 3.15. Manga Series Progress */}
-        <MangaSeriesProgress
-          categoryId={categoryId}
-          items={data.items}
-          accentColor={accentColor}
-          colors={colors}
-        />
-
-        {/* 3.25. Browse Catalog — bake-populated catalog table
-            (category_items, ~140k rows). Visible regardless of whether the
-            user owns anything in this category, since this is the
-            discovery path for new collectors. The "Browse Catalog" header
-            inside the component labels it clearly as catalog content. */}
-        <CatalogBrowseSection
-          catalogExpanded={catalogExpanded}
-          onToggleExpanded={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            setCatalogExpanded(!catalogExpanded);
-          }}
-          catalogTotal={catalogTotal}
-          catalogSearch={catalogSearch}
-          onSearchChange={handleCatalogSearchChange}
-          onClearSearch={() => {
-            setCatalogSearch('');
-            setCatalogOffset(0);
-            loadCatalogItems('', 0, false);
-          }}
-          catalogLoading={catalogLoading}
-          catalogLoadingMore={catalogLoadingMore}
-          catalogItems={catalogItems}
-          onLoadMore={handleCatalogLoadMore}
-          onAddToCollection={(cItem) => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push({
-              pathname: '/add-manual',
-              params: {
-                name: cItem.title,
-                category: categoryId,
-                // R50k: no catalog reference image forwarded to add-manual
-              },
-            });
-          }}
-          onAddToWatchlist={async (cItem) => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            try {
-              await collectorsApi.addToWatchlist({
-                title: cItem.title,
-                category: categoryId || cItem.category,
-                target_price: cItem.estimated_price,
-              });
-              showToast({ message: `${cItem.title} added to watchlist`, type: 'success' });
-              // Take the user to the existing watchlist page so they see it land.
-              router.push('/(tabs)/wishlist' as Href);
-            } catch {
-              showToast({ message: "Couldn't add to watchlist — try again", type: 'error' });
-            }
-          }}
-          onItemPress={(cItem) => router.push({
-            pathname: '/catalog-item/[key]',
-            params: {
-              key: cItem.item_key,
-              category: cItem.category,
-              title: cItem.title,
-              image_url: cItem.image_url ?? '',
-              rarity: cItem.rarity ?? '',
-              set_code: cItem.set_code ?? '',
-              brand: cItem.brand ?? '',
-              estimated_price: cItem.estimated_price != null ? String(cItem.estimated_price) : '',
-            },
-          } as unknown as Href)}
-          accentColor={accentColor}
-          colors={colors}
-        />
 
         {/* 3.5. Market Insights (Deep Dive) */}
         <MarketInsightsSection
@@ -586,40 +506,15 @@ function CategoryStoreScreen() {
           colors={colors}
         />
 
-        {/* 4.5. Set Completion Progress */}
-        {categoryId && (
-          <SetProgressSection
-            categoryId={categoryId}
-            onSetPress={(setId) => router.push(`/categories/${categoryId}` as Href)}
-          />
-        )}
-
-        {/* 4.55. Featured Collections */}
-        {categoryMeta && categoryId && (
-          <FeaturedCollectionsSection
-            collections={categoryMeta.collections}
-            categoryId={categoryId}
-            onCollectionPress={(name) => router.push({
-              // The category page is a catalog "museum" of what EXISTS, not the
-              // user's collection. Tapping a featured collection must open the
-              // CATALOG browse for it — never the user's own items tab.
-              pathname: '/category-browse',
-              params: { categoryId: String(categoryId), collection: name },
-            })}
-          />
-        )}
+        {/* Set Progress + Featured Collections removed — folded into the single
+            Category Overview rail (sort: By set) at the top of the page. */}
 
         {/* 4.6. Missing Items Checklist */}
         <MissingItemsChecklist
           {...missingItemsProps}
         />
 
-        {/* 4.6. Build Projects (hidden in beta) */}
-        {!BETA_MODE && (
-          <BuildProjectsSection
-            {...buildProjectsProps}
-          />
-        )}
+        {/* Build Projects removed from the category overview. */}
 
         {/* 5. Friends Who Follow */}
         <FriendsFollowSection

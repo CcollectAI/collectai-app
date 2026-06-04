@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Category Page Redesign — Sparrow Collect</title>
+<style>
+  :root { --tiff:#81D8D0; --tiffDark:#2C7873; --ink:#0F172A; --muted:#64748B; --line:#E2E8F0; --bg:#F0FBFB; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,'Roboto',sans-serif; background:#EEF2F4; color:var(--ink); line-height:1.5; padding:32px 16px 80px; }
+  h1 { font-size:26px; font-weight:900; text-align:center; }
+  .sub { text-align:center; color:var(--muted); margin:6px 0 28px; font-size:14px; }
+  .cols { display:flex; gap:40px; justify-content:center; flex-wrap:wrap; align-items:flex-start; }
+  .col { width:340px; }
+  .colhead { text-align:center; font-weight:800; font-size:15px; margin-bottom:4px; }
+  .coltag { text-align:center; font-size:12px; margin-bottom:14px; padding:3px 0; border-radius:6px; font-weight:600; }
+  .before .coltag { background:#FEE2E2; color:#B91C1C; }
+  .after .coltag { background:#81D8D025; color:var(--tiffDark); }
+  /* phone */
+  .phone { background:#fff; border-radius:30px; border:8px solid #1f2937; overflow:hidden; box-shadow:0 12px 30px rgba(0,0,0,.18); }
+  .statusbar { height:30px; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 16px; font-size:11px; font-weight:700; }
+  .screen { height:620px; overflow-y:auto; background:var(--bg); }
+  .scrollnote { text-align:center; font-size:10px; color:#94A3B8; padding:6px; }
+  .cathead { padding:16px; background:linear-gradient(135deg,var(--tiff),var(--tiffDark)); color:#fff; }
+  .cathead h2 { font-size:20px; font-weight:900; }
+  .cathead p { font-size:12px; opacity:.9; }
+  /* generic section block (BEFORE clutter) */
+  .sec { background:#fff; margin:8px; border-radius:12px; border:1px solid var(--line); padding:12px; }
+  .sec .lbl { font-size:11px; font-weight:800; letter-spacing:.4px; color:var(--muted); }
+  .rail { display:flex; gap:8px; margin-top:8px; overflow:hidden; }
+  .mini { min-width:64px; height:64px; border-radius:8px; background:#E8EEF1; display:flex; align-items:center; justify-content:center; font-size:22px; }
+  .strike { position:relative; }
+  .removed { background:#FEF2F2 !important; border-color:#FECACA !important; opacity:.85; }
+  .removed .lbl { color:#B91C1C; }
+  .xbadge { float:right; font-size:10px; background:#B91C1C; color:#fff; border-radius:5px; padding:1px 6px; font-weight:700; }
+  /* AFTER hero carousel */
+  .keepbadge { float:right; font-size:10px; background:var(--tiffDark); color:#fff; border-radius:5px; padding:1px 6px; font-weight:700; }
+  .bigrail { display:flex; gap:12px; margin-top:10px; overflow-x:auto; padding-bottom:4px; }
+  .card { min-width:140px; background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .card .art { height:120px; background:linear-gradient(160deg,#FDE68A,#F59E0B); display:flex; align-items:center; justify-content:center; font-size:44px; }
+  .card .art.b{background:linear-gradient(160deg,#BFDBFE,#3B82F6);} .card .art.c{background:linear-gradient(160deg,#FBCFE8,#EC4899);}
+  .card .art.d{background:linear-gradient(160deg,#BBF7D0,#22C55E);} .card .art.e{background:linear-gradient(160deg,#DDD6FE,#8B5CF6);}
+  .card .meta { padding:8px 10px; }
+  .card .nm { font-size:12px; font-weight:700; }
+  .card .pr { font-size:15px; font-weight:900; color:var(--tiffDark); margin-top:2px; }
+  .card .tag { font-size:9px; color:var(--muted); }
+  .flow { background:#fff; margin:8px; border-radius:12px; border:1px dashed var(--tiff); padding:12px; font-size:12px; color:var(--muted); }
+  .flow b { color:var(--ink); }
+  .insights { background:#fff; margin:8px; border-radius:12px; border:1px solid var(--line); padding:12px; }
+  .insights .big { font-size:24px; font-weight:900; }
+  .spark { height:34px; margin-top:6px; background:linear-gradient(90deg,#81D8D020,#81D8D000); border-bottom:2px solid var(--tiff); border-radius:4px; }
+  .fold { text-align:center; font-size:10px; color:#94A3B8; border-top:1px dashed #CBD5E1; margin:10px 8px 4px; padding-top:6px; }
+  .note { max-width:760px; margin:30px auto 0; background:#fff; border:1px solid var(--line); border-radius:14px; padding:20px 24px; }
+  .note h3 { font-size:16px; margin-bottom:8px; }
+  .note li { margin:6px 0 6px 18px; font-size:14px; }
+  .pill { display:inline-block; background:#81D8D020; color:var(--tiffDark); border-radius:999px; padding:2px 10px; font-size:12px; font-weight:600; margin:2px; }
+  /* refined chip / segmented control */
+  .chips { display:flex; gap:8px; padding:12px; overflow-x:auto; }
+  .chip { display:flex; align-items:center; gap:5px; padding:7px 13px; border-radius:999px; font-size:12.5px; font-weight:600;
+          background:#fff; color:var(--muted); border:1px solid var(--line); white-space:nowrap; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .chip.active { background:linear-gradient(135deg,var(--tiff),var(--tiffDark)); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(44,120,115,.32); }
+  .chip .ico { font-size:13px; }
+  /* brand zone — clean store header. Slim cover, logo seated in the white row
+     (no aggressive overlap → no clipping), meta on its own line so nothing cuts. */
+  .brandhero { background:#fff; }
+  .brandcover { height:48px; position:relative;
+    background:linear-gradient(120deg,#312e81 0%,#6d28d9 55%,#db2777 100%); }
+  .brandcover .official { position:absolute; left:14px; top:14px; }
+  .brandrow { display:flex; align-items:center; gap:11px; padding:10px 14px 12px; }
+  .brandlogo { width:48px; height:48px; border-radius:13px; background:#fff; color:#3b2c7a; display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:23px; border:1px solid var(--line); box-shadow:0 2px 8px rgba(15,23,42,.10); flex-shrink:0; }
+  .brandtext { flex:1; min-width:0; }
+  .brandname { font-size:17px; font-weight:900; color:var(--ink); display:flex; align-items:center; gap:5px; line-height:1.2; }
+  .brandname span.nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .vcheck { width:16px; height:16px; border-radius:50%; background:#3B82F6; color:#fff; font-size:9px; font-weight:900; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .brandmeta { font-size:11px; color:var(--muted); margin-top:1px; }
+  .official { font-size:9px; font-weight:800; letter-spacing:.4px; color:#fff; background:rgba(255,255,255,.22); padding:2px 8px; border-radius:999px; }
+  .followbtn { background:linear-gradient(135deg,#6d28d9,#3b2c7a); color:#fff; border:none; border-radius:999px; padding:8px 18px; font-size:13px; font-weight:800; box-shadow:0 3px 10px rgba(59,44,122,.4); flex-shrink:0; }
+  .sponsored { background:#fff; margin:8px; border-radius:12px; border:1px solid #C7B8F0; padding:12px; position:relative; }
+  .sponsored .adtag { position:absolute; top:8px; right:10px; font-size:9px; color:#7C3AED; font-weight:700; letter-spacing:.4px; }
+  .brandcta { display:block; text-align:center; margin:8px; padding:11px; border-radius:12px; background:#3b2c7a; color:#fff; font-weight:700; font-size:13px; }
+</style>
+</head>
+<body>
+  <h1>Category Page → one carousel that earns</h1>
+  <p class="sub">Proposal preview. Left = today (10+ competing carousels). Right = proposed (one "Most Valuable" rail → museum → affiliate buy links).</p>
+
+  <div class="cols">
+    <!-- BEFORE -->
+    <div class="col before">
+      <div class="colhead">BEFORE — today</div>
+      <div class="coltag">Cluttered · taps scatter · weak buy intent</div>
+      <div class="phone">
+        <div class="statusbar"><span>11:01</span><span>4G ▤</span></div>
+        <div class="screen">
+          <div class="cathead"><h2>Pokémon</h2><p>Category store</p></div>
+          <div class="sec removed"><span class="xbadge">REMOVE</span><div class="lbl">SPOTLIGHT CAROUSEL</div><div class="rail"><div class="mini">🖼️</div><div class="mini">🖼️</div></div></div>
+          <div class="sec removed"><span class="xbadge">MERGE</span><div class="lbl">FEATURED IN CATALOG</div><div class="rail"><div class="mini">🎴</div><div class="mini">🎴</div><div class="mini">🎴</div></div></div>
+          <div class="sec removed"><span class="xbadge">REMOVE</span><div class="lbl">ITEMS IN THIS CATEGORY</div><div class="rail"><div class="mini">📦</div><div class="mini">📦</div></div></div>
+          <div class="sec removed"><span class="xbadge">MERGE</span><div class="lbl">FEATURED COLLECTIONS</div><div class="rail"><div class="mini">📚</div><div class="mini">📚</div></div></div>
+          <div class="sec removed"><span class="xbadge">MERGE</span><div class="lbl">BROWSE CATALOG</div><div class="rail"><div class="mini">🎴</div><div class="mini">🎴</div></div></div>
+          <div class="sec removed"><span class="xbadge">REMOVE</span><div class="lbl">MANGA / SET PROGRESS</div></div>
+          <div class="sec removed"><span class="xbadge">REMOVE</span><div class="lbl">BUILD PROJECTS</div></div>
+          <div class="sec"><div class="lbl">MARKET INSIGHTS</div><div class="rail"><div class="mini">📈</div></div></div>
+          <div class="sec"><div class="lbl">FRIENDS / EVENTS / RELATED</div></div>
+          <div class="scrollnote">↓ keeps scrolling…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="col after">
+      <div class="colhead">AFTER — proposed</div>
+      <div class="coltag">One rail · every tap → buy links</div>
+      <div class="phone">
+        <div class="statusbar"><span>11:01</span><span>4G ▤</span></div>
+        <div class="screen">
+          <!-- BRAND ZONE — a brand "claims" the category and runs it (paid) -->
+          <div class="brandhero">
+            <div class="brandcover"><span class="official">OFFICIAL</span></div>
+            <div class="brandrow">
+              <div class="brandlogo">P</div>
+              <div class="brandtext">
+                <div class="brandname"><span class="nm">Pokémon</span><span class="vcheck">✓</span></div>
+                <div class="brandmeta">1,247 items · 84k followers</div>
+              </div>
+              <button class="followbtn">Follow</button>
+            </div>
+          </div>
+
+          <!-- refined chips: overview you sort/filter, not a fixed top-4 -->
+          <div class="chips">
+            <span class="chip active"><span class="ico">▦</span>All 1,247</span>
+            <span class="chip"><span class="ico">💎</span>Most valuable</span>
+            <span class="chip"><span class="ico">✦</span>Newest</span>
+            <span class="chip"><span class="ico">🗂</span>By set</span>
+          </div>
+
+          <div class="sec" style="border-color:var(--tiff)">
+            <span class="keepbadge">THE ONE</span>
+            <div class="lbl">📚 THE POKÉMON CATALOG — what's available</div>
+            <div class="bigrail">
+              <div class="card"><div class="art c">⚡</div><div class="meta"><div class="nm">Pikachu Illustrator</div><div class="pr">€1,200</div><div class="tag">Promo · grail</div></div></div>
+              <div class="card"><div class="art">🔥</div><div class="meta"><div class="nm">Charizard · Base Set</div><div class="pr">€420</div><div class="tag">Holo Rare · #4/102</div></div></div>
+              <div class="card"><div class="art b">🌊</div><div class="meta"><div class="nm">Blastoise · Base</div><div class="pr">€185</div><div class="tag">Holo Rare</div></div></div>
+              <div class="card"><div class="art d">🌿</div><div class="meta"><div class="nm">Venusaur · Base</div><div class="pr">€140</div><div class="tag">Holo Rare</div></div></div>
+              <div class="card" style="display:flex;align-items:center;justify-content:center;background:#81D8D012;border-style:dashed;border-color:var(--tiff)"><div style="text-align:center;color:var(--tiffDark);font-weight:700;font-size:13px;padding:12px">See all<br>1,247 →</div></div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:8px">A gallery of the <b>whole category</b> — scroll the rail or “See all” for the full grid. Sort flips the same list (Most valuable leads for buy-intent).</div>
+          </div>
+
+          <div class="flow">Tap any item → <b>Museum detail</b> (image · value · from this set) → <b>Where to buy</b> (eBay · TCGPlayer · Cardmarket — all <b>affiliate-tagged</b> 💸)</div>
+
+          <!-- BRAND-PAID: sponsored placement the brand controls -->
+          <div class="sponsored">
+            <span class="adtag">SPONSORED · BRAND</span>
+            <div class="lbl" style="font-size:11px;color:#7C3AED;font-weight:800">FEATURED BY POKÉMON</div>
+            <div class="bigrail" style="margin-top:8px">
+              <div class="card" style="border-color:#C7B8F0"><div class="art e">🎁</div><div class="meta"><div class="nm">Scarlet & Violet — 151</div><div class="pr" style="color:#7C3AED">New set</div><div class="tag">Pre-order now</div></div></div>
+              <div class="card" style="border-color:#C7B8F0"><div class="art">📦</div><div class="meta"><div class="nm">Elite Trainer Box</div><div class="pr" style="color:#7C3AED">€49.99</div><div class="tag">Official</div></div></div>
+            </div>
+          </div>
+          <a class="brandcta">🛒 Shop the official Pokémon store →</a>
+
+          <div class="insights">
+            <div class="lbl" style="font-size:11px;color:var(--muted);font-weight:800">CATEGORY MARKET VALUE</div>
+            <div class="big">€312 avg <span style="font-size:12px;color:#22C55E;font-weight:700">▲ 6%</span></div>
+            <div class="spark"></div>
+          </div>
+
+          <div class="fold">— below the fold: events · friends · related —</div>
+          <div class="sec"><div class="lbl">CATEGORY EVENTS</div></div>
+          <div class="sec"><div class="lbl">FRIENDS WHO FOLLOW</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <h3>One catalog-overview rail — breadth + earnings</h3>
+    <ul>
+      <li><b>It's still a category overview.</b> The rail is the whole catalog ("1,247 items"), browsable, with "See all" → full grid + sort/filter (All / Most valuable / Newest / By set). Users see <b>what exists</b>, not just a top-4.</li>
+      <li><b>Default sort = Most valuable</b> because commission is a % of price (a €420 Charizard pays ~30–80× a €5 common) — breadth is preserved, but the highest-earning items lead.</li>
+      <li><b>The museum is where money is made</b> (the affiliate "Where to buy" rail). The overview's job is to funnel taps into it. One focused rail &gt; six competing ones.</li>
+      <li>High-value categories route to <b>high-rate networks</b> (Catawiki ~7–10%, Master of Malt) where a match exists.</li>
+    </ul>
+    <h3 style="margin-top:14px">What gets removed vs kept</h3>
+    <div>
+      <span class="pill">✕ Spotlight</span><span class="pill">✕ Items in Category</span><span class="pill">✕ Manga/Set progress</span><span class="pill">✕ Build projects</span>
+      <span class="pill">⤵ New-in-Catalog → merged</span><span class="pill">⤵ Featured Collections → merged</span><span class="pill">⤵ Browse Catalog → merged</span>
+      <br><span class="pill">✓ Most Valuable rail</span><span class="pill">✓ Market value trend</span><span class="pill">✓ Events</span><span class="pill">✓ Friends (below fold)</span>
+    </div>
+  </div>
+
+  <div class="note" style="border-color:#C7B8F0">
+    <h3>🏷️ Brands as a marketing channel (the future model)</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px">A brand "claims" its category and runs it like an Amazon Brand Store — except it sits on top of a page full of real owners, valuations, and buyers. The pitch: <b>a warm audience of collectors already browsing your category.</b></p>
+    <p style="font-size:13.5px;margin-bottom:6px"><b>What a brand can add (purple = paid):</b></p>
+    <ul>
+      <li><b>Official banner + verified badge</b> — claim the header, brand colors/logo, "Follow" to build an owned audience.</li>
+      <li><b>Sponsored "Featured by [Brand]" slot</b> — promote new drops, pre-orders, restocks above the organic catalog.</li>
+      <li><b>Official store CTA</b> — a direct link to the brand's own storefront (they keep 100%; you charge for placement).</li>
+      <li><b>Boosted catalog items</b> — pin/highlight specific SKUs in the overview rail.</li>
+      <li><b>Brand announcements & events</b> — set launches, signings, conventions surfaced to followers.</li>
+    </ul>
+    <p style="font-size:13.5px;margin:10px 0 6px"><b>Pricing tiers (suggested):</b></p>
+    <div>
+      <span class="pill" style="background:#EDE9FE;color:#6D28D9">Sponsored slot — €/mo placement</span>
+      <span class="pill" style="background:#EDE9FE;color:#6D28D9">Verified banner + Follow — €€/mo</span>
+      <span class="pill" style="background:#EDE9FE;color:#6D28D9">Full category takeover — €€€/mo</span>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px"><b>Why it works:</b> you already own the audience, the data (what's valuable, what's trending, who collects it), and the surface. Brands pay for <b>access to intent</b> — collectors deciding what to buy next — which is exactly what the museum → "Where to buy" flow captures. Affiliate is the default revenue; brand sponsorship is the premium layer on the same page.</p>
+  </div>
+</body>
+</html>
