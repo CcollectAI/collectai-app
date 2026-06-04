@@ -3,8 +3,10 @@
  * category. Groups 4 avatars per slide so each slide shows a row.
  */
 
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, Image, StyleSheet, Share } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
 import type { MiniUserProfile } from '@/data';
@@ -14,6 +16,39 @@ type Props = {
   friends: MiniUserProfile[];
   onFriendPress: (userId: string) => void;
   colors: AppTheme['colors'];
+};
+
+// Invite (external share) + Find friends (in-app search) CTAs. Shown in both
+// the empty and populated states so there's always a path to grow your circle.
+const FriendsCtaRow: React.FC<{ colors: AppTheme['colors'] }> = ({ colors }) => {
+  const router = useRouter();
+  const onInvite = useCallback(() => {
+    Share.share({
+      message: 'Track and value your collection with me on Sparrow Collect — https://sparrowcollect.com',
+    }).catch(() => {});
+  }, []);
+  const onFind = useCallback(() => {
+    // The collector search lives on the marketplace tab ("Find Collectors").
+    router.push('/(tabs)/marketplace' as Href);
+  }, [router]);
+  return (
+    <View style={styles.ctaRow}>
+      <AnimatedPressable
+        style={[styles.ctaBtn, { backgroundColor: colors.accent }]}
+        onPress={onInvite} accessibilityRole="button" accessibilityLabel="Invite your friends"
+      >
+        <Ionicons name="share-outline" size={16} color="#fff" />
+        <Text style={styles.ctaBtnText}>Invite friends</Text>
+      </AnimatedPressable>
+      <AnimatedPressable
+        style={[styles.ctaBtnOutline, { borderColor: colors.accent }]}
+        onPress={onFind} accessibilityRole="button" accessibilityLabel="Find friends to follow"
+      >
+        <Ionicons name="search" size={16} color={colors.accent} />
+        <Text style={[styles.ctaBtnTextOutline, { color: colors.accent }]}>Find friends</Text>
+      </AnimatedPressable>
+    </View>
+  );
 };
 
 const PER_SLIDE = 4;
@@ -76,6 +111,7 @@ const FriendsFollowSection: React.FC<Props> = ({ friends, onFriendPress, colors 
         <Text style={[styles.emptyText, { color: colors.muted }]}>
           None of your friends follow this category yet.
         </Text>
+        <FriendsCtaRow colors={colors} />
       </View>
     );
   }
@@ -100,6 +136,7 @@ const FriendsFollowSection: React.FC<Props> = ({ friends, onFriendPress, colors 
           </View>
         ))}
       </AutoRotatingCarousel>
+      <FriendsCtaRow colors={colors} />
     </View>
   );
 };
@@ -118,6 +155,32 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 13,
   },
+  ctaRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  ctaBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 40,
+    borderRadius: 10,
+  },
+  ctaBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  ctaBtnOutline: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  ctaBtnTextOutline: { fontSize: 14, fontWeight: '600' },
   friendsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',

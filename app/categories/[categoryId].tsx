@@ -97,7 +97,7 @@ function CategoryStoreScreen() {
   const [catalogOffset, setCatalogOffset] = useState(0);
   const [catalogExpanded, setCatalogExpanded] = useState(false);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
-  const CATALOG_PAGE_SIZE = 30;
+  const CATALOG_PAGE_SIZE = 10;
 
   const loadCatalogItems = useCallback(async (search: string, offset: number, append = false) => {
     if (!categoryId) return;
@@ -549,6 +549,8 @@ function CategoryStoreScreen() {
                 target_price: cItem.estimated_price,
               });
               showToast({ message: `${cItem.title} added to watchlist`, type: 'success' });
+              // Take the user to the existing watchlist page so they see it land.
+              router.push('/(tabs)/wishlist' as Href);
             } catch {
               showToast({ message: "Couldn't add to watchlist — try again", type: 'error' });
             }

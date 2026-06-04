@@ -226,7 +226,7 @@ function CatalogBrowseSectionInner({
                       accessibilityRole="button"
                       accessibilityLabel={`Add ${cItem.title} to want list`}
                     >
-                      <Ionicons name="heart-outline" size={16} color="#fff" />
+                      <Ionicons name="add" size={18} color="#fff" />
                     </AnimatedPressable>
                   </View>
                 </AnimatedPressable>
