@@ -134,6 +134,12 @@ export const browseCatalogItems = (categoryId: string, opts?: {
   rarity?: string;
   /** Only return items that have a recent market comp (used by New-in-Catalog). */
   pricedOnly?: boolean;
+  /**
+   * Server-side sort: 'value' (highest price first, implies pricedOnly on the
+   * BE), 'newest' (catalog ingest recency), 'set' (set_code grouping),
+   * default 'title'. Drives the category overview rail chips.
+   */
+  sort?: 'title' | 'value' | 'newest' | 'set';
 }) => {
   const sp = new URLSearchParams();
   if (opts?.q) sp.set('q', opts.q);
@@ -141,6 +147,7 @@ export const browseCatalogItems = (categoryId: string, opts?: {
   if (opts?.offset) sp.set('offset', String(opts.offset));
   if (opts?.rarity) sp.set('rarity', opts.rarity);
   if (opts?.pricedOnly) sp.set('priced_only', 'true');
+  if (opts?.sort) sp.set('sort', opts.sort);
   const query = sp.toString();
   return get<{
     items: {

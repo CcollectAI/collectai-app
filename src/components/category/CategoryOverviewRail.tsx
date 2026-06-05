@@ -15,26 +15,34 @@ import logger from '@/utils/logger';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
 import type { AppTheme } from '@/hooks/useAppTheme';
 
-type SortKey = 'value' | 'all' | 'set';
+type SortKey = 'all' | 'value' | 'newest' | 'set';
 
 type Props = {
   categoryId: string;
-  total?: number;
+  /** Optional display name for the header ("The Pokémon catalog"). */
+  categoryName?: string;
   accentColor: string;
   colors: AppTheme['colors'];
   onItemPress: (item: CatalogItemData) => void;
   onSeeAll: () => void;
 };
 
+// Mockup chip order (All / Most valuable / Newest / By set); default SORT is
+// still 'value' — commission is a % of price, so the highest-earning items
+// lead while the chips keep the whole catalog reachable.
 const CHIPS: { key: SortKey; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { key: 'value', label: 'Most valuable', icon: 'diamond-outline' },
   { key: 'all', label: 'All', icon: 'grid-outline' },
+  { key: 'value', label: 'Most valuable', icon: 'diamond-outline' },
+  { key: 'newest', label: 'Newest', icon: 'sparkles-outline' },
   { key: 'set', label: 'By set', icon: 'albums-outline' },
 ];
 
-function CategoryOverviewRail({ categoryId, total, accentColor, colors, onItemPress, onSeeAll }: Props) {
+function CategoryOverviewRail({ categoryId, categoryName, accentColor, colors, onItemPress, onSeeAll }: Props) {
   const [sort, setSort] = useState<SortKey>('value');
   const [items, setItems] = useState<CatalogItemData[]>([]);
+  // Full catalog size for the category ("what exists"), from the BE's real
+  // total — drives "· 1,247 items" in the header and the See-all tile.
+  const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,18 +50,17 @@ function CategoryOverviewRail({ categoryId, total, accentColor, colors, onItemPr
     setLoading(true);
     (async () => {
       try {
-        // "Most valuable" pulls priced items; the others pull a general page.
+        // Sorting is server-side now: 'value' ranks by latest comp price
+        // (priced items only), the rest page the full catalog.
         const res = await collectorsApi.browseCatalogItems(categoryId, {
-          limit: 24,
+          limit: 20,
           pricedOnly: sort === 'value',
+          sort: sort === 'all' ? 'title' : sort,
         });
-        let list = (res?.items ?? []) as CatalogItemData[];
-        if (sort === 'value') {
-          list = [...list].sort((a, b) => (b.estimated_price ?? 0) - (a.estimated_price ?? 0));
-        } else if (sort === 'set') {
-          list = [...list].sort((a, b) => (a.set_code ?? '').localeCompare(b.set_code ?? ''));
+        if (!cancelled) {
+          setItems((res?.items ?? []) as CatalogItemData[]);
+          if (typeof res?.total === 'number') setTotal(res.total);
         }
-        if (!cancelled) setItems(list.slice(0, 20));
       } catch (e) {
         logger.warn('[CategoryOverviewRail] fetch failed:', e);
         if (!cancelled) setItems([]);
@@ -69,8 +76,8 @@ function CategoryOverviewRail({ categoryId, total, accentColor, colors, onItemPr
   return (
     <View style={styles.wrap}>
       <View style={styles.head}>
-        <Text style={[styles.title, { color: colors.text }]}>
-          The {''}catalog{total ? ` · ${total.toLocaleString()} items` : ''}
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+          The {categoryName ? `${categoryName} ` : ''}catalog{total ? ` · ${total.toLocaleString()} items` : ''}
         </Text>
         <AnimatedPressable onPress={onSeeAll} accessibilityRole="button" accessibilityLabel="See all items">
           <Text style={[styles.seeAll, { color: accentColor }]}>See all →</Text>
@@ -148,7 +155,7 @@ function CategoryOverviewRail({ categoryId, total, accentColor, colors, onItemPr
 const styles = StyleSheet.create({
   wrap: { marginBottom: 18 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8 },
-  title: { fontSize: 16, fontWeight: '800' },
+  title: { fontSize: 16, fontWeight: '800', flex: 1, marginRight: 8 },
   seeAll: { fontSize: 13, fontWeight: '600' },
   chips: { gap: 8, paddingHorizontal: 16, paddingBottom: 10 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 7, paddingHorizontal: 13, borderRadius: 999, borderWidth: 1 },
