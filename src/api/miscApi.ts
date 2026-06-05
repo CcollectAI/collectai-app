@@ -9,6 +9,11 @@ import type { BillingStatus, IntakeResultResponse, NotificationHistoryResponse }
 
 // Watchlist
 export const fetchWatchlist = () => get("/watchlist/mine");
+// DO NOT call this directly from screens — use dataProvider.addWatchlistItem.
+// The server contract (WatchlistCreate) reads `name`, NOT `title`; calling
+// this raw helper with `{title}` silently stores a junk row title. That bug
+// shipped twice (watchlistProvider 2026-04-30, catalog museum 2026-06-05) —
+// the provider does the field mapping and cache invalidation.
 export const addToWatchlist = (p: Record<string, unknown>) => post("/watchlist/mine", p);
 
 // Insights (duplicated entries in collectorsApi object)

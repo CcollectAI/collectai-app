@@ -215,7 +215,7 @@ function CatalogBrowseSectionInner({
                     </View>
                   </View>
 
-                  {/* Action: single "add to want list" button. The category
+                  {/* Action: single "add to watchlist" button. The category
                       page is a catalog of what EXISTS, so the action here is
                       "I want this" (watchlist), not "I own this" (collection).
                       Previously there were duplicate plus + heart buttons. */}
@@ -224,7 +224,7 @@ function CatalogBrowseSectionInner({
                       style={[s.catalogActionBtn, { backgroundColor: accentColor }]}
                       onPress={() => onAddToWatchlist(cItem)}
                       accessibilityRole="button"
-                      accessibilityLabel={`Add ${cItem.title} to want list`}
+                      accessibilityLabel={`Add ${cItem.title} to watchlist`}
                     >
                       <Ionicons name="add" size={18} color="#fff" />
                     </AnimatedPressable>

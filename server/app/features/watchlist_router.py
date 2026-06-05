@@ -33,6 +33,12 @@ class WatchlistItem(BaseModel):
     last_checked_at: Optional[datetime] = None
     price_trend: Optional[str] = None
     market_hit_count: int = 0
+    # User-facing fields (columns existed on watchlist_items all along but the
+    # create contract silently dropped them — every FE add-screen was sending
+    # target_price/priority/notes into the void; found 2026-06-05).
+    target_price: Optional[float] = None
+    priority: str = "medium"
+    notes: Optional[str] = None
 
 
 class WatchlistCreate(BaseModel):
@@ -41,6 +47,9 @@ class WatchlistCreate(BaseModel):
     category: Optional[str] = Field(None, max_length=64)
     predicted_value: Optional[float] = None
     currency: str = Field(default="EUR", max_length=3, pattern=r"^[A-Z]{3}$")
+    target_price: Optional[float] = Field(None, ge=0)
+    priority: str = Field(default="medium", pattern=r"^(high|medium|low)$")
+    notes: Optional[str] = Field(None, max_length=2000)
 
 
 class WatchlistResponse(BaseModel):
@@ -74,7 +83,8 @@ async def get_my_watchlist(
                            title AS name, category,
                            created_at, predicted_value, currency,
                            last_market_price, last_checked_at,
-                           price_trend, market_hit_count
+                           price_trend, market_hit_count,
+                           target_price, priority, notes
                     FROM public.watchlist_items
                     WHERE user_id = $1::uuid
                     ORDER BY created_at DESC
@@ -100,6 +110,9 @@ async def get_my_watchlist(
                         last_checked_at=r["last_checked_at"],
                         price_trend=r["price_trend"],
                         market_hit_count=r["market_hit_count"] or 0,
+                        target_price=float(r["target_price"]) if r["target_price"] is not None else None,
+                        priority=r["priority"] or "medium",
+                        notes=r["notes"],
                     )
                     for r in rows
                 ]
@@ -124,6 +137,9 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
         category=payload.category,
         predicted_value=payload.predicted_value,
         currency=payload.currency,
+        target_price=payload.target_price,
+        priority=payload.priority,
+        notes=payload.notes,
     )
 
     if pool is not None:
@@ -133,8 +149,10 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
                     """
                     INSERT INTO public.watchlist_items
                         (id, user_id, item_id, title, category,
-                         created_at, predicted_value, currency)
-                    VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8)
+                         created_at, predicted_value, currency,
+                         target_price, priority, notes)
+                    VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8,
+                            $9, $10, $11)
                     """,
                     item.id, user_id, payload.item_id,
                     # watchlist_items.title is NOT NULL — fallback keeps INSERTs valid
@@ -142,6 +160,7 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
                     payload.name or "(unnamed)",
                     payload.category, item.created_at,
                     payload.predicted_value, payload.currency,
+                    payload.target_price, payload.priority, payload.notes,
                 )
                 logger.info("[watchlist] Added item: id=%s, user=%s", item.id, user_id)
 
@@ -215,7 +234,8 @@ async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_curren
                     SELECT id, user_id, item_id, title AS name, category,
                            created_at, predicted_value, currency,
                            last_market_price, last_checked_at,
-                           price_trend, market_hit_count
+                           price_trend, market_hit_count,
+                           target_price, priority, notes
                     FROM watchlist_items
                     WHERE user_id = $1
                     ORDER BY created_at DESC
@@ -240,6 +260,9 @@ async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_curren
                         last_checked_at=r["last_checked_at"],
                         price_trend=r["price_trend"],
                         market_hit_count=r["market_hit_count"] or 0,
+                        target_price=float(r["target_price"]) if r["target_price"] is not None else None,
+                        priority=r["priority"] or "medium",
+                        notes=r["notes"],
                     )
                     for r in rows
                 ]

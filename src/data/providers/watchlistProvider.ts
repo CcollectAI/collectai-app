@@ -79,14 +79,20 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
   // "Could not find the function" silently.
   let r: Record<string, unknown>;
   try {
-    // Server contract (WatchlistCreate): name, category, item_id?,
-    // predicted_value?, currency?. Sending `title` was wrong; the
-    // server reads `name` and stores it as watchlist_items.title.
-    // E2E-verified against POST /watchlist/mine 2026-04-30.
+    // Server contract (WatchlistCreate): name, category, target_price?,
+    // priority?, notes?, item_id?, predicted_value?, currency?. Sending
+    // `title` was wrong; the server reads `name` and stores it as
+    // watchlist_items.title. E2E-verified 2026-04-30. target_price /
+    // priority / notes were silently DROPPED here until 2026-06-05 —
+    // every add-screen (wishlist tab, watchlist-builder, catalog museum)
+    // was sending them into the void while the columns sat in the table.
     const data = await collectorsApi.post<Record<string, unknown>>('/watchlist/mine', {
       name: input.title,
       category: input.category,
       currency: 'EUR',
+      target_price: input.targetPrice ?? null,
+      priority: input.priority ?? 'medium',
+      notes: input.notes ?? null,
     });
     r = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
   } catch (e) {
@@ -108,7 +114,10 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
 
   return {
     id: typeof r.id === 'string' ? r.id : String(r.id ?? ''),
-    title: typeof r.title === 'string' ? r.title : String(r.title ?? ''),
+    // The server's response field is `name` (it aliases watchlist_items.title
+    // on the way out) — reading `r.title` returned '' for every fresh add,
+    // which blanked optimistic rows in watchlist-builder until a refetch.
+    title: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : ''),
     priority: (['high', 'medium', 'low'].includes(r.priority as string) ? r.priority as 'high' | 'medium' | 'low' : 'medium'),
     owned: typeof r.owned === 'boolean' ? r.owned : false,
     targetPrice: typeof r.target_price === 'number' ? r.target_price : null,

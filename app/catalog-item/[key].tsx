@@ -27,6 +27,7 @@ import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
+import { dataProvider } from '@/data';
 import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import logger from '@/utils/logger';
@@ -95,16 +96,20 @@ function CatalogItemMuseumScreen() {
     return () => { cancelled = true; };
   }, [setCode, category, params.key]);
 
-  const onWantList = useCallback(async () => {
+  const onAddToWatchlist = useCallback(async () => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setAdding(true);
     try {
-      await collectorsApi.addToWatchlist({
-        title, category, target_price: estPrice ?? undefined,
+      // Go through the provider, not collectorsApi directly: the server
+      // contract is `name` (NOT `title` — that exact bug was fixed once
+      // before in watchlistProvider, 2026-04-30) and the provider also
+      // invalidates the cached watchlist.
+      await dataProvider.addWatchlistItem({
+        title, category, targetPrice: estPrice ?? undefined,
       });
-      showToast({ message: `${title} added to want list`, type: 'success' });
+      showToast({ message: `${title} added to watchlist`, type: 'success' });
     } catch {
-      showToast({ message: "Couldn't add to want list — try again", type: 'error' });
+      showToast({ message: "Couldn't add to watchlist — try again", type: 'error' });
     } finally {
       setAdding(false);
     }
@@ -241,11 +246,11 @@ function CatalogItemMuseumScreen() {
         {/* Primary CTA */}
         <AnimatedPressable
           style={[styles.cta, { backgroundColor: colors.accent, opacity: adding ? 0.6 : 1 }]}
-          onPress={onWantList} disabled={adding}
-          accessibilityRole="button" accessibilityLabel="Add to want list"
+          onPress={onAddToWatchlist} disabled={adding}
+          accessibilityRole="button" accessibilityLabel="Add to watchlist"
         >
           <Ionicons name="heart-outline" size={18} color="#fff" />
-          <Text style={styles.ctaText}>Add to want list</Text>
+          <Text style={styles.ctaText}>Add to watchlist</Text>
         </AnimatedPressable>
       </View>
     </ScrollView>
