@@ -479,9 +479,22 @@ async def run_once():
                 now,
             )
 
-            # Mark hits as processed
+            # Mark hits as processed. The predicate must mirror the fetch
+            # above: `processed = false` so we never rewrite rows that are
+            # already true (Postgres rewrites the row even when the value is
+            # unchanged — the bare item_ref version re-dirtied EVERY
+            # historical row for the ref on EVERY cycle: 1.2M calls / 20M
+            # blocks dirtied in pg_stat_statements, the DB's top write-churn
+            # query), and the `seen_at` floor so the partitioned table prunes
+            # to recent partitions instead of probing all of them per call.
             await conn.execute(
-                "UPDATE public.market_hits SET processed = true WHERE item_ref = $1",
+                """
+                UPDATE public.market_hits
+                SET processed = true
+                WHERE item_ref = $1
+                  AND processed = false
+                  AND seen_at > now() - interval '90 days'
+                """,
                 item_ref,
             )
 
