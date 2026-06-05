@@ -119,7 +119,7 @@ export function emitOutcome(actionType: "bought" | "followed" | "sold" | "added"
 
 **Trigger**: every time the user taps an external marketplace link. The current FE has affiliate URLs in 7+ components but no tracking when they're opened.
 
-**RN file to add the call to**: `src/utils/affiliateHelpers.ts` — wrap the existing helper that calls `Linking.openURL`. ALL the components that use this helper (ExternalMarketplacesSection, ItemShopSection, MarketplacePickerSheet, MarketplaceResultCard, BarcodeResultCard, SearchResultQuickView, MarketplacePricesSection) get the tracking automatically.
+**RN file to add the call to**: `src/utils/affiliateHelpers.ts` — wrap the existing helper that calls `Linking.openURL`. ALL the components that use this helper (ItemShopSection, MarketplacePickerSheet, MarketplaceResultCard, BarcodeResultCard, SearchResultQuickView, MarketplacePricesSection, the catalog museum screen `app/catalog-item/[key].tsx`) get the tracking automatically. (ExternalMarketplacesSection was removed from the category page in the 2026-06-05 museum redesign — the museum's "Where to buy" rail is the affiliate surface there now.)
 
 **Implementation**:
 ```ts

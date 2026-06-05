@@ -176,6 +176,14 @@ In `DEV_MODE=true`, JWT auth falls back to `DEV_USER_ID` without a token.
 | POST | `/purchase/deals/{deal_id}/decline` | JWT | Dismiss deal |
 | GET | `/purchase/stats` | JWT | Agent stats |
 
+## Catalog Browser
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/catalog/{category_id}/items` | No (IP rate limit) | Browse the catalog. `sort=value\|newest\|set\|title` (`value` ranks by latest comp price and implies `priced_only`), `priced_only`, `q`, `rarity`, `limit`, `offset`. `total` is always the full category count. Drives the category-page overview rail. |
+| GET | `/catalog/{category_id}/collections` | No | Set_code-grouped discovery collections with cover art |
+| POST | `/catalog/match` | JWT + Rate Limit | Match a manual (title, category) entry → best catalog item_key for canonical_key |
+
 ## Catalog Learning
 
 | Method | Path | Auth | Description |
