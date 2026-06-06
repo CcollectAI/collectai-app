@@ -132,21 +132,13 @@ async def browse_catalog_items(
     if pool is None:
         raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
 
-    # sort=value is meaningless without the price join — force it on.
-    if sort == "value":
-        priced_only = True
-
     # ORDER BY whitelist (never interpolate user input directly).
     _ci_order = {
         "title": "ci.title ASC",
         "newest": "ci.created_at DESC NULLS LAST, ci.title ASC",
         "set": "ci.set_code ASC NULLS LAST, ci.title ASC",
     }
-    order_by = (
-        "mp.price_eur DESC, ci.title ASC"
-        if sort == "value"
-        else _ci_order.get(sort or "title", "ci.title ASC")
-    )
+    order_by = _ci_order.get(sort or "title", "ci.title ASC")
 
     # Build query conditions (all qualified with the `ci` alias so the
     # priced_only branch below can join market_hits on the same predicate set).
@@ -166,18 +158,78 @@ async def browse_catalog_items(
 
     where = " AND ".join(conditions)
 
+    if sort == "value":
+        # "Most valuable" reads the precomputed top-60-per-category matview
+        # (mv_category_top_value, refreshed daily 03:10 UTC by pg_cron job
+        # 'refresh-mv-category-top-value'). The naive per-request approach —
+        # a price lateral evaluated for EVERY catalog item before sorting —
+        # was O(catalog size × partition probes): pokemon 21s, mtg 25k items
+        # blew the pooler's 30s cap and 500'd (measured 2026-06-05). The
+        # matview read is O(limit). Depth is capped at 60 ranked items per
+        # category; `total` stays the full catalog count ("what exists").
+        total = await pool.fetchval(
+            f"SELECT count(*) FROM category_items ci WHERE {where}",
+            *params,
+        ) or 0
+        rows = await pool.fetch(
+            f"""
+            SELECT ci.id, ci.category, ci.item_key, ci.title, ci.brand,
+                   ci.rarity, ci.notes, ci.image_url, ci.external_id,
+                   ci.set_code, tv.price_eur AS estimated_price
+            FROM public.mv_category_top_value tv
+            JOIN category_items ci ON ci.id = tv.catalog_item_id
+            WHERE tv.category = $1 AND {where}
+            ORDER BY tv.rn ASC
+            LIMIT ${idx} OFFSET ${idx + 1}
+            """,
+            *params,
+            limit,
+            offset,
+        )
+        items = [
+            CatalogItem(
+                id=str(r["id"]),
+                category=r["category"],
+                item_key=r["item_key"],
+                title=r["title"],
+                brand=r["brand"],
+                rarity=r["rarity"],
+                notes=r["notes"],
+                has_reference_image=bool(r["image_url"]),
+                image_url=r["image_url"],
+                external_id=r["external_id"],
+                set_code=r["set_code"],
+                estimated_price=float(r["estimated_price"]),
+            )
+            for r in rows
+        ]
+        try:
+            from app.features.data_moat import record_demand_signal
+            await record_demand_signal(
+                signal_type="catalog_browsed",
+                category=category_id,
+                query_text=q,
+            )
+        except Exception as e:
+            logger.debug("[catalog_browser] demand signal recording failed: %s", e)
+        return CatalogBrowseResponse(
+            items=items,
+            total=total,
+            limit=limit,
+            offset=offset,
+            category_id=category_id,
+        )
+
     if priced_only:
         # INNER-join the latest-comp lateral so ONLY items with a price within
         # 180d are returned — the price becomes a filter, not a post-fetch
-        # decoration. For title/newest/set sorts LIMIT lets the planner
-        # short-circuit the scan; sort=value must rank by the joined price, so
-        # the lateral is evaluated per category row before the sort (verified
-        # acceptable post partition-pruning — see EXPLAIN note below). The
-        # seen_at floor + category filter keep partition pruning intact (see
-        # the price-map query below). `total` is the full catalog size for the
-        # category (cheap index-only count) — the overview rail displays
-        # "what exists" ("The catalog · 1,247 items"), and its callers do not
-        # paginate the priced list.
+        # decoration. Only title/newest/set sorts reach this branch (sort=value
+        # returns from the matview above), so LIMIT lets the planner
+        # short-circuit the scan. The seen_at floor + category filter keep
+        # partition pruning intact (see the price-map query below). `total` is
+        # the full catalog size for the category (cheap index-only count) —
+        # the overview rail displays "what exists" ("The catalog · 1,247
+        # items"), and its callers do not paginate the priced list.
         total = await pool.fetchval(
             f"SELECT count(*) FROM category_items ci WHERE {where}",
             *params,

@@ -1,11 +1,18 @@
 /**
- * Category Browse — Pro-grade item browser for a single category.
+ * Category Browse — the catalog "full grid" behind the overview rail's
+ * "See all" (mockup: web/category-redesign-preview.html — "scroll the rail or
+ * 'See all' for the full grid").
  *
- * Shows all missing items in a category with search, filter by ownership,
- * and one-tap "Mark Owned" action. Navigated to from "X more to collect"
- * on the category overview page.
+ * A browsable 2-column gallery of the WHOLE category catalog ("what exists"),
+ * with search + the same sort chips as the category page. Every tap opens the
+ * museum detail (→ affiliate "Where to buy"). Server-side search/sort/paging
+ * via /catalog/{cat}/items.
+ *
+ * The old missing-items checklist that lived here (text rows + Mark Owned) is
+ * gone with the redesign — ownership lives on the items tab, the catalog is
+ * the museum.
  */
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
   View,
@@ -17,214 +24,161 @@ import {
   RefreshControl,
 } from "react-native";
 import { FlashList } from "@shopify/flash-list";
-import { useLocalSearchParams, useRouter, Stack } from "expo-router";
+import { useLocalSearchParams, useRouter, Stack, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  dataProvider,
-  type CategoryMissingItem,
-} from "@/data";
-import { getCategoryById, CATEGORY_VISUAL, type CategoryId } from "@/data/categories";
+import { collectorsApi } from "@/api/collectorsApi";
+import { getCategoryById, type CategoryId } from "@/data/categories";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { QuickNavBar } from "@/components/QuickNavBar";
-import { useToast } from "@/components/Toast";
+import { colors as tokens } from "@/theme/tokens";
+import CategorySortChips, { type CatalogSortKey } from "@/components/category/CategorySortChips";
+import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
 
-type FilterMode = "all" | "missing" | "owned";
+const PAGE_SIZE = 40;
 
 function CategoryBrowseScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
-  const { showToast } = useToast();
 
   const catMeta = getCategoryById(categoryId as CategoryId);
-  const visual = CATEGORY_VISUAL[categoryId as CategoryId];
-  // Use app theme accent for all UI; category accent only for small visual indicators
-  const categoryAccent = visual?.accentColor ?? colors.accent;
   const catName = catMeta?.name ?? categoryId ?? "Category";
 
-  const [items, setItems] = useState<CategoryMissingItem[]>([]);
+  const [items, setItems] = useState<CatalogItemData[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<FilterMode>("missing");
-  const [ownedIds, setOwnedIds] = useState<Set<string>>(new Set());
-  const [markingId, setMarkingId] = useState<string | null>(null);
+  // Same default as the category page rail: highest-earning items lead.
+  const [sort, setSort] = useState<CatalogSortKey>("value");
+  // Monotonic request id — a stale slow response must not clobber a newer one.
+  const reqId = useRef(0);
 
-  const loadItems = useCallback(async () => {
-    if (!categoryId) return;
-    try {
-      const data = await dataProvider.listCategoryMissing(categoryId);
-      setItems(data);
-    } catch (err) {
-      logger.warn("[CategoryBrowse] load error:", err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [categoryId]);
+  const fetchPage = useCallback(
+    async (offset: number, q: string, sortKey: CatalogSortKey, mode: "replace" | "append") => {
+      if (!categoryId) return;
+      const id = ++reqId.current;
+      try {
+        const res = await collectorsApi.browseCatalogItems(categoryId, {
+          q: q.trim() || undefined,
+          limit: PAGE_SIZE,
+          offset,
+          pricedOnly: sortKey === "value",
+          sort: sortKey === "all" ? "title" : sortKey,
+        });
+        if (id !== reqId.current) return; // superseded
+        const page = (res?.items ?? []) as CatalogItemData[];
+        setItems((prev) => (mode === "append" ? [...prev, ...page] : page));
+        if (typeof res?.total === "number") setTotal(res.total);
+      } catch (err) {
+        logger.warn("[CategoryBrowse] load error:", err);
+        if (mode === "replace" && id === reqId.current) setItems([]);
+      } finally {
+        if (id === reqId.current) {
+          setLoading(false);
+          setLoadingMore(false);
+          setRefreshing(false);
+        }
+      }
+    },
+    [categoryId],
+  );
 
+  // First page — refetched on sort change and (debounced) on search input.
   useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+    setLoading(true);
+    const t = setTimeout(() => fetchPage(0, search, sort, "replace"), search ? 400 : 0);
+    return () => clearTimeout(t);
+  }, [fetchPage, search, sort]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    loadItems();
-  }, [loadItems]);
+    fetchPage(0, search, sort, "replace");
+  }, [fetchPage, search, sort]);
 
-  const handleMarkOwned = useCallback(
-    async (item: CategoryMissingItem) => {
-      if (ownedIds.has(item.id)) return;
-      setMarkingId(item.id);
+  const handleEndReached = useCallback(() => {
+    if (loading || loadingMore) return;
+    if (total != null && items.length >= total) return;
+    setLoadingMore(true);
+    fetchPage(items.length, search, sort, "append");
+  }, [loading, loadingMore, total, items.length, fetchPage, search, sort]);
+
+  const handleSortChange = useCallback(
+    (next: CatalogSortKey) => {
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-      try {
-        await dataProvider.markCategoryItemOwned(item.id, 1);
-        setOwnedIds((prev) => new Set(prev).add(item.id));
-        showToast({ message: `Added "${item.title}" to collection`, type: "success" });
-      } catch {
-        showToast({ message: "Failed to mark as owned", type: "error" });
-      } finally {
-        setMarkingId(null);
-      }
+      setSort(next);
     },
-    [ownedIds, settings.hapticsEnabled, showToast],
+    [settings.hapticsEnabled],
   );
 
-  const filteredItems = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return items.filter((item) => {
-      if (q && !item.title.toLowerCase().includes(q) && !(item.brand?.toLowerCase().includes(q))) {
-        return false;
-      }
-      if (filter === "owned") return ownedIds.has(item.id);
-      if (filter === "missing") return !ownedIds.has(item.id);
-      return true;
-    });
-  }, [items, search, filter, ownedIds]);
-
-  const missingCount = items.filter((i) => !ownedIds.has(i.id)).length;
-  const ownedCount = ownedIds.size;
+  // Tap → museum detail, same param contract as the category page rail.
+  const openMuseum = useCallback(
+    (it: CatalogItemData) => {
+      router.push({
+        pathname: "/catalog-item/[key]",
+        params: {
+          key: it.item_key, category: it.category, title: it.title,
+          image_url: it.image_url ?? "", rarity: it.rarity ?? "",
+          set_code: it.set_code ?? "", brand: it.brand ?? "",
+          estimated_price: it.estimated_price != null ? String(it.estimated_price) : "",
+        },
+      } as unknown as Href);
+    },
+    [router],
+  );
 
   const renderItem = useCallback(
-    ({ item }: { item: CategoryMissingItem }) => {
-      const isOwned = ownedIds.has(item.id);
-      const isMarking = markingId === item.id;
-
-      return (
-        <View style={[s.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={[s.itemAccent, { backgroundColor: isOwned ? colors.success : colors.accent }]} />
-          <View style={s.itemBody}>
-            <View style={s.itemTop}>
-              <View style={s.itemInfo}>
-                <Text style={[s.itemTitle, { color: colors.text }]} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                {item.brand && (
-                  <Text style={[s.itemBrand, { color: colors.muted }]} numberOfLines={1}>
-                    {item.brand}
-                  </Text>
-                )}
-                {item.notes && (
-                  <Text style={[s.itemNotes, { color: colors.muted }]} numberOfLines={2}>
-                    {item.notes}
-                  </Text>
-                )}
-              </View>
-
-              {isOwned ? (
-                <View style={[s.ownedBadge, { backgroundColor: colors.success + "15" }]}>
-                  <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-                  <Text style={[s.ownedBadgeText, { color: colors.success }]}>Owned</Text>
-                </View>
-              ) : (
-                <AnimatedPressable
-                  onPress={() => handleMarkOwned(item)}
-                  disabled={isMarking}
-                  style={[s.addBtn, { backgroundColor: colors.accent }]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Mark "${item.title}" as owned`}
-                >
-                  {isMarking ? (
-                    <ActivityIndicator size="small" color={colors.accentText} />
-                  ) : (
-                    <>
-                      <Ionicons name="add" size={16} color={colors.accentText} />
-                      <Text style={[s.addBtnText, { color: colors.accentText }]}>Add</Text>
-                    </>
-                  )}
-                </AnimatedPressable>
-              )}
-            </View>
+    ({ item }: { item: CatalogItemData }) => (
+      <AnimatedPressable
+        style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => openMuseum(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`View ${item.title}`}
+      >
+        {item.image_url ? (
+          <Image source={{ uri: item.image_url }} style={s.art} resizeMode="cover" accessibilityIgnoresInvertColors />
+        ) : (
+          <View style={[s.art, s.artEmpty, { backgroundColor: tokens.brand.base + "12" }]}>
+            <Ionicons name="cube-outline" size={28} color={tokens.brand.base} />
           </View>
+        )}
+        <View style={s.meta}>
+          <Text style={[s.nm, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
+          {item.estimated_price != null ? (
+            <Text style={s.pr}>~€{Math.round(item.estimated_price)}</Text>
+          ) : (
+            <Text style={[s.tag, { color: colors.muted }]} numberOfLines={1}>
+              {item.rarity || item.set_code || "Explore"}
+            </Text>
+          )}
         </View>
-      );
-    },
-    [colors, ownedIds, markingId, handleMarkOwned],
+      </AnimatedPressable>
+    ),
+    [colors, openMuseum],
   );
-
-  const FILTERS: { key: FilterMode; label: string; count: number }[] = [
-    { key: "all", label: "All", count: items.length },
-    { key: "missing", label: "Missing", count: missingCount },
-    { key: "owned", label: "Owned", count: ownedCount },
-  ];
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          title: catName,
+          title: `${catName} catalog`,
           headerTintColor: colors.text,
           headerStyle: { backgroundColor: colors.background },
         }}
       />
 
-      {/* Header stats card */}
-      <View style={[s.statsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={[s.statsAccent, { backgroundColor: categoryAccent }]} />
-        <View style={s.statsContent}>
-          <Text style={[s.statsTitle, { color: colors.text }]}>Collection Progress</Text>
-          <View style={s.statsRow}>
-            <View style={s.statItem}>
-              <Text style={[s.statValue, { color: colors.success }]}>{ownedCount}</Text>
-              <Text style={[s.statLabel, { color: colors.muted }]}>Owned</Text>
-            </View>
-            <View style={[s.statDivider, { backgroundColor: colors.border }]} />
-            <View style={s.statItem}>
-              <Text style={[s.statValue, { color: colors.accent }]}>{missingCount}</Text>
-              <Text style={[s.statLabel, { color: colors.muted }]}>Missing</Text>
-            </View>
-            <View style={[s.statDivider, { backgroundColor: colors.border }]} />
-            <View style={s.statItem}>
-              <Text style={[s.statValue, { color: colors.text }]}>{items.length}</Text>
-              <Text style={[s.statLabel, { color: colors.muted }]}>Total</Text>
-            </View>
-          </View>
-          {/* Progress bar */}
-          <View style={[s.progressTrack, { backgroundColor: colors.border }]}>
-            <View
-              style={[
-                s.progressFill,
-                {
-                  backgroundColor: colors.success,
-                  width: items.length > 0 ? `${Math.round((ownedCount / items.length) * 100)}%` : "0%",
-                },
-              ]}
-            />
-          </View>
-        </View>
-      </View>
-
       {/* Search */}
-      <View style={[s.searchRow, { borderColor: colors.border }]}>
+      <View style={[s.searchRow, { borderColor: colors.border, backgroundColor: colors.card }]}>
         <Ionicons name="search-outline" size={18} color={colors.muted} />
         <TextInput
           style={[s.searchInput, { color: colors.text }]}
-          placeholder={`Search ${catName} items...`}
+          placeholder={`Search ${catName}...`}
           placeholderTextColor={colors.muted}
           value={search}
           onChangeText={setSearch}
@@ -240,52 +194,23 @@ function CategoryBrowseScreen() {
         )}
       </View>
 
-      {/* Filter pills */}
-      <View style={s.filterRow}>
-        {FILTERS.map((f) => {
-          const active = filter === f.key;
-          return (
-            <AnimatedPressable
-              key={f.key}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                setFilter(f.key);
-              }}
-              style={[
-                s.filterPill,
-                {
-                  backgroundColor: active ? colors.accent : colors.card,
-                  borderColor: active ? colors.accent : colors.border,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={`${f.label}: ${f.count}`}
-            >
-              <Text style={[s.filterPillText, { color: active ? colors.accentText : colors.text }]}>
-                {f.label}
-              </Text>
-              <View style={[s.filterBadge, { backgroundColor: active ? colors.accentText + "30" : colors.border }]}>
-                <Text style={[s.filterBadgeText, { color: active ? colors.accentText : colors.muted }]}>
-                  {f.count}
-                </Text>
-              </View>
-            </AnimatedPressable>
-          );
-        })}
-      </View>
+      {/* Sort chips — same component + order as the category page */}
+      <CategorySortChips sort={sort} onChange={handleSortChange} total={total} colors={colors} />
 
-      {/* Item list */}
+      {/* Catalog grid */}
       {loading ? (
         <View style={s.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : (
         <FlashList
-          data={filteredItems}
+          data={items}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          numColumns={2}
           contentContainerStyle={s.list}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.4}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -294,26 +219,17 @@ function CategoryBrowseScreen() {
               colors={[colors.accent]}
             />
           }
+          ListFooterComponent={
+            loadingMore ? <ActivityIndicator color={colors.accent} style={s.footerSpinner} /> : null
+          }
           ListEmptyComponent={
             <View style={s.emptyContainer}>
-              <Ionicons
-                name={filter === "owned" ? "checkmark-done-circle-outline" : "search-outline"}
-                size={48}
-                color={colors.muted}
-              />
+              <Ionicons name="search-outline" size={48} color={colors.muted} />
               <Text style={[s.emptyTitle, { color: colors.text }]}>
-                {filter === "owned"
-                  ? "No owned items yet"
-                  : search
-                  ? "No matching items"
-                  : "All caught up!"}
+                {search ? "No matching items" : "No catalog items yet"}
               </Text>
               <Text style={[s.emptySubtitle, { color: colors.muted }]}>
-                {filter === "owned"
-                  ? "Tap Add on items below to track your collection"
-                  : search
-                  ? "Try a different search term"
-                  : "You've collected everything in this category"}
+                {search ? "Try a different search term" : "This category's catalog is still being curated"}
               </Text>
             </View>
           }
@@ -325,207 +241,6 @@ function CategoryBrowseScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  // Stats card
-  statsCard: {
-    flexDirection: "row",
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  statsAccent: {
-    width: 5,
-  },
-  statsContent: {
-    flex: 1,
-    padding: 14,
-  },
-  statsTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    marginTop: 2,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  statDivider: {
-    width: 1,
-    height: 28,
-  },
-  progressTrack: {
-    height: 6,
-    borderRadius: 3,
-  },
-  progressFill: {
-    height: 6,
-    borderRadius: 3,
-  },
-  // Search
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 16,
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    paddingVertical: 0,
-  },
-  // Filter pills
-  filterRow: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  filterPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  filterPillText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  filterBadge: {
-    minWidth: 22,
-    height: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 5,
-  },
-  filterBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  // List
-  list: {
-    paddingHorizontal: 16,
-    paddingBottom: 80,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  // Item card
-  itemCard: {
-    flexDirection: "row",
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 8,
-    overflow: "hidden",
-  },
-  itemAccent: {
-    width: 4,
-  },
-  itemBody: {
-    flex: 1,
-    padding: 14,
-  },
-  itemTop: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  itemInfo: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  itemTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  itemBrand: {
-    fontSize: 12,
-    fontWeight: "500",
-    marginTop: 2,
-  },
-  itemNotes: {
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 16,
-    fontStyle: "italic",
-  },
-  // Owned badge
-  ownedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  ownedBadgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  // Add button
-  addBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    minWidth: 60,
-    justifyContent: "center",
-  },
-  addBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  // Empty
-  emptyContainer: {
-    alignItems: "center",
-    paddingTop: 60,
-    paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginTop: 12,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: "center",
-    marginTop: 6,
-    lineHeight: 20,
-  },
-});
-
 export default function CategoryBrowseScreenWithBoundary() {
   return (
     <ScreenErrorBoundary screenName="Category Browse">
@@ -533,3 +248,39 @@ export default function CategoryBrowseScreenWithBoundary() {
     </ScreenErrorBoundary>
   );
 }
+
+const s = StyleSheet.create({
+  container: { flex: 1 },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  searchInput: { flex: 1, fontSize: 14, padding: 0 },
+  loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
+  list: { paddingHorizontal: 10, paddingBottom: 96 },
+  // Museum card — same visual language as the category rail (mockup `.card`).
+  card: {
+    flex: 1,
+    margin: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  art: { width: "100%", height: 150 },
+  artEmpty: { alignItems: "center", justifyContent: "center" },
+  meta: { paddingVertical: 8, paddingHorizontal: 10 },
+  nm: { fontSize: 12, fontWeight: "700" },
+  pr: { fontSize: 15, fontWeight: "900", marginTop: 2, color: tokens.brand.deep },
+  tag: { fontSize: 9, marginTop: 2 },
+  footerSpinner: { marginVertical: 16 },
+  emptyContainer: { alignItems: "center", paddingTop: 64, paddingHorizontal: 32 },
+  emptyTitle: { fontSize: 16, fontWeight: "700", marginTop: 12 },
+  emptySubtitle: { fontSize: 13, textAlign: "center", marginTop: 4 },
+});

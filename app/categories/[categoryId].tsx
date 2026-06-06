@@ -49,7 +49,9 @@ import {
   RelatedCategoriesSection,
   CategoryOverviewRail,
   CategoryBrandHeader,
+  CategorySortChips,
 } from '@/components/category';
+import type { CatalogSortKey } from '@/components/category/CategorySortChips';
 
 function CategoryStoreScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
@@ -65,6 +67,12 @@ function CategoryStoreScreen() {
   const [following, setFollowing] = useState(false);
   const [events, setEvents] = useState<CategoryStoreData['upcomingEvents']>([]);
   const [friends, setFriends] = useState<CategoryStoreData['friendsWhoFollow']>([]);
+
+  // Catalog sort — owned here so CategorySortChips (mockup: page-level, under
+  // the header) and the rail share it. Default 'value': commission is a % of
+  // price, so the highest-earning items lead.
+  const [catalogSort, setCatalogSort] = useState<CatalogSortKey>('value');
+  const [catalogTotal, setCatalogTotal] = useState<number | null>(null);
 
   // Market insights state
   const [deepDive, setDeepDive] = useState<Record<string, unknown> | null>(null);
@@ -180,13 +188,23 @@ function CategoryStoreScreen() {
           colors={colors}
         />
 
-        {/* 3. THE single category overview rail → museum → affiliate
+        {/* 3a. Page-level sort chips (mockup `.chips` — gradient active pill,
+            live catalog count on "All"). */}
+        <CategorySortChips
+          sort={catalogSort}
+          onChange={setCatalogSort}
+          total={catalogTotal}
+          colors={colors}
+        />
+
+        {/* 3b. THE single category overview rail → museum → affiliate
             "Where to buy". A browsable gallery of what EXISTS in the
-            category, with sort chips; every tap opens the catalog museum
-            detail. */}
+            category; every tap opens the catalog museum detail. */}
         <CategoryOverviewRail
           categoryId={categoryId}
           categoryName={categoryMeta.name}
+          sort={catalogSort}
+          onTotal={setCatalogTotal}
           accentColor={accentColor}
           colors={colors}
           onSeeAll={() => router.push({

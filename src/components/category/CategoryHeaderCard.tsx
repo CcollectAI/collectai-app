@@ -1,7 +1,15 @@
+/**
+ * CategoryHeaderCard — tiffany gradient banner per the redesign mockup
+ * (web/category-redesign-preview.html `.cathead`: linear-gradient(135deg,
+ * #81D8D0 → #2C7873), white text). Follow pill inverts on the gradient:
+ * outline-white when idle, solid-white with deep-tiffany text when following.
+ */
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedPressable } from '@/motion';
+import { colors as tokens } from '@/theme/tokens';
 import type { AppTheme } from '@/hooks/useAppTheme';
 
 type Props = {
@@ -17,21 +25,21 @@ const CategoryHeaderCard: React.FC<Props> = ({
   categoryTagline,
   following,
   onToggleFollow,
-  colors,
 }) => (
-  <View style={[styles.headerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+  <LinearGradient
+    colors={[tokens.brand.base, tokens.brand.deep]}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 1 }}
+    style={styles.headerCard}
+  >
     <View style={styles.headerContent}>
-      <Text style={[styles.categoryName, { color: colors.text }]}>{categoryName}</Text>
-      <Text style={[styles.categoryTagline, { color: colors.muted }]} numberOfLines={3}>
+      <Text style={styles.categoryName}>{categoryName}</Text>
+      <Text style={styles.categoryTagline} numberOfLines={3}>
         {categoryTagline}
       </Text>
     </View>
     <AnimatedPressable
-      style={[
-        styles.followButton,
-        { borderColor: colors.accent },
-        following && { backgroundColor: colors.accent },
-      ]}
+      style={[styles.followButton, following && styles.followButtonActive]}
       onPress={onToggleFollow}
       accessibilityRole="button"
       accessibilityLabel={following ? `Unfollow ${categoryName}` : `Follow ${categoryName}`}
@@ -39,19 +47,13 @@ const CategoryHeaderCard: React.FC<Props> = ({
       <Ionicons
         name={following ? 'checkmark' : 'add'}
         size={16}
-        color={following ? '#fff' : colors.accent}
+        color={following ? tokens.brand.deep : '#fff'}
       />
-      <Text
-        style={[
-          styles.followButtonText,
-          { color: colors.accent },
-          following && { color: '#fff' },
-        ]}
-      >
+      <Text style={[styles.followButtonText, following && styles.followButtonTextActive]}>
         {following ? 'Following' : 'Follow'}
       </Text>
     </AnimatedPressable>
-  </View>
+  </LinearGradient>
 );
 
 export default React.memo(CategoryHeaderCard);
@@ -59,8 +61,7 @@ export default React.memo(CategoryHeaderCard);
 const styles = StyleSheet.create({
   headerCard: {
     borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
+    padding: 16,
     marginBottom: 16,
   },
   headerContent: {
@@ -68,12 +69,15 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '900',
+    color: '#fff',
   },
   categoryTagline: {
     marginTop: 4,
     fontSize: 13,
     lineHeight: 18,
+    color: '#fff',
+    opacity: 0.9,
   },
   followButton: {
     flexDirection: 'row',
@@ -83,10 +87,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
+    borderColor: '#fff',
+  },
+  followButtonActive: {
+    backgroundColor: '#fff',
+    borderColor: '#fff',
   },
   followButtonText: {
     marginLeft: 4,
     fontSize: 13,
     fontWeight: '600',
+    color: '#fff',
+  },
+  followButtonTextActive: {
+    color: tokens.brand.deep,
   },
 });

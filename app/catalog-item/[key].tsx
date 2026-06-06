@@ -29,6 +29,7 @@ import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import { dataProvider } from '@/data';
 import { openAffiliateUrl } from '@/utils/affiliateHelpers';
+import { colors as tokens } from '@/theme/tokens';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import logger from '@/utils/logger';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
@@ -162,7 +163,8 @@ function CatalogItemMuseumScreen() {
           <View style={styles.badgeRow}>
             {badges.map((b) => (
               <View key={b} style={[styles.badge, { backgroundColor: colors.accent + '20' }]}>
-                <Text style={[styles.badgeText, { color: colors.accent }]} numberOfLines={1}>{b}</Text>
+                {/* Deep tiffany (mockup --tiffDark): base accent washes out on its own 20% tint */}
+                <Text style={[styles.badgeText, { color: tokens.brand.deep }]} numberOfLines={1}>{b}</Text>
               </View>
             ))}
           </View>

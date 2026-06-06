@@ -3,6 +3,10 @@ export const colors = {
     base: "#81D8D0",   // Tiffany blue
     dark: "#5FBFB6",
     darker: "#44A9A1",
+    // Deep tiffany — the category-page mockup's price/active-chip color
+    // (web/category-redesign-preview.html --tiffDark). Use for text that
+    // must hold contrast on white where `base` washes out.
+    deep: "#2C7873",
     light: "#AEE6E1",
     lighter: "#E6F7F5",
   },
