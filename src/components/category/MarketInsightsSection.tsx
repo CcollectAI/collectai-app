@@ -33,6 +33,10 @@ const MarketInsightsSection: React.FC<Props> = ({ deepDive, deepDiveLoading, col
   const trend: 'up' | 'down' | 'flat' = trendPct > 2 ? 'up' : trendPct < -2 ? 'down' : 'flat';
   const hasData = avgPrice > 0 || dist.length > 0;
 
+  // No insights → no card. An empty "no market value available" banner on
+  // every thin category looked broken; the section simply doesn't render.
+  if (!deepDiveLoading && !hasData) return null;
+
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <Text style={[styles.label, { color: colors.muted }]}>CATEGORY MARKET VALUE</Text>

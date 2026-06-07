@@ -28,6 +28,8 @@ type Props = {
   categoryId: string;
   /** Optional display name for the header ("THE POKÉMON CATALOG"). */
   categoryName?: string;
+  /** Overrides the header label entirely (e.g. "🗂 BY SET"). */
+  label?: string;
   /** Sort selected in the page-level CategorySortChips. */
   sort: CatalogSortKey;
   accentColor: string;
@@ -38,7 +40,7 @@ type Props = {
   onTotal?: (total: number) => void;
 };
 
-function CategoryOverviewRail({ categoryId, categoryName, sort, accentColor, colors, onItemPress, onSeeAll, onTotal }: Props) {
+function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentColor, colors, onItemPress, onSeeAll, onTotal }: Props) {
   const [items, setItems] = useState<CatalogItemData[]>([]);
   // Full catalog size for the category ("what exists"), from the BE's real
   // total — drives the see-all tile and is reported up for the "All" chip.
@@ -82,7 +84,7 @@ function CategoryOverviewRail({ categoryId, categoryName, sort, accentColor, col
     <View style={[styles.wrap, { backgroundColor: colors.card }]}>
       <View style={styles.head}>
         <Text style={[styles.label, { color: colors.muted }]} numberOfLines={1}>
-          📚 THE {categoryName ? `${categoryName.toUpperCase()} ` : ''}CATALOG
+          {label ?? `📚 THE ${categoryName ? `${categoryName.toUpperCase()} ` : ''}CATALOG`}
         </Text>
         <AnimatedPressable onPress={onSeeAll} accessibilityRole="button" accessibilityLabel="See all items">
           <Text style={styles.seeAll}>See all →</Text>
@@ -108,6 +110,9 @@ function CategoryOverviewRail({ categoryId, categoryName, sort, accentColor, col
               ) : (
                 <View style={[styles.art, styles.artEmpty, { backgroundColor: accentColor + '12' }]}>
                   <Ionicons name="cube-outline" size={26} color={accentColor} />
+                  {/* No catalog art yet — user photos will fill these as the
+                      database grows; say so instead of looking broken. */}
+                  <Text style={styles.comingSoon}>Image coming soon</Text>
                 </View>
               )}
               <View style={styles.meta}>
@@ -154,6 +159,7 @@ const styles = StyleSheet.create({
   card: { width: 140, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
   art: { width: '100%', height: 120 },
   artEmpty: { alignItems: 'center', justifyContent: 'center' },
+  comingSoon: { fontSize: 10, fontWeight: '600', marginTop: 6, color: tokens.brand.deep, opacity: 0.7 },
   meta: { paddingVertical: 8, paddingHorizontal: 10 },
   nm: { fontSize: 12, fontWeight: '700' },
   // Mockup `.pr`: deep tiffany — holds contrast on white where base washes out.

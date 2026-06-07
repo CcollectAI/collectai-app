@@ -41,7 +41,7 @@ import logger from "@/utils/logger";
 const PAGE_SIZE = 40;
 
 function CategoryBrowseScreen() {
-  const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
+  const { categoryId, sort: sortParam } = useLocalSearchParams<{ categoryId: string; sort?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -56,7 +56,10 @@ function CategoryBrowseScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   // Same default as the category page rail: highest-earning items lead.
-  const [sort, setSort] = useState<CatalogSortKey>("value");
+  // The BY SET rail's "See all" deep-links here with ?sort=set.
+  const [sort, setSort] = useState<CatalogSortKey>(
+    sortParam === "set" || sortParam === "newest" || sortParam === "all" ? sortParam : "value",
+  );
   // Monotonic request id — a stale slow response must not clobber a newer one.
   const reqId = useRef(0);
 
@@ -146,6 +149,8 @@ function CategoryBrowseScreen() {
         ) : (
           <View style={[s.art, s.artEmpty, { backgroundColor: tokens.brand.base + "12" }]}>
             <Ionicons name="cube-outline" size={28} color={tokens.brand.base} />
+            {/* No catalog art yet — user photos will fill these as the database grows. */}
+            <Text style={s.comingSoon}>Image coming soon</Text>
           </View>
         )}
         <View style={s.meta}>
@@ -195,7 +200,7 @@ function CategoryBrowseScreen() {
       </View>
 
       {/* Sort chips — same component + order as the category page */}
-      <CategorySortChips sort={sort} onChange={handleSortChange} total={total} colors={colors} />
+      <CategorySortChips sort={sort} onChange={handleSortChange} colors={colors} />
 
       {/* Catalog grid */}
       {loading ? (
@@ -275,6 +280,7 @@ const s = StyleSheet.create({
   },
   art: { width: "100%", height: 150 },
   artEmpty: { alignItems: "center", justifyContent: "center" },
+  comingSoon: { fontSize: 10, fontWeight: "600", marginTop: 6, color: tokens.brand.deep, opacity: 0.7 },
   meta: { paddingVertical: 8, paddingHorizontal: 10 },
   nm: { fontSize: 12, fontWeight: "700" },
   pr: { fontSize: 15, fontWeight: "900", marginTop: 2, color: tokens.brand.deep },

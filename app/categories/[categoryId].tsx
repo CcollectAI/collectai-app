@@ -2,15 +2,15 @@
  * Category Store — the "one carousel that earns" museum layout
  * (web/category-redesign-preview.html).
  *
- * Page order mirrors the mockup exactly:
+ * Page order mirrors the mockup:
  *   1. Brand header (paid sponsor zone — stub, dark until a sponsor exists)
- *   2. Category header card (organic header + Follow)
- *   3. THE category overview rail (sort chips → museum detail → affiliate buy)
- *   4. Market insights (category market value + trend)
+ *   2. Category header card (organic header + Follow + Invite/Find friends)
+ *   3. Category overview rails (sort chips → main rail, then BY SET rail;
+ *      every tap → museum detail → affiliate buy)
+ *   4. Market insights (category market value + trend; hidden when empty)
  *   — below the fold —
- *   5. Upcoming events
- *   6. Friends who follow
- *   7. Related categories
+ *   5. Upcoming events (category-tagged first, then the events-tab pool)
+ *   6. Related categories
  *
  * Everything else the old page stacked (Spotlight, Items-in-Category,
  * Featured Collections, Browse Catalog, Tips, Grading Guide, Missing Items,
@@ -45,7 +45,6 @@ import {
   CategoryHeaderCard,
   MarketInsightsSection,
   CategoryEventsSection,
-  FriendsFollowSection,
   RelatedCategoriesSection,
   CategoryOverviewRail,
   CategoryBrandHeader,
@@ -66,13 +65,11 @@ function CategoryStoreScreen() {
 
   const [following, setFollowing] = useState(false);
   const [events, setEvents] = useState<CategoryStoreData['upcomingEvents']>([]);
-  const [friends, setFriends] = useState<CategoryStoreData['friendsWhoFollow']>([]);
 
   // Catalog sort — owned here so CategorySortChips (mockup: page-level, under
   // the header) and the rail share it. Default 'value': commission is a % of
   // price, so the highest-earning items lead.
   const [catalogSort, setCatalogSort] = useState<CatalogSortKey>('value');
-  const [catalogTotal, setCatalogTotal] = useState<number | null>(null);
 
   // Market insights state
   const [deepDive, setDeepDive] = useState<Record<string, unknown> | null>(null);
@@ -89,7 +86,6 @@ function CategoryStoreScreen() {
       const storeResult = await dataProvider.getCategoryStore(categoryId);
       if (storeResult) {
         setEvents(storeResult.upcomingEvents);
-        setFriends(storeResult.friendsWhoFollow);
       }
     } catch (err: unknown) {
       logger.warn('[CategoryStore] store fetch error:', err);
@@ -124,10 +120,6 @@ function CategoryStoreScreen() {
     router.push(`/events/${encodeURIComponent(eventId)}`);
   }, [router]);
 
-  const handleFriendPress = useCallback((userId: string) => {
-    router.push(`/users/${encodeURIComponent(userId)}`);
-  }, [router]);
-
   const handleToggleFollow = useCallback(async () => {
     const newFollowing = !following;
     setFollowing(newFollowing);
@@ -142,7 +134,10 @@ function CategoryStoreScreen() {
       // Revert on error
       setFollowing(!newFollowing);
       logger.warn('[Category] Follow toggle failed', err);
-      showToast({ message: 'Could not update follow status. Please try again.', type: 'error' });
+      // Surface the real failure (status + detail) — a generic message hides
+      // whether this is auth, network, or a server error.
+      const detail = err instanceof Error && err.message ? ` (${err.message})` : '';
+      showToast({ message: `Could not update follow status. Please try again.${detail}`, type: 'error' });
     }
   }, [following, categoryId, showToast]);
 
@@ -188,28 +183,48 @@ function CategoryStoreScreen() {
           colors={colors}
         />
 
-        {/* 3a. Page-level sort chips (mockup `.chips` — gradient active pill,
-            live catalog count on "All"). */}
+        {/* 3a. Page-level sort chips (mockup `.chips` — gradient active pill). */}
         <CategorySortChips
           sort={catalogSort}
           onChange={setCatalogSort}
-          total={catalogTotal}
           colors={colors}
         />
 
-        {/* 3b. THE single category overview rail → museum → affiliate
-            "Where to buy". A browsable gallery of what EXISTS in the
-            category; every tap opens the catalog museum detail. */}
+        {/* 3b. The category overview rail → museum → affiliate "Where to
+            buy". A browsable gallery of what EXISTS in the category; every
+            tap opens the catalog museum detail. */}
         <CategoryOverviewRail
           categoryId={categoryId}
           categoryName={categoryMeta.name}
           sort={catalogSort}
-          onTotal={setCatalogTotal}
           accentColor={accentColor}
           colors={colors}
           onSeeAll={() => router.push({
             pathname: '/category-browse',
             params: { categoryId: String(categoryId) },
+          } as unknown as Href)}
+          onItemPress={(it) => router.push({
+            pathname: '/catalog-item/[key]',
+            params: {
+              key: it.item_key, category: it.category, title: it.title,
+              image_url: it.image_url ?? '', rarity: it.rarity ?? '',
+              set_code: it.set_code ?? '', brand: it.brand ?? '',
+              estimated_price: it.estimated_price != null ? String(it.estimated_price) : '',
+            },
+          } as unknown as Href)}
+        />
+
+        {/* 3c. BY SET — its own carousel under the main rail ("By set" left
+            the sort chips; it's a browse dimension, not a sort). */}
+        <CategoryOverviewRail
+          categoryId={categoryId}
+          label="🗂 BY SET"
+          sort="set"
+          accentColor={accentColor}
+          colors={colors}
+          onSeeAll={() => router.push({
+            pathname: '/category-browse',
+            params: { categoryId: String(categoryId), sort: 'set' },
           } as unknown as Href)}
           onItemPress={(it) => router.push({
             pathname: '/catalog-item/[key]',
@@ -238,14 +253,8 @@ function CategoryStoreScreen() {
           colors={colors}
         />
 
-        {/* 6. Friends Who Follow */}
-        <FriendsFollowSection
-          friends={friends}
-          onFriendPress={handleFriendPress}
-          colors={colors}
-        />
-
-        {/* 7. Related Categories */}
+        {/* 6. Related Categories — Friends Who Follow is gone; its Invite/
+            Find friends CTAs moved into the header banner. */}
         <RelatedCategoriesSection
           categories={relatedCategories}
           onCategoryPress={handleRelatedCategoryPress}

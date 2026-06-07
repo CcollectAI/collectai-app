@@ -3,7 +3,8 @@
  * (mockup: web/category-redesign-preview.html `.chips`). Sit directly under
  * the category header, OUTSIDE the rail card. Active chip = tiffany gradient
  * (#81D8D0 → #2C7873) with white text + soft shadow; inactive = white pill
- * with hairline border. First chip carries the live catalog count ("All 1,247").
+ * with hairline border. "All" is just "All" (no live count), and "By set"
+ * is NOT a chip — it has its own carousel under the main rail.
  */
 import React from 'react';
 import { ScrollView, View, Text, StyleSheet, Platform } from 'react-native';
@@ -19,23 +20,20 @@ const CHIPS: { key: CatalogSortKey; label: string; icon: keyof typeof Ionicons.g
   { key: 'all', label: 'All', icon: 'grid-outline' },
   { key: 'value', label: 'Most valuable', icon: 'diamond-outline' },
   { key: 'newest', label: 'Newest', icon: 'sparkles-outline' },
-  { key: 'set', label: 'By set', icon: 'albums-outline' },
 ];
 
 type Props = {
   sort: CatalogSortKey;
   onChange: (sort: CatalogSortKey) => void;
-  /** Live catalog size — rendered on the "All" chip when known. */
-  total?: number | null;
   colors: AppTheme['colors'];
 };
 
-function CategorySortChips({ sort, onChange, total, colors }: Props) {
+function CategorySortChips({ sort, onChange, colors }: Props) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
       {CHIPS.map((c) => {
         const active = c.key === sort;
-        const label = c.key === 'all' && total ? `All ${total.toLocaleString()}` : c.label;
+        const label = c.label;
         const inner = (
           <>
             <Ionicons name={c.icon} size={13} color={active ? '#fff' : colors.muted} />

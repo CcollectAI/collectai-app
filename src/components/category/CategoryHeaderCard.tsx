@@ -1,11 +1,17 @@
 /**
  * CategoryHeaderCard — tiffany gradient banner per the redesign mockup
- * (web/category-redesign-preview.html `.cathead`: linear-gradient(135deg,
- * #81D8D0 → #2C7873), white text). Follow pill inverts on the gradient:
- * outline-white when idle, solid-white with deep-tiffany text when following.
+ * (web/category-redesign-preview.html `.cathead`), tuned to the app's brand
+ * ramp (tokens.brand.base → darker — the mockup's #2C7873 endpoint read
+ * off-palette next to the rest of the app). White text; Follow pill inverts
+ * on the gradient: outline-white when idle, solid-white when following.
+ *
+ * Also hosts the Invite/Find friends CTAs (moved up from the old
+ * FriendsFollowSection, which is gone): one banner owns all "grow your
+ * circle around this category" actions.
  */
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, Share } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedPressable } from '@/motion';
@@ -25,36 +31,71 @@ const CategoryHeaderCard: React.FC<Props> = ({
   categoryTagline,
   following,
   onToggleFollow,
-}) => (
-  <LinearGradient
-    colors={[tokens.brand.base, tokens.brand.deep]}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={styles.headerCard}
-  >
-    <View style={styles.headerContent}>
-      <Text style={styles.categoryName}>{categoryName}</Text>
-      <Text style={styles.categoryTagline} numberOfLines={3}>
-        {categoryTagline}
-      </Text>
-    </View>
-    <AnimatedPressable
-      style={[styles.followButton, following && styles.followButtonActive]}
-      onPress={onToggleFollow}
-      accessibilityRole="button"
-      accessibilityLabel={following ? `Unfollow ${categoryName}` : `Follow ${categoryName}`}
+}) => {
+  const router = useRouter();
+
+  const onInvite = useCallback(() => {
+    Share.share({
+      message: 'Track and value your collection with me on Sparrow Collect — https://sparrowcollect.com',
+    }).catch(() => {});
+  }, []);
+
+  const onFindFriends = useCallback(() => {
+    // The collector search lives on the marketplace tab ("Find Collectors").
+    router.push('/(tabs)/marketplace' as Href);
+  }, [router]);
+
+  return (
+    <LinearGradient
+      colors={[tokens.brand.base, tokens.brand.darker]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.headerCard}
     >
-      <Ionicons
-        name={following ? 'checkmark' : 'add'}
-        size={16}
-        color={following ? tokens.brand.deep : '#fff'}
-      />
-      <Text style={[styles.followButtonText, following && styles.followButtonTextActive]}>
-        {following ? 'Following' : 'Follow'}
-      </Text>
-    </AnimatedPressable>
-  </LinearGradient>
-);
+      <View style={styles.headerContent}>
+        <Text style={styles.categoryName}>{categoryName}</Text>
+        <Text style={styles.categoryTagline} numberOfLines={3}>
+          {categoryTagline}
+        </Text>
+      </View>
+      <View style={styles.actionsRow}>
+        <AnimatedPressable
+          style={[styles.pill, following && styles.pillActive]}
+          onPress={onToggleFollow}
+          accessibilityRole="button"
+          accessibilityLabel={following ? `Unfollow ${categoryName}` : `Follow ${categoryName}`}
+        >
+          <Ionicons
+            name={following ? 'checkmark' : 'add'}
+            size={16}
+            color={following ? tokens.brand.darker : '#fff'}
+          />
+          <Text style={[styles.pillText, following && styles.pillTextActive]}>
+            {following ? 'Following' : 'Follow'}
+          </Text>
+        </AnimatedPressable>
+        <AnimatedPressable
+          style={styles.pill}
+          onPress={onInvite}
+          accessibilityRole="button"
+          accessibilityLabel="Invite your friends"
+        >
+          <Ionicons name="share-outline" size={15} color="#fff" />
+          <Text style={styles.pillText}>Invite friends</Text>
+        </AnimatedPressable>
+        <AnimatedPressable
+          style={styles.pill}
+          onPress={onFindFriends}
+          accessibilityRole="button"
+          accessibilityLabel="Find friends to follow"
+        >
+          <Ionicons name="search" size={15} color="#fff" />
+          <Text style={styles.pillText}>Find friends</Text>
+        </AnimatedPressable>
+      </View>
+    </LinearGradient>
+  );
+};
 
 export default React.memo(CategoryHeaderCard);
 
@@ -79,27 +120,31 @@ const styles = StyleSheet.create({
     color: '#fff',
     opacity: 0.9,
   },
-  followButton: {
+  actionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: '#fff',
   },
-  followButtonActive: {
+  pillActive: {
     backgroundColor: '#fff',
     borderColor: '#fff',
   },
-  followButtonText: {
+  pillText: {
     marginLeft: 4,
     fontSize: 13,
     fontWeight: '600',
     color: '#fff',
   },
-  followButtonTextActive: {
-    color: tokens.brand.deep,
+  pillTextActive: {
+    color: tokens.brand.darker,
   },
 });

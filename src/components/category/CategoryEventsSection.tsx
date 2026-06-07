@@ -16,12 +16,14 @@ const kindIcon: Record<string, keyof typeof Ionicons.glyphMap> = {
   collection_drop: 'cube-outline',
   meetup: 'people-outline',
   stream: 'logo-twitch',
+  convention: 'business-outline',
 };
 
 const kindLabel: Record<string, string> = {
   collection_drop: 'Drop',
   meetup: 'Meetup',
   stream: 'Stream',
+  convention: 'Convention',
 };
 
 type Props = {

@@ -109,8 +109,11 @@ function CatalogItemMuseumScreen() {
         title, category, targetPrice: estPrice ?? undefined,
       });
       showToast({ message: `${title} added to watchlist`, type: 'success' });
-    } catch {
-      showToast({ message: "Couldn't add to watchlist — try again", type: 'error' });
+    } catch (e) {
+      // Surface the real failure (status + detail) — a generic message hides
+      // whether this is auth, network, or a server error.
+      const detail = e instanceof Error && e.message ? ` (${e.message})` : '';
+      showToast({ message: `Couldn't add to watchlist — try again${detail}`, type: 'error' });
     } finally {
       setAdding(false);
     }
@@ -154,6 +157,8 @@ function CatalogItemMuseumScreen() {
       ) : (
         <View style={[styles.hero, styles.heroEmpty, { backgroundColor: colors.card }]}>
           <Ionicons name="image-outline" size={48} color={colors.muted} />
+          {/* No catalog art yet — user photos will fill these as the database grows. */}
+          <Text style={[styles.comingSoon, { color: colors.muted }]}>Image coming soon</Text>
         </View>
       )}
 
@@ -182,7 +187,7 @@ function CatalogItemMuseumScreen() {
           {!limits?.advanced_analytics && (
             <AnimatedPressable
               style={[styles.proRow, { borderColor: colors.border }]}
-              onPress={() => router.push('/pro' as never)}
+              onPress={() => router.push('/subscription' as Href)}
               accessibilityRole="button" accessibilityLabel="Unlock full market analysis with Pro"
             >
               <Ionicons name="lock-closed" size={14} color={colors.muted} />
@@ -273,6 +278,7 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   hero: { width: '100%', height: 280, marginTop: 8 },
   heroEmpty: { alignItems: 'center', justifyContent: 'center' },
+  comingSoon: { fontSize: 13, fontWeight: '600', marginTop: 8 },
   body: { padding: 16 },
   title: { fontSize: 22, fontWeight: '800', marginBottom: 8 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
