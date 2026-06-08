@@ -42,6 +42,7 @@ import type {
 } from './types';
 import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
 import { cacheGet, cacheSet, cacheClear } from './offlineCache';
+import { followedCategoriesStore } from './followedCategoriesStore';
 import logger from '../utils/logger';
 
 // ---------------------------------------------------------------------------
@@ -299,6 +300,8 @@ export class CachedDataProvider implements DataProvider {
 
   async followCategory(categoryId: string): Promise<void> {
     await this.inner.followCategory(categoryId);
+    // Propagate to every useFollowedCategories consumer immediately.
+    followedCategoriesStore.add(categoryId);
     await Promise.all([
       cacheClear(CK.EVENTS),
       cacheClear(CK.CATEGORY_SUMMARIES),
@@ -308,6 +311,7 @@ export class CachedDataProvider implements DataProvider {
 
   async unfollowCategory(categoryId: string): Promise<void> {
     await this.inner.unfollowCategory(categoryId);
+    followedCategoriesStore.remove(categoryId);
     await Promise.all([
       cacheClear(CK.EVENTS),
       cacheClear(CK.CATEGORY_SUMMARIES),

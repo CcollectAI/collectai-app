@@ -2,6 +2,7 @@
  * Settings, preferences, and taxonomy API methods.
  */
 import { get, put, patch, post, del } from "./httpClient";
+import { followedCategoriesStore } from "@/data/followedCategoriesStore";
 
 // Onboarding / category-follow state.
 // PUT /settings only accepts {currency, region, locale} (user_settings_router.py)
@@ -20,6 +21,8 @@ export const saveFollowedCategories = async (categories: string[]) => {
     ...toAdd.map((c) => post(`/events/categories/${encodeURIComponent(c)}/follow`, {})),
     ...toRemove.map((c) => del(`/events/categories/${encodeURIComponent(c)}/follow`)),
   ]);
+  // Keep the shared store (and every live consumer) in sync.
+  followedCategoriesStore.setAll(categories);
   return { followed_categories: categories };
 };
 

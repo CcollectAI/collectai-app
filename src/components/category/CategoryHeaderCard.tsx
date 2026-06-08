@@ -9,14 +9,15 @@
  * FriendsFollowSection, which is gone): one banner owns all "grow your
  * circle around this category" actions.
  */
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Share } from 'react-native';
-import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedPressable } from '@/motion';
 import { colors as tokens } from '@/theme/tokens';
+import { COMMUNITY_GATED } from '@/config/featureFlags';
 import type { AppTheme } from '@/hooks/useAppTheme';
+import CategoryCollectorSearch from './CategoryCollectorSearch';
 
 type Props = {
   categoryName: string;
@@ -31,8 +32,9 @@ const CategoryHeaderCard: React.FC<Props> = ({
   categoryTagline,
   following,
   onToggleFollow,
+  colors,
 }) => {
-  const router = useRouter();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const onInvite = useCallback(() => {
     Share.share({
@@ -40,10 +42,12 @@ const CategoryHeaderCard: React.FC<Props> = ({
     }).catch(() => {});
   }, []);
 
+  // Inline collector search drops down in place instead of leaving for the
+  // marketplace tab. Whole surface is gated by COMMUNITY_GATED below.
   const onFindFriends = useCallback(() => {
-    // The collector search lives on the marketplace tab ("Find Collectors").
-    router.push('/(tabs)/marketplace' as Href);
-  }, [router]);
+    setSearchOpen((v) => !v);
+  }, []);
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
 
   return (
     <LinearGradient
@@ -83,16 +87,28 @@ const CategoryHeaderCard: React.FC<Props> = ({
           <Ionicons name="share-outline" size={15} color="#fff" />
           <Text style={styles.pillText}>Invite friends</Text>
         </AnimatedPressable>
-        <AnimatedPressable
-          style={styles.pill}
-          onPress={onFindFriends}
-          accessibilityRole="button"
-          accessibilityLabel="Find friends to follow"
-        >
-          <Ionicons name="search" size={15} color="#fff" />
-          <Text style={styles.pillText}>Find friends</Text>
-        </AnimatedPressable>
+        {!COMMUNITY_GATED && (
+          <AnimatedPressable
+            style={[styles.pill, searchOpen && styles.pillActive]}
+            onPress={onFindFriends}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: searchOpen }}
+            accessibilityLabel="Find friends to follow"
+          >
+            <Ionicons
+              name="search"
+              size={15}
+              color={searchOpen ? tokens.brand.darker : '#fff'}
+            />
+            <Text style={[styles.pillText, searchOpen && styles.pillTextActive]}>
+              Find friends
+            </Text>
+          </AnimatedPressable>
+        )}
       </View>
+      {!COMMUNITY_GATED && searchOpen && (
+        <CategoryCollectorSearch colors={colors} onClose={closeSearch} />
+      )}
     </LinearGradient>
   );
 };
