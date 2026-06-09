@@ -267,6 +267,74 @@ warm the same day.
 
 ---
 
+## RESOLVED 2026-06-09 — Phase A applied: jobs 21 + 24 paused (dead producer)
+
+Re-ranked `pg_stat_statements` by `shared_blks_read` total (per the 06-05 lesson).
+The clear #1 and #2 disk-read sources over the ~21-day window:
+
+```
+select public.produce_alerts_price_drop_30d()   → 493 calls · 16,994 ms mean · 69.3M blocks read (~540 GB)   [pg_cron job 21, hourly]
+select public.produce_alerts_price_spike_7d()    → 494 calls · 23,657 ms mean · 55.8M blocks read (~436 GB)   [pg_cron job 24, hourly]
+```
+
+Combined ≈ **47 GB/day of disk reads**. Each call re-aggregates 90 days of
+`market_hits` through a live (non-materialized) view chain:
+`v_market_lens_item_summary` → `v_item_price_daily_90d` (`DISTINCT ON` +
+two `percentile_cont` passes), ≈ 1 GB/call.
+
+**They are a DEAD PRODUCER.** `alerts_outbox` last grew **2025-11-21** (31 rows
+total). The only code referencing it is `worker_output_registry.py` (a liveness
+monitor) — no endpoint, no FE serves it, and `signal_alerts_worker` (the intended
+consumer) has been disabled since 2026-04-21. So ~47 GB/day produced alerts that
+nothing reads.
+
+**Action taken** (stronger than the May Phase A proposal, which only suggested
+pausing job 24 for measurement — we now have dead-consumer proof, so both went):
+
+```sql
+-- cron.job is owned by supabase_admin even on the postgres direct connection;
+-- a raw UPDATE cron.job gets "permission denied". Use the SECURITY-DEFINER
+-- function with => named args (asyncpg chokes on := + $1 binding).
+SELECT cron.alter_job(job_id => 21, active => false);
+SELECT cron.alter_job(job_id => 24, active => false);
+-- reverse with active => true
+```
+
+Fully reversible. `_instance_health_monitor` pages on `matview_supply stall > 180m`;
+21/24 are not matviews, so no false page. No bake restart required.
+
+Secondary effect this relieves: the `_HEAVY_LOCK` heavy workers (deal_discovery,
+marketplace_scrape) were starving at the gate under the saturation —
+`deal_discovery waited 827.0s for heavy gate` (up from ~65s) on 2026-06-09 09:54.
+
+### Durable fix for jobs 21/24 — THREE LAYERS (deferred, gated on a consumer)
+
+Pausing is the tourniquet, not the cure. When the alerts feature is actually
+wired to users, replace it with all three layers (cheapest-first):
+
+1. **Hourly → daily.** A 30-day and 7-day price signal does not change hour to
+   hour. Daily off-peak = ~96% cut, and it's a one-line schedule change:
+   `SELECT cron.alter_job(job_id => 21, schedule => '30 2 * * *');`
+2. **Materialize the base.** Turn `v_item_price_daily_90d` into a matview
+   refreshed once/day — we already do exactly this for `mv_daily_median_price`
+   (job 17) and `category_daily_medians` (job 5). The alert functions then read
+   a cheap index scan instead of re-scanning `market_hits`.
+3. **Gate on a consumer.** Even cheap, it writes to `alerts_outbox`, which
+   `signal_alerts_worker` (disabled) and the FE don't read. Re-enable the
+   consumer FIRST, or you're producing into a void.
+
+Until the alerts feature ships a consumer, **paused is the correct state** — a
+documented decision, not silent rot.
+
+**Class-level IO fix (still open):** Phase B partition-pruning rewrites
+(`now()` → Python-bound `$N::timestamptz`) for the next-heaviest cron jobs
+(16/17 MV refreshes) and hot worker queries, plus the `market_hits` >90d → S3
+warm-tier migration (`DATA_SCALING_PLAN.md`) to shrink the hot scan set so every
+aggregation gets structurally cheaper. Capture `EXPLAIN ANALYZE` before each
+rewrite (`feedback_no_fixes_on_assumptions.md`).
+
+---
+
 ## Cross-references
 
 - `docs/PHASE_3_QUERY_REWRITES.md` — the queued rewrite plan (gates this work)

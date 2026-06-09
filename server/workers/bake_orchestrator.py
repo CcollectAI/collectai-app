@@ -80,6 +80,13 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     # Daily portfolio/item value-change notifications.
     ("value_change_worker",     "workers.value_change_worker",        "run_once", True),
 
+    # ── Events — RE-ENABLED 2026-06-09 ──
+    # Ingestion was off since the 2026-05-04 pre-launch manifest cut; events
+    # tab went stale (0 new events for 36 days, most past their start date).
+    # Free sources (RSS/Crawl4AI/MusicBrainz/Limitless); Firecrawl sub-step
+    # stays no-op via FIRECRAWL_ENABLED kill-switch. SCHEDULES = 6h.
+    ("event_scraper_worker",    "workers.event_scraper_scheduler",    "run_once", False),
+
     # ── DISABLED — post-launch features (no users yet) ──
     # ("catalog_crawler_worker",  "workers.catalog_crawler_worker",     "run_once", True),
     #   Nightly full crawl. Catalog imports (tcgcsv/discogs) cover pre-launch needs.
@@ -93,8 +100,6 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   Watchlist alerts. 9 watchlist items in DB, all dev/seed.
     # ("auto_delist_worker",      "workers.auto_delist_worker",         "run_once", True),
     #   Cross-marketplace listing sync. No connected sellers.
-    # ("event_scraper_worker",    "workers.event_scraper_scheduler",    "run_once", False),
-    #   Events feature for users. No users.
     # ("auction_alert_worker",    "workers.auction_alert_worker",       "run_once", True),
     #   Disabled 2026-05-04 due to partition-pruning planner regression
     #   (see learning_partition_pruning_planning_cost.md). Re-enable after
