@@ -326,12 +326,47 @@ wired to users, replace it with all three layers (cheapest-first):
 Until the alerts feature ships a consumer, **paused is the correct state** — a
 documented decision, not silent rot.
 
-**Class-level IO fix (still open):** Phase B partition-pruning rewrites
-(`now()` → Python-bound `$N::timestamptz`) for the next-heaviest cron jobs
-(16/17 MV refreshes) and hot worker queries, plus the `market_hits` >90d → S3
-warm-tier migration (`DATA_SCALING_PLAN.md`) to shrink the hot scan set so every
-aggregation gets structurally cheaper. Capture `EXPLAIN ANALYZE` before each
-rewrite (`feedback_no_fixes_on_assumptions.md`).
+### Class-level IO fix — Phase B thesis REVISED by EXPLAIN evidence (2026-06-09)
+
+Captured `EXPLAIN (ANALYZE, BUFFERS)` first (per `feedback_no_fixes_on_assumptions.md`)
+on the live DB before touching any query — and it **disproved the assumed fix**:
+
+| Query (forced generic plan, mimics asyncpg) | Pruning | Planning | Execution | Cost driver |
+|---|---|---|---|---|
+| sanity_probe `hourly_baseline` (8-day market_hits scan) | **Subplans Removed: 8** | 6.3 ms | 1813 ms | 306 MB seq-scan of `m06` (571K/614K rows match — 93% selectivity) |
+| 24h `count(*) market_hits` | **Subplans Removed: 4** | 4.4 ms | 1492 ms | seq-scan of `m06` |
+
+**Runtime partition pruning already works** with `now()` inline under a generic
+plan on this PG version (`Subplans Removed` > 0, planning ≈ 5 ms). So the
+"`now()` → `$N::timestamptz`" rewrite buys ~nothing for these simple single-table
+scans. (Join-shaped queries — e.g. the `learning_partition_pruning_planning_cost.md`
+calibration case — can still defeat pruning; capture EXPLAIN per query, don't
+assume either way.)
+
+Two corrections to the earlier framing:
+- Jobs **16/17 are MV refreshes whose definitions don't use `now()` at all**
+  (`mv_item_best_comp_canon` = per-item LATERAL over `v_market_hits_canon`;
+  `mv_daily_median_price` = percentile aggregation). The timestamp rewrite is
+  irrelevant to them; their cost is the underlying aggregation/LATERAL.
+- `market_hits` has **no standalone `seen_at` index** — only composite
+  `(item_ref, seen_at)` / `(category, seen_at)` where `seen_at` is secondary,
+  so bare recent-window filters can't use them → seq scan of the 613 MB / 1.23M-row
+  current-month partition.
+
+**The genuinely effective levers (capture EXPLAIN per change, none applied yet):**
+1. **Reduce monitor/probe frequency.** sanity_probe's `hourly_baseline` reads
+   ~306 MB/run; it does not need a 613 MB scan every hour. Biggest, cheapest win.
+2. **Pre-aggregate ingest counts.** Maintain a tiny hourly `ingest_counts` rollup
+   so volume-drop / count probes read a small table instead of re-scanning raw
+   `market_hits`.
+3. **BRIN index on `seen_at`** (tiny, ideal for append-only time-ordered data) —
+   would help the narrow 1h/24h windows; EXPLAIN to confirm benefit at the actual
+   selectivity before adding.
+4. **Warm-tier `market_hits` >90d → S3 Parquet** (`DATA_SCALING_PLAN.md`) — shrinks
+   total footprint but NOT the current-month hot partition, so it's secondary here.
+
+Do NOT blanket-apply the `$N::timestamptz` rewrite — the evidence says it's wasted
+effort for the queries measured.
 
 ---
 
