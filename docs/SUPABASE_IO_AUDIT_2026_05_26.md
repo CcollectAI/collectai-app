@@ -267,6 +267,109 @@ warm the same day.
 
 ---
 
+## RESOLVED 2026-06-09 — Phase A applied: jobs 21 + 24 paused (dead producer)
+
+Re-ranked `pg_stat_statements` by `shared_blks_read` total (per the 06-05 lesson).
+The clear #1 and #2 disk-read sources over the ~21-day window:
+
+```
+select public.produce_alerts_price_drop_30d()   → 493 calls · 16,994 ms mean · 69.3M blocks read (~540 GB)   [pg_cron job 21, hourly]
+select public.produce_alerts_price_spike_7d()    → 494 calls · 23,657 ms mean · 55.8M blocks read (~436 GB)   [pg_cron job 24, hourly]
+```
+
+Combined ≈ **47 GB/day of disk reads**. Each call re-aggregates 90 days of
+`market_hits` through a live (non-materialized) view chain:
+`v_market_lens_item_summary` → `v_item_price_daily_90d` (`DISTINCT ON` +
+two `percentile_cont` passes), ≈ 1 GB/call.
+
+**They are a DEAD PRODUCER.** `alerts_outbox` last grew **2025-11-21** (31 rows
+total). The only code referencing it is `worker_output_registry.py` (a liveness
+monitor) — no endpoint, no FE serves it, and `signal_alerts_worker` (the intended
+consumer) has been disabled since 2026-04-21. So ~47 GB/day produced alerts that
+nothing reads.
+
+**Action taken** (stronger than the May Phase A proposal, which only suggested
+pausing job 24 for measurement — we now have dead-consumer proof, so both went):
+
+```sql
+-- cron.job is owned by supabase_admin even on the postgres direct connection;
+-- a raw UPDATE cron.job gets "permission denied". Use the SECURITY-DEFINER
+-- function with => named args (asyncpg chokes on := + $1 binding).
+SELECT cron.alter_job(job_id => 21, active => false);
+SELECT cron.alter_job(job_id => 24, active => false);
+-- reverse with active => true
+```
+
+Fully reversible. `_instance_health_monitor` pages on `matview_supply stall > 180m`;
+21/24 are not matviews, so no false page. No bake restart required.
+
+Secondary effect this relieves: the `_HEAVY_LOCK` heavy workers (deal_discovery,
+marketplace_scrape) were starving at the gate under the saturation —
+`deal_discovery waited 827.0s for heavy gate` (up from ~65s) on 2026-06-09 09:54.
+
+### Durable fix for jobs 21/24 — THREE LAYERS (deferred, gated on a consumer)
+
+Pausing is the tourniquet, not the cure. When the alerts feature is actually
+wired to users, replace it with all three layers (cheapest-first):
+
+1. **Hourly → daily.** A 30-day and 7-day price signal does not change hour to
+   hour. Daily off-peak = ~96% cut, and it's a one-line schedule change:
+   `SELECT cron.alter_job(job_id => 21, schedule => '30 2 * * *');`
+2. **Materialize the base.** Turn `v_item_price_daily_90d` into a matview
+   refreshed once/day — we already do exactly this for `mv_daily_median_price`
+   (job 17) and `category_daily_medians` (job 5). The alert functions then read
+   a cheap index scan instead of re-scanning `market_hits`.
+3. **Gate on a consumer.** Even cheap, it writes to `alerts_outbox`, which
+   `signal_alerts_worker` (disabled) and the FE don't read. Re-enable the
+   consumer FIRST, or you're producing into a void.
+
+Until the alerts feature ships a consumer, **paused is the correct state** — a
+documented decision, not silent rot.
+
+### Class-level IO fix — Phase B thesis REVISED by EXPLAIN evidence (2026-06-09)
+
+Captured `EXPLAIN (ANALYZE, BUFFERS)` first (per `feedback_no_fixes_on_assumptions.md`)
+on the live DB before touching any query — and it **disproved the assumed fix**:
+
+| Query (forced generic plan, mimics asyncpg) | Pruning | Planning | Execution | Cost driver |
+|---|---|---|---|---|
+| sanity_probe `hourly_baseline` (8-day market_hits scan) | **Subplans Removed: 8** | 6.3 ms | 1813 ms | 306 MB seq-scan of `m06` (571K/614K rows match — 93% selectivity) |
+| 24h `count(*) market_hits` | **Subplans Removed: 4** | 4.4 ms | 1492 ms | seq-scan of `m06` |
+
+**Runtime partition pruning already works** with `now()` inline under a generic
+plan on this PG version (`Subplans Removed` > 0, planning ≈ 5 ms). So the
+"`now()` → `$N::timestamptz`" rewrite buys ~nothing for these simple single-table
+scans. (Join-shaped queries — e.g. the `learning_partition_pruning_planning_cost.md`
+calibration case — can still defeat pruning; capture EXPLAIN per query, don't
+assume either way.)
+
+Two corrections to the earlier framing:
+- Jobs **16/17 are MV refreshes whose definitions don't use `now()` at all**
+  (`mv_item_best_comp_canon` = per-item LATERAL over `v_market_hits_canon`;
+  `mv_daily_median_price` = percentile aggregation). The timestamp rewrite is
+  irrelevant to them; their cost is the underlying aggregation/LATERAL.
+- `market_hits` has **no standalone `seen_at` index** — only composite
+  `(item_ref, seen_at)` / `(category, seen_at)` where `seen_at` is secondary,
+  so bare recent-window filters can't use them → seq scan of the 613 MB / 1.23M-row
+  current-month partition.
+
+**The genuinely effective levers (capture EXPLAIN per change, none applied yet):**
+1. **Reduce monitor/probe frequency.** sanity_probe's `hourly_baseline` reads
+   ~306 MB/run; it does not need a 613 MB scan every hour. Biggest, cheapest win.
+2. **Pre-aggregate ingest counts.** Maintain a tiny hourly `ingest_counts` rollup
+   so volume-drop / count probes read a small table instead of re-scanning raw
+   `market_hits`.
+3. **BRIN index on `seen_at`** (tiny, ideal for append-only time-ordered data) —
+   would help the narrow 1h/24h windows; EXPLAIN to confirm benefit at the actual
+   selectivity before adding.
+4. **Warm-tier `market_hits` >90d → S3 Parquet** (`DATA_SCALING_PLAN.md`) — shrinks
+   total footprint but NOT the current-month hot partition, so it's secondary here.
+
+Do NOT blanket-apply the `$N::timestamptz` rewrite — the evidence says it's wasted
+effort for the queries measured.
+
+---
+
 ## Cross-references
 
 - `docs/PHASE_3_QUERY_REWRITES.md` — the queued rewrite plan (gates this work)
