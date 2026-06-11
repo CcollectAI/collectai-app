@@ -7,6 +7,7 @@
  */
 
 import React, { createContext, useEffect, useState, useCallback } from 'react';
+import * as Linking from 'expo-linking';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
@@ -64,6 +65,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setProfile(null);
     }
+  }, []);
+
+  // Auth deep-link handler. When the app is opened via the email confirmation
+  // (or magic) link, Supabase appends the session to the URL fragment, e.g.
+  //   sparrow://#access_token=...&refresh_token=...&type=signup
+  // React Native has no `detectSessionInUrl`, so parse it manually and hydrate
+  // the session; the onAuthStateChange listener below then routes the now
+  // signed-in user into the app. Added 2026-06-11 so tapping the confirm link
+  // drops testers straight into the app instead of stranding them. The web
+  // /auth/confirm page forwards its #fragment to sparrow:// for this handler.
+  useEffect(() => {
+    const handleAuthLink = async (url: string | null) => {
+      if (!url) return;
+      const hashIdx = url.indexOf('#');
+      if (hashIdx === -1) return;
+      const params: Record<string, string> = {};
+      for (const kv of url.slice(hashIdx + 1).split('&')) {
+        const eq = kv.indexOf('=');
+        if (eq === -1) continue;
+        params[kv.slice(0, eq)] = decodeURIComponent(kv.slice(eq + 1));
+      }
+      const access_token = params['access_token'];
+      const refresh_token = params['refresh_token'];
+      if (!access_token || !refresh_token) return;
+      try {
+        await supabase.auth.setSession({ access_token, refresh_token });
+      } catch (e) {
+        logger.warn('[AuthProvider] setSession from deep link failed:', e);
+      }
+    };
+    Linking.getInitialURL().then(handleAuthLink).catch(() => {});
+    const sub = Linking.addEventListener('url', ({ url }) => { void handleAuthLink(url); });
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {

@@ -129,11 +129,14 @@ function RegisterScreen() {
         email: trimmedEmail,
         password,
         options: {
-          // Deep-link back into the app after the user taps the confirmation link.
-          // Supabase client has detectSessionInUrl: true (src/lib/supabase.ts) so the
-          // session is created automatically when the app re-opens via this URL.
-          // sparrow:// is registered in app.json scheme.
-          emailRedirectTo: 'sparrow://',
+          // Confirmation link redirects here. This is an https Universal Link
+          // (app.json associatedDomains: applinks:sparrowcollect.com; AASA path
+          // /auth/*) so iOS Mail/Safari can hand off to the app; if the app
+          // isn't installed it shows a branded web page. The /auth/confirm page
+          // forwards Supabase's #access_token fragment to sparrow://, which the
+          // AuthProvider deep-link handler turns into a session. Custom-scheme
+          // links straight from email (sparrow://) are unreliable, hence https.
+          emailRedirectTo: 'https://sparrowcollect.com/auth/confirm',
         },
       });
       if (error) throw error;
