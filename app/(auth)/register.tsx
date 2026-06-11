@@ -302,28 +302,7 @@ function RegisterScreen() {
               </Animated.View>
 
               <Animated.View style={getItemStyle(4)}>
-                <AnimatedPressable
-                  style={styles.gradientBtnWrap}
-                  onPress={handleSignUp}
-                  disabled={loading}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('auth.register.create_button')}
-                >
-                  <LinearGradient
-                    colors={[colors.brand.dark, colors.brand.base]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.gradientBtn}
-                  >
-                    {loading ? (
-                      <ActivityIndicator color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.gradientBtnText}>{t('auth.register.create_button')}</Text>
-                    )}
-                  </LinearGradient>
-                </AnimatedPressable>
-
-                {/* Animated Terms checkbox */}
+                {/* Animated Terms checkbox — above the button so users agree before acting */}
                 <AnimatedPressable
                   style={styles.termsRow}
                   onPress={toggleTerms}
@@ -362,6 +341,27 @@ function RegisterScreen() {
                       {t('auth.register.privacy_policy')}
                     </Text>
                   </Text>
+                </AnimatedPressable>
+
+                <AnimatedPressable
+                  style={styles.gradientBtnWrap}
+                  onPress={handleSignUp}
+                  disabled={loading}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('auth.register.create_button')}
+                >
+                  <LinearGradient
+                    colors={[colors.brand.dark, colors.brand.base]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.gradientBtn}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.gradientBtnText}>{t('auth.register.create_button')}</Text>
+                    )}
+                  </LinearGradient>
                 </AnimatedPressable>
               </Animated.View>
             </View>

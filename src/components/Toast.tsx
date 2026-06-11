@@ -29,7 +29,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { DURATION } from '@/motion/tokens';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
-import { useAppTheme } from '@/hooks/useAppTheme';
 
 // --------------- Types ---------------
 
@@ -62,17 +61,10 @@ const TYPE_ICONS: Record<
   ToastType,
   { icon: keyof typeof Ionicons.glyphMap; iconColor: string }
 > = {
-  success: { icon: 'checkmark-circle', iconColor: '#A5D6A7' },
-  error: { icon: 'alert-circle', iconColor: '#EF9A9A' },
-  warning: { icon: 'warning', iconColor: '#FFE082' },
-  info: { icon: 'information-circle', iconColor: '#90CAF9' },
-};
-
-const TOAST_BG_KEY: Record<ToastType, 'toastSuccess' | 'toastError' | 'toastWarning' | 'toastInfo'> = {
-  success: 'toastSuccess',
-  error: 'toastError',
-  warning: 'toastWarning',
-  info: 'toastInfo',
+  success: { icon: 'checkmark-circle', iconColor: '#34D399' },
+  error: { icon: 'alert-circle', iconColor: '#F87171' },
+  warning: { icon: 'warning', iconColor: '#FBBF24' },
+  info: { icon: 'information-circle', iconColor: '#60A5FA' },
 };
 
 const HAPTIC_MAP: Record<ToastType, HapticIntent> = {
@@ -89,7 +81,6 @@ let nextId = 0;
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   const { settings } = useSettings();
-  const { colors } = useAppTheme();
   const [toast, setToast] = useState<ToastState | null>(null);
   const translateY = useRef(new Animated.Value(-120)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -162,7 +153,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 
   const cfg = toast ? TYPE_ICONS[toast.type] : null;
-  const toastBg = toast ? colors[TOAST_BG_KEY[toast.type]] : undefined;
 
   return (
     <ToastCtx.Provider value={value}>
@@ -184,7 +174,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         >
           <Pressable
             onPress={dismiss}
-            style={[styles.toast, { backgroundColor: toastBg }]}
+            style={[styles.toast, { borderLeftColor: cfg.iconColor }]}
             accessibilityRole="alert"
             accessibilityLabel={toast.message}
           >
@@ -221,7 +211,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 14,
+    borderLeftWidth: 4,
+    backgroundColor: '#1E293B',
     minHeight: 48,
     maxWidth: 420,
     width: '100%',
