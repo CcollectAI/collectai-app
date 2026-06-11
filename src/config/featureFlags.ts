@@ -14,6 +14,15 @@ export const BETA_MODE = false;
  */
 export const COMMUNITY_GATED = true;
 
+/**
+ * Social login (Sign in with Apple / Google) on the auth screens.
+ * OFF for launch — email/password only avoids App Store guideline 4.8 (offering
+ * Google requires also offering Apple) and the "broken button" rejection risk
+ * from showing providers not yet configured in Supabase. Flip to true once the
+ * Apple Services-ID/key + Google OAuth client are set up in Supabase.
+ */
+export const SOCIAL_LOGIN_ENABLED = false;
+
 export const featureFlags = {
   darkMode: false,
   FEATURE_HAPTICS_MICRO_ANIMATIONS: true,

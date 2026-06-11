@@ -37,6 +37,7 @@ import { track } from '@/analytics/track';
 import { GradientBackground } from '@/components/auth/GradientBackground';
 import { AuthTextInput } from '@/components/auth/AuthTextInput';
 import { fonts } from '@/theme/tokens';
+import { SOCIAL_LOGIN_ENABLED } from '@/config/featureFlags';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -310,6 +311,8 @@ function LoginScreen() {
               </Animated.View>
             </View>
 
+            {SOCIAL_LOGIN_ENABLED && (
+            <>
             {/* Divider */}
             <Animated.View style={[styles.dividerRow, getItemStyle(4)]}>
               <LinearGradient
@@ -370,6 +373,8 @@ function LoginScreen() {
               )}
 
             </Animated.View>
+            </>
+            )}
 
             {/* Sign-up CTA — prominent outlined button */}
             <Animated.View style={getItemStyle(6)}>
