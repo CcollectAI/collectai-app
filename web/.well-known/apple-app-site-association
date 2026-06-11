@@ -4,21 +4,22 @@
     "details": [
       {
         "appIDs": [
-          "TEAM_ID.com.sparrowcollect.app"
+          "3DX8FBF7S6.io.sparrowcollect.app"
         ],
         "paths": [
           "/item/*",
           "/events/*",
           "/categories/*",
           "/purchase/*",
-          "/users/*"
+          "/users/*",
+          "/auth/*"
         ]
       }
     ]
   },
   "webcredentials": {
     "apps": [
-      "TEAM_ID.com.sparrowcollect.app"
+      "3DX8FBF7S6.io.sparrowcollect.app"
     ]
   }
 }
