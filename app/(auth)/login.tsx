@@ -218,11 +218,11 @@ function LoginScreen() {
               <View style={[styles.iconCircleOuter, { backgroundColor: colors.brand.base + '15' }]}>
                 {Platform.OS === 'ios' ? (
                   <BlurView intensity={40} tint={isDark ? 'dark' : 'light'} style={styles.iconCircle}>
-                    <Image source={require('../../assets/icon.png')} style={{ width: 32, height: 32 }} resizeMode="contain" />
+                    <Image source={require('../../assets/icon.png')} style={{ width: 48, height: 48 }} resizeMode="contain" />
                   </BlurView>
                 ) : (
                   <View style={[styles.iconCircle, { backgroundColor: colors.brand.base + '25' }]}>
-                    <Image source={require('../../assets/icon.png')} style={{ width: 32, height: 32 }} resizeMode="contain" />
+                    <Image source={require('../../assets/icon.png')} style={{ width: 48, height: 48 }} resizeMode="contain" />
                   </View>
                 )}
               </View>
@@ -250,7 +250,7 @@ function LoginScreen() {
                 />
               </Animated.View>
 
-              <Animated.View style={[{ marginTop: 14 }, getItemStyle(2)]}>
+              <Animated.View style={[{ marginTop: 16 }, getItemStyle(2)]}>
                 <AuthTextInput
                   ref={passwordRef}
                   label="Password"
@@ -418,31 +418,37 @@ const styles = StyleSheet.create({
   },
   brandSection: {
     alignItems: 'center',
-    marginBottom: 56,
+    marginBottom: 48,
   },
   iconCircleOuter: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 18,
+    shadowColor: '#44A9A1',
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
   iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   brandTitle: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
+    letterSpacing: -0.5,
   },
   brandSubtitle: {
     fontSize: 16,
-    marginTop: 4,
+    marginTop: 8,
   },
   form: {
     marginBottom: 32,

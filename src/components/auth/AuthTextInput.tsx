@@ -98,10 +98,10 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(
             borderColor,
             ...(focused && {
               shadowColor: colors.brand.base,
-              shadowOpacity: 0.2,
-              shadowRadius: 8,
+              shadowOpacity: 0.28,
+              shadowRadius: 12,
               shadowOffset: { width: 0, height: 0 },
-              elevation: 4,
+              elevation: 6,
             }),
           },
         ]}
@@ -166,10 +166,10 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
+    height: 58,
     borderRadius: 16,
     borderWidth: 1.5,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
   },
   icon: {
     marginRight: 10,
