@@ -116,8 +116,9 @@ Renew with: `ssh collectai 'sudo certbot renew --nginx'`
 |---|---|
 | Email rate limit | Supabase free tier limits emails. Check Auth → Rate limits in dashboard. |
 | Wrong Site URL | Auth → URL Configuration → must be `https://sparrowcollect.com` |
-| Redirect URL missing | Auth → URL Configuration → add `sparrow://reset-password`, `sparrow://subscription` |
-| Apple/Google not configured | Auth → Providers → for v1 beta, email/password is the only required provider |
+| Redirect URL missing | Auth → URL Configuration → allowlist is `sparrow://**, https://sparrowcollect.com/**, collectai://**`. Signup-confirm + password-reset links redirect to `https://sparrowcollect.com/auth/confirm` (an https Universal Link — a raw `sparrow://` redirect makes Safari show "address invalid"). |
+| "Address is invalid" after tapping confirm | The confirm link is redirecting to `sparrow://` instead of `https://sparrowcollect.com/auth/confirm`. Ensure the build uses the https `emailRedirectTo` and that `web/auth/confirm` is deployed (see `AUTH_AND_WEB_DEPLOY.md`). |
+| Apple/Google not configured | Login is **email-only** (`SOCIAL_LOGIN_ENABLED=false` in `src/config/featureFlags.ts`). Don't enable the Supabase providers (or show the buttons) without configuring Apple Services-ID/key + Google OAuth client first — broken-button + guideline 4.8 rejection risk. |
 | RLS blocking sign-up | Database → Policies → ensure `auth.users` insertion isn't blocked |
 
 ---
