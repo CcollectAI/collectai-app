@@ -76,7 +76,10 @@ function ForgotPasswordScreen() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: 'sparrow://reset-password',
+        // https Universal-Link page (avoids Safari's "address invalid" on a raw
+        // custom scheme). It forwards the #access_token fragment (type=recovery)
+        // to sparrow://, and AuthProvider's handler routes recovery → reset-password.
+        redirectTo: 'https://sparrowcollect.com/auth/confirm',
       });
       if (error) throw error;
       setSent(true);

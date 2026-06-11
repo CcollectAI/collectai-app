@@ -129,15 +129,13 @@ function RegisterScreen() {
         email: trimmedEmail,
         password,
         options: {
-          // Confirmation link redirects to the app via the sparrow:// scheme; the
-          // AuthProvider deep-link handler parses the #access_token fragment and
-          // calls setSession to land the user signed-in.
-          // NOTE: the https Universal-Link flow (https://sparrowcollect.com/auth/confirm)
-          // is the eventual target for reliable Mail/Safari hand-off, but it
-          // requires web/auth/confirm to be DEPLOYED first (else it 404s). Until
-          // web/ is live, sparrow:// is used — it falls back to the real site, not
-          // a stale preview URL. Switch to the https link once web/ is deployed.
-          emailRedirectTo: 'sparrow://',
+          // Confirmation link redirects to the deployed https Universal-Link page
+          // (web/auth/confirm, AASA path /auth/*). Unlike a raw sparrow:// custom
+          // scheme — which Safari rejects with "address invalid" from an email
+          // redirect — this loads cleanly, then forwards Supabase's #access_token
+          // fragment to sparrow://, which the AuthProvider deep-link handler turns
+          // into a session. Shows a branded fallback page if the app isn't installed.
+          emailRedirectTo: 'https://sparrowcollect.com/auth/confirm',
         },
       });
       if (error) throw error;
