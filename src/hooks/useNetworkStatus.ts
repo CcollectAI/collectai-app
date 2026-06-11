@@ -89,35 +89,42 @@ export function useNetworkStatus(): NetworkStatus {
     // isConnected only — isInternetReachable returns false transiently on iOS mid-probe (TestFlight #9 false-positive).
     const computeOnline = (state: Network.NetworkState) => state.isConnected !== false;
 
-    // Initial check
-    Network.getNetworkStateAsync()
-      .then((state) => {
-        if (mounted) {
-          const online = computeOnline(state);
-          setIsOnline(online);
-          handleConnectivityChange(online);
-          prevOnline.current = online;
-        }
-      })
-      .catch((err) => {
-        logger.warn('[useNetworkStatus] initial check failed:', err);
-        if (mounted) setIsOnline(true);
-      });
+    const commit = (online: boolean) => {
+      if (!mounted) return;
+      setIsOnline(online);
+      handleConnectivityChange(online);
+      prevOnline.current = online;
+    };
 
-    // Periodic polling (expo-network does not expose a subscription listener)
-    const interval = setInterval(async () => {
+    // Evaluate connectivity. A single `isConnected === false` reading is NOT
+    // trusted: iOS reports offline transiently during cold start / network-stack
+    // warmup, which flashed the orange "You're offline" banner at login for new
+    // users (reported 2026-06-11). Re-verify ~1.2s later and only commit offline
+    // if it's still offline; online is committed immediately.
+    const evaluate = async () => {
       try {
         const state = await Network.getNetworkStateAsync();
-        if (mounted) {
-          const online = computeOnline(state);
-          setIsOnline(online);
-          handleConnectivityChange(online);
-          prevOnline.current = online;
+        if (computeOnline(state)) {
+          commit(true);
+          return;
         }
-      } catch {
-        // Silently ignore polling errors
+        await new Promise((r) => setTimeout(r, 1200));
+        if (!mounted) return;
+        try {
+          const recheck = await Network.getNetworkStateAsync();
+          commit(computeOnline(recheck));
+        } catch {
+          commit(true); // optimistic on error
+        }
+      } catch (err) {
+        logger.warn('[useNetworkStatus] check failed:', err);
+        commit(true); // optimistic on error
       }
-    }, 10_000);
+    };
+
+    // Initial check + periodic polling (expo-network has no subscription listener)
+    evaluate();
+    const interval = setInterval(evaluate, 10_000);
 
     return () => {
       mounted = false;

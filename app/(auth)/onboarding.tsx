@@ -306,16 +306,24 @@ function OnboardingScreen() {
     // Age confirmation moved to a point-of-sale gate (2026-05-18 rework) —
     // App Store Age Rating covers the consumer/collection use case.
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-    await confirmRegion(detectedRegion);
 
+    // Persist completion + picks LOCALLY first, before any network call. The
+    // server syncs below use raw fetch with no timeout; in the old order, if one
+    // hung (slow/unreachable backend on a flaky connection) execution never
+    // reached the flag write, so the gate looped new users back into onboarding
+    // forever (reported 2026-06-11). Local writes can't hang the user.
+    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
     if (selectedCategories.size > 0) {
-      try {
-        await collectorsApi.saveFollowedCategories(Array.from(selectedCategories));
-      } catch {}
       await AsyncStorage.setItem('@sparrowcollect/followed_categories', JSON.stringify(Array.from(selectedCategories)));
     }
 
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    // Fire-and-forget the server syncs — they must never block leaving onboarding.
+    // (confirmRegion applies region/currency locally and synchronously before its fetch.)
+    confirmRegion(detectedRegion).catch(() => {});
+    if (selectedCategories.size > 0) {
+      collectorsApi.saveFollowedCategories(Array.from(selectedCategories)).catch(() => {});
+    }
+
     track({ name: 'onboarding_completed', properties: { categories_selected: selectedCategories.size } });
 
     logActivity({
@@ -341,9 +349,10 @@ function OnboardingScreen() {
 
   const handleSkip = useCallback(async () => {
     track({ name: 'onboarding_skipped', properties: { skip_slide: currentIndex } });
-    // Persist defaults so we don't strand the user with no region/currency.
-    await confirmRegion(detectedRegion);
+    // Persist completion LOCALLY first; confirmRegion's network PUT has no timeout
+    // and must never block the user from leaving onboarding (same trap as complete).
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    confirmRegion(detectedRegion).catch(() => {});
     router.replace('/(tabs)/add');
   }, [currentIndex, confirmRegion, detectedRegion, router]);
 
