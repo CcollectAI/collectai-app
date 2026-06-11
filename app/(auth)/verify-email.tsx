@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   gradientBtnWrap: {
-    marginTop: 40,
+    marginTop: 24,
     marginBottom: 8,
     alignSelf: 'stretch',
     borderRadius: 16,

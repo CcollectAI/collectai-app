@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Pressable, ActivityIndicator, Text, TextInput, Animated as RNAnimated } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { Stack, useRouter, useSegments, usePathname } from "expo-router";
+import { Stack, useRouter, useSegments, usePathname, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
@@ -26,6 +26,7 @@ import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-c
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { enableFreeze } from "react-native-screens";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { isRecoveryPending } from "@/auth/recoveryState";
 import { DebugOverlay } from "@/components/DebugOverlay";
 import { ExternalTabBar } from "@/components/ExternalTabBar";
 import { pushDebugLog } from "@/lib/debugLog";
@@ -220,11 +221,21 @@ function useProtectedRoute() {
 
     const inAuthGroup = segments[0] === '(auth)';
     const onOnboardingScreen = (segments as string[])[1] === 'onboarding';
+    const onResetScreen = (segments as string[])[1] === 'reset-password';
 
     if (!user) {
       setOnboardingComplete(false);
       setOnboardingChecked(true);
       if (!inAuthGroup) router.replace('/(auth)/login');
+      return;
+    }
+
+    // Password-recovery in progress: keep the user on the reset-password screen
+    // (the recovery link sets a session, which would otherwise route them
+    // straight into the app via the redirects below). Flag cleared by the screen.
+    if (isRecoveryPending()) {
+      setOnboardingChecked(true);
+      if (!onResetScreen) router.replace('/(auth)/reset-password' as Href);
       return;
     }
 
@@ -234,9 +245,9 @@ function useProtectedRoute() {
         setOnboardingComplete(complete);
         setOnboardingChecked(true);
 
-        if (!complete && !onOnboardingScreen) {
+        if (!complete && !onOnboardingScreen && !onResetScreen) {
           router.replace('/(auth)/onboarding');
-        } else if (complete && inAuthGroup) {
+        } else if (complete && inAuthGroup && !onResetScreen) {
           router.replace('/(tabs)');
         }
       })

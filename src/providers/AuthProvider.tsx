@@ -8,9 +8,11 @@
 
 import React, { createContext, useEffect, useState, useCallback } from 'react';
 import * as Linking from 'expo-linking';
+import { router, type Href } from 'expo-router';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { setRecoveryPending } from '@/auth/recoveryState';
 
 import { identifyUser, resetAnalytics, track } from '@/analytics/track';
 import {
@@ -89,10 +91,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const access_token = params['access_token'];
       const refresh_token = params['refresh_token'];
       if (!access_token || !refresh_token) return;
+      // Password-recovery links must land on the reset-password screen with the
+      // session set — not log the user straight into the app. Flag it before
+      // setSession so the root gate cooperates (see recoveryState).
+      const isRecovery = params['type'] === 'recovery' || url.indexOf('reset-password') !== -1;
+      if (isRecovery) setRecoveryPending(true);
       try {
         await supabase.auth.setSession({ access_token, refresh_token });
+        if (isRecovery) router.replace('/(auth)/reset-password' as Href);
       } catch (e) {
         logger.warn('[AuthProvider] setSession from deep link failed:', e);
+        if (isRecovery) setRecoveryPending(false);
       }
     };
     Linking.getInitialURL().then(handleAuthLink).catch(() => {});
