@@ -6,8 +6,10 @@ bottom; the **If it fails** notes cover the usual snags.
 ## Phase 0 — Before you invite (one-time)
 - [ ] **Confirm signup** email template pasted + saved in Supabase (Auth → Email Templates). *This is the only one the signup flow uses.*
 - [ ] Build **#60** shows **Ready to Submit / in TestFlight** in App Store Connect (not stuck "Processing"). Auto-submit was scheduled from EAS.
-- [ ] Supabase → Auth → **URL Configuration**: redirect allowlist includes the app scheme (`io.sparrowcollect.app` / `sparrow://`) and `https://sparrowcollect.com`.
-  - *If it fails:* the confirm link dead-ends. Add the URLs and re-test.
+- [ ] Supabase → Auth → **URL Configuration**:
+  - **Redirect URLs** → add `sparrow://**` (the app signs up with `emailRedirectTo: 'sparrow://'` — `register.tsx:136` — and resets with `sparrow://reset-password`; the wildcard covers both).
+  - **Site URL** → `https://sparrowcollect.com`.
+  - *Note:* even if this isn't perfect, the verify-email screen polls `getSession()` every ~5s and routes on `email_confirmed_at`, so confirmation still succeeds — the allowlist just makes the deep-link return into the app clean. Not a silent-breaker for this app.
 
 ## Phase 1 — TestFlight delivery
 - [ ] Add the tester in **App Store Connect → TestFlight** (internal = instant; external = needs a quick Beta App Review) — or send them the public TestFlight link.
