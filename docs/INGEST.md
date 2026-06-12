@@ -1,4 +1,4 @@
-# CollectAI Nightly Ingest Pipeline
+# Sparrow Collect Nightly Ingest Pipeline
 
 The ingest pipeline appends datapoints (raw observations) and produces normalized training candidates for the ML pricing models.
 

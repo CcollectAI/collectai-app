@@ -89,9 +89,8 @@ Sparrow Collect uses Apple/Google in-app subscriptions (StoreKit / Play Billing)
 
 | Tier | Price | Features |
 |------|-------|----------|
-| Free | $0 | Collection tracking, valuations, 3 purchase mandates |
-| Pro | $4.99/mo | 10 mandates, deal alerts, dossier PDF export |
-| Premium | $9.99/mo | 50 mandates, advanced analytics, everything in Pro |
+| Free | €0 | Collection tracking, valuations, 3 purchase mandates |
+| Pro | €4.99/mo or €39.99/yr | 10 mandates, deal alerts, dossier PDF export |
 
 - Auto-renewal terms are clearly displayed before purchase
 - Users can manage/cancel via device Settings (linked from in-app settings)
@@ -99,7 +98,7 @@ Sparrow Collect uses Apple/Google in-app subscriptions (StoreKit / Play Billing)
 
 ## Data Privacy
 
-- **Authentication**: Email/password, Apple Sign In, Google Sign In
+- **Authentication**: Email/password only at launch (social login — Apple/Google Sign In — deferred post-launch)
 - **Two-Factor Authentication**: Optional TOTP-based 2FA
 - **Data storage**: Supabase (PostgreSQL) with row-level security
 - **Encryption**: All data in transit via HTTPS/TLS
@@ -114,7 +113,6 @@ Terms of Service: https://sparrowcollect.com/terms
 ## Age Verification
 
 - Registration screen includes age confirmation checkbox: "I confirm I am at least 13 years old (16 in the EU)"
-- Social login users see the same age gate during onboarding
 - Registration is blocked without confirmation (COPPA/GDPR Art. 8 compliance)
 - App is not marketed to children and is not in the Kids category
 

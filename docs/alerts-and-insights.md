@@ -1,6 +1,6 @@
 # Alerts & Insights System
 
-Data-driven portfolio insights and smart alerts for CcollectAI.
+Data-driven portfolio insights and smart alerts for Sparrow Collect.
 
 ## Overview
 

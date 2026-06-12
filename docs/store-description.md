@@ -44,7 +44,7 @@ Welcome to Sparrow Collect — the smartest way to manage your collection.
 - Automatic region and currency detection
 - Category analytics with trends and biggest movers
 - Support for EUR, USD, GBP, JPY, KRW, AUD, and CAD
-- Free, Pro, and Premium subscription tiers
+- Free and Pro subscription tiers
 ```
 
 ### App Store Description (4000 chars max)
@@ -66,7 +66,7 @@ NEVER MISS A DEAL
 
 Set up purchase mandates to tell Sparrow Collect exactly what you are looking for, your maximum budget, and your preferred condition. The deal discovery agent monitors marketplaces around the clock and alerts you when listings match your criteria. Scarcity and urgency scoring helps you prioritize the most time-sensitive opportunities. Item-level cooldown prevents duplicate notifications, so you only see fresh finds.
 
-Free accounts include 3 active mandates. Pro subscribers get 10 mandates plus deal discovery alerts and exportable dossier PDFs. Premium subscribers unlock 50 mandates and advanced analytics.
+Free accounts include 3 active mandates. Pro subscribers get 10 mandates plus deal discovery alerts and exportable dossier PDFs.
 
 COMPLETE YOUR SETS
 
@@ -82,15 +82,13 @@ Sparrow Collect supports seven currencies: EUR, USD, GBP, JPY, KRW, AUD, and CAD
 
 SECURE AND PRIVATE
 
-Sign in with Apple, Google, or email. Two-factor authentication via TOTP keeps your account safe. Your data is protected with row-level security and encrypted connections.
+Sign in securely with your email and password. Two-factor authentication via TOTP keeps your account safe. Your data is protected with row-level security and encrypted connections.
 
 SUBSCRIPTION PLANS
 
 Free: Track your collection, get valuations, 3 purchase mandates.
 
-Pro (EUR 4.99/month): 10 mandates, deal discovery alerts, dossier PDF export.
-
-Premium (EUR 9.99/month): 50 mandates, advanced portfolio analytics, and everything in Pro.
+Pro (EUR 4.99/month or EUR 39.99/year): 10 mandates, deal discovery alerts, dossier PDF export.
 
 Payment is charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your Apple ID account settings.
 
@@ -127,7 +125,7 @@ NEVER MISS A DEAL
 
 Set up purchase mandates to tell Sparrow Collect exactly what you are looking for, your maximum budget, and your preferred condition. The deal discovery agent monitors marketplaces around the clock and alerts you when listings match your criteria. Scarcity and urgency scoring helps you prioritize the most time-sensitive opportunities. Item-level cooldown prevents duplicate notifications, so you only see fresh finds.
 
-Free accounts include 3 active mandates. Pro subscribers get 10 mandates plus deal discovery alerts and exportable dossier PDFs. Premium subscribers unlock 50 mandates and advanced analytics.
+Free accounts include 3 active mandates. Pro subscribers get 10 mandates plus deal discovery alerts and exportable dossier PDFs.
 
 COMPLETE YOUR SETS
 
@@ -143,13 +141,12 @@ Sparrow Collect supports seven currencies: EUR, USD, GBP, JPY, KRW, AUD, and CAD
 
 SECURE AND PRIVATE
 
-Sign in with Google, Apple, or email. Two-factor authentication via TOTP keeps your account safe. Your data is protected with row-level security and encrypted connections.
+Sign in securely with your email and password. Two-factor authentication via TOTP keeps your account safe. Your data is protected with row-level security and encrypted connections.
 
 SUBSCRIPTION PLANS
 
 Free: Track your collection, get valuations, 3 purchase mandates.
-Pro (EUR 4.99/month): 10 mandates, deal discovery alerts, dossier PDF export.
-Premium (EUR 9.99/month): 50 mandates, advanced portfolio analytics, and everything in Pro.
+Pro (EUR 4.99/month or EUR 39.99/year): 10 mandates, deal discovery alerts, dossier PDF export.
 
 Privacy Policy: https://sparrowcollect.com/privacy
 Terms of Service: https://sparrowcollect.com/terms

@@ -1,7 +1,7 @@
 # TestFlight QA Checklist — Sparrow Collect
 
 > **Use this for every new TestFlight build.** Most recent build at time of
-> last refresh: **build #13** (eas auto-increment, 2026-05-19, profile `store`,
+> last refresh: **v1.0.0 build #64** (eas auto-increment, profile `store`,
 > `BETA_UNLOCK_ALL=false`). Each section is independent — start with the
 > golden path, then loop the others. Anything red or behaving weird,
 > note it and we fix before submitting for App Store review.
@@ -31,6 +31,16 @@ If splash → main app transition takes >5 seconds, something's slow. Note the t
 ---
 
 ## Section 1 — Auth flow (golden path)
+
+> **Email/password only at launch.** Apple/Google social sign-in is hidden
+> (`SOCIAL_LOGIN_ENABLED=false` in `src/config/featureFlags.ts`; Supabase
+> social providers not configured). Do NOT test "Sign in with Apple/Google" —
+> those buttons are intentionally absent. (Subscriptions still use Apple/Google
+> IAP billing — that's separate from auth.)
+>
+> Email confirmation is ON. The confirmation link goes to
+> `https://sparrowcollect.com/auth/confirm` (an https Universal Link that hands
+> off to the app), not a `sparrow://` link directly.
 
 - [ ] Open the app fresh (sign out first if you're auto-logged in from a previous build)
 - [ ] Tap **Sign Up** → enter a brand-new email (use `+test@` aliasing to keep your inbox clean: `slendebroekmerle+sparrow1@gmail.com`)

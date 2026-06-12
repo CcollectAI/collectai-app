@@ -1,8 +1,8 @@
-# CollectAI Hybrid Data Architecture
+# Sparrow Collect Hybrid Data Architecture
 
 ## Overview
 
-CollectAI uses a hybrid data architecture:
+Sparrow Collect uses a hybrid data architecture:
 
 - **Supabase Postgres** - App-critical data, curated training, per-user state
 - **S3** - Large volumes (market comps, images, embeddings), cheap storage, batch analytics

@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Atlantis is a collectibles tracking and valuation platform with a React Native mobile app backed by a FastAPI server and Supabase/PostgreSQL database.
+Sparrow Collect is a collectibles tracking and valuation platform with a React Native mobile app backed by a FastAPI server and Supabase/PostgreSQL database.
 
 ```
 Mobile App (Expo/React Native)

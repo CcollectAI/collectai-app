@@ -1,6 +1,6 @@
-# CollectAI UI Playbook
+# Sparrow Collect UI Playbook
 
-A practical guide to building consistent, polished screens in the CollectAI app.
+A practical guide to building consistent, polished screens in the Sparrow Collect app.
 
 ## Screen Template
 

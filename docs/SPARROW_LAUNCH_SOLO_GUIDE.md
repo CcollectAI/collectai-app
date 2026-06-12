@@ -7,7 +7,7 @@
 > **Why deprecated:**
 > - TASK 1 (Stripe Live Mode) — **OBSOLETE**. RevenueCat replaced Stripe for IAP on 2026-05-09 (commit `652230a`). For v1 beta, even RevenueCat is deferred (`EXPO_PUBLIC_BETA_UNLOCK_ALL=true`).
 > - TASK 4-7 (D-U-N-S + Apple Dev Organization enrolment) — **WRONG PATH**. Merle enrolled as **Individual** on 2026-05-07 (see memory `project_apple_developer_individual.md`); D-U-N-S is irrelevant for an eenmanszaak.
-> - TASK 2 (Google OAuth) — **DEFERRED** for beta; email/password auth only.
+> - TASK 2 (Google OAuth) — **DEFERRED**; email/password auth only at launch (`SOCIAL_LOGIN_ENABLED=false` in `src/config/featureFlags.ts`; providers not configured in Supabase). Flip the flag once configured. TASK 7's Apple Sign-In Service ID / .p8 key is likewise deferred. For the actual auth + web-deploy flow, see `docs/AUTH_AND_WEB_DEPLOY.md`.
 > - TASK 3 (Google Play) — **DEFERRED**; iOS-first launch, Android ships 1-2 weeks after.
 > - Status block below was accurate for 2026-05-06 but most "waiting on KvK" items resolved 2026-05-07.
 >

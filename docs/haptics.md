@@ -1,6 +1,6 @@
 # Haptics System
 
-Semantic haptic feedback for meaningful UI state changes in CcollectAI.
+Semantic haptic feedback for meaningful UI state changes in Sparrow Collect.
 
 ## Overview
 

@@ -11,7 +11,7 @@
 > - Section 6 (Google Cloud OAuth) — ⏭️ DEFERRED (email/password for beta)
 > - Section 7 (Play Console enrolment) — ⏭️ DEFERRED (iOS-first; Play scaffolded in `android/fastlane/` for phase 2)
 > - Section 8 (Stripe Live Mode) — ❌ OBSOLETE (RevenueCat replaced Stripe 2026-05-09; even RC deferred for beta via `EXPO_PUBLIC_BETA_UNLOCK_ALL=true`). Section already flagged HISTORICAL below.
-> - Section 9 (Supabase Auth) — ⏭️ Partial; redirect URLs sufficient for v1
+> - Section 9 (Supabase Auth) — ✅ URL config done (Site URL + `sparrow://**, https://sparrowcollect.com/**, collectai://**` allowlist); Apple/Google providers DEFERRED (email-only at launch). See `docs/AUTH_AND_WEB_DEPLOY.md`.
 > - Section 10 (Supabase hardening) — ⏭️ Pending but not blocking
 > - Section 11 (EAS Secrets) — ✅ DONE (5 vars in EAS production env per `docs/PUBLIC_LAUNCH_CHECKLIST.md`)
 > - Section 12 (eas.json submit creds) — ✅ DONE
@@ -239,25 +239,29 @@ supabase.com/dashboard → project `ykqrruipzmrrvjcvwfgp`:
 
 **Authentication → URL Configuration**:
 - **Site URL**: `https://sparrowcollect.com`
-- **Redirect URLs** (add both, keep old `collectai://` for one release of
-  back-compat):
-  - `sparrow://reset-password`
-  - `sparrow://subscription`
+- **Redirect allowlist**: `sparrow://**, https://sparrowcollect.com/**, collectai://**`
+  (NOT the old `sparrow://reset-password` / `sparrow://subscription` entries —
+  confirm/reset links now go to the https Universal Link
+  `https://sparrowcollect.com/auth/confirm`. See `docs/AUTH_AND_WEB_DEPLOY.md`.)
 
-**Authentication → Providers → Apple**:
-- Enable
-- Service ID: `com.sparrowcollect.app.auth` (from step 5)
-- Team ID: from step 4
+**Authentication → Providers → Apple / Google** — ⏭️ DEFERRED. Email/password
+is the only auth method at launch (`SOCIAL_LOGIN_ENABLED=false` in
+`src/config/featureFlags.ts`; providers not configured in Supabase). Skip the
+provider config below until you flip `SOCIAL_LOGIN_ENABLED` to true. Steps 5
+and 6 are likewise deferred. (IAP subscriptions still use Apple/Google billing —
+that's separate from login.)
+
+~~**Authentication → Providers → Apple**~~ (deferred):
+- Service ID: `io.sparrowcollect.app.auth` (from step 5)
+- Team ID: `3DX8FBF7S6`
 - Key ID + Private key (.p8 contents) from step 5
 
-**Authentication → Providers → Google**:
-- Enable
+~~**Authentication → Providers → Google**~~ (deferred):
 - Web Client ID + Client Secret from step 6 (Web client)
 
-**Authentication → Email Templates** (rebrand at your leisure):
-- Confirm signup, reset password, magic link — replace any "CollectAI"
-  with "Sparrow Collect" / "Sparrow"; replace `#81D8D0` brand colour
-  blocks if you change palette later.
+**Authentication → Email Templates**: already branded (tiffany `#44A9A1`,
+6 templates) and live via Resend SMTP (`noreply@sparrowcollect.com`). See
+`docs/AUTH_AND_WEB_DEPLOY.md` and `supabase/templates/`.
 
 ---
 

@@ -1,6 +1,6 @@
 # Accessibility Guide
 
-Guidelines and implementation details for accessibility in CcollectAI.
+Guidelines and implementation details for accessibility in Sparrow Collect.
 
 ## Overview
 

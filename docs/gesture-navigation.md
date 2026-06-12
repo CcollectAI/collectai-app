@@ -1,6 +1,6 @@
 # Gesture-First & Thumb-Zone Navigation
 
-This document describes the gesture-based navigation and thumb-zone optimization implemented in CcollectAI.
+This document describes the gesture-based navigation and thumb-zone optimization implemented in Sparrow Collect.
 
 ## Overview
 

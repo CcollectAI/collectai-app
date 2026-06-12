@@ -354,9 +354,9 @@ These appear in older launch docs but you can ignore them for the first App Stor
 
 - ❌ `/webhook/revenuecat` server endpoint — v1.1 work; FE-only gating via RevenueCat `customerInfo` is sufficient. (Memory: `project_iap_blocker.md`)
 - ❌ Stripe live mode — RevenueCat replaced it 2026-05-09 (commit `652230a`). Don't waste time creating Stripe products.
-- ❌ Google OAuth client IDs — beta uses email/password auth. Add Google Sign-In post-launch.
+- ❌ Google OAuth client IDs — launch uses email/password auth only (`SOCIAL_LOGIN_ENABLED=false` in `src/config/featureFlags.ts`; providers not configured in Supabase). Add Google Sign-In post-launch by flipping the flag once configured. See `docs/AUTH_AND_WEB_DEPLOY.md`.
 - ❌ Google Play Console submission — iOS first. Android can ship 1-2 weeks later from the same codebase.
-- ❌ Apple Sign-In service ID / Key — only needed when you wire Apple Sign-In through Supabase. Not required for App Store approval.
+- ❌ Apple Sign-In service ID / Key — only needed when you wire Apple Sign-In through Supabase (deferred; `SOCIAL_LOGIN_ENABLED=false`). Not required for App Store approval.
 
 ## File-level checklist
 

@@ -1,6 +1,6 @@
 # Motion System
 
-CollectAI uses a unified motion system for consistent, polished animations across the app.
+Sparrow Collect uses a unified motion system for consistent, polished animations across the app.
 
 ## Core Primitives
 

@@ -1,4 +1,4 @@
-# CollectAI Taxonomy System
+# Sparrow Collect Taxonomy System
 
 ## Overview
 

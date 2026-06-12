@@ -4,7 +4,7 @@ This document describes the provider-adapter framework for aggregating market da
 
 ## Overview
 
-CollectAI supports market data from multiple providers through a normalized adapter interface. This allows:
+Sparrow Collect supports market data from multiple providers through a normalized adapter interface. This allows:
 
 - Adding new data sources without changing UI code
 - Aggregating and deduplicating results across providers

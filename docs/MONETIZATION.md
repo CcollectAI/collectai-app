@@ -235,9 +235,9 @@ aggregate anonymized market intelligence becomes valuable to:
 
 ## 5. Revenue Model Summary
 
-| Stream | Free Users | Pro/Premium Users | Status |
-|--------|-----------|-------------------|--------|
-| Subscriptions | — | EUR 4.99-9.99/mo | Built |
+| Stream | Free Users | Pro Users | Status |
+|--------|-----------|-----------|--------|
+| Subscriptions | — | EUR 4.99/mo or EUR 39.99/yr (Pro) | Built |
 | Affiliate (deal agent) | — | Passive per click | Built |
 | Affiliate (item pages) | Passive per click | Passive per click | Built |
 | Affiliate (barcode scan) | Passive per click | Passive per click | Built |
@@ -262,7 +262,7 @@ aggregate anonymized market intelligence becomes valuable to:
 
 | Priority | Item | Effort | Revenue Impact |
 |----------|------|--------|---------------|
-| P0 | Activate Stripe (set env vars) | 30 min | Enables subscriptions |
+| ~~P0~~ | ~~Activate Stripe (set env vars)~~ | ~~30 min~~ | ~~Enables subscriptions~~ — **SUPERSEDED**: subscriptions ship via RevenueCat IAP (Free + Pro), not Stripe. Stripe is dormant/web-only. |
 | P0 | Apply for eBay Partner Network | 1 hour | Enables affiliate revenue |
 | ~~P1~~ | ~~Affiliate links on item detail pages~~ | ~~1 day~~ | ~~Free-tier monetization~~ | **DONE** |
 | ~~P1~~ | ~~Affiliate links in barcode scan results~~ | ~~0.5 day~~ | ~~Free-tier monetization~~ | **DONE** |

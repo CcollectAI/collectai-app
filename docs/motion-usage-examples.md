@@ -1,6 +1,6 @@
 # Motion Usage Examples
 
-Real-world examples of how motion primitives are used throughout CollectAI.
+Real-world examples of how motion primitives are used throughout Sparrow Collect.
 
 ## Screen Entrance Animation
 

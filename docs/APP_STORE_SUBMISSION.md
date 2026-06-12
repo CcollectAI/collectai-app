@@ -120,7 +120,7 @@ See `docs/APP_REVIEW_NOTES.md` for the full demo account walkthrough.
 Key points for reviewers:
 - Demo account pre-loaded with collection items across multiple categories
 - Marketplace links are affiliate links (eBay EPN, TCGPlayer, etc.) — this is standard and disclosed
-- Subscriptions use Apple/Google in-app purchase — Free/Pro ($4.99)/Premium ($9.99)
+- Subscriptions use Apple/Google in-app purchase — Free / Pro (€4.99/mo or €39.99/yr)
 - Age verification checkbox on registration (COPPA/GDPR compliance)
 - Chat requires mutual connection (not open messaging)
 
@@ -227,7 +227,7 @@ undefined-table-skipped, DB error 500, V1 endpoint, **missing-confirm 400**,
 | 5.1.1(v) Account Deletion | In-app deletion in Settings with typed-confirmation modal — see §5b |
 | 5.1.2 Data Use and Sharing | No third-party data sharing. Sentry for crash reporting only. |
 | 4.0 Design (web views) | All features are native — no wrapped web views for core functionality |
-| **4.8 Sign in with Apple** | **Required because we offer Google Sign In.** Service ID `com.sparrowcollect.app.auth` configured in Apple Developer; Supabase Auth → Providers → Apple wired with Team ID + Key ID + .p8. FE login screen shows the Apple Sign In button at-or-above the Google Sign In button per HIG. |
+| **4.8 Sign in with Apple** | **N/A at launch.** Authentication is email/password only — no third-party social login is offered (`SOCIAL_LOGIN_ENABLED=false` in `src/config/featureFlags.ts`), so guideline 4.8 does not apply. When Apple/Google Sign In are enabled post-launch, Apple Sign In will be shown at-or-above Google per HIG. |
 | Affiliate Links | Clearly labeled as marketplace links, standard affiliate programs |
 
 ## 7. Submit to Stores

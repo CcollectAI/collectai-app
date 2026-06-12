@@ -27,7 +27,7 @@ To unlock these, sign up at the URLs below and paste credentials into `/opt/coll
 
 **Signup**:
 1. Go to https://secure.meetup.com/meetup_api/oauth_consumers/
-2. Create a new OAuth consumer (name it "CollectAI")
+2. Create a new OAuth consumer (name it "Sparrow Collect")
 3. Choose "Client credentials" flow
 4. Copy the Client ID and Client Secret
 
@@ -70,7 +70,7 @@ Docs: https://www.eventbrite.com/platform/docs/
 
 **Signup**:
 1. Go to https://brickset.com/tools/webservices/requestkey
-2. Fill out the form (project = "CollectAI — collectibles tracking app")
+2. Fill out the form (project = "Sparrow Collect — collectibles tracking app")
 3. You get an API key by email
 
 **Env var to set**:
@@ -91,7 +91,7 @@ Docs: https://brickset.com/article/52664/api-version-3-documentation
 **Signup**:
 1. Go to https://dev.twitch.tv/console/apps
 2. Log in with your Twitch account
-3. "Register Your Application" → name "CollectAI" → redirect URL `http://localhost` → category "Application Integration"
+3. "Register Your Application" → name "Sparrow Collect" → redirect URL `http://localhost` → category "Application Integration"
 4. Copy Client ID + generate Client Secret
 
 **Env vars to set**:
