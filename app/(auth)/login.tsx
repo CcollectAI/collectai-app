@@ -296,17 +296,6 @@ function LoginScreen() {
                   >
                     <Text style={[styles.linkText, { color: colors.brand.dark }]}>{t('auth.forgot_password')}</Text>
                   </AnimatedPressable>
-
-                  <AnimatedPressable
-                    onPress={handleMagicLink}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('auth.magic_link')}
-                  >
-                    <View style={styles.magicLinkRow}>
-                      <Ionicons name="mail-outline" size={15} color={colors.brand.dark} />
-                      <Text style={[styles.linkText, { color: colors.brand.dark }]}>{t('auth.magic_link')}</Text>
-                    </View>
-                  </AnimatedPressable>
                 </View>
               </Animated.View>
             </View>
@@ -456,7 +445,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   form: {
-    marginBottom: 32,
+    marginBottom: 8,
   },
   gradientBtnWrap: {
     marginTop: 24,
@@ -481,7 +470,7 @@ const styles = StyleSheet.create({
   },
   linksRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     marginTop: 14,
     paddingHorizontal: 4,
@@ -524,8 +513,9 @@ const styles = StyleSheet.create({
   },
   signUpHint: {
     fontSize: 13,
+    fontWeight: '700',
     textAlign: 'center',
-    marginTop: 24,
+    marginTop: 16,
     marginBottom: 10,
   },
   signUpBtn: {
