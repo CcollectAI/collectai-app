@@ -1,2 +1,0 @@
-app/schemas/registry.py:7: error: Closing parenthesis ']' does not match opening parenthesis '('  [syntax]
-Found 1 error in 1 file (errors prevented further checking)

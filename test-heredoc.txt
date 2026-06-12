@@ -1,2 +1,0 @@
-hello from heredoc
-this should go into a file
