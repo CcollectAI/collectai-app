@@ -16,6 +16,12 @@ import { popSellerAgeGate } from "./sellerAgeGate";
 // LONG_REQUEST_TIMEOUT_MS` explicitly AND own the user-facing progress UI.
 const REQUEST_TIMEOUT_MS = 5_000;
 export const LONG_REQUEST_TIMEOUT_MS = 90_000;
+// Multipart requests are always file uploads (raw image bytes → server-side
+// resize + blurhash + S3 put). That routinely exceeds the 5 s fast-read
+// default on mobile/cellular, so without a longer budget the upload aborts
+// mid-flight and surfaces to the user as "image upload failed". Callers can
+// still override via opts.timeoutMs.
+export const UPLOAD_TIMEOUT_MS = 60_000;
 const MAX_RETRIES = 2;
 const RETRY_BASE_MS = 500; // exponential backoff base
 
@@ -233,7 +239,7 @@ export async function postMultipart<T = unknown>(path: string, formData: FormDat
     method: "POST",
     headers: { ...auth },
     body: formData,
-  }, opts?.timeoutMs);
+  }, opts?.timeoutMs ?? UPLOAD_TIMEOUT_MS);
   if (!res.ok) throw await parseErrorResponse("POST", path, res);
   return res.json() as Promise<T>;
 }

@@ -26,6 +26,7 @@ import { MultiItemOverlay } from '@/components/MultiItemOverlay';
 import { ComparisonCard } from '@/components/ComparisonCard';
 import { classifyOnDevice, buildCategoryDistribution } from '@/lib/edgeClassifier';
 import type { EdgeClassification } from '@/lib/edgeClassifier';
+import { CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
 import { multiDetect, collectorsApi } from '@/api/collectorsApi';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -54,6 +55,14 @@ const ANALYSIS_STEP_INTERVAL = 1500;
 const EDGE_HINT_THRESHOLD = 0.15;
 const VIEWFINDER_HINT_INTERVAL = 2500;
 const PHOTO_QUALITY = 0.8;
+// After this long, reassure the user the scan is just running slow.
+const SCAN_SLOW_HINT_MS = 4000;
+// Hard client-side cap: past this we stop waiting and hand off to manual add
+// (carrying the snapped image + on-device category guess) so the user is
+// never stuck on the analyzing screen.
+const SCAN_MAX_MS = 8000;
+// Sentinel rejection so we can tell a scan timeout apart from a real error.
+const SCAN_TIMEOUT = Symbol('scan_timeout');
 
 type ScanPhase =
   | 'camera'
@@ -79,6 +88,7 @@ function QuickScanScreen() {
   const [phase, setPhase] = useState<ScanPhase>('camera');
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const [analysisStepIndex, setAnalysisStepIndex] = useState(0);
+  const [analysisSlow, setAnalysisSlow] = useState(false);
 
   // Batch mode state
   const [batchMode, setBatchMode] = useState(false);
@@ -228,6 +238,7 @@ function QuickScanScreen() {
     setScanResult(null);
     setEdgeHint(null);
     setAnalysisStepIndex(0);
+    setAnalysisSlow(false);
   }, []);
 
   const handleScreenshotScan = useCallback(async () => {
@@ -405,9 +416,45 @@ function QuickScanScreen() {
       }
 
       setPhase('analyzing');
+      setAnalysisSlow(false);
 
-      // Run AI analysis
-      const sr = await dataProvider.quickscanSingle(uploadUri);
+      // Best on-device category guess — handed to manual-add on any fallback.
+      const guessedCategory = edgeHint?.category ? CATEGORY_SLUG_TO_NAME[edgeHint.category] : undefined;
+
+      // Reassure the user if the scan runs long, and hard-cap the wait at
+      // SCAN_MAX_MS. Past that we hand off to manual add carrying the snapped
+      // image + category guess rather than leave them on the analyzing screen.
+      const slowTimer = setTimeout(() => setAnalysisSlow(true), SCAN_SLOW_HINT_MS);
+      let sr: QuickScanResult;
+      try {
+        sr = await Promise.race([
+          dataProvider.quickscanSingle(uploadUri),
+          new Promise<QuickScanResult>((_, reject) =>
+            setTimeout(() => reject(SCAN_TIMEOUT), SCAN_MAX_MS),
+          ),
+        ]);
+      } catch (scanErr: unknown) {
+        clearTimeout(slowTimer);
+        setAnalysisSlow(false);
+        if (scanErr === SCAN_TIMEOUT) {
+          fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+          showToast({
+            message: "This is taking too long — finish adding it manually",
+            type: 'info',
+            duration: 4000,
+          });
+          router.push({
+            pathname: '/add-manual',
+            params: { imageUri: photo.uri, ...(guessedCategory ? { category: guessedCategory } : null) },
+          });
+          setPhase('camera');
+          setCapturedUri(null);
+          return;
+        }
+        throw scanErr; // genuine failure → outer catch
+      }
+      clearTimeout(slowTimer);
+      setAnalysisSlow(false);
 
       // R48.4 — Low-confidence fallback: if the AI can't identify the item,
       // offer "Add Manually" instead of showing a garbage guess.
@@ -415,14 +462,26 @@ function QuickScanScreen() {
       if (sr.prediction.confidence < LOW_CONFIDENCE_THRESHOLD) {
         fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
         showToast({
-          message: "Couldn't identify this item",
+          message: "Couldn't identify this item — we've pre-filled what we could",
           type: 'info',
           duration: 4000,
         });
-        // Navigate to manual-add with the captured photo pre-attached
+        // The vision pass still extracted usable details even at low
+        // confidence — carry name / category / condition / attributes into
+        // manual-add so the user confirms fields instead of typing from scratch.
+        const visionCategory = sr.attributes.category
+          ? CATEGORY_SLUG_TO_NAME[sr.attributes.category]
+          : undefined;
+        const extracted = sr.attributes.extractedDetails;
         router.push({
           pathname: '/add-manual',
-          params: { imageUri: photo.uri },
+          params: {
+            imageUri: photo.uri,
+            ...((visionCategory ?? guessedCategory) ? { category: (visionCategory ?? guessedCategory) as string } : null),
+            ...(sr.prediction.name ? { name: sr.prediction.name } : null),
+            ...(sr.attributes.conditionGuess ? { condition: sr.attributes.conditionGuess } : null),
+            ...(extracted && Object.keys(extracted).length ? { attrs: JSON.stringify(extracted) } : null),
+          },
         });
         setPhase('camera');
         setCapturedUri(null);
@@ -737,7 +796,7 @@ function QuickScanScreen() {
         capturedUri={capturedUri}
         analysisStepIndex={analysisStepIndex}
         scanLineAnim={scanLineAnim}
-        edgeHint={edgeHint}
+        slow={analysisSlow}
         colors={colors}
       />
     );
@@ -753,7 +812,6 @@ function QuickScanScreen() {
         multiMode={multiMode}
         compareMode={compareMode}
         savedBatchCount={savedBatchCount}
-        edgeHint={edgeHint}
         comparisonA={comparisonA}
         currentBatchResult={currentBatchResult}
         batchOverlayAnim={batchOverlayAnim}

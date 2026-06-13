@@ -37,7 +37,6 @@ import { AlertsCard } from "@/components/home/AlertsCard";
 import { PortfolioValueHeader } from "@/components/home/PortfolioValueHeader";
 import { ChartRangeSelector } from "@/components/home/ChartRangeSelector";
 import { type CategoryBreakdownItem } from "@/components/home/CategoryBreakdownSection";
-import { CATEGORIES as ALL_CATEGORIES } from "@/constants/categories";
 import { getCategoryByName, getCategoryById } from "@/data/categories";
 import { TopItemsList, type ItemRow } from "@/components/home/TopItemsList";
 import { FollowedCategoriesCarousel } from "@/components/home/FollowedCategoriesCarousel";
@@ -534,38 +533,12 @@ function PortfolioScreen() {
             <View style={[styles.emptyIconCircle, { backgroundColor: colors.accent + '15' }]}>
               <Ionicons name="camera-outline" size={64} color={colors.accent} />
             </View>
-            {(() => {
-              // Personalize headline using the first followed category from
-              // onboarding — falls back to the generic copy if the user did
-              // not pick anything or the slug isn't in the static catalog.
-              const firstFollow = followedCategories[0];
-              const matched = firstFollow
-                ? ALL_CATEGORIES.find((c) => c.slug === firstFollow)
-                : undefined;
-              if (matched) {
-                return (
-                  <>
-                    <Text style={[styles.emptyHeadline, { color: colors.text }]}>
-                      {t('home.add_first_in_category', {
-                        defaultValue: 'Add your first {{category}}',
-                        category: matched.name,
-                      })}
-                    </Text>
-                    <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-                      {t('home.start_collection_subtitle')}
-                    </Text>
-                  </>
-                );
-              }
-              return (
-                <>
-                  <Text style={[styles.emptyHeadline, { color: colors.text }]}>{t('home.start_collection')}</Text>
-                  <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-                    {t('home.start_collection_subtitle')}
-                  </Text>
-                </>
-              );
-            })()}
+            <Text style={[styles.emptyHeadline, { color: colors.text }]}>
+              {t('home.add_first_item', { defaultValue: 'Add your first item' })}
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+              {t('home.start_collection_subtitle')}
+            </Text>
             <AnimatedPressable
               style={[styles.emptyCta, { backgroundColor: colors.accent }]}
               onPress={handleOpenQuickScan}

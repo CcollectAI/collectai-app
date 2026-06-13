@@ -135,6 +135,14 @@ Key tables in Supabase PostgreSQL:
 Barcode Scan → Intake Agent → Taxonomy Resolver → Vision Classifier → Pricing Agent → DB
 ```
 
+**QuickScan client guardrail (`app/quickscan.tsx`):** the standard scan races the
+intake call against an 8s client-side cap (reassurance message at ~4s). On
+timeout or a low-confidence result the user is handed off to **Add Manually**
+(`app/add-manual.tsx`) with the snapped image; on the low-confidence path the
+vision-extracted name / category / condition / attributes are passed through as
+route params and pre-filled so the user confirms instead of retyping. Photo
+uploads use a dedicated 60s `UPLOAD_TIMEOUT_MS` (not the 5s fast-read default).
+
 ### Price Monitoring
 ```
 Scheduler → Price Monitor Worker → Marketplace Agent → Price Update → Alert Agent → Push Notification

@@ -1,12 +1,35 @@
 # TestFlight QA Checklist — Sparrow Collect
 
 > **Use this for every new TestFlight build.** Most recent build at time of
-> last refresh: **v1.0.0 build #64** (eas auto-increment, profile `store`,
+> last refresh: **v1.0.0 build #67** (eas auto-increment, profile `store`,
 > `BETA_UNLOCK_ALL=false`). Each section is independent — start with the
 > golden path, then loop the others. Anything red or behaving weird,
 > note it and we fix before submitting for App Store review.
 >
 > Total time on the happy path: ~10 minutes. Full sweep: ~30 minutes.
+
+## What changed in build #67 (2026-06-13) — QuickScan & manual-add
+
+Give these flows extra attention this build:
+
+- **QuickScan 8s timeout** — if a scan takes longer than ~4s the analyzing
+  screen shows "This is taking longer than expected…"; at 8s it stops waiting
+  and drops you into **Add Manually** instead of spinning forever.
+- **Scan → manual-add handoff** — when a scan times out or comes back
+  low-confidence, the snapped photo persists into Add Manually, and on the
+  low-confidence path the vision-extracted **name / category / condition /
+  attributes are pre-filled** so you confirm rather than retype.
+- **"Looks like…" tag removed** from both the camera viewfinder and the
+  analyzing screen (it was often wrong).
+- **Add-Manually photo upload fixed** — uploads no longer fail on a 5s
+  timeout (multipart now gets a 60s budget). Verify a gallery/camera photo
+  attaches and shows on the saved item.
+- **Add-Manually category dropdown** now lifts above the keyboard (both the
+  list and the search box stay visible while typing).
+- **Add-Manually polish** — redundant "Manual Entry" intro banner removed;
+  the save toast no longer claims "~5 min saved" (that's QuickScan-only).
+- **Home empty state** now reads the generic "Add your first item" regardless
+  of onboarding category picks.
 
 ## Pre-flight
 

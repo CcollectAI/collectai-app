@@ -14,8 +14,6 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { featureFlags } from '@/config/featureFlags';
-import type { EdgeClassification } from '@/lib/edgeClassifier';
 import { BRAND_COLORS } from '@/constants/colors';
 
 const TIFFANY = BRAND_COLORS.tiffany;
@@ -36,7 +34,8 @@ interface AnalyzingScreenProps {
   capturedUri: string;
   analysisStepIndex: number;
   scanLineAnim: Animated.Value;
-  edgeHint: EdgeClassification | null;
+  /** When true, the scan is running long — surface a reassurance message. */
+  slow?: boolean;
   colors: {
     background: string;
     text: string;
@@ -48,7 +47,7 @@ function AnalyzingScreenInner({
   capturedUri,
   analysisStepIndex,
   scanLineAnim,
-  edgeHint,
+  slow = false,
   colors,
 }: AnalyzingScreenProps) {
   const imageHeight = SCREEN_WIDTH * 0.75;
@@ -124,20 +123,12 @@ function AnalyzingScreenInner({
         })}
       </View>
 
-      {/* F3: Edge classification category pill */}
-      {featureFlags.FEATURE_EDGE_CLASSIFICATION && edgeHint && edgeHint.confidence >= 0.15 && (
-        <View style={styles.edgeHintPill}>
-          <Ionicons name="sparkles" size={14} color={TIFFANY} />
-          <Text style={[styles.edgeHintText, { color: colors.text }]}>
-            Looks like: {edgeHint.category.replace(/_/g, ' ')}
-          </Text>
-        </View>
-      )}
-
       {/* Bottom hint */}
       <View style={styles.analysisBottomHint}>
         <Text style={[styles.analysisHintText, { color: colors.muted }]}>
-          Hold tight -- this usually takes a few seconds
+          {slow
+            ? 'This is taking longer than expected…'
+            : 'Hold tight -- this usually takes a few seconds'}
         </Text>
       </View>
     </View>
@@ -241,21 +232,5 @@ const styles = StyleSheet.create({
   analysisHintText: {
     fontSize: 13,
     fontWeight: '400',
-  },
-  edgeHintPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    gap: 6,
-    marginTop: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(129,216,208,0.12)',
-  },
-  edgeHintText: {
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'capitalize',
   },
 });

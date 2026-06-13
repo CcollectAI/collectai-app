@@ -13,7 +13,7 @@ import {
   Text,
 } from "react-native";
 // TextInput, ActivityIndicator, TouchableOpacity, Keyboard, Ionicons moved to extracted components
-import { useRouter, Stack } from "expo-router";
+import { useRouter, Stack, useLocalSearchParams } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useEnterReveal } from "@/motion";
@@ -38,7 +38,6 @@ import {
   CategorySpecificFields,
   ConditionValueSection,
   AdditionalDetailsSection,
-  AddManualIntroCard,
   AddManualStatusBanner,
   AddManualBasicInfoSection,
   AddManualSubmitSection,
@@ -57,7 +56,19 @@ const ManualAddScreen: React.FC = () => {
   const { settings } = useSettings();
   const { t } = useTranslation();
 
-  const { pickAndUpload, uploading: photoUploading, error: photoError, photoUrl, clearError: clearPhotoError } = usePhotoUpload("manual-draft");
+  const { pickAndUpload, uploadFromUri, uploading: photoUploading, error: photoError, photoUrl, clearError: clearPhotoError } = usePhotoUpload("manual-draft");
+
+  // QuickScan hands off here when it can't identify an item (low confidence or
+  // the scan timed out). It passes the snapped image + its best on-device
+  // category guess so the user lands on a pre-filled form instead of a blank one.
+  const {
+    imageUri: handoffImageUri,
+    category: handoffCategory,
+    name: handoffName,
+    condition: handoffCondition,
+    attrs: handoffAttrs,
+  } = useLocalSearchParams<{ imageUri?: string; category?: string; name?: string; condition?: string; attrs?: string }>();
+  const handoffConsumedRef = React.useRef(false);
 
   const currencySymbol = settings.currency === 'EUR' ? '€' : settings.currency === 'USD' ? '$' : settings.currency === 'GBP' ? '£' : settings.currency === 'JPY' ? '¥' : settings.currency === 'KRW' ? '₩' : settings.currency === 'AUD' ? 'A$' : settings.currency === 'CAD' ? 'C$' : settings.currency;
 
@@ -81,6 +92,34 @@ const ManualAddScreen: React.FC = () => {
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
 
   const { showToast } = useToast();
+
+  // Consume the QuickScan handoff exactly once: pre-fill the fields the vision
+  // pass already extracted (name / category / condition / attributes) and
+  // upload the snapped image, so the user confirms instead of retyping.
+  useEffect(() => {
+    if (handoffConsumedRef.current) return;
+    if (!handoffImageUri && !handoffCategory && !handoffName && !handoffCondition && !handoffAttrs) return;
+    handoffConsumedRef.current = true;
+    if (handoffCategory) setCategory(handoffCategory);
+    if (handoffName) nameField.setValue(handoffName);
+    if (handoffCondition) setConditionGrade(handoffCondition);
+    if (handoffAttrs) {
+      try {
+        const parsed = JSON.parse(handoffAttrs);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          const next: Record<string, string | boolean> = {};
+          for (const [k, v] of Object.entries(parsed)) {
+            if (v === null || v === undefined) continue;
+            next[k] = typeof v === 'boolean' ? v : String(v);
+          }
+          if (Object.keys(next).length > 0) setCategoryAttrs(next);
+        }
+      } catch {
+        // Malformed handoff payload — ignore, user fills manually.
+      }
+    }
+    if (handoffImageUri) { void uploadFromUri(handoffImageUri); }
+  }, [handoffImageUri, handoffCategory, handoffName, handoffCondition, handoffAttrs, uploadFromUri]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Draft auto-save ---
   const formState = useMemo<FormDraftState>(() => ({
@@ -318,7 +357,7 @@ const ManualAddScreen: React.FC = () => {
       track({ name: 'item_added', properties: { source: 'manual', category: categorySlug || category } });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       setSaveState("success");
-      showToast({ message: 'Item tracked — ~5 min of manual inventory saved', type: 'success' });
+      showToast({ message: 'Item added to your collection', type: 'success' });
       await clearDraft();
       nameField.reset();
       setCategory("");
@@ -404,9 +443,6 @@ const ManualAddScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
-            {/* Intro Card */}
-            <AddManualIntroCard />
-
             {hasDraft && (
               <Pressable
                 onPress={handleDiscardDraft}

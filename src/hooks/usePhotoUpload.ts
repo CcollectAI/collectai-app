@@ -40,6 +40,8 @@ function getMimeType(uri: string): string {
 export type PhotoUploadResult = {
   /** Pick a photo from camera or gallery and upload it */
   pickAndUpload: (source?: "camera" | "gallery") => Promise<string | null>;
+  /** Upload an already-captured image by URI (e.g. handed off from QuickScan) */
+  uploadFromUri: (uri: string, contentType?: string) => Promise<string | null>;
   /** Whether an upload is currently in progress */
   uploading: boolean;
   /** Last error message, if any */
@@ -64,8 +66,11 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
 
   const clearError = useCallback(() => setError(null), []);
 
-  const pickAndUpload = useCallback(
-    async (source: "camera" | "gallery" = "gallery"): Promise<string | null> => {
+  // Core upload: takes an image URI (from the picker OR handed off from
+  // another flow like QuickScan) and pushes it through the server-side
+  // optimized endpoint, falling back to the presigned-URL flow.
+  const uploadFromUri = useCallback(
+    async (uri: string, contentType?: string): Promise<string | null> => {
       if (!user?.id) {
         setError("You must be signed in to upload photos");
         return null;
@@ -74,51 +79,15 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
       setError(null);
       setUploading(true);
 
+      const mime = contentType ?? getMimeType(uri);
+
       try {
-        // 1. Request permissions
-        if (source === "camera") {
-          const { status } = await ImagePicker.requestCameraPermissionsAsync();
-          if (status !== "granted") {
-            setError("Camera permission is required to take photos");
-            return null;
-          }
-        } else {
-          const { status } =
-            await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (status !== "granted") {
-            setError("Photo library permission is required to select photos");
-            return null;
-          }
-        }
-
-        // 2. Launch picker
-        const pickerFn =
-          source === "camera"
-            ? ImagePicker.launchCameraAsync
-            : ImagePicker.launchImageLibraryAsync;
-
-        const result = await pickerFn({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          quality: 0.8,
-          allowsEditing: true,
-          aspect: [1, 1],
-        });
-
-        if (result.canceled || !result.assets?.length) {
-          // User cancelled — not an error
-          return null;
-        }
-
-        const asset = result.assets[0];
-        const uri = asset.uri;
-        const contentType = getMimeType(uri);
-
-        // 3. Try server-side optimized upload first
+        // 1. Try server-side optimized upload first
         try {
           const response: ServerUploadResponse = await collectorsApi.uploadPhoto(
             itemId,
             uri,
-            contentType,
+            mime,
           );
 
           setPhotoUrl(response.cdn_url);
@@ -137,10 +106,10 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
           );
         }
 
-        // 4. Fallback: presigned URL flow
+        // 2. Fallback: presigned URL flow
         const presignResponse = await collectorsApi.getPresignedUploadUrl(
           itemId,
-          contentType,
+          mime,
         );
 
         const imageResponse = await fetch(uri);
@@ -149,7 +118,7 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
         const uploadResponse = await fetch(presignResponse.upload_url, {
           method: "PUT",
           headers: {
-            "Content-Type": contentType,
+            "Content-Type": mime,
           },
           body: blob,
         });
@@ -176,7 +145,57 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
     [itemId, user?.id],
   );
 
-  return { pickAndUpload, uploading, error, photoUrl, blurhash, dimensions, clearError };
+  const pickAndUpload = useCallback(
+    async (source: "camera" | "gallery" = "gallery"): Promise<string | null> => {
+      if (!user?.id) {
+        setError("You must be signed in to upload photos");
+        return null;
+      }
+
+      setError(null);
+
+      // 1. Request permissions
+      if (source === "camera") {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== "granted") {
+          setError("Camera permission is required to take photos");
+          return null;
+        }
+      } else {
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          setError("Photo library permission is required to select photos");
+          return null;
+        }
+      }
+
+      // 2. Launch picker
+      const pickerFn =
+        source === "camera"
+          ? ImagePicker.launchCameraAsync
+          : ImagePicker.launchImageLibraryAsync;
+
+      const result = await pickerFn({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsEditing: true,
+        aspect: [1, 1],
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        // User cancelled — not an error
+        return null;
+      }
+
+      const asset = result.assets[0];
+      // 3. Upload via the shared core
+      return uploadFromUri(asset.uri, getMimeType(asset.uri));
+    },
+    [uploadFromUri, user?.id],
+  );
+
+  return { pickAndUpload, uploadFromUri, uploading, error, photoUrl, blurhash, dimensions, clearError };
 }
 
 export default usePhotoUpload;

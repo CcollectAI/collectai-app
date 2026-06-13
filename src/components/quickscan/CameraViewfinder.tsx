@@ -16,7 +16,6 @@ import { CameraView } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { featureFlags } from '@/config/featureFlags';
 import { AnimatedPressable } from '@/motion';
-import type { EdgeClassification } from '@/lib/edgeClassifier';
 import type { CurrencyCode } from '@/data/types';
 import { BatchResultOverlay } from './BatchResultOverlay';
 import type { BatchScannedItem } from './BatchSummaryScreen';
@@ -48,7 +47,6 @@ interface CameraViewfinderProps {
   multiMode: boolean;
   compareMode: boolean;
   savedBatchCount: number;
-  edgeHint: EdgeClassification | null;
   comparisonA: unknown | null;
   currentBatchResult: BatchScannedItem | null;
   batchOverlayAnim: Animated.Value;
@@ -78,7 +76,6 @@ function CameraViewfinderInner({
   multiMode,
   compareMode,
   savedBatchCount,
-  edgeHint,
   comparisonA,
   currentBatchResult,
   batchOverlayAnim,
@@ -214,18 +211,6 @@ function CameraViewfinderInner({
                 <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
                 <Text style={styles.batchCounterText}>
                   {savedBatchCount} item{savedBatchCount !== 1 ? 's' : ''} scanned
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* F5: Viewfinder hint floating pill */}
-          {featureFlags.FEATURE_VIEWFINDER_HINTS && edgeHint && edgeHint.confidence >= 0.15 && phase === 'camera' && (
-            <View style={styles.viewfinderHintRow}>
-              <View style={styles.viewfinderHintPill}>
-                <Ionicons name="sparkles" size={13} color={TIFFANY} />
-                <Text style={styles.viewfinderHintText}>
-                  Looks like: {edgeHint.category.replace(/_/g, ' ')}
                 </Text>
               </View>
             </View>
@@ -469,25 +454,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '600',
-  },
-  viewfinderHintRow: {
-    alignItems: 'center',
-    paddingVertical: 6,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  viewfinderHintPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  viewfinderHintText: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
   },
 });
