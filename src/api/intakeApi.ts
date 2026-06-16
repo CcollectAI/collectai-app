@@ -173,6 +173,15 @@ export const browseCatalogItems = (categoryId: string, opts?: {
   }>(`/catalog/${encodeURIComponent(categoryId)}/items${query ? `?${query}` : ''}`);
 };
 
+// Latest-comp price for a single catalog item. Backs the museum detail
+// screen's market-value fallback when it was opened without an
+// `estimated_price` nav param (deep link, older build, sibling tap). Reads the
+// precomputed mv_catalog_item_price matview server-side — cheap index lookup.
+export const getCatalogItemPrice = (categoryId: string, itemKey: string) =>
+  get<{ category: string; item_key: string; estimated_price: number | null }>(
+    `/catalog/${encodeURIComponent(categoryId)}/items/${encodeURIComponent(itemKey)}/price`,
+  );
+
 // Catalog Collections — discovery "Featured Collections" for a category,
 // grouped by set_code from the curated catalog (NOT user ownership).
 export const getCatalogCollections = (categoryId: string, limit?: number) =>

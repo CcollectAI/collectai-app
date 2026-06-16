@@ -93,7 +93,7 @@ const AddScreen: React.FC = () => {
     }
 
     try {
-      const dest = `${FileSystem.cacheDirectory}collectai_import_template.csv`;
+      const dest = `${FileSystem.cacheDirectory}sparrow_collect_overview.csv`;
       const { uri, status } = await FileSystem.downloadAsync(templateUrl, dest);
       if (status !== 200) {
         throw new Error(`HTTP ${status}`);
@@ -101,7 +101,7 @@ const AddScreen: React.FC = () => {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           mimeType: 'text/csv',
-          dialogTitle: 'Save Sparrow Collect import template',
+          dialogTitle: 'Save Sparrow Collect Overview',
           UTI: 'public.comma-separated-values-text',
         });
       } else {

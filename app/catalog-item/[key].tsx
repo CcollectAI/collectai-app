@@ -54,12 +54,17 @@ function CatalogItemMuseumScreen() {
   const rarity = params.rarity || null;
   const brand = params.brand || null;
   const imageUrl = params.image_url || null;
-  const estPrice = params.estimated_price ? parseFloat(params.estimated_price) : null;
+  const paramPrice = params.estimated_price ? parseFloat(params.estimated_price) : null;
 
   const [links, setLinks] = useState<AffiliateLink[]>([]);
   const [linksLoading, setLinksLoading] = useState(true);
   const [siblings, setSiblings] = useState<CatalogItemData[]>([]);
   const [adding, setAdding] = useState(false);
+  // Price is seeded from the nav param (instant) but falls back to a fetch
+  // when the caller didn't pass one — otherwise a priced item shows "No recent
+  // sales data" purely because of how it was navigated to (deep link, older
+  // build, sibling tap). See the fallback effect below.
+  const [estPrice, setEstPrice] = useState<number | null>(paramPrice);
 
   // Where-to-buy: public affiliate-tagged links (monetized).
   useEffect(() => {
@@ -96,6 +101,23 @@ function CatalogItemMuseumScreen() {
     })();
     return () => { cancelled = true; };
   }, [setCode, category, params.key]);
+
+  // Market-value fallback: if we arrived without a price param, fetch the
+  // latest comp for this item so a priced item never shows "No recent sales
+  // data" just because the entry point omitted estimated_price.
+  useEffect(() => {
+    if (paramPrice != null || !params.key || !category) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await collectorsApi.getCatalogItemPrice(category, params.key as string);
+        if (!cancelled && res?.estimated_price != null) setEstPrice(res.estimated_price);
+      } catch (e) {
+        logger.warn('[museum] price fallback failed:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [paramPrice, params.key, category]);
 
   const onAddToWatchlist = useCallback(async () => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });

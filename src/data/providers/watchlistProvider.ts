@@ -86,6 +86,10 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
     // priority / notes were silently DROPPED here until 2026-06-05 —
     // every add-screen (wishlist tab, watchlist-builder, catalog museum)
     // was sending them into the void while the columns sat in the table.
+    // 15s timeout (vs the 5s httpClient default): the write commits fast now
+    // that demand-signal recording is fire-and-forget server-side, but a 5s
+    // cap left no headroom under pooler pressure and surfaced spurious
+    // "Couldn't add to watchlist" errors on a write that actually succeeded.
     const data = await collectorsApi.post<Record<string, unknown>>('/watchlist/mine', {
       name: input.title,
       category: input.category,
@@ -93,7 +97,7 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
       target_price: input.targetPrice ?? null,
       priority: input.priority ?? 'medium',
       notes: input.notes ?? null,
-    });
+    }, { timeoutMs: 15_000 });
     r = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
   } catch (e) {
     logger.error('[SupabaseDataProvider] addWatchlistItem error:', e);
