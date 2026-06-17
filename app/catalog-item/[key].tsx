@@ -27,6 +27,7 @@ import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
+import { browseCatalogItemsCached } from '@/data/catalogBrowseCache';
 import { dataProvider } from '@/data';
 import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 import { colors as tokens } from '@/theme/tokens';
@@ -89,7 +90,7 @@ function CatalogItemMuseumScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await collectorsApi.browseCatalogItems(category, { limit: 50 });
+        const res = await browseCatalogItemsCached(category, { limit: 50 });
         const data = res as { items?: CatalogItemData[] } | undefined;
         const sameSet = (data?.items ?? [])
           .filter((it) => it.set_code === setCode && it.item_key !== params.key)

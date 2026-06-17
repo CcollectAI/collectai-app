@@ -5,7 +5,7 @@
  */
 
 // ── Re-export shared HTTP primitives & error class ─────────────────────────
-import { get, post, del, patch } from "./httpClient";
+import { get, post, del, patch, type ReqOpts } from "./httpClient";
 
 // ── Import everything from domain modules to build the collectorsApi object ─
 import * as intakeApi from "./intakeApi";
@@ -357,8 +357,8 @@ export const collectorsApi = {
   getPredictionAccuracy: dataMoatApi.getPredictionAccuracy,
 
   // Generic HTTP helpers (used by DataProvider implementations)
-  get: <T = unknown>(path: string) => get<T>(path),
-  post: <T = unknown>(path: string, body: Record<string, unknown> = {}) => post<T>(path, body),
-  patch: <T = unknown>(path: string, body: Record<string, unknown> = {}) => patch<T>(path, body),
-  delete: <T = unknown>(path: string) => del<T>(path),
+  get: <T = unknown>(path: string, opts?: ReqOpts) => get<T>(path, opts),
+  post: <T = unknown>(path: string, body: Record<string, unknown> = {}, opts?: ReqOpts) => post<T>(path, body, opts),
+  patch: <T = unknown>(path: string, body: Record<string, unknown> = {}, opts?: ReqOpts) => patch<T>(path, body, opts),
+  delete: <T = unknown>(path: string, opts?: ReqOpts) => del<T>(path, opts),
 };

@@ -17,7 +17,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
-import { collectorsApi } from '@/api/collectorsApi';
+import { browseCatalogItemsCached } from '@/data/catalogBrowseCache';
 import { colors as tokens } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
@@ -54,7 +54,7 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
       try {
         // Sorting is server-side: 'value' ranks by latest comp price
         // (priced items only), the rest page the full catalog.
-        const res = await collectorsApi.browseCatalogItems(categoryId, {
+        const res = await browseCatalogItemsCached(categoryId, {
           limit: 20,
           pricedOnly: sort === 'value',
           sort: sort === 'all' ? 'title' : sort,

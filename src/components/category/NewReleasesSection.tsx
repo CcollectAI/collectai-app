@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
-import { collectorsApi } from '@/api/collectorsApi';
+import { browseCatalogItemsCached } from '@/data/catalogBrowseCache';
 import logger from '@/utils/logger';
 
 type NewItem = {
@@ -38,7 +38,7 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
     // the carousel never shows a price-less "New in Catalog" card. Over-fetch
     // a little and keep a FE price filter as a guard in case an older backend
     // ignores the flag.
-    collectorsApi.browseCatalogItems(categoryId, { limit: 12, pricedOnly: true })
+    browseCatalogItemsCached(categoryId, { limit: 12, pricedOnly: true })
       .then((data) => {
         if (cancelled) return;
         const arr = Array.isArray(data?.items) ? data.items : [];
