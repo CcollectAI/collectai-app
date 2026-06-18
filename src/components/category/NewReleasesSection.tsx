@@ -12,6 +12,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
 import { browseCatalogItemsCached } from '@/data/catalogBrowseCache';
+import { cleanCatalogTitle } from '@/lib/catalogPresentation';
 import logger from '@/utils/logger';
 
 type NewItem = {
@@ -98,7 +99,7 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
               numberOfLines={2}
               ellipsizeMode="tail"
             >
-              {item.title}
+              {cleanCatalogTitle(item.title)}
             </Text>
             {item.estimated_price != null && (
               <Text style={[styles.price, { color: colors.accent }]} numberOfLines={1}>

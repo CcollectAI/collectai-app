@@ -22,8 +22,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  FlatList,
 } from "react-native";
-import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter, Stack, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { collectorsApi } from "@/api/collectorsApi";
@@ -35,6 +35,7 @@ import { useSettings } from "@/lib/settings";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { colors as tokens } from "@/theme/tokens";
 import CategorySortChips, { type CatalogSortKey } from "@/components/category/CategorySortChips";
+import { cleanCatalogTitle } from "@/lib/catalogPresentation";
 import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
 
@@ -154,7 +155,7 @@ function CategoryBrowseScreen() {
           </View>
         )}
         <View style={s.meta}>
-          <Text style={[s.nm, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
+          <Text style={[s.nm, { color: colors.text }]} numberOfLines={2}>{cleanCatalogTitle(item.title, { brand: item.brand, setCode: item.set_code })}</Text>
           {item.estimated_price != null ? (
             <Text style={s.pr}>~€{Math.round(item.estimated_price)}</Text>
           ) : (
@@ -208,7 +209,7 @@ function CategoryBrowseScreen() {
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : (
-        <FlashList
+        <FlatList
           data={items}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}

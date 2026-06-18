@@ -18,6 +18,7 @@ import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator } from 're
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { browseCatalogItemsCached } from '@/data/catalogBrowseCache';
+import { cleanCatalogTitle } from '@/lib/catalogPresentation';
 import { colors as tokens } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
@@ -116,7 +117,7 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
                 </View>
               )}
               <View style={styles.meta}>
-                <Text style={[styles.nm, { color: colors.text }]} numberOfLines={2}>{it.title}</Text>
+                <Text style={[styles.nm, { color: colors.text }]} numberOfLines={2}>{cleanCatalogTitle(it.title, { brand: it.brand, setCode: it.set_code })}</Text>
                 {fmtPrice(it.estimated_price) ? (
                   <Text style={styles.pr}>{fmtPrice(it.estimated_price)}</Text>
                 ) : (

@@ -107,6 +107,11 @@ async def browse_catalog_items(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     rarity: Optional[str] = Query(None, description="Filter by rarity tier"),
+    set_code: Optional[str] = Query(
+        None,
+        max_length=200,
+        description="Filter to a single set/collection (raw set_code). Drives the set-detail grid.",
+    ),
     priced_only: bool = Query(
         False,
         description=(
@@ -154,6 +159,11 @@ async def browse_catalog_items(
     if rarity and rarity.strip():
         conditions.append(f"ci.rarity = ${idx}")
         params.append(rarity.strip())
+        idx += 1
+
+    if set_code and set_code.strip():
+        conditions.append(f"ci.set_code = ${idx}")
+        params.append(set_code.strip())
         idx += 1
 
     where = " AND ".join(conditions)
@@ -221,15 +231,19 @@ async def browse_catalog_items(
         )
 
     if priced_only:
-        # INNER-join the latest-comp lateral so ONLY items with a price within
-        # 180d are returned — the price becomes a filter, not a post-fetch
-        # decoration. Only title/newest/set sorts reach this branch (sort=value
-        # returns from the matview above), so LIMIT lets the planner
-        # short-circuit the scan. The seen_at floor + category filter keep
-        # partition pruning intact (see the price-map query below). `total` is
-        # the full catalog size for the category (cheap index-only count) —
-        # the overview rail displays "what exists" ("The catalog · 1,247
-        # items"), and its callers do not paginate the priced list.
+        # INNER-join the precomputed price matview so ONLY items with a price
+        # within 180d are returned — the price becomes a filter, not a
+        # post-fetch decoration. Only title/newest/set sorts reach this branch
+        # (sort=value returns from mv_category_top_value above).
+        #
+        # mv_catalog_item_price (category, item_key, price_eur) holds the latest
+        # comp per catalog item, rebuilt nightly at 00:00 UTC by pg_cron job
+        # 'refresh-mv-catalog-item-price'. Reading it is an index lookup on the
+        # matview's unique (category, item_key) key — NOT a per-row lateral over
+        # the partitioned market_hits table on every request (that was the
+        # 1.4s-per-30-items hot path; replaced 2026-06-15). `total` is the full
+        # catalog size for the category (cheap index-only count) — the overview
+        # rail displays "what exists" and its callers do not paginate.
         total = await pool.fetchval(
             f"SELECT count(*) FROM category_items ci WHERE {where}",
             *params,
@@ -240,13 +254,8 @@ async def browse_catalog_items(
                    ci.rarity, ci.notes, ci.image_url, ci.external_id,
                    ci.set_code, mp.price_eur AS estimated_price
             FROM category_items ci
-            JOIN LATERAL (
-                SELECT price_eur FROM market_hits mh
-                WHERE mh.item_ref = (ci.category || ':' || ci.item_key)
-                  AND mh.seen_at > now() - interval '180 days'
-                ORDER BY mh.seen_at DESC
-                LIMIT 1
-            ) mp ON TRUE
+            JOIN public.mv_catalog_item_price mp
+              ON mp.category = ci.category AND mp.item_key = ci.item_key
             WHERE {where}
             ORDER BY {order_by}
             LIMIT ${idx} OFFSET ${idx + 1}
@@ -317,29 +326,17 @@ async def browse_catalog_items(
         try:
             price_rows = await pool.fetch(
                 """
-                -- market_observations is vestigial (1 row); market_hits is the
-                -- canonical comp source (~900K rows). category_items has
-                -- (category, item_key); market_hits.item_ref is the
-                -- `category:item_key` concatenation.
-                --
-                -- The `seen_at` floor is load-bearing: market_hits is
-                -- partitioned by month, so without a partition-key predicate
-                -- the planner Merge-Appends across every monthly partition for
-                -- each item_key (~1.4s for 30 items). The 180-day floor lets
-                -- it prune to recent partitions only (~96ms). The category
-                -- filter both prevents item_key collisions across categories
-                -- and narrows the ci scan.
-                SELECT ci.item_key, mp.price_eur AS price
-                FROM category_items ci
-                JOIN LATERAL (
-                    SELECT price_eur FROM market_hits mh
-                    WHERE mh.item_ref = (ci.category || ':' || ci.item_key)
-                      AND mh.seen_at > now() - interval '180 days'
-                    ORDER BY mh.seen_at DESC
-                    LIMIT 1
-                ) mp ON TRUE
-                WHERE ci.category = $1
-                  AND ci.item_key = ANY($2)
+                -- Prices come from mv_catalog_item_price (category, item_key,
+                -- price_eur) — the latest comp per catalog item, rebuilt
+                -- nightly at 00:00 UTC by pg_cron 'refresh-mv-catalog-item-price'.
+                -- This is a unique-index lookup on the matview, replacing the
+                -- former per-request lateral over the partitioned market_hits
+                -- table (~1.4s for 30 items). Items absent from the matview
+                -- simply have no recent comp; they fall back to null price.
+                SELECT mp.item_key, mp.price_eur AS price
+                FROM public.mv_catalog_item_price mp
+                WHERE mp.category = $1
+                  AND mp.item_key = ANY($2)
                 """,
                 category_id,
                 item_keys,
@@ -385,6 +382,38 @@ async def browse_catalog_items(
         offset=offset,
         category_id=category_id,
     )
+
+
+@router.get(
+    "/catalog/{category_id}/items/{item_key}/price",
+    summary="Latest comp price for a single catalog item",
+)
+async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
+    """Return the latest-comp price for one catalog item.
+
+    Backs the museum detail screen's market-value fallback: that screen is
+    usually handed `estimated_price` as a nav param by the list it came from,
+    but when reached without one (older build, deep link, sibling tap) it
+    fetches here instead of showing "No recent sales data" on a priced item.
+    Reads the precomputed mv_catalog_item_price matview — an index lookup,
+    not a market_hits scan.
+    """
+    pool = get_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+    price = await pool.fetchval(
+        """
+        SELECT price_eur FROM public.mv_catalog_item_price
+        WHERE category = $1 AND item_key = $2
+        """,
+        category_id,
+        item_key,
+    )
+    return {
+        "category": category_id,
+        "item_key": item_key,
+        "estimated_price": float(price) if price is not None else None,
+    }
 
 
 # ---------------------------------------------------------------------------

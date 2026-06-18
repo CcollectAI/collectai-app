@@ -49,6 +49,7 @@ import {
   CategoryOverviewRail,
   CategoryBrandHeader,
   CategorySortChips,
+  FeaturedCollectionsSection,
 } from '@/components/category';
 import type { CatalogSortKey } from '@/components/category/CategorySortChips';
 
@@ -214,25 +215,18 @@ function CategoryStoreScreen() {
           } as unknown as Href)}
         />
 
-        {/* 3c. BY SET — its own carousel under the main rail ("By set" left
-            the sort chips; it's a browse dimension, not a sort). */}
-        <CategoryOverviewRail
-          categoryId={categoryId}
-          label="🗂 BY SET"
-          sort="set"
-          accentColor={accentColor}
-          colors={colors}
-          onSeeAll={() => router.push({
-            pathname: '/category-browse',
-            params: { categoryId: String(categoryId), sort: 'set' },
-          } as unknown as Href)}
-          onItemPress={(it) => router.push({
-            pathname: '/catalog-item/[key]',
+        {/* 3c. BY SET — grouped sets (set_code), not individual items. Each tile
+            opens the set "museum": an Instagram-discover grid of the set's items. */}
+        <FeaturedCollectionsSection
+          categoryId={String(categoryId)}
+          collections={[]}
+          title="🗂 Browse by Set"
+          onCollectionPress={(col) => router.push({
+            pathname: '/catalog-set/[setCode]',
             params: {
-              key: it.item_key, category: it.category, title: it.title,
-              image_url: it.image_url ?? '', rarity: it.rarity ?? '',
-              set_code: it.set_code ?? '', brand: it.brand ?? '',
-              estimated_price: it.estimated_price != null ? String(it.estimated_price) : '',
+              setCode: col.collection_key,
+              category: String(categoryId),
+              name: col.display_name,
             },
           } as unknown as Href)}
         />

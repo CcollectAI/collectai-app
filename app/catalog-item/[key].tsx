@@ -28,6 +28,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import { browseCatalogItemsCached } from '@/data/catalogBrowseCache';
+import { cleanCatalogItem, cleanCatalogTitle } from '@/lib/catalogPresentation';
 import { dataProvider } from '@/data';
 import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 import { colors as tokens } from '@/theme/tokens';
@@ -159,7 +160,9 @@ function CatalogItemMuseumScreen() {
     } as unknown as Href);
   }, [router]);
 
-  const badges = [setCode, rarity, brand].filter(Boolean) as string[];
+  // Render-time cleanup of scraped fields (jargon, duplicate platform tags,
+  // brand-vs-platform mislabel). Does NOT touch stored catalog data.
+  const clean = cleanCatalogItem({ title, brand, rarity, setCode });
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ paddingBottom: 48 }}>
@@ -186,10 +189,10 @@ function CatalogItemMuseumScreen() {
       )}
 
       <View style={styles.body}>
-        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-        {badges.length > 0 && (
+        <Text style={[styles.title, { color: colors.text }]}>{clean.title}</Text>
+        {clean.tags.length > 0 && (
           <View style={styles.badgeRow}>
-            {badges.map((b) => (
+            {clean.tags.map((b) => (
               <View key={b} style={[styles.badge, { backgroundColor: colors.accent + '20' }]}>
                 {/* Deep tiffany (mockup --tiffDark): base accent washes out on its own 20% tint */}
                 <Text style={[styles.badgeText, { color: tokens.brand.deep }]} numberOfLines={1}>{b}</Text>
@@ -220,13 +223,15 @@ function CatalogItemMuseumScreen() {
           )}
         </View>
 
-        {/* Details (from the public catalog fields) */}
-        {(setCode || rarity || brand) && (
+        {/* Details (from the public catalog fields, cleaned for presentation) */}
+        {(clean.platform || clean.brand || clean.setCode || clean.rarity || clean.condition) && (
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.sectionLabel, { color: colors.muted }]}>DETAILS</Text>
-            {brand && <Detail label="Brand" value={brand} colors={colors} />}
-            {setCode && <Detail label="Set" value={setCode} colors={colors} />}
-            {rarity && <Detail label="Rarity" value={rarity} colors={colors} />}
+            {clean.platform && <Detail label="Platform" value={clean.platform} colors={colors} />}
+            {clean.brand && <Detail label="Brand" value={clean.brand} colors={colors} />}
+            {clean.setCode && <Detail label="Set" value={clean.setCode} colors={colors} />}
+            {clean.condition && <Detail label="Condition" value={clean.condition} colors={colors} />}
+            {clean.rarity && <Detail label="Rarity" value={clean.rarity} colors={colors} />}
           </View>
         )}
 
@@ -244,7 +249,7 @@ function CatalogItemMuseumScreen() {
                       <Ionicons name="cube-outline" size={20} color={colors.muted} />
                     </View>
                   )}
-                  <Text style={[styles.siblingName, { color: colors.text }]} numberOfLines={2}>{it.title}</Text>
+                  <Text style={[styles.siblingName, { color: colors.text }]} numberOfLines={2}>{cleanCatalogTitle(it.title, { brand: it.brand, setCode: it.set_code })}</Text>
                 </AnimatedPressable>
               ))}
             </ScrollView>

@@ -30,10 +30,11 @@ type Props = {
   // fallback if the catalog endpoint returns nothing.
   collections: CategoryCollection[];
   categoryId: string;
-  onCollectionPress?: (name: string) => void;
+  title?: string;
+  onCollectionPress?: (collection: { collection_key: string; display_name: string }) => void;
 };
 
-export default React.memo(function FeaturedCollectionsSection({ collections, categoryId, onCollectionPress }: Props) {
+export default React.memo(function FeaturedCollectionsSection({ collections, categoryId, title, onCollectionPress }: Props) {
   const { colors } = useAppTheme();
   const [items, setItems] = useState<CatalogCollection[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -72,7 +73,7 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="bookmark-outline" size={18} color={colors.accent} />
-        <Text style={[styles.title, { color: colors.text }]}>Featured Collections</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{title ?? 'Featured Collections'}</Text>
       </View>
 
       <AutoRotatingCarousel intervalMs={6000} horizontalInset={30}>
@@ -90,7 +91,7 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
             <AnimatedPressable
               key={col.collection_key}
               style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}
-              onPress={() => onCollectionPress?.(col.display_name)}
+              onPress={() => onCollectionPress?.({ collection_key: col.collection_key, display_name: col.display_name })}
               accessibilityRole="button"
               accessibilityLabel={`Collection: ${col.display_name}`}
             >

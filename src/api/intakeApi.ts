@@ -134,6 +134,8 @@ export const browseCatalogItems = (categoryId: string, opts?: {
   rarity?: string;
   /** Only return items that have a recent market comp (used by New-in-Catalog). */
   pricedOnly?: boolean;
+  /** Filter to a single set/collection (raw set_code). Drives the set-detail grid. */
+  setCode?: string;
   /**
    * Server-side sort: 'value' (highest price first, implies pricedOnly on the
    * BE), 'newest' (catalog ingest recency), 'set' (set_code grouping),
@@ -146,6 +148,7 @@ export const browseCatalogItems = (categoryId: string, opts?: {
   if (opts?.limit) sp.set('limit', String(opts.limit));
   if (opts?.offset) sp.set('offset', String(opts.offset));
   if (opts?.rarity) sp.set('rarity', opts.rarity);
+  if (opts?.setCode) sp.set('set_code', opts.setCode);
   if (opts?.pricedOnly) sp.set('priced_only', 'true');
   if (opts?.sort) sp.set('sort', opts.sort);
   const query = sp.toString();
