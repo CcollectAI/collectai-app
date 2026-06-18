@@ -54,40 +54,25 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
     }
   })();
 
-  // Two pools, merged category-first: events tagged to THIS category lead,
-  // then the general upcoming pool (what the events tab shows) fills the
-  // rest. Without the second pool, categories with no tagged events showed
-  // "No upcoming events" while the events tab was full.
+  // Strict category-relevant: ONLY events tagged to THIS category. Categories
+  // with none show "No upcoming events" rather than filling the section with
+  // off-topic events from a general pool (user decision 2026-06-18). Events
+  // genuinely exist for ~10/54 categories (taylor_swift, kpop_merch, lego…).
   const today = new Date().toISOString().split('T')[0];
   const eventsP = (async (): Promise<EventRow[] | null> => {
     try {
-      const [catRes, allRes] = await Promise.all([
-        withTimeout(
-          supabase
-            .from('v_events_with_attendees_v1')
-            .select('id, title, kind, date, time')
-            .eq('category_id', categoryId)
-            .gte('date', today)
-            .order('date', { ascending: true })
-            .limit(5),
-          SUPABASE_READ_TIMEOUT_MS,
-          'getCategoryStore.events',
-        ),
-        withTimeout(
-          supabase
-            .from('v_events_with_attendees_v1')
-            .select('id, title, kind, date, time')
-            .gte('date', today)
-            .order('date', { ascending: true })
-            .limit(5),
-          SUPABASE_READ_TIMEOUT_MS,
-          'getCategoryStore.eventsAll',
-        ),
-      ]);
-      const catEvents = (catRes.data ?? []) as EventRow[];
-      const allEvents = (allRes.data ?? []) as EventRow[];
-      const seen = new Set(catEvents.map((e) => e.id));
-      return [...catEvents, ...allEvents.filter((e) => !seen.has(e.id))].slice(0, 5);
+      const catRes = await withTimeout(
+        supabase
+          .from('v_events_with_attendees_v1')
+          .select('id, title, kind, date, time')
+          .eq('category_id', categoryId)
+          .gte('date', today)
+          .order('date', { ascending: true })
+          .limit(5),
+        SUPABASE_READ_TIMEOUT_MS,
+        'getCategoryStore.events',
+      );
+      return (catRes.data ?? []) as EventRow[];
     } catch (e) {
       if (e instanceof TimeoutError) {
         logger.warn('[SupabaseDataProvider] getCategoryStore.events timed out');
