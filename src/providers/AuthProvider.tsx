@@ -7,6 +7,7 @@
  */
 
 import React, { createContext, useEffect, useState, useCallback } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import * as Linking from 'expo-linking';
 import { router, type Href } from 'expo-router';
 import { Session, User } from '@supabase/supabase-js';
@@ -106,6 +107,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     Linking.getInitialURL().then(handleAuthLink).catch(() => {});
     const sub = Linking.addEventListener('url', ({ url }) => { void handleAuthLink(url); });
+    return () => sub.remove();
+  }, []);
+
+  // Supabase-RN gotcha: `autoRefreshToken: true` alone does NOT resume the
+  // refresh ticker after the app has been backgrounded past the access-token
+  // lifetime (~1h). So getSession() keeps handing back an EXPIRED token, which
+  // the API rejects with 401 "Authentication required" — every authenticated
+  // write (Follow a category, Add to watchlist) silently fails until relaunch.
+  // The documented fix is to drive start/stopAutoRefresh from AppState so the
+  // token is force-refreshed whenever the app returns to the foreground.
+  useEffect(() => {
+    const sync = (state: AppStateStatus) => {
+      if (state === 'active') {
+        void supabase.auth.startAutoRefresh();
+      } else {
+        void supabase.auth.stopAutoRefresh();
+      }
+    };
+    sync(AppState.currentState);
+    const sub = AppState.addEventListener('change', sync);
     return () => sub.remove();
   }, []);
 

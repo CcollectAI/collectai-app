@@ -35,6 +35,8 @@ jest.mock('@/lib/supabase', () => ({
     auth: {
       getSession: () => mockGetSession(),
       signOut: () => mockSignOut(),
+      startAutoRefresh: async () => {},
+      stopAutoRefresh: () => {},
       onAuthStateChange: (cb: (event: string, session: Session | null) => void) =>
         mockOnAuthStateChange(cb),
     },

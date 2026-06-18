@@ -6,6 +6,7 @@
 import { API_BASE } from "./config";
 import { supabase } from "@/lib/supabase";
 import { popSellerAgeGate } from "./sellerAgeGate";
+import logger from "@/utils/logger";
 
 // Default 5 s — fast DB-backed endpoints (billing/status, portfolio/*,
 // /events, watchlist reads) respond in <2 s on a healthy network. A 5 s
@@ -45,14 +46,49 @@ const AUTH_HEADER_TIMEOUT_MS = 2_000;
 // the 2 s fast path already failed, so normal calls are never delayed.
 const AUTH_HEADER_REFRESH_TIMEOUT_MS = 8_000;
 
+// Refresh the token if it's within this window of expiry. supabase-js v2's
+// getSession() returns the STORED session without refreshing, so an expired
+// access_token comes back verbatim and the API rejects it with 401
+// "Authentication required" (the Follow / Add-to-watchlist failures). The
+// AppState auto-refresh in AuthProvider keeps it fresh in the common case;
+// this is the per-request guard so a stale token never goes out.
+const AUTH_EXPIRY_SKEW_MS = 30_000;
+
 async function readAccessToken(timeoutMs: number): Promise<string | null> {
-  const session = await Promise.race([
+  const result = await Promise.race([
     supabase.auth.getSession(),
     new Promise<{ data: { session: null } }>((resolve) =>
       setTimeout(() => resolve({ data: { session: null } }), timeoutMs),
     ),
   ]);
-  return session.data?.session?.access_token ?? null;
+  const session = result.data?.session;
+  if (!session?.access_token) return null;
+
+  // expires_at is epoch SECONDS. If valid and not near expiry, use it as-is.
+  const expEpochSec = session.expires_at;
+  if (typeof expEpochSec !== "number" || expEpochSec * 1000 - Date.now() >= AUTH_EXPIRY_SKEW_MS) {
+    return session.access_token;
+  }
+
+  // Token is at/past expiry — force a refresh (bounded so a hung refresh can't
+  // freeze the request) rather than send a known-401 token.
+  try {
+    const refreshed = await Promise.race([
+      supabase.auth.refreshSession(),
+      new Promise<{ data: { session: null }; error: { message: string } }>((resolve) =>
+        setTimeout(() => resolve({ data: { session: null }, error: { message: "refresh timeout" } }), timeoutMs),
+      ),
+    ]);
+    const token = refreshed.data?.session?.access_token;
+    if (token) return token;
+    logger.warn("[auth] expired token; refreshSession returned no session:", refreshed.error?.message);
+  } catch (e) {
+    logger.warn("[auth] expired token; refreshSession threw:", e);
+  }
+  // Dead session — send no auth header (caller surfaces a clean error) instead
+  // of an expired token. If 401s persist past this, the logs above prove the
+  // refresh itself is failing (refresh-token expired → user must re-login).
+  return null;
 }
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {

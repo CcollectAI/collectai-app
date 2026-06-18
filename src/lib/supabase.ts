@@ -69,6 +69,8 @@ function makeMock(): SupabaseClient<any, any, any> {
 
       verifyOtp: async () => ({ error: null } as any),
       signOut: async () => ({ error: null } as any),
+      startAutoRefresh: async () => {},
+      stopAutoRefresh: () => {},
     },
     from: () => makeBuilder(),
     rpc: () => makeBuilder(),
