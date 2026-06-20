@@ -133,6 +133,21 @@ jobs:
           ./check_jwt.sh
           ./sanity_e2e_strict.sh | tee logs/sanity_${{ github.run_id }}.log
 
+      # Authenticated WRITE flows against the live EC2 backend: creates two
+      # throwaway users (service key), then runs the REAL client paths and
+      # asserts outcomes — chat (request/accept/inbox/send/read), create-event,
+      # follow, watchlist add/remove. Catches FE/BE contract drift, RLS
+      # returns-[], RPC param drift, 404/422 before they reach a build.
+      # stdlib-only (no pip install); cleans up its own users.
+      - name: Authenticated flow E2E (chat / events / follow / watchlist)
+        if: env.HAS_SECRETS == 'true'
+        env:
+          SUPABASE_URL: https://${{ secrets.SUPA_REF }}.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.ANON_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SERVICE_ROLE_KEY }}
+          E2E_API_BASE: http://51.21.210.195:8000
+        run: python3 server/scripts/e2e_authed_flows.py | tee logs/authed_flows_${{ github.run_id }}.log
+
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4

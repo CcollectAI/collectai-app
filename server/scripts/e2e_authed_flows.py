@@ -29,14 +29,11 @@ import time
 import urllib.error
 import urllib.request
 
-import jwt
-
 API_BASE = os.environ.get("E2E_API_BASE", "http://127.0.0.1:8000")
 SU = os.environ["SUPABASE_URL"]
 ANON = os.environ["EXPO_PUBLIC_SUPABASE_ANON_KEY"]
 SRK = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_KEY")
-SEC = os.environ["SUPABASE_JWT_SECRET"]
-ISS = os.environ.get("SUPABASE_JWT_ISSUER")
+PW = "E2eProbe123!aZ"  # throwaway test-user password
 
 results: list[tuple[str, bool, str]] = []
 
@@ -59,7 +56,7 @@ def _admin_create(email):
     sc, b = _http(
         f"{SU}/auth/v1/admin/users", "POST",
         {"apikey": SRK, "Authorization": f"Bearer {SRK}"},
-        {"email": email, "password": "E2eProbe123!", "email_confirm": True},
+        {"email": email, "password": PW, "email_confirm": True},
     )
     return json.loads(b).get("id") if sc < 300 else None
 
@@ -70,12 +67,12 @@ def _admin_delete(uid):
               {"apikey": SRK, "Authorization": f"Bearer {SRK}"})
 
 
-def _mint(uid):
-    c = {"sub": uid, "aud": "authenticated", "role": "authenticated",
-         "exp": int(time.time()) + 3600, "iat": int(time.time())}
-    if ISS:
-        c["iss"] = ISS
-    return jwt.encode(c, SEC, algorithm="HS256")
+def _login(email):
+    """Password-grant a real Supabase access token (no JWT secret needed —
+    portable to CI which only has the anon + service-role keys)."""
+    sc, b = _http(f"{SU}/auth/v1/token?grant_type=password", "POST",
+                  {"apikey": ANON}, {"email": email, "password": PW})
+    return json.loads(b).get("access_token") if sc < 300 else None
 
 
 def _rpc(fn, body, tok):
@@ -98,12 +95,18 @@ def check(name, cond, detail=""):
 
 def main():
     ts = int(time.time())
-    a = _admin_create(f"e2e_a_{ts}@example.com")
-    b = _admin_create(f"e2e_b_{ts}@example.com")
+    ea, eb = f"e2e_a_{ts}@example.com", f"e2e_b_{ts}@example.com"
+    a = _admin_create(ea)
+    b = _admin_create(eb)
     if not a or not b:
         print("FATAL: could not create test users")
         return 2
-    ta, tb = _mint(a), _mint(b)
+    ta, tb = _login(ea), _login(eb)
+    if not ta or not tb:
+        print("FATAL: could not log in test users")
+        _admin_delete(a)
+        _admin_delete(b)
+        return 2
     try:
         # ---- chat ----
         sc, body = _rpc("rpc_request_dm_v1", {"p_target_user_id": b, "p_context": {}}, ta)
