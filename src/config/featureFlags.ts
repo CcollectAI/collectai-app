@@ -11,8 +11,13 @@ export const BETA_MODE = false;
  * launch avoids the "1 entry on the leaderboard" / "0 attendees on every
  * event" ghost-town look. Future: wire to a runtime public-user-count probe
  * via PostHog remote flag.
+ *
+ * 2026-06-20: set to FALSE so chat/inbox/Find-Collectors are reachable for
+ * hands-on testing (verifying chat + events end-to-end). REVISIT before the
+ * public App Store launch — flip back to true (or wire the runtime probe) so
+ * day-1 users don't see empty social surfaces.
  */
-export const COMMUNITY_GATED = true;
+export const COMMUNITY_GATED = false;
 
 /**
  * Social login (Sign in with Apple / Google) on the auth screens.
