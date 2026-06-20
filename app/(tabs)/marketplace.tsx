@@ -344,16 +344,6 @@ const SearchScreen: React.FC = () => {
     ).slice(0, 6);
   }, [trimmedQuery]);
 
-  const allResults = useMemo(
-    () => [...marketplaceResults, ...collectionResults],
-    [marketplaceResults, collectionResults]
-  );
-
-  const topResult = useMemo(() => allResults[0] ?? null, [allResults]);
-  const otherResults = useMemo(
-    () => (topResult ? allResults.slice(1) : allResults),
-    [allResults, topResult],
-  );
 
   // Unique collections from collection results only
   const uniqueCollections = useMemo(
@@ -604,8 +594,6 @@ const SearchScreen: React.FC = () => {
     setUserSearchQuery("");
     setUserSearchResults([]);
   }, []);
-
-  const hasResults = trimmedQuery && (allResults.length > 0 || searchLoading);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -935,7 +923,6 @@ const SearchScreen: React.FC = () => {
                     <Ionicons name="chevron-forward" size={18} color={colors.muted} />
                   </AnimatedPressable>
                 ))}
-                <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 16 }]}>Products & listings</Text>
               </>
             )}
             {searchLoading ? (
@@ -952,38 +939,37 @@ const SearchScreen: React.FC = () => {
               </>
             ) : (
               <>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                  Top result
-                </Text>
-                {topResult ? (
-                  <MarketplaceResultCard
-                    item={topResult}
-                    onPress={handleOpenResult}
-                    isTopResult
-                  />
-                ) : (
-                  <MarketplaceEmptyState />
+                {/* Your items — the user's own collection (internal) */}
+                {collectionResults.length > 0 && (
+                  <>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Your items</Text>
+                    {collectionResults.map((item) => (
+                      <MarketplaceResultCard key={item.id} item={item} onPress={handleOpenResult} />
+                    ))}
+                  </>
                 )}
 
-                {otherResults.length > 0 && (
+                {/* Buy externally — live marketplace listings (external) */}
+                {marketplaceResults.length > 0 && (
                   <>
                     <Text
                       style={[
                         styles.sectionTitle,
-                        { color: colors.text, marginTop: 16 },
+                        { color: colors.text, marginTop: collectionResults.length > 0 ? 16 : 0 },
                       ]}
                     >
-                      More results
+                      Buy externally
                     </Text>
-                    {otherResults.map((item) => (
-                      <MarketplaceResultCard
-                        key={item.id}
-                        item={item}
-                        onPress={handleOpenResult}
-                      />
+                    {marketplaceResults.map((item) => (
+                      <MarketplaceResultCard key={item.id} item={item} onPress={handleOpenResult} />
                     ))}
                   </>
                 )}
+
+                {/* Nothing matched in any of the three sections */}
+                {categoryResults.length === 0 &&
+                  collectionResults.length === 0 &&
+                  marketplaceResults.length === 0 && <MarketplaceEmptyState />}
 
                 {/* Cross-border disclaimer */}
                 {marketplaceResults.some((r) => r.shippingHint || r.secondaryPrice) && (
