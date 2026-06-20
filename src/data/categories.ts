@@ -78,6 +78,12 @@ export type Category = {
   collections: CategoryCollection[];
   externalMarketplaces: ExternalMarketplaceLink[];
   relatedCategoryIds: CategoryId[];
+  /**
+   * Grouping dimension for the "Browse by …" rail. Default 'set' (set_code).
+   * Brand-centric categories where set_code is near-unique per item (e.g.
+   * watches) set 'brand' so the rail groups by brand instead.
+   */
+  collectionDimension?: 'set' | 'brand';
 };
 
 /** Accent color + icon lookup by category ID */
@@ -1570,6 +1576,8 @@ export const CATEGORIES: Category[] = [
       'https://images.pexels.com/photos/3490349/pexels-photo-3490349.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#92400E',
     iconName: 'watch',
+    // set_code is near-unique per item (model/ref); brand (Omega/Rolex/…) groups well.
+    collectionDimension: 'brand',
     collections: [
       { id: 'w-dive', name: 'Dive Watches', itemCount: 0 },
       { id: 'w-dress', name: 'Dress Watches', itemCount: 0 },

@@ -112,6 +112,11 @@ async def browse_catalog_items(
         max_length=200,
         description="Filter to a single set/collection (raw set_code). Drives the set-detail grid.",
     ),
+    brand: Optional[str] = Query(
+        None,
+        max_length=200,
+        description="Filter to a single brand. Drives the brand-detail grid (e.g. watches).",
+    ),
     priced_only: bool = Query(
         False,
         description=(
@@ -164,6 +169,11 @@ async def browse_catalog_items(
     if set_code and set_code.strip():
         conditions.append(f"ci.set_code = ${idx}")
         params.append(set_code.strip())
+        idx += 1
+
+    if brand and brand.strip():
+        conditions.append(f"ci.brand = ${idx}")
+        params.append(brand.strip())
         idx += 1
 
     where = " AND ".join(conditions)
@@ -432,33 +442,45 @@ def _humanize_set_code(set_code: str) -> str:
 async def browse_catalog_collections(
     category_id: str,
     limit: int = Query(20, ge=1, le=100),
+    group_by: str = Query(
+        "set",
+        pattern=r"^(set|brand)$",
+        description=(
+            "Grouping dimension: 'set' (set_code, default) or 'brand'. "
+            "Brand-centric categories (e.g. watches, where set_code is "
+            "near-unique per item) group by brand instead."
+        ),
+    ),
 ):
-    """Catalog-derived collections for a category, grouped by set_code.
+    """Catalog-derived collections for a category, grouped by set_code or brand.
 
-    Drives the category page's "Featured Collections" rail. This is a
+    Drives the category page's "Browse by Set / Brand" rail. This is a
     DISCOVERY view computed from the curated catalog (category_items),
     NOT from any single user's ownership — category pages are
     exploratory by design. Counts are live item counts; cover_image is
-    the first available reference image in the set (may be null for
+    the first available reference image in the group (may be null for
     categories without catalog images).
     """
     pool = get_pool()
     if pool is None:
         raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
 
+    # group_by is pattern-validated to a fixed whitelist, so this column name
+    # is never user-controlled — safe to interpolate.
+    col = "brand" if group_by == "brand" else "set_code"
     rows = await pool.fetch(
-        """
-        SELECT set_code,
+        f"""
+        SELECT {col} AS grp,
                COUNT(*) AS total_items,
                (ARRAY_AGG(image_url) FILTER (
                    WHERE image_url IS NOT NULL AND image_url <> ''
                ))[1] AS cover_image
         FROM category_items
         WHERE category = $1
-          AND set_code IS NOT NULL
-          AND set_code <> ''
-        GROUP BY set_code
-        ORDER BY COUNT(*) DESC, set_code
+          AND {col} IS NOT NULL
+          AND {col} <> ''
+        GROUP BY {col}
+        ORDER BY COUNT(*) DESC, {col}
         LIMIT $2
         """,
         category_id,
@@ -467,8 +489,9 @@ async def browse_catalog_collections(
 
     collections = [
         CatalogCollection(
-            collection_key=r["set_code"],
-            display_name=_humanize_set_code(r["set_code"]),
+            collection_key=r["grp"],
+            # Brands are already display-ready; only set codes need humanizing.
+            display_name=r["grp"] if group_by == "brand" else _humanize_set_code(r["grp"]),
             total_items=int(r["total_items"]),
             cover_image=r["cover_image"],
         )

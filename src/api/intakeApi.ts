@@ -136,6 +136,8 @@ export const browseCatalogItems = (categoryId: string, opts?: {
   pricedOnly?: boolean;
   /** Filter to a single set/collection (raw set_code). Drives the set-detail grid. */
   setCode?: string;
+  /** Filter to a single brand. Drives the brand-detail grid (e.g. watches). */
+  brand?: string;
   /**
    * Server-side sort: 'value' (highest price first, implies pricedOnly on the
    * BE), 'newest' (catalog ingest recency), 'set' (set_code grouping),
@@ -149,6 +151,7 @@ export const browseCatalogItems = (categoryId: string, opts?: {
   if (opts?.offset) sp.set('offset', String(opts.offset));
   if (opts?.rarity) sp.set('rarity', opts.rarity);
   if (opts?.setCode) sp.set('set_code', opts.setCode);
+  if (opts?.brand) sp.set('brand', opts.brand);
   if (opts?.pricedOnly) sp.set('priced_only', 'true');
   if (opts?.sort) sp.set('sort', opts.sort);
   const query = sp.toString();
@@ -187,8 +190,16 @@ export const getCatalogItemPrice = (categoryId: string, itemKey: string) =>
 
 // Catalog Collections — discovery "Featured Collections" for a category,
 // grouped by set_code from the curated catalog (NOT user ownership).
-export const getCatalogCollections = (categoryId: string, limit?: number) =>
-  get<{
+export const getCatalogCollections = (
+  categoryId: string,
+  limit?: number,
+  groupBy?: 'set' | 'brand',
+) => {
+  const sp = new URLSearchParams();
+  if (limit) sp.set('limit', String(limit));
+  if (groupBy) sp.set('group_by', groupBy);
+  const qs = sp.toString();
+  return get<{
     collections: {
       collection_key: string;
       display_name: string;
@@ -197,4 +208,5 @@ export const getCatalogCollections = (categoryId: string, limit?: number) =>
     }[];
     total: number;
     category_id: string;
-  }>(`/catalog/${encodeURIComponent(categoryId)}/collections${limit ? `?limit=${limit}` : ''}`);
+  }>(`/catalog/${encodeURIComponent(categoryId)}/collections${qs ? `?${qs}` : ''}`);
+};

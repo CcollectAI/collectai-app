@@ -32,10 +32,11 @@ const NUM_COLS = 3;
 const GAP = 2;
 
 function CatalogSetScreen() {
-  const { setCode, category, name } = useLocalSearchParams<{
+  const { setCode, category, name, dimension } = useLocalSearchParams<{
     setCode: string;
     category: string;
     name?: string;
+    dimension?: 'set' | 'brand';
   }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -53,8 +54,10 @@ function CatalogSetScreen() {
       if (!category || !setCode) return;
       const id = ++reqId.current;
       try {
+        // `setCode` carries the collection_key — a brand value for brand-grouped
+        // categories (watches), a set_code otherwise. Filter by the right field.
         const res = await browseCatalogItems(category, {
-          setCode,
+          ...(dimension === "brand" ? { brand: setCode } : { setCode }),
           limit: PAGE_SIZE,
           offset,
           sort: "value", // priced/known items lead — the "what people know" feed
@@ -73,7 +76,7 @@ function CatalogSetScreen() {
         }
       }
     },
-    [category, setCode],
+    [category, setCode, dimension],
   );
 
   useEffect(() => {

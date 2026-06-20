@@ -215,18 +215,21 @@ function CategoryStoreScreen() {
           } as unknown as Href)}
         />
 
-        {/* 3c. BY SET — grouped sets (set_code), not individual items. Each tile
-            opens the set "museum": an Instagram-discover grid of the set's items. */}
+        {/* 3c. Browse by Set/Brand — grouped collections, not individual items.
+            Dimension is per-category (watches → brand; most → set_code). Each
+            tile opens an Instagram-discover grid of that group's items. */}
         <FeaturedCollectionsSection
           categoryId={String(categoryId)}
           collections={[]}
-          title="🗂 Browse by Set"
+          groupBy={categoryMeta.collectionDimension ?? 'set'}
+          title={categoryMeta.collectionDimension === 'brand' ? '🏷 Browse by Brand' : '🗂 Browse by Set'}
           onCollectionPress={(col) => router.push({
             pathname: '/catalog-set/[setCode]',
             params: {
               setCode: col.collection_key,
               category: String(categoryId),
               name: col.display_name,
+              dimension: categoryMeta.collectionDimension ?? 'set',
             },
           } as unknown as Href)}
         />

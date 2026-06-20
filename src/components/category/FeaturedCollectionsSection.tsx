@@ -31,17 +31,19 @@ type Props = {
   collections: CategoryCollection[];
   categoryId: string;
   title?: string;
+  /** 'set' (default) groups by set_code; 'brand' groups by brand (e.g. watches). */
+  groupBy?: 'set' | 'brand';
   onCollectionPress?: (collection: { collection_key: string; display_name: string }) => void;
 };
 
-export default React.memo(function FeaturedCollectionsSection({ collections, categoryId, title, onCollectionPress }: Props) {
+export default React.memo(function FeaturedCollectionsSection({ collections, categoryId, title, groupBy, onCollectionPress }: Props) {
   const { colors } = useAppTheme();
   const [items, setItems] = useState<CatalogCollection[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    collectorsApi.getCatalogCollections(categoryId, 12)
+    collectorsApi.getCatalogCollections(categoryId, 12, groupBy)
       .then((data) => {
         if (cancelled) return;
         const arr = Array.isArray(data?.collections) ? data.collections : [];
@@ -50,7 +52,7 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
       .catch((err) => logger.warn('[FeaturedCollections] catalog fetch failed:', err))
       .finally(() => { if (!cancelled) setLoaded(true); });
     return () => { cancelled = true; };
-  }, [categoryId]);
+  }, [categoryId, groupBy]);
 
   // Fall back to the static category collections only if the catalog has none.
   // Cap at 10 — big categories (e.g. pokemon) have 50+ sets, which made the
