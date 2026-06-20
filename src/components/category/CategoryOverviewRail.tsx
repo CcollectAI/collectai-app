@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { browseCatalogItemsCached } from '@/data/catalogBrowseCache';
 import { cleanCatalogTitle } from '@/lib/catalogPresentation';
+import { formatPrice } from '@/lib/format';
 import { colors as tokens } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
@@ -79,7 +80,7 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryId, sort]);
 
-  const fmtPrice = useCallback((p: number | null) => (p == null ? null : `~€${Math.round(p)}`), []);
+  const fmtPrice = useCallback((p: number | null) => (p == null ? null : `~${formatPrice(p)}`), []);
 
   return (
     <View style={[styles.wrap, { backgroundColor: colors.card }]}>

@@ -29,6 +29,7 @@ import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import { browseCatalogItemsCached } from '@/data/catalogBrowseCache';
 import { cleanCatalogItem, cleanCatalogTitle } from '@/lib/catalogPresentation';
+import { formatPrice } from '@/lib/format';
 import { dataProvider } from '@/data';
 import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 import { colors as tokens } from '@/theme/tokens';
@@ -205,7 +206,7 @@ function CatalogItemMuseumScreen() {
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionLabel, { color: colors.muted }]}>MARKET VALUE</Text>
           {estPrice != null ? (
-            <Text style={[styles.price, { color: colors.text }]}>~€{estPrice.toFixed(2)}</Text>
+            <Text style={[styles.price, { color: colors.text }]}>~{formatPrice(estPrice)}</Text>
           ) : (
             <Text style={[styles.priceMuted, { color: colors.muted }]}>No recent sales data</Text>
           )}

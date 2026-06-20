@@ -13,6 +13,8 @@ import { AnimatedPressable } from '@/motion';
 import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
 import { browseCatalogItemsCached } from '@/data/catalogBrowseCache';
 import { cleanCatalogTitle } from '@/lib/catalogPresentation';
+import { formatPrice } from '@/lib/format';
+import type { Currency } from '@/lib/settings';
 import logger from '@/utils/logger';
 
 type NewItem = {
@@ -61,7 +63,6 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
 
   if (items.length === 0) return null;
 
-  const currencySymbol = currency === 'EUR' ? '€' : '$';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -103,7 +104,7 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
             </Text>
             {item.estimated_price != null && (
               <Text style={[styles.price, { color: colors.accent }]} numberOfLines={1}>
-                {currencySymbol}{item.estimated_price.toFixed(0)}
+                {formatPrice(item.estimated_price, currency as Currency)}
               </Text>
             )}
           </AnimatedPressable>

@@ -36,6 +36,7 @@ import { QuickNavBar } from "@/components/QuickNavBar";
 import { colors as tokens } from "@/theme/tokens";
 import CategorySortChips, { type CatalogSortKey } from "@/components/category/CategorySortChips";
 import { cleanCatalogTitle } from "@/lib/catalogPresentation";
+import { formatPrice } from "@/lib/format";
 import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
 
@@ -157,7 +158,7 @@ function CategoryBrowseScreen() {
         <View style={s.meta}>
           <Text style={[s.nm, { color: colors.text }]} numberOfLines={2}>{cleanCatalogTitle(item.title, { brand: item.brand, setCode: item.set_code })}</Text>
           {item.estimated_price != null ? (
-            <Text style={s.pr}>~€{Math.round(item.estimated_price)}</Text>
+            <Text style={s.pr}>~{formatPrice(item.estimated_price)}</Text>
           ) : (
             <Text style={[s.tag, { color: colors.muted }]} numberOfLines={1}>
               {item.rarity || item.set_code || "Explore"}
