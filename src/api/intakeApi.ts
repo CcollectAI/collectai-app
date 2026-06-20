@@ -184,7 +184,14 @@ export const browseCatalogItems = (categoryId: string, opts?: {
 // `estimated_price` nav param (deep link, older build, sibling tap). Reads the
 // precomputed mv_catalog_item_price matview server-side — cheap index lookup.
 export const getCatalogItemPrice = (categoryId: string, itemKey: string) =>
-  get<{ category: string; item_key: string; estimated_price: number | null }>(
+  get<{
+    category: string;
+    item_key: string;
+    estimated_price: number | null;
+    median_price: number | null;
+    latest_price: number | null;
+    comps_count: number;
+  }>(
     `/catalog/${encodeURIComponent(categoryId)}/items/${encodeURIComponent(itemKey)}/price`,
   );
 

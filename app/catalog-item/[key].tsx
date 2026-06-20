@@ -68,6 +68,10 @@ function CatalogItemMuseumScreen() {
   // sales data" purely because of how it was navigated to (deep link, older
   // build, sibling tap). See the fallback effect below.
   const [estPrice, setEstPrice] = useState<number | null>(paramPrice);
+  // Median over recent comps + how many comps back it — drives the credibility
+  // line ("Based on N recent comps"). Fetched on mount; the nav param shows
+  // instantly meanwhile.
+  const [priceDetail, setPriceDetail] = useState<{ estimated_price: number | null; comps_count: number } | null>(null);
 
   // Where-to-buy: public affiliate-tagged links (monetized).
   useEffect(() => {
@@ -105,22 +109,24 @@ function CatalogItemMuseumScreen() {
     return () => { cancelled = true; };
   }, [setCode, category, params.key]);
 
-  // Market-value fallback: if we arrived without a price param, fetch the
-  // latest comp for this item so a priced item never shows "No recent sales
-  // data" just because the entry point omitted estimated_price.
+  // Market value: always fetch the detail so we get the comp COUNT (and a
+  // robust median) for the credibility line — the nav param only carries a bare
+  // latest price. The param still shows instantly; this refines it on arrival.
   useEffect(() => {
-    if (paramPrice != null || !params.key || !category) return;
+    if (!params.key || !category) return;
     let cancelled = false;
     (async () => {
       try {
         const res = await collectorsApi.getCatalogItemPrice(category, params.key as string);
-        if (!cancelled && res?.estimated_price != null) setEstPrice(res.estimated_price);
+        if (cancelled || !res) return;
+        setPriceDetail({ estimated_price: res.estimated_price, comps_count: res.comps_count });
+        if (res.estimated_price != null) setEstPrice(res.estimated_price);
       } catch (e) {
-        logger.warn('[museum] price fallback failed:', e);
+        logger.warn('[museum] price detail fetch failed:', e);
       }
     })();
     return () => { cancelled = true; };
-  }, [paramPrice, params.key, category]);
+  }, [params.key, category]);
 
   const onAddToWatchlist = useCallback(async () => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -210,7 +216,15 @@ function CatalogItemMuseumScreen() {
           ) : (
             <Text style={[styles.priceMuted, { color: colors.muted }]}>No recent sales data</Text>
           )}
-          <Text style={[styles.priceSub, { color: colors.muted }]}>Estimated from the latest marketplace comp</Text>
+          <Text style={[styles.priceSub, { color: colors.muted }]}>
+            {estPrice == null
+              ? 'Estimated from the latest marketplace comp'
+              : (priceDetail && priceDetail.comps_count >= 3)
+                ? `Median of ${priceDetail.comps_count} recent comps`
+                : (priceDetail && priceDetail.comps_count > 0)
+                  ? `Based on ${priceDetail.comps_count} recent comp${priceDetail.comps_count === 1 ? '' : 's'}`
+                  : 'Estimated from the latest marketplace comp'}
+          </Text>
           {!limits?.advanced_analytics && (
             <AnimatedPressable
               style={[styles.proRow, { borderColor: colors.border }]}

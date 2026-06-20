@@ -396,33 +396,50 @@ async def browse_catalog_items(
 
 @router.get(
     "/catalog/{category_id}/items/{item_key}/price",
-    summary="Latest comp price for a single catalog item",
+    summary="Market-value detail (median + comp count) for a single catalog item",
 )
 async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
-    """Return the latest-comp price for one catalog item.
+    """Return market-value detail for one catalog item.
 
-    Backs the museum detail screen's market-value fallback: that screen is
-    usually handed `estimated_price` as a nav param by the list it came from,
-    but when reached without one (older build, deep link, sibling tap) it
-    fetches here instead of showing "No recent sales data" on a priced item.
-    Reads the precomputed mv_catalog_item_price matview — an index lookup,
-    not a market_hits scan.
+    Backs the museum detail screen's MARKET VALUE block. Rather than a single
+    latest comp (which can be an outlier — e.g. a cheap listing), this returns
+    a robust MEDIAN over the last 180d of comps plus the comp COUNT that backs
+    it, so the screen can show "Based on N recent comps" for credibility. Falls
+    back to the latest comp when there aren't enough (<3) to median.
+
+    One per-item query, partition-pruned on seen_at (180d) — a bounded scan, and
+    this endpoint serves a single item on tap (not a list), so reading
+    market_hits directly here is fine.
     """
     pool = get_pool()
     if pool is None:
         raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
-    price = await pool.fetchval(
+    item_ref = f"{category_id}:{item_key}"
+    row = await pool.fetchrow(
         """
-        SELECT price_eur FROM public.mv_catalog_item_price
-        WHERE category = $1 AND item_key = $2
+        SELECT
+            COUNT(*) AS comps_count,
+            percentile_cont(0.5) WITHIN GROUP (ORDER BY price_eur) AS median_price,
+            (ARRAY_AGG(price_eur ORDER BY seen_at DESC))[1] AS latest_price
+        FROM market_hits
+        WHERE item_ref = $1
+          AND seen_at > now() - interval '180 days'
+          AND price_eur IS NOT NULL
         """,
-        category_id,
-        item_key,
+        item_ref,
     )
+    comps = int(row["comps_count"]) if row and row["comps_count"] else 0
+    median = float(row["median_price"]) if row and row["median_price"] is not None else None
+    latest = float(row["latest_price"]) if row and row["latest_price"] is not None else None
+    # Prefer the robust median once enough comps back it; else the latest comp.
+    estimated = median if (comps >= 3 and median is not None) else latest
     return {
         "category": category_id,
         "item_key": item_key,
-        "estimated_price": float(price) if price is not None else None,
+        "estimated_price": estimated,
+        "median_price": median,
+        "latest_price": latest,
+        "comps_count": comps,
     }
 
 
