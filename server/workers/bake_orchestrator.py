@@ -108,8 +108,14 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   Disabled 2026-04-21: silent-writer pattern + wrong table reference.
     # ("discovery_audit_worker",  "workers.discovery_audit_worker",     "run_once", True),
     #   Daily broad data sweep. Useful post-scale, not load-bearing pre-launch.
-    # ("datalake_export_worker",  "workers.datalake_export_worker",     "run_once", True),
-    #   Nightly parquet export to S3. Storage cost optimization, post-launch.
+    ("datalake_export_worker",  "workers.datalake_export_worker",     "run_once", True),
+    #   RE-ENABLED 2026-06-15: DB hit the storage-warning line, which IS the
+    #   wave-6 trigger ("when the DB is large enough"). Now streams closed
+    #   months → S3 Parquet in bounded-memory batches (was single-shot SELECT
+    #   that would OOM the t3.medium at full month size). Daily cadence, but
+    #   a no-op except once a month when a month closes (manifest dedup).
+    #   Gated by DATALAKE_ENABLED=true in /opt/collectors/.env. partition_drop
+    #   (the DELETE side) stays OFF — that's a separate, deliberate decision.
     # ("partition_drop_worker",   "workers.partition_drop_worker",      "run_once", True),
     #   Drops >6mo partitions. We don't have >6mo data yet.
     # ("ticketmaster_events_worker", "pipelines.ticketmaster_events",    "run_once", False),
@@ -416,6 +422,18 @@ async def _supervised(
         delay = min(max_delay, delay * 2)
 
 
+# Per-worker cycle timeout. run_once() was awaited with NO bound, so a hung
+# HTTP/crawl call (e.g. a marketplace adapter with no socket timeout) blocks
+# THAT worker's loop forever — silently, since it's a hang not an exception —
+# until a process restart, while siblings keep running. Observed 2026-06-20:
+# marketplace_scrape silent for 2h45m, no error logged. wait_for caps each
+# cycle; on timeout the loop records an error and recovers on the next tick.
+_DEFAULT_WORKER_CYCLE_TIMEOUT_S = 1800  # 30 min — far above any healthy cycle
+_WORKER_CYCLE_TIMEOUTS = {
+    "marketplace_scrape_worker": 1500,  # normal cycle is ≤18 min
+}
+
+
 async def _run_worker_loop(
     name: str,
     module_path: str,
@@ -499,10 +517,10 @@ async def _run_worker_loop(
                 # Some run_once() functions accept keyword args — call with no args
                 # since the orchestrator always uses the default signature.
                 # Special case: aggregate_catalog_attributes.run_once(dry_run=True)
-                if name == "aggregate_catalog_attributes":
-                    await run_fn(dry_run=False)
-                else:
-                    await run_fn()
+                # Bounded by wait_for so a hung cycle can't stall the loop forever.
+                _cap = _WORKER_CYCLE_TIMEOUTS.get(name, _DEFAULT_WORKER_CYCLE_TIMEOUT_S)
+                _coro = run_fn(dry_run=False) if name == "aggregate_catalog_attributes" else run_fn()
+                await asyncio.wait_for(_coro, timeout=_cap)
 
                 duration = time.monotonic() - t0
                 record_run(name, "ok", duration_s=duration)
@@ -517,6 +535,23 @@ async def _run_worker_loop(
                 logger.info("[bake_orchestrator] %s cancelled", name)
                 _in_flight.discard(name)
                 return
+            except asyncio.TimeoutError:
+                # A hung cycle was killed by wait_for — record it and let the
+                # loop fall through to the next interval (the recovery that was
+                # missing: previously this would have stalled silently forever).
+                duration = time.monotonic() - t0
+                _worker_errors[name] = _worker_errors.get(name, 0) + 1
+                if name not in _worker_first_error_at:
+                    _worker_first_error_at[name] = time.time()
+                error_repr = f"TimeoutError: cycle exceeded {_cap}s — killed, retry next interval"
+                try:
+                    record_run(name, "error", duration_s=duration, error_repr=error_repr)
+                except Exception:
+                    pass
+                logger.error(
+                    "[bake_orchestrator] %s TIMED OUT after %ds — cycle killed, retrying next interval",
+                    name, _cap,
+                )
             except Exception as e:
                 duration = time.monotonic() - t0
                 _worker_errors[name] = _worker_errors.get(name, 0) + 1
