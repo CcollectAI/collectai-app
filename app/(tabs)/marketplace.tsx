@@ -329,6 +329,21 @@ const SearchScreen: React.FC = () => {
   const trimmedQuery = query.trim();
   const debouncedQuery = useDebounce(trimmedQuery, 350);
 
+  // Category matches — instant, local (CATEGORIES is static), so searching
+  // "taylor swift" surfaces the category immediately even before the
+  // marketplace/collection network searches return. Matches name, id (with
+  // underscores treated as spaces), and tagline.
+  const categoryResults = useMemo(() => {
+    if (!trimmedQuery) return [];
+    const q = trimmedQuery.toLowerCase();
+    return CATEGORIES.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.id.replace(/_/g, ' ').toLowerCase().includes(q) ||
+        (c.tagline ?? '').toLowerCase().includes(q),
+    ).slice(0, 6);
+  }, [trimmedQuery]);
+
   const allResults = useMemo(
     () => [...marketplaceResults, ...collectionResults],
     [marketplaceResults, collectionResults]
@@ -903,6 +918,26 @@ const SearchScreen: React.FC = () => {
         {/* Results when searching */}
         {trimmedQuery ? (
           <View style={styles.section}>
+            {/* Categories — instant local matches, shown above network results */}
+            {categoryResults.length > 0 && (
+              <>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Categories</Text>
+                {categoryResults.map((cat) => (
+                  <AnimatedPressable
+                    key={cat.id}
+                    style={[styles.catResultRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => handleOpenCategory(cat.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${cat.name} category`}
+                  >
+                    <Ionicons name="grid-outline" size={18} color={colors.accent} />
+                    <Text style={[styles.catResultName, { color: colors.text }]} numberOfLines={1}>{cat.name}</Text>
+                    <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+                  </AnimatedPressable>
+                ))}
+                <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 16 }]}>Products & listings</Text>
+              </>
+            )}
             {searchLoading ? (
               <>
                 {searchStatus ? (
@@ -1049,6 +1084,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 6,
+  },
+  catResultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 8,
+  },
+  catResultName: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
   },
   searchStatusRow: {
     flexDirection: 'row',
