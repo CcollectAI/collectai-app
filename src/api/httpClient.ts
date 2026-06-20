@@ -8,6 +8,16 @@ import { supabase } from "@/lib/supabase";
 import { popSellerAgeGate } from "./sellerAgeGate";
 import logger from "@/utils/logger";
 
+// Guarded Sentry — telemetry for the auth-refresh failure path so the actual
+// reason (refresh-token revoked / network / timeout) is visible in prod rather
+// than only in unread device logs. No-ops when Sentry isn't installed.
+let Sentry: { captureMessage?: (msg: string, level?: string) => void } | null = null;
+try {
+  Sentry = require("@sentry/react-native");
+} catch {
+  /* not installed */
+}
+
 // Default 5 s — fast DB-backed endpoints (billing/status, portfolio/*,
 // /events, watchlist reads) respond in <2 s on a healthy network. A 5 s
 // ceiling means users never see a spinner sit past "this feels slow"; the
@@ -46,14 +56,6 @@ const AUTH_HEADER_TIMEOUT_MS = 2_000;
 // the 2 s fast path already failed, so normal calls are never delayed.
 const AUTH_HEADER_REFRESH_TIMEOUT_MS = 8_000;
 
-// Refresh the token if it's within this window of expiry. supabase-js v2's
-// getSession() returns the STORED session without refreshing, so an expired
-// access_token comes back verbatim and the API rejects it with 401
-// "Authentication required" (the Follow / Add-to-watchlist failures). The
-// AppState auto-refresh in AuthProvider keeps it fresh in the common case;
-// this is the per-request guard so a stale token never goes out.
-const AUTH_EXPIRY_SKEW_MS = 30_000;
-
 async function readAccessToken(timeoutMs: number): Promise<string | null> {
   const result = await Promise.race([
     supabase.auth.getSession(),
@@ -61,33 +63,43 @@ async function readAccessToken(timeoutMs: number): Promise<string | null> {
       setTimeout(() => resolve({ data: { session: null } }), timeoutMs),
     ),
   ]);
-  const session = result.data?.session;
-  if (!session?.access_token) return null;
+  // Return whatever supabase has stored. Keeping it fresh is supabase-js's job
+  // (autoRefreshToken + the AppState start/stopAutoRefresh wired in
+  // AuthProvider). We deliberately do NOT refresh here: a per-request refresh
+  // raced against a timeout abandons an in-flight refresh that keeps running,
+  // so a retry fires a SECOND concurrent refresh — two refreshes on one
+  // rotating refresh-token can trip Supabase's reuse detection and revoke the
+  // session. Staleness is recovered once, centrally, on a real 401 (below).
+  return result.data?.session?.access_token ?? null;
+}
 
-  // expires_at is epoch SECONDS. If valid and not near expiry, use it as-is.
-  const expEpochSec = session.expires_at;
-  if (typeof expEpochSec !== "number" || expEpochSec * 1000 - Date.now() >= AUTH_EXPIRY_SKEW_MS) {
-    return session.access_token;
-  }
-
-  // Token is at/past expiry — force a refresh (bounded so a hung refresh can't
-  // freeze the request) rather than send a known-401 token.
+// One-shot 401 recovery. An authenticated request was rejected, which almost
+// always means the stored access token is expired/stale. Force a SINGLE
+// refresh (no racing) and return fresh auth headers for one retry. If the
+// refresh itself fails the session is unrecoverable on this device, so sign
+// out — AuthProvider's onAuthStateChange routes to login and a fresh sign-in
+// writes a valid, persisted session — rather than looping on "try again".
+async function recoverAuthAfter401(): Promise<Record<string, string> | null> {
   try {
-    const refreshed = await Promise.race([
-      supabase.auth.refreshSession(),
-      new Promise<{ data: { session: null }; error: { message: string } }>((resolve) =>
-        setTimeout(() => resolve({ data: { session: null }, error: { message: "refresh timeout" } }), timeoutMs),
-      ),
-    ]);
-    const token = refreshed.data?.session?.access_token;
-    if (token) return token;
-    logger.warn("[auth] expired token; refreshSession returned no session:", refreshed.error?.message);
+    const { data, error } = await supabase.auth.refreshSession();
+    const token = data?.session?.access_token;
+    if (token && !error) return { Authorization: `Bearer ${token}` };
+    // Definitive auth failure (refresh token revoked/expired/not-found): the
+    // stored session is unrecoverable, so sign out → AuthProvider routes to
+    // login and a fresh sign-in writes a valid, persisted session.
+    logger.warn("[auth] 401 recovery: refreshSession failed:", error?.message);
+    Sentry?.captureMessage?.(`auth refresh failed after 401: ${error?.message ?? "no session"}`, "warning");
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* best effort */
+    }
   } catch (e) {
-    logger.warn("[auth] expired token; refreshSession threw:", e);
+    // Transient (network) failure — surface the 401 but do NOT sign the user
+    // out; supabase retries the refresh on its own cadence / next launch.
+    logger.warn("[auth] 401 recovery: refreshSession threw:", e);
+    Sentry?.captureMessage?.(`auth refresh threw after 401: ${String(e)}`, "warning");
   }
-  // Dead session — send no auth header (caller surfaces a clean error) instead
-  // of an expired token. If 401s persist past this, the logs above prove the
-  // refresh itself is failing (refresh-token expired → user must re-login).
   return null;
 }
 
@@ -220,50 +232,64 @@ async function runWithGate(method: string, path: string, init: RequestInit, time
   return res;
 }
 
-export async function get<T = unknown>(path: string, opts?: ReqOpts): Promise<T> {
+// Attach auth headers, run, and recover ONCE from a 401 on an authenticated
+// request: refresh the session and replay with the fresh token. `makeInit`
+// rebuilds the request from the (possibly refreshed) headers so the retry
+// carries the new token.
+async function authedRequest(
+  method: string,
+  path: string,
+  makeInit: (auth: Record<string, string>) => RequestInit,
+  timeoutMs?: number,
+): Promise<Response> {
   const auth = await getAuthHeaders();
-  const res = await runWithGate("GET", path, { headers: { ...auth } }, opts?.timeoutMs);
+  let res = await runWithGate(method, path, makeInit(auth), timeoutMs);
+  if (res.status === 401 && auth.Authorization) {
+    const fresh = await recoverAuthAfter401();
+    if (fresh) res = await runWithGate(method, path, makeInit(fresh), timeoutMs);
+  }
+  return res;
+}
+
+export async function get<T = unknown>(path: string, opts?: ReqOpts): Promise<T> {
+  const res = await authedRequest("GET", path, (auth) => ({ headers: { ...auth } }), opts?.timeoutMs);
   if (!res.ok) throw await parseErrorResponse("GET", path, res);
   return res.json() as Promise<T>;
 }
 
 export async function post<T = unknown>(path: string, body: Record<string, unknown> = {}, opts?: ReqOpts): Promise<T> {
-  const auth = await getAuthHeaders();
-  const res = await runWithGate("POST", path, {
+  const res = await authedRequest("POST", path, (auth) => ({
     method: "POST",
     headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify(body),
-  }, opts?.timeoutMs);
+  }), opts?.timeoutMs);
   if (!res.ok) throw await parseErrorResponse("POST", path, res);
   return res.json() as Promise<T>;
 }
 
 export async function del<T = unknown>(path: string, opts?: ReqOpts): Promise<T> {
-  const auth = await getAuthHeaders();
-  const res = await runWithGate("DELETE", path, { method: "DELETE", headers: { ...auth } }, opts?.timeoutMs);
+  const res = await authedRequest("DELETE", path, (auth) => ({ method: "DELETE", headers: { ...auth } }), opts?.timeoutMs);
   if (!res.ok) throw await parseErrorResponse("DELETE", path, res);
   if (res.status === 204) return {} as T;
   return res.json() as Promise<T>;
 }
 
 export async function patch<T = unknown>(path: string, body: Record<string, unknown> = {}, opts?: ReqOpts): Promise<T> {
-  const auth = await getAuthHeaders();
-  const res = await runWithGate("PATCH", path, {
+  const res = await authedRequest("PATCH", path, (auth) => ({
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify(body),
-  }, opts?.timeoutMs);
+  }), opts?.timeoutMs);
   if (!res.ok) throw await parseErrorResponse("PATCH", path, res);
   return res.json() as Promise<T>;
 }
 
 export async function put<T = unknown>(path: string, body: Record<string, unknown> = {}, opts?: ReqOpts): Promise<T> {
-  const auth = await getAuthHeaders();
-  const res = await runWithGate("PUT", path, {
+  const res = await authedRequest("PUT", path, (auth) => ({
     method: "PUT",
     headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify(body),
-  }, opts?.timeoutMs);
+  }), opts?.timeoutMs);
   if (!res.ok) throw await parseErrorResponse("PUT", path, res);
   return res.json() as Promise<T>;
 }
