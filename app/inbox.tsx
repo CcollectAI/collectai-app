@@ -29,6 +29,7 @@ import { useSettings } from '@/lib/settings';
 import { SkeletonList } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import logger from '@/utils/logger';
+import { logAuthState, logLoad, startTimer } from '@/utils/diagnostics';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { timeAgoShort } from '@/lib/timeAgo';
 import { MS_PER_WEEK } from '@/constants/time';
@@ -110,6 +111,8 @@ function InboxScreen() {
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
 
   const loadInbox = useCallback(async () => {
+    const elapsed = startTimer();
+    logAuthState('inbox');
     try {
       const [inboxThreads, incomingRequests] = await Promise.all([
         dataProvider.listInboxThreads(),
@@ -123,7 +126,14 @@ function InboxScreen() {
       setThreads(accepted);
       setSentRequests(pending);
       setRequests(incomingRequests);
+      logLoad('inbox', {
+        threads: inboxThreads.length,
+        accepted: accepted.length,
+        requests: incomingRequests.length,
+        ms: elapsed(),
+      });
     } catch (err) {
+      logLoad('inbox', { error: err instanceof Error ? err.message : String(err), ms: elapsed() });
       logger.warn('[InboxScreen] loadInbox error:', err);
     } finally {
       setLoading(false);

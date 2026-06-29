@@ -10,6 +10,12 @@ import type {
 } from '../types';
 import { supabase } from '../../lib/supabase';
 import logger from '../../utils/logger';
+import { withTimeout, TimeoutError } from '../../lib/withTimeout';
+
+// supabase-js has no per-request timeout, so a stalled HTTPS round-trip would
+// leave the inbox's `loading` state pinned forever (infinite spinner). Guard
+// the loading-gating reads and treat a timeout as an empty result.
+const SUPABASE_READ_TIMEOUT_MS = 5_000;
 
 // v_chat_inbox_v1 columns (verified 2026-04-29 against live schema):
 // thread_id, user_id, other_user_id, other_avatar_url, other_display_name,
@@ -17,52 +23,73 @@ import logger from '../../utils/logger';
 // Status + is_incoming live in chat_dm_requests_v1, queried separately.
 
 export async function listInboxThreads(): Promise<DmThread[]> {
-  const { data, error } = await supabase
-    .from('v_chat_inbox_v1')
-    .select('thread_id, other_user_id, other_avatar_url, other_display_name, last_message_at, last_message_body, unread_count')
-    .order('last_message_at', { ascending: false });
+  try {
+    const { data, error } = await withTimeout(
+      supabase
+        .from('v_chat_inbox_v1')
+        .select('thread_id, other_user_id, other_avatar_url, other_display_name, last_message_at, last_message_body, unread_count')
+        .order('last_message_at', { ascending: false }),
+      SUPABASE_READ_TIMEOUT_MS,
+      'listInboxThreads',
+    );
 
-  if (error) {
-    logger.warn('[SupabaseDataProvider] listInboxThreads error:', error);
-    return [];
+    if (error) {
+      logger.warn('[SupabaseDataProvider] listInboxThreads error:', error);
+      return [];
+    }
+
+    if (!data) return [];
+
+    return (data as Record<string, unknown>[]).map((row) => ({
+      id: row.thread_id as string,
+      otherUserId: row.other_user_id as string,
+      otherUserName: (row.other_display_name ?? 'Unknown') as string,
+      otherUserHandle: null,
+      otherUserAvatarUrl: (row.other_avatar_url ?? null) as string | null,
+      otherUserAvatarColor: '#6b7280',
+      status: 'accepted' as DmThreadStatus,
+      lastMessagePreview: (row.last_message_body ?? null) as string | null,
+      lastMessageAt: (row.last_message_at ?? null) as string | null,
+      unreadCount: (row.unread_count ?? 0) as number,
+      isIncoming: false,
+    }));
+  } catch (e) {
+    if (e instanceof TimeoutError) {
+      logger.warn('[SupabaseDataProvider] listInboxThreads timed out');
+      return [];
+    }
+    throw e;
   }
-
-  if (!data) return [];
-
-  return (data as Record<string, unknown>[]).map((row) => ({
-    id: row.thread_id as string,
-    otherUserId: row.other_user_id as string,
-    otherUserName: (row.other_display_name ?? 'Unknown') as string,
-    otherUserHandle: null,
-    otherUserAvatarUrl: (row.other_avatar_url ?? null) as string | null,
-    otherUserAvatarColor: '#6b7280',
-    status: 'accepted' as DmThreadStatus,
-    lastMessagePreview: (row.last_message_body ?? null) as string | null,
-    lastMessageAt: (row.last_message_at ?? null) as string | null,
-    unreadCount: (row.unread_count ?? 0) as number,
-    isIncoming: false,
-  }));
 }
 
 export async function listIncomingRequests(): Promise<DmRequest[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  try {
+    const { data: { user } } = await withTimeout(
+      supabase.auth.getUser(),
+      SUPABASE_READ_TIMEOUT_MS,
+      'listIncomingRequests.getUser',
+    );
+    if (!user) return [];
 
-  const { data, error } = await supabase
-    .from('chat_dm_requests_v1')
-    .select('id, thread_id, requester_id, context, created_at')
-    .eq('target_user_id', user.id)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false });
+    const { data, error } = await withTimeout(
+      supabase
+        .from('chat_dm_requests_v1')
+        .select('id, thread_id, requester_id, context, created_at')
+        .eq('target_user_id', user.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false }),
+      SUPABASE_READ_TIMEOUT_MS,
+      'listIncomingRequests',
+    );
 
-  if (error) {
-    logger.warn('[SupabaseDataProvider] listIncomingRequests error:', error);
-    return [];
-  }
+    if (error) {
+      logger.warn('[SupabaseDataProvider] listIncomingRequests error:', error);
+      return [];
+    }
 
-  if (!data) return [];
+    if (!data) return [];
 
-  return (data as Record<string, unknown>[]).map((row) => {
+    return (data as Record<string, unknown>[]).map((row) => {
     const ctx = (row.context ?? null) as Record<string, unknown> | null;
     return {
       threadId: (row.thread_id ?? row.id) as string,
@@ -74,7 +101,14 @@ export async function listIncomingRequests(): Promise<DmRequest[]> {
       requestMessage: (ctx?.message as string | null) ?? null,
       requestedAt: (row.created_at ?? new Date().toISOString()) as string,
     };
-  });
+    });
+  } catch (e) {
+    if (e instanceof TimeoutError) {
+      logger.warn('[SupabaseDataProvider] listIncomingRequests timed out');
+      return [];
+    }
+    throw e;
+  }
 }
 
 // rpc_request_dm_v1 returns { request_id, status:'pending' } — NOT a
