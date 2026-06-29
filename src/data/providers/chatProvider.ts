@@ -161,27 +161,41 @@ export async function getThreadMessages(threadId: string): Promise<DmMessage[]> 
   // chat_messages_v1 columns: id, thread_id, user_id, body, created_at,
   // edited_at, deleted_at. Per-message read tracking lives on
   // chat_thread_reads_v1 (thread-level last_read_at), not the message row.
-  const { data, error } = await supabase
-    .from('chat_messages_v1')
-    .select('id, thread_id, user_id, body, created_at')
-    .eq('thread_id', threadId)
-    .order('created_at', { ascending: true });
+  // Timeout-guarded like the inbox reads: a stalled round-trip would
+  // otherwise pin the thread screen's loading state for ~1min.
+  try {
+    const { data, error } = await withTimeout(
+      supabase
+        .from('chat_messages_v1')
+        .select('id, thread_id, user_id, body, created_at')
+        .eq('thread_id', threadId)
+        .order('created_at', { ascending: true }),
+      SUPABASE_READ_TIMEOUT_MS,
+      'getThreadMessages',
+    );
 
-  if (error) {
-    logger.warn('[SupabaseDataProvider] getThreadMessages error:', error);
-    return [];
+    if (error) {
+      logger.warn('[SupabaseDataProvider] getThreadMessages error:', error);
+      return [];
+    }
+
+    if (!data) return [];
+
+    return (data as Record<string, unknown>[]).map((row) => ({
+      id: row.id as string,
+      threadId: (row.thread_id as string | null) ?? threadId,
+      authorUserId: row.user_id as string,
+      text: (row.body as string | null) ?? '',
+      createdAt: (row.created_at ?? new Date().toISOString()) as string,
+      readAt: null,
+    }));
+  } catch (e) {
+    if (e instanceof TimeoutError) {
+      logger.warn('[SupabaseDataProvider] getThreadMessages timed out');
+      return [];
+    }
+    throw e;
   }
-
-  if (!data) return [];
-
-  return (data as Record<string, unknown>[]).map((row) => ({
-    id: row.id as string,
-    threadId: (row.thread_id as string | null) ?? threadId,
-    authorUserId: row.user_id as string,
-    text: (row.body as string | null) ?? '',
-    createdAt: (row.created_at ?? new Date().toISOString()) as string,
-    readAt: null,
-  }));
 }
 
 export async function sendMessage(threadId: string, body: string): Promise<DmMessage> {
