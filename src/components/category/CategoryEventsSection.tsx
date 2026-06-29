@@ -17,6 +17,7 @@ const kindIcon: Record<string, keyof typeof Ionicons.glyphMap> = {
   meetup: 'people-outline',
   stream: 'logo-twitch',
   convention: 'business-outline',
+  release: 'disc-outline',
 };
 
 const kindLabel: Record<string, string> = {
@@ -24,6 +25,7 @@ const kindLabel: Record<string, string> = {
   meetup: 'Meetup',
   stream: 'Stream',
   convention: 'Convention',
+  release: 'Release',
 };
 
 type Props = {
