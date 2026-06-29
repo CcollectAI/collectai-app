@@ -114,10 +114,15 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   months → S3 Parquet in bounded-memory batches (was single-shot SELECT
     #   that would OOM the t3.medium at full month size). Daily cadence, but
     #   a no-op except once a month when a month closes (manifest dedup).
-    #   Gated by DATALAKE_ENABLED=true in /opt/collectors/.env. partition_drop
-    #   (the DELETE side) stays OFF — that's a separate, deliberate decision.
-    # ("partition_drop_worker",   "workers.partition_drop_worker",      "run_once", True),
-    #   Drops >6mo partitions. We don't have >6mo data yet.
+    #   Gated by DATALAKE_ENABLED=true in /opt/collectors/.env.
+    ("partition_drop_worker",   "workers.partition_drop_worker",      "run_once", True),
+    #   RE-ENABLED 2026-06-26 (Phase 3): the DELETE side of the data tier. DB
+    #   autoscaled because closed months were exported to S3 (Phase 2) but never
+    #   dropped from Postgres. Gated by PARTITION_DROP_ENABLED=true +
+    #   PARTITION_RETENTION_MONTHS=2 in .env (each month ~4GB, so a 2-month
+    #   retention caps the DB at ~2 months ≈ 9-10GB and covers the FE's 30d
+    #   window). Drops ONLY after the month is confirmed in the S3 export
+    #   manifest (verified safe via dry-run 2026-06-26). May auto-drops ~Jul 1.
     # ("ticketmaster_events_worker", "pipelines.ticketmaster_events",    "run_once", False),
     # ("seatgeek_events_worker",  "pipelines.seatgeek_events",          "run_once", False),
     #   Events ingest. Events feature gated post-launch.
@@ -431,6 +436,13 @@ async def _supervised(
 _DEFAULT_WORKER_CYCLE_TIMEOUT_S = 1800  # 30 min — far above any healthy cycle
 _WORKER_CYCLE_TIMEOUTS = {
     "marketplace_scrape_worker": 1500,  # normal cycle is ≤18 min
+    # discogs is a rate-limited network pipeline (per-request sleeps + 429
+    # backoff, Discogs ~60 req/min). A full catalog cycle legitimately runs
+    # >30 min, so the 1800s default killed it every interval since 2026-06-21
+    # ("cycle exceeded 1800s — killed"). It runs ~daily, so 4h is ample
+    # headroom and still bounded; per-request 30s HTTP timeouts prevent a
+    # true hang from running the full 4h.
+    "discogs_worker": 14400,  # 4h — rate-limited, ~24h interval
 }
 
 
