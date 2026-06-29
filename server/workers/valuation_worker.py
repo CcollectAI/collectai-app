@@ -19,6 +19,15 @@ logging.basicConfig(
 
 DSN = os.getenv("DB_DSN")
 
+# Max market_hits fetched (and thus item_refs processed) per cycle. The worker
+# was fetching the ENTIRE unprocessed backlog (≈580k rows / 32k refs) and
+# trying to value all of it in one pass, blowing past the 1800s bake cycle
+# timeout. Bounding it lets each cycle finish green and drains the backlog
+# across cycles. Measured throughput is ~12 rows/s (per-group model + DB
+# round-trips), so 15k rows ≈ ~20 min — comfortably under the 1800s cap with
+# margin for DB load. Env-overridable so it can be tuned without a redeploy.
+_MAX_HITS_PER_CYCLE = int(os.getenv("VALUATION_MAX_HITS_PER_CYCLE", "15000"))
+
 _EVIDENCE_LOOKBACK_DAYS = 90
 
 # Temporal decay: half-life in days (listings older than this get exponentially less weight)
@@ -229,6 +238,20 @@ async def run_once():
         # RPC) populate observed_at directly. Without this fallback,
         # temporal-decay weighting collapses to a uniform 0.368 weight on
         # ~800K legacy rows.
+        # Served by the partial index `idx_market_hits_valuation_queue`
+        # (item_ref, seen_at) WHERE processed=false AND is_listing IS NOT TRUE
+        # AND price IS NOT NULL AND item_ref IS NOT NULL — its predicate mirrors
+        # this WHERE so the planner does a Merge-Append index scan (no seq scan,
+        # no global sort) and the LIMIT short-circuits (~0.2s for 30k rows vs a
+        # seq-scan+sort that hit the 30s pooler cap → QueryCanceledError, and a
+        # full backlog drain that blew past the 1800s bake cycle timeout).
+        # ORDER BY mirrors the index (item_ref, seen_at) so rows arrive
+        # clustered per item_ref, ascending by recency — preserved for the
+        # `reversed(hits)` "most recent condition" pick below. The Python
+        # grouping is order-independent and quantiles re-sort by price, so the
+        # old COALESCE(observed_at, seen_at) sort key (not indexable) was dead
+        # weight. LIMIT bounds per-cycle work so the backlog drains across
+        # cycles instead of one cycle trying (and failing) to process it all.
         hit_rows = await conn.fetch("""
             SELECT id, item_ref, source,
                    COALESCE(price_eur, price)::numeric AS price,
@@ -236,16 +259,13 @@ async def run_once():
                    condition, attrs
             FROM public.market_hits
             WHERE processed = false
-              -- Partition prune: anything still unprocessed after 90 days
-              -- is stale by valuation standards (model retrains weekly,
-              -- decay half-life is 30d). The previous query walked all
-              -- monthly partitions of the 1.4M-row table on every cycle.
               AND seen_at > now() - interval '90 days'
               AND price IS NOT NULL
               AND item_ref IS NOT NULL
               AND (is_listing IS NOT TRUE)  -- exclude asking-price rows (Discogs listings)
-            ORDER BY item_ref, COALESCE(observed_at, seen_at)
-        """)
+            ORDER BY item_ref, seen_at
+            LIMIT $1
+        """, _MAX_HITS_PER_CYCLE)
 
         if not hit_rows:
             logging.info("No unprocessed market_hits found")
@@ -264,7 +284,25 @@ async def run_once():
                 "attrs": row["attrs"],
             })
 
+        # When we hit the LIMIT, the last item_ref's comps may be truncated at
+        # the row boundary. Drop it this cycle so no item is ever valued on a
+        # partial comp set (the per-item UPDATE below would otherwise mark all
+        # its hits processed). It is fully picked up next cycle. Rows are
+        # clustered by item_ref (ORDER BY item_ref), so only the final group
+        # can be partial. Keep it if it's the only group (else we'd stall).
+        if len(hit_rows) >= _MAX_HITS_PER_CYCLE and len(groups) > 1:
+            truncated_ref = next(reversed(groups))
+            del groups[truncated_ref]
+
         logging.info("Found %d item_ref groups to process", len(groups))
+
+        # Per-cycle memo caches. gate-pass and latest-PICP are keyed purely by
+        # category (item_ref prefix), but were being fetched once per item_ref
+        # — ~2 DB round-trips × 16k groups dominated the cycle time on the
+        # pooler. Categories number ~54, so caching collapses ~32k round-trips
+        # to ~54. Cleared each run so fresh gate/calibration state is picked up.
+        _gate_cache: dict[str, bool] = {}
+        _picp_cache: dict[str, float | None] = {}
 
         for item_ref, hits in groups.items():
             now = datetime.datetime.now(datetime.timezone.utc)
@@ -325,7 +363,9 @@ async def run_once():
                     model and model.get("ridge") and model.get("standardizer")
                     and n >= _MIN_COMPS_FOR_MODEL
                 ):
-                    gate_pass = await _check_gate_pass(conn, category)
+                    if category not in _gate_cache:
+                        _gate_cache[category] = await _check_gate_pass(conn, category)
+                    gate_pass = _gate_cache[category]
                     alpha = _MODEL_BLEND_ALPHA if gate_pass else 0.0
                     if alpha > 0:
                         # V1: build real feature values from the item's comps.
@@ -395,7 +435,9 @@ async def run_once():
             recency_factor = min(1.0, avg_weight)
 
             cat_for_picp = item_ref.split(":")[0] if ":" in item_ref else item_ref
-            picp = await _get_latest_picp(conn, cat_for_picp)
+            if cat_for_picp not in _picp_cache:
+                _picp_cache[cat_for_picp] = await _get_latest_picp(conn, cat_for_picp)
+            picp = _picp_cache[cat_for_picp]
             if picp is None:
                 picp_boost = 1.0
             else:
