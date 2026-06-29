@@ -19,12 +19,13 @@
  * so a cache failure simply degrades to the existing direct-fetch behaviour.
  */
 
-import { browseCatalogItems } from '@/api/intakeApi';
+import { browseCatalogItems, getCatalogCollections } from '@/api/intakeApi';
 import { cacheGet, cacheSet } from '@/data/offlineCache';
 import logger from '@/utils/logger';
 
 type BrowseOpts = Parameters<typeof browseCatalogItems>[1];
 type BrowseResult = Awaited<ReturnType<typeof browseCatalogItems>>;
+type CollectionsResult = Awaited<ReturnType<typeof getCatalogCollections>>;
 
 // 15 min — matches the TTL_LONG "categories" tier in CachedDataProvider.
 const TTL_MS = 15 * 60 * 1000;
@@ -64,6 +65,34 @@ export async function browseCatalogItemsCached(
   }
 
   const fresh = await browseCatalogItems(categoryId, opts);
+  await cacheSet(cacheKey, fresh, TTL_MS);
+  return fresh;
+}
+
+/**
+ * Drop-in cached replacement for collectorsApi.getCatalogCollections, used by
+ * FeaturedCollectionsSection. Same rationale as browseCatalogItemsCached: the
+ * collections endpoint is fast warm (~60ms) but cold first-hits spike to
+ * 1.6–2.7s, and the carousel re-fetched on every category mount with no cache
+ * behind a skeleton. Set_code/brand groupings only change with the nightly
+ * catalog refresh, so the 15-min SWR TTL keeps revisits instant.
+ */
+export async function getCatalogCollectionsCached(
+  categoryId: string,
+  limit?: number,
+  groupBy?: 'set' | 'brand',
+): Promise<CollectionsResult> {
+  const cacheKey = ['catalog:collections', categoryId, groupBy ?? 'set', limit ?? ''].join(':');
+  const cached = await cacheGet<CollectionsResult>(cacheKey);
+
+  if (cached !== null) {
+    getCatalogCollections(categoryId, limit, groupBy)
+      .then((fresh) => cacheSet(cacheKey, fresh, TTL_MS))
+      .catch((err) => logger.warn(`[catalogBrowseCache] bg revalidate ${cacheKey}:`, err));
+    return cached;
+  }
+
+  const fresh = await getCatalogCollections(categoryId, limit, groupBy);
   await cacheSet(cacheKey, fresh, TTL_MS);
   return fresh;
 }

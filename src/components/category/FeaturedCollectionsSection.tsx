@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
-import { collectorsApi } from '@/api/collectorsApi';
+import { getCatalogCollectionsCached } from '@/data/catalogBrowseCache';
 import { type CategoryCollection } from '@/data/categories';
 import logger from '@/utils/logger';
 
@@ -43,7 +43,7 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
 
   useEffect(() => {
     let cancelled = false;
-    collectorsApi.getCatalogCollections(categoryId, 12, groupBy)
+    getCatalogCollectionsCached(categoryId, 12, groupBy)
       .then((data) => {
         if (cancelled) return;
         const arr = Array.isArray(data?.collections) ? data.collections : [];
