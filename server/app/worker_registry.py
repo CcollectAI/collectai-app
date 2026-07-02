@@ -31,7 +31,10 @@ SCHEDULES = {
     "price_monitor": 6 * 3600,          # every 6 hours
     "alerts_worker": 3600,               # every 1 hour
     "vision_ingest": 0,                  # on-demand only
-    "valuation_worker": 6 * 3600,        # every 6 hours
+    "valuation_worker": 3 * 3600,        # every 3h (was 6h — raised drain rate
+                                         # 2026-07-02 to catch up with the tcgcsv
+                                         # bulk-import backlog; paired with
+                                         # VALUATION_MAX_HITS_PER_CYCLE=25000)
     "deal_discovery": 1800,              # every 30 minutes
     "matview_demand": 600,               # every 10 minutes
     "matview_supply": 1800,              # every 30 minutes
