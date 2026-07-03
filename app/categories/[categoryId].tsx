@@ -37,6 +37,7 @@ import { getCategoryById, getRelatedCategories } from '@/data/categories';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import logger from '@/utils/logger';
+import { logAuthState, logLoad, startTimer } from '@/utils/diagnostics';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
 import { QuickNavBar } from '@/components/QuickNavBar';
@@ -83,12 +84,20 @@ function CategoryStoreScreen() {
   const loadCategoryData = useCallback(async () => {
     if (!categoryId) return;
 
+    const elapsed = startTimer();
+    logAuthState(`category:${categoryId}`);
     try {
       const storeResult = await dataProvider.getCategoryStore(categoryId);
       if (storeResult) {
         setEvents(storeResult.upcomingEvents);
       }
+      logLoad(`category:${categoryId}`, {
+        events: storeResult?.upcomingEvents.length ?? 'null-store',
+        items: storeResult?.items.length ?? 'null-store',
+        ms: elapsed(),
+      });
     } catch (err: unknown) {
+      logLoad(`category:${categoryId}`, { error: err instanceof Error ? err.message : String(err), ms: elapsed() });
       logger.warn('[CategoryStore] store fetch error:', err);
     }
 
@@ -113,8 +122,14 @@ function CategoryStoreScreen() {
   useEffect(() => {
     if (!categoryId) return;
     dataProvider.isFollowingCategory(categoryId)
-      .then(setFollowing)
-      .catch((err) => { logger.info('[Category] follow state fetch error:', err); });
+      .then((isFollowing) => {
+        setFollowing(isFollowing);
+        logLoad(`follow:${categoryId}`, { following: isFollowing });
+      })
+      .catch((err) => {
+        logLoad(`follow:${categoryId}`, { error: err instanceof Error ? err.message : String(err) });
+        logger.info('[Category] follow state fetch error:', err);
+      });
   }, [categoryId]);
 
   const handleEventPress = useCallback((eventId: string) => {

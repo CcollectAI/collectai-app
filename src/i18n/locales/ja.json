@@ -295,6 +295,7 @@
   },
 
   "home": {
+    "collection_get_started": "最初のアイテムを追加して始めましょう",
     "portfolio_value": "ポートフォリオ価値",
     "portfolio_title": "ポートフォリオ",
     "portfolio_subtitle": "コレクションの価値を追跡しましょう。",

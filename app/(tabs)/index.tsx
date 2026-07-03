@@ -741,6 +741,11 @@ function PortfolioScreen() {
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Collection</Text>
         </View>
+        {items.length === 0 && (
+          <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>
+            {t('home.collection_get_started')}
+          </Text>
+        )}
 
         {/* Top Movers & Shakers */}
         <TopItemsList
@@ -964,6 +969,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: text.xl,
     fontWeight: fontWeight.extrabold,
+  },
+  sectionSubtitle: {
+    fontSize: text.sm,
+    marginTop: -4,
+    marginBottom: 12,
   },
 
   // Global Collection Stats

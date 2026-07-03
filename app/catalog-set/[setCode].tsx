@@ -26,6 +26,7 @@ import { AnimatedPressable } from "@/motion";
 import { colors as tokens } from "@/theme/tokens";
 import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
+import { logLoad, startTimer } from "@/utils/diagnostics";
 
 const PAGE_SIZE = 60;
 const NUM_COLS = 3;
@@ -53,6 +54,7 @@ function CatalogSetScreen() {
     async (offset: number, mode: "replace" | "append") => {
       if (!category || !setCode) return;
       const id = ++reqId.current;
+      const elapsed = startTimer();
       try {
         // `setCode` carries the collection_key — a brand value for brand-grouped
         // categories (watches), a set_code otherwise. Filter by the right field.
@@ -66,7 +68,19 @@ function CatalogSetScreen() {
         const page = (res?.items ?? []) as CatalogItemData[];
         setItems((prev) => (mode === "append" ? [...prev, ...page] : page));
         if (typeof res?.total === "number") setTotal(res.total);
+        logLoad(`set-grid:${category}/${setCode}`, {
+          dimension: dimension ?? "set",
+          mode,
+          offset,
+          got: page.length,
+          total: res?.total ?? "?",
+          ms: elapsed(),
+        });
       } catch (err) {
+        logLoad(`set-grid:${category}/${setCode}`, {
+          error: err instanceof Error ? err.message : String(err),
+          ms: elapsed(),
+        });
         logger.warn("[CatalogSet] load error:", err);
         if (mode === "replace" && id === reqId.current) setItems([]);
       } finally {

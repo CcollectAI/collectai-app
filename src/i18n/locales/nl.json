@@ -295,6 +295,7 @@
   },
 
   "home": {
+    "collection_get_started": "Begin door je eerste item toe te voegen",
     "portfolio_value": "Portfoliowaarde",
     "portfolio_title": "Portfolio",
     "portfolio_subtitle": "Volg de waarde van je collectie.",
