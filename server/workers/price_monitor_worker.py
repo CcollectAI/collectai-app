@@ -221,27 +221,31 @@ async def detect_anomalies(conn):
     # Only check items that are actively relevant: owned by users (updated in
     # last 7 days) or on active watchlists.  This avoids scanning every item
     # with price history, reducing load by ~80-90%.
+    # Reads the compact price_prediction_daily rollup (one q-value per item/day),
+    # not raw price_history, so anomaly detection survives price_history partition
+    # retention. Trade-off: detection is day-granular and lags live comps by ≤1
+    # day (nightly rollup) — fine for value-move alerts, not real-time trading.
     item_refs = await conn.fetch(
         """
-        SELECT ph.item_ref, count(*) AS cnt
-        FROM public.price_history ph
-        WHERE ph.item_ref IS NOT NULL
-          AND ph.snapshot_at > now() - ($1 || ' days')::interval
+        SELECT ppd.item_ref, count(*) AS cnt
+        FROM public.price_prediction_daily ppd
+        WHERE ppd.item_ref IS NOT NULL
+          AND ppd.day > (current_date - make_interval(days => $1))
           AND (
             EXISTS (
               SELECT 1 FROM public.items i
-              WHERE i.canonical_key = ph.item_ref
+              WHERE i.canonical_key = ppd.item_ref
                 AND i.user_id IS NOT NULL
             )
             OR EXISTS (
               SELECT 1 FROM public.watchlist_items w
-              WHERE w.category = split_part(ph.item_ref, '-', 1)
+              WHERE w.category = split_part(ppd.item_ref, '-', 1)
             )
           )
-        GROUP BY ph.item_ref
+        GROUP BY ppd.item_ref
         HAVING count(*) >= $2
         """,
-        str(HISTORY_WINDOW),
+        HISTORY_WINDOW,
         MIN_HISTORY_POINTS,
     )
 
@@ -262,11 +266,11 @@ async def detect_anomalies(conn):
         # Without this filter the planner walks all monthly partitions.
         snapshots = await conn.fetch(
             """
-            SELECT price_q50
-            FROM public.price_history
+            SELECT q50 AS price_q50
+            FROM public.price_prediction_daily
             WHERE item_ref = $1
-              AND snapshot_at > now() - interval '90 days'
-            ORDER BY snapshot_at DESC
+              AND day > (current_date - interval '90 days')
+            ORDER BY day DESC
             LIMIT $2
             """,
             item_ref,

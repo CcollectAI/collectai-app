@@ -407,9 +407,13 @@ async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
     it, so the screen can show "Based on N recent comps" for credibility. Falls
     back to the latest comp when there aren't enough (<3) to median.
 
-    One per-item query, partition-pruned on seen_at (180d) — a bounded scan, and
-    this endpoint serves a single item on tap (not a list), so reading
-    market_hits directly here is fine.
+    Reads the compact `market_hits_daily` rollup (one row per item/day) rather
+    than raw `market_hits`, so the 180d pricing window survives raw-partition
+    retention (which now drops market_hits sooner). comps_count is the exact sum
+    of daily counts; median_price is the median-of-daily-medians (robust, and a
+    negligible shift from median-of-all-comps for a market-value display); latest
+    is the most recent day's latest comp. Rollup lags live comps by ≤1 day (the
+    nightly job re-rolls the last 2 days), which is fine for a 180d value.
     """
     pool = get_pool()
     if pool is None:
@@ -418,13 +422,13 @@ async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
     row = await pool.fetchrow(
         """
         SELECT
-            COUNT(*) AS comps_count,
-            percentile_cont(0.5) WITHIN GROUP (ORDER BY price_eur) AS median_price,
-            (ARRAY_AGG(price_eur ORDER BY seen_at DESC))[1] AS latest_price
-        FROM market_hits
+            COALESCE(SUM(comps_count), 0) AS comps_count,
+            percentile_cont(0.5) WITHIN GROUP (ORDER BY median_price) AS median_price,
+            (ARRAY_AGG(latest_price ORDER BY latest_seen_at DESC))[1] AS latest_price
+        FROM market_hits_daily
         WHERE item_ref = $1
-          AND seen_at > now() - interval '180 days'
-          AND price_eur IS NOT NULL
+          AND day > (current_date - interval '180 days')
+          AND median_price IS NOT NULL
         """,
         item_ref,
     )

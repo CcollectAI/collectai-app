@@ -27,7 +27,11 @@ Algorithm per run:
           in a row, emit 'error' so sanity_probe surfaces it.
 
 Env:
-  PARTITION_RETENTION_MONTHS  — age threshold (default 6)
+  PARTITION_RETENTION_MONTHS  — global age threshold (default 6)
+  PARTITION_RETENTION_MONTHS_<PARENT>  — per-table override (falls back to the
+                                 global), e.g. PARTITION_RETENTION_MONTHS_PRICE_HISTORY=1
+                                 keeps price_history for 1 month while market_hits
+                                 stays at the global value. Floored at 1.
   PARTITION_DROP_ENABLED       — 'true' to actually drop; default 'false'
                                  for dry-run mode (logs what it would do)
   DATALAKE_BUCKET             — S3 bucket holding the exports manifest
@@ -67,6 +71,29 @@ _PARTITION_RE = re.compile(r"y(\d{4})m(\d{2})")
 def _months_between(a: date, b: date) -> int:
     """Return (a - b) in calendar months (a >= b assumed)."""
     return (a.year - b.year) * 12 + (a.month - b.month)
+
+
+def _retention_for(parent: str) -> int:
+    """Per-table retention in months.
+
+    Reads PARTITION_RETENTION_MONTHS_<PARENT> (e.g.
+    PARTITION_RETENTION_MONTHS_PRICE_HISTORY), falling back to the global
+    PARTITION_RETENTION_MONTHS. This lets each table age out on its own
+    schedule once its readers are tier-safe — e.g. keep `market_hits` longer
+    (catalog pricing reads 180d) while `price_history` drops sooner (its
+    history is served from the rollup + S3 warm tier). Floored at 1 month so a
+    typo can never drop the current month's live data.
+    """
+    override = os.getenv(f"PARTITION_RETENTION_MONTHS_{parent.upper()}")
+    if override is not None:
+        try:
+            return max(1, int(override))
+        except ValueError:
+            logger.warning(
+                "[partition_drop] invalid PARTITION_RETENTION_MONTHS_%s=%r — using global %d",
+                parent.upper(), override, RETENTION_MONTHS,
+            )
+    return RETENTION_MONTHS
 
 
 async def _list_partitions(conn, parent: str) -> list[str]:
@@ -139,6 +166,8 @@ async def run_once() -> dict:
 
     try:
         for parent, manifest_fmt in PARENTS:
+            retention = _retention_for(parent)
+            logger.info("[partition_drop] %s retention=%d months", parent, retention)
             parts = await _list_partitions(conn, parent)
             for part_name in parts:
                 stats["checked"] += 1
@@ -153,7 +182,7 @@ async def run_once() -> dict:
                 part_start = date(year, month, 1)
                 age_months = _months_between(cutoff_month, part_start)
 
-                if age_months < RETENTION_MONTHS:
+                if age_months < retention:
                     continue
                 stats["eligible_by_age"] += 1
 
