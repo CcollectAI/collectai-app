@@ -28,6 +28,15 @@ export const COMMUNITY_GATED = false;
  */
 export const SOCIAL_LOGIN_ENABLED = false;
 
+/**
+ * "Follow category" pill on the category header. Disabled pre-launch: the
+ * follow write (POST /events/categories/{id}/follow) currently fails with a
+ * client-side 401 (the recurring auth-token bug — see the auth diagnostics
+ * work). Hiding it avoids surfacing a button that always errors. Flip back to
+ * true once the 401 root cause is fixed and verified on device.
+ */
+export const CATEGORY_FOLLOW_ENABLED = false;
+
 export const featureFlags = {
   darkMode: false,
   FEATURE_HAPTICS_MICRO_ANIMATIONS: true,

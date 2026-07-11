@@ -310,6 +310,8 @@ function RootStack() {
         <Stack.Screen name="inbox" options={{ headerShown: false }} />
         <Stack.Screen name="chat/[threadId]" options={{ headerShown: false }} />
         <Stack.Screen name="chat/new" options={{ headerShown: false }} />
+        <Stack.Screen name="chat-demo" options={{ headerShown: false }} />
+        <Stack.Screen name="catalog-item/[key]" options={{ headerShown: false }} />
         <Stack.Screen name="users/[userId]" options={{ headerShown: false }} />
         <Stack.Screen name="search" options={{ headerShown: false }} />
 

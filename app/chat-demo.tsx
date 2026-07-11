@@ -16,7 +16,7 @@ import {
   Platform,
   type ListRenderItemInfo,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -36,9 +36,11 @@ const SEED: DemoMessage[] = [
 function ChatDemoScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<DemoMessage[]>(SEED);
   const [draft, setDraft] = useState('');
   const seq = useRef(0);
+  const listRef = useRef<FlatList<DemoMessage>>(null);
 
   const send = useCallback(() => {
     const body = draft.trim();
@@ -68,43 +70,46 @@ function ChatDemoScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <AnimatedPressable
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }}
-          style={styles.backBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-        <View style={styles.headerTitleBlock}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Test Collector</Text>
-          <Text style={[styles.headerSub, { color: colors.muted }]}>Placeholder · not saved</Text>
+    <KeyboardAvoidingView
+      style={[styles.safe, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={insets.bottom}
+    >
+      <SafeAreaView style={styles.flex} edges={['top', 'left', 'right']}>
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <AnimatedPressable
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <View style={styles.headerTitleBlock}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Test Collector</Text>
+            <Text style={[styles.headerSub, { color: colors.muted }]}>Placeholder · not saved</Text>
+          </View>
+          <View style={{ width: 32 }} />
         </View>
-        <View style={{ width: 32 }} />
-      </View>
 
-      <View style={[styles.demoBanner, { backgroundColor: colors.accent + '15' }]}>
-        <Ionicons name="flask-outline" size={14} color={colors.accent} style={{ marginRight: 6 }} />
-        <Text style={[styles.demoBannerText, { color: colors.accent }]}>
-          Demo conversation for testing — messages stay on this device.
-        </Text>
-      </View>
+        <View style={[styles.demoBanner, { backgroundColor: colors.accent + '15' }]}>
+          <Ionicons name="flask-outline" size={14} color={colors.accent} style={{ marginRight: 6 }} />
+          <Text style={[styles.demoBannerText, { color: colors.accent }]}>
+            Demo conversation for testing — messages stay on this device.
+          </Text>
+        </View>
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
-      >
         <FlatList
+          ref={listRef}
+          style={styles.flex}
           data={messages}
           keyExtractor={(m) => m.id}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
+          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
         />
-        <View style={[styles.inputBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+        <View style={[styles.inputBar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: insets.bottom || 8 }]}>
           <TextInput
             value={draft}
             onChangeText={setDraft}
@@ -125,8 +130,8 @@ function ChatDemoScreen() {
             <Ionicons name="arrow-up" size={20} color="#fff" />
           </AnimatedPressable>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, processLock, type SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "@/lib/logger";
 import { SUPABASE_URL as URL, SUPABASE_ANON_KEY as KEY, SUPABASE_MODE as MODE } from "@/api/config";
 import { secureStoreAdapter } from "@/lib/secureStoreAdapter";
@@ -103,6 +103,15 @@ export const supabase: SupabaseClient = (() => {
       autoRefreshToken: true,
       detectSessionInUrl: true,
       storage: secureStoreAdapter,
+      // CRITICAL for React Native: without an explicit lock, GoTrueClient falls
+      // back to `lockNoOp` (no locking) because `navigator.locks` only exists on
+      // web. Unserialized auth ops then race — autoRefreshToken + the AppState
+      // startAutoRefresh + getSession()/refreshSession() can fire TWO concurrent
+      // refreshes on one rotating refresh-token, tripping Supabase's reuse
+      // detection, which REVOKES the session. Result: every authenticated write
+      // 401s and re-login doesn't help (the fresh session is re-revoked by the
+      // same race). processLock serializes all auth ops in-process and fixes it.
+      lock: processLock,
     },
   });
 })();
