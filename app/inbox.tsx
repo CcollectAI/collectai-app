@@ -18,7 +18,7 @@ import {
 import { Image } from 'expo-image';
 import { useToast } from '@/components/Toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type DmThread, type DmRequest } from '@/data';
@@ -492,9 +492,31 @@ function InboxScreen() {
           <EmptyState
             icon="chatbubbles-outline"
             title="No messages yet"
-            subtitle="Start a conversation by visiting someone's profile"
+            subtitle="Find other collectors to start a conversation — or open a test chat to preview messaging."
             colors={colors}
             style={{ paddingTop: 80 }}
+            action={
+              <View style={styles.emptyActions}>
+                <AnimatedPressable
+                  onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/marketplace'); }}
+                  style={[styles.emptyActionPrimary, { backgroundColor: colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Find collectors to message"
+                >
+                  <Ionicons name="search" size={16} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={styles.emptyActionPrimaryText}>Find collectors</Text>
+                </AnimatedPressable>
+                <AnimatedPressable
+                  onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/chat-demo' as Href); }}
+                  style={[styles.emptyActionSecondary, { borderColor: colors.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open a test chat to preview messaging"
+                >
+                  <Ionicons name="flask-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+                  <Text style={[styles.emptyActionSecondaryText, { color: colors.accent }]}>Open test chat</Text>
+                </AnimatedPressable>
+              </View>
+            }
           />
         )}
         </Animated.View>
@@ -723,6 +745,38 @@ const styles = StyleSheet.create({
   },
   pendingBadgeText: {
     fontSize: text.xs,
+    fontWeight: fontWeight.semibold,
+  },
+
+  // Empty-state action buttons
+  emptyActions: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  emptyActionPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+  },
+  emptyActionPrimaryText: {
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
+    color: '#ffffff',
+  },
+  emptyActionSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  emptyActionSecondaryText: {
+    fontSize: text.md,
     fontWeight: fontWeight.semibold,
   },
 

@@ -37,6 +37,7 @@ import { useSettings } from '@/lib/settings';
 import { useEventForm, validateEventForm, buildEventInput, type EventFormat } from '@/hooks/useEventForm';
 import { BottomSheetModal } from '@/components/BottomSheetModal';
 import logger from '@/utils/logger';
+import { logAuthState } from '@/utils/diagnostics';
 import { useToast } from '@/components/Toast';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { FormField } from '@/components/form';
@@ -110,6 +111,10 @@ const CreateEventScreen: React.FC = () => {
     if (!form.canSubmit || saving) return;
 
     setSaving(true);
+
+    // DIAG: snapshot auth state right before the create call so a 401 shows
+    // whether the device had a live, non-expired token (Console.app → "DIAG").
+    void logAuthState('create-event');
 
     try {
       const input = buildEventInput(form, {

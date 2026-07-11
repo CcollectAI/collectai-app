@@ -100,8 +100,8 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
               {coverUri ? (
                 <Image
                   source={{ uri: coverUri }}
-                  style={styles.cover}
-                  resizeMode="cover"
+                  style={[styles.cover, { backgroundColor: colors.card }]}
+                  resizeMode="contain"
                   accessibilityIgnoresInvertColors
                 />
               ) : null}

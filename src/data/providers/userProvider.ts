@@ -4,6 +4,7 @@
 
 import type { PublicUserProfile } from '../types';
 import { supabase } from '../../lib/supabase';
+import { withTimeout } from '../../lib/withTimeout';
 import logger from '../../utils/logger';
 
 // In-memory profile cache to prevent repeated lookups
@@ -82,11 +83,25 @@ export async function searchUsers(query: string): Promise<PublicUserProfile[]> {
 
   const pattern = `%${query.trim()}%`;
 
-  const { data, error } = await supabase
-    .from('user_public_profiles')
-    .select('user_id, display_name, handle, avatar_url, bio, interests')
-    .or(`display_name.ilike.${pattern},handle.ilike.${pattern}`)
-    .limit(20);
+  // supabase-js has no per-request timeout; without this a stalled round-trip
+  // pins the "Find friends" spinner forever. Time out to [] so the caller falls
+  // through to its existing "No collectors found" empty state.
+  let data: unknown;
+  let error: unknown;
+  try {
+    ({ data, error } = await withTimeout(
+      supabase
+        .from('user_public_profiles')
+        .select('user_id, display_name, handle, avatar_url, bio, interests')
+        .or(`display_name.ilike.${pattern},handle.ilike.${pattern}`)
+        .limit(20),
+      5_000,
+      'searchUsers',
+    ));
+  } catch (e) {
+    logger.warn('[SupabaseDataProvider] searchUsers timed out or threw:', e);
+    return [];
+  }
 
   if (error) {
     logger.warn('[SupabaseDataProvider] searchUsers error:', error);

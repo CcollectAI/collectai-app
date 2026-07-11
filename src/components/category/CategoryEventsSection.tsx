@@ -34,13 +34,16 @@ type Props = {
   colors: AppTheme['colors'];
 };
 
-const CategoryEventsSection: React.FC<Props> = ({ events, onEventPress, colors }) => (
-  <View style={styles.section}>
-    <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Events & Drops</Text>
-    {events.length === 0 ? (
-      <Text style={[styles.emptyText, { color: colors.muted }]}>No upcoming events for this category.</Text>
-    ) : (
-      events.map((event) => (
+const CategoryEventsSection: React.FC<Props> = ({ events, onEventPress, colors }) => {
+  // Hide the section entirely when this category has no events, rather than
+  // rendering a permanent "No upcoming events" placeholder — most categories
+  // have zero events pre-launch, so the empty state showed on nearly every page.
+  if (events.length === 0) return null;
+
+  return (
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Events & Drops</Text>
+      {events.map((event) => (
         <AnimatedPressable
           key={event.id}
           style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -71,10 +74,10 @@ const CategoryEventsSection: React.FC<Props> = ({ events, onEventPress, colors }
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />
         </AnimatedPressable>
-      ))
-    )}
-  </View>
-);
+      ))}
+    </View>
+  );
+};
 
 export default React.memo(CategoryEventsSection);
 
@@ -86,9 +89,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 10,
-  },
-  emptyText: {
-    fontSize: 13,
   },
   eventCard: {
     flexDirection: 'row',

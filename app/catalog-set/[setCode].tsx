@@ -26,7 +26,7 @@ import { AnimatedPressable } from "@/motion";
 import { colors as tokens } from "@/theme/tokens";
 import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
-import { logLoad, startTimer } from "@/utils/diagnostics";
+import { logAuthState, logLoad, startTimer } from "@/utils/diagnostics";
 
 const PAGE_SIZE = 60;
 const NUM_COLS = 3;
@@ -55,6 +55,9 @@ function CatalogSetScreen() {
       if (!category || !setCode) return;
       const id = ++reqId.current;
       const elapsed = startTimer();
+      // DIAG: on the initial load, snapshot auth — the recurring "spins forever"
+      // reports line up with getSession() stalling before the request even fires.
+      if (mode === "replace") void logAuthState(`set-grid:${category}/${setCode}`);
       try {
         // `setCode` carries the collection_key — a brand value for brand-grouped
         // categories (watches), a set_code otherwise. Filter by the right field.
@@ -62,7 +65,11 @@ function CatalogSetScreen() {
           ...(dimension === "brand" ? { brand: setCode } : { setCode }),
           limit: PAGE_SIZE,
           offset,
-          sort: "value", // priced/known items lead — the "what people know" feed
+          // NOTE: sort:"value" filters to priced-only on the BE, which returns
+          // ZERO items for sets whose cards have no market comp (e.g. most MTG
+          // sets — MKM has 265 items, 0 priced → empty grid). This screen's job
+          // is to show EVERY item in the set, so use set order instead.
+          sort: "set",
         });
         if (id !== reqId.current) return;
         const page = (res?.items ?? []) as CatalogItemData[];
@@ -138,7 +145,7 @@ function CatalogSetScreen() {
           <Image
             source={{ uri: item.image_url }}
             style={styles.fill}
-            resizeMode="cover"
+            resizeMode="contain"
             accessibilityIgnoresInvertColors
           />
         ) : (
