@@ -52,6 +52,7 @@ import { MarketplaceEmptyState } from '@/components/marketplace/MarketplaceEmpty
 import { DemandHeatBanner } from '@/components/marketplace/DemandHeatBanner';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { RegionalInsightsSection } from '@/components/marketplace/RegionalInsightsSection';
+import { MarketMoversSection } from '@/components/marketplace/MarketMoversSection';
 
 // --- Types for marketplace API results ---
 type MarketplaceHit = {
@@ -760,6 +761,9 @@ const SearchScreen: React.FC = () => {
 
             {/* Regional demand insights */}
             <RegionalInsightsSection items={regionalDemand} onSearchItem={handleChipPress} />
+
+            {/* Market Movers — biggest 7d price gainers/losers (followed cats + see-all) */}
+            <MarketMoversSection />
 
             {/* Trending categories removed */}
           </>

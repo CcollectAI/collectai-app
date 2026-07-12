@@ -448,6 +448,122 @@ async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# GET /catalog/top-movers — biggest market price movers (gainers/losers)
+# ---------------------------------------------------------------------------
+
+class TopMoverItem(BaseModel):
+    item_ref: str
+    category: str
+    item_key: Optional[str] = None
+    title: Optional[str] = None
+    brand: Optional[str] = None
+    set_code: Optional[str] = None
+    image_url: Optional[str] = None
+    last_price: float
+    med_7d: Optional[float] = None
+    med_30d: Optional[float] = None
+    delta_pct_7d: Optional[float] = None
+    delta_pct_30d: Optional[float] = None
+    comps_30d: int = 0
+    in_catalog: bool = False
+
+
+class TopMoversResponse(BaseModel):
+    movers: list[TopMoverItem]
+    direction: str
+    window: str
+
+
+@router.get(
+    "/catalog/top-movers",
+    response_model=TopMoversResponse,
+    summary="Biggest market price movers (gainers/losers) from the market_hits_daily rollup",
+)
+async def get_top_movers(
+    direction: str = Query(
+        "gainers",
+        pattern=r"^(gainers|losers)$",
+        description="`gainers` = biggest price increases, `losers` = biggest decreases.",
+    ),
+    window: str = Query(
+        "7d",
+        pattern=r"^(7d|30d)$",
+        description="Change window used for ranking and the headline delta.",
+    ),
+    categories: Optional[str] = Query(
+        None,
+        max_length=500,
+        description=(
+            "Comma-separated category filter (e.g. `mtg,pokemon`). Drives the "
+            "app's followed-categories default; omit for a whole-catalog list."
+        ),
+    ),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Ranked market movers, served from the `mv_market_top_movers` MV.
+
+    The MV pre-computes per-item 7d/30d median deltas off the `market_hits_daily`
+    rollup (credibility floors: >=5 comps, >=3 active days, recent activity,
+    swings capped at +/-500%) and LEFT JOINs `category_items` for display
+    metadata. `gainers` orders by the window delta DESC (positive only),
+    `losers` ASC (negative only). Refreshed nightly (cron `refresh-mv-market-top-movers`).
+    """
+    pool = get_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+
+    delta_col = "delta_pct_7d" if window == "7d" else "delta_pct_30d"
+    if direction == "gainers":
+        order, sign = "DESC", ">"
+    else:
+        order, sign = "ASC", "<"
+
+    where = [f"{delta_col} IS NOT NULL", f"{delta_col} {sign} 0"]
+    params: list[Any] = []
+    if categories:
+        cats = [c.strip().lower() for c in categories.split(",") if c.strip()]
+        if cats:
+            params.append(cats)
+            where.append(f"category = ANY(${len(params)})")
+    params.append(limit)
+
+    sql = f"""
+        SELECT item_ref, category, item_key, title, brand, set_code, image_url,
+               last_price, med_7d, med_30d, delta_pct_7d, delta_pct_30d,
+               comps_30d, in_catalog
+        FROM mv_market_top_movers
+        WHERE {' AND '.join(where)}
+        ORDER BY {delta_col} {order}
+        LIMIT ${len(params)}
+    """
+    rows = await pool.fetch(sql, *params)
+
+    def _f(v: Any) -> Optional[float]:
+        return float(v) if v is not None else None
+
+    movers = [
+        TopMoverItem(
+            item_ref=r["item_ref"],
+            category=r["category"],
+            item_key=r["item_key"],
+            title=r["title"],
+            brand=r["brand"],
+            set_code=r["set_code"],
+            image_url=r["image_url"],
+            last_price=_f(r["last_price"]) or 0.0,
+            med_7d=_f(r["med_7d"]),
+            med_30d=_f(r["med_30d"]),
+            delta_pct_7d=_f(r["delta_pct_7d"]),
+            delta_pct_30d=_f(r["delta_pct_30d"]),
+            comps_30d=int(r["comps_30d"]) if r["comps_30d"] is not None else 0,
+            in_catalog=bool(r["in_catalog"]),
+        )
+        for r in rows
+    ]
+    return TopMoversResponse(movers=movers, direction=direction, window=window)
+
+
+# ---------------------------------------------------------------------------
 # GET /catalog/{category_id}/collections — discovery "Featured Collections"
 # ---------------------------------------------------------------------------
 
