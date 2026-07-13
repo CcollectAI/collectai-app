@@ -7,7 +7,6 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
-import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { formatPrice } from '@/lib/format';
 
 interface ItemsGridHeaderProps {
@@ -29,7 +28,6 @@ export const ItemsGridHeader = React.memo(function ItemsGridHeader({
       </View>
       <View style={styles.headerIcons}>
         <InboxHeaderButton color={colors.text} size={22} />
-        <ThemeToggleButton size={22} />
       </View>
     </View>
   );

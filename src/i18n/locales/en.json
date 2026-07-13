@@ -272,6 +272,7 @@
     "profile": "Profile"
   },
   "home": {
+    "collection_get_started": "Get started by adding your first item",
     "portfolio_value": "Portfolio value",
     "portfolio_title": "Portfolio",
     "portfolio_subtitle": "Track your collection value.",

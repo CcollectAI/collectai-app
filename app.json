@@ -57,7 +57,8 @@
       ],
       "expo-apple-authentication",
       "@sentry/react-native",
-      "expo-localization"
+      "expo-localization",
+      "@react-native-community/datetimepicker"
     ],
     "notification": {
       "iosDisplayInForeground": true,

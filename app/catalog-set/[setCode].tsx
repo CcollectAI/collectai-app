@@ -13,21 +13,28 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
+  Modal,
+  ScrollView,
   useWindowDimensions,
   type ListRenderItemInfo,
 } from "react-native";
 import { FlatList } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, Stack, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import { browseCatalogItems } from "@/api/intakeApi";
+import { browseCatalogItemsCached, SET_GRID_PAGE_SIZE } from "@/data/catalogBrowseCache";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable } from "@/motion";
 import { colors as tokens } from "@/theme/tokens";
+import { cleanCatalogItem } from "@/lib/catalogPresentation";
+import { formatPrice } from "@/lib/format";
 import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
+import { logAuthState, logLoad, startTimer } from "@/utils/diagnostics";
 
-const PAGE_SIZE = 60;
+const PAGE_SIZE = SET_GRID_PAGE_SIZE;
 const NUM_COLS = 3;
 const GAP = 2;
 
@@ -41,7 +48,13 @@ function CatalogSetScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const tile = Math.floor((width - GAP * (NUM_COLS - 1)) / NUM_COLS);
+
+  // Full-screen swipe viewer: index of the item currently open (null = closed).
+  // Tapping a grid tile opens the viewer here so the user can swipe left/right
+  // through every item in the set without bouncing back to the grid.
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   const [items, setItems] = useState<CatalogItemData[]>([]);
   const [total, setTotal] = useState<number | null>(null);
@@ -53,20 +66,43 @@ function CatalogSetScreen() {
     async (offset: number, mode: "replace" | "append") => {
       if (!category || !setCode) return;
       const id = ++reqId.current;
+      const elapsed = startTimer();
+      // DIAG: on the initial load, snapshot auth — the recurring "spins forever"
+      // reports line up with getSession() stalling before the request even fires.
+      if (mode === "replace") void logAuthState(`set-grid:${category}/${setCode}`);
       try {
         // `setCode` carries the collection_key — a brand value for brand-grouped
         // categories (watches), a set_code otherwise. Filter by the right field.
-        const res = await browseCatalogItems(category, {
+        // First page rides the SWR cache (instant on revisit, bg-revalidates);
+        // append pages go direct so pagination isn't served stale.
+        const fetchItems = offset === 0 ? browseCatalogItemsCached : browseCatalogItems;
+        const res = await fetchItems(category, {
           ...(dimension === "brand" ? { brand: setCode } : { setCode }),
           limit: PAGE_SIZE,
           offset,
-          sort: "value", // priced/known items lead — the "what people know" feed
+          // NOTE: sort:"value" filters to priced-only on the BE, which returns
+          // ZERO items for sets whose cards have no market comp (e.g. most MTG
+          // sets — MKM has 265 items, 0 priced → empty grid). This screen's job
+          // is to show EVERY item in the set, so use set order instead.
+          sort: "set",
         });
         if (id !== reqId.current) return;
         const page = (res?.items ?? []) as CatalogItemData[];
         setItems((prev) => (mode === "append" ? [...prev, ...page] : page));
         if (typeof res?.total === "number") setTotal(res.total);
+        logLoad(`set-grid:${category}/${setCode}`, {
+          dimension: dimension ?? "set",
+          mode,
+          offset,
+          got: page.length,
+          total: res?.total ?? "?",
+          ms: elapsed(),
+        });
       } catch (err) {
+        logLoad(`set-grid:${category}/${setCode}`, {
+          error: err instanceof Error ? err.message : String(err),
+          ms: elapsed(),
+        });
         logger.warn("[CatalogSet] load error:", err);
         if (mode === "replace" && id === reqId.current) setItems([]);
       } finally {
@@ -106,6 +142,60 @@ function CatalogSetScreen() {
     [router],
   );
 
+  const openViewer = useCallback((index: number) => setViewerIndex(index), []);
+  const closeViewer = useCallback(() => setViewerIndex(null), []);
+
+  // One full-screen page of the swipe viewer: hero image + title + tags + price,
+  // with a deep-link to the full museum detail for the richer market view.
+  const renderViewerPage = useCallback(
+    ({ item }: ListRenderItemInfo<CatalogItemData>) => {
+      const clean = cleanCatalogItem({
+        title: item.title,
+        brand: item.brand,
+        rarity: item.rarity,
+        setCode: item.set_code,
+      });
+      return (
+        <ScrollView
+          style={{ width }}
+          contentContainerStyle={[styles.viewerPage, { paddingTop: insets.top + 56, paddingBottom: insets.bottom + 32 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {item.image_url ? (
+            <Image source={{ uri: item.image_url }} style={styles.viewerHero} resizeMode="contain" accessibilityIgnoresInvertColors />
+          ) : (
+            <View style={[styles.viewerHero, styles.placeholder, { backgroundColor: tokens.brand.base + "12" }]}>
+              <Ionicons name="cube-outline" size={48} color={tokens.brand.base} />
+            </View>
+          )}
+          <Text style={[styles.viewerTitle, { color: colors.text }]}>{clean.title}</Text>
+          {clean.tags.length > 0 && (
+            <View style={styles.badgeRow}>
+              {clean.tags.map((b) => (
+                <View key={b} style={[styles.badge, { backgroundColor: colors.accent + "20" }]}>
+                  <Text style={[styles.badgeText, { color: tokens.brand.deep }]} numberOfLines={1}>{b}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          {item.estimated_price != null && (
+            <Text style={[styles.viewerPrice, { color: colors.text }]}>~{formatPrice(item.estimated_price)}</Text>
+          )}
+          <AnimatedPressable
+            style={[styles.viewerCta, { borderColor: colors.border }]}
+            onPress={() => { closeViewer(); openItem(item); }}
+            accessibilityRole="button"
+            accessibilityLabel={`View full details for ${item.title}`}
+          >
+            <Text style={[styles.viewerCtaText, { color: colors.accent }]}>View full details</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.accent} />
+          </AnimatedPressable>
+        </ScrollView>
+      );
+    },
+    [width, insets.top, insets.bottom, colors, closeViewer, openItem],
+  );
+
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<CatalogItemData>) => (
       <AnimatedPressable
@@ -116,7 +206,7 @@ function CatalogSetScreen() {
           marginBottom: GAP,
           backgroundColor: colors.card,
         }}
-        onPress={() => openItem(item)}
+        onPress={() => openViewer(index)}
         accessibilityRole="button"
         accessibilityLabel={`View ${item.title}`}
       >
@@ -124,7 +214,7 @@ function CatalogSetScreen() {
           <Image
             source={{ uri: item.image_url }}
             style={styles.fill}
-            resizeMode="cover"
+            resizeMode="contain"
             accessibilityIgnoresInvertColors
           />
         ) : (
@@ -134,7 +224,7 @@ function CatalogSetScreen() {
         )}
       </AnimatedPressable>
     ),
-    [tile, colors.card, openItem],
+    [tile, colors.card, openViewer],
   );
 
   const setName = name || "Set";
@@ -182,6 +272,37 @@ function CatalogSetScreen() {
           }
         />
       )}
+
+      {/* Full-screen swipe viewer — page left/right through the whole set. */}
+      {viewerIndex != null && (
+        <Modal visible animationType="slide" onRequestClose={closeViewer}>
+          <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <FlatList
+              data={items}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              initialScrollIndex={viewerIndex}
+              getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
+              keyExtractor={(item) => `v_${item.id}`}
+              renderItem={renderViewerPage}
+              onEndReached={handleEndReached}
+              onEndReachedThreshold={0.5}
+              windowSize={3}
+              initialNumToRender={1}
+              maxToRenderPerBatch={2}
+            />
+            <AnimatedPressable
+              style={[styles.viewerClose, { top: insets.top + 8, backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={closeViewer}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
+              <Ionicons name="close" size={24} color={colors.text} />
+            </AnimatedPressable>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -207,4 +328,33 @@ const styles = StyleSheet.create({
   empty: { alignItems: "center", paddingTop: 64, paddingHorizontal: 32 },
   emptyTitle: { fontSize: 16, fontWeight: "700", marginTop: 12 },
   emptySub: { fontSize: 13, textAlign: "center", marginTop: 4 },
+  // Swipe viewer
+  viewerPage: { paddingHorizontal: 20, alignItems: "center" },
+  viewerHero: { width: "100%", height: 340, marginBottom: 20 },
+  viewerTitle: { fontSize: 22, fontWeight: "800", textAlign: "center" },
+  badgeRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 6, marginTop: 10 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  badgeText: { fontSize: 12, fontWeight: "700" },
+  viewerPrice: { fontSize: 26, fontWeight: "800", marginTop: 16 },
+  viewerCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 22,
+    borderWidth: 1,
+  },
+  viewerCtaText: { fontSize: 14, fontWeight: "700" },
+  viewerClose: {
+    position: "absolute",
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

@@ -114,8 +114,13 @@ export const listVerifiedSales = () =>
 export const getCollectionTrends = (days = 30) =>
   get(`/analytics/collection/trends?days=${days}`);
 
+// Served from a server-side cache that a background warmer keeps primed, so
+// this is normally a ~ms response. A cold miss (e.g. a category not yet warmed
+// after a backend restart) runs a heavy aggregation that can take 10s+, so use
+// a longer-than-default timeout to let Market Insights load rather than failing
+// silently at the 5s default.
 export const getCategoryDeepDive = (categoryId: string) =>
-  get(`/analytics/categories/${encodeURIComponent(categoryId)}/deep-dive`);
+  get(`/analytics/categories/${encodeURIComponent(categoryId)}/deep-dive`, { timeoutMs: 20_000 });
 
 export const getItemTrends = (itemId: string) =>
   get(`/analytics/items/${encodeURIComponent(itemId)}/trends`);

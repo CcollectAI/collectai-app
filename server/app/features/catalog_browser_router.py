@@ -407,9 +407,13 @@ async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
     it, so the screen can show "Based on N recent comps" for credibility. Falls
     back to the latest comp when there aren't enough (<3) to median.
 
-    One per-item query, partition-pruned on seen_at (180d) — a bounded scan, and
-    this endpoint serves a single item on tap (not a list), so reading
-    market_hits directly here is fine.
+    Reads the compact `market_hits_daily` rollup (one row per item/day) rather
+    than raw `market_hits`, so the 180d pricing window survives raw-partition
+    retention (which now drops market_hits sooner). comps_count is the exact sum
+    of daily counts; median_price is the median-of-daily-medians (robust, and a
+    negligible shift from median-of-all-comps for a market-value display); latest
+    is the most recent day's latest comp. Rollup lags live comps by ≤1 day (the
+    nightly job re-rolls the last 2 days), which is fine for a 180d value.
     """
     pool = get_pool()
     if pool is None:
@@ -418,13 +422,13 @@ async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
     row = await pool.fetchrow(
         """
         SELECT
-            COUNT(*) AS comps_count,
-            percentile_cont(0.5) WITHIN GROUP (ORDER BY price_eur) AS median_price,
-            (ARRAY_AGG(price_eur ORDER BY seen_at DESC))[1] AS latest_price
-        FROM market_hits
+            COALESCE(SUM(comps_count), 0) AS comps_count,
+            percentile_cont(0.5) WITHIN GROUP (ORDER BY median_price) AS median_price,
+            (ARRAY_AGG(latest_price ORDER BY latest_seen_at DESC))[1] AS latest_price
+        FROM market_hits_daily
         WHERE item_ref = $1
-          AND seen_at > now() - interval '180 days'
-          AND price_eur IS NOT NULL
+          AND day > (current_date - interval '180 days')
+          AND median_price IS NOT NULL
         """,
         item_ref,
     )
@@ -441,6 +445,122 @@ async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
         "latest_price": latest,
         "comps_count": comps,
     }
+
+
+# ---------------------------------------------------------------------------
+# GET /catalog/top-movers — biggest market price movers (gainers/losers)
+# ---------------------------------------------------------------------------
+
+class TopMoverItem(BaseModel):
+    item_ref: str
+    category: str
+    item_key: Optional[str] = None
+    title: Optional[str] = None
+    brand: Optional[str] = None
+    set_code: Optional[str] = None
+    image_url: Optional[str] = None
+    last_price: float
+    med_7d: Optional[float] = None
+    med_30d: Optional[float] = None
+    delta_pct_7d: Optional[float] = None
+    delta_pct_30d: Optional[float] = None
+    comps_30d: int = 0
+    in_catalog: bool = False
+
+
+class TopMoversResponse(BaseModel):
+    movers: list[TopMoverItem]
+    direction: str
+    window: str
+
+
+@router.get(
+    "/catalog/top-movers",
+    response_model=TopMoversResponse,
+    summary="Biggest market price movers (gainers/losers) from the market_hits_daily rollup",
+)
+async def get_top_movers(
+    direction: str = Query(
+        "gainers",
+        pattern=r"^(gainers|losers)$",
+        description="`gainers` = biggest price increases, `losers` = biggest decreases.",
+    ),
+    window: str = Query(
+        "7d",
+        pattern=r"^(7d|30d)$",
+        description="Change window used for ranking and the headline delta.",
+    ),
+    categories: Optional[str] = Query(
+        None,
+        max_length=500,
+        description=(
+            "Comma-separated category filter (e.g. `mtg,pokemon`). Drives the "
+            "app's followed-categories default; omit for a whole-catalog list."
+        ),
+    ),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Ranked market movers, served from the `mv_market_top_movers` MV.
+
+    The MV pre-computes per-item 7d/30d median deltas off the `market_hits_daily`
+    rollup (credibility floors: >=5 comps, >=3 active days, recent activity,
+    swings capped at +/-500%) and LEFT JOINs `category_items` for display
+    metadata. `gainers` orders by the window delta DESC (positive only),
+    `losers` ASC (negative only). Refreshed nightly (cron `refresh-mv-market-top-movers`).
+    """
+    pool = get_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+
+    delta_col = "delta_pct_7d" if window == "7d" else "delta_pct_30d"
+    if direction == "gainers":
+        order, sign = "DESC", ">"
+    else:
+        order, sign = "ASC", "<"
+
+    where = [f"{delta_col} IS NOT NULL", f"{delta_col} {sign} 0"]
+    params: list[Any] = []
+    if categories:
+        cats = [c.strip().lower() for c in categories.split(",") if c.strip()]
+        if cats:
+            params.append(cats)
+            where.append(f"category = ANY(${len(params)})")
+    params.append(limit)
+
+    sql = f"""
+        SELECT item_ref, category, item_key, title, brand, set_code, image_url,
+               last_price, med_7d, med_30d, delta_pct_7d, delta_pct_30d,
+               comps_30d, in_catalog
+        FROM mv_market_top_movers
+        WHERE {' AND '.join(where)}
+        ORDER BY {delta_col} {order}
+        LIMIT ${len(params)}
+    """
+    rows = await pool.fetch(sql, *params)
+
+    def _f(v: Any) -> Optional[float]:
+        return float(v) if v is not None else None
+
+    movers = [
+        TopMoverItem(
+            item_ref=r["item_ref"],
+            category=r["category"],
+            item_key=r["item_key"],
+            title=r["title"],
+            brand=r["brand"],
+            set_code=r["set_code"],
+            image_url=r["image_url"],
+            last_price=_f(r["last_price"]) or 0.0,
+            med_7d=_f(r["med_7d"]),
+            med_30d=_f(r["med_30d"]),
+            delta_pct_7d=_f(r["delta_pct_7d"]),
+            delta_pct_30d=_f(r["delta_pct_30d"]),
+            comps_30d=int(r["comps_30d"]) if r["comps_30d"] is not None else 0,
+            in_catalog=bool(r["in_catalog"]),
+        )
+        for r in rows
+    ]
+    return TopMoversResponse(movers=movers, direction=direction, window=window)
 
 
 # ---------------------------------------------------------------------------
@@ -482,25 +602,23 @@ async def browse_catalog_collections(
     if pool is None:
         raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
 
-    # group_by is pattern-validated to a fixed whitelist, so this column name
-    # is never user-controlled — safe to interpolate.
-    col = "brand" if group_by == "brand" else "set_code"
+    # Read the pre-aggregated mv_catalog_collections rollup instead of a live
+    # GROUP BY over all of a category's items. The live aggregate cold-hits at
+    # 1.6-2.1s (scans ~20K rows) vs <60ms indexed read here; the MV refreshes
+    # nightly (pg_cron refresh-mv-catalog-collections, 00:05 UTC) — the catalog
+    # only changes on nightly ingest, so the <=1d lag is invisible. Mirrors
+    # mv_catalog_item_price. dim is pattern-validated (set|brand).
+    dim = "brand" if group_by == "brand" else "set"
     rows = await pool.fetch(
-        f"""
-        SELECT {col} AS grp,
-               COUNT(*) AS total_items,
-               (ARRAY_AGG(image_url) FILTER (
-                   WHERE image_url IS NOT NULL AND image_url <> ''
-               ))[1] AS cover_image
-        FROM category_items
-        WHERE category = $1
-          AND {col} IS NOT NULL
-          AND {col} <> ''
-        GROUP BY {col}
-        ORDER BY COUNT(*) DESC, {col}
-        LIMIT $2
+        """
+        SELECT grp, total_items, cover_image
+        FROM mv_catalog_collections
+        WHERE category = $1 AND dim = $2
+        ORDER BY total_items DESC, grp
+        LIMIT $3
         """,
         category_id,
+        dim,
         limit,
     )
 

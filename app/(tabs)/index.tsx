@@ -27,7 +27,6 @@ import { PortfolioLineChart, type TimeSeriesPoint } from "@/components/Portfolio
 import { SkeletonPortfolioHeader } from "@/components/Skeleton";
 import { dataProvider } from "@/data";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
-import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { featureFlags } from "@/config/featureFlags";
 import { InsightsCard } from "@/components/home/InsightsCard";
@@ -514,7 +513,6 @@ function PortfolioScreen() {
               )}
             </AnimatedPressable>
             <InboxHeaderButton color={colors.text} size={22} />
-            <ThemeToggleButton size={22} />
             <AnimatedPressable
               testID="open-settings-btn"
               onPress={handleOpenSettings}
@@ -741,6 +739,11 @@ function PortfolioScreen() {
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Collection</Text>
         </View>
+        {items.length === 0 && (
+          <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>
+            {t('home.collection_get_started')}
+          </Text>
+        )}
 
         {/* Top Movers & Shakers */}
         <TopItemsList
@@ -964,6 +967,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: text.xl,
     fontWeight: fontWeight.extrabold,
+  },
+  sectionSubtitle: {
+    fontSize: text.sm,
+    marginTop: -4,
+    marginBottom: 12,
   },
 
   // Global Collection Stats

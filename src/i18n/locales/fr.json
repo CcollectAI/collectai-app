@@ -295,6 +295,7 @@
   },
 
   "home": {
+    "collection_get_started": "Commencez par ajouter votre premier article",
     "portfolio_value": "Valeur du portefeuille",
     "portfolio_title": "Portefeuille",
     "portfolio_subtitle": "Suivez la valeur de votre collection.",

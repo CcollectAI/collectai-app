@@ -270,6 +270,7 @@ export const collectorsApi = {
   getSupplyTrends: dataMoatApi.getSupplyTrends,
   getDemandHeat: dataMoatApi.getDemandHeat,
   getScarcityScores: dataMoatApi.getScarcityScores,
+  getTopMovers: dataMoatApi.getTopMovers,
 
   // Trends & Deep-Dive
   getCollectionTrends: miscApi.getCollectionTrends,

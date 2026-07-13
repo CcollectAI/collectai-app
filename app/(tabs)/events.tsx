@@ -34,7 +34,6 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
-import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { CountdownBadge } from '@/components/EventCountdown';
 import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
 import calendar, { parseEventDate, getCountdown } from '@/lib/calendar';
@@ -467,7 +466,6 @@ function EventsScreen() {
         </View>
         <View style={styles.headerIcons}>
           <InboxHeaderButton color={colors.text} size={22} />
-          <ThemeToggleButton size={22} />
         </View>
       </View>
 

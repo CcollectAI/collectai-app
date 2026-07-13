@@ -1,15 +1,21 @@
 /**
  * Date & Time section for the Create Event form.
  *
- * Renders date, time, and end date input fields.
+ * Date + End Date use a native tap-to-pick calendar
+ * (@react-native-community/datetimepicker). The value is STORED as ISO
+ * `YYYY-MM-DD` (so the form validator, buildEventInput, and the server contract
+ * are unchanged) but DISPLAYED as `DD-MM-YYYY`. Time stays a free-text field.
  *
  * Extracted from app/create-event.tsx to reduce file size.
  */
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Platform, Modal, Pressable } from 'react-native';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable } from '@/motion';
+import { parseIso, toIso, formatDMY } from '@/lib/eventDate';
 
 interface FormFieldState {
   value: string;
@@ -37,6 +43,43 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
   const { t } = useTranslation();
   const { colors } = useAppTheme();
 
+  const [picker, setPicker] = useState<null | 'date' | 'end'>(null);
+
+  const currentIso = picker === 'end' ? endDate : dateField.value;
+  const pickerValue = parseIso(currentIso) ?? new Date();
+
+  const applyDate = useCallback(
+    (which: 'date' | 'end', d: Date) => {
+      const iso = toIso(d);
+      if (which === 'end') {
+        onEndDateChange(iso);
+      } else {
+        dateField.onChange(iso);
+        dateField.onBlur();
+      }
+    },
+    [dateField, onEndDateChange],
+  );
+
+  const onChange = useCallback(
+    (event: DateTimePickerEvent, selected?: Date) => {
+      const which = picker;
+      if (which === null) return;
+      if (Platform.OS === 'android') {
+        setPicker(null);
+        if (event.type === 'set' && selected) applyDate(which, selected);
+        return;
+      }
+      // iOS: inline picker updates live as the user scrolls; stays open until Done.
+      if (selected) applyDate(which, selected);
+    },
+    [picker, applyDate],
+  );
+
+  const dateDisplay = formatDMY(dateField.value);
+  const endDisplay = formatDMY(endDate);
+  const dateHasError = dateField.touched && !!dateField.error;
+
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -50,20 +93,18 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
           <Text style={[styles.fieldLabel, { color: colors.text }]}>
             Date <Text style={{ color: colors.accent }}>*</Text>
           </Text>
-          <View style={[styles.inputWrap, { borderColor: dateField.touched && dateField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
+          <AnimatedPressable
+            onPress={() => setPicker('date')}
+            style={[styles.inputWrap, { borderColor: dateHasError ? colors.danger : colors.border, backgroundColor: colors.background }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('event_datetime.date_a11y')}
+          >
             <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-            <TextInput
-              value={dateField.value}
-              onChangeText={dateField.onChange}
-              onBlur={dateField.onBlur}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.muted}
-              style={[styles.input, { color: colors.text }]}
-              accessibilityLabel={t('event_datetime.date_a11y')}
-              returnKeyType="next"
-            />
-          </View>
-          {dateField.touched && dateField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{dateField.error}</Text>}
+            <Text style={[styles.inputText, { color: dateDisplay ? colors.text : colors.muted }]}>
+              {dateDisplay || 'DD-MM-YYYY'}
+            </Text>
+          </AnimatedPressable>
+          {dateHasError && <Text style={[styles.fieldError, { color: colors.danger }]}>{dateField.error}</Text>}
         </View>
 
         {/* Time */}
@@ -86,20 +127,57 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
         {/* End Date */}
         <View style={styles.fieldBlock}>
           <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('event_datetime.end_date_optional')}</Text>
-          <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+          <AnimatedPressable
+            onPress={() => setPicker('end')}
+            style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('event_datetime.end_date_a11y')}
+          >
             <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-            <TextInput
-              value={endDate}
-              onChangeText={onEndDateChange}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.muted}
-              style={[styles.input, { color: colors.text }]}
-              accessibilityLabel={t('event_datetime.end_date_a11y')}
-              returnKeyType="next"
-            />
-          </View>
+            <Text style={[styles.inputText, { color: endDisplay ? colors.text : colors.muted }]}>
+              {endDisplay || 'DD-MM-YYYY'}
+            </Text>
+            {endDisplay ? (
+              <AnimatedPressable
+                onPress={() => onEndDateChange('')}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Clear end date"
+              >
+                <Ionicons name="close-circle" size={16} color={colors.muted} />
+              </AnimatedPressable>
+            ) : null}
+          </AnimatedPressable>
         </View>
       </View>
+
+      {/* Android renders the picker as a dialog; iOS inside a bottom sheet with Done. */}
+      {Platform.OS === 'ios' ? (
+        <Modal visible={picker !== null} transparent animationType="slide" onRequestClose={() => setPicker(null)}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setPicker(null)}>
+            <Pressable style={[styles.modalSheet, { backgroundColor: colors.card }]} onPress={() => {}}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>
+                  {picker === 'end' ? t('event_datetime.end_date_optional') : 'Date'}
+                </Text>
+                <AnimatedPressable onPress={() => setPicker(null)} accessibilityRole="button" accessibilityLabel="Done">
+                  <Text style={[styles.modalDone, { color: colors.accent }]}>Done</Text>
+                </AnimatedPressable>
+              </View>
+              <DateTimePicker
+                value={pickerValue}
+                mode="date"
+                display="inline"
+                onChange={onChange}
+              />
+            </Pressable>
+          </Pressable>
+        </Modal>
+      ) : (
+        picker !== null && (
+          <DateTimePicker value={pickerValue} mode="date" display="default" onChange={onChange} />
+        )
+      )}
     </View>
   );
 });
@@ -147,9 +225,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: 0,
   },
+  inputText: {
+    flex: 1,
+    fontSize: 14,
+  },
   fieldError: {
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 12,
+    paddingBottom: 24,
+    paddingTop: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+  },
+  modalTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  modalDone: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

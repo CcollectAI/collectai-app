@@ -18,10 +18,11 @@ import {
 import { Image } from 'expo-image';
 import { useToast } from '@/components/Toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type DmThread, type DmRequest } from '@/data';
+import { cacheGet, cacheSet } from '@/data/offlineCache';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -36,6 +37,11 @@ import { MS_PER_WEEK } from '@/constants/time';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import { supabase } from '@/lib/supabase';
 import { trackScreen } from '@/analytics/track';
+
+// SWR cache for instant inbox first-paint on revisit (realtime + on-mount
+// revalidate keep it fresh; TTL just bounds offline staleness).
+const INBOX_CACHE_KEY = 'inbox:threads+requests:v1';
+const INBOX_CACHE_TTL_MS = 30 * 60 * 1000;
 
 
 function formatRelativeTime(dateStr: string | null | undefined): string {
@@ -113,6 +119,17 @@ function InboxScreen() {
   const loadInbox = useCallback(async () => {
     const elapsed = startTimer();
     logAuthState('inbox');
+
+    // SWR: paint the last-known inbox instantly so a revisit isn't a cold
+    // skeleton behind 2 round-trips to eu-north-1; then revalidate below.
+    const cached = await cacheGet<{ threads: DmThread[]; requests: DmRequest[] }>(INBOX_CACHE_KEY);
+    if (cached) {
+      setThreads(cached.threads.filter((t) => t.status === 'accepted'));
+      setSentRequests(cached.threads.filter((t) => t.status === 'pending' && !t.isIncoming));
+      setRequests(cached.requests);
+      setLoading(false);
+    }
+
     try {
       const [inboxThreads, incomingRequests] = await Promise.all([
         dataProvider.listInboxThreads(),
@@ -126,6 +143,7 @@ function InboxScreen() {
       setThreads(accepted);
       setSentRequests(pending);
       setRequests(incomingRequests);
+      void cacheSet(INBOX_CACHE_KEY, { threads: inboxThreads, requests: incomingRequests }, INBOX_CACHE_TTL_MS);
       logLoad('inbox', {
         threads: inboxThreads.length,
         accepted: accepted.length,
@@ -492,9 +510,31 @@ function InboxScreen() {
           <EmptyState
             icon="chatbubbles-outline"
             title="No messages yet"
-            subtitle="Start a conversation by visiting someone's profile"
+            subtitle="Find other collectors to start a conversation — or open a test chat to preview messaging."
             colors={colors}
             style={{ paddingTop: 80 }}
+            action={
+              <View style={styles.emptyActions}>
+                <AnimatedPressable
+                  onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/marketplace'); }}
+                  style={[styles.emptyActionPrimary, { backgroundColor: colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Find collectors to message"
+                >
+                  <Ionicons name="search" size={16} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={styles.emptyActionPrimaryText}>Find collectors</Text>
+                </AnimatedPressable>
+                <AnimatedPressable
+                  onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/chat-demo' as Href); }}
+                  style={[styles.emptyActionSecondary, { borderColor: colors.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open a test chat to preview messaging"
+                >
+                  <Ionicons name="flask-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+                  <Text style={[styles.emptyActionSecondaryText, { color: colors.accent }]}>Open test chat</Text>
+                </AnimatedPressable>
+              </View>
+            }
           />
         )}
         </Animated.View>
@@ -723,6 +763,38 @@ const styles = StyleSheet.create({
   },
   pendingBadgeText: {
     fontSize: text.xs,
+    fontWeight: fontWeight.semibold,
+  },
+
+  // Empty-state action buttons
+  emptyActions: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  emptyActionPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+  },
+  emptyActionPrimaryText: {
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
+    color: '#ffffff',
+  },
+  emptyActionSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  emptyActionSecondaryText: {
+    fontSize: text.md,
     fontWeight: fontWeight.semibold,
   },
 

@@ -115,8 +115,13 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
     if (token) {
       return { Authorization: `Bearer ${token}` };
     }
-  } catch {
+    // DIAG: no token even after the slow path — this is the exact state that
+    // produces "401 Authentication required" on authenticated writes. logger.error
+    // survives TestFlight (info/warn are stripped). Greppable in Console.app.
+    logger.error('[DIAG auth] getAuthHeaders: NO TOKEN after refresh window — request will go unauthenticated');
+  } catch (e) {
     // Supabase mock mode or genuinely no session — proceed without auth.
+    logger.error(`[DIAG auth] getAuthHeaders threw: ${e instanceof Error ? e.message : String(e)}`);
   }
   return {};
 }

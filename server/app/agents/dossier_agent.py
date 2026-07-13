@@ -311,15 +311,15 @@ async def generate_dossier(
         # Look up by canonical catalog key, not user's items.id UUID (2026-04-19 fix)
         ph_rows = await conn.fetch(
             """
-            SELECT price_q50, price_q10, price_q90, source, snapshot_at
-            FROM public.price_history
+            SELECT q50 AS price_q50, q10 AS price_q10, q90 AS price_q90,
+                   NULL::text AS source, (day::timestamptz) AS snapshot_at
+            FROM public.price_prediction_daily
             WHERE item_ref = $1
-              -- Partition prune: dossier shows a 90-day trend chart, so
-              -- match the read window to what the FE actually renders.
-              -- Without this filter the planner walks all monthly
-              -- partitions of the 686K-row table on every dossier view.
-              AND snapshot_at > now() - interval '90 days'
-            ORDER BY snapshot_at ASC
+              -- Read the compact daily rollup, not raw price_history, so the
+              -- 90-day dossier chart survives price_history partition retention.
+              -- Same q-values (daily), one point per day.
+              AND day > (current_date - interval '90 days')
+            ORDER BY day ASC
             """,
             canonical_key,
         ) if canonical_key else []

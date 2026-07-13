@@ -10,6 +10,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
+import { CATEGORY_FOLLOW_ENABLED } from '@/config/featureFlags';
 import type { AppTheme } from '@/hooks/useAppTheme';
 
 export type CategorySponsor = {
@@ -65,9 +66,11 @@ function CategoryBrandHeader({ sponsor, colors, onFollow }: Props) {
           </View>
           {!!meta && <Text style={[styles.meta, { color: colors.muted }]} numberOfLines={1}>{meta}</Text>}
         </View>
-        <AnimatedPressable style={styles.followBtn} onPress={onFollow} accessibilityRole="button" accessibilityLabel="Follow brand">
-          <Text style={styles.followText}>Follow</Text>
-        </AnimatedPressable>
+        {CATEGORY_FOLLOW_ENABLED && (
+          <AnimatedPressable style={styles.followBtn} onPress={onFollow} accessibilityRole="button" accessibilityLabel="Follow brand">
+            <Text style={styles.followText}>Follow</Text>
+          </AnimatedPressable>
+        )}
       </View>
     </View>
   );

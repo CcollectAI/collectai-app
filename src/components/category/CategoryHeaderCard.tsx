@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedPressable } from '@/motion';
 import { colors as tokens } from '@/theme/tokens';
-import { COMMUNITY_GATED } from '@/config/featureFlags';
+import { COMMUNITY_GATED, CATEGORY_FOLLOW_ENABLED } from '@/config/featureFlags';
 import type { AppTheme } from '@/hooks/useAppTheme';
 import CategoryCollectorSearch from './CategoryCollectorSearch';
 
@@ -63,21 +63,23 @@ const CategoryHeaderCard: React.FC<Props> = ({
         </Text>
       </View>
       <View style={styles.actionsRow}>
-        <AnimatedPressable
-          style={[styles.pill, following && styles.pillActive]}
-          onPress={onToggleFollow}
-          accessibilityRole="button"
-          accessibilityLabel={following ? `Unfollow ${categoryName}` : `Follow ${categoryName}`}
-        >
-          <Ionicons
-            name={following ? 'checkmark' : 'add'}
-            size={16}
-            color={following ? tokens.brand.darker : '#fff'}
-          />
-          <Text style={[styles.pillText, following && styles.pillTextActive]}>
-            {following ? 'Following' : 'Follow'}
-          </Text>
-        </AnimatedPressable>
+        {CATEGORY_FOLLOW_ENABLED && (
+          <AnimatedPressable
+            style={[styles.pill, following && styles.pillActive]}
+            onPress={onToggleFollow}
+            accessibilityRole="button"
+            accessibilityLabel={following ? `Unfollow ${categoryName}` : `Follow ${categoryName}`}
+          >
+            <Ionicons
+              name={following ? 'checkmark' : 'add'}
+              size={16}
+              color={following ? tokens.brand.darker : '#fff'}
+            />
+            <Text style={[styles.pillText, following && styles.pillTextActive]}>
+              {following ? 'Following' : 'Follow'}
+            </Text>
+          </AnimatedPressable>
+        )}
         <AnimatedPressable
           style={styles.pill}
           onPress={onInvite}

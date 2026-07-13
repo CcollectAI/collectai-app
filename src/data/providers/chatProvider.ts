@@ -64,11 +64,16 @@ export async function listInboxThreads(): Promise<DmThread[]> {
 
 export async function listIncomingRequests(): Promise<DmRequest[]> {
   try {
-    const { data: { user } } = await withTimeout(
-      supabase.auth.getUser(),
+    // getSession() reads the LOCAL session (no network) — avoids the extra
+    // auth-server round-trip getUser() makes on every inbox open. The user.id
+    // is only used to filter; RLS on chat_dm_requests_v1 enforces auth.uid()
+    // server-side regardless, so this is safe.
+    const { data: { session } } = await withTimeout(
+      supabase.auth.getSession(),
       SUPABASE_READ_TIMEOUT_MS,
-      'listIncomingRequests.getUser',
+      'listIncomingRequests.getSession',
     );
+    const user = session?.user;
     if (!user) return [];
 
     const { data, error } = await withTimeout(

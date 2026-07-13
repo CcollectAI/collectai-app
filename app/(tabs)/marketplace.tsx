@@ -52,6 +52,7 @@ import { MarketplaceEmptyState } from '@/components/marketplace/MarketplaceEmpty
 import { DemandHeatBanner } from '@/components/marketplace/DemandHeatBanner';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { RegionalInsightsSection } from '@/components/marketplace/RegionalInsightsSection';
+import { MarketMoversSection } from '@/components/marketplace/MarketMoversSection';
 
 // --- Types for marketplace API results ---
 type MarketplaceHit = {
@@ -152,6 +153,11 @@ const SearchScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [marketplaceResults, setMarketplaceResults] = useState<SearchResult[]>([]);
   const [collectionResults, setCollectionResults] = useState<SearchResult[]>([]);
+  // DISABLED pre-launch: the external "Buy externally" search does a live scrape
+  // across 44 marketplace adapters, which can take up to 90s for rare items and
+  // reads as broken. Only the instant local sections (Your items + Categories)
+  // run while this is false. Flip to true once the scrape budget is fast enough.
+  const EXTERNAL_MARKETPLACE_SEARCH_ENABLED = false;
   const searchIdRef = useRef(0);
 
   // Escalating status copy while marketplace search is running. The server
@@ -164,6 +170,12 @@ const SearchScreen: React.FC = () => {
       setSearchStatus('');
       return;
     }
+    // External scrape disabled → only the fast local search runs; show a brief
+    // neutral status and skip the long-wait ("up to 90s") escalation entirely.
+    if (!EXTERNAL_MARKETPLACE_SEARCH_ENABLED) {
+      setSearchStatus('Searching…');
+      return;
+    }
     setSearchStatus('Searching marketplaces…');
     const t1 = setTimeout(() => setSearchStatus('Aggregating across 44 sources…'), 6_000);
     const t2 = setTimeout(() => setSearchStatus('Still searching — this can take up to 90s for rare items.'), 20_000);
@@ -173,7 +185,7 @@ const SearchScreen: React.FC = () => {
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [searchLoading]);
+  }, [searchLoading, EXTERNAL_MARKETPLACE_SEARCH_ENABLED]);
 
   // User search state
   const [userSearchVisible, openUserSearch, closeUserSearch] = useModal();
@@ -384,12 +396,17 @@ const SearchScreen: React.FC = () => {
     if (filterSort && filterSort !== "relevance") searchOpts.sort = filterSort;
     if (settings.region) searchOpts.region = settings.region;
 
-    // Run marketplace API + local collection search in parallel
+    // Run marketplace API + local collection search in parallel. The external
+    // marketplace scrape is gated off pre-launch (see flag above) — when
+    // disabled it resolves to null instantly so only the fast local "Your items"
+    // + instant "Categories" sections populate.
     const [mktResult, colResult] = await Promise.allSettled([
-      collectorsApi.marketplaceSearch(q.trim(), searchOpts).catch((err: unknown) => {
-        logger.warn("[Search] marketplace search error:", err);
-        return null;
-      }),
+      EXTERNAL_MARKETPLACE_SEARCH_ENABLED
+        ? collectorsApi.marketplaceSearch(q.trim(), searchOpts).catch((err: unknown) => {
+            logger.warn("[Search] marketplace search error:", err);
+            return null;
+          })
+        : Promise.resolve(null),
       dataProvider.searchItems(q.trim()).catch((err: unknown) => {
         logger.warn("[Search] collection search error:", err);
         return [] as DataItem[];
@@ -744,6 +761,9 @@ const SearchScreen: React.FC = () => {
 
             {/* Regional demand insights */}
             <RegionalInsightsSection items={regionalDemand} onSearchItem={handleChipPress} />
+
+            {/* Market Movers — biggest 7d price gainers/losers (followed cats + see-all) */}
+            <MarketMoversSection />
 
             {/* Trending categories removed */}
           </>

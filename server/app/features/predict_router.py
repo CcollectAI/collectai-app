@@ -8,8 +8,10 @@ and market evidence.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -222,8 +224,48 @@ async def get_price_trend(
                 # User item not linked to a catalog entry — no trend data possible
                 return PriceTrendResponse(item_ref=item_id, period_days=days)
 
-            # Fetch price history snapshots by the canonical catalog key
-            rows = await conn.fetch(
+            # ── Warm-tier read path: merge price history across storage tiers ──
+            # All three tiers are the SAME q-series (valuation_worker writes the
+            # same q10/q50/q90 to price_history and price_predictions; the rollup
+            # is the daily average of price_predictions). We collapse every tier
+            # to one point per day so the merged line is continuous with no seam:
+            #   Tier 1 (hot):    price_history            — last ~2 months, per-snapshot
+            #   Tier 2 (rollup): price_prediction_daily   — up to its retention (180d)
+            #   Tier 3 (cold):   S3 Parquet via warm_tier — older than Postgres retains
+            # Priority hot > rollup > cold for any overlapping day.
+            by_day: dict[str, TrendDataPoint] = {}
+
+            def _point(date_str: str, q50, q10, q90) -> TrendDataPoint | None:
+                if q50 is None:
+                    return None
+                return TrendDataPoint(
+                    date=date_str,
+                    q50=float(q50),
+                    q10=float(q10) if q10 is not None else None,
+                    q90=float(q90) if q90 is not None else None,
+                )
+
+            # Tier 2 (rollup) first — lowest of the two Postgres tiers, so hot
+            # overwrites it below for any day both cover.
+            rollup_rows = await conn.fetch(
+                """
+                SELECT day, q50, q10, q90
+                FROM public.price_prediction_daily
+                WHERE item_ref = $1
+                  AND day >= (current_date - ($2 || ' days')::interval)
+                ORDER BY day ASC
+                """,
+                canonical, str(days),
+            )
+            for r in rollup_rows:
+                d = r["day"].strftime("%Y-%m-%d")
+                p = _point(d, r["q50"], r["q10"], r["q90"])
+                if p is not None:
+                    by_day[d] = p
+
+            # Tier 1 (hot) — highest priority; ASC order means the last write for
+            # a day is the latest snapshot that day (daily collapse).
+            hot_rows = await conn.fetch(
                 """
                 SELECT price_q50, price_q10, price_q90, snapshot_at
                 FROM public.price_history
@@ -233,22 +275,65 @@ async def get_price_trend(
                 """,
                 canonical, str(days),
             )
+            for r in hot_rows:
+                d = r["snapshot_at"].strftime("%Y-%m-%d")
+                p = _point(d, r["price_q50"], r["price_q10"], r["price_q90"])
+                if p is not None:
+                    by_day[d] = p
 
-            if not rows:
+            # Tier 3 (cold, S3 Parquet via DuckDB) — only when the requested
+            # window reaches before what hot+rollup already cover. As the rollup
+            # fills toward its 180d retention, short windows stop hitting S3 at
+            # all, so this is a genuinely cold/rare path at steady state.
+            window_start = (datetime.now(timezone.utc) - timedelta(days=days)).date()
+            covered_earliest = (
+                datetime.strptime(min(by_day), "%Y-%m-%d").date()
+                if by_day
+                else datetime.now(timezone.utc).date()
+            )
+            if window_start < covered_earliest:
+                try:
+                    from app.lib.warm_tier import warm_tier_read
+
+                    # `canonical` is a DB-resolved catalog key (items.canonical_key),
+                    # never user input — but warm_tier concatenates `where` into SQL,
+                    # so escape quotes defensively before crossing that boundary.
+                    safe_ref = canonical.replace("'", "''")
+                    # Sync DuckDB/S3 call → run off the event loop so it can't block
+                    # other requests. Failure must never break the chart (degrade to
+                    # the Postgres tiers we already have).
+                    s3_rows = await asyncio.to_thread(
+                        warm_tier_read,
+                        "price_history",
+                        year_from=window_start.year,
+                        month_from=window_start.month,
+                        year_to=covered_earliest.year,
+                        month_to=covered_earliest.month,
+                        where=(
+                            f"item_ref = '{safe_ref}' "
+                            f"AND snapshot_at >= (now() - INTERVAL '{int(days)} days')"
+                        ),
+                        select="price_q10, price_q50, price_q90, snapshot_at",
+                        limit=100_000,
+                    )
+                    for r in s3_rows:
+                        sa = r.get("snapshot_at")
+                        d = sa.strftime("%Y-%m-%d") if hasattr(sa, "strftime") else str(sa)[:10]
+                        p = _point(d, r.get("price_q50"), r.get("price_q10"), r.get("price_q90"))
+                        if p is not None:
+                            by_day.setdefault(d, p)  # never overwrite hot/rollup
+                except Exception as exc:
+                    logger.warning(
+                        "[predict] warm-tier S3 read failed, using hot+rollup only: %s", exc
+                    )
+
+            data_points = [by_day[d] for d in sorted(by_day)]
+
+            if not data_points:
                 return PriceTrendResponse(item_ref=item_id, period_days=days)
 
-            data_points = [
-                TrendDataPoint(
-                    date=row["snapshot_at"].strftime("%Y-%m-%d"),
-                    q50=float(row["price_q50"]),
-                    q10=float(row["price_q10"]) if row.get("price_q10") is not None else None,
-                    q90=float(row["price_q90"]) if row.get("price_q90") is not None else None,
-                )
-                for row in rows
-            ]
-
-            earliest_q50 = float(rows[0]["price_q50"])
-            current_q50 = float(rows[-1]["price_q50"])
+            earliest_q50 = data_points[0].q50
+            current_q50 = data_points[-1].q50
 
             # Calculate trend
             if earliest_q50 > 0:
