@@ -7,6 +7,67 @@ from app.config import DEV_MODE, DEV_USER_ID, JWT_SECRET, JWT_ISSUER, OPS_API_KE
 
 logger = logging.getLogger(__name__)
 
+# Supabase is migrating projects from a single HS256 shared secret to
+# asymmetric JWT signing keys (ES256/RS256). A migrated project issues tokens
+# the HS256-only path cannot verify → 401 on every authenticated write
+# (follow / add-to-watchlist / event RSVP). We therefore dispatch on the
+# token's own `alg` header and verify asymmetric tokens against the project
+# JWKS, while keeping the legacy HS256 path unchanged.
+_ASYMMETRIC_ALGS = {"RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "EdDSA"}
+_jwks_client = None  # lazily built, caches the JWK set internally (5 min)
+
+
+def _get_jwks_client():
+    """Return a cached PyJWKClient for the Supabase project's JWKS endpoint.
+
+    Returns None when SUPABASE_URL is unset — asymmetric verification is then
+    unavailable and HS256 remains the only supported path.
+    """
+    global _jwks_client
+    if _jwks_client is not None:
+        return _jwks_client
+    from app.config import SUPABASE_URL
+
+    if not SUPABASE_URL:
+        return None
+    import jwt as _jwt
+
+    _jwks_client = _jwt.PyJWKClient(
+        f"{SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json"
+    )
+    return _jwks_client
+
+
+def _decode_supabase_jwt(token: str) -> dict:
+    """Verify a Supabase access token via HS256 (legacy shared secret) OR the
+    project's asymmetric signing keys (ES256/RS256), chosen by the token header.
+
+    Raises on any validation failure (bad signature, expired, wrong audience/
+    issuer, unknown key) so the caller maps it to 401 exactly as before.
+    """
+    import jwt as _jwt
+
+    alg = _jwt.get_unverified_header(token).get("alg", "")
+
+    common: dict = {
+        "audience": "authenticated",
+        "options": {"require": ["exp", "sub"]},
+    }
+    if JWT_ISSUER:
+        common["issuer"] = JWT_ISSUER
+
+    if alg in _ASYMMETRIC_ALGS:
+        client = _get_jwks_client()
+        if client is None:
+            raise RuntimeError(
+                "SUPABASE_URL not set — cannot verify asymmetric JWT"
+            )
+        signing_key = client.get_signing_key_from_jwt(token)
+        return _jwt.decode(token, signing_key.key, algorithms=[alg], **common)
+
+    # Legacy / default: HS256 shared secret.
+    return _jwt.decode(token, JWT_SECRET, algorithms=["HS256"], **common)
+
 
 async def get_current_user_id(request: Request) -> str:
     """
