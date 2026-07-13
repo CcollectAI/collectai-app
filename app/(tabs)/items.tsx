@@ -4,7 +4,6 @@ import { useHasEverHadItems } from '@/hooks/useHasEverHadItems';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
-import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import {
   View,
   Text,

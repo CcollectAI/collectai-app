@@ -15,7 +15,6 @@ import {
 import { SettingsProvider } from "@/lib/settings";
 import { ToastProvider } from "@/components/Toast";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
-import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { usePresenceHeartbeat } from "@/hooks/usePresenceHeartbeat";
@@ -165,7 +164,6 @@ function HeaderRight() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <InboxHeaderButton />
-      <ThemeToggleButton />
       <SettingsHeaderButton />
     </View>
   );

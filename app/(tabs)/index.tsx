@@ -27,7 +27,6 @@ import { PortfolioLineChart, type TimeSeriesPoint } from "@/components/Portfolio
 import { SkeletonPortfolioHeader } from "@/components/Skeleton";
 import { dataProvider } from "@/data";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
-import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { featureFlags } from "@/config/featureFlags";
 import { InsightsCard } from "@/components/home/InsightsCard";
@@ -514,7 +513,6 @@ function PortfolioScreen() {
               )}
             </AnimatedPressable>
             <InboxHeaderButton color={colors.text} size={22} />
-            <ThemeToggleButton size={22} />
             <AnimatedPressable
               testID="open-settings-btn"
               onPress={handleOpenSettings}
