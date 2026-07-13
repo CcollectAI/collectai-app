@@ -144,7 +144,11 @@ CATEGORY_CONTENT_PATTERNS: dict[str, list[str]] = {
         r"lorcana|disney.*lorcana",
     ],
     "funko": [
-        r"funko|pop!?\s*vinyl|funko\s*pop|funko\s*fair",
+        # NOTE: bare "funko" must NOT match "Funko Field" — that's the Everett
+        # AquaSox baseball stadium, so ballgames/concerts there were being
+        # mis-tagged as Funko Pop collectible events. Exclude venue words after
+        # "funko"; still match Funko / Funko Pop / Pop! Vinyl / Funko Fair etc.
+        r"funko\s*pop|pop!?\s*vinyl|funko\s*fair|funko\s*hollywood|funko(?!\s*(?:field|stadium|ballpark|arena|park))",
     ],
     "designer_toys": [
         r"kaws|bearbrick|be@rbrick|medicom|pop\s*mart",

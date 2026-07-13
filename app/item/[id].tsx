@@ -741,6 +741,7 @@ function ItemDetailScreen() {
             <ItemQuickActionsRow
               editableName={editableName}
               editableValue={editableValue}
+              imageUri={displayImageUri}
               isForSale={isForSale}
               onEdit={() => setIsEditing(true)}
               onListForSale={() => listForSaleHook.open()}
