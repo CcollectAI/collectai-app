@@ -40,6 +40,10 @@ function keyFor(categoryId: string, opts?: BrowseOpts): string {
     opts?.offset ?? '',
     opts?.rarity ?? '',
     opts?.q?.trim() ?? '',
+    // set/brand scope the set-detail grid — MUST be in the key or two sets
+    // with the same (category, sort, limit, offset) collide on one entry.
+    opts?.setCode ?? '',
+    opts?.brand ?? '',
   ].join(':');
 }
 
@@ -95,4 +99,33 @@ export async function getCatalogCollectionsCached(
   const fresh = await getCatalogCollections(categoryId, limit, groupBy);
   await cacheSet(cacheKey, fresh, TTL_MS);
   return fresh;
+}
+
+/**
+ * Page size for the set-detail grid's first page. Single source of truth so the
+ * prefetch below and the grid screen (app/catalog-set/[setCode].tsx) produce the
+ * SAME cache key — a mismatch would silently waste the prefetch.
+ */
+export const SET_GRID_PAGE_SIZE = 60;
+
+/**
+ * Warm the set-detail grid's first page into the cache. Called on press-in of a
+ * collection tile so the grid is already cached by the time the screen mounts —
+ * the first tap feels instant, not just revisits. Fire-and-forget; mirrors the
+ * grid's exact first-page fetch (offset 0, sort 'set', set/brand by dimension).
+ */
+export function prefetchSetGridFirstPage(
+  categoryId: string,
+  groupBy: 'set' | 'brand' | undefined,
+  collectionKey: string,
+): void {
+  const scope = groupBy === 'brand' ? { brand: collectionKey } : { setCode: collectionKey };
+  void browseCatalogItemsCached(categoryId, {
+    ...scope,
+    limit: SET_GRID_PAGE_SIZE,
+    offset: 0,
+    sort: 'set',
+  }).catch(() => {
+    /* prefetch is best-effort; the grid screen will fetch normally on mount */
+  });
 }

@@ -602,25 +602,23 @@ async def browse_catalog_collections(
     if pool is None:
         raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
 
-    # group_by is pattern-validated to a fixed whitelist, so this column name
-    # is never user-controlled — safe to interpolate.
-    col = "brand" if group_by == "brand" else "set_code"
+    # Read the pre-aggregated mv_catalog_collections rollup instead of a live
+    # GROUP BY over all of a category's items. The live aggregate cold-hits at
+    # 1.6-2.1s (scans ~20K rows) vs <60ms indexed read here; the MV refreshes
+    # nightly (pg_cron refresh-mv-catalog-collections, 00:05 UTC) — the catalog
+    # only changes on nightly ingest, so the <=1d lag is invisible. Mirrors
+    # mv_catalog_item_price. dim is pattern-validated (set|brand).
+    dim = "brand" if group_by == "brand" else "set"
     rows = await pool.fetch(
-        f"""
-        SELECT {col} AS grp,
-               COUNT(*) AS total_items,
-               (ARRAY_AGG(image_url) FILTER (
-                   WHERE image_url IS NOT NULL AND image_url <> ''
-               ))[1] AS cover_image
-        FROM category_items
-        WHERE category = $1
-          AND {col} IS NOT NULL
-          AND {col} <> ''
-        GROUP BY {col}
-        ORDER BY COUNT(*) DESC, {col}
-        LIMIT $2
+        """
+        SELECT grp, total_items, cover_image
+        FROM mv_catalog_collections
+        WHERE category = $1 AND dim = $2
+        ORDER BY total_items DESC, grp
+        LIMIT $3
         """,
         category_id,
+        dim,
         limit,
     )
 

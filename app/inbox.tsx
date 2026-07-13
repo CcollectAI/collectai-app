@@ -22,6 +22,7 @@ import { useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type DmThread, type DmRequest } from '@/data';
+import { cacheGet, cacheSet } from '@/data/offlineCache';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -36,6 +37,11 @@ import { MS_PER_WEEK } from '@/constants/time';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import { supabase } from '@/lib/supabase';
 import { trackScreen } from '@/analytics/track';
+
+// SWR cache for instant inbox first-paint on revisit (realtime + on-mount
+// revalidate keep it fresh; TTL just bounds offline staleness).
+const INBOX_CACHE_KEY = 'inbox:threads+requests:v1';
+const INBOX_CACHE_TTL_MS = 30 * 60 * 1000;
 
 
 function formatRelativeTime(dateStr: string | null | undefined): string {
@@ -113,6 +119,17 @@ function InboxScreen() {
   const loadInbox = useCallback(async () => {
     const elapsed = startTimer();
     logAuthState('inbox');
+
+    // SWR: paint the last-known inbox instantly so a revisit isn't a cold
+    // skeleton behind 2 round-trips to eu-north-1; then revalidate below.
+    const cached = await cacheGet<{ threads: DmThread[]; requests: DmRequest[] }>(INBOX_CACHE_KEY);
+    if (cached) {
+      setThreads(cached.threads.filter((t) => t.status === 'accepted'));
+      setSentRequests(cached.threads.filter((t) => t.status === 'pending' && !t.isIncoming));
+      setRequests(cached.requests);
+      setLoading(false);
+    }
+
     try {
       const [inboxThreads, incomingRequests] = await Promise.all([
         dataProvider.listInboxThreads(),
@@ -126,6 +143,7 @@ function InboxScreen() {
       setThreads(accepted);
       setSentRequests(pending);
       setRequests(incomingRequests);
+      void cacheSet(INBOX_CACHE_KEY, { threads: inboxThreads, requests: incomingRequests }, INBOX_CACHE_TTL_MS);
       logLoad('inbox', {
         threads: inboxThreads.length,
         accepted: accepted.length,

@@ -24,6 +24,7 @@ import { useLocalSearchParams, useRouter, Stack, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import { browseCatalogItems } from "@/api/intakeApi";
+import { browseCatalogItemsCached, SET_GRID_PAGE_SIZE } from "@/data/catalogBrowseCache";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable } from "@/motion";
 import { colors as tokens } from "@/theme/tokens";
@@ -33,7 +34,7 @@ import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
 import { logAuthState, logLoad, startTimer } from "@/utils/diagnostics";
 
-const PAGE_SIZE = 60;
+const PAGE_SIZE = SET_GRID_PAGE_SIZE;
 const NUM_COLS = 3;
 const GAP = 2;
 
@@ -72,7 +73,10 @@ function CatalogSetScreen() {
       try {
         // `setCode` carries the collection_key — a brand value for brand-grouped
         // categories (watches), a set_code otherwise. Filter by the right field.
-        const res = await browseCatalogItems(category, {
+        // First page rides the SWR cache (instant on revisit, bg-revalidates);
+        // append pages go direct so pagination isn't served stale.
+        const fetchItems = offset === 0 ? browseCatalogItemsCached : browseCatalogItems;
+        const res = await fetchItems(category, {
           ...(dimension === "brand" ? { brand: setCode } : { setCode }),
           limit: PAGE_SIZE,
           offset,

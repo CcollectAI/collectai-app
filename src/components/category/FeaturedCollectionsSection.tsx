@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
-import { getCatalogCollectionsCached } from '@/data/catalogBrowseCache';
+import { getCatalogCollectionsCached, prefetchSetGridFirstPage } from '@/data/catalogBrowseCache';
 import { type CategoryCollection } from '@/data/categories';
 import logger from '@/utils/logger';
 
@@ -93,6 +93,9 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
             <AnimatedPressable
               key={col.collection_key}
               style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}
+              // Warm the set-detail grid cache as the tap begins so the grid
+              // screen is already loaded by the time it mounts (first-tap instant).
+              onPressIn={() => prefetchSetGridFirstPage(categoryId, groupBy, col.collection_key)}
               onPress={() => onCollectionPress?.({ collection_key: col.collection_key, display_name: col.display_name })}
               accessibilityRole="button"
               accessibilityLabel={`Collection: ${col.display_name}`}
