@@ -69,6 +69,51 @@ def _decode_supabase_jwt(token: str) -> dict:
     return _jwt.decode(token, JWT_SECRET, algorithms=["HS256"], **common)
 
 
+def _log_jwt_failure(token: str, exc: Exception) -> None:
+    """Explain WHY a token was rejected, without leaking secrets.
+
+    Logs the token's own (unverified) alg / iss / aud / expiry next to what
+    THIS server expects, so the recurring write-401 root cause is visible on
+    the very first failed request:
+
+      * ``InvalidSignatureError`` + ``secret_configured=True``  → server's
+        SUPABASE_JWT_SECRET does not match the project's JWT secret.
+      * ``secret_configured=False``                            → secret unset.
+      * ``token_iss`` != ``expected_issuer``                   → SUPABASE_JWT_ISSUER wrong.
+      * ``token_aud`` != ``authenticated``                     → audience mismatch.
+      * ``token_expired=True``                                 → stale/expired session (client-side).
+
+    The JWT secret value is NEVER logged — only whether it is set and its length.
+    """
+    import time as _time
+
+    detail: dict = {
+        "reason": type(exc).__name__,
+        "secret_configured": bool(JWT_SECRET),
+        "secret_len": len(JWT_SECRET or ""),
+        "expected_issuer": JWT_ISSUER or "(unchecked)",
+        "expected_audience": "authenticated",
+    }
+    try:
+        import jwt as _jwt
+
+        hdr = _jwt.get_unverified_header(token)
+        claims = _jwt.decode(token, options={"verify_signature": False})
+        exp = claims.get("exp")
+        detail.update(
+            {
+                "token_alg": hdr.get("alg"),
+                "token_iss": claims.get("iss"),
+                "token_aud": claims.get("aud"),
+                "token_expired": bool(exp and exp < _time.time()),
+            }
+        )
+    except Exception:  # malformed token — the claims themselves are unreadable
+        detail["unverified_decode"] = "failed"
+
+    logger.warning("JWT validation failed: %s", detail)
+
+
 async def get_current_user_id(request: Request) -> str:
     """
     FastAPI dependency that extracts and validates a JWT from the
@@ -87,16 +132,7 @@ async def get_current_user_id(request: Request) -> str:
     if auth_header.startswith("Bearer "):
         token = auth_header[7:]
         try:
-            import jwt as _jwt
-
-            decode_opts: dict = {
-                "algorithms": ["HS256"],
-                "audience": "authenticated",
-                "options": {"require": ["exp", "sub"]},
-            }
-            if JWT_ISSUER:
-                decode_opts["issuer"] = JWT_ISSUER
-            payload = _jwt.decode(token, JWT_SECRET, **decode_opts)
+            payload = _decode_supabase_jwt(token)
             user_id = payload.get("sub", "")
             if user_id:
                 set_user_id(user_id)
@@ -106,7 +142,10 @@ async def get_current_user_id(request: Request) -> str:
             logger.error("PyJWT not installed — cannot validate tokens")
             raise HTTPException(status_code=500, detail="Auth module misconfigured")
         except Exception as exc:
-            logger.warning("JWT validation failed: %s", type(exc).__name__)
+            # Log the PRECISE reason (token's own iss/aud/exp vs. what this server
+            # expects) so a secret/issuer/audience/expiry mismatch is obvious on
+            # the first failed request — the recurring write-401 root cause.
+            _log_jwt_failure(token, exc)
             if not DEV_MODE:
                 raise HTTPException(
                     status_code=401,
