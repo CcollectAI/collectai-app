@@ -24,7 +24,7 @@ import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
 import CatalogSuggestionModal from "@/components/CatalogSuggestionModal";
-import { matchCatalog } from "@/api/itemsApi";
+import { matchCatalog, revalueItem } from "@/api/itemsApi";
 import { checkDuplicate } from "@/lib/duplicateCheck";
 import { dataProvider } from "@/data";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
@@ -326,7 +326,7 @@ const ManualAddScreen: React.FC = () => {
         }
       }
 
-      const { error } = await supabase.from("items").insert([
+      const { data: inserted, error } = await supabase.from("items").insert([
         {
           user_id: (await supabase.auth.getUser()).data.user?.id ?? null,
           title: trimmedTitle,
@@ -344,7 +344,7 @@ const ManualAddScreen: React.FC = () => {
           attrs: Object.keys(mergedAttrs).length > 0 ? mergedAttrs : null,
           image_url: photoUrl || null,
         },
-      ]);
+      ]).select("id").single();
 
       if (error) {
         logger.warn("[ManualAdd] insert error:", error.message);
@@ -352,6 +352,14 @@ const ManualAddScreen: React.FC = () => {
         setErrorText(error.message || "Couldn't save item — check your connection and try again.");
         fireHaptic(HapticIntent.ALERT_TRIGGERED);
         return;
+      }
+
+      // Market valuation for the card (best-effort). This insert is client-side
+      // so the server can't value it inline like POST /items does; when the
+      // item is catalog-matched (canonicalKey set) ask the server to write a
+      // quick_predictions row so its card shows a value. Fire-and-forget.
+      if (canonicalKey && inserted?.id) {
+        revalueItem(inserted.id).catch(() => { /* non-critical */ });
       }
 
       track({ name: 'item_added', properties: { source: 'manual', category: categorySlug || category } });

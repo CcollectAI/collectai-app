@@ -92,6 +92,47 @@ def get_demo_items() -> list[ItemResponse]:
     return _DEMO_ITEMS
 
 
+async def write_quick_valuation(conn, item_id: str, user_id: str, canonical_key: Optional[str]) -> bool:
+    """Best-effort: write a `quick_predictions` row from the catalog market
+    valuation so the item card shows a real value right after add.
+
+    Source is `price_prediction_daily.q50`, which is EUR — valuation_worker
+    predicts on COALESCE(price_eur, price) with an `_MAX_SANE_PRICE_EUR` bound —
+    so it maps directly onto `quick_predictions.q50_eur`. No-op (returns False)
+    when the item isn't catalog-linked or has no daily price; the card then
+    falls back to the user's own estimate. Never raises — a valuation must not
+    block or fail an add.
+    """
+    if not canonical_key:
+        return False
+    try:
+        row = await conn.fetchrow(
+            """
+            SELECT q50, confidence, model_version
+            FROM public.price_prediction_daily
+            WHERE item_ref = $1 AND q50 IS NOT NULL
+            ORDER BY day DESC
+            LIMIT 1
+            """,
+            canonical_key,
+        )
+        if not row or row["q50"] is None:
+            return False
+        await conn.execute(
+            """
+            INSERT INTO public.quick_predictions (item_id, user_id, nk, q50_eur, confidence, raw)
+            VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::jsonb)
+            """,
+            item_id, user_id, canonical_key, float(row["q50"]),
+            float(row["confidence"]) if row["confidence"] is not None else 0.6,
+            json.dumps({"source": "catalog_daily", "model_version": row["model_version"]}),
+        )
+        return True
+    except Exception:
+        logger.debug("[items] quick valuation write skipped (non-critical)")
+        return False
+
+
 # ---- Endpoints ----
 
 @router.post("/items", response_model=ItemResponse, dependencies=[Depends(_items_write_limit)], summary="Create a new item")
@@ -144,6 +185,9 @@ async def create_item(
                 except Exception:
                     logger.debug("[items] Gamification XP award failed (non-critical)")
 
+                # Market valuation for the card (best-effort, EUR, local data).
+                await write_quick_valuation(conn, item_id, user_id, payload.canonical_key)
+
                 return ItemResponse(id=item_id, **payload.model_dump())
         except HTTPException:
             raise
@@ -156,6 +200,29 @@ async def create_item(
     item = ItemResponse(id=new_id, **payload.model_dump())
     _DEMO_ITEMS.append(item)
     return item
+
+
+@router.post("/items/{item_id}/revalue", dependencies=[Depends(_items_write_limit)], summary="Compute the card valuation for an item")
+async def revalue_item(item_id: str, user_id: str = Depends(get_current_user_id)):
+    """Write a fresh quick_predictions row from the catalog market valuation.
+
+    The manual-add screen inserts items client-side (direct Supabase), so it
+    can't run the server-side valuation inline the way POST /items does. It
+    calls this right after saving so a catalog-linked item shows a value on its
+    card immediately. No-op (valued=false) when the item isn't catalog-linked.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return {"ok": False, "valued": False}
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT canonical_key FROM items WHERE id = $1::uuid AND user_id = $2::uuid",
+            item_id, user_id,
+        )
+        if not row:
+            raise error_response(404, "Item not found")
+        valued = await write_quick_valuation(conn, item_id, user_id, row["canonical_key"])
+    return {"ok": True, "valued": valued}
 
 
 @router.get("/items", response_model=PaginatedItemsResponse, dependencies=[Depends(_items_read_limit)], summary="List user items", description="Returns paginated items for the authenticated user, ordered by most recently updated. Supports cursor-based pagination via `cursor` and `limit` query params.")

@@ -188,3 +188,12 @@ export const matchCatalog = (title: string, category: string, opts?: { brand?: s
     ...(opts?.brand ? { brand: opts.brand } : {}),
     ...(opts?.set_code ? { set_code: opts.set_code } : {}),
   });
+
+/**
+ * Compute the card valuation for a just-saved item from the catalog market
+ * price. The manual-add screen inserts items client-side (direct Supabase), so
+ * it calls this right after saving so a catalog-linked item shows a value on
+ * its card immediately. Best-effort; `valued=false` when not catalog-linked.
+ */
+export const revalueItem = (itemId: string) =>
+  post<{ ok: boolean; valued: boolean }>(`/items/${encodeURIComponent(itemId)}/revalue`, {});
