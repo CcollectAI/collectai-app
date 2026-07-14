@@ -128,6 +128,17 @@ export type CreateItemInput = {
   price: number;
   priceBand?: PriceBand;
   imageUrl?: string;
+  // Rich detail so the saved item lands as a FULL card (see POST /items).
+  // Populated by QuickScan / catalog-match / the manual form.
+  notes?: string;
+  canonicalKey?: string;
+  brand?: string;
+  condition?: string;
+  year?: number;
+  series?: string;
+  editionLabel?: string;
+  /** Category-specific attributes (rarity, set_code, edition, print run, …). */
+  attributes?: Record<string, unknown>;
 };
 
 /**

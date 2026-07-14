@@ -117,15 +117,32 @@ export async function listItems(pagination?: PaginationParams): Promise<Item[]> 
 
 export async function createItem(input: CreateItemInput): Promise<Item> {
   // Server contract (ItemCreateRequest): name, category?, collection_name?,
-  // estimated_value?, notes?. Sending `title` (the DB column name) was
-  // wrong — server expects `name` (the API field) and stores it as
-  // items.title internally. Image URLs are NOT a body field; images are
-  // attached separately via POST /items/{id}/images.
+  // estimated_value?, notes?, canonical_key?, image_url?, brand?, condition?,
+  // year?, series?, edition_label?, attrs?. Server stores `name` as
+  // items.title internally. `attrs` carries the category-specific attributes
+  // (rarity/set_code/edition/…) plus subtype_id/taxonomy_version (which the
+  // read path maps back out of attrs).
+  const attrs: Record<string, unknown> = {
+    ...(input.attributes ?? {}),
+    ...(input.subtypeId ? { subtype_id: input.subtypeId } : {}),
+    ...(input.taxonomyVersion ? { taxonomy_version: input.taxonomyVersion } : {}),
+  };
   let row: Record<string, unknown>;
   try {
     row = await collectorsApi.post<Record<string, unknown>>('/items', {
       name: input.name,
       category: input.category,
+      estimated_value: input.price || undefined,
+      collection_name: input.collections?.[0],
+      notes: input.notes,
+      canonical_key: input.canonicalKey,
+      image_url: input.imageUrl,
+      brand: input.brand,
+      condition: input.condition,
+      year: input.year,
+      series: input.series,
+      edition_label: input.editionLabel,
+      attrs: Object.keys(attrs).length ? attrs : undefined,
     });
   } catch (e) {
     logger.error('[SupabaseDataProvider] createItem error:', e);
