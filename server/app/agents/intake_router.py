@@ -706,16 +706,19 @@ async def intake_save(
     normalized_key = _normalize_key(payload.title)
 
     async with get_conn() as conn:
+        # NB: map to the columns that ACTUALLY exist on `items`. The prior
+        # INSERT referenced subtype_id/taxonomy_version/attributes_json/images/
+        # normalized_key — none of which exist on this table — so every
+        # /intake/save (barcode-scan "Add to Collection") 500'd with 42703.
+        # Real columns: attrs (jsonb), image_url (single), estimated_value.
         await conn.execute(
             """
             INSERT INTO public.items (
                 id, user_id, title, category, condition,
-                subtype_id, taxonomy_version,
-                attributes_json, images, normalized_key
+                attrs, image_url, estimated_value
             ) VALUES (
                 $1::uuid, $2::uuid, $3, $4, $5,
-                $6, $7,
-                $8, $9, $10
+                $6::jsonb, $7, $8
             )
             """,
             item_id,
@@ -723,11 +726,9 @@ async def intake_save(
             payload.title,
             payload.category,
             payload.condition,
-            payload.subtype_id,
-            payload.taxonomy_version,
             _json.dumps(payload.attributes) if payload.attributes else None,
-            _json.dumps(payload.images) if payload.images else None,
-            normalized_key,
+            (payload.images[0] if payload.images else None),
+            payload.estimated_price,
         )
 
     logger.info(
