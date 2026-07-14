@@ -183,7 +183,7 @@ async def list_items(
 
                     rows = await conn.fetch(
                         """
-                        SELECT id, title, category, notes, collection_name, estimated_value, updated_at
+                        SELECT id, title, category, notes, collection_name, estimated_value, canonical_key, updated_at
                         FROM items
                         WHERE user_id = $1::uuid
                           AND (updated_at, id) < ($2::timestamptz, $3::uuid)
@@ -195,7 +195,7 @@ async def list_items(
                 else:
                     rows = await conn.fetch(
                         """
-                        SELECT id, title, category, notes, collection_name, estimated_value, updated_at
+                        SELECT id, title, category, notes, collection_name, estimated_value, canonical_key, updated_at
                         FROM items
                         WHERE user_id = $1::uuid
                         ORDER BY updated_at DESC, id DESC
@@ -215,6 +215,7 @@ async def list_items(
                         collection_name=r.get("collection_name"),
                         estimated_value=float(r["estimated_value"]) if r.get("estimated_value") is not None else None,
                         notes=r["notes"],
+                        canonical_key=r.get("canonical_key"),
                     )
                     for r in result_rows
                 ]
