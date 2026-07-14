@@ -50,6 +50,12 @@ type ItemRow = {
   purchase_currency?: string | null;
   purchased_at?: string | null;
   purchase_notes?: string | null;
+  // The item's own value, captured by the add flow (user estimate / scan /
+  // catalog). The card shows quick_predictions.q50_eur when a model valuation
+  // exists, and falls back to these so a just-added item shows its value
+  // immediately instead of 0.
+  estimated_value?: number | null;
+  predicted_price_eur?: number | null;
   quick_predictions?: PredRow[];
 };
 
@@ -60,6 +66,11 @@ function mapItemRow(r: ItemRow): Item {
     (a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''),
   );
   const latest = preds[0];
+  // Card value: prefer a model prediction; fall back to the value the add
+  // flow captured so every method shows a price immediately (quick_predictions
+  // is populated asynchronously / for canonical-linked items).
+  const fallbackValue = (r.predicted_price_eur ?? r.estimated_value) ?? undefined;
+  const cardValue = (typeof latest?.q50_eur === 'number' ? latest.q50_eur : undefined) ?? fallbackValue ?? 0;
   const attrs = r.attrs ?? undefined;
   // subtype_id + taxonomy_version were originally bare columns; they now
   // live inside the attrs jsonb when set. Fall back to undefined when missing.
@@ -78,7 +89,7 @@ function mapItemRow(r: ItemRow): Item {
     taxonomyVersion,
     collections,
     attributesJson: attrs,
-    price: latest?.q50_eur ?? 0,
+    price: cardValue,
     // quick_predictions only stores a single point estimate (q50_eur), not
     // a quantile band. Synthesize a degenerate band from q50 alone so
     // downstream consumers that check `priceBand?.confidence` still work.
@@ -86,7 +97,9 @@ function mapItemRow(r: ItemRow): Item {
     // by canonical_key separately.
     priceBand: latest && typeof latest.q50_eur === 'number'
       ? { q10: latest.q50_eur, q50: latest.q50_eur, q90: latest.q50_eur, confidence: latest.confidence ?? 0, currency: 'EUR' }
-      : undefined,
+      : typeof fallbackValue === 'number'
+        ? { q10: fallbackValue, q50: fallbackValue, q90: fallbackValue, confidence: 0, currency: 'EUR' }
+        : undefined,
     imageUrl: r.image_url ?? undefined,
     updatedAt: r.updated_at ?? undefined,
     purchasePriceEur: r.purchase_price_eur ?? null,
@@ -96,7 +109,7 @@ function mapItemRow(r: ItemRow): Item {
   };
 }
 
-const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
+const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, estimated_value, predicted_price_eur, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
 
 export async function listItems(pagination?: PaginationParams): Promise<Item[]> {
   const limit = pagination?.limit ?? API_LIMITS.ITEMS_DEFAULT;
