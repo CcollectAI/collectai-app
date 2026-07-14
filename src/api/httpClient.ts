@@ -237,10 +237,34 @@ async function runWithGate(method: string, path: string, init: RequestInit, time
   return res;
 }
 
+// Single-flight guard around recoverAuthAfter401's refresh. A screen that
+// mounts fires ~10 authenticated requests at once; if the session was
+// momentarily null they ALL 401 together. Without this guard each would call
+// refreshSession() concurrently — N refreshes on one rotating refresh-token
+// trips Supabase's reuse detection and revokes the session. The guard collapses
+// a concurrent burst into ONE refresh whose result every caller shares.
+let inFlightRecovery: Promise<Record<string, string> | null> | null = null;
+function recoverAuthAfter401Once(): Promise<Record<string, string> | null> {
+  if (!inFlightRecovery) {
+    inFlightRecovery = recoverAuthAfter401().finally(() => {
+      inFlightRecovery = null;
+    });
+  }
+  return inFlightRecovery;
+}
+
 // Attach auth headers, run, and recover ONCE from a 401 on an authenticated
-// request: refresh the session and replay with the fresh token. `makeInit`
-// rebuilds the request from the (possibly refreshed) headers so the retry
-// carries the new token.
+// request, then replay with a valid token. `makeInit` rebuilds the request from
+// the (possibly refreshed) headers so the retry carries the new token.
+//
+// Two 401 shapes are recovered (see the httpClient tokenless-401 root cause):
+//   1. A token WAS attached but rejected (expired/stale) → force a refresh.
+//   2. NO token was attached — getAuthHeaders() returned {} because getSession()
+//      was still null when the request fired (cold-start hydration, or a refresh
+//      stuck past the 2s+8s window). This is the DOMINANT case in prod: the
+//      backend rejects it with a silent 401 (no Authorization header). Re-read
+//      the session cheaply first (it has usually hydrated by now → no refresh
+//      needed), and only force a refresh if it is still null.
 async function authedRequest(
   method: string,
   path: string,
@@ -249,8 +273,18 @@ async function authedRequest(
 ): Promise<Response> {
   const auth = await getAuthHeaders();
   let res = await runWithGate(method, path, makeInit(auth), timeoutMs);
-  if (res.status === 401 && auth.Authorization) {
-    const fresh = await recoverAuthAfter401();
+  if (res.status === 401) {
+    let fresh: Record<string, string> | null = null;
+    if (!auth.Authorization) {
+      // Tokenless 401: the session may have hydrated since the request fired —
+      // re-read it cheaply before spending a refresh (avoids rotating the
+      // refresh-token unnecessarily across a concurrent burst).
+      const reread = await getAuthHeaders();
+      if (reread.Authorization) fresh = reread;
+    }
+    // Token was rejected, or the cheap re-read still yielded nothing → force a
+    // SINGLE shared refresh (signs out if the refresh-token is unrecoverable).
+    if (!fresh) fresh = await recoverAuthAfter401Once();
     if (fresh) res = await runWithGate(method, path, makeInit(fresh), timeoutMs);
   }
   return res;
