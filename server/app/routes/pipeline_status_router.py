@@ -65,9 +65,11 @@ async def pipeline_status() -> dict:
                 "SELECT COUNT(*) FROM public.market_hits"
             ) or 0
 
-            # Latest market_hit timestamp
+            # Latest market_hit timestamp. NB: market_hits uses `seen_at`
+            # (legacy) — there is no `created_at`, so MAX(created_at) 500'd
+            # this endpoint with 42703 (column does not exist).
             latest_hit = await conn.fetchval(
-                "SELECT MAX(created_at) FROM public.market_hits"
+                "SELECT MAX(seen_at) FROM public.market_hits"
             )
 
     except Exception as e:
