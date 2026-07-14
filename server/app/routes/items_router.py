@@ -44,6 +44,19 @@ class ItemCreateRequest(BaseModel):
     # surface that JOINs items → catalog returns empty for paid users.
     # Format example: 'pokemon:base-set-charizard-4-102'.
     canonical_key: Optional[str] = Field(None, max_length=255)
+    # Rich detail — populated by QuickScan / catalog-match / manual form so the
+    # item lands as a FULL card (ItemAttributesSection reads `attrs`; the card
+    # shows `image_url`). Before this, POST /items dropped all of it and every
+    # non-ISBN add landed with empty attrs + no image.
+    image_url: Optional[str] = Field(None, max_length=1000)
+    brand: Optional[str] = Field(None, max_length=128)
+    condition: Optional[str] = Field(None, max_length=64)
+    year: Optional[int] = None
+    series: Optional[str] = Field(None, max_length=255)
+    edition_label: Optional[str] = Field(None, max_length=128)
+    # Category-specific attributes (rarity, set_code, edition, print run,
+    # authenticity, etc.) — stored as items.attrs (jsonb object).
+    attrs: Optional[Dict[str, Any]] = None
 
 
 class ItemResponse(ItemCreateRequest):
@@ -95,11 +108,16 @@ async def create_item(
                 item_id = str(uuid4())
                 await conn.execute(
                     """
-                    INSERT INTO items (id, user_id, title, category, notes, collection_name, estimated_value, canonical_key)
-                    VALUES ($1, $2::uuid, $3, $4, $5, $6, $7, $8)
+                    INSERT INTO items (id, user_id, title, category, notes, collection_name, estimated_value, canonical_key,
+                                       image_url, brand, condition, year, series, edition_label, attrs)
+                    VALUES ($1, $2::uuid, $3, $4, $5, $6, $7, $8,
+                            $9, $10, $11, $12, $13, $14, $15::jsonb)
                     """,
                     item_id, user_id, payload.name, payload.category, payload.notes,
                     payload.collection_name, payload.estimated_value, payload.canonical_key,
+                    payload.image_url, payload.brand, payload.condition, payload.year,
+                    payload.series, payload.edition_label,
+                    json.dumps(payload.attrs) if payload.attrs else None,
                 )
                 logger.info(
                     "[items] Created item: id=%s, user=%s, canonical_key=%s",
@@ -126,15 +144,7 @@ async def create_item(
                 except Exception:
                     logger.debug("[items] Gamification XP award failed (non-critical)")
 
-                return ItemResponse(
-                    id=item_id,
-                    name=payload.name,
-                    category=payload.category,
-                    collection_name=payload.collection_name,
-                    estimated_value=payload.estimated_value,
-                    notes=payload.notes,
-                    canonical_key=payload.canonical_key,
-                )
+                return ItemResponse(id=item_id, **payload.model_dump())
         except HTTPException:
             raise
         except Exception as e:
@@ -143,15 +153,7 @@ async def create_item(
 
     # In-memory fallback
     new_id = f"demo-{len(_DEMO_ITEMS) + 1}"
-    item = ItemResponse(
-        id=new_id,
-        name=payload.name,
-        category=payload.category,
-        collection_name=payload.collection_name,
-        estimated_value=payload.estimated_value,
-        notes=payload.notes,
-        canonical_key=payload.canonical_key,
-    )
+    item = ItemResponse(id=new_id, **payload.model_dump())
     _DEMO_ITEMS.append(item)
     return item
 
