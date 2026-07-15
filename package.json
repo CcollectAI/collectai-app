@@ -13,6 +13,8 @@
     "precheck": "node scripts/precheck.mjs",
     "dev": "bash scripts/dev.sh",
     "test": "jest",
+    "verify:items-contract": "node scripts/verify_items_contract.mjs",
+    "verify:prebuild": "tsc --noEmit && jest __tests__/data/screenItem.test.ts __tests__/data/itemsProviderPurchase.test.ts __tests__/components/ItemsListItem.test.tsx && node scripts/verify_items_contract.mjs",
     "i18n:check": "node scripts/check-i18n-strings.mjs",
     "i18n:check:quiet": "node scripts/check-i18n-strings.mjs --quiet",
     "bundle-size": "node scripts/bundle-size.mjs",
@@ -123,8 +125,12 @@
     ],
     "testPathIgnorePatterns": [
       "<rootDir>/node_modules/",
+      "<rootDir>/.claude/",
       "<rootDir>/__tests__/setup.ts",
       "<rootDir>/__tests__/a11y/helpers.ts"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/.claude/"
     ]
   },
   "private": true

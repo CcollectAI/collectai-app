@@ -70,6 +70,12 @@ type MakeItemOverrides = {
   value?: number;
   purchasePriceEur?: number | null;
   purchasedAt?: string | null;
+  collectionName?: string;
+  condition?: string;
+  brand?: string;
+  year?: number;
+  series?: string;
+  editionLabel?: string;
 };
 
 function makeItem(overrides: MakeItemOverrides = {}) {
@@ -135,5 +141,40 @@ describe('ItemsListItem — paid-price + P/L surface', () => {
   it('exposes a P/L accessibility label so screen readers announce direction + magnitude', () => {
     render(<ItemsListItem item={makeItem({ value: 150, purchasePriceEur: 100 })} {...baseProps} />);
     expect(screen.getByLabelText(/Up 50 percent versus purchase price/)).toBeTruthy();
+  });
+});
+
+describe('ItemsListItem — enrichment surface', () => {
+  it('renders the brand · year · edition detail line when present', () => {
+    render(
+      <ItemsListItem
+        item={makeItem({ brand: 'WotC', year: 1999, editionLabel: '1st Edition' })}
+        {...baseProps}
+      />,
+    );
+    expect(screen.getByText(/WotC · 1999 · 1st Edition/)).toBeTruthy();
+  });
+
+  it('renders the condition badge when a condition is set', () => {
+    render(
+      <ItemsListItem item={makeItem({ condition: 'PSA 9' })} {...baseProps} />,
+    );
+    expect(screen.getByText('PSA 9')).toBeTruthy();
+  });
+
+  it('shows a clean meta line (no dangling dash) when there is no collection', () => {
+    render(<ItemsListItem item={makeItem({ collectionName: '' })} {...baseProps} />);
+    // The bug rendered "pokemon – " with a trailing separator on every row.
+    expect(screen.queryByText(/–\s*$/)).toBeNull();
+  });
+
+  it('shows the collection with a separator when present', () => {
+    render(<ItemsListItem item={makeItem({ collectionName: 'Base Set' })} {...baseProps} />);
+    expect(screen.getByText(/– Base Set/)).toBeTruthy();
+  });
+
+  it('omits the detail line entirely for a sparse item', () => {
+    render(<ItemsListItem item={makeItem()} {...baseProps} />);
+    expect(screen.queryByText(/·/)).toBeNull();
   });
 });
