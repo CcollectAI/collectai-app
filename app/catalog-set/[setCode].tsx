@@ -293,12 +293,12 @@ function CatalogSetScreen() {
               maxToRenderPerBatch={2}
             />
             <AnimatedPressable
-              style={[styles.viewerClose, { top: insets.top + 8, backgroundColor: colors.card, borderColor: colors.border }]}
+              style={[styles.viewerClose, { top: insets.top + 8 }]}
               onPress={closeViewer}
               accessibilityRole="button"
-              accessibilityLabel="Close"
+              accessibilityLabel="Back to set"
             >
-              <Ionicons name="close" size={24} color={colors.text} />
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </AnimatedPressable>
           </View>
         </Modal>
@@ -347,13 +347,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   viewerCtaText: { fontSize: 14, fontWeight: "700" },
+  // Translucent dark scrim + white arrow so the back affordance stays visible
+  // over both the (light) viewer background AND the card art — the old
+  // colors.card fill was a white circle lost on the white background.
   viewerClose: {
     position: "absolute",
     left: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
-    borderWidth: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
     alignItems: "center",
     justifyContent: "center",
   },

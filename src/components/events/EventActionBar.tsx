@@ -37,10 +37,17 @@ export const EventActionBar = React.memo(function EventActionBar({
   const handleShare = async () => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
     try {
-      await Share.share({
-        message: `${event.title}\n${event.date}${event.time ? ` at ${event.time}` : ''}${event.location ? `\n${event.location}` : ''}\n\nCheck it out on Sparrow Collect!`,
-        title: event.title,
-      });
+      // Optimized for messaging (WhatsApp / iMessage): the details a recipient
+      // needs (what, when, where) on their own lines + a tappable link — the
+      // event's own URL when it has one, else the app site.
+      const link = event.onlineUrl || 'https://sparrowcollect.com';
+      const message =
+        `${event.title}` +
+        `\n${event.date}${event.time ? ` at ${event.time}` : ''}` +
+        (event.location ? `\n${event.location}` : '') +
+        `\n\n${link}` +
+        `\n\nShared via Sparrow Collect`;
+      await Share.share({ message, title: event.title });
     } catch {
       showToast({ message: 'Failed to share event', type: 'error' });
     }

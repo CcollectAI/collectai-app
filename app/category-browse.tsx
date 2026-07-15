@@ -23,6 +23,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   FlatList,
+  Dimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -41,6 +42,16 @@ import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
 
 const PAGE_SIZE = 40;
+
+// Fixed tile geometry so every card occupies the SAME footprint regardless of
+// the source image's shape. list padding (10*2) + per-card margin (6*2 each) →
+// 44px of fixed horizontal chrome across a 2-column row.
+const SCREEN_W = Dimensions.get("window").width;
+const CARD_W = (SCREEN_W - 44) / 2;
+// Standard trading-card ratio (63×88mm). Art fills the full card height at this
+// ratio and uses `contain`, so the WHOLE card shows (portrait, landscape, or
+// full-art) — no more cover-cropping the name/HP off the top and bottom.
+const CARD_ART_RATIO = 63 / 88;
 
 function CategoryBrowseScreen() {
   const { categoryId, sort: sortParam } = useLocalSearchParams<{ categoryId: string; sort?: string }>();
@@ -147,7 +158,7 @@ function CategoryBrowseScreen() {
         accessibilityLabel={`View ${item.title}`}
       >
         {item.image_url ? (
-          <Image source={{ uri: item.image_url }} style={s.art} resizeMode="cover" accessibilityIgnoresInvertColors />
+          <Image source={{ uri: item.image_url }} style={s.art} resizeMode="contain" accessibilityIgnoresInvertColors />
         ) : (
           <View style={[s.art, s.artEmpty, { backgroundColor: tokens.brand.base + "12" }]}>
             <Ionicons name="cube-outline" size={28} color={tokens.brand.base} />
@@ -215,6 +226,7 @@ function CategoryBrowseScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           numColumns={2}
+          columnWrapperStyle={s.column}
           contentContainerStyle={s.list}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
@@ -272,15 +284,23 @@ const s = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14, padding: 0 },
   loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
   list: { paddingHorizontal: 10, paddingBottom: 96 },
+  // Left-align each row so a lone last card sits in its column instead of
+  // stretching to full width (the flex:1 + numColumns odd-item gotcha).
+  column: { justifyContent: "flex-start" },
   // Museum card — same visual language as the category rail (mockup `.card`).
+  // Fixed width (not flex:1) so every tile is identical and odd counts don't
+  // blow up the last card.
   card: {
-    flex: 1,
+    width: CARD_W,
     margin: 6,
     borderRadius: 14,
     borderWidth: 1,
     overflow: "hidden",
   },
-  art: { width: "100%", height: 150 },
+  // Full card height at the standard card ratio + `contain` (in renderItem) so
+  // nothing is cropped. The faint tint fills the letterbox gutters when a
+  // non-portrait card doesn't fill the frame.
+  art: { width: "100%", aspectRatio: CARD_ART_RATIO, backgroundColor: tokens.brand.base + "0A" },
   artEmpty: { alignItems: "center", justifyContent: "center" },
   comingSoon: { fontSize: 10, fontWeight: "600", marginTop: 6, color: tokens.brand.deep, opacity: 0.7 },
   meta: { paddingVertical: 8, paddingHorizontal: 10 },

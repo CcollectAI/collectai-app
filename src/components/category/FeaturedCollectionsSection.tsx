@@ -153,9 +153,14 @@ const styles = StyleSheet.create({
     gap: 10,
     overflow: 'hidden',
   },
+  // A single representative card, shown as a centered card-shaped thumbnail.
+  // Was width:100% + height:80 + contain, which shrank one portrait card into
+  // a wide banner so it floated tiny with big empty side gutters. A card-ratio
+  // box (63:88) centered keeps it recognizable and fills its own frame.
   cover: {
-    width: '100%',
-    height: 80,
+    alignSelf: 'center',
+    height: 104,
+    aspectRatio: 63 / 88,
     borderRadius: 8,
     marginBottom: 2,
   },

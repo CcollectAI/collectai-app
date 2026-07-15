@@ -108,7 +108,7 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
               accessibilityLabel={`View ${it.title}`}
             >
               {it.image_url ? (
-                <Image source={{ uri: it.image_url }} style={styles.art} resizeMode="cover" accessibilityIgnoresInvertColors />
+                <Image source={{ uri: it.image_url }} style={styles.art} resizeMode="contain" accessibilityIgnoresInvertColors />
               ) : (
                 <View style={[styles.art, styles.artEmpty, { backgroundColor: accentColor + '12' }]}>
                   <Ionicons name="cube-outline" size={26} color={accentColor} />
@@ -159,7 +159,10 @@ const styles = StyleSheet.create({
   seeAll: { fontSize: 13, fontWeight: '600', color: tokens.brand.deep },
   rail: { gap: 12, paddingHorizontal: 12, paddingBottom: 4 },
   card: { width: 140, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
-  art: { width: '100%', height: 120 },
+  // Full card at the standard 63:88 ratio + `contain` so the whole card shows
+  // (was height:120 + cover, which sliced the name/HP off the top & bottom).
+  // The faint tint fills the gutters for non-portrait cards.
+  art: { width: '100%', aspectRatio: 63 / 88, backgroundColor: tokens.brand.base + '0A' },
   artEmpty: { alignItems: 'center', justifyContent: 'center' },
   comingSoon: { fontSize: 10, fontWeight: '600', marginTop: 6, color: tokens.brand.deep, opacity: 0.7 },
   meta: { paddingVertical: 8, paddingHorizontal: 10 },

@@ -28,11 +28,14 @@
     },
     "preview": {
       "distribution": "internal",
+      "environment": "production",
       "ios": {
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_SUPABASE_MODE": "strict"
+        "EXPO_PUBLIC_SUPABASE_MODE": "strict",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "SENTRY_ALLOW_FAILURE": "true"
       }
     },
     "production": {
