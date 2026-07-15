@@ -26,6 +26,11 @@ interface Item {
   condition?: string;
   notes?: string;
   imageUrl?: string;
+  // Rich detail (2026-07-15 enrichment) — shown as a compact subtitle line.
+  brand?: string;
+  year?: number;
+  series?: string;
+  editionLabel?: string;
   // Purchase data — surfaced 2026-05-01. null = item has no purchase price
   // recorded (most QuickScan-only items); undefined = field not on the row
   // (older callers that haven't been updated). Either case → suppress display.
@@ -111,8 +116,24 @@ export const ItemsListItem = React.memo(function ItemsListItem({
             {item.name}
           </Text>
           <Text style={[styles.itemMeta, { color: colors.muted }]}>
-            <CategoryPill id={item.category} label={item.category} /> – {item.collectionName}
+            <CategoryPill id={item.category} label={item.category} />
+            {item.collectionName ? ` – ${item.collectionName}` : ''}
           </Text>
+          {/* Rich detail subtitle: brand · year · series · edition. Series is
+              dropped when it duplicates the collection name shown above. */}
+          {(() => {
+            const parts = [
+              item.brand,
+              typeof item.year === 'number' ? String(item.year) : null,
+              item.series && item.series !== item.collectionName ? item.series : null,
+              item.editionLabel,
+            ].filter(Boolean);
+            return parts.length ? (
+              <Text style={[styles.itemDetail, { color: colors.muted }]} numberOfLines={1}>
+                {parts.join(' · ')}
+              </Text>
+            ) : null;
+          })()}
           {item.condition ? (
             GRADING_ELIGIBLE_CATEGORIES.has(item.category) ? (
               <View style={[styles.gradeBadge, { backgroundColor: colors.accent + '15' }]}>
@@ -225,6 +246,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   itemCondition: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  itemDetail: {
     fontSize: 11,
     marginTop: 2,
   },

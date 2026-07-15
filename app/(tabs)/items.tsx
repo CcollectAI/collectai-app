@@ -23,6 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { dataProvider, type Item as DataItem } from "@/data";
+import { mapDataItemToScreenItem, type ScreenItem } from "@/data/screenItem";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { AnimatedPressable, useEnterReveal, useStaggerReveal } from "@/motion";
@@ -68,23 +69,10 @@ import {
   ItemsFloatingAddButton,
 } from '@/components/items';
 
-type Item = {
-  id: string;
-  name: string;
-  category: string;        // e.g. Pokémon, LEGO, or custom like "vintage_lamps"
-  collectionName: string;  // e.g. "151 Base Set"
-  value: number;
-  condition?: string;
-  notes?: string;
-  imageUrl?: string;
-  source?: string;         // 'ai' | 'scan' | 'manual' — R48
-  isManual?: boolean;      // derived: true when source='manual' and no AI predictions
-  // Acquisition fields surfaced 2026-05-01 (was captured in add-manual but
-  // never read back). null = no purchase data on this item, undefined = not
-  // available in the underlying provider response.
-  purchasePriceEur?: number | null;
-  purchasedAt?: string | null;
-};
+// Screen row shape + the provider→screen mapper live in @/data/screenItem so
+// the mapping is unit-testable (see screenItem.test.ts). Aliased to `Item`
+// here to keep the rest of this file unchanged.
+type Item = ScreenItem;
 
 const VIEW_MODE_KEY = '@sparrowcollect/items_view_mode';
 
@@ -108,20 +96,7 @@ const ItemsScreen: React.FC = () => {
   const itemFetcher = useCallback(
     async (limit: number, offset: number): Promise<Item[]> => {
       const items = await dataProvider.listItems({ limit, offset });
-      return items.map((it: DataItem) => ({
-        id: it.id,
-        name: it.name || '(Untitled)',
-        category: it.category,
-        collectionName: "",
-        value: it.price,
-        condition: undefined,
-        notes: undefined,
-        imageUrl: it.imageUrl,
-        source: (it as Record<string, unknown>).source as string | undefined,
-        isManual: (it as Record<string, unknown>).source === 'manual' && !it.priceBand,
-        purchasePriceEur: it.purchasePriceEur ?? null,
-        purchasedAt: it.purchasedAt ?? null,
-      }));
+      return items.map(mapDataItemToScreenItem);
     },
     [],
   );
@@ -628,6 +603,7 @@ const ItemsScreen: React.FC = () => {
           category: item.category,
           value: item.value,
           imageUrl: item.imageUrl,
+          condition: item.condition,
         }))
       ),
     [filteredAndSortedByCategory]

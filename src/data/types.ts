@@ -80,6 +80,13 @@ export type Item = {
   priceBand?: PriceBand;        // q10/q50/q90 price estimates
   imageUrl?: string;
   updatedAt?: string;
+  // Rich detail surfaced on the collection card (POST /items enrichment,
+  // 2026-07-15). All optional — legacy or QuickScan-only items may lack them.
+  condition?: string;           // e.g. "Near Mint", "PSA 9"
+  brand?: string;               // manufacturer / publisher
+  year?: number;                // release year
+  series?: string;              // set / series name
+  editionLabel?: string;        // e.g. "1st Edition", "Limited"
   // Acquisition / "what I paid" fields. Captured at add-manual time and stored
   // in the items table; until 2026-05-01 they were never read back into the
   // Item shape, so the items screen showed predicted price only and the user's

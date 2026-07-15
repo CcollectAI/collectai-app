@@ -42,6 +42,14 @@ type ItemRow = {
   attrs?: Record<string, unknown> | null;
   collection_name?: string | null;
   image_url?: string | null;
+  // Rich detail columns (schema-lock-confirmed). Written by POST /items and
+  // the add-manual insert (2026-07-15 enrichment); surfaced on the card so an
+  // enriched item lands as a full card instead of just name + price.
+  condition?: string | null;
+  brand?: string | null;
+  year?: number | null;
+  series?: string | null;
+  edition_label?: string | null;
   // Acquisition columns. Schema-lock-confirmed (scripts/schema.lock.json):
   // items has both purchase_price (raw, in purchase_currency) and
   // purchase_price_eur (FX-normalized for analytics). We only need the EUR
@@ -102,6 +110,11 @@ function mapItemRow(r: ItemRow): Item {
         : undefined,
     imageUrl: r.image_url ?? undefined,
     updatedAt: r.updated_at ?? undefined,
+    condition: r.condition ?? undefined,
+    brand: r.brand ?? undefined,
+    year: typeof r.year === 'number' ? r.year : undefined,
+    series: r.series ?? undefined,
+    editionLabel: r.edition_label ?? undefined,
     purchasePriceEur: r.purchase_price_eur ?? null,
     purchaseCurrency: (r.purchase_currency as Item['purchaseCurrency']) ?? null,
     purchasedAt: r.purchased_at ?? null,
@@ -109,7 +122,7 @@ function mapItemRow(r: ItemRow): Item {
   };
 }
 
-const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, estimated_value, predicted_price_eur, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
+const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, condition, brand, year, series, edition_label, estimated_value, predicted_price_eur, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
 
 export async function listItems(pagination?: PaginationParams): Promise<Item[]> {
   const limit = pagination?.limit ?? API_LIMITS.ITEMS_DEFAULT;
