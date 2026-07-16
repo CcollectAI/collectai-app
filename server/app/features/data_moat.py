@@ -580,24 +580,24 @@ async def detect_scarcity(
                     SELECT
                         category,
                         item_key,
-                        COUNT(*) FILTER (WHERE created_at >= now() - ($1 || ' days')::interval) AS recent_signals,
-                        COUNT(*) FILTER (WHERE created_at < now() - ($1 || ' days')::interval
-                                           AND created_at >= now() - ($1 * 2 || ' days')::interval) AS prev_signals
+                        COUNT(*) FILTER (WHERE created_at >= now() - make_interval(days => $1)) AS recent_signals,
+                        COUNT(*) FILTER (WHERE created_at < now() - make_interval(days => $1)
+                                           AND created_at >= now() - make_interval(days => $1 * 2)) AS prev_signals
                     FROM demand_signals
                     WHERE item_key IS NOT NULL
-                      AND created_at >= now() - ($1 * 2 || ' days')::interval
+                      AND created_at >= now() - make_interval(days => $1 * 2)
                     GROUP BY category, item_key
-                    HAVING COUNT(*) FILTER (WHERE created_at >= now() - ($1 || ' days')::interval) >= $2
+                    HAVING COUNT(*) FILTER (WHERE created_at >= now() - make_interval(days => $1)) >= $2
                 ),
                 supply AS (
                     SELECT
                         category,
                         item_key,
-                        AVG(listing_count) FILTER (WHERE snapshot_at >= now() - ($1 || ' days')::interval) AS recent_supply,
-                        AVG(listing_count) FILTER (WHERE snapshot_at < now() - ($1 || ' days')::interval
-                                                     AND snapshot_at >= now() - ($1 * 2 || ' days')::interval) AS prev_supply
+                        AVG(listing_count) FILTER (WHERE snapshot_at >= now() - make_interval(days => $1)) AS recent_supply,
+                        AVG(listing_count) FILTER (WHERE snapshot_at < now() - make_interval(days => $1)
+                                                     AND snapshot_at >= now() - make_interval(days => $1 * 2)) AS prev_supply
                     FROM supply_snapshots
-                    WHERE snapshot_at >= now() - ($1 * 2 || ' days')::interval
+                    WHERE snapshot_at >= now() - make_interval(days => $1 * 2)
                     GROUP BY category, item_key
                 )
                 SELECT
@@ -623,7 +623,7 @@ async def detect_scarcity(
                 ORDER BY d.recent_signals DESC
                 LIMIT 20
                 """,
-                str(days),
+                days,
                 min_demand_signals,
                 min_supply_decline_pct,
             )
@@ -681,7 +681,7 @@ async def demand_heat_by_region(
     try:
         async with pool.acquire() as conn:
             cat_filter = ""
-            # str(days) — the query below uses ($1 || ' days')::interval which
+            # str(days) — the query below uses make_interval(days => $1) which
             # requires text. See learning_asyncpg_interval_str_cast.md.
             params: list = [str(days)]
             if category:
@@ -697,7 +697,7 @@ async def demand_heat_by_region(
                     COUNT(DISTINCT user_id) AS unique_users,
                     COUNT(DISTINCT item_key) AS unique_items
                 FROM demand_signals
-                WHERE created_at >= now() - ($1 || ' days')::interval
+                WHERE created_at >= now() - make_interval(days => $1)
                   AND region IS NOT NULL
                   {cat_filter}
                 GROUP BY region, country_code

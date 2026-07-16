@@ -23,7 +23,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   FlatList,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -45,9 +45,10 @@ const PAGE_SIZE = 40;
 
 // Fixed tile geometry so every card occupies the SAME footprint regardless of
 // the source image's shape. list padding (10*2) + per-card margin (6*2 each) →
-// 44px of fixed horizontal chrome across a 2-column row.
-const SCREEN_W = Dimensions.get("window").width;
-const CARD_W = (SCREEN_W - 44) / 2;
+// 44px of fixed horizontal chrome across a 2-column row. Card width is computed
+// inside the component via useWindowDimensions() so it tracks rotation / iPad
+// split-view instead of freezing at the module-load width.
+const CARD_CHROME = 44;
 // Standard trading-card ratio (63×88mm). Art fills the full card height at this
 // ratio and uses `contain`, so the WHOLE card shows (portrait, landscape, or
 // full-art) — no more cover-cropping the name/HP off the top and bottom.
@@ -58,6 +59,9 @@ function CategoryBrowseScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
+  // Recomputes on rotation / split-view instead of freezing at module load.
+  const { width: screenW } = useWindowDimensions();
+  const cardW = (screenW - CARD_CHROME) / 2;
 
   const catMeta = getCategoryById(categoryId as CategoryId);
   const catName = catMeta?.name ?? categoryId ?? "Category";
@@ -152,7 +156,7 @@ function CategoryBrowseScreen() {
   const renderItem = useCallback(
     ({ item }: { item: CatalogItemData }) => (
       <AnimatedPressable
-        style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+        style={[s.card, { width: cardW, backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={() => openMuseum(item)}
         accessibilityRole="button"
         accessibilityLabel={`View ${item.title}`}
@@ -178,7 +182,7 @@ function CategoryBrowseScreen() {
         </View>
       </AnimatedPressable>
     ),
-    [colors, openMuseum],
+    [colors, openMuseum, cardW],
   );
 
   return (
@@ -291,7 +295,7 @@ const s = StyleSheet.create({
   // Fixed width (not flex:1) so every tile is identical and odd counts don't
   // blow up the last card.
   card: {
-    width: CARD_W,
+    // width is applied inline (responsive via useWindowDimensions).
     margin: 6,
     borderRadius: 14,
     borderWidth: 1,

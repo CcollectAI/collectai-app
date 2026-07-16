@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from uuid import UUID
 
@@ -10,6 +9,7 @@ from fastapi import Depends, HTTPException
 
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.lib.bg_tasks import spawn_bg
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 
@@ -95,7 +95,10 @@ async def rsvp_event(
                         "SELECT is_sponsored FROM events WHERE id = $1", event_id
                     )
                     if is_spons:
-                        asyncio.ensure_future(increment_sponsor_rsvp(event_id))
+                        # Retained ref + WARNING-logged failure: a dropped or
+                        # silently-failing task here permanently under-counts
+                        # sponsor RSVPs (real billing/reporting data).
+                        spawn_bg(increment_sponsor_rsvp(event_id), "sponsor_rsvp")
 
                 return {"success": True, "status": actual_status, "waitlisted": waitlisted}
 

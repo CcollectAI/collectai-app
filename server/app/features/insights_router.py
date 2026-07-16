@@ -152,46 +152,58 @@ async def get_personalized_insights(
                 )
 
             # ---- Trending items from market_hits (positive price delta, last 14 days) ----
+            # Self-contained try (like the rare-set block below): a failure here
+            # must NOT discard the already-computed overexposed_categories /
+            # diversification_suggestions — before this was in the function's
+            # outer try, so one bad sub-query zeroed the entire response.
             cutoff = datetime.now(timezone.utc) - timedelta(days=14)
-            trend_rows = await conn.fetch(
-                """
-                WITH first_last AS (
+            trending: List[TrendingItem] = []
+            try:
+                trend_rows = await conn.fetch(
+                    """
+                    WITH first_last AS (
+                        SELECT
+                            normalized_key,
+                            COALESCE(MAX(title), normalized_key) AS item_name,
+                            (ARRAY_AGG(price ORDER BY COALESCE(observed_at, seen_at) ASC))[1]  AS first_price,
+                            (ARRAY_AGG(price ORDER BY COALESCE(observed_at, seen_at) DESC))[1] AS last_price
+                        FROM market_hits
+                        -- market_hits has no `created_at` column (dropped in the
+                        -- 2026-04-24 partition migration). Order by observed_at
+                        -- (fall back to seen_at for legacy rows) and prune on the
+                        -- seen_at partition key. Mirrors sell_timing_router.py.
+                        WHERE seen_at >= $1
+                          AND price IS NOT NULL
+                          AND (is_listing IS NOT TRUE)
+                        GROUP BY normalized_key
+                        HAVING COUNT(*) >= 2
+                    )
                     SELECT
                         normalized_key,
-                        COALESCE(MAX(title), normalized_key) AS item_name,
-                        (ARRAY_AGG(price ORDER BY created_at ASC))[1]  AS first_price,
-                        (ARRAY_AGG(price ORDER BY created_at DESC))[1] AS last_price
-                    FROM market_hits
-                    WHERE created_at >= $1
-                      AND price IS NOT NULL
-                      AND (is_listing IS NOT TRUE)
-                    GROUP BY normalized_key
-                    HAVING COUNT(*) >= 2
+                        item_name,
+                        first_price,
+                        last_price,
+                        CASE WHEN first_price > 0
+                             THEN (last_price - first_price) / first_price
+                             ELSE 0
+                        END AS change_pct
+                    FROM first_last
+                    WHERE last_price > first_price
+                    ORDER BY change_pct DESC
+                    LIMIT 5
+                    """,
+                    cutoff,
                 )
-                SELECT
-                    normalized_key,
-                    item_name,
-                    first_price,
-                    last_price,
-                    CASE WHEN first_price > 0
-                         THEN (last_price - first_price) / first_price
-                         ELSE 0
-                    END AS change_pct
-                FROM first_last
-                WHERE last_price > first_price
-                ORDER BY change_pct DESC
-                LIMIT 5
-                """,
-                cutoff,
-            )
-            trending = [
-                TrendingItem(
-                    category=_extract_category_from_key(row["normalized_key"]),
-                    item_name=row["item_name"] or row["normalized_key"],
-                    change_pct=round(float(row["change_pct"] or 0), 4),
-                )
-                for row in trend_rows
-            ]
+                trending = [
+                    TrendingItem(
+                        category=_extract_category_from_key(row["normalized_key"]),
+                        item_name=row["item_name"] or row["normalized_key"],
+                        change_pct=round(float(row["change_pct"] or 0), 4),
+                    )
+                    for row in trend_rows
+                ]
+            except asyncpg.PostgresError as e:
+                logger.warning("[insights] trending fetch failed (best-effort): %s", e)
 
             # ---- Rare-set alerts (near-complete sets) ----
             rare_alerts: List[RareSetAlert] = []

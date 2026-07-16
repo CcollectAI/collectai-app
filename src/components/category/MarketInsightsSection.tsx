@@ -65,10 +65,15 @@ const MarketInsightsSection: React.FC<Props> = ({ deepDive, deepDiveLoading, col
           const max = Math.max(...series);
           const min = Math.min(...series);
           const range = max - min || 1;
+          // Inset by half the stroke width so the 2px line isn't clipped at the
+          // top/left/right/bottom edges of the Svg viewport.
+          const PAD = 1;
+          const w = chartWidth - PAD * 2;
+          const h = SPARK_HEIGHT - PAD * 2;
           return series
             .map((v, i) => {
-              const x = (i / (series.length - 1)) * chartWidth;
-              const y = SPARK_HEIGHT - ((v - min) / range) * SPARK_HEIGHT;
+              const x = PAD + (i / (series.length - 1)) * w;
+              const y = PAD + h - ((v - min) / range) * h;
               return `${x},${y}`;
             })
             .join(' ');
