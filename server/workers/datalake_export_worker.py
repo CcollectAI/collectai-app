@@ -79,6 +79,72 @@ def _row_to_arrow_safe(row) -> dict:
     return d
 
 
+# Bounded streaming: how many rows to hold in memory per Parquet part file.
+# 50k rows ≈ ~100 MB peak (rows + Arrow copy) — fits comfortably on the
+# t3.medium (~2.4 GB free) no matter how large the partition is. The old
+# single-shot `conn.fetch(SELECT *)` loaded the whole partition (2 GB+ for a
+# full month) and would OOM the box. Tunable via DATALAKE_EXPORT_BATCH_ROWS.
+EXPORT_BATCH_ROWS = int(os.getenv("DATALAKE_EXPORT_BATCH_ROWS", "50000"))
+
+
+def _part_key(s3_dir: str, idx: int) -> str:
+    """e.g. market_hits/year=2026/month=05 + idx 0 -> .../part-000.snappy.parquet"""
+    return f"{s3_dir}/part-{idx:03d}.snappy.parquet"
+
+
+async def _stream_export_to_s3(conn, s3, *, query: str, params: tuple, s3_dir: str):
+    """Stream a SELECT to S3 as one or more snappy Parquet part files using a
+    server-side cursor, so peak memory is bounded to EXPORT_BATCH_ROWS rows
+    regardless of partition size.
+
+    Writes part-000, part-001, … under s3_dir. The warm_tier reader globs
+    `part-*.snappy.parquet` with union_by_name, so multiple parts read back as
+    one logical table. Returns (total_rows, total_bytes, n_parts).
+    """
+    import pyarrow as pa  # type: ignore
+    import pyarrow.parquet as pq  # type: ignore
+
+    total_rows = 0
+    total_bytes = 0
+    part_idx = 0
+    # Server-side cursor must run inside a transaction. The partition is a
+    # closed month (no concurrent writes), so the held snapshot is safe.
+    async with conn.transaction():
+        cur = await conn.cursor(query, *params)
+        while True:
+            batch = await cur.fetch(EXPORT_BATCH_ROWS)
+            if not batch:
+                break
+            tbl = pa.Table.from_pylist([_row_to_arrow_safe(r) for r in batch])
+            with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as tmp:
+                tmp_path = Path(tmp.name)
+            try:
+                pq.write_table(tbl, tmp_path, compression="snappy")
+                size_bytes = tmp_path.stat().st_size
+                s3.upload_file(str(tmp_path), BUCKET, _part_key(s3_dir, part_idx))
+                total_rows += len(batch)
+                total_bytes += size_bytes
+                part_idx += 1
+            finally:
+                tmp_path.unlink(missing_ok=True)
+            del tbl, batch  # release before the next fetch
+    return total_rows, total_bytes, part_idx
+
+
+def _append_manifest(s3, entry: dict) -> None:
+    """Append one JSON line to the exports manifest (read-modify-write of a
+    single small file). Written only after all part files for a month upload
+    OK, so an interrupted run leaves no manifest entry and is safely re-run."""
+    existing_body = b""
+    try:
+        obj = s3.get_object(Bucket=BUCKET, Key=MANIFEST_KEY)
+        existing_body = obj["Body"].read()
+    except s3.exceptions.NoSuchKey:
+        pass
+    new_body = existing_body + (json.dumps(entry) + "\n").encode("utf-8")
+    s3.put_object(Bucket=BUCKET, Key=MANIFEST_KEY, Body=new_body)
+
+
 async def run_once() -> dict:
     """Export eligible partitions. Returns summary stats."""
     from app.worker_registry import record_run
@@ -156,55 +222,32 @@ async def run_once() -> dict:
             logger.info("[datalake_export] %s empty, skipping", part)
             continue
 
-        # Stream rows → Parquet file locally, then upload.
-        # For the 100k-row monthly size range this fits easily in memory;
-        # add a chunked batch iterator only when partitions exceed ~1M rows.
-        all_rows = await conn.fetch(f"SELECT * FROM public.{part}")
-        if not all_rows:
+        # Stream rows → Parquet part files (bounded memory). The old single-
+        # shot SELECT loaded the whole partition and would OOM the box at full
+        # month size; _stream_export_to_s3 caps peak memory to a single batch.
+        s3_dir = f"market_hits/year={year:04d}/month={month:02d}"
+        rows_written, size_bytes, n_parts = await _stream_export_to_s3(
+            conn, s3, query=f"SELECT * FROM public.{part}", params=(), s3_dir=s3_dir,
+        )
+        if rows_written == 0:
             continue
 
-        table = pa.Table.from_pylist([_row_to_arrow_safe(r) for r in all_rows])
-
-        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as tmp:
-            tmp_path = Path(tmp.name)
-        try:
-            pq.write_table(table, tmp_path, compression="snappy")
-            size_bytes = tmp_path.stat().st_size
-            sha256 = hashlib.sha256(tmp_path.read_bytes()).hexdigest()
-
-            s3_key = _partition_s3_key(part, year, month)
-            s3.upload_file(str(tmp_path), BUCKET, s3_key)
-
-            manifest_entry = {
-                "partition": part,
-                "s3_key": s3_key,
-                "rows": n_rows,
-                "bytes": size_bytes,
-                "sha256": sha256,
-                "exported_at": datetime.now(timezone.utc).isoformat(),
-            }
-            # Append to manifest via read-modify-write of a single small file.
-            # Acceptable for monthly cadence; if two exporters ever run concurrently
-            # we'd switch to S3 Object Lambda or a lock.
-            existing_body = b""
-            try:
-                obj = s3.get_object(Bucket=BUCKET, Key=MANIFEST_KEY)
-                existing_body = obj["Body"].read()
-            except s3.exceptions.NoSuchKey:
-                pass
-            new_body = existing_body + (json.dumps(manifest_entry) + "\n").encode("utf-8")
-            s3.put_object(Bucket=BUCKET, Key=MANIFEST_KEY, Body=new_body)
-
-            stats["exported"] += 1
-            stats["rows"] += n_rows
-            stats["bytes"] += size_bytes
-            stats["partitions"].append(part)
-            logger.info(
-                "[datalake_export] ✓ %s → s3://%s/%s  (%d rows, %.1f MB)",
-                part, BUCKET, s3_key, n_rows, size_bytes / 1024 / 1024,
-            )
-        finally:
-            tmp_path.unlink(missing_ok=True)
+        _append_manifest(s3, {
+            "partition": part,
+            "s3_dir": s3_dir,
+            "parts": n_parts,
+            "rows": rows_written,
+            "bytes": size_bytes,
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+        })
+        stats["exported"] += 1
+        stats["rows"] += rows_written
+        stats["bytes"] += size_bytes
+        stats["partitions"].append(part)
+        logger.info(
+            "[datalake_export] ✓ %s → s3://%s/%s/part-*  (%d rows, %d parts, %.1f MB)",
+            part, BUCKET, s3_dir, rows_written, n_parts, size_bytes / 1024 / 1024,
+        )
 
     # ----------------------------------------------------------------------
     # 2026-04-24: time-bucketed export for non-partitioned tables.
@@ -235,62 +278,41 @@ async def run_once() -> dict:
             if mid in exported:
                 continue
 
-            # Stream this month's rows. Still single-shot SELECT for now; if
-            # any bucket exceeds ~1M rows, switch to a chunked cursor (same
-            # threshold called out in the partition path above).
-            all_rows = await conn.fetch(
-                f"""
-                SELECT * FROM public.{table}
-                WHERE {time_col} >= make_date($1, $2, 1)
-                  AND {time_col} <  (make_date($1, $2, 1) + interval '1 month')
+            # Stream this month's rows → Parquet part files (bounded memory).
+            # price_predictions months are ~2M rows now — single-shot loaded
+            # all of it and would OOM; the cursor caps memory to one batch.
+            s3_dir = f"{s3_prefix}/year={year:04d}/month={month:02d}"
+            rows_written, size_bytes, n_parts = await _stream_export_to_s3(
+                conn, s3,
+                query=f"""
+                    SELECT * FROM public.{table}
+                    WHERE {time_col} >= make_date($1, $2, 1)
+                      AND {time_col} <  (make_date($1, $2, 1) + interval '1 month')
                 """,
-                year, month,
+                params=(year, month),
+                s3_dir=s3_dir,
             )
-            if not all_rows:
+            if rows_written == 0:
                 continue
 
-            table_arrow = pa.Table.from_pylist([_row_to_arrow_safe(row) for row in all_rows])
-            with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as tmp:
-                tmp_path = Path(tmp.name)
-            try:
-                pq.write_table(table_arrow, tmp_path, compression="snappy")
-                size_bytes = tmp_path.stat().st_size
-                sha256 = hashlib.sha256(tmp_path.read_bytes()).hexdigest()
-
-                s3_key = _bucket_s3_key(s3_prefix, year, month)
-                s3.upload_file(str(tmp_path), BUCKET, s3_key)
-
-                manifest_entry = {
-                    "partition": mid,        # stays as 'partition' so reader paths don't fork
-                    "table": table,
-                    "s3_key": s3_key,
-                    "rows": n_rows,
-                    "bytes": size_bytes,
-                    "sha256": sha256,
-                    "exported_at": datetime.now(timezone.utc).isoformat(),
-                }
-                # Same read-modify-write append as above. Refactor to a helper
-                # if a third call site appears.
-                existing_body = b""
-                try:
-                    obj = s3.get_object(Bucket=BUCKET, Key=MANIFEST_KEY)
-                    existing_body = obj["Body"].read()
-                except s3.exceptions.NoSuchKey:
-                    pass
-                new_body = existing_body + (json.dumps(manifest_entry) + "\n").encode("utf-8")
-                s3.put_object(Bucket=BUCKET, Key=MANIFEST_KEY, Body=new_body)
-
-                exported.add(mid)  # so we don't re-export within the same run
-                stats["exported"] += 1
-                stats["rows"] += n_rows
-                stats["bytes"] += size_bytes
-                stats["partitions"].append(mid)
-                logger.info(
-                    "[datalake_export] ✓ %s → s3://%s/%s  (%d rows, %.1f MB)",
-                    mid, BUCKET, s3_key, n_rows, size_bytes / 1024 / 1024,
-                )
-            finally:
-                tmp_path.unlink(missing_ok=True)
+            _append_manifest(s3, {
+                "partition": mid,        # stays as 'partition' so reader dedup doesn't fork
+                "table": table,
+                "s3_dir": s3_dir,
+                "parts": n_parts,
+                "rows": rows_written,
+                "bytes": size_bytes,
+                "exported_at": datetime.now(timezone.utc).isoformat(),
+            })
+            exported.add(mid)  # so we don't re-export within the same run
+            stats["exported"] += 1
+            stats["rows"] += rows_written
+            stats["bytes"] += size_bytes
+            stats["partitions"].append(mid)
+            logger.info(
+                "[datalake_export] ✓ %s → s3://%s/%s/part-*  (%d rows, %d parts, %.1f MB)",
+                mid, BUCKET, s3_dir, rows_written, n_parts, size_bytes / 1024 / 1024,
+            )
 
     await conn.close()
     record_run("datalake_export_worker", "ok", duration_s=0.0)
