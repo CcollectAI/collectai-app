@@ -92,6 +92,34 @@ def _part_key(s3_dir: str, idx: int) -> str:
     return f"{s3_dir}/part-{idx:03d}.snappy.parquet"
 
 
+def _purge_part_files(s3, s3_dir: str) -> int:
+    """Delete existing part-*.snappy.parquet directly under s3_dir. Returns count.
+
+    Deliberately narrow: only keys whose leaf matches the part naming
+    convention are removed, so a stray non-part object under the same prefix is
+    never touched. Failures are logged and swallowed — a purge that cannot run
+    must not abort the export; it just leaves the pre-existing stale-parts risk
+    in place for that run.
+    """
+    deleted = 0
+    try:
+        paginator = s3.get_paginator("list_objects_v2")
+        stale: list[dict] = []
+        for page in paginator.paginate(Bucket=BUCKET, Prefix=f"{s3_dir}/"):
+            for obj in page.get("Contents", []) or []:
+                leaf = obj["Key"].rsplit("/", 1)[-1]
+                if leaf.startswith("part-") and leaf.endswith(".snappy.parquet"):
+                    stale.append({"Key": obj["Key"]})
+        for i in range(0, len(stale), 1000):  # delete_objects caps at 1000 keys/call
+            s3.delete_objects(Bucket=BUCKET, Delete={"Objects": stale[i:i + 1000]})
+            deleted += len(stale[i:i + 1000])
+        if deleted:
+            logger.info("[datalake_export] purged %d stale part file(s) under %s", deleted, s3_dir)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[datalake_export] part purge failed for %s: %s", s3_dir, exc)
+    return deleted
+
+
 async def _stream_export_to_s3(conn, s3, *, query: str, params: tuple, s3_dir: str):
     """Stream a SELECT to S3 as one or more snappy Parquet part files using a
     server-side cursor, so peak memory is bounded to EXPORT_BATCH_ROWS rows
@@ -103,6 +131,14 @@ async def _stream_export_to_s3(conn, s3, *, query: str, params: tuple, s3_dir: s
     """
     import pyarrow as pa  # type: ignore
     import pyarrow.parquet as pq  # type: ignore
+
+    # Clear part files left by a previous attempt BEFORE writing part-000.
+    # Without this, a re-run producing FEWER parts than last time (smaller
+    # partition, larger batch size, or a resumed run) leaves stale
+    # higher-numbered parts behind — and warm_tier globs `part-*`, so those
+    # orphans get read back and silently double-count rows. Manifest dedup
+    # normally prevents a re-export, but a manual run bypasses it.
+    _purge_part_files(s3, s3_dir)
 
     total_rows = 0
     total_bytes = 0
