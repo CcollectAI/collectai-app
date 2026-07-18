@@ -35,17 +35,6 @@ import { MS_PER_WEEK } from "@/constants/time";
 
 const PAGE_SIZE = 20;
 
-// Mock data for when backend is unavailable
-const MOCK_NOTIFICATIONS: NotificationItem[] = [
-  { id: "n1", type: "price_alert", title: "Charizard VMAX price drop", body: "Down 12% to $185 — below your $200 target", data: {}, deep_link: null, read_at: null, created_at: new Date(Date.now() - 900000).toISOString() },
-  { id: "n2", type: "deal", title: "New deal on Pikachu Illustrator", body: "Listed at $42,500 on eBay — 15% below market", data: {}, deep_link: null, read_at: null, created_at: new Date(Date.now() - 3600000).toISOString() },
-  { id: "n3", type: "value_change", title: "Portfolio up 3.2% today", body: "Your collection gained $127 in value", data: {}, deep_link: null, read_at: null, created_at: new Date(Date.now() - 7200000).toISOString() },
-  { id: "n4", type: "achievement", title: "Achievement unlocked!", body: "Collector Level 5 — You've added 25 items", data: {}, deep_link: null, read_at: new Date().toISOString(), created_at: new Date(Date.now() - 86400000).toISOString() },
-  { id: "n5", type: "scarcity", title: "Scarcity alert: LEGO UCS Falcon", body: "Only 3 listings remain on tracked marketplaces", data: {}, deep_link: null, read_at: null, created_at: new Date(Date.now() - 172800000).toISOString() },
-  { id: "n6", type: "insight", title: "Weekly portfolio insight", body: "Your top gainer: Star Wars Black Series Boba Fett (+18%)", data: {}, deep_link: null, read_at: new Date().toISOString(), created_at: new Date(Date.now() - 259200000).toISOString() },
-  { id: "n7", type: "connection", title: "New follower", body: "AuroraCollector started following you", data: {}, deep_link: null, read_at: new Date().toISOString(), created_at: new Date(Date.now() - 345600000).toISOString() },
-  { id: "n8", type: "event", title: "Upcoming: Tokyo Toy Show", body: "Starts in 2 days — you marked interested", data: {}, deep_link: null, read_at: null, created_at: new Date(Date.now() - 432000000).toISOString() },
-];
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   price_alert: "trending-up",
@@ -105,14 +94,16 @@ function NotificationsScreen() {
         setTotalCount(data.total_count);
         setUnreadCount(data.unread_count);
       } catch (err) {
-        // logger.error, not .warn — warn is stripped from TestFlight builds, and
-        // the mock fallback below means a failure otherwise looks like success.
+        // logger.error, not .warn — warn is stripped from TestFlight builds.
         logger.error('[Notifications] fetch failed:', err);
-        // Fall back to mock data when backend is unavailable
+        // NO mock fallback. This used to substitute 8 fabricated notifications
+        // (invented price drops, deals, followers) that a user could not tell
+        // from real ones — so a total backend outage rendered as a healthy,
+        // populated inbox. An empty list is honest; the empty state renders.
         if (replace && offset === 0) {
-          setNotifications(MOCK_NOTIFICATIONS);
-          setTotalCount(MOCK_NOTIFICATIONS.length);
-          setUnreadCount(MOCK_NOTIFICATIONS.filter((n) => !n.read_at).length);
+          setNotifications([]);
+          setTotalCount(0);
+          setUnreadCount(0);
         }
       }
     },
