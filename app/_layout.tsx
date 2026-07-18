@@ -320,7 +320,11 @@ function RootStack() {
         <Stack.Screen name="twitch" options={iconOnlyHeader} />
         <Stack.Screen name="build-paint-projects" options={iconOnlyHeader} />
         <Stack.Screen name="categories/index" options={iconOnlyHeader} />
-        <Stack.Screen name="categories/[categoryId]" options={iconOnlyHeader} />
+        {/* headerShown:false at registration (not just in-component) so the
+            native glass header never flashes during the push transition — the
+            screens render their own flat ScreenHeader instead. */}
+        <Stack.Screen name="categories/[categoryId]" options={{ headerShown: false }} />
+        <Stack.Screen name="category-browse" options={{ headerShown: false }} />
         <Stack.Screen name="projects/[id]" options={iconOnlyHeader} />
         <Stack.Screen name="barcode-scan" options={iconOnlyHeader} />
         <Stack.Screen name="quickscan" options={iconOnlyHeader} />

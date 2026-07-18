@@ -23,8 +23,12 @@ import {
   ActivityIndicator,
   RefreshControl,
   FlatList,
+  Modal,
+  ScrollView,
   useWindowDimensions,
+  type ListRenderItemInfo,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, Stack, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { collectorsApi } from "@/api/collectorsApi";
@@ -36,23 +40,21 @@ import { useSettings } from "@/lib/settings";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { colors as tokens } from "@/theme/tokens";
 import CategorySortChips, { type CatalogSortKey } from "@/components/category/CategorySortChips";
-import { cleanCatalogTitle } from "@/lib/catalogPresentation";
+import ScreenHeader from "@/components/ScreenHeader";
+import { cleanCatalogItem } from "@/lib/catalogPresentation";
 import { formatPrice } from "@/lib/format";
 import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
 
 const PAGE_SIZE = 40;
 
-// Fixed tile geometry so every card occupies the SAME footprint regardless of
-// the source image's shape. list padding (10*2) + per-card margin (6*2 each) →
-// 44px of fixed horizontal chrome across a 2-column row. Card width is computed
-// inside the component via useWindowDimensions() so it tracks rotation / iPad
+// Match the set-detail grid (app/catalog-set/[setCode].tsx) EXACTLY so "See all"
+// and a collection open into the same Instagram-discover-style square image
+// grid: 3 columns, a 2px gutter, square tiles that `contain` the card art.
+// Tile size is computed via useWindowDimensions() so it tracks rotation /
 // split-view instead of freezing at the module-load width.
-const CARD_CHROME = 44;
-// Standard trading-card ratio (63×88mm). Art fills the full card height at this
-// ratio and uses `contain`, so the WHOLE card shows (portrait, landscape, or
-// full-art) — no more cover-cropping the name/HP off the top and bottom.
-const CARD_ART_RATIO = 63 / 88;
+const NUM_COLS = 3;
+const GAP = 2;
 
 function CategoryBrowseScreen() {
   const { categoryId, sort: sortParam } = useLocalSearchParams<{ categoryId: string; sort?: string }>();
@@ -61,10 +63,16 @@ function CategoryBrowseScreen() {
   const { settings } = useSettings();
   // Recomputes on rotation / split-view instead of freezing at module load.
   const { width: screenW } = useWindowDimensions();
-  const cardW = (screenW - CARD_CHROME) / 2;
+  const insets = useSafeAreaInsets();
+  const tile = Math.floor((screenW - GAP * (NUM_COLS - 1)) / NUM_COLS);
 
   const catMeta = getCategoryById(categoryId as CategoryId);
   const catName = catMeta?.name ?? categoryId ?? "Category";
+
+  // Full-screen swipe viewer — same as the set-detail grid. Tapping a tile
+  // opens the viewer at that index so the user can swipe left/right through the
+  // whole (paginated) catalog instead of bouncing back to the grid each time.
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   const [items, setItems] = useState<CatalogItemData[]>([]);
   const [total, setTotal] = useState<number | null>(null);
@@ -153,47 +161,95 @@ function CategoryBrowseScreen() {
     [router],
   );
 
+  const openViewer = useCallback((index: number) => setViewerIndex(index), []);
+  const closeViewer = useCallback(() => setViewerIndex(null), []);
+
+  // One full-screen page of the swipe viewer: hero image + title + tags + price,
+  // plus a deep-link to the full museum detail (market view + affiliate links).
+  const renderViewerPage = useCallback(
+    ({ item }: ListRenderItemInfo<CatalogItemData>) => {
+      const clean = cleanCatalogItem({
+        title: item.title,
+        brand: item.brand,
+        rarity: item.rarity,
+        setCode: item.set_code,
+      });
+      return (
+        <ScrollView
+          style={{ width: screenW }}
+          contentContainerStyle={[s.viewerPage, { paddingTop: insets.top + 56, paddingBottom: insets.bottom + 32 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {item.image_url ? (
+            <Image source={{ uri: item.image_url }} style={s.viewerHero} resizeMode="contain" accessibilityIgnoresInvertColors />
+          ) : (
+            <View style={[s.viewerHero, s.placeholder, { backgroundColor: tokens.brand.base + "12" }]}>
+              <Ionicons name="cube-outline" size={48} color={tokens.brand.base} />
+            </View>
+          )}
+          <Text style={[s.viewerTitle, { color: colors.text }]}>{clean.title}</Text>
+          {clean.tags.length > 0 && (
+            <View style={s.badgeRow}>
+              {clean.tags.map((b) => (
+                <View key={b} style={[s.badge, { backgroundColor: colors.accent + "20" }]}>
+                  <Text style={[s.badgeText, { color: tokens.brand.deep }]} numberOfLines={1}>{b}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          {item.estimated_price != null && (
+            <Text style={[s.viewerPrice, { color: colors.text }]}>~{formatPrice(item.estimated_price)}</Text>
+          )}
+          <AnimatedPressable
+            style={[s.viewerCta, { borderColor: colors.border }]}
+            onPress={() => { closeViewer(); openMuseum(item); }}
+            accessibilityRole="button"
+            accessibilityLabel={`View full details for ${item.title}`}
+          >
+            <Text style={[s.viewerCtaText, { color: colors.accent }]}>View full details</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.accent} />
+          </AnimatedPressable>
+        </ScrollView>
+      );
+    },
+    [screenW, insets.top, insets.bottom, colors, closeViewer, openMuseum],
+  );
+
+  // Square image tile — identical structure to the set-detail grid so "See all"
+  // and a collection look and behave the same. Per-tile art only; tap opens the
+  // full-screen swipe viewer (price + details are one more tap away).
   const renderItem = useCallback(
-    ({ item }: { item: CatalogItemData }) => (
+    ({ item, index }: { item: CatalogItemData; index: number }) => (
       <AnimatedPressable
-        style={[s.card, { width: cardW, backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => openMuseum(item)}
+        style={{
+          width: tile,
+          height: tile,
+          marginRight: (index + 1) % NUM_COLS === 0 ? 0 : GAP,
+          marginBottom: GAP,
+          backgroundColor: colors.card,
+        }}
+        onPress={() => openViewer(index)}
         accessibilityRole="button"
         accessibilityLabel={`View ${item.title}`}
       >
         {item.image_url ? (
-          <Image source={{ uri: item.image_url }} style={s.art} resizeMode="contain" accessibilityIgnoresInvertColors />
+          <Image source={{ uri: item.image_url }} style={s.fill} resizeMode="contain" accessibilityIgnoresInvertColors />
         ) : (
-          <View style={[s.art, s.artEmpty, { backgroundColor: tokens.brand.base + "12" }]}>
-            <Ionicons name="cube-outline" size={28} color={tokens.brand.base} />
-            {/* No catalog art yet — user photos will fill these as the database grows. */}
-            <Text style={s.comingSoon}>Image coming soon</Text>
+          <View style={[s.fill, s.placeholder, { backgroundColor: tokens.brand.base + "12" }]}>
+            <Ionicons name="cube-outline" size={26} color={tokens.brand.base} />
           </View>
         )}
-        <View style={s.meta}>
-          <Text style={[s.nm, { color: colors.text }]} numberOfLines={2}>{cleanCatalogTitle(item.title, { brand: item.brand, setCode: item.set_code })}</Text>
-          {item.estimated_price != null ? (
-            <Text style={s.pr}>~{formatPrice(item.estimated_price)}</Text>
-          ) : (
-            <Text style={[s.tag, { color: colors.muted }]} numberOfLines={1}>
-              {item.rarity || item.set_code || "Explore"}
-            </Text>
-          )}
-        </View>
       </AnimatedPressable>
     ),
-    [colors, openMuseum, cardW],
+    [tile, colors.card, openViewer],
   );
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen
-        options={{
-          title: `${catName} catalog`,
-          headerTintColor: colors.text,
-          headerStyle: { backgroundColor: colors.background },
-        }}
-      />
+      {/* Native header off — replaced by the flat ScreenHeader below so the
+          back/chat/settings icons don't get the iOS 26 glass capsules. */}
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title={catName} />
 
       {/* Search */}
       <View style={[s.searchRow, { borderColor: colors.border, backgroundColor: colors.card }]}>
@@ -226,12 +282,14 @@ function CategoryBrowseScreen() {
         </View>
       ) : (
         <FlatList
+          // Stable key tied to the column count — RN forbids changing
+          // numColumns on a live FlatList; a key makes any change remount it.
+          key={`grid-${NUM_COLS}`}
           data={items}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          numColumns={2}
-          columnWrapperStyle={s.column}
-          contentContainerStyle={s.list}
+          numColumns={NUM_COLS}
+          contentContainerStyle={s.grid}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={
@@ -259,6 +317,37 @@ function CategoryBrowseScreen() {
         />
       )}
 
+      {/* Full-screen swipe viewer — page left/right through the whole catalog. */}
+      {viewerIndex != null && (
+        <Modal visible animationType="slide" onRequestClose={closeViewer}>
+          <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <FlatList
+              data={items}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              initialScrollIndex={viewerIndex}
+              getItemLayout={(_, index) => ({ length: screenW, offset: screenW * index, index })}
+              keyExtractor={(item) => `v_${item.id}`}
+              renderItem={renderViewerPage}
+              onEndReached={handleEndReached}
+              onEndReachedThreshold={0.5}
+              windowSize={3}
+              initialNumToRender={1}
+              maxToRenderPerBatch={2}
+            />
+            <AnimatedPressable
+              style={[s.viewerClose, { top: insets.top + 8 }]}
+              onPress={closeViewer}
+              accessibilityRole="button"
+              accessibilityLabel="Back to grid"
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </AnimatedPressable>
+          </View>
+        </Modal>
+      )}
+
       <QuickNavBar />
     </View>
   );
@@ -279,7 +368,8 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginHorizontal: 16,
-    marginTop: 12,
+    // Sits just below the in-body ScreenHeader now (no native header to clear).
+    marginTop: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
@@ -287,32 +377,47 @@ const s = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, padding: 0 },
   loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
-  list: { paddingHorizontal: 10, paddingBottom: 96 },
-  // Left-align each row so a lone last card sits in its column instead of
-  // stretching to full width (the flex:1 + numColumns odd-item gotcha).
-  column: { justifyContent: "flex-start" },
-  // Museum card — same visual language as the category rail (mockup `.card`).
-  // Fixed width (not flex:1) so every tile is identical and odd counts don't
-  // blow up the last card.
-  card: {
-    // width is applied inline (responsive via useWindowDimensions).
-    margin: 6,
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  // Full card height at the standard card ratio + `contain` (in renderItem) so
-  // nothing is cropped. The faint tint fills the letterbox gutters when a
-  // non-portrait card doesn't fill the frame.
-  art: { width: "100%", aspectRatio: CARD_ART_RATIO, backgroundColor: tokens.brand.base + "0A" },
-  artEmpty: { alignItems: "center", justifyContent: "center" },
-  comingSoon: { fontSize: 10, fontWeight: "600", marginTop: 6, color: tokens.brand.deep, opacity: 0.7 },
-  meta: { paddingVertical: 8, paddingHorizontal: 10 },
-  nm: { fontSize: 12, fontWeight: "700" },
-  pr: { fontSize: 15, fontWeight: "900", marginTop: 2, color: tokens.brand.deep },
-  tag: { fontSize: 9, marginTop: 2 },
+  // Edge-to-edge square grid (mirrors the set-detail grid): tile size + gutters
+  // are applied inline in renderItem, so the container just owns the tab-bar
+  // bottom clearance.
+  // paddingTop keeps the edge-to-edge grid from butting right up against the
+  // sort chips (All / Most valuable / …). The tiles have white card backgrounds,
+  // so without a clear gap that white field merges into the (also light) chip
+  // row and reads as encroaching on the chips.
+  grid: { paddingTop: 24, paddingBottom: 96 },
+  fill: { width: "100%", height: "100%" },
+  placeholder: { alignItems: "center", justifyContent: "center" },
   footerSpinner: { marginVertical: 16 },
   emptyContainer: { alignItems: "center", paddingTop: 64, paddingHorizontal: 32 },
   emptyTitle: { fontSize: 16, fontWeight: "700", marginTop: 12 },
   emptySubtitle: { fontSize: 13, textAlign: "center", marginTop: 4 },
+  // Swipe viewer (mirrors app/catalog-set/[setCode].tsx).
+  viewerPage: { paddingHorizontal: 20, alignItems: "center" },
+  viewerHero: { width: "100%", height: 340, marginBottom: 20 },
+  viewerTitle: { fontSize: 22, fontWeight: "800", textAlign: "center" },
+  badgeRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 6, marginTop: 10 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  badgeText: { fontSize: 12, fontWeight: "700" },
+  viewerPrice: { fontSize: 26, fontWeight: "800", marginTop: 16 },
+  viewerCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 22,
+    borderWidth: 1,
+  },
+  viewerCtaText: { fontSize: 14, fontWeight: "700" },
+  viewerClose: {
+    position: "absolute",
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

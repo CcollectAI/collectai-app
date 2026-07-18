@@ -7,7 +7,7 @@
  */
 import React, { useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, type LayoutChangeEvent } from 'react-native';
-import Svg, { Polyline } from 'react-native-svg';
+import Svg, { Polyline, Polygon, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { formatPrice } from '@/lib/format';
 import { colors as tokens } from '@/theme/tokens';
 import type { AppTheme } from '@/hooks/useAppTheme';
@@ -25,7 +25,7 @@ const WINDOW_DAYS = 30;
 // Below this many real (>0) daily points, a single-line "trend" and a plotted
 // sparkline are just noise off one or two samples — we show the average alone.
 const MIN_POINTS_FOR_TREND = 3;
-const SPARK_HEIGHT = 34;
+const SPARK_HEIGHT = 44;
 
 const MarketInsightsSection: React.FC<Props> = ({ deepDive, deepDiveLoading, colors }) => {
   const [chartWidth, setChartWidth] = useState(0);
@@ -58,27 +58,34 @@ const MarketInsightsSection: React.FC<Props> = ({ deepDive, deepDiveLoading, col
   // every thin category looked broken; the section simply doesn't render.
   if (!deepDiveLoading && !hasData) return null;
 
-  // Full-width sparkline points (only plotted when we have a real series).
-  const sparkPoints =
+  // Full-width sparkline geometry (only computed when we have a real series):
+  //   line — the polyline points
+  //   area — line + baseline corners, for the soft gradient fill underneath
+  //   last — the final point, for the endpoint dot
+  const spark =
     hasTrend && chartWidth > 0
       ? (() => {
           const max = Math.max(...series);
           const min = Math.min(...series);
           const range = max - min || 1;
-          // Inset by half the stroke width so the 2px line isn't clipped at the
-          // top/left/right/bottom edges of the Svg viewport.
-          const PAD = 1;
+          // Inset so neither the 2.5px stroke nor the 3px endpoint dot clips at
+          // the top/bottom/left/right edges of the Svg viewport.
+          const PAD = 4;
           const w = chartWidth - PAD * 2;
           const h = SPARK_HEIGHT - PAD * 2;
-          return series
-            .map((v, i) => {
-              const x = PAD + (i / (series.length - 1)) * w;
-              const y = PAD + h - ((v - min) / range) * h;
-              return `${x},${y}`;
-            })
-            .join(' ');
+          const pts = series.map((v, i) => ({
+            x: PAD + (i / (series.length - 1)) * w,
+            y: PAD + h - ((v - min) / range) * h,
+          }));
+          const line = pts.map((p) => `${p.x},${p.y}`).join(' ');
+          // Close the shape down to the baseline so the gradient fills the area
+          // beneath the line, not the whole box.
+          const first = pts[0];
+          const lastP = pts[pts.length - 1];
+          const area = `${line} ${lastP.x},${SPARK_HEIGHT} ${first.x},${SPARK_HEIGHT}`;
+          return { line, area, last: lastP };
         })()
-      : '';
+      : null;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -108,16 +115,28 @@ const MarketInsightsSection: React.FC<Props> = ({ deepDive, deepDiveLoading, col
               style={styles.spark}
               onLayout={(e: LayoutChangeEvent) => setChartWidth(e.nativeEvent.layout.width)}
             >
-              {sparkPoints !== '' && (
+              {spark && (
                 <Svg width={chartWidth} height={SPARK_HEIGHT}>
+                  <Defs>
+                    <LinearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+                      <Stop offset="0" stopColor={trendColor} stopOpacity={0.24} />
+                      <Stop offset="1" stopColor={trendColor} stopOpacity={0} />
+                    </LinearGradient>
+                  </Defs>
+                  {/* Soft area fill under the line for depth. */}
+                  <Polygon points={spark.area} fill="url(#sparkFill)" stroke="none" />
+                  {/* The trend line itself. */}
                   <Polyline
-                    points={sparkPoints}
+                    points={spark.line}
                     fill="none"
                     stroke={trendColor}
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     strokeLinejoin="round"
                     strokeLinecap="round"
                   />
+                  {/* Endpoint marker — anchors the eye at the latest value. */}
+                  <Circle cx={spark.last.x} cy={spark.last.y} r="3" fill={trendColor} />
+                  <Circle cx={spark.last.x} cy={spark.last.y} r="5.5" fill={trendColor} fillOpacity={0.18} />
                 </Svg>
               )}
             </View>

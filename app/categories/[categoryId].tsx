@@ -30,7 +30,7 @@ import {
   StyleSheet,
   RefreshControl,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type CategoryStoreData } from '@/data';
 import { getCategoryById, getRelatedCategories } from '@/data/categories';
@@ -41,6 +41,7 @@ import { logAuthState, logLoad, startTimer } from '@/utils/diagnostics';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import ScreenHeader from '@/components/ScreenHeader';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import {
   CategoryHeaderCard,
@@ -181,6 +182,11 @@ function CategoryStoreScreen() {
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
+      {/* Native header off — flat ScreenHeader instead (no iOS 26 glass on the
+          back/chat/settings icons). Title-less: the teal banner below already
+          names the category. */}
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader />
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}

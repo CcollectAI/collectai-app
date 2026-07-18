@@ -663,6 +663,11 @@ const ItemsScreen: React.FC = () => {
     if (hasEverHadItems !== true) {
       return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+          {/* Header (chat + settings) stays put even on the first-frame hero so
+              it never disappears between cold-start states. */}
+          <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+            <ItemsGridHeader portfolioTotal={portfolioTotal} />
+          </View>
           <View style={{ flex: 1, justifyContent: 'center' }}>
             <ItemsEmptyState />
           </View>
@@ -704,6 +709,11 @@ const ItemsScreen: React.FC = () => {
   if (isFirstRun) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        {/* Keep the top-right chat + settings icons here too so the empty state
+            matches every other screen (the grid path renders the same header). */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+          <ItemsGridHeader portfolioTotal={portfolioTotal} />
+        </View>
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
           refreshControl={

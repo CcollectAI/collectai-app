@@ -18,7 +18,9 @@ export function getCurrencySymbol(currency: Currency): string {
 
 /** Locale lookup for each currency */
 const CURRENCY_LOCALE: Record<Currency, NumberLocale> = {
-  EUR: 'de-DE',
+  // nl-NL renders EUR with the symbol on the LEFT ("€ 5", "€ 1.234") — de-DE
+  // put it on the right ("5 €"). Euro-on-left is the app-wide convention.
+  EUR: 'nl-NL',
   USD: 'en-US',
   JPY: 'ja-JP',
   GBP: 'en-US',

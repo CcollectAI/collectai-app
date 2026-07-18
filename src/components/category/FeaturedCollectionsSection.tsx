@@ -43,14 +43,32 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
 
   useEffect(() => {
     let cancelled = false;
-    getCatalogCollectionsCached(categoryId, 12, groupBy)
-      .then((data) => {
-        if (cancelled) return;
-        const arr = Array.isArray(data?.collections) ? data.collections : [];
-        setItems(arr);
-      })
-      .catch((err) => logger.warn('[FeaturedCollections] catalog fetch failed:', err))
-      .finally(() => { if (!cancelled) setLoaded(true); });
+    // Cold-start contention (see CategoryOverviewRail): the mount request burst
+    // can push this fast collections call past the httpClient's 5s timeout and
+    // abort it. That used to drop the carousel to its static fallback (or hide
+    // it). A warm retry returns the real catalog collections in ~0.3s, so retry
+    // a transient abort before giving up.
+    const isAbort = (e: unknown) => e instanceof Error && e.name === 'AbortError';
+    (async () => {
+      for (let attempt = 0; attempt <= 2 && !cancelled; attempt++) {
+        try {
+          const data = await getCatalogCollectionsCached(categoryId, 12, groupBy);
+          if (cancelled) return;
+          const arr = Array.isArray(data?.collections) ? data.collections : [];
+          setItems(arr);
+          setLoaded(true);
+          return;
+        } catch (err) {
+          if (isAbort(err) && attempt < 2) {
+            await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+            continue;
+          }
+          logger.warn('[FeaturedCollections] catalog fetch failed:', err);
+          if (!cancelled) setLoaded(true);
+          return;
+        }
+      }
+    })();
     return () => { cancelled = true; };
   }, [categoryId, groupBy]);
 
