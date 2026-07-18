@@ -15,8 +15,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
+from app.lib.bg_tasks import spawn_bg
 from app.agents.adapters.ebay_caller import EbayCaller
 from app.agents.adapters.tcgplayer_caller import TCGPlayerCaller
 from app.agents.adapters.firecrawl_caller import FirecrawlCaller
@@ -84,6 +86,16 @@ from app.agents.marketplace_helpers import (  # noqa: F401
 )
 
 logger = logging.getLogger(__name__)
+
+# Overall wall-clock budget for a live (cache-miss) aggregate search. Fast API
+# adapters (eBay, TCGPlayer) finish in ~1-2s; slow scrapers (crawl4ai, etc.)
+# can take 8s+ and were dragging the whole gather. Cap the wall-clock and
+# return whatever finished in time — stragglers are cancelled for THIS request
+# (the next identical search reuses the 6h cache). Override via env if needed.
+try:
+    _SEARCH_BUDGET_SECONDS = float(os.getenv("MARKETPLACE_SEARCH_BUDGET_S", "5.0"))
+except (TypeError, ValueError):
+    _SEARCH_BUDGET_SECONDS = 5.0
 
 
 # ---------------------------------------------------------------------------
@@ -369,21 +381,54 @@ class MarketplaceAgent:
         successful_sources = 0
         source_errors: List[str] = []
 
-        # Execute all adapter queries concurrently
-        results = await asyncio.gather(
-            *[task for _, task in tasks],
-            return_exceptions=True,
+        # Execute all adapter queries concurrently, but cap the overall
+        # wall-clock so one slow scraper can't drag out the whole search.
+        # Anything still pending when the budget elapses is cancelled and
+        # counted as a (soft) source error — the fast adapters' results are
+        # returned immediately. This is the dominant lever on search latency.
+        named = [(name, asyncio.ensure_future(coro)) for name, coro in tasks]
+        _done, pending = await asyncio.wait(
+            [t for _, t in named],
+            timeout=_SEARCH_BUDGET_SECONDS,
+            return_when=asyncio.ALL_COMPLETED,
         )
 
-        for (source_name, _), result in zip(tasks, results):
-            if isinstance(result, Exception):
-                logger.error("[MarketplaceAgent] %s failed: %s", source_name, result)
-                source_errors.append(source_name)
-            elif isinstance(result, list):
+        for name, t in named:
+            if t in pending:
+                t.cancel()
+                source_errors.append(name)
+                logger.info(
+                    "[MarketplaceAgent] %s exceeded %.1fs budget — dropped from this search",
+                    name, _SEARCH_BUDGET_SECONDS,
+                )
+                continue
+            try:
+                result = t.result()
+            except asyncio.CancelledError:
+                source_errors.append(name)
+                continue
+            except Exception as exc:
+                logger.error("[MarketplaceAgent] %s failed: %s", name, exc)
+                source_errors.append(name)
+                continue
+            if isinstance(result, list):
                 successful_sources += 1
                 all_hits.extend(result)
             else:
-                logger.warning("[MarketplaceAgent] %s returned unexpected type: %s", source_name, type(result))
+                logger.warning("[MarketplaceAgent] %s returned unexpected type: %s", name, type(result))
+
+        # Reap cancelled stragglers so the event loop doesn't log
+        # "Task was destroyed but it is pending"; don't block the response on
+        # them (cancellation resolves promptly for cooperative async I/O).
+        if pending:
+            # spawn_bg, not bare ensure_future — a bare task holds no strong
+            # reference and can be GC'd mid-await, and its failures are
+            # swallowed silently. This is the pattern the 2026-07-16 audit
+            # removed everywhere else (see app/lib/bg_tasks.py).
+            spawn_bg(
+                asyncio.gather(*pending, return_exceptions=True),
+                "marketplace_straggler_reap",
+            )
 
         # Deduplicate and score
         scored_hits, dedup_count = dedup_and_score(all_hits, condition=condition)

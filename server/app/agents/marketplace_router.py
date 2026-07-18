@@ -10,7 +10,7 @@ import logging
 from typing import List, Optional
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
@@ -61,6 +61,7 @@ class CompsRequest(BaseModel):
 @router.post("/search")
 async def marketplace_search(
     request: MarketSearchRequest,
+    background: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_search_user_limit),
 ):
@@ -91,12 +92,10 @@ async def marketplace_search(
             region=region,
         )
 
-        # Persist new hits to market_hits if DB is configured
+        # Persist new hits to market_hits AFTER the response is sent so the DB
+        # write never sits in the user-facing latency path.
         if db_configured() and result.hits:
-            try:
-                await _persist_hits(result.hits, user_id)
-            except asyncpg.PostgresError:
-                logger.warning("Failed to persist market hits to DB")
+            background.add_task(_persist_hits_bg, result.hits, user_id)
 
         # Build affiliate URLs + shipping estimates for each hit
         hits_out = []
@@ -171,20 +170,10 @@ async def marketplace_search(
                 hits_out.sort(key=lambda h: (h.get("price") is None, -(h.get("price") or 0)))
             # "newest" and "relevance" keep the default order from the agent
 
-        # Record demand signal with geo enrichment (best-effort)
-        try:
-            from app.features.data_moat import record_demand_signal, get_user_geo
-            geo_region, geo_country = await get_user_geo(user_id)
-            await record_demand_signal(
-                signal_type="search_query",
-                category=request.category,
-                query_text=request.query,
-                user_id=user_id,
-                region=geo_region,
-                country_code=geo_country,
-            )
-        except Exception:
-            pass
+        # Record demand signal with geo enrichment AFTER the response is sent.
+        background.add_task(
+            _record_search_demand_bg, request.category, request.query, user_id,
+        )
 
         return {
             "hits": hits_out,
@@ -320,6 +309,36 @@ async def adapter_health() -> dict:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+async def _persist_hits_bg(scored_hits: list, user_id: str) -> None:
+    """Background-task wrapper for _persist_hits: never raise into the task
+    runner (any failure is best-effort and must not surface to the user)."""
+    try:
+        await _persist_hits(scored_hits, user_id)
+    except asyncpg.PostgresError:
+        logger.warning("Failed to persist market hits to DB")
+    except Exception:
+        logger.exception("Unexpected error persisting market hits")
+
+
+async def _record_search_demand_bg(
+    category: Optional[str], query: str, user_id: str
+) -> None:
+    """Background-task wrapper for demand-signal recording (best-effort)."""
+    try:
+        from app.features.data_moat import record_demand_signal, get_user_geo
+        geo_region, geo_country = await get_user_geo(user_id)
+        await record_demand_signal(
+            signal_type="search_query",
+            category=category,
+            query_text=query,
+            user_id=user_id,
+            region=geo_region,
+            country_code=geo_country,
+        )
+    except Exception:
+        logger.debug("Demand signal recording failed (best-effort)", exc_info=True)
+
 
 async def _persist_hits(scored_hits: list, user_id: str) -> None:
     """Write scored market hits into the market_hits table.
