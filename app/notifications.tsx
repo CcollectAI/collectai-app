@@ -105,7 +105,9 @@ function NotificationsScreen() {
         setTotalCount(data.total_count);
         setUnreadCount(data.unread_count);
       } catch (err) {
-        logger.warn('[Notifications] fetch failed:', err);
+        // logger.error, not .warn — warn is stripped from TestFlight builds, and
+        // the mock fallback below means a failure otherwise looks like success.
+        logger.error('[Notifications] fetch failed:', err);
         // Fall back to mock data when backend is unavailable
         if (replace && offset === 0) {
           setNotifications(MOCK_NOTIFICATIONS);

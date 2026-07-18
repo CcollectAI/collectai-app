@@ -105,7 +105,10 @@ function CategoryStoreScreen() {
     setDeepDiveLoading(true);
     dataProvider.getCategoryDeepDive(categoryId)
       .then(setDeepDive)
-      .catch((err) => { logger.info('[Category] deep dive fetch error:', err); setDeepDive(null); })
+      // logger.error, not .info — info/warn are stripped from TestFlight builds,
+      // so this failure was invisible on device for two days while the card
+      // silently rendered nothing (MarketInsightsSection returns null on !hasData).
+      .catch((err) => { logger.error('[Category] deep dive fetch error:', err); setDeepDive(null); })
       .finally(() => setDeepDiveLoading(false));
   }, [categoryId]);
 

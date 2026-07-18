@@ -253,7 +253,12 @@ export async function isFollowingCategory(categoryId: string): Promise<boolean> 
   }
 }
 
+// Delegates to collectorsApi.getCategoryDeepDive (src/api/miscApi.ts) instead
+// of building the request here. The hand-rolled version inherited httpClient's
+// 5s default, but a cold deep-dive runs a 1M+ row aggregation — so the card
+// timed out, the screen swallowed the rejection into logger.info (stripped in
+// TestFlight), and the section rendered nothing. Keeping one implementation
+// means the 20s timeout and the URL encoding can't drift apart again.
 export async function getCategoryDeepDive(categoryId: string, days?: number): Promise<Record<string, unknown>> {
-  const params = days ? `?days=${days}` : '';
-  return await collectorsApi.get(`/analytics/categories/${categoryId}/deep-dive${params}`) as Record<string, unknown>;
+  return await collectorsApi.getCategoryDeepDive(categoryId, days) as Record<string, unknown>;
 }
