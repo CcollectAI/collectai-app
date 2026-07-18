@@ -115,7 +115,11 @@ function EventsScreen() {
     () => events.filter((e) => {
       if (searchQuery && !e.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (kindFilter && e.kind !== kindFilter) return false;
-      if (followedFilterActive && (!e.categoryId || !followedCategoryIds.has(e.categoryId))) return false;
+      // Only hide an event that HAS a category the user doesn't follow. An
+      // event with NO category is unknown, not unwanted — hiding it made every
+      // user-created event invisible, because create-event leaves category_id
+      // null. You'd create an event, it would save fine, and never appear.
+      if (followedFilterActive && e.categoryId && !followedCategoryIds.has(e.categoryId)) return false;
       return true;
     }),
     [events, searchQuery, kindFilter, followedFilterActive, followedCategoryIds],
