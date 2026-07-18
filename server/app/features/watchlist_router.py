@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.features.pagination import pagination_params
+from app.lib.bg_tasks import spawn_bg
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
 
@@ -18,6 +19,25 @@ router = APIRouter(prefix="/watchlist", tags=["Watchlist"])
 
 _watchlist_write_limit = per_user_rate_limit(30, window_seconds=60, scope="watchlist_write")
 logger = logging.getLogger(__name__)
+
+
+async def _record_watchlist_demand(user_id: str, category, item_key) -> None:
+    """Best-effort demand-signal write, run as a background task after the
+    watchlist INSERT has committed (see add_to_watchlist). Never raises into
+    the request path — failures are analytics-only."""
+    try:
+        from app.features.data_moat import record_demand_signal, get_user_geo
+        region, country = await get_user_geo(user_id)
+        await record_demand_signal(
+            signal_type="watchlist_add",
+            category=category,
+            item_key=item_key,
+            user_id=user_id,
+            region=region,
+            country_code=country,
+        )
+    except Exception as e:
+        logger.debug("[watchlist] demand signal recording failed: %s", e)
 
 
 class WatchlistItem(BaseModel):
@@ -164,22 +184,22 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
                 )
                 logger.info("[watchlist] Added item: id=%s, user=%s", item.id, user_id)
 
-                # Record demand signal with geo enrichment (best-effort)
-                try:
-                    from app.features.data_moat import record_demand_signal, get_user_geo
-                    region, country = await get_user_geo(user_id)
-                    await record_demand_signal(
-                        signal_type="watchlist_add",
-                        category=payload.category,
-                        item_key=payload.name or payload.item_id,
-                        user_id=user_id,
-                        region=region,
-                        country_code=country,
-                    )
-                except Exception as e:
-                    logger.debug("[watchlist] demand signal recording failed: %s", e)
-
-                return item
+            # The INSERT is committed. Record the demand signal (geo lookup +
+            # insert = two more pooled round-trips) OFF the request's critical
+            # path — it was running synchronously before `return`, and under
+            # pooler pressure pushed the whole call past the mobile client's 5s
+            # timeout, so adds appeared to "fail" while the row was (or wasn't)
+            # written. Fire-and-forget keeps the user-facing add fast and
+            # reliable; the signal is best-effort analytics, not user data.
+            spawn_bg(
+                _record_watchlist_demand(
+                    user_id=user_id,
+                    category=payload.category,
+                    item_key=payload.name or payload.item_id,
+                ),
+                "watchlist_demand",
+            )
+            return item
         except Exception as e:
             logger.error("[watchlist] DB error adding to watchlist: %s", e)
             raise error_response(500, "Failed to add to watchlist", code="DB_ERROR")

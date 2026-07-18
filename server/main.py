@@ -28,6 +28,7 @@ from app.config import (
     TASK_WORKER_ENABLED,
     DEBUG,
 )
+from app.lib.bg_tasks import spawn_bg
 from app.middleware_stack import install_middlewares
 from app.db import connect_pool, close_pool, db_configured
 from app.metrics import metrics_middleware, ensure_metrics_once
@@ -92,9 +93,21 @@ async def lifespan(app: FastAPI):
     # then hits a warm cache instead of paying the ~40-call fal.ai warm-up.
     try:
         from app.ml.clip_predictor import warm_clip_text_embeddings
-        asyncio.create_task(warm_clip_text_embeddings())
+        spawn_bg(warm_clip_text_embeddings(), "clip_warm")
     except Exception as e:
         logging.getLogger("uvicorn").debug("[startup] CLIP warm-up skipped: %s", e)
+
+    # Pre-warm the category deep-dive (Market Insights) cache for the busiest
+    # categories OUT of the request path. The cold aggregation scans 1M+
+    # market_hits rows (~30s for pokemon/mtg) which exceeds the FE timeout, so
+    # without this the first viewer in each TTL window gets an empty panel.
+    # Fire-and-forget; loops every 3h (< 6h cache TTL).
+    if DB_ENABLED:
+        try:
+            from app.features.trends_and_deepdive_router import deep_dive_warm_loop
+            spawn_bg(deep_dive_warm_loop(), "deep_dive_warm_loop")
+        except Exception as e:
+            logging.getLogger("uvicorn").debug("[startup] deep-dive warm-up skipped: %s", e)
 
     # ── Bake Orchestrator — unified worker scheduling ──────────────────
     # Replaces all individual scheduler starts (price_monitor, deal_discovery,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
@@ -13,6 +14,7 @@ from app.errors import error_response
 from app.rate_limit import per_user_rate_limit
 from app.cache import cache_get, cache_set
 from app.features.pagination import pagination_params
+from app.lib.bg_tasks import spawn_bg
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 
@@ -382,43 +384,22 @@ async def get_portfolio_category_breakdown(
         return PortfolioCategoryBreakdownResponse(breakdown=[], total_value=0.0)
 
 
-@router.get("/categories/{category}/deep-dive", response_model=CategoryDeepDiveResponse)
-async def get_category_deep_dive(
+async def _compute_category_deep_dive(
+    pool,
     category: str,
-    days: int = Query(30, ge=7, le=365),
-    currency: str = Query("EUR"),
-    pagination: tuple[int, int] = Depends(pagination_params),
-    _rl: None = Depends(_analytics_limit),
-    user_id: str = Depends(get_current_user_id),
-):
+    days: int,
+    currency: str,
+    limit: int,
+    offset: int,
+) -> CategoryDeepDiveResponse:
+    """Heavy market_hits aggregation for a category deep-dive.
+
+    Pure compute: no auth, no response cache, no demand-signal side effects.
+    Shared by the HTTP endpoint and the background pre-warmer so the (slow,
+    multi-million-row) query logic lives in exactly one place. Raises on DB
+    error so callers can decide whether to return an empty payload or skip
+    caching — it must never silently cache an error as an empty result.
     """
-    Category deep dive:
-    - avg market price          (from market_hits)
-    - value distribution        (daily avg price series)
-    - volume trends             (daily listing count)
-    - most-traded items         (normalized_key with highest listing count)
-    - top movers                (biggest price delta over the period)
-    """
-    limit, offset = pagination
-
-    # Check cache
-    cache_key = f"deepdive:{category}:{days}:{currency}:{limit}:{offset}"
-    cached = cache_get(cache_key)
-    if cached is not None:
-        return cached
-
-    pool = get_db_pool()
-    if not pool:
-        return CategoryDeepDiveResponse(
-            category=category,
-            currency=currency,
-            avg_market_price=0.0,
-            value_distribution=[],
-            volume_trend=[],
-            top_traded_items=[],
-            top_movers=[],
-        )
-
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     try:
@@ -557,21 +538,7 @@ async def get_category_deep_dive(
                 reverse=True,
             )
 
-            # Record demand signal with geo enrichment (best-effort)
-            try:
-                from app.features.data_moat import record_demand_signal, get_user_geo
-                region, country = await get_user_geo(user_id)
-                await record_demand_signal(
-                    signal_type="category_viewed",
-                    category=category,
-                    user_id=user_id,
-                    region=region,
-                    country_code=country,
-                )
-            except Exception as e:
-                logger.debug("Demand signal recording failed (best-effort): %s", e)
-
-            result = CategoryDeepDiveResponse(
+            return CategoryDeepDiveResponse(
                 category=category,
                 currency=currency,
                 avg_market_price=round(avg_market_price, 2),
@@ -580,11 +547,71 @@ async def get_category_deep_dive(
                 top_traded_items=top_traded_items[offset:offset + limit],
                 top_movers=top_movers[offset:offset + limit],
             )
-            cache_set(cache_key, result, ttl=_DEEPDIVE_CACHE_TTL)
-            return result
 
     except Exception as e:
-        logger.error(f"[categories/{category}/deep-dive] DB error: {e}")
+        logger.error(f"[deep-dive compute] {category}: {e}")
+        raise
+
+
+async def _record_category_view(category: str, user_id: str) -> None:
+    """Best-effort `category_viewed` demand signal with geo enrichment.
+
+    Spawned fire-and-forget on every authenticated deep-dive view. Swallows its
+    own errors — it's analytics, never user-facing.
+    """
+    try:
+        from app.features.data_moat import record_demand_signal, get_user_geo
+        region, country = await get_user_geo(user_id)
+        await record_demand_signal(
+            signal_type="category_viewed",
+            category=category,
+            user_id=user_id,
+            region=region,
+            country_code=country,
+        )
+    except Exception as e:
+        logger.debug("Demand signal recording failed (best-effort): %s", e)
+
+
+@router.get("/categories/{category}/deep-dive", response_model=CategoryDeepDiveResponse)
+async def get_category_deep_dive(
+    category: str,
+    days: int = Query(30, ge=7, le=365),
+    currency: str = Query("EUR"),
+    pagination: tuple[int, int] = Depends(pagination_params),
+    _rl: None = Depends(_analytics_limit),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Category deep dive:
+    - avg market price          (from market_hits)
+    - value distribution        (daily avg price series)
+    - volume trends             (daily listing count)
+    - most-traded items         (normalized_key with highest listing count)
+    - top movers                (biggest price delta over the period)
+
+    Served from a 6h cache. A cold miss runs a heavy market_hits aggregation
+    (tens of seconds for high-volume categories like pokemon/mtg), which the
+    background warmer keeps primed — see `warm_category_deep_dives`.
+    """
+    limit, offset = pagination
+
+    # Record the category view on EVERY authenticated request, fire-and-forget
+    # so it never adds latency. This used to run only on the cache-miss path
+    # (below), but the background warmer keeps the cache hot, so real user views
+    # almost always hit cache and `category_viewed` silently stopped firing.
+    spawn_bg(_record_category_view(category, user_id), "category_view_signal")
+
+    # Check cache. Key is case-normalised so the warmer (which reads category
+    # from the DB) and this endpoint (which reads it from the URL) can never
+    # miss each other on casing.
+    cache_key = f"deepdive:{category.lower()}:{days}:{currency}:{limit}:{offset}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    pool = get_db_pool()
+    if not pool:
         return CategoryDeepDiveResponse(
             category=category,
             currency=currency,
@@ -594,3 +621,107 @@ async def get_category_deep_dive(
             top_traded_items=[],
             top_movers=[],
         )
+
+    try:
+        result = await _compute_category_deep_dive(
+            pool, category, days, currency, limit, offset
+        )
+    except Exception:
+        # Already logged in the helper. Return an empty payload (uncached) so
+        # the next request retries rather than serving a cached error.
+        return CategoryDeepDiveResponse(
+            category=category,
+            currency=currency,
+            avg_market_price=0.0,
+            value_distribution=[],
+            volume_trend=[],
+            top_traded_items=[],
+            top_movers=[],
+        )
+
+    cache_set(cache_key, result, ttl=_DEEPDIVE_CACHE_TTL)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Background cache pre-warmer
+# ---------------------------------------------------------------------------
+# The deep-dive aggregation scans 1M+ market_hits rows for high-volume
+# categories (e.g. pokemon ~1.3M rows/30d → ~30s cold). The FE calls the
+# endpoint with a short timeout, so a cold miss silently shows an empty Market
+# Insights panel. This task computes + caches the default-parameter deep-dive
+# for the busiest categories on an interval shorter than the cache TTL, so real
+# users always hit the warm path (~ms). Runs in-process (cache is per-process;
+# there is no Redis), mirroring the CLIP-embedding warm-up in main.py.
+
+# Match the FE's call shape (no days/currency/pagination overrides) so the warm
+# writes the exact cache key the endpoint reads.
+_WARM_DAYS = 30
+_WARM_CURRENCY = "EUR"
+_WARM_LIMIT, _WARM_OFFSET = 50, 0
+_WARM_TOP_N = 15
+_WARM_INTERVAL_SECONDS = 3 * 3600  # 3h < 6h TTL → cache never goes cold
+
+
+async def warm_category_deep_dives() -> int:
+    """Pre-compute + cache the deep-dive for the top-N busiest categories.
+
+    Returns the number of categories warmed. Best-effort per category; one
+    failure never aborts the rest. Sleeps briefly between categories so the
+    heavy scans don't monopolise a DB connection or the event loop.
+    """
+    pool = get_db_pool()
+    if not pool:
+        return 0
+    try:
+        async with pool.acquire() as conn:
+            cats = await conn.fetch(
+                """
+                SELECT category
+                FROM market_hits
+                WHERE seen_at >= now() - make_interval(days => $1)
+                  AND category IS NOT NULL
+                GROUP BY category
+                ORDER BY count(*) DESC
+                LIMIT $2
+                """,
+                _WARM_DAYS,
+                _WARM_TOP_N,
+            )
+    except Exception as e:
+        logger.warning("[deepdive warm] could not list top categories: %s", e)
+        return 0
+
+    warmed = 0
+    for row in cats:
+        category = row["category"]
+        try:
+            result = await _compute_category_deep_dive(
+                pool, category, _WARM_DAYS, _WARM_CURRENCY, _WARM_LIMIT, _WARM_OFFSET
+            )
+            cache_key = (
+                f"deepdive:{category.lower()}:{_WARM_DAYS}:{_WARM_CURRENCY}:"
+                f"{_WARM_LIMIT}:{_WARM_OFFSET}"
+            )
+            cache_set(cache_key, result, ttl=_DEEPDIVE_CACHE_TTL)
+            warmed += 1
+        except Exception as e:
+            logger.warning("[deepdive warm] %s failed: %s", category, e)
+        await asyncio.sleep(2)
+    logger.info("[deepdive warm] warmed %d/%d categories", warmed, len(cats))
+    return warmed
+
+
+async def deep_dive_warm_loop() -> None:
+    """Periodically refresh the deep-dive cache for busy categories.
+
+    Waits briefly before the first run so the DB pool and bake orchestrator
+    finish their (IO-heavy) startup before this adds its own heavy scans.
+    """
+    await asyncio.sleep(90)
+    while True:
+        try:
+            await warm_category_deep_dives()
+        except Exception as e:
+            logger.warning("[deepdive warm] loop iteration failed: %s", e)
+        await asyncio.sleep(_WARM_INTERVAL_SECONDS)
