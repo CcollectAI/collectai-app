@@ -126,6 +126,37 @@ async def _user_follows_category(conn, user_id: str, category_slug: str) -> bool
         return True
 
 
+async def _persist_only(
+    conn,
+    user_id: str,
+    title: str,
+    body: str,
+    category: str,
+    data: Optional[dict[str, Any]] = None,
+    deep_link: Optional[str] = None,
+) -> None:
+    """Record a notification in the in-app feed WITHOUT delivering a push.
+
+    Used on the paths where we deliberately decline to interrupt the user
+    (followed-category filter, daily frequency cap) but the event is still
+    worth showing when they open the inbox themselves. Before this, those
+    branches returned early and the event was lost entirely — the cap silenced
+    the record, not just the push.
+
+    Reuses app.push._persist_notification so there is exactly ONE INSERT
+    statement against notification_history in the codebase. Never raises;
+    persistence failures must not break a caller's notification loop.
+    """
+    try:
+        from app.push import _persist_notification
+        await _persist_notification(
+            conn, user_id, title, body,
+            notification_type=category, data=data, deep_link=deep_link,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[notify] in-app persist failed for user %s: %s", user_id[:8], exc)
+
+
 async def notify_user(
     conn,
     user_id: str,
@@ -136,7 +167,7 @@ async def notify_user(
     deep_link: Optional[str] = None,
     urgent: bool = False,
     collectible_category: Optional[str] = None,
-) -> int:
+) -> int:  # noqa: D401 — see _persist_only for the in-app/push split
     """
     Send a preference-aware, frequency-capped push notification.
 
@@ -178,9 +209,13 @@ async def notify_user(
             if has_any_follows:
                 if not await _user_follows_category(conn, user_id, collectible_category):
                     logger.debug(
-                        "[notify] Skipped: user %s does not follow category %s",
+                        "[notify] Skipped push: user %s does not follow category %s",
                         user_id[:8], collectible_category,
                     )
+                    # Still record it in the in-app feed. The follow filter is
+                    # about what we're willing to interrupt someone with, not
+                    # about hiding the event from the inbox they chose to open.
+                    await _persist_only(conn, user_id, title, body, category, data, deep_link)
                     return 0
 
         # Check frequency cap (skip for urgent)
@@ -195,12 +230,19 @@ async def notify_user(
 
             if count >= cap:
                 logger.debug(
-                    "[notify] Skipped: user %s hit daily cap (%d/%d)",
+                    "[notify] Skipped push: user %s hit daily cap (%d/%d)",
                     user_id[:8], count, cap,
                 )
+                # The cap exists to stop us spamming someone's lock screen, not
+                # to erase the event. Record it in-app so it's waiting for them.
+                await _persist_only(conn, user_id, title, body, category, data, deep_link)
                 return 0
 
-        # Send via existing push infrastructure
+        # Send via existing push infrastructure. send_push_to_user persists to
+        # notification_history itself (before it checks for tokens), so this
+        # branch must NOT call _persist_only or the row would be duplicated.
+        # notification_type=category so the feed shows the real kind
+        # (price_alerts, deal_alerts, …) instead of a uniform 'push'.
         from app.push import send_push_to_user
         sent = await send_push_to_user(
             conn,
@@ -208,6 +250,7 @@ async def notify_user(
             title,
             body,
             data=data,
+            notification_type=category,
             deep_link=deep_link,
         )
         if sent > 0:
