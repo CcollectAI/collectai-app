@@ -126,6 +126,49 @@ async def _user_follows_category(conn, user_id: str, category_slug: str) -> bool
         return True
 
 
+# notify_user takes a PREFERENCE key (plural: "price_alerts"); the RN feed maps
+# an icon from a notification TYPE (singular: "price_alert", see
+# app/notifications.tsx TYPE_ICONS). Those two vocabularies drifted apart, so
+# every row written with the raw category fell through to the generic
+# "notifications-outline" fallback. Translate here, at the one place that
+# writes the type, rather than teaching the FE every server-side spelling.
+# Keys here MUST be the preference keys on the right-hand side of
+# ALERT_TYPE_TO_PREF above (that's the existing source of truth for what a
+# category is called); values MUST be keys of TYPE_ICONS in
+# app/notifications.tsx. Anything else silently renders the fallback icon.
+_FEED_TYPE_BY_CATEGORY = {
+    "price_alerts": "price_alert",
+    "deal_alerts": "deal_alert",
+    "value_changes": "value_change",
+    "item_value_changes": "value_change",
+    "weekly_digest": "insight",          # no weekly_digest icon; insight fits
+    "chat_messages": "chat",
+    "connection_requests": "connection",
+    "event_announcements": "event",
+}
+
+
+def _feed_type(category: str) -> str:
+    """Map a notify preference category to an FE-renderable notification type.
+
+    Unmapped categories pass through unchanged AND log a warning — the FE falls
+    back to a generic icon either way, but a silent fallback is how this drift
+    went unnoticed in the first place. A warning here makes the next mismatch
+    visible instead of just ugly. (It also surfaces callers passing a
+    COLLECTIBLE category like "pokemon" into the notification-category slot.)
+    """
+    mapped = _FEED_TYPE_BY_CATEGORY.get(category)
+    if mapped:
+        return mapped
+    if category not in ("test",):
+        logger.warning(
+            "[notify] category %r has no FE icon mapping — feed will show the "
+            "generic fallback. Add it to _FEED_TYPE_BY_CATEGORY or fix the caller.",
+            category,
+        )
+    return category
+
+
 async def _persist_only(
     conn,
     user_id: str,
@@ -151,7 +194,7 @@ async def _persist_only(
         from app.push import _persist_notification
         await _persist_notification(
             conn, user_id, title, body,
-            notification_type=category, data=data, deep_link=deep_link,
+            notification_type=_feed_type(category), data=data, deep_link=deep_link,
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning("[notify] in-app persist failed for user %s: %s", user_id[:8], exc)
@@ -250,7 +293,7 @@ async def notify_user(
             title,
             body,
             data=data,
-            notification_type=category,
+            notification_type=_feed_type(category),
             deep_link=deep_link,
         )
         if sent > 0:
