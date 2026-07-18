@@ -42,7 +42,7 @@ IMPORT_COLUMNS = [
 # history). All optional except `name` + `category`.
 IMPORT_EXAMPLE_ROWS = [
     {
-        "name": "Charizard Base Set Holo 1st Edition",
+        "name": "EXAMPLE – Charizard Base Set Holo 1st Edition (delete this row)",
         "category": "pokemon",
         "condition": "Near Mint",
         "grade": "PSA 9",
@@ -100,7 +100,7 @@ async def import_template() -> StreamingResponse:
     return StreamingResponse(
         buf,
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=collectai_import_template.csv"},
+        headers={"Content-Disposition": "attachment; filename=sparrow_collect_overview.csv"},
     )
 
 
@@ -132,13 +132,28 @@ async def import_collection(
             text = content.decode("utf-8", errors="replace")
             reader = csv.DictReader(io.StringIO(text))
             rows = list(reader)
-        elif lower_name.endswith(".xlsx") or lower_name.endswith(".xls"):
+        elif lower_name.endswith(".xlsx"):
+            # openpyxl only (no pandas — too heavy for the t3.medium and pandas
+            # was never installed, so this branch 500'd for every Excel upload
+            # even though the FE import picker offers .xlsx).
             try:
-                import pandas as pd  # type: ignore
+                from openpyxl import load_workbook  # lightweight
             except ImportError:
-                raise error_response(500, "Excel support is not installed. Please install pandas and openpyxl.")
-            df = pd.read_excel(io.BytesIO(content))
-            rows = df.to_dict(orient="records")
+                raise error_response(500, "Excel support is not installed on the server.")
+            wb = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+            ws = wb.active
+            row_iter = ws.iter_rows(values_only=True) if ws is not None else iter(())
+            header = next(row_iter, None)
+            if header:
+                cols = [str(h).strip() if h is not None else "" for h in header]
+                for r in row_iter:
+                    if r is None or all(c is None for c in r):
+                        continue
+                    rows.append({cols[i]: (r[i] if i < len(r) else None)
+                                 for i in range(len(cols)) if cols[i]})
+            wb.close()
+        elif lower_name.endswith(".xls"):
+            raise error_response(400, "Legacy .xls is not supported — please re-save as .xlsx or CSV.")
         else:
             raise error_response(400, "Unsupported file type. Please upload a CSV or Excel file.")
     except HTTPException:

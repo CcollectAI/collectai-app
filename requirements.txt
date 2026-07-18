@@ -53,3 +53,7 @@ alembic>=1.13.0
 
 # Monitoring
 sentry-sdk[fastapi]==2.22.0
+
+# Excel (.xlsx) collection import — openpyxl only, NOT pandas (too heavy for t3.medium).
+# import_router.py:/import/collection depends on this; without it every .xlsx upload 500s.
+openpyxl==3.1.5

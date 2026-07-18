@@ -71,7 +71,7 @@ class TestImportTemplate:
         assert resp.status_code == 200
         assert "text/csv" in resp.headers.get("content-type", "")
         assert "Content-Disposition" in resp.headers
-        assert "collectai_import_template.csv" in resp.headers["Content-Disposition"]
+        assert "sparrow_collect_overview.csv" in resp.headers["Content-Disposition"]
 
     def test_template_has_headers_and_example(self):
         """Template CSV should have header row + 1 example row."""
