@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import { APP_CONFIG } from "../../admin.config";
+import { noteDemo, clearDemo, getDemoReason, isUsingDemoData as isDemoSource } from "@/lib/demoState";
 
 const BASE = APP_CONFIG.api.baseUrl;
 
@@ -21,13 +22,20 @@ let _apiAvailable: boolean | null = null;
 async function tryFetchJSON<T>(path: string, fallback: T): Promise<T> {
   try {
     const res = await fetch(`${BASE}${path}`, { headers: headers(), signal: AbortSignal.timeout(5000) });
-    if (!res.ok) throw new Error(`${res.status}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     _apiAvailable = true;
+    // A reachable endpoint clears any stale "api" demo flag from an earlier
+    // failure, so the banner cannot keep crying wolf after the backend recovers.
+    clearDemo("api");
     return res.json();
   } catch (err) {
     _apiAvailable = false;
-    // Surface the fallback so admin users can tell when they're looking at demo data
-    // (consumed via isUsingDemoData() in components — wire a banner where useful).
+    // Record WHICH endpoint failed and why. This used to only console.warn,
+    // so six tabs rendered fabricated numbers with no on-screen indication —
+    // and their own `error` state could never be set, because the throw was
+    // swallowed here rather than reaching the caller.
+    const detail = err instanceof Error ? err.message : String(err);
+    noteDemo("api", `${BASE}${path} unavailable (${detail}) — showing sample data`, fallback);
     // eslint-disable-next-line no-console
     console.warn(`[collectai-api] using demo fallback for ${path}:`, err);
     return fallback;
@@ -35,7 +43,12 @@ async function tryFetchJSON<T>(path: string, fallback: T): Promise<T> {
 }
 
 export function isUsingDemoData(): boolean {
-  return _apiAvailable === false;
+  return _apiAvailable === false || isDemoSource("api");
+}
+
+/** Which endpoint failed, for the banner to name rather than hand-wave. */
+export function getApiDemoReason(): string | null {
+  return getDemoReason("api");
 }
 
 async function postJSON<T = unknown>(path: string): Promise<T> {
