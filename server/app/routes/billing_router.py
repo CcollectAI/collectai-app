@@ -6,11 +6,14 @@ Endpoints:
     POST /billing/portal-session    — Create a Stripe Customer Portal session (manage/cancel)
     GET  /billing/status            — Return current user's subscription status
     POST /billing/webhook           — Stripe webhook (no auth — signature verified)
+    POST /billing/revenuecat-webhook — RevenueCat webhook (no auth — shared-secret header)
 """
 
 from __future__ import annotations
 
 import asyncio
+import hmac
+import json
 import logging
 import time
 from collections import OrderedDict
@@ -33,10 +36,19 @@ from app.config import (
     STRIPE_PRICE_PRO_YEARLY,
     STRIPE_PRICE_PRO_YEARLY_WEB,
     STRIPE_SECRET_KEY,
+    REVENUECAT_WEBHOOK_AUTH,
     STRIPE_WEBHOOK_SECRET,
     SUPABASE_URL,
 )
 from app.db import get_pool
+from app.lib.revenuecat import (
+    _RC_ACTIVE_EVENTS,
+    _RC_ENDED_EVENTS,
+    _rc_affiliate_code,
+    _rc_ms_to_dt,
+    _rc_plan_from_event,
+    _rc_revenue_cents,
+)
 from app.errors import error_response
 from app.rate_limit import per_user_rate_limit
 
@@ -912,3 +924,132 @@ async def _handle_ticket_checkout_completed(pool: Any, session: dict):
             )
 
     _log.info("Ticket purchased: event=%s user=%s amount=%s fee=%s", event_id, user_id, amount, fee_cents)
+
+
+# ---------------------------------------------------------------------------
+# POST /billing/revenuecat-webhook
+# ---------------------------------------------------------------------------
+# Mobile Pro/Premium purchases go through RevenueCat/StoreKit, not Stripe. Until
+# this existed, subscriptions held zero paid rows and mobile revenue was
+# invisible server-side — no creator payout could be computed from anything
+# queryable. This writes both the current-state row (subscriptions) and the
+# append-only ledger (subscription_events) that payouts are summed from.
+#
+# NOTE: RevenueCat's payload field names are read defensively below (COALESCE
+# across the documented aliases) because they differ by event type and API
+# version. Verify against a real sample payload in the RevenueCat dashboard
+# (Integrations -> Webhooks -> Send test event) before trusting the amounts.
+
+@router.post("/revenuecat-webhook", summary="Handle RevenueCat webhook")
+async def revenuecat_webhook(
+    request: Request,
+    authorization: str = Header(None, alias="Authorization"),
+):
+    """Handle RevenueCat webhook events (no user auth — shared-secret header)."""
+    if not REVENUECAT_WEBHOOK_AUTH:
+        # Never accept unauthenticated revenue writes.
+        raise error_response(503, "RevenueCat webhook not configured")
+
+    # compare_digest avoids leaking the secret through timing.
+    if not authorization or not hmac.compare_digest(authorization, REVENUECAT_WEBHOOK_AUTH):
+        _log.warning("revenuecat: rejected webhook with bad Authorization header")
+        raise error_response(401, "Invalid webhook signature")
+
+    try:
+        body = await request.json()
+    except Exception:
+        raise error_response(400, "Malformed JSON body")
+
+    event = body.get("event") or {}
+    event_id = event.get("id")
+    event_type = event.get("type")
+    if not event_id or not event_type:
+        raise error_response(400, "Missing event id or type")
+
+    pool = await get_pool() if DB_ENABLED else None
+    if pool is None:
+        # 503 (not 200) so RevenueCat retries rather than dropping the event.
+        raise error_response(503, "Database unavailable")
+
+    if await _event_already_processed(event_id, f"revenuecat.{event_type}", pool):
+        _log.info("revenuecat: duplicate event %s (%s) ignored", event_id, event_type)
+        return JSONResponse({"ok": True, "duplicate": True})
+
+    app_user_id = event.get("app_user_id")
+    plan = _rc_plan_from_event(event)
+    revenue_cents = _rc_revenue_cents(event)
+    affiliate_code = _rc_affiliate_code(event)
+    occurred_at = _rc_ms_to_dt(event.get("purchased_at_ms")) or datetime.now(timezone.utc)
+    expires_at = _rc_ms_to_dt(event.get("expiration_at_ms"))
+
+    # app_user_id is our auth.users.id (purchases.ts calls Purchases.logIn).
+    # Anonymous RevenueCat ids ($RCAnonymousID:...) cannot be attributed.
+    user_id = app_user_id if app_user_id and not str(app_user_id).startswith("$RCAnonymousID") else None
+
+    # Fall back to the profile's stored code when the subscriber attribute is
+    # missing — e.g. a user who upgraded from a build predating setAttributes.
+    if affiliate_code is None and user_id:
+        try:
+            affiliate_code = await pool.fetchval(
+                "SELECT referred_by_code FROM profiles WHERE id = $1::uuid", user_id
+            )
+        except Exception as exc:
+            _log.warning("revenuecat: profile lookup failed for %s: %s", user_id, exc)
+
+    # Ledger row first: it is the payout source of truth, and its UNIQUE
+    # event_id is what makes a retry safe.
+    try:
+        await pool.execute(
+            """
+            INSERT INTO subscription_events (
+                event_id, event_type, provider, user_id, app_user_id, product_id,
+                plan, store, environment, revenue_cents, currency,
+                takehome_percentage, affiliate_code, occurred_at, raw
+            )
+            VALUES ($1, $2, 'revenuecat', $3::uuid, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb)
+            ON CONFLICT (event_id) DO NOTHING
+            """,
+            event_id, event_type, user_id, app_user_id, event.get("product_id"),
+            plan, event.get("store"), event.get("environment"), revenue_cents,
+            event.get("currency"), event.get("takehome_percentage"),
+            affiliate_code, occurred_at, json.dumps(event),
+        )
+    except Exception as exc:
+        # 500 so RevenueCat retries — losing a revenue event loses a payout.
+        _log.exception("revenuecat: ledger insert failed for %s", event_id)
+        raise error_response(500, "Failed to record subscription event") from exc
+
+    # Current-state row. Only for identified users on entitlement-changing events.
+    if user_id and event_type in (_RC_ACTIVE_EVENTS | _RC_ENDED_EVENTS):
+        is_active = event_type in _RC_ACTIVE_EVENTS
+        status = "active" if is_active else ("paused" if event_type == "SUBSCRIPTION_PAUSED" else "expired")
+        try:
+            await pool.execute(
+                """
+                INSERT INTO subscriptions (
+                    user_id, provider, revenuecat_app_user_id, revenuecat_product_id,
+                    plan, status, current_period_end
+                )
+                VALUES ($1::uuid, 'revenuecat', $2, $3, $4, $5, $6)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    provider = 'revenuecat',
+                    revenuecat_app_user_id = EXCLUDED.revenuecat_app_user_id,
+                    revenuecat_product_id = EXCLUDED.revenuecat_product_id,
+                    plan = EXCLUDED.plan,
+                    status = EXCLUDED.status,
+                    current_period_end = EXCLUDED.current_period_end,
+                    updated_at = now()
+                """,
+                user_id, app_user_id, event.get("product_id"),
+                plan if is_active else "free", status, expires_at,
+            )
+        except Exception:
+            # The ledger already landed, so revenue is not lost. Log loudly and
+            # return 200 — a retry would be a no-op on the ledger anyway.
+            _log.exception("revenuecat: subscriptions upsert failed for user %s", user_id)
+
+    _log.info(
+        "revenuecat: %s user=%s plan=%s revenue=%s%s code=%s",
+        event_type, user_id, plan, revenue_cents, event.get("currency") or "", affiliate_code,
+    )
+    return JSONResponse({"ok": True})

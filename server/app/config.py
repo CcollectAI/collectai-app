@@ -302,6 +302,11 @@ TASK_WORKER_POLL_INTERVAL: float = float(os.getenv("TASK_WORKER_POLL_INTERVAL", 
 STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
+# RevenueCat sends this verbatim as the Authorization header on every webhook.
+# Set it to a long random string in the RevenueCat dashboard and in .env; the
+# webhook 503s while unset rather than accepting unauthenticated revenue writes.
+REVENUECAT_WEBHOOK_AUTH: str = os.getenv("REVENUECAT_WEBHOOK_AUTH", "")
+
 # Plan subscription price IDs (create in Stripe Dashboard → Products → Prices)
 # Pro plan
 STRIPE_PRICE_ID_PRO: str = os.getenv("STRIPE_PRICE_ID_PRO", "")  # legacy/default
