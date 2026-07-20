@@ -101,7 +101,7 @@ export function AdminAccountTracker() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-[#0D1B2A]">Account Tracker</h2>
-          <AdminDemoBanner />
+          <AdminDemoBanner source="accounts" />
         </div>
         <div className="flex items-center gap-2">
           {PERIODS.map((p) => (

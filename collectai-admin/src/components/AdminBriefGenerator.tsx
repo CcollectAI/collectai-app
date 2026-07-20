@@ -70,7 +70,7 @@ export function AdminBriefGenerator() {
       {/* Header */}
       <div>
         <h2 className="text-lg font-bold text-[#0D1B2A]">Creator Brief Generator</h2>
-        <AdminDemoBanner />
+        <AdminDemoBanner source="ugc" />
       </div>
 
       {/* Controls */}

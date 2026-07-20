@@ -25,16 +25,35 @@ export function AdminShell({ kits }: { kits: unknown[] }) {
     setChecking(false);
   }, []);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (pin === getAdminPin()) {
-      sessionStorage.setItem(ADMIN_PIN_KEY, pin);
-      setAuthenticated(true);
-      setError(false);
-    } else {
+
+    // Client-side check first — it is what gates the UI, and it keeps the
+    // dashboard usable when the server-side vars are not configured yet.
+    if (pin !== getAdminPin()) {
       setError(true);
       setPin("");
+      return;
     }
+
+    // Then exchange the PIN for an httpOnly session cookie. This is the real
+    // gate: the service-role write routes (/api/creators) trust only the
+    // cookie, never NEXT_PUBLIC_ADMIN_PIN, which ships in the client bundle.
+    // A 503 means the server-only vars are unset — reads still work, writes
+    // will 401, and the Creators tab surfaces that when you try to save.
+    try {
+      await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
+      });
+    } catch {
+      // Network failure here must not lock you out of the read-only dashboard.
+    }
+
+    sessionStorage.setItem(ADMIN_PIN_KEY, pin);
+    setAuthenticated(true);
+    setError(false);
   }
 
   if (checking) return null;

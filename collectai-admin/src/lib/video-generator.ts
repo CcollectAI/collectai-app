@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { noteDemo, clearDemo } from "@/lib/demoState";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -352,11 +353,29 @@ async function fetchFromSupabase(): Promise<VideoScript[] | null> {
 
 export async function fetchVideoScriptsAsync(): Promise<VideoScript[]> {
   const fromDb = await fetchFromSupabase();
-  return fromDb ?? getDemoScripts();
+  if (fromDb && fromDb.length > 0) {
+    // Real rows from ugc_video_scripts → clear any prior demo flag for the tab.
+    clearDemo("video");
+    return fromDb;
+  }
+  return noteDemo(
+    "video",
+    "no scripts in ugc_video_scripts — showing sample scripts",
+    getDemoScripts(),
+  );
 }
 
+/**
+ * Synchronous variant that never touches the database — it is what
+ * AdminVideoGenerator renders, so that tab is always sample data. Reported
+ * rather than silently substituted; use fetchVideoScriptsAsync for real rows.
+ */
 export function fetchVideoScripts(): VideoScript[] {
-  return getDemoScripts();
+  return noteDemo(
+    "video",
+    "Video Generator reads sample scripts — fetchVideoScripts() never queries the database",
+    getDemoScripts(),
+  );
 }
 
 export function fetchQueueStats(scripts: VideoScript[]): VideoQueueStats {
@@ -390,5 +409,9 @@ export function fetchQueueStats(scripts: VideoScript[]): VideoQueueStats {
 }
 
 export function fetchAutomationRules(): AutomationRule[] {
-  return getDemoAutomationRules();
+  return noteDemo(
+    "video",
+    "automation rules are sample data — no backing table is read",
+    getDemoAutomationRules(),
+  );
 }

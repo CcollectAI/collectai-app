@@ -98,7 +98,7 @@ export function AdminBoostTracker() {
       {/* Header */}
       <div>
         <h2 className="text-lg font-bold text-[#0D1B2A] dark:text-white">Boost / Spark Ads Tracker</h2>
-        <AdminDemoBanner />
+        <AdminDemoBanner source="boost" />
       </div>
 
       {/* Top stats */}
