@@ -391,6 +391,7 @@ async def _compute_category_deep_dive(
     currency: str,
     limit: int,
     offset: int,
+    include_rankings: bool = False,
 ) -> CategoryDeepDiveResponse:
     """Heavy market_hits aggregation for a category deep-dive.
 
@@ -399,6 +400,13 @@ async def _compute_category_deep_dive(
     multi-million-row) query logic lives in exactly one place. Raises on DB
     error so callers can decide whether to return an empty payload or skip
     caching — it must never silently cache an error as an empty result.
+
+    `include_rankings` gates the second, far heavier pass (top-traded /
+    top-movers). It is off by default because no screen reads those fields —
+    the category screen shows only avg price + the value sparkline, and market
+    movers come from mv_market_top_movers. Skipping it roughly thirds the cold
+    compute time (mtg: ~17s -> ~5s), keeping a cold miss under the client's
+    20s timeout instead of racing it.
     """
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
@@ -455,8 +463,15 @@ async def _compute_category_deep_dive(
             # first-vs-last delta, which produced absurd swings (e.g. a single
             # €0.01 placeholder → -100%, a one-off mispriced listing → +387200%).
             # The half-split point is the midpoint of the requested window.
-            half = cutoff + (datetime.now(timezone.utc) - cutoff) / 2
-            combo_rows = await conn.fetch(
+            # Skip this pass unless rankings are explicitly requested — it is a
+            # second GROUP BY normalized_key with percentile_cont over the whole
+            # window (~12s of mtg's ~17s), and nothing on the FE consumes its
+            # output. When off, combo_rows stays empty and the builders below
+            # naturally yield empty top_traded/top_movers lists.
+            combo_rows = []
+            if include_rankings:
+              half = cutoff + (datetime.now(timezone.utc) - cutoff) / 2
+              combo_rows = await conn.fetch(
                 """
                 WITH per_key AS (
                     SELECT
@@ -578,6 +593,11 @@ async def get_category_deep_dive(
     category: str,
     days: int = Query(30, ge=7, le=365),
     currency: str = Query("EUR"),
+    include_rankings: bool = Query(
+        False,
+        description="Also compute top-traded / top-movers (heavy second pass; "
+        "off by default so a cold miss stays under the client timeout).",
+    ),
     pagination: tuple[int, int] = Depends(pagination_params),
     _rl: None = Depends(_analytics_limit),
     user_id: str = Depends(get_current_user_id),
@@ -605,7 +625,7 @@ async def get_category_deep_dive(
     # Check cache. Key is case-normalised so the warmer (which reads category
     # from the DB) and this endpoint (which reads it from the URL) can never
     # miss each other on casing.
-    cache_key = f"deepdive:{category.lower()}:{days}:{currency}:{limit}:{offset}"
+    cache_key = f"deepdive:{category.lower()}:{days}:{currency}:{limit}:{offset}:{int(include_rankings)}"
     cached = cache_get(cache_key)
     if cached is not None:
         return cached
@@ -624,7 +644,7 @@ async def get_category_deep_dive(
 
     try:
         result = await _compute_category_deep_dive(
-            pool, category, days, currency, limit, offset
+            pool, category, days, currency, limit, offset, include_rankings
         )
     except Exception:
         # Already logged in the helper. Return an empty payload (uncached) so
@@ -699,9 +719,10 @@ async def warm_category_deep_dives() -> int:
             result = await _compute_category_deep_dive(
                 pool, category, _WARM_DAYS, _WARM_CURRENCY, _WARM_LIMIT, _WARM_OFFSET
             )
+            # Warm the exact key the FE reads: default params, rankings off (:0).
             cache_key = (
                 f"deepdive:{category.lower()}:{_WARM_DAYS}:{_WARM_CURRENCY}:"
-                f"{_WARM_LIMIT}:{_WARM_OFFSET}"
+                f"{_WARM_LIMIT}:{_WARM_OFFSET}:0"
             )
             cache_set(cache_key, result, ttl=_DEEPDIVE_CACHE_TTL)
             warmed += 1
