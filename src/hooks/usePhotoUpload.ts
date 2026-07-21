@@ -18,10 +18,27 @@
 
 import { useState, useCallback } from "react";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
+import { decode as atob } from "base-64";
 import { collectorsApi } from "@/api/collectorsApi";
 import type { ServerUploadResponse } from "@/api/collectorsApi";
 import { useAuthContext } from "@/providers/useAuthContext";
 import { logger } from "@/lib/logger";
+
+/**
+ * Read a local file URI as raw bytes for an S3 PUT. RN's `fetch(uri).blob()`
+ * body is unreliable against S3 (uploads empty / fails), which left every
+ * item's image_url null when the server path fell back to presign. Reading the
+ * file as base64 → Uint8Array and PUTting the bytes is the pattern proven in
+ * src/utils/uploadImageS3.ts.
+ */
+async function readFileAsBytes(uri: string): Promise<Uint8Array> {
+  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: "base64" });
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
 
 /** MIME type mapping from expo-image-picker type field */
 const MIME_MAP: Record<string, string> = {
@@ -112,20 +129,21 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
           mime,
         );
 
-        const imageResponse = await fetch(uri);
-        const blob = await imageResponse.blob();
-
+        // PUT the raw file bytes (not a blob) — S3 signs `content-type`, so the
+        // header must match the presigned content type exactly.
+        const bytes = await readFileAsBytes(uri);
         const uploadResponse = await fetch(presignResponse.upload_url, {
           method: "PUT",
           headers: {
             "Content-Type": mime,
           },
-          body: blob,
+          body: bytes as unknown as BodyInit,
         });
 
         if (!uploadResponse.ok) {
+          const detail = await uploadResponse.text().catch(() => "");
           throw new Error(
-            `S3 upload failed with status ${uploadResponse.status}`,
+            `S3 upload failed with status ${uploadResponse.status}${detail ? `: ${detail.slice(0, 120)}` : ""}`,
           );
         }
 
