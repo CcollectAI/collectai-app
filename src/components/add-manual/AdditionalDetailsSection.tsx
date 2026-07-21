@@ -66,7 +66,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
             <TextInput
               value={acquisitionDate}
               onChangeText={onAcquisitionDateChange}
-              placeholder="YYYY-MM-DD"
+              placeholder="DD-MM-YYYY"
               placeholderTextColor={colors.muted}
               keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
               maxLength={10}

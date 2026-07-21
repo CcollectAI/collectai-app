@@ -1,16 +1,11 @@
 /**
- * WeekViewCalendar — 7-day time-grid that stays legible on a phone.
+ * WeekViewCalendar — a full-week overview time-grid for phones.
  *
- * The whole week no longer gets crushed into the screen width (which left each
- * day ~47px wide and made overlapping events unreadable slivers). Instead the
- * grid scrolls horizontally with wide, fixed-width day columns — about 2.5 days
- * visible at once, swipe for the rest. The time gutter stays pinned on the left
- * and the day headers track the horizontal scroll so the two never drift apart.
- *
- * On landing it scrolls to today's column (not always Monday) and to the hour
- * that matters, taps and week-nav give haptic feedback, columns snap into
- * place, and events that fall outside the visible hours are surfaced rather
- * than silently dropped.
+ * All 7 days are visible at once (fit to screen width) so you get an actual
+ * week overview at a glance, and the hour rows are short enough that most of
+ * the day is on screen. Events render as compact blocks — tap one for details.
+ * Overlapping events split into side-by-side lanes; the current time shows as a
+ * red line; today and the weekend get a subtle tint for orientation.
  */
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
@@ -19,8 +14,6 @@ import {
   ScrollView,
   StyleSheet,
   Dimensions,
-  type NativeSyntheticEvent,
-  type NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -31,19 +24,19 @@ import type { CollectorsEvent } from '@/data/events';
 import { parseEventDate } from '@/lib/calendar';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const HOUR_HEIGHT = 64;
+// Short hour rows so most of the day fits without scrolling — this is the
+// "overview" the tall 64px rows were killing.
+const HOUR_HEIGHT = 48;
 const START_HOUR = 7;
 const END_HOUR = 23;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const TIME_GUTTER_WIDTH = 52;
-// Wide, fixed columns so events stay readable and tappable. ~2.5 days show at
-// once; the rest are a swipe away. This is the core fix for the cramped view.
-const COL_WIDTH = Math.round((SCREEN_WIDTH - TIME_GUTTER_WIDTH) / 2.5);
+const TIME_GUTTER_WIDTH = 44;
+// All 7 days share the width — no horizontal scroll, so the whole week is
+// visible at once.
+const COL_WIDTH = (SCREEN_WIDTH - TIME_GUTTER_WIDTH) / 7;
 const GRID_WIDTH = COL_WIDTH * 7;
 const GRID_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT;
-// Width the two horizontal scrollers share (everything right of the gutter).
-const SCROLLER_WIDTH = SCREEN_WIDTH - TIME_GUTTER_WIDTH;
 
 interface WeekViewCalendarProps {
   events: CollectorsEvent[];
@@ -80,8 +73,6 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const scrollRef = useRef<ScrollView>(null);
-  const headerScrollRef = useRef<ScrollView>(null);
-  const gridHScrollRef = useRef<ScrollView>(null);
   const lastScrolledWeek = useRef<number>(0);
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
 
@@ -108,18 +99,6 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
     setWeekStart(getMonday(new Date()));
   }, [tick]);
 
-  // Keep the day headers aligned with the grid as it scrolls sideways. The
-  // header scroller is not user-draggable; the grid drives it.
-  const onGridHorizontalScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      headerScrollRef.current?.scrollTo({
-        x: e.nativeEvent.contentOffset.x,
-        animated: false,
-      });
-    },
-    [],
-  );
-
   const { blocks, hiddenCount } = useMemo(() => {
     type Block = {
       event: CollectorsEvent;
@@ -131,7 +110,6 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
       laneCount: number;
     };
 
-    // 1. Build raw blocks per day
     let hidden = 0;
     const perDay: Record<number, Omit<Block, "lane" | "laneCount">[]> = {};
     for (const evt of events) {
@@ -154,7 +132,7 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
       const durationHrs = evt.endDate
         ? (new Date(evt.endDate).getTime() - start.getTime()) / (1000 * 60 * 60)
         : 1;
-      const height = Math.max(Math.min(durationHrs, TOTAL_HOURS) * HOUR_HEIGHT, 34);
+      const height = Math.max(Math.min(durationHrs, TOTAL_HOURS) * HOUR_HEIGHT, 26);
       const startTime = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
       (perDay[dayDiff] ??= []).push({
@@ -166,14 +144,12 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
       });
     }
 
-    // 2. Per day, assign each event to a horizontal lane so overlapping events
-    //    sit side-by-side instead of stacking on top of each other.
+    // Per day, assign each event to a horizontal lane so overlapping events
+    // sit side-by-side instead of stacking on top of each other.
     const out: Block[] = [];
     for (const dayKey of Object.keys(perDay)) {
       const dayEvents = perDay[Number(dayKey)]!.sort((a, b) => a.topOffset - b.topOffset);
-      // Greedy lane assignment: for each event, place it in the first lane
-      // whose previous event has already ended.
-      const laneEnds: number[] = []; // bottom Y of the last event placed in each lane
+      const laneEnds: number[] = [];
       const assigned: Block[] = [];
       for (const e of dayEvents) {
         let lane = laneEnds.findIndex((end) => end <= e.topOffset);
@@ -184,9 +160,6 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
         laneEnds[lane] = e.topOffset + e.height;
         assigned.push({ ...e, lane, laneCount: 0 });
       }
-      // Compute the max simultaneous lanes for sizing.
-      // For accuracy, recompute per-event laneCount as the max lanes that
-      // overlap with it; cheap pass since N is small per day.
       for (const e of assigned) {
         let overlapping = 0;
         for (const other of assigned) {
@@ -214,10 +187,8 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
 
   const weekEventCount = blocks.length;
 
-  // On landing on a week, scroll both axes so its events are actually in view.
-  // Vertically: this week's current hour, else the earliest event. Horizontally:
-  // today's column (so a Thursday event isn't hidden off to the right). Runs
-  // once per distinct week.
+  // On landing on a week, scroll vertically so its events are in view: this
+  // week's current hour, else the earliest event. Runs once per distinct week.
   useEffect(() => {
     if (lastScrolledWeek.current === weekStart.getTime()) return;
     lastScrolledWeek.current = weekStart.getTime();
@@ -228,24 +199,10 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
     } else if (blocks.length > 0) {
       targetTop = Math.min(...blocks.map((b) => b.topOffset)) - HOUR_HEIGHT / 2;
     }
-
-    // Horizontal: reveal today (with the prior day peeking for context), or the
-    // day of the week's first event; otherwise reset to Monday.
-    const focusDay = isThisWeek
-      ? nowDayIndex
-      : blocks.length > 0
-        ? Math.min(...blocks.map((b) => b.dayIndex))
-        : 0;
-    const maxX = Math.max(0, GRID_WIDTH - SCROLLER_WIDTH);
-    const targetX = Math.min(Math.max(0, (focusDay - 0.5) * COL_WIDTH), maxX);
-
-    setTimeout(() => {
-      if (targetTop !== null) {
-        scrollRef.current?.scrollTo({ y: Math.max(0, targetTop), animated: false });
-      }
-      gridHScrollRef.current?.scrollTo({ x: targetX, animated: false });
-      headerScrollRef.current?.scrollTo({ x: targetX, animated: false });
-    }, 80);
+    if (targetTop !== null) {
+      const y = Math.max(0, targetTop);
+      setTimeout(() => scrollRef.current?.scrollTo({ y, animated: false }), 80);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart, blocks]);
 
@@ -282,153 +239,132 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
         </AnimatedPressable>
       </View>
 
-      {/* Day headers — pinned gutter on the left, cells track the grid scroll */}
+      {/* Day headers — all 7, fixed above the scrolling grid */}
       <View style={[styles.dayHeaderRow, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View style={styles.timeGutter} />
-        <ScrollView
-          ref={headerScrollRef}
-          horizontal
-          scrollEnabled={false}
-          showsHorizontalScrollIndicator={false}
-          style={{ width: SCROLLER_WIDTH }}
-        >
-          <View style={{ flexDirection: 'row', width: GRID_WIDTH }}>
-            {DAY_LABELS.map((label, i) => {
-              const date = addDays(weekStart, i);
-              const isToday = date.toDateString() === now.toDateString();
-              return (
-                <View key={label} style={[styles.dayHeaderCell, { width: COL_WIDTH }]}>
-                  <Text style={[
-                    styles.dayLabel,
-                    { color: isToday ? colors.accent : colors.muted },
-                    isToday && { fontWeight: '700' },
-                  ]}>
-                    {label}
-                  </Text>
-                  <View style={[
-                    styles.dayNumberCircle,
-                    isToday && { backgroundColor: colors.accent },
-                  ]}>
-                    <Text style={[
-                      styles.dayNumber,
-                      { color: isToday ? '#FFFFFF' : colors.text },
-                      isToday && { fontWeight: '700' },
-                    ]}>
-                      {date.getDate()}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        </ScrollView>
+        {DAY_LABELS.map((label, i) => {
+          const date = addDays(weekStart, i);
+          const isToday = date.toDateString() === now.toDateString();
+          return (
+            <View key={label} style={[styles.dayHeaderCell, { width: COL_WIDTH }]}>
+              <Text style={[
+                styles.dayLabel,
+                { color: isToday ? colors.accent : colors.muted },
+                isToday && { fontWeight: '700' },
+              ]}>
+                {label}
+              </Text>
+              <View style={[
+                styles.dayNumberCircle,
+                isToday && { backgroundColor: colors.accent },
+              ]}>
+                <Text style={[
+                  styles.dayNumber,
+                  { color: isToday ? '#FFFFFF' : colors.text },
+                  isToday && { fontWeight: '700' },
+                ]}>
+                  {date.getDate()}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
       </View>
 
       {/* Time grid */}
       <ScrollView ref={scrollRef} style={styles.gridScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.gridContainer}>
-          {/* Time labels — pinned, scroll only vertically with the grid */}
+          {/* Time labels */}
           <View style={styles.timeGutter}>
             {Array.from({ length: TOTAL_HOURS }, (_, i) => (
               <View key={i} style={[styles.hourRow, { height: HOUR_HEIGHT }]}>
                 <Text style={[styles.timeLabel, { color: colors.muted }]}>
-                  {String(START_HOUR + i).padStart(2, '0')}:00
+                  {String(START_HOUR + i).padStart(2, '0')}
                 </Text>
               </View>
             ))}
           </View>
 
-          {/* Day columns scroll horizontally; the gutter above stays put */}
-          <ScrollView
-            ref={gridHScrollRef}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEventThrottle={16}
-            onScroll={onGridHorizontalScroll}
-            snapToInterval={COL_WIDTH}
-            snapToAlignment="start"
-            decelerationRate="fast"
-            disableIntervalMomentum
-            nestedScrollEnabled
-            style={{ width: SCROLLER_WIDTH }}
-          >
-            <View style={[styles.columnsContainer, { width: GRID_WIDTH, height: GRID_HEIGHT }]}>
-              {DAY_LABELS.map((_, dayIdx) => {
-                const isTodayCol = dayIdx === nowDayIndex;
-                const isWeekend = dayIdx >= 5;
-                return (
-                  <View
-                    key={dayIdx}
-                    style={[
-                      styles.dayColumn,
-                      {
-                        width: COL_WIDTH,
-                        left: dayIdx * COL_WIDTH,
-                        borderLeftColor: colors.border + '60',
-                      },
-                      isWeekend && { backgroundColor: colors.muted + '0A' },
-                      isTodayCol && { backgroundColor: colors.accent + '0F' },
-                    ]}
-                  >
-                    {Array.from({ length: TOTAL_HOURS }, (__, hr) => (
-                      <View
-                        key={hr}
-                        style={[
-                          styles.hourGridLine,
-                          { height: HOUR_HEIGHT, borderBottomColor: colors.border + '40' },
-                        ]}
-                      />
-                    ))}
-                  </View>
-                );
-              })}
+          {/* Day columns + events */}
+          <View style={[styles.columnsContainer, { width: GRID_WIDTH, height: GRID_HEIGHT }]}>
+            {DAY_LABELS.map((_, dayIdx) => {
+              const isTodayCol = dayIdx === nowDayIndex;
+              const isWeekend = dayIdx >= 5;
+              return (
+                <View
+                  key={dayIdx}
+                  style={[
+                    styles.dayColumn,
+                    {
+                      width: COL_WIDTH,
+                      left: dayIdx * COL_WIDTH,
+                      borderLeftColor: colors.border + '60',
+                    },
+                    isWeekend && { backgroundColor: colors.muted + '0A' },
+                    isTodayCol && { backgroundColor: colors.accent + '0F' },
+                  ]}
+                >
+                  {Array.from({ length: TOTAL_HOURS }, (__, hr) => (
+                    <View
+                      key={hr}
+                      style={[
+                        styles.hourGridLine,
+                        { height: HOUR_HEIGHT, borderBottomColor: colors.border + '40' },
+                      ]}
+                    />
+                  ))}
+                </View>
+              );
+            })}
 
-              {/* Event blocks — overlapping events split horizontally into lanes */}
-              {blocks.map(({ event, dayIndex, topOffset, height, startTime, lane, laneCount }) => {
-                const laneWidth = (COL_WIDTH - 4) / laneCount;
-                return (
-                  <AnimatedPressable
-                    key={event.id}
-                    style={[
-                      styles.eventBlock,
-                      {
-                        left: dayIndex * COL_WIDTH + 2 + lane * laneWidth,
-                        top: topOffset,
-                        height,
-                        width: laneWidth - 2,
-                        backgroundColor: colors.accent + '22',
-                        borderLeftColor: colors.accent,
-                      },
-                    ]}
-                    onPress={() => {
-                      tick();
-                      onEventPress?.(event);
-                    }}
-                    accessibilityLabel={`${event.title}, ${startTime}`}
-                    accessibilityRole="button"
-                  >
+            {/* Event blocks — overlapping events split horizontally into lanes */}
+            {blocks.map(({ event, dayIndex, topOffset, height, startTime, lane, laneCount }) => {
+              const laneWidth = (COL_WIDTH - 2) / laneCount;
+              const tiny = laneWidth < 40 || height < 30;
+              return (
+                <AnimatedPressable
+                  key={event.id}
+                  style={[
+                    styles.eventBlock,
+                    {
+                      left: dayIndex * COL_WIDTH + 1 + lane * laneWidth,
+                      top: topOffset,
+                      height,
+                      width: laneWidth - 1,
+                      backgroundColor: colors.accent + '22',
+                      borderLeftColor: colors.accent,
+                    },
+                  ]}
+                  onPress={() => {
+                    tick();
+                    onEventPress?.(event);
+                  }}
+                  accessibilityLabel={`${event.title}, ${startTime}`}
+                  accessibilityRole="button"
+                >
+                  {!tiny && (
                     <Text style={[styles.eventBlockTime, { color: colors.accent }]} numberOfLines={1}>
                       {startTime}
                     </Text>
-                    <Text
-                      style={[styles.eventBlockTitle, { color: colors.text }]}
-                      numberOfLines={laneCount > 1 ? 2 : 3}
-                    >
-                      {event.title}
-                    </Text>
-                  </AnimatedPressable>
-                );
-              })}
+                  )}
+                  <Text
+                    style={[styles.eventBlockTitle, { color: colors.text }]}
+                    numberOfLines={tiny ? 1 : 2}
+                  >
+                    {event.title}
+                  </Text>
+                </AnimatedPressable>
+              );
+            })}
 
-              {/* Current time indicator */}
-              {nowTop >= 0 && (
-                <View style={[styles.nowLine, { top: nowTop, width: GRID_WIDTH }]}>
-                  <View style={[styles.nowDot, { backgroundColor: colors.error }]} />
-                  <View style={[styles.nowLineBar, { backgroundColor: colors.error }]} />
-                </View>
-              )}
-            </View>
-          </ScrollView>
+            {/* Current time indicator */}
+            {nowTop >= 0 && (
+              <View style={[styles.nowLine, { top: nowTop, width: GRID_WIDTH }]}>
+                <View style={[styles.nowDot, { backgroundColor: colors.error }]} />
+                <View style={[styles.nowLineBar, { backgroundColor: colors.error }]} />
+              </View>
+            )}
+          </View>
         </View>
       </ScrollView>
 
@@ -456,24 +392,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
   },
   navBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
   },
   weekLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     letterSpacing: 0.2,
     textAlign: 'center',
   },
   weekMeta: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     textAlign: 'center',
     marginTop: 2,
@@ -481,29 +417,29 @@ const styles = StyleSheet.create({
   dayHeaderRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    paddingVertical: 8,
-    paddingBottom: 10,
+    paddingVertical: 6,
+    paddingBottom: 8,
   },
   dayHeaderCell: {
     alignItems: 'center',
-    gap: 5,
+    gap: 3,
   },
   dayLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   dayNumberCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dayNumber: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
   },
   gridScroll: {
     flex: 1,
@@ -517,12 +453,13 @@ const styles = StyleSheet.create({
   hourRow: {
     justifyContent: 'flex-start',
     paddingTop: 0,
-    paddingLeft: 8,
+    paddingRight: 6,
+    alignItems: 'flex-end',
   },
   timeLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginTop: -7,
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: -6,
   },
   columnsContainer: {
     position: 'relative',
@@ -538,22 +475,21 @@ const styles = StyleSheet.create({
   },
   eventBlock: {
     position: 'absolute',
-    borderLeftWidth: 3,
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
+    borderLeftWidth: 2.5,
+    borderRadius: 5,
+    paddingHorizontal: 3,
+    paddingVertical: 2,
     overflow: 'hidden',
   },
   eventBlockTime: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: '700',
-    lineHeight: 14,
+    lineHeight: 12,
   },
   eventBlockTitle: {
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: '600',
-    lineHeight: 15,
-    marginTop: 1,
+    lineHeight: 11,
   },
   nowLine: {
     position: 'absolute',
@@ -563,10 +499,10 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   nowDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    marginLeft: -4.5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: -4,
   },
   nowLineBar: {
     flex: 1,

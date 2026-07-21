@@ -14,7 +14,7 @@ import { AnimatedPressable } from '@/motion';
 import { CategoryPill } from '@/components/CategoryPill';
 import { formatPrice } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
-import { GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
+import { GRADING_ELIGIBLE_CATEGORIES, formatCategoryName } from '@/constants/categories';
 import { SwipeableRow, SwipeActions, type SwipeAction } from '@/components/SwipeableRow';
 
 interface Item {
@@ -116,7 +116,7 @@ export const ItemsListItem = React.memo(function ItemsListItem({
             {item.name}
           </Text>
           <Text style={[styles.itemMeta, { color: colors.muted }]}>
-            <CategoryPill id={item.category} label={item.category} />
+            <CategoryPill id={item.category} label={formatCategoryName(item.category)} />
             {item.collectionName ? ` – ${item.collectionName}` : ''}
           </Text>
           {/* Rich detail subtitle: brand · year · series · edition. Series is

@@ -54,6 +54,7 @@ import {
 import { collectorsApi } from '@/api/collectorsApi';
 import { exportItemsOverview } from '@/api/miscApi';
 import { formatPrice } from '@/lib/format';
+import { formatCategoryName } from '@/constants/categories';
 import { getCategoryById, getCategoryByName } from '@/data/categories';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import {
@@ -148,9 +149,20 @@ const ItemsScreen: React.FC = () => {
     collectorsApi.getPortfolioCategoryBreakdown()
       .then((data) => {
         if (cancelled) return;
-        const cats = Array.isArray((data as { categories?: unknown })?.categories)
-          ? (data as { categories: CategoryBreakdownItem[] }).categories
+        // Backend (GET /analytics/portfolio/category-breakdown) returns
+        // { breakdown: [{ category, item_count, total_value, pct_of_portfolio }] }.
+        // We previously read `.categories` (never existed) so real data never
+        // populated and the section always fell back to its demo preview. Map
+        // pct_of_portfolio (0–1) → percentage (0–100).
+        const raw = Array.isArray((data as { breakdown?: unknown })?.breakdown)
+          ? (data as { breakdown: Array<Record<string, unknown>> }).breakdown
           : [];
+        const cats: CategoryBreakdownItem[] = raw.map((b) => ({
+          category: String(b.category ?? ''),
+          item_count: Number(b.item_count ?? 0),
+          total_value: Number(b.total_value ?? 0),
+          percentage: Math.round(Number(b.pct_of_portfolio ?? 0) * 1000) / 10,
+        }));
         setCategoryBreakdown(cats);
       })
       .catch((err) => {
@@ -923,7 +935,7 @@ const ItemsScreen: React.FC = () => {
           renderSectionHeader={({ section }) => (
             <View style={[styles.categoryBlock, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
               <Text style={[styles.categoryTitle, { color: colors.text }]}>
-                {section.title}
+                {formatCategoryName(section.title)}
               </Text>
             </View>
           )}

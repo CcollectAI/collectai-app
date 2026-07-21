@@ -97,6 +97,23 @@ export const CATEGORY_SLUG_TO_NAME: Record<string, string> = Object.fromEntries(
   CATEGORIES.map((c) => [c.slug, c.name])
 );
 
+/**
+ * Human-readable category name for display. Uses the curated name when the slug
+ * is known (e.g. 'taylor_swift' → 'Taylor Swift', 'lorcana' → 'Disney Lorcana'),
+ * and otherwise title-cases the slug so raw values like 'taylor_swift' never
+ * surface underscored/lowercase in the UI.
+ */
+export function formatCategoryName(slug: string | null | undefined): string {
+  if (!slug) return '';
+  const known = CATEGORY_SLUG_TO_NAME[slug];
+  if (known) return known;
+  return slug
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 /** Categories eligible for professional grading (PSA, CGC, BGS, etc.) */
 export const GRADING_ELIGIBLE_CATEGORIES = new Set<string>([
   'pokemon', 'mtg', 'yugioh', 'sportscards', 'comic_books', 'retro_games',

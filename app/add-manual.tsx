@@ -46,6 +46,7 @@ import {
 import { CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 import { CUSTOM_CATEGORY_SENTINEL } from '@/components/add-manual/CategoryPickerModal';
 import { getCategoryFields } from '@/constants/categoryFields';
+import { dmyToIso } from '@/lib/eventDate';
 
 type SaveState = "idle" | "saving" | "success" | "error";
 
@@ -337,7 +338,8 @@ const ManualAddScreen: React.FC = () => {
           purchase_price_eur: Number.isNaN(purchase as number) ? null : purchase,
           predicted_price_eur: Number.isNaN(estimated as number) ? null : estimated,
           purchase_currency: settings.currency,
-          purchased_at: acquisitionDate.trim() || null,
+          // Field is entered as DD-MM-YYYY; the backend expects ISO YYYY-MM-DD.
+          purchased_at: dmyToIso(acquisitionDate) || null,
           quantity: Number.isNaN(qty) || qty < 1 ? 1 : qty,
           source: 'manual',
           notes: notes.trim() || null,

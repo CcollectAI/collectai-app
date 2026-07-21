@@ -597,7 +597,7 @@ function EventsScreen() {
       )}
 
       {/* View Mode Tabs — below search */}
-      <View style={[styles.viewModeTabs, { backgroundColor: colors.border + '40' }]}>
+      <View style={[styles.viewModeTabs, { backgroundColor: colors.muted + '22' }]}>
         {VIEW_MODE_TABS.map((tab) => {
           const isActive = viewMode === tab.key;
           return (
@@ -770,7 +770,9 @@ function EventsScreen() {
         </ScrollView>
       ) : viewMode === 'week' ? (
         <View style={styles.scrollView}>
-          <View style={styles.scrollContent}>
+          {/* Tight bottom padding: the calendar follows immediately, so the
+              default 24px would open a dead white gap above the week grid. */}
+          <View style={[styles.scrollContent, { paddingBottom: 4 }]}>
             {headerElement}
           </View>
           <WeekViewCalendar
@@ -866,7 +868,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: radius.lg,
     padding: 4,
-    marginBottom: 14,
+    marginBottom: 8,
     gap: 4,
   },
   viewModeTab: {
@@ -874,8 +876,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 10,
+    gap: 3,
+    paddingVertical: 7,
     paddingHorizontal: 8,
     borderRadius: radius.sm,
   },

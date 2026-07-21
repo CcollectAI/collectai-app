@@ -539,7 +539,7 @@ function AlertsScreen() {
             {plan === 'free' && (
               <View style={{ marginBottom: 12 }}>
                 <UpgradePrompt
-                  feature="Unlimited Alerts (3/day on Free)"
+                  feature="Unlimited Alerts (1/week on Free)"
                   requiredPlan="Pro"
                 />
               </View>

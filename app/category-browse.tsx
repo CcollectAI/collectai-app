@@ -342,7 +342,7 @@ function CategoryBrowseScreen() {
               accessibilityRole="button"
               accessibilityLabel="Back to grid"
             >
-              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              <Ionicons name="arrow-back" size={26} color={colors.text} />
             </AnimatedPressable>
           </View>
         </Modal>
@@ -412,11 +412,14 @@ const s = StyleSheet.create({
   viewerCtaText: { fontSize: 14, fontWeight: "700" },
   viewerClose: {
     position: "absolute",
-    left: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    left: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    // No visible chrome — just a clear, tappable back arrow. (Was a dim
+    // rgba(0,0,0,0.45) circle with a white arrow that vanished on the light
+    // viewer background.)
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
   },

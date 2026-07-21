@@ -37,6 +37,26 @@ export const SOCIAL_LOGIN_ENABLED = false;
  */
 export const CATEGORY_FOLLOW_ENABLED = false;
 
+/**
+ * "Comparable Sales" list on the item detail price section. Disabled for now:
+ * the comp matching surfaces unrelated items — e.g. classical/other-artist
+ * discogs pressings shown as comps for a Taylor Swift record, all at €0 — which
+ * reads as broken and erodes trust in the app's valuations. Hiding it is better
+ * than showing bad data. Flip back to true once comp matching is reliable and
+ * verified on real items across categories.
+ */
+export const COMPARABLE_SALES_ENABLED = false;
+
+/**
+ * On-demand "Get fresh comps" live price-fetch (the thin-category prompt on the
+ * item detail screen). OFF for now: the live fetch is backed by the paid
+ * scrapers (Firecrawl / Scrape.do), which are quota-exhausted / killswitched,
+ * so the button only ever reports "Live price-fetch is currently unavailable" —
+ * a dead-end CTA that reads as broken. Hide the whole prompt until the fetch
+ * path is live again, then flip back to true.
+ */
+export const LIVE_PRICE_FETCH_ENABLED = false;
+
 export const featureFlags = {
   darkMode: false,
   FEATURE_HAPTICS_MICRO_ANIMATIONS: true,

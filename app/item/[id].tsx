@@ -35,7 +35,7 @@ import {
   getConfidenceTier,
   DEFAULT_DISCLAIMER,
 } from "@/types/priceExplanation";
-import { featureFlags } from "@/config/featureFlags";
+import { featureFlags, LIVE_PRICE_FETCH_ENABLED } from "@/config/featureFlags";
 import { radius, text, fontWeight, gap, shadow } from "@/theme/tokens";
 import { collectorsApi } from "@/api/collectorsApi";
 import { enrichOnDemand } from "@/api/marketplaceApi";
@@ -800,7 +800,7 @@ function ItemDetailScreen() {
                 for cats with sparse market data so the "tell us what you paid"
                 signal is more visible. List mirrors BOOST_CATEGORIES in the
                 scrape scheduler. */}
-            {!isDraft && id && (() => {
+            {LIVE_PRICE_FETCH_ENABLED && !isDraft && id && (() => {
               const thinCats = new Set([
                 'ghibli','pens','whiskey','pop_fandom','action_figures',
                 'keycaps','blind_box','taylor_swift',
@@ -987,77 +987,62 @@ function ItemDetailScreen() {
                 on (or per-category gate) once the bake feeds enough
                 comps to every cat. */}
 
-            {/* Item History */}
+            {/* Pro insight sections. Pro users get all three as real,
+                expandable sections. Free users get ONE consolidated upgrade
+                card listing the three — stacking three full upsell cards
+                buried the rest of the screen. */}
             {!isDraft && id && (
               limits.advanced_analytics ? (
-                <ProvenanceHistorySection
-                  theme={theme}
-                  hapticsEnabled={settings.hapticsEnabled}
-                  provenanceExpanded={provenanceExpanded}
-                  provenanceLoading={provenanceLoading}
-                  provenanceEvents={provenanceEvents}
-                  authenticitySignals={authenticitySignals}
-                  onToggleExpanded={() => setProvenanceExpanded(!provenanceExpanded)}
-                />
+                <>
+                  <ProvenanceHistorySection
+                    theme={theme}
+                    hapticsEnabled={settings.hapticsEnabled}
+                    provenanceExpanded={provenanceExpanded}
+                    provenanceLoading={provenanceLoading}
+                    provenanceEvents={provenanceEvents}
+                    authenticitySignals={authenticitySignals}
+                    onToggleExpanded={() => setProvenanceExpanded(!provenanceExpanded)}
+                  />
+                  <DossierReportSection
+                    theme={theme}
+                    dossierData={dossierData}
+                    dossierLoading={dossierLoading}
+                    dossierExpanded={dossierExpanded}
+                    dossierError={dossierError}
+                    onToggleExpanded={() => {
+                      if (!dossierData && !dossierError) loadDossier();
+                      else setDossierExpanded(!dossierExpanded);
+                    }}
+                    onRetry={() => loadDossier()}
+                    itemId={id}
+                    formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
+                    toNum={toNum}
+                  />
+                  <MarketplacePricesSection
+                    theme={theme}
+                    marketResults={marketResults}
+                    marketLoading={marketLoading}
+                    marketExpanded={marketExpanded}
+                    marketError={marketError}
+                    editableName={editableName}
+                    onToggleExpanded={() => {
+                      if (marketResults.length === 0 && !marketError) loadMarketResults();
+                      else setMarketExpanded(!marketExpanded);
+                    }}
+                    onRetry={() => loadMarketResults()}
+                    formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
+                    toNum={toNum}
+                  />
+                </>
               ) : (
                 <LockedPreviewSection
-                  title="Item History"
-                  subtitle="View provenance events and authenticity signals with Pro."
-                  previewType="history"
-                />
-              )
-            )}
-
-            {/* Valuation Report (Dossier) */}
-            {!isDraft && id && (
-              limits.advanced_analytics ? (
-                <DossierReportSection
-                  theme={theme}
-                  dossierData={dossierData}
-                  dossierLoading={dossierLoading}
-                  dossierExpanded={dossierExpanded}
-                  dossierError={dossierError}
-                  onToggleExpanded={() => {
-                    if (!dossierData && !dossierError) loadDossier();
-                    else setDossierExpanded(!dossierExpanded);
-                  }}
-                  onRetry={() => loadDossier()}
-                  itemId={id}
-                  formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
-                  toNum={toNum}
-                />
-              ) : (
-                <LockedPreviewSection
-                  title="Valuation Report"
-                  subtitle="Get a full dossier PDF with comps, confidence, and provenance signals with Pro."
-                  previewType="report"
-                />
-              )
-            )}
-
-            {/* Market Prices */}
-            {!isDraft && id && (
-              limits.advanced_analytics ? (
-                <MarketplacePricesSection
-                  theme={theme}
-                  marketResults={marketResults}
-                  marketLoading={marketLoading}
-                  marketExpanded={marketExpanded}
-                  marketError={marketError}
-                  editableName={editableName}
-                  onToggleExpanded={() => {
-                    if (marketResults.length === 0 && !marketError) loadMarketResults();
-                    else setMarketExpanded(!marketExpanded);
-                  }}
-                  onRetry={() => loadMarketResults()}
-                  formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
-                  toNum={toNum}
-                />
-              ) : (
-                <LockedPreviewSection
-                  title="Market Prices"
-                  subtitle="See live listings from eBay, Mercari, Vinted and more with Pro."
-                  previewType="list"
+                  title="Item Insights"
+                  requiredPlan="Pro"
+                  features={[
+                    { label: 'Item History', description: '— provenance events & authenticity signals' },
+                    { label: 'Valuation Report', description: '— full dossier PDF with comps & confidence' },
+                    { label: 'Market Prices', description: '— live listings from eBay, Mercari, Vinted & more' },
+                  ]}
                 />
               )
             )}
