@@ -291,18 +291,37 @@ async def submit_feedback(
             if owner_check is None:
                 raise error_response(404, "Item not found", code="NOT_FOUND")
 
-            # Insert into feedback table (user_id may be NULL if column not yet migrated)
+            # Write to user_feedback_events_v1 — the table the training readers
+            # (pipelines/export_feedback.py, pipelines/train_price.py) consume.
+            # (The old target `feedback` is the ML training-row table and has none
+            # of these columns, so every submit 500'd — see migration
+            # 20260721_user_feedback_events_reconcile.sql.)
+            #
+            # value_json is the shape the readers parse: they pull the price from
+            # value_json["price"] for training. sale_price carries a numeric price;
+            # qualitative signals (disagree/accurate) carry the raw value and are
+            # naturally ignored by the price-training filter.
+            value_payload: dict = {"notes": request.notes}
+            if feedback_type == "sale_price" and request.value:
+                try:
+                    value_payload["price"] = float(str(request.value).replace(",", "."))
+                except (ValueError, TypeError):
+                    value_payload["value"] = request.value
+            elif request.value:
+                value_payload["value"] = request.value
+
             row = await conn.fetchrow(
                 """
-                INSERT INTO feedback (item_id, label, notes, observed_at, user_id)
-                VALUES ($1, $2, $3, $4, $5::uuid)
+                INSERT INTO public.user_feedback_events_v1
+                    (user_id, item_id, feedback_type, value_json, source, created_at)
+                VALUES ($1::uuid, $2::uuid, $3, $4::jsonb, 'app', $5)
                 RETURNING id
                 """,
-                item_uuid,
-                label,
-                request.notes,
-                datetime.now(timezone.utc),
                 user_id,
+                str(item_uuid),
+                feedback_type,
+                json.dumps(value_payload),
+                datetime.now(timezone.utc),
             )
 
             feedback_id = str(row["id"]) if row else None

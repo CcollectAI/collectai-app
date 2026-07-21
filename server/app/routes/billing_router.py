@@ -146,6 +146,8 @@ def _resolve_price_id(plan: str, interval: str = "monthly") -> str | None:
 PLAN_LIMITS = {
     "free": {
         "max_mandates": 3,
+        # Price-alert creation cap per rolling 7 days. None = unlimited.
+        "max_alerts_per_week": 1,
         "deal_discovery": False,
         "dossier_pdf": False,
         "detailed_valuation": False,
@@ -156,6 +158,7 @@ PLAN_LIMITS = {
     },
     "pro": {
         "max_mandates": 10,
+        "max_alerts_per_week": None,
         "deal_discovery": True,
         "dossier_pdf": True,
         "detailed_valuation": True,
@@ -166,6 +169,7 @@ PLAN_LIMITS = {
     },
     "premium": {
         "max_mandates": 50,
+        "max_alerts_per_week": None,
         "deal_discovery": True,
         "dossier_pdf": True,
         "detailed_valuation": True,

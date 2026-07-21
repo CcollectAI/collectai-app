@@ -121,12 +121,6 @@
     "market_hits_y2026m03.price_eur": [
       "CHECK ((((price IS NULL) OR (price <= (20000000)::numeric)) AND ((price_eur IS NULL) OR (price_eur <= (20000000)::numeric))))"
     ],
-    "market_hits_y2026m06.price": [
-      "CHECK ((((price IS NULL) OR (price <= (20000000)::numeric)) AND ((price_eur IS NULL) OR (price_eur <= (20000000)::numeric))))"
-    ],
-    "market_hits_y2026m06.price_eur": [
-      "CHECK ((((price IS NULL) OR (price <= (20000000)::numeric)) AND ((price_eur IS NULL) OR (price_eur <= (20000000)::numeric))))"
-    ],
     "market_hits_y2026m07.price": [
       "CHECK ((((price IS NULL) OR (price <= (20000000)::numeric)) AND ((price_eur IS NULL) OR (price_eur <= (20000000)::numeric))))"
     ],
@@ -277,8 +271,11 @@
     "subscriptions.plan": [
       "CHECK ((plan = ANY (ARRAY['free'::text, 'pro'::text, 'premium'::text])))"
     ],
+    "subscriptions.provider": [
+      "CHECK ((provider = ANY (ARRAY['stripe'::text, 'revenuecat'::text])))"
+    ],
     "subscriptions.status": [
-      "CHECK ((status = ANY (ARRAY['active'::text, 'past_due'::text, 'canceled'::text, 'unpaid'::text, 'trialing'::text])))"
+      "CHECK ((status = ANY (ARRAY['active'::text, 'past_due'::text, 'canceled'::text, 'unpaid'::text, 'trialing'::text, 'expired'::text, 'paused'::text])))"
     ],
     "supply_snapshots.listing_count": [
       "CHECK ((listing_count >= 0))"
@@ -288,6 +285,21 @@
     ],
     "training_candidates_v1.label_state": [
       "CHECK ((label_state = ANY (ARRAY['pending'::text, 'verified'::text, 'rejected'::text])))"
+    ],
+    "ugc_video_audio.mood": [
+      "CHECK ((mood = ANY (ARRAY['hype'::text, 'chill'::text, 'dramatic'::text, 'upbeat'::text, 'cinematic'::text, 'lofi'::text])))"
+    ],
+    "ugc_video_learning.trend": [
+      "CHECK ((trend = ANY (ARRAY['rising'::text, 'stable'::text, 'declining'::text])))"
+    ],
+    "ugc_video_scripts.classification": [
+      "CHECK ((classification = ANY (ARRAY['hit'::text, 'average'::text, 'fail'::text, 'pending'::text])))"
+    ],
+    "ugc_video_scripts.status": [
+      "CHECK ((status = ANY (ARRAY['draft'::text, 'rendering'::text, 'rendered'::text, 'posted'::text, 'tracking'::text])))"
+    ],
+    "ugc_video_scripts.template_id": [
+      "CHECK ((template_id = ANY (ARRAY['pull-reveal'::text, 'whats-it-worth'::text, 'hidden-gem'::text, 'market-alert'::text, 'collection-flex'::text])))"
     ],
     "user_alert_preferences.frequency": [
       "CHECK ((frequency = ANY (ARRAY['immediate'::text, 'daily'::text, 'weekly'::text])))"
@@ -3271,6 +3283,59 @@
       "nullable": false,
       "type": "uuid"
     },
+    "calendar_items.account_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "calendar_items.calendar_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "calendar_items.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "calendar_items.format": {
+      "nullable": true,
+      "type": "text"
+    },
+    "calendar_items.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "calendar_items.idea_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "calendar_items.language_code": {
+      "default": "'en'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "calendar_items.notes": {
+      "nullable": true,
+      "type": "text"
+    },
+    "calendar_items.planned_date": {
+      "nullable": false,
+      "type": "date"
+    },
+    "calendar_items.planned_time": {
+      "nullable": true,
+      "type": "time"
+    },
+    "calendar_items.sort_order": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "calendar_items.status": {
+      "default": "'planned'::text",
+      "nullable": false,
+      "type": "text"
+    },
     "calibration_snapshots.ace": {
       "nullable": false,
       "type": "float8"
@@ -4607,6 +4672,400 @@
       "nullable": true,
       "type": "numeric"
     },
+    "content_accounts.account_type": {
+      "default": "'brand'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "content_accounts.content_focus": {
+      "nullable": true,
+      "type": "_text"
+    },
+    "content_accounts.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "content_accounts.display_name": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_accounts.handle": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_accounts.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "content_accounts.is_active": {
+      "default": "true",
+      "nullable": false,
+      "type": "bool"
+    },
+    "content_accounts.language": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_accounts.platform": {
+      "default": "'tiktok'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "content_accounts.posting_rules": {
+      "default": "'{}'::jsonb",
+      "nullable": true,
+      "type": "jsonb"
+    },
+    "content_accounts.purpose": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_batch_items.batch_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "content_batch_items.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "content_batch_items.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "content_batch_items.idea_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "content_batch_items.is_filmed": {
+      "default": "false",
+      "nullable": true,
+      "type": "bool"
+    },
+    "content_batch_items.setup_notes": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_batch_items.shot_order": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "content_batches.actual_duration_mins": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "content_batches.batch_date": {
+      "nullable": false,
+      "type": "date"
+    },
+    "content_batches.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "content_batches.estimated_duration_mins": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "content_batches.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "content_batches.notes": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_batches.setup_type": {
+      "default": "'mixed'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "content_batches.status": {
+      "default": "'planned'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "content_batches.title": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_ideas.account_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "content_ideas.affiliate_ready": {
+      "default": "false",
+      "nullable": false,
+      "type": "bool"
+    },
+    "content_ideas.boostable_reason": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_ideas.commerce_mode": {
+      "default": "'organic'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "content_ideas.concept": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_ideas.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "content_ideas.cta": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_ideas.estimated_duration": {
+      "default": "'15-45s'::text",
+      "nullable": true,
+      "type": "text"
+    },
+    "content_ideas.format": {
+      "default": "'tutorial'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "content_ideas.hashtags": {
+      "nullable": true,
+      "type": "_text"
+    },
+    "content_ideas.hook": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_ideas.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "content_ideas.language_code": {
+      "default": "'en'::text",
+      "nullable": true,
+      "type": "text"
+    },
+    "content_ideas.niche_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "content_ideas.objective_type": {
+      "default": "'awareness'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "content_ideas.paid_candidate": {
+      "default": "false",
+      "nullable": false,
+      "type": "bool"
+    },
+    "content_ideas.pillar_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "content_ideas.presence_mode": {
+      "default": "'hands_only'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "content_ideas.priority": {
+      "default": "'normal'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "content_ideas.product_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "content_ideas.series_id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_ideas.series_order": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "content_ideas.shot_list": {
+      "nullable": true,
+      "type": "_text"
+    },
+    "content_ideas.status": {
+      "default": "'draft'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "content_ideas.target_completion_rate": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "content_ideas.target_keyword": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_ideas.target_save_rate": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "content_ideas.title": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_ideas.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "content_ideas.voiceover": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_niches.audience_tags": {
+      "nullable": true,
+      "type": "_text"
+    },
+    "content_niches.category_slug": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_niches.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "content_niches.emoji": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_niches.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "content_niches.is_active": {
+      "default": "true",
+      "nullable": false,
+      "type": "bool"
+    },
+    "content_niches.name": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_niches.personality_tags": {
+      "nullable": true,
+      "type": "_text"
+    },
+    "content_niches.price_range": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_niches.short_description": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_niches.slug": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_niches.trending_topics": {
+      "nullable": true,
+      "type": "_text"
+    },
+    "content_pillars.best_formats": {
+      "nullable": true,
+      "type": "_text"
+    },
+    "content_pillars.best_presence": {
+      "nullable": true,
+      "type": "_text"
+    },
+    "content_pillars.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "content_pillars.default_cta": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_pillars.description": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_pillars.emoji": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_pillars.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "content_pillars.is_active": {
+      "default": "true",
+      "nullable": false,
+      "type": "bool"
+    },
+    "content_pillars.name": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_pillars.slug": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_pillars.target_mix_pct": {
+      "default": "10",
+      "nullable": false,
+      "type": "int4"
+    },
+    "content_products.best_content_angles": {
+      "nullable": true,
+      "type": "_text"
+    },
+    "content_products.category": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_products.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "content_products.description": {
+      "nullable": true,
+      "type": "text"
+    },
+    "content_products.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "content_products.is_active": {
+      "default": "true",
+      "nullable": false,
+      "type": "bool"
+    },
+    "content_products.name": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_products.slug": {
+      "nullable": false,
+      "type": "text"
+    },
+    "content_products.tier": {
+      "default": "'free'::text",
+      "nullable": true,
+      "type": "text"
+    },
     "creator_leaderboards.hits_count": {
       "default": "0",
       "nullable": true,
@@ -4634,6 +5093,58 @@
       "default": "now()",
       "nullable": true,
       "type": "timestamptz"
+    },
+    "creators.affiliate_code": {
+      "nullable": false,
+      "type": "text"
+    },
+    "creators.affiliate_payout_pct": {
+      "default": "15.00",
+      "nullable": false,
+      "type": "numeric"
+    },
+    "creators.cogs_per_kit_cents": {
+      "default": "600",
+      "nullable": false,
+      "type": "int4"
+    },
+    "creators.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "creators.handle": {
+      "nullable": false,
+      "type": "text"
+    },
+    "creators.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "creators.is_active": {
+      "default": "true",
+      "nullable": false,
+      "type": "bool"
+    },
+    "creators.kits_sent": {
+      "default": "2",
+      "nullable": false,
+      "type": "int4"
+    },
+    "creators.language": {
+      "default": "'en'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "creators.name": {
+      "nullable": false,
+      "type": "text"
+    },
+    "creators.platform": {
+      "default": "'tiktok'::text",
+      "nullable": false,
+      "type": "text"
     },
     "deal_ratings.comment": {
       "nullable": true,
@@ -5483,6 +5994,59 @@
       "default": "now()",
       "nullable": false,
       "type": "timestamptz"
+    },
+    "generated_captions.account_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "generated_captions.caption": {
+      "nullable": false,
+      "type": "text"
+    },
+    "generated_captions.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "generated_captions.cta": {
+      "nullable": true,
+      "type": "text"
+    },
+    "generated_captions.hashtags": {
+      "nullable": true,
+      "type": "_text"
+    },
+    "generated_captions.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "generated_captions.idea_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "generated_captions.is_approved": {
+      "default": "false",
+      "nullable": true,
+      "type": "bool"
+    },
+    "generated_captions.language_code": {
+      "nullable": false,
+      "type": "text"
+    },
+    "generated_captions.mode": {
+      "default": "'organic'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "generated_captions.seo_keyword": {
+      "nullable": true,
+      "type": "text"
+    },
+    "generated_captions.version": {
+      "default": "1",
+      "nullable": false,
+      "type": "int4"
     },
     "guidance_runs.created_at": {
       "default": "now()",
@@ -7411,6 +7975,38 @@
       "nullable": true,
       "type": "uuid"
     },
+    "market_hits_daily.comps_count": {
+      "nullable": false,
+      "type": "int4"
+    },
+    "market_hits_daily.day": {
+      "nullable": false,
+      "type": "date"
+    },
+    "market_hits_daily.item_ref": {
+      "nullable": false,
+      "type": "text"
+    },
+    "market_hits_daily.latest_price": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "market_hits_daily.latest_seen_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "market_hits_daily.max_price": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "market_hits_daily.median_price": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "market_hits_daily.min_price": {
+      "nullable": true,
+      "type": "numeric"
+    },
     "market_hits_default.attrs": {
       "nullable": true,
       "type": "jsonb"
@@ -8024,132 +8620,6 @@
       "type": "text"
     },
     "market_hits_y2026m03.user_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "market_hits_y2026m06.attrs": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "market_hits_y2026m06.category": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.condition": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.condition_grade": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.currency": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.ended_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "market_hits_y2026m06.features_json": {
-      "default": "'{}'::jsonb",
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "market_hits_y2026m06.graded": {
-      "default": "false",
-      "nullable": true,
-      "type": "bool"
-    },
-    "market_hits_y2026m06.id": {
-      "default": "nextval('market_hits_id_seq'::regclass)",
-      "nullable": false,
-      "type": "int8"
-    },
-    "market_hits_y2026m06.image_url": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.is_listing": {
-      "default": "false",
-      "nullable": true,
-      "type": "bool"
-    },
-    "market_hits_y2026m06.item_ref": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.listing_id": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.marketplace": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.normalized_key": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.observed_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "market_hits_y2026m06.price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "market_hits_y2026m06.price_eur": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "market_hits_y2026m06.processed": {
-      "default": "false",
-      "nullable": true,
-      "type": "bool"
-    },
-    "market_hits_y2026m06.provider": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.seen_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "market_hits_y2026m06.seller_rating": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "market_hits_y2026m06.seller_score": {
-      "nullable": true,
-      "type": "float8"
-    },
-    "market_hits_y2026m06.shipping": {
-      "nullable": true,
-      "type": "float8"
-    },
-    "market_hits_y2026m06.source": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.title": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.tx_id": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.url": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.url_hash": {
-      "nullable": true,
-      "type": "text"
-    },
-    "market_hits_y2026m06.user_id": {
       "nullable": true,
       "type": "uuid"
     },
@@ -9448,6 +9918,26 @@
       "nullable": false,
       "type": "text"
     },
+    "mv_catalog_collections.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_catalog_collections.cover_image": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_catalog_collections.dim": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_catalog_collections.grp": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_catalog_collections.total_items": {
+      "nullable": true,
+      "type": "int8"
+    },
     "mv_catalog_item_price.category": {
       "nullable": true,
       "type": "text"
@@ -9571,6 +10061,74 @@
     "mv_item_best_comp_canon.item_id": {
       "nullable": true,
       "type": "uuid"
+    },
+    "mv_market_top_movers.brand": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_market_top_movers.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_market_top_movers.comps_30d": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "mv_market_top_movers.days_30d": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "mv_market_top_movers.delta_pct_30d": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_market_top_movers.delta_pct_7d": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_market_top_movers.image_url": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_market_top_movers.in_catalog": {
+      "nullable": true,
+      "type": "bool"
+    },
+    "mv_market_top_movers.item_key": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_market_top_movers.item_ref": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_market_top_movers.last_day": {
+      "nullable": true,
+      "type": "date"
+    },
+    "mv_market_top_movers.last_price": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_market_top_movers.med_30d": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_market_top_movers.med_7d": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "mv_market_top_movers.rarity": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_market_top_movers.set_code": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_market_top_movers.title": {
+      "nullable": true,
+      "type": "text"
     },
     "mv_supply_trend.avg_listings": {
       "nullable": true,
@@ -11032,53 +11590,6 @@
       "nullable": false,
       "type": "text"
     },
-    "price_history_y2026m06.as_of": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "price_history_y2026m06.currency": {
-      "default": "'EUR'::text",
-      "nullable": true,
-      "type": "text"
-    },
-    "price_history_y2026m06.id": {
-      "nullable": false,
-      "type": "int8"
-    },
-    "price_history_y2026m06.item_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "price_history_y2026m06.item_ref": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_history_y2026m06.price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_history_y2026m06.price_q10": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_history_y2026m06.price_q50": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_history_y2026m06.price_q90": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_history_y2026m06.snapshot_at": {
-      "default": "now()",
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "price_history_y2026m06.source": {
-      "nullable": false,
-      "type": "text"
-    },
     "price_history_y2026m07.as_of": {
       "default": "now()",
       "nullable": false,
@@ -12385,6 +12896,10 @@
       "nullable": false,
       "type": "uuid"
     },
+    "profiles.referred_by_code": {
+      "nullable": true,
+      "type": "text"
+    },
     "profiles.username": {
       "nullable": true,
       "type": "text"
@@ -13543,6 +14058,79 @@
       "nullable": true,
       "type": "timestamptz"
     },
+    "subscription_events.affiliate_code": {
+      "nullable": true,
+      "type": "text"
+    },
+    "subscription_events.app_user_id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "subscription_events.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "subscription_events.currency": {
+      "nullable": true,
+      "type": "text"
+    },
+    "subscription_events.environment": {
+      "nullable": true,
+      "type": "text"
+    },
+    "subscription_events.event_id": {
+      "nullable": false,
+      "type": "text"
+    },
+    "subscription_events.event_type": {
+      "nullable": false,
+      "type": "text"
+    },
+    "subscription_events.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "subscription_events.occurred_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "subscription_events.plan": {
+      "nullable": true,
+      "type": "text"
+    },
+    "subscription_events.product_id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "subscription_events.provider": {
+      "default": "'revenuecat'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "subscription_events.raw": {
+      "nullable": true,
+      "type": "jsonb"
+    },
+    "subscription_events.revenue_cents": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "subscription_events.store": {
+      "nullable": true,
+      "type": "text"
+    },
+    "subscription_events.takehome_percentage": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "subscription_events.user_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
     "subscriptions.cancel_at_period_end": {
       "default": "false",
       "nullable": true,
@@ -13569,6 +14157,19 @@
     "subscriptions.plan": {
       "default": "'free'::text",
       "nullable": false,
+      "type": "text"
+    },
+    "subscriptions.provider": {
+      "default": "'stripe'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "subscriptions.revenuecat_app_user_id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "subscriptions.revenuecat_product_id": {
+      "nullable": true,
       "type": "text"
     },
     "subscriptions.status": {
@@ -14376,6 +14977,775 @@
       "nullable": true,
       "type": "int4"
     },
+    "ugc_accounts.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_accounts.description": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_accounts.followers": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_accounts.handle": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_accounts.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_accounts.is_active": {
+      "default": "true",
+      "nullable": true,
+      "type": "bool"
+    },
+    "ugc_accounts.language": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_accounts.platform": {
+      "default": "'tiktok'::text",
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_accounts.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_content_pipeline.account_id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_content_pipeline.concept_cluster": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_content_pipeline.country": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_content_pipeline.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_content_pipeline.creator_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "ugc_content_pipeline.description": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_content_pipeline.due_date": {
+      "nullable": true,
+      "type": "date"
+    },
+    "ugc_content_pipeline.format": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_content_pipeline.hook_text": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_content_pipeline.hook_type": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_content_pipeline.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_content_pipeline.kit_slug": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_content_pipeline.niche": {
+      "default": "'crochet'::text",
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_content_pipeline.notes": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_content_pipeline.pod_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "ugc_content_pipeline.posted_date": {
+      "nullable": true,
+      "type": "date"
+    },
+    "ugc_content_pipeline.priority": {
+      "default": "'normal'::text",
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_content_pipeline.status": {
+      "default": "'idea'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_content_pipeline.title": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_content_pipeline.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_content_pipeline.video_id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_daily_snapshots.comments": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_daily_snapshots.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_daily_snapshots.likes": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_daily_snapshots.saves": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_daily_snapshots.shares": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_daily_snapshots.snapshot_date": {
+      "nullable": false,
+      "type": "date"
+    },
+    "ugc_daily_snapshots.video_id": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_daily_snapshots.views": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_pod_members.creator_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_pod_members.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_pod_members.joined_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_pod_members.pod_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_pod_members.role": {
+      "default": "'creator'::text",
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_pods.color": {
+      "default": "'#FF6B6B'::text",
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_pods.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_pods.description": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_pods.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_pods.is_active": {
+      "default": "true",
+      "nullable": true,
+      "type": "bool"
+    },
+    "ugc_pods.language": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_pods.name": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_pods.target_videos_per_week": {
+      "default": "5",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_swipe_file.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_swipe_file.estimated_views": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_swipe_file.format": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_swipe_file.hook_text": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_swipe_file.hook_type": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_swipe_file.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_swipe_file.is_competitor": {
+      "default": "false",
+      "nullable": true,
+      "type": "bool"
+    },
+    "ugc_swipe_file.niche": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_swipe_file.platform": {
+      "default": "'tiktok'::text",
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_swipe_file.saved_by": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_swipe_file.source_account": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_swipe_file.tags": {
+      "default": "'{}'::text[]",
+      "nullable": true,
+      "type": "_text"
+    },
+    "ugc_swipe_file.url": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_swipe_file.why_it_works": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_tiktok_metrics.avg_watch_time": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "ugc_tiktok_metrics.comments": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "ugc_tiktok_metrics.completion_rate": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "ugc_tiktok_metrics.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_tiktok_metrics.likes": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "ugc_tiktok_metrics.profile_views": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_tiktok_metrics.reach": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_tiktok_metrics.retention_3s": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "ugc_tiktok_metrics.shares": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "ugc_tiktok_metrics.snapshot_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_tiktok_metrics.tiktok_video_id": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_tiktok_metrics.video_script_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_tiktok_metrics.views": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "ugc_video_audio.artist": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_video_audio.bpm": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_video_audio.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_video_audio.duration_ms": {
+      "nullable": false,
+      "type": "int4"
+    },
+    "ugc_video_audio.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_video_audio.is_active": {
+      "default": "true",
+      "nullable": false,
+      "type": "bool"
+    },
+    "ugc_video_audio.mood": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_audio.niche_tags": {
+      "default": "'{}'::text[]",
+      "nullable": false,
+      "type": "_text"
+    },
+    "ugc_video_audio.s3_key": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_audio.title": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_learning.avg_retention": {
+      "default": "0",
+      "nullable": false,
+      "type": "numeric"
+    },
+    "ugc_video_learning.avg_views": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "ugc_video_learning.hits": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "ugc_video_learning.hook_id": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_learning.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_video_learning.last_used": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "ugc_video_learning.niche_id": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_learning.score": {
+      "default": "0",
+      "nullable": false,
+      "type": "numeric"
+    },
+    "ugc_video_learning.template_id": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_learning.trend": {
+      "default": "'stable'::text",
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_video_learning.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_video_learning.uses": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "ugc_video_scripts.ab_group": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_video_scripts.ab_pair_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "ugc_video_scripts.ab_winner": {
+      "nullable": true,
+      "type": "bool"
+    },
+    "ugc_video_scripts.classification": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_video_scripts.completion_rate": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "ugc_video_scripts.composition_id": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_scripts.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_video_scripts.creator_id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_video_scripts.estimated_cost": {
+      "default": "0.03",
+      "nullable": false,
+      "type": "numeric"
+    },
+    "ugc_video_scripts.hook_id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_video_scripts.hook_text": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_scripts.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_video_scripts.installs": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_video_scripts.language": {
+      "default": "'EN'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_scripts.link_clicks": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_video_scripts.niche_id": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_scripts.niche_label": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_scripts.pipeline_item_id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_video_scripts.pod_id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_video_scripts.posted_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "ugc_video_scripts.props": {
+      "default": "'{}'::jsonb",
+      "nullable": false,
+      "type": "jsonb"
+    },
+    "ugc_video_scripts.render_id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_video_scripts.render_url": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_video_scripts.retention_3s": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "ugc_video_scripts.shares": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_video_scripts.status": {
+      "default": "'draft'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_scripts.template_id": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_video_scripts.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_video_scripts.video_url": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_video_scripts.views_12h": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_video_scripts.views_24h": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_video_scripts.views_2h": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_video_scripts.views_total": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.account_id": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_videos.avg_watch_time": {
+      "default": "0",
+      "nullable": true,
+      "type": "numeric"
+    },
+    "ugc_videos.boost_clicks": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.boost_end_date": {
+      "nullable": true,
+      "type": "date"
+    },
+    "ugc_videos.boost_installs": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.boost_spend_cents": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.boost_start_date": {
+      "nullable": true,
+      "type": "date"
+    },
+    "ugc_videos.boost_views": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.classification": {
+      "default": "'pending'::text",
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_videos.clicks": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.comments": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.completion_rate": {
+      "default": "0",
+      "nullable": true,
+      "type": "numeric"
+    },
+    "ugc_videos.concept_cluster": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_videos.cost_cents": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.country": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_videos.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_videos.creator_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "ugc_videos.date_posted": {
+      "nullable": false,
+      "type": "date"
+    },
+    "ugc_videos.format": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_videos.hook_retention_rate": {
+      "default": "0",
+      "nullable": true,
+      "type": "numeric"
+    },
+    "ugc_videos.hook_text": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_videos.hook_type": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_videos.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "ugc_videos.installs": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.is_boosted": {
+      "default": "false",
+      "nullable": true,
+      "type": "bool"
+    },
+    "ugc_videos.likes": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.niche": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_videos.notes": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_videos.revenue_cents": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.saves": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.shares": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.thumbnail_url": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_videos.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "ugc_videos.video_id": {
+      "nullable": false,
+      "type": "text"
+    },
+    "ugc_videos.video_url": {
+      "nullable": true,
+      "type": "text"
+    },
+    "ugc_videos.views_12h": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.views_24h": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.views_2h": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
+    "ugc_videos.views_total": {
+      "default": "0",
+      "nullable": true,
+      "type": "int4"
+    },
     "user_achievements.achievement_id": {
       "nullable": false,
       "type": "text"
@@ -14664,13 +16034,26 @@
       "type": "timestamptz"
     },
     "user_feedback_events_v1.event_type": {
+      "default": "'price_feedback'::text",
       "nullable": false,
+      "type": "text"
+    },
+    "user_feedback_events_v1.feedback_type": {
+      "nullable": true,
       "type": "text"
     },
     "user_feedback_events_v1.id": {
       "default": "gen_random_uuid()",
       "nullable": false,
       "type": "uuid"
+    },
+    "user_feedback_events_v1.incorporated_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "user_feedback_events_v1.incorporated_run_id": {
+      "nullable": true,
+      "type": "text"
     },
     "user_feedback_events_v1.item_id": {
       "nullable": true,
@@ -14689,14 +16072,23 @@
       "nullable": true,
       "type": "text"
     },
+    "user_feedback_events_v1.source": {
+      "default": "'app'::text",
+      "nullable": true,
+      "type": "text"
+    },
     "user_feedback_events_v1.status": {
-      "default": "'pending'::text",
+      "default": "'new'::text",
       "nullable": false,
       "type": "text"
     },
     "user_feedback_events_v1.user_id": {
       "nullable": true,
       "type": "uuid"
+    },
+    "user_feedback_events_v1.value_json": {
+      "nullable": true,
+      "type": "jsonb"
     },
     "user_gamification.current_streak": {
       "default": "0",
@@ -20460,6 +21852,41 @@
       "nullable": false,
       "type": "text"
     },
+    "weekly_calendars.batch_film_day": {
+      "nullable": true,
+      "type": "date"
+    },
+    "weekly_calendars.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "weekly_calendars.goal": {
+      "nullable": true,
+      "type": "text"
+    },
+    "weekly_calendars.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "weekly_calendars.notes": {
+      "nullable": true,
+      "type": "text"
+    },
+    "weekly_calendars.pillar_distribution": {
+      "nullable": true,
+      "type": "jsonb"
+    },
+    "weekly_calendars.status": {
+      "default": "'draft'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "weekly_calendars.week_start": {
+      "nullable": false,
+      "type": "date"
+    },
     "wish_items.acquired": {
       "default": "false",
       "nullable": true,
@@ -21521,6 +22948,20 @@
       "is_active",
       "created_at"
     ],
+    "calendar_items": [
+      "id",
+      "calendar_id",
+      "idea_id",
+      "account_id",
+      "planned_date",
+      "planned_time",
+      "language_code",
+      "status",
+      "format",
+      "notes",
+      "sort_order",
+      "created_at"
+    ],
     "calibration_snapshots": [
       "id",
       "category",
@@ -21921,6 +23362,109 @@
       "key",
       "value"
     ],
+    "content_accounts": [
+      "id",
+      "handle",
+      "display_name",
+      "purpose",
+      "platform",
+      "account_type",
+      "language",
+      "content_focus",
+      "posting_rules",
+      "is_active",
+      "created_at"
+    ],
+    "content_batch_items": [
+      "id",
+      "batch_id",
+      "idea_id",
+      "shot_order",
+      "setup_notes",
+      "is_filmed",
+      "created_at"
+    ],
+    "content_batches": [
+      "id",
+      "title",
+      "batch_date",
+      "setup_type",
+      "estimated_duration_mins",
+      "actual_duration_mins",
+      "status",
+      "notes",
+      "created_at"
+    ],
+    "content_ideas": [
+      "id",
+      "title",
+      "hook",
+      "concept",
+      "shot_list",
+      "voiceover",
+      "cta",
+      "pillar_id",
+      "account_id",
+      "product_id",
+      "niche_id",
+      "objective_type",
+      "commerce_mode",
+      "presence_mode",
+      "paid_candidate",
+      "affiliate_ready",
+      "boostable_reason",
+      "target_keyword",
+      "hashtags",
+      "series_id",
+      "series_order",
+      "format",
+      "estimated_duration",
+      "language_code",
+      "status",
+      "priority",
+      "target_completion_rate",
+      "target_save_rate",
+      "created_at",
+      "updated_at"
+    ],
+    "content_niches": [
+      "id",
+      "slug",
+      "name",
+      "category_slug",
+      "emoji",
+      "price_range",
+      "audience_tags",
+      "trending_topics",
+      "short_description",
+      "personality_tags",
+      "is_active",
+      "created_at"
+    ],
+    "content_pillars": [
+      "id",
+      "slug",
+      "name",
+      "description",
+      "target_mix_pct",
+      "default_cta",
+      "emoji",
+      "best_formats",
+      "best_presence",
+      "is_active",
+      "created_at"
+    ],
+    "content_products": [
+      "id",
+      "slug",
+      "name",
+      "category",
+      "description",
+      "tier",
+      "best_content_angles",
+      "is_active",
+      "created_at"
+    ],
     "creator_leaderboards": [
       "streamer_id",
       "period",
@@ -21928,6 +23472,19 @@
       "total_value",
       "hits_count",
       "updated_at"
+    ],
+    "creators": [
+      "id",
+      "name",
+      "handle",
+      "platform",
+      "language",
+      "affiliate_code",
+      "is_active",
+      "kits_sent",
+      "cogs_per_kit_cents",
+      "affiliate_payout_pct",
+      "created_at"
     ],
     "deal_ratings": [
       "id",
@@ -22177,6 +23734,20 @@
       "currency",
       "rate_to_eur",
       "updated_at"
+    ],
+    "generated_captions": [
+      "id",
+      "idea_id",
+      "account_id",
+      "language_code",
+      "caption",
+      "hashtags",
+      "cta",
+      "seo_keyword",
+      "mode",
+      "version",
+      "is_approved",
+      "created_at"
     ],
     "guidance_runs": [
       "id",
@@ -22714,6 +24285,16 @@
       "price_eur",
       "is_listing"
     ],
+    "market_hits_daily": [
+      "item_ref",
+      "day",
+      "comps_count",
+      "median_price",
+      "min_price",
+      "max_price",
+      "latest_price",
+      "latest_seen_at"
+    ],
     "market_hits_default": [
       "id",
       "user_id",
@@ -22841,38 +24422,6 @@
       "is_listing"
     ],
     "market_hits_y2026m03": [
-      "id",
-      "user_id",
-      "title",
-      "url",
-      "price",
-      "currency",
-      "image_url",
-      "marketplace",
-      "seen_at",
-      "item_ref",
-      "category",
-      "source",
-      "observed_at",
-      "condition_grade",
-      "tx_id",
-      "seller_rating",
-      "url_hash",
-      "processed",
-      "attrs",
-      "provider",
-      "listing_id",
-      "condition",
-      "normalized_key",
-      "ended_at",
-      "seller_score",
-      "features_json",
-      "shipping",
-      "graded",
-      "price_eur",
-      "is_listing"
-    ],
-    "market_hits_y2026m06": [
       "id",
       "user_id",
       "title",
@@ -23251,6 +24800,13 @@
       "params_json",
       "artifact_etag"
     ],
+    "mv_catalog_collections": [
+      "category",
+      "dim",
+      "grp",
+      "total_items",
+      "cover_image"
+    ],
     "mv_catalog_item_price": [
       "category",
       "item_key",
@@ -23295,6 +24851,25 @@
     "mv_item_best_comp_canon": [
       "item_id",
       "hit_id"
+    ],
+    "mv_market_top_movers": [
+      "item_ref",
+      "category",
+      "item_key",
+      "title",
+      "brand",
+      "set_code",
+      "rarity",
+      "image_url",
+      "last_day",
+      "last_price",
+      "med_7d",
+      "med_30d",
+      "comps_30d",
+      "days_30d",
+      "delta_pct_7d",
+      "delta_pct_30d",
+      "in_catalog"
     ],
     "mv_supply_trend": [
       "category",
@@ -23717,19 +25292,6 @@
       "price_q90",
       "snapshot_at"
     ],
-    "price_history_y2026m06": [
-      "id",
-      "item_id",
-      "source",
-      "price",
-      "currency",
-      "as_of",
-      "item_ref",
-      "price_q10",
-      "price_q50",
-      "price_q90",
-      "snapshot_at"
-    ],
     "price_history_y2026m07": [
       "id",
       "item_id",
@@ -24085,7 +25647,8 @@
       "created_at",
       "display_name",
       "avatar_url",
-      "avatar_color"
+      "avatar_color",
+      "referred_by_code"
     ],
     "project_notes": [
       "id",
@@ -24417,6 +25980,25 @@
       "created_at",
       "updated_at"
     ],
+    "subscription_events": [
+      "id",
+      "event_id",
+      "event_type",
+      "provider",
+      "user_id",
+      "app_user_id",
+      "product_id",
+      "plan",
+      "store",
+      "environment",
+      "revenue_cents",
+      "currency",
+      "takehome_percentage",
+      "affiliate_code",
+      "occurred_at",
+      "created_at",
+      "raw"
+    ],
     "subscriptions": [
       "id",
       "user_id",
@@ -24428,7 +26010,10 @@
       "current_period_end",
       "cancel_at_period_end",
       "created_at",
-      "updated_at"
+      "updated_at",
+      "provider",
+      "revenuecat_app_user_id",
+      "revenuecat_product_id"
     ],
     "suggestion_logs": [
       "id",
@@ -24640,6 +26225,200 @@
       "thumbnail_url",
       "last_seen_at"
     ],
+    "ugc_accounts": [
+      "id",
+      "handle",
+      "platform",
+      "language",
+      "description",
+      "followers",
+      "is_active",
+      "created_at",
+      "updated_at"
+    ],
+    "ugc_content_pipeline": [
+      "id",
+      "title",
+      "description",
+      "pod_id",
+      "creator_id",
+      "account_id",
+      "hook_text",
+      "hook_type",
+      "format",
+      "concept_cluster",
+      "kit_slug",
+      "niche",
+      "country",
+      "status",
+      "due_date",
+      "posted_date",
+      "video_id",
+      "priority",
+      "notes",
+      "created_at",
+      "updated_at"
+    ],
+    "ugc_daily_snapshots": [
+      "id",
+      "video_id",
+      "snapshot_date",
+      "views",
+      "likes",
+      "comments",
+      "shares",
+      "saves"
+    ],
+    "ugc_pod_members": [
+      "id",
+      "pod_id",
+      "creator_id",
+      "role",
+      "joined_at"
+    ],
+    "ugc_pods": [
+      "id",
+      "name",
+      "language",
+      "description",
+      "color",
+      "target_videos_per_week",
+      "is_active",
+      "created_at"
+    ],
+    "ugc_swipe_file": [
+      "id",
+      "url",
+      "platform",
+      "hook_text",
+      "hook_type",
+      "format",
+      "niche",
+      "why_it_works",
+      "tags",
+      "estimated_views",
+      "saved_by",
+      "is_competitor",
+      "source_account",
+      "created_at"
+    ],
+    "ugc_tiktok_metrics": [
+      "id",
+      "video_script_id",
+      "tiktok_video_id",
+      "snapshot_at",
+      "views",
+      "likes",
+      "comments",
+      "shares",
+      "avg_watch_time",
+      "retention_3s",
+      "completion_rate",
+      "reach",
+      "profile_views"
+    ],
+    "ugc_video_audio": [
+      "id",
+      "title",
+      "artist",
+      "s3_key",
+      "duration_ms",
+      "bpm",
+      "mood",
+      "niche_tags",
+      "is_active",
+      "created_at"
+    ],
+    "ugc_video_learning": [
+      "id",
+      "hook_id",
+      "niche_id",
+      "template_id",
+      "score",
+      "uses",
+      "hits",
+      "avg_retention",
+      "avg_views",
+      "trend",
+      "last_used",
+      "updated_at"
+    ],
+    "ugc_video_scripts": [
+      "id",
+      "template_id",
+      "composition_id",
+      "niche_id",
+      "niche_label",
+      "language",
+      "hook_text",
+      "hook_id",
+      "props",
+      "status",
+      "estimated_cost",
+      "render_id",
+      "render_url",
+      "video_url",
+      "views_2h",
+      "views_12h",
+      "views_24h",
+      "views_total",
+      "retention_3s",
+      "completion_rate",
+      "shares",
+      "link_clicks",
+      "installs",
+      "classification",
+      "ab_group",
+      "ab_pair_id",
+      "ab_winner",
+      "pod_id",
+      "creator_id",
+      "pipeline_item_id",
+      "created_at",
+      "posted_at",
+      "updated_at"
+    ],
+    "ugc_videos": [
+      "id",
+      "video_id",
+      "account_id",
+      "creator_id",
+      "date_posted",
+      "niche",
+      "format",
+      "hook_text",
+      "hook_type",
+      "concept_cluster",
+      "country",
+      "views_2h",
+      "views_12h",
+      "views_24h",
+      "views_total",
+      "hook_retention_rate",
+      "avg_watch_time",
+      "completion_rate",
+      "likes",
+      "comments",
+      "shares",
+      "saves",
+      "clicks",
+      "installs",
+      "revenue_cents",
+      "classification",
+      "cost_cents",
+      "video_url",
+      "thumbnail_url",
+      "notes",
+      "created_at",
+      "updated_at",
+      "is_boosted",
+      "boost_spend_cents",
+      "boost_views",
+      "boost_clicks",
+      "boost_installs",
+      "boost_start_date",
+      "boost_end_date"
+    ],
     "user_achievements": [
       "user_id",
       "achievement_id",
@@ -24735,7 +26514,12 @@
       "payload",
       "created_at",
       "status",
-      "review_reason"
+      "review_reason",
+      "feedback_type",
+      "value_json",
+      "source",
+      "incorporated_at",
+      "incorporated_run_id"
     ],
     "user_gamification": [
       "user_id",
@@ -26486,6 +28270,16 @@
       "created_at",
       "sent_at"
     ],
+    "weekly_calendars": [
+      "id",
+      "week_start",
+      "goal",
+      "notes",
+      "pillar_distribution",
+      "batch_film_day",
+      "status",
+      "created_at"
+    ],
     "wish_items": [
       "id",
       "user_id",
@@ -26712,6 +28506,11 @@
       ]
     ],
     "buyer_intents": [
+      [
+        "id"
+      ]
+    ],
+    "calendar_items": [
       [
         "id"
       ]
@@ -27010,10 +28809,65 @@
         "key"
       ]
     ],
+    "content_accounts": [
+      [
+        "handle"
+      ],
+      [
+        "id"
+      ]
+    ],
+    "content_batch_items": [
+      [
+        "id"
+      ]
+    ],
+    "content_batches": [
+      [
+        "id"
+      ]
+    ],
+    "content_ideas": [
+      [
+        "id"
+      ]
+    ],
+    "content_niches": [
+      [
+        "id"
+      ],
+      [
+        "slug"
+      ]
+    ],
+    "content_pillars": [
+      [
+        "id"
+      ],
+      [
+        "slug"
+      ]
+    ],
+    "content_products": [
+      [
+        "id"
+      ],
+      [
+        "slug"
+      ]
+    ],
     "creator_leaderboards": [
       [
         "streamer_id",
         "period"
+      ]
+    ],
+    "creators": [
+      [
+        "affiliate_code"
+      ],
+      [
+        "id"
       ]
     ],
     "deal_ratings": [
@@ -27179,6 +29033,17 @@
     "fx_rates_v1": [
       [
         "currency"
+      ]
+    ],
+    "generated_captions": [
+      [
+        "id"
+      ],
+      [
+        "idea_id",
+        "language_code",
+        "mode",
+        "version"
       ]
     ],
     "guidance_runs": [
@@ -27373,6 +29238,12 @@
         "seen_at"
       ]
     ],
+    "market_hits_daily": [
+      [
+        "item_ref",
+        "day"
+      ]
+    ],
     "market_hits_default": [
       [
         "id",
@@ -27407,17 +29278,6 @@
       ]
     ],
     "market_hits_y2026m03": [
-      [
-        "id",
-        "seen_at"
-      ],
-      [
-        "provider",
-        "listing_id",
-        "seen_at"
-      ]
-    ],
-    "market_hits_y2026m06": [
       [
         "id",
         "seen_at"
@@ -27580,6 +29440,13 @@
         "id"
       ]
     ],
+    "mv_catalog_collections": [
+      [
+        "category",
+        "dim",
+        "grp"
+      ]
+    ],
     "mv_catalog_item_price": [
       [
         "category",
@@ -27620,11 +29487,21 @@
         "item_id"
       ]
     ],
+    "mv_market_top_movers": [
+      [
+        "item_ref"
+      ]
+    ],
     "mv_supply_trend": [
       [
         "category",
         "item_key",
         "snap_date"
+      ]
+    ],
+    "mv_top_movers": [
+      [
+        "item_ref"
       ]
     ],
     "normalized_listings": [
@@ -27816,12 +29693,6 @@
       ]
     ],
     "price_history_default": [
-      [
-        "id",
-        "as_of"
-      ]
-    ],
-    "price_history_y2026m06": [
       [
         "id",
         "as_of"
@@ -28121,6 +29992,14 @@
         "twitch_user_id"
       ]
     ],
+    "subscription_events": [
+      [
+        "event_id"
+      ],
+      [
+        "id"
+      ]
+    ],
     "subscriptions": [
       [
         "id"
@@ -28223,6 +30102,84 @@
       ],
       [
         "twitch_stream_id"
+      ]
+    ],
+    "ugc_accounts": [
+      [
+        "handle"
+      ],
+      [
+        "id"
+      ]
+    ],
+    "ugc_content_pipeline": [
+      [
+        "id"
+      ]
+    ],
+    "ugc_daily_snapshots": [
+      [
+        "id"
+      ],
+      [
+        "video_id",
+        "snapshot_date"
+      ]
+    ],
+    "ugc_pod_members": [
+      [
+        "id"
+      ],
+      [
+        "pod_id",
+        "creator_id"
+      ]
+    ],
+    "ugc_pods": [
+      [
+        "id"
+      ]
+    ],
+    "ugc_swipe_file": [
+      [
+        "id"
+      ]
+    ],
+    "ugc_tiktok_metrics": [
+      [
+        "id"
+      ],
+      [
+        "video_script_id",
+        "snapshot_at"
+      ]
+    ],
+    "ugc_video_audio": [
+      [
+        "id"
+      ]
+    ],
+    "ugc_video_learning": [
+      [
+        "hook_id",
+        "niche_id",
+        "template_id"
+      ],
+      [
+        "id"
+      ]
+    ],
+    "ugc_video_scripts": [
+      [
+        "id"
+      ]
+    ],
+    "ugc_videos": [
+      [
+        "id"
+      ],
+      [
+        "video_id"
       ]
     ],
     "user_achievements": [
@@ -28452,6 +30409,11 @@
       ]
     ],
     "webhook_outbox": [
+      [
+        "id"
+      ]
+    ],
+    "weekly_calendars": [
       [
         "id"
       ]
