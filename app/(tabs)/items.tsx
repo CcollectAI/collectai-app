@@ -600,7 +600,9 @@ const ItemsScreen: React.FC = () => {
       group.total += item.value;
     }
 
-    groups.sort((a, b) => a.category.localeCompare(b.category));
+    // Null-safe: an item with no category yields group.category === null, and
+    // null.localeCompare() throws — which blanked the whole Items screen.
+    groups.sort((a, b) => (a.category ?? '').localeCompare(b.category ?? ''));
 
     return groups;
   }, [query, filterCategory, advancedFilter, categoryParam, collectionParam, dataSource]);
