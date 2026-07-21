@@ -423,19 +423,68 @@ export function getCountdown(targetDate: Date): {
  * Parse event date string to Date object
  * Supports formats: "2026-02-15", "2026-02-15T14:00:00"
  */
+/**
+ * Timezone abbreviation → offset from UTC in minutes. Curated to the common,
+ * low-ambiguity zones this app's events actually use (mostly European), so an
+ * event labelled "19:30 CET" renders at the correct instant in the *viewer's*
+ * local time rather than being shown as a raw 19:30 everywhere. Unknown or
+ * genuinely ambiguous abbreviations fall through to "treat as local".
+ */
+const TZ_OFFSET_MIN: Record<string, number> = {
+  UTC: 0, GMT: 0, WET: 0,
+  BST: 60, WEST: 60, CET: 60, WAT: 60,
+  CEST: 120, EET: 120, SAST: 120,
+  EEST: 180, MSK: 180, EAT: 180, TRT: 180,
+  GST: 240,
+  PKT: 300,
+  ICT: 420, WIB: 420,
+  HKT: 480, SGT: 480, AWST: 480, PHT: 480,
+  JST: 540, KST: 540,
+  ACST: 570,
+  AEST: 600,
+  AEDT: 660,
+  NZST: 720,
+  NZDT: 780,
+  // Americas (US zones assumed for CST/EST etc. — this app's audience is Western)
+  EDT: -240,
+  EST: -300, CDT: -300,
+  CST: -360, MDT: -360,
+  MST: -420, PDT: -420,
+  PST: -480,
+  AKST: -540,
+  HST: -600,
+};
+
 export function parseEventDate(dateStr: string, timeStr?: string): Date {
   if (dateStr.includes('T')) {
     return new Date(dateStr);
   }
 
   if (timeStr) {
-    // Parse time like "14:00", "2:00 PM", "12:00 CET"
-    // Strip timezone/AM/PM suffixes and extract just HH:MM
-    const cleanTime = timeStr.replace(/\s*(AM|PM|[A-Z]{2,4})$/i, '').trim();
-    const [hours, minutes] = cleanTime.split(':').map(Number);
-    const isPM = /PM$/i.test(timeStr);
-    const adjustedHours = isPM && hours !== 12 ? hours + 12 : hours;
-    return new Date(`${dateStr}T${String(adjustedHours).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}:00`);
+    // Parse time like "14:00", "2:00 PM", "12:00 CET".
+    const trimmed = timeStr.trim();
+    const isAmPm = /(AM|PM)$/i.test(trimmed);
+    // A trailing timezone abbreviation (not AM/PM) tells us the event's zone.
+    const tzMatch = isAmPm ? null : trimmed.match(/\b([A-Z]{2,4})$/);
+    const tzAbbr = tzMatch ? tzMatch[1].toUpperCase() : null;
+
+    const cleanTime = trimmed.replace(/\s*(AM|PM|[A-Z]{2,4})$/i, '').trim();
+    const [rawHours, rawMinutes] = cleanTime.split(':').map(Number);
+    const isPM = /PM$/i.test(trimmed);
+    const hours = isPM && rawHours !== 12 ? rawHours + 12 : rawHours;
+    const minutes = rawMinutes || 0;
+
+    if (tzAbbr && tzAbbr in TZ_OFFSET_MIN) {
+      // The wall-clock time is in the event's timezone → convert to the UTC
+      // instant so the app renders it in the viewer's local time (and buckets
+      // it on the correct local day).
+      const [y, mo, d] = dateStr.split('-').map(Number);
+      const utcMs = Date.UTC(y, mo - 1, d, hours, minutes) - TZ_OFFSET_MIN[tzAbbr] * 60000;
+      return new Date(utcMs);
+    }
+
+    // No known timezone — treat the time as the viewer's local time (best effort).
+    return new Date(`${dateStr}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
   }
 
   return new Date(`${dateStr}T00:00:00`);

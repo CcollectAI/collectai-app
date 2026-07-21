@@ -596,8 +596,10 @@ function EventsScreen() {
         </ScrollView>
       )}
 
-      {/* View Mode Tabs — below search */}
-      <View style={[styles.viewModeTabs, { backgroundColor: colors.muted + '22' }]}>
+      {/* View Mode Tabs — below search. No track background: a full-width grey
+          bar under the filter chips read as a stray "sliding bar". The active
+          tab is an accent-tinted pill instead, legible on the plain background. */}
+      <View style={styles.viewModeTabs}>
         {VIEW_MODE_TABS.map((tab) => {
           const isActive = viewMode === tab.key;
           return (
@@ -606,14 +608,7 @@ function EventsScreen() {
               onPress={() => handleViewModeChange(tab.key)}
               style={[
                 styles.viewModeTab,
-                isActive && {
-                  backgroundColor: colors.card,
-                  shadowColor: colors.text,
-                  shadowOpacity: 0.08,
-                  shadowRadius: 4,
-                  shadowOffset: { width: 0, height: 1 },
-                  elevation: 2,
-                },
+                isActive && { backgroundColor: colors.accent + '1E' },
               ]}
               accessibilityRole="button"
               accessibilityLabel={`${tab.label} view`}

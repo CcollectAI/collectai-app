@@ -18,6 +18,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -41,6 +42,7 @@ type AffiliateLink = { source: string; url: string; affiliate_url: string; label
 
 function CatalogItemMuseumScreen() {
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const { settings } = useSettings();
   const { showToast } = useToast();
   const { limits } = useBillingLimits();
@@ -174,7 +176,7 @@ function CatalogItemMuseumScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ paddingBottom: 48 }}>
       {/* Back */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
         <AnimatedPressable
           style={[styles.backBtn, { borderColor: colors.border }]}
           onPress={() => router.back()}
