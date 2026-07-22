@@ -9,6 +9,7 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
+  Pressable,
   ScrollView,
   SectionList,
   StyleSheet,
@@ -92,7 +93,9 @@ function EventsScreen() {
     loadMore,
     refresh: paginatedRefresh,
     setItems: setEvents,
-  } = usePaginatedList<CollectorsEvent>(eventFetcher, { pageSize: 20 });
+    // pageSize 100 (server max): the Week/Month calendar filters loaded events by
+    // day, so it needs a wide upcoming window or future weeks render empty.
+  } = usePaginatedList<CollectorsEvent>(eventFetcher, { pageSize: 100 });
 
 
   const [now, setNow] = useState(() => new Date());
@@ -603,7 +606,12 @@ function EventsScreen() {
         {VIEW_MODE_TABS.map((tab) => {
           const isActive = viewMode === tab.key;
           return (
-            <AnimatedPressable
+            // Plain Pressable, NOT AnimatedPressable: AnimatedPressable applies
+            // `style` to an inner Animated.View, which breaks `flex: 1` in a row
+            // — the 4 tabs collapsed to ~0 width, leaving an empty band with just
+            // the active tab's tinted pill (the "persistent bar" flagged 4×). Same
+            // fix QuickNavBar already uses for the same reason.
+            <Pressable
               key={tab.key}
               onPress={() => handleViewModeChange(tab.key)}
               style={[
@@ -626,7 +634,7 @@ function EventsScreen() {
               ]}>
                 {tab.label}
               </Text>
-            </AnimatedPressable>
+            </Pressable>
           );
         })}
       </View>

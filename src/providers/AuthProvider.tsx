@@ -12,6 +12,7 @@ import * as Linking from 'expo-linking';
 import { router, type Href } from 'expo-router';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { captureReferralFromUrl } from '@/lib/referral';
 import { logger } from '@/lib/logger';
 import { setRecoveryPending } from '@/auth/recoveryState';
 
@@ -19,6 +20,7 @@ import { identifyUser, resetAnalytics, track } from '@/analytics/track';
 import {
   initPurchases,
   identifyUser as identifyPurchasesUser,
+  setReferralAttribute,
 } from '@/lib/purchases';
 
 /* ---------- Sentry (guarded) ---------- */
@@ -34,6 +36,8 @@ export type Profile = {
   id: string;
   username: string;
   created_at?: string;
+  /** Creator affiliate_code this user signed up under, if any. */
+  referred_by_code?: string | null;
 };
 
 export type AuthContextValue = {
@@ -57,16 +61,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
       return;
     }
+
+    let referredCode: string | null = null;
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, created_at')
+        .select('id, username, created_at, referred_by_code')
         .eq('id', u.id)
         .single();
       if (error) throw error;
-      setProfile(data as Profile);
+      const loaded = data as Profile;
+      setProfile(loaded);
+      referredCode = loaded.referred_by_code ?? null;
     } catch {
       setProfile(null);
+    }
+
+    // Deliberately OUTSIDE the try above. Inside it, anything this threw —
+    // including a synchronous throw before a promise exists — was caught by
+    // that `catch` and turned into setProfile(null), wiping a profile that had
+    // already loaded successfully. Attribution is best-effort and must never
+    // be able to destroy auth state.
+    if (referredCode) {
+      try {
+        await setReferralAttribute(referredCode);
+      } catch (e) {
+        logger.warn('[AuthProvider] referral attribution failed:', e);
+      }
     }
   }, []);
 
@@ -81,6 +102,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handleAuthLink = async (url: string | null) => {
       if (!url) return;
+
+      // Creator referral capture, BEFORE the fragment check below. That check
+      // bails on any URL without a '#', which silently discarded every
+      // query-string link — including https://sparrowcollect.com/r/LUNA10 and
+      // sparrow://?ref=LUNA10, i.e. every link a creator would ever post.
+      // Awaited so an app opened cold by a creator link has the code stored
+      // before the register screen mounts and reads it.
+      await captureReferralFromUrl(url);
+
       const hashIdx = url.indexOf('#');
       if (hashIdx === -1) return;
       const params: Record<string, string> = {};
@@ -121,6 +151,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const sync = (state: AppStateStatus) => {
       if (state === 'active') {
         void supabase.auth.startAutoRefresh();
+        // startAutoRefresh only (re)starts the ticker — it does NOT force-refresh
+        // an already-expired access token. After the app is idle past the ~1h
+        // token lifetime, getSession()/getAuthHeaders() keep handing back a
+        // stale/absent token on the next cold foreground, so the first screen's
+        // requests either 401 or block on httpClient's 2s+8s auth-header wait —
+        // the ~10s blank Items page and "Add to watchlist does nothing" hang.
+        // A single forced refreshSession() (serialized by processLock, so it
+        // can't refresh-storm and trip reuse detection) makes a fresh token
+        // available within ~1-2s of foreground. No-ops harmlessly when logged out.
+        void supabase.auth.refreshSession().catch(() => {});
       } else {
         void supabase.auth.stopAutoRefresh();
       }

@@ -95,12 +95,14 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingVertical: 7,
     paddingHorizontal: 13,
-    // Guarantee the pill is tall enough for the full label line box. Without
-    // this, `overflow: 'hidden'` + the label's natural line height could shave
-    // the bottoms of the letters ("only the tops visible") on some devices.
-    minHeight: 32,
+    // Tall enough for the full label line box.
+    minHeight: 34,
     borderRadius: 999,
-    overflow: 'hidden',
+    // NO `overflow: 'hidden'` — it was shearing the label's bottoms ("words look
+    // halved") whenever the line box was a hair taller than the content area.
+    // borderRadius already rounds the gradient/pill, so hidden overflow bought
+    // nothing but the clipping bug. Text scaling is bounded via
+    // maxFontSizeMultiplier on the <Text>, so nothing overflows the pill anyway.
   },
   inactive: { borderWidth: 1 },
   // No fixed lineHeight — a hard value would itself clip Dynamic-Type-scaled

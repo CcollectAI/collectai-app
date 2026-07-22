@@ -130,14 +130,21 @@ export async function getEventById(eventId: string): Promise<CollectorsEvent | n
 // the view-shaped row.
 
 export async function listEvents(pagination?: PaginationParams): Promise<CollectorsEvent[]> {
-  const limit = pagination?.limit ?? API_LIMITS.ALERTS_DEFAULT;
+  // Pass limit/offset THROUGH to the server (GET /events defaults to limit=20,
+  // upcoming_only=true, ORDER BY date). Previously this called `/events` with no
+  // params and sliced client-side, so the app only ever held the 20 soonest
+  // events — the Week/Month calendar filters those by day, so any week beyond the
+  // first ~20 events rendered empty ("future weeks show no events"). Server caps
+  // limit at 100; the calendar requests a large page so it spans many weeks.
+  const limit = Math.min(pagination?.limit ?? API_LIMITS.ALERTS_DEFAULT, 100);
   const offset = pagination?.offset ?? 0;
   try {
     const data = await collectorsApi.get<{ events?: Record<string, unknown>[] } | Record<string, unknown>[]>(
-      '/events',
+      `/events?limit=${limit}&offset=${offset}`,
     );
     const rows = Array.isArray(data) ? data : ((data as { events?: Record<string, unknown>[] })?.events ?? []);
-    return rows.slice(offset, offset + limit).map(mapEventApiResponse);
+    // Server already applied limit/offset — do NOT slice again.
+    return rows.map(mapEventApiResponse);
   } catch (e) {
     logger.warn('[SupabaseDataProvider] listEvents error:', e);
     throw e instanceof Error ? e : new Error('Failed to load events');
