@@ -337,12 +337,21 @@ function CategoryBrowseScreen() {
               maxToRenderPerBatch={2}
             />
             <AnimatedPressable
-              style={[s.viewerClose, { top: insets.top + 8 }]}
+              style={[s.viewerClose, {
+                // Inside a RN <Modal> useSafeAreaInsets() resolves to 0, so
+                // top:insets.top+8 put the arrow at y=8 — UNDER the status bar,
+                // invisible (flagged 3×). Floor it so it always clears the status
+                // bar. Visible chrome (card bg + border + shadow) so a dark arrow
+                // can't vanish on a light card either.
+                top: Math.max(insets.top, 44) + 8,
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+              }]}
               onPress={closeViewer}
               accessibilityRole="button"
               accessibilityLabel="Back to grid"
             >
-              <Ionicons name="arrow-back" size={26} color={colors.text} />
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </AnimatedPressable>
           </View>
         </Modal>
@@ -416,11 +425,15 @@ const s = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    // No visible chrome — just a clear, tappable back arrow. (Was a dim
-    // rgba(0,0,0,0.45) circle with a white arrow that vanished on the light
-    // viewer background.)
-    backgroundColor: "transparent",
+    borderWidth: 1,
+    // Visible chrome (bg/border set inline for theme) + shadow so the back arrow
+    // is unmistakable on any card background. bg is transparent-vanish no more.
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
 });

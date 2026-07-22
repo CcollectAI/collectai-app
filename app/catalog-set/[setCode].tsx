@@ -293,12 +293,19 @@ function CatalogSetScreen() {
               maxToRenderPerBatch={2}
             />
             <AnimatedPressable
-              style={[styles.viewerClose, { top: insets.top + 8 }]}
+              style={[styles.viewerClose, {
+                // Modal safe-area insets resolve to 0 → top:8 hid the arrow under
+                // the status bar (flagged 3×). Floor it; visible chrome so a dark
+                // arrow can't vanish on a light card.
+                top: Math.max(insets.top, 44) + 8,
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+              }]}
               onPress={closeViewer}
               accessibilityRole="button"
               accessibilityLabel="Back to set"
             >
-              <Ionicons name="arrow-back" size={26} color={colors.text} />
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </AnimatedPressable>
           </View>
         </Modal>
@@ -356,11 +363,15 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    // No visible chrome — just a clear, tappable back arrow. (Was a dim
-    // rgba(0,0,0,0.45) circle with a white arrow that vanished on the light
-    // viewer background.)
-    backgroundColor: "transparent",
+    borderWidth: 1,
+    // Visible chrome (bg/border set inline for theme) + shadow so the back arrow
+    // is unmistakable on any card background.
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
 });
