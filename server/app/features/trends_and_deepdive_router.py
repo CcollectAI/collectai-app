@@ -311,47 +311,57 @@ async def get_portfolio_category_breakdown(
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 """
-                -- price_predictions is partitioned by month. Without a
-                -- generated_at filter the planner has to consider every
-                -- partition (10+ as of 2026-05). EXPLAIN ANALYZE on
-                -- 2026-05-01 showed Planning Time = 6.7s, Execution = 2.5s
-                -- on this query, dominated by partition planning.
-                -- Adding `generated_at >= now() - interval '90 days'`
-                -- triggers Subplans Removed=2 and drops Execution to
-                -- ~700ms; planner stops walking the older partitions.
-                -- Predictions older than 90 days are stale anyway — fresh
-                -- ones reflect actual portfolio value.
-                WITH latest_pred AS (
-                    SELECT DISTINCT ON (pp.item_ref)
-                        pp.item_ref,
-                        pp.q50,
-                        pp.generated_at
-                    FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
-                    WHERE i.user_id = $1
-                      AND pp.generated_at >= now() - interval '90 days'
-                    ORDER BY pp.item_ref, pp.generated_at DESC
+                -- Per-item value MUST match what the Items list card shows,
+                -- or the category cards + home "Portfolio" stat disagree with
+                -- the item rows / "Collection total" (flagged 2026-07-22:
+                -- item = €55 but card/portfolio = €0). The FE reads
+                -- COALESCE(latest quick_predictions.q50_eur,
+                --          items.predicted_price_eur, items.estimated_value, 0)
+                -- (see src/data/providers/itemsProvider.ts mapItemRow) — NOT
+                -- price_predictions.q50. Manual / QuickScan items have no
+                -- price_predictions row (that table is catalog-model output,
+                -- joined by canonical_key), so the old SUM(pp.q50) returned 0
+                -- for every hand-added item. Sum the SAME source here.
+                -- quick_predictions is a plain (non-partitioned) table keyed
+                -- by item_id, so there is no partition-planning cost.
+                WITH latest_qp AS (
+                    SELECT DISTINCT ON (qp.item_id)
+                        qp.item_id,
+                        qp.q50_eur,
+                        qp.created_at
+                    FROM quick_predictions qp
+                    JOIN items i2 ON i2.id = qp.item_id
+                    WHERE i2.user_id = $1
+                    ORDER BY qp.item_id, qp.created_at DESC
                 ),
-                earliest_pred AS (
-                    SELECT DISTINCT ON (pp.item_ref)
-                        pp.item_ref,
-                        pp.q50 AS first_q50
-                    FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
-                    WHERE i.user_id = $1
-                      AND pp.generated_at >= now() - interval '90 days'
-                    ORDER BY pp.item_ref, pp.generated_at ASC
+                earliest_qp AS (
+                    SELECT DISTINCT ON (qp.item_id)
+                        qp.item_id,
+                        qp.q50_eur AS first_q50
+                    FROM quick_predictions qp
+                    JOIN items i2 ON i2.id = qp.item_id
+                    WHERE i2.user_id = $1
+                    ORDER BY qp.item_id, qp.created_at ASC
                 )
                 SELECT
                     i.category,
                     COUNT(*) AS item_count,
-                    COALESCE(SUM(lp.q50), 0) AS total_value,
-                    COALESCE(SUM(ep.first_q50), 0) AS first_total
+                    COALESCE(SUM(
+                        COALESCE(lq.q50_eur, i.predicted_price_eur, i.estimated_value, 0)
+                    ), 0) AS total_value,
+                    COALESCE(SUM(
+                        COALESCE(eq.first_q50, i.predicted_price_eur, i.estimated_value, 0)
+                    ), 0) AS first_total
                 FROM items i
-                LEFT JOIN latest_pred lp ON lp.item_ref = i.canonical_key
-                LEFT JOIN earliest_pred ep ON ep.item_ref = i.canonical_key
+                LEFT JOIN latest_qp lq ON lq.item_id = i.id
+                LEFT JOIN earliest_qp eq ON eq.item_id = i.id
                 WHERE i.user_id = $1
                   AND i.category IS NOT NULL
+                  -- NOTE: intentionally NOT filtering i.archived, to stay in
+                  -- exact parity with the Items list (listItems does not filter
+                  -- it either). If archived items should be excluded from
+                  -- portfolio value, add the SAME filter to listItems in the
+                  -- same change so the card/footer/portfolio stay consistent.
                 GROUP BY i.category
                 ORDER BY total_value DESC
                 """,

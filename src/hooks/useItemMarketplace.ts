@@ -35,14 +35,10 @@ export function useItemMarketplace(
   const [dossierExpanded, setDossierExpanded] = useState(false);
   const [dossierError, setDossierError] = useState(false);
 
-  // Provenance state
-  const [provenanceEvents, setProvenanceEvents] = useState<{
-    id: string; eventType: string; timestamp: string;
-    note: string | null; source: string | null; metadata: Record<string, unknown>;
-  }[]>([]);
-  const [authenticitySignals, setAuthenticitySignals] = useState<string[]>([]);
-  const [provenanceLoading, setProvenanceLoading] = useState(false);
-  const [provenanceExpanded, setProvenanceExpanded] = useState(false);
+  // Provenance ("Item History") removed 2026-07-22 — the standalone section was
+  // a subset of the dossier (which already returns provenance[]) and empty for
+  // virtually every item, so we no longer fetch it here. The /provenance BE
+  // endpoint stays; restore the state + fetch + return if the section comes back.
 
   // Fetch affiliate links on mount
   useEffect(() => {
@@ -51,31 +47,6 @@ export function useItemMarketplace(
       .then((data) => setAffiliateLinks(data.links))
       .catch((err) => logger.warn('[useItemMarketplace] affiliate links error:', err));
   }, [itemId, isDraft, itemName, category]);
-
-  // Fetch provenance on mount
-  useEffect(() => {
-    if (!itemId || isDraft) return;
-    setProvenanceLoading(true);
-    collectorsApi.getProvenance(itemId)
-      .then((data) => {
-        const events = data.events.map((e: { id: string; event_type: string; timestamp: string; note: string | null; source: string | null; metadata?: Record<string, unknown> }) => ({
-          id: e.id,
-          eventType: e.event_type,
-          timestamp: e.timestamp,
-          note: e.note,
-          source: e.source,
-          metadata: e.metadata || {},
-        }));
-        setProvenanceEvents(events);
-        setAuthenticitySignals(data.authenticity_signals || []);
-      })
-      .catch((err) => {
-        logger.warn('[useItemMarketplace] provenance error:', err);
-        setProvenanceEvents([]);
-        setAuthenticitySignals([]);
-      })
-      .finally(() => setProvenanceLoading(false));
-  }, [itemId, isDraft]);
 
   const loadMarketResults = useCallback(async () => {
     if (!itemName) return;
@@ -125,8 +96,5 @@ export function useItemMarketplace(
     // Dossier
     dossierData, dossierLoading, dossierExpanded, setDossierExpanded,
     dossierError, loadDossier,
-    // Provenance
-    provenanceEvents, authenticitySignals,
-    provenanceLoading, provenanceExpanded, setProvenanceExpanded,
   };
 }

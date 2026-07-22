@@ -118,3 +118,15 @@ export function formatCategoryName(slug: string | null | undefined): string {
 export const GRADING_ELIGIBLE_CATEGORIES = new Set<string>([
   'pokemon', 'mtg', 'yugioh', 'sportscards', 'comic_books', 'retro_games',
 ]);
+
+// Categories where the Valuation Report (dossier) has enough underlying data to
+// be worth showing. Prod coverage (2026-07-22): price_predictions exists for
+// ONLY these 6 of 54 categories — mtg/pokemon/yugioh are 99.5% of it, with a
+// thin tail of digimon/one_piece_tcg/lorcana. For the other 48 the dossier's
+// valuation + price history come back empty, so the Pro section renders as dead
+// weight. Gate the section to these until the bake feeds comps to more cats
+// (same rationale that shelved the Price Trend chart). Update this set when new
+// categories cross into having real prediction/market coverage.
+export const VALUATION_ELIGIBLE_CATEGORIES = new Set<string>([
+  'mtg', 'pokemon', 'yugioh', 'digimon', 'one_piece_tcg', 'lorcana',
+]);

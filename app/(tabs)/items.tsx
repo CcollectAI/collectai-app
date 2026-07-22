@@ -67,7 +67,6 @@ import {
   ItemsLoadingState,
   ItemsErrorState,
   ItemsSectionFooter,
-  ItemsFloatingAddButton,
 } from '@/components/items';
 
 // Screen row shape + the provider→screen mapper live in @/data/screenItem so
@@ -81,7 +80,6 @@ const ITEMS_PAGE_SIZE = 20;
 const STAGGER_MS = 40;
 const STATUS_CLEAR_DELAY_MS = 3000;
 const SCROLL_LOAD_THRESHOLD = 0.5;
-const FLOATING_BUTTON_SCROLL_PX = 100;
 
 const ItemsScreen: React.FC = () => {
   const router = useRouter();
@@ -131,7 +129,6 @@ const ItemsScreen: React.FC = () => {
   }, [providerItems]);
 
   const [refreshing, setRefreshing] = useState(false);
-  const [showFloatingAdd, setShowFloatingAdd] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
@@ -646,8 +643,6 @@ const ItemsScreen: React.FC = () => {
       if (distanceFromBottom < layoutMeasurement.height * SCROLL_LOAD_THRESHOLD) {
         loadMore();
       }
-      // Show floating add button when user scrolls down past 100px
-      setShowFloatingAdd(contentOffset.y > FLOATING_BUTTON_SCROLL_PX);
     },
     [loadMore],
   );
@@ -975,15 +970,6 @@ const ItemsScreen: React.FC = () => {
         />
       )}
 
-      {/* Floating Add Item button — appears when scrolling */}
-      {showFloatingAdd && !isMultiSelectMode && (
-        <ItemsFloatingAddButton
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push('/(tabs)/add');
-          }}
-        />
-      )}
       </KeyboardAvoidingView>
 
       {/* Category Change Modal */}

@@ -62,7 +62,9 @@ import type { DossierData } from '@/components/DossierReportSection';
 import { MarketplacePricesSection } from '@/components/MarketplacePricesSection';
 import type { MarketHit } from '@/components/MarketplacePricesSection';
 import { BuildProjectSection } from '@/components/BuildProjectSection';
-import { ProvenanceHistorySection } from '@/components/ProvenanceHistorySection';
+// ProvenanceHistorySection ("Item History") removed 2026-07-22 — it duplicated the
+// dossier's provenance[] and was empty for virtually every item. See render block.
+// import { ProvenanceHistorySection } from '@/components/ProvenanceHistorySection';
 import { track } from '@/analytics/track';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { LockedPreviewSection } from '@/components/LockedPreviewSection';
@@ -80,9 +82,10 @@ import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { ItemCatalogRefresh } from '@/components/item/ItemCatalogRefresh';
 import { supabase } from '@/lib/supabase';
 import { PriceTrendChart } from '@/components/PriceTrendChart';
-import { SellTimingBadge } from '@/components/SellTimingBadge';
+// SellTimingBadge hidden 2026-07-22 (see render block below) — restore both together.
+// import { SellTimingBadge } from '@/components/SellTimingBadge';
 // Pull from single source of truth — all 36 categories
-import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG, GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
+import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG, GRADING_ELIGIBLE_CATEGORIES, VALUATION_ELIGIBLE_CATEGORIES } from '@/constants/categories';
 // DossierData and MarketHit types imported from extracted components
 
 // Price trend data shape
@@ -361,8 +364,6 @@ function ItemDetailScreen() {
     affiliateLinks,
     dossierData, dossierLoading, dossierExpanded, setDossierExpanded,
     dossierError, loadDossier,
-    provenanceEvents, authenticitySignals,
-    provenanceLoading, provenanceExpanded, setProvenanceExpanded,
   } = marketplace;
 
   // Price trend (extracted to useItemPriceTrend hook)
@@ -958,12 +959,14 @@ function ItemDetailScreen() {
               <ItemShopSection affiliateLinks={affiliateLinks} />
             )}
 
-            {/* Sell Timing Badge — Premium-only. Needs canonical_key
-                (`category:item_key`) to query market_hits — won't render
-                for items that haven't been catalog-matched yet. */}
+            {/* Sell Timing Badge — HIDDEN 2026-07-22 (per request). It only ever
+                showed a "Coming soon · Premium" teaser (the feature isn't built),
+                so it read as dead weight on the detail screen. The component +
+                the market_hits query behind it are intentionally untouched — flip
+                this block back on once Sell Timing actually ships.
             {!isDraft && savedCanonicalKey && (
               <SellTimingBadge itemId={savedCanonicalKey} />
-            )}
+            )} */}
 
             {/* Condition Grading — SHELVED 2026-05-02.
                 Other apps (PSA app, CGC app) do this well already; charging
@@ -987,37 +990,36 @@ function ItemDetailScreen() {
                 on (or per-category gate) once the bake feeds enough
                 comps to every cat. */}
 
-            {/* Pro insight sections. Pro users get all three as real,
-                expandable sections. Free users get ONE consolidated upgrade
-                card listing the three — stacking three full upsell cards
-                buried the rest of the screen. */}
+            {/* Pro insight sections. CONSOLIDATED 2026-07-22:
+                - "Item History" (provenance) removed — it's a subset of the
+                  dossier (which already returns provenance[]) and is empty for
+                  virtually every user item, so it read as dead weight.
+                - "Valuation Report" (dossier) is now gated to
+                  VALUATION_ELIGIBLE_CATEGORIES — prod price/comps data only
+                  exists for those cats; elsewhere the dossier renders empty.
+                - "Market Prices" always shows for Pro: it's a LIVE marketplace
+                  search (eBay/Cardmarket/…), so it works for any category.
+                Free users get ONE consolidated upgrade card. */}
             {!isDraft && id && (
               limits.advanced_analytics ? (
                 <>
-                  <ProvenanceHistorySection
-                    theme={theme}
-                    hapticsEnabled={settings.hapticsEnabled}
-                    provenanceExpanded={provenanceExpanded}
-                    provenanceLoading={provenanceLoading}
-                    provenanceEvents={provenanceEvents}
-                    authenticitySignals={authenticitySignals}
-                    onToggleExpanded={() => setProvenanceExpanded(!provenanceExpanded)}
-                  />
-                  <DossierReportSection
-                    theme={theme}
-                    dossierData={dossierData}
-                    dossierLoading={dossierLoading}
-                    dossierExpanded={dossierExpanded}
-                    dossierError={dossierError}
-                    onToggleExpanded={() => {
-                      if (!dossierData && !dossierError) loadDossier();
-                      else setDossierExpanded(!dossierExpanded);
-                    }}
-                    onRetry={() => loadDossier()}
-                    itemId={id}
-                    formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
-                    toNum={toNum}
-                  />
+                  {VALUATION_ELIGIBLE_CATEGORIES.has(categorySlug) && (
+                    <DossierReportSection
+                      theme={theme}
+                      dossierData={dossierData}
+                      dossierLoading={dossierLoading}
+                      dossierExpanded={dossierExpanded}
+                      dossierError={dossierError}
+                      onToggleExpanded={() => {
+                        if (!dossierData && !dossierError) loadDossier();
+                        else setDossierExpanded(!dossierExpanded);
+                      }}
+                      onRetry={() => loadDossier()}
+                      itemId={id}
+                      formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
+                      toNum={toNum}
+                    />
+                  )}
                   <MarketplacePricesSection
                     theme={theme}
                     marketResults={marketResults}
@@ -1039,9 +1041,8 @@ function ItemDetailScreen() {
                   title="Item Insights"
                   requiredPlan="Pro"
                   features={[
-                    { label: 'Item History', description: '— provenance events & authenticity signals' },
-                    { label: 'Valuation Report', description: '— full dossier PDF with comps & confidence' },
                     { label: 'Market Prices', description: '— live listings from eBay, Mercari, Vinted & more' },
+                    { label: 'Valuation Report', description: '— full dossier with comps & confidence' },
                   ]}
                 />
               )
