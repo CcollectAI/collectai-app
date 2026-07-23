@@ -282,6 +282,32 @@ const ManualAddScreen: React.FC = () => {
     setErrorText(null);
 
     try {
+      // Resolve the authenticated user id up front. getSession() reads the
+      // cached session (no network) and refreshes via the processLock if
+      // needed; relying on getUser() alone makes a /auth/v1/user round-trip
+      // that returns null on a token-refresh blip or cold start (the tokenless
+      // cold-start issue). A null user_id then fails the items INSERT RLS
+      // with_check (auth.uid() = user_id) with a cryptic message that reads to
+      // the user as "the item just doesn't save". Fail loud instead.
+      let userId: string | null = null;
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        userId = sess.session?.user?.id ?? null;
+        if (!userId) {
+          const { data: u } = await supabase.auth.getUser();
+          userId = u.user?.id ?? null;
+        }
+      } catch (e) {
+        logger.error("[ManualAdd] auth resolution failed:", e);
+      }
+      if (!userId) {
+        logger.error("[ManualAdd] no authenticated user id — item not saved");
+        setSaveState("error");
+        setErrorText("You appear to be signed out. Please sign in again, then save.");
+        fireHaptic(HapticIntent.ALERT_TRIGGERED);
+        return;
+      }
+
       const purchase = purchasePriceField.value ? Number(purchasePriceField.value) : null;
       const estimated = estimatedValueField.value ? Number(estimatedValueField.value) : null;
 
@@ -329,7 +355,7 @@ const ManualAddScreen: React.FC = () => {
 
       const { data: inserted, error } = await supabase.from("items").insert([
         {
-          user_id: (await supabase.auth.getUser()).data.user?.id ?? null,
+          user_id: userId,
           title: trimmedTitle,
           category: effectiveCat || null,
           canonical_key: canonicalKey,
