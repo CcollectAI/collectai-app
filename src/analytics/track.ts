@@ -8,7 +8,9 @@
 /* ---------- Types ---------- */
 
 type AuthEvent =
-  | { name: 'user_signed_up'; properties: { method: string } }
+  // affiliate_code: the creator whose code the user signed up under, when any.
+  // Carried on the two events the creator funnel is measured on.
+  | { name: 'user_signed_up'; properties: { method: string; affiliate_code?: string } }
   | { name: 'user_logged_in'; properties: { method: string } }
   | { name: 'user_logged_out' }
   | { name: 'onboarding_completed'; properties?: { categories_selected?: number } }
@@ -42,7 +44,7 @@ type DealEvent =
 type SubscriptionEvent =
   | { name: 'subscription_screen_viewed' }
   | { name: 'subscription_upgrade_initiated'; properties: { plan: string } }
-  | { name: 'subscription_upgrade_completed'; properties: { plan: string; period: 'monthly' | 'yearly' } }
+  | { name: 'subscription_upgrade_completed'; properties: { plan: string; period: 'monthly' | 'yearly'; affiliate_code?: string } }
   | { name: 'subscription_restored'; properties: { plan: string } };
 
 type SponsorEvent =

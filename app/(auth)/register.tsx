@@ -3,7 +3,7 @@
  * Pro-grade: gradient bg, floating-label inputs, animated strength bar, animated checkbox.
  */
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -30,6 +30,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
 import { track } from '@/analytics/track';
+import { getPendingReferralCode, clearPendingReferralCode } from '@/lib/referral';
 import { GradientBackground } from '@/components/auth/GradientBackground';
 import { AuthTextInput } from '@/components/auth/AuthTextInput';
 import { fonts } from '@/theme/tokens';
@@ -43,6 +44,22 @@ function RegisterScreen() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [codeFromLink, setCodeFromLink] = useState(false);
+
+  // Prefill from a creator link captured by the deep-link handler
+  // (src/lib/referral.ts). Without this the code is stored and never read —
+  // the user would have to retype what they already clicked.
+  useEffect(() => {
+    let alive = true;
+    getPendingReferralCode().then((code) => {
+      if (alive && code) {
+        setReferralCode(code);
+        setCodeFromLink(true);
+      }
+    });
+    return () => { alive = false; };
+  }, []);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const emailRef = useRef<TextInput>(null);
@@ -111,6 +128,9 @@ function RegisterScreen() {
 
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim();
+    // Normalise here to match the trigger's UPPER(TRIM(...)), so the code the
+    // creator prints and the code we store are the same string.
+    const trimmedReferralCode = referralCode.trim().toUpperCase();
 
     if (!trimmedUsername || !trimmedEmail || !password) {
       showToast({ message: t('auth.errors.fill_all_fields'), type: 'warning' });
@@ -136,6 +156,12 @@ function RegisterScreen() {
           // fragment to sparrow://, which the AuthProvider deep-link handler turns
           // into a session. Shows a branded fallback page if the app isn't installed.
           emailRedirectTo: 'https://sparrowcollect.com/auth/confirm',
+          // Creator attribution. This lands in auth.users.raw_user_meta_data,
+          // which the handle_new_user trigger reads into
+          // profiles.referred_by_code (20260719_referral_attribution.sql).
+          // Omitted entirely when blank so an untouched field can never be
+          // mistaken for an attributed signup.
+          ...(trimmedReferralCode ? { data: { referral_code: trimmedReferralCode } } : {}),
         },
       });
       if (error) throw error;
@@ -178,7 +204,15 @@ function RegisterScreen() {
         console.warn('[register] profile upsert failed', code, profileError);
       }
 
-      track({ name: 'user_signed_up', properties: { method: 'email' } });
+      if (trimmedReferralCode) void clearPendingReferralCode();
+
+      track({
+        name: 'user_signed_up',
+        properties: {
+          method: 'email',
+          ...(trimmedReferralCode ? { affiliate_code: trimmedReferralCode } : {}),
+        },
+      });
 
       if (!user.email_confirmed_at) {
         router.replace({
@@ -300,7 +334,25 @@ function RegisterScreen() {
                 )}
               </Animated.View>
 
-              <Animated.View style={getItemStyle(4)}>
+              <Animated.View style={[{ marginTop: 14 }, getItemStyle(4)]}>
+                {/* Creator code — optional. This is the only point at which a
+                    creator's attribution enters the system: it rides along on
+                    signUp() metadata into auth.users.raw_user_meta_data, and the
+                    handle_new_user trigger copies it to profiles.referred_by_code. */}
+                <AuthTextInput
+                  testID="referral-code-input"
+                  label={codeFromLink ? "Creator code (from your link)" : "Creator code (optional)"}
+                  icon="pricetag-outline"
+                  value={referralCode}
+                  onChangeText={setReferralCode}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={handleSignUp}
+                />
+              </Animated.View>
+
+              <Animated.View style={getItemStyle(5)}>
                 {/* Animated Terms checkbox — above the button so users agree before acting */}
                 <AnimatedPressable
                   style={styles.termsRow}
@@ -366,7 +418,7 @@ function RegisterScreen() {
             </View>
 
             {/* Footer */}
-            <Animated.View style={getItemStyle(5)}>
+            <Animated.View style={getItemStyle(6)}>
               <AnimatedPressable
                 style={styles.footer}
                 onPress={() => {

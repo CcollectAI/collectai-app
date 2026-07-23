@@ -66,7 +66,7 @@
     },
     "ios": {
       "bundleIdentifier": "io.sparrowcollect.app",
-      "buildNumber": "1",
+      "buildNumber": "101",
       "supportsTablet": true,
       "usesAppleSignIn": true,
       "associatedDomains": [
@@ -255,6 +255,16 @@
               "scheme": "https",
               "host": "www.sparrowcollect.com",
               "pathPrefix": "/users"
+            },
+            {
+              "scheme": "https",
+              "host": "sparrowcollect.com",
+              "pathPrefix": "/r"
+            },
+            {
+              "scheme": "https",
+              "host": "www.sparrowcollect.com",
+              "pathPrefix": "/r"
             }
           ],
           "category": [

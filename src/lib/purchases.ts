@@ -70,6 +70,23 @@ export async function identifyUser(userId: string | null): Promise<void> {
   }
 }
 
+/**
+ * Stamp the creator code as a RevenueCat subscriber attribute so it rides along
+ * on every webhook event for this user.
+ *
+ * Kept separate from identifyUser because the code lives on the profile, which
+ * loads *after* the session — calling it from identifyUser would almost always
+ * pass undefined. AuthProvider calls this once the profile resolves.
+ */
+export async function setReferralAttribute(referralCode: string | null | undefined): Promise<void> {
+  if (!configured || !referralCode) return;
+  try {
+    await Purchases.setAttributes({ affiliate_code: referralCode });
+  } catch (e) {
+    logger.warn('[purchases] setReferralAttribute failed:', e);
+  }
+}
+
 export function planFromCustomerInfo(info: CustomerInfo | null | undefined): PlanTier {
   if (!info) return 'free';
   const active = info.entitlements.active;

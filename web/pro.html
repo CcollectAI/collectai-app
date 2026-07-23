@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sparrow Pro — Sparrow Collect</title>
+<meta name="description" content="Unlock unlimited items, AI scans, market alerts, and advanced valuations with Sparrow Pro. Save 5% by subscribing on the web.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://sparrowcollect.com/pro">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<!-- Supabase JS via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Roboto', sans-serif;
+    color: #0F172A;
+    background: linear-gradient(180deg, #F0FBFB 0%, #FFFFFF 60%);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 880px; margin: 0 auto; padding: 32px 24px 80px; }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: #44A9A1; text-decoration: none; font-weight: 500; font-size: 14px;
+    margin-bottom: 32px;
+  }
+  .back-link:hover { text-decoration: underline; }
+  .hero { text-align: center; margin-bottom: 40px; }
+  .hero img.logo { width: 72px; height: 72px; margin-bottom: 16px; }
+  .hero h1 {
+    font-size: 38px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 8px;
+  }
+  .hero .tagline { font-size: 16px; color: #64748B; }
+  .web-badge {
+    display: inline-block; margin-top: 12px;
+    background: #81D8D015; color: #2C7873; padding: 6px 14px;
+    border-radius: 999px; font-size: 13px; font-weight: 500;
+  }
+
+  .auth-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 28px 24px;
+    margin-bottom: 32px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+  .auth-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .auth-card p.sub { font-size: 14px; color: #64748B; margin-bottom: 16px; }
+  .auth-row { display: flex; gap: 8px; }
+  .auth-row input {
+    flex: 1; padding: 12px 14px; font-size: 15px;
+    border: 1.5px solid #E2E8F0; border-radius: 10px; font-family: inherit;
+    color: #0F172A;
+  }
+  .auth-row input:focus { outline: none; border-color: #81D8D0; }
+  .auth-row button, .pricing button {
+    padding: 12px 22px; font-size: 15px; font-weight: 700; font-family: inherit;
+    background: linear-gradient(90deg, #44A9A1, #81D8D0);
+    color: #FFFFFF; border: none; border-radius: 10px; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .auth-row button:hover, .pricing button:hover { opacity: 0.92; }
+  .auth-row button:disabled, .pricing button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .auth-status { margin-top: 10px; font-size: 13px; color: #44A9A1; min-height: 18px; }
+  .auth-status.err { color: #DC2626; }
+  .signed-in {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #F0FBFB; border-radius: 10px; padding: 12px 16px;
+  }
+  .signed-in .email { font-size: 14px; font-weight: 500; color: #0F172A; }
+  .signed-in button {
+    background: none; border: none; color: #64748B; cursor: pointer;
+    font-size: 13px; font-family: inherit; text-decoration: underline;
+  }
+
+  .pricing { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 640px) { .pricing { grid-template-columns: 1fr; } }
+  .plan {
+    background: #FFFFFF;
+    border: 2px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 28px 24px;
+    transition: border-color 0.15s, transform 0.15s;
+    position: relative;
+  }
+  .plan.popular { border-color: #81D8D0; }
+  .plan .ribbon {
+    position: absolute; top: -12px; right: 16px;
+    background: #81D8D0; color: #FFFFFF; font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .plan h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .plan .price { font-size: 32px; font-weight: 900; color: #0F172A; }
+  .plan .price-suffix { font-size: 14px; font-weight: 500; color: #64748B; }
+  .plan .compare {
+    font-size: 12px; color: #64748B; margin-top: 4px;
+    text-decoration: line-through;
+  }
+  .plan ul {
+    margin: 16px 0 20px 0; padding: 0; list-style: none;
+  }
+  .plan li {
+    font-size: 14px; color: #334155; padding: 4px 0 4px 22px; position: relative;
+  }
+  .plan li::before {
+    content: '✓'; position: absolute; left: 0; color: #44A9A1; font-weight: 700;
+  }
+  .plan button { width: 100%; }
+
+  .why-web {
+    margin-top: 32px; padding: 20px;
+    background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px;
+    font-size: 13px; color: #475569;
+  }
+  .why-web strong { color: #0F172A; }
+
+  .legal-note {
+    margin-top: 24px; font-size: 12px; color: #94A3B8; text-align: center;
+  }
+  .legal-note a { color: #44A9A1; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/" class="back-link">← Back to home</a>
+
+  <div class="hero">
+    <img src="/icon.png" alt="Sparrow Collect" class="logo">
+    <h1>Sparrow Pro</h1>
+    <p class="tagline">Unlimited items, AI scans, market alerts, and advanced valuations.</p>
+    <span class="web-badge">5% off when you subscribe on the web</span>
+  </div>
+
+  <!-- Auth state -->
+  <div class="auth-card" id="auth-card">
+    <h2 id="auth-title">Sign in to continue</h2>
+    <p class="sub" id="auth-sub">We'll send you a secure sign-in link by email.</p>
+
+    <div id="signed-out-ui">
+      <div class="auth-row">
+        <input type="email" id="email-input" placeholder="your@email.com" autocomplete="email">
+        <button id="send-link-btn">Send link</button>
+      </div>
+      <p class="auth-status" id="auth-status"></p>
+    </div>
+
+    <div id="signed-in-ui" class="signed-in" style="display:none;">
+      <span class="email" id="signed-in-email"></span>
+      <button id="signout-btn">Sign out</button>
+    </div>
+  </div>
+
+  <!-- Pricing -->
+  <div class="pricing">
+    <div class="plan">
+      <h3>Monthly</h3>
+      <div class="price">€4.74<span class="price-suffix">/mo</span></div>
+      <div class="compare">€4.99 on iOS</div>
+      <ul>
+        <li>Unlimited items</li>
+        <li>AI photo scanning</li>
+        <li>Market alerts</li>
+        <li>Advanced valuations</li>
+        <li>Cancel anytime</li>
+      </ul>
+      <button id="subscribe-monthly" disabled>Subscribe — €4.74/mo</button>
+    </div>
+
+    <div class="plan popular">
+      <span class="ribbon">Best value</span>
+      <h3>Yearly</h3>
+      <div class="price">€37.99<span class="price-suffix">/yr</span></div>
+      <div class="compare">€39.99 on iOS</div>
+      <ul>
+        <li>Everything in Monthly</li>
+        <li>Save ~33% vs monthly</li>
+        <li>Cancel anytime</li>
+      </ul>
+      <button id="subscribe-yearly" disabled>Subscribe — €37.99/yr</button>
+    </div>
+  </div>
+
+  <p class="auth-status" id="checkout-status"></p>
+
+  <div class="why-web">
+    <strong>Why subscribe on the web?</strong> You save 5% vs the in-app price because we don't pay platform fees on this transaction.
+    Your Pro features unlock automatically in the Sparrow Collect iOS app once you sign in with the same email.
+  </div>
+
+  <p class="legal-note">
+    By subscribing you agree to our <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.
+    Payments processed by Stripe. Manage or cancel anytime from your account.
+  </p>
+</div>
+
+<script>
+(function() {
+  // ────────────────────────────────────────────────────────────────────────
+  // Configuration
+  // ────────────────────────────────────────────────────────────────────────
+  // Public-by-design: Supabase anon key + URL are safe to commit.
+  // The anon key only allows access governed by RLS policies.
+  const SUPABASE_URL = 'https://ykqrruipzmrrvjcvwfgp.supabase.co';
+  const SUPABASE_ANON_KEY = 'REPLACE_WITH_REAL_ANON_KEY';  // <-- TODO: paste from .env or Supabase dashboard
+  const API_BASE = 'https://api.sparrowcollect.com';
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ────────────────────────────────────────────────────────────────────────
+  // DOM refs
+  // ────────────────────────────────────────────────────────────────────────
+  const els = {
+    signedOut: document.getElementById('signed-out-ui'),
+    signedIn: document.getElementById('signed-in-ui'),
+    email: document.getElementById('email-input'),
+    sendLink: document.getElementById('send-link-btn'),
+    status: document.getElementById('auth-status'),
+    signedInEmail: document.getElementById('signed-in-email'),
+    signout: document.getElementById('signout-btn'),
+    title: document.getElementById('auth-title'),
+    sub: document.getElementById('auth-sub'),
+    subMonthly: document.getElementById('subscribe-monthly'),
+    subYearly: document.getElementById('subscribe-yearly'),
+    checkoutStatus: document.getElementById('checkout-status'),
+  };
+
+  // ────────────────────────────────────────────────────────────────────────
+  // Auth state
+  // ────────────────────────────────────────────────────────────────────────
+  function renderAuthState(session) {
+    if (session && session.user) {
+      els.signedOut.style.display = 'none';
+      els.signedIn.style.display = 'flex';
+      els.signedInEmail.textContent = session.user.email || 'Signed in';
+      els.title.textContent = 'You\'re signed in';
+      els.sub.textContent = 'Choose a plan below to continue to checkout.';
+      els.subMonthly.disabled = false;
+      els.subYearly.disabled = false;
+    } else {
+      els.signedOut.style.display = 'block';
+      els.signedIn.style.display = 'none';
+      els.title.textContent = 'Sign in to continue';
+      els.sub.textContent = "We'll send you a secure sign-in link by email.";
+      els.subMonthly.disabled = true;
+      els.subYearly.disabled = true;
+    }
+  }
+
+  supabase.auth.getSession().then(({ data }) => renderAuthState(data.session));
+  supabase.auth.onAuthStateChange((_event, session) => renderAuthState(session));
+
+  // ────────────────────────────────────────────────────────────────────────
+  // Magic link send
+  // ────────────────────────────────────────────────────────────────────────
+  els.sendLink.addEventListener('click', async () => {
+    const email = els.email.value.trim();
+    if (!email) {
+      els.status.textContent = 'Enter your email first.';
+      els.status.classList.add('err');
+      return;
+    }
+    els.sendLink.disabled = true;
+    els.status.textContent = 'Sending…';
+    els.status.classList.remove('err');
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: 'https://sparrowcollect.com/pro' },
+      });
+      if (error) throw error;
+      els.status.textContent = 'Check your inbox for the sign-in link.';
+    } catch (err) {
+      els.status.textContent = err.message || 'Could not send link. Try again.';
+      els.status.classList.add('err');
+    } finally {
+      els.sendLink.disabled = false;
+    }
+  });
+
+  els.signout.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+  });
+
+  // ────────────────────────────────────────────────────────────────────────
+  // Stripe checkout
+  // ────────────────────────────────────────────────────────────────────────
+  async function startCheckout(interval) {
+    els.checkoutStatus.textContent = '';
+    els.checkoutStatus.classList.remove('err');
+    els.subMonthly.disabled = true;
+    els.subYearly.disabled = true;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        els.checkoutStatus.textContent = 'Please sign in first.';
+        els.checkoutStatus.classList.add('err');
+        return;
+      }
+      const res = await fetch(`${API_BASE}/billing/web/checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ interval }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || errBody.detail || `Checkout failed (HTTP ${res.status})`);
+      }
+      const { url } = await res.json();
+      if (!url) throw new Error('Checkout did not return a URL.');
+      window.location.href = url;
+    } catch (err) {
+      els.checkoutStatus.textContent = err.message || 'Something went wrong starting checkout.';
+      els.checkoutStatus.classList.add('err');
+      els.subMonthly.disabled = false;
+      els.subYearly.disabled = false;
+    }
+  }
+
+  els.subMonthly.addEventListener('click', () => startCheckout('monthly'));
+  els.subYearly.addEventListener('click', () => startCheckout('yearly'));
+})();
+</script>
+
+    <script src="/referral.js" defer></script>
+</body>
+</html>

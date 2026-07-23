@@ -20,6 +20,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useAuthContext } from '@/providers/useAuthContext';
 import {
   getOfferings,
   purchasePackage,
@@ -118,6 +119,7 @@ function SubscriptionScreen() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [upgrading, setUpgrading] = useState<'monthly' | 'yearly' | null>(null);
   const [restoring, setRestoring] = useState(false);
+  const { profile } = useAuthContext();
 
   function fetchOfferings() {
     setLoading(true);
@@ -168,7 +170,14 @@ function SubscriptionScreen() {
         const newPlan = planFromCustomerInfo(result.customerInfo);
         track({
           name: 'subscription_upgrade_completed',
-          properties: { plan: newPlan, period },
+          properties: {
+            plan: newPlan,
+            period,
+            // Credits the creator this user signed up under. The revenue join
+            // still happens server-side off the RevenueCat webhook — this is
+            // for funnel visibility in PostHog, not for payout maths.
+            ...(profile?.referred_by_code ? { affiliate_code: profile.referred_by_code } : {}),
+          },
         });
         showToast({ message: 'Welcome to Pro!', type: 'success' });
       } else if (result.cancelled) {

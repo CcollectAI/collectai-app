@@ -19,7 +19,8 @@
     "i18n:check:quiet": "node scripts/check-i18n-strings.mjs --quiet",
     "bundle-size": "node scripts/bundle-size.mjs",
     "bundle-size:update": "node scripts/bundle-size.mjs --update",
-    "postinstall": "node scripts/postinstall-fixes.js"
+    "postinstall": "node scripts/postinstall-fixes.js",
+    "test:web:referral": "node scripts/web-tests/referral.test.js"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
@@ -127,7 +128,8 @@
       "<rootDir>/node_modules/",
       "<rootDir>/.claude/",
       "<rootDir>/__tests__/setup.ts",
-      "<rootDir>/__tests__/a11y/helpers.ts"
+      "<rootDir>/__tests__/a11y/helpers.ts",
+      "<rootDir>/scripts/web-tests/"
     ],
     "modulePathIgnorePatterns": [
       "<rootDir>/.claude/"
