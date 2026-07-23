@@ -577,6 +577,14 @@ class MarketplaceAgent:
         except Exception:
             normalize_attributes = None
 
+        # CJK title enrichment (opt-in; gated inside on CJK_NORMALIZE_ENABLED +
+        # CJK-content + spend budget). Fills structured attrs from Japanese
+        # titles the canonical normalizer can't read. See cjk_normalizer.
+        try:
+            from app.agents.cjk_normalizer import enrich_cjk_attrs
+        except Exception:
+            enrich_cjk_attrs = None
+
         inserted = 0
         # Use DB_DSN_DIRECT instead of the pooler to bypass the 30s
         # statement timeout. The per-row INSERT ... WHERE NOT EXISTS has to
@@ -671,6 +679,20 @@ class MarketplaceAgent:
                     resolved_category = category
                     if not resolved_category and normalized_key and ":" in normalized_key:
                         resolved_category = normalized_key.split(":", 1)[0]
+
+                    # CJK enrichment (opt-in) — structure a Japanese/CJK title
+                    # into attrs via Kimi, then gap-fill: the canonical
+                    # normalizer's values win on key conflicts. No-op unless
+                    # enabled + CJK-present + under budget; never blocks the write.
+                    if enrich_cjk_attrs is not None:
+                        try:
+                            _cjk = await enrich_cjk_attrs(
+                                hit.get("title") or "", resolved_category, raw_attrs,
+                            )
+                            if _cjk:
+                                raw_attrs = {**_cjk, **raw_attrs}
+                        except Exception:
+                            pass
 
                     # item_ref must be the canonical `{category}:{key}` form
                     # (learnings.md §22, §64, root-cause essay post-write rule).
