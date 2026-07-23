@@ -86,7 +86,7 @@ async def _backfill_one_category(
                 result = await agent.find_sold_comps(
                     query=query,
                     category=category,
-                    max_results=10,
+                    limit=10,
                 )
                 hit_count = len(result.hits) if result and hasattr(result, "hits") else 0
                 found += hit_count
@@ -94,7 +94,7 @@ async def _backfill_one_category(
                 if hit_count > 0:
                     normalized_key = f"{category}:{it['item_key']}"
                     n_persisted = await agent.persist_comps_to_db(
-                        result, normalized_key=normalized_key,
+                        result, normalized_key=normalized_key, category=category,
                     )
                     persisted += n_persisted or 0
                     logger.info(

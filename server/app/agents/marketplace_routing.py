@@ -143,7 +143,8 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
     "ktown4u": {"kpop", "kpop_lightsticks", "blind_box"},
     "comicbookrealm": {"comic_books"},
     "masterofmalt": {"whiskey"},
-    "pricecharting": {"retro_games", "retro_handhelds", "pokemon", "nintendo_merch", "sportscards"},
+    "pricecharting": {"retro_games", "retro_handhelds", "pokemon", "nintendo_merch", "sportscards",
+                      "funko", "comic_books"},
     "yahoo_auctions": {
         "bandai_premium", "jp_event", "jp_magazine", "ghibli", "anime_figures",
         "retro_pokemon", "vtuber", "gunpla", "anime_bluray", "anime_soundtrack",

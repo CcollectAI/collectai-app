@@ -91,6 +91,19 @@ _GAME_LINK_RE = re.compile(r"/game/([a-z0-9\-]+)/([a-z0-9\-]+)")
 _TITLE_RE = re.compile(r'itemprop="name"\s+content="([^"]+)"')
 _MAX_PRODUCTS_PER_QUERY = 3  # top few search candidates; bounds requests/item
 
+# Relevance guard for the keyless web search. The fuzzy /search-products endpoint
+# returns the closest products across ALL PriceCharting databases, so a query that
+# has no exact match in the target database silently returns cross-category junk
+# (a Funko search → a Pokemon card, a comic search → a Yugioh card). For categories
+# whose PriceCharting `console` path segment carries an unambiguous keyword, we
+# require it — a product whose console doesn't contain an allowed token is dropped
+# before we fetch its page. Categories absent here are unfiltered (retro_games and
+# other console/game queries match the video-game DB directly and rarely cross).
+_CATEGORY_CONSOLE_ALLOW: Dict[str, tuple[str, ...]] = {
+    "funko": ("funko",),
+    "comic_books": ("comic",),
+}
+
 
 def _price_from_cell(html: str, td_id: str) -> float:
     """Extract the first $ price inside the <td id={td_id}> cell (0 if none)."""
@@ -269,6 +282,17 @@ class PriceChartingCaller:
             paths.append(key)
             if len(paths) >= _MAX_PRODUCTS_PER_QUERY:
                 break
+
+        # Drop cross-category false positives before fetching product pages: for
+        # guarded categories the console path segment must carry an allowed token
+        # (see _CATEGORY_CONSOLE_ALLOW). `console` is the raw lowercase-hyphenated
+        # segment, e.g. "funko-pop-animation" (kept) vs "pokemon-fusion-strike"
+        # (dropped for a funko query).
+        allow = _CATEGORY_CONSOLE_ALLOW.get(category)
+        if allow:
+            paths = [(c, s) for (c, s) in paths if any(tok in c for tok in allow)]
+            if not paths:
+                return []
 
         # Date-only ISO (YYYY-MM-DD). MUST match one of _parse_sold_date's
         # accepted formats — its full isoformat() "+00:00" variant is NOT parsed
