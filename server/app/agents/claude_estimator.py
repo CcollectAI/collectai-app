@@ -39,6 +39,19 @@ MAX_TOKENS_OUT = int(os.getenv("CLAUDE_ESTIMATE_MAX_TOKENS", "512"))
 MODEL = os.getenv("CLAUDE_ESTIMATE_MODEL", "claude-haiku-4-5")
 ENABLED = os.getenv("CLAUDE_ESTIMATE_ENABLED", "false").lower() in ("1", "true", "yes")
 
+# Provider switch for the estimate (A/B Claude vs Kimi K2). "anthropic" keeps
+# the proven cached-Haiku path byte-for-byte; "kimi" routes to Moonshot's
+# OpenAI-compatible /chat/completions endpoint (function calling). On a Kimi
+# hard error we fall back to Claude when ANTHROPIC_API_KEY is set, so flipping
+# the flag can never take estimates fully dark. Kimi has no prompt caching on
+# this path, so every call pays the full ~4K-token system prefix — priced below.
+ESTIMATE_PROVIDER = os.getenv("ESTIMATE_PROVIDER", "anthropic").strip().lower()
+KIMI_API_KEY = os.getenv("KIMI_API_KEY", "")
+KIMI_BASE_URL = os.getenv("KIMI_BASE_URL", "https://api.moonshot.ai/v1")
+KIMI_MODEL = os.getenv("KIMI_MODEL", "kimi-k2-0711-preview")
+# Kimi K2 ~$0.60/Mtok in, $2.50/Mtok out; ~4K uncached in + ~150 out ≈ €0.0023.
+KIMI_COST_PER_CALL_EUR = float(os.getenv("KIMI_ESTIMATE_COST_EUR", "0.0025"))
+
 # System prompt — long-form so the prefix exceeds Haiku 4.5's 4096-token
 # minimum cacheable size. Anything below 4096 tokens silently won't cache
 # and you'll see cache_read_input_tokens stay at zero across requests.
@@ -257,38 +270,41 @@ def _format_user_prompt(category: str, title: str, attrs: Optional[dict]) -> str
     )
 
 
-async def estimate_thin_cat_price(
-    category: str,
-    title: str,
-    attrs: Optional[dict] = None,
-) -> dict:
-    """Ask Claude Haiku 4.5 for a price estimate.
+def _parse_estimate_output(inp: dict, base: dict, cost_eur: float, cache_hit: bool) -> dict:
+    """Validate a submit_price_estimate payload (identical shape from either
+    provider) and build the return dict. Mirrors the DB CHECK on
+    price_predictions."""
+    try:
+        q10 = float(inp["q10"])
+        q50 = float(inp["q50"])
+        q90 = float(inp["q90"])
+        conf = float(inp["confidence"])
+        reasoning = str(inp.get("reasoning", ""))[:300]
+    except (KeyError, TypeError, ValueError) as e:
+        logger.warning("[claude_estimator] tool input malformed: %s; payload=%r", e, inp)
+        return {**base, "reason": "parse_error", "cost_eur": cost_eur, "cache_hit": cache_hit}
 
-    Returns:
-        {
-            "ok": bool,                       # False if disabled / capped / errored
-            "reason": str,                    # 'ok' | 'disabled' | 'budget_exhausted' | 'no_api_key' | 'parse_error' | 'sdk_missing' | 'api_error'
-            "q10": float | None,
-            "q50": float | None,
-            "q90": float | None,
-            "confidence": float | None,       # [0,1] from the model
-            "reasoning": str | None,
-            "cost_eur": float,
-            "cache_hit": bool,                # True if the cached prefix was read
-        }
-    """
-    base = {
-        "ok": False, "reason": "", "q10": None, "q50": None, "q90": None,
-        "confidence": None, "reasoning": None, "cost_eur": 0.0, "cache_hit": False,
+    if not (0 < q10 <= q50 <= q90 <= 20_000_000):
+        logger.warning(
+            "[claude_estimator] quantile bounds violated: q10=%s q50=%s q90=%s", q10, q50, q90,
+        )
+        return {**base, "reason": "parse_error", "cost_eur": cost_eur, "cache_hit": cache_hit}
+
+    return {
+        "ok": True,
+        "reason": "ok",
+        "q10": q10, "q50": q50, "q90": q90,
+        "confidence": max(0.0, min(1.0, conf)),
+        "reasoning": reasoning,
+        "cost_eur": cost_eur,
+        "cache_hit": cache_hit,
     }
 
-    if not ENABLED:
-        return {**base, "reason": "disabled"}
 
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        return {**base, "reason": "no_api_key"}
-
-    # Spend gate — same pattern as on_demand_enrich's Scrape.do gate.
+async def _estimate_via_anthropic(user_prompt: str, base: dict) -> dict:
+    """Claude Haiku path — cached system prefix + forced tool call. Byte-for-byte
+    the original implementation; the provider switch only chooses whether to
+    reach it."""
     try:
         from app.lib.spend_tracker import SpendTracker
         tracker = SpendTracker.instance() if hasattr(SpendTracker, "instance") else SpendTracker()
@@ -304,8 +320,6 @@ async def estimate_thin_cat_price(
         return {**base, "reason": "sdk_missing"}
 
     client = AsyncAnthropic()
-    user_prompt = _format_user_prompt(category, title, attrs)
-
     try:
         response = await client.messages.create(
             model=MODEL,
@@ -341,33 +355,133 @@ async def estimate_thin_cat_price(
         logger.warning("[claude_estimator] no tool_use block; stop_reason=%s", response.stop_reason)
         return {**base, "reason": "parse_error", "cost_eur": COST_PER_CALL_EUR, "cache_hit": cache_hit}
 
-    inp = tool_block.input or {}
+    return _parse_estimate_output(tool_block.input or {}, base, COST_PER_CALL_EUR, cache_hit)
+
+
+async def _estimate_via_kimi(user_prompt: str, base: dict) -> Optional[dict]:
+    """Kimi K2 path via Moonshot's OpenAI-compatible /chat/completions (function
+    calling). Returns None on a hard transport/HTTP error so the caller can fall
+    back to Claude; returns a result dict for budget/parse outcomes.
+
+    Kimi is NOT Anthropic-compatible, so this deliberately uses a raw
+    OpenAI-shaped HTTP call (same pattern as ml/openai_vision.py) — the Claude
+    path above stays on the Anthropic SDK."""
     try:
-        q10 = float(inp["q10"])
-        q50 = float(inp["q50"])
-        q90 = float(inp["q90"])
-        conf = float(inp["confidence"])
-        reasoning = str(inp.get("reasoning", ""))[:300]
-    except (KeyError, TypeError, ValueError) as e:
-        logger.warning("[claude_estimator] tool input malformed: %s; payload=%r", e, inp)
-        return {**base, "reason": "parse_error", "cost_eur": COST_PER_CALL_EUR, "cache_hit": cache_hit}
+        from app.lib.spend_tracker import SpendTracker
+        tracker = SpendTracker.instance() if hasattr(SpendTracker, "instance") else SpendTracker()
+        tracker.check("kimi_estimate")
+    except Exception as e:  # noqa: BLE001
+        logger.warning("[claude_estimator] kimi budget gate blocked: %s", e)
+        return {**base, "reason": "budget_exhausted"}
 
-    # Schema sanity — mirrors the DB CHECK constraint on price_predictions.
-    if not (0 < q10 <= q50 <= q90 <= 20_000_000):
-        logger.warning(
-            "[claude_estimator] quantile bounds violated: q10=%s q50=%s q90=%s", q10, q50, q90,
-        )
-        return {**base, "reason": "parse_error", "cost_eur": COST_PER_CALL_EUR, "cache_hit": cache_hit}
+    import json as _json
+    try:
+        import httpx
+    except ImportError:
+        logger.error("[claude_estimator] httpx not installed; cannot call Kimi")
+        return None
 
-    return {
-        "ok": True,
-        "reason": "ok",
-        "q10": q10, "q50": q50, "q90": q90,
-        "confidence": max(0.0, min(1.0, conf)),
-        "reasoning": reasoning,
-        "cost_eur": COST_PER_CALL_EUR,
-        "cache_hit": cache_hit,
+    payload = {
+        "model": KIMI_MODEL,
+        "max_tokens": MAX_TOKENS_OUT,
+        "temperature": 0.3,
+        "messages": [
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ],
+        # Anthropic tool -> OpenAI function shape (Moonshot is OpenAI-compatible).
+        "tools": [{
+            "type": "function",
+            "function": {
+                "name": _TOOL["name"],
+                "description": _TOOL["description"],
+                "parameters": _TOOL["input_schema"],
+            },
+        }],
+        "tool_choice": {"type": "function", "function": {"name": _TOOL["name"]}},
     }
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{KIMI_BASE_URL.rstrip('/')}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {KIMI_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as e:  # noqa: BLE001
+        logger.warning("[claude_estimator] Kimi API call failed: %s", e)
+        return None  # signal fallback to Claude
+
+    try:
+        tracker.record("kimi_estimate", cost_eur=KIMI_COST_PER_CALL_EUR)
+    except Exception:
+        pass
+
+    # No prompt caching on this path, so cache_hit is always False.
+    try:
+        tool_calls = data["choices"][0]["message"].get("tool_calls") or []
+        inp = _json.loads(tool_calls[0]["function"]["arguments"])
+    except (KeyError, IndexError, TypeError, ValueError) as e:
+        logger.warning("[claude_estimator] Kimi response parse failed: %s; payload=%r", e, data)
+        return {**base, "reason": "parse_error", "cost_eur": KIMI_COST_PER_CALL_EUR, "cache_hit": False}
+
+    return _parse_estimate_output(inp, base, KIMI_COST_PER_CALL_EUR, False)
+
+
+async def estimate_thin_cat_price(
+    category: str,
+    title: str,
+    attrs: Optional[dict] = None,
+) -> dict:
+    """Ask Claude Haiku 4.5 for a price estimate.
+
+    Returns:
+        {
+            "ok": bool,                       # False if disabled / capped / errored
+            "reason": str,                    # 'ok' | 'disabled' | 'budget_exhausted' | 'no_api_key' | 'parse_error' | 'sdk_missing' | 'api_error'
+            "q10": float | None,
+            "q50": float | None,
+            "q90": float | None,
+            "confidence": float | None,       # [0,1] from the model
+            "reasoning": str | None,
+            "cost_eur": float,
+            "cache_hit": bool,                # True if the cached prefix was read
+        }
+    """
+    base = {
+        "ok": False, "reason": "", "q10": None, "q50": None, "q90": None,
+        "confidence": None, "reasoning": None, "cost_eur": 0.0, "cache_hit": False,
+    }
+
+    if not ENABLED:
+        return {**base, "reason": "disabled"}
+
+    provider = ESTIMATE_PROVIDER if ESTIMATE_PROVIDER in ("anthropic", "kimi") else "anthropic"
+    if provider == "kimi" and not KIMI_API_KEY:
+        logger.warning("[claude_estimator] ESTIMATE_PROVIDER=kimi but KIMI_API_KEY unset; using anthropic")
+        provider = "anthropic"
+
+    user_prompt = _format_user_prompt(category, title, attrs)
+
+    if provider == "kimi":
+        result = await _estimate_via_kimi(user_prompt, base)
+        # None = Kimi hard error (network/HTTP/missing httpx). Fall back to
+        # Claude when we have a key, so a bad Kimi flag never takes estimates
+        # fully dark. A budget/parse dict (not None) is returned as-is.
+        if result is not None:
+            return result
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            return {**base, "reason": "api_error"}
+        logger.info("[claude_estimator] Kimi failed; falling back to anthropic")
+
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        return {**base, "reason": "no_api_key"}
+
+    return await _estimate_via_anthropic(user_prompt, base)
 
 
 def to_market_hit(

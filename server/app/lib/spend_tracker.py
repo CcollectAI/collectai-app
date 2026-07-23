@@ -52,6 +52,7 @@ class BudgetExceededError(Exception):
 
 DEFAULT_COSTS: dict[str, float] = {
     "openai": 0.003,       # gpt-4o-mini vision: ~500 input + 200 output tokens
+    "kimi_estimate": 0.0025,  # Kimi K2 thin-cat estimate: ~4K uncached in + ~150 out
     "firecrawl": 0.006,    # Growth plan: ~€19/3000 credits
     "scrapedo": 0.001,     # ~€1/1000 requests
     "serpapi": 0.005,      # ~€50/10K searches
