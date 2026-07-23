@@ -8,6 +8,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "build:ios:local": "eas build --platform ios --profile store --local --non-interactive --output ./builds/sparrow-ios-local.ipa",
+    "submit:ios": "eas submit --platform ios --profile store --path ./builds/sparrow-ios-local.ipa",
+    "release:ios": "npm run build:ios:local && npm run submit:ios",
     "web": "expo start --web",
     "lint": "expo lint",
     "precheck": "node scripts/precheck.mjs",
