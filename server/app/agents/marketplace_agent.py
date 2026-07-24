@@ -620,6 +620,64 @@ class MarketplaceAgent:
                     "recently sold", "most watched", "unknown", "n/a",
                 }
 
+                # Cross-source sanity band. Sources that publish a *rolling
+                # aggregate* for a whole product (rather than one observed sale)
+                # are the ones that go catastrophically wrong when their fuzzy
+                # search matches the wrong product: the price is plausible for
+                # SOME item, so the €1M ceiling above never fires. Verified
+                # 2026-07-23: a €9 Funko got PriceCharting comps of €1369-2282
+                # (from a mis-matched Spider-Man) while eBay hits for the same
+                # item sat at €8.78-13.17, and price_predictions valued it at
+                # €1997. The per-source relevance guard is the primary fix; this
+                # is the writer-side backstop that does not trust any adapter.
+                #
+                # Deliberately generous (10×) and only armed when >=2 independent
+                # comps exist: real collectibles do span an order of magnitude
+                # (graded vs raw, sealed vs loose), so this must only catch the
+                # egregious case — the Piccolo was ~150× off.
+                _AGGREGATE_PRICE_SOURCES = {"pricecharting"}
+                _BAND_FACTOR = 10.0
+                _BAND_MIN_REFS = 2
+
+                async def _to_eur(_hit: dict):
+                    _p = _hit.get("price")
+                    _c = _hit.get("currency", "EUR")
+                    if _p and _c != "EUR" and convert_to_eur:
+                        try:
+                            return await convert_to_eur(float(_p), _c)
+                        except Exception:
+                            return _p
+                    return _p
+
+                # Pre-pass: convert once, keyed by identity, so the main loop
+                # reuses the value instead of paying for a second conversion.
+                _eur_cache: dict = {}
+                for _scored in result.hits:
+                    try:
+                        _eur_cache[id(_scored.hit)] = await _to_eur(_scored.hit)
+                    except Exception:
+                        pass
+
+                _ref_prices = []
+                for _scored in result.hits:
+                    _src = str(_scored.hit.get("source") or _scored.hit.get("provider") or "")
+                    if _src in _AGGREGATE_PRICE_SOURCES:
+                        continue
+                    _v = _eur_cache.get(id(_scored.hit))
+                    try:
+                        if _v is not None and float(_v) > 0:
+                            _ref_prices.append(float(_v))
+                    except (TypeError, ValueError):
+                        continue
+                _ref_median = None
+                if len(_ref_prices) >= _BAND_MIN_REFS:
+                    _ref_prices.sort()
+                    _mid = len(_ref_prices) // 2
+                    _ref_median = (
+                        _ref_prices[_mid] if len(_ref_prices) % 2
+                        else (_ref_prices[_mid - 1] + _ref_prices[_mid]) / 2.0
+                    )
+
                 for scored in result.hits:
                     hit = scored.hit
                     # Skip zero/null prices — these skew training and valuations
@@ -630,21 +688,34 @@ class MarketplaceAgent:
                     _title_norm = str(hit.get("title") or "").strip().lower()
                     if _title_norm in _GARBAGE_TITLES or not _title_norm:
                         continue
-                    # Normalize price to EUR
+                    # Normalize price to EUR. Computed in the pre-pass above (which
+                    # needs EUR to build the sanity band); _to_eur is the same
+                    # conversion — convert_to_eur is async, and a missing await
+                    # meant price_eur was a coroutine that serialised into JSON as
+                    # "Object of type coroutine is not JSON serializable" and
+                    # dropped whole batches (learning 2026-04-18).
                     raw_price = hit.get("price")
-                    raw_currency = hit.get("currency", "EUR")
-                    if raw_price and raw_currency != "EUR" and convert_to_eur:
-                        try:
-                            # convert_to_eur is async — missing await meant
-                            # price_eur was a coroutine that serialised into
-                            # JSON as "Object of type coroutine is not JSON
-                            # serializable" and dropped whole batches (learning
-                            # 2026-04-18).
-                            price_eur = await convert_to_eur(float(raw_price), raw_currency)
-                        except Exception:
-                            price_eur = raw_price  # fallback: store as-is
+                    raw_currency = hit.get("currency", "EUR")  # persisted as source_currency below
+                    if id(hit) in _eur_cache:
+                        price_eur = _eur_cache[id(hit)]
                     else:
-                        price_eur = raw_price
+                        price_eur = await _to_eur(hit)
+
+                    # Cross-source sanity band — see _AGGREGATE_PRICE_SOURCES.
+                    hit_source = str(hit.get("source") or hit.get("provider") or "")
+                    if _ref_median and hit_source in _AGGREGATE_PRICE_SOURCES:
+                        try:
+                            _pv = float(price_eur)
+                            if _pv > _ref_median * _BAND_FACTOR or _pv < _ref_median / _BAND_FACTOR:
+                                logger.warning(
+                                    "[MarketplaceAgent] Dropping %s hit: €%.2f outside %.0f× band "
+                                    "around €%.2f median of %d other-source comps (title=%r)",
+                                    hit_source, _pv, _BAND_FACTOR, _ref_median,
+                                    len(_ref_prices), hit.get("title"),
+                                )
+                                continue
+                        except (TypeError, ValueError):
+                            continue
 
                     # Writer-side price ceiling — see _WRITE_PRICE_CEILING_EUR
                     # comment above. Drop obvious parse errors before they

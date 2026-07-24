@@ -91,18 +91,108 @@ _GAME_LINK_RE = re.compile(r"/game/([a-z0-9\-]+)/([a-z0-9\-]+)")
 _TITLE_RE = re.compile(r'itemprop="name"\s+content="([^"]+)"')
 _MAX_PRODUCTS_PER_QUERY = 3  # top few search candidates; bounds requests/item
 
-# Relevance guard for the keyless web search. The fuzzy /search-products endpoint
-# returns the closest products across ALL PriceCharting databases, so a query that
-# has no exact match in the target database silently returns cross-category junk
-# (a Funko search → a Pokemon card, a comic search → a Yugioh card). For categories
-# whose PriceCharting `console` path segment carries an unambiguous keyword, we
-# require it — a product whose console doesn't contain an allowed token is dropped
-# before we fetch its page. Categories absent here are unfiltered (retro_games and
-# other console/game queries match the video-game DB directly and rarely cross).
+# Relevance guard, layer 1 (database). The fuzzy /search-products endpoint returns
+# the closest products across ALL PriceCharting databases, so a query that has no
+# exact match in the target database silently returns cross-category junk (a Funko
+# search → a Pokemon card, a comic search → a Yugioh card). For categories whose
+# PriceCharting `console` path segment carries an unambiguous keyword, we require
+# it — a product whose console doesn't contain an allowed token is dropped before
+# we fetch its page. Categories absent here rely on layer 2 alone.
 _CATEGORY_CONSOLE_ALLOW: Dict[str, tuple[str, ...]] = {
     "funko": ("funko",),
     "comic_books": ("comic",),
 }
+
+# Relevance guard, layer 2 (product). Layer 1 only proves the result came from the
+# right *database* — it says nothing about whether it is the right *product*, and
+# within-database fuzzy misses are both common and expensive. Verified 2026-07-23:
+# query "Dragon Ball Z - Piccolo (Metallic) #SE" returned "Spider-Man [Metallic] #3
+# (Funko Pop Marvel)" — console `funko-pop-marvel` passes layer 1, the match is on
+# the single word "Metallic", and its three price cells landed as sold comps worth
+# €1369/€1997/€2282 against eBay actives of €8.78. price_predictions then valued an
+# €9 Funko at €1997. A wrong comp is worse than no comp: require that the candidate
+# actually covers the query's distinctive words.
+_TOKEN_SPLIT_RE = re.compile(r"[^a-z0-9]+")
+_MIN_TOKEN_COVERAGE = 0.5
+
+# Tokens that identify the *database* or are otherwise carried by nearly every
+# title, so matching on them proves nothing about product identity. Excluded from
+# both sides of the comparison — without this, a query beginning "Funko Pop!
+# Animation:" scores 2 free tokens against every console named `funko-pop-*`.
+_NOISE_TOKENS = frozenset({
+    # Database / format words
+    "funko", "pop", "pops", "vinyl", "figure", "figures", "animation", "comic",
+    "comics", "book", "books", "card", "cards", "game", "games", "console",
+    "edition", "ed", "version", "ver", "the", "and", "for", "with", "official",
+    "limited", "exclusive", "collectible", "collectibles", "series", "vol",
+    "volume", "no", "new", "set",
+    # Variant qualifiers. These describe a FINISH or RELEASE, never the subject,
+    # and they are the most repeated words in the catalog — so they are exactly
+    # what a fuzzy search latches onto when it cannot find the real product.
+    # Probe 2026-07-24: "Piccolo (Metallic) #SE" matched
+    # "Freddy Funko as Loki [Metallic] SE" on {metallic, se} alone and passed the
+    # guard at 0.67 coverage. Excluding them forces the match onto the subject
+    # ("piccolo" vs "loki"), which is the only thing that identifies the product.
+    "se", "chase", "metallic", "flocked", "chrome", "diamond", "glitter",
+    "glow", "gitd", "sepia", "blacklight", "translucent", "clear", "gold",
+    "silver", "special", "variant", "reprint", "newsstand", "signed",
+    "cgc", "psa", "bgs", "wata", "vga", "sgc", "graded", "slab", "cib",
+    "sealed", "loose", "complete", "boxed", "pal", "ntsc", "jp", "us", "eu",
+})
+
+# Graded prices are a different market: a WATA/CGC slab routinely sells for 10-100×
+# the loose copy of the same product. Persisting the graded cell as an unqualified
+# sold comp is a systematic inflator (condition_grade is not carried through to
+# market_hits, so the model cannot tell the tiers apart). Only take it when the
+# query is itself asking about a graded copy.
+_GRADED_QUERY_RE = re.compile(
+    r"\b(psa|cgc|bgs|wata|vga|sgc|graded|slab|slabbed|gem\s*mint)\b", re.IGNORECASE
+)
+
+
+def _significant_tokens(text: str) -> set[str]:
+    """Lowercase alphanumeric tokens worth matching on.
+
+    Words need >=2 chars; bare digits are kept at any length. A single digit is
+    usually the whole product identity in this domain ("Super Mario Bros 3" vs
+    "New Super Mario Bros 2"), and dropping it as "too short" is what let a
+    $674 Nintendo 3DS XL bundle match a $11 Famicom cartridge (probe 2026-07-24).
+    """
+    return {
+        tok for tok in _TOKEN_SPLIT_RE.split((text or "").lower())
+        if tok and tok not in _NOISE_TOKENS and (len(tok) >= 2 or tok.isdigit())
+    }
+
+
+def _is_relevant(query: str, candidate: str) -> bool:
+    """True when `candidate` plausibly IS the product `query` asked for.
+
+    Two conditions:
+
+    1. **Numbers must survive.** Every bare number in the query has to appear in
+       the candidate. Issue numbers, Pop numbers and sequel numbers are the
+       identity of the product, not a qualifier — "#300" vs "#301" is a different
+       comic at a different price, and coverage alone happily accepts the wrong
+       one because all the words still match.
+    2. **Coverage over the QUERY's tokens** (not Jaccard) must clear
+       _MIN_TOKEN_COVERAGE. PriceCharting titles carry extra qualifiers we don't
+       want to penalise, but a candidate missing most of what we asked for is a
+       different product. At least one non-numeric token must overlap, so a bare
+       number can never carry a match on its own.
+    """
+    q_tokens = _significant_tokens(query)
+    if not q_tokens:
+        return False
+    c_tokens = _significant_tokens(candidate)
+
+    q_nums = {tok for tok in q_tokens if tok.isdigit()}
+    if q_nums and not q_nums <= {tok for tok in c_tokens if tok.isdigit()}:
+        return False
+
+    overlap = q_tokens & c_tokens
+    if not any(not tok.isdigit() for tok in overlap):
+        return False
+    return len(overlap) / len(q_tokens) >= _MIN_TOKEN_COVERAGE
 
 
 def _price_from_cell(html: str, td_id: str) -> float:
@@ -291,8 +381,37 @@ class PriceChartingCaller:
         allow = _CATEGORY_CONSOLE_ALLOW.get(category)
         if allow:
             paths = [(c, s) for (c, s) in paths if any(tok in c for tok in allow)]
-            if not paths:
-                return []
+
+        # Layer 2 — product relevance, pre-fetch. The URL slug carries the product
+        # identity, so a mismatch is dropped without spending a page fetch.
+        #
+        # Scored on the SLUG ALONE, deliberately. Including the console segment
+        # lets every product on a platform match a query that names the platform:
+        # catalog item "Nintendo Wii" (the console) scored 0.5 against
+        # `wii/lego-star-wars-complete-saga` on the shared token "wii" and was
+        # valued at Wii *game* prices (€16) — observed in prod 2026-07-24. The
+        # console still gates the database via _CATEGORY_CONSOLE_ALLOW above; it
+        # must not also vouch for product identity.
+        dropped = [
+            (c, s) for (c, s) in paths
+            if not _is_relevant(query, s)
+        ]
+        if dropped:
+            logger.info(
+                "PriceCharting relevance guard dropped %d/%d candidate(s) for %r: %s",
+                len(dropped), len(paths), query[:60],
+                ", ".join(f"{c}/{s}" for c, s in dropped[:3]),
+            )
+        paths = [p for p in paths if p not in dropped]
+        if not paths:
+            return []
+
+        # Graded cells only when the query is about a graded copy — see
+        # _GRADED_QUERY_RE. Otherwise a slab price masquerades as a raw sold comp.
+        price_cells = [
+            cell for cell in _PRICE_CELLS
+            if cell[1] != "graded" or _GRADED_QUERY_RE.search(query)
+        ]
 
         # Date-only ISO (YYYY-MM-DD). MUST match one of _parse_sold_date's
         # accepted formats — its full isoformat() "+00:00" variant is NOT parsed
@@ -312,7 +431,19 @@ class PriceChartingCaller:
             title_match = _TITLE_RE.search(phtml)
             console_name = console.replace("-", " ").title()
             title = title_match.group(1) if title_match else slug.replace("-", " ").title()
-            for td_id, price_key, cond_label in _PRICE_CELLS:
+
+            # Layer 2 again, post-fetch. The rendered product name is the
+            # authoritative identity — the slug can be abbreviated or stale, and a
+            # search redirect can land on a page whose path never went through the
+            # pre-fetch check.
+            if not _is_relevant(query, f"{title} {console_name}"):
+                logger.info(
+                    "PriceCharting relevance guard dropped product %r for query %r",
+                    title[:60], query[:60],
+                )
+                continue
+
+            for td_id, price_key, cond_label in price_cells:
                 price = _price_from_cell(phtml, td_id)
                 if price <= 0:
                     continue

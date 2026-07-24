@@ -36,6 +36,20 @@ _DECAY_HALF_LIFE = 30.0
 # Model blending weight when calibration gate passes
 _MODEL_BLEND_ALPHA = 0.7
 
+# Model-vs-empirical sanity band. Even a gate-passing model can be degraded —
+# _check_gate_pass reads the LATEST calibration_snapshots.gate_pass and a stale
+# TRUE row keeps a since-broken model live (2026-07-24: comic_books had a
+# 2026-06-30 gate_pass=t row while its artifact had train_mae €33.8k / intercept
+# €24.1k and emitted a flat €44k for every item, pinning q50 near €28k
+# regardless of the real comps). The empirical q50 here is built from
+# >=_MIN_COMPS_FOR_MODEL real sold comps, so it is the trustworthy per-item
+# anchor: if the model's central estimate is more than this factor away from it,
+# refuse to blend and keep empirical. Unit-agnostic (both EUR), self-calibrating,
+# never trips a healthy model (verified 2026-07-24: pokemon/yugioh ratios 0.4-10x
+# pass; comic_books 426-4690x and a mispriced yugioh outlier correctly skip).
+# Generous on purpose — real items span an order of magnitude (graded vs raw).
+_MODEL_SANITY_BAND = 10.0
+
 # Sanity ceiling on predicted prices. Anything above this is almost certainly
 # a feature-extraction NaN/Inf or a log-space blow-up (e.g. expm1 on a large
 # intercept). Lego Ridge model was emitting €1.5B for 65 items in Apr 2026;
@@ -385,6 +399,20 @@ async def run_once():
                         fv = extract_core_features(rep_condition, merged_attrs)
 
                         m50 = _predict_quantile(model, fv, "ridge")
+                        # Model-vs-empirical sanity band (see _MODEL_SANITY_BAND):
+                        # refuse a model whose central estimate is wildly off the
+                        # item's own comps, so a degraded-but-still-gated model
+                        # falls back to empirical instead of dominating at alpha.
+                        if (
+                            m50 is not None and q50 and q50 > 0
+                            and not (q50 / _MODEL_SANITY_BAND <= m50 <= q50 * _MODEL_SANITY_BAND)
+                        ):
+                            logging.warning(
+                                "valuation: skipping model blend for %s — model q50=%.2f "
+                                "outside %.0fx band around empirical q50=%.2f (n=%d)",
+                                item_ref, m50, _MODEL_SANITY_BAND, q50, n,
+                            )
+                            m50 = None
                         if m50 is not None:
                             # V3: blend each quantile head with its empirical
                             # counterpart; fall back to empirical per-head when a
