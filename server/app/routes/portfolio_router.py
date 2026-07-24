@@ -523,27 +523,43 @@ async def category_health(
                       AND pp.generated_at >= NOW() - INTERVAL '30 days'
                     GROUP BY i.category, DATE(pp.generated_at)
                 ),
-                stats AS (
-                    SELECT
-                        category,
-                        STDDEV(day_val) AS volatility,
-                        FIRST_VALUE(day_val) OVER (
-                            PARTITION BY category ORDER BY day ASC
-                        ) AS val_30d_ago,
-                        LAST_VALUE(day_val) OVER (
-                            PARTITION BY category
-                            ORDER BY day ASC
-                            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
-                        ) AS val_now
+                -- Volatility (an aggregate) and the first/last values (window
+                -- functions) MUST be computed in separate CTEs. Selecting
+                -- STDDEV(day_val) alongside a bare `category` and two OVER()
+                -- expressions with no GROUP BY is invalid SQL, and Postgres
+                -- rejected it every single call:
+                --   column "daily_vals.category" must appear in the GROUP BY
+                --   clause or be used in an aggregate function
+                -- The except below logs it, but still returns {"health": []}
+                -- with HTTP 200 — so from the client's side the endpoint looked
+                -- healthy and merely empty, and the Category Health card never
+                -- rendered for anyone. Fixed 2026-07-25; it was showing up
+                -- 13x/day in the Supabase Postgres logs.
+                vol AS (
+                    SELECT category, STDDEV(day_val) AS volatility
                     FROM daily_vals
+                    GROUP BY category
+                ),
+                edges AS (
+                    SELECT DISTINCT ON (category)
+                        category,
+                        FIRST_VALUE(day_val) OVER w AS val_30d_ago,
+                        LAST_VALUE(day_val)  OVER w AS val_now
+                    FROM daily_vals
+                    WINDOW w AS (
+                        PARTITION BY category
+                        ORDER BY day ASC
+                        ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+                    )
                 )
-                SELECT DISTINCT
-                    s.category,
-                    COALESCE(s.volatility, 0) AS volatility,
-                    COALESCE(s.val_now, 0) AS val_now,
-                    COALESCE(s.val_30d_ago, 0) AS val_30d_ago
-                FROM stats s
-                JOIN user_cats uc ON uc.category = s.category
+                SELECT
+                    v.category,
+                    COALESCE(v.volatility, 0) AS volatility,
+                    COALESCE(e.val_now, 0) AS val_now,
+                    COALESCE(e.val_30d_ago, 0) AS val_30d_ago
+                FROM vol v
+                JOIN edges e ON e.category = v.category
+                JOIN user_cats uc ON uc.category = v.category
                 """,
                 user_id,
             )
