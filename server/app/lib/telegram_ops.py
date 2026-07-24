@@ -27,7 +27,11 @@ def configured() -> bool:
     return bool(TELEGRAM_BOT_TOKEN) and bool(TELEGRAM_CHAT_ID)
 
 
-async def send_ops_alert(message: str) -> bool:
+async def send_ops_alert(
+    message: str,
+    title: str | None = None,
+    silent: bool = False,
+) -> bool:
     """Send a message to the configured Telegram ops chat.
 
     Returns True on success, False on failure (never raises).
@@ -43,10 +47,17 @@ async def send_ops_alert(message: str) -> bool:
         return False
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    # `title` lets routine reports opt out of the siren. A daily green digest
+    # prefixed with 🚨 trains you to ignore the channel, which defeats the
+    # point of having it — reserve the alarm for genuine pages.
+    header = title if title is not None else "\U0001f6a8 Sparrow Ops"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
-        "text": f"\U0001f6a8 CollectAI Ops\n\n{message}",
+        "text": f"{header}\n\n{message}" if header else message,
         "parse_mode": "HTML",
+        # Long digests are unreadable when Telegram expands every link.
+        "disable_web_page_preview": True,
+        "disable_notification": bool(silent),
     }
 
     try:
