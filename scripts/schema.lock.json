@@ -8,7 +8,7 @@
       "CHECK ((tier = ANY (ARRAY['bronze'::text, 'silver'::text, 'gold'::text, 'platinum'::text, 'diamond'::text])))"
     ],
     "activity_feed.activity_type": [
-      "CHECK ((activity_type = ANY (ARRAY['item_added'::text, 'item_sold'::text, 'event_rsvp'::text, 'event_created'::text, 'project_completed'::text, 'achievement_earned'::text, 'category_followed'::text, 'collection_milestone'::text])))"
+      "CHECK ((activity_type = ANY (ARRAY['item_added'::text, 'item_sold'::text, 'event_rsvp'::text, 'event_created'::text, 'project_completed'::text, 'achievement_earned'::text, 'category_followed'::text, 'collection_milestone'::text, 'onboarding_completed'::text])))"
     ],
     "alert_endpoints.kind": [
       "CHECK ((kind = ANY (ARRAY['webhook'::text, 'slack'::text])))"
@@ -50,7 +50,7 @@
       "CHECK (((stars >= 1) AND (stars <= 5)))"
     ],
     "demand_signals.signal_type": [
-      "CHECK ((signal_type = ANY (ARRAY['mandate_created'::text, 'search_query'::text, 'item_viewed'::text, 'price_alert_set'::text, 'watchlist_add'::text, 'item_added'::text, 'item_scanned'::text, 'item_archived'::text, 'item_deleted'::text, 'catalog_browsed'::text, 'category_viewed'::text, 'no_results_search'::text, 'marketplace_listing_viewed'::text, 'event_viewed'::text, 'event_followed'::text, 'event_announcement_read'::text, 'ticket_clicked'::text, 'watchlist_remove'::text, 'price_alert_removed'::text, 'notification_settings_changed'::text, 'affiliate_click'::text, 'feature_gated_attempt'::text, 'subscription_purchased'::text])))"
+      "CHECK ((signal_type = ANY (ARRAY['affiliate_click'::text, 'catalog_browsed'::text, 'category_viewed'::text, 'collection_viewed'::text, 'event_announcement_read'::text, 'event_followed'::text, 'event_viewed'::text, 'feature_gated_attempt'::text, 'item_added'::text, 'item_archived'::text, 'item_deleted'::text, 'item_scanned'::text, 'item_viewed'::text, 'mandate_created'::text, 'marketplace_listing_viewed'::text, 'no_results_search'::text, 'notification_settings_changed'::text, 'paywall_dismissed'::text, 'paywall_viewed'::text, 'price_alert_removed'::text, 'price_alert_set'::text, 'search_query'::text, 'subscription_purchased'::text, 'ticket_clicked'::text, 'watchlist_add'::text, 'watchlist_remove'::text])))"
     ],
     "dm_threads.status": [
       "CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])))"
@@ -143,7 +143,7 @@
       "CHECK ((kind = ANY (ARRAY['open'::text, 'click'::text, 'dismiss'::text, 'snooze'::text])))"
     ],
     "notification_outcomes.outcome": [
-      "CHECK ((outcome = ANY (ARRAY['acted'::text, 'ignored'::text, 'superseded'::text, 'no_action_expected'::text])))"
+      "CHECK ((outcome = ANY (ARRAY['acted'::text, 'ignored'::text, 'superseded'::text, 'no_action_expected'::text, 'converted'::text, 'expired'::text, 'other'::text])))"
     ],
     "offer_events.event_type": [
       "CHECK ((event_type = ANY (ARRAY['proposed'::text, 'countered'::text, 'accepted'::text, 'declined'::text, 'expired'::text, 'cancelled'::text, 'shipped'::text, 'delivered'::text, 'rated'::text])))"
