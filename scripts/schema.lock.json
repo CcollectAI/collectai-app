@@ -16320,8 +16320,7 @@
       "type": "text"
     },
     "user_public_profile_v1.created_at": {
-      "default": "now()",
-      "nullable": false,
+      "nullable": true,
       "type": "timestamptz"
     },
     "user_public_profile_v1.display_handle": {
@@ -16329,11 +16328,32 @@
       "type": "text"
     },
     "user_public_profile_v1.updated_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "user_public_profile_v1.user_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "user_public_profile_v1_legacy_20260724.avatar_url": {
+      "nullable": true,
+      "type": "text"
+    },
+    "user_public_profile_v1_legacy_20260724.created_at": {
       "default": "now()",
       "nullable": false,
       "type": "timestamptz"
     },
-    "user_public_profile_v1.user_id": {
+    "user_public_profile_v1_legacy_20260724.display_handle": {
+      "nullable": true,
+      "type": "text"
+    },
+    "user_public_profile_v1_legacy_20260724.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "user_public_profile_v1_legacy_20260724.user_id": {
       "nullable": false,
       "type": "uuid"
     },
@@ -16346,13 +16366,11 @@
       "type": "text"
     },
     "user_public_profiles.created_at": {
-      "default": "now()",
-      "nullable": false,
+      "nullable": true,
       "type": "timestamptz"
     },
     "user_public_profiles.display_name": {
-      "default": "'Unknown'::text",
-      "nullable": false,
+      "nullable": true,
       "type": "text"
     },
     "user_public_profiles.handle": {
@@ -16360,8 +16378,7 @@
       "type": "text"
     },
     "user_public_profiles.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
+      "nullable": true,
       "type": "uuid"
     },
     "user_public_profiles.interests": {
@@ -16373,6 +16390,45 @@
       "type": "text"
     },
     "user_public_profiles.user_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "user_public_profiles_legacy_20260724.avatar_url": {
+      "nullable": true,
+      "type": "text"
+    },
+    "user_public_profiles_legacy_20260724.bio": {
+      "nullable": true,
+      "type": "text"
+    },
+    "user_public_profiles_legacy_20260724.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "user_public_profiles_legacy_20260724.display_name": {
+      "default": "'Unknown'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "user_public_profiles_legacy_20260724.handle": {
+      "nullable": true,
+      "type": "text"
+    },
+    "user_public_profiles_legacy_20260724.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "user_public_profiles_legacy_20260724.interests": {
+      "nullable": true,
+      "type": "_text"
+    },
+    "user_public_profiles_legacy_20260724.location": {
+      "nullable": true,
+      "type": "text"
+    },
+    "user_public_profiles_legacy_20260724.user_id": {
       "nullable": false,
       "type": "uuid"
     },
@@ -26589,7 +26645,25 @@
       "created_at",
       "updated_at"
     ],
+    "user_public_profile_v1_legacy_20260724": [
+      "user_id",
+      "display_handle",
+      "avatar_url",
+      "created_at",
+      "updated_at"
+    ],
     "user_public_profiles": [
+      "id",
+      "user_id",
+      "handle",
+      "display_name",
+      "avatar_url",
+      "bio",
+      "location",
+      "interests",
+      "created_at"
+    ],
+    "user_public_profiles_legacy_20260724": [
       "id",
       "user_id",
       "handle",
@@ -30299,7 +30373,7 @@
         "user_id"
       ]
     ],
-    "user_public_profile_v1": [
+    "user_public_profile_v1_legacy_20260724": [
       [
         "display_handle"
       ],
@@ -30307,7 +30381,7 @@
         "user_id"
       ]
     ],
-    "user_public_profiles": [
+    "user_public_profiles_legacy_20260724": [
       [
         "handle"
       ],
