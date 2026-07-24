@@ -768,7 +768,7 @@ async def intake_save(
     try:
         from app.features.data_moat import record_demand_signal, get_user_geo
         region, country = await get_user_geo(user_id)
-        await record_demand_signal(
+        recorded = await record_demand_signal(
             signal_type="item_added",
             category=payload.category,
             item_key=normalized_key,
@@ -776,8 +776,21 @@ async def intake_save(
             region=region,
             country_code=country,
         )
+        # record_demand_signal returns False instead of raising, so a bare
+        # `except: pass` here saw nothing. It hid a total outage: the
+        # demand_signals CHECK constraint permitted only 5 of the 23 signal
+        # types the code emits, so EVERY item_added insert was rejected by
+        # Postgres — 0 rows ever recorded (fixed 2026-07-25 by
+        # 20260725_demand_signals_signal_types.sql). Check the return value so
+        # the next constraint/schema drift is visible instead of silent.
+        if not recorded:
+            logger.warning(
+                "[intake/save] demand signal 'item_added' was NOT recorded "
+                "(item=%s category=%s) — check demand_signals constraints",
+                normalized_key, payload.category,
+            )
     except Exception:
-        pass
+        logger.warning("[intake/save] demand signal failed (non-critical)", exc_info=True)
 
     return IntakeSaveResponse(id=item_id, title=payload.title, category=payload.category)
 
