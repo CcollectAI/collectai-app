@@ -12,16 +12,39 @@ import { logger } from "@/lib/logger";
 // ---------------------------------------------------------------------------
 
 /** Single marketplace search hit */
-export const MarketplaceHitSchema = z.object({
-  source: z.string(),
-  title: z.string(),
-  price: z.number().positive(),
-  currency: z.string(),
-  url: z.string().optional(),
-  image_url: z.string().optional(),
-  sold_date: z.string().optional(),
-  condition: z.string().optional(),
-});
+/** A single marketplace search hit.
+ *
+ *  `.passthrough()` is REQUIRED here, and `affiliate_url` is declared
+ *  explicitly rather than left to it. Zod strips undeclared keys by default,
+ *  and this schema previously dropped `affiliate_url` — which the backend sets
+ *  on every hit (marketplace_router.py:133). The screen reads
+ *  `h.affiliate_url ?? undefined` (marketplace.tsx:426) and then opens
+ *  `affiliateUrl || externalUrl` (:527), so stripping it meant every single
+ *  marketplace search result opened an UNTAGGED link and earned nothing. Same
+ *  trap as the `items` array in PortfolioSnapshotSchema below.
+ *
+ *  Fields are nullable/optional on purpose. These rows come from ~44 scraped
+ *  marketplace adapters, and a strict field turned one malformed hit into an
+ *  empty search page: a failed element fails the whole `z.array(...)`, which
+ *  fails the whole response, which drops safeParse to its `{results: [],
+ *  hits: []}` fallback. In particular `price` was `.positive()`, so a single
+ *  0-price row blanked the results. Rendering a hit with a missing field is
+ *  strictly better than rendering nothing.
+ */
+export const MarketplaceHitSchema = z
+  .object({
+    source: z.string().nullable().optional(),
+    title: z.string().nullable().optional(),
+    price: z.number().nullable().optional(),
+    currency: z.string().nullable().optional(),
+    url: z.string().nullable().optional(),
+    image_url: z.string().nullable().optional(),
+    sold_date: z.string().nullable().optional(),
+    condition: z.string().nullable().optional(),
+    /** Affiliate-tagged URL. null when the source has no campaign ID set. */
+    affiliate_url: z.string().nullable().optional(),
+  })
+  .passthrough();
 export type MarketplaceHit = z.infer<typeof MarketplaceHitSchema>;
 
 /** Marketplace search response (array of hits) */
