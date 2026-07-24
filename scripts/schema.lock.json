@@ -50,7 +50,7 @@
       "CHECK (((stars >= 1) AND (stars <= 5)))"
     ],
     "demand_signals.signal_type": [
-      "CHECK ((signal_type = ANY (ARRAY['mandate_created'::text, 'search_query'::text, 'item_viewed'::text, 'price_alert_set'::text, 'watchlist_add'::text])))"
+      "CHECK ((signal_type = ANY (ARRAY['mandate_created'::text, 'search_query'::text, 'item_viewed'::text, 'price_alert_set'::text, 'watchlist_add'::text, 'item_added'::text, 'item_scanned'::text, 'item_archived'::text, 'item_deleted'::text, 'catalog_browsed'::text, 'category_viewed'::text, 'no_results_search'::text, 'marketplace_listing_viewed'::text, 'event_viewed'::text, 'event_followed'::text, 'event_announcement_read'::text, 'ticket_clicked'::text, 'watchlist_remove'::text, 'price_alert_removed'::text, 'notification_settings_changed'::text, 'affiliate_click'::text, 'feature_gated_attempt'::text, 'subscription_purchased'::text])))"
     ],
     "dm_threads.status": [
       "CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])))"
