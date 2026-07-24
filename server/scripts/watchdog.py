@@ -636,10 +636,10 @@ async def main() -> int:
             body = "last %dh · %s" % (args.hours, report["generated_at"][:16].replace("T", " "))
 
             body += "\n\n<b>\U0001f465 Users &amp; collection</b>"
-            body += "\n%s users%s · %s with a name" % (
+            body += "\n<b>{:,}</b> users{} · {:,} with a name".format(
                 a["users"]["total"], delta(a["users"]["total"], ["activity", "users", "total"]),
                 a["users"]["with_a_profile_name"])
-            body += "\n%s items%s · %s priced · %s with cost basis" % (
+            body += "\n<b>{:,}</b> items{} · {:,} priced · {:,} with cost basis".format(
                 a["collection"]["items_total"],
                 delta(a["collection"]["items_total"], ["activity", "collection", "items_total"]),
                 a["collection"]["items_with_canonical_key"],
@@ -650,7 +650,7 @@ async def main() -> int:
             sig = a["demand_signals"]["in_window"]
             if sig:
                 for s in sig[:8]:
-                    body += "\n  %s <b>%d</b>" % (esc(s["type"]), s["count"])
+                    body += "\n  {} — <b>{:,}</b>".format(esc(s["type"]), s["count"])
             else:
                 # Empty window is normal pre-launch — say so, so it doesn't
                 # read as a failure.
@@ -688,13 +688,20 @@ async def main() -> int:
                 tot = ok + e4 + e5
                 rate = (100.0 * (e4 + e5) / tot) if tot else 0.0
                 body += "\n\n<b>\U0001f6f0 Supabase (API + DB)</b>"
-                body += "\n%s requests · %s OK · <b>%s 4xx</b> · <b>%s 5xx</b> (%.1f%% failing)" % (
-                    tot, ok, e4, e5, rate)
-                for p in (sb.get("api_failing_paths") or [])[:3]:
-                    body += "\n  %s %s <b>x%s</b>" % (esc(p["code"]), esc(p["path"]), p["count"])
-                body += "\n<b>%s Postgres errors</b>" % t.get("postgres_errors", 0)
+                body += "\n<b>{:,}</b> requests".format(tot)
+                body += "\n  {:,} succeeded".format(ok)
+                body += "\n  <b>{:,}</b> client errors (4xx)".format(e4)
+                body += "\n  <b>{:,}</b> server errors (5xx)".format(e5)
+                body += "\n  <b>{:.1f}%</b> of all requests failed".format(rate)
+                paths = (sb.get("api_failing_paths") or [])[:3]
+                if paths:
+                    body += "\n\n<b>Failing endpoints</b>"
+                    for p in paths:
+                        body += "\n  <b>{:,}</b> failed with {} — {}".format(
+                            p["count"] or 0, esc(p["code"]), esc(p["path"]))
+                body += "\n\n<b>{:,}</b> Postgres errors".format(t.get("postgres_errors", 0) or 0)
                 for e in (sb.get("postgres_errors") or [])[:3]:
-                    body += "\n  <b>%dx</b> %s" % (e["count"], esc(e["message"][:100]))
+                    body += "\n  <b>{:,}</b> — {}".format(e["count"] or 0, esc(e["message"][:100]))
                 links = sb.get("links") or {}
                 body += "\n" + " · ".join(x for x in [
                     a_href(links.get("postgres_logs", ""), "pg logs"),
@@ -704,10 +711,12 @@ async def main() -> int:
                 body += "\n\n<b>\U0001f6f0 Supabase logs</b>\n<i>%s</i>" % esc(
                     (sb.get("error") or "unavailable")[:180])
 
-            body += "\n\n<b>\U0001f4dc App journal (EC2)</b>\n%s lines · %d error patterns · %d tracebacks" % (
-                lg.get("lines_scanned", "?"), lg.get("distinct_error_patterns", 0), lg.get("tracebacks", 0))
+            body += "\n\n<b>\U0001f4dc App journal (EC2)</b>"
+            body += "\n{:,} lines · {:,} error patterns · {:,} tracebacks".format(
+                lg.get("lines_scanned", 0) or 0, lg.get("distinct_error_patterns", 0) or 0,
+                lg.get("tracebacks", 0) or 0)
             for e in lg.get("errors", [])[:2]:
-                body += "\n  <b>%dx</b> %s" % (e["count"], esc(e["sample"][:100]))
+                body += "\n  <b>{:,}</b> — {}".format(e["count"] or 0, esc(e["sample"][:100]))
 
             body += "\n\n<b>✅ Healthy: %d checks</b>" % cnt["healthy"]
             if green:

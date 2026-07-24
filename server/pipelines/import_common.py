@@ -281,7 +281,23 @@ class CatalogItem:
         if self.barcode:
             row["barcode"] = self.barcode
         if self.attributes_json:
-            row["attributes_json"] = json.dumps(self.attributes_json)
+            # Send the dict, NOT json.dumps(dict).
+            #
+            # The batch is posted with httpx `json=batch` (see upsert_catalog),
+            # so httpx serialises the whole payload itself. Pre-encoding this
+            # value made PostgREST receive a JSON *string* and store a JSONB
+            # string rather than a JSONB object — the "double-stringified"
+            # corruption scripts/repair_attributes_json_types.py was written to
+            # clean up (136K string rows + 4K array rows, 0 objects).
+            #
+            # Once category_items_attrs_is_object was added
+            # (CHECK jsonb_typeof(attributes_json) = 'object') the repair held,
+            # but this writer was never fixed, so every catalog upsert carrying
+            # attributes was rejected 23514 — 597 per day, invisible because the
+            # pipeline logs the count it *attempted*, not the count Postgres
+            # accepted. Verified against the live REST endpoint 2026-07-25:
+            # json.dumps(...) -> HTTP 400 23514, plain dict -> HTTP 201.
+            row["attributes_json"] = self.attributes_json
         return row
 
     def _parse_notes_into_attributes(self) -> None:
