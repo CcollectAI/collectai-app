@@ -226,11 +226,15 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
 
             items = []
             total = 0.0
+            total_prev = 0.0
             for r in rows:
                 cv = float(r["current_value"] or 0)
                 pv = float(r["prev_value"] or 0)
                 change = ((cv - pv) / pv) if pv > 0 else 0.0
                 total += cv
+                # Fall back to cv so an item with no prior valuation contributes
+                # 0% rather than a phantom +100% to the portfolio-level change.
+                total_prev += pv if pv > 0 else cv
                 items.append({
                     "id": r["id"],
                     "name": r["name"],
@@ -239,8 +243,17 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
                     "change_1d_pct": round(change, 4),
                 })
 
+            # Portfolio-level change. Added 2026-07-24: the FE's
+            # getPortfolioSummary derived this from `portfolio_values`, a table
+            # with no writer anywhere (0 rows), so Home's insights card showed
+            # +0.00% / EUR 0 change no matter what the collection did. Serving
+            # it here reuses the same COALESCE valuation the totals use.
+            total_change = ((total - total_prev) / total_prev) if total_prev > 0 else 0.0
+
             return {
                 "total_value": round(total, 2),
+                "total_prev_value": round(total_prev, 2),
+                "change_1d_pct": round(total_change, 4),
                 "item_count": len(items),
                 "items": items,
             }

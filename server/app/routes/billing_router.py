@@ -799,27 +799,64 @@ async def _handle_sponsor_checkout_completed(pool: Any, session: dict):
                     "SELECT title, category_id FROM events WHERE id = $1", event_id
                 )
                 if row and row["category_id"]:
+                    # Fixed 2026-07-24. This used to JOIN `device_tokens`, a
+                    # table with zero writers anywhere (0 rows) — the real one
+                    # is `user_push_tokens`, and the column differs too
+                    # (`token` vs `push_token`). Every sponsored-event blast
+                    # therefore reached nobody, silently, because the whole
+                    # block is wrapped in the except below.
+                    #
+                    # Do NOT reintroduce a direct join here: user_category_
+                    # follows.user_id is `uuid` while user_push_tokens.user_id
+                    # is `text`, so joining them raises
+                    # "operator does not exist: text = uuid" — which this same
+                    # except would have swallowed again. Select the followers,
+                    # then let send_push_to_user do the token lookup; it owns
+                    # that query and also persists to notification_history, so
+                    # the blast now shows up in the in-app inbox too.
                     follower_rows = await conn.fetch(
-                        """
-                        SELECT DISTINCT dt.token AS push_token
-                        FROM user_category_follows ucf
-                        JOIN device_tokens dt ON dt.user_id = ucf.user_id
-                        WHERE ucf.category_id = $1 AND dt.active = true
-                        """,
+                        "SELECT DISTINCT user_id FROM user_category_follows WHERE category_id = $1",
                         row["category_id"],
                     )
-                    from app.push import send_push
+                    from app.push import send_push_to_user
                     title = row["title"] or "Sponsored Event"
+                    sent = 0
                     for fr in follower_rows:
-                        await send_push(
-                            fr["push_token"],
+                        sent += await send_push_to_user(
+                            conn,
+                            str(fr["user_id"]),
                             f"New {tier.title()} Event",
                             f"{sponsor_name} presents: {title}",
                             data={"event_id": event_id, "type": "sponsored_event"},
+                            notification_type="sponsored_event",
+                            deep_link=f"sparrow://events/{event_id}",
                         )
-                    _log.info("Sent push to %d category followers for event %s", len(follower_rows), event_id)
+                    # A paid tier delivering 0 pushes is a billing-visible
+                    # failure, not routine info — say so loudly enough to be
+                    # greppable. This is exactly the state that hid for months.
+                    if follower_rows and sent == 0:
+                        _log.error(
+                            "Sponsor push for event %s reached 0 devices: %d category followers, "
+                            "none with an active push token",
+                            event_id, len(follower_rows),
+                        )
+                    elif not follower_rows:
+                        _log.warning(
+                            "Sponsor push for event %s: no followers for category %s",
+                            event_id, row["category_id"],
+                        )
+                    else:
+                        _log.info(
+                            "Sent %d sponsor pushes to %d category followers for event %s",
+                            sent, len(follower_rows), event_id,
+                        )
         except Exception as push_err:
-            _log.warning("Failed to send sponsor push notifications: %s", push_err)
+            # Keep the sponsorship transaction intact, but do not let a paid
+            # feature fail at WARNING level — this swallowed the bug above.
+            _log.error(
+                "Failed to send sponsor push notifications for event %s: %s",
+                event_id, push_err, exc_info=True,
+            )
 
 
 async def _handle_sponsor_subscription_completed(pool: Any, session: dict):

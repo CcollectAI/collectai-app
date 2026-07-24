@@ -67,6 +67,12 @@ export const PortfolioSnapshotSchema = z.object({
   item_count: z.number(),
   categories: z.array(PortfolioCategorySchema).optional(),
   items: z.array(PortfolioOverviewItemSchema).optional(),
+  /** Portfolio-level day change, a FRACTION (0.05 = +5%). Declared for the
+   *  same reason as `items` above — undeclared keys are stripped by safeParse,
+   *  and getPortfolioSummary reads this to replace the dead `portfolio_values`
+   *  table. Optional/nullable so an older backend still parses. */
+  change_1d_pct: z.number().nullable().optional(),
+  total_prev_value: z.number().nullable().optional(),
 });
 export type PortfolioSnapshot = z.infer<typeof PortfolioSnapshotSchema>;
 

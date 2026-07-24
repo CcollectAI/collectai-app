@@ -57,6 +57,19 @@ class ItemCreateRequest(BaseModel):
     # Category-specific attributes (rarity, set_code, edition, print run,
     # authenticity, etc.) — stored as items.attrs (jsonb object).
     attrs: Optional[Dict[str, Any]] = None
+    # What the user actually paid. Added 2026-07-24: the wishlist "I Got It!"
+    # flow (src/data/providers/watchlistProvider.ts:228) has always POSTed
+    # `purchase_price`, but this model never declared it, so Pydantic dropped
+    # it silently and the INSERT below never stored it — the app prompts for
+    # the real acquisition price "to feed the ML model" and then discarded it.
+    # Every reader of items.purchase_price (analytics Cost Basis / DCA,
+    # the value-saved banner, dossier, CSV export) saw NULL as a result.
+    purchase_price: Optional[float] = None
+    purchase_currency: Optional[str] = Field(None, max_length=8)
+    # ISO date. Written to BOTH purchased_at (timestamptz, read by the
+    # analytics DCA series) and purchase_date (date, read by the CSV export)
+    # because the schema carries both and different consumers read each.
+    purchased_at: Optional[str] = None
 
 
 class ItemResponse(ItemCreateRequest):
@@ -150,15 +163,18 @@ async def create_item(
                 await conn.execute(
                     """
                     INSERT INTO items (id, user_id, name, title, category, notes, collection_name, estimated_value, canonical_key,
-                                       image_url, brand, condition, year, series, edition_label, attrs)
+                                       image_url, brand, condition, year, series, edition_label, attrs,
+                                       purchase_price, purchase_currency, purchased_at, purchase_date)
                     VALUES ($1, $2::uuid, $3, $3, $4, $5, $6, $7, $8,
-                            $9, $10, $11, $12, $13, $14, $15::jsonb)
+                            $9, $10, $11, $12, $13, $14, $15::jsonb,
+                            $16, $17, $18::timestamptz, $18::date)
                     """,
                     item_id, user_id, payload.name, payload.category, payload.notes,
                     payload.collection_name, payload.estimated_value, payload.canonical_key,
                     payload.image_url, payload.brand, payload.condition, payload.year,
                     payload.series, payload.edition_label,
                     json.dumps(payload.attrs) if payload.attrs else None,
+                    payload.purchase_price, payload.purchase_currency, payload.purchased_at,
                 )
                 logger.info(
                     "[items] Created item: id=%s, user=%s, canonical_key=%s",

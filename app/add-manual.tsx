@@ -19,6 +19,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { convertCurrency } from "@/lib/fx";
 import { useTranslation } from "react-i18next";
 import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, numeric } from "@/lib/validate";
@@ -319,7 +320,20 @@ const ManualAddScreen: React.FC = () => {
       // R48 — write to `items` table (not the legacy `portfolio_items` which
       // has an incompatible schema on this DB). Column mapping matches the
       // actual items table: title (not name), attrs (not attributes_json),
-      // purchase_price_eur (not purchase_price), image_url (not user_photo_url).
+      // image_url (not user_photo_url).
+      //
+      // Purchase price: the items table deliberately has BOTH
+      // `purchase_price` (raw, denominated in purchase_currency) and
+      // `purchase_price_eur` (FX-normalized) — see itemsProvider.ts:54.
+      // Until 2026-07-24 this path wrote ONLY purchase_price_eur, and wrote
+      // the raw entered amount into it without converting. So for any
+      // non-EUR user the "EUR" column held a non-EUR number, and every
+      // reader of `purchase_price` got NULL: the analytics Cost Basis / DCA
+      // series (trends_and_deepdive_router.py:170), the value-saved banner
+      // (value_summary_router.py:183), the dossier agent, and the CSV export.
+      // Same story for the date — this wrote `purchased_at` while the export
+      // reads `purchase_date` (items_export_router.py:198). Write both halves
+      // of each pair.
       // Merge category-specific attrs with user-defined custom fields
       const mergedAttrs: Record<string, unknown> = { ...attrs };
       for (const cf of customFields) {
@@ -329,6 +343,18 @@ const ManualAddScreen: React.FC = () => {
       }
 
       const qty = parseInt(quantity, 10);
+
+      // Purchase price, written to BOTH columns (see the note above).
+      // `purchase` is whatever the user typed, in settings.currency.
+      const purchaseRaw = Number.isNaN(purchase as number) ? null : (purchase as number);
+      const purchaseEur =
+        purchaseRaw === null
+          ? null
+          : Math.round(
+              convertCurrency(purchaseRaw, settings.currency, 'EUR', settings.fxRates) * 100,
+            ) / 100;
+      // Field is entered as DD-MM-YYYY; both date columns want ISO YYYY-MM-DD.
+      const purchasedIso = dmyToIso(acquisitionDate) || null;
 
       // Match against the catalog so this manually-added item gets a
       // canonical_key — the JOIN key that links it to price_predictions /
@@ -367,11 +393,17 @@ const ManualAddScreen: React.FC = () => {
           canonical_key: canonicalKey,
           condition_grade: conditionGrade.trim() || null,
           condition: conditionGrade.trim() || null,
-          purchase_price_eur: Number.isNaN(purchase as number) ? null : purchase,
+          // Raw amount, denominated in purchase_currency below.
+          purchase_price: purchaseRaw,
+          // Same amount normalized to EUR so analytics can sum across
+          // currencies without re-deriving the rate.
+          purchase_price_eur: purchaseEur,
           predicted_price_eur: Number.isNaN(estimated as number) ? null : estimated,
           purchase_currency: settings.currency,
           // Field is entered as DD-MM-YYYY; the backend expects ISO YYYY-MM-DD.
-          purchased_at: dmyToIso(acquisitionDate) || null,
+          purchased_at: purchasedIso,
+          // Same date, `date` column — this is the one the CSV export reads.
+          purchase_date: purchasedIso,
           quantity: Number.isNaN(qty) || qty < 1 ? 1 : qty,
           source: 'manual',
           notes: notes.trim() || null,

@@ -226,6 +226,12 @@ export async function convertWatchlistToItem(
       name: row.title,
       category: row.category ?? 'uncategorized',
       purchase_price: actualPrice ?? null,
+      // "I Got It!" means the acquisition happened now. Stamping it gives the
+      // analytics cost-basis series a real date to bucket on instead of
+      // falling back to created_at. NOTE: purchase_currency is not sent — this
+      // provider is outside React so it has no settings accessor, and the raw
+      // amount is already denominated in whatever the user typed.
+      purchased_at: new Date().toISOString(),
       notes: notes ?? null,
     });
   } catch (e) {

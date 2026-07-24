@@ -42,7 +42,6 @@ import { track } from '@/analytics/track';
 import { MarketplaceSearchBar } from '@/components/MarketplaceSearchBar';
 import { MarketplaceFilterPanel } from '@/components/MarketplaceFilterPanel';
 import { RecentSearchesSection } from '@/components/RecentSearchesSection';
-import type { TrendingCategory } from '@/components/TrendingCategoriesGrid';
 import { SearchResultQuickView } from '@/components/SearchResultQuickView';
 import { SkeletonList } from '@/components/Skeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -114,15 +113,6 @@ const BROWSE_CATEGORIES = CATEGORIES.map((cat) => ({
   name: cat.name,
   imageUrl: cat.bannerImageUrl,
 }));
-
-const FALLBACK_TRENDING = [
-  { id: 'lorcana', name: 'Disney Lorcana', meta: 'Hot right now' },
-  { id: 'pokemon', name: 'Pok\u00e9mon Cards', meta: 'Always popular' },
-  { id: 'lego', name: 'LEGO', meta: 'Growing fast' },
-  { id: 'one_piece', name: 'One Piece', meta: 'Rising demand' },
-  { id: 'kpop_merch', name: 'K-pop Merch', meta: 'Surging' },
-  { id: 'gunpla', name: 'Gunpla & Model Kits', meta: 'Steady growth' },
-];
 
 // Filter options (constants moved to MarketplaceFilterPanel component)
 
@@ -294,32 +284,14 @@ const SearchScreen: React.FC = () => {
   const [filterMaxPrice, setFilterMaxPrice] = useState("");
   const [filterSort, setFilterSort] = useState("relevance");
 
-  // Trending categories — fetch from backend, fall back to hardcoded
-  const [trendingCategories, setTrendingCategories] = useState<TrendingCategory[]>(FALLBACK_TRENDING);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const resp = await collectorsApi.fetchInsights() as { trending_items?: { category?: string; change_pct?: number }[] };
-        if (cancelled || !resp?.trending_items?.length) return;
-        const catMap = CATEGORIES.reduce<Record<string, string>>((m, c) => { m[c.id] = c.name; return m; }, {});
-        const seen = new Set<string>();
-        const items: TrendingCategory[] = [];
-        for (const t of resp.trending_items) {
-          if (!t.category || seen.has(t.category)) continue;
-          seen.add(t.category);
-          const name = catMap[t.category] ?? t.category;
-          const pct = Math.round((t.change_pct ?? 0) * 100);
-          items.push({ id: t.category, name, meta: pct > 0 ? `+${pct}% this month` : 'Popular' });
-        }
-        if (items.length >= 3) setTrendingCategories(items.slice(0, 6));
-      } catch (err) {
-        logger.warn('[Marketplace] trending categories error:', err);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  // Trending-categories fetch removed 2026-07-24. The rail it fed was deleted
+  // from the render (see "Trending categories removed" below), so this effect
+  // called /insights/personalized on every mount and wrote the result into
+  // state no JSX read — the endpoint's four computed arrays were all discarded.
+  // The concentration/diversification half of that payload now renders on the
+  // analytics screen; see app/analytics.tsx "Concentration & Balance" and the
+  // seam fn in src/data/personalizedInsights.ts. Restore a call here only
+  // alongside a rail that actually renders it.
 
   // Count of active filters for badge
   const activeFilterCount = useMemo(() => {
