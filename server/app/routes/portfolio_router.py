@@ -119,6 +119,43 @@ async def portfolio_timeseries(
                 for row in rows
             ]
 
+            # Flat-baseline fallback. Portfolios whose items have no dated
+            # price_predictions (e.g. hand-added items carrying only a stored
+            # value) produce zero prediction rows → an empty curve → the FE shows
+            # "No history yet". Instead draw a flat line at the CURRENT stored
+            # portfolio value across the range so the graph always reflects the
+            # collection's worth. Same value source as /portfolio/overview
+            # (COALESCE q50 → predicted_price_eur → estimated_value). This is a
+            # synthetic baseline until real history (predictions or a daily
+            # snapshot worker) accrues; a genuinely empty portfolio (value 0)
+            # still yields no points so the honest empty state remains.
+            if len(points) < 2:
+                cur = await conn.fetchval(
+                    """
+                    WITH latest AS (
+                        SELECT DISTINCT ON (pp.item_ref) pp.item_ref, pp.q50
+                        FROM price_predictions pp
+                        JOIN items i ON i.canonical_key = pp.item_ref
+                        WHERE i.user_id = $1
+                        ORDER BY pp.item_ref, pp.generated_at DESC
+                    )
+                    SELECT COALESCE(SUM(
+                        COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)
+                    ), 0)
+                    FROM items i
+                    LEFT JOIN latest l ON l.item_ref = i.canonical_key
+                    WHERE i.user_id = $1
+                    """,
+                    user_id,
+                )
+                cur_v = round(float(cur or 0), 2)
+                if cur_v > 0:
+                    today = datetime.now(timezone.utc)
+                    points = [
+                        {"t": since.date().isoformat(), "v": cur_v},
+                        {"t": today.date().isoformat(), "v": cur_v},
+                    ]
+
             return {"points": points}
     except Exception as e:
         _logger.error("[portfolio/timeseries] DB error: %s", e)
@@ -170,13 +207,19 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
                 )
                 SELECT
                     i.id, i.name, i.category,
-                    COALESCE(l.q50, 0) AS current_value,
-                    COALESCE(p.prev_q50, l.q50, 0) AS prev_value
+                    -- Match the category-breakdown / Items-tab value source: a
+                    -- model prediction if one exists, else the item's own stored
+                    -- value (predicted_price_eur / estimated_value). Without this
+                    -- fallback, hand-added items with no price_predictions row
+                    -- valued at 0 here while the Items tab showed their stored
+                    -- price — Home's "COLLECTION VALUE" read €0 vs €55 elsewhere.
+                    COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0) AS current_value,
+                    COALESCE(p.prev_q50, l.q50, i.predicted_price_eur, i.estimated_value, 0) AS prev_value
                 FROM items i
                 LEFT JOIN latest l ON l.item_ref = i.canonical_key
                 LEFT JOIN prev p ON p.item_ref = i.canonical_key
                 WHERE i.user_id = $1
-                ORDER BY COALESCE(l.q50, 0) DESC
+                ORDER BY COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0) DESC
                 """,
                 user_id,
             )

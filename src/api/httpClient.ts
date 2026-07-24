@@ -55,6 +55,19 @@ const AUTH_HEADER_TIMEOUT_MS = 2_000;
 // in-flight refresh with a longer budget. This slower path runs ONLY after
 // the 2 s fast path already failed, so normal calls are never delayed.
 const AUTH_HEADER_REFRESH_TIMEOUT_MS = 8_000;
+// After a TOKENLESS 401 we already know the request needs auth and failed, so
+// on the recovery path we wait out session hydration with a much larger budget
+// than the fast race above. On cold-start (fresh launch / just after login)
+// getSession() can sit behind processLock while autoRefresh holds it, so the
+// first request of a screen — the portfolio graph's /portfolio/timeseries —
+// would otherwise 401 permanently while a later request in the same batch
+// (/portfolio/overview) succeeds once the session finally resolves ~5 s in.
+// This only extends the WAIT (no extra refresh), so it cannot cause a refresh
+// storm. Kept modest: a stuck (not merely slow) session must NOT hang the
+// screen's loading state for long — fail fast, then useFocusEffect refetches on
+// the next focus once the session has resolved. 6s catches a slow cold-start
+// hydration without pinning a skeleton when the session is genuinely wedged.
+const AUTH_HEADER_COLDSTART_RECOVERY_MS = 6_000;
 
 async function readAccessToken(timeoutMs: number): Promise<string | null> {
   const result = await Promise.race([
@@ -276,11 +289,13 @@ async function authedRequest(
   if (res.status === 401) {
     let fresh: Record<string, string> | null = null;
     if (!auth.Authorization) {
-      // Tokenless 401: the session may have hydrated since the request fired —
-      // re-read it cheaply before spending a refresh (avoids rotating the
-      // refresh-token unnecessarily across a concurrent burst).
-      const reread = await getAuthHeaders();
-      if (reread.Authorization) fresh = reread;
+      // Tokenless 401: the session is very likely still hydrating (cold-start /
+      // just-after-login, behind processLock). Wait it out with the generous
+      // cold-start budget rather than the fast 2s/8s race getAuthHeaders uses —
+      // otherwise the first request of a screen permanently 401s. This only
+      // waits for the EXISTING session to resolve (no refresh → no storm).
+      const token = await readAccessToken(AUTH_HEADER_COLDSTART_RECOVERY_MS);
+      if (token) fresh = { Authorization: `Bearer ${token}` };
     }
     // Token was rejected, or the cheap re-read still yielded nothing → force a
     // SINGLE shared refresh (signs out if the refresh-token is unrecoverable).

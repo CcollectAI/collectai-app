@@ -149,9 +149,9 @@ async def create_item(
                 item_id = str(uuid4())
                 await conn.execute(
                     """
-                    INSERT INTO items (id, user_id, title, category, notes, collection_name, estimated_value, canonical_key,
+                    INSERT INTO items (id, user_id, name, title, category, notes, collection_name, estimated_value, canonical_key,
                                        image_url, brand, condition, year, series, edition_label, attrs)
-                    VALUES ($1, $2::uuid, $3, $4, $5, $6, $7, $8,
+                    VALUES ($1, $2::uuid, $3, $3, $4, $5, $6, $7, $8,
                             $9, $10, $11, $12, $13, $14, $15::jsonb)
                     """,
                     item_id, user_id, payload.name, payload.category, payload.notes,

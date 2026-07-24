@@ -356,6 +356,12 @@ const ManualAddScreen: React.FC = () => {
       const { data: inserted, error } = await supabase.from("items").insert([
         {
           user_id: userId,
+          // Write BOTH name and title. The canonical readers key on `name`
+          // (backend /portfolio/overview reads items.name; FE screenItem mapper
+          // reads it.name), but this path historically wrote only `title` →
+          // items.name stayed NULL → Home's portfolio showed nameless/empty
+          // items while the Items tab (which falls back to title) looked fine.
+          name: trimmedTitle,
           title: trimmedTitle,
           category: effectiveCat || null,
           canonical_key: canonicalKey,

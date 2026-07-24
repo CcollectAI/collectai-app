@@ -38,11 +38,35 @@ const PortfolioCategorySchema = z.object({
   count: z.number(),
 });
 
-/** Portfolio overview snapshot */
+/** Portfolio overview item — the backend (portfolio_router.py) returns
+ *  snake_case current_value / change_1d_pct. `.passthrough()` keeps any extra
+ *  or alternately-named fields so extractItems' fallback chains still resolve. */
+const PortfolioOverviewItemSchema = z
+  .object({
+    id: z.union([z.string(), z.number()]).nullable().optional(),
+    // name IS nullable — items can be saved with a null name (the backend reads
+    // items.name, which is NULL for catalog-matched adds). A non-nullable
+    // z.string() here fails the WHOLE snapshot parse → safeParse returns the
+    // empty fallback → Home falsely shows "add your first item" while the Items
+    // tab lists them. Verified via [DIAG] 2026-07-24.
+    name: z.string().nullable().optional(),
+    category: z.string().nullable().optional(),
+    current_value: z.number().nullable().optional(),
+    change_1d_pct: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+/** Portfolio overview snapshot.
+ *  NOTE: `items` MUST be declared here. Zod strips undeclared keys by default,
+ *  so without it the backend's `items` array was silently deleted during
+ *  safeParse and Home's extractItems (which reads raw.items) always got [] —
+ *  the Portfolio tab showed "add your first item" while the Items tab (Supabase)
+ *  correctly listed the items. FE/BE contract bug, fixed 2026-07-24. */
 export const PortfolioSnapshotSchema = z.object({
   total_value: z.number(),
   item_count: z.number(),
   categories: z.array(PortfolioCategorySchema).optional(),
+  items: z.array(PortfolioOverviewItemSchema).optional(),
 });
 export type PortfolioSnapshot = z.infer<typeof PortfolioSnapshotSchema>;
 

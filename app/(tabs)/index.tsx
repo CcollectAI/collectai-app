@@ -22,7 +22,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { PortfolioLineChart, type TimeSeriesPoint } from "@/components/PortfolioLineChart";
 import { SkeletonPortfolioHeader } from "@/components/Skeleton";
 import { dataProvider } from "@/data";
@@ -40,6 +40,7 @@ import { getCategoryByName, getCategoryById } from "@/data/categories";
 import { TopItemsList, type ItemRow } from "@/components/home/TopItemsList";
 import { FollowedCategoriesCarousel } from "@/components/home/FollowedCategoriesCarousel";
 import { usePortfolioInsights } from "@/hooks/usePortfolioInsights";
+import { useHasEverHadItems } from "@/hooks/useHasEverHadItems";
 import { useAlertsFeed } from "@/hooks/useAlertsFeed";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
@@ -126,6 +127,9 @@ function extractItems(raw: unknown): ItemRow[] {
           ? it.value
           : typeof it?.currentValue === "number"
           ? it.currentValue
+          : // Backend /portfolio/overview returns snake_case current_value.
+          typeof it?.current_value === "number"
+          ? it.current_value
           : typeof it?.marketValue === "number"
           ? it.marketValue
           : typeof it?.totalValue === "number"
@@ -139,6 +143,9 @@ function extractItems(raw: unknown): ItemRow[] {
           ? it.changePct
           : typeof it?.change1dPct === "number"
           ? it.change1dPct
+          : // Backend /portfolio/overview returns snake_case change_1d_pct.
+          typeof it?.change_1d_pct === "number"
+          ? it.change_1d_pct
           : typeof it?.pctChange === "number"
           ? it.pctChange
           : undefined;
@@ -173,6 +180,12 @@ function PortfolioScreen() {
   const [range, setRange] = useState<RangeKey>("7D");
   const [series, setSeries] = useState<TimeSeriesPoint[]>([]);
   const [items, setItems] = useState<ItemRow[]>([]);
+  // Persisted "has ever had items" flag. Drives the first-item hero: it shows
+  // ONLY for a genuinely-new collection and is replaced by the graph the moment
+  // the first item is added — and never comes back, even if a later portfolio
+  // fetch transiently returns empty (a token cold-start / network blip must not
+  // resurrect "add your first item" for an established collection).
+  const { hasEverHadItems, markHasItems } = useHasEverHadItems();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
@@ -181,6 +194,12 @@ function PortfolioScreen() {
 
   // Store review prompt (criteria: 10+ items, 3+ days, 90-day cooldown)
   useStoreReview(items.length);
+
+  // Once the portfolio has ever shown items, remember it permanently so the
+  // first-item hero never resurfaces on a later empty fetch.
+  useEffect(() => {
+    if (items.length > 0) markHasItems();
+  }, [items.length, markHasItems]);
 
   // Category breakdown state
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdownItem[]>([]);
@@ -299,38 +318,49 @@ function PortfolioScreen() {
     }
   }, [range]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Refetch on FOCUS, not just mount. The first mount fires during the
+  // post-login tokenless cold-start window, when the EC2 portfolio endpoints
+  // (getPortfolioTimeseries/getPortfolioOverview) return empty because
+  // getAuthHeaders has no token yet → Home would otherwise show
+  // "add your first item" + no graph permanently, diverging from the Items tab
+  // (which reads Supabase directly AND already refetches on focus via
+  // useFocusEffect). Refetching on focus repopulates Home once the token lands.
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData]),
+  );
 
-  // Load category breakdown
-  useEffect(() => {
-    let cancelled = false;
-    setBreakdownLoading(true);
-    collectorsApi.getPortfolioCategoryBreakdown()
-      .then((res: unknown) => {
-        if (cancelled) return;
-        const data = res as Record<string, unknown>;
-        // Backend returns "breakdown", also check "categories" for compat
-        const cats = Array.isArray(data?.breakdown)
-          ? (data.breakdown as Record<string, unknown>[]).map((b) => ({
-              category: String(b.category ?? ''),
-              item_count: Number(b.item_count ?? 0),
-              total_value: Number(b.total_value ?? 0),
-              percentage: Number(b.pct_of_portfolio ?? b.percentage ?? 0),
-            }))
-          : Array.isArray(data?.categories)
-          ? data.categories as CategoryBreakdownItem[]
-          : [];
-        setCategoryBreakdown(cats);
-      })
-      .catch((err: unknown) => {
-        logger.warn('[Portfolio] category breakdown fetch failed:', err);
-        if (!cancelled) setCategoryBreakdown([]);
-      })
-      .finally(() => { if (!cancelled) setBreakdownLoading(false); });
-    return () => { cancelled = true; };
-  }, []);
+  // Load category breakdown — also on focus, same cold-start reason as above.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      setBreakdownLoading(true);
+      collectorsApi.getPortfolioCategoryBreakdown()
+        .then((res: unknown) => {
+          if (cancelled) return;
+          const data = res as Record<string, unknown>;
+          // Backend returns "breakdown", also check "categories" for compat
+          const cats = Array.isArray(data?.breakdown)
+            ? (data.breakdown as Record<string, unknown>[]).map((b) => ({
+                category: String(b.category ?? ''),
+                item_count: Number(b.item_count ?? 0),
+                total_value: Number(b.total_value ?? 0),
+                percentage: Number(b.pct_of_portfolio ?? b.percentage ?? 0),
+              }))
+            : Array.isArray(data?.categories)
+            ? data.categories as CategoryBreakdownItem[]
+            : [];
+          setCategoryBreakdown(cats);
+        })
+        .catch((err: unknown) => {
+          logger.warn('[Portfolio] category breakdown fetch failed:', err);
+          if (!cancelled) setCategoryBreakdown([]);
+        })
+        .finally(() => { if (!cancelled) setBreakdownLoading(false); });
+      return () => { cancelled = true; };
+    }, []),
+  );
 
   // Load followed categories from onboarding
   useEffect(() => {
@@ -525,8 +555,13 @@ function PortfolioScreen() {
           </View>
         </View>
 
-        {/* Empty portfolio state OR Collection value + chart */}
-        {items.length === 0 && !loading ? (
+        {/* First-item hero ONLY for a genuinely-new collection (confirmed never
+            had items), else the Collection value + chart. Keyed on the persisted
+            hasEverHadItems===false rather than the live items array so a token
+            cold-start / transient empty fetch can't resurrect the hero for an
+            established portfolio — and the hero is replaced by the graph the
+            instant the first item is added. */}
+        {items.length === 0 && hasEverHadItems === false ? (
           <View style={styles.emptyPortfolio}>
             <View style={[styles.emptyIconCircle, { backgroundColor: colors.accent + '15' }]}>
               <Ionicons name="camera-outline" size={64} color={colors.accent} />
