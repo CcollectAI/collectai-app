@@ -156,12 +156,24 @@ function RegisterScreen() {
           // fragment to sparrow://, which the AuthProvider deep-link handler turns
           // into a session. Shows a branded fallback page if the app isn't installed.
           emailRedirectTo: 'https://sparrowcollect.com/auth/confirm',
-          // Creator attribution. This lands in auth.users.raw_user_meta_data,
-          // which the handle_new_user trigger reads into
-          // profiles.referred_by_code (20260719_referral_attribution.sql).
-          // Omitted entirely when blank so an untouched field can never be
-          // mistaken for an attributed signup.
-          ...(trimmedReferralCode ? { data: { referral_code: trimmedReferralCode } } : {}),
+          // Everything here lands in auth.users.raw_user_meta_data, which the
+          // handle_new_user trigger reads. The trigger is SECURITY DEFINER, so
+          // it can write profiles even when the caller has no session yet.
+          //
+          // `username` MUST travel this way. The profile upsert further down
+          // cannot set it on the email-verification path: RLS on profiles
+          // requires auth.uid() = id for INSERT/UPDATE, and signUp() returns a
+          // user with NO session, so auth.uid() is NULL and the write is
+          // rejected. That failure was only console.warn'd (and warn is
+          // stripped in TestFlight), so it went unnoticed -- 0 of 23 profiles
+          // had a username, and every social surface showed "Unknown".
+          //
+          // referral_code: omitted entirely when blank so an untouched field
+          // can never be mistaken for an attributed signup.
+          data: {
+            ...(trimmedUsername ? { username: trimmedUsername } : {}),
+            ...(trimmedReferralCode ? { referral_code: trimmedReferralCode } : {}),
+          },
         },
       });
       if (error) throw error;
