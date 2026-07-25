@@ -71,6 +71,13 @@ CATEGORY_MAP: dict[str, str] = {
 }
 
 # Upstream requests — conservative timeouts. Some group payloads are large.
+# Categories whose catalog is DERIVED from tcgcsv (see build_catalog_rows).
+# Only these: mtg/pokemon already sit at 98-99% coverage on their own slug keys,
+# so deriving them would add ~250k redundant rows for no gain. yugioh IS derived
+# because its seed catalog is per-printing while its passcode prices are
+# per-card — a 545x error on the worst card.
+CATALOG_CATEGORIES = {"lorcana", "digimon", "one_piece_tcg", "yugioh"}
+
 HTTP_TIMEOUT = 60.0
 PER_REQUEST_SLEEP = 0.25  # be polite to tcgcsv.com
 
@@ -436,7 +443,8 @@ def run_game(
         total_hits += len(hits)
         groups_processed += 1
 
-        cat_rows = build_catalog_rows(hits, our_category, group_name, group_abbr) if catalog else []
+        do_catalog = catalog and our_category in CATALOG_CATEGORIES
+        cat_rows = build_catalog_rows(hits, our_category, group_name, group_abbr) if do_catalog else []
         total_catalog += len(cat_rows)
 
         if dry_run:
@@ -540,7 +548,14 @@ async def run_once() -> None:
     loop = asyncio.get_running_loop()
     t0 = time.monotonic()
     try:
-        summary = await loop.run_in_executor(None, run_pipeline)
+        # catalog=True so newly-released products get a category_items row on
+        # the same run that first prices them. Without this the derivation is a
+        # one-shot: prices would keep flowing for new cards while they stayed
+        # unsearchable and un-addable. Only CATALOG_CATEGORIES are derived —
+        # mtg/pokemon already sit at 98-99% on their own slug keys and deriving
+        # them would add ~250k redundant rows.
+        summary = await loop.run_in_executor(
+            None, lambda: run_pipeline(catalog=True))
         duration = time.monotonic() - t0
         status = "ok" if summary.get("ok") else "error"
         record_run("tcgcsv_worker", status, duration_s=duration)
