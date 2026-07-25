@@ -175,13 +175,6 @@ export interface ItemDetail {
   [key: string]: unknown;
 }
 
-/**
- * Fetch rich item detail, including category meta, prediction band and signals.
- * Expected backend route (to be implemented): GET /items/{id}/detail
- */
-export function getItemDetail(id: string): Promise<ItemDetail> {
-  return request<ItemDetail>(`/items/${encodeURIComponent(id)}/detail`);
-}
 // --- CollectAI: portfolio & trends extensions --- //
 // (Removed createAlert/getAlerts here — they hit /alerts which was never
 // deployed. The active wire is alertsApi.createAlert → POST /alerts/mine.)
@@ -213,17 +206,6 @@ export type ItemTrendPoint = {
   category_health: number;
 };
 
-export async function getItemTrends(
-  itemId: string,
-  window: '1d' | '7d' | '30d' = '30d',
-) {
-  const qs = `?window=${window}`;
-  return request<{
-    item_id: string;
-    window: string;
-    points: ItemTrendPoint[];
-  }>(`/items/${itemId}/trends${qs}`);
-}
 
 // --- CollectAI: category deep-dive --- //
 
@@ -237,11 +219,6 @@ export type CategoryOverview = {
   top_movers: { name: string; change_pct: number }[];
 };
 
-export async function getCategoryOverview(
-  categoryId: string,
-) {
-  return request<CategoryOverview>(`/categories/${categoryId}/overview`);
-}
 
 // --- CollectAI: provenance & ownership history --- //
 
@@ -380,13 +357,6 @@ export type ItemInsightsResponse = {
   };
 };
 
-export async function getItemInsights(
-  itemId: string,
-  window: '1d' | '7d' | '30d' = '7d',
-): Promise<ItemInsightsResponse> {
-  const qs = `?window=${window}`;
-  return request<ItemInsightsResponse>(`/items/${itemId}/insights${qs}`);
-}
 
 // --- CollectAI: watchlist insights --- //
 
@@ -412,12 +382,6 @@ export type WatchlistInsightsResponse = {
   generated_at: string;
 };
 
-export async function getWatchlistInsights(
-  window: '1d' | '7d' | '30d' = '7d',
-): Promise<WatchlistInsightsResponse> {
-  const qs = `?window=${window}`;
-  return request<WatchlistInsightsResponse>(`/watchlist/insights${qs}`);
-}
 
 // Trust/reputation is now handled by /deals/reputation/{user_id} endpoint
 
@@ -497,12 +461,6 @@ export type CategoriesDeepDiveResponse = {
   categories: CategoryDeepDive[];
 };
 
-export async function getCategoriesDeepDive(
-  window: '1d' | '7d' | '30d' = '7d',
-): Promise<CategoriesDeepDiveResponse> {
-  const qs = `?window=${window}`;
-  return request<CategoriesDeepDiveResponse>(`/categories/deepdive${qs}`);
-}
 
 // --- CollectAI: categories deep-dive (all categories) --- //
 
