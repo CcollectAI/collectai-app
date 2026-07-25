@@ -90,3 +90,6 @@ builds/
 *.swp
 *.tsbuildinfo
 supabase/.temp/
+
+# Local agent worktrees — embedded git repos, never commit
+.claude/worktrees/
