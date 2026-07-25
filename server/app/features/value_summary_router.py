@@ -160,7 +160,12 @@ async def get_value_summary(
                 0::numeric AS total_savings
             FROM mandate_deals
             WHERE user_id = $1
-              AND status = 'completed'
+              -- 'completed' is NOT in the mandate_deals status CHECK
+              -- (discovered, notified, clicked, purchased, declined, expired),
+              -- so this counted a value that can never exist and reported 0
+              -- deals forever. A read, so it never errored. 'purchased' is the
+              -- terminal state. Found by check-constraint-drift.mjs 2026-07-25.
+              AND status = 'purchased'
             """,
             user_id,
         )

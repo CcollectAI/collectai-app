@@ -45,6 +45,11 @@ const CHECKS = [
     why: 'a router.push to a route with no file — a button that goes nowhere',
   },
   {
+    name: 'constraint-drift',
+    cmd: 'node scripts/check-constraint-drift.mjs',
+    why: 'code using a literal a CHECK rejects — writes 23514, reads silently return 0',
+  },
+  {
     name: 'item-writers',
     cmd: 'python3 server/scripts/audit_item_writers.py',
     why: 'an INSERT INTO items with no canonical_key — the item can never be priced',
