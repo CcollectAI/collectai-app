@@ -50,6 +50,12 @@ const CHECKS = [
     why: 'an INSERT INTO items with no canonical_key — the item can never be priced',
   },
   {
+    name: 'canonical-key-resolution',
+    cmd: `${SSH} '${REMOTE_PY} scripts/probe_canonical_key_resolution.py'`,
+    db: true,
+    why: 'the add paths RESOLVING a key, not just naming the column (values, not structure)',
+  },
+  {
     name: 'account-deletion',
     cmd: `${SSH} '${REMOTE_PY} scripts/audit_account_deletion.py'`,
     db: true,
