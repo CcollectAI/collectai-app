@@ -24,7 +24,7 @@ from app.agents.intake_agent import IntakeResult, process_intake, process_url_im
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.config import INTAKE_MAX_IMAGE_BYTES as MAX_IMAGE_BYTES
-from app.db import db_configured, get_conn
+from app.db import db_configured, get_conn, get_pool
 from app.lib.validators import is_valid_barcode
 from app.rate_limit import per_user_rate_limit
 from app.ssrf import validate_url
@@ -686,6 +686,60 @@ def _normalize_key(title: str) -> str:
     return key[:200]
 
 
+# Score floor for accepting a catalog match. /catalog/match documents
+# >= 0.75 = strong, >= 0.6 = probable; use the strong threshold here because a
+# WRONG canonical_key is worse than none — it prices the item as a different
+# product, which looks authoritative and is silently incorrect.
+_CANONICAL_MATCH_FLOOR = 0.75
+
+
+async def _resolve_canonical_key(title: str | None, category: str | None) -> str | None:
+    """
+    Best-effort catalog match -> BARE canonical_key, or None.
+
+    Why this exists: an item saved without canonical_key can never be priced.
+    The chain is canonical_key --trg_items_canonical_ref--> canonical_ref
+    --join--> price_predictions.item_ref. Miss the first link and the item shows
+    "—" forever, with no error and nothing logged.
+
+    canonical_key is BARE (`sm10-sm10-101`), never namespaced — see CLAUDE.md
+    "Identifier formats". The trigger derives canonical_ref from it; do NOT set
+    canonical_ref by hand.
+
+    Never raises: a failed match must not fail the save. The item is simply
+    saved unpriced, exactly as it was before this function existed, which is
+    the same posture /catalog/match already takes.
+    """
+    if not title or not category:
+        return None
+    pool = get_pool()
+    if pool is None:
+        return None
+    try:
+        # Lazy import — catalog_matching pulls in heavy intake dependencies.
+        from app.agents.intake.catalog_matching import _match_catalog_items
+
+        matches = await _match_catalog_items(
+            category_id=category,
+            suggested_name=title,
+            search_keywords=[],
+            brand=None,
+            set_code=None,
+            pool=pool,
+            extracted_attributes=None,
+        )
+    except Exception as e:
+        logger.warning("[intake/save] catalog match failed for %r: %s", title, e)
+        return None
+
+    if not matches:
+        return None
+    best = matches[0]
+    if float(best.get("match_score") or 0.0) < _CANONICAL_MATCH_FLOOR:
+        return None
+    return best.get("item_key") or None
+
+
 @router.post("/save", response_model=IntakeSaveResponse, summary="Save intake result to collection", description="Persist an intake result as a new item in the user's collection. Called after scan identification when the user taps 'Add to Collection'.")
 async def intake_save(
     payload: IntakeSaveRequest,
@@ -704,6 +758,7 @@ async def intake_save(
         return IntakeSaveResponse(id=item_id, title=payload.title, category=payload.category)
 
     normalized_key = _normalize_key(payload.title)
+    canonical_key = await _resolve_canonical_key(payload.title, payload.category)
 
     async with get_conn() as conn:
         # NB: map to the columns that ACTUALLY exist on `items`. The prior
@@ -715,10 +770,10 @@ async def intake_save(
             """
             INSERT INTO public.items (
                 id, user_id, title, category, condition,
-                attrs, image_url, estimated_value
+                attrs, image_url, estimated_value, canonical_key
             ) VALUES (
                 $1::uuid, $2::uuid, $3, $4, $5,
-                $6::jsonb, $7, $8
+                $6::jsonb, $7, $8, $9
             )
             """,
             item_id,
@@ -729,6 +784,7 @@ async def intake_save(
             _json.dumps(payload.attributes) if payload.attributes else None,
             (payload.images[0] if payload.images else None),
             payload.estimated_price,
+            canonical_key,
         )
 
     logger.info(

@@ -27,6 +27,49 @@ _import_limit = per_user_rate_limit(5, window_seconds=3600, scope="collection_im
 
 _logger = logging.getLogger(__name__)
 
+# Score floor for accepting a catalog match. /catalog/match documents
+# >= 0.75 = strong; a WRONG canonical_key is worse than none, because it prices
+# the row as a different product and looks authoritative while being incorrect.
+_CANONICAL_MATCH_FLOOR = 0.75
+
+
+async def _resolve_canonical_key(title, category, pool) -> "str | None":
+    """
+    Best-effort catalog match -> BARE canonical_key, or None.
+
+    canonical_key is BARE (`sm10-sm10-101`), never namespaced — CLAUDE.md
+    "Identifier formats". The trigger derives canonical_ref from it; never set
+    canonical_ref by hand.
+
+    Never raises: a failed match must not fail the import. The row is saved
+    unpriced, which is what every imported row did before this existed.
+    """
+    if not title or not category or pool is None:
+        return None
+    try:
+        from app.agents.intake.catalog_matching import _match_catalog_items
+
+        matches = await _match_catalog_items(
+            category_id=category,
+            suggested_name=title,
+            search_keywords=[],
+            brand=None,
+            set_code=None,
+            pool=pool,
+            extracted_attributes=None,
+        )
+    except Exception as e:
+        _logger.warning("[import] catalog match failed for %r: %s", title, e)
+        return None
+    if not matches:
+        return None
+    best = matches[0]
+    if float(best.get("match_score") or 0.0) < _CANONICAL_MATCH_FLOOR:
+        return None
+    return best.get("item_key") or None
+
+
+
 # ---- Import template columns ----
 # Canonical 12-column schema shared with /items-export/overview so that
 # round-trips work: export → edit in Excel → re-import.
@@ -240,6 +283,13 @@ async def import_collection(
         if sealed is not None:
             attrs["sealed"] = sealed
 
+        # Resolve a BARE canonical_key so imported rows are priceable. Without
+        # it the item saves fine and shows "—" forever: canonical_key
+        # --trg_items_canonical_ref--> canonical_ref --join--> price_predictions.
+        # Best-effort and never fatal — a failed match imports the row unpriced,
+        # which is exactly the old behaviour for every row.
+        canonical_key = await _resolve_canonical_key(title, category, pool)
+
         if pool:
             try:
                 async with pool.acquire() as conn:
@@ -249,9 +299,9 @@ async def import_collection(
                             id, user_id, title, category, condition,
                             condition_grade, attrs,
                             purchase_price, purchase_currency, purchase_date,
-                            estimated_value, notes
+                            estimated_value, notes, canonical_key
                         )
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                         """,
                         str(_uuid.uuid4()),
                         user_id,
@@ -265,6 +315,7 @@ async def import_collection(
                         purchase_date,
                         est_val,
                         notes_str,
+                        canonical_key,
                     )
                 inserted += 1
             except Exception as e:

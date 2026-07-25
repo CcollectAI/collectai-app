@@ -45,6 +45,11 @@ const CHECKS = [
     why: 'a router.push to a route with no file — a button that goes nowhere',
   },
   {
+    name: 'item-writers',
+    cmd: 'python3 server/scripts/audit_item_writers.py',
+    why: 'an INSERT INTO items with no canonical_key — the item can never be priced',
+  },
+  {
     name: 'account-deletion',
     cmd: `${SSH} '${REMOTE_PY} scripts/audit_account_deletion.py'`,
     db: true,
