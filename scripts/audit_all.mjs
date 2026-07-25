@@ -50,6 +50,11 @@ const CHECKS = [
     why: 'code using a literal a CHECK rejects — writes 23514, reads silently return 0',
   },
   {
+    name: 'upsert-targets',
+    cmd: 'node scripts/check-upsert-targets.mjs',
+    why: 'ON CONFLICT naming columns with no unique key — 42P10, swallowed, row never written',
+  },
+  {
     name: 'item-writers',
     cmd: 'python3 server/scripts/audit_item_writers.py',
     why: 'an INSERT INTO items with no canonical_key — the item can never be priced',

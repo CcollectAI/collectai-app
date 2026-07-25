@@ -16,7 +16,7 @@
     "dev": "bash scripts/dev.sh",
     "test": "jest",
     "verify:items-contract": "node scripts/verify_items_contract.mjs",
-    "verify:prebuild": "node scripts/check-unbounded-awaits.mjs && node scripts/check-dead-nav.mjs && node scripts/check-constraint-drift.mjs && tsc --noEmit && jest __tests__/lib/supabaseTimeout.test.ts __tests__/lib/loggerRetention.test.ts __tests__/data/screenItem.test.ts __tests__/data/itemsProviderPurchase.test.ts __tests__/data/personalizedInsights.test.ts __tests__/data/marketplaceSchema.test.ts __tests__/lib/ids.test.ts __tests__/hooks/usePaginatedList.test.ts __tests__/components/ItemsListItem.test.tsx && node scripts/verify_items_contract.mjs",
+    "verify:prebuild": "node scripts/check-unbounded-awaits.mjs && node scripts/check-dead-nav.mjs && node scripts/check-constraint-drift.mjs && node scripts/check-upsert-targets.mjs && tsc --noEmit && jest __tests__/lib/supabaseTimeout.test.ts __tests__/lib/loggerRetention.test.ts __tests__/data/screenItem.test.ts __tests__/data/itemsProviderPurchase.test.ts __tests__/data/personalizedInsights.test.ts __tests__/data/marketplaceSchema.test.ts __tests__/lib/ids.test.ts __tests__/hooks/usePaginatedList.test.ts __tests__/components/ItemsListItem.test.tsx && node scripts/verify_items_contract.mjs",
     "i18n:check": "node scripts/check-i18n-strings.mjs",
     "i18n:check:quiet": "node scripts/check-i18n-strings.mjs --quiet",
     "bundle-size": "node scripts/bundle-size.mjs",
@@ -29,7 +29,8 @@
     "verify:silent": "node scripts/check-silent-failures.mjs",
     "audit:all": "node scripts/audit_all.mjs",
     "verify:nav": "node scripts/check-dead-nav.mjs",
-    "verify:constraints": "node scripts/check-constraint-drift.mjs"
+    "verify:constraints": "node scripts/check-constraint-drift.mjs",
+    "verify:upserts": "node scripts/check-upsert-targets.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
