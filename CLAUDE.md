@@ -41,12 +41,54 @@ A writer and a reader that were never connected, plus a construct that turns
 narrower than the code, a LEFT JOIN yielding NULL, a `?? 0` default. Nothing
 goes red, so a dead feature is indistinguishable from an unused one.
 
-Two advisory audits exist for it — neither blocks CI:
+Three advisory audits exist for it — none blocks CI:
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes
 - `server/scripts/audit_column_drift.py` — reader/writer on different columns
+- `server/scripts/audit_key_overlap.py` — **joins whose two sides share no values**
 
 **When something looks empty, check whether it is REJECTED before assuming it is
 unused.** Look at Supabase > Logs > Postgres, not just the app journal.
+
+### Identifier formats — read this before writing a JOIN
+
+The 2026-07-25 incident: every query joining `items.canonical_key =
+price_predictions.item_ref` matched zero rows, for every user, for ~4 months.
+44 sites in 13 files. Portfolio value, category health, category stats,
+timeseries, deep-dives, insights, exports and valuation-on-add were all
+silently empty. **Nothing ever errored** — an empty join is a valid result.
+
+| column | format | example |
+|---|---|---|
+| `items.canonical_key` | **bare** catalog key | `sm10-sm10-101` |
+| `category_items.item_key` | **bare** | `sm10-sm10-101` |
+| `items.canonical_ref` | **namespaced** (generated, STORED) | `pokemon:sm10-sm10-101` |
+| `price_predictions.item_ref` | **namespaced** always (0 bare rows in 1.7M) | `pokemon:sm10-sm10-101` |
+| `price_prediction_daily.item_ref` | **namespaced** always | `pokemon:sm10-sm10-101` |
+| `market_hits.item_ref` | **namespaced** always | `pokemon:ex8-ex8-13` |
+
+Rules:
+- Join predictions/market_hits with **`items.canonical_ref`**, never `canonical_key`.
+- Join the catalog with **`items.canonical_key`** — `v_category_summaries_v1`
+  depends on the bare form. Do NOT "normalise" canonical_key to namespaced.
+- `ItemCreateRequest.canonical_key` documents a namespaced *example* but
+  `/catalog/match` returns a bare key. That contradiction caused this bug.
+  `canonical_ref` passes an already-namespaced key through without
+  double-prefixing, so correcting the writer later is safe.
+- Adding a text-key join? Declare it in `audit_key_overlap.py::PAIRS`.
+- **No index on `canonical_ref`.** One was added, then dropped: EXPLAIN showed
+  the planner seq-scans `items` (already filtered by `user_id`) and drives the
+  join through the existing per-partition `price_predictions_*_item_ref_idx`.
+  Identical plan and cost with and without it — governance rule 1 in
+  `docs/DATA_SCALING_PLAN.md` is "default = refuse to add". Revisit only if a
+  plan shows `items` as the expensive side.
+
+**Structural checks cannot catch this class.** The table existed, was populated,
+the column names matched, the SQL was valid, the endpoint returned 200. Only
+comparing the VALUES on each side reveals it — which is all `audit_key_overlap.py`
+does. Coverage caveat: even with the correct join only ~13% of predicted refs
+are catalog-reachable; TCG categories key predictions by TCGplayer product id
+(`lorcana:tcgplayer:702699:normal`) while the catalog uses set-slugs, so
+lorcana/digimon/one_piece_tcg sit at 0% until an id crosswalk exists.
 
 ## Key Files
 - `app/(tabs)/_layout.tsx` - Main tab navigation (5 visible tabs: Home, Items, Add, Events, Marketplace; wishlist + search are hidden routes)
