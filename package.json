@@ -22,7 +22,9 @@
     "bundle-size": "node scripts/bundle-size.mjs",
     "bundle-size:update": "node scripts/bundle-size.mjs --update",
     "postinstall": "node scripts/postinstall-fixes.js",
-    "test:web:referral": "node scripts/web-tests/referral.test.js"
+    "test:web:referral": "node scripts/web-tests/referral.test.js",
+    "audit:drift": "python3 server/scripts/audit_column_drift.py --columns scripts/db_columns.json",
+    "audit:drift:refresh": "ssh collectai 'cd /opt/collectors/server && set -a && . /opt/collectors/.env && set +a && /opt/collectors/.venv/bin/python scripts/audit_column_drift.py --dump-columns' > scripts/db_columns.json"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
