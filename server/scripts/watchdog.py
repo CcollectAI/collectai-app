@@ -394,6 +394,102 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
     except Exception as e:
         bug("info", "pricing coverage canary could not run", str(e)[:200])
 
+    # --- column drift: reader and writer on different columns ---
+    # Two-phase by necessity: the code half needs src/ + app/, which are never
+    # deployed here, so a refs blob is generated on the dev box
+    # (`npm run audit:drift:refresh`) and shipped. If it goes stale the audit is
+    # still answering questions about code that no longer exists, so age is
+    # reported rather than silently trusted.
+    try:
+        import subprocess
+        refs = SERVER_ROOT / "scripts" / "coldrift_refs.json"
+        if not refs.exists():
+            healthy.append({"check": "column drift", "detail": "skipped — no refs blob shipped"})
+        else:
+            age_d = (datetime.now(timezone.utc).timestamp() - refs.stat().st_mtime) / 86400
+            r = subprocess.run(
+                ["/opt/collectors/.venv/bin/python",
+                 str(SERVER_ROOT / "scripts" / "audit_column_drift.py"), "--refs", str(refs)],
+                capture_output=True, timeout=600, cwd=str(SERVER_ROOT))
+            out = r.stdout.decode()
+            m = re.search(r"(\d+) finding\(s\): (\d+) HIGH", out)
+            n_high = int(m.group(2)) if m else 0
+            if n_high:
+                bug("high", "column drift: %d reader/writer column mismatch(es)" % n_high,
+                    "A column the code READS is entirely NULL while a similarly-named one is "
+                    "written — the feature is starved of input and returns empty without erroring.",
+                    src_link("server/scripts/audit_column_drift.py"),
+                    "python3 scripts/audit_column_drift.py --refs scripts/coldrift_refs.json",
+                    "Repoint the reader to the column the writer actually fills")
+            elif age_d > 21:
+                bug("info", "column-drift refs are %d days old" % int(age_d),
+                    "The code half of this audit is stale; regenerate with "
+                    "`npm run audit:drift:refresh` so it reflects current code.",
+                    src_link("package.json"), "ls -l scripts/coldrift_refs.json", "")
+            else:
+                healthy.append({"check": "column drift",
+                                "detail": "0 findings (refs %d days old)" % int(age_d)})
+    except Exception as e:
+        bug("info", "column-drift audit could not run", str(e)[:200])
+
+    # --- search canary ---
+    # unified_search ILIKEs four sources (items, category_items,
+    # user_public_profiles, events). items is user-scoped and the profile view is
+    # empty by design (COMMUNITY_GATED), but category_items and events MUST
+    # return hits for common terms — if they stop, search silently returns an
+    # empty page and still answers 200.
+    try:
+        probes = [("category_items", "title", ["charizard", "pikachu", "booster"]),
+                  ("events", "title", ["tournament", "expo", "con"])]
+        for table, col, terms in probes:
+            hits = {}
+            for t in terms:
+                hits[t] = await c.fetchval(
+                    f'SELECT count(*) FROM public."{table}" WHERE "{col}" ILIKE $1', f"%{t}%")
+            if not any(hits.values()):
+                bug("high", "search returns nothing from %s" % table,
+                    "None of these common terms matched: %s. unified_search ILIKEs this "
+                    "table and would render an empty results page with HTTP 200."
+                    % ", ".join("%s=%d" % kv for kv in hits.items()),
+                    src_link("server/app/features/search_router.py"),
+                    "SELECT count(*) FROM %s WHERE %s ILIKE '%%charizard%%';" % (table, col),
+                    "Check the table still has rows and the column was not renamed")
+            else:
+                healthy.append({"check": "search source %s" % table,
+                                "detail": ", ".join("%s=%d" % kv for kv in hits.items())})
+    except Exception as e:
+        bug("info", "search canary could not run", str(e)[:200])
+
+    # --- item-render canary ---
+    # The item card needs name + category to render at all. A row missing them
+    # shows as a blank card, which is how the 2026-07-24 Home-vs-Items bug
+    # presented (Zod dropped a non-nullable `name` and the list silently emptied).
+    try:
+        r = await c.fetchrow("""
+            SELECT count(*) total,
+                   count(*) FILTER (WHERE COALESCE(NULLIF(name,''), NULLIF(title,'')) IS NULL) no_name,
+                   count(*) FILTER (WHERE category IS NULL) no_category,
+                   count(*) FILTER (WHERE user_id IS NULL) no_owner
+            FROM public.items
+        """)
+        if r and r["total"]:
+            broken = (r["no_name"] or 0) + (r["no_owner"] or 0)
+            if broken:
+                bug("high", "%d item row(s) cannot render" % broken,
+                    "items missing a name (%d) or an owner (%d) out of %d. A nameless row "
+                    "renders as a blank card; a NULL user_id is invisible under RLS to "
+                    "everyone, including its creator."
+                    % (r["no_name"], r["no_owner"], r["total"]),
+                    tbl_link("items"),
+                    "SELECT id FROM items WHERE user_id IS NULL OR COALESCE(NULLIF(name,''),NULLIF(title,'')) IS NULL;",
+                    "Backfill the name, or delete the orphan rows")
+            else:
+                healthy.append({"check": "item render fields",
+                                "detail": "%d items, all have name + owner (%d lack a category)"
+                                          % (r["total"], r["no_category"])})
+    except Exception as e:
+        bug("info", "item-render canary could not run", str(e)[:200])
+
     # --- schema.lock staleness: a restart with a stale lock hard-downs the API ---
     try:
         import subprocess
