@@ -56,6 +56,12 @@ const CHECKS = [
     why: 'the add paths RESOLVING a key, not just naming the column (values, not structure)',
   },
   {
+    name: 'env-coverage',
+    cmd: `${SSH} '${REMOTE_PY} scripts/audit_env_coverage.py'`,
+    db: true,
+    why: 'a credential read with no default but empty in prod — the client silently degrades',
+  },
+  {
     name: 'account-deletion',
     cmd: `${SSH} '${REMOTE_PY} scripts/audit_account_deletion.py'`,
     db: true,
