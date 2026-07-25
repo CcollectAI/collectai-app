@@ -19,7 +19,8 @@ import {
   Linking,
   RefreshControl,
 } from 'react-native';
-import { useRouter, Stack, type Href } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
+import { itemHref } from '@/lib/ids';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type AlertFeedItem } from '@/data';
 import { collectorsApi } from '@/api/collectorsApi';
@@ -339,7 +340,13 @@ function AlertsScreen() {
             <AnimatedPressable
               onPress={() => {
                 handleMarkRead(item.id);
-                router.push(`/item/${item.itemId}` as Href);
+                // itemId comes from `alert_trigger_history.item_id`, a TEXT
+                // column: the low-value worker stores a catalog key there, not
+                // an items uuid. Interpolating it into /item/[id] produced
+                // 22P02 and a blank "Unknown item" screen. itemHref picks the
+                // screen that matches the identifier's shape.
+                const href = itemHref(item.itemId);
+                if (href) router.push(href);
               }}
               style={[styles.viewListingBtn, { borderColor: colors.accent + '40' }]}
               accessibilityRole="link"

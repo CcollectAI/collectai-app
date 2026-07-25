@@ -22,6 +22,7 @@ import { useRouter, type Href } from "expo-router";
 import { collectorsApi } from "@/api/collectorsApi";
 import { recordPushImpression, recordPushInteraction } from "@/api/intelligenceApi";
 import { trackTap } from "@/lib/notificationOutcomeTracker";
+import { itemHref } from "@/lib/ids";
 
 // ---------------------------------------------------------------------------
 // Configure how notifications appear when the app is in the foreground
@@ -213,16 +214,21 @@ export function usePushNotifications(userId: string | null) {
           return;
         }
 
-        // Individual item value change -> open the item
+        // Individual item value change -> open the item.
+        // `data.item_id` is whatever the sending worker put there. Most send an
+        // items uuid, but the low-value worker sends `price_predictions.item_ref`
+        // — a catalog key — so route by identifier shape, not by assumption.
         if (data.type === "item_value_change" && typeof data.item_id === "string" && data.item_id) {
-          router.push(`/item/${data.item_id}` as Href);
+          const href = itemHref(data.item_id);
+          if (href) router.push(href);
           return;
         }
 
         if (typeof data.deal_id === "string" && data.deal_id) {
           router.push(`/purchase/deal/${data.deal_id}` as Href);
         } else if (typeof data.item_id === "string" && data.item_id) {
-          router.push(`/item/${data.item_id}` as Href);
+          const href = itemHref(data.item_id);
+          if (href) router.push(href);
         } else if (typeof data.event_id === "string" && data.event_id) {
           router.push(`/events/${data.event_id}` as Href);
         } else if (typeof data.thread_id === "string" && data.thread_id) {

@@ -121,6 +121,18 @@ export type CreateWatchlistInput = {
   targetPrice?: number | null;
   notes?: string;
   priority?: 'high' | 'medium' | 'low';
+  /**
+   * Reference to what is being watched — a catalog `item_key` when the add came
+   * from a catalog screen. Maps to `watchlist_items.item_id` (a TEXT column, so
+   * catalog keys are valid there; it is NOT `items.id`).
+   *
+   * The server has accepted `item_id` on POST /watchlist/mine all along, but
+   * this type had no slot for it, so every add wrote NULL — all 12 production
+   * rows had `item_id IS NULL` and no watchlist row could be traced back to
+   * what it watches. Free-text adds (wishlist form, watchlist-builder) have no
+   * reference and correctly leave this undefined.
+   */
+  itemId?: string | null;
 };
 
 // Alias for backwards compatibility

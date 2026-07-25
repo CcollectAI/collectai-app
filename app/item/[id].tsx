@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { router , useLocalSearchParams } from 'expo-router';
+import { router , useLocalSearchParams, Redirect } from 'expo-router';
+import { isUuid } from '@/lib/ids';
 import {
   ScrollView,
   View,
@@ -1118,6 +1119,19 @@ function ItemDetailScreen() {
 }
 
 export default function ItemDetailScreenWithBoundary() {
+  // Backstop for the id-shape seam. This screen is keyed by `items.id` (uuid);
+  // every query below does `.eq('id', id)`, which PostgREST rejects with
+  // `22P02 invalid input syntax for type uuid` for anything else. The call
+  // sites route through `itemHref()` now, but deep links, push payloads and
+  // future callers can still land here directly — so bounce a non-uuid id to
+  // the catalog screen rather than rendering an "Unknown item" shell whose
+  // every fetch fails silently.
+  const { id, draft } = useLocalSearchParams<{ id?: string; draft?: string }>();
+  const isDraftRoute = id === 'draft' || draft === '1';
+  if (id && !isDraftRoute && !isUuid(id)) {
+    return <Redirect href={{ pathname: '/catalog-item/[key]', params: { key: id } }} />;
+  }
+
   return (
     <ScreenErrorBoundary screenName="Item Detail">
       <ItemDetailScreen />

@@ -72,9 +72,11 @@ class TestAlertsWorkerIdempotency:
         """If no alert was fired in last 24h, the batch query returns the item
         and the worker inserts a new alert."""
         price_row = {
-            # alerts_worker reads `item_ref` (not item_id) per the
-            # canonical-key migration — see _BATCH_QUERY in alerts_worker.py
-            "item_ref": "item-002",
+            # _BATCH_QUERY selects BOTH: `item_ref` is the catalog key (used in
+            # the human-readable message) and `item_uuid` is items.id (what gets
+            # persisted and routed on).
+            "item_ref": "pokemon:base1-base1-99",
+            "item_uuid": "4497d8bf-6e60-483a-ba97-1e3dfe6e6636",
             "q10": 2.0,
             "q50": 7.0,   # below 10
             "q90": 12.0,
@@ -94,6 +96,16 @@ class TestAlertsWorkerIdempotency:
         insert_call = mock_conn.execute.call_args_list[0]
         sql = insert_call[0][0]
         assert "INSERT INTO public.alert_trigger_history" in sql
+
+        # Regression gate (2026-07-25): item_id must be the items UUID, never
+        # the catalog key. Writing item_ref here made the alerts screen and the
+        # push deep-link push `/item/pokemon:base1-base1-99`, which PostgREST
+        # rejects with 22P02 and the FE swallows as a warn — a blank screen.
+        # Positional args are (sql, user_id, item_id, trigger_value, message).
+        persisted_item_id = insert_call[0][2]
+        assert persisted_item_id == "4497d8bf-6e60-483a-ba97-1e3dfe6e6636", (
+            f"alert_trigger_history.item_id must be the items uuid, got {persisted_item_id!r}"
+        )
 
     @pytest.mark.asyncio
     async def test_skips_item_with_no_owner(self, mock_conn):

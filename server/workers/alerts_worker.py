@@ -34,6 +34,13 @@ DSN = os.getenv("DB_DSN")
 _BATCH_QUERY = """
 SELECT DISTINCT ON (pp.item_ref)
     pp.item_ref,
+    -- The OWNED row's uuid. alert_trigger_history.item_id is `text`, so writing
+    -- pp.item_ref (a catalog key like `pokemon:base1-base1-99`) into it was
+    -- accepted by Postgres but broke every consumer: the alerts screen and the
+    -- push deep-link both feed item_id into /item/[id], which is keyed by
+    -- items.id (uuid) and 22P02s on a catalog key. 58/58 non-null rows written
+    -- by this worker were unusable. The join already has the real id — use it.
+    i.id AS item_uuid,
     pp.q10,
     pp.q50,
     pp.q90,
@@ -51,7 +58,10 @@ WHERE pp.q50 IS NOT NULL
   AND NOT EXISTS (
       SELECT 1 FROM public.alert_trigger_history ath
       WHERE ath.user_id = i.user_id
-        AND ath.item_id = pp.item_ref
+        -- Must match what the INSERT below writes (items.id as text), not
+        -- pp.item_ref — otherwise the 24h dedup silently never matches and the
+        -- same item re-alerts every cycle.
+        AND ath.item_id = i.id::text
         AND ath.trigger_type = 'low_value'
         AND ath.created_at > now() - interval '24 hours'
   )
@@ -72,7 +82,11 @@ async def run_once():
 
         fired = 0
         for r in rows:
-            item_id = r["item_ref"]
+            # item_id must be the items uuid — it is what the alerts screen and
+            # the push handler route on. item_ref (the catalog key) stays in the
+            # message text, where it is human-readable and harmless.
+            item_id = str(r["item_uuid"])
+            item_ref = r["item_ref"]
             owner = r["user_id"]
             mid = r["q50"]
 
@@ -81,7 +95,7 @@ async def run_once():
                 "q10": float(r["q10"]) if r["q10"] is not None else None,
                 "q90": float(r["q90"]) if r["q90"] is not None else None,
             })
-            message = f"Low valuation alert: item {item_id} estimated at {mid:.2f} EUR"
+            message = f"Low valuation alert: item {item_ref} estimated at {mid:.2f} EUR"
 
             await conn.execute("""
                 INSERT INTO public.alert_trigger_history

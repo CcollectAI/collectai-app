@@ -140,6 +140,9 @@ function CatalogItemMuseumScreen() {
       // invalidates the cached watchlist.
       await dataProvider.addWatchlistItem({
         title, category, targetPrice: estPrice ?? undefined,
+        // Link the row back to the catalog entry it was added from, so the
+        // watchlist knows *what* it is watching (was NULL on every row).
+        itemId: params.key ?? null,
       });
       showToast({ message: `${title} added to watchlist`, type: 'success' });
     } catch (e) {
@@ -150,7 +153,7 @@ function CatalogItemMuseumScreen() {
     } finally {
       setAdding(false);
     }
-  }, [title, category, estPrice, settings.hapticsEnabled, showToast]);
+  }, [title, category, estPrice, params.key, settings.hapticsEnabled, showToast]);
 
   const openLink = useCallback((link: AffiliateLink) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });

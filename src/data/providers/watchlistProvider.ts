@@ -97,6 +97,9 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
       target_price: input.targetPrice ?? null,
       priority: input.priority ?? 'medium',
       notes: input.notes ?? null,
+      // WatchlistCreate.item_id has always existed server-side; nothing ever
+      // sent it, so watchlist_items.item_id was NULL on every row.
+      item_id: input.itemId ?? null,
     }, { timeoutMs: 15_000 });
     r = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
   } catch (e) {
