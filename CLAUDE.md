@@ -12,30 +12,41 @@ Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funk
 - **Payments:** RevenueCat (iOS IAP, shipped 2026-05-09); Stripe dormant for future web/Android
 - **Theme:** Tiffany Blue (#81D8D0) accent, EUR currency, Roboto font
 
-## Current launch state (2026-05-20 evening)
-- **TestFlight build #13** successfully on TestFlight (build id `6609f91e-d09a-4d62-a1a6-90ca80de9688`, commit `d0c4713`). Submitted via ASC API Key `AM32RK7DAY` (regenerated after `VT5SJZ3AUH` returned 401 NOT_AUTHORIZED). General app QA works against #13, but **paywall test won't work** on it — was built before the new RevenueCat key.
-- **TestFlight build #14** building right now (build id `76b78c81-0273-4a95-a245-0d39f6704cca`, auto-submit set). Picks up the new `EXPO_PUBLIC_REVENUECAT_IOS_KEY`. ETA ~30-50 min from kickoff.
-- **Apple Developer:** Individual enrollment approved 2026-05-07 (Team `3DX8FBF7S6`, KvK 99596326).
-- **App Store Connect:** App ID `6767359453`, bundle `io.sparrowcollect.app`, name "Sparrow Collect".
-  - ASC API Key (EAS Submit): `AM32RK7DAY` (active)
-  - In-App Purchase Key: `3LX4HL24FM` (active, named `RevenueCat`)
-  - Issuer ID: `215c3feb-76f3-4399-a0bb-d2385003e1b1`
-- **Domain:** [sparrowcollect.com](https://sparrowcollect.com) live with SSL via Cloudflare DNS-only + Vercel (fixed 2026-05-08).
-- **IAP — RevenueCat wired end-to-end (2026-05-20 evening):**
-  - ASC subscription group `Pro` with `sparrow_pro_monthly` (€4.99/mo) + `sparrow_pro_yearly` (€39.99/yr), both `Ready to Submit`.
-  - RevenueCat project `Sparrow`, App Store-type app pointing to `io.sparrowcollect.app`, `SubscriptionKey_3LX4HL24FM.p8` uploaded.
-  - Entitlement `pro` (lowercase, matches `PRO_ENTITLEMENT_ID` in `src/lib/purchases.ts:5`) attached to both products.
-  - Offering `default` with packages `$rc_monthly` → `sparrow_pro_monthly` and `$rc_annual` → `sparrow_pro_yearly` (swap was corrected mid-session — mappings were inverted initially).
-  - `EXPO_PUBLIC_REVENUECAT_IOS_KEY` updated in EAS `production` env. Active in build #14, NOT in build #13.
-- **Sandbox tester:** `sandbox-merle@sparrowcollect.com` created in ASC Sandbox. Sign into Settings → App Store → Sandbox Account on iPhone before testing IAP flow.
-- **Apple reviewer demo account:** `apple-review@sparrowcollect.com` created in Supabase with Auto-Confirm. To be pasted into ASC App Review Information.
-- **Beta override:** `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` on `production` EAS profile, `false` on `store` profile (App Store submission).
-- **Onboarding rework** shipped 2026-05-18: age→seller-gate (412 + auto-modal), followed-categories drive add-flow / scan / catalog-match / home / Deal Hub, auth bug fixes.
-- **2026-05-19/20 bake fixes (deployed + verified live):**
-  - `calibration_worker.py:131` — added `LIMIT 10000` to bound per-category `market_hits` fetch. Was hitting 2min `statement_timeout` for high-card categories (mtg has 186K item_refs / 1.35M actuals). Now 85ms/category. Commit `c6e83fc`.
-  - `aggregate_catalog_attributes.py:_fetch_groups` — added `seen_at > now() - 90 days` partition-pruning filter. Was hanging on full-table JOIN. Now 15.3s/cycle. Commit `091c377`.
-  - `nightly_health_check.sh` — silenced false-positive Telegram pages: `count=planned` instead of `exact`, healthz via domain not IP, events gated behind `PRE_LAUNCH_MODE`. Commit `9350dae`.
-- **Active branch:** `feature/all-enhancements` (pushed through `04c4039` to origin as of 2026-05-20).
+## Current state (2026-07-25)
+
+- **Active branch:** `feature/creator-funnel-admin-dashboard`. iOS build 96 on TestFlight.
+- **Apple:** Individual enrollment (Team `3DX8FBF7S6`), App ID `6767359453`, bundle `io.sparrowcollect.app`.
+- **IAP:** RevenueCat Free + Pro (EUR 4.99/mo, EUR 39.99/yr) + Premium. 4 paying users live
+  (3 pro, 1 premium) — note **none of them has added an item yet**.
+- **Builds are LOCAL ONLY** — `npm run build:ios:local`. Never `eas build` without `--local`.
+- **Before any local build:** `npm run verify:prebuild` (tsc + seam tests + live Supabase contract).
+
+### Production watchdog (added 2026-07-25)
+
+`server/scripts/watchdog.py` — read-only daily report of what users did, what is
+healthy, and what is silently failing. Cron `0 9 * * *` (server TZ Europe/Paris)
+via `/opt/collectors/scripts/watchdog_daily.sh`, Telegram digest, JSON kept 30
+days in `/opt/collectors/logs/`. See `docs/WATCHDOG.md`.
+
+It reads **Supabase Logflare logs** (postgres/edge/auth) via the Management API,
+which is the only layer that sees DB rejections and PostgREST failures — the EC2
+journal cannot. On its first run it surfaced four production errors that every
+app-side audit had missed.
+
+### The failure mode this codebase is prone to
+
+A writer and a reader that were never connected, plus a construct that turns
+"not connected" into an empty result instead of an error: a bare
+`except: pass`, Pydantic or Zod dropping an undeclared field, a CHECK constraint
+narrower than the code, a LEFT JOIN yielding NULL, a `?? 0` default. Nothing
+goes red, so a dead feature is indistinguishable from an unused one.
+
+Two advisory audits exist for it — neither blocks CI:
+- `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes
+- `server/scripts/audit_column_drift.py` — reader/writer on different columns
+
+**When something looks empty, check whether it is REJECTED before assuming it is
+unused.** Look at Supabase > Logs > Postgres, not just the app journal.
 
 ## Key Files
 - `app/(tabs)/_layout.tsx` - Main tab navigation (5 visible tabs: Home, Items, Add, Events, Marketplace; wishlist + search are hidden routes)

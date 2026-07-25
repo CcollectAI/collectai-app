@@ -432,6 +432,14 @@ eas submit --platform android --profile production
 
 ## Monitoring
 
+- **Daily watchdog** — `server/scripts/watchdog.py`, cron `0 9 * * *`
+  (Europe/Paris) via `/opt/collectors/scripts/watchdog_daily.sh`. Reports user
+  activity, healthy loops and silent failures to Telegram; JSON kept 30 days in
+  `/opt/collectors/logs/`. **Reads Supabase Logflare logs**, which is the only
+  place DB rejections and PostgREST failures appear — the EC2 journal cannot see
+  them. See [`docs/WATCHDOG.md`](./WATCHDOG.md).
+
+
 - **Health check**: `GET /healthz` returns `{"status": "ok", "version": "...", "db": "ok"}`
 - **Pipeline status**: `GET /pipeline/status` reports model freshness and ingest health
 - **Ops dashboard**: `GET /ops/status` (requires `X-Ops-Key` header)
