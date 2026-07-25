@@ -58,7 +58,8 @@ const resources = {
  * Detect the user's device locale and return a supported language code.
  * Falls back to 'en' if no match.
  */
-function detectInitialLocale(): SupportedLocale {
+// Retained for the moment i18n is switched back on — see LAUNCH_LOCALE below.
+export function detectInitialLocale(): SupportedLocale {
   try {
     const locales = getLocales();
     if (locales && locales.length > 0) {
@@ -76,9 +77,26 @@ function detectInitialLocale(): SupportedLocale {
   return 'en';
 }
 
+// ── English-only at launch (2026-07-25) ────────────────────────────────────
+// `lng` is pinned to 'en' rather than detected from the device.
+//
+// The six non-English locales are 168 keys behind en.json (423 vs 591), and a
+// separate 608 hardcoded strings across 171 files were never wrapped in t() at
+// all. With device detection on, a Dutch or German phone therefore rendered a
+// HALF-translated app: wrapped-and-translated strings in the device language,
+// everything else in English. Mixed-language UI reads as unfinished in a way
+// that plain English does not, and this is a product people pay for.
+//
+// Nothing here is deleted: detectInitialLocale, the seven locale files and the
+// t() call sites all stay. Flipping back is this one line, once the key deficit
+// is closed and the 608 strings are wrapped — and preferably once a native
+// speaker has checked ja/ko, where machine-translated collector terminology
+// ("graded", "sealed", "slabbed") goes wrong in credibility-damaging ways.
+const LAUNCH_LOCALE: SupportedLocale = 'en';
+
 i18n.use(initReactI18next).init({
   resources,
-  lng: detectInitialLocale(),
+  lng: LAUNCH_LOCALE,
   fallbackLng: 'en',
   compatibilityJSON: 'v4', // for React Native < 0.72 with Intl polyfill gaps
   interpolation: {
