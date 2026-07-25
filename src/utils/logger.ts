@@ -1,27 +1,31 @@
 /**
- * Lightweight logger utility for CollectAI.
+ * Sparrow logger — re-export of the single implementation in `@/lib/logger`.
  *
- * - info/warn are gated behind __DEV__ so they are stripped in production builds.
- * - error always logs (production errors should still surface).
- * - The implementation wraps console.* so it can be swapped for a remote
- *   logging service (e.g. Sentry, Datadog) without touching call sites.
+ * There used to be TWO logger implementations with DIFFERENT production
+ * semantics: this one stripped `warn` behind __DEV__, while `@/lib/logger`
+ * always printed it. 102 files import this one and 44 the other, so whether
+ * `logger.warn('request failed')` survived into a release build depended
+ * entirely on which import a file happened to have — invisible at the call
+ * site, and impossible to reason about when reading a screen.
+ *
+ * That is the duplicate-implementation trap: a fix applied to one copy does
+ * nothing for the other, and both typecheck. Collapsed to one implementation so
+ * there is a single answer to "is this visible in production?".
+ *
+ * Behaviour now, for every caller:
+ *   debug/info   console output only in __DEV__
+ *   warn/error   always printed
+ *   ALL levels   retained in a bounded ring buffer, readable via getRecentLogs()
+ *
+ * The default export is preserved, so existing
+ * `import logger from '@/utils/logger'` call sites keep working unchanged.
  */
+import { createLogger } from '@/lib/logger';
 
-const TAG = '[Sparrow]';
+export { getRecentLogs, clearRecentLogs, createLogger } from '@/lib/logger';
+export type { RetainedLog } from '@/lib/logger';
 
-const logger = {
-  debug: (...args: unknown[]) => {
-    if (__DEV__) console.log(TAG, '[DEBUG]', ...args);
-  },
-  info: (...args: unknown[]) => {
-    if (__DEV__) console.log(TAG, ...args);
-  },
-  warn: (...args: unknown[]) => {
-    if (__DEV__) console.warn(TAG, ...args);
-  },
-  error: (...args: unknown[]) => {
-    console.error(TAG, ...args);
-  },
-};
+const logger = createLogger({ prefix: 'Sparrow' });
 
+export { logger };
 export default logger;

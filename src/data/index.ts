@@ -81,7 +81,23 @@ export type { DataProvider } from './DataProvider';
  * is transparent — callers see the same DataProvider interface.
  */
 function selectProvider(): DataProvider {
-  const mode = (process.env.EXPO_PUBLIC_SUPABASE_MODE ?? 'mock').toLowerCase();
+  // Defaulting to 'mock' when the env var is missing is only safe in dev. In a
+  // release build a missing EXPO_PUBLIC_SUPABASE_MODE would have served the
+  // ENTIRE app from MockDataProvider — fabricated items, portfolio and prices
+  // presented as the user's real data — and the only trace was a
+  // dataLogger.info, which release builds strip. eas.json does set 'strict' for
+  // the real profiles, so this is a latent trap rather than a live bug, but the
+  // failure mode is severe enough that it must not depend on one JSON key.
+  const rawMode = process.env.EXPO_PUBLIC_SUPABASE_MODE;
+  const mode = (rawMode ?? (__DEV__ ? 'mock' : 'strict')).toLowerCase();
+
+  if (!rawMode && !__DEV__) {
+    dataLogger.error(
+      '[data] EXPO_PUBLIC_SUPABASE_MODE is missing in a release build — ' +
+        'defaulting to strict (real backend) rather than serving mock data. ' +
+        'Check the eas.json build profile.',
+    );
+  }
 
   let inner: DataProvider;
 
@@ -89,7 +105,10 @@ function selectProvider(): DataProvider {
     dataLogger.info(`Using SupabaseDataProvider (mode=${mode})`);
     inner = supabaseDataProvider;
   } else {
-    dataLogger.info(`Using MockDataProvider (mode=${mode})`);
+    // logger.error, not info: mock data in a release build is a serious
+    // condition the user would otherwise have no way to detect.
+    const log = __DEV__ ? dataLogger.info : dataLogger.error;
+    log(`Using MockDataProvider (mode=${mode})`);
     inner = mockDataProvider;
   }
 

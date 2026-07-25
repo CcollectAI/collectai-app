@@ -15,7 +15,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { installRequestTimeouts } from '@/lib/supabase';
 
-jest.mock('@/lib/logger', () => ({ logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn() } }));
+// `@/utils/logger` is now a re-export of this module, so the mock must keep
+// createLogger present or every downstream importer breaks at require time.
+jest.mock('@/lib/logger', () => {
+  const noop = () => ({ debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() });
+  return {
+    logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+    createLogger: jest.fn(noop),
+    getRecentLogs: jest.fn(() => []),
+    clearRecentLogs: jest.fn(),
+  };
+});
 
 /** Builder whose `then` never settles, mimicking a stall behind the auth lock. */
 function hangingBuilder() {

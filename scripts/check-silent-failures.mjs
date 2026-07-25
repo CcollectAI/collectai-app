@@ -80,6 +80,29 @@ for (const abs of files) {
     add('unchecked-write', rel, lineOf(src, m.index), `${m[2]}() result discarded — cannot detect failure`);
   }
 
+
+  // ── E. Fabricated demo/mock data reachable in production ────────────────
+  // The worst silent failure: the UI renders invented numbers as the user's
+  // real data. portfolioAnalyticsStore returned DEMO_SERIES (a fake
+  // 1200 -> 2050 curve) and DEMO_SETS whenever the backend failed, ungated,
+  // on both Home and Analytics. The sibling DEMO_ITEMS path HAD been gated --
+  // the fix was applied to one of three and never swept.
+  // Files under a mocks/ directory legitimately DEFINE mock data; whether the
+  // mock provider is reachable in a release build is a separate question,
+  // answered in src/data/index.ts (which now refuses to default to mock).
+  for (const m of isMock ? [] : src.matchAll(/\b(DEMO|MOCK|SAMPLE|FAKE)_[A-Z0-9_]+\b/g)) {
+    const ln = lineOf(src, m.index);
+    const line = src.split('\n')[ln - 1] ?? '';
+    const t = line.trim();
+    if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) continue; // comment
+    if (/^\}?,?\s*\[[^\]]*\]\s*\)?;?$/.test(t)) continue;                     // deps array
+    if (/^(export\s+)?(const|let|var|type|interface)\s/.test(t)) continue;      // definition
+    if (/^import\b/.test(t)) continue;
+    const ctx = src.slice(Math.max(0, m.index - 200), m.index + 100);
+    if (/__DEV__|isDev|MODE\s*===|process\.env\.NODE_ENV/.test(ctx)) continue;  // gated
+    add('ungated-demo-data', rel, ln, `${m[0]} reachable in a release build`);
+  }
+
   // ── D. money/value coerced to 0 inside a sum ────────────────────────────
   // "unknown price" rendered as "worth 0" and silently folded into a total.
   if (!isMock) {
@@ -90,8 +113,9 @@ for (const abs of files) {
 }
 
 const byClass = findings.reduce((a, f) => ((a[f.cls] ??= []).push(f), a), {});
-const ORDER = ['capped-aggregate', 'unchecked-write', 'unknown-as-zero', 'swallowed-catch', 'prod-invisible-log'];
+const ORDER = ['ungated-demo-data', 'capped-aggregate', 'unchecked-write', 'unknown-as-zero', 'swallowed-catch', 'prod-invisible-log'];
 const SEVERITY = {
+  'ungated-demo-data': 'renders invented data as the user\'s real data',
   'capped-aggregate': 'renders a partial number as the whole truth',
   'unchecked-write': 'reports success when the write failed',
   'unknown-as-zero': 'renders "unknown" as "zero"',
