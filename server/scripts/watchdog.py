@@ -57,9 +57,12 @@ SERVER_ROOT = Path(__file__).resolve().parents[1]
 # GROWS — the remainder are unfinished/unwired features tracked separately, and a
 # daily alarm on a known backlog trains you to ignore the channel. Dropped 12->10
 # when event_follows_v1 and user_challenge_progress were allowlisted as deliberate
-# product decisions, and again to 9 when quickscan_history fell off entirely after
-# value_summary was repointed to predict_sessions (it now has zero readers).
-ORPHAN_HIGH_BASELINE = 9
+# product decisions; to 9 when quickscan_history fell off after value_summary was
+# repointed to predict_sessions; and to 7 when `images` (a docstring false
+# positive) and `taxonomy_registry` (works via code fallback) were allowlisted.
+# The remaining 7 are two unbuilt feature clusters — sets/set_items/set_registry
+# and listings/deal_ratings/offer_evidence(+collections) — awaiting a product call.
+ORPHAN_HIGH_BASELINE = 7
 
 
 def tbl_link(table: str) -> str:

@@ -80,6 +80,15 @@ ALLOWLIST: dict[str, str] = {
     "user_challenge_progress": "2026-07-25 product decision: gamification challenges are out of "
                                "scope. `challenges` has 6 seed rows but no progress writer, and "
                                "that is intentional — do not wire one.",
+    "images": "FALSE POSITIVE, verified 2026-07-25. The only 'reader' is prose in a docstring: "
+              "vision_classifier.py:4 reads 'Classifies collectible items FROM IMAGES using a "
+              "3-tier approach'. The PY_READ regex cannot tell SQL from English. No query "
+              "touches this table.",
+    "taxonomy_registry": "Vestigial, verified 2026-07-25. taxonomy_router falls back to "
+                         "_fallback_taxonomy() when the table is empty and GET /taxonomy/current "
+                         "returns the full 36-category taxonomy from code. The table would only "
+                         "matter for versioned remapping; pipelines/taxonomy_seed.py can seed it "
+                         "if that is ever wanted. Nothing is broken.",
 }
 
 # Write verbs. A reference is a WRITE if one of these appears near the table
