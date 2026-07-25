@@ -14,7 +14,7 @@ Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funk
 
 ## Current state (2026-07-25)
 
-- **Active branch:** `feature/creator-funnel-admin-dashboard`. iOS build 98 built locally (99 building); last on TestFlight was 96.
+- **Active branch:** `feature/micro-interactions-haptics`. iOS build 100 built locally 2026-07-25 (`builds/sparrow-ios-local.ipa`); last on TestFlight was 96.
 - **Apple:** Individual enrollment (Team `3DX8FBF7S6`), App ID `6767359453`, bundle `io.sparrowcollect.app`.
 - **IAP:** RevenueCat Free + Pro (EUR 4.99/mo, EUR 39.99/yr) + Premium. **All current
   accounts and items are TEST data** (confirmed 2026-07-25) — treat prod data as disposable.
@@ -40,6 +40,38 @@ A writer and a reader that were never connected, plus a construct that turns
 `except: pass`, Pydantic or Zod dropping an undeclared field, a CHECK constraint
 narrower than the code, a LEFT JOIN yielding NULL, a `?? 0` default. Nothing
 goes red, so a dead feature is indistinguishable from an unused one.
+
+**Enumerate this class mechanically; never triage it by judgment.** The pattern
+that made bugs surface late was: fix the reported instance, hand-triage the
+rest, declare done — then the user hits the next one. `npm run verify:silent`
+(`scripts/check-silent-failures.mjs`) turns each variant into a check:
+
+| class | what it renders |
+|---|---|
+| `ungated-demo-data` | invented data as the user's real data |
+| `capped-aggregate` | a partial number as the whole truth |
+| `unchecked-write` | success when the write failed |
+| `unknown-as-zero` | "unknown" as "zero" |
+| `swallowed-catch` | no trace at all |
+| `prod-invisible-log` | a trace stripped from release builds |
+
+The first four are at 0 and each was proven to fail before being fixed. Two real
+bugs it caught: `fetchPortfolioSeries` returned a fabricated €1200→€2050 curve
+ungated in production (its `DEMO_ITEMS` sibling *had* been gated — the fix was
+applied to one of three and never swept), and `usePortfolioInsights` summed a
+list capped at `limit: 50` to produce the portfolio total.
+
+Intentional swallows carry a `best-effort:` marker stating why, so a decision is
+distinguishable from an oversight. Remaining and reported, not hidden: 91
+swallowed catches (none touching a backend call) and 181 logging only via
+warn/info.
+
+**One logger, not two.** `@/utils/logger` used to strip `warn` while
+`@/lib/logger` printed it; 102 files imported one and 44 the other, so whether a
+failure survived into a release build depended on which import a file happened
+to have. Collapsed to one implementation; every level is retained in a bounded
+ring buffer readable via `getRecentLogs()`, so a failure is recoverable even
+when it is not printed.
 
 Three advisory audits exist for it — none blocks CI:
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes
@@ -117,17 +149,29 @@ refreshes nor retries, and there is a recovery path. `httpClient.readAccessToken
 and `AuthProvider` follow that pattern; read `docs/AUTH_AND_WEB_DEPLOY.md` before
 touching any of it.
 
-**Known unbounded, deliberately NOT fixed yet** (swept 2026-07-25; 25 files have
-unbounded `await supabase`, most harmless because nothing gates on them):
+**4. The bound now lives on the CLIENT, not the call site** (2026-07-25).
+Fixing call sites one at a time did not converge. A hand grep found 49 unbounded
+`await supabase`; a mechanical check found **90** — the grep missed multi-line
+`await supabase\n  .from(...)`. So `installRequestTimeouts()` in
+`src/lib/supabase.ts` wraps `.from()` and `.rpc()`: every PostgREST call is
+bounded by construction (15s), including code not yet written.
 
-| file | why it is left | severity |
-|---|---|---|
-| `app/(auth)/login.tsx` (3), `register.tsx` (2), `forgot-password.tsx`, `reset-password.tsx`, `mfa-setup.tsx` (5) | all are AUTH ops — see the warning above. A hang here spins a button the user can see and retry, unlike a silent skeleton | medium, visible |
-| `settings/ProfileEditSection.tsx` (2), `PrivacySettingsSection.tsx` (4) | plain PostgREST, safe to bound — just not done yet | low |
-| `buildPaintProvider.ts` (15) | feature has 0 rows | low |
+On timeout it **resolves** with `{ data: null, error: { code: 'TIMEOUT' } }` —
+the shape callers already destructure — rather than rejecting, which would trade
+silent hangs for unhandled throws. Screens may still set a tighter bound
+(`listItems` uses 8s); the client is the backstop that stops "forever", not
+"slow".
 
-Fixed so far: `itemsProvider.listItems`, `usePaginatedList` (all callers),
-`add-manual.tsx` (3 calls), `AuthProvider` (2 calls).
+`auth.*` is deliberately NOT wrapped, for the revocation reason above. Those 18
+call sites are listed in `scripts/unbounded-await-allowlist.json`, each with a
+written reason. `npm run verify:unbounded` fails if the central bound is removed
+or a new unallowlisted auth await appears; both regressions were reintroduced to
+prove it bites. Pinned by `__tests__/lib/supabaseTimeout.test.ts`.
+
+**Save paths count too.** `add-manual.tsx` had three unbounded awaits between
+`setSaveState("saving")` and anything clearing it, so the button hung forever:
+nothing saved, no error, nothing logged. Any await between a spinner going up
+and coming down must be bounded.
 
 ### The catalog ↔ price crosswalk
 

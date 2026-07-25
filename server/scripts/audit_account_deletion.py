@@ -53,6 +53,38 @@ BASE_TABLES_SQL = """
       AND t.table_type = 'BASE TABLE'
 """
 
+# A DELETE inside the 15s statement_timeout seq-scans any table without an
+# index on user_id. 24 of the 82 deletion targets have no such index, but the
+# largest is `events` at ~1,981 rows, where a seq scan costs microseconds — so
+# adding 24 indexes today would buy nothing and cost write throughput on every
+# insert. docs/DATA_SCALING_PLAN.md governance rule 1 is "every new index needs
+# a written justification of which existing index doesn't serve; default state =
+# refuse to add", and this is exactly the case that rule exists for (24 indexes
+# on one table is what prompted it).
+#
+# So: warn on growth rather than pre-indexing. Past this row count a seq scan
+# starts to matter and the index becomes justifiable — with this audit's output
+# as the written justification.
+UNINDEXED_ROW_WARN = 50_000
+
+UNINDEXED_SQL = """
+    SELECT t.relname AS tbl, s.n_live_tup AS rows
+    FROM pg_class t
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    JOIN pg_stat_user_tables s ON s.relname = t.relname AND s.schemaname = n.nspname
+    WHERE n.nspname = 'public'
+      AND t.relkind = 'r'
+      AND EXISTS (
+        SELECT 1 FROM pg_attribute a
+        WHERE a.attrelid = t.oid AND a.attname = 'user_id' AND a.attnum > 0
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM pg_index i
+        JOIN pg_attribute a2 ON a2.attrelid = t.oid AND a2.attnum = ANY(i.indkey)
+        WHERE i.indrelid = t.oid AND a2.attname = 'user_id'
+      )
+"""
+
 CASCADE_SQL = """
     SELECT DISTINCT tc.table_name, rc.delete_rule
     FROM information_schema.table_constraints tc
@@ -106,6 +138,7 @@ async def main() -> int:
     try:
         base = {r["table_name"] for r in await conn.fetch(BASE_TABLES_SQL)}
         cascade = {r["table_name"] for r in await conn.fetch(CASCADE_SQL) if r["delete_rule"] == "CASCADE"}
+        unindexed = {r["tbl"]: (r["rows"] or 0) for r in await conn.fetch(UNINDEXED_SQL)}
     finally:
         await conn.close()
 
@@ -113,6 +146,13 @@ async def main() -> int:
     base = {t for t in base if not t.startswith(PARTITION_PREFIXES)}
 
     gaps = sorted(base - cascade - allowed - set(retained))
+    # Only deletion targets matter: an unindexed table nobody deletes from is
+    # not on the request path.
+    slow = sorted(
+        ((t, n) for t, n in unindexed.items() if t in allowed and n >= UNINDEXED_ROW_WARN),
+        key=lambda x: -x[1],
+    )
+    unindexed_small = sum(1 for t in unindexed if t in allowed)
     stale_allowed = sorted(allowed - base)
     stale_retained = sorted(set(retained) - base)
     unreasoned = sorted(t for t, why in retained.items() if not why or why == "(no reason)")
@@ -122,6 +162,8 @@ async def main() -> int:
             "with_user_id": len(base), "cascade": len(base & cascade),
             "deleted": len(base & allowed), "retained": len(base & set(retained)),
             "gaps": gaps, "stale_allowed": stale_allowed, "stale_retained": stale_retained,
+            "unindexed_deletion_targets": unindexed_small,
+            "unindexed_over_warn": [{"table": t, "rows": n} for t, n in slow],
         }, indent=2))
     else:
         print("\n=== DELETE /account coverage (live schema) ===\n")
@@ -138,9 +180,17 @@ async def main() -> int:
             print(f"    STALE  {t} is listed as retained but no longer exists")
         for t in unreasoned:
             print(f"    NO REASON  {t} is retained without a written justification")
+        print(f"\n  deletion targets without an index on user_id: {unindexed_small}")
+        if slow:
+            print(f"  ...of which {len(slow)} now exceed {UNINDEXED_ROW_WARN:,} rows —")
+            print("  an index is now justifiable (DATA_SCALING_PLAN rule 1); cite this output:")
+            for t, n in slow:
+                print(f"    INDEX NEEDED  {t}  ~{n:,} rows — DELETE seq-scans inside a 15s timeout")
+        else:
+            print(f"  none exceed {UNINDEXED_ROW_WARN:,} rows — seq scan is cheap, no index warranted")
         print()
 
-    return 1 if (gaps or stale_allowed or stale_retained or unreasoned) else 0
+    return 1 if (gaps or stale_allowed or stale_retained or unreasoned or slow) else 0
 
 
 if __name__ == "__main__":
