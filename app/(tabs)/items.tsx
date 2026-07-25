@@ -36,6 +36,7 @@ import {
   useOptimisticBulkArchive,
   useOptimisticBulkDelete,
 } from "@/hooks/useOptimisticItems";
+import { useAuthContext } from '@/providers/useAuthContext';
 import { usePaginatedList } from "@/hooks/usePaginatedList";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
@@ -92,6 +93,8 @@ const ItemsScreen: React.FC = () => {
   const [query, setQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   // Paginated data fetching
+  const { loading: authLoading } = useAuthContext();
+
   const itemFetcher = useCallback(
     async (limit: number, offset: number): Promise<Item[]> => {
       const items = await dataProvider.listItems({ limit, offset });
@@ -109,7 +112,13 @@ const ItemsScreen: React.FC = () => {
     loadMore,
     refresh: paginatedRefresh,
     setItems: setProviderItems,
-  } = usePaginatedList<Item>(itemFetcher, { pageSize: ITEMS_PAGE_SIZE });
+  } = usePaginatedList<Item>(itemFetcher, {
+    pageSize: ITEMS_PAGE_SIZE,
+    // Don't fire the first Supabase read while the session is still hydrating:
+    // supabase-js queues it behind the auth lock, so it stalls for the full 8s
+    // timeout and returns empty instead of failing fast.
+    enabled: !authLoading,
+  });
 
   // Stagger animation for list items — compute flat index map
   const { getItemStyle: getStaggerStyle } = useStaggerReveal({

@@ -176,3 +176,58 @@ describe('usePaginatedList — a hanging fetcher must not pin the skeleton', () 
     expect(result.current.error).toMatch(/timed out/i);
   });
 });
+
+/**
+ * The `enabled` gate — deferring the first fetch until auth has hydrated.
+ *
+ * Cold-start measurement (2026-07-25): firing the first Supabase read before the
+ * session resolved did not fail fast, it STALLED behind supabase-js's auth lock
+ * and burned the whole 8s timeout before returning empty. Gating removes that.
+ *
+ * The second test here is the one that matters. Gating on auth introduces a new
+ * way to hang: if the session wedges, `enabled` never flips and the skeleton is
+ * pinned again — the same bug by a different route. GATE_MAX_WAIT_MS exists to
+ * make that impossible, so it is pinned explicitly.
+ */
+describe('usePaginatedList — enabled gate', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
+  });
+
+  it('does NOT fetch while disabled, then fetches once it is enabled', async () => {
+    const fetcher = jest.fn().mockResolvedValue([{ id: 1 }]);
+    const { rerender } = renderHook(
+      ({ on }: { on: boolean }) => usePaginatedList(fetcher, { enabled: on }),
+      { initialProps: { on: false } },
+    );
+
+    expect(fetcher).not.toHaveBeenCalled(); // gated — no wasted stalling query
+
+    await act(async () => {
+      rerender({ on: true });
+    });
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    // Must stay one-shot: later re-renders must not refire it.
+    await act(async () => {
+      rerender({ on: true });
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('fetches anyway if the gate never opens, so a wedged session cannot pin the skeleton', async () => {
+    const fetcher = jest.fn().mockResolvedValue([]);
+    renderHook(() => usePaginatedList(fetcher, { enabled: false }));
+
+    expect(fetcher).not.toHaveBeenCalled();
+
+    await act(async () => {
+      jest.advanceTimersByTime(6_000); // past GATE_MAX_WAIT_MS
+    });
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+});

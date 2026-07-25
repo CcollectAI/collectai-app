@@ -23,6 +23,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useFocusEffect } from "expo-router";
+import { useAuthContext } from "@/providers/useAuthContext";
 import { PortfolioLineChart, type TimeSeriesPoint } from "@/components/PortfolioLineChart";
 import { SkeletonPortfolioHeader } from "@/components/Skeleton";
 import { dataProvider } from "@/data";
@@ -244,6 +245,9 @@ function PortfolioScreen() {
     return { total: endVal, delta: d, deltaPct: pct };
   }, [series]);
 
+  const { loading: authLoading } = useAuthContext();
+
+
   // Load data based on mode and range
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -327,8 +331,16 @@ function PortfolioScreen() {
   // useFocusEffect). Refetching on focus repopulates Home once the token lands.
   useFocusEffect(
     useCallback(() => {
+      // Wait for the session to hydrate before the first load. Firing during the
+      // tokenless cold-start window does not fail fast: getAuthHeaders burns its
+      // 6s refresh window, the request then goes out unauthenticated and 401s,
+      // and `loading` — and therefore the chart skeleton — stays up for the whole
+      // round. Measured on the simulator 2026-07-25: still skeletonised 30s
+      // after launch. useFocusEffect re-runs when authLoading flips, so the load
+      // fires as soon as the session lands.
+      if (authLoading) return;
       loadData();
-    }, [loadData]),
+    }, [loadData, authLoading]),
   );
 
   // Load category breakdown — also on focus, same cold-start reason as above.

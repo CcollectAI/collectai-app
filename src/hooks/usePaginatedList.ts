@@ -21,6 +21,11 @@ import { withTimeout, TimeoutError } from '../lib/withTimeout';
 // clears" holds even for a fetcher that forgot its own guard.
 const FETCH_TIMEOUT_MS = 12_000;
 
+// Longest we will wait for `enabled` (auth hydration) before fetching anyway.
+// Comfortably longer than a normal cold-start session read, short enough that a
+// wedged session costs seconds, not a permanently stuck screen.
+const GATE_MAX_WAIT_MS = 5_000;
+
 const DEFAULT_PAGE_SIZE = 20;
 
 export type PaginatedFetcher<T> = (limit: number, offset: number) => Promise<T[]>;
@@ -28,6 +33,19 @@ export type PaginatedFetcher<T> = (limit: number, offset: number) => Promise<T[]
 export type UsePaginatedListOptions = {
   /** Items per page (default 20) */
   pageSize?: number;
+  /**
+   * Defer the initial fetch until this is true. Pass `!auth.loading` so the
+   * first query does not fire while the Supabase session is still hydrating.
+   *
+   * Why: supabase-js queues queries behind its auth lock during hydration, so a
+   * query fired too early does not fail fast — it STALLS, burning the full
+   * timeout (8s on listItems) before returning empty, and the screen only
+   * recovers on the next focus-refetch. Measured on a cold start 2026-07-25.
+   *
+   * `isLoading` stays true while gated, which is honest: we really are loading.
+   * Defaults to true so existing callers are unaffected.
+   */
+  enabled?: boolean;
 };
 
 export type UsePaginatedListReturn<T> = {
@@ -47,6 +65,7 @@ export function usePaginatedList<T>(
   options: UsePaginatedListOptions = {},
 ): UsePaginatedListReturn<T> {
   const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
+  const enabled = options.enabled ?? true;
 
   const [items, setItems] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -118,11 +137,35 @@ export function usePaginatedList<T>(
     [fetcher, pageSize],
   );
 
-  // Auto-load on mount
+  // Auto-load once the gate opens (defaults to immediately).
+  //
+  // `didInitialFetchRef` keeps this a ONE-shot: the effect re-runs when
+  // `enabled` flips false->true, but must not refire on later re-renders.
+  //
+  // GATE_MAX_WAIT_MS is the important half. Gating on auth means a wedged
+  // session would otherwise hold `enabled` false forever and pin the skeleton —
+  // reintroducing the exact bug this hook was just fixed for, by a different
+  // route. So the gate is an optimisation with a deadline: wait for auth if it
+  // is coming, but fetch anyway rather than wait indefinitely, and let the
+  // fetch timeout handle the fallout.
+  const didInitialFetchRef = useRef(false);
   useEffect(() => {
-    fetchPage(true);
+    if (didInitialFetchRef.current) return;
+
+    if (enabled) {
+      didInitialFetchRef.current = true;
+      fetchPage(true);
+      return;
+    }
+
+    const t = setTimeout(() => {
+      if (didInitialFetchRef.current) return;
+      didInitialFetchRef.current = true;
+      fetchPage(true);
+    }, GATE_MAX_WAIT_MS);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enabled]);
 
   const loadMore = useCallback((): Promise<void> => {
     if (!hasMore || isLoadingMore || isLoading) return Promise.resolve();
