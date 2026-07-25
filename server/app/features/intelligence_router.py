@@ -366,6 +366,18 @@ async def top_events(
                   + 10 * COALESCE(r.rsvp_count, 0) AS engagement_score
             FROM public.events e
             LEFT JOIN views v ON v.event_id = e.id::text
+            -- NOTE: this joins on e.canonical_key while views/rsvps join on
+            -- e.id::text. events.canonical_key is NULL on all 1,981 rows and
+            -- has NO writer, so f.follower_count is always NULL and the
+            -- follower term -- weighted 5x below -- is structurally 0 behind
+            -- its COALESCE. Harmless today because event-following is a
+            -- cancelled feature and event_follows_v1 is empty, which is why
+            -- this is documented rather than "fixed": closing it would rebuild
+            -- a feature that was deliberately dropped.
+            -- If follows are ever enabled, this join must move to e.id::text
+            -- (or canonical_key must get a writer) or engagement_score will
+            -- silently undercount every event with zero errors.
+            -- Found by audit_key_overlap.py --discover, 2026-07-25.
             LEFT JOIN follows f ON f.event_id = e.canonical_key
             LEFT JOIN rsvps r ON r.event_id = e.id::text
             WHERE COALESCE(v.view_count, 0)
