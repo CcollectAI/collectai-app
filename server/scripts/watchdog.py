@@ -53,6 +53,11 @@ PROJECT_REF = os.getenv("SUPABASE_PROJECT_REF") or (
 REPO = "https://github.com/CcollectAI/collectai-app/blob/main"
 SERVER_ROOT = Path(__file__).resolve().parents[1]
 
+# Known orphan-table backlog as of 2026-07-25. The watchdog pages only when this
+# GROWS — the existing 12 are unfinished/unwired features tracked separately, and
+# a daily alarm on a known backlog trains you to ignore the channel.
+ORPHAN_HIGH_BASELINE = 12
+
 
 def tbl_link(table: str) -> str:
     """Supabase table-editor deep link."""
@@ -286,6 +291,58 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
                             "detail": "%d declared joins, no unexplained dead ones" % len(rep["report"])})
     except Exception as e:
         bug("info", "key-overlap audit could not run", str(e)[:200])
+
+    # --- orphan tables: read by code, written by nothing ---
+    # Advisory backlog, so this reports a COUNT and only escalates when it grows.
+    # A dead-feature backlog you can't see is how 12 of these accumulated.
+    try:
+        import subprocess, json as _json
+        r = subprocess.run(
+            ["/opt/collectors/.venv/bin/python",
+             str(SERVER_ROOT / "scripts" / "audit_orphan_tables.py"), "--json"],
+            capture_output=True, timeout=600, cwd=str(SERVER_ROOT))
+        f = _json.loads(r.stdout.decode() or "{}").get("findings", [])
+        high = [x for x in f if x.get("severity") == "HIGH" or x.get("confidence") == "HIGH"]
+        if len(high) > ORPHAN_HIGH_BASELINE:
+            bug("medium", "orphan-table HIGH findings rose to %d (baseline %d)"
+                % (len(high), ORPHAN_HIGH_BASELINE),
+                "Tables read by code that nothing writes — each is a feature that cannot populate: %s"
+                % ", ".join(sorted(x.get("table", "?") for x in high)[:12]),
+                src_link("server/scripts/audit_orphan_tables.py"),
+                "python3 scripts/audit_orphan_tables.py",
+                "Repoint the reader to the real table, or finish/remove the feature")
+        else:
+            healthy.append({"check": "orphan tables",
+                            "detail": "%d HIGH (baseline %d)" % (len(high), ORPHAN_HIGH_BASELINE)})
+    except Exception as e:
+        bug("info", "orphan-table audit could not run", str(e)[:200])
+
+    # --- mv_supply_trend: adding a refresh cron ZEROES it ---
+    # Its definition filters snapshot_at > now() - 90 days, and supply_snapshots
+    # stopped being written 2026-05-04 (DEAL_DISCOVERY_ENABLED=false). The stale
+    # matview is currently the ONLY thing keeping scan scarcity alive. Warn as
+    # the 90-day horizon approaches so nobody "fixes" it by adding a refresh.
+    try:
+        row = await c.fetchrow("""
+            SELECT (SELECT count(*) FROM public.mv_supply_trend) AS rows,
+                   (SELECT max(snapshot_at) FROM public.supply_snapshots) AS last_write
+        """)
+        if row and row["rows"] and row["last_write"]:
+            age_days = (datetime.now(timezone.utc) - row["last_write"]).days
+            if age_days > 75:
+                bug("medium", "mv_supply_trend is %d days from going empty" % max(0, 90 - age_days),
+                    "supply_snapshots last written %d days ago; the matview filters to a 90-day "
+                    "window. DO NOT add a refresh cron — refreshing it now returns 0 rows and kills "
+                    "scan scarcity. Re-enable the writer (DEAL_DISCOVERY_ENABLED) or retire the feature."
+                    % age_days,
+                    src_link("server/workers/deal_discovery_worker.py"),
+                    "SELECT max(snapshot_at) FROM supply_snapshots;",
+                    "Re-enable the supply_snapshots writer, or drop mv_supply_trend and its readers")
+            else:
+                healthy.append({"check": "mv_supply_trend",
+                                "detail": "%d rows, source %d days old" % (row["rows"], age_days)})
+    except Exception:
+        pass
 
     # --- pricing coverage canary ---
     # The end-to-end assertion the four-month bug needed: can a catalog item

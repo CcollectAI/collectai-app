@@ -110,8 +110,15 @@ async def get_value_summary(
             days_as_member = (datetime.now(timezone.utc) - member_row["created_at"]).days
 
         # -- Scan count --
+        # 2026-07-25: was `quickscan_history`, a table with 0 rows and NO writer
+        # anywhere in the codebase — so "scans" on the value screen was pinned to
+        # 0 for every user forever. Scan history actually lands in
+        # `predict_sessions` (101 rows / 47 distinct users at repoint time),
+        # written by the predict pipeline. Same shape as the device_tokens ->
+        # user_push_tokens repoint: an empty parallel schema shadowing the real
+        # one. quickscan_history is now unreferenced and can be dropped.
         scan_row = await conn.fetchrow(
-            "SELECT COUNT(*) AS cnt FROM quickscan_history WHERE user_id = $1",
+            "SELECT COUNT(*) AS cnt FROM public.predict_sessions WHERE user_id = $1::uuid",
             user_id,
         )
         total_scans = scan_row["cnt"] if scan_row else 0
