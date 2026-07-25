@@ -157,10 +157,11 @@ _ALLOWED_TABLES = (
 # a missing table is a bug.
 _RETAINED_TABLES: dict[str, str] = {
     "market_hits": (
-        "Shared market observations, not user content. user_id only records who "
-        "triggered the lookup. Deleting would destroy price history for every "
-        "other user, and an unindexed DELETE scans all monthly partitions and "
-        "exceeds the 15s statement_timeout. Anonymised below instead."
+        "Shared market observations, not user content. MEASURED 2026-07-25: 0 of "
+        "3,332,124 rows have a non-null user_id -- the column is never written, "
+        "so there is no user data here to delete. Deleting would also destroy "
+        "price history for every other user, and an unindexed DELETE scans all "
+        "monthly partitions past the 15s statement_timeout."
     ),
     # market_hits partitions (market_hits_archive / _default / _yYYYYmMM) are
     # deliberately NOT listed: they are covered by the parent, and the audit
@@ -168,13 +169,17 @@ _RETAINED_TABLES: dict[str, str] = {
     "comps": "Derived market comparables keyed to catalog refs, not user content.",
 }
 
-# NOTE (open follow-up): market_hits still carries the triggering user_id and is
-# neither deleted nor anonymised. Anonymising it inline is not possible today
-# for the same reason deleting was not — there is no index on user_id, so an
-# UPDATE scans every monthly partition and exceeds the 15s statement_timeout.
-# Closing it properly needs an index on market_hits(user_id) first, then an
-# out-of-band anonymisation job; doing it in the request path would just trade
-# a data gap for a timeout. Recorded here rather than silently ignored.
+# market_hits needs NO deletion, anonymisation, or index. Measured 2026-07-25:
+# 0 of 3,332,124 rows carry a non-null user_id. The column exists but no writer
+# ever populates it, so there is no user data to remove — "anonymous crawl data"
+# is literally true, not a euphemism.
+#
+# Do NOT add an index on market_hits(user_id) to "enable" cleanup. That is the
+# table whose 24 indexes at 528k rows timed out PostgREST batch upserts and
+# stalled the entire ingest pipeline — the incident docs/DATA_SCALING_PLAN.md
+# was written about, and the reason its governance rule 1 is "default = refuse
+# to add". An index here would cost write throughput on 3.3M rows to serve
+# exactly zero of them.
 
 
 async def _do_account_delete(conn: asyncpg.Connection, user_id: str) -> None:
