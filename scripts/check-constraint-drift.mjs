@@ -64,8 +64,13 @@ for (const [key, allow] of allowed) {
   );
   for (const file of files) {
     if (file.includes('__tests__') || file.includes('/tests/')) continue;
-    const src = readFileSync(file, 'utf8');
+    let src = readFileSync(file, 'utf8');
     if (!src.includes(table)) continue;
+    // Strip SQL line comments before matching. An explanatory `-- ...` between
+    // FROM and the predicate pushed them past the span window, so the check
+    // could not see the very bug it was written for — caught by reintroducing
+    // it and getting a PASS.
+    src = src.replace(/--[^\n]*/g, '');
     for (const m of src.matchAll(stmt)) {
       if (allow.has(m[1])) continue;
       findings.push({
