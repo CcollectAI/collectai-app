@@ -1065,6 +1065,33 @@ class EventUpserter:
         client = self._get_client()
         rows = [self._event_to_row(e, source=source) for e in events]
 
+        # Deduplicate by the conflict key BEFORE batching.
+        #
+        # PostgREST compiles each batch into a single
+        # INSERT ... ON CONFLICT (<conflict_key>) DO UPDATE. If one batch
+        # contains the same key twice Postgres aborts the WHOLE statement with
+        #   ON CONFLICT DO UPDATE command cannot affect row a second time
+        # and all `batch_size` events are lost, not just the duplicate — and
+        # PostgREST reports it to the caller as a 500 on /rest/v1/events.
+        #
+        # Scrapers legitimately emit repeats: the same event appears in two
+        # newsletters, pagination overlaps, a retry re-sends. `upsert_catalog`
+        # in import_common.py was given exactly this guard on 2026-07-25
+        # (ee62c21) but this second copy of the pattern was missed, so the error
+        # kept firing from here — 9 occurrences in a 4h window. Last occurrence
+        # wins so later/fresher data overwrites.
+        key_cols = [k.strip() for k in conflict_key.split(",") if k.strip()]
+        deduped: dict[tuple, dict] = {}
+        for row in rows:
+            deduped[tuple(row.get(k) for k in key_cols)] = row
+        dropped = len(rows) - len(deduped)
+        if dropped:
+            log.info(
+                "[events] dropped %d within-batch duplicate row(s) before upsert "
+                "(same %s)", dropped, conflict_key,
+            )
+        rows = list(deduped.values())
+
         headers = _supabase_headers()
         # Use Prefer header to signal upsert on the desired columns
         headers["Prefer"] = f"resolution=merge-duplicates"
