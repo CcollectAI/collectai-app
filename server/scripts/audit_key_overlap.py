@@ -115,6 +115,17 @@ PAIRS = [
         "expect_partial": True,
     },
     {
+        "left": ("catalog_price_refs", "price_ref"),
+        "right": ("price_predictions", "item_ref"),
+        "note": (
+            "The catalog->price crosswalk MUST point at refs that actually exist. "
+            "If this goes DEAD the crosswalk is stale (predictions rolled out of the "
+            "30d window or changed key format) and every yugioh item silently loses "
+            "its price again. Rebuild with pipelines/build_catalog_price_crosswalk.py."
+        ),
+        "expect_partial": True,  # crosswalk spans all time; predictions are windowed
+    },
+    {
         "left": ("events", "canonical_key"),
         "right": ("event_follows_v1", "canonical_key"),
         "note": (

@@ -61,7 +61,7 @@ silently empty. **Nothing ever errored** — an empty join is a valid result.
 |---|---|---|
 | `items.canonical_key` | **bare** catalog key | `sm10-sm10-101` |
 | `category_items.item_key` | **bare** | `sm10-sm10-101` |
-| `items.canonical_ref` | **namespaced** (generated, STORED) | `pokemon:sm10-sm10-101` |
+| `items.canonical_ref` | **resolved price ref** (trigger-maintained) | `pokemon:sm10-sm10-101` |
 | `price_predictions.item_ref` | **namespaced** always (0 bare rows in 1.7M) | `pokemon:sm10-sm10-101` |
 | `price_prediction_daily.item_ref` | **namespaced** always | `pokemon:sm10-sm10-101` |
 | `market_hits.item_ref` | **namespaced** always | `pokemon:ex8-ex8-13` |
@@ -81,6 +81,34 @@ Rules:
   Identical plan and cost with and without it — governance rule 1 in
   `docs/DATA_SCALING_PLAN.md` is "default = refuse to add". Revisit only if a
   plan shows `items` as the expensive side.
+
+### The catalog ↔ price crosswalk
+
+Not every category shares a namespace between catalog and predictions. Measured
+catalog→price coverage ("can a user's item get a price?"):
+
+| category | catalog rows | priced | why |
+|---|---|---|---|
+| mtg | 25,407 | 99% | same slug both sides |
+| pokemon | 20,236 | 97% | same slug both sides |
+| yugioh | 38,312 | 0.6% → **95%** | catalog is per-PRINTING (`sbc1-en122-…`), predictions per-PASSCODE (`10000-…`) — bridged by `catalog_price_refs` |
+| lorcana, digimon, one_piece_tcg | 2,302 | ~0% | predictions keyed by TCGplayer product id; **no matcher yet** |
+| lego, watches, whiskey, gunpla, warhammer, … (40+) | ~62,000 | 0% | **no price source at all** — not a crosswalk problem |
+
+`catalog_price_refs` maps `(category, item_key) -> price_ref`, built by
+`pipelines/build_catalog_price_crosswalk.py`. `items.canonical_ref` is resolved
+by `trg_items_canonical_ref`, preferring the direct key (printing-exact) and
+falling back to the crosswalk.
+
+**Accuracy limit — do not present yugioh crosswalk prices as printing-exact.**
+The passcode price is per CARD, so every printing of a card shows the SAME
+value: a scarce 1st-edition and a common reprint are indistinguishable. Stored
+with `method='name_slug'`, `confidence=0.75` so it can be filtered later.
+Ambiguous names (8) are skipped, never guessed.
+
+**Rebuilding the crosswalk does NOT refire the trigger** — the builder
+re-touches `items` afterwards. If you change `catalog_price_refs` by hand, run
+`UPDATE items SET canonical_key = canonical_key WHERE canonical_key IS NOT NULL`.
 
 **Structural checks cannot catch this class.** The table existed, was populated,
 the column names matched, the SQL was valid, the endpoint returned 200. Only

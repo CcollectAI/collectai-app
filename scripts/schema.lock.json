@@ -3331,6 +3331,32 @@
       "nullable": false,
       "type": "int4"
     },
+    "catalog_price_refs.category": {
+      "nullable": false,
+      "type": "text"
+    },
+    "catalog_price_refs.confidence": {
+      "default": "0.0",
+      "nullable": false,
+      "type": "float4"
+    },
+    "catalog_price_refs.item_key": {
+      "nullable": false,
+      "type": "text"
+    },
+    "catalog_price_refs.method": {
+      "nullable": false,
+      "type": "text"
+    },
+    "catalog_price_refs.price_ref": {
+      "nullable": false,
+      "type": "text"
+    },
+    "catalog_price_refs.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
     "catalog_suggestions.confidence": {
       "default": "0.0",
       "nullable": true,
@@ -6840,7 +6866,6 @@
       "type": "text"
     },
     "items.canonical_ref": {
-      "default": "\nCASE\n    WHEN (canonical_key IS NULL) THEN NULL::text\n    WHEN (strpos(canonical_key, ':'::text) > 0) THEN canonical_key\n    WHEN (category IS NULL) THEN NULL::text\n    ELSE ((category || ':'::text) || canonical_key)\nEND",
       "nullable": true,
       "type": "text"
     },
@@ -22389,6 +22414,14 @@
       "gate_reasons",
       "created_at"
     ],
+    "catalog_price_refs": [
+      "category",
+      "item_key",
+      "price_ref",
+      "method",
+      "confidence",
+      "updated_at"
+    ],
     "catalog_suggestions": [
       "id",
       "user_id",
@@ -27802,6 +27835,12 @@
     "calibration_snapshots": [
       [
         "id"
+      ]
+    ],
+    "catalog_price_refs": [
+      [
+        "category",
+        "item_key"
       ]
     ],
     "catalog_suggestions": [
