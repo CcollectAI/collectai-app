@@ -14,10 +14,10 @@ Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funk
 
 ## Current state (2026-07-25)
 
-- **Active branch:** `feature/creator-funnel-admin-dashboard`. iOS build 96 on TestFlight.
+- **Active branch:** `feature/creator-funnel-admin-dashboard`. iOS build 98 built locally (99 building); last on TestFlight was 96.
 - **Apple:** Individual enrollment (Team `3DX8FBF7S6`), App ID `6767359453`, bundle `io.sparrowcollect.app`.
-- **IAP:** RevenueCat Free + Pro (EUR 4.99/mo, EUR 39.99/yr) + Premium. 4 paying users live
-  (3 pro, 1 premium) — note **none of them has added an item yet**.
+- **IAP:** RevenueCat Free + Pro (EUR 4.99/mo, EUR 39.99/yr) + Premium. **All current
+  accounts and items are TEST data** (confirmed 2026-07-25) — treat prod data as disposable.
 - **Builds are LOCAL ONLY** — `npm run build:ios:local`. Never `eas build` without `--local`.
 - **Before any local build:** `npm run verify:prebuild` (tsc + seam tests + live Supabase contract).
 
@@ -82,23 +82,73 @@ Rules:
   `docs/DATA_SCALING_PLAN.md` is "default = refuse to add". Revisit only if a
   plan shows `items` as the expensive side.
 
+### Loading states — the rule for any screen that fetches
+
+Two bugs on 2026-07-25, both presenting as "stuck on a skeleton", both from the
+same cause: **supabase-js ships NO per-request timeout.** A query fired while the
+session is hydrating does not fail fast — it stalls behind the auth lock.
+
+1. **Every direct Supabase read in a loading-gating path must use
+   `withTimeout`** (`src/lib/withTimeout.ts`). chat/category/user/watchlist
+   providers already did; `listItems` did not, so a stalled read left
+   `isLoading` true forever with no error and nothing in the logs — and
+   `logger.warn` is stripped in release builds, so it was invisible on exactly
+   the builds where it mattered. Log timeouts with `logger.error`.
+2. **Don't fire the first read until auth has hydrated.** Gate on
+   `useAuthContext().loading`: `usePaginatedList` takes `enabled`, and
+   index.tsx's focus effect returns early. This took cold-start auth-window
+   burns from ~46 to 0.
+3. **Any gate needs a deadline.** Gating on auth means a wedged session can pin
+   the skeleton again by another route — `GATE_MAX_WAIT_MS` (5s) fetches anyway.
+
+`usePaginatedList` enforces 1 and 3 for every caller (items, alerts, events, and
+any list screen added later), so this cannot be reintroduced by a new screen.
+Pinned by `__tests__/hooks/usePaginatedList.test.ts` — the three cases nobody had
+covered were: a promise that never settles, a gate that opens, a gate that never
+does. Wired into `verify:prebuild`.
+
 ### The catalog ↔ price crosswalk
 
 Not every category shares a namespace between catalog and predictions. Measured
 catalog→price coverage ("can a user's item get a price?"):
 
-| category | catalog rows | priced | why |
+| category | rows | priced | how |
 |---|---|---|---|
-| mtg | 25,407 | 99% | same slug both sides |
-| pokemon | 20,236 | 97% | same slug both sides |
-| yugioh | 38,312 | 0.6% → **95%** | catalog is per-PRINTING (`sbc1-en122-…`), predictions per-PASSCODE (`10000-…`) — bridged by `catalog_price_refs` |
-| lorcana, digimon, one_piece_tcg | 2,302 | ~0% | predictions keyed by TCGplayer product id; **no matcher yet** |
-| lego, watches, whiskey, gunpla, warhammer, … (40+) | ~62,000 | 0% | **no price source at all** — not a crosswalk problem |
+| mtg | 25,407 seed | 98% | same slug both sides, no bridging needed |
+| pokemon | 20,236 seed | 99% | same slug both sides |
+| yugioh | 58,565 tcgcsv | **100%** | derived from the price source (per-PRINTING) |
+| yugioh | 38,312 seed | 88% | via `catalog_price_refs` (per-CARD, approximate) |
+| lorcana / digimon / one_piece_tcg | 22,042 tcgcsv | **100%** | derived from the price source |
+| ⤷ same, old seed rows | 2,302 seed | 0% | superseded; see the seed/tcgcsv split below |
+| lego, watches, whiskey, gunpla, warhammer, … (40+) | ~62,000 | **0%** | **no sold-comp source** — see below |
 
-`catalog_price_refs` maps `(category, item_key) -> price_ref`, built by
+**The winning move was NOT a crosswalk.** Matching two namespaces was measured
+and rejected (name-only was 224-of-226 ambiguous for lorcana; adding set gave
+8.2% / 1.3% / 0.0%). Instead `import_tcgcsv.py --catalog` DERIVES catalog rows
+from the same products that produce the prices, so
+`category || ':' || item_key == price_predictions.item_ref` holds **by
+construction** — which is exactly why pokemon/mtg never needed bridging. Runs
+daily via `run_once(catalog=True)`, gated to `CATALOG_CATEGORIES`.
+
+`catalog_price_refs` remains for the **seed** yugioh rows only, built by
 `pipelines/build_catalog_price_crosswalk.py`. `items.canonical_ref` is resolved
 by `trg_items_canonical_ref`, preferring the direct key (printing-exact) and
 falling back to the crosswalk.
+
+**Seed vs tcgcsv:** the old `source='seed'` rows still exist alongside the
+derived ones and are mostly unpriceable. Do NOT bulk-delete them — 7.6% are
+non-card merchandise (figures, Digivices) that tcgcsv cannot cover, and user
+items point at seed keys. Deduplicate in the browse query using `source`. An item
+linked to a seed key shows €0 even though its tcgcsv twin is priced — that is the
+known `Azurite Sea Booster Box` case.
+
+**The 62,000 gap is ONE stubbed function, not a sourcing problem.** The scraper
+runs and collects ~74k hits/day for those categories (lego 26,903, warhammer
+18,477 …), but `ebay_caller.py:387 sold_comps()` **returns `[]`** pending
+migration to the Marketplace Insights API, so everything falls back to the Browse
+API = active listings, `is_listing = TRUE`, and `valuation_worker.py:279`
+excludes them. A listings→sold haircut is NOT calibratable: only 205 refs have
+both, and the observed ratio is backwards (1.32–1.60).
 
 **Accuracy limit — do not present yugioh crosswalk prices as printing-exact.**
 The passcode price is per CARD, so every printing of a card shows the SAME

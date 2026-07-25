@@ -84,6 +84,49 @@ Always use `AnimatedPressable` instead of `TouchableOpacity` or `Pressable`:
 </AnimatedPressable>
 ```
 
+## Loading states
+
+Any screen that fetches has to answer one question: **what happens if the fetch
+never comes back?** Get this wrong and the screen shows a skeleton forever, with
+no error and nothing in the logs. That shipped twice and was reported as "the app
+is stuck loading" (2026-07-25).
+
+The cause is worth knowing: **supabase-js has no per-request timeout**, and a
+query fired while the auth session is hydrating doesn't fail fast — it *stalls*
+behind the auth lock for the full duration.
+
+```tsx
+// 1. Bound every direct Supabase read that gates a skeleton.
+const res = await withTimeout(
+  supabase.from('items').select(ITEMS_SELECT),
+  8_000,
+  'listItems',
+);
+// Log timeouts with logger.error — info/warn are STRIPPED in release builds,
+// so a warn here is invisible on the builds where it matters most.
+
+// 2. Don't fetch until auth has hydrated.
+const { loading: authLoading } = useAuthContext();
+usePaginatedList(fetcher, { enabled: !authLoading });
+
+// 3. In a hand-rolled loader, gate the effect the same way.
+useFocusEffect(useCallback(() => {
+  if (authLoading) return;
+  loadData();
+}, [loadData, authLoading]));
+```
+
+`usePaginatedList` already enforces the timeout and the gate deadline for every
+caller, so prefer it over a hand-rolled list loader.
+
+**If you gate on something, give the gate a deadline.** Waiting on auth means a
+wedged session can pin the skeleton by a different route. The hook uses a 5s cap
+and fetches anyway.
+
+**Empty ≠ loading.** A screen with no data should render its empty state
+("No history yet…"), never a skeleton. If you can't tell them apart on screen,
+neither can the user.
+
 ## Component Checklist
 
 Before shipping a screen, verify:
@@ -94,6 +137,9 @@ Before shipping a screen, verify:
 - [ ] Replaces `TouchableOpacity`/`Pressable` with `AnimatedPressable`
 - [ ] No hardcoded colors (use theme colors)
 - [ ] Responsive to dark mode toggle
+- [ ] **Every fetch that gates a skeleton is bounded** (`withTimeout`, or via `usePaginatedList`)
+- [ ] **First fetch waits for `!authLoading`**, and the gate has a deadline
+- [ ] **Empty state is distinguishable from loading** on screen
 
 ## Import Pattern
 
