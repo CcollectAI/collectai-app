@@ -400,7 +400,7 @@ async def export_insurance_report(
                     -- the last 60 days; LATERAL fires once per item.
                     SELECT q50
                     FROM price_predictions
-                    WHERE item_ref = i.canonical_key
+                    WHERE item_ref = i.canonical_ref
                       AND generated_at > now() - interval '60 days'
                     ORDER BY generated_at DESC
                     LIMIT 1

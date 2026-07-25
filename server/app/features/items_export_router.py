@@ -206,7 +206,7 @@ async def export_items_overview(
                     -- collection walks all partitions 100 times.
                     SELECT q50
                     FROM price_predictions
-                    WHERE item_ref = i.canonical_key
+                    WHERE item_ref = i.canonical_ref
                       AND generated_at > now() - interval '60 days'
                     ORDER BY generated_at DESC
                     LIMIT 1
@@ -342,7 +342,7 @@ async def export_items_full(
                 LEFT JOIN LATERAL (
                     SELECT q10, q50, q90
                     FROM price_predictions
-                    WHERE item_ref = i.canonical_key
+                    WHERE item_ref = i.canonical_ref
                       AND generated_at > now() - interval '60 days'
                     ORDER BY generated_at DESC
                     LIMIT 1

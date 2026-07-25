@@ -266,7 +266,7 @@ async def get_home_widget(
                         pp.item_ref,
                         pp.q50 AS latest_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
@@ -275,7 +275,7 @@ async def get_home_widget(
                         pp.item_ref,
                         pp.q50 AS prev_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                       AND pp.generated_at <= $2
                     ORDER BY pp.item_ref, pp.generated_at DESC
@@ -300,7 +300,7 @@ async def get_home_widget(
                     COALESCE(SUM(c.prev_q50), 0)     AS yesterday_value,
                     COALESCE(
                         (SELECT COALESCE(i.title, i.canonical_key, i.id::text)
-                         FROM mover m JOIN items i ON i.canonical_key = m.item_ref),
+                         FROM mover m JOIN items i ON i.canonical_ref = m.item_ref),
                         '--'
                     ) AS biggest_mover_name,
                     COALESCE(

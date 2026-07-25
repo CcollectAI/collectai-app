@@ -50,7 +50,7 @@ FROM (
     SELECT DISTINCT ON (pp.item_ref)
         pp.q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
       AND pp.generated_at > now() - interval '60 days'
@@ -66,7 +66,7 @@ FROM (
     SELECT DISTINCT ON (pp.item_ref)
         pp.q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
       AND pp.generated_at > $2 - interval '30 days'
@@ -83,7 +83,7 @@ WITH current_vals AS (
         pp.q50 AS current_q50,
         i.title AS item_name
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
       -- Partition prune: latest predictions are always within last 60d.
@@ -95,7 +95,7 @@ historical_vals AS (
         pp.item_ref,
         pp.q50 AS old_q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
       AND pp.generated_at <= $2

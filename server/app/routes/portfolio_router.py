@@ -104,7 +104,7 @@ async def portfolio_timeseries(
                     DATE(pp.generated_at) AS day,
                     COALESCE(SUM(pp.q50), 0) AS total_value
                 FROM price_predictions pp
-                JOIN items i ON i.canonical_key = pp.item_ref
+                JOIN items i ON i.canonical_ref = pp.item_ref
                 WHERE i.user_id = $1
                   AND pp.generated_at >= $2
                 GROUP BY DATE(pp.generated_at)
@@ -135,7 +135,7 @@ async def portfolio_timeseries(
                     WITH latest AS (
                         SELECT DISTINCT ON (pp.item_ref) pp.item_ref, pp.q50
                         FROM price_predictions pp
-                        JOIN items i ON i.canonical_key = pp.item_ref
+                        JOIN items i ON i.canonical_ref = pp.item_ref
                         WHERE i.user_id = $1
                         ORDER BY pp.item_ref, pp.generated_at DESC
                     )
@@ -143,7 +143,7 @@ async def portfolio_timeseries(
                         COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)
                     ), 0)
                     FROM items i
-                    LEFT JOIN latest l ON l.item_ref = i.canonical_key
+                    LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                     WHERE i.user_id = $1
                     """,
                     user_id,
@@ -192,7 +192,7 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50, pp.generated_at
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
@@ -200,7 +200,7 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50 AS prev_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                       AND pp.generated_at < CURRENT_DATE
                     ORDER BY pp.item_ref, pp.generated_at DESC
@@ -216,8 +216,8 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
                     COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0) AS current_value,
                     COALESCE(p.prev_q50, l.q50, i.predicted_price_eur, i.estimated_value, 0) AS prev_value
                 FROM items i
-                LEFT JOIN latest l ON l.item_ref = i.canonical_key
-                LEFT JOIN prev p ON p.item_ref = i.canonical_key
+                LEFT JOIN latest l ON l.item_ref = i.canonical_ref
+                LEFT JOIN prev p ON p.item_ref = i.canonical_ref
                 WHERE i.user_id = $1
                 ORDER BY COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0) DESC
                 """,
@@ -289,7 +289,7 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50, pp.q10, pp.q90
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
@@ -297,7 +297,7 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50 AS first_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                     ORDER BY pp.item_ref, pp.generated_at ASC
                 )
@@ -308,8 +308,8 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     COALESCE(l.q90, 0) AS q90,
                     COALESCE(e.first_q50, 0) AS cost_basis
                 FROM items i
-                LEFT JOIN latest l ON l.item_ref = i.canonical_key
-                LEFT JOIN earliest e ON e.item_ref = i.canonical_key
+                LEFT JOIN latest l ON l.item_ref = i.canonical_ref
+                LEFT JOIN earliest e ON e.item_ref = i.canonical_ref
                 WHERE i.user_id = $1
                 ORDER BY COALESCE(l.q50, 0) DESC
                 """,
@@ -356,7 +356,7 @@ async def portfolio_summary(user_id: str = Depends(get_current_user_id)) -> dict
                     FROM items i
                     LEFT JOIN LATERAL (
                         SELECT q50 FROM price_predictions pp
-                        WHERE pp.item_ref = i.canonical_key
+                        WHERE pp.item_ref = i.canonical_ref
                         ORDER BY pp.generated_at DESC LIMIT 1
                     ) lp ON TRUE
                     WHERE i.user_id = $1
@@ -429,7 +429,7 @@ async def portfolio_category_stats(
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50, pp.generated_at
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
@@ -437,7 +437,7 @@ async def portfolio_category_stats(
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50 AS q50_7d
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                       AND pp.generated_at <= NOW() - INTERVAL '7 days'
                     ORDER BY pp.item_ref, pp.generated_at DESC
@@ -450,8 +450,8 @@ async def portfolio_category_stats(
                     COALESCE(SUM(l.q50), 0) - COALESCE(SUM(p.q50_7d), 0) AS change_7d,
                     MAX(l.q50) AS max_item_value
                 FROM items i
-                LEFT JOIN latest l ON l.item_ref = i.canonical_key
-                LEFT JOIN prev_7d p ON p.item_ref = i.canonical_key
+                LEFT JOIN latest l ON l.item_ref = i.canonical_ref
+                LEFT JOIN prev_7d p ON p.item_ref = i.canonical_ref
                 WHERE i.user_id = $1
                   AND i.category IS NOT NULL
                 GROUP BY i.category
@@ -518,7 +518,7 @@ async def category_health(
                         DATE(pp.generated_at) AS day,
                         SUM(pp.q50) AS day_val
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                       AND pp.generated_at >= NOW() - INTERVAL '30 days'
                     GROUP BY i.category, DATE(pp.generated_at)

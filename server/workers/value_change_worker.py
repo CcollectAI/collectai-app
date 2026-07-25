@@ -45,7 +45,7 @@ ITEM_DEDUP_HOURS = 72
 # R49 — All 3 queries rewritten against actual prod schema:
 #   pp.item_id  → pp.item_ref (text)
 #   pp.asof     → pp.generated_at
-#   i.id = pp.X → i.canonical_key = pp.item_ref (text = text)
+#   i.id = pp.X → i.canonical_ref = pp.item_ref (text = text)
 #   i.name      → i.title
 
 # Get all users with at least 1 item and their current portfolio value
@@ -57,7 +57,7 @@ WITH latest_predictions AS (
         i.user_id,
         i.title AS item_name
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
     WHERE pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
       AND i.user_id IS NOT NULL
@@ -83,7 +83,7 @@ WITH historical_predictions AS (
         pp.item_ref,
         pp.q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
@@ -102,7 +102,7 @@ WITH current_vals AS (
         pp.q50 AS current_q50,
         i.title AS item_name
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
@@ -115,7 +115,7 @@ historical_vals AS (
         pp.item_ref AS item_id,
         pp.q50 AS old_q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
     WHERE i.user_id = $1
       AND pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL

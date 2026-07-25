@@ -92,7 +92,7 @@ async def _estimate_price(
                 """
                 SELECT pp.q10, pp.q50, pp.q90, pp.conf_score
                 FROM price_predictions pp
-                JOIN items i ON i.canonical_key = pp.item_ref
+                JOIN items i ON i.canonical_ref = pp.item_ref
                 WHERE i.category = $1
                   AND i.title ILIKE $2
                 ORDER BY pp.generated_at DESC

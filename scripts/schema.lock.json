@@ -202,6 +202,15 @@
     "price_predictions_y2026m07.q90": [
       "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
     ],
+    "price_predictions_y2026m08.q10": [
+      "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
+    ],
+    "price_predictions_y2026m08.q50": [
+      "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
+    ],
+    "price_predictions_y2026m08.q90": [
+      "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
+    ],
     "pricing_traces.stage": [
       "CHECK ((stage = ANY (ARRAY['quick'::text, 'market_ingest'::text, 'quantile'::text, 'calibration'::text, 'capping'::text, 'alert'::text])))"
     ],
@@ -6830,6 +6839,11 @@
       "nullable": true,
       "type": "text"
     },
+    "items.canonical_ref": {
+      "default": "\nCASE\n    WHEN (canonical_key IS NULL) THEN NULL::text\n    WHEN (strpos(canonical_key, ':'::text) > 0) THEN canonical_key\n    WHEN (category IS NULL) THEN NULL::text\n    ELSE ((category || ':'::text) || canonical_key)\nEND",
+      "nullable": true,
+      "type": "text"
+    },
     "items.category": {
       "nullable": true,
       "type": "text"
@@ -11205,6 +11219,53 @@
       "nullable": false,
       "type": "text"
     },
+    "price_history_y2026m08.as_of": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "price_history_y2026m08.currency": {
+      "default": "'EUR'::text",
+      "nullable": true,
+      "type": "text"
+    },
+    "price_history_y2026m08.id": {
+      "nullable": false,
+      "type": "int8"
+    },
+    "price_history_y2026m08.item_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "price_history_y2026m08.item_ref": {
+      "nullable": true,
+      "type": "text"
+    },
+    "price_history_y2026m08.price": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_history_y2026m08.price_q10": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_history_y2026m08.price_q50": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_history_y2026m08.price_q90": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_history_y2026m08.snapshot_at": {
+      "default": "now()",
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "price_history_y2026m08.source": {
+      "nullable": false,
+      "type": "text"
+    },
     "price_prediction_comps.condition_norm": {
       "nullable": true,
       "type": "text"
@@ -11731,6 +11792,97 @@
       "type": "timestamptz"
     },
     "price_predictions_y2026m07.ts": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "price_predictions_y2026m08.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "price_predictions_y2026m08.comps_count": {
+      "nullable": true,
+      "type": "int4"
+    },
+    "price_predictions_y2026m08.conf_score": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_predictions_y2026m08.confidence": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_predictions_y2026m08.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "price_predictions_y2026m08.evidence_hit_ids": {
+      "default": "'{}'::text[]",
+      "nullable": true,
+      "type": "_text"
+    },
+    "price_predictions_y2026m08.evidence_summary": {
+      "default": "'{}'::jsonb",
+      "nullable": true,
+      "type": "jsonb"
+    },
+    "price_predictions_y2026m08.explanation": {
+      "nullable": true,
+      "type": "text"
+    },
+    "price_predictions_y2026m08.generated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "price_predictions_y2026m08.head": {
+      "nullable": true,
+      "type": "text"
+    },
+    "price_predictions_y2026m08.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "price_predictions_y2026m08.item_ref": {
+      "nullable": true,
+      "type": "text"
+    },
+    "price_predictions_y2026m08.model_version": {
+      "nullable": true,
+      "type": "text"
+    },
+    "price_predictions_y2026m08.nk": {
+      "default": "(gen_random_uuid())::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "price_predictions_y2026m08.q10": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_predictions_y2026m08.q50": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_predictions_y2026m08.q90": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "price_predictions_y2026m08.raw": {
+      "nullable": true,
+      "type": "jsonb"
+    },
+    "price_predictions_y2026m08.source": {
+      "nullable": true,
+      "type": "text"
+    },
+    "price_predictions_y2026m08.training_data_asof": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "price_predictions_y2026m08.ts": {
       "default": "now()",
       "nullable": false,
       "type": "timestamptz"
@@ -23317,7 +23469,8 @@
       "updated_at",
       "progress_status",
       "progress_pct",
-      "progress_notes"
+      "progress_notes",
+      "canonical_ref"
     ],
     "items_card": [
       "id",
@@ -24473,6 +24626,19 @@
       "price_q90",
       "snapshot_at"
     ],
+    "price_history_y2026m08": [
+      "id",
+      "item_id",
+      "source",
+      "price",
+      "currency",
+      "as_of",
+      "item_ref",
+      "price_q10",
+      "price_q50",
+      "price_q90",
+      "snapshot_at"
+    ],
     "price_prediction_comps": [
       "id",
       "trace_id",
@@ -24590,6 +24756,29 @@
       "conf_score"
     ],
     "price_predictions_y2026m07": [
+      "id",
+      "nk",
+      "q10",
+      "q50",
+      "q90",
+      "confidence",
+      "comps_count",
+      "model_version",
+      "source",
+      "training_data_asof",
+      "created_at",
+      "item_ref",
+      "category",
+      "raw",
+      "ts",
+      "head",
+      "generated_at",
+      "evidence_hit_ids",
+      "evidence_summary",
+      "explanation",
+      "conf_score"
+    ],
+    "price_predictions_y2026m08": [
       "id",
       "nk",
       "q10",
@@ -28766,6 +28955,12 @@
         "as_of"
       ]
     ],
+    "price_history_y2026m08": [
+      [
+        "id",
+        "as_of"
+      ]
+    ],
     "price_prediction_comps": [
       [
         "id"
@@ -28801,6 +28996,12 @@
       ]
     ],
     "price_predictions_y2026m07": [
+      [
+        "id",
+        "generated_at"
+      ]
+    ],
+    "price_predictions_y2026m08": [
       [
         "id",
         "generated_at"

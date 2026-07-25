@@ -234,7 +234,7 @@ async def detect_anomalies(conn):
           AND (
             EXISTS (
               SELECT 1 FROM public.items i
-              WHERE i.canonical_key = ppd.item_ref
+              WHERE i.canonical_ref = ppd.item_ref
                 AND i.user_id IS NOT NULL
             )
             OR EXISTS (

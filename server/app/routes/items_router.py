@@ -105,7 +105,7 @@ def get_demo_items() -> list[ItemResponse]:
     return _DEMO_ITEMS
 
 
-async def write_quick_valuation(conn, item_id: str, user_id: str, canonical_key: Optional[str]) -> bool:
+async def write_quick_valuation(conn, item_id: str, user_id: str, canonical_ref: Optional[str]) -> bool:
     """Best-effort: write a `quick_predictions` row from the catalog market
     valuation so the item card shows a real value right after add.
 
@@ -115,8 +115,14 @@ async def write_quick_valuation(conn, item_id: str, user_id: str, canonical_key:
     when the item isn't catalog-linked or has no daily price; the card then
     falls back to the user's own estimate. Never raises — a valuation must not
     block or fail an add.
+
+    Takes the **namespaced** ref (`category:item_key`, i.e. `items.canonical_ref`),
+    NOT the bare `canonical_key`. Every `price_prediction_daily.item_ref` is
+    namespaced — 0 bare rows — so passing the bare key silently matched nothing
+    and this returned False on every add since the column was introduced. See
+    docs/schema-lock.md and the 2026-07-25 keyspace audit.
     """
-    if not canonical_key:
+    if not canonical_ref:
         return False
     try:
         row = await conn.fetchrow(
@@ -127,7 +133,7 @@ async def write_quick_valuation(conn, item_id: str, user_id: str, canonical_key:
             ORDER BY day DESC
             LIMIT 1
             """,
-            canonical_key,
+            canonical_ref,
         )
         if not row or row["q50"] is None:
             return False
@@ -136,7 +142,7 @@ async def write_quick_valuation(conn, item_id: str, user_id: str, canonical_key:
             INSERT INTO public.quick_predictions (item_id, user_id, nk, q50_eur, confidence, raw)
             VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::jsonb)
             """,
-            item_id, user_id, canonical_key, float(row["q50"]),
+            item_id, user_id, canonical_ref, float(row["q50"]),
             float(row["confidence"]) if row["confidence"] is not None else 0.6,
             json.dumps({"source": "catalog_daily", "model_version": row["model_version"]}),
         )
@@ -202,7 +208,12 @@ async def create_item(
                     logger.debug("[items] Gamification XP award failed (non-critical)")
 
                 # Market valuation for the card (best-effort, EUR, local data).
-                await write_quick_valuation(conn, item_id, user_id, payload.canonical_key)
+                # Namespaced ref — mirrors the items.canonical_ref generated column.
+                _ref = (
+                    f"{payload.category}:{payload.canonical_key}"
+                    if payload.canonical_key and payload.category else None
+                )
+                await write_quick_valuation(conn, item_id, user_id, _ref)
 
                 return ItemResponse(id=item_id, **payload.model_dump())
         except HTTPException:
@@ -232,12 +243,12 @@ async def revalue_item(item_id: str, user_id: str = Depends(get_current_user_id)
         return {"ok": False, "valued": False}
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT canonical_key FROM items WHERE id = $1::uuid AND user_id = $2::uuid",
+            "SELECT canonical_ref FROM items WHERE id = $1::uuid AND user_id = $2::uuid",
             item_id, user_id,
         )
         if not row:
             raise error_response(404, "Item not found")
-        valued = await write_quick_valuation(conn, item_id, user_id, row["canonical_key"])
+        valued = await write_quick_valuation(conn, item_id, user_id, row["canonical_ref"])
     return {"ok": True, "valued": valued}
 
 

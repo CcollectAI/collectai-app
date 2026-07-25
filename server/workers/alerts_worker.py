@@ -46,7 +46,7 @@ SELECT DISTINCT ON (pp.item_ref)
     pp.q90,
     i.user_id
 FROM public.price_predictions pp
-JOIN public.items i ON i.canonical_key = pp.item_ref
+JOIN public.items i ON i.canonical_ref = pp.item_ref
 WHERE pp.q50 IS NOT NULL
   AND pp.q50 < 10
   AND pp.item_ref IS NOT NULL

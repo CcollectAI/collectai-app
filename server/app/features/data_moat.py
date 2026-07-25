@@ -440,12 +440,12 @@ async def record_price_ground_truth(
     try:
         async with pool.acquire() as conn:
             # price_predictions: column is generated_at, not asof; lookup
-            # joins via item_ref = items.canonical_key (no item_id col).
+            # joins via item_ref = items.canonical_ref (no item_id col).
             pred = await conn.fetchrow(
                 """
                 SELECT q50, q10, q90, conf_score, generated_at AS asof
                 FROM price_predictions
-                WHERE item_ref = (SELECT canonical_key FROM items WHERE id = $1::uuid)
+                WHERE item_ref = (SELECT canonical_ref FROM items WHERE id = $1::uuid)
                   -- Partition prune: latest predictions are always
                   -- within the last 60 days. Without this filter the
                   -- planner walks all monthly partitions on every
@@ -525,7 +525,7 @@ async def prediction_accuracy(
                 JOIN items i ON i.id = gt.item_id
                 LEFT JOIN LATERAL (
                     SELECT q10, q90 FROM price_predictions pp2
-                    WHERE pp2.item_ref = i.canonical_key
+                    WHERE pp2.item_ref = i.canonical_ref
                       -- Partition prune: latest prediction is always in the
                       -- last 60 days. The LATERAL fires once per ground-truth
                       -- row, so without this filter we walk all monthly

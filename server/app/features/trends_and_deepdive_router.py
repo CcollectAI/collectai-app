@@ -100,7 +100,7 @@ async def get_collection_trends(
                     date_trunc('day', pp.generated_at) AS day,
                     SUM(pp.q50)                AS total_value
                 FROM price_predictions pp
-                JOIN items i ON i.canonical_key = pp.item_ref
+                JOIN items i ON i.canonical_ref = pp.item_ref
                 WHERE i.user_id = $1
                   AND pp.generated_at >= $2
                 GROUP BY date_trunc('day', pp.generated_at)
@@ -123,7 +123,7 @@ async def get_collection_trends(
                         i.category,
                         pp.q50 AS first_value
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1 AND pp.generated_at >= $2
                     ORDER BY i.id, pp.generated_at ASC
                 ),
@@ -133,7 +133,7 @@ async def get_collection_trends(
                         i.category,
                         pp.q50 AS last_value
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1 AND pp.generated_at >= $2
                     ORDER BY i.id, pp.generated_at DESC
                 )
@@ -241,7 +241,7 @@ async def get_item_trends(
                 """
                 SELECT generated_at AS asof, q50, conf_score
                 FROM price_predictions
-                WHERE item_ref = (SELECT canonical_key FROM items WHERE id = $1::uuid)
+                WHERE item_ref = (SELECT canonical_ref FROM items WHERE id = $1::uuid)
                   AND generated_at >= $2
                 ORDER BY generated_at
                 """,
