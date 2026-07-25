@@ -13,6 +13,13 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { withTimeout, TimeoutError } from '../lib/withTimeout';
+
+// Upper bound on any single page fetch. Deliberately looser than an individual
+// provider's own timeout (itemsProvider uses 8s) so this stays a backstop rather
+// than the primary mechanism — it exists so the invariant "isLoading always
+// clears" holds even for a fetcher that forgot its own guard.
+const FETCH_TIMEOUT_MS = 12_000;
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -71,7 +78,18 @@ export function usePaginatedList<T>(
       }
 
       try {
-        const page = await fetcher(pageSize, offset);
+        // Hard cap on the fetcher, independent of whatever the fetcher itself
+        // does. `isLoading` is only cleared in the `finally` below, so a fetcher
+        // that never settles pins the skeleton up forever with no error and no
+        // retry — the "stuck on skeleton" bug. Individual providers should still
+        // use withTimeout (see itemsProvider), but this guarantees the invariant
+        // for EVERY caller of this hook (items, alerts, events) including any
+        // added later, so the same bug cannot reappear via a new list screen.
+        const page = await withTimeout(
+          Promise.resolve(fetcher(pageSize, offset)),
+          FETCH_TIMEOUT_MS,
+          'usePaginatedList.fetcher',
+        );
         const receivedLessThanPage = page.length < pageSize;
 
         if (reset) {
@@ -85,7 +103,11 @@ export function usePaginatedList<T>(
         setHasMore(!receivedLessThanPage);
       } catch (e: unknown) {
         const message =
-          e instanceof Error ? e.message : 'Failed to load items';
+          e instanceof TimeoutError
+            ? 'Timed out loading. Pull to refresh.'
+            : e instanceof Error
+              ? e.message
+              : 'Failed to load items';
         setError(message);
       } finally {
         setIsLoading(false);

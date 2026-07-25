@@ -14,7 +14,18 @@ import type {
 } from '../types';
 import { supabase } from '../../lib/supabase';
 import { collectorsApi } from '../../api/collectorsApi';
+import { withTimeout, TimeoutError } from '../../lib/withTimeout';
 import logger from '../../utils/logger';
+
+// The Items tab gates its skeleton on this query resolving. supabase-js ships
+// NO per-request timeout, so a stalled TLS handshake / captive portal / server
+// hang leaves the promise pending forever — usePaginatedList only clears
+// isLoading in its `finally`, so the skeleton stays up with no error and no
+// retry. That is the "stuck on skeleton" report, and it is exactly what
+// src/lib/withTimeout.ts was written for: "Use on direct supabase queries in
+// loading-gating paths." chatProvider / categoryProvider / userProvider /
+// watchlistProvider all do this; itemsProvider was the one that did not.
+const ITEMS_READ_TIMEOUT_MS = 8_000;
 
 // Shared row types used by listItems and searchItems.
 // items has the columns id/title/category/updated_at/attrs/image_url/
@@ -127,11 +138,30 @@ const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, i
 export async function listItems(pagination?: PaginationParams): Promise<Item[]> {
   const limit = pagination?.limit ?? API_LIMITS.ITEMS_DEFAULT;
   const offset = pagination?.offset ?? 0;
-  const { data, error } = await supabase
-    .from('items')
-    .select(ITEMS_SELECT)
-    .order('updated_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+  let data: unknown;
+  let error: unknown;
+  try {
+    const res = await withTimeout(
+      supabase
+        .from('items')
+        .select(ITEMS_SELECT)
+        .order('updated_at', { ascending: false })
+        .range(offset, offset + limit - 1),
+      ITEMS_READ_TIMEOUT_MS,
+      'listItems',
+    );
+    data = res.data;
+    error = res.error;
+  } catch (e) {
+    if (e instanceof TimeoutError) {
+      // Surface as an ERROR, not a warn: logger.info/warn are stripped in
+      // TestFlight/production builds, so a warn here would be invisible on the
+      // exact build where this matters most.
+      logger.error('[SupabaseDataProvider] listItems timed out after %dms', ITEMS_READ_TIMEOUT_MS);
+      return [];
+    }
+    throw e;
+  }
 
   if (error) {
     logger.warn('[SupabaseDataProvider] listItems error:', error);

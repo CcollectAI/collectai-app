@@ -135,3 +135,44 @@ describe('usePaginatedList', () => {
     });
   });
 });
+
+/**
+ * The gap that let the "stuck on skeleton" bug exist.
+ *
+ * Every test above resolves or rejects. None covered a fetcher that does
+ * NEITHER — and that is the production failure: supabase-js ships no
+ * per-request timeout, so a stalled TLS handshake / captive portal / server hang
+ * left the promise pending forever. `isLoading` is only cleared in `finally`, so
+ * the Items skeleton stayed up with no error, no retry and nothing in the logs
+ * (logger.warn is stripped in release builds).
+ *
+ * Reported 2026-07-25. Fixed in two layers: itemsProvider.listItems now wraps its
+ * query in withTimeout(8s), and this hook caps ANY fetcher at 12s so the
+ * invariant holds for every caller — items, alerts, events, and any list screen
+ * added later.
+ *
+ * Teeth: drop the withTimeout wrapper from fetchPage and this block hangs to the
+ * jest timeout and fails.
+ */
+describe('usePaginatedList — a hanging fetcher must not pin the skeleton', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
+  });
+
+  it('clears isLoading and reports a timeout when the fetcher never settles', async () => {
+    const neverSettles = jest.fn(() => new Promise<unknown[]>(() => {}));
+    const { result } = renderHook(() => usePaginatedList(neverSettles as never));
+
+    // Skeleton up while genuinely in flight — correct.
+    expect(result.current.isLoading).toBe(true);
+
+    await act(async () => {
+      jest.advanceTimersByTime(13_000); // past the hook's FETCH_TIMEOUT_MS
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toMatch(/timed out/i);
+  });
+});
