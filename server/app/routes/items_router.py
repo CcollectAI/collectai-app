@@ -23,6 +23,49 @@ from app.rate_limit import per_user_rate_limit
 router = APIRouter(tags=["Items"])
 logger = logging.getLogger(__name__)
 
+# Score floor for accepting a catalog match. /catalog/match documents
+# >= 0.75 = strong. A WRONG canonical_key is worse than none: it prices the item
+# as a different product and looks authoritative while being silently incorrect.
+_CANONICAL_MATCH_FLOOR = 0.75
+
+
+async def _resolve_canonical_key(title, category, pool):
+    """
+    Best-effort catalog match -> BARE canonical_key, or None.
+
+    canonical_key is BARE (`sm10-sm10-101`), never namespaced -- CLAUDE.md
+    "Identifier formats". The trigger derives canonical_ref from it; never set
+    canonical_ref by hand.
+
+    Never raises: a failed match must not fail item creation. The item is saved
+    unpriced, exactly as it was before this existed.
+    """
+    if not title or not category or pool is None:
+        return None
+    try:
+        from app.agents.intake.catalog_matching import _match_catalog_items
+
+        matches = await _match_catalog_items(
+            category_id=category,
+            suggested_name=title,
+            search_keywords=[],
+            brand=None,
+            set_code=None,
+            pool=pool,
+            extracted_attributes=None,
+        )
+    except Exception as e:
+        logger.warning("[items] catalog match failed for %r: %s", title, e)
+        return None
+    if not matches:
+        return None
+    best = matches[0]
+    if float(best.get("match_score") or 0.0) < _CANONICAL_MATCH_FLOOR:
+        return None
+    return best.get("item_key") or None
+
+
+
 # Per-user: 50 requests per minute for reading items
 _items_read_limit = per_user_rate_limit(50, scope="items_read")
 # Per-user: 10 requests per minute for creating items
@@ -161,6 +204,25 @@ async def create_item(
 ):
     """Create a new item in the user's collection."""
     pool = get_db_pool()
+
+    # Resolve canonical_key server-side when the client omits it. Without it the
+    # item can never be priced: canonical_key --trg_items_canonical_ref-->
+    # canonical_ref --join--> price_predictions.item_ref. The item saves fine and
+    # shows "—" forever, with no error and nothing logged.
+    #
+    # This is the CHOKEPOINT, deliberately. Three separate callers had already
+    # been missed one at a time -- /intake/save (barcode+ISBN), import_router
+    # (Excel/CSV), and QuickScan's BATCH save in quickscan.tsx, which omits
+    # canonicalKey while the single-scan path in useItemDetail.ts passes it.
+    # Fixing callers one by one does not converge; resolving here covers every
+    # client, including builds already in the field that can never be updated.
+    #
+    # A client-supplied key always wins: it came from an interactive catalog
+    # match the user could see and correct.
+    if pool is not None and not payload.canonical_key:
+        payload.canonical_key = await _resolve_canonical_key(
+            payload.name, payload.category, pool
+        )
 
     if pool is not None:
         try:
