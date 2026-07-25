@@ -114,6 +114,18 @@ PAIRS = [
         "note": "Both namespaced; valuation reads market_hits by item_ref.",
         "expect_partial": True,
     },
+    {
+        "left": ("events", "canonical_key"),
+        "right": ("event_follows_v1", "canonical_key"),
+        "note": (
+            "intelligence_router engagement_score joins follows on canonical_key. "
+            "LATENT: events.canonical_key is NULL on all 1,981 rows (no writer) and "
+            "event_follows_v1 is empty, so the follower term is structurally always 0 "
+            "behind COALESCE(...,0). Harmless while both are empty; becomes a real "
+            "undercount the moment follows are written. Found by --discover 2026-07-25."
+        ),
+        "expect_partial": True,
+    },
 ]
 
 
