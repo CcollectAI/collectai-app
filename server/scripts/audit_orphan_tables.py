@@ -74,6 +74,12 @@ ALLOWLIST: dict[str, str] = {
     "user_category_ownership": "superseded 2026-07-24 - v_category_summaries_v1 now joins items.canonical_key",
     "portfolio_values": "superseded 2026-07-24 - getPortfolioSummary now reads /portfolio/overview",
     "supply_snapshots": "writer intentionally killswitched (DEAL_DISCOVERY_ENABLED=false)",
+    "event_follows_v1": "2026-07-25 product decision: event following is not a feature we want. "
+                        "Readers left in place but deliberately never populated — do not 'fix' by "
+                        "wiring a writer. events.canonical_key being NULL is the same decision.",
+    "user_challenge_progress": "2026-07-25 product decision: gamification challenges are out of "
+                               "scope. `challenges` has 6 seed rows but no progress writer, and "
+                               "that is intentional — do not wire one.",
 }
 
 # Write verbs. A reference is a WRITE if one of these appears near the table

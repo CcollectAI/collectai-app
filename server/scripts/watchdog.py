@@ -54,9 +54,12 @@ REPO = "https://github.com/CcollectAI/collectai-app/blob/main"
 SERVER_ROOT = Path(__file__).resolve().parents[1]
 
 # Known orphan-table backlog as of 2026-07-25. The watchdog pages only when this
-# GROWS — the existing 12 are unfinished/unwired features tracked separately, and
-# a daily alarm on a known backlog trains you to ignore the channel.
-ORPHAN_HIGH_BASELINE = 12
+# GROWS — the remainder are unfinished/unwired features tracked separately, and a
+# daily alarm on a known backlog trains you to ignore the channel. Dropped 12->10
+# when event_follows_v1 and user_challenge_progress were allowlisted as deliberate
+# product decisions, and again to 9 when quickscan_history fell off entirely after
+# value_summary was repointed to predict_sessions (it now has zero readers).
+ORPHAN_HIGH_BASELINE = 9
 
 
 def tbl_link(table: str) -> str:
@@ -351,33 +354,43 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
     # this pages on a COLLAPSE, not on normal drift.
     try:
         canaries = [("mtg", 80.0), ("pokemon", 80.0), ("yugioh", 60.0)]
+        SAMPLE = 300
         for cat, floor in canaries:
             total = await c.fetchval(
                 "SELECT count(*) FROM category_items WHERE category=$1", cat)
             if not total:
                 continue
+            # SAMPLE, don't scan. The exhaustive version (EXISTS per catalog row
+            # against a partitioned 3M-row table) ran for minutes on yugioh's
+            # 38k rows and made the daily cron hammer the DB — a monitor that is
+            # itself a load problem gets switched off. 300 rows is far more than
+            # enough to detect a COLLAPSE, which is all this check is for.
             priced = await c.fetchval(
                 """
-                SELECT count(*) FROM category_items ci
-                WHERE ci.category = $1
-                  AND (EXISTS (SELECT 1 FROM price_predictions p
-                               WHERE p.item_ref = ci.category||':'||ci.item_key
-                                 AND p.generated_at >= now() - interval '30 days')
-                       OR EXISTS (SELECT 1 FROM catalog_price_refs x
-                                  WHERE x.category = ci.category AND x.item_key = ci.item_key))
-                """, cat)
-            pct = 100.0 * priced / total
+                WITH s AS (
+                    SELECT category, item_key FROM category_items
+                    WHERE category = $1 LIMIT $2
+                )
+                SELECT count(*) FROM s
+                WHERE EXISTS (SELECT 1 FROM price_predictions p
+                              WHERE p.item_ref = s.category||':'||s.item_key
+                                AND p.generated_at >= now() - interval '30 days')
+                   OR EXISTS (SELECT 1 FROM catalog_price_refs x
+                              WHERE x.category = s.category AND x.item_key = s.item_key)
+                """, cat, SAMPLE)
+            sampled = min(total, SAMPLE)
+            pct = 100.0 * priced / sampled
             if pct < floor:
                 bug("high", "pricing coverage collapsed for %s: %.1f%%" % (cat, pct),
-                    "%d of %d catalog rows can reach a price (floor %.0f%%). Users in this "
-                    "category will see 0.00 everywhere while every endpoint still returns 200."
-                    % (priced, total, floor),
+                    "%d of %d SAMPLED catalog rows can reach a price (floor %.0f%%, table has %d). "
+                    "Users in this category will see 0.00 everywhere while every endpoint "
+                    "still returns 200." % (priced, sampled, floor, total),
                     src_link("server/pipelines/build_catalog_price_crosswalk.py"),
                     "python3 scripts/audit_key_overlap.py",
                     "Rebuild the crosswalk, or check whether items.canonical_ref resolution broke")
             else:
                 healthy.append({"check": "pricing coverage %s" % cat,
-                                "detail": "%.1f%% of %d catalog rows priceable" % (pct, total)})
+                                "detail": "%.1f%% priceable (sampled %d of %d)" % (pct, sampled, total)})
     except Exception as e:
         bug("info", "pricing coverage canary could not run", str(e)[:200])
 
