@@ -15,6 +15,7 @@ Usage:
 """
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Any, Optional
@@ -46,14 +47,42 @@ ALERT_TYPE_TO_PREF = {
 
 
 async def _get_user_prefs(conn, user_id: str) -> dict:
-    """Fetch notification preferences for a user. Returns defaults if not set.
+    """Fetch notification preferences for a user. {} means "no opinion stored".
 
-    user_settings has no notification_preferences column (round-2 silent-
-    failure sweep 2026-04-20). Returns empty dict so call sites fall
-    through to all-enabled defaults. No DB round-trip — the previous
-    probe-for-user-id was dead code the grep flagged in round 4.
+    Call sites do `prefs.get(category, True)`, so an empty dict = all enabled.
+
+    2026-07-25: this was a `return {}` stub whose docstring claimed
+    "user_settings has no notification_preferences column". That was true when
+    it was written and is NOT true now — the jsonb column exists and
+    `PUT /notifications/preferences` has been writing to it correctly all along.
+    So every user's saved preferences were silently ignored on the delivery
+    path: mute a category, still get pushed. Verified against prod before the
+    fix (column present, populated).
+
+    Never raises. A preferences lookup must not be able to block a
+    notification — on a DB error we fall through to all-enabled, which is the
+    same behaviour as no stored prefs.
     """
-    return {}
+    try:
+        row = await conn.fetchrow(
+            "SELECT notification_preferences FROM public.user_settings WHERE user_id = $1",
+            user_id,
+        )
+    except Exception as e:
+        logger.warning("[notify] prefs lookup failed for %s: %s", user_id[:8], e)
+        return {}
+    if not row:
+        return {}
+    prefs = row["notification_preferences"]
+    if prefs is None:
+        return {}
+    if isinstance(prefs, str):  # asyncpg hands back jsonb as text without a codec
+        try:
+            prefs = json.loads(prefs)
+        except (ValueError, TypeError):
+            logger.warning("[notify] unparseable prefs for %s", user_id[:8])
+            return {}
+    return prefs if isinstance(prefs, dict) else {}
 
 
 async def _get_daily_push_count(conn, user_id: str) -> int:

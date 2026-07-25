@@ -252,20 +252,33 @@ async def get_notification_preferences(
     if not db_configured():
         return {"preferences": DEFAULT_NOTIFICATION_PREFERENCES}
 
-    # user_settings has no notification_preferences column (see round-2
-    # silent-failure sweep 2026-04-20). Until a real prefs table exists,
-    # every authenticated user gets the defaults. Probing by user_id
-    # lets us still fail loudly on DB errors.
+    # 2026-07-25: this used to SELECT user_id, throw the result away and return
+    # DEFAULT_NOTIFICATION_PREFERENCES, on the belief that user_settings had no
+    # notification_preferences column. The column exists and the PUT below has
+    # been writing it all along, so the settings screen read back defaults
+    # immediately after saving — a toggle appeared to revert. Read the same
+    # column the writer writes, merged over defaults so a partially-populated
+    # jsonb still yields every key.
     try:
         async with get_conn() as conn:
-            await conn.fetchrow(
-                "SELECT user_id FROM public.user_settings WHERE user_id = $1",
+            row = await conn.fetchrow(
+                "SELECT notification_preferences FROM public.user_settings WHERE user_id = $1",
                 user_id,
             )
-        return {"preferences": DEFAULT_NOTIFICATION_PREFERENCES}
     except asyncpg.PostgresError as e:
         logger.error("[notifications] Error fetching preferences: %s", e)
         raise error_response(500, "Failed to fetch notification preferences", code="DB_ERROR")
+
+    stored = row["notification_preferences"] if row else None
+    if isinstance(stored, str):
+        try:
+            stored = json.loads(stored)
+        except (ValueError, TypeError):
+            logger.warning("[notifications] unparseable prefs for user %s", user_id[:8])
+            stored = None
+    if not isinstance(stored, dict):
+        stored = {}
+    return {"preferences": {**DEFAULT_NOTIFICATION_PREFERENCES, **stored}}
 
 
 @router.put("/preferences", summary="Update notification preferences")
