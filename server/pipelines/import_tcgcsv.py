@@ -20,6 +20,9 @@ Usage:
   python pipelines/import_tcgcsv.py             # all supported games
   python pipelines/import_tcgcsv.py --game mtg  # single game
   python pipelines/import_tcgcsv.py --dry-run   # fetch but don't upsert
+  python pipelines/import_tcgcsv.py --catalog --dry-run --game lorcana
+                                                # ALSO derive category_items rows
+                                                # keyed to match price item_refs
 """
 from __future__ import annotations
 
@@ -299,6 +302,101 @@ def upsert_hits_batched(
 # ---------------------------------------------------------------------------
 
 
+def build_catalog_rows(
+    hits: list["MarketHit"],
+    our_category: str,
+    group_name: Optional[str] = None,
+    group_abbreviation: Optional[str] = None,
+) -> list[dict]:
+    """Derive `category_items` rows from the SAME hits that produce prices.
+
+    Why this exists (2026-07-25)
+    ----------------------------
+    lorcana / digimon / one_piece_tcg had ~0% price coverage: their catalog rows
+    are hand-seeded slugs (`azu-abu-tricky-monkey`) while their predictions are
+    keyed by TCGplayer product id (`lorcana:tcgplayer:702699:normal`). Two
+    disjoint namespaces.
+
+    Crosswalking them was measured and REJECTED: matching on card name alone was
+    224-of-226 ambiguous for lorcana, and adding the set as a tiebreak gave 8.2%
+    / 1.3% / 0.0% unique matches for one_piece / digimon / lorcana, because the
+    set vocabularies barely overlap (lorcana prices bracket sets as NUMBERS,
+    `[13]`, while the catalog uses letter codes, `AZU`). A matcher at those rates
+    would ship wrong prices for almost no coverage.
+
+    So instead of bridging two namespaces, derive the catalog from the SAME
+    source as the prices. `item_key` is the hit's normalized_key minus the
+    leading `{category}:`, which makes
+
+        category_items.category || ':' || category_items.item_key
+          ==  price_predictions.item_ref
+
+    true BY CONSTRUCTION — the same reason pokemon and mtg already sit at 97-99%
+    coverage. No matching, nothing to drift.
+
+    Rows are marked `source='tcgcsv'` so they stay distinguishable from the
+    existing `source='seed'` rows, which remain untouched.
+    """
+    prefix = f"{our_category}:"
+    rows: list[dict] = []
+    seen: set[str] = set()
+    for h in hits:
+        nk = h.normalized_key or ""
+        if not nk.startswith(prefix):
+            continue
+        item_key = nk[len(prefix):]
+        if not item_key or item_key in seen:
+            continue
+        seen.add(item_key)
+        rows.append({
+            "category": our_category,
+            "item_key": item_key,
+            "title": (h.title or item_key)[:500],
+            "set_code": (group_abbreviation or "")[:64] or None,
+            "image_url": h.image_url or None,
+            "source": "tcgcsv",
+            "attributes_json": {
+                "set_name": group_name,
+                "set_abbreviation": group_abbreviation,
+                "tcgplayer_product_id": item_key.split(":")[1] if ":" in item_key else None,
+            },
+        })
+    return rows
+
+
+def upsert_catalog_rows(rows: list[dict], batch_size: int = 200) -> int:
+    """Upsert into category_items on its UNIQUE (category, item_key).
+
+    Idempotent: re-running refreshes title/image/set without duplicating. Does
+    NOT touch source='seed' rows, because those have different item_keys.
+    """
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        logger.warning("SUPABASE env not set — skipping catalog upsert")
+        return 0
+    if not rows:
+        return 0
+    import json as _json
+    written = 0
+    client = get_http_client()
+    url = f"{SUPABASE_URL}/rest/v1/category_items?on_conflict=category,item_key"
+    headers = {**_headers(), "Prefer": "resolution=merge-duplicates,return=minimal"}
+    for i in range(0, len(rows), batch_size):
+        chunk = rows[i:i + batch_size]
+        # attributes_json must be posted as an OBJECT, not a pre-serialised
+        # string — httpx json= serialises the whole body, and double-encoding it
+        # is exactly what produced 598 rejected upserts/day in the 2026-07-25
+        # catalog bug (category_items_attrs_is_object).
+        try:
+            r = client.post(url, headers=headers, json=chunk, timeout=60.0)
+            if r.status_code >= 300:
+                logger.warning("catalog upsert HTTP %d: %s", r.status_code, r.text[:200])
+                continue
+            written += len(chunk)
+        except Exception as e:
+            logger.warning("catalog upsert failed: %s", e)
+    return written
+
+
 def run_game(
     client: httpx.Client,
     category_id: int,
@@ -306,6 +404,7 @@ def run_game(
     our_category: str,
     dry_run: bool,
     stats: IngestStats,
+    catalog: bool = False,
 ) -> dict:
     """Import all groups for a single tcgcsv category. Returns per-game stats."""
     groups = list_groups(client, category_id)
@@ -313,6 +412,8 @@ def run_game(
 
     total_hits = 0
     total_upserted = 0
+    total_catalog = 0
+    total_catalog_written = 0
     groups_processed = 0
 
     for g in groups:
@@ -334,14 +435,25 @@ def run_game(
             continue
         total_hits += len(hits)
         groups_processed += 1
+
+        cat_rows = build_catalog_rows(hits, our_category, group_name, group_abbr) if catalog else []
+        total_catalog += len(cat_rows)
+
         if dry_run:
-            logger.info("  [dry] %s: %d hits (sample: %s @ $%.2f)",
+            logger.info("  [dry] %s: %d hits%s (sample: %s @ $%.2f)",
                         group_name[:40], len(hits),
+                        ", %d catalog rows" % len(cat_rows) if catalog else "",
                         hits[0].title[:40], hits[0].price)
+            if catalog and cat_rows:
+                logger.info("        [dry] sample catalog key: %s:%s",
+                            our_category, cat_rows[0]["item_key"])
             continue
         upserted = upsert_hits_batched(hits, stats)
         total_upserted += upserted
-        logger.info("  %s: %d hits, %d upserted", group_name[:40], len(hits), upserted)
+        cat_written = upsert_catalog_rows(cat_rows) if cat_rows else 0
+        total_catalog_written += cat_written
+        logger.info("  %s: %d hits, %d upserted%s", group_name[:40], len(hits), upserted,
+                    ", %d catalog rows" % cat_written if catalog else "")
 
     return {
         "category": our_category,
@@ -349,10 +461,13 @@ def run_game(
         "total_groups": len(groups),
         "total_hits": total_hits,
         "total_upserted": total_upserted,
+        "catalog_rows_seen": total_catalog,
+        "catalog_rows_written": total_catalog_written,
     }
 
 
-def run_pipeline(only_game: Optional[str] = None, dry_run: bool = False) -> dict:
+def run_pipeline(only_game: Optional[str] = None, dry_run: bool = False,
+                 catalog: bool = False) -> dict:
     """Top-level entry point — orchestrates fetch + upsert for all games."""
     stats = IngestStats()
     results: list[dict] = []
@@ -383,6 +498,7 @@ def run_pipeline(only_game: Optional[str] = None, dry_run: bool = False) -> dict
                 cat["our_category"],
                 dry_run,
                 stats,
+                catalog=catalog,
             )
             results.append(r)
 
@@ -445,8 +561,12 @@ def main() -> int:
                    help="only run one game (mtg, pokemon, yugioh, lorcana, one_piece_tcg, digimon)")
     p.add_argument("--dry-run", action="store_true",
                    help="fetch but do not upsert")
+    p.add_argument("--catalog", action="store_true",
+                   help="ALSO derive category_items rows from the same products, keyed so "
+                        "category||':'||item_key equals the prediction item_ref (fixes the "
+                        "lorcana/digimon/one_piece 0%% price coverage without fuzzy matching)")
     args = p.parse_args()
-    summary = run_pipeline(only_game=args.game, dry_run=args.dry_run)
+    summary = run_pipeline(only_game=args.game, dry_run=args.dry_run, catalog=args.catalog)
     return 0 if summary.get("ok") else 1
 
 
