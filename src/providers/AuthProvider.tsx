@@ -25,6 +25,30 @@ import {
 
 /* ---------- Sentry (guarded) ---------- */
 import type { SentryModule } from '@/../types/api';
+import { withTimeout } from '@/lib/withTimeout';
+
+// `loading` gates the whole app: the router waits on it, and Home/Items now
+// defer their first fetch until it clears. supabase-js has no per-request
+// timeout, so if getSession() or the profile read stalls behind the auth lock
+// `setLoading(false)` never runs and EVERY screen sits there — the worst
+// version of the 2026-07-25 "stuck loading" class, because nothing downstream
+// can recover from it.
+//
+// WHY THIS IS SAFE despite `lock: processLock` (see docs/AUTH_AND_WEB_DEPLOY.md
+// and the 2026-07-11 401 saga): withTimeout is Promise.race, which ABANDONS the
+// inner call without cancelling it. That is only dangerous when the timeout
+// leads to a SECOND concurrent auth op — two refreshes on one rotating
+// refresh-token trip Supabase's reuse detection and REVOKE the session. Neither
+// call below retries, and neither refreshes: the profile read is a plain
+// PostgREST select (not an auth op at all), and getSession() only reads the
+// cached session. httpClient.readAccessToken already races getSession the same
+// way for the same reason.
+//
+// On timeout we fall through to `finally { setLoading(false) }` with no session,
+// and the onAuthStateChange listener below sets it unconditionally once the lock
+// releases — so a slow session is a brief logged-out flash, never a logout.
+const AUTH_INIT_TIMEOUT_MS = 8_000;
+const PROFILE_READ_TIMEOUT_MS = 6_000;
 let Sentry: SentryModule | null = null;
 try {
   Sentry = require('@sentry/react-native');
@@ -64,11 +88,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let referredCode: string | null = null;
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username, created_at, referred_by_code')
-        .eq('id', u.id)
-        .single();
+      const { data, error } = await withTimeout(
+        supabase
+          .from('profiles')
+          .select('id, username, created_at, referred_by_code')
+          .eq('id', u.id)
+          .single(),
+        PROFILE_READ_TIMEOUT_MS,
+        'AuthProvider.loadProfile',
+      );
       if (error) throw error;
       const loaded = data as Profile;
       setProfile(loaded);
@@ -177,7 +205,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     (async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await withTimeout(
+          supabase.auth.getSession(),
+          AUTH_INIT_TIMEOUT_MS,
+          'AuthProvider.getSession',
+        );
         if (error) throw error;
         if (!active) return;
 

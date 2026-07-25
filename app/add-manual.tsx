@@ -48,6 +48,17 @@ import { CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 import { CUSTOM_CATEGORY_SENTINEL } from '@/components/add-manual/CategoryPickerModal';
 import { getCategoryFields } from '@/constants/categoryFields';
 import { dmyToIso } from '@/lib/eventDate';
+import { withTimeout, TimeoutError } from '@/lib/withTimeout';
+
+// supabase-js ships NO per-request timeout, and both auth reads below sit
+// BETWEEN setSaveState("saving") and any state that clears it. A stalled auth
+// lock (cold start, mid-refresh, signed out) therefore leaves the button on
+// "Saving..." forever: the item never saves, no error is shown, and nothing is
+// logged. Reported as "impossible to manually add an item and have it save"
+// (2026-07-25) — the same root cause as the stuck list skeleton the same day.
+// See CLAUDE.md "Loading states".
+const AUTH_RESOLVE_TIMEOUT_MS = 6_000;
+const INSERT_TIMEOUT_MS = 15_000;
 
 type SaveState = "idle" | "saving" | "success" | "error";
 
@@ -292,14 +303,29 @@ const ManualAddScreen: React.FC = () => {
       // the user as "the item just doesn't save". Fail loud instead.
       let userId: string | null = null;
       try {
-        const { data: sess } = await supabase.auth.getSession();
-        userId = sess.session?.user?.id ?? null;
+        const sessRes = await withTimeout(
+          supabase.auth.getSession(),
+          AUTH_RESOLVE_TIMEOUT_MS,
+          'ManualAdd.getSession',
+        );
+        userId = sessRes.data.session?.user?.id ?? null;
         if (!userId) {
-          const { data: u } = await supabase.auth.getUser();
-          userId = u.user?.id ?? null;
+          const uRes = await withTimeout(
+            supabase.auth.getUser(),
+            AUTH_RESOLVE_TIMEOUT_MS,
+            'ManualAdd.getUser',
+          );
+          userId = uRes.data.user?.id ?? null;
         }
       } catch (e) {
-        logger.error("[ManualAdd] auth resolution failed:", e);
+        // A timeout here is NOT "signed out" — it is "we could not find out in
+        // time". Both fall through to the explicit !userId branch below, which
+        // tells the user something actionable instead of spinning.
+        logger.error(
+          e instanceof TimeoutError
+            ? `[ManualAdd] auth resolution timed out after ${AUTH_RESOLVE_TIMEOUT_MS}ms`
+            : `[ManualAdd] auth resolution failed: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
       if (!userId) {
         logger.error("[ManualAdd] no authenticated user id — item not saved");
@@ -379,7 +405,8 @@ const ManualAddScreen: React.FC = () => {
         }
       }
 
-      const { data: inserted, error } = await supabase.from("items").insert([
+      const { data: inserted, error } = await withTimeout(
+        supabase.from("items").insert([
         {
           user_id: userId,
           // Write BOTH name and title. The canonical readers key on `name`
@@ -410,7 +437,10 @@ const ManualAddScreen: React.FC = () => {
           attrs: Object.keys(mergedAttrs).length > 0 ? mergedAttrs : null,
           image_url: photoUrl || null,
         },
-      ]).select("id").single();
+      ]).select("id").single(),
+        INSERT_TIMEOUT_MS,
+        'ManualAdd.insert',
+      );
 
       if (error) {
         logger.warn("[ManualAdd] insert error:", error.message);
@@ -443,9 +473,21 @@ const ManualAddScreen: React.FC = () => {
       setSource("");
       setNotes("");
     } catch (err: any) {
-      logger.warn("[ManualAdd] unexpected error:", err);
+      // A TimeoutError's raw message ("Timed out after 15000ms
+      // (ManualAdd.insert)") is useless to a user, and this string is shown
+      // verbatim on screen. Say what happened and what to do.
+      const isTimeout = err instanceof TimeoutError;
+      logger.error(
+        isTimeout
+          ? `[ManualAdd] save timed out: ${err.label ?? ''}`
+          : `[ManualAdd] unexpected error: ${err?.message ?? String(err)}`,
+      );
       setSaveState("error");
-      setErrorText(err?.message || "Something unexpected happened — try saving again.");
+      setErrorText(
+        isTimeout
+          ? "Saving is taking too long — check your connection and try again. Your details are kept."
+          : (err?.message || "Something unexpected happened — try saving again."),
+      );
       fireHaptic(HapticIntent.ALERT_TRIGGERED);
     } finally {
       setTimeout(() => { setSaveState("idle"); }, 2000);

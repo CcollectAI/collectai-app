@@ -107,6 +107,28 @@ Pinned by `__tests__/hooks/usePaginatedList.test.ts` — the three cases nobody 
 covered were: a promise that never settles, a gate that opens, a gate that never
 does. Wired into `verify:prebuild`.
 
+**⚠️ Bounding an AUTH call is not automatically safe.** `withTimeout` is
+`Promise.race`: it abandons the inner call without cancelling it. If a timeout
+then leads to a SECOND concurrent auth op, two refreshes on one rotating
+refresh-token trip Supabase's reuse detection and **revoke the session** — the
+multi-week 401 saga ([[project_2026_07_11_auth_401_root_cause_lock]], why the
+client uses `lock: processLock`). It is safe only when the bounded call neither
+refreshes nor retries, and there is a recovery path. `httpClient.readAccessToken`
+and `AuthProvider` follow that pattern; read `docs/AUTH_AND_WEB_DEPLOY.md` before
+touching any of it.
+
+**Known unbounded, deliberately NOT fixed yet** (swept 2026-07-25; 25 files have
+unbounded `await supabase`, most harmless because nothing gates on them):
+
+| file | why it is left | severity |
+|---|---|---|
+| `app/(auth)/login.tsx` (3), `register.tsx` (2), `forgot-password.tsx`, `reset-password.tsx`, `mfa-setup.tsx` (5) | all are AUTH ops — see the warning above. A hang here spins a button the user can see and retry, unlike a silent skeleton | medium, visible |
+| `settings/ProfileEditSection.tsx` (2), `PrivacySettingsSection.tsx` (4) | plain PostgREST, safe to bound — just not done yet | low |
+| `buildPaintProvider.ts` (15) | feature has 0 rows | low |
+
+Fixed so far: `itemsProvider.listItems`, `usePaginatedList` (all callers),
+`add-manual.tsx` (3 calls), `AuthProvider` (2 calls).
+
 ### The catalog ↔ price crosswalk
 
 Not every category shares a namespace between catalog and predictions. Measured

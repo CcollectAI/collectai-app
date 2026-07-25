@@ -127,6 +127,19 @@ and fetches anyway.
 ("No history yet…"), never a skeleton. If you can't tell them apart on screen,
 neither can the user.
 
+**This applies to SAVE paths too, not just loads.** `add-manual.tsx` had three
+unbounded `await supabase` calls sitting between `setSaveState("saving")` and
+anything that clears it — so a stalled auth lock left the button on "Saving…"
+forever: nothing saved, no error, nothing logged. Reported as "impossible to
+manually add an item and have it save". Any await between a spinner going up and
+coming down must be bounded.
+
+**⚠️ Auth calls are the exception — do not bound them casually.** `withTimeout`
+is `Promise.race` and abandons rather than cancels. If that leads to a second
+concurrent auth op it can revoke the session (see CLAUDE.md "Loading states" and
+`docs/AUTH_AND_WEB_DEPLOY.md`). Safe only when the call neither refreshes nor
+retries and there is a recovery path.
+
 ## Component Checklist
 
 Before shipping a screen, verify:
