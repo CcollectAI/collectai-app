@@ -30,6 +30,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { logger } from '@/lib/logger';
 
 type MFAFactor = {
   id: string;
@@ -71,7 +72,8 @@ function MFASetupScreen() {
       const { data, error } = await supabase.auth.mfa.listFactors();
       if (error) throw error;
       if (!cancelled) setFactors(data?.totp ?? []);
-    } catch {
+    } catch (e) {
+      logger.error('[silent-fallback] mfa: enroll/challenge step failed:', e);
       // MFA not available or error
     } finally {
       if (!cancelled) setLoading(false);

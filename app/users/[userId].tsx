@@ -124,7 +124,8 @@ function UserProfileScreen() {
         ]);
         setIsUserBlocked(blocked);
         setDmStatus(status);
-      } catch {
+      } catch (e) {
+        logger.error('[silent-fallback] users: profile action failed:', e);
         // Silently ignore state check errors
       }
     };

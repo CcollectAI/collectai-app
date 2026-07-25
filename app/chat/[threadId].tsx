@@ -138,7 +138,8 @@ function ThreadDetailScreen() {
       if (!threadId) return;
       try {
         dataProvider.markThreadRead(threadId).catch((err) => logger.info('[Chat] markRead error:', err));
-      } catch {
+      } catch (e) {
+        logger.error('[silent-fallback] chat: thread action failed:', e);
         // Non-critical
       }
     }, [threadId])

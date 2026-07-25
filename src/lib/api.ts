@@ -21,6 +21,8 @@ export async function callEdge<T = unknown>(fn: string, jwt: string, anonKey: st
     }
     return { ok: true, data: json as T }
   } catch (e: unknown) {
+    // best-effort: not swallowed — the error is returned to the caller as
+    // { ok: false, error } and surfaced there.
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
 }

@@ -101,7 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const loaded = data as Profile;
       setProfile(loaded);
       referredCode = loaded.referred_by_code ?? null;
-    } catch {
+    } catch (e) {
+      logger.error('[silent-fallback] auth: profile hydrate failed:', e);
       setProfile(null);
     }
 

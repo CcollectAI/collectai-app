@@ -8,6 +8,7 @@ import { Alert, AlertType } from '@/types/insights';
 import { featureFlags } from '@/config/featureFlags';
 import { dataProvider } from '@/data';
 import { collectorsApi } from '@/api/collectorsApi';
+import { logger } from '@/lib/logger';
 
 export type UseAlertsFeedOptions = {
   limit?: number;
@@ -137,7 +138,8 @@ export function useAlertsFeed(
     // Persist to backend (fire-and-forget)
     try {
       await collectorsApi.markTriggerRead(alertId);
-    } catch {
+    } catch (e) {
+      logger.error('[silent-fallback] alertsFeed: optimistic action failed to persist:', e);
       // Best-effort — UI already updated optimistically
     }
   }, []);

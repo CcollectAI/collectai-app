@@ -15,6 +15,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { supabase } from "@/lib/supabase";
 import { TWITCH_PURPLE } from "@/constants/colors";
+import { logger } from '@/lib/logger';
 
 type TwitchStats = {
   liveCount: string;
@@ -60,7 +61,8 @@ function useTwitchStats(): { stats: TwitchStats; loading: boolean } {
           creatorsCount: String(totalCount ?? 0),
           dropsCount: "\u2014", // No drops table yet
         });
-      } catch {
+      } catch (e) {
+        logger.error('[silent-fallback] twitch: creators load failed:', e);
         // Table doesn't exist or network error — keep placeholder dashes
       } finally {
         if (!cancelled) setLoading(false);

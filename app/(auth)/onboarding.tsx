@@ -40,6 +40,7 @@ import { CATEGORIES as ALL_CATEGORIES } from '@/constants/categories';
 import { track } from '@/analytics/track';
 import { GradientBackground } from '@/components/auth/GradientBackground';
 import { fonts } from '@/theme/tokens';
+import { logger } from '@/lib/logger';
 
 const ONBOARDING_KEY = '@sparrowcollect/onboarding_complete';
 
@@ -275,7 +276,9 @@ function OnboardingScreen() {
           body: JSON.stringify({ region, currency: defaults.currency, locale: defaults.numberLocale }),
         });
       }
-    } catch {}
+    } catch (e) {
+      logger.error('[silent-fallback] onboarding: step persist failed:', e);
+    }
   }, [updateSettings]);
 
   const onViewableItemsChanged = useRef(

@@ -108,7 +108,10 @@ const SponsorDashboardScreen: React.FC = () => {
           const events = await dataProvider.listEvents({ limit: 50 });
           sponsored = events.filter((e) => e.sponsorName === c.name || e.sponsorCompanyId === c.id);
           setSponsoredEvents(sponsored);
-        } catch { setSponsoredEvents([]); }
+        } catch (e) {
+          logger.error('[silent-fallback] sponsor: sponsored events load failed:', e);
+          setSponsoredEvents([]);
+        }
 
         if (sponsored.length > 0) {
           try {
@@ -118,7 +121,10 @@ const SponsorDashboardScreen: React.FC = () => {
             const results = await Promise.all(annPromises);
             const allAnns = results.flat().sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
             setAnnouncements(allAnns.slice(0, 20));
-          } catch { setAnnouncements([]); }
+          } catch (e) {
+            logger.error('[silent-fallback] sponsor: dashboard load failed:', e);
+            setAnnouncements([]);
+          }
         } else { setAnnouncements([]); }
       } else { setCompany(null); }
     } catch (err: unknown) {

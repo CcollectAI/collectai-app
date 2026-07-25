@@ -266,7 +266,8 @@ function WatchlistTabScreen() {
       const res = await collectorsApi.getAffiliateLinks(item.title, item.category);
       const url = res.links?.[0]?.affiliate_url || `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`;
       Linking.openURL(url).catch(() => {});
-    } catch {
+    } catch (e) {
+      logger.error('[silent-fallback] wishlist: deep-link failed, falling back to web search:', e);
       Linking.openURL(`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`).catch(() => {});
     }
   };

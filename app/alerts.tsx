@@ -242,7 +242,8 @@ function AlertsScreen() {
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
       try {
         await collectorsApi.markTriggerRead(triggerId);
-      } catch {
+      } catch (e) {
+        logger.error('[silent-fallback] alerts: mark-read failed, reverting:', e);
         // Revert on failure — reload from server
         setReadIds(new Set());
         loadTriggers();

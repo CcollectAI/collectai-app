@@ -61,7 +61,9 @@ function VerifyEmailScreen() {
       setResent(true);
       setCooldown(60);
     } catch {
-      // Silently fail — don't leak whether the email exists
+      // best-effort: deliberate. Swallowed so the UI cannot reveal whether the
+      // address exists (account-enumeration defence). Not logged either, since
+      // the log would reconstruct exactly what the response withholds.
     } finally {
       setResending(false);
     }
@@ -76,7 +78,11 @@ function VerifyEmailScreen() {
           clearInterval(interval);
           router.replace('/(auth)/onboarding');
         }
-      } catch {}
+      } catch {
+        // best-effort: 5s poll for verification status. A single failed tick is
+        // meaningless and logging each one would flood the log at 12/min; the
+        // next tick retries.
+      }
     }, 5000);
     const timeout = setTimeout(() => clearInterval(interval), 300000);
     return () => { clearInterval(interval); clearTimeout(timeout); };
