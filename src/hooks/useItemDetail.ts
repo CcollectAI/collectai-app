@@ -259,7 +259,12 @@ export function useItemDetail(params: UseItemDetailParams) {
       const numericValue = parseFloat(editableValue);
       if (!isNaN(numericValue) && numericValue > 0) extraPatch.user_value = numericValue;
       if (Object.keys(extraPatch).length > 0) {
-        await supabase.from('items').update(extraPatch).eq('id', id);
+        // Check the error: this used to discard the result, so a failed or
+        // timed-out write fell straight through to "Changes saved" — a false
+        // success, which is worse than an error. supabase-js resolves rather
+        // than throws, so the only way to notice is to look.
+        const { error: patchError } = await supabase.from('items').update(extraPatch).eq('id', id);
+        if (patchError) throw new Error(patchError.message);
       }
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Changes saved', type: 'success' });

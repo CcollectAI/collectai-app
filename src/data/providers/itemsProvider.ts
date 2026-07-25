@@ -500,7 +500,11 @@ export async function searchItems(query: string): Promise<Item[]> {
     .limit(API_LIMITS.RECENT_ITEMS);
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] searchItems error:', error);
+    // logger.error, not warn: info/warn are STRIPPED in release builds, so a
+    // search that silently returns [] would be invisible in exactly the builds
+    // where it matters. Returning [] renders as "no results", which is
+    // indistinguishable from a genuinely empty search unless this is logged.
+    logger.error('[SupabaseDataProvider] searchItems error:', error);
     return [];
   }
 
