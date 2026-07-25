@@ -368,32 +368,50 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
             # 38k rows and made the daily cron hammer the DB — a monitor that is
             # itself a load problem gets switched off. 300 rows is far more than
             # enough to detect a COLLAPSE, which is all this check is for.
-            priced = await c.fetchval(
+            # STRATIFY BY source. An unordered `LIMIT n` returns the oldest
+            # physical rows, which for any category that gained tcgcsv-derived
+            # rows means sampling only the old seed rows — that reported yugioh
+            # as "collapsed to 40.3%" when the real split is 88% seed / 100%
+            # tcgcsv. Same unordered-LIMIT bias that produced a false DEAD in
+            # audit_key_overlap; a canary that cries wolf gets muted, so weight
+            # each source's rate by its share of the category.
+            rows = await c.fetch(
                 """
-                WITH s AS (
-                    SELECT category, item_key FROM category_items
-                    WHERE category = $1 LIMIT $2
-                )
-                SELECT count(*) FROM s
-                WHERE EXISTS (SELECT 1 FROM price_predictions p
-                              WHERE p.item_ref = s.category||':'||s.item_key
-                                AND p.generated_at >= now() - interval '30 days')
-                   OR EXISTS (SELECT 1 FROM catalog_price_refs x
-                              WHERE x.category = s.category AND x.item_key = s.item_key)
-                """, cat, SAMPLE)
-            sampled = min(total, SAMPLE)
-            pct = 100.0 * priced / sampled
+                SELECT source, count(*) AS n FROM category_items
+                WHERE category = $1 GROUP BY source
+                """, cat)
+            priced = sampled = 0
+            for sr in rows:
+                src, n_src = sr["source"], sr["n"]
+                took = min(n_src, max(1, SAMPLE // max(1, len(rows))))
+                hit = await c.fetchval(
+                    """
+                    WITH s AS (
+                        SELECT category, item_key FROM category_items
+                        WHERE category = $1 AND source IS NOT DISTINCT FROM $2 LIMIT $3
+                    )
+                    SELECT count(*) FROM s
+                    WHERE EXISTS (SELECT 1 FROM price_predictions p
+                                  WHERE p.item_ref = s.category||':'||s.item_key
+                                    AND p.generated_at >= now() - interval '30 days')
+                       OR EXISTS (SELECT 1 FROM catalog_price_refs x
+                                  WHERE x.category = s.category AND x.item_key = s.item_key)
+                    """, cat, src, took)
+                # weight this stratum's rate by its true share of the category
+                priced += (hit / took) * n_src if took else 0
+                sampled += n_src
+            pct = 100.0 * priced / sampled if sampled else 0.0
             if pct < floor:
                 bug("high", "pricing coverage collapsed for %s: %.1f%%" % (cat, pct),
-                    "%d of %d SAMPLED catalog rows can reach a price (floor %.0f%%, table has %d). "
-                    "Users in this category will see 0.00 everywhere while every endpoint "
-                    "still returns 200." % (priced, sampled, floor, total),
+                    "%.0f of %d catalog rows can reach a price (floor %.0f%%), estimated from a "
+                    "source-stratified sample. Users in this category will see 0.00 everywhere "
+                    "while every endpoint still returns 200." % (priced, sampled, floor),
                     src_link("server/pipelines/build_catalog_price_crosswalk.py"),
                     "python3 scripts/audit_key_overlap.py",
                     "Rebuild the crosswalk, or check whether items.canonical_ref resolution broke")
             else:
                 healthy.append({"check": "pricing coverage %s" % cat,
-                                "detail": "%.1f%% priceable (sampled %d of %d)" % (pct, sampled, total)})
+                                "detail": "%.1f%% priceable of %d rows (source-stratified)" % (pct, sampled)})
     except Exception as e:
         bug("info", "pricing coverage canary could not run", str(e)[:200])
 
