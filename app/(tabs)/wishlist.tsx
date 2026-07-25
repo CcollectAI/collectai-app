@@ -104,7 +104,7 @@ function WatchlistTabScreen() {
       const data = await dataProvider.listWatchlist(user?.id ?? 'current-user');
       setItems(data);
     } catch (err) {
-      logger.warn('[Watchlist] loadItems error:', err);
+      logger.error('[Watchlist] loadItems error:', err);
       showToast({ message: 'Failed to load watchlist. Pull down to retry.', type: 'error' });
     } finally {
       setLoading(false);
@@ -166,7 +166,7 @@ function WatchlistTabScreen() {
             type: 'success',
           });
         } catch (alertErr: unknown) {
-          logger.warn('[Watchlist] auto-alert creation failed:', alertErr);
+          logger.error('[Watchlist] auto-alert creation failed:', alertErr);
           // Don't fail the add if alert creation fails
         }
       }
@@ -241,7 +241,7 @@ function WatchlistTabScreen() {
             type: 'success',
           });
         } catch (alertErr: unknown) {
-          logger.warn('[Watchlist] auto-alert creation failed:', alertErr);
+          logger.error('[Watchlist] auto-alert creation failed:', alertErr);
           showToast({ message: 'Target price saved', type: 'success' });
         }
       } else {

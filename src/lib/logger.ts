@@ -18,6 +18,9 @@ const isDev = (() => {
   try {
     return typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production';
   } catch {
+    // best-effort: __DEV__ detection. This IS the logger, so it cannot log
+    // its own bootstrap failure without recursing. Defaulting to dev mode is
+    // the safe side: it prints more, never less.
     return true; // Default to dev mode if detection fails
   }
 })();

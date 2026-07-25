@@ -30,7 +30,7 @@ export async function prepareImageForUpload(uri: string): Promise<string> {
     );
     return result.uri || uri;
   } catch (err) {
-    logger.warn('[prepareImageForUpload] resize failed, using original:', err);
+    logger.error('[prepareImageForUpload] resize failed, using original:', err);
     return uri;
   }
 }

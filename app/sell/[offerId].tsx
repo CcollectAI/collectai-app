@@ -133,7 +133,7 @@ function OfferDetailScreen() {
         })
         .catch((err) => { logger.warn('[OfferDetail] risk flags fetch failed:', err); });
     } catch (err) {
-      logger.warn('[OfferDetail] action failed:', err);
+      logger.error('[OfferDetail] action failed:', err);
       showToast({ message: 'Failed to load offer details', type: 'error' });
     } finally {
       setLoading(false);
@@ -171,7 +171,7 @@ function OfferDetailScreen() {
               track({ name: 'offer_created', properties: { offer_id: offerId as string } });
               await loadData();
             } catch (err) {
-              logger.warn('[OfferDetail] action failed:', err);
+              logger.error('[OfferDetail] action failed:', err);
               showToast({ message: 'Failed to accept offer', type: 'error' });
             } finally {
               setActionLoading(false);
@@ -200,7 +200,7 @@ function OfferDetailScreen() {
               showToast({ message: 'Offer declined', type: 'info' });
               await loadData();
             } catch (err) {
-              logger.warn('[OfferDetail] action failed:', err);
+              logger.error('[OfferDetail] action failed:', err);
               showToast({ message: 'Failed to decline offer', type: 'error' });
             } finally {
               setActionLoading(false);
@@ -220,7 +220,7 @@ function OfferDetailScreen() {
       showToast({ message: 'Offer cancelled', type: 'info' });
       await loadData();
     } catch (err) {
-      logger.warn('[OfferDetail] action failed:', err);
+      logger.error('[OfferDetail] action failed:', err);
       showToast({ message: 'Failed to cancel offer', type: 'error' });
     } finally {
       setActionLoading(false);
@@ -244,7 +244,7 @@ function OfferDetailScreen() {
       setCounterMessage('');
       await loadData();
     } catch (err) {
-      logger.warn('[OfferDetail] action failed:', err);
+      logger.error('[OfferDetail] action failed:', err);
       showToast({ message: 'Failed to send counter-offer', type: 'error' });
     } finally {
       setActionLoading(false);
@@ -270,7 +270,7 @@ function OfferDetailScreen() {
               setTrackingInfo('');
               await loadData();
             } catch (err) {
-              logger.warn('[OfferDetail] action failed:', err);
+              logger.error('[OfferDetail] action failed:', err);
               showToast({ message: 'Failed to mark as shipped', type: 'error' });
             } finally {
               setActionLoading(false);
@@ -294,7 +294,7 @@ function OfferDetailScreen() {
       setRatingComment('');
       await loadData();
     } catch (err) {
-      logger.warn('[OfferDetail] action failed:', err);
+      logger.error('[OfferDetail] action failed:', err);
       showToast({ message: 'Failed to complete deal', type: 'error' });
     } finally {
       setActionLoading(false);

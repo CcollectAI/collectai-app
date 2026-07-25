@@ -216,7 +216,8 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
     // Lazy import to keep this provider tree-shakeable.
     const { emitOutcome } = await import('@/lib/notificationOutcomeTracker');
     emitOutcome('added', { item_id: itemId });
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] itemsProvider.ts:219:', e);
     // Tracker import failed — best-effort, ignore.
   }
 
@@ -330,7 +331,7 @@ export async function persistQuickscanDraft(input: QuickscanDraft): Promise<Pers
         attributes: input.attributes,
       });
     } catch (e) {
-      logger.warn('[SupabaseDataProvider] persistQuickscanDraft attrs PATCH failed (non-fatal):', e);
+      logger.error('[SupabaseDataProvider] persistQuickscanDraft attrs PATCH failed (non-fatal):', e);
     }
   }
 

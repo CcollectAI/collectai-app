@@ -61,7 +61,8 @@ function getEnv(key: string): string | undefined {
   // Fallback to process.env
   try {
     return (process.env as Record<string, string | undefined>)[key];
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] tcgplayer-adapter.ts:64:', e);
     return undefined;
   }
 }
@@ -196,7 +197,7 @@ export class TCGPlayerAdapter implements MarketProviderAdapter {
         }
       }
     } catch (err) {
-      logger.warn(TAG, 'fetchPrices error:', err instanceof Error ? err.message : String(err));
+      logger.error(TAG, 'fetchPrices error:', err instanceof Error ? err.message : String(err));
     }
 
     return priceMap;
@@ -413,7 +414,8 @@ export class TCGPlayerAdapter implements MarketProviderAdapter {
     try {
       const result = await this.search('pikachu', { limit: 1, categoryId: 'pokemon' });
       return result.success;
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] tcgplayer-adapter.ts:416:', e);
       return false;
     }
   }

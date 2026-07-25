@@ -104,14 +104,15 @@ export function MarketplaceConnectionsSection() {
                 d?.return_policy_id,
             );
             return { ...a, defaultsConfigured: ok };
-          } catch {
+          } catch (e) {
+            logger.error('[silent-catch] MarketplaceConnectionsSection.tsx:107:', e);
             return { ...a, defaultsConfigured: false };
           }
         }),
       );
       setAccounts(withDefaults);
     } catch (e) {
-      logger.warn('list_marketplace_accounts_failed', { error: String(e) });
+      logger.error('list_marketplace_accounts_failed', { error: String(e) });
     } finally {
       setLoading(false);
     }
@@ -140,7 +141,7 @@ export function MarketplaceConnectionsSection() {
       if (!ok) throw new Error('cannot open URL');
       await Linking.openURL(url);
     } catch (e) {
-      logger.warn('connect_ebay_failed', { error: String(e) });
+      logger.error('connect_ebay_failed', { error: String(e) });
       Alert.alert(
         t('marketplace_connections.connect_failed_title'),
         t('marketplace_connections.connect_failed_body'),
@@ -166,7 +167,7 @@ export function MarketplaceConnectionsSection() {
               await disconnectMarketplaceAccount(account.id);
               await loadAccounts();
             } catch (e) {
-              logger.warn('disconnect_failed', { error: String(e) });
+              logger.error('disconnect_failed', { error: String(e) });
               Alert.alert('Disconnect failed', 'Please try again.');
             } finally {
               setDisconnectingId(null);

@@ -99,7 +99,7 @@ export async function searchUsers(query: string): Promise<PublicUserProfile[]> {
       'searchUsers',
     ));
   } catch (e) {
-    logger.warn('[SupabaseDataProvider] searchUsers timed out or threw:', e);
+    logger.error('[SupabaseDataProvider] searchUsers timed out or threw:', e);
     return [];
   }
 

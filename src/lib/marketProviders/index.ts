@@ -75,7 +75,7 @@ export async function aggregateSearch(
 
       return { adapter, result };
     } catch (err) {
-      logger.warn(`[aggregateSearch] ${adapter.metadata.id} error:`, err);
+      logger.error(`[aggregateSearch] ${adapter.metadata.id} error:`, err);
       return { adapter, result: null };
     }
   });

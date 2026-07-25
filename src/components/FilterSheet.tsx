@@ -107,7 +107,7 @@ function FilterSheetInner({
         setPresets(JSON.parse(stored));
       }
     } catch (err) {
-      logger.warn('[FilterSheet] Failed to load presets:', err);
+      logger.error('[FilterSheet] Failed to load presets:', err);
     }
   }, []);
 
@@ -116,7 +116,7 @@ function FilterSheetInner({
       await AsyncStorage.setItem(PRESETS_KEY, JSON.stringify(newPresets));
       setPresets(newPresets);
     } catch (err) {
-      logger.warn('[FilterSheet] Failed to save presets:', err);
+      logger.error('[FilterSheet] Failed to save presets:', err);
     }
   }, []);
 

@@ -26,7 +26,8 @@ function getEnv(key: string): string | undefined {
   }
   try {
     return (process.env as Record<string, string | undefined>)[key];
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] index.ts:29:', e);
     return undefined;
   }
 }

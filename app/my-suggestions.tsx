@@ -57,7 +57,7 @@ function MySuggestionsContent() {
         }
         setTotal(data.total);
       } catch (err) {
-        logger.warn("[MySuggestions] Failed to fetch suggestions:", err);
+        logger.error("[MySuggestions] Failed to fetch suggestions:", err);
       } finally {
         if (!cancelledRef.current) {
           setLoading(false);

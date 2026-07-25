@@ -15,6 +15,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logger } from '@/lib/logger';
 
 const STORAGE_KEY = '@sparrowcollect/followed_categories';
 
@@ -58,7 +59,8 @@ export const followedCategoriesStore = {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) current = new Set(parsed);
       }
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] followedCategoriesStore.ts:61:', e);
       /* stale/corrupt cache — fall through to backend hydration */
     }
     hydrated = true;

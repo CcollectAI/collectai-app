@@ -59,7 +59,7 @@ export function useItemMarketplace(
       setMarketScannedAt(new Date().toISOString());
       setMarketExpanded(true);
     } catch (err) {
-      logger.warn('[useItemMarketplace] search error:', err);
+      logger.error('[useItemMarketplace] search error:', err);
       setMarketResults([]);
       setMarketError(true);
       setMarketScannedAt(new Date().toISOString());
@@ -78,7 +78,7 @@ export function useItemMarketplace(
       setDossierData(data || null);
       setDossierExpanded(true);
     } catch (err) {
-      logger.warn('[useItemMarketplace] dossier error:', err);
+      logger.error('[useItemMarketplace] dossier error:', err);
       setDossierData(null);
       setDossierError(true);
       setDossierExpanded(true);

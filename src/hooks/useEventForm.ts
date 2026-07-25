@@ -166,7 +166,7 @@ export function useEventForm(options?: UseEventFormOptions): EventFormState {
         if (name) setLocation(name);
       }
     } catch (err: unknown) {
-      logger.warn('[useEventForm] geolocation error:', err);
+      logger.error('[useEventForm] geolocation error:', err);
       showToast({
         message: 'Could not retrieve your location. Please enter it manually.',
         type: 'error',

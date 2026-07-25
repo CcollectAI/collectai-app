@@ -5,6 +5,7 @@
 
 import { Platform } from 'react-native';
 import { HapticIntent, uniqueIntents } from './intents';
+import { logger } from '@/lib/logger';
 
 // Optional dependency - graceful fallback if not installed
  
@@ -12,7 +13,8 @@ let Haptics: Record<string, any> | null = null;
 
 try {
   Haptics = require('expo-haptics');
-} catch {
+} catch (e) {
+  logger.error('[silent-catch] driver.ts:15:', e);
   // expo-haptics not installed - haptic feedback disabled
 }
 
@@ -71,7 +73,8 @@ async function executeHaptic(intent: HapticIntent): Promise<void> {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         break;
     }
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] driver.ts:74:', e);
     // Silently ignore errors
   }
 }

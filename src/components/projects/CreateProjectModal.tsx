@@ -101,7 +101,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
       const items = await dataProvider.listItems();
       setCategoryItems(items.filter((i) => i.category === catId));
     } catch (err) {
-      logger.warn('[CreateProjectModal] category items fetch failed:', err);
+      logger.error('[CreateProjectModal] category items fetch failed:', err);
       setCategoryItems([]);
     } finally {
       setLoadingItems(false);
@@ -141,7 +141,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
       resetAndClose();
       onCreated();
     } catch (err: unknown) {
-      logger.warn('[CreateProjectModal] create error:', err);
+      logger.error('[CreateProjectModal] create error:', err);
     } finally {
       setCreating(false);
     }

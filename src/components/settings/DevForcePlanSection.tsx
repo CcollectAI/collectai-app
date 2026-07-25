@@ -15,6 +15,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { logger } from '@/lib/logger';
 
 const STORAGE_KEY = '@collectai/force_plan';
 const WEB_KEY = 'COLLECTAI_FORCE_PLAN';
@@ -46,13 +47,15 @@ export const DevForcePlanSection: React.FC = () => {
     setCurrent(plan);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, plan);
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] DevForcePlanSection.tsx:49:', e);
       // no-op
     }
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
         window.localStorage.setItem(WEB_KEY, plan);
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] DevForcePlanSection.tsx:55:', e);
         // no-op
       }
     }
@@ -66,13 +69,15 @@ export const DevForcePlanSection: React.FC = () => {
     setCurrent(null);
     try {
       await AsyncStorage.removeItem(STORAGE_KEY);
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] DevForcePlanSection.tsx:69:', e);
       // no-op
     }
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
         window.localStorage.removeItem(WEB_KEY);
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] DevForcePlanSection.tsx:75:', e);
         // no-op
       }
     }

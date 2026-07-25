@@ -43,7 +43,8 @@ async function clearChunks(key: string): Promise<void> {
         }
       }
     }
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] secureStoreAdapter.ts:46:', e);
     /* best effort — a failed cleanup just leaves orphaned chunks */
   }
 }
@@ -82,7 +83,7 @@ export const secureStoreAdapter = {
       }
       return out;
     } catch (err) {
-      logger.warn("[secureStore] getItem failed:", err);
+      logger.error("[secureStore] getItem failed:", err);
       return null;
     }
   },
@@ -110,7 +111,7 @@ export const secureStoreAdapter = {
       // nothing, never a marker pointing at missing chunks.
       await SecureStore.setItemAsync(key, `${CHUNK_MARKER}${count}`);
     } catch (err) {
-      logger.warn("[secureStore] setItem failed — session will not persist:", err);
+      logger.error("[secureStore] setItem failed — session will not persist:", err);
     }
   },
 
@@ -123,7 +124,7 @@ export const secureStoreAdapter = {
       await clearChunks(key);
       await SecureStore.deleteItemAsync(key);
     } catch (err) {
-      logger.warn("[secureStore] removeItem failed:", err);
+      logger.error("[secureStore] removeItem failed:", err);
     }
   },
 };

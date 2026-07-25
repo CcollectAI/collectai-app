@@ -170,7 +170,7 @@ function EventsScreen() {
         setNearbyEvents(sorted);
       }
     } catch (err) {
-      logger.warn('[Events] nearby events failed:', err);
+      logger.error('[Events] nearby events failed:', err);
       setNearbyError(true);
       showToast({ message: 'Could not load nearby events', type: 'error' });
     } finally {
@@ -236,11 +236,11 @@ function EventsScreen() {
           });
         } catch (calErr) {
           // Calendar add is non-critical; don't fail the RSVP for this
-          logger.warn('[EventsScreen] calendar add error:', calErr);
+          logger.error('[EventsScreen] calendar add error:', calErr);
         }
       }
     } catch (err: unknown) {
-      logger.warn('[EventsScreen] RSVP error:', err);
+      logger.error('[EventsScreen] RSVP error:', err);
     }
   };
 

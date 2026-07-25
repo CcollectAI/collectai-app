@@ -53,7 +53,7 @@ export function initPurchases(): void {
     Purchases.configure({ apiKey });
     configured = true;
   } catch (e) {
-    logger.warn('[purchases] configure failed:', e);
+    logger.error('[purchases] configure failed:', e);
   }
 }
 
@@ -66,7 +66,7 @@ export async function identifyUser(userId: string | null): Promise<void> {
       await Purchases.logOut();
     }
   } catch (e) {
-    logger.warn('[purchases] identifyUser failed:', e);
+    logger.error('[purchases] identifyUser failed:', e);
   }
 }
 
@@ -83,7 +83,7 @@ export async function setReferralAttribute(referralCode: string | null | undefin
   try {
     await Purchases.setAttributes({ affiliate_code: referralCode });
   } catch (e) {
-    logger.warn('[purchases] setReferralAttribute failed:', e);
+    logger.error('[purchases] setReferralAttribute failed:', e);
   }
 }
 
@@ -100,7 +100,7 @@ export async function getCustomerInfo(): Promise<CustomerInfo | null> {
   try {
     return await Purchases.getCustomerInfo();
   } catch (e) {
-    logger.warn('[purchases] getCustomerInfo failed:', e);
+    logger.error('[purchases] getCustomerInfo failed:', e);
     return null;
   }
 }
@@ -110,7 +110,7 @@ export async function getOfferings(): Promise<PurchasesOfferings | null> {
   try {
     return await Purchases.getOfferings();
   } catch (e) {
-    logger.warn('[purchases] getOfferings failed:', e);
+    logger.error('[purchases] getOfferings failed:', e);
     return null;
   }
 }
@@ -128,6 +128,7 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
     const { customerInfo } = await Purchases.purchasePackage(pkg);
     return { ok: true, customerInfo };
   } catch (e) {
+    logger.error('[silent-catch] purchases.ts:130:', e);
     const err = e as { userCancelled?: boolean; message?: string };
     if (err.userCancelled) return { ok: false, cancelled: true };
     return {
@@ -143,7 +144,7 @@ export async function restorePurchases(): Promise<CustomerInfo | null> {
   try {
     return await Purchases.restorePurchases();
   } catch (e) {
-    logger.warn('[purchases] restorePurchases failed:', e);
+    logger.error('[purchases] restorePurchases failed:', e);
     return null;
   }
 }

@@ -34,7 +34,8 @@ function getWebLocalStorageOverride(): string {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       return (window.localStorage.getItem('COLLECTAI_FORCE_PLAN') || '').toLowerCase();
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] useBillingLimits.ts:37:', e);
       return '';
     }
   }

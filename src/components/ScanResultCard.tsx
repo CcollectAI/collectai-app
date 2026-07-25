@@ -158,7 +158,7 @@ function ScanResultCardInner({
       });
       track({ name: 'scan_result_shared', properties: { method: 'text', category: scanResult.attributes.category } });
     } catch (e) {
-      logger.warn('Share failed', e);
+      logger.error('Share failed', e);
     } finally {
       setIsSharing(false);
     }

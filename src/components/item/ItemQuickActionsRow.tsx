@@ -8,6 +8,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { formatPrice } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight as fw, gap } from '@/theme/tokens';
+import { logger } from '@/lib/logger';
 
 interface ItemQuickActionsRowProps {
   editableName: string;
@@ -45,7 +46,8 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
         (val ? `\nEstimated value: ${formatPrice(val)}` : '') +
         `\n\nhttps://sparrowcollect.com`;
       await Share.share({ message });
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] ItemQuickActionsRow.tsx:48:', e);
       // User cancelled
     } finally {
       setBusy(false);

@@ -98,7 +98,7 @@ export async function cacheGet<T = unknown>(key: string): Promise<T | null> {
 
     return JSON.parse(row.data) as T;
   } catch (err) {
-    logger.warn('[offlineCache] cacheGet error:', err);
+    logger.error('[offlineCache] cacheGet error:', err);
     return null;
   }
 }
@@ -127,7 +127,7 @@ export async function cacheSet(
       [key, serialised, expiresAt],
     );
   } catch (err) {
-    logger.warn('[offlineCache] cacheSet error:', err);
+    logger.error('[offlineCache] cacheSet error:', err);
   }
 }
 
@@ -155,7 +155,7 @@ export async function cacheClear(prefix?: string): Promise<void> {
       logger.info('[offlineCache] cleared all entries');
     }
   } catch (err) {
-    logger.warn('[offlineCache] cacheClear error:', err);
+    logger.error('[offlineCache] cacheClear error:', err);
   }
 }
 
@@ -185,7 +185,7 @@ export async function cacheEvictExpired(): Promise<number> {
     }
     return deleted;
   } catch (err) {
-    logger.warn('[offlineCache] cacheEvictExpired error:', err);
+    logger.error('[offlineCache] cacheEvictExpired error:', err);
     return 0;
   }
 }

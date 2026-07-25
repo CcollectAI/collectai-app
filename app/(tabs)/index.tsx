@@ -70,7 +70,8 @@ let analyticsApi: { fetchPortfolioSnapshot?: () => Promise<unknown>; [k: string]
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   analyticsApi = require("@/store/portfolioAnalyticsStore");
-} catch {
+} catch (e) {
+  logger.error('[silent-catch] index.tsx:73:', e);
   analyticsApi = null;
 }
 
@@ -274,7 +275,7 @@ function PortfolioScreen() {
             setItems([]);
           }
         } catch (realErr: unknown) {
-          logger.warn("[Portfolio] Real backend error, falling back:", realErr);
+          logger.error("[Portfolio] Real backend error, falling back:", realErr);
           setError("Could not load portfolio data.");
           setSeries([]);
           setItems([]);
@@ -296,7 +297,7 @@ function PortfolioScreen() {
               : [];
             if ((snap as Record<string, unknown>)?.tierSummary) setTierSummary((snap as Record<string, unknown>).tierSummary as typeof tierSummary);
           } catch (mockErr) {
-            logger.warn("[Portfolio] Mock store error:", mockErr);
+            logger.error("[Portfolio] Mock store error:", mockErr);
           }
         }
 
@@ -313,7 +314,7 @@ function PortfolioScreen() {
         setItems(baseItems);
       }
     } catch (err: unknown) {
-      logger.warn("[Portfolio] Unexpected error:", err);
+      logger.error("[Portfolio] Unexpected error:", err);
       setError("Failed to load portfolio data.");
       setSeries([]);
       setItems([]);
@@ -387,7 +388,8 @@ function PortfolioScreen() {
             if (Array.isArray(parsed) && parsed.length > 0) {
               setFollowedCategories(parsed);
             }
-          } catch {}
+          } catch (e) {
+            logger.error('[silent-catch] index.tsx:390:', e);}
         }
       })
       .catch((err) => logger.warn('[Home] followed categories local fetch error:', err));

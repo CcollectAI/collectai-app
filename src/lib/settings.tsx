@@ -88,7 +88,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setSettings((prev) => ({ ...prev, fxRates: next }));
       }
     } catch (e) {
-      logger.debug('[settings] FX rate fetch failed:', e);
+      logger.error('[settings] FX rate fetch failed:', e);
     }
   }, []);
 
@@ -107,7 +107,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (e) {
-        logger.warn('[settings] Failed to load settings from AsyncStorage:', e);
+        logger.error('[settings] Failed to load settings from AsyncStorage:', e);
       }
       setReady(true);
     })();

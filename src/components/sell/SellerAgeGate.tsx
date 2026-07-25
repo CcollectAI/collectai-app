@@ -17,6 +17,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { verifySellerAge } from '@/api/marketplaceApi';
 import { registerSellerAgeGate } from '@/api/sellerAgeGate';
 import { fonts } from '@/theme/tokens';
+import { logger } from '@/lib/logger';
 
 type Pending = {
   resolve: (ok: boolean) => void;
@@ -53,7 +54,8 @@ export function SellerAgeGateProvider({ children }: { children: React.ReactNode 
     try {
       await verifySellerAge();
       finish(true);
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] SellerAgeGate.tsx:56:', e);
       // If the verify call itself fails (network etc.) treat as cancel so
       // the caller doesn't retry against a still-gated backend.
       finish(false);

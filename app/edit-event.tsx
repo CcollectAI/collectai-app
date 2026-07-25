@@ -105,7 +105,7 @@ const EditEventScreen: React.FC = () => {
 
         setOriginalEvent(evt);
       } catch (err: unknown) {
-        logger.warn('[EditEvent] load error:', err);
+        logger.error('[EditEvent] load error:', err);
         setAuthError('Failed to load event.');
       } finally {
         setInitialLoading(false);
@@ -135,7 +135,7 @@ const EditEventScreen: React.FC = () => {
       await dataProvider.updateEvent(eventId, patch);
       router.back();
     } catch (err: unknown) {
-      logger.warn('[EditEvent] error:', err);
+      logger.error('[EditEvent] error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to update event. Please try again.', type: 'error' });
     } finally {
       setSaving(false);
@@ -160,7 +160,7 @@ const EditEventScreen: React.FC = () => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
               router.back();
             } catch (err: unknown) {
-              logger.warn('[EditEvent] cancel error:', err);
+              logger.error('[EditEvent] cancel error:', err);
               showToast({ message: (err as Error)?.message || 'Failed to cancel event.', type: 'error' });
             }
           },

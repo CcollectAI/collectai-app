@@ -16,7 +16,7 @@ let Haptics: Record<string, any> | null = null;
 try {
   Haptics = require('expo-haptics');
 } catch {
-  logger.info('[Haptics] expo-haptics not installed - haptic feedback disabled');
+  logger.error('[Haptics] expo-haptics not installed - haptic feedback disabled');
 }
 
 // Check if haptics are available (iOS and some Android devices)
@@ -30,6 +30,7 @@ export function lightTap(): void {
   try {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   } catch (e) {
+    logger.error('[silent-catch] haptics.ts:32:', e);
     // Silently ignore errors
   }
 }
@@ -42,6 +43,7 @@ export function mediumTap(): void {
   try {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   } catch (e) {
+    logger.error('[silent-catch] haptics.ts:44:', e);
     // Silently ignore errors
   }
 }
@@ -54,6 +56,7 @@ export function heavyTap(): void {
   try {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
   } catch (e) {
+    logger.error('[silent-catch] haptics.ts:56:', e);
     // Silently ignore errors
   }
 }
@@ -66,6 +69,7 @@ export function success(): void {
   try {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   } catch (e) {
+    logger.error('[silent-catch] haptics.ts:68:', e);
     // Silently ignore errors
   }
 }
@@ -78,6 +82,7 @@ export function warning(): void {
   try {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   } catch (e) {
+    logger.error('[silent-catch] haptics.ts:80:', e);
     // Silently ignore errors
   }
 }
@@ -90,6 +95,7 @@ export function error(): void {
   try {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   } catch (e) {
+    logger.error('[silent-catch] haptics.ts:92:', e);
     // Silently ignore errors
   }
 }
@@ -102,6 +108,7 @@ export function selection(): void {
   try {
     Haptics.selectionAsync();
   } catch (e) {
+    logger.error('[silent-catch] haptics.ts:104:', e);
     // Silently ignore errors
   }
 }

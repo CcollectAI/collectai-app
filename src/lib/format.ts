@@ -1,5 +1,6 @@
 import type { Currency, NumberLocale, Settings } from './settings';
 import { convertEUR } from './fx';
+import { logger } from '@/lib/logger';
 
 /** Map currency code to its symbol for inline display. */
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
@@ -83,7 +84,8 @@ export function formatPrice(amount: number | null | undefined, currency: Currenc
       maximumFractionDigits: 0,
     });
     return fmt.format(amount);
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] format.ts:86:', e);
     return `${amount.toFixed(0)} ${currency}`;
   }
 }

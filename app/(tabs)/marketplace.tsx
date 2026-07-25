@@ -204,7 +204,8 @@ const SearchScreen: React.FC = () => {
             return;
           }
         }
-      } catch { /* cache miss, proceed to fetch */ }
+      } catch (e) {
+        logger.error('[silent-catch] marketplace.tsx:207:', e); /* cache miss, proceed to fetch */ }
       try {
         const data = await collectorsApi.getDemandHeat();
         if (cancelled) return;
@@ -215,7 +216,7 @@ const SearchScreen: React.FC = () => {
           setDemandHeat(sliced);
           AsyncStorage.setItem(DEMAND_HEAT_CACHE_KEY, JSON.stringify({ data: sliced, ts: Date.now() })).catch(() => {});
         }
-      } catch (err) { logger.warn('[Marketplace] getDemandHeat error:', err); }
+      } catch (err) { logger.error('[Marketplace] getDemandHeat error:', err); }
     }
 
     async function fetchRegionalDemand() {
@@ -228,7 +229,8 @@ const SearchScreen: React.FC = () => {
             return;
           }
         }
-      } catch { /* cache miss, proceed to fetch */ }
+      } catch (e) {
+        logger.error('[silent-catch] marketplace.tsx:231:', e); /* cache miss, proceed to fetch */ }
       try {
         const data = await collectorsApi.getDemandHeatByRegion();
         if (cancelled) return;
@@ -238,7 +240,7 @@ const SearchScreen: React.FC = () => {
           setRegionalDemand(sliced);
           AsyncStorage.setItem(REGIONAL_DEMAND_CACHE_KEY, JSON.stringify({ data: sliced, ts: Date.now() })).catch(() => {});
         }
-      } catch (err) { logger.warn('[Marketplace] getDemandHeatByRegion error:', err); }
+      } catch (err) { logger.error('[Marketplace] getDemandHeatByRegion error:', err); }
     }
 
     fetchDemandHeat();
@@ -543,7 +545,7 @@ const SearchScreen: React.FC = () => {
         url: quickViewItem.externalUrl,
       });
     } catch (err) {
-      logger.warn('[Marketplace] share error:', err);
+      logger.error('[Marketplace] share error:', err);
     }
   }, [quickViewItem, settings.hapticsEnabled]);
 

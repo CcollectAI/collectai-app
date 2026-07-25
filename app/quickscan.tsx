@@ -197,7 +197,8 @@ function QuickScanScreen() {
           try {
             const parsed = JSON.parse(followedRaw);
             if (Array.isArray(parsed)) followed = parsed;
-          } catch {/* ignore */}
+          } catch (e) {
+            logger.error('[silent-catch] quickscan.tsx:200:', e);/* ignore */}
         }
         const list = items ?? [];
         if (list.length === 0 && !followed?.length) return;
@@ -223,7 +224,8 @@ function QuickScanScreen() {
             setEdgeHint(hint);
           }
         }
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] quickscan.tsx:226:', e);
         // Silent — frame capture may fail during transitions
       }
     }, VIEWFINDER_HINT_INTERVAL);
@@ -280,7 +282,7 @@ function QuickScanScreen() {
         setPhase('camera');
       }
     } catch (err) {
-      logger.warn('[QuickScan] Screenshot analysis failed:', err);
+      logger.error('[QuickScan] Screenshot analysis failed:', err);
       showToast({ message: 'Screenshot analysis failed', type: 'error' });
       setPhase('camera');
     }
@@ -310,7 +312,7 @@ function QuickScanScreen() {
       showToast({ message: 'Item saved to collection!', type: 'success' });
       resetCamera();
     } catch (err: unknown) {
-      logger.warn('[QuickScan] batch save error:', err);
+      logger.error('[QuickScan] batch save error:', err);
       showToast({
         message: (err as Error)?.message ?? 'Failed to save item.',
         type: 'error',
@@ -389,7 +391,7 @@ function QuickScanScreen() {
             setCapturedUri(null);
           }
         } catch (err: unknown) {
-          logger.warn('[QuickScan] multi-detect error:', err);
+          logger.error('[QuickScan] multi-detect error:', err);
           showToast({ message: 'Multi-detect failed. Try standard mode.', type: 'error' });
           setPhase('camera');
           setCapturedUri(null);
@@ -524,7 +526,7 @@ function QuickScanScreen() {
         setPhase('result');
       }
     } catch (err: unknown) {
-      logger.warn('[QuickScan] error:', err);
+      logger.error('[QuickScan] error:', err);
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
       showToast({
         message: (err as Error)?.message ?? 'Unable to analyze image. Please try again.',

@@ -94,7 +94,7 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
             await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
             continue;
           }
-          logger.warn('[CategoryOverviewRail] fetch failed:', e);
+          logger.error('[CategoryOverviewRail] fetch failed:', e);
           if (!cancelled) {
             setFailed(true);
             setLoading(false);

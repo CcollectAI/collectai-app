@@ -103,7 +103,7 @@ function CatalogSetScreen() {
           error: err instanceof Error ? err.message : String(err),
           ms: elapsed(),
         });
-        logger.warn("[CatalogSet] load error:", err);
+        logger.error("[CatalogSet] load error:", err);
         if (mode === "replace" && id === reqId.current) setItems([]);
       } finally {
         if (id === reqId.current) {

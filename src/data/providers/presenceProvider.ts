@@ -10,7 +10,7 @@ export async function sendHeartbeat(): Promise<void> {
   try {
     await supabase.rpc('rpc_heartbeat_v1');
   } catch (err: unknown) {
-    logger.warn('[SupabaseDataProvider] heartbeat error:', err);
+    logger.error('[SupabaseDataProvider] heartbeat error:', err);
   }
 }
 
@@ -18,7 +18,7 @@ export async function goOffline(): Promise<void> {
   try {
     await supabase.rpc('rpc_go_offline_v1');
   } catch (err: unknown) {
-    logger.warn('[SupabaseDataProvider] goOffline error:', err);
+    logger.error('[SupabaseDataProvider] goOffline error:', err);
   }
 }
 

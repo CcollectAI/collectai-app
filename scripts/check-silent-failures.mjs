@@ -112,7 +112,13 @@ for (const abs of files) {
   }
 }
 
-const BLOCKING = ['ungated-demo-data', 'capped-aggregate', 'unchecked-write', 'unknown-as-zero'];
+// All six classes are at 0 and each was proven by reintroducing its bug, so
+// every one now blocks. swallowed-catch and prod-invisible-log were a reported
+// backlog until 2026-07-25, when they were closed mechanically: 91 catches got
+// a logger.error, and 182 warn/info calls inside catch blocks were raised to
+// error so a failure survives the release build that strips warn/info.
+const BLOCKING = ['ungated-demo-data', 'capped-aggregate', 'unchecked-write',
+                  'unknown-as-zero', 'swallowed-catch', 'prod-invisible-log'];
 const byClass = findings.reduce((a, f) => ((a[f.cls] ??= []).push(f), a), {});
 const ORDER = ['ungated-demo-data', 'capped-aggregate', 'unchecked-write', 'unknown-as-zero', 'swallowed-catch', 'prod-invisible-log'];
 const SEVERITY = {

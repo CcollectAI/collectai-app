@@ -23,6 +23,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { logger } from '@/lib/logger';
 
 let Sentry: {
   captureException: (e: unknown, ctx?: Record<string, unknown>) => void;
@@ -30,7 +31,8 @@ let Sentry: {
 } | null = null;
 try {
   Sentry = require('@sentry/react-native');
-} catch {
+} catch (e) {
+  logger.error('[silent-catch] DevSentryCrashSection.tsx:33:', e);
   // sentry not installed in dev — no-op
 }
 

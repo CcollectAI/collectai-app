@@ -169,7 +169,8 @@ function SearchScreen() {
           try {
             const parsed = JSON.parse(stored);
             if (Array.isArray(parsed)) setRecentSearches(parsed);
-          } catch { /* ignore parse errors */ }
+          } catch (e) {
+            logger.error('[silent-catch] search.tsx:172:', e); /* ignore parse errors */ }
         }
       })
       .catch((err) => logger.warn('[Search] restore recent searches failed:', err));

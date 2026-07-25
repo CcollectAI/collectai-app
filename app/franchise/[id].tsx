@@ -94,7 +94,7 @@ function FranchiseDetailScreen() {
 
       setItems(result);
     } catch (err) {
-      logger.warn('[FranchiseDetail] loadItems error:', err);
+      logger.error('[FranchiseDetail] loadItems error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);

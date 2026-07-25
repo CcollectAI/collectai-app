@@ -99,7 +99,7 @@ function CategoryStoreScreen() {
       });
     } catch (err: unknown) {
       logLoad(`category:${categoryId}`, { error: err instanceof Error ? err.message : String(err), ms: elapsed() });
-      logger.warn('[CategoryStore] store fetch error:', err);
+      logger.error('[CategoryStore] store fetch error:', err);
     }
 
     setDeepDiveLoading(true);
@@ -153,7 +153,7 @@ function CategoryStoreScreen() {
     } catch (err) {
       // Revert on error
       setFollowing(!newFollowing);
-      logger.warn('[Category] Follow toggle failed', err);
+      logger.error('[Category] Follow toggle failed', err);
       // Surface the real failure (status + detail) — a generic message hides
       // whether this is auth, network, or a server error.
       const detail = err instanceof Error && err.message ? ` (${err.message})` : '';

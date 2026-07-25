@@ -11,6 +11,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { featureFlags } from '@/config/featureFlags';
 import { submitScanFeedback } from '@/api/collectorsApi';
+import { logger } from '@/lib/logger';
 
 type EditableField = 'name' | 'category' | 'condition';
 
@@ -68,7 +69,8 @@ function ScanFeedbackPanelInner({
       setFeedbackSent(true);
       setEditingField(null);
       Alert.alert('Thanks!', 'Your correction helps improve future scans.');
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] ScanFeedbackPanel.tsx:71:', e);
       Alert.alert('Error', 'Could not submit feedback. Please try again.');
     }
   }, [editingField, editValue, scanSessionId]);

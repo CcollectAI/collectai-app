@@ -6,6 +6,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logger } from '@/lib/logger';
 
 // Achievement definitions
 export interface Achievement {
@@ -227,7 +228,8 @@ export async function loadEarnedAchievements(): Promise<EarnedAchievement[]> {
   try {
     const stored = await AsyncStorage.getItem(ACHIEVEMENTS_KEY);
     return stored ? JSON.parse(stored) : [];
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] achievements.ts:230:', e);
     return [];
   }
 }

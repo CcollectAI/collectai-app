@@ -78,7 +78,8 @@ try {
       return origInputRender.call(this, { ...props, style }, ref);
     };
   }
-} catch {
+} catch (e) {
+  logger.error('[silent-catch] _layout.tsx:81:', e);
   // Font monkey-patch failed — system font will be used as fallback
 }
 
@@ -90,16 +91,19 @@ let Updates: {
 try {
   Updates = require("expo-updates");
 } catch (_) {
+  logger.error('[silent-catch] _layout.tsx:92:', _);
   // expo-updates not installed or in dev — skip
 }
 
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
 import { scrubSentryEvent, scrubSentryBreadcrumb } from '@/lib/sentryScrub';
+import { logger } from '@/lib/logger';
 
 let Sentry: { init: (opts: Record<string, unknown>) => void; wrap: (component: React.ComponentType) => React.ComponentType } | null = null;
 try {
   Sentry = require("@sentry/react-native");
 } catch (_) {
+  logger.error('[silent-catch] _layout.tsx:102:', _);
   // @sentry/react-native not installed – skip silently
 }
 
@@ -116,7 +120,8 @@ if (Sentry && SENTRY_DSN) {
     beforeSend: (event: Record<string, any>) => {
       try {
         return scrubSentryEvent(event);
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] _layout.tsx:119:', e);
         // If scrubbing itself throws, drop the event — better to lose
         // a crash report than ship raw PII.
         return null;
@@ -125,7 +130,8 @@ if (Sentry && SENTRY_DSN) {
     beforeBreadcrumb: (breadcrumb: Record<string, any>) => {
       try {
         return scrubSentryBreadcrumb(breadcrumb);
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] _layout.tsx:128:', e);
         return null;
       }
     },

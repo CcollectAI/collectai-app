@@ -181,7 +181,7 @@ function NotificationsScreen() {
     try {
       await markAllNotificationsRead();
     } catch (err) {
-      logger.warn('[Notifications] mark-all-read failed:', err);
+      logger.error('[Notifications] mark-all-read failed:', err);
       // Rollback on failure
       setNotifications(previousNotifications);
       setUnreadCount(previousUnreadCount);

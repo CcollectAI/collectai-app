@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Form validation utilities.
  *
@@ -79,7 +80,8 @@ export function url(fieldName: string = "URL"): Validator {
       return u.protocol === "http:" || u.protocol === "https:"
         ? null
         : `${fieldName} must start with http:// or https://`;
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] validate.ts:82:', e);
       return `${fieldName} must be a valid URL`;
     }
   };

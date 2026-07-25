@@ -51,7 +51,8 @@ export async function initOfflineQueue(): Promise<void> {
     for (const listener of _failureListeners) {
       try {
         listener(failed);
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] OfflineDataProvider.ts:54:', e);
         // swallow listener errors
       }
     }

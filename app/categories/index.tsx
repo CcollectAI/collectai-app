@@ -57,7 +57,7 @@ function CategoriesListScreen() {
       const data = await dataProvider.listCategorySummaries();
       setCategories(data);
     } catch (err: unknown) {
-      logger.warn('[CategoriesList] loadCategories error:', err);
+      logger.error('[CategoriesList] loadCategories error:', err);
       setError((err as Error)?.message || 'Failed to load categories');
     } finally {
       setLoading(false);

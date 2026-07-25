@@ -84,7 +84,7 @@ function CatalogItemMuseumScreen() {
         const data = res as { links?: AffiliateLink[] } | undefined;
         if (!cancelled) setLinks(data?.links ?? []);
       } catch (e) {
-        logger.warn('[museum] affiliate links failed:', e);
+        logger.error('[museum] affiliate links failed:', e);
       } finally {
         if (!cancelled) setLinksLoading(false);
       }
@@ -105,7 +105,7 @@ function CatalogItemMuseumScreen() {
           .slice(0, 10);
         if (!cancelled) setSiblings(sameSet);
       } catch (e) {
-        logger.warn('[museum] siblings fetch failed:', e);
+        logger.error('[museum] siblings fetch failed:', e);
       }
     })();
     return () => { cancelled = true; };
@@ -124,7 +124,7 @@ function CatalogItemMuseumScreen() {
         setPriceDetail({ estimated_price: res.estimated_price, comps_count: res.comps_count });
         if (res.estimated_price != null) setEstPrice(res.estimated_price);
       } catch (e) {
-        logger.warn('[museum] price detail fetch failed:', e);
+        logger.error('[museum] price detail fetch failed:', e);
       }
     })();
     return () => { cancelled = true; };

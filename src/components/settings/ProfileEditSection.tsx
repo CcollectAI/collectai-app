@@ -90,7 +90,7 @@ function ProfileEditSectionInner() {
         showToast({ message: `Saved ${filename}`, type: 'info', duration: 4000 });
       }
     } catch (e) {
-      logger.warn('[Settings] full inventory export failed:', e);
+      logger.error('[Settings] full inventory export failed:', e);
       showToast({ message: 'Failed to export inventory', type: 'error' });
     } finally {
       setExportingFullInventory(false);
@@ -113,6 +113,7 @@ function ProfileEditSectionInner() {
       await signOut();
       Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
     } catch (e) {
+      logger.error('[silent-catch] ProfileEditSection.tsx:115:', e);
       Alert.alert(
         'Error',
         e instanceof Error ? e.message : 'Failed to delete account. Please try again.',
@@ -139,7 +140,7 @@ function ProfileEditSectionInner() {
       setEditProfileVisible(false);
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     } catch (e) {
-      logger.warn('[Settings] Failed to save profile:', e);
+      logger.error('[Settings] Failed to save profile:', e);
       showToast({ message: 'Failed to save profile changes', type: 'error' });
     } finally {
       setSavingProfile(false);

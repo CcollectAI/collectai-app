@@ -23,6 +23,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { recordPushImpression, recordPushInteraction } from "@/api/intelligenceApi";
 import { trackTap } from "@/lib/notificationOutcomeTracker";
 import { itemHref } from "@/lib/ids";
+import { logger } from '@/lib/logger';
 
 // ---------------------------------------------------------------------------
 // Configure how notifications appear when the app is in the foreground
@@ -123,10 +124,12 @@ export function usePushNotifications(userId: string | null) {
         // Clear badge on app open
         try {
           await Notifications.setBadgeCountAsync(0);
-        } catch {
+        } catch (e) {
+          logger.error('[silent-catch] usePushNotifications.ts:126:', e);
           // Silently ignore
         }
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] usePushNotifications.ts:129:', e);
         // expo-notifications is not available (web, certain Expo Go versions)
         // or another error occurred — silently ignore.
       }
@@ -158,7 +161,8 @@ export function usePushNotifications(userId: string | null) {
         try {
           const badgeCount = await Notifications.getBadgeCountAsync();
           await Notifications.setBadgeCountAsync(badgeCount + 1);
-        } catch {
+        } catch (e) {
+          logger.error('[silent-catch] usePushNotifications.ts:161:', e);
           // Badge count not supported on all platforms
         }
       });
@@ -202,7 +206,8 @@ export function usePushNotifications(userId: string | null) {
             if (ALLOWED_SCHEMES.includes(parsed.protocol)) {
               Linking.openURL(directUrl).catch(() => {});
             }
-          } catch {
+          } catch (e) {
+            logger.error('[silent-catch] usePushNotifications.ts:205:', e);
             // Invalid URL — ignore silently
           }
           return;
@@ -255,7 +260,8 @@ export function usePushNotifications(userId: string | null) {
         if (state === "active") {
           try {
             await Notifications.setBadgeCountAsync(0);
-          } catch {
+          } catch (e) {
+            logger.error('[silent-catch] usePushNotifications.ts:258:', e);
             // Silently ignore
           }
         }

@@ -1,4 +1,5 @@
 import { API_BASE_URL, API_KEY } from '@/config/api';
+import { logger } from '@/lib/logger';
 
 export interface VisionPredictRequest {
   image_base64: string;
@@ -54,7 +55,8 @@ async function request<T>(
     try {
       const text = await res.text();
       if (text) message = text;
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] visionClient.ts:57:', e);
       // ignore
     }
     throw new Error(message);

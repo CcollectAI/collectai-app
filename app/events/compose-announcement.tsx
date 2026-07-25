@@ -89,7 +89,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
       );
       router.back();
     } catch (err: unknown) {
-      logger.warn('[ComposeAnnouncement] error:', err);
+      logger.error('[ComposeAnnouncement] error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to send announcement. Please try again.', type: 'error' });
     } finally {
       setSaveState('idle');

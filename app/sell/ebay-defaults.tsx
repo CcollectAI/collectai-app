@@ -130,7 +130,7 @@ function EbayDefaultsScreen() {
         });
       }
     } catch (e) {
-      logger.warn('get_ebay_defaults_failed', { error: String(e) });
+      logger.error('get_ebay_defaults_failed', { error: String(e) });
     } finally {
       setLoading(false);
     }
@@ -167,7 +167,7 @@ function EbayDefaultsScreen() {
       showToast({ message: 'Defaults saved', type: 'success' });
       router.back();
     } catch (e) {
-      logger.warn('set_ebay_defaults_failed', { error: String(e) });
+      logger.error('set_ebay_defaults_failed', { error: String(e) });
       Alert.alert(
         'Save failed',
         'Could not save eBay defaults. Check your values and try again.',

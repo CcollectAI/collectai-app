@@ -67,7 +67,7 @@ function BuildPaintProjectsScreen() {
       setProjects(data);
       setError(null);
     } catch (err: unknown) {
-      logger.warn("[BuildPaintProjects] loadProjects error:", err);
+      logger.error("[BuildPaintProjects] loadProjects error:", err);
       setError((err as Error)?.message || "Failed to load projects");
     } finally {
       setLoading(false);

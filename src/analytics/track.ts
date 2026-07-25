@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Analytics module — single choke-point for all event tracking.
  *
@@ -113,7 +114,8 @@ export function initAnalytics(apiKey: string | undefined, host?: string): void {
   try {
     const PostHog = require('posthog-react-native');
     posthog = new PostHog.PostHog(apiKey, { host: host ?? 'https://us.i.posthog.com' });
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] track.ts:116:', e);
     // SDK not installed — analytics disabled
   }
 }

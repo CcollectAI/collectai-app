@@ -42,7 +42,8 @@ function formatTimestamp(iso?: string): string {
     const diff = Date.now() - d.getTime();
     if (diff < MS_PER_WEEK) return timeAgo(d);
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] announcements.tsx:45:', e);
     return '';
   }
 }
@@ -76,7 +77,7 @@ const EventAnnouncementsScreen: React.FC = () => {
       setAnnouncements(announcementList);
       setEvent(eventData);
     } catch (err: unknown) {
-      logger.warn('[EventAnnouncements] loadData error:', err);
+      logger.error('[EventAnnouncements] loadData error:', err);
     } finally {
       setLoading(false);
     }

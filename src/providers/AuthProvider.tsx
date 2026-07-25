@@ -53,6 +53,7 @@ let Sentry: SentryModule | null = null;
 try {
   Sentry = require('@sentry/react-native');
 } catch (_) {
+  logger.error('[silent-catch] AuthProvider.tsx:55:', _);
   // not installed
 }
 
@@ -115,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await setReferralAttribute(referredCode);
       } catch (e) {
-        logger.warn('[AuthProvider] referral attribution failed:', e);
+        logger.error('[AuthProvider] referral attribution failed:', e);
       }
     }
   }, []);
@@ -160,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.auth.setSession({ access_token, refresh_token });
         if (isRecovery) router.replace('/(auth)/reset-password' as Href);
       } catch (e) {
-        logger.warn('[AuthProvider] setSession from deep link failed:', e);
+        logger.error('[AuthProvider] setSession from deep link failed:', e);
         if (isRecovery) setRecoveryPending(false);
       }
     };
@@ -225,7 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         await loadProfile(data.session?.user ?? null);
       } catch (e) {
-        logger.warn('[AuthProvider] getSession error:', e);
+        logger.error('[AuthProvider] getSession error:', e);
       } finally {
         if (active) setLoading(false);
       }
@@ -265,7 +266,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       track({ name: 'user_logged_out' });
       resetAnalytics();
     } catch (e) {
-      logger.warn('[AuthProvider] signOut error:', e);
+      logger.error('[AuthProvider] signOut error:', e);
     }
   }, []);
 

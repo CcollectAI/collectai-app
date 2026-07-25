@@ -105,7 +105,7 @@ function CategoryBrowseScreen() {
         setItems((prev) => (mode === "append" ? [...prev, ...page] : page));
         if (typeof res?.total === "number") setTotal(res.total);
       } catch (err) {
-        logger.warn("[CategoryBrowse] load error:", err);
+        logger.error("[CategoryBrowse] load error:", err);
         if (mode === "replace" && id === reqId.current) setItems([]);
       } finally {
         if (id === reqId.current) {

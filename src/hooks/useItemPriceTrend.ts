@@ -35,7 +35,7 @@ export function useItemPriceTrend(itemId: string | undefined, isDraft: boolean) 
       setPriceTrendHoverValue(null);
       setPriceTrendHoverDate(null);
     } catch (err) {
-      logger.warn('[useItemPriceTrend] fetch error:', err);
+      logger.error('[useItemPriceTrend] fetch error:', err);
       setPriceTrendData(null);
     } finally {
       setPriceTrendLoading(false);

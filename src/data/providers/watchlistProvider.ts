@@ -36,7 +36,7 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     error = res.error;
   } catch (e) {
     if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] listWatchlist timed out — returning empty list');
+      logger.error('[SupabaseDataProvider] listWatchlist timed out — returning empty list');
       return [];
     }
     throw e;
@@ -115,7 +115,8 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
   try {
     const { emitOutcome } = await import('@/lib/notificationOutcomeTracker');
     emitOutcome('followed', { watchlist_id: r.id, title: input.title });
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] watchlistProvider.ts:118:', e);
     // best-effort
   }
 
@@ -188,6 +189,7 @@ export async function removeWatchlistItems(ids: string[]): Promise<void> {
     try {
       await removeWatchlistItem(id);
     } catch (err) {
+      logger.error('[silent-catch] watchlistProvider.ts:190:', err);
       errors.push(err instanceof Error ? err.message : String(err));
     }
   }
@@ -248,7 +250,7 @@ export async function convertWatchlistToItem(
   try {
     await collectorsApi.delete(`/watchlist/mine/${encodeURIComponent(watchlistItemId)}`);
   } catch (e) {
-    logger.warn('[SupabaseDataProvider] convertWatchlistToItem delete failed (item created OK):', e);
+    logger.error('[SupabaseDataProvider] convertWatchlistToItem delete failed (item created OK):', e);
   }
 
   return {

@@ -42,7 +42,7 @@ export async function lookupByBarcode(
       imageUrl: (res.image_url as string | null) ?? null,
     };
   } catch (err: unknown) {
-    logger.warn('[SupabaseDataProvider] lookupByBarcode API error:', err);
+    logger.error('[SupabaseDataProvider] lookupByBarcode API error:', err);
 
     return {
       title: null,
@@ -96,7 +96,7 @@ export async function marketSearch(
       confidence: (res.confidence as number | null) ?? 0.5,
     };
   } catch (err: unknown) {
-    logger.warn('[SupabaseDataProvider] marketSearch API error:', err);
+    logger.error('[SupabaseDataProvider] marketSearch API error:', err);
 
     return {
       hits: [],

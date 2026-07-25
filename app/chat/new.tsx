@@ -57,7 +57,7 @@ const NewChatScreen: React.FC = () => {
           setDmStatus(status);
         }
       } catch (err) {
-        logger.warn('[Chat/new] status check error:', err);
+        logger.error('[Chat/new] status check error:', err);
         setDmStatus('none');
       }
     };

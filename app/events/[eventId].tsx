@@ -82,7 +82,7 @@ function EventDetailScreen() {
       const eventData = await dataProvider.getEventById(eventId);
       setEvent(eventData);
     } catch (err) {
-      logger.warn('[EventDetail] loadEvent error:', err);
+      logger.error('[EventDetail] loadEvent error:', err);
     } finally {
       setLoading(false);
     }
@@ -164,7 +164,8 @@ function EventDetailScreen() {
     try {
       const eventDate = new Date(event.endDate || event.date);
       return eventDate < new Date();
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] [eventId].tsx:167:', e);
       return false;
     }
   }, [event?.date, event?.endDate]);
@@ -182,7 +183,7 @@ function EventDetailScreen() {
           Linking.openURL(url);
         }
       } catch (err) {
-        logger.warn('[EventDetail] ticket checkout error:', err);
+        logger.error('[EventDetail] ticket checkout error:', err);
         showToast({ message: (err as Error)?.message || 'Failed to start ticket checkout.', type: 'error' });
       }
       return;
@@ -216,7 +217,7 @@ function EventDetailScreen() {
         track({ name: 'event_rsvp', properties: { event_id: eventId as string, status: 'going' } });
       }
     } catch (err) {
-      logger.warn('[EventDetail] rsvp going error:', err);
+      logger.error('[EventDetail] rsvp going error:', err);
       loadEvent(); // rollback
     }
   }, [event, eventId, rsvpStatus, settings.hapticsEnabled, showToast, loadEvent]);
@@ -252,7 +253,7 @@ function EventDetailScreen() {
         track({ name: 'event_rsvp', properties: { event_id: eventId as string, status: 'interested' } });
       }
     } catch (err) {
-      logger.warn('[EventDetail] rsvp interested error:', err);
+      logger.error('[EventDetail] rsvp interested error:', err);
       loadEvent(); // rollback
     }
   }, [event, eventId, rsvpStatus, settings.hapticsEnabled, loadEvent]);
@@ -264,7 +265,7 @@ function EventDetailScreen() {
       setRsvpStatus('waitlist');
       await dataProvider.rsvpEvent(eventId, 'waitlist');
     } catch (err) {
-      logger.warn('[EventDetail] waitlist error:', err);
+      logger.error('[EventDetail] waitlist error:', err);
       loadEvent();
     }
   }, [event, eventId, settings.hapticsEnabled, loadEvent]);
@@ -284,7 +285,7 @@ function EventDetailScreen() {
         showToast({ message: "Alert set \u2014 we'll notify you before this drop", type: 'success' });
       }
     } catch (err) {
-      logger.warn('[EventDetail] toggle drop alert error:', err);
+      logger.error('[EventDetail] toggle drop alert error:', err);
       showToast({ message: 'Failed to update drop alert', type: 'error' });
     } finally {
       setAlertsLoading(false);
@@ -311,7 +312,7 @@ function EventDetailScreen() {
       const duplicated = await dataProvider.duplicateEvent(eventId);
       router.push({ pathname: '/edit-event', params: { eventId: duplicated.id } });
     } catch (err) {
-      logger.warn('[EventDetail] duplicate error:', err);
+      logger.error('[EventDetail] duplicate error:', err);
       showToast({ message: 'Failed to duplicate event.', type: 'error' });
     }
   };
@@ -333,7 +334,7 @@ function EventDetailScreen() {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
               router.back();
             } catch (err) {
-              logger.warn('[EventDetail] cancel error:', err);
+              logger.error('[EventDetail] cancel error:', err);
               showToast({ message: 'Failed to cancel event.', type: 'error' });
             }
           },

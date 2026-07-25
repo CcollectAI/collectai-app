@@ -22,13 +22,13 @@ let Notifications: Record<string, any> | null = null;
 try {
   Calendar = require('expo-calendar');
 } catch {
-  logger.info('[Calendar] expo-calendar not installed - calendar features disabled');
+  logger.error('[Calendar] expo-calendar not installed - calendar features disabled');
 }
 
 try {
   Notifications = require('expo-notifications');
 } catch {
-  logger.info('[Calendar] expo-notifications not installed - reminder features disabled');
+  logger.error('[Calendar] expo-notifications not installed - reminder features disabled');
 }
 
 const CALENDAR_STORAGE_KEY = '@collectai/calendar_events';
@@ -121,7 +121,7 @@ async function getDefaultCalendarId(): Promise<string | null> {
     const modifiableCalendar = calendars.find((cal: ExpoCalendarEntry) => cal.allowsModifications);
     return modifiableCalendar?.id || null;
   } catch (error) {
-    logger.warn('[Calendar] Error getting calendars:', error);
+    logger.error('[Calendar] Error getting calendars:', error);
     return null;
   }
 }
@@ -190,7 +190,7 @@ export async function addToCalendar(params: {
     fireHaptic(HapticIntent.CONFIDENCE_HIGH);
     return { success: true, calendarEventId };
   } catch (error: unknown) {
-    logger.warn('[Calendar] Error adding event:', error);
+    logger.error('[Calendar] Error adding event:', error);
     fireHaptic(HapticIntent.ALERT_TRIGGERED);
     return { success: false, error: error instanceof Error ? error.message : 'Failed to add event' };
   }
@@ -203,7 +203,8 @@ export async function isEventInCalendar(eventId: string): Promise<boolean> {
   try {
     const stored = await getStoredCalendarEvents();
     return stored.some((e) => e.eventId === eventId);
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] calendar.ts:206:', e);
     return false;
   }
 }
@@ -227,7 +228,7 @@ export async function removeFromCalendar(eventId: string): Promise<boolean> {
     }
     return false;
   } catch (error) {
-    logger.warn('[Calendar] Error removing event:', error);
+    logger.error('[Calendar] Error removing event:', error);
     return false;
   }
 }
@@ -293,7 +294,7 @@ export async function scheduleReminder(params: {
     fireHaptic(HapticIntent.CONFIDENCE_HIGH);
     return { success: true, notificationId };
   } catch (error: unknown) {
-    logger.warn('[Calendar] Error scheduling reminder:', error);
+    logger.error('[Calendar] Error scheduling reminder:', error);
     fireHaptic(HapticIntent.ALERT_TRIGGERED);
     return { success: false, error: error instanceof Error ? error.message : 'Failed to schedule reminder' };
   }
@@ -318,7 +319,7 @@ export async function cancelReminder(eventId: string): Promise<boolean> {
     }
     return false;
   } catch (error) {
-    logger.warn('[Calendar] Error canceling reminder:', error);
+    logger.error('[Calendar] Error canceling reminder:', error);
     return false;
   }
 }
@@ -330,7 +331,8 @@ export async function hasReminder(eventId: string): Promise<boolean> {
   try {
     const stored = await getStoredReminders();
     return stored.some((r) => r.eventId === eventId);
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] calendar.ts:333:', e);
     return false;
   }
 }
@@ -340,7 +342,8 @@ async function getStoredCalendarEvents(): Promise<StoredCalendarEvent[]> {
   try {
     const data = await AsyncStorage.getItem(CALENDAR_STORAGE_KEY);
     return data ? JSON.parse(data) : [];
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] calendar.ts:343:', e);
     return [];
   }
 }
@@ -355,7 +358,8 @@ async function getStoredReminders(): Promise<StoredReminder[]> {
   try {
     const data = await AsyncStorage.getItem(REMINDERS_STORAGE_KEY);
     return data ? JSON.parse(data) : [];
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] calendar.ts:358:', e);
     return [];
   }
 }

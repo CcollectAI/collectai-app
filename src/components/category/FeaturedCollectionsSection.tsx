@@ -63,7 +63,7 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
             await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
             continue;
           }
-          logger.warn('[FeaturedCollections] catalog fetch failed:', err);
+          logger.error('[FeaturedCollections] catalog fetch failed:', err);
           if (!cancelled) setLoaded(true);
           return;
         }

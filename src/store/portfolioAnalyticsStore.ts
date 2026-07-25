@@ -268,7 +268,7 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
 
     return mapped;
   } catch (error) {
-    logger.warn('[portfolioAnalyticsStore] Items backend error:', error);
+    logger.error('[portfolioAnalyticsStore] Items backend error:', error);
     return null;
   }
 }

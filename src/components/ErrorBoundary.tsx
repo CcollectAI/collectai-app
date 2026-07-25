@@ -18,6 +18,7 @@ let Sentry: SentryModule | null = null;
 try {
   Sentry = require('@sentry/react-native');
 } catch (_) {
+  logger.error('[silent-catch] ErrorBoundary.tsx:20:', _);
   // @sentry/react-native not installed – skip silently
 }
 

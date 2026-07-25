@@ -47,7 +47,7 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
       return res.data as CatItemRow[] | null;
     } catch (e) {
       if (e instanceof TimeoutError) {
-        logger.warn('[SupabaseDataProvider] getCategoryStore.items timed out');
+        logger.error('[SupabaseDataProvider] getCategoryStore.items timed out');
         return null;
       }
       throw e;
@@ -75,7 +75,7 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
       return (catRes.data ?? []) as EventRow[];
     } catch (e) {
       if (e instanceof TimeoutError) {
-        logger.warn('[SupabaseDataProvider] getCategoryStore.events timed out');
+        logger.error('[SupabaseDataProvider] getCategoryStore.events timed out');
         return null;
       }
       throw e;
@@ -160,7 +160,7 @@ export async function listCategoryMissing(categoryId: string): Promise<CategoryM
     error = res.error;
   } catch (e) {
     if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] listCategoryMissing timed out');
+      logger.error('[SupabaseDataProvider] listCategoryMissing timed out');
       return [];
     }
     throw e;
@@ -236,7 +236,7 @@ export async function listFollowedCategories(): Promise<string[]> {
     );
     return data?.categories ?? [];
   } catch (e) {
-    logger.warn('[SupabaseDataProvider] listFollowedCategories error:', e);
+    logger.error('[SupabaseDataProvider] listFollowedCategories error:', e);
     return [];
   }
 }
@@ -248,7 +248,7 @@ export async function isFollowingCategory(categoryId: string): Promise<boolean> 
     );
     return Boolean(data?.following);
   } catch (e) {
-    logger.warn('[SupabaseDataProvider] isFollowingCategory error:', e);
+    logger.error('[SupabaseDataProvider] isFollowingCategory error:', e);
     return false;
   }
 }

@@ -55,7 +55,7 @@ export async function listInboxThreads(): Promise<DmThread[]> {
     }));
   } catch (e) {
     if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] listInboxThreads timed out');
+      logger.error('[SupabaseDataProvider] listInboxThreads timed out');
       return [];
     }
     throw e;
@@ -109,7 +109,7 @@ export async function listIncomingRequests(): Promise<DmRequest[]> {
     });
   } catch (e) {
     if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] listIncomingRequests timed out');
+      logger.error('[SupabaseDataProvider] listIncomingRequests timed out');
       return [];
     }
     throw e;
@@ -196,7 +196,7 @@ export async function getThreadMessages(threadId: string): Promise<DmMessage[]> 
     }));
   } catch (e) {
     if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] getThreadMessages timed out');
+      logger.error('[SupabaseDataProvider] getThreadMessages timed out');
       return [];
     }
     throw e;

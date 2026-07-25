@@ -77,7 +77,7 @@ const LeaderboardScreen: React.FC = () => {
       }
     } catch (err) {
       if (guard.cancelled) return;
-      logger.warn('[Leaderboard] API fetch failed, using local fallback:', err);
+      logger.error('[Leaderboard] API fetch failed, using local fallback:', err);
     } finally {
       if (!guard.cancelled) setLoading(false);
     }

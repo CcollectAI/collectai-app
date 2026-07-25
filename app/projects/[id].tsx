@@ -116,7 +116,7 @@ function ProjectDetailScreen() {
       setNotes(notesData);
       setError(null);
     } catch (err: unknown) {
-      logger.warn("[ProjectDetail] loadProject error:", err);
+      logger.error("[ProjectDetail] loadProject error:", err);
       setError((err as Error)?.message || "Failed to load project");
     } finally {
       setLoading(false);

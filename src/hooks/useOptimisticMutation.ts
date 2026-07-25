@@ -79,7 +79,7 @@ export function useOptimisticMutation<TArgs, TResult = void>(
     try {
       onOptimisticUpdate(args);
     } catch (optimisticError) {
-      logger.warn('[useOptimisticMutation] onOptimisticUpdate threw:', optimisticError);
+      logger.error('[useOptimisticMutation] onOptimisticUpdate threw:', optimisticError);
       // If the optimistic update itself fails, don't proceed with the mutation.
       setError(optimisticError instanceof Error ? optimisticError : new Error(String(optimisticError)));
       return;
@@ -95,7 +95,7 @@ export function useOptimisticMutation<TArgs, TResult = void>(
         try {
           onSuccess(args, result);
         } catch (successError) {
-          logger.warn('[useOptimisticMutation] onSuccess threw:', successError);
+          logger.error('[useOptimisticMutation] onSuccess threw:', successError);
         }
       }
     } catch (mutationError) {
@@ -106,10 +106,10 @@ export function useOptimisticMutation<TArgs, TResult = void>(
       try {
         onRollback(args, err);
       } catch (rollbackError) {
-        logger.warn('[useOptimisticMutation] onRollback threw:', rollbackError);
+        logger.error('[useOptimisticMutation] onRollback threw:', rollbackError);
       }
 
-      logger.warn('[useOptimisticMutation] mutation failed, rolled back:', err.message);
+      logger.error('[useOptimisticMutation] mutation failed, rolled back:', err.message);
     } finally {
       setIsLoading(false);
     }

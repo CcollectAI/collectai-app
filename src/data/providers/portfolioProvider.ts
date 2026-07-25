@@ -36,7 +36,7 @@ export async function getPortfolioSummary(): Promise<PortfolioSummary> {
       itemCount: snapshot.item_count ?? 0,
     };
   } catch (err) {
-    logger.warn('[SupabaseDataProvider] getPortfolioSummary overview error:', err);
+    logger.error('[SupabaseDataProvider] getPortfolioSummary overview error:', err);
 
     // Fall back to a Supabase item count so the card can still show a total
     // rather than collapsing to an empty-collection state on a transient 401.

@@ -127,7 +127,8 @@ const ManualAddScreen: React.FC = () => {
           }
           if (Object.keys(next).length > 0) setCategoryAttrs(next);
         }
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] add-manual.tsx:130:', e);
         // Malformed handoff payload — ignore, user fills manually.
       }
     }
@@ -255,7 +256,8 @@ const ManualAddScreen: React.FC = () => {
           return next;
         });
         if (best.title) setAutoFilledFromCatalog(best.title);
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] add-manual.tsx:258:', e);
         // Best-effort enrichment — silent on failure.
       }
     }, 600);
@@ -401,7 +403,7 @@ const ManualAddScreen: React.FC = () => {
             canonicalKey = m.best.item_key;
           }
         } catch (e) {
-          logger.warn("[ManualAdd] catalog match failed (saving without canonical_key):", e);
+          logger.error("[ManualAdd] catalog match failed (saving without canonical_key):", e);
         }
       }
 

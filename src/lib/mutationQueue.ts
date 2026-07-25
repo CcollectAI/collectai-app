@@ -97,7 +97,8 @@ export async function loadQueue(): Promise<void> {
     const raw = await AsyncStorage.getItem(QUEUE_KEY);
     _queue = raw ? JSON.parse(raw) : [];
     logger.info(`[MutationQueue] Loaded ${_queue.length} queued mutations`);
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] mutationQueue.ts:100:', e);
     _queue = [];
   }
 }
@@ -109,7 +110,7 @@ async function persistQueue(): Promise<void> {
   try {
     await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(_queue));
   } catch {
-    logger.warn('[MutationQueue] Failed to persist queue');
+    logger.error('[MutationQueue] Failed to persist queue');
   }
 }
 
@@ -206,7 +207,7 @@ export async function replayQueue(
       mutation.retries++;
       if (mutation.retries < MAX_RETRIES) {
         retryLater.push(mutation);
-        logger.warn(
+        logger.error(
           `[MutationQueue] Failed ${mutation.type} (retry ${mutation.retries}/${MAX_RETRIES}): ${err}`,
         );
       } else {
@@ -232,7 +233,7 @@ export async function replayQueue(
     try {
       _onPermanentFailure(permanentlyFailed);
     } catch {
-      logger.warn('[MutationQueue] onPermanentFailure callback threw');
+      logger.error('[MutationQueue] onPermanentFailure callback threw');
     }
   }
 

@@ -1,6 +1,7 @@
 import { Linking } from 'react-native';
 import { track } from '@/analytics/track';
 import { recordAffiliateClick } from '@/api/intelligenceApi';
+import { logger } from '@/lib/logger';
 
 type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
 
@@ -70,7 +71,8 @@ export function buildItemAffiliateUrl(
     // No known query param found — append as _nkw (eBay default)
     url.searchParams.set('_nkw', itemName);
     return url.toString();
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] affiliateHelpers.ts:73:', e);
     return `${FALLBACK_EBAY_SEARCH}${encodeURIComponent(itemName)}`;
   }
 }
@@ -85,7 +87,8 @@ export function openAffiliateUrl(
     const parsed = new URL(url);
     if (!ALLOWED_SCHEMES.includes(parsed.protocol)) return;
     hostname = parsed.hostname;
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] affiliateHelpers.ts:88:', e);
     return;
   }
   track({ name: 'affiliate_link_opened', properties: { domain: hostname } });

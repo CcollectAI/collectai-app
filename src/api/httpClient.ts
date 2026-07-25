@@ -14,7 +14,8 @@ import logger from "@/utils/logger";
 let Sentry: { captureMessage?: (msg: string, level?: string) => void } | null = null;
 try {
   Sentry = require("@sentry/react-native");
-} catch {
+} catch (e) {
+  logger.error('[silent-catch] httpClient.ts:17:', e);
   /* not installed */
 }
 
@@ -104,13 +105,14 @@ async function recoverAuthAfter401(): Promise<Record<string, string> | null> {
     Sentry?.captureMessage?.(`auth refresh failed after 401: ${error?.message ?? "no session"}`, "warning");
     try {
       await supabase.auth.signOut();
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] httpClient.ts:107:', e);
       /* best effort */
     }
   } catch (e) {
     // Transient (network) failure — surface the 401 but do NOT sign the user
     // out; supabase retries the refresh on its own cadence / next launch.
-    logger.warn("[auth] 401 recovery: refreshSession threw:", e);
+    logger.error("[auth] 401 recovery: refreshSession threw:", e);
     Sentry?.captureMessage?.(`auth refresh threw after 401: ${String(e)}`, "warning");
   }
   return null;
@@ -206,7 +208,8 @@ export async function parseErrorResponse(method: string, path: string, res: Resp
     const detail = typeof body?.detail === "string" ? body.detail : `${method} ${path} failed`;
     const code = typeof body?.code === "string" ? body.code : null;
     return new ApiError(method, path, res.status, detail, code);
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] httpClient.ts:209:', e);
     return new ApiError(method, path, res.status, `${method} ${path} failed`);
   }
 }
@@ -229,7 +232,8 @@ async function maybeHandleSellerAgeGate(res: Response): Promise<boolean> {
     ) {
       return await popSellerAgeGate();
     }
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] httpClient.ts:232:', e);
     // Body wasn't JSON or didn't match — fall through.
   }
   return false;

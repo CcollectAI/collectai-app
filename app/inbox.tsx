@@ -152,7 +152,7 @@ function InboxScreen() {
       });
     } catch (err) {
       logLoad('inbox', { error: err instanceof Error ? err.message : String(err), ms: elapsed() });
-      logger.warn('[InboxScreen] loadInbox error:', err);
+      logger.error('[InboxScreen] loadInbox error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);

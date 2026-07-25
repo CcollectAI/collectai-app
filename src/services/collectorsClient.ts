@@ -1,5 +1,6 @@
 import { API_BASE_URL, API_KEY } from '@/config/api';
 import type { CurrencyCode } from '@/data/types';
+import { logger } from '@/lib/logger';
 
 export interface PortfolioOverview {
   total_value: number;
@@ -96,7 +97,8 @@ export async function request<T>(
     try {
       const text = await res.text();
       if (text) message = text;
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] collectorsClient.ts:99:', e);
       // ignore
     }
     throw new Error(message);

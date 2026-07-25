@@ -90,7 +90,7 @@ function ThreadDetailScreen() {
       const msgs = await dataProvider.getThreadMessages(threadId);
       setMessages(msgs.map((m) => ({ ...m, localStatus: 'sent' })));
     } catch (err) {
-      logger.warn('[ThreadDetail] loadMessages error:', err);
+      logger.error('[ThreadDetail] loadMessages error:', err);
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ function ThreadDetailScreen() {
       const found = threads.find((t) => t.id === threadId);
       if (found) setThreadInfo(found);
     } catch (err) {
-      logger.warn('[ThreadDetail] loadThreadInfo error:', err);
+      logger.error('[ThreadDetail] loadThreadInfo error:', err);
     }
   }, [threadId]);
 
@@ -114,7 +114,7 @@ function ThreadDetailScreen() {
       const profile = await dataProvider.getMyProfile();
       if (profile) setCurrentUser(profile);
     } catch (err) {
-      logger.warn('[ThreadDetail] loadCurrentUser error:', err);
+      logger.error('[ThreadDetail] loadCurrentUser error:', err);
     }
   }, []);
 
@@ -293,7 +293,7 @@ function ThreadDetailScreen() {
         )
       );
     } catch (err: unknown) {
-      logger.warn('[ThreadDetail] sendMessage error:', err);
+      logger.error('[ThreadDetail] sendMessage error:', err);
       // Mark as failed
       setMessages((prev) =>
         prev.map((m) =>
@@ -323,7 +323,7 @@ function ThreadDetailScreen() {
         )
       );
     } catch (err: unknown) {
-      logger.warn('[ThreadDetail] retryMessage error:', err);
+      logger.error('[ThreadDetail] retryMessage error:', err);
       setMessages((prev) =>
         prev.map((m) =>
           m.id === tempId ? { ...m, localStatus: 'failed' } : m

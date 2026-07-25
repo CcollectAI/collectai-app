@@ -181,7 +181,8 @@ function ItemDetailScreen() {
     if (!initialAttributesJson) return null;
     try {
       return JSON.parse(initialAttributesJson) as Record<string, unknown>;
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] [id].tsx:184:', e);
       return null;
     }
   }, [initialAttributesJson]);
@@ -330,6 +331,7 @@ function ItemDetailScreen() {
         setEnrichResult(t('items_detail.enrich_done', { count: r?.hits_persisted ?? 0 }));
       }
     } catch (e) {
+      logger.error('[silent-catch] [id].tsx:332:', e);
       setEnrichResult(t('items_detail.enrich_error'));
     } finally {
       setEnriching(false);
@@ -418,7 +420,7 @@ function ItemDetailScreen() {
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Size saved', type: 'success' });
     } catch (err) {
-      logger.warn('[ItemDetail] size save error:', err);
+      logger.error('[ItemDetail] size save error:', err);
       showToast({ message: 'Failed to save size', type: 'error' });
     } finally {
       setSizeSaving(false);
@@ -633,7 +635,7 @@ function ItemDetailScreen() {
       ]);
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     } catch (err) {
-      logger.warn('[ItemDetail] intelligence refresh error:', err);
+      logger.error('[ItemDetail] intelligence refresh error:', err);
     } finally {
       setAiRefreshing(false);
     }

@@ -41,7 +41,7 @@ export const InboxHeaderButton: React.FC<Props> = ({
           setUnreadCount(count);
         }
       } catch (err) {
-        logger.warn('[InboxHeaderButton] Failed to fetch unread count:', err);
+        logger.error('[InboxHeaderButton] Failed to fetch unread count:', err);
       }
     };
 

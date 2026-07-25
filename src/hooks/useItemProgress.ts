@@ -60,7 +60,7 @@ export function useItemProgress(itemId: string | undefined, isDraft: boolean, ca
         });
         fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
       } catch (err) {
-        logger.warn('[useItemProgress] save error:', err);
+        logger.error('[useItemProgress] save error:', err);
         showToast({ message: 'Failed to save progress', type: 'error' });
       } finally {
         setProgressSaving(false);

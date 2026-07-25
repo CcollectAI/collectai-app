@@ -49,7 +49,7 @@ export default function Settings() {
           frequency: data.frequency,
         });
       } catch (err) {
-        logger.warn('[Settings] Failed to load alert preferences:', err);
+        logger.error('[Settings] Failed to load alert preferences:', err);
       }
     };
     loadAlertPreferences();
@@ -69,7 +69,7 @@ export default function Settings() {
         frequency: prefs.frequency,
       });
     } catch (e) {
-      logger.warn('[Settings] Failed to persist alert preferences:', e);
+      logger.error('[Settings] Failed to persist alert preferences:', e);
     }
   };
 

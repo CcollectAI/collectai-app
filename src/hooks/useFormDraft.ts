@@ -60,7 +60,7 @@ export function useFormDraft({ draftKey, formState, onRestore }: UseFormDraftOpt
           }
         }
       } catch (err) {
-        logger.warn('[useFormDraft] failed to load draft:', err);
+        logger.error('[useFormDraft] failed to load draft:', err);
       }
     })();
     return () => { cancelled = true; };
@@ -96,7 +96,7 @@ export function useFormDraft({ draftKey, formState, onRestore }: UseFormDraftOpt
     try {
       await AsyncStorage.removeItem(storageKey);
     } catch (err) {
-      logger.warn('[useFormDraft] failed to clear draft:', err);
+      logger.error('[useFormDraft] failed to clear draft:', err);
     }
     setHasDraft(false);
     setDraftRestored(false);

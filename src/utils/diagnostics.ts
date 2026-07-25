@@ -74,7 +74,8 @@ export function logLoad(tag: string, info: Record<string, unknown>): void {
     const failed = 'error' in info && info.error != null;
     const log = failed ? logger.error : logger.info;
     log(`[DIAG ${tag}] ${parts.join(' ')}`);
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] diagnostics.ts:77:', e);
     // diagnostics must never break a screen
   }
 }

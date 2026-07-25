@@ -118,7 +118,7 @@ export class SupabaseDataProvider implements DataProvider {
         watchlistItemId: null,
       }));
     } catch (err) {
-      logger.warn('[SupabaseDataProvider] listAlertsFeed error:', err);
+      logger.error('[SupabaseDataProvider] listAlertsFeed error:', err);
       return [];
     }
   }

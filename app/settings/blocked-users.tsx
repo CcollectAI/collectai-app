@@ -41,7 +41,7 @@ function BlockedUsersScreen() {
       const users = await dataProvider.listBlockedUsers();
       setBlockedUsers(users);
     } catch (err) {
-      logger.warn('[BlockedUsers] loadBlockedUsers error:', err);
+      logger.error('[BlockedUsers] loadBlockedUsers error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);

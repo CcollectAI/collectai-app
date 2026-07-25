@@ -74,7 +74,7 @@ function AppearanceSectionInner() {
         });
       }
     } catch (e) {
-      logger.warn('[Settings] Failed to persist region to backend:', e);
+      logger.error('[Settings] Failed to persist region to backend:', e);
     }
   };
 
@@ -101,7 +101,7 @@ function AppearanceSectionInner() {
         });
       }
     } catch (e) {
-      logger.warn('[Settings] Failed to persist currency to backend:', e);
+      logger.error('[Settings] Failed to persist currency to backend:', e);
     }
   };
 

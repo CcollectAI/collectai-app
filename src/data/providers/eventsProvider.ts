@@ -146,7 +146,7 @@ export async function listEvents(pagination?: PaginationParams): Promise<Collect
     // Server already applied limit/offset — do NOT slice again.
     return rows.map(mapEventApiResponse);
   } catch (e) {
-    logger.warn('[SupabaseDataProvider] listEvents error:', e);
+    logger.error('[SupabaseDataProvider] listEvents error:', e);
     throw e instanceof Error ? e : new Error('Failed to load events');
   }
 }
@@ -404,7 +404,8 @@ export async function searchEvents(params: {
       maxAttendees: (e.max_attendees ?? e.maxAttendees ?? null) as number | null,
       isAttending: false,
     })) as CollectorsEvent[];
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] eventsProvider.ts:407:', e);
     return [];
   }
 }

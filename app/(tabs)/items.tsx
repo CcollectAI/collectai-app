@@ -333,7 +333,7 @@ const ItemsScreen: React.FC = () => {
         setExportStatus('Saved (sharing unavailable)');
       }
     } catch (err: unknown) {
-      logger.warn('[Items] export error:', err);
+      logger.error('[Items] export error:', err);
       setExportStatus('Export failed');
       showToast({ message: 'Failed to export items', type: 'error' });
     } finally {
@@ -383,7 +383,7 @@ const ItemsScreen: React.FC = () => {
       }
       exitMultiSelectMode();
     } catch (err: unknown) {
-      logger.warn('[Items] bulk export error:', err);
+      logger.error('[Items] bulk export error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to export selected items', type: 'error' });
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     } finally {
@@ -468,7 +468,7 @@ const ItemsScreen: React.FC = () => {
       showToast({ message: `${count} item${count > 1 ? 's' : ''} moved to ${newCategory}`, type: 'success' });
       await paginatedRefresh();
     } catch (err: unknown) {
-      logger.warn('[Items] bulk category change error:', err);
+      logger.error('[Items] bulk category change error:', err);
       showToast({ message: 'Could not update items', type: 'error' });
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     } finally {
@@ -668,7 +668,7 @@ const ItemsScreen: React.FC = () => {
     try {
       router.setParams({ category: undefined, collectionName: undefined });
     } catch (err) {
-      logger.warn('[Items] setParams failed:', err);
+      logger.error('[Items] setParams failed:', err);
     }
   };
 

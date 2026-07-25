@@ -55,7 +55,7 @@ function handleConnectivityChange(online: boolean): void {
       try {
         fn(online);
       } catch (err) {
-        logger.warn('[useNetworkStatus] reconnect listener error:', err);
+        logger.error('[useNetworkStatus] reconnect listener error:', err);
       }
     });
   }
@@ -70,7 +70,8 @@ export async function isDeviceOnline(): Promise<boolean> {
   try {
     const state = await Network.getNetworkStateAsync();
     return state.isConnected !== false;
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] useNetworkStatus.ts:73:', e);
     return true; // optimistic fallback
   }
 }
@@ -113,11 +114,12 @@ export function useNetworkStatus(): NetworkStatus {
         try {
           const recheck = await Network.getNetworkStateAsync();
           commit(computeOnline(recheck));
-        } catch {
+        } catch (e) {
+          logger.error('[silent-catch] useNetworkStatus.ts:116:', e);
           commit(true); // optimistic on error
         }
       } catch (err) {
-        logger.warn('[useNetworkStatus] check failed:', err);
+        logger.error('[useNetworkStatus] check failed:', err);
         commit(true); // optimistic on error
       }
     };

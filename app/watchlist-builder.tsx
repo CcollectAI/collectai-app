@@ -155,7 +155,7 @@ function WatchlistBuilderScreen() {
       const data = await dataProvider.listWatchlist(userId);
       setItems(data);
     } catch (err: unknown) {
-      logger.warn("[watchlist-builder] load error", err);
+      logger.error("[watchlist-builder] load error", err);
       setError(err instanceof Error ? err.message : "Unable to load your watchlist.");
     } finally {
       setLoading(false);
@@ -292,7 +292,7 @@ function WatchlistBuilderScreen() {
         prev.map((item) => (item.id === optimisticId ? savedItem : item)),
       );
     } catch (err: unknown) {
-      logger.warn("[watchlist-builder] save error", err);
+      logger.error("[watchlist-builder] save error", err);
       // Rollback: restore previous state
       setItems(previousItems);
       showToast({ message: err instanceof Error ? err.message : "Unable to save this item.", type: "error" });
@@ -416,7 +416,8 @@ function WatchlistBuilderScreen() {
     try {
       await Share.share({ message });
       track({ name: 'watchlist_shared', properties: { method: 'text', itemCount: items.length } });
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] watchlist-builder.tsx:419:', e);
       // user cancelled or share failed — no action needed
     }
   }, [items, settings.currency, categoryDisplayName, showToast]);

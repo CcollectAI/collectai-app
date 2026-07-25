@@ -117,7 +117,7 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
 
           return response.cdn_url;
         } catch (serverErr: unknown) {
-          logger.warn(
+          logger.error(
             "[usePhotoUpload] Server-side upload failed, falling back to presigned URL:",
             serverErr instanceof Error ? serverErr.message : String(serverErr),
           );

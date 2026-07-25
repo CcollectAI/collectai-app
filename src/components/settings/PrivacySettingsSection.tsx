@@ -68,7 +68,7 @@ function PrivacySettingsSectionInner() {
           });
         }
       } catch (err) {
-        logger.warn('[Settings] Failed to load privacy settings:', err);
+        logger.error('[Settings] Failed to load privacy settings:', err);
       } finally {
         if (!cancelled) setLoadingPrivacy(false);
       }
@@ -115,7 +115,7 @@ function PrivacySettingsSectionInner() {
         showToast({ message: 'Failed to save privacy setting', type: 'error' });
       }
     } catch (err) {
-      logger.warn('[Settings] Privacy update error:', err);
+      logger.error('[Settings] Privacy update error:', err);
       setPrivacy(prevPrivacy);
     } finally {
       setSavingPrivacy(false);
