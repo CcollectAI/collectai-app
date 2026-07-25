@@ -72,6 +72,12 @@ const CHECKS = [
     why: 'a credential read with no default but empty in prod — the client silently degrades',
   },
   {
+    name: 'fe-rpc-contract',
+    cmd: `${SSH} '${REMOTE_PY} scripts/audit_fe_rpc_contract.py'`,
+    db: true,
+    why: 'a supabase.rpc() the FE calls that is missing or ungranted — 404/42501, swallowed',
+  },
+  {
     name: 'account-deletion',
     cmd: `${SSH} '${REMOTE_PY} scripts/audit_account_deletion.py'`,
     db: true,
