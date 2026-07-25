@@ -360,13 +360,28 @@ async def _persist_hits(scored_hits: list, user_id: str) -> None:
                 }
                 await conn.execute(
                     """
+                    -- WHERE NOT EXISTS, not ON CONFLICT: market_hits is
+                    -- PARTITION BY RANGE (seen_at), and Postgres requires a
+                    -- partitioned table's unique constraint to include the
+                    -- partition key. The only unique index is
+                    -- (provider, listing_id, seen_at), so `ON CONFLICT
+                    -- (provider, listing_id)` raised 42P10 on every call and the
+                    -- row was never written. Adding seen_at to the conflict target
+                    -- would "fix" the error but defeat dedup entirely, since
+                    -- seen_at = now() is unique per insert.
+                    -- Pattern per docs/DATA_SCALING_PLAN.md "ON CONFLICT +
+                    -- partitioned tables"; the probe uses the composite index's
+                    -- leading columns, so it prunes across partitions.
                     INSERT INTO public.market_hits
                         (provider, listing_id, title, price, currency,
                          condition, ended_at, url, normalized_key, features_json,
                          shipping)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb,
-                            $11::jsonb)
-                    ON CONFLICT (provider, listing_id) DO NOTHING
+                    SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb,
+                           $11::jsonb
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM public.market_hits
+                         WHERE provider = $1 AND listing_id = $2
+                    )
                     """,
                     h.get("source", "unknown"),
                     h.get("raw_id") or h.get("content_hash") or h.get("url", "")[:255],
