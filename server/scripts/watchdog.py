@@ -261,6 +261,69 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
     except Exception:
         pass
 
+    # --- dead text-key joins (the 2026-07-25 four-month bug) ---
+    # An empty join is a VALID result: it raises nothing, logs nothing, and is
+    # byte-identical to a user who owns nothing. No structural check can see it.
+    # This is the only check that compares the VALUES on each side.
+    try:
+        import subprocess, json as _json
+        r = subprocess.run(
+            ["/opt/collectors/.venv/bin/python",
+             str(SERVER_ROOT / "scripts" / "audit_key_overlap.py"), "--json", "--sample", "400"],
+            capture_output=True, timeout=600, cwd=str(SERVER_ROOT))
+        rep = _json.loads(r.stdout.decode() or "{}")
+        dead = [e for e in rep.get("report", [])
+                if e.get("status") == "DEAD" and not e.get("expect_partial")]
+        for e in dead:
+            bug("high", "dead key join: %s" % e["pair"],
+                "The two sides of this join share NO values, so every query using it returns "
+                "[] forever without erroring. Check the key FORMATS, not the schema.",
+                src_link("server/scripts/audit_key_overlap.py"),
+                "python3 scripts/audit_key_overlap.py --sample 400",
+                "Compare sample values on each side; a namespaced-vs-bare mismatch is the usual cause")
+        if not dead and rep.get("report"):
+            healthy.append({"check": "text-key joins",
+                            "detail": "%d declared joins, no unexplained dead ones" % len(rep["report"])})
+    except Exception as e:
+        bug("info", "key-overlap audit could not run", str(e)[:200])
+
+    # --- pricing coverage canary ---
+    # The end-to-end assertion the four-month bug needed: can a catalog item
+    # actually reach a price? Coverage silently collapsing to ~0 is exactly what
+    # nobody noticed. Thresholds are deliberately far below current levels so
+    # this pages on a COLLAPSE, not on normal drift.
+    try:
+        canaries = [("mtg", 80.0), ("pokemon", 80.0), ("yugioh", 60.0)]
+        for cat, floor in canaries:
+            total = await c.fetchval(
+                "SELECT count(*) FROM category_items WHERE category=$1", cat)
+            if not total:
+                continue
+            priced = await c.fetchval(
+                """
+                SELECT count(*) FROM category_items ci
+                WHERE ci.category = $1
+                  AND (EXISTS (SELECT 1 FROM price_predictions p
+                               WHERE p.item_ref = ci.category||':'||ci.item_key
+                                 AND p.generated_at >= now() - interval '30 days')
+                       OR EXISTS (SELECT 1 FROM catalog_price_refs x
+                                  WHERE x.category = ci.category AND x.item_key = ci.item_key))
+                """, cat)
+            pct = 100.0 * priced / total
+            if pct < floor:
+                bug("high", "pricing coverage collapsed for %s: %.1f%%" % (cat, pct),
+                    "%d of %d catalog rows can reach a price (floor %.0f%%). Users in this "
+                    "category will see 0.00 everywhere while every endpoint still returns 200."
+                    % (priced, total, floor),
+                    src_link("server/pipelines/build_catalog_price_crosswalk.py"),
+                    "python3 scripts/audit_key_overlap.py",
+                    "Rebuild the crosswalk, or check whether items.canonical_ref resolution broke")
+            else:
+                healthy.append({"check": "pricing coverage %s" % cat,
+                                "detail": "%.1f%% of %d catalog rows priceable" % (pct, total)})
+    except Exception as e:
+        bug("info", "pricing coverage canary could not run", str(e)[:200])
+
     # --- schema.lock staleness: a restart with a stale lock hard-downs the API ---
     try:
         import subprocess
