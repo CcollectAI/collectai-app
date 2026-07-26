@@ -355,7 +355,13 @@ class TestActiveLearningPrompts:
         attrs = {"name_confidence": 0.6, "suggested_name": "Charizard VMAX"}
         conn = AsyncMock()
         conn.fetchrow = AsyncMock(return_value={
-            "attributes_json": json.dumps(attrs),
+            # `attrs`, not `attributes_json`: the column was renamed in 5c9a73e
+            # and the router moved with it (intake_feedback_router.py:191-201).
+            # These mocks did not, so row["attrs"] raised and the endpoint
+            # returned no prompts — the CODE was correct and the TEST was
+            # asserting against a column that no longer exists. Verified
+            # against prod: information_schema shows items.attrs only.
+            "attrs": json.dumps(attrs),
         })
 
         with patch("app.db.db_configured", return_value=True), \
@@ -373,7 +379,13 @@ class TestActiveLearningPrompts:
         attrs = {"name_confidence": 0.95, "suggested_name": "High Conf"}
         conn = AsyncMock()
         conn.fetchrow = AsyncMock(return_value={
-            "attributes_json": json.dumps(attrs),
+            # `attrs`, not `attributes_json`: the column was renamed in 5c9a73e
+            # and the router moved with it (intake_feedback_router.py:191-201).
+            # These mocks did not, so row["attrs"] raised and the endpoint
+            # returned no prompts — the CODE was correct and the TEST was
+            # asserting against a column that no longer exists. Verified
+            # against prod: information_schema shows items.attrs only.
+            "attrs": json.dumps(attrs),
         })
 
         with patch("app.db.db_configured", return_value=True), \
