@@ -5366,7 +5366,7 @@
     },
     "event_attendees.event_id": {
       "nullable": false,
-      "type": "text"
+      "type": "uuid"
     },
     "event_attendees.id": {
       "default": "gen_random_uuid()",
