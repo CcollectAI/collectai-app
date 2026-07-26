@@ -476,6 +476,7 @@ async def intake_process(
         barcode_type=barcode_type,
         user_hints=user_hints if user_hints else None,
         user_id=user_id,
+        filename=getattr(file, "filename", None),
     )
 
     # Record demand signal with geo enrichment (best-effort)
@@ -592,6 +593,7 @@ async def intake_image_only(
         image_bytes=image_bytes,
         barcode=None,
         barcode_type=None,
+        filename=getattr(file, "filename", None),
         user_hints=user_hints if user_hints else None,
         user_id=user_id,
     )

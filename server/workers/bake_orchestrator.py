@@ -132,7 +132,7 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   Turns user 0-result searches into category candidates. No users searching.
     # ("demand_priority_worker",  "workers.demand_priority_worker",     "run_once", True),
     #   Refresh top-N items by demand_signals. No demand signals from users.
-    # ("vision_quality_worker",   "workers.vision_quality_worker",      "run_once", True),
+    ("vision_quality_worker",   "workers.vision_quality_worker",      "run_once", True),
     # ("vision_reclassifier_worker", "workers.vision_reclassifier_worker", "run_once", True),
     # ("vision_regret_worker",    "workers.vision_regret_worker",       "run_once", True),
     #   Vision learning loop. Needs scan_corrections from real users to be useful.

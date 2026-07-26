@@ -109,6 +109,7 @@ async def process_intake(
     user_hints: Optional[dict[str, Any]] = None,
     user_id: Optional[str] = None,
     conn=None,
+    filename: Optional[str] = None,
 ) -> IntakeResult:
     """
     Unified intake orchestrator.
@@ -186,7 +187,12 @@ async def process_intake(
         if (not barcode_found or barcode_partial) and image_bytes:
             result.rationale.append("Attempting vision classification")
 
-            vision_result = await _vision_classify_internal(image_bytes)
+            # Tier 3's heuristic matches on the FILENAME
+            # (confidence_aggregator.classify_heuristic), so calling this with
+            # image bytes alone made the whole fallback structurally dead: it
+            # always saw filename="" and returned unknown/0.0. The parameter
+            # existed the whole way down; nothing ever passed it.
+            vision_result = await _vision_classify_internal(image_bytes, filename or "")
 
             if vision_result:
                 vision_cat = vision_result.get("category_id")

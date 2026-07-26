@@ -68,7 +68,7 @@ def _sanitize_filename_for_prompt(filename: str | None) -> str:
 
 _OPENAI_SYSTEM_PROMPT = """Collectibles ID expert. Observe image details (text, logos, numbers, packaging, damage), classify category, identify specific item (set/number/edition/variant), extract attributes, assess condition (mint/near_mint/very_good/good/fair/poor).
 
-Categories: pokemon,mtg,yugioh,lorcana,funko,designer_toys,anime_figures,hot_toys,action_figures,vintage_toys,marvel_legends,lego,gunpla,scale_models,warhammer,retro_games,manga,bluray_steelbook,anime_bluray,anime_soundtrack,anime_ost_vinyl,kpop_merch,taylor_swift,pop_fandom,kpop_lightsticks,disney,theme_park,ghibli,bandai_premium,jp_magazine,jp_event,nintendo_merch,retro_pokemon,one_piece,vtuber,keycaps,loungefly,diecast,sportscards,retro_handhelds
+Categories: {category_list}
 
 {category_detail}
 Also note any visible defects (scratches, dents, wear, stains, creases) with severity and location. Suggest a PSA/CGC grade for cards/comics.
@@ -90,7 +90,18 @@ _IDENTIFICATION_SCHEMA: dict[str, Any] = {
                 },
                 "category_id": {
                     "type": "string",
-                    "description": "Category ID from the allowed list",
+                    # Enumerate the real categories instead of accepting any
+                    # string. Unconstrained, the model returned '' and 'null',
+                    # which openai_vision:481 turned into None -> the degraded
+                    # path -> SCAN_DEGRADED low_confidence. That accounted for
+                    # 4 of 10 lifetime scans. Derived from ALL_CATEGORIES so it
+                    # cannot drift from the taxonomy the way the prompt did.
+                    # NOTE: `strict` stays False — strict mode requires
+                    # additionalProperties:false everywhere, and `attributes`
+                    # (below) is deliberately open. enum is still a strong
+                    # constraint in non-strict json_schema mode.
+                    "enum": list(ALL_CATEGORIES),
+                    "description": "Category ID — MUST be one of the enum values",
                 },
                 "category_confidence": {
                     "type": "number",
@@ -174,7 +185,14 @@ def build_system_prompt(category_hint: str | None = None) -> str:
             "No category hint available. Identify the category first, "
             "then extract relevant attributes."
         )
-    return _OPENAI_SYSTEM_PROMPT.format(category_detail=detail_block)
+    # The prompt used to hardcode 40 categories while ALL_CATEGORIES held 54,
+    # so 14 (sneakers, watches, vinyl_records, comic_books, ...) were never
+    # shown to the model and could only ever be misclassified or rejected.
+    # Rendered from the constant so the two cannot diverge again.
+    return _OPENAI_SYSTEM_PROMPT.format(
+        category_detail=detail_block,
+        category_list=",".join(ALL_CATEGORIES),
+    )
 
 
 # ---------------------------------------------------------------------------
