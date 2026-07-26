@@ -14,7 +14,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { dataProvider, type BuildPaintProject } from "@/data";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -81,9 +81,15 @@ function BuildPaintProjectsScreen() {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
   }, [loadProjects, settings.hapticsEnabled]);
 
-  useEffect(() => {
-    loadProjects();
-  }, [loadProjects]);
+  // Mount-only loading left this list stale: editing a project's progress in
+  // projects/[id] persisted (setBuildPaintProgress throws on failure and the
+  // detail screen re-read 30%), but navigating back still showed the old 0% —
+  // the list had never refetched. Refetch on focus, as (tabs)/index does.
+  useFocusEffect(
+    useCallback(() => {
+      loadProjects();
+    }, [loadProjects]),
+  );
 
   // Auto-open create modal when navigated from item detail with params
   useEffect(() => {

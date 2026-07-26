@@ -284,15 +284,10 @@ function ScanResultCardInner({
               </Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              {/* AnimatedPressable puts `style` on its INNER Animated.View, so
-                  the outer Pressable — the actual flex child — stays unstyled
-                  and sizes to its content. `flex: 1` on the button therefore
-                  did nothing and the longer label overflowed the card. These
-                  wrapper Views own the flex; the Pressable inside stretches to
-                  them (column default alignItems: 'stretch'). */}
-              <View style={{ flex: 1, minWidth: 0 }}>
               <AnimatedPressable
                 style={{
+                  flex: 1,
+                  minWidth: 0,
                   backgroundColor: TIFFANY,
                   paddingVertical: 14,
                   paddingHorizontal: 12,
@@ -318,10 +313,10 @@ function ScanResultCardInner({
                   {t('scan.yes_correct')}
                 </Text>
               </AnimatedPressable>
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
               <AnimatedPressable
                 style={{
+                  flex: 1,
+                  minWidth: 0,
                   backgroundColor: 'transparent',
                   paddingVertical: 14,
                   paddingHorizontal: 12,
@@ -348,7 +343,6 @@ function ScanResultCardInner({
                   {t('scan.no_correct')}
                 </Text>
               </AnimatedPressable>
-              </View>
             </View>
           </View>
         )}
@@ -551,23 +545,17 @@ function ScanResultCardInner({
           >
             <Ionicons name="share-outline" size={20} color={colors.brand.dark} />
           </AnimatedPressable>
-          {/* Same AnimatedPressable caveat as the Yes/No row: `style` lands on
-              the inner Animated.View, so `flex: 1` on addBtn never reached the
-              outer Pressable and the CTA sat at content width instead of
-              filling the bar. The wrapper owns the flex. */}
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <AnimatedPressable
+          <AnimatedPressable
               style={[styles.addBtn, { backgroundColor: colors.brand.base }]}
               onPress={onConfirm}
               accessibilityRole="button"
               accessibilityLabel={t('scan.add_to_collection')}
             >
               <Ionicons name="add-circle" size={22} color="#FFFFFF" />
-              <Text style={styles.addBtnText} numberOfLines={1}>
-                {t('scan.add_to_collection')}
-              </Text>
-            </AnimatedPressable>
-          </View>
+            <Text style={styles.addBtnText} numberOfLines={1}>
+              {t('scan.add_to_collection')}
+            </Text>
+          </AnimatedPressable>
         </View>
       </View>
 
@@ -852,10 +840,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addBtn: {
-    // No `flex: 1` — the wrapper View owns the flex now. Leaving it here would
-    // ask the inner view to grow VERTICALLY (the Pressable is a column).
-    // Height pinned to 52 to match shareBtn exactly, so the two bottom-bar
-    // buttons share a baseline instead of being 2px off.
+    flex: 1,
+    // Matches shareBtn exactly so the two bottom-bar buttons share a baseline.
     height: 52,
     flexDirection: 'row',
     alignItems: 'center',

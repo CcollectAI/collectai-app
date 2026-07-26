@@ -111,11 +111,7 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
       </View>
 
       {/* Action buttons */}
-      {/* AnimatedPressable applies `style` to its inner Animated.View, so the
-          `flex: 1` on these halves never reached the outer Pressable and both
-          buttons sized to their content. The wrapper Views own the flex. */}
       <View style={styles.actionButtonsRow}>
-        <View style={{ flex: 1, minWidth: 0 }}>
           <AnimatedPressable
             style={[styles.secondaryButtonHalf, { borderColor: colors.border }]}
             onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled }); onRescan(); }}
@@ -130,9 +126,7 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
               {t('barcode.scan_another')}
             </Text>
           </AnimatedPressable>
-        </View>
 
-        <View style={{ flex: 1, minWidth: 0 }}>
           <AnimatedPressable
             style={[styles.primaryButtonHalf, { backgroundColor: colors.accent, opacity: isSaving ? 0.7 : 1 }]}
             onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: hapticsEnabled }); onSave(); }}
@@ -157,7 +151,6 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
               </>
             )}
           </AnimatedPressable>
-        </View>
       </View>
 
       <AnimatedPressable
@@ -267,6 +260,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   primaryButtonHalf: {
+    flex: 1,
+    minWidth: 0,
     height: 52,
     flexDirection: 'row',
     alignItems: 'center',
@@ -280,6 +275,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   secondaryButtonHalf: {
+    flex: 1,
+    minWidth: 0,
     height: 52,
     flexDirection: 'row',
     alignItems: 'center',
