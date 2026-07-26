@@ -53,6 +53,10 @@ _TRUST_TIER_BY_SOURCE: dict[str, str] = {
     # User submissions — community
     "user_submission": "community",
     "community": "community",
+    # POST /events writes source='user' (events_core.py), not
+    # 'user_submission'. Without this entry the lookup fell through to the
+    # `unverified` default and mislabelled every in-app submission.
+    "user": "community",
 }
 
 

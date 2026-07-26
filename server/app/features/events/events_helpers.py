@@ -75,6 +75,13 @@ class CreateEventRequest(BaseModel):
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
     ticket_price_cents: Optional[int] = Field(None, ge=0, description="Ticket price in cents (0 = free)")
+    max_attendees: Optional[int] = Field(None, ge=1)
+    # Sponsor association. Accepted here so the create form's sponsor branch
+    # stops losing them, but they are NOT a way to buy placement: create_event
+    # verifies the caller owns the sponsor company and never sets is_sponsored
+    # (only the Stripe webhook, billing_router.py:770, may do that).
+    sponsor_company_id: Optional[str] = Field(None, max_length=64)
+    sponsor_tier: Optional[str] = Field(None, pattern=r"^(featured|promoted|spotlight)$")
 
 
 class UpdateEventRequest(BaseModel):
@@ -119,6 +126,10 @@ class EventResponse(BaseModel):
     longitude: Optional[float] = None
     created_by: Optional[str] = None
     source: str = "user"
+    # The mobile detail screen used to read source_url off
+    # v_events_with_attendees_v1 directly; now that it reads GET /events/{id}
+    # instead, the field has to exist here or it silently disappears.
+    source_url: Optional[str] = None
     attendee_count: int = 0
     going_count: int = 0
     interested_count: int = 0
@@ -370,6 +381,7 @@ def row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventRes
         # is typed as Optional[str], so coerce here. Same pattern as `id` above.
         created_by=str(row["created_by"]) if row.get("created_by") else None,
         source=row.get("source", "user"),
+        source_url=row.get("source_url"),
         attendee_count=row.get("attendee_count", 0),
         going_count=going_count,
         interested_count=interested_count,

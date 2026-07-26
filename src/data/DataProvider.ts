@@ -520,9 +520,15 @@ export interface DataProvider {
    * Mock: tracks in-memory.
    * Real: calls rpc_rsvp_event_v1.
    * @param eventId - The event ID
-   * @param status - RSVP status ('going' | 'interested'), defaults to 'going'
+   * @param status - RSVP status, defaults to 'going'. There is no 'waitlist'
+   *   value: on a full event the server stores 'interested' and returns
+   *   `waitlisted: true`, which is why this resolves to the server's decision
+   *   rather than void.
    */
-  rsvpEvent(eventId: string, status?: string): Promise<void>;
+  rsvpEvent(
+    eventId: string,
+    status?: 'going' | 'interested' | 'not_going',
+  ): Promise<{ status: string; waitlisted: boolean }>;
 
   /**
    * Remove RSVP from an event.

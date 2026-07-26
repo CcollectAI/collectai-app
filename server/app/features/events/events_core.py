@@ -193,10 +193,19 @@ async def list_events(
                 total_count = await count_events_basic(conn, category_id, include_past, user_id=user_id)
 
                 if user_id:
-                    # Try the personalized RPC first
+                    # Try the personalized RPC first.
+                    #
+                    # `user_rsvp_status` is new (migration
+                    # 20260727b_rpc_list_personalized_events_v1_counts.sql).
+                    # ORDER OF OPERATIONS MATTERS: apply that migration BEFORE
+                    # deploying this file. If the old 27-column function is
+                    # still live, this SELECT raises "column
+                    # user_rsvp_status does not exist", the except below logs
+                    # it and falls back to fetch_events_basic() — degraded
+                    # (generic ordering, zero counts) but not broken.
                     try:
                         rows = await conn.fetch(
-                            "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM rpc_list_personalized_events_v1($1, $2, $3) LIMIT $4 OFFSET $5",
+                            "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at, user_rsvp_status FROM rpc_list_personalized_events_v1($1, $2, $3) LIMIT $4 OFFSET $5",
                             user_id,
                             category_id,
                             include_past,
@@ -290,18 +299,74 @@ async def create_event(
 
     pool = get_db_pool()
 
+    # Event-quality Phase 1 (docs/EVENT_QUALITY_PLAN.md §"Phase 4"): a
+    # user-submitted event is `community` — untrusted by default — and carries
+    # a rule-based score. The ingest pipeline has stamped both since 2026-04-21
+    # (newsletter_scraper.py:1148), but this route never did, so every event a
+    # real user created landed with trust_tier IS NULL / quality_score IS NULL
+    # and fell outside every tier-based filter and index the plan describes.
+    # Note map_source_to_trust_tier() is NOT used here: it keys off the source
+    # string, and this route writes source='user', which is not in its table —
+    # it would silently return 'unverified'. The tier is a property of the
+    # ROUTE (a signed-in human posted this), so it is stated outright.
+    trust_tier = "community"
+    try:
+        from app.lib.event_quality import score_event
+
+        quality_score, _reasons = score_event(
+            {
+                "title": request.title,
+                "date": request.date,
+                "location": request.location or "",
+                "source_url": request.online_url or "",
+                "image_url": request.image_url or "",
+                "description": request.description or "",
+            },
+            trust_tier=trust_tier,
+        )
+    except Exception as e:
+        # Scoring is advisory; never block a create on it. NULL score is the
+        # same "unknown" the column already allows.
+        logger.warning("[events] quality scoring failed: %s", e)
+        quality_score = None
+
     if pool is not None:
         try:
             async with pool.acquire() as conn:
+                # Sponsor association: only the company's own admin may attach
+                # an event to it. is_sponsored is deliberately NOT set — paid
+                # placement is granted exclusively by the Stripe webhook
+                # (billing_router.py:770) or the ownership-checked sponsor
+                # routes, so this cannot be used to self-grant promotion.
+                sponsor_company_id = None
+                sponsor_tier = None
+                if request.sponsor_company_id:
+                    owns = await conn.fetchval(
+                        "SELECT 1 FROM sponsor_companies WHERE id = $1::uuid AND admin_user_id = $2",
+                        request.sponsor_company_id,
+                        user_id,
+                    )
+                    if not owns:
+                        raise error_response(
+                            403,
+                            "Sponsor company not found or not owned by you",
+                            code=ErrorCode.FORBIDDEN,
+                        )
+                    sponsor_company_id = request.sponsor_company_id
+                    sponsor_tier = request.sponsor_tier
+
                 row = await conn.fetchrow(
                     """
                     INSERT INTO events (
                         title, kind, category_id, date, time, end_date,
                         location, online_url, image_url, description, created_by, source,
-                        format, status, is_public, latitude, longitude, ticket_price_cents
+                        format, status, is_public, latitude, longitude, ticket_price_cents,
+                        max_attendees, trust_tier, quality_score,
+                        sponsor_company_id, sponsor_tier
                     )
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'user',
-                            $12, $13, $14, $15, $16, $17)
+                            $12, $13, $14, $15, $16, $17,
+                            $18, $19, $20, $21::uuid, $22)
                     RETURNING *
                     """,
                     request.title,
@@ -324,6 +389,11 @@ async def create_event(
                     request.latitude,
                     request.longitude,
                     request.ticket_price_cents or 0,
+                    request.max_attendees,
+                    trust_tier,
+                    quality_score,
+                    sponsor_company_id,
+                    sponsor_tier,
                 )
                 return row_to_event(dict(row), user_id=user_id)
 
@@ -943,13 +1013,26 @@ async def get_event(
                     row = await conn.fetchrow(
                         # `attendees` was non-existent; view exposes
                         # attendee_count / going_count / interested_count.
-                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM v_events_with_attendees_v1 WHERE id = $1",
+                        # source_url added 2026-07-27: the mobile detail screen
+                        # no longer reads the view directly (it was returning
+                        # 0/0 counts under RLS), so anything it used to get off
+                        # the view has to come through here. Column verified
+                        # present on BOTH v_events_with_attendees_v1 and events.
+                        # ticket_price_cents is NOT a column on the view, so it
+                        # comes from a correlated read of `events` rather than a
+                        # bare column ref — a missing column here would raise and
+                        # silently demote every detail request to the count-less
+                        # fallback below. Without it EventResponse defaulted the
+                        # price to 0 and the app could never show "Buy Ticket".
+                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, source_url, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at, "
+                        "(SELECT e2.ticket_price_cents FROM events e2 WHERE e2.id = v.id) AS ticket_price_cents "
+                        "FROM v_events_with_attendees_v1 v WHERE v.id = $1",
                         event_id,
                     )
                 except Exception as view_err:
                     logger.warning("[events] View query failed, falling back to events table: %s", view_err)
                     row = await conn.fetchrow(
-                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, 0 AS attendee_count, 0 AS going_count, 0 AS interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1",
+                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, source_url, 0 AS attendee_count, 0 AS going_count, 0 AS interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at, ticket_price_cents FROM events WHERE id = $1",
                         event_id,
                     )
 

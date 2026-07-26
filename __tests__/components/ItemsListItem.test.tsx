@@ -144,6 +144,42 @@ describe('ItemsListItem — paid-price + P/L surface', () => {
   });
 });
 
+describe('ItemsListItem — unpriced items', () => {
+  // The intake pipeline stores estimated_value = 0 when it cannot price an
+  // item (an ISBN scan with no market comps), so "€ 0" in the row read as
+  // "worthless" when it meant "unknown". ItemDetailsCard has said "Cannot
+  // estimate value" for this state since 2026-07; the list row still showed
+  // "€ 0", so the same item contradicted itself between the two screens.
+  // These pin the row to the shared rule in @/lib/format.
+
+  it('renders the unpriced label instead of a zero price when value is 0', () => {
+    render(<ItemsListItem item={makeItem({ value: 0 })} {...baseProps} />);
+    expect(screen.getByText('Cannot estimate value')).toBeTruthy();
+    // No formatted zero anywhere in the row.
+    expect(screen.queryByText(/^\D*0\D*$/)).toBeNull();
+  });
+
+  it('announces the unpriced state to screen readers rather than "0"', () => {
+    render(<ItemsListItem item={makeItem({ value: 0 })} {...baseProps} />);
+    expect(
+      screen.getByLabelText('Charizard 1st Edition, Cannot estimate value'),
+    ).toBeTruthy();
+  });
+
+  it('still renders a real price when the item IS priced', () => {
+    render(<ItemsListItem item={makeItem({ value: 100 })} {...baseProps} />);
+    expect(screen.queryByText('Cannot estimate value')).toBeNull();
+    expect(screen.getByText(/100/)).toBeTruthy();
+  });
+
+  it('keeps the paid line while showing the unpriced label', () => {
+    // Unpriced prediction must not suppress data we DO have.
+    render(<ItemsListItem item={makeItem({ value: 0, purchasePriceEur: 100 })} {...baseProps} />);
+    expect(screen.getByText('Cannot estimate value')).toBeTruthy();
+    expect(screen.getByText(/Paid /)).toBeTruthy();
+  });
+});
+
 describe('ItemsListItem — enrichment surface', () => {
   it('renders the brand · year · edition detail line when present', () => {
     render(

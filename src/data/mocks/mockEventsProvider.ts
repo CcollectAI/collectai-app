@@ -67,9 +67,13 @@ export function createEvent(input: CreateEventInput, sponsorCompanies: SponsorCo
   return event;
 }
 
-export async function rsvpEvent(eventId: string, status: string = 'going'): Promise<void> {
+export async function rsvpEvent(
+  eventId: string,
+  status: 'going' | 'interested' | 'not_going' = 'going',
+): Promise<{ status: string; waitlisted: boolean }> {
   mockEventAttendees.set(eventId, status);
   logger.info('[MockDataProvider] rsvpEvent', { eventId, status });
+  return { status, waitlisted: false };
 }
 
 export async function unrsvpEvent(eventId: string): Promise<void> {

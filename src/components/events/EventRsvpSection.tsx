@@ -45,6 +45,18 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
   const isStream = event.kind === 'stream';
   const isDrop = event.kind === 'collection_drop';
 
+  // There is no 'waitlist' RSVP status — the server implements the waitlist by
+  // storing 'interested' when a 'going' lands on a full event
+  // (events_rsvp.py:65-89). So on a FULL event "interested" IS "on the
+  // waitlist"; this used to compare against a literal 'waitlist' the API can
+  // never return, so the button read "Join Waitlist" forever.
+  const onWaitlist = !!event.isFull && rsvpStatus === 'interested';
+
+  // ...and for the same reason the separate Interested button is suppressed
+  // while the event is full: it would write the exact same row as the waitlist
+  // button, so showing both offers the user a distinction the data cannot keep.
+  const showInterestedBtn = !event.isFull;
+
   return (
     <>
       {isPastEvent ? (
@@ -120,21 +132,21 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
               style={[
                 styles.actionBtn,
                 {
-                  backgroundColor: rsvpStatus === 'waitlist' ? `${colors.accent}15` : colors.card,
-                  borderColor: rsvpStatus === 'waitlist' ? colors.accent : colors.border,
+                  backgroundColor: onWaitlist ? `${colors.accent}15` : colors.card,
+                  borderColor: onWaitlist ? colors.accent : colors.border,
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel={rsvpStatus === 'waitlist' ? 'On waitlist' : 'Join waitlist'}
+              accessibilityLabel={onWaitlist ? 'On waitlist' : 'Join waitlist'}
             >
               <Ionicons
-                name={rsvpStatus === 'waitlist' ? 'time' : 'hourglass-outline'}
+                name={onWaitlist ? 'time' : 'hourglass-outline'}
                 size={16}
-                color={rsvpStatus === 'waitlist' ? colors.accent : colors.muted}
+                color={onWaitlist ? colors.accent : colors.muted}
                 style={{ marginRight: 6 }}
               />
-              <Text style={[styles.actionBtnText, { color: rsvpStatus === 'waitlist' ? colors.accent : colors.muted }]}>
-                {rsvpStatus === 'waitlist' ? 'On Waitlist' : 'Join Waitlist'}
+              <Text style={[styles.actionBtnText, { color: onWaitlist ? colors.accent : colors.muted }]}>
+                {onWaitlist ? 'On Waitlist' : 'Join Waitlist'}
               </Text>
             </AnimatedPressable>
           ) : (
@@ -165,7 +177,8 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
             </AnimatedPressable>
           )}
 
-          {/* Interested button */}
+          {/* Interested button — hidden on a full event, see showInterestedBtn */}
+          {showInterestedBtn && (
           <AnimatedPressable
             onPress={onRsvpInterested}
             style={[
@@ -189,6 +202,7 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
               Interested
             </Text>
           </AnimatedPressable>
+          )}
         </View>
       )}
 

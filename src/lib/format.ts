@@ -91,6 +91,35 @@ export function formatPrice(amount: number | null | undefined, currency: Currenc
 }
 
 /**
+ * "We have no price" vs "this is worth nothing" are different facts, and the
+ * intake pipeline collapses both to 0 (an ISBN scan with no market comps saves
+ * estimated_value = 0). Showing "€ 0" reads as *worthless* when it means
+ * *unknown*, so treat a missing-or-zero value as unpriced. No collectible a
+ * user bothers to track is genuinely worth 0, so this direction is safe.
+ *
+ * Lives here (not in a component) because more than one surface renders a
+ * per-item value: the detail card AND the collection list row. Two copies of
+ * this rule would drift. NOTE: this is a PER-ITEM rule only — an aggregate
+ * ("Collection total", "Portfolio total") of zero genuinely is zero and must
+ * keep rendering "€ 0".
+ */
+export const UNPRICED_LABEL = 'Cannot estimate value';
+
+/** Coerce a string|number value to a finite number, or undefined. */
+export function toPriceNum(value: string | number | undefined | null): number | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (!Number.isFinite(num)) return undefined;
+  return num;
+}
+
+/** True when a per-item value is missing, unparseable, or zero. See UNPRICED_LABEL. */
+export function isUnpriced(value: string | number | undefined | null): boolean {
+  const n = toPriceNum(value);
+  return n === undefined || n === 0;
+}
+
+/**
  * Format a plain number (no currency symbol).
  */
 export function formatNumber(value: number | null | undefined, locale: NumberLocale = 'de-DE'): string {

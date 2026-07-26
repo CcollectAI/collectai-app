@@ -246,12 +246,19 @@ export class CachedDataProvider implements DataProvider {
     return result;
   }
 
-  async rsvpEvent(eventId: string, status?: string): Promise<void> {
-    await this.inner.rsvpEvent(eventId, status);
+  // Must FORWARD the result, not swallow it: on a full event the server
+  // downgrades 'going' to 'interested' and reports `waitlisted: true`, and the
+  // caller has no other way to learn what was actually stored.
+  async rsvpEvent(
+    eventId: string,
+    status?: 'going' | 'interested' | 'not_going',
+  ): Promise<{ status: string; waitlisted: boolean }> {
+    const result = await this.inner.rsvpEvent(eventId, status);
     await Promise.all([
       cacheClear(CK.EVENTS),
       cacheClear(`${CK.EVENT_BY_ID}:${eventId}`),
     ]);
+    return result;
   }
 
   async unrsvpEvent(eventId: string): Promise<void> {

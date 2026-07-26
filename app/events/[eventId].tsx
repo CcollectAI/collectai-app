@@ -258,17 +258,43 @@ function EventDetailScreen() {
     }
   }, [event, eventId, rsvpStatus, settings.hapticsEnabled, loadEvent]);
 
+  // Join the waitlist for a full event.
+  //
+  // This used to POST status:'waitlist'. RsvpRequest only permits
+  // going|interested|not_going (events_helpers.py:96), so every tap was a hard
+  // 422 that this catch swallowed into a log line — the button changed colour,
+  // said "On Waitlist", and nothing was ever written. There is no 'waitlist'
+  // row type anywhere: the server implements the waitlist by ACCEPTING 'going'
+  // on a full event, storing 'interested', and returning waitlisted:true
+  // (events_rsvp.py:65-89). So we send 'going' and take the server's answer.
+  // Introducing a real 4th status would mean a DDL change plus re-auditing
+  // every consumer of event_attendees.status (v_events_with_attendees_v1's
+  // going/interested counters filter on it), for no behavioural gain.
   const handleJoinWaitlist = useCallback(async () => {
     if (!event || !eventId) return;
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+    const prevStatus = rsvpStatus;
     try {
-      setRsvpStatus('waitlist');
-      await dataProvider.rsvpEvent(eventId, 'waitlist');
+      const res = await dataProvider.rsvpEvent(eventId, 'going');
+      setRsvpStatus(res.status);
+      setEvent((prev) => (prev ? { ...prev, myRsvpStatus: res.status } : prev));
+      showToast({
+        message: res.waitlisted
+          ? "Event is full — you're on the waitlist"
+          : "You're going",
+        type: 'success',
+      });
+      track({ name: 'event_rsvp', properties: { event_id: eventId as string, status: res.status } });
     } catch (err) {
       logger.error('[EventDetail] waitlist error:', err);
+      setRsvpStatus(prevStatus);
+      showToast({
+        message: (err as Error)?.message || 'Could not join the waitlist. Please try again.',
+        type: 'error',
+      });
       loadEvent();
     }
-  }, [event, eventId, settings.hapticsEnabled, loadEvent]);
+  }, [event, eventId, rsvpStatus, settings.hapticsEnabled, showToast, loadEvent]);
 
   const handleToggleDropAlert = useCallback(async () => {
     if (!eventId || alertsLoading) return;

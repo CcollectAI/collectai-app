@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
-import { formatPrice, getCurrencySymbol } from '@/lib/format';
+import { formatPrice, getCurrencySymbol, UNPRICED_LABEL, isUnpriced, toPriceNum } from '@/lib/format';
 import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { CategorySpecificSection } from '@/components/CategorySpecificSection';
 import { Skeleton, SkeletonList } from '@/components/Skeleton';
@@ -45,25 +45,10 @@ interface ItemDetailsCardProps {
   onSizeValueChange: (v: string) => void;
 }
 
-const toNum = (value: string | number | undefined | null): number | undefined => {
-  if (value === undefined || value === null || value === '') return undefined;
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(num)) return undefined;
-  return num;
-};
-
-/**
- * "We have no price" vs "this is worth nothing" are different facts, and the
- * intake pipeline collapses both to 0 (an ISBN scan with no market comps saves
- * estimated_value = 0). Showing "€ 0" reads as *worthless* when it means
- * *unknown*, so treat a missing-or-zero value as unpriced. No collectible a
- * user bothers to track is genuinely worth 0, so this direction is safe.
- */
-const UNPRICED_LABEL = 'Cannot estimate value';
-const isUnpriced = (value: string | number | undefined | null): boolean => {
-  const n = toNum(value);
-  return n === undefined || n === 0;
-};
+// UNPRICED_LABEL / isUnpriced / toPriceNum moved to @/lib/format (2026-07-27) so
+// the collection list row can apply the SAME rule instead of growing a second,
+// drifting copy. `toNum` kept as a local alias to avoid churning 20 call sites.
+const toNum = toPriceNum;
 
 export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDetailsCardProps) {
   const { colors: theme } = useAppTheme();

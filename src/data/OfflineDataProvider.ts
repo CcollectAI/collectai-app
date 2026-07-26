@@ -144,7 +144,10 @@ async function executeMutation(type: MutationType, args: unknown[]): Promise<voi
 
     // ── Events ─────────────────────────────────────────────────────────────
     case 'rsvpEvent':
-      await dataProvider.rsvpEvent(args[0] as string, args[1] as string);
+      await dataProvider.rsvpEvent(
+        args[0] as string,
+        args[1] as 'going' | 'interested' | 'not_going' | undefined,
+      );
       break;
     case 'unrsvpEvent':
       await dataProvider.unrsvpEvent(args[0] as string);
