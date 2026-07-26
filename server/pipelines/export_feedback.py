@@ -50,6 +50,15 @@ logger = logging.getLogger("collectai.export_feedback")
 
 PRICE_FEEDBACK_TYPES = ("sale_price", "price_correction", "verified_sale")
 
+# The app only ever sends three types (src/data/providers/feedbackProvider.ts):
+# sale_price, disagree, accurate. The latter two are qualitative — they carry no
+# price and no category, so they match neither bucket below. They were still
+# swept into the mark-as-incorporated UPDATE at the end of the run, so a user
+# telling us "this prediction is wrong" was recorded as processed while its
+# signal was thrown away, and no counter showed it. Bucket them explicitly so
+# the discard is visible in the run summary instead of silent.
+QUALITATIVE_FEEDBACK_TYPES = ("disagree", "accurate")
+
 # Condition and rarity score maps (duplicated minimally for standalone usage)
 CONDITION_SCORE_MAP: dict[str, float] = {
     "Mint": 1.0, "Near Mint": 0.9, "NM": 0.9, "Excellent": 0.8,
@@ -132,7 +141,8 @@ async def _process_feedback(
 
     if not rows:
         logger.info("No unprocessed feedback found. Nothing to export.")
-        return {"exported": 0, "taxonomy": 0, "skipped": 0, "run_id": run_id}
+        return {"exported": 0, "taxonomy": 0, "skipped": 0,
+                "qualitative": 0, "unhandled": 0, "run_id": run_id}
 
     logger.info("Found %d unprocessed feedback rows", len(rows))
 
@@ -141,6 +151,30 @@ async def _process_feedback(
     # ------------------------------------------------------------------
     price_rows = [r for r in rows if r["feedback_type"] in PRICE_FEEDBACK_TYPES]
     category_rows = [r for r in rows if r["feedback_type"] == "category_correction"]
+    qualitative_rows = [r for r in rows if r["feedback_type"] in QUALITATIVE_FEEDBACK_TYPES]
+    unhandled_rows = [
+        r for r in rows
+        if r["feedback_type"] not in PRICE_FEEDBACK_TYPES
+        and r["feedback_type"] != "category_correction"
+        and r["feedback_type"] not in QUALITATIVE_FEEDBACK_TYPES
+    ]
+    if qualitative_rows:
+        agree = sum(1 for r in qualitative_rows if r["feedback_type"] == "accurate")
+        logger.info(
+            "Qualitative feedback this run: %d (%d accurate, %d disagree) — "
+            "recorded as incorporated but NOT used for training: no price or "
+            "category to learn from. Agreement rate: %.0f%%",
+            len(qualitative_rows), agree, len(qualitative_rows) - agree,
+            100.0 * agree / len(qualitative_rows),
+        )
+    if unhandled_rows:
+        # A type no bucket claims would otherwise be marked processed in silence.
+        kinds = sorted({r["feedback_type"] for r in unhandled_rows})
+        logger.warning(
+            "UNHANDLED feedback_type(s) %s — %d row(s) will be marked "
+            "incorporated without being consumed. Add a bucket or stop writing "
+            "the type.", kinds, len(unhandled_rows),
+        )
 
     # Gather unique item IDs that we need to look up
     item_ids = list({r["item_id"] for r in price_rows if r["item_id"]})
@@ -422,6 +456,8 @@ async def _process_feedback(
         "exported": len(jsonl_records),
         "taxonomy": taxonomy_count if not dry_run else len(category_rows),
         "skipped": skipped,
+        "qualitative": len(qualitative_rows),
+        "unhandled": len(unhandled_rows),
         "total_processed": len(rows),
         "dry_run": dry_run,
     }

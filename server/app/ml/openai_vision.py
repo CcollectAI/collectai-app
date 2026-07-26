@@ -179,7 +179,9 @@ def build_system_prompt(category_hint: str | None = None) -> str:
 
 # ---------------------------------------------------------------------------
 # Vision-quality cache (B3.1/B3.2) — sync read with TTL so per-scan latency
-# stays low. Worker `vision_quality_worker` repopulates the table hourly.
+# stays low. Repopulated by `vision_quality_worker` (every 6h) — which is only
+# useful once scan_corrections has data; vision_category_quality is empty until
+# then, and _apply_confidence_calibration is a no-op returning raw confidence.
 # ---------------------------------------------------------------------------
 
 import time as _time

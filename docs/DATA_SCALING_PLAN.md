@@ -16,7 +16,7 @@ This document is the answer to the question: "we will have unbelievably large am
 | `category_items` | 140k | mostly static | hot: catalog browse, matching |
 | `items` | small | user-driven | hot: portfolio |
 | `events` | ~300 | 10-50/week | hot: events tab |
-| `label_events` | growing | per QuickScan | hot: feedback loop, train data |
+| `label_events` | static | **not written by the live scan path** | hot: feedback loop, train data |
 | `spend_events` | empty | per paid API call | hot: budget circuit breaker |
 | `calibration_snapshots` | 0 (until today) | 54/day | cold: model health |
 
