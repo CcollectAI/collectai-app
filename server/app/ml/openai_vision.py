@@ -217,6 +217,16 @@ def _refresh_vision_quality_cache_sync() -> None:
     ~50 categories the table is tiny; full pull every TTL is fine.
     """
     global _VQ_CACHE, _VQ_CACHE_LOADED_AT
+    # Stamp the ATTEMPT, not the success. This assignment used to live at the
+    # end of the try block, so a failed refresh left _VQ_CACHE_LOADED_AT at
+    # 0.0 -> _get_vq_entry's TTL check (now - 0.0 > 600) was permanently true
+    # -> every subsequent scan re-entered this function and made a BLOCKING
+    # psycopg2.connect() on the async request path, with uvicorn on
+    # --workers 1. One brief DB blip would therefore stall the event loop for
+    # every scan until the DB recovered, and the except below logs at debug,
+    # so it was invisible. Backing off for the TTL on failure is the point of
+    # the timestamp.
+    _VQ_CACHE_LOADED_AT = _time.time()
     try:
         import psycopg2
         from app.config import DB_DSN_DIRECT, DB_DSN
@@ -242,12 +252,16 @@ def _refresh_vision_quality_cache_sync() -> None:
                     "sample_count": int(n or 0),
                 }
             _VQ_CACHE = new_cache
-            _VQ_CACHE_LOADED_AT = _time.time()
         finally:
             conn.close()
     except Exception as e:
-        # Cache stays empty / stale; calibration_factor defaults to 1.0
-        logger.debug("[openai_vision] vision_quality cache refresh skipped: %s", e)
+        # Cache stays empty / stale; calibration_factor defaults to 1.0.
+        # Warning, not debug: this silently disables B3.2 calibration for the
+        # whole TTL, and at debug level nothing ever surfaced that it happened.
+        logger.warning(
+            "[openai_vision] vision_quality cache refresh failed; calibration "
+            "disabled for %.0fs: %s", _VQ_CACHE_TTL_S, e,
+        )
 
 
 def _get_vq_entry(category: str) -> dict | None:
