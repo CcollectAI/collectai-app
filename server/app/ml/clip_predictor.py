@@ -18,6 +18,25 @@ from typing import Any
 import httpx
 
 from app.config import FAL_KEY, FAL_CLIP_URL
+
+# Both entry points below no-op when FAL_KEY is unset — silently, until now.
+# The result was a tier that looked configured, produced nothing and said
+# nothing: category_hint was permanently None, which also left the B3.2b
+# confusion hint unreachable (it only fires on a truthy hint). Announce it
+# once per process so a dead pre-filter is visible instead of inferred from
+# an absence of log lines.
+_FAL_KEY_WARNED = False
+
+
+def _warn_clip_disabled(where: str) -> None:
+    global _FAL_KEY_WARNED
+    if not _FAL_KEY_WARNED:
+        _FAL_KEY_WARNED = True
+        logger.warning(
+            "CLIP pre-filter DISABLED: FAL_KEY is unset (%s). Tier 1 is skipped, "
+            "category_hint stays None, and the confusion-hint path is unreachable. "
+            "Set FAL_KEY or remove the CLIP tier.", where,
+        )
 from app.ml.vision_helpers import (
     ALL_CATEGORIES,
     CATEGORY_DESCRIPTIONS,
@@ -136,6 +155,7 @@ async def warm_clip_text_embeddings() -> int:
     the cache is already warm (in-process or on disk).
     """
     if not FAL_KEY:
+        _warn_clip_disabled("warmup")
         return 0
     if (_clip_text_embeddings_loaded and _clip_text_embeddings) or _load_clip_cache_from_disk():
         return len(_clip_text_embeddings)
@@ -153,6 +173,7 @@ async def classify_clip(image_bytes: bytes, filename: str) -> ClassificationResu
     cosine similarity against cached text embeddings of all category descriptions.
     """
     if not FAL_KEY:
+        _warn_clip_disabled("predict")
         return None
 
     logger.info("vision_classifier: attempting CLIP classification via fal.ai")

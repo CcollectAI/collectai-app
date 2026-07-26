@@ -16,6 +16,24 @@ from typing import Any
 import httpx
 
 from app.config import OPENAI_API_KEY, OPENAI_VISION_MODEL
+
+# USD per 1M tokens (input, output). Deliberately NOT guessed for models that
+# are not listed: an invented rate is worse than an explicit fallback warning.
+_MODEL_USD_PER_1M: dict[str, tuple[float, float]] = {
+    "gpt-4o-mini": (0.15, 0.60),
+}
+_UNPRICED_MODEL_WARNED: set[str] = set()
+
+
+def _warn_unpriced_model(model: str) -> None:
+    if model not in _UNPRICED_MODEL_WARNED:
+        _UNPRICED_MODEL_WARNED.add(model)
+        logger.warning(
+            "No pricing entry for OPENAI_VISION_MODEL=%r — spend tracking is "
+            "using gpt-4o-mini rates and is therefore an ESTIMATE. Add the "
+            "model to _MODEL_USD_PER_1M; spend_tracker can hard-block scans.",
+            model,
+        )
 from app.lib.spend_tracker import spend_tracker, BudgetExceededError
 from app.ml.vision_helpers import (
     ALL_CATEGORIES,
@@ -478,9 +496,18 @@ async def classify_openai_vision(
         usage = data.get("usage", {})
         input_tokens = usage.get("prompt_tokens", 500)
         output_tokens = usage.get("completion_tokens", 200)
-        # gpt-4o-mini: $0.15/1M input, $0.60/1M output (USD→EUR via config)
+        # Pricing is per-model. This used to hardcode gpt-4o-mini's rates while
+        # the model itself comes from the OPENAI_VISION_MODEL env var, so
+        # swapping the model silently corrupted spend tracking — and
+        # spend_tracker.check("openai") can hard-block every scan on budget, so
+        # a wrong number is not a cosmetic problem. Unknown models fall back to
+        # the mini rate and SAY SO rather than guessing a price.
         from app.config import USD_TO_EUR
-        cost_usd = (input_tokens * 0.15 + output_tokens * 0.60) / 1_000_000
+        in_rate, out_rate = _MODEL_USD_PER_1M.get(OPENAI_VISION_MODEL, (None, None))
+        if in_rate is None:
+            in_rate, out_rate = _MODEL_USD_PER_1M["gpt-4o-mini"]
+            _warn_unpriced_model(OPENAI_VISION_MODEL)
+        cost_usd = (input_tokens * in_rate + output_tokens * out_rate) / 1_000_000
         spend_tracker.record("openai", cost_eur=cost_usd * USD_TO_EUR)
 
         # Parse the structured response
