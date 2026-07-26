@@ -74,7 +74,10 @@ export const featureFlags = {
   FEATURE_EDGE_CLASSIFICATION: true,
   FEATURE_VIEWFINDER_HINTS: true,
   FEATURE_MULTI_ITEM_SCAN: true,
-  FEATURE_COMPARISON_SCAN: true,
+  // Compare (A/B scan) retired — not needed for launch. The flag gates BOTH
+  // the pill in CameraViewfinder and the capture branch in quickscan.tsx, so
+  // turning it off removes the whole flow; the code stays for easy revival.
+  FEATURE_COMPARISON_SCAN: false,
   // Ads — dark by default. Enable via PostHog remote flag or manually
   // when user threshold is reached. Free users only; paid = ad-free.
   FEATURE_ADS: false,

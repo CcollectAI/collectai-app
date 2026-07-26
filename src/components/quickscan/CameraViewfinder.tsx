@@ -11,7 +11,6 @@ import {
   Animated,
   StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { featureFlags } from '@/config/featureFlags';
@@ -104,18 +103,28 @@ function CameraViewfinderInner({
         {/* Semi-transparent overlay with cutout */}
         <View style={styles.overlay}>
           {/* Top bar */}
-          <SafeAreaView style={styles.topBar} edges={['top']}>
-            <AnimatedPressable
-              onPress={onCancel}
-              style={styles.cancelBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel and go back"
-            >
-              <Ionicons name="close" size={28} color="#FFFFFF" />
-            </AnimatedPressable>
-            <Text style={styles.topBarTitle}>QuickScan</Text>
+          {/* Plain View, NOT SafeAreaView: the screen renders under a native
+              header that has already consumed the status-bar inset. Applying
+              edges={['top']} here added it a second time, leaving a tall band
+              of dead black space above the title. */}
+          <View style={styles.topBar}>
+            <View style={styles.topBarRow}>
+              <AnimatedPressable
+                onPress={onCancel}
+                style={styles.cancelBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel and go back"
+              >
+                <Ionicons name="close" size={28} color="#FFFFFF" />
+              </AnimatedPressable>
+              <Text style={styles.topBarTitle}>QuickScan</Text>
+              {/* Balances the close button so the title stays optically centred. */}
+              <View style={styles.topBarSpacer} />
+            </View>
 
-            {/* Mode toggle pills */}
+            {/* Mode toggle pills — their own row. Inline with the title they
+                overflowed the screen once a third mode shipped, clipping
+                "Compare" off the right edge. */}
             <View style={styles.modePills}>
               <AnimatedPressable
                 onPress={onToggleBatch}
@@ -126,7 +135,7 @@ function CameraViewfinderInner({
                     : { backgroundColor: 'rgba(255,255,255,0.2)' },
                 ]}
                 accessibilityRole="switch"
-                accessibilityLabel={`Batch mode ${batchMode ? 'on' : 'off'}`}
+                accessibilityLabel={`One by one mode ${batchMode ? 'on' : 'off'}`}
                 accessibilityState={{ checked: batchMode }}
               >
                 <Ionicons
@@ -140,7 +149,7 @@ function CameraViewfinderInner({
                     { color: batchMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)' },
                   ]}
                 >
-                  Batch
+                  One by one
                 </Text>
               </AnimatedPressable>
 
@@ -154,7 +163,7 @@ function CameraViewfinderInner({
                       : { backgroundColor: 'rgba(255,255,255,0.2)' },
                   ]}
                   accessibilityRole="switch"
-                  accessibilityLabel={`Multi mode ${multiMode ? 'on' : 'off'}`}
+                  accessibilityLabel={`All at once mode ${multiMode ? 'on' : 'off'}`}
                   accessibilityState={{ checked: multiMode }}
                 >
                   <Ionicons
@@ -168,7 +177,7 @@ function CameraViewfinderInner({
                       { color: multiMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)' },
                     ]}
                   >
-                    Multi
+                    All at once
                   </Text>
                 </AnimatedPressable>
               )}
@@ -202,7 +211,7 @@ function CameraViewfinderInner({
                 </AnimatedPressable>
               )}
             </View>
-          </SafeAreaView>
+          </View>
 
           {/* Batch counter badge */}
           {batchMode && savedBatchCount > 0 && (
@@ -233,9 +242,9 @@ function CameraViewfinderInner({
           <View style={styles.hintArea}>
             <Text style={styles.hintText}>
               {batchMode
-                ? 'Batch mode -- scan multiple items'
+                ? 'One by one -- scan items in a row'
                 : multiMode
-                  ? 'Multi mode -- point at a shelf or group'
+                  ? 'All at once -- point at a shelf or group'
                   : compareMode
                     ? comparisonA
                       ? 'Now scan item B for comparison'
@@ -251,7 +260,7 @@ function CameraViewfinderInner({
                 onPress={onBatchDone}
                 style={[styles.batchDoneBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
                 accessibilityRole="button"
-                accessibilityLabel="Finish batch scanning"
+                accessibilityLabel="Finish scanning"
               >
                 <Text style={styles.batchDoneBtnText}>
                   Done ({savedBatchCount})
@@ -304,13 +313,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
     backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  topBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  topBarSpacer: {
+    width: 44,
   },
   cancelBtn: {
     width: 44,
@@ -328,7 +342,12 @@ const styles = StyleSheet.create({
   },
   modePills: {
     flexDirection: 'row',
+    justifyContent: 'center',
+    // Wraps rather than clips if a fourth mode ships or the text scales up.
+    flexWrap: 'wrap',
     gap: 6,
+    rowGap: 8,
+    marginTop: 10,
   },
   batchPill: {
     flexDirection: 'row',

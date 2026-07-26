@@ -151,7 +151,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const ONBOARDING_KEY = '@sparrowcollect/onboarding_complete';
 
-function SettingsHeaderButton() {
+function SettingsHeaderButton({ color }: { color?: string }) {
   const router = useRouter();
   const { colors } = useAppTheme();
   return (
@@ -161,16 +161,18 @@ function SettingsHeaderButton() {
       accessibilityRole="button"
       accessibilityLabel="Open settings"
     >
-      <Ionicons name="settings-outline" size={22} color={colors.text} />
+      <Ionicons name="settings-outline" size={22} color={color ?? colors.text} />
     </Pressable>
   );
 }
 
-function HeaderRight() {
+/** `color` overrides the theme tint — needed on the black camera header,
+ *  where the default `colors.text` is near-invisible in light mode. */
+function HeaderRight({ color }: { color?: string } = {}) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <InboxHeaderButton />
-      <SettingsHeaderButton />
+      <InboxHeaderButton color={color} />
+      <SettingsHeaderButton color={color} />
     </View>
   );
 }
@@ -286,6 +288,18 @@ function RootStack() {
     headerRight: () => <HeaderRight />,
   };
 
+  // QuickScan is a full-bleed black camera screen. With the default
+  // `colors.card` header it rendered as a white band above the viewfinder in
+  // light mode. Header stays SHOWN — AnalyzingScreen, BatchSummaryScreen and
+  // MultiItemOverlay have no back affordance of their own, so hiding it would
+  // strand the user on those phases.
+  const cameraHeader = {
+    ...iconOnlyHeader,
+    headerStyle: { backgroundColor: '#000000' },
+    headerTintColor: '#FFFFFF',
+    headerRight: () => <HeaderRight color="#FFFFFF" />,
+  };
+
   // Show loading overlay while auth resolves, but ALWAYS render the Stack
   // so Expo Router can register all routes
   return (
@@ -333,7 +347,7 @@ function RootStack() {
         <Stack.Screen name="category-browse" options={{ headerShown: false }} />
         <Stack.Screen name="projects/[id]" options={iconOnlyHeader} />
         <Stack.Screen name="barcode-scan" options={iconOnlyHeader} />
-        <Stack.Screen name="quickscan" options={iconOnlyHeader} />
+        <Stack.Screen name="quickscan" options={cameraHeader} />
         <Stack.Screen name="add-manual" options={iconOnlyHeader} />
         <Stack.Screen name="events/[eventId]" options={iconOnlyHeader} />
         <Stack.Screen name="events/[eventId]/announcements" options={iconOnlyHeader} />

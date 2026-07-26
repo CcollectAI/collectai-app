@@ -150,3 +150,31 @@ export function useAppTheme() {
 }
 
 export type AppTheme = ReturnType<typeof useAppTheme>;
+
+/**
+ * QuickScan runs against a full-bleed black camera viewfinder, so its result
+ * and analyzing screens must stay black too — otherwise the flow flashes from
+ * black to white mid-scan. This forces the dark palette regardless of the
+ * user's light/dark setting, with the surfaces pushed to true black so they
+ * match the viewfinder (`#000`) rather than the app's dark navy.
+ */
+const QUICKSCAN_COLORS = {
+  ...DARK_COLORS,
+  background: "#000000",
+  card: "#101114",
+  border: "#24262B",
+  skeletonCard: "#101114",
+};
+
+export function useQuickScanTheme() {
+  const base = useAppTheme();
+  return useMemo(
+    () => ({
+      ...base,
+      colors: QUICKSCAN_COLORS,
+      status: statusColorsDark,
+      isDark: true,
+    }),
+    [base],
+  );
+}

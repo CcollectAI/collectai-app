@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useQuickScanTheme } from '@/hooks/useAppTheme';
 import { featureFlags } from '@/config/featureFlags';
 import { SocialProofSection } from '@/components/SocialProofSection';
 import type { SocialProof, CurrencyCode } from '@/data/types';

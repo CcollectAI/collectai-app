@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   summaryValueBadge: {
     marginTop: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 16,
     alignItems: 'center',
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   summaryList: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 100,
     gap: 10,
   },
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     gap: 12,
   },
@@ -211,14 +211,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 40,
     paddingTop: 16,
   },
   summaryDoneBtn: {
     alignItems: 'center',
     paddingVertical: 16,
-    borderRadius: 14,
+    borderRadius: 12,
   },
   summaryDoneBtnText: {
     color: '#FFFFFF',

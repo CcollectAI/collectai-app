@@ -16,7 +16,7 @@ import { router } from 'expo-router';
 import { dataProvider } from '@/data';
 import { featureFlags } from '@/config/featureFlags';
 import { fireHaptic, HapticIntent, confidenceToIntent } from '@/haptics';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useQuickScanTheme } from '@/hooks/useAppTheme';
 import { isDeviceOnline } from '@/hooks/useNetworkStatus';
 import { useToast } from '@/components/Toast';
 import { useSettings } from '@/lib/settings';
@@ -27,10 +27,9 @@ import { ComparisonCard } from '@/components/ComparisonCard';
 import { classifyOnDevice, buildCategoryDistribution } from '@/lib/edgeClassifier';
 import type { EdgeClassification } from '@/lib/edgeClassifier';
 import { CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
-import { multiDetect, collectorsApi } from '@/api/collectorsApi';
+import { multiDetect } from '@/api/collectorsApi';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import type { QuickScanResult, CatalogAlternative, DetectedMultiItem } from '@/data/types';
@@ -55,6 +54,9 @@ const ANALYSIS_STEP_INTERVAL = 1500;
 const EDGE_HINT_THRESHOLD = 0.15;
 const VIEWFINDER_HINT_INTERVAL = 2500;
 const PHOTO_QUALITY = 0.8;
+// R48.4 — below this the AI guess is worthless, so we hand off to manual-add
+// pre-filled instead of showing it. Shared by the camera and gallery paths.
+const LOW_CONFIDENCE_THRESHOLD = 0.3;
 // After this long, reassure the user the scan is just running slow.
 const SCAN_SLOW_HINT_MS = 4000;
 // Hard client-side cap: past this we stop waiting and hand off to manual add
@@ -78,7 +80,11 @@ type ScanPhase =
   | 'comparison_result';
 
 function QuickScanScreen() {
-  const { colors } = useAppTheme();
+  // The whole QuickScan flow sits on the black camera viewfinder, so it forces
+  // the black palette instead of following the app's light/dark setting —
+  // otherwise capture (black) → analyzing/result (white) flashes mid-scan.
+  // This is the chokepoint: `colors` is passed down to every child screen.
+  const { colors } = useQuickScanTheme();
   const { showToast } = useToast();
   const { settings } = useSettings();
   const { t } = useTranslation();
@@ -248,7 +254,6 @@ function QuickScanScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: PHOTO_QUALITY,
-        base64: true,
       });
 
       if (result.canceled || !result.assets?.[0]) return;
@@ -256,33 +261,54 @@ function QuickScanScreen() {
       const asset = result.assets[0];
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
 
-      // If base64 not available, read from URI
-      let base64 = asset.base64;
-      if (!base64 && asset.uri) {
-        base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: 'base64' });
-      }
-
-      if (!base64) {
-        showToast({ message: 'Could not read image', type: 'error' });
-        return;
-      }
+      // Gallery picks and marketplace screenshots both go through the SAME
+      // vision pipeline as the camera path (/intake/image-only). The old
+      // /screenshot-intel/analyze call could never succeed: it sent
+      // {image_base64, source} to an endpoint that requires {screenshot_id},
+      // so every gallery scan 422'd — and its response shape
+      // ({screenshot_id, items[]}) was cast to QuickScanResult, which would
+      // have rendered an empty result card even if the request had worked.
+      const uploadUri = await prepareImageForUpload(asset.uri);
 
       setPhase('analyzing');
       setCapturedUri(asset.uri);
       setAnalysisStepIndex(0);
 
-      const response = await collectorsApi.analyzeScreenshot({ image_base64: base64, source: 'gallery' });
+      const sr = await dataProvider.quickscanSingle(uploadUri);
 
-      // The response should be similar to intake result — set it as scan result
-      if (response) {
-        setScanResult(response as QuickScanResult);
-        setPhase('result');
-      } else {
-        showToast({ message: 'Could not identify items in screenshot', type: 'info' });
+      // Same low-confidence fallback as the camera path: hand off to
+      // manual-add pre-filled rather than show a garbage guess.
+      if (sr.prediction.confidence < LOW_CONFIDENCE_THRESHOLD) {
+        fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+        showToast({
+          message: "Couldn't identify this item — we've pre-filled what we could",
+          type: 'info',
+          duration: 4000,
+        });
+        const visionCategory = sr.attributes.category
+          ? CATEGORY_SLUG_TO_NAME[sr.attributes.category]
+          : undefined;
+        const extracted = sr.attributes.extractedDetails;
+        router.push({
+          pathname: '/add-manual',
+          params: {
+            imageUri: asset.uri,
+            ...(visionCategory ? { category: visionCategory } : null),
+            ...(sr.prediction.name ? { name: sr.prediction.name } : null),
+            ...(sr.attributes.conditionGuess ? { condition: sr.attributes.conditionGuess } : null),
+            ...(extracted && Object.keys(extracted).length ? { attrs: JSON.stringify(extracted) } : null),
+          },
+        });
         setPhase('camera');
+        setCapturedUri(null);
+        return;
       }
+
+      fireHaptic(confidenceToIntent(sr.prediction.confidence), { enabled: settings.hapticsEnabled });
+      setScanResult(sr);
+      setPhase('result');
     } catch (err) {
-      logger.error('[QuickScan] Screenshot analysis failed:', err);
+      logger.error('[QuickScan] Gallery scan failed:', err);
       showToast({ message: 'Screenshot analysis failed', type: 'error' });
       setPhase('camera');
     }
@@ -392,7 +418,7 @@ function QuickScanScreen() {
           }
         } catch (err: unknown) {
           logger.error('[QuickScan] multi-detect error:', err);
-          showToast({ message: 'Multi-detect failed. Try standard mode.', type: 'error' });
+          showToast({ message: "All-at-once scan failed. Try one at a time.", type: 'error' });
           setPhase('camera');
           setCapturedUri(null);
         }
@@ -460,7 +486,6 @@ function QuickScanScreen() {
 
       // R48.4 — Low-confidence fallback: if the AI can't identify the item,
       // offer "Add Manually" instead of showing a garbage guess.
-      const LOW_CONFIDENCE_THRESHOLD = 0.3;
       if (sr.prediction.confidence < LOW_CONFIDENCE_THRESHOLD) {
         fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
         showToast({
