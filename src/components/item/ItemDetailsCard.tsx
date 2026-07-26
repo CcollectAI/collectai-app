@@ -52,6 +52,19 @@ const toNum = (value: string | number | undefined | null): number | undefined =>
   return num;
 };
 
+/**
+ * "We have no price" vs "this is worth nothing" are different facts, and the
+ * intake pipeline collapses both to 0 (an ISBN scan with no market comps saves
+ * estimated_value = 0). Showing "€ 0" reads as *worthless* when it means
+ * *unknown*, so treat a missing-or-zero value as unpriced. No collectible a
+ * user bothers to track is genuinely worth 0, so this direction is safe.
+ */
+const UNPRICED_LABEL = 'Cannot estimate value';
+const isUnpriced = (value: string | number | undefined | null): boolean => {
+  const n = toNum(value);
+  return n === undefined || n === 0;
+};
+
 export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDetailsCardProps) {
   const { colors: theme } = useAppTheme();
   const { settings } = useSettings();
@@ -169,7 +182,14 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
       </View>
 
       {/* Value row */}
-      <View style={styles.row} accessibilityLabel={`Estimated value: ${formatPrice(toNum(editableValue))}`}>
+      <View
+        style={styles.row}
+        accessibilityLabel={
+          isUnpriced(editableValue)
+            ? `Estimated value: ${UNPRICED_LABEL}`
+            : `Estimated value: ${formatPrice(toNum(editableValue), settings.currency)}`
+        }
+      >
         <Text style={[styles.label, { color: theme.muted }]}>Estimated value</Text>
         {isDraft || isEditing ? (
           <View style={styles.editableValueRow}>
@@ -187,11 +207,23 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
           </View>
         ) : (
           <Text
-            style={[styles.valueHighlight, { color: theme.text }]}
+            style={[
+              styles.valueHighlight,
+              // Muted + smaller: it's an absence of data, not a headline figure.
+              isUnpriced(editableValue)
+                ? { color: theme.muted, fontSize: 15 }
+                : { color: theme.text },
+            ]}
             accessibilityRole="text"
-            accessibilityLabel={`Estimated value: ${formatPrice(toNum(editableValue))}`}
+            accessibilityLabel={
+              isUnpriced(editableValue)
+                ? `Estimated value: ${UNPRICED_LABEL}`
+                : `Estimated value: ${formatPrice(toNum(editableValue), settings.currency)}`
+            }
           >
-            {formatPrice(toNum(editableValue))}
+            {isUnpriced(editableValue)
+              ? UNPRICED_LABEL
+              : formatPrice(toNum(editableValue), settings.currency)}
           </Text>
         )}
       </View>
