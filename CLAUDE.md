@@ -8,7 +8,7 @@ Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funk
 ## Tech Stack
 - **Frontend:** Expo SDK 54 (React Native 0.81) with Expo Router, TypeScript
 - **Backend:** FastAPI (Python 3.12) with Supabase/PostgreSQL, asyncpg, partitioned monthly
-- **ML:** 36 Ridge regression models (log-scale for high-variance categories), CLIP vision, OpenAI fallback
+- **ML:** 36 Ridge regression models (log-scale for high-variance categories), OpenAI Vision + heuristic fallback
 - **Payments:** RevenueCat (iOS IAP, shipped 2026-05-09); Stripe dormant for future web/Android
 - **Theme:** Tiffany Blue (#81D8D0) accent, EUR currency, Roboto font
 

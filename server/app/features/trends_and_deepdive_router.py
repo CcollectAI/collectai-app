@@ -682,7 +682,7 @@ async def get_category_deep_dive(
 # Insights panel. This task computes + caches the default-parameter deep-dive
 # for the busiest categories on an interval shorter than the cache TTL, so real
 # users always hit the warm path (~ms). Runs in-process (cache is per-process;
-# there is no Redis), mirroring the CLIP-embedding warm-up in main.py.
+# there is no Redis), spawned from the startup hook in main.py.
 
 # Match the FE's call shape (no days/currency/pagination overrides) so the warm
 # writes the exact cache key the endpoint reads.

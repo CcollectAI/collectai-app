@@ -346,7 +346,7 @@ async def bake_summary(request: Request) -> JSONResponse:
         "stockx": bool(os.getenv("STOCKX_API_KEY")),
         "pricecharting": bool(os.getenv("PRICECHARTING_API_KEY")),
         "bricklink": bool(os.getenv("BRICKLINK_CONSUMER_KEY")),
-        "fal": bool(os.getenv("FAL_KEY")),
+        # "fal" removed with the CLIP tier — it reported a key that nothing read.
         "telegram": bool(os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID")),
     }
     active_sources = [k for k, v in out["data_sources"].items() if v]

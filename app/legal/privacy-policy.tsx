@@ -165,8 +165,7 @@ function PrivacyPolicyScreenInner() {
           {'\u2022'} Sentry — error and crash reporting{'\n'}
           {'\u2022'} Expo — app distribution and push notifications{'\n\n'}
           <Text style={styles.bold}>AI & Image Processing:</Text>{'\n'}
-          {'\u2022'} OpenAI — Vision API for item identification and condition grading{'\n'}
-          {'\u2022'} fal.ai — CLIP text embedding generation for catalog matching{'\n\n'}
+          {'\u2022'} OpenAI — Vision API for item identification and condition grading{'\n\n'}
           <Text style={styles.bold}>Marketplace Data (37 sources across 54 categories):</Text>{'\n'}
           <Text style={styles.bold}>General (all categories):</Text>{'\n'}
           {'\u2022'} eBay, Firecrawl, Crawl4AI, Mercari US, Vinted, Mavin.io, Scrape.do, Google Shopping, Etsy{'\n\n'}

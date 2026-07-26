@@ -151,8 +151,9 @@ MODEL_CANARY_TRAFFIC_PCT: float = float(os.getenv("MODEL_CANARY_TRAFFIC_PCT", "5
 VISION_MAX_IMAGE_BYTES: int = int(os.getenv("VISION_MAX_IMAGE_BYTES", str(20 * 1024 * 1024)))
 INTAKE_MAX_IMAGE_BYTES: int = int(os.getenv("INTAKE_MAX_IMAGE_BYTES", str(20 * 1024 * 1024)))
 
-FAL_KEY: str = os.getenv("FAL_KEY", "")
-FAL_CLIP_URL: str = os.getenv("FAL_CLIP_URL", "https://fal.run/fal-ai/clip")
+# FAL_KEY / FAL_CLIP_URL were removed with the CLIP pre-filter tier: fal.ai is
+# no longer a subprocessor and no code path reads them. Do not re-add without
+# also re-adding the tier and the privacy-policy disclosure.
 OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 OPENAI_VISION_MODEL: str = os.getenv("OPENAI_VISION_MODEL", "gpt-4o-mini")
 
@@ -471,7 +472,6 @@ def validate_config() -> None:
         "EBAY_CLIENT_SECRET": EBAY_CLIENT_SECRET,
         "EBAY_APP_ID": EBAY_APP_ID,
         "OPENAI_API_KEY": OPENAI_API_KEY,
-        "FAL_KEY": FAL_KEY,
         "TCGPLAYER_BEARER_TOKEN": TCGPLAYER_BEARER_TOKEN,
         "TCGPLAYER_PUBLIC_KEY": TCGPLAYER_PUBLIC_KEY,
         "TCGPLAYER_PRIVATE_KEY": TCGPLAYER_PRIVATE_KEY,

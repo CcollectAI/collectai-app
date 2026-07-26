@@ -195,7 +195,7 @@ Implements remaining vision components across all 4 phases + 6 agentic modules.
 ### Vision Classification (Phase 2)
 | Component | Files |
 |-----------|-------|
-| Vision classifier | `app/ml/vision_classifier.py` (613 lines) — 3-tier: CLIP→OpenAI Vision→heuristic, 36 CATEGORY_DESCRIPTIONS for zero-shot |
+| Vision classifier | `app/ml/vision_classifier.py` — 2-tier: OpenAI Vision→heuristic over 54 categories. Structured output uses `strict: true`, so `category_id` is constrained to the taxonomy enum |
 | Vision endpoint | `app/routes/vision_predict.py` — POST /vision-predict/classify with ClassificationResponse |
 | Vision worker | `workers/vision_ingest_worker.py` (514 lines) — processes queue + unclassified items with real classifier |
 
@@ -265,6 +265,6 @@ Implements remaining vision components across all 4 phases + 6 agentic modules.
 1. **RLS bypass**: Backend asyncpg connections bypass Supabase RLS policies
 2. **Secret rotation**: .env files removed from git but tokens exposed in git history
 3. **Market API credentials**: eBay/TCGPlayer adapters need real production API keys
-4. **Vision model**: Uses fal.ai/OpenAI APIs — no offline/embedded model yet
+4. **Vision model**: Uses the OpenAI Vision API — no offline/embedded model yet
 5. **S3 credentials**: presigned URLs need AWS_ACCESS_KEY_ID/SECRET configured
 6. **Test coverage gaps**: New agents/routers (marketplace, taxonomy, dossier, intake, storage) lack tests

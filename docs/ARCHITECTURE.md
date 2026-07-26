@@ -61,7 +61,7 @@ types/                  # category.ts (36 categories)
 | Pricing | Ridge regression v2, q10/q50/q90 quantile predictions | `app/ml/model_loader.py` |
 | Alert & Insight | Threshold, anomaly, set completion alerts | `app/agents/alert_agent.py` |
 | Learning & Calibration | Feedback loop, calibration gate | `app/agents/calibration_agent.py` |
-| Vision & Classification | 3-tier: CLIP → OpenAI → heuristic (36 categories) | `app/ml/vision_classifier.py` |
+| Vision & Classification | 2-tier: OpenAI Vision → heuristic (54 categories). CLIP/fal.ai tier removed 2026-07-27 — FAL_KEY was never set, so it never ran | `app/ml/vision_classifier.py` |
 | Marketplace Aggregation | Multi-source search, dedup, provenance scoring | `app/agents/marketplace_agent.py` |
 | Smart Deal | Purchase mandates, policy engine, deal discovery | `app/agents/deal_discovery_agent.py` |
 | Catalog Learning | Capture unrecognized items, auto-map by consensus, surface new category candidates | `features/catalog_learning_router.py` |

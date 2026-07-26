@@ -88,14 +88,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logging.getLogger("uvicorn").debug("[startup] spend hydrate skipped: %s", e)
 
-    # Pre-warm the CLIP category text-embedding cache OUT of the request path
-    # (S3). Fire-and-forget so it never blocks startup; the first user's scan
-    # then hits a warm cache instead of paying the ~40-call fal.ai warm-up.
-    try:
-        from app.ml.clip_predictor import warm_clip_text_embeddings
-        spawn_bg(warm_clip_text_embeddings(), "clip_warm")
-    except Exception as e:
-        logging.getLogger("uvicorn").debug("[startup] CLIP warm-up skipped: %s", e)
+    # (The CLIP text-embedding warm-up used to run here. The CLIP tier was
+    # removed 2026-07-27 — FAL_KEY was never set, so the warm-up no-op'd on
+    # every boot and the tier never classified anything.)
 
     # Pre-warm the category deep-dive (Market Insights) cache for the busiest
     # categories OUT of the request path. The cold aggregation scans 1M+

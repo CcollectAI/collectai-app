@@ -58,13 +58,11 @@ DEFAULT_COSTS: dict[str, float] = {
     "serpapi": 0.005,      # ~€50/10K searches
     "posthog": 0.0,        # Free tier (1M events/mo)
     "sentry": 0.0,         # Free tier or flat monthly
-    # NOTE: fal_clip was previously listed at €0.002/call, but
-    # server/app/ml/clip_predictor.py never calls tracker.record("fal_clip", ...)
-    # and FAL_KEY is empty on EC2 — every CLIP call would have been free
-    # spend if the key were set. Removed 2026-05-01 to avoid the
-    # "instrumented but not enforced" false signal. Re-add atomically
-    # when FAL is wired: add the record() call in clip_predictor.py
-    # AND restore this entry in the same commit.
+    # NOTE: fal_clip was previously listed at €0.002/call. It was removed
+    # 2026-05-01 because clip_predictor.py never called record("fal_clip", ...)
+    # and FAL_KEY was empty on EC2 — an "instrumented but not enforced" false
+    # signal. The CLIP tier itself was deleted 2026-07-27 (it had never run in
+    # production), so there is nothing left to re-wire.
 }
 
 
