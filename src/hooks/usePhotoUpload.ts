@@ -17,6 +17,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { Alert, Linking } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import { decode as atob } from "base-64";
@@ -24,6 +25,20 @@ import { collectorsApi } from "@/api/collectorsApi";
 import type { ServerUploadResponse } from "@/api/collectorsApi";
 import { useAuthContext } from "@/providers/useAuthContext";
 import { logger } from "@/lib/logger";
+
+/**
+ * iOS presents each permission dialog only ONCE per install. After a denial the
+ * request resolves instantly with `granted: false, canAskAgain: false` and no
+ * dialog — so retrying the request is a no-op and the user is stuck with an
+ * error string and no way to act on it. Route them to Settings instead, the
+ * same way src/lib/calendar.ts does for calendar access.
+ */
+function promptOpenSettings(title: string, body: string) {
+  Alert.alert(title, body, [
+    { text: "Cancel", style: "cancel" },
+    { text: "Open Settings", onPress: () => Linking.openSettings() },
+  ]);
+}
 
 /**
  * Read a local file URI as raw bytes for an S3 PUT. RN's `fetch(uri).blob()`
@@ -174,16 +189,29 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
 
       // 1. Request permissions
       if (source === "camera") {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        const { status, canAskAgain } =
+          await ImagePicker.requestCameraPermissionsAsync();
         if (status !== "granted") {
           setError("Camera permission is required to take photos");
+          if (!canAskAgain) {
+            promptOpenSettings(
+              "Camera Access Is Off",
+              "Camera access was turned off for Sparrow. Open Settings and switch Camera on to take photos.",
+            );
+          }
           return null;
         }
       } else {
-        const { status } =
+        const { status, canAskAgain } =
           await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== "granted") {
           setError("Photo library permission is required to select photos");
+          if (!canAskAgain) {
+            promptOpenSettings(
+              "Photo Access Is Off",
+              "Photo library access was turned off for Sparrow. Open Settings and allow Photos to select images.",
+            );
+          }
           return null;
         }
       }

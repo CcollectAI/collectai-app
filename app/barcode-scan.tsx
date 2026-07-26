@@ -32,6 +32,9 @@ import { useToast } from '@/components/Toast';
 import CatalogSuggestionModal, { type CatalogSuggestionSource } from '@/components/CatalogSuggestionModal';
 import { BarcodeResultCard } from '@/components/barcode/BarcodeResultCard';
 import { BarcodeModeSelector } from '@/components/barcode/BarcodeModeSelector';
+// Imported from the file, not the quickscan barrel, to avoid pulling the whole
+// QuickScan component set into this screen.
+import { PermissionScreen } from '@/components/quickscan/PermissionScreen';
 
 /** Barcode types accepted by the scanner */
 const SUPPORTED_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'isbn'] as const;
@@ -379,28 +382,14 @@ function BarcodeScanScreen() {
   // Permission denied
   if (!permission.granted) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.permissionContainer}>
-          <Ionicons name="camera-outline" size={64} color={colors.muted} />
-          <Text style={[styles.permissionTitle, { color: colors.text }]}>
-            Camera Permission Required
-          </Text>
-          <Text style={[styles.permissionText, { color: colors.muted }]}>
-            We need camera access to scan barcodes and ISBN codes.
-          </Text>
-          <AnimatedPressable
-            style={[styles.permissionButton, { backgroundColor: colors.accent }]}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); requestPermission(); }}
-            accessibilityRole="button"
-            accessibilityLabel="Grant camera permission"
-          >
-            <Text style={[styles.permissionButtonText, { color: colors.card }]}>Grant Permission</Text>
-          </AnimatedPressable>
-          <AnimatedPressable style={styles.backButton} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }} accessibilityRole="button" accessibilityLabel="Go back">
-            <Text style={[styles.backButtonText, { color: colors.muted }]}>Go Back</Text>
-          </AnimatedPressable>
-        </View>
-      </View>
+      <PermissionScreen
+        onGrant={requestPermission}
+        onCancel={() => router.back()}
+        hapticsEnabled={settings.hapticsEnabled}
+        canAskAgain={permission.canAskAgain}
+        message="We need camera access to scan barcodes and ISBN codes."
+        colors={colors}
+      />
     );
   }
 
@@ -556,39 +545,8 @@ const styles = StyleSheet.create({
   headerRight: {
     width: 32,
   },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  permissionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  permissionText: {
-    fontSize: 15,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  permissionButton: {
-    paddingHorizontal: 28,
-    paddingVertical: 16,
-    borderRadius: 12,
-  },
-  permissionButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  backButton: {
-    marginTop: 16,
-    padding: 8,
-  },
-  backButtonText: {
-    fontSize: 15,
-  },
+  // Permission styles removed — this screen now renders the shared
+  // PermissionScreen component instead of its own copy of that UI.
   cameraContainer: {
     flex: 1,
     borderRadius: 16,

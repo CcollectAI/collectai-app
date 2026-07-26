@@ -721,6 +721,7 @@ function QuickScanScreen() {
         onGrant={requestPermission}
         onCancel={handleCancel}
         hapticsEnabled={settings.hapticsEnabled}
+        canAskAgain={permission.canAskAgain}
         colors={colors}
       />
     );
