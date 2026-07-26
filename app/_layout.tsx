@@ -346,7 +346,7 @@ function RootStack() {
         <Stack.Screen name="categories/[categoryId]" options={{ headerShown: false }} />
         <Stack.Screen name="category-browse" options={{ headerShown: false }} />
         <Stack.Screen name="projects/[id]" options={iconOnlyHeader} />
-        <Stack.Screen name="barcode-scan" options={iconOnlyHeader} />
+        <Stack.Screen name="barcode-scan" options={cameraHeader} />
         <Stack.Screen name="quickscan" options={cameraHeader} />
         <Stack.Screen name="add-manual" options={iconOnlyHeader} />
         <Stack.Screen name="events/[eventId]" options={iconOnlyHeader} />

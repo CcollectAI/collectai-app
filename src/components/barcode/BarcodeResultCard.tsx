@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -46,7 +46,7 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
   onSave,
   onAddToWatchlist,
 }: BarcodeResultCardProps) {
-  const { colors } = useAppTheme();
+  const { colors } = useScannerTheme();
   const { t } = useTranslation();
 
   return (
@@ -111,33 +111,53 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
       </View>
 
       {/* Action buttons */}
+      {/* AnimatedPressable applies `style` to its inner Animated.View, so the
+          `flex: 1` on these halves never reached the outer Pressable and both
+          buttons sized to their content. The wrapper Views own the flex. */}
       <View style={styles.actionButtonsRow}>
-        <AnimatedPressable
-          style={[styles.secondaryButtonHalf, { borderColor: colors.border }]}
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled }); onRescan(); }}
-          accessibilityRole="button"
-          accessibilityLabel={t('barcode.scan_another_a11y')}
-        >
-          <Ionicons name="scan-outline" size={18} color={colors.text} />
-          <Text style={[styles.secondaryButtonText, { color: colors.text }]}>{t('barcode.scan_another')}</Text>
-        </AnimatedPressable>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <AnimatedPressable
+            style={[styles.secondaryButtonHalf, { borderColor: colors.border }]}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled }); onRescan(); }}
+            accessibilityRole="button"
+            accessibilityLabel={t('barcode.scan_another_a11y')}
+          >
+            <Ionicons name="scan-outline" size={18} color={colors.text} />
+            <Text
+              numberOfLines={1}
+              style={[styles.secondaryButtonText, { color: colors.text, flexShrink: 1 }]}
+            >
+              {t('barcode.scan_another')}
+            </Text>
+          </AnimatedPressable>
+        </View>
 
-        <AnimatedPressable
-          style={[styles.primaryButtonHalf, { backgroundColor: colors.accent, opacity: isSaving ? 0.7 : 1 }]}
-          onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: hapticsEnabled }); onSave(); }}
-          disabled={isSaving}
-          accessibilityRole="button"
-          accessibilityLabel={t('barcode.save_a11y')}
-        >
-          {isSaving ? (
-            <ActivityIndicator size="small" color={colors.card} />
-          ) : (
-            <>
-              <Ionicons name="add-circle-outline" size={18} color={colors.card} />
-              <Text style={[styles.primaryButtonText, { color: colors.card }]}>Save</Text>
-            </>
-          )}
-        </AnimatedPressable>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <AnimatedPressable
+            style={[styles.primaryButtonHalf, { backgroundColor: colors.accent, opacity: isSaving ? 0.7 : 1 }]}
+            onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: hapticsEnabled }); onSave(); }}
+            disabled={isSaving}
+            accessibilityRole="button"
+            accessibilityLabel={t('barcode.save_a11y')}
+          >
+            {isSaving ? (
+              <ActivityIndicator size="small" color={colors.accentText} />
+            ) : (
+              <>
+                {/* accentText, NOT colors.card — `card` is a SURFACE token. It
+                    only looked right in light mode because card was near-white;
+                    on the black scanner theme it rendered dark-on-teal. */}
+                <Ionicons name="add-circle-outline" size={18} color={colors.accentText} />
+                <Text
+                  numberOfLines={1}
+                  style={[styles.primaryButtonText, { color: colors.accentText, flexShrink: 1 }]}
+                >
+                  Save
+                </Text>
+              </>
+            )}
+          </AnimatedPressable>
+        </View>
       </View>
 
       <AnimatedPressable
@@ -247,12 +267,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   primaryButtonHalf: {
-    flex: 1,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 16,
+    gap: 8,
+    paddingHorizontal: 12,
     borderRadius: 12,
   },
   primaryButtonText: {
@@ -260,12 +280,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   secondaryButtonHalf: {
-    flex: 1,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 16,
+    gap: 8,
+    paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
   },

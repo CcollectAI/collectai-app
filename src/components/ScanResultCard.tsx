@@ -20,7 +20,7 @@ import {
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuickScanTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { featureFlags } from '@/config/featureFlags';
@@ -75,7 +75,7 @@ function ConfidenceRing({
   label: string;
   borderColor: string;
 }) {
-  const { colors } = useQuickScanTheme();
+  const { colors } = useScannerTheme();
   const { t } = useTranslation();
   const pct = Math.round(value * 100);
   const strokeDash = RING_CIRCUMFERENCE * value;
@@ -139,7 +139,7 @@ function ScanResultCardInner({
   onSelectAlternative,
   onConfirm,
 }: ScanResultCardProps) {
-  const { colors } = useQuickScanTheme();
+  const { colors } = useScannerTheme();
   const { t } = useTranslation();
   const [isSharing, setIsSharing] = useState(false);
   const [showCorrection, setShowCorrection] = useState(false);

@@ -7,7 +7,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuickScanTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { featureFlags } from '@/config/featureFlags';
 import { submitScanFeedback } from '@/api/collectorsApi';
@@ -38,7 +38,7 @@ function ScanFeedbackPanelInner({
   feedbackEnabled,
   onPressName,
 }: Props) {
-  const { colors } = useQuickScanTheme();
+  const { colors } = useScannerTheme();
 
   const [editingField, setEditingField] = useState<EditableField | null>(null);
   const [editValue, setEditValue] = useState('');

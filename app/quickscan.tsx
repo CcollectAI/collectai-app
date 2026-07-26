@@ -16,7 +16,7 @@ import { router } from 'expo-router';
 import { dataProvider } from '@/data';
 import { featureFlags } from '@/config/featureFlags';
 import { fireHaptic, HapticIntent, confidenceToIntent } from '@/haptics';
-import { useQuickScanTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { isDeviceOnline } from '@/hooks/useNetworkStatus';
 import { useToast } from '@/components/Toast';
 import { useSettings } from '@/lib/settings';
@@ -84,7 +84,7 @@ function QuickScanScreen() {
   // the black palette instead of following the app's light/dark setting —
   // otherwise capture (black) → analyzing/result (white) flashes mid-scan.
   // This is the chokepoint: `colors` is passed down to every child screen.
-  const { colors } = useQuickScanTheme();
+  const { colors } = useScannerTheme();
   const { showToast } = useToast();
   const { settings } = useSettings();
   const { t } = useTranslation();

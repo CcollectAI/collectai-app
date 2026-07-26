@@ -21,7 +21,7 @@ import {
 import { router, Stack } from 'expo-router';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { dataProvider, type BarcodeLookupResult } from '@/data';
 import { collectorsApi, type IntakeResultResponse, getBillingStatus, type BillingStatus } from '@/api/collectorsApi';
 import { AnimatedPressable } from '@/motion';
@@ -43,7 +43,7 @@ type ScanState = 'scanning' | 'loading' | 'result' | 'error';
 type InputMode = 'camera' | 'url';
 
 function BarcodeScanScreen() {
-  const { colors } = useAppTheme();
+  const { colors } = useScannerTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
 
