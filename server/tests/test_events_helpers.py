@@ -86,7 +86,11 @@ class TestBuildEventConditionsIncludePast:
         )
         assert any("date >=" in c for c in conditions)
         # The param should be today's date string
-        assert params[0] == date.today().isoformat()
+        # A `date` object, not an ISO string: build_event_conditions binds
+        # this straight to a PG date column via asyncpg, which rejects a
+        # str with "'str' has no attribute 'toordinal'". The assertion was
+        # left behind when the code was corrected.
+        assert params[0] == date.today()
 
     def test_date_param_index(self):
         conditions, params, idx = build_event_conditions(
@@ -102,7 +106,7 @@ class TestBuildEventConditionsIncludePast:
         )
         assert "date >= $1" in conditions
         assert "category_id = $2" in conditions
-        assert params == [date.today().isoformat(), "funko"]
+        assert params == [date.today(), "funko"]
         assert idx == 3
 
 
@@ -136,7 +140,7 @@ class TestBuildEventConditionsUserId:
         assert "date >= $1" in conditions
         assert "category_id = $2" in conditions
         assert "created_by = $3" in conditions[3]  # inside the OR clause
-        assert params == [date.today().isoformat(), "manga", "user-abc"]
+        assert params == [date.today(), "manga", "user-abc"]
         assert idx == 4
 
 
@@ -175,3 +179,45 @@ class TestEventColumns:
     def test_event_columns_contains_url_fields(self):
         for col in ["online_url", "image_url"]:
             assert col in EVENT_COLUMNS, f"Missing URL column: {col}"
+
+
+class TestDisplayGateIsAlwaysApplied:
+    """The feed gate must be present on EVERY conditions build.
+
+    build_event_conditions is the shared chokepoint for fetch_events_basic
+    and count_events_basic; if the gate is dropped here, the list and the
+    count silently start including quarantined and low-quality rows again.
+    Added 2026-07-27 alongside the gate itself.
+    """
+
+    def test_gate_present_with_no_filters(self):
+        conditions, _params, _idx = build_event_conditions(None, True)
+        joined = " AND ".join(conditions)
+        assert "quality_score" in joined
+        assert "source NOT IN" in joined
+
+    def test_gate_present_with_all_filters(self):
+        conditions, _params, _idx = build_event_conditions("manga", False, "user-abc")
+        joined = " AND ".join(conditions)
+        assert "quality_score IS NULL OR quality_score >= 40" in joined
+
+    def test_gate_adds_no_bind_params(self):
+        """It must not renumber the caller's positional placeholders."""
+        _c, params_without, idx_without = build_event_conditions(None, True)
+        _c2, params_with, idx_with = build_event_conditions("manga", False, "u")
+        assert len(params_without) == 0
+        assert len(params_with) == 3
+        assert idx_with == 4
+
+    def test_gate_sql_refuses_a_non_identifier_source(self):
+        """The only values interpolated into SQL are guarded."""
+        import app.features.events.events_helpers as helpers
+        import app.lib.event_quality as eq
+
+        original = eq.UNRELIABLE_FREE_TEXT_SOURCES
+        try:
+            eq.UNRELIABLE_FREE_TEXT_SOURCES = frozenset({"x'; DROP TABLE events;--"})
+            with pytest.raises(ValueError):
+                helpers.display_gate_sql()
+        finally:
+            eq.UNRELIABLE_FREE_TEXT_SOURCES = original
