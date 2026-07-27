@@ -344,7 +344,7 @@ async def get_portfolio_category_breakdown(
                     ORDER BY qp.item_id, qp.created_at ASC
                 )
                 SELECT
-                    i.category,
+                    COALESCE(NULLIF(i.category, ''), 'uncategorized') AS category,
                     COUNT(*) AS item_count,
                     COALESCE(SUM(
                         COALESCE(lq.q50_eur, i.predicted_price_eur, i.estimated_value, 0)
@@ -356,13 +356,29 @@ async def get_portfolio_category_breakdown(
                 LEFT JOIN latest_qp lq ON lq.item_id = i.id
                 LEFT JOIN earliest_qp eq ON eq.item_id = i.id
                 WHERE i.user_id = $1
-                  AND i.category IS NOT NULL
+                  -- `AND i.category IS NOT NULL` USED TO BE HERE. It silently
+                  -- dropped every item saved without a category — and Category
+                  -- is OPTIONAL on the Add-Manually form, so this is a normal
+                  -- thing for a user to do.
+                  --
+                  -- The effect was a headline number that disagreed with
+                  -- itself: Home showed "1 Categories / 1 Total Items / €0"
+                  -- (globalStatsTotalItems sums this breakdown) while the
+                  -- Items tab showed "2 items" with an "Uncategorized" group.
+                  -- Reproduced 2026-07-27 by saving an item with no category.
+                  --
+                  -- That is the exact goal the comment above states — parity
+                  -- with the Items list — so bucketing under 'uncategorized'
+                  -- restores it rather than widening scope. itemsProvider.ts
+                  -- already maps a null category to 'Uncategorized' for
+                  -- display, so the FE needs no change.
+                  --
                   -- NOTE: intentionally NOT filtering i.archived, to stay in
                   -- exact parity with the Items list (listItems does not filter
                   -- it either). If archived items should be excluded from
                   -- portfolio value, add the SAME filter to listItems in the
                   -- same change so the card/footer/portfolio stay consistent.
-                GROUP BY i.category
+                GROUP BY COALESCE(NULLIF(i.category, ''), 'uncategorized')
                 ORDER BY total_value DESC
                 """,
                 user_id,
