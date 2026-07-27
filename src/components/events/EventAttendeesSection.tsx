@@ -7,7 +7,6 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
-import { COMMUNITY_GATED } from '@/config/featureFlags';
 
 interface AttendeeUser {
   id: string;
@@ -44,10 +43,31 @@ export const EventAttendeesSection = React.memo(function EventAttendeesSection({
 }: EventAttendeesSectionProps) {
   const { colors } = useAppTheme();
 
-  // When community is gated and there are 0 attendees, hide the whole
-  // section. Every event showing "no one attending" reads as ghost town;
-  // when real RSVPs land the section reappears automatically.
-  if (COMMUNITY_GATED && attendees.length === 0) {
+  // Hide whenever there is nobody to show — NOT only when COMMUNITY_GATED.
+  //
+  // Corrected 2026-07-27. The old guard was `COMMUNITY_GATED && length === 0`,
+  // and COMMUNITY_GATED is currently false, so the empty state rendered. On
+  // the "Hello" event that produced a screen reading
+  //
+  //     1 going
+  //     Collectors attending / following
+  //     No collectors are marked as attending yet. You can be the first.
+  //
+  // — the section flatly contradicting the count directly above it.
+  //
+  // The old comment claimed "when real RSVPs land the section reappears
+  // automatically". That was not true. This list can NEVER populate:
+  //   * eventsProvider.ts:35 and :429 hardcode `attendeeIds: []`;
+  //   * GET /events/{id} returns counts only (attendee_count, going_count,
+  //     interested_count, user_rsvp_status) and no attendee id list;
+  //   * getUserById resolves against USER_PROFILES, a static array of demo
+  //     collectors, so real user UUIDs would not match even if they arrived.
+  //
+  // Exposing real attendees is deliberately OFF the table: event_attendees
+  // carries a deny-all RLS policy on purpose — "attendee lists are not public
+  // data" (2026-07-27). So the honest fix is to show nothing rather than
+  // assert that nobody is attending.
+  if (attendees.length === 0) {
     return null;
   }
 
