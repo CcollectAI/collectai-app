@@ -86,11 +86,23 @@ def _clear_overrides():
 
 
 def _thread_participant_row(requester_id=TEST_USER_ID, responder_id=OTHER_USER_ID):
-    """Mock row returned by _get_thread_participant query."""
+    """Mock row returned by the _get_thread_participant query.
+
+    Columns are dm_user_a / dm_user_b, not requester_id / responder_id.
+    chat_router reads `chat_threads_v1` (kind='dm'); the older requester/
+    responder shape belongs to the legacy `chat_*` tables that the _v1
+    tables superseded. Verified against prod 2026-07-27:
+    chat_threads_v1 has dm_user_a, dm_user_b — and no requester_id.
+
+    The stale keys made row["dm_user_a"] raise KeyError, which surfaced as
+    3 failures that looked like a broken DM endpoint rather than a mock
+    left behind by the v1 migration. Parameter names are kept so the call
+    sites read the same; only the emitted column names change.
+    """
     row = MagicMock()
     row.__getitem__ = lambda self, key: {
-        "requester_id": requester_id,
-        "responder_id": responder_id,
+        "dm_user_a": requester_id,
+        "dm_user_b": responder_id,
     }[key]
     return row
 
