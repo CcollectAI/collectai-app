@@ -49,6 +49,53 @@ def _token_overlap(a: str, b: str) -> float:
     return len(intersection) / len(union)
 
 
+def _token_containment(a: str, b: str) -> float:
+    """Overlap coefficient: |A∩B| / min(|A|,|B|).
+
+    Jaccard cannot see a title that is a DEGRADED version of another,
+    because it divides by the union and so punishes the shorter string.
+    Measured on the real pair that survived dedup for months:
+
+        "BTS"  vs  "BTS WORLD TOUR 'ARIRANG' IN EAST RUTHERFORD"
+        jaccard     = 1/7 = 0.14   -> under the 0.70 threshold, missed
+        containment = 1/1 = 1.00   -> caught
+
+    SeatGeek routinely writes the bare artist name where Ticketmaster
+    writes the full billing, so every such concert was stored twice.
+    """
+    tokens_a = set(_normalize_title(a).split())
+    tokens_b = set(_normalize_title(b).split())
+    if not tokens_a or not tokens_b:
+        return 0.0
+    return len(tokens_a & tokens_b) / min(len(tokens_a), len(tokens_b))
+
+
+# Vendor precedence for cross-source duplicates, best first. Ticketmaster
+# outranks SeatGeek because its titles are consistently the fuller billing
+# ("BTS WORLD TOUR 'ARIRANG' IN EAST RUTHERFORD" vs a bare "BTS") and it
+# carries images and venue strings more reliably — measured across the 459
+# rows that have a location, 2026-07-27. Sources absent from this list fall
+# back to the richness heuristic.
+_SOURCE_RANK: dict[str, int] = {
+    "ticketmaster": 0,
+    "seatgeek": 1,
+}
+
+
+def _city_of(location: str | None) -> str:
+    """Middle component of "Venue, City, Country", normalised.
+
+    Used to require that two same-day, similarly-titled events are in the
+    same place before calling them duplicates — a national tour plays the
+    same show in many cities on different dates, but two vendors listing
+    one date must agree on the city.
+    """
+    if not location:
+        return ""
+    parts = [p.strip() for p in location.split(",")]
+    return _normalize_title(parts[1]) if len(parts) >= 2 else ""
+
+
 async def deduplicate_events(
     similarity_threshold: float = 0.70,
     dry_run: bool = False,
@@ -76,6 +123,7 @@ async def deduplicate_events(
             SELECT id, title, date, category_id, source, description, image_url, location
             FROM public.events
             WHERE date >= now() - interval '60 days'
+              AND status = 'published'
             ORDER BY date, created_at
             """
         )
@@ -115,12 +163,30 @@ async def deduplicate_events(
                     ):
                         continue
 
-                    # Check title similarity
+                    # Check title similarity.
+                    #
+                    # Jaccard alone missed every cross-vendor duplicate,
+                    # because SeatGeek writes the bare artist name where
+                    # Ticketmaster writes the full billing. Containment
+                    # catches that, but only apply it ACROSS sources and
+                    # in the same city — within one source a short title
+                    # that is a subset of a longer one is usually a
+                    # genuinely different event (a festival's "Day 1" vs
+                    # its "2-DAY VIP" ticket).
                     sim = _token_overlap(a["title"] or "", b["title"] or "")
+                    cross_source = (a["source"] or "") != (b["source"] or "")
+                    same_city = _city_of(a["location"]) == _city_of(b["location"])
                     if sim < similarity_threshold:
-                        continue
+                        if not (cross_source and same_city and _city_of(a["location"])):
+                            continue
+                        if _token_containment(a["title"] or "", b["title"] or "") < 0.99:
+                            continue
 
-                    # Found a duplicate pair — keep the richer one
+                    # Found a duplicate pair. Across vendors the winner is
+                    # decided by source precedence, not richness: SeatGeek
+                    # rows can carry a longer description and still have a
+                    # strictly worse title, and the title is what the user
+                    # reads in the feed.
                     def _richness(r):  # noqa: E301
                         score = 0
                         if r["description"]:
@@ -131,26 +197,40 @@ async def deduplicate_events(
                             score += 50
                         return score
 
-                    if _richness(a) >= _richness(b):
-                        ids_to_delete.append(b["id"])
-                        seen_merged.add(b["id"])
+                    rank_a = _SOURCE_RANK.get((a["source"] or "").lower())
+                    rank_b = _SOURCE_RANK.get((b["source"] or "").lower())
+                    if rank_a is not None and rank_b is not None and rank_a != rank_b:
+                        loser = b if rank_a < rank_b else a
+                    elif _richness(a) >= _richness(b):
+                        loser = b
                     else:
-                        ids_to_delete.append(a["id"])
-                        seen_merged.add(a["id"])
+                        loser = a
+
+                    ids_to_delete.append(loser["id"])
+                    seen_merged.add(loser["id"])
 
         if ids_to_delete and not dry_run:
-            # Delete in batches of 50
+            # Quarantine rather than DELETE (changed 2026-07-27).
+            #
+            # Every read path filters status='published', so flipping the
+            # status hides the duplicate just as effectively while leaving
+            # the row inspectable and restorable. A dedup heuristic that
+            # destroys rows is unrecoverable when it is wrong, and this one
+            # was demonstrably wrong for months in the other direction —
+            # its Jaccard threshold silently matched nothing across vendors.
+            # ON DELETE CASCADE on event_attendees also meant a false match
+            # took real RSVPs with it.
             for batch_start in range(0, len(ids_to_delete), 50):
                 batch = ids_to_delete[batch_start : batch_start + 50]
                 await conn.execute(
-                    "DELETE FROM public.events WHERE id = ANY($1)",
+                    "UPDATE public.events SET status = 'rejected' WHERE id = ANY($1)",
                     batch,
                 )
             removed = len(ids_to_delete)
-            logger.info("Dedup: removed %d duplicate events", removed)
+            logger.info("Dedup: quarantined %d duplicate events", removed)
         elif ids_to_delete:
             removed = len(ids_to_delete)
-            logger.info("Dedup (dry-run): would remove %d duplicates", removed)
+            logger.info("Dedup (dry-run): would quarantine %d duplicates", removed)
 
     finally:
         await conn.close()
