@@ -852,7 +852,15 @@ const ItemsScreen: React.FC = () => {
         formatPrice={(v) => formatPrice(v)}
         resolveCategoryName={(raw) => {
           const cat = getCategoryById(raw) ?? getCategoryByName(raw);
-          return cat?.name ?? raw;
+          // Fall back to formatCategoryName, not the raw slug. The registry
+          // only knows real categories, so anything else rendered lowercase
+          // and unsplit — visible from 2026-07-27 as a breakdown card reading
+          // "uncategorized" directly above a section header reading
+          // "Uncategorized", once the backend started returning that bucket.
+          // formatCategoryName is already what the section headers (line 952)
+          // and the row pills (ItemsListItem.tsx:126) use, so this makes one
+          // screen agree with itself.
+          return cat?.name ?? formatCategoryName(raw);
         }}
         onCategoryPress={(catRaw) => {
           fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
