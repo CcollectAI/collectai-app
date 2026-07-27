@@ -117,6 +117,33 @@ This is the most critical flow Apple's reviewer will exercise.
 
 ---
 
+## Section 4b — Spreadsheet import + watchlist acquire
+
+> **Added 2026-07-28.** Both flows returned success while silently dropping
+> data, and the watchlist one 500'd outright. Neither had a QA row, and no
+> automated test covered them. Check the **values**, not just that the row
+> appears — a structurally-valid row with a NULL half is exactly what shipped.
+
+- [ ] Add tab → **Import from spreadsheet** → download the template
+- [ ] Import the filled template as **.csv** → success count matches your rows
+- [ ] Import the same data as **.xlsx** → same result (Excel path uses `openpyxl`)
+- [ ] Imported items appear on the **Home portfolio with their names visible**
+      (not blank / "Untitled" — Home reads `name`, the Items tab reads `title`,
+      so an item can look correct on one screen and blank on the other)
+- [ ] Open an imported item → purchase price, currency, condition, grade and
+      purchase date all match the spreadsheet
+- [ ] The purchase date is the **same day** you typed, not the day before
+      (timezone off-by-one)
+- [ ] Analytics tab → **Cost Basis** reflects the imported purchase prices
+- [ ] Import a row priced in a **non-EUR** currency → cost basis shows the
+      FX-converted amount, not the raw number relabelled as EUR
+- [ ] Watchlist → **"I Got It!"** on an item → converts to a collection item
+      without an error toast, and the watchlist row disappears
+- [ ] That acquired item's cost basis is in **your** currency, converted —
+      set Settings → Currency to USD first to make the bug visible
+
+---
+
 ## Section 5 — Paywall (expectation depends on the BUILD PROFILE)
 
 > **Corrected 2026-07-27.** This section used to say every paywall should be

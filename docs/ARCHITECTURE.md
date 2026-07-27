@@ -128,6 +128,49 @@ Key tables in Supabase PostgreSQL:
 | `taxonomy_registry` | Category taxonomy versions |
 | `object_pointers` | S3 image references |
 
+### `items` paired columns — read this before adding a writer
+
+`items` deliberately carries **both halves** of three pairs, and different
+readers key on different halves:
+
+| Pair | Who reads which half |
+|------|----------------------|
+| `name` ↔ `title` | Home portfolio and `/portfolio/overview` read `name`; the Items tab falls back to `title` |
+| `purchased_at` ↔ `purchase_date` | `ITEMS_SELECT` (`itemsProvider.ts`) reads `purchased_at`; the CSV export reads `purchase_date` |
+| `purchase_price` ↔ `purchase_price_eur` | The analytics Cost Basis / DCA series sums the EUR half |
+
+Writing one half and not the other **never throws**. A `SELECT` of the
+unwritten half returns NULL and every reader defaults (`?? 0`, `'Untitled'`),
+so the feature renders empty instead of failing. That is why this recurred:
+the 2026-07-24 fix landed on `add-manual.tsx` and was never carried to
+`routes/items_router.py`, `features/import_router.py` or
+`pipelines/seed_beta_users.py`. Measured 2026-07-28, before the fix,
+`purchase_price_eur` was non-null on **0 of 5** priced rows — the Cost Basis
+card could not populate for anyone.
+
+Since 2026-07-28, **`trg_items_sync_paired_columns` (BEFORE INSERT OR UPDATE)
+derives the missing half**, so a new writer no longer has to remember. Two
+things it deliberately does not do:
+
+- it never overwrites a half that *was* supplied — the watchlist "I Got It!"
+  flow sends a real timestamp, not a date, and keeps it
+- it will not treat a non-EUR row as EUR; the database cannot call the FX
+  service. App-side conversion is `app/lib/fx_service.py::convert_to_eur`,
+  wired into all three server writers.
+
+Two binding traps in the same area, both fixed and both worth not repeating:
+
+- **Never bind a bare `datetime.date` to a `timestamptz` column.** asyncpg
+  encodes it as midnight in the *host* timezone, so `purchase_date`
+  2024-06-01 stored `purchased_at` = 2024-05-31 22:00Z — a day early for
+  every UTC reader. Derive it in SQL pinned to UTC instead.
+- **Never bind one parameter to both `$N::timestamptz` and `$N::date`.**
+  Postgres infers a date/timestamp type for the parameter and asyncpg then
+  rejects the ISO *string* a Pydantic model declares (`expected a
+  datetime.date or datetime.datetime instance, got 'str'`). This 500'd every
+  `POST /items` carrying a `purchased_at` — the whole watchlist conversion —
+  silently, because the route caught it as a generic `DB_ERROR`.
+
 ## Data Flow
 
 ### Item Intake
