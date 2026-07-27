@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
+from app.lib.fx_service import convert_to_eur
 from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(tags=["Items"])
@@ -224,6 +225,17 @@ async def create_item(
             payload.name, payload.category, pool
         )
 
+    # items carries BOTH purchase_price (raw, in purchase_currency) and
+    # purchase_price_eur (FX-normalized). The analytics Cost Basis / DCA series
+    # sums the EUR half. add-manual.tsx got this on 2026-07-24; this route and
+    # import_router.py did not, so table-wide `purchase_price_eur` was non-null
+    # on 0 of 5 priced rows and the card could never populate.
+    purchase_price_eur = (
+        await convert_to_eur(payload.purchase_price, payload.purchase_currency or "EUR")
+        if payload.purchase_price is not None
+        else None
+    )
+
     if pool is not None:
         try:
             async with pool.acquire() as conn:
@@ -232,17 +244,18 @@ async def create_item(
                     """
                     INSERT INTO items (id, user_id, name, title, category, notes, collection_name, estimated_value, canonical_key,
                                        image_url, brand, condition, year, series, edition_label, attrs,
-                                       purchase_price, purchase_currency, purchased_at, purchase_date)
+                                       purchase_price, purchase_price_eur, purchase_currency, purchased_at, purchase_date)
                     VALUES ($1, $2::uuid, $3, $3, $4, $5, $6, $7, $8,
                             $9, $10, $11, $12, $13, $14, $15::jsonb,
-                            $16, $17, $18::timestamptz, $18::date)
+                            $16, $17, $18, $19::timestamptz, $19::date)
                     """,
                     item_id, user_id, payload.name, payload.category, payload.notes,
                     payload.collection_name, payload.estimated_value, payload.canonical_key,
                     payload.image_url, payload.brand, payload.condition, payload.year,
                     payload.series, payload.edition_label,
                     json.dumps(payload.attrs) if payload.attrs else None,
-                    payload.purchase_price, payload.purchase_currency, payload.purchased_at,
+                    payload.purchase_price, purchase_price_eur,
+                    payload.purchase_currency, payload.purchased_at,
                 )
                 logger.info(
                     "[items] Created item: id=%s, user=%s, canonical_key=%s",

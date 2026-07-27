@@ -19,6 +19,7 @@ from fastapi.responses import StreamingResponse
 
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.lib.fx_service import convert_to_eur
 from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/api/imports", tags=["Imports"])
@@ -271,6 +272,22 @@ async def import_collection(
             except ValueError:
                 _logger.debug("[import] purchase_date parse failed: %s", purchase_date_raw)
 
+        # The items table deliberately carries BOTH halves of three pairs, and
+        # different readers key on different halves — see the note at
+        # add-manual.tsx:414-435 and scripts/audit_column_drift.py. This path
+        # wrote only one half of each, so every imported row was:
+        #   name NULL      -> nameless on the Home portfolio (the f9195fe bug,
+        #                     fixed for add-manual/QuickScan but not here)
+        #   ..._eur NULL   -> no cost basis in the analytics DCA series
+        #   purchased_at   -> NULL, and that is the half ITEMS_SELECT reads
+        #                     (itemsProvider.ts:136)
+        # None of it threw: the readers all default to `?? 0` / 'Untitled'.
+        purchase_price_eur = (
+            await convert_to_eur(purchase_price, purchase_currency or "EUR")
+            if purchase_price is not None
+            else None
+        )
+
         est_val = _num(r.get("estimated_value") or r.get("price") or r.get("value"))
         notes = r.get("notes")
         notes_str = str(notes).strip() if notes else None
@@ -296,22 +313,32 @@ async def import_collection(
                     await conn.execute(
                         """
                         INSERT INTO items (
-                            id, user_id, title, category, condition,
+                            id, user_id, name, title, category, condition,
                             condition_grade, attrs,
-                            purchase_price, purchase_currency, purchase_date,
-                            estimated_value, notes, canonical_key
+                            purchase_price, purchase_price_eur,
+                            purchase_currency, purchase_date,
+                            estimated_value, notes, canonical_key, source
                         )
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+                                $12, $13, $14, $15, 'import')
                         """,
                         str(_uuid.uuid4()),
                         user_id,
+                        title,
                         title,
                         category,
                         condition,
                         condition_grade,
                         json.dumps(attrs) if attrs else None,
                         purchase_price,
+                        purchase_price_eur,
                         purchase_currency,
+                        # purchased_at is intentionally NOT bound here.
+                        # asyncpg encodes a bare `date` into a timestamptz as
+                        # midnight in the *host* timezone, so an Amsterdam box
+                        # stored 2024-06-01 as 2024-05-31 22:00Z -- a day early
+                        # for every UTC reader. trg_items_sync_paired_columns
+                        # derives it from purchase_date pinned to UTC midnight.
                         purchase_date,
                         est_val,
                         notes_str,
