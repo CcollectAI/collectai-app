@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
@@ -74,6 +75,46 @@ INTER_CALL_SLEEP_SECONDS = 0.3
 # ---------------------------------------------------------------------------
 # Mapping
 # ---------------------------------------------------------------------------
+
+def _normalise(s: str) -> str:
+    """Lowercase and strip non-alphanumerics.
+
+    So the query "yu-gi-oh" matches an event named "Yugioh", and "k-pop"
+    matches "KPOP".
+    """
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def _event_identity_text(event: dict[str, Any]) -> str:
+    """Everything that says what an event IS — deliberately NOT the venue.
+
+    The venue is excluded on purpose. Ticketmaster's keyword search matches
+    the venue too, so querying "funko" returns every home game at **Funko
+    Field**, a minor-league ballpark in Everett WA named after the company's
+    HQ. Those were stamped category_id='funko' and filed 5+ Everett AquaSox
+    baseball games under Funko collectibles (found 2026-07-27).
+    """
+    parts: list[str] = [event.get("name") or ""]
+
+    for attraction in (event.get("_embedded", {}).get("attractions") or []):
+        parts.append(attraction.get("name") or "")
+
+    for cls in (event.get("classifications") or []):
+        for key in ("segment", "genre", "subGenre"):
+            parts.append((cls.get(key) or {}).get("name") or "")
+
+    return " ".join(p for p in parts if p)
+
+
+def _keyword_matches_event(event: dict[str, Any], keyword: str) -> bool:
+    """Whether the search keyword describes the event, not merely its venue.
+
+    The category in QUERIES is the keyword we SEARCHED for, and it was
+    trusted unconditionally — so anything the search matched for any reason
+    inherited that category.
+    """
+    return _normalise(keyword) in _normalise(_event_identity_text(event))
+
 
 def _event_to_scraped(
     event: dict[str, Any],
@@ -152,13 +193,20 @@ async def run_ticketmaster_ingest(
                 end_date_time=end_dt,
                 size=50,
             )
+            # Keep only results the keyword actually describes. Ticketmaster
+            # matches the VENUE too, so "funko" returned every home game at
+            # Funko Field (a ballpark) and stamped them category_id='funko'.
+            on_topic = [e for e in raw if _keyword_matches_event(e, keyword)]
+            dropped = len(raw) - len(on_topic)
+
             mapped = [
-                ev for ev in (_event_to_scraped(e, category_id, kind_default) for e in raw)
+                ev for ev in (_event_to_scraped(e, category_id, kind_default) for e in on_topic)
                 if ev is not None
             ]
             logger.info(
-                "[Ticketmaster] %s/%s → %d raw / %d mapped",
-                keyword, country_code, len(raw), len(mapped),
+                "[Ticketmaster] %s/%s → %d raw / %d on-topic / %d mapped%s",
+                keyword, country_code, len(raw), len(on_topic), len(mapped),
+                f" ({dropped} off-topic dropped)" if dropped else "",
             )
             all_events.extend(mapped)
             await asyncio.sleep(INTER_CALL_SLEEP_SECONDS)
