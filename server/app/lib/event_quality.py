@@ -304,6 +304,112 @@ def score_event(event: Any, trust_tier: str = "unverified") -> tuple[int, str]:
 # Display helpers for downstream code + tests
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Ingest-time repair + rejection (added 2026-07-27)
+#
+# The display gate stops junk reaching users; this stops it being STORED.
+# Applied at EventUpserter.upsert(), which is the single point every parser
+# funnels through — NewsletterParser._parse_with_patterns, ._parse_generic
+# and EventbriteParser.parse all end there. Validating per-parser would put
+# the fix on whichever copy the next scraper does not call.
+# ---------------------------------------------------------------------------
+
+# `[Label](https://url)` -> `Label`. Newsletter bodies are markdown-ish and
+# the parsers never unwrapped it, which is how an event reached production
+# titled `[Nike Vaporposite Pro](https://sneakernews.com/2025/09/01/...)`.
+_MD_LINK = re.compile(r"\[([^\]]{1,120})\]\((?:https?://|www\.)[^)]*\)?")
+
+# Web/email chrome that the parsers mistook for event names. Every entry is
+# a real observed title from `source='newsletter'`, or the immediate family
+# of one. Matched on a normalised (lowercased, punctuation-trimmed) title.
+#
+# A phrase list is unavoidable here and is deliberately narrow: the
+# structural signals below were measured first and only two of them are
+# free of false positives, catching 3 of 14. There is no structural
+# difference between "Site Navigation" and a real two-word event title —
+# `BTS` and `KUN` are genuine Ticketmaster titles, so "short" and "starts
+# lowercase" both had to be rejected as signals.
+_BOILERPLATE_TITLES: frozenset[str] = frozenset({
+    "site navigation", "navigation", "menu", "main menu", "home",
+    "we use cookies", "cookie policy", "cookies", "privacy policy",
+    "terms of service", "terms and conditions", "all rights reserved",
+    "sign up", "sign in", "log in", "login", "register", "subscribe",
+    "newsletter", "follow us", "share this", "read more", "learn more",
+    "skip to content", "main content", "back to top", "search",
+    "contact us", "about us", "podcasts & more", "podcasts and more",
+    "filter news articles", "filter news", "attention", "visit us",
+    "latest news", "news", "events", "upcoming events", "shop", "store",
+})
+
+# Prefixes that mark a fragment of prose rather than a name.
+_BOILERPLATE_PREFIXES: tuple[str, ...] = (
+    "visit us", "check out the latest", "gimme your", "click here",
+    "see all", "view all", "browse ", "follow ", "subscribe ",
+)
+
+_DANGLING_TAIL = re.compile(r"[-–—:&,/|]\s*$")
+
+
+def clean_title(raw: str | None) -> str:
+    """Repair a scraped title. Returns "" when nothing usable survives.
+
+    Repair before rejection: `[Nike Vaporposite Pro](https://...)` is a
+    perfectly good event name wearing markdown, and unwrapping it recovers
+    a real event instead of discarding one.
+    """
+    if not raw:
+        return ""
+    title = _MD_LINK.sub(r"\1", raw)
+    # Leading "[" left by a link whose closing paren fell outside the slice.
+    title = title.lstrip("[").strip()
+    title = re.sub(r"\s+", " ", title)
+    title = _DANGLING_TAIL.sub("", title).strip()
+    return title
+
+
+def clean_location(raw: str | None) -> str | None:
+    """Return a venue string, or None when the value is extractor debris.
+
+    Dropping the field is right rather than dropping the event: a real
+    event with an unparsable venue is still a real event, and `location`
+    is nullable.
+    """
+    if not raw:
+        return None
+    loc = raw.strip()
+    if not loc:
+        return None
+    if _MD_OR_URL_RESIDUE.search(loc):
+        return None
+    if "," not in loc and loc.lower() not in _VENUELESS_BUT_VALID:
+        return None
+    return loc
+
+
+def reject_reason(title: str | None, date_str: str | None) -> str | None:
+    """Why this event must not be stored, or None if it may be.
+
+    Runs on the ALREADY-cleaned title.
+    """
+    t = (title or "").strip()
+    if len(t) < 3:
+        return "title_too_short"
+    if _MD_OR_URL_RESIDUE.search(t):
+        # Survived clean_title, so it is raw markup rather than a link label.
+        return "markup_in_title"
+    normalised = t.lower().strip(" .!:—–-")
+    if normalised in _BOILERPLATE_TITLES:
+        return "boilerplate_title"
+    if any(normalised.startswith(p) for p in _BOILERPLATE_PREFIXES):
+        return "boilerplate_prefix"
+    # Measured 0 of 2028 real rows end in "?"; a real event is not a question.
+    if t.endswith("?"):
+        return "question_title"
+    if not date_str:
+        return "no_date"
+    return None
+
+
 def display_state(score: int) -> str:
     """Map a quality_score to one of three UX buckets."""
     if score < 40:
