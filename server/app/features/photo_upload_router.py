@@ -53,6 +53,38 @@ _MAX_IMAGE_EDGE = 1200
 # Lazy S3 client
 # ---------------------------------------------------------------------------
 
+def _sniff_image_format(raw: bytes) -> str | None:
+    """Identify jpeg/png/webp from magic bytes. Returns None if unrecognised.
+
+    Replaces `imghdr.what()`, which was deprecated in Python 3.11 and REMOVED
+    in 3.13. EC2 still runs 3.12.3 so production is unaffected today — but the
+    import is a landmine: the first interpreter upgrade would turn every photo
+    upload into a 500, and the failure would be in the security check, not a
+    cosmetic path. (It already fails on any dev machine running 3.13+, which
+    is how it surfaced — 5 tests, `ModuleNotFoundError: No module named
+    'imghdr'`.)
+
+    Only the three formats the caller accepts are detected; anything else
+    returns None and is rejected, which is the same posture as before —
+    imghdr recognised more types, but every one of them fell through the
+    `not in {"jpeg", "png", "webp"}` check anyway.
+
+    Signatures:
+      JPEG  FF D8 FF
+      PNG   89 50 4E 47 0D 0A 1A 0A
+      WEBP  "RIFF" ....  "WEBP"   (RIFF container, 4-byte size, then WEBP)
+    """
+    if len(raw) < 12:
+        return None
+    if raw[:3] == b"\xff\xd8\xff":
+        return "jpeg"
+    if raw[:8] == b"\x89PNG\r\n\x1a\n":
+        return "png"
+    if raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+        return "webp"
+    return None
+
+
 _s3_client = None
 
 
@@ -253,8 +285,7 @@ async def upload_photo(
         raise error_response(400, "Empty file", code="VALIDATION_ERROR")
 
     # Magic-byte verification (defence-in-depth — content-type header is client-controlled)
-    import imghdr
-    detected = imghdr.what(None, h=raw_bytes)
+    detected = _sniff_image_format(raw_bytes)
     if detected not in {"jpeg", "png", "webp"}:
         raise error_response(
             400,

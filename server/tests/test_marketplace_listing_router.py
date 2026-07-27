@@ -72,12 +72,24 @@ def _mock_pool():
 
 
 def _auth_override():
-    from app.auth import get_current_user_id
+    from app.auth import get_current_user_id, require_seller_age_verified
 
     async def _fake_user():
         return TEST_USER_ID
 
     app.dependency_overrides[get_current_user_id] = _fake_user
+
+    # The mutating routes (connect account, create/publish listing) depend on
+    # `require_seller_age_verified`, NOT plain get_current_user_id. That
+    # dependency runs BEFORE the route body and does its own get_db_pool()
+    # (auth.py:103), returning 503 when there is no pool — so patching
+    # `marketplace_listing_router.get_db_pool` never got a chance and 8 tests
+    # failed with 503 on assertions about 201/400/409/422.
+    #
+    # Overriding it here is right rather than a workaround: the age gate has
+    # its own coverage, and these tests are about the listing router's own
+    # logic. Without the override they could only ever assert the gate.
+    app.dependency_overrides[require_seller_age_verified] = _fake_user
 
 
 def _clear_overrides():
