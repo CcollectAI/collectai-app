@@ -86,7 +86,12 @@ export const DemandHeatSection = React.memo(function DemandHeatSection() {
       </View>
       {items.map((item, i) => (
         <AnimatedPressable
-          key={item.item_key}
+          // Same non-unique key as DemandHeatBanner had — mv_demand_heat's
+          // grain is (category, item_key, signal_type) and sentinel keys
+          // recur across categories, so `general` arrives under both
+          // `unknown` and `mtg`. Fixing only the Banner left this copy
+          // warning 6x on the Analytics screen.
+          key={`${item.category}::${item.item_key}`}
           onPress={() => router.push(`/(tabs)/marketplace`)}
           style={[styles.row, i < items.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}
           accessibilityRole="button"
