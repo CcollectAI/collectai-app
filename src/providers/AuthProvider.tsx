@@ -81,13 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = useCallback(async (u: User | null) => {
+  const loadProfile = useCallback(async (u: User | null, source: string = 'unknown') => {
     if (!u) {
       setProfile(null);
       return;
     }
 
     let referredCode: string | null = null;
+    const startedAt = Date.now();
     try {
       const { data, error } = await withTimeout(
         supabase
@@ -96,14 +97,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq('id', u.id)
           .single(),
         PROFILE_READ_TIMEOUT_MS,
-        'AuthProvider.loadProfile',
+        `AuthProvider.loadProfile(${source})`,
       );
       if (error) throw error;
       const loaded = data as Profile;
       setProfile(loaded);
       referredCode = loaded.referred_by_code ?? null;
     } catch (e) {
-      logger.error('[silent-fallback] auth: profile hydrate failed:', e);
+      logger.error(
+        `[silent-fallback] auth: profile hydrate failed after ${Date.now() - startedAt}ms via ${source}:`,
+        e,
+      );
       setProfile(null);
     }
 
@@ -224,7 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           identifyUser(data.session.user.id);
           void identifyPurchasesUser(data.session.user.id);
         }
-        await loadProfile(data.session?.user ?? null);
+        await loadProfile(data.session?.user ?? null, 'getSession');
       } catch (e) {
         logger.error('[AuthProvider] getSession error:', e);
       } finally {
@@ -234,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!active) return;
       setSession(newSession);
       setUser(newSession?.user ?? null);
@@ -247,7 +251,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         void identifyPurchasesUser(null);
       }
-      await loadProfile(newSession?.user ?? null);
+
+      // DEFERRED, and the callback is no longer `async`. Both matter.
+      //
+      // GoTrueClient invokes onAuthStateChange callbacks from INSIDE
+      // `_acquireLock`, and with `lock: processLock` (see supabase.ts, where it
+      // is load-bearing) that lock is held for the whole callback. Every
+      // `supabase.from(...)` needs a session, so it calls `_useSession`, which
+      // queues on the SAME lock — the callback ends up waiting on a lock it is
+      // itself holding. Nothing breaks the cycle except the 6s timeout.
+      //
+      // Measured on device before this change: EVERY cold start logged
+      //   "profile hydrate failed after 6011ms via onAuthStateChange"
+      // while the identical read via `getSession` succeeded, and the query
+      // itself returns in ~90-125ms against prod. So this was never a slow
+      // query or an RLS problem — it was self-inflicted lock contention.
+      //
+      // Worse than a stall: getSession loads the profile successfully first,
+      // then this copy times out 6s later and runs setProfile(null), WIPING a
+      // profile that was already there. That is why the app showed a
+      // signed-in user with no profile.
+      //
+      // setTimeout(0) lets the callback return, releasing the lock, before the
+      // read starts. This is supabase-js's own documented guidance for calling
+      // Supabase functions from this callback.
+      //
+      // NOT a `withTimeout`-on-an-auth-call change: the profile read is a plain
+      // PostgREST select, and nothing here refreshes or retries a token — so
+      // the refresh-token reuse hazard behind the 2026-07-11 401 saga does not
+      // apply (same reasoning as the header comment on AUTH_INIT_TIMEOUT_MS).
+      const userForProfile = newSession?.user ?? null;
+      setTimeout(() => {
+        if (!active) return;
+        void loadProfile(userForProfile, 'onAuthStateChange');
+      }, 0);
     });
 
     return () => {
