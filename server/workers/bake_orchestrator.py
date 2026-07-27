@@ -123,9 +123,28 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   retention caps the DB at ~2 months ≈ 9-10GB and covers the FE's 30d
     #   window). Drops ONLY after the month is confirmed in the S3 export
     #   manifest (verified safe via dry-run 2026-06-26). May auto-drops ~Jul 1.
-    # ("ticketmaster_events_worker", "pipelines.ticketmaster_events",    "run_once", False),
-    # ("seatgeek_events_worker",  "pipelines.seatgeek_events",          "run_once", False),
-    #   Events ingest. Events feature gated post-launch.
+    # ── RE-ENABLED 2026-07-27 (first wave off the pre-launch minimum) ──
+    # Both last ran 2026-05-04. Ticketmaster + SeatGeek are 99 of the 102
+    # events in the visible feed, and that feed only reaches 2026-10-30 —
+    # after which it empties, because nothing else fills it. `event_scraper`
+    # still runs but its output is withheld from the feed (see
+    # event_quality.UNRELIABLE_FREE_TEXT_SOURCES).
+    #
+    # Prerequisites checked before flipping these, not assumed:
+    #   - SCHEDULES has both at 12h (worker_registry.py:64-65)
+    #   - TICKETMASTER_* and SEATGEEK_* credentials all SET on EC2
+    #   - both modules import cleanly and expose run_once()
+    #   - needs_db_dsn=False is correct: these write through the Supabase
+    #     REST upserter, not asyncpg
+    #
+    # They have NEVER run with the topicality filter added earlier today
+    # (_keyword_matches_event), which stops a search keyword matching a
+    # VENUE — the bug that filed 55 Everett AquaSox baseball games under
+    # `funko` because they play at Funko Field. Watch the first cycle's
+    # "N raw / M on-topic" log line: a large drop is the filter working, a
+    # drop to zero is the filter overreaching.
+    ("ticketmaster_events_worker", "pipelines.ticketmaster_events",    "run_once", False),
+    ("seatgeek_events_worker",  "pipelines.seatgeek_events",          "run_once", False),
     # ("offer_expiry_worker",     "workers.offer_expiry_worker",        "run_once", True),
     #   Deal Desk offers. No deals.
     # ("search_gap_worker",       "workers.search_gap_worker",          "run_once", True),
