@@ -71,6 +71,34 @@ def _make_set_row(set_id="set1", category_id="watches", set_name="Omega Speedmas
 
 # ── run_once: no DSN ────────────────────────────────────────────────────────
 
+# ---------------------------------------------------------------------------
+# Phase 2 gave every worker a bounded statement_timeout
+# (docs/PHASE_3_QUERY_REWRITES.md: "the bounded statement_timeout per worker
+# caps blast radius"). price_monitor_worker therefore opens each run with
+#     await conn.execute("SET statement_timeout = '300s'")
+# which is a real, wanted call — but it broke 11 assertions here that were
+# written before it existed: `execute.assert_not_awaited()` now sees 1 call,
+# and `execute.call_args_list[0]` returns the SET instead of the query under
+# test.
+#
+# Filtering it keeps the original intent ("this path issues no writes" /
+# "the first write is the alert insert") without asserting the timeout away.
+# Rewritten 2026-07-27.
+# ---------------------------------------------------------------------------
+
+def _real_execute_calls(mock_conn):
+    """execute() calls excluding the per-run statement_timeout preamble."""
+    return [
+        c for c in mock_conn.execute.call_args_list
+        if "statement_timeout" not in str(c)
+    ]
+
+
+def _assert_no_writes(mock_conn):
+    extra = _real_execute_calls(mock_conn)
+    assert extra == [], f"expected no INSERT/UPDATE, got: {extra}"
+
+
 @pytest.mark.asyncio
 @patch("workers.price_monitor_worker.record_run")
 async def test_no_dsn_records_error(mock_record_run, _no_dsn):
@@ -171,7 +199,7 @@ async def test_threshold_alert_not_fired_when_above(mock_asyncpg, mock_record_ru
     await run_once()
 
     # No INSERT / UPDATE calls expected (only fetch/fetchrow)
-    mock_conn.execute.assert_not_awaited()
+    _assert_no_writes(mock_conn)
     mock_record_run.assert_called_with("price_monitor", "ok")
 
 
@@ -198,7 +226,7 @@ async def test_threshold_alert_skipped_when_already_fired(mock_asyncpg, mock_rec
 
     # Should NOT fetch price prediction or insert anything
     mock_conn.fetchrow.assert_not_awaited()
-    mock_conn.execute.assert_not_awaited()
+    _assert_no_writes(mock_conn)
 
 
 # ── Anomaly detection: price spike ──────────────────────────────────────────
@@ -230,7 +258,7 @@ async def test_anomaly_price_spike_detected(mock_asyncpg, mock_record_run, _clea
     # Should have inserted one anomaly alert
     assert mock_conn.execute.await_count >= 1
     # Verify the trigger_type is price_spike in the call args
-    insert_call = mock_conn.execute.call_args_list[0]
+    insert_call = _real_execute_calls(mock_conn)[0]
     assert "price_spike" in str(insert_call) or insert_call[0][0].find("alert_trigger_history") >= 0
     mock_record_run.assert_called_with("price_monitor", "ok")
 
@@ -261,7 +289,7 @@ async def test_anomaly_price_drop_detected(mock_asyncpg, mock_record_run, _clear
     await run_once()
 
     assert mock_conn.execute.await_count >= 1
-    insert_call = mock_conn.execute.call_args_list[0]
+    insert_call = _real_execute_calls(mock_conn)[0]
     assert "price_drop" in str(insert_call)
 
 
@@ -289,7 +317,7 @@ async def test_anomaly_not_fired_below_threshold(mock_asyncpg, mock_record_run, 
     from workers.price_monitor_worker import run_once
     await run_once()
 
-    mock_conn.execute.assert_not_awaited()
+    _assert_no_writes(mock_conn)
 
 
 # ── Anomaly: std_dev == 0 (all identical prices) ────────────────────────────
@@ -313,7 +341,7 @@ async def test_anomaly_skipped_when_stddev_zero(mock_asyncpg, mock_record_run, _
     from workers.price_monitor_worker import run_once
     await run_once()
 
-    mock_conn.execute.assert_not_awaited()
+    _assert_no_writes(mock_conn)
 
 
 # ── DB connection failure ───────────────────────────────────────────────────
@@ -388,7 +416,10 @@ async def test_max_alerts_per_user_cap(mock_asyncpg, mock_record_run, _clear_dsn
     await run_once()
 
     # Each fired alert = 2 execute calls (INSERT + UPDATE), capped at 2 alerts
-    assert mock_conn.execute.await_count == 4  # 2 alerts * 2 calls
+    # 2 alerts * 2 calls. Counted excluding the statement_timeout preamble —
+    # await_count is 5 with it, which is what made this look like an
+    # off-by-one in the cap rather than an extra (wanted) SET.
+    assert len(_real_execute_calls(mock_conn)) == 4
     mock_record_run.assert_called_with("price_monitor", "ok")
 
 
@@ -422,7 +453,7 @@ async def test_set_completion_alert_fires(mock_asyncpg, mock_record_run, _clear_
     await run_once()
 
     assert mock_conn.execute.await_count >= 1
-    insert_call = mock_conn.execute.call_args_list[0]
+    insert_call = _real_execute_calls(mock_conn)[0]
     assert "completeness" in str(insert_call)
     mock_record_run.assert_called_with("price_monitor", "ok")
 
@@ -451,7 +482,7 @@ async def test_set_completion_not_fired_below_min_pct(mock_asyncpg, mock_record_
     from workers.price_monitor_worker import run_once
     await run_once()
 
-    mock_conn.execute.assert_not_awaited()
+    _assert_no_writes(mock_conn)
 
 
 # ── Set completion: 100% complete, no alert ─────────────────────────────────
@@ -481,7 +512,7 @@ async def test_set_completion_not_fired_when_complete(mock_asyncpg, mock_record_
     from workers.price_monitor_worker import run_once
     await run_once()
 
-    mock_conn.execute.assert_not_awaited()
+    _assert_no_writes(mock_conn)
 
 
 # ── Threshold: prediction is None ───────────────────────────────────────────
@@ -506,4 +537,4 @@ async def test_threshold_skipped_when_no_prediction(mock_asyncpg, mock_record_ru
     from workers.price_monitor_worker import run_once
     await run_once()
 
-    mock_conn.execute.assert_not_awaited()
+    _assert_no_writes(mock_conn)
