@@ -681,9 +681,18 @@ async def demand_heat_by_region(
     try:
         async with pool.acquire() as conn:
             cat_filter = ""
-            # str(days) — the query below uses make_interval(days => $1) which
-            # requires text. See learning_asyncpg_interval_str_cast.md.
-            params: list = [str(days)]
+            # `days` as an INT. The previous comment here said make_interval
+            # "requires text" and passed str(days); that inverted the lesson it
+            # cited. `($N || ' days')::interval` needs a string because it is
+            # string concatenation — `make_interval(days => $1)` takes an
+            # integer, so str(days) made every call fail with
+            #   invalid input for query argument $1: '7'
+            #   ('str' object cannot be interpreted as an integer)
+            # caught below and returned as {"regions": [], "error": ...} inside
+            # a 200, so nothing ever surfaced. Verified against prod 2026-07-27.
+            # The sibling endpoint at line ~508 already passes [days] correctly;
+            # this was the only site with the inversion.
+            params: list = [days]
             if category:
                 cat_filter = "AND category = $2"
                 params.append(category)
