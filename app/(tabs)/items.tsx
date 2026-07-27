@@ -489,6 +489,14 @@ const ItemsScreen: React.FC = () => {
         value: String(item.value),
         condition: item.condition ?? "",
         notes: item.notes ?? "",
+        // The detail screen takes its photo from this route param
+        // (item/[id].tsx:161 reads `imageUri` out of useLocalSearchParams);
+        // it never fetches items.image_url itself. Omitting it meant opening
+        // an item from this list showed an empty "Add Photo" dropzone even
+        // though the row right above it rendered the thumbnail fine, and the
+        // URL resolves — verified 2026-07-27 against a saved item whose
+        // image_url returns HTTP 200.
+        imageUri: item.imageUrl ?? "",
       },
     });
   }, [router, settings.hapticsEnabled]);
