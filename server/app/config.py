@@ -138,6 +138,15 @@ CATALOG_IMAGES_CDN_URL: str = os.environ.get("CATALOG_IMAGES_CDN_URL", "")
 # User uploads (photo_upload_router)
 USER_UPLOADS_S3_BUCKET: str = os.environ.get("USER_UPLOADS_S3_BUCKET", "collectai-artifacts")
 USER_UPLOADS_CDN_URL: str = os.environ.get("USER_UPLOADS_CDN_URL", "")
+
+# Public origin of THIS API, used to build durable photo URLs that are stored
+# on items.image_url. Deliberately NOT read from EXPO_PUBLIC_API_BASE_URL:
+# that variable is set to https://api.collectai.app on EC2, a domain that is
+# not ours (see the collectai.app placeholder note), while the app actually
+# talks to api.sparrowcollect.com.
+PUBLIC_API_BASE_URL: str = os.environ.get(
+    "PUBLIC_API_BASE_URL", "https://api.sparrowcollect.com"
+).rstrip("/")
 USER_UPLOADS_MAX_SIZE: int = int(os.environ.get("USER_UPLOADS_MAX_SIZE", "2097152"))  # 2 MB
 
 # ML model S3
