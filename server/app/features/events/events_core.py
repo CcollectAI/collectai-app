@@ -192,30 +192,44 @@ async def list_events(
                 # Get total count for pagination
                 total_count = await count_events_basic(conn, category_id, include_past, user_id=user_id)
 
-                if user_id:
-                    # Try the personalized RPC first.
-                    #
-                    # `user_rsvp_status` is new (migration
-                    # 20260727b_rpc_list_personalized_events_v1_counts.sql).
-                    # ORDER OF OPERATIONS MATTERS: apply that migration BEFORE
-                    # deploying this file. If the old 27-column function is
-                    # still live, this SELECT raises "column
-                    # user_rsvp_status does not exist", the except below logs
-                    # it and falls back to fetch_events_basic() — degraded
-                    # (generic ordering, zero counts) but not broken.
-                    try:
-                        rows = await conn.fetch(
-                            "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at, user_rsvp_status FROM rpc_list_personalized_events_v1($1, $2, $3) LIMIT $4 OFFSET $5",
-                            user_id,
-                            category_id,
-                            include_past,
-                            limit,
-                            offset,
-                        )
-                    except Exception as rpc_err:
-                        logger.warning("[events] Personalized RPC failed, falling back: %s", rpc_err)
-                        rows = await fetch_events_basic(conn, category_id, include_past, limit, offset)
-                else:
+                # The RPC runs for ANONYMOUS callers too (user_id -> NULL).
+                #
+                # It used to be gated on `if user_id:`, sending logged-out
+                # callers down fetch_events_basic() — which reads the bare
+                # table and hardcodes `0 AS attendee_count`. So the same
+                # event returned going=1 to an authenticated request and
+                # going=0 to an anonymous one, measured live 2026-07-27.
+                # That is reachable from the app, not theoretical: this
+                # route depends on get_optional_user_id, so a request that
+                # arrives before the token has hydrated gets 200 + zeroed
+                # counts rather than a 401 — and httpClient's tokenless-401
+                # retry (project_2026_07_14_401_root_cause_tokenless) only
+                # fires on a 401, so nothing corrects it.
+                #
+                # The RPC already handles a NULL caller correctly: the
+                # counts come from a LATERAL that does not reference
+                # p_user_id, and user_rsvp_status is explicitly NULL when
+                # p_user_id is NULL. Only the follows-first ORDER BY term
+                # is personalized, and it degrades to a constant false.
+                #
+                # `user_rsvp_status` arrived with migration
+                # 20260727b_rpc_list_personalized_events_v1_counts.sql.
+                # ORDER OF OPERATIONS MATTERS: apply that BEFORE deploying
+                # this file. Against the old 27-column function this SELECT
+                # raises "column user_rsvp_status does not exist", the
+                # except logs it and falls back — degraded (generic
+                # ordering, zero counts) but not broken.
+                try:
+                    rows = await conn.fetch(
+                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at, user_rsvp_status FROM rpc_list_personalized_events_v1($1, $2, $3) LIMIT $4 OFFSET $5",
+                        user_id,
+                        category_id,
+                        include_past,
+                        limit,
+                        offset,
+                    )
+                except Exception as rpc_err:
+                    logger.warning("[events] Personalized RPC failed, falling back: %s", rpc_err)
                     rows = await fetch_events_basic(conn, category_id, include_past, limit, offset)
 
                 events = []
