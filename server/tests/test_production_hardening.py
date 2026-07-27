@@ -163,38 +163,44 @@ class TestTemporalDecay:
 
 
 class TestValuationModelBlending:
-    """Tests for Ridge model blending in valuation worker."""
+    """Ridge model blending in the valuation worker.
 
-    def test_predict_ridge_basic(self):
-        from workers.valuation_worker import _predict_ridge
+    Repointed 2026-07-27: `_predict_ridge` was renamed `_predict_quantile`
+    and its second argument became a feature dict rather than an item_ref
+    plus a raw price. These three had been dead with ImportError since.
+    """
+
+    def test_predict_quantile_basic(self):
+        from workers.valuation_worker import _predict_quantile
         model = {
             "features": ["price"],
             "standardizer": {"mean": [100.0], "std": [50.0]},
             "ridge": {"coef": [1.0], "intercept": 100.0},
         }
-        result = _predict_ridge(model, "pokemon:charizard", 150.0)
+        result = _predict_quantile(model, {"price": 150.0}, "ridge")
         assert result is not None
         assert result > 0
 
-    def test_predict_ridge_mismatched_dimensions(self):
-        from workers.valuation_worker import _predict_ridge
+    def test_predict_quantile_mismatched_dimensions(self):
+        """An older artifact's standardizer vs a newer feature list."""
+        from workers.valuation_worker import _predict_quantile
         model = {
             "features": ["price", "condition"],
-            "standardizer": {"mean": [100.0], "std": [50.0]},  # Wrong dimension
+            "standardizer": {"mean": [100.0], "std": [50.0]},  # wrong dimension
             "ridge": {"coef": [1.0, 0.5], "intercept": 100.0},
         }
-        result = _predict_ridge(model, "pokemon:charizard", 150.0)
-        assert result is None  # Should fail gracefully
+        result = _predict_quantile(model, {"price": 150.0, "condition": 0.8}, "ridge")
+        assert result is None  # skip the model; empirical wins
 
-    def test_predict_ridge_zero_std(self):
-        from workers.valuation_worker import _predict_ridge
+    def test_predict_quantile_zero_std(self):
+        """A feature constant in training must be ignored, not divide by zero."""
+        from workers.valuation_worker import _predict_quantile
         model = {
             "features": ["price"],
             "standardizer": {"mean": [100.0], "std": [0.0]},
             "ridge": {"coef": [1.0], "intercept": 100.0},
         }
-        result = _predict_ridge(model, "pokemon:charizard", 150.0)
-        # Should handle zero std gracefully (x_std = 0)
+        result = _predict_quantile(model, {"price": 150.0}, "ridge")
         assert result is not None
         assert result == 100.0  # intercept only
 

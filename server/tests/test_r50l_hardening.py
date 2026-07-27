@@ -84,70 +84,82 @@ class TestRepairValue:
 # ---------------------------------------------------------------------------
 
 class TestRidgeClamp:
+    """Clamps and guards on the Ridge head.
+
+    Repointed 2026-07-27 from `_predict_ridge`, which no longer exists. The
+    function is now `_predict_quantile(model, feature_values, coef_key)`:
+    the second argument became a FEATURE DICT (built from the item's real
+    attributes via build_feature_vector) instead of an item_ref + a raw
+    price, and a third selects which trained head to run. Every behaviour
+    asserted below is unchanged — only the call shape moved. These nine
+    tests had been dead with ImportError since the rename, leaving the
+    money-producing path with no coverage at all.
+    """
+
     def test_normal_prediction_returns_float(self):
-        from workers.valuation_worker import _predict_ridge
+        from workers.valuation_worker import _predict_quantile
         model = {
             "features": ["price"],
             "standardizer": {"mean": [100.0], "std": [50.0]},
             "ridge": {"coef": [1.0], "intercept": 100.0},
         }
-        assert _predict_ridge(model, "pokemon:charizard", 150.0) == pytest.approx(101.0)
+        # (150-100)/50 = 1.0 standardized; 1.0*1.0 + 100 = 101.0
+        assert _predict_quantile(model, {"price": 150.0}, "ridge") == pytest.approx(101.0)
 
     def test_absurd_prediction_returns_none(self):
-        """Lego-class blow-up: intercept drives prediction to €1.5B."""
-        from workers.valuation_worker import _predict_ridge, _MAX_SANE_PRICE_EUR
+        """Lego-class blow-up: intercept drives prediction to EUR 1.5B."""
+        from workers.valuation_worker import _predict_quantile, _MAX_SANE_PRICE_EUR
         assert _MAX_SANE_PRICE_EUR == 20_000_000.0
         model = {
             "features": ["price"],
             "standardizer": {"mean": [100.0], "std": [50.0]},
             "ridge": {"coef": [0.0], "intercept": 1_500_000_000.0},
         }
-        # Intercept alone is €1.5B → should be clamped
-        assert _predict_ridge(model, "lego:foo", 150.0) is None
+        assert _predict_quantile(model, {"price": 150.0}, "ridge") is None
 
     def test_log_scale_expm1_blowup_is_clamped(self):
         """Log-space intercept of 21 expm1s to ~1.3B — must clamp."""
-        from workers.valuation_worker import _predict_ridge
+        from workers.valuation_worker import _predict_quantile
         model = {
             "log_scale": True,
             "features": ["price"],
             "standardizer": {"mean": [100.0], "std": [50.0]},
             "ridge": {"coef": [0.0], "intercept": 21.0},
         }
-        assert _predict_ridge(model, "lego:foo", 100.0) is None
+        assert _predict_quantile(model, {"price": 100.0}, "ridge") is None
 
     def test_log_scale_reasonable_returns_float(self):
-        """log1p(50) ~= 3.93 — normal log-scale model output decodes to ~€50."""
+        """A normal log-scale output decodes back to ~EUR 50."""
         import math
-        from workers.valuation_worker import _predict_ridge
+        from workers.valuation_worker import _predict_quantile
         model = {
             "log_scale": True,
             "features": ["price"],
             "standardizer": {"mean": [math.log1p(100.0)], "std": [1.0]},
             "ridge": {"coef": [0.0], "intercept": math.log1p(50.0)},
         }
-        result = _predict_ridge(model, "retro:foo", 100.0)
+        result = _predict_quantile(model, {"price": 100.0}, "ridge")
         assert result is not None
         assert 40 < result < 60
 
     def test_negative_prediction_returns_none(self):
-        from workers.valuation_worker import _predict_ridge
+        from workers.valuation_worker import _predict_quantile
         model = {
             "features": ["price"],
             "standardizer": {"mean": [100.0], "std": [50.0]},
             "ridge": {"coef": [-10.0], "intercept": -1000.0},
         }
-        assert _predict_ridge(model, "x:y", 50.0) is None
+        assert _predict_quantile(model, {"price": 50.0}, "ridge") is None
 
     def test_nan_prediction_returns_none(self):
-        """Feature NaN + intercept NaN → NaN prediction → None."""
-        from workers.valuation_worker import _predict_ridge
+        """Feature NaN + intercept NaN -> NaN prediction -> None."""
+        from workers.valuation_worker import _predict_quantile
         model = {
             "features": ["price"],
             "standardizer": {"mean": [float("nan")], "std": [50.0]},
             "ridge": {"coef": [1.0], "intercept": float("nan")},
         }
-        assert _predict_ridge(model, "x:y", 100.0) is None
+        assert _predict_quantile(model, {"price": 100.0}, "ridge") is None
 
 
 # ---------------------------------------------------------------------------
