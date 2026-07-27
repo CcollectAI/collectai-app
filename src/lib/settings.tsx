@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collectorsApi } from '@/api/collectorsApi';
-import { updateFxCache } from '@/lib/fx';
+import { updateFxCache, getFxRates } from '@/lib/fx';
 import type { CurrencyCode } from '@/data/types';
 import logger from '@/utils/logger';
 import i18n, { SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n';
@@ -149,3 +149,31 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useSettings(){ return useContext(SettingsCtx); }
+
+/**
+ * Non-React read of the user's settings.
+ *
+ * `useSettings` is a Context hook, so modules that run outside the React tree
+ * — data providers, background tasks, market adapters — cannot reach it. That
+ * gap had a real cost: watchlistProvider's "I Got It!" posted a purchase_price
+ * with no purchase_currency because it had no way to ask, so a non-EUR user's
+ * amount was recorded as if it were EUR.
+ *
+ * Same escape hatch `src/lib/fx.ts` already uses for rates. `updateSettings`
+ * persists to AsyncStorage on every change, so the stored blob is the current
+ * user choice; merge it over DEFAULTS exactly as the provider's boot path does.
+ *
+ * `fxRates` is taken from the live module cache rather than the persisted blob:
+ * `fetchFxRates` refreshes rates via setSettings + updateFxCache and never
+ * writes them back to AsyncStorage, so the stored copy is stale by design.
+ */
+export async function getSettingsSnapshot(): Promise<Settings> {
+  let stored: Partial<Settings> = {};
+  try {
+    const s = await AsyncStorage.getItem('@settings');
+    if (s) stored = JSON.parse(s) as Partial<Settings>;
+  } catch (e) {
+    logger.error('[settings] getSettingsSnapshot read failed, using defaults:', e);
+  }
+  return { ...DEFAULTS, ...stored, fxRates: getFxRates() };
+}

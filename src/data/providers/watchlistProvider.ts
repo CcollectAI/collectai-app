@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase';
 import { collectorsApi } from '../../api/collectorsApi';
 import { withTimeout, TimeoutError } from '../../lib/withTimeout';
 import logger from '../../utils/logger';
+import { getSettingsSnapshot } from '../../lib/settings';
 
 const SUPABASE_READ_TIMEOUT_MS = 5_000;
 
@@ -225,17 +226,24 @@ export async function convertWatchlistToItem(
   }
   const row = w as { id: string; title: string; category?: string | null };
 
+  // `actualPrice` is denominated in whatever currency the user is running the
+  // app in, so the server needs to be told which one. Until 2026-07-28 this
+  // was omitted — the comment here claimed no settings accessor existed
+  // outside React — and the server fell back to EUR, so a USD user who paid
+  // $100 had €100 booked as their cost basis. getSettingsSnapshot() reads the
+  // same persisted blob SettingsProvider boots from.
+  const { currency } = await getSettingsSnapshot();
+
   let created: Record<string, unknown>;
   try {
     created = await collectorsApi.post<Record<string, unknown>>('/items', {
       name: row.title,
       category: row.category ?? 'uncategorized',
       purchase_price: actualPrice ?? null,
+      purchase_currency: currency,
       // "I Got It!" means the acquisition happened now. Stamping it gives the
       // analytics cost-basis series a real date to bucket on instead of
-      // falling back to created_at. NOTE: purchase_currency is not sent — this
-      // provider is outside React so it has no settings accessor, and the raw
-      // amount is already denominated in whatever the user typed.
+      // falling back to created_at.
       purchased_at: new Date().toISOString(),
       notes: notes ?? null,
     });

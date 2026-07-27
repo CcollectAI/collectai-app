@@ -9,7 +9,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
@@ -19,6 +19,33 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.lib.fx_service import convert_to_eur
+
+
+def _parse_purchased_at(value: Optional[str]) -> Optional[datetime]:
+    """Coerce the model's ISO string into the datetime asyncpg requires.
+
+    Accepts both the full timestamp watchlistProvider sends
+    ("2024-06-01T12:34:56.000Z") and a bare "YYYY-MM-DD". A naive value is
+    pinned to UTC rather than the host timezone -- binding a bare date to a
+    timestamptz is what stored purchase dates a day early elsewhere.
+    Unparseable input yields None so the row still saves without the date.
+    """
+    if not value:
+        return None
+    raw = value.strip()
+    if raw.endswith(("Z", "z")):
+        raw = raw[:-1] + "+00:00"
+    parsed: Optional[datetime] = None
+    for candidate in (raw, raw[:10]):
+        try:
+            parsed = datetime.fromisoformat(candidate)
+            break
+        except ValueError:
+            continue
+    if parsed is None:
+        logger.warning("[items] unparseable purchased_at %r, saving without it", value)
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(tags=["Items"])
@@ -242,12 +269,21 @@ async def create_item(
                 item_id = str(uuid4())
                 await conn.execute(
                     """
+                    -- purchase_date is deliberately NOT listed: binding one
+                    -- param to both `$N::timestamptz` and `$N::date` made
+                    -- Postgres infer a date/timestamp type for it, and asyncpg
+                    -- then rejected the ISO *string* the model declares --
+                    -- "expected a datetime.date or datetime.datetime
+                    -- instance, got 'str'". Every POST /items carrying a
+                    -- purchased_at 500'd, which is the whole of the watchlist
+                    -- "I Got It!" conversion. Bind a real datetime and let
+                    -- trg_items_sync_paired_columns derive purchase_date.
                     INSERT INTO items (id, user_id, name, title, category, notes, collection_name, estimated_value, canonical_key,
                                        image_url, brand, condition, year, series, edition_label, attrs,
-                                       purchase_price, purchase_price_eur, purchase_currency, purchased_at, purchase_date)
+                                       purchase_price, purchase_price_eur, purchase_currency, purchased_at)
                     VALUES ($1, $2::uuid, $3, $3, $4, $5, $6, $7, $8,
                             $9, $10, $11, $12, $13, $14, $15::jsonb,
-                            $16, $17, $18, $19::timestamptz, $19::date)
+                            $16, $17, $18, $19)
                     """,
                     item_id, user_id, payload.name, payload.category, payload.notes,
                     payload.collection_name, payload.estimated_value, payload.canonical_key,
@@ -255,7 +291,7 @@ async def create_item(
                     payload.series, payload.edition_label,
                     json.dumps(payload.attrs) if payload.attrs else None,
                     payload.purchase_price, purchase_price_eur,
-                    payload.purchase_currency, payload.purchased_at,
+                    payload.purchase_currency, _parse_purchased_at(payload.purchased_at),
                 )
                 logger.info(
                     "[items] Created item: id=%s, user=%s, canonical_key=%s",
