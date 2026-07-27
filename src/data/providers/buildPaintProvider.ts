@@ -165,8 +165,19 @@ export async function createBuildPaintProject(input: CreateBuildPaintProjectInpu
 // tables' own policies). Real tables: build_paint_projects,
 // build_paint_steps (status text), build_paint_notes (content text).
 
+// `last_updated` is a DATE column and nothing was maintaining it, so the
+// project card's "Updated {relative}" label rendered the row's original value
+// forever. Observed 2026-07-27: bumped a project 30% -> 40%, the list
+// correctly refetched and showed 40%, and the same card still read "Updated
+// yesterday". The label was not stale — the column genuinely had not moved
+// since the project was created.
+//
+// Stamped by both writers below rather than by a trigger, to keep it in the
+// same place as the other column writes for this table.
+const today = () => new Date().toISOString().slice(0, 10); // DATE, not timestamptz
+
 export async function setBuildPaintProgress(projectId: string, percent: number, status?: string): Promise<void> {
-  const patch: Record<string, unknown> = { progress_pct: percent };
+  const patch: Record<string, unknown> = { progress_pct: percent, last_updated: today() };
   if (status) patch.status = status;
   const { error } = await supabase
     .from('build_paint_projects')
@@ -184,6 +195,7 @@ export async function markBuildPaintProjectComplete(projectId: string, isComplet
     .update({
       status: isCompleted ? 'finished' : 'in_progress',
       progress_pct: isCompleted ? 100 : null,
+      last_updated: today(),
     })
     .eq('id', projectId);
   if (error) {
