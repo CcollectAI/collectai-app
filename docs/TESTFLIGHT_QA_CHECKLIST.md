@@ -117,19 +117,36 @@ This is the most critical flow Apple's reviewer will exercise.
 
 ---
 
-## Section 5 — Paywalled features (BETA — all should be UNLOCKED)
+## Section 5 — Paywall (expectation depends on the BUILD PROFILE)
 
-This is the test for `EXPO_PUBLIC_BETA_UNLOCK_ALL=true`. **Every paywall
-should be open**, no "Upgrade to Pro" CTAs should be visible.
+> **Corrected 2026-07-27.** This section used to say every paywall should be
+> UNLOCKED, and that a visible paywall meant `EXPO_PUBLIC_BETA_UNLOCK_ALL`
+> had failed to reach the build. That is wrong for any TestFlight build made
+> with the `store` profile — which is all of them, since
+> `npm run build:ios:local` uses `--profile store`, and that profile pins
+> `EXPO_PUBLIC_BETA_UNLOCK_ALL=false`. Following the old text would have you
+> file a working build as broken.
 
-- [ ] Bottom nav → **Analytics** tab (or wherever you have it) — should load chart UI, NOT a paywall card
-- [ ] Side drawer → **Deal Discovery** / **Deal Hub** → should show deal listings, NOT a locked state
-- [ ] Side drawer → **Sets to Complete** → should show set tracker UI, NOT "Upgrade to unlock"
-- [ ] Item detail → Advanced Predictions → should show q10/q50/q90 charts, NOT a lock icon
-- [ ] Settings → **Subscription** → should render **"You're in the Sparrow beta — every Pro feature unlocked for free"** info card, NOT plan cards
-- [ ] Verify NO "Upgrade to Pro" button anywhere in the app
+Check which profile the build came from, then use the matching column:
 
-If a paywall IS showing during beta, that means `EXPO_PUBLIC_BETA_UNLOCK_ALL` didn't reach the build (EAS env miswire). Note which screen and we'll re-trigger a build.
+| Surface | `store` profile (TestFlight + App Store) | `development` / `preview` (internal) |
+|---|---|---|
+| Analytics tab | paywall card **shown** | chart UI, no paywall |
+| Deal Discovery / Deal Hub | locked state **shown** | deal listings |
+| Sets to Complete | "Upgrade to unlock" **shown** | set tracker UI |
+| Item detail → Advanced Predictions | lock icon **shown** | q10/q50/q90 charts |
+| Settings → Subscription | **plan cards** (€4.99/mo, €39.99/yr) | "every Pro feature unlocked for free" card |
+
+For a `store` build (the normal case):
+
+- [ ] Settings → **Subscription** renders real plan cards with prices, not the beta card
+- [ ] At least one gated surface shows its paywall rather than the feature
+- [ ] Tapping a plan opens the Apple IAP sheet (sandbox account required — device only, not simulator)
+
+If a `store` build shows **no** paywall anywhere, that is the serious case:
+it means the beta flag leaked into a shippable profile. Both `store` and
+`production` now pin it to `false` (eas.json), so this should not recur —
+but if it does, do not submit that build.
 
 ---
 
