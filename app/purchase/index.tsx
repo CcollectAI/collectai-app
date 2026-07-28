@@ -92,6 +92,9 @@ function AgentHubScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreDeals, setHasMoreDeals] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Kept separate from `error` on purpose: a paywall is not a failure and
+  // must not render in the red error banner.
+  const [upgradeNotice, setUpgradeNotice] = useState(false);
   // Default: only deals from mandates whose category the user follows.
   // Toggle flips to "all" when the user explicitly broadens the view.
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -177,7 +180,12 @@ function AgentHubScreen() {
       // "couldn't load" error that reads like a bug.
       const status = (e as { status?: number } | null)?.status;
       if (status === 403) {
-        setError('Deal discovery is a Sparrow Pro feature. Upgrade to let Sparrow hunt deals for you.');
+        // Upgrade prompt, NOT setError: the error banner is red with a warning
+        // triangle, so routing this through it made a paywall read as a
+        // failure. The comment above always said it should not look like a
+        // bug; it rendered like one until 2026-07-29.
+        setUpgradeNotice(true);
+        setError(null);
       } else {
         setError('Could not load deals. Pull to refresh.');
       }
@@ -300,6 +308,20 @@ function AgentHubScreen() {
           <Text style={{ color: colors.danger, fontSize: 13, flex: 1 }}>{error}</Text>
         </View>
       )}
+      {upgradeNotice && (
+        <AnimatedPressable
+          onPress={() => router.push('/subscription')}
+          style={{ backgroundColor: colors.accent + '14', borderColor: colors.accent + '40', borderWidth: 1, padding: 12, borderRadius: 8, marginHorizontal: 16, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Deal discovery is a Sparrow Pro feature. Tap to upgrade."
+        >
+          <Ionicons name="lock-closed" size={14} color={colors.accent} />
+          <Text style={{ color: colors.text, fontSize: 13, flex: 1 }}>
+            Deal discovery is a Sparrow Pro feature. Upgrade to let Sparrow hunt deals for you.
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.accent} />
+        </AnimatedPressable>
+      )}
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
@@ -327,9 +349,13 @@ function AgentHubScreen() {
           <View style={{ flex: 1 }}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Sparrow's Watch</Text>
             <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
-              A little bird watching the marketplaces for you.
+              We watch marketplaces and alert you when your price is hit.
             </Text>
           </View>
+          {/* Hidden while the empty card is showing: that card's button is the
+              same action with the same accessibilityLabel, so both together
+              gave one screen two identical CTAs. */}
+          {mandates.length > 0 && (
           <AnimatedPressable
             style={[styles.createBtn, { backgroundColor: colors.accent }]}
             onPress={() => {
@@ -337,11 +363,12 @@ function AgentHubScreen() {
               router.push("/purchase/create-mandate");
             }}
             accessibilityRole="button"
-            accessibilityLabel="Tell Sparrow what to watch"
+            accessibilityLabel="Add something to watch"
           >
-            <Ionicons name="add" size={20} color="#fff" />
-            <Text style={styles.createBtnText}>Watch</Text>
+            <Ionicons name="add" size={20} color={colors.accentText} />
+            <Text style={[styles.createBtnText, { color: colors.accentText }]}>Watch</Text>
           </AnimatedPressable>
+          )}
         </View>
 
         {/* Live status — index 1 (sticky). Wrapped in opaque background so
@@ -391,9 +418,9 @@ function AgentHubScreen() {
         {mandates.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Ionicons name="search-outline" size={32} color={colors.muted} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Sparrow hasn't started watching yet</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Not watching anything yet</Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-              Tell Sparrow what you're hunting and the price you'd pay. You'll hear a chirp the moment something matches.
+              Add an item and your max price.
             </Text>
             <View style={styles.emptyCtaContainer}>
               <AnimatedPressable
@@ -405,7 +432,7 @@ function AgentHubScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Tell Sparrow what to watch"
               >
-                <Text style={styles.emptyCtaBtnText}>Tell Sparrow what to watch</Text>
+                <Text style={[styles.emptyCtaBtnText, { color: colors.accentText }]}>Add something to watch</Text>
               </AnimatedPressable>
             </View>
           </View>
@@ -532,7 +559,7 @@ function AgentHubScreen() {
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
               {deals.length > 0 && !showAllCategories
                 ? 'Tap "Show all" to see deals from other categories.'
-                : 'Sparrow will leave deals here as it spots them.'}
+                : 'Matches will appear here.'}
             </Text>
           </View>
         ) : (
@@ -667,7 +694,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 4,
   },
-  createBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  // colour comes from colors.accentText at the call site — these sit on an
+  // accent fill, which is #FFFFFF in the high-contrast dark palette.
+  createBtnText: { fontWeight: "700", fontSize: 14 },
 
   // "Sparrow's watching" status row — pulsing dot + last-scan label
   scanStatus: {
@@ -744,7 +773,6 @@ const styles = StyleSheet.create({
   emptyCtaBtnText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
   },
 
   // Mandate card
