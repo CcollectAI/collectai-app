@@ -303,7 +303,13 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                 )
                 SELECT
                     i.id, i.name, i.category,
-                    COALESCE(l.q50, 0) AS current_value,
+                    -- Same fallback chain as /portfolio/overview (see the note
+                    -- at its query): a model prediction if one exists, else the
+                    -- item's own stored value. Overview was fixed for this and
+                    -- this sibling was not, so the SAME portfolio read EUR 55
+                    -- in the header and EUR 0 on every row -- verified on a
+                    -- live account whose 3 items have zero price_predictions.
+                    COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0) AS current_value,
                     COALESCE(l.q10, 0) AS q10,
                     COALESCE(l.q90, 0) AS q90,
                     -- What the user actually PAID, falling back to the earliest
@@ -454,20 +460,28 @@ async def portfolio_category_stats(
                       AND pp.generated_at <= NOW() - INTERVAL '7 days'
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 )
+                -- Same fallback chain as /portfolio/overview: a prediction if
+                -- one exists, else the item's own stored value. Without it this
+                -- endpoint reported total_value 0.00 for categories the header
+                -- valued at EUR 55, because hand-added items have no
+                -- price_predictions row.
+                -- COALESCE on category too: `category IS NOT NULL` silently
+                -- dropped uncategorised items from every category breakdown,
+                -- so the parts did not add up to the whole.
                 SELECT
-                    i.category,
+                    COALESCE(NULLIF(i.category, ''), 'uncategorized') AS category,
                     COUNT(*) AS item_count,
-                    COALESCE(SUM(l.q50), 0) AS total_value,
-                    COALESCE(AVG(l.q50), 0) AS avg_value,
-                    COALESCE(SUM(l.q50), 0) - COALESCE(SUM(p.q50_7d), 0) AS change_7d,
-                    MAX(l.q50) AS max_item_value
+                    COALESCE(SUM(COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)), 0) AS total_value,
+                    COALESCE(AVG(COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)), 0) AS avg_value,
+                    COALESCE(SUM(COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)), 0)
+                        - COALESCE(SUM(p.q50_7d), 0) AS change_7d,
+                    MAX(COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)) AS max_item_value
                 FROM items i
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN prev_7d p ON p.item_ref = i.canonical_ref
                 WHERE i.user_id = $1
-                  AND i.category IS NOT NULL
-                GROUP BY i.category
-                ORDER BY COALESCE(SUM(l.q50), 0) DESC
+                GROUP BY COALESCE(NULLIF(i.category, ''), 'uncategorized')
+                ORDER BY 3 DESC
                 """,
                 user_id,
             )
