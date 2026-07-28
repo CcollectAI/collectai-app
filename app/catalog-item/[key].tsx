@@ -8,7 +8,10 @@
  *
  * Gating (verified 2026-06-04): the single `estimated_price` (latest comp,
  * public/free) IS shown. The q10/q50/q90 bands + trend are Pro-gated
- * (`limits.detailed_valuation`) — this screen does NOT fetch or render them for
+ * (`limits.advanced_analytics`, line 233 — this comment said
+ * `limits.detailed_valuation` until 2026-07-28, a key the FE's limits tables
+ * do not even define; the code has always read advanced_analytics)
+ * — this screen does NOT fetch or render them for
  * free users; it shows a single locked teaser row instead, so no gated data
  * leaks onto a public catalog screen.
  *

@@ -162,7 +162,25 @@ PLAN_LIMITS = {
         "deal_discovery": True,
         "dossier_pdf": True,
         "detailed_valuation": True,
-        "advanced_analytics": False,
+        # True since 2026-07-28. This was False, a leftover from the old
+        # three-tier model where advanced_analytics was Premium-only. Premium
+        # was folded into Pro (docs/MONETIZATION.md) and is no longer
+        # purchasable -- RevenueCat sells only the `pro` entitlement -- so
+        # while this stayed False NO user could ever be granted it here.
+        #
+        # It disagreed with the front end, which has always had
+        # FORCED_LIMITS.pro.advanced_analytics = true
+        # (src/hooks/useBillingLimits.ts). On iOS that divergence is masked:
+        # RevenueCat resolves the plan and the FE uses its own table. The BE
+        # value is only consumed on the fallback path -- RevenueCat
+        # unconfigured (no EXPO_PUBLIC_REVENUECAT_IOS_KEY) or reporting free --
+        # and there a paying Pro user was told advanced_analytics=False, which
+        # sends the Home "Extended Portfolio Insights" button to the paywall
+        # instead of /analytics (app/(tabs)/index.tsx:470).
+        #
+        # No server route enforces this flag; it is reported to the client
+        # only, so this changes what /billing/status advertises, nothing else.
+        "advanced_analytics": True,
         "condition_grading": True,
         "set_completion": True,
         "show_ads": False,
