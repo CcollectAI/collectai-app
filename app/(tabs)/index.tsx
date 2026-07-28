@@ -261,6 +261,21 @@ function PortfolioScreen() {
     period: range.toLowerCase() as '7d' | '30d',
     enabled: featureFlags.FEATURE_DATA_INSIGHTS_ALERTS
   });
+  // Home had TWO entry points to the same analytics screen: this CTA banner,
+  // which rendered unconditionally, and <InsightsCard/>, which renders only for
+  // users who actually have advanced_analytics. So every entitled user (and
+  // every beta-unlocked build) saw "Extended Portfolio Insights → View" AND
+  // "Portfolio Insights → View Full Insights" stacked on one screen, both
+  // going to /analytics.
+  //
+  // Show the banner only when the card is NOT rendering. Free users still get
+  // it as the upsell (it routes to /subscription), and an entitled user whose
+  // card is suppressed — feature flag off, or insights failed to load — keeps a
+  // way in rather than losing the entry point entirely.
+  const insightsCardVisible = Boolean(
+    featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && limits.advanced_analytics,
+  );
+
   const { alerts, markAsRead } = useAlertsFeed({
     limit: 5,
     enabled: featureFlags.FEATURE_DATA_INSIGHTS_ALERTS
@@ -756,7 +771,9 @@ function PortfolioScreen() {
           </View>
         )}
 
-        {/* Extended Portfolio Insights CTA */}
+        {/* Extended Portfolio Insights CTA — only when InsightsCard below is
+            not rendering, so Home never shows two routes to /analytics. */}
+        {!insightsCardVisible && (
         <AnimatedPressable
           style={[styles.insightsCta, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={handleInsightsCtaPress}
@@ -780,6 +797,7 @@ function PortfolioScreen() {
             <Text style={[styles.insightsCtaBtnText, { color: colors.accentText }]}>{limits.advanced_analytics ? t('home.view') : t('home.upgrade')}</Text>
           </View>
         </AnimatedPressable>
+        )}
 
         {/* Watchlist Card (always show - has empty state) */}
         {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && (
