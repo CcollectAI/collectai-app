@@ -142,6 +142,33 @@ This is the most critical flow Apple's reviewer will exercise.
 - [ ] That acquired item's cost basis is in **your** currency, converted —
       set Settings → Currency to USD first to make the bug visible
 
+### Subscription screen (added 2026-07-28)
+
+> The RevenueCat key is injected from the EAS **production** environment, not
+> from local `.env`. A dev/Metro run therefore shows "Subscriptions Coming
+> Soon" — that is expected locally and proves nothing about this build. On
+> TestFlight the offerings should load.
+
+- [ ] Subscription screen shows **plan cards with real prices** (€4.99/mo,
+      €39.99/yr), not "Subscriptions Coming Soon". If it says Coming Soon on
+      TestFlight, `EXPO_PUBLIC_REVENUECAT_IOS_KEY` did not reach the build or
+      the RevenueCat `default` offering is misconfigured.
+- [ ] **Settings → Appearance → High Contrast + Dark**, then reopen this
+      screen: the Upgrade button label and the RECOMMENDED badge must be
+      **readable**. This shipped as white-on-white (invisible) until
+      2026-07-28 — it is invisible in exactly one of four palettes, so it must
+      be checked in that one.
+- [ ] Screen fades/slides in like the rest of the app (it had no enter
+      animation before 2026-07-28)
+- [ ] Restore / Manage buttons align with the content edges on the screens
+      either side of it
+- [ ] Buy a plan with the **sandbox account** (`sandbox-merle@sparrowcollect.com`
+      — sign in first via iPhone Settings → App Store → Sandbox Account).
+      This cannot be tested in the simulator.
+- [ ] After purchase, Pro features unlock (Home "Extended Portfolio Insights"
+      opens **/analytics**, not the paywall)
+- [ ] **Restore Purchases** on a second device / after reinstall re-grants Pro
+
 ### Cost basis / P&L (added 2026-07-28)
 
 > Every one of these read a model estimate where it should have read what you

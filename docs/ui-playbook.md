@@ -140,6 +140,35 @@ concurrent auth op it can revoke the session (see CLAUDE.md "Loading states" and
 `docs/AUTH_AND_WEB_DEPLOY.md`). Safe only when the call neither refreshes nor
 retries and there is a recovery path.
 
+## Never hardcode a colour on a themed background
+
+`'#FFFFFF'` looks safe on a brand-coloured button. It is not. The palette
+swaps underneath it:
+
+| Palette | `brand.darker` | `accentText` |
+|---------|----------------|--------------|
+| light | `#44A9A1` | `#ffffff` |
+| dark | `#44A9A1` | `#0b1120` |
+| high-contrast light | `#002966` | `#FFFFFF` |
+| **high-contrast dark** | **`#FFFFFF`** | `#000000` |
+
+`app/subscription.tsx` hardcoded white on a `brand.darker` button, so in
+high-contrast dark the primary CTA was **white text on a white button —
+invisible**, and the spinner inside it vanished the same way (fixed
+2026-07-28). Use `colors.accentText` for any label sitting on `accent` or a
+`brand.*` fill; 40+ files already do.
+
+The screen gutter is **16**. `analytics.tsx`, `(tabs)/index.tsx`,
+`purchase/index.tsx` and the template above all use it. Subscription used 20
+and its buttons sat 4pt narrower per side than the rest of the app — small
+enough to look like nothing, obvious when you navigate between screens.
+
+**On `SafeAreaView`:** the checklist below asks for it, but `app/_layout.tsx`
+sets `headerShown: true` globally, so screens rendered inside that navigator
+already get their insets from the header. `analytics.tsx` and
+`subscription.tsx` have no `SafeAreaView` and are correct. Check how a screen
+gets its header before "fixing" this.
+
 ## Component Checklist
 
 Before shipping a screen, verify:
