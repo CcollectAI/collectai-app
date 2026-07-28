@@ -164,10 +164,14 @@ async def get_collection_trends(
                     WITH daily AS (
                         SELECT
                             date_trunc('day', COALESCE(i.purchased_at, i.created_at)) AS day,
-                            SUM(i.purchase_price) AS day_cost
+                            -- EUR half, not the raw one: total_history above
+                            -- sums pp.q50 (EUR), so summing raw purchase_price
+                            -- here put two different units on one chart -- a
+                            -- USD 100 and a EUR 100 each contributed 100.
+                            SUM(i.purchase_price_eur) AS day_cost
                         FROM items i
                         WHERE i.user_id = $1
-                          AND i.purchase_price IS NOT NULL
+                          AND i.purchase_price_eur IS NOT NULL
                           AND COALESCE(i.purchased_at, i.created_at) >= $2
                         GROUP BY 1
                     )

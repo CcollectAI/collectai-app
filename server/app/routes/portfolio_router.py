@@ -306,7 +306,19 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     COALESCE(l.q50, 0) AS current_value,
                     COALESCE(l.q10, 0) AS q10,
                     COALESCE(l.q90, 0) AS q90,
-                    COALESCE(e.first_q50, 0) AS cost_basis
+                    -- What the user actually PAID, falling back to the earliest
+                    -- prediction only when there is no purchase price on file.
+                    -- This was `COALESCE(e.first_q50, 0)` alone, which made
+                    -- unrealized_pl = current_value - first_predicted_value:
+                    -- model drift, not profit. Someone who paid EUR 50 for an
+                    -- item now worth EUR 200 saw ~0 P/L whenever the model had
+                    -- been stable. Unfixable until 2026-07-28, because
+                    -- purchase_price_eur was non-null on 0 of 5 priced rows;
+                    -- see the paired-columns note in docs/ARCHITECTURE.md.
+                    -- The EUR half is the right one: current_value is q50,
+                    -- which is EUR, so summing raw purchase_price here would
+                    -- mix currencies on the same axis.
+                    COALESCE(i.purchase_price_eur, e.first_q50, 0) AS cost_basis
                 FROM items i
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN earliest e ON e.item_ref = i.canonical_ref
