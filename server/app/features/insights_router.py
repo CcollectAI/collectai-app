@@ -206,15 +206,33 @@ async def get_personalized_insights(
                 # to display it. Divide by 100 to keep that contract.
                 trend_rows = await conn.fetch(
                     """
+                    -- Scoped to the categories this user actually collects.
+                    -- This endpoint is called /personalized, but the movers it
+                    -- returned were the global top 5 -- identical for every
+                    -- user, and usually in categories they do not collect.
+                    WITH user_cats AS (
+                        SELECT DISTINCT category
+                        FROM items
+                        WHERE user_id = $1
+                          AND NULLIF(BTRIM(category), '') IS NOT NULL
+                    )
                     SELECT
-                        category,
-                        COALESCE(NULLIF(title, ''), item_ref) AS item_name,
-                        delta_pct_7d
-                    FROM mv_market_top_movers
-                    WHERE delta_pct_7d > 0
-                    ORDER BY delta_pct_7d DESC
+                        m.category,
+                        COALESCE(NULLIF(m.title, ''), m.item_ref) AS item_name,
+                        m.delta_pct_7d
+                    FROM mv_market_top_movers m
+                    WHERE m.delta_pct_7d > 0
+                      AND (
+                            m.category IN (SELECT category FROM user_cats)
+                            -- New/empty account, or one holding only
+                            -- uncategorised items: fall back to the global
+                            -- movers rather than showing an empty rail.
+                            OR NOT EXISTS (SELECT 1 FROM user_cats)
+                          )
+                    ORDER BY m.delta_pct_7d DESC
                     LIMIT 5
-                    """
+                    """,
+                    user_id,
                 )
                 trending = [
                     TrendingItem(

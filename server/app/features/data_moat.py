@@ -261,6 +261,7 @@ async def get_supply_trend(
 async def get_demand_heat(
     category: Optional[str] = None,
     limit: int = 20,
+    user_id: Optional[str] = None,
 ) -> list[dict]:
     """
     Get top trending items by demand signal volume.
@@ -312,6 +313,32 @@ async def get_demand_heat(
                     base_sql.format(where="WHERE h.category = $1", limit_param="$2"),
                     category,
                     limit,
+                )
+            elif user_id:
+                # No explicit category: scope to what this user collects. The
+                # rail sits on a screen that is otherwise entirely about the
+                # user's own collection, so a global list read as if it were
+                # theirs. Falls back to global when the account has no
+                # categorised items yet, so a new user sees something rather
+                # than an empty rail.
+                rows = await conn.fetch(
+                    base_sql.format(
+                        where="""WHERE (
+                                 h.category IN (
+                                     SELECT DISTINCT category FROM items
+                                     WHERE user_id = $2::uuid
+                                       AND NULLIF(BTRIM(category), '') IS NOT NULL
+                                 )
+                                 OR NOT EXISTS (
+                                     SELECT 1 FROM items
+                                     WHERE user_id = $2::uuid
+                                       AND NULLIF(BTRIM(category), '') IS NOT NULL
+                                 )
+                               )""",
+                        limit_param="$1",
+                    ),
+                    limit,
+                    user_id,
                 )
             else:
                 rows = await conn.fetch(
@@ -372,7 +399,7 @@ async def demand_heat_endpoint(
 ):
     """Top trending items by demand signal volume."""
     # R48.5 — same as above, accept any category
-    data = await get_demand_heat(category, limit)
+    data = await get_demand_heat(category, limit, user_id=_user)
     return {"category": category, "limit": limit, "items": data}
 
 
@@ -537,6 +564,25 @@ async def prediction_accuracy(
             if category:
                 cat_filter = "AND i.category = $2"
                 params.append(category)
+            elif _user:
+                # No explicit category: report accuracy for the categories this
+                # user actually collects. Sitting on an otherwise
+                # collection-scoped screen, a global model-accuracy number read
+                # as if it described their items. Falls back to global when the
+                # account has no categorised items yet.
+                cat_filter = """AND (
+                    i.category IN (
+                        SELECT DISTINCT category FROM items
+                        WHERE user_id = $2::uuid
+                          AND NULLIF(BTRIM(category), '') IS NOT NULL
+                    )
+                    OR NOT EXISTS (
+                        SELECT 1 FROM items
+                        WHERE user_id = $2::uuid
+                          AND NULLIF(BTRIM(category), '') IS NOT NULL
+                    )
+                )"""
+                params.append(_user)
 
             row = await conn.fetchrow(
                 f"""
