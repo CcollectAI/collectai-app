@@ -142,6 +142,24 @@ This is the most critical flow Apple's reviewer will exercise.
 - [ ] That acquired item's cost basis is in **your** currency, converted —
       set Settings → Currency to USD first to make the bug visible
 
+### Cost basis / P&L (added 2026-07-28)
+
+> Every one of these read a model estimate where it should have read what you
+> actually paid. They looked plausible, which is the problem — check them
+> against a purchase price you know.
+
+- [ ] Add an item with a purchase price **well above or below** its estimated
+      value (e.g. pay €50 for something valued ~€8)
+- [ ] Portfolio / P&L shows a gain or loss reflecting **what you paid**, not
+      roughly zero. (`unrealized_pl` used to be `current_value − first
+      predicted value`, so a stable model always showed ~break-even.)
+- [ ] Items list row shows the **"Paid €X"** line with a gain/loss delta —
+      this never rendered before 2026-07-28 because the EUR column was empty
+      for every item, so it has no prior device coverage
+- [ ] "You saved €X" banner: buy something in a **non-EUR** currency below
+      market value and confirm the saving is the FX-converted difference, not
+      the raw number treated as EUR
+
 ---
 
 ## Section 5 — Paywall (expectation depends on the BUILD PROFILE)

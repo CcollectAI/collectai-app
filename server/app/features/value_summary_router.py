@@ -181,9 +181,15 @@ async def get_value_summary(
             SELECT
                 COALESCE(i.title, i.manual_name, i.name, '') AS item_name,
                 i.category,
-                i.purchase_price,
+                -- EUR half throughout: pp.q50 is EUR, while purchase_price is
+                -- raw in purchase_currency. Comparing them treated a USD 100
+                -- purchase as EUR 100, which both mis-filtered the "smart buy"
+                -- test (pp.q50 > purchase_price) and overstated the saving for
+                -- any user not on EUR. See the paired-columns note in
+                -- docs/ARCHITECTURE.md.
+                i.purchase_price_eur AS purchase_price,
                 pp.q50 AS market_value,
-                (pp.q50 - i.purchase_price) AS saved
+                (pp.q50 - i.purchase_price_eur) AS saved
             FROM items i
             JOIN LATERAL (
                 SELECT q50 FROM price_predictions
@@ -192,10 +198,10 @@ async def get_value_summary(
                 LIMIT 1
             ) pp ON true
             WHERE i.user_id = $1::uuid
-              AND i.purchase_price IS NOT NULL
-              AND i.purchase_price > 0
-              AND pp.q50 > i.purchase_price
-            ORDER BY (pp.q50 - i.purchase_price) DESC
+              AND i.purchase_price_eur IS NOT NULL
+              AND i.purchase_price_eur > 0
+              AND pp.q50 > i.purchase_price_eur
+            ORDER BY (pp.q50 - i.purchase_price_eur) DESC
             LIMIT 20
             """,
             user_id,

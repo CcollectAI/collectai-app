@@ -158,6 +158,35 @@ things it deliberately does not do:
   service. App-side conversion is `app/lib/fx_service.py::convert_to_eur`,
   wired into all three server writers.
 
+#### Money math: always use the EUR half, never the raw one
+
+`price_predictions.q50` — the source of every "current value", "market value"
+and portfolio total — is **EUR**. `items.purchase_price` is raw, denominated in
+`items.purchase_currency`. Putting the two in one expression silently mixes
+units: a USD 100 and a EUR 100 each contribute 100. Nothing errors, and for a
+EUR-only user the numbers even look right, which is why three separate queries
+carried this defect at once (all fixed 2026-07-28):
+
+| Site | Was | Effect |
+|------|-----|--------|
+| `portfolio_router.py` `/portfolio/items` | `cost_basis = COALESCE(e.first_q50, 0)` | `unrealized_pl` measured **model drift, not profit** — a stable model reported ~break-even no matter what the user paid. Proved on prod: an item bought for €50 with `first_q50` 8.22 reported `cost_basis` 8.22 and P/L **0.00**; correct values are 50.00 and **−41.78**. |
+| `value_summary_router.py` `/value-summary` | `pp.q50 - i.purchase_price` | Smart-buy savings compared EUR against a raw amount, corrupting both the `q50 > purchase_price` filter and the total. |
+| `trends_and_deepdive_router.py` DCA series | `SUM(i.purchase_price)` | Cost-basis line plotted in mixed currencies against an EUR value line. (Endpoint is currently dead code — see `app/analytics.tsx:143`.) |
+
+**Rule: if an expression touches `q50`, use `purchase_price_eur`.** Fall back to
+`first_q50` only when there is no purchase price on file, so items the user
+never priced keep a sensible value instead of dropping to zero.
+
+Two places that correctly use the raw column, so don't "fix" them:
+`items_export_router.py` (exports the amount *with* `purchase_currency`) and
+`dossier_agent.py` (emits `amount` + `currency` as a pair).
+
+Note this class is **invisible to `scripts/audit_column_drift.py`**, which asks
+a structural question — is a column read but never written. Here both columns
+had readers and writers; the defect was choosing the wrong one. Structural
+audits cannot catch a semantic substitution, so this needs the value-level
+check described in the QA checklist.
+
 Two binding traps in the same area, both fixed and both worth not repeating:
 
 - **Never bind a bare `datetime.date` to a `timestamptz` column.** asyncpg
