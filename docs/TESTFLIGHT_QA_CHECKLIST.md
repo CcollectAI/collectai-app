@@ -160,6 +160,35 @@ This is the most critical flow Apple's reviewer will exercise.
       market value and confirm the saving is the FX-converted difference, not
       the raw number treated as EUR
 
+### Analytics screen (added 2026-07-28)
+
+> Every endpoint this screen calls was swept live as two users — one with items,
+> one without — because an empty section is ambiguous otherwise. The failures
+> below were all invisible from the app: an HTTP 200 with an empty body, or a
+> total that disagreed with the rows beneath it.
+
+- [ ] Analytics tab opens with **no blank/error sections**
+- [ ] The **portfolio total at the top equals the sum of the item rows** below
+      it, and equals the sum of the category breakdown. These came from three
+      different queries and disagreed (€55 header vs €0 rows).
+- [ ] Add an item **by hand** (no scan, so it has no price prediction) with an
+      estimated value → it still contributes its value to the total, the rows
+      and the category breakdown, not 0
+- [ ] An item with **no category** still appears in the category breakdown
+      (as "uncategorized"), so the parts add up to the whole
+- [ ] **Risk notes / insights** section renders. It used to 500 whenever the
+      account held even one uncategorised item, and again whenever the trending
+      query timed out — both showed as a blank section, never an error.
+- [ ] **Trending items** show real names and categories (e.g. "Charizard ★ δ",
+      `pokemon`) — not raw keys like `base6-base6-8`
+- [ ] The screen loads promptly; insights used to take up to 30s and then fail
+
+Sections that are legitimately empty on a fresh account — **not** bugs:
+
+- **Category Health** needs price predictions from the last 30 days
+- **Prediction Accuracy** stays at 0 until you mark an item **sold** on its
+  detail screen (that is what records ground truth)
+
 ---
 
 ## Section 5 — Paywall (expectation depends on the BUILD PROFILE)

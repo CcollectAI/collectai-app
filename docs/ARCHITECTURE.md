@@ -187,6 +187,52 @@ had readers and writers; the defect was choosing the wrong one. Structural
 audits cannot catch a semantic substitution, so this needs the value-level
 check described in the QA checklist.
 
+#### One valuation expression, or the screen contradicts itself
+
+An item's current value is:
+
+```sql
+COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)
+```
+
+a model prediction if one exists, **else the item's own stored value**. Most
+items added by hand have no `price_predictions` row at all, so an endpoint that
+uses `COALESCE(l.q50, 0)` alone values them at zero while a sibling endpoint
+counts them. The screen then disagrees with itself and there is no error
+anywhere.
+
+Measured 2026-07-28 on a live account whose 3 items have **zero**
+`price_predictions` rows:
+
+| | `/portfolio/overview` | `/portfolio/items` | `/portfolio/category-stats` |
+|---|---|---|---|
+| before | 55.00 | rows sum to 0.00 | 0.00 |
+| after | 55.00 | 55.00 | 55.00 |
+
+`/portfolio/overview` had already been fixed for this once — its query still
+carries the comment "Home's COLLECTION VALUE read €0 vs €55 elsewhere" — and
+the fix was never carried to the siblings. **Grep the expression, not the
+file.**
+
+Related: never filter `AND category IS NOT NULL` in a breakdown. It silently
+drops uncategorised items, so the parts stop adding up to the total the header
+shows. Group on `COALESCE(NULLIF(category, ''), 'uncategorized')` instead
+(done in `portfolio_router`, `trends_and_deepdive_router`, `insights_router`).
+
+#### Empty is not always broken
+
+Two analytics endpoints return empty for a correct reason. Verified by querying
+the joins directly rather than inferring from the response — check the same way
+before "fixing" either:
+
+- `/portfolio/category-health` → `{"health": []}` needs ≥1 `price_predictions`
+  row within 30 days to compute volatility and trend.
+- `/data-moat/prediction-accuracy` → `total_ground_truths: 0` because
+  `price_ground_truths` has never had a row. The write chain **is** fully
+  wired: item detail (`useItemDetail.ts:289`) → `submitVerifiedSale` →
+  `POST /feedback/verified-sale` → `record_price_ground_truth`. It only fills
+  when a user marks an item sold, which no test data does.
+
 Two binding traps in the same area, both fixed and both worth not repeating:
 
 - **Never bind a bare `datetime.date` to a `timestamptz` column.** asyncpg
