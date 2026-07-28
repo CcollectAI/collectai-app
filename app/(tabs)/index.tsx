@@ -160,6 +160,42 @@ function extractItems(raw: unknown): ItemRow[] {
     .filter(Boolean) as ItemRow[];
 }
 
+/**
+ * Load the collection from the SAME source the Items tab uses.
+ *
+ * Home and Items read from two different places: Home calls the EC2 API
+ * (/portfolio/overview, which needs a JWT and reads items.name), while the
+ * Items tab reads Supabase directly through dataProvider.listItems() under RLS.
+ * So the two tabs can — and did — disagree: items added manually showed up on
+ * Items while Home said the collection was empty.
+ *
+ * The API path fails empty in several ordinary situations: a request that goes
+ * out before the auth token has hydrated (401), a cold EC2, or any network
+ * blip. Every one of those hit `setItems([])`, which renders as "no items"
+ * rather than as an error — indistinguishable, to the user, from an empty
+ * collection.
+ *
+ * `listItems` is already withTimeout-bounded internally (itemsProvider.ts:144),
+ * so this cannot hang the screen.
+ */
+async function loadItemsFromCollection(): Promise<ItemRow[]> {
+  try {
+    const items = await dataProvider.listItems({ limit: 50, offset: 0 });
+    return (items ?? [])
+      .map((it) => ({
+        id: String(it.id),
+        name: it.name || 'Untitled',
+        category: it.category || undefined,
+        value: Number(it.price ?? 0),
+        changePct: undefined,
+      }))
+      .filter((r) => Number.isFinite(r.value));
+  } catch (e) {
+    logger.error('[Portfolio] Items-tab fallback failed:', e);
+    return [];
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
@@ -272,13 +308,23 @@ function PortfolioScreen() {
           if (extractedItems.length) {
             setItems(extractedItems.sort((a, b) => b.value - a.value));
           } else {
-            setItems([]);
+            // The API said "no items". Before believing it, ask the source the
+            // Items tab uses — an empty answer here is far more often a
+            // tokenless/cold-start 401 than an actually empty collection, and
+            // the two are indistinguishable on screen.
+            const fallback = await loadItemsFromCollection();
+            setItems(fallback.sort((a, b) => b.value - a.value));
           }
         } catch (realErr: unknown) {
           logger.error("[Portfolio] Real backend error, falling back:", realErr);
-          setError("Could not load portfolio data.");
           setSeries([]);
-          setItems([]);
+          // Same fallback on a hard failure. Only surface an error if the
+          // collection genuinely cannot be read either way — otherwise Home
+          // showed "Could not load portfolio data" over a collection the Items
+          // tab was displaying perfectly well.
+          const fallback = await loadItemsFromCollection();
+          setItems(fallback.sort((a, b) => b.value - a.value));
+          if (!fallback.length) setError("Could not load portfolio data.");
         }
       } else {
         // Mock mode: use analytics store or fallback
