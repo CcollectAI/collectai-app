@@ -273,35 +273,63 @@ async def get_demand_heat(
 
     try:
         async with pool.acquire() as conn:
+            # mv_demand_heat is a raw telemetry counter, not a list of items:
+            # item_key holds sentinels ('general', 'price_alerts'), bare UUIDs
+            # and barcodes, and signal_type includes non-item events like
+            # notification_settings_changed. Returning it verbatim is what put
+            # rows like "8b439f25 a812 46aa a918 28a50e08..." under
+            # "Hot Right Now" on the analytics screen (the FE falls back to
+            # item_key.replace(/-/g,' ') when title is missing).
+            #
+            # Join category_items so a row only survives if it resolves to a
+            # real CATALOG entry. That drops every sentinel/UUID/barcode by
+            # construction, and keeps the rail to public reference data rather
+            # than surfacing other users' private item titles.
+            #
+            # Also aggregate across signal_type: the MV's grain is
+            # (category, item_key, signal_type), so one item appeared once per
+            # signal type -- the duplicate React keys that DemandHeatSection
+            # and DemandHeatBanner both had to work around.
+            base_sql = """
+                SELECT
+                    h.category,
+                    h.item_key,
+                    ci.title,
+                    SUM(h.signal_count)::int  AS signal_count,
+                    SUM(h.unique_users)::int  AS unique_users,
+                    MAX(h.last_signal_at)     AS last_signal_at
+                FROM public.mv_demand_heat h
+                JOIN public.category_items ci
+                  ON ci.category = h.category
+                 AND ci.item_key = h.item_key
+                {where}
+                GROUP BY h.category, h.item_key, ci.title
+                ORDER BY SUM(h.signal_count) DESC
+                LIMIT {limit_param}
+            """
             if category:
                 rows = await conn.fetch(
-                    """
-                    SELECT category, item_key, signal_type,
-                           signal_count, unique_users, last_signal_at
-                    FROM public.mv_demand_heat
-                    WHERE category = $1
-                    ORDER BY signal_count DESC
-                    LIMIT $2
-                    """,
+                    base_sql.format(where="WHERE h.category = $1", limit_param="$2"),
                     category,
                     limit,
                 )
             else:
                 rows = await conn.fetch(
-                    """
-                    SELECT category, item_key, signal_type,
-                           signal_count, unique_users, last_signal_at
-                    FROM public.mv_demand_heat
-                    ORDER BY signal_count DESC
-                    LIMIT $1
-                    """,
+                    base_sql.format(where="", limit_param="$1"),
                     limit,
                 )
         return [
             {
                 "category": row["category"],
                 "item_key": row["item_key"],
-                "signal_type": row["signal_type"],
+                # `title` and `search_count` are what the FE reads
+                # (DemandHeatSection's HeatItem). It previously got neither:
+                # title was absent so it rendered the raw key, and it looked for
+                # search_count while this returned only signal_count, so the row
+                # read "unknown - searches" with no number at all.
+                "title": row["title"],
+                "search_count": row["signal_count"],
+                "demand_score": row["signal_count"],
                 "signal_count": row["signal_count"],
                 "unique_users": row["unique_users"],
                 "last_signal_at": row["last_signal_at"].isoformat() if row["last_signal_at"] else None,
