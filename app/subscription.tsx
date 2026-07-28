@@ -14,9 +14,10 @@ import {
   ScrollView,
   Linking,
   Platform,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AnimatedPressable } from '@/motion';
+import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -62,7 +63,7 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
     >
       {recommended && (
         <View style={[styles.recommendedBadge, { backgroundColor: colors.brand.dark }]}>
-          <Text style={styles.recommendedText}>RECOMMENDED</Text>
+          <Text style={[styles.recommendedText, { color: colors.accentText }]}>RECOMMENDED</Text>
         </View>
       )}
       <Text style={[styles.planName, { color: colors.text }]}>{name}</Text>
@@ -92,9 +93,9 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
           accessibilityLabel={`Select ${name} plan`}
         >
           {loading ? (
-            <ActivityIndicator size="small" color="#FFF" />
+            <ActivityIndicator size="small" color={colors.accentText} />
           ) : (
-            <Text style={styles.selectBtnText}>
+            <Text style={[styles.selectBtnText, { color: colors.accentText }]}>
               {name === 'Free' ? 'Downgrade' : 'Upgrade'}
             </Text>
           )}
@@ -109,6 +110,12 @@ type Offerings = Awaited<ReturnType<typeof getOfferings>>;
 function SubscriptionScreen() {
   const { t } = useTranslation();
   const { settings } = useSettings();
+  // Enter reveal, matching every other screen in the app (see the
+  // Component Checklist in docs/ui-playbook.md). This screen was the
+  // only one that appeared with no transition. Gated on
+  // settings.animationsEnabled exactly as analytics.tsx does, so the
+  // reduce-motion preference still wins.
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { colors } = useAppTheme();
   const { showToast } = useToast();
   const { plan: currentPlan, loading: planLoading, isBetaUnlocked } = useBillingLimits();
@@ -241,6 +248,9 @@ function SubscriptionScreen() {
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
+      <Animated.View
+        style={[{ flex: 1 }, settings.animationsEnabled ? animatedStyle : undefined]}
+      >
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={[styles.title, { color: colors.text }]}>Subscription</Text>
 
@@ -384,6 +394,7 @@ function SubscriptionScreen() {
         </Text>
         )}
       </ScrollView>
+      </Animated.View>
       <QuickNavBar />
     </View>
   );
@@ -402,7 +413,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scroll: {
-    paddingHorizontal: 20,
+    // 16, not 20 — this is the app-wide screen gutter (analytics.tsx,
+    // (tabs)/index.tsx, purchase/index.tsx and the template in
+    // docs/ui-playbook.md all use 16). At 20 the Restore / Manage buttons sat
+    // 4pt narrower on each side than every other screen's content, which is
+    // visible when navigating between them. The buttons are flex:1 inside
+    // actionsRow, so this gutter is what sets their outer edges.
+    paddingHorizontal: 16,
     paddingVertical: 24,
   },
   title: {
@@ -442,7 +459,7 @@ const styles = StyleSheet.create({
   recommendedText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#FFFFFF',
+    // colour comes from colors.accentText at the call site — see selectBtnText.
     letterSpacing: 0.5,
   },
   planName: {
@@ -482,7 +499,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectBtnText: {
-    color: '#FFFFFF',
+    // NOT hardcoded white. These buttons are painted with colors.brand.darker /
+    // brand.dark, and in the high-contrast DARK palette brand.darker is
+    // '#FFFFFF' (src/theme/highContrast.ts) — so a fixed white label rendered
+    // white-on-white and the primary CTA was invisible. colors.accentText
+    // resolves per palette: #000000 (HC dark), #0b1120 (dark), #ffffff (light),
+    // #FFFFFF (HC light). 43 other files already use this token.
     fontSize: 15,
     fontWeight: '700',
   },
