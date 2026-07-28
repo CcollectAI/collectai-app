@@ -17,6 +17,24 @@ router = APIRouter(prefix="/insights", tags=["Insights"])
 logger = logging.getLogger(__name__)
 
 
+# Transient infrastructure failures where degrading to a partial/empty response
+# is the right behaviour.
+#
+# These handlers used to catch `asyncpg.PostgresError` alone. asyncpg raises a
+# bare `TimeoutError` (asyncio.TimeoutError, which IS the builtin on 3.11+) when
+# a command exceeds the pool timeout, and that is NOT a PostgresError -- so the
+# "best-effort" guard around the trending query did not catch the one failure it
+# existed for. The trending scan over 14 days of market_hits times out against
+# the 30s pooler cap under load, the TimeoutError escaped, and the entire
+# /insights/personalized response 500'd -- blanking the analytics risk-notes
+# section intermittently. Same hole in the /insights/home-widget handler.
+#
+# Deliberately NOT bare `Exception`: a ValidationError or a typo must still fail
+# loudly rather than silently serving an empty insights card forever. See the
+# silent-fallback note in docs/ARCHITECTURE.md.
+_TRANSIENT_DB_ERRORS = (asyncpg.PostgresError, TimeoutError, OSError)
+
+
 # ---------------------------------------------------------------------------
 # Thresholds for insight generation
 # ---------------------------------------------------------------------------
@@ -98,13 +116,20 @@ async def get_personalized_insights(
             # ---- Category exposure from user's items ----
             cat_rows = await conn.fetch(
                 """
+                -- COALESCE, because items.category is nullable and
+                -- CategoryExposure.category is a required str: a single item
+                -- with no category raised a Pydantic ValidationError and the
+                -- whole endpoint 500'd, blanking the risk-notes section of the
+                -- analytics screen for that user. Grouping on the coalesced
+                -- value also stops NULL and '' splitting into two buckets.
+                -- Same fix as trends_and_deepdive_router.py.
                 SELECT
-                    category,
+                    COALESCE(NULLIF(category, ''), 'uncategorized') AS category,
                     COUNT(*)::float AS cnt,
                     SUM(COUNT(*)) OVER ()::float AS total
                 FROM items
                 WHERE user_id = $1
-                GROUP BY category
+                GROUP BY COALESCE(NULLIF(category, ''), 'uncategorized')
                 ORDER BY cnt DESC
                 """,
                 user_id,
@@ -156,54 +181,54 @@ async def get_personalized_insights(
             # must NOT discard the already-computed overexposed_categories /
             # diversification_suggestions — before this was in the function's
             # outer try, so one bad sub-query zeroed the entire response.
-            cutoff = datetime.now(timezone.utc) - timedelta(days=14)
             trending: List[TrendingItem] = []
             try:
+                # Read the pre-computed mv_market_top_movers rollup rather than
+                # re-deriving movers from raw market_hits on every request.
+                #
+                # The old query grouped 14 days of market_hits by normalized_key
+                # with two ARRAY_AGGs per group: 1.54M rows / 67.5k keys, scanned
+                # per request, per user, for a result that is GLOBAL and
+                # identical for everyone. It routinely blew the 30s pooler cap
+                # and raised TimeoutError -- see _TRANSIENT_DB_ERRORS above.
+                #
+                # The MV (18.5k rows, unique index on item_ref, refreshed
+                # nightly by pg_cron after the market_hits_daily rollup) already
+                # answers exactly this question, and answers it better: it
+                # applies credibility floors (>=5 comps, >=3 distinct days,
+                # active within 7d, <=500% swing) and joins category_items, so
+                # rows carry a real title and category. The old path fed
+                # _extract_category_from_key(normalized_key), which produced
+                # junk categories like "base6-base6-8" in live responses.
+                #
+                # delta_pct_7d is a PERCENT; TrendingItem.change_pct is a
+                # FRACTION -- personalizedInsights.ts:65 does `change_pct * 100`
+                # to display it. Divide by 100 to keep that contract.
                 trend_rows = await conn.fetch(
                     """
-                    WITH first_last AS (
-                        SELECT
-                            normalized_key,
-                            COALESCE(MAX(title), normalized_key) AS item_name,
-                            (ARRAY_AGG(price ORDER BY COALESCE(observed_at, seen_at) ASC))[1]  AS first_price,
-                            (ARRAY_AGG(price ORDER BY COALESCE(observed_at, seen_at) DESC))[1] AS last_price
-                        FROM market_hits
-                        -- market_hits has no `created_at` column (dropped in the
-                        -- 2026-04-24 partition migration). Order by observed_at
-                        -- (fall back to seen_at for legacy rows) and prune on the
-                        -- seen_at partition key. Mirrors sell_timing_router.py.
-                        WHERE seen_at >= $1
-                          AND price IS NOT NULL
-                          AND (is_listing IS NOT TRUE)
-                        GROUP BY normalized_key
-                        HAVING COUNT(*) >= 2
-                    )
                     SELECT
-                        normalized_key,
-                        item_name,
-                        first_price,
-                        last_price,
-                        CASE WHEN first_price > 0
-                             THEN (last_price - first_price) / first_price
-                             ELSE 0
-                        END AS change_pct
-                    FROM first_last
-                    WHERE last_price > first_price
-                    ORDER BY change_pct DESC
+                        category,
+                        COALESCE(NULLIF(title, ''), item_ref) AS item_name,
+                        delta_pct_7d
+                    FROM mv_market_top_movers
+                    WHERE delta_pct_7d > 0
+                    ORDER BY delta_pct_7d DESC
                     LIMIT 5
-                    """,
-                    cutoff,
+                    """
                 )
                 trending = [
                     TrendingItem(
-                        category=_extract_category_from_key(row["normalized_key"]),
-                        item_name=row["item_name"] or row["normalized_key"],
-                        change_pct=round(float(row["change_pct"] or 0), 4),
+                        category=row["category"] or "uncategorized",
+                        item_name=row["item_name"],
+                        change_pct=round(float(row["delta_pct_7d"] or 0) / 100.0, 4),
                     )
                     for row in trend_rows
                 ]
-            except asyncpg.PostgresError as e:
-                logger.warning("[insights] trending fetch failed (best-effort): %s", e)
+            except _TRANSIENT_DB_ERRORS as e:
+                logger.warning(
+                    "[insights] trending fetch failed (best-effort): %s: %s",
+                    type(e).__name__, e,
+                )
 
             # ---- Rare-set alerts (near-complete sets) ----
             # DISABLED 2026-07-24. This block ran an N+1: one `items` query per
@@ -223,8 +248,8 @@ async def get_personalized_insights(
                 trending_items=trending[offset:offset + limit],
             )
 
-    except asyncpg.PostgresError as e:
-        logger.error(f"[insights/personalized] DB error: {e}")
+    except _TRANSIENT_DB_ERRORS as e:
+        logger.error(f"[insights/personalized] DB error: {type(e).__name__}: {e}")
         return PersonalizedInsightsResponse(
             overexposed_categories=[],
             diversification_suggestions=[],
@@ -327,8 +352,8 @@ async def get_home_widget(
                 currency="EUR",
             )
 
-    except asyncpg.PostgresError as e:
-        logger.error(f"[insights/home-widget] DB error: {e}")
+    except _TRANSIENT_DB_ERRORS as e:
+        logger.error(f"[insights/home-widget] DB error: {type(e).__name__}: {e}")
         return HomeWidgetResponse(
             collection_value=0.0,
             today_change=0.0,
@@ -342,11 +367,8 @@ async def get_home_widget(
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _extract_category_from_key(normalized_key: str) -> str:
-    """
-    normalized_key is typically formatted as 'category|...' (e.g. 'lego|10297|...').
-    Extract the leading category segment.
-    """
-    if normalized_key and "|" in normalized_key:
-        return normalized_key.split("|", 1)[0]
-    return normalized_key or "unknown"
+# _extract_category_from_key was removed 2026-07-28 along with its only caller.
+# It split normalized_key on '|', but the live format is 'category:key'
+# (e.g. 'blind_box:pop-mart-labubu-...'), so the branch never matched and it
+# returned the whole key as the category -- which is why trending_items shipped
+# categories like "base6-base6-8". The MV supplies a real category column.
