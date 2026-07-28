@@ -518,7 +518,7 @@ function AgentHubScreen() {
                       <Text style={[styles.statValue, { color: colors.text }]}>
                         {formatPrice(m.maxPrice)}
                       </Text>
-                      <Text style={[styles.statLabel, { color: colors.muted }]}>limit per match</Text>
+                      <Text style={[styles.statLabel, { color: colors.muted }]}>limit</Text>
                     </View>
                   </View>
                 </View>
