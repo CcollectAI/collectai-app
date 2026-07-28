@@ -30,6 +30,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useFollowedCategories } from "@/hooks/useFollowedCategories";
 import type { PurchaseMandate, MandateDeal } from "@/data/types";
+import logger from "@/utils/logger";
 
 const DEALS_PAGE_SIZE = 10;
 
@@ -164,31 +165,50 @@ function AgentHubScreen() {
     try {
       setError(null);
       setHasMoreDeals(true);
-      const [mandateRes, dealRes] = await Promise.all([
+      // allSettled, NOT all. These two calls have different entitlements:
+      // /purchase/mandates is available on every plan, /purchase/deals is
+      // Pro-only and 403s for free users. Promise.all rejected the moment the
+      // deals call 403'd, so setMandates was NEVER reached — a free user could
+      // create up to 3 mandates, the API returned them correctly, and the
+      // screen still said "Not watching anything yet". Their own data was
+      // invisible to them. Found 2026-07-29 by seeding a mandate and watching
+      // the screen stay empty.
+      const [mandateRes, dealRes] = await Promise.allSettled([
         collectorsApi.listMandates(20, 0),
         collectorsApi.listDeals({ limit: DEALS_PAGE_SIZE, offset: 0 }),
       ]);
-      const mandateData = mandateRes as { mandates?: typeof mandates } | undefined;
-      const dealData = dealRes as { deals?: typeof deals } | undefined;
-      setMandates(mandateData?.mandates ?? []);
-      const initialDeals = dealData?.deals ?? [];
-      setDeals(initialDeals);
-      if (initialDeals.length < DEALS_PAGE_SIZE) setHasMoreDeals(false);
-    } catch (e) {
-      // D8: a 403 here means the user isn't on a plan that includes deal
-      // discovery — surface that as an upgrade prompt rather than a generic
-      // "couldn't load" error that reads like a bug.
-      const status = (e as { status?: number } | null)?.status;
-      if (status === 403) {
-        // Upgrade prompt, NOT setError: the error banner is red with a warning
-        // triangle, so routing this through it made a paywall read as a
-        // failure. The comment above always said it should not look like a
-        // bug; it rendered like one until 2026-07-29.
-        setUpgradeNotice(true);
-        setError(null);
+
+      if (mandateRes.status === 'fulfilled') {
+        const mandateData = mandateRes.value as { mandates?: typeof mandates } | undefined;
+        setMandates(mandateData?.mandates ?? []);
       } else {
-        setError('Could not load deals. Pull to refresh.');
+        logger.warn('[DealAgent] mandates load failed:', mandateRes.reason);
       }
+
+      if (dealRes.status === 'fulfilled') {
+        const dealData = dealRes.value as { deals?: typeof deals } | undefined;
+        const initialDeals = dealData?.deals ?? [];
+        setDeals(initialDeals);
+        if (initialDeals.length < DEALS_PAGE_SIZE) setHasMoreDeals(false);
+      } else {
+        // A 403 here means the user isn't on a plan that includes deal
+        // discovery — surface that as an upgrade prompt rather than a generic
+        // "couldn't load" error that reads like a bug.
+        const status = (dealRes.reason as { status?: number } | null)?.status;
+        setDeals([]);
+        setHasMoreDeals(false);
+        if (status === 403) {
+          // Upgrade prompt, NOT setError: the error banner is red with a
+          // warning triangle, so routing this through it made a paywall read
+          // as a failure.
+          setUpgradeNotice(true);
+        } else {
+          setError('Could not load deals. Pull to refresh.');
+        }
+      }
+    } catch (e) {
+      logger.error('[DealAgent] unexpected load error:', e);
+      setError('Could not load deals. Pull to refresh.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -377,34 +397,39 @@ function AgentHubScreen() {
           <View
             style={[styles.scanStatus, { backgroundColor: colors.card, borderColor: colors.border }]}
             accessibilityRole="text"
-            accessibilityLabel={`Sparrow is watching ${activeMandateCount} ${activeMandateCount === 1 ? 'thing' : 'things'}, last scan ${lastScanLabel ?? 'pending'}`}
+            accessibilityLabel={`Sparrow is watching ${activeMandateCount} ${activeMandateCount === 1 ? 'deal' : 'deals'}, last scan ${lastScanLabel ?? 'pending'}`}
           >
-            <View style={styles.pulseWrap}>
-              {[pulseAnim1, pulseAnim2, pulseAnim3].map((anim, i) => (
-                <Animated.View
-                  key={i}
-                  style={[
-                    styles.pulseRing,
-                    {
-                      borderColor: colors.accent,
-                      transform: [
-                        {
-                          scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 2.6] }),
-                        },
-                      ],
-                      opacity: anim.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 0.55, 0] }),
-                    },
-                  ]}
-                />
-              ))}
-              <View style={[styles.pulseDot, { backgroundColor: colors.accent }]} />
-            </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.scanStatusTitle, { color: colors.text }]}>
-                {activeMandateCount > 0
-                  ? `Watching ${activeMandateCount} ${activeMandateCount === 1 ? 'thing' : 'things'} for you`
-                  : 'Idle'}
-              </Text>
+              {/* Dot sits ON the headline row, not in a column of its own —
+                  it is a live indicator for that sentence, so it has to read
+                  as part of it. */}
+              <View style={styles.scanStatusTitleRow}>
+                <Text style={[styles.scanStatusTitle, { color: colors.text }]}>
+                  {activeMandateCount > 0
+                    ? `Watching ${activeMandateCount} ${activeMandateCount === 1 ? 'deal' : 'deals'} for you`
+                    : 'Idle'}
+                </Text>
+                <View style={styles.pulseWrap}>
+                  {[pulseAnim1, pulseAnim2, pulseAnim3].map((anim, i) => (
+                    <Animated.View
+                      key={i}
+                      style={[
+                        styles.pulseRing,
+                        {
+                          borderColor: colors.accent,
+                          transform: [
+                            {
+                              scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 2.6] }),
+                            },
+                          ],
+                          opacity: anim.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 0.55, 0] }),
+                        },
+                      ]}
+                    />
+                  ))}
+                  <View style={[styles.pulseDot, { backgroundColor: colors.accent }]} />
+                </View>
+              </View>
               <Text style={[styles.scanStatusSub, { color: colors.muted }]} numberOfLines={1}>
                 {lastScanLabel ? `Last scan ${lastScanLabel}` : 'Sparrow will start watching shortly.'}
               </Text>
@@ -452,7 +477,7 @@ function AgentHubScreen() {
                   router.push(`/purchase/create-mandate?id=${m.id}`);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel={`Watching: ${m.name}, ${m.dealsFound} spotted, cap ${formatPrice(m.maxPrice)}`}
+                accessibilityLabel={`Watching: ${m.name}, ${m.dealsFound} spotted, limit ${formatPrice(m.maxPrice)} per match`}
               >
                 <View style={styles.mandateHeader}>
                   {/* Category-aware icon prefix — visually differentiates mandate types
@@ -493,7 +518,7 @@ function AgentHubScreen() {
                       <Text style={[styles.statValue, { color: colors.text }]}>
                         {formatPrice(m.maxPrice)}
                       </Text>
-                      <Text style={[styles.statLabel, { color: colors.muted }]}>cap per match</Text>
+                      <Text style={[styles.statLabel, { color: colors.muted }]}>limit per match</Text>
                     </View>
                   </View>
                 </View>
@@ -714,6 +739,10 @@ const styles = StyleSheet.create({
     height: 16,
     alignItems: "center",
     justifyContent: "center",
+    // Pin to the trailing edge. Relying on source order alone left the dot
+    // rendering bottom-left; marginLeft:auto makes "right" explicit whatever
+    // the sibling does.
+    marginLeft: "auto",
   },
   pulseDot: {
     width: 10,
@@ -726,6 +755,11 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     borderWidth: 2,
+  },
+  scanStatusTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   scanStatusTitle: { fontSize: 14, fontWeight: "700" },
   scanStatusSub: { fontSize: 12, marginTop: 2 },
