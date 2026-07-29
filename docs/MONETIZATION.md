@@ -10,7 +10,7 @@ Two-tier model (was three-tier on Stripe; Premium folded into Pro).
 
 | | Free | Pro (€4.99/mo or €39.99/yr) |
 |--|------|-----------------------------|
-| Purchase mandates | 3 | Unlimited |
+| Purchase mandates | 3 | 10 |
 | Deal discovery | No | Yes |
 | Dossier PDF export | No | Yes |
 | Condition Grading (item card) | No | Yes |
@@ -19,6 +19,26 @@ Two-tier model (was three-tier on Stripe; Premium folded into Pro).
 | Basic valuation | Yes | Yes |
 | Community events | Yes | Yes |
 | Ads | Yes | No |
+
+> **Two of these are easy to misread — verified 2026-07-29:**
+>
+> * **Purchase mandates** is **10**, not unlimited. Both
+>   `PLAN_LIMITS["pro"]["max_mandates"]` (billing_router.py) and
+>   `FORCED_LIMITS.pro` (useBillingLimits.ts) say 10; only this table said
+>   "Unlimited". Corrected here rather than in code — raise both if you want it
+>   to be truly unlimited.
+> * **Set Completion works**, despite `sets`, `set_items` and `set_registry`
+>   all being EMPTY. It is served by `GET /sets/auto-progress`, which computes
+>   completion from `items.attrs->>'set_name'` against
+>   `category_items.attributes_json->>'set_name'` (165,243 catalog rows carry
+>   one) — it never reads those tables. Verified end to end: an account with 2
+>   items tagged "Quarter Century Stampede" returns
+>   `owned_count 2 / catalog_total 989`.
+>
+>   The empty tables belong to a separate legacy manual-registry path (`GET
+>   /sets`, which does return empty). The only thing genuinely dead there is
+>   the **Set Completion ALERT**, which `price_monitor_worker` drives off
+>   `set_registry` — and that worker is disabled pre-launch anyway.
 
 ### RevenueCat ↔ FE contract
 
