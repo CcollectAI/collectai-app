@@ -100,14 +100,65 @@ async def portfolio_timeseries(
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 """
+                -- Every point must value the WHOLE collection, not just the
+                -- items that happen to have a prediction that day.
+                --
+                -- This summed pp.q50 alone, so a hand-added item (no
+                -- price_predictions row, value stored on the item) contributed
+                -- 0 to the curve. Home derives its headline "COLLECTION VALUE",
+                -- the chart, AND the change % from this series, while the Items
+                -- tab sums every item — so the two screens disagreed for any
+                -- account with >= 2 days of prediction history. Below that the
+                -- len(points) < 2 fallback masked it, which is why it survived.
+                --
+                -- Items with no prediction have no history either, so their
+                -- stored value is a constant baseline added to every day. That
+                -- keeps the last point equal to /portfolio/overview's total,
+                -- which is what makes the screens agree.
+                -- Uses the same expression as every other value site — see
+                -- "One valuation expression" in docs/ARCHITECTURE.md.
+                WITH daily AS (
+                    SELECT
+                        DATE(pp.generated_at) AS day,
+                        COALESCE(SUM(pp.q50), 0) AS predicted_total
+                    FROM price_predictions pp
+                    JOIN items i ON i.canonical_ref = pp.item_ref
+                    WHERE i.user_id = $1
+                      AND pp.generated_at >= $2
+                    GROUP BY DATE(pp.generated_at)
+                ),
+                unpriced AS (
+                    -- There are TWO prediction sources and they cover
+                    -- different items: price_predictions is catalog-model
+                    -- output joined by canonical_ref, quick_predictions is
+                    -- per-item QuickScan output joined by item_id. Measured
+                    -- 2026-07-29 on 11 live items: 1 had a quick prediction,
+                    -- 2 had a catalog one. Using either alone drops the other
+                    -- group to zero, which is how Home and the Items tab came
+                    -- to disagree. Value the baseline with the SAME superset
+                    -- the Items list uses, then fall back to the stored value.
+                    SELECT COALESCE(SUM(
+                        COALESCE(
+                            (SELECT qp.q50_eur FROM quick_predictions qp
+                              WHERE qp.item_id = i.id
+                              ORDER BY qp.created_at DESC LIMIT 1),
+                            i.predicted_price_eur,
+                            i.estimated_value,
+                            0
+                        )
+                    ), 0) AS base
+                    FROM items i
+                    WHERE i.user_id = $1
+                      AND NOT EXISTS (
+                          SELECT 1 FROM price_predictions pp2
+                          WHERE pp2.item_ref = i.canonical_ref
+                      )
+                )
                 SELECT
-                    DATE(pp.generated_at) AS day,
-                    COALESCE(SUM(pp.q50), 0) AS total_value
-                FROM price_predictions pp
-                JOIN items i ON i.canonical_ref = pp.item_ref
-                WHERE i.user_id = $1
-                  AND pp.generated_at >= $2
-                GROUP BY DATE(pp.generated_at)
+                    d.day AS day,
+                    (d.predicted_total + u.base) AS total_value
+                FROM daily d
+                CROSS JOIN unpriced u
                 ORDER BY day ASC
                 """,
                 user_id,
@@ -140,7 +191,7 @@ async def portfolio_timeseries(
                         ORDER BY pp.item_ref, pp.generated_at DESC
                     )
                     SELECT COALESCE(SUM(
-                        COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)
+                        COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)
                     ), 0)
                     FROM items i
                     LEFT JOIN latest l ON l.item_ref = i.canonical_ref
@@ -213,13 +264,13 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
                     -- fallback, hand-added items with no price_predictions row
                     -- valued at 0 here while the Items tab showed their stored
                     -- price — Home's "COLLECTION VALUE" read €0 vs €55 elsewhere.
-                    COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0) AS current_value,
+                    COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0) AS current_value,
                     COALESCE(p.prev_q50, l.q50, i.predicted_price_eur, i.estimated_value, 0) AS prev_value
                 FROM items i
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN prev p ON p.item_ref = i.canonical_ref
                 WHERE i.user_id = $1
-                ORDER BY COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0) DESC
+                ORDER BY COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0) DESC
                 """,
                 user_id,
             )
@@ -309,7 +360,7 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     -- this sibling was not, so the SAME portfolio read EUR 55
                     -- in the header and EUR 0 on every row -- verified on a
                     -- live account whose 3 items have zero price_predictions.
-                    COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0) AS current_value,
+                    COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0) AS current_value,
                     COALESCE(l.q10, 0) AS q10,
                     COALESCE(l.q90, 0) AS q90,
                     -- What the user actually PAID, falling back to the earliest
@@ -471,11 +522,11 @@ async def portfolio_category_stats(
                 SELECT
                     COALESCE(NULLIF(i.category, ''), 'uncategorized') AS category,
                     COUNT(*) AS item_count,
-                    COALESCE(SUM(COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)), 0) AS total_value,
-                    COALESCE(AVG(COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)), 0) AS avg_value,
-                    COALESCE(SUM(COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)), 0)
+                    COALESCE(SUM(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)), 0) AS total_value,
+                    COALESCE(AVG(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)), 0) AS avg_value,
+                    COALESCE(SUM(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)), 0)
                         - COALESCE(SUM(p.q50_7d), 0) AS change_7d,
-                    MAX(COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)) AS max_item_value
+                    MAX(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)) AS max_item_value
                 FROM items i
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN prev_7d p ON p.item_ref = i.canonical_ref

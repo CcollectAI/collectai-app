@@ -351,7 +351,18 @@ async def get_portfolio_category_breakdown(
                     COALESCE(NULLIF(i.category, ''), 'uncategorized') AS category,
                     COUNT(*) AS item_count,
                     COALESCE(SUM(
-                        COALESCE(lq.q50_eur, i.predicted_price_eur, i.estimated_value, 0)
+                        -- price_predictions added 2026-07-29 as a secondary
+                        -- source. It is catalog-model output joined by
+                        -- canonical_ref, and quick_predictions is per-item
+                        -- QuickScan output; an item priced in one but not the
+                        -- other counted on some Home surfaces and read 0 here.
+                        -- Measured: the headline said 340 while this said 120.
+                        COALESCE(
+                            lq.q50_eur,
+                            (SELECT pp.q50 FROM price_predictions pp
+                              WHERE pp.item_ref = i.canonical_ref
+                              ORDER BY pp.generated_at DESC LIMIT 1),
+                            i.predicted_price_eur, i.estimated_value, 0)
                     ), 0) AS total_value,
                     COALESCE(SUM(
                         COALESCE(eq.first_q50, i.predicted_price_eur, i.estimated_value, 0)
