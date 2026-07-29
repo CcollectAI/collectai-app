@@ -389,7 +389,15 @@ async def list_active_offers(
                 """
                 SELECT COUNT(*) FROM v_offer_summary_v1
                 WHERE (seller_id = $1 OR buyer_id = $1)
-                  AND status IN ('proposed', 'countered', 'accepted')
+                  -- 'pending', not 'proposed'. offers.status DEFAULTs to
+                  -- 'pending' and offers_status_chk permits
+                  -- pending|countered|accepted|declined|cancelled|expired|
+                  -- shipped|completed — 'proposed' is not a legal value and is
+                  -- written nowhere in the codebase. So this filter excluded
+                  -- every newly-created offer: a seller received an offer and
+                  -- /deals/active returned an empty list. Verified 2026-07-29
+                  -- by seeding a pending offer and watching it not appear.
+                  AND status IN ('pending', 'countered', 'accepted')
                 """,
                 user_id,
             )
@@ -398,7 +406,15 @@ async def list_active_offers(
                 """
                 SELECT * FROM v_offer_summary_v1
                 WHERE (seller_id = $1 OR buyer_id = $1)
-                  AND status IN ('proposed', 'countered', 'accepted')
+                  -- 'pending', not 'proposed'. offers.status DEFAULTs to
+                  -- 'pending' and offers_status_chk permits
+                  -- pending|countered|accepted|declined|cancelled|expired|
+                  -- shipped|completed — 'proposed' is not a legal value and is
+                  -- written nowhere in the codebase. So this filter excluded
+                  -- every newly-created offer: a seller received an offer and
+                  -- /deals/active returned an empty list. Verified 2026-07-29
+                  -- by seeding a pending offer and watching it not appear.
+                  AND status IN ('pending', 'countered', 'accepted')
                 ORDER BY updated_at DESC
                 LIMIT $2 OFFSET $3
                 """,
@@ -705,19 +721,37 @@ def _row_to_offer_summary(row: dict, current_user_id: str) -> dict:
 
     # Other party = the one that is NOT the current user
     other_user_id = buyer_id if is_seller else seller_id
-    other_user_name = (row.get("buyer_name") if is_seller else row.get("seller_name")) or "Unknown"
+    # display_name -> username -> "Unknown". Measured 2026-07-29: all 24
+    # profiles rows have BOTH columns null, so this reads "Unknown" today
+    # regardless; the fallback means it starts working the moment either is
+    # populated, rather than needing another change then.
+    other_user_name = (
+        (row.get("buyer_name") if is_seller else row.get("seller_name"))
+        or (row.get("buyer_username") if is_seller else row.get("seller_username"))
+        or "Unknown"
+    )
     other_user_avatar = (row.get("buyer_avatar_url") if is_seller else row.get("seller_avatar_url"))
 
+    # Column names must match v_offer_summary_v1. These read item_title /
+    # item_image_url / current_price / currency, none of which the view has —
+    # it exposes listing_title / listing_image_url / listing_price /
+    # listing_currency. Every get() fell to its default, so an offer card showed
+    # "Untitled" at a price of 0 from "Unknown". `amount` is the offer itself
+    # and is what belongs on an offer card; listing_price is the ask.
+    current = row.get("amount") if row.get("amount") is not None else row.get("listing_price")
     return {
         "id": str(row.get("offer_id", "")),
-        "item_id": str(row.get("item_id", "")),
-        "item_title": row.get("item_title", "Untitled"),
-        "item_image_url": row.get("item_image_url"),
+        "item_id": str(row.get("item_id") or ""),
+        "item_title": row.get("listing_title") or "Untitled",
+        "item_image_url": row.get("listing_image_url"),
         "seller_id": seller_id,
         "buyer_id": buyer_id,
-        "status": row.get("status", "proposed"),
-        "current_price": float(row["current_price"]) if row.get("current_price") else 0,
-        "currency": row.get("currency", "EUR"),
+        # 'pending' is the real default (offers_status_chk); 'proposed' is not a
+        # legal status and was never written.
+        "status": row.get("status", "pending"),
+        "current_price": float(current) if current is not None else 0,
+        "listing_price": float(row["listing_price"]) if row.get("listing_price") is not None else None,
+        "currency": row.get("listing_currency") or "EUR",
         "dm_thread_id": str(row.get("dm_thread_id", "")),
         "other_user_id": other_user_id,
         "other_user_name": other_user_name,
