@@ -278,10 +278,10 @@
       "CHECK ((currency = ANY (ARRAY['EUR'::text, 'USD'::text, 'GBP'::text, 'JPY'::text, 'KRW'::text, 'AUD'::text, 'CAD'::text])))"
     ],
     "user_settings.locale": [
-      "CHECK ((locale = ANY (ARRAY['en-US'::text, 'de-DE'::text, 'ja-JP'::text, 'nl-NL'::text])))"
+      "CHECK ((locale = ANY (ARRAY['en-US'::text, 'de-DE'::text, 'ja-JP'::text, 'nl-NL'::text, 'ko-KR'::text, 'en-AU'::text])))"
     ],
     "user_settings.region": [
-      "CHECK ((region = ANY (ARRAY['americas'::text, 'europe'::text, 'japan'::text, 'other'::text])))"
+      "CHECK ((region = ANY (ARRAY['americas'::text, 'europe'::text, 'japan'::text, 'korea'::text, 'oceania'::text, 'other'::text])))"
     ],
     "verified_sales.currency": [
       "CHECK ((currency = ANY (ARRAY['EUR'::text, 'USD'::text, 'GBP'::text, 'JPY'::text])))"

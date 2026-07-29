@@ -158,25 +158,36 @@ things it deliberately does not do:
   service. App-side conversion is `app/lib/fx_service.py::convert_to_eur`,
   wired into all three server writers.
 
-#### Seven currencies — four places must agree
+#### `user_settings`: currency / region / locale — code and CHECK must agree
 
-The app offers **EUR, USD, GBP, JPY, KRW, AUD, CAD**. `docs/store-description.md`
-promises this on the App Store ("seven currencies … you can change them
-anytime"), and `REGION_DEFAULTS` hands out KRW for `korea` and AUD for `oceania`
-as first-launch defaults. All four of these must carry the same set:
+`PUT /settings` writes three constrained columns. Each has a code-side allow-list
+that is the intended contract, and each must match its CHECK exactly:
 
-| Place | Symbol |
-|-------|--------|
-| FE type | `src/data/types.ts` → `CurrencyCode` |
-| FE defaults | `src/lib/settings.tsx` → `REGION_DEFAULTS`, `DEFAULTS.fxRates` |
-| Server validation | `server/app/routes/user_settings_router.py` → `VALID_CURRENCIES` |
-| DB constraint | `user_settings_currency_check` |
+| Column | Code allow-list | Values |
+|--------|-----------------|--------|
+| `currency` | `CurrencyCode` (`src/data/types.ts`), `VALID_CURRENCIES` | EUR, USD, GBP, JPY, **KRW, AUD, CAD** |
+| `region` | `Region` (`src/lib/settings.tsx`), `VALID_REGIONS` | americas, europe, japan, **korea, oceania**, other |
+| `locale` | `NumberLocale`, `VALID_LOCALES` | en-US, de-DE, ja-JP, nl-NL, **ko-KR, en-AU** |
 
-Until 2026-07-30 the **DB constraint held only 4** (no KRW/AUD/CAD) while the
-other three held 7. The handler validated KRW as legal, the INSERT then raised
-23514, and the user got a generic **500 `DB_ERROR`** — so three of the seven
-advertised currencies could not be saved at all. Proven on prod: EUR → 200,
-KRW/AUD/CAD → 500. Migration `20260730_user_settings_currency_seven.sql`.
+Until 2026-07-30 **all three CHECKs were missing the bold values** — Korea and
+Oceania support was added throughout the code and the constraints were never
+migrated with it. The handler validated the value as legal, the INSERT then
+raised 23514, and the user got a generic **500 `DB_ERROR`**.
+
+This was not cosmetic. `REGION_DEFAULTS` maps `korea → KRW` and
+`oceania → AUD`, and hands those out as **first-launch defaults**, so a Korean
+user could save neither their currency, nor their region, nor their locale —
+three 500s on the values the app itself chose for them. `docs/store-description.md`
+also promises "seven currencies … you can change them anytime" on the App Store
+listing. Proven on prod: the 4 legacy values 200, the 5 new ones 500.
+
+Migrations `20260730_user_settings_currency_seven.sql` and
+`20260730_user_settings_region_locale_korea_oceania.sql`. All 7 currencies, 6
+regions and 6 locales now return 200; illegal values still 400 with the valid list.
+
+`user_settings.locale` is the **number-format** locale (`NumberLocale`). The UI
+language is a different set — `SUPPORTED_LOCALES` in `src/i18n/index.ts`
+(`en,nl,de,fr,es,ja,ko`). Don't merge them.
 
 Deliberately still 4: `verified_sales.currency`. Its CHECK and
 `feedback_router.ALLOWED_CURRENCIES` **agree**, so there is no silent failure —
