@@ -1,6 +1,16 @@
 /**
  * Import from URL screen — paste a marketplace listing URL to auto-import item details.
  * Moved from barcode-scan mode toggle to its own dedicated screen.
+ *
+ * ⛔ NOT PART OF THE APP. Product decision (Merle, 2026-07-30): URL import is
+ * deferred to a future build. This screen is INTENTIONALLY unreachable — there
+ * is deliberately no router.push to it, no AddMenuModal entry, and no
+ * Stack.Screen in _layout.tsx. Do not add an entry point, and do not "fix" the
+ * POST /intake/url path it calls (server/app/ssrf.py blocks every domain-name
+ * URL, which is the safe direction while the feature is parked).
+ *
+ * Full context and the work required if it is ever picked up:
+ * docs/API.md → "URL import (POST /intake/url) is deliberately out of scope".
  */
 
 import React, { useState } from 'react';
