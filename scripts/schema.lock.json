@@ -275,7 +275,7 @@
       "CHECK ((trigger_type = ANY (ARRAY['below_threshold'::text, 'category_trend'::text, 'high_prediction'::text])))"
     ],
     "user_settings.currency": [
-      "CHECK ((currency = ANY (ARRAY['EUR'::text, 'USD'::text, 'JPY'::text, 'GBP'::text])))"
+      "CHECK ((currency = ANY (ARRAY['EUR'::text, 'USD'::text, 'GBP'::text, 'JPY'::text, 'KRW'::text, 'AUD'::text, 'CAD'::text])))"
     ],
     "user_settings.locale": [
       "CHECK ((locale = ANY (ARRAY['en-US'::text, 'de-DE'::text, 'ja-JP'::text, 'nl-NL'::text])))"
@@ -18772,9 +18772,21 @@
       "nullable": true,
       "type": "numeric"
     },
+    "v_offer_summary_v1.buyer_avatar_url": {
+      "nullable": true,
+      "type": "text"
+    },
     "v_offer_summary_v1.buyer_id": {
       "nullable": true,
       "type": "uuid"
+    },
+    "v_offer_summary_v1.buyer_name": {
+      "nullable": true,
+      "type": "text"
+    },
+    "v_offer_summary_v1.buyer_username": {
+      "nullable": true,
+      "type": "text"
     },
     "v_offer_summary_v1.counter_count": {
       "nullable": true,
@@ -18789,6 +18801,10 @@
       "type": "timestamptz"
     },
     "v_offer_summary_v1.id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "v_offer_summary_v1.item_id": {
       "nullable": true,
       "type": "uuid"
     },
@@ -18820,9 +18836,21 @@
       "nullable": true,
       "type": "uuid"
     },
+    "v_offer_summary_v1.seller_avatar_url": {
+      "nullable": true,
+      "type": "text"
+    },
     "v_offer_summary_v1.seller_id": {
       "nullable": true,
       "type": "uuid"
+    },
+    "v_offer_summary_v1.seller_name": {
+      "nullable": true,
+      "type": "text"
+    },
+    "v_offer_summary_v1.seller_username": {
+      "nullable": true,
+      "type": "text"
     },
     "v_offer_summary_v1.status": {
       "nullable": true,
@@ -26843,7 +26871,14 @@
       "listing_title",
       "listing_image_url",
       "listing_price",
-      "listing_currency"
+      "listing_currency",
+      "item_id",
+      "seller_name",
+      "seller_username",
+      "seller_avatar_url",
+      "buyer_name",
+      "buyer_username",
+      "buyer_avatar_url"
     ],
     "v_orphan_checklist_items_v1": [
       "checklist_id",

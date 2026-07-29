@@ -158,6 +158,44 @@ things it deliberately does not do:
   service. App-side conversion is `app/lib/fx_service.py::convert_to_eur`,
   wired into all three server writers.
 
+#### Seven currencies — four places must agree
+
+The app offers **EUR, USD, GBP, JPY, KRW, AUD, CAD**. `docs/store-description.md`
+promises this on the App Store ("seven currencies … you can change them
+anytime"), and `REGION_DEFAULTS` hands out KRW for `korea` and AUD for `oceania`
+as first-launch defaults. All four of these must carry the same set:
+
+| Place | Symbol |
+|-------|--------|
+| FE type | `src/data/types.ts` → `CurrencyCode` |
+| FE defaults | `src/lib/settings.tsx` → `REGION_DEFAULTS`, `DEFAULTS.fxRates` |
+| Server validation | `server/app/routes/user_settings_router.py` → `VALID_CURRENCIES` |
+| DB constraint | `user_settings_currency_check` |
+
+Until 2026-07-30 the **DB constraint held only 4** (no KRW/AUD/CAD) while the
+other three held 7. The handler validated KRW as legal, the INSERT then raised
+23514, and the user got a generic **500 `DB_ERROR`** — so three of the seven
+advertised currencies could not be saved at all. Proven on prod: EUR → 200,
+KRW/AUD/CAD → 500. Migration `20260730_user_settings_currency_seven.sql`.
+
+Deliberately still 4: `verified_sales.currency`. Its CHECK and
+`feedback_router.ALLOWED_CURRENCIES` **agree**, so there is no silent failure —
+and `miscApi.submitVerifiedSale` has zero FE callers. Widen both together if
+verified sales are ever wired to the UI.
+
+> **Why `check-constraint-drift.mjs` did not catch this, or the alerts
+> `direction: 'below'` bug:** that gate matches a literal only when it can see
+> the constrained column near a mention of its **table**. FE code never mentions
+> a table — it posts to an endpoint. So every constraint reachable only through
+> an API call is invisible to it. Mutation-tested 2026-07-30: reintroducing
+> `direction: 'below'` still reports PASS. The FE-side defence is typing those
+> payload fields as **literal unions rather than `string`** (see
+> `AlertDirection` / `AlertTriggerType` in `src/api/alertsApi.ts`), which `tsc`
+> enforces in `verify:prebuild`. A generic scanner was considered and rejected:
+> matching on column name alone collides badly (FE `category` means `pokemon`,
+> the constrained `category` means `scanning`/`collection`), and 46 of the 46
+> candidates it produced were mostly false positives.
+
 #### Money math: always use the EUR half, never the raw one
 
 `price_predictions.q50` — the source of every "current value", "market value"
