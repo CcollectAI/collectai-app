@@ -93,6 +93,7 @@ export class MockDataProvider implements DataProvider {
 
   // ─── Alerts ─────────────────────────────────────────────────────────────────
   listAlertsFeed = alertProvider.listAlertsFeed;
+  listAlertRules = alertProvider.listAlertRules;
 
   // ─── Chat / DM ──────────────────────────────────────────────────────────────
   listInboxThreads = chatProvider.listInboxThreads;

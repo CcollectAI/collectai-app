@@ -2,7 +2,7 @@
  * Mock alerts domain provider.
  */
 
-import type { PaginationParams, AlertFeedItem } from '../types';
+import type { PaginationParams, AlertFeedItem, AlertRule } from '../types';
 
 export async function listAlertsFeed(pagination?: PaginationParams): Promise<AlertFeedItem[]> {
   const now = new Date();
@@ -102,4 +102,38 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     return mockAlerts.slice(offset, offset + limit);
   }
   return mockAlerts;
+}
+
+/**
+ * Mock standing alert rules (GET /alerts/mine). Distinct from the trigger
+ * feed above — see the AlertRule doc comment in ../types.ts for why these
+ * must not be crossed.
+ */
+export async function listAlertRules(pagination?: PaginationParams): Promise<AlertRule[]> {
+  const now = new Date();
+  const rules: AlertRule[] = [
+    {
+      id: 'rule-1',
+      itemId: null,
+      category: 'pokemon',
+      triggerType: 'below_threshold',
+      thresholdValue: 250,
+      direction: 'down',
+      active: true,
+      createdAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+    },
+    {
+      id: 'rule-2',
+      itemId: null,
+      category: 'lego',
+      triggerType: 'below_threshold',
+      thresholdValue: 800,
+      direction: 'down',
+      active: true,
+      createdAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 9).toISOString(),
+    },
+  ];
+  const limit = pagination?.limit ?? 20;
+  const offset = pagination?.offset ?? 0;
+  return rules.slice(offset, offset + limit);
 }

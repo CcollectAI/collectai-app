@@ -235,6 +235,26 @@ Sections that are legitimately empty on a fresh account — **not** bugs:
 - **Prediction Accuracy** stays at 0 until you mark an item **sold** on its
   detail screen (that is what records ground truth)
 
+### Price alerts (added 2026-07-30)
+
+The **only** way to create an alert is a watchlist target price. Free plan =
+1 alert/week, so do this on a fresh week or expect the limit toast.
+
+- [ ] Wishlist tab → add an item **with a target price** → a toast confirms
+      *"Price alert created — we'll notify you when the price drops below …"*.
+      A toast reading "Target saved, but the price alert couldn't be created"
+      means the plan limit was hit (fine) — a **silent** result is a bug
+- [ ] Alerts screen → **Rules** tab → the alert appears as one plain sentence,
+      e.g. *"Pokemon drops below €50.00"* with a **Price drop** badge.
+      An empty "No alert rules yet" here after the step above is the 2026-07-30
+      regression (Rules tab reading the trigger feed) — flag it
+- [ ] The **Rules** tab and the **Recent** tab must show **different** content.
+      Identical lists = the two have been crossed again
+- [ ] Swipe a rule → **Delete** → it disappears and stays gone after
+      pull-to-refresh. "Failed to delete alert" means a non-alert id is being
+      sent to `DELETE /alerts/mine/{id}`
+- [ ] Edit an existing watchlist item's target price → same alert behaviour
+
 ---
 
 ## Section 5 — Paywall (expectation depends on the BUILD PROFILE)

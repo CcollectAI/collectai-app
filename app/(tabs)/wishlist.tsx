@@ -158,7 +158,7 @@ function WatchlistTabScreen() {
             category: formCategory,
             trigger_type: 'below_threshold',
             threshold_value: targetPrice,
-            direction: 'below',
+            direction: 'down',
             metadata: { watchlist_title: formTitle.trim() },
           });
           showToast({
@@ -167,7 +167,18 @@ function WatchlistTabScreen() {
           });
         } catch (alertErr: unknown) {
           logger.error('[Watchlist] auto-alert creation failed:', alertErr);
-          // Don't fail the add if alert creation fails
+          // Don't fail the add if the alert fails — but don't stay silent
+          // either. The free plan allows 1 price alert per week
+          // (PLAN_LIMIT_ALERTS, 403), and swallowing that left the user with a
+          // watchlist target and no notification and no way to know. The
+          // watchlist row itself is already saved at this point, so this is a
+          // warning, not an error.
+          showToast({
+            message:
+              (alertErr as Error)?.message ||
+              "Target saved, but the price alert couldn't be created",
+            type: 'info',
+          });
         }
       }
 
@@ -232,7 +243,7 @@ function WatchlistTabScreen() {
             category: editTargetItem.category || undefined,
             trigger_type: 'below_threshold',
             threshold_value: newTarget,
-            direction: 'below',
+            direction: 'down',
             metadata: { watchlist_title: editTargetItem.title, watchlist_id: editTargetItem.id },
           });
           fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
@@ -242,7 +253,17 @@ function WatchlistTabScreen() {
           });
         } catch (alertErr: unknown) {
           logger.error('[Watchlist] auto-alert creation failed:', alertErr);
-          showToast({ message: 'Target price saved', type: 'success' });
+          // Was a plain `success` toast reading "Target price saved", which
+          // reported the happy path while the alert had in fact failed — the
+          // user believed they'd be notified. The target IS saved, so say only
+          // that, and surface why the alert didn't happen (e.g. the free
+          // plan's 1-alert-per-week PLAN_LIMIT_ALERTS 403).
+          showToast({
+            message:
+              (alertErr as Error)?.message ||
+              "Target saved, but the price alert couldn't be created",
+            type: 'info',
+          });
         }
       } else {
         showToast({ message: 'Target price updated', type: 'success' });

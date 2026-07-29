@@ -25,6 +25,7 @@ import type {
   CategorySummary,
   CategoryMissingItem,
   AlertFeedItem,
+  AlertRule,
   DmThread,
   DmRequest,
   DmMessage,
@@ -129,6 +130,17 @@ export class CachedDataProvider implements DataProvider {
       return this.inner.listAlertsFeed(pagination);
     }
     return swr(CK.ALERTS_FEED, () => this.inner.listAlertsFeed(pagination), TTL_MEDIUM);
+  }
+
+  /**
+   * Deliberately NOT cached. Rules mutate on direct user action (created from
+   * the wishlist target-price flow, deleted by swiping on the Alerts screen),
+   * and the Rules tab deletes optimistically then refreshes — an SWR copy
+   * would hand back the row the user just removed. The list is small and
+   * user-scoped, so the pass-through costs one cheap request.
+   */
+  listAlertRules(pagination?: PaginationParams): Promise<AlertRule[]> {
+    return this.inner.listAlertRules(pagination);
   }
 
   listCategorySummaries(): Promise<CategorySummary[]> {

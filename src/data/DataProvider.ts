@@ -19,6 +19,7 @@ import type {
   CategorySummary,
   CategoryMissingItem,
   AlertFeedItem,
+  AlertRule,
   DmThread,
   DmRequest,
   DmMessage,
@@ -199,6 +200,8 @@ export interface DataProvider {
    * Supports optional pagination (limit/offset).
    */
   listAlertsFeed(pagination?: PaginationParams): Promise<AlertFeedItem[]>;
+  /** Standing alert rules (GET /alerts/mine) — NOT the trigger feed above. */
+  listAlertRules(pagination?: PaginationParams): Promise<AlertRule[]>;
 
   // ─────────────────────────────────────────────────────────────────────────────
   // DM / Inbox methods

@@ -4,7 +4,7 @@
  *
  * Two tabs:
  *   "Recent"  — entries from alert_trigger_history (when alerts actually fired)
- *   "Rules"   — configured alert rules from v_alerts_feed_v1 / user_price_alerts
+ *   "Rules"   — the user's standing rules from GET /alerts/mine (user_price_alerts)
  */
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -22,7 +22,7 @@ import {
 import { useRouter, Stack } from 'expo-router';
 import { itemHref } from '@/lib/ids';
 import { Ionicons } from '@expo/vector-icons';
-import { dataProvider, type AlertFeedItem } from '@/data';
+import { dataProvider, type AlertRule } from '@/data';
 import { collectorsApi } from '@/api/collectorsApi';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
@@ -87,6 +87,13 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   rarity: 'diamond-outline',
 };
 
+/** Human labels for the 3 legal user_price_alerts.trigger_type values. */
+const RULE_TYPE_LABELS: Record<string, string> = {
+  below_threshold: 'Price drop',
+  category_trend: 'Trend',
+  high_prediction: 'Predicted rise',
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -129,9 +136,14 @@ function AlertsScreen() {
   // Paginated alert rules via usePaginatedList
   // -----------------------------------------------------------------------
 
+  // The Rules tab must read the user's standing rules (GET /alerts/mine), not
+  // the trigger feed. It called listAlertsFeed until 2026-07-30, which meant
+  // it duplicated the Triggers tab, showed "No alert rules yet" even when the
+  // user had rules, and fed trigger-history ids to DELETE /alerts/mine/{id}
+  // (a 404 on every swipe-to-delete).
   const alertsFetcher = useCallback(
-    async (limit: number, offset: number): Promise<AlertFeedItem[]> => {
-      return dataProvider.listAlertsFeed({ limit, offset });
+    async (limit: number, offset: number): Promise<AlertRule[]> => {
+      return dataProvider.listAlertRules({ limit, offset });
     },
     [],
   );
@@ -145,7 +157,7 @@ function AlertsScreen() {
     error: alertsError,
     loadMore: alertsLoadMore,
     refresh: alertsRefresh,
-  } = usePaginatedList<AlertFeedItem>(alertsFetcher, { pageSize: 20 });
+  } = usePaginatedList<AlertRule>(alertsFetcher, { pageSize: 20 });
 
   const { showToast } = useToast();
 
@@ -363,16 +375,33 @@ function AlertsScreen() {
   };
 
   // -----------------------------------------------------------------------
-  // Render: existing alert-rule card (unchanged logic)
+  // Render: a standing alert rule (GET /alerts/mine)
   // -----------------------------------------------------------------------
 
-  const renderAlert = ({ item }: { item: AlertFeedItem }) => {
-    const typeColor = getTypeColor(colors, item.type);
+  const renderAlert = ({ item }: { item: AlertRule }) => {
+    const typeColor = getTypeColor(colors, item.triggerType);
     const typeIcon: keyof typeof Ionicons.glyphMap =
-      TYPE_ICONS[item.type] || 'notifications-outline';
-    const typeLabel = item.type
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
+      TYPE_ICONS[item.triggerType] || 'notifications-outline';
+    const typeLabel = RULE_TYPE_LABELS[item.triggerType] ?? 'Alert';
+
+    // One plain sentence, no sub-explanations. `threshold_value` has no
+    // currency column server-side — it is stored as the number the user typed
+    // in the wishlist, so render it in their current display currency, which
+    // is what that screen showed them when they set it.
+    const subject = item.category
+      ? item.category.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+      : 'This item';
+    const threshold =
+      item.thresholdValue != null
+        ? formatPrice(item.thresholdValue, settings.currency, settings.numberLocale)
+        : null;
+    const title =
+      item.triggerType === 'below_threshold' && threshold
+        ? `${subject} drops below ${threshold}`
+        : item.triggerType === 'high_prediction'
+          ? `${subject} is predicted to rise`
+          : `${subject} trends ${item.direction === 'up' ? 'up' : 'down'}`;
+    const body = item.active ? null : 'Paused';
 
     const card = (
       <View
@@ -394,14 +423,14 @@ function AlertsScreen() {
           style={[styles.cardTitle, { color: colors.text }]}
           numberOfLines={2}
         >
-          {item.title}
+          {title}
         </Text>
-        {item.body && (
+        {body && (
           <Text
             style={[styles.cardBody, { color: colors.muted }]}
             numberOfLines={3}
           >
-            {item.body}
+            {body}
           </Text>
         )}
 

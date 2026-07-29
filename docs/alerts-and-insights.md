@@ -2,6 +2,76 @@
 
 Data-driven portfolio insights and smart alerts for Sparrow Collect.
 
+> **⚠️ Sections below marked _aspirational_ describe components and RPCs that were
+> never deployed** (`rpc_get_alerts_feed_v1`, `rpc_get_portfolio_insights_v1`,
+> `alerts_v1`, `alert_preferences_v1`, `AlertsCard`, `AlertDetailModal`,
+> `AlertSettings`, `FEATURE_DATA_INSIGHTS_ALERTS`). They are kept as design
+> intent. **The "Actual wiring" section immediately below is the truth.** Trust it
+> over the rest of this file, and over any memory of this file.
+
+## Actual wiring (verified E2E against prod 2026-07-30)
+
+There are **two different things** here, and crossing them has broken this
+feature twice:
+
+| Concept | Meaning | Endpoint | Table | FE reader |
+|---------|---------|----------|-------|-----------|
+| **Rule** | A standing condition the user configured | `GET /alerts/mine` | `user_price_alerts` | `dataProvider.listAlertRules` → `AlertRule` |
+| **Trigger** | A record of a rule having fired | `GET /alerts/trigger-history` | `alert_trigger_history` | `dataProvider.listAlertsFeed` → `AlertFeedItem` |
+
+`app/alerts.tsx` has a tab for each. The **Rules** tab must use `listAlertRules`;
+the **Recent** tab and the Home-screen feed (`useAlertsFeed`) use
+`listAlertsFeed`. `AlertRule` and `AlertFeedItem` are separate types precisely so
+the compiler stops them being swapped.
+
+### The only writer
+
+`app/(tabs)/wishlist.tsx` — setting a watchlist **target price** auto-creates a
+`below_threshold` rule (two call sites: add-item and edit-target). There is no
+other way to create an alert in the app; the Alerts screen's "Create an Alert"
+CTA routes to `/watchlist-builder`.
+
+### Legal field values — server, DB, and client must all agree
+
+`PriceAlertCreate` (`alerts_feature_router.py:55`) and the
+`user_price_alerts_direction_check` / `_trigger_type_check` CHECK constraints
+both allow exactly:
+
+- `direction`: `'up' | 'down'` (or NULL)
+- `trigger_type`: `'below_threshold' | 'category_trend' | 'high_prediction'`
+
+These are typed as literal unions in `src/api/alertsApi.ts`
+(`AlertDirection`, `AlertTriggerType`). **Do not widen them back to `string`.**
+They were `string`, and the wishlist sent `direction: 'below'` — a 422 on every
+call, caught and only logged, so no alert was ever created and the user saw no
+error. See [Two bugs this cost](#two-bugs-this-cost).
+
+### Plan limit
+
+Free = **1 price alert per week** (`PLAN_LIMIT_ALERTS`, HTTP **403**), so a
+second target price legitimately fails. Both wishlist call sites surface the
+server's message as an `info` toast; the watchlist target itself is already
+saved by then. Do not report this as a success — one site used to show
+"Target price saved" as a `success` toast on alert failure.
+
+### Two bugs this cost
+
+Found 2026-07-30 by seeding a real rule and looking at the screen:
+
+1. **No wishlist alert had ever been created.** `direction: 'below'` → 422 on
+   both call sites, swallowed by the catch. Prod contained zero rows with a
+   `'below'` direction because the constraint would not accept one.
+2. **The Rules tab could never show a rule.** It called `listAlertsFeed`, so it
+   duplicated the Recent tab, showed "No alert rules yet" regardless, and its
+   swipe-to-delete passed an `alert_trigger_history` id to
+   `DELETE /alerts/mine/{alert_id}` — a 404 every time. `collectorsApi.getMyAlerts`
+   (the correct reader) already existed, exported, with **zero callers**.
+
+Both are the house bug class: a reader and a writer that never meet, failing
+silently to empty. Neither is visible on an empty account, and no test caught
+either — the writer's 422 and the reader's wrong endpoint both produced a
+plausible-looking empty list.
+
 ## Overview
 
 The insights and alerts system helps users understand how their collections change over time and notifies them about important events like price drops, new listings, and milestones.
@@ -101,7 +171,7 @@ function MyComponent() {
 }
 ```
 
-## Components
+## Components (aspirational — none of these are mounted; see "Actual wiring" above)
 
 ### InsightsCard
 
@@ -151,7 +221,7 @@ Settings UI for alert preferences.
 />
 ```
 
-## Backend RPCs
+## Backend RPCs (aspirational — never deployed; see "Actual wiring" above)
 
 ### rpc_get_portfolio_insights_v1
 
@@ -209,7 +279,7 @@ Three frequency options:
 3. **Respect preferences**: Always check user's frequency and enabled settings
 4. **Non-intrusive**: Alerts should inform, not annoy
 
-## Feature Flag
+## Feature Flag (aspirational — FEATURE_DATA_INSIGHTS_ALERTS is not wired)
 
 Gate behind `FEATURE_DATA_INSIGHTS_ALERTS`:
 
@@ -220,7 +290,7 @@ if (featureFlags.FEATURE_DATA_INSIGHTS_ALERTS) {
 return null;
 ```
 
-## Database Tables
+## Database Tables (aspirational — the live tables are user_price_alerts + alert_trigger_history)
 
 - `alerts_v1`: Stores triggered alerts
 - `alert_preferences_v1`: User alert settings

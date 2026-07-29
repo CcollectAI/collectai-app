@@ -483,6 +483,27 @@ export type AlertFeedItem = {
 };
 
 /**
+ * A standing alert *rule* the user configured — distinct from AlertFeedItem,
+ * which is a record of a rule having fired.
+ *
+ * The Alerts screen's "Rules" tab rendered AlertFeedItem until 2026-07-30, so
+ * it showed the same trigger history as the "Triggers" tab, could never show a
+ * rule, and its swipe-to-delete sent a trigger-history id to
+ * DELETE /alerts/mine/{alert_id} (a 404 every time). Rules come from
+ * GET /alerts/mine; keep the two types separate so they cannot be crossed again.
+ */
+export type AlertRule = {
+  id: string;
+  itemId: string | null;
+  category: string | null;
+  triggerType: string;
+  thresholdValue: number | null;
+  direction: 'up' | 'down' | null;
+  active: boolean;
+  createdAt: string;
+};
+
+/**
  * QuickScan draft — data captured from scan before persisting.
  */
 export type QuickscanDraft = {

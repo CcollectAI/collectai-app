@@ -37,6 +37,7 @@ export type {
   CategorySummary,
   CategoryMissingItem,
   AlertFeedItem,
+  AlertRule,
   DmThread,
   DmRequest,
   DmMessage,

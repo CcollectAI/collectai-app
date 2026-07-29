@@ -22,6 +22,7 @@ import type {
   CategorySummary,
   CategoryMissingItem,
   AlertFeedItem,
+  AlertRule,
   DmThread,
   DmRequest,
   DmMessage,
@@ -119,6 +120,40 @@ export class SupabaseDataProvider implements DataProvider {
       }));
     } catch (err) {
       logger.error('[SupabaseDataProvider] listAlertsFeed error:', err);
+      return [];
+    }
+  }
+
+  /**
+   * The user's standing alert rules — GET /alerts/mine
+   * (alerts_feature_router.py:72), the same rows POST /alerts/mine writes.
+   *
+   * `collectorsApi.getMyAlerts` existed and was exported but had zero callers:
+   * the Rules tab was reading the trigger *feed* instead. Paginated
+   * client-side because the wrapper takes no params.
+   */
+  async listAlertRules(pagination?: PaginationParams): Promise<AlertRule[]> {
+    const { API_LIMITS } = await import('@/constants/apiLimits');
+    const { collectorsApi } = await import('../api/collectorsApi');
+    const logger = (await import('../utils/logger')).default;
+
+    const limit = pagination?.limit ?? API_LIMITS.ALERTS_DEFAULT;
+    const offset = pagination?.offset ?? 0;
+    try {
+      const data = await collectorsApi.getMyAlerts();
+      const rules = (data?.alerts ?? []).slice(offset, offset + limit);
+      return rules.map((a) => ({
+        id: a.id,
+        itemId: a.item_id ?? null,
+        category: a.category ?? null,
+        triggerType: a.trigger_type ?? 'below_threshold',
+        thresholdValue: typeof a.threshold_value === 'number' ? a.threshold_value : null,
+        direction: a.direction === 'up' || a.direction === 'down' ? a.direction : null,
+        active: a.active ?? true,
+        createdAt: a.created_at ?? new Date().toISOString(),
+      }));
+    } catch (err) {
+      logger.error('[SupabaseDataProvider] listAlertRules error:', err);
       return [];
     }
   }
