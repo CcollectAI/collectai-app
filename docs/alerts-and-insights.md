@@ -102,9 +102,28 @@ Seven types of alerts, all routed through `app/lib/notify.py` for preference-awa
 | Auction Ending | Watched auction ending in <15min | auction_alert_worker | Yes (urgent) |
 | Low Value | Item valued below 10 EUR | alerts_worker | Yes |
 
-### Notification Preferences
+### Notification Preferences — API only, **no UI yet** (verified 2026-07-30)
 
-Users can toggle 8 notification categories in Settings:
+`GET`/`PUT /notifications/preferences` both work: all 8 keys round-trip and
+persist (tested against prod). What does **not** exist is a screen to change
+them — `getNotificationPreferences` / `updateNotificationPreferences` are
+exported on `collectorsApi` with **zero screen callers**, `app/notifications.tsx`
+is history-only (no toggles), and neither `app/settings.tsx` nor
+`src/screens/Settings.tsx` has a notification section.
+
+That is consistent with the pre-launch posture rather than a defect: every
+worker that would *send* these is commented out of the bake manifest under
+`── DISABLED — post-launch features (no users yet) ──`
+(`bake_orchestrator.py:90`) — `alerts_worker`, `price_monitor`,
+`watchlist_monitor_worker`, `scarcity_monitor_worker`, `auction_alert_worker`,
+`signal_alerts_worker`. There is nothing to opt out of yet, and `chat_messages`
+/ `connection_requests` gate features `COMMUNITY_GATED` hides anyway.
+
+**When the senders are re-enabled, the toggle UI must land in the same wave** —
+shipping notifications with no way to turn them off is the one part of this that
+would be a real defect. The server side is ready; it needs a screen only.
+
+The 8 keys (enforced by `app/lib/notify.py`, defaults all `true`):
 
 | Preference Key | Controls |
 |---------------|----------|
