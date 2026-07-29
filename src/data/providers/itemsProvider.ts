@@ -246,7 +246,15 @@ export async function deleteItem(itemId: string): Promise<void> {
 
 export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item> {
   const updatePayload: Record<string, unknown> = {};
-  if (patch.name !== undefined) updatePayload.title = patch.name;
+  // BOTH halves. items carries name and title as a pair and different readers
+  // key on different ones (docs/ARCHITECTURE.md). Writing only `title` left
+  // `name` at its old value, so renaming an item made the two diverge — the
+  // Home portfolio kept showing the old name. trg_items_sync_paired_columns
+  // only fills a half that is NULL, so it cannot repair an UPDATE like this.
+  if (patch.name !== undefined) {
+    updatePayload.title = patch.name;
+    updatePayload.name = patch.name;
+  }
   if (patch.category !== undefined) updatePayload.category = patch.category;
   // items has `image_url` (singular text), not `images` (array). The earlier
   // shape wrote `images: [url]` which silently failed on every save.

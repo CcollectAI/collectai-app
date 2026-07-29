@@ -153,7 +153,7 @@ function ItemDetailScreen() {
     id,
     draft,
     name = "Unknown item",
-    category = "Unknown category",
+    category = "Not set",
     collection = "Not set",
     condition = "Not set",
     value = "0",
@@ -196,17 +196,44 @@ function ItemDetailScreen() {
   const [savedCollectionName, setSavedCollectionName] = useState<string | null>(null);
   const [savedSubtypeId, setSavedSubtypeId] = useState<string | null>(null);
   const [savedCanonicalKey, setSavedCanonicalKey] = useState<string | null>(null);
+  // Core fields fetched by id. The screen takes name/category/condition/value
+  // from ROUTE PARAMS, which only works when the caller happens to pass them.
+  // Three entry points push just an id — search.tsx, franchise/[id].tsx and
+  // sell/[offerId].tsx — so opening an item from Search, a franchise page or a
+  // sell offer rendered "Unknown item / Unknown category / 0". Nothing fetched
+  // the name: this effect selected only attrs/collection_name/canonical_key and
+  // useItemDetail selects only for_sale/asking_price.
+  //
+  // Params stay the fast path (no flash of placeholder when they are supplied);
+  // this is the fallback so a bare id is enough.
+  const [savedCore, setSavedCore] = useState<{
+    name?: string | null; category?: string | null; condition?: string | null;
+    value?: number | null; imageUrl?: string | null;
+  } | null>(null);
   useEffect(() => {
     if (isDraft || !id) return;
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
         .from('items')
-        .select('attrs, collection_name, canonical_key')
+        .select('attrs, collection_name, canonical_key, name, title, category, condition, estimated_value, predicted_price_eur, image_url')
         .eq('id', id)
         .maybeSingle();
       if (cancelled || error || !data) return;
-      const row = data as { attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null };
+      const row = data as {
+        attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null;
+        name?: string | null; title?: string | null; category?: string | null; condition?: string | null;
+        estimated_value?: number | null; predicted_price_eur?: number | null; image_url?: string | null;
+      };
+      setSavedCore({
+        // name and title are the two halves of the same pair — see the
+        // paired-columns note in docs/ARCHITECTURE.md.
+        name: row.name || row.title || null,
+        category: row.category ?? null,
+        condition: row.condition ?? null,
+        value: row.predicted_price_eur ?? row.estimated_value ?? null,
+        imageUrl: row.image_url ?? null,
+      });
       setSavedAttrs(row.attrs ?? null);
       setSavedCollectionName(row.collection_name ?? null);
       setSavedCanonicalKey(row.canonical_key ?? null);
@@ -222,6 +249,17 @@ function ItemDetailScreen() {
   const displayAttributes = isDraft ? initialAttributes : savedAttrs;
   const displayCollections = savedCollectionName ? [savedCollectionName] : undefined;
 
+  // Adopt the fetched core fields once they land.
+  //
+  // useItemDetail seeds its editable state with useState(initialName), which
+  // captures the FIRST render only — so passing a better initialName later has
+  // no effect. The screen has to push the values in.
+  //
+  // Guarded on the placeholder so this can never clobber a real route param or
+  // something the user has typed: it only fills in when the field is still
+  // "Unknown item" / "Unknown category" / unset.
+  const adoptedCoreRef = useRef(false);
+
   // ── Consolidated local state (useItemDetail hook) ──────────────────────
   const detail = useItemDetail({
     id, isDraft,
@@ -231,6 +269,23 @@ function ItemDetailScreen() {
     initialAttributes,
     catalogKey,
   });
+
+  useEffect(() => {
+    if (!savedCore || adoptedCoreRef.current) return;
+    if (savedCore.name && detail.editableName === "Unknown item") {
+      detail.setEditableName(savedCore.name);
+    }
+    if (savedCore.category && detail.editableCategory === "Not set") {
+      detail.setEditableCategory(savedCore.category);
+    }
+    if (savedCore.condition && detail.editableCondition === "Not set") {
+      detail.setEditableCondition(savedCore.condition);
+    }
+    if (savedCore.value != null && (detail.editableValue === "0" || !detail.editableValue)) {
+      detail.setEditableValue(String(savedCore.value));
+    }
+    adoptedCoreRef.current = true;
+  }, [savedCore, detail]);
   const {
     isEditing, setIsEditing,
     editableName, setEditableName,

@@ -254,10 +254,16 @@ export function useItemDetail(params: UseItemDetailParams) {
         category: editableCategory,
       });
       const extraPatch: Record<string, unknown> = {};
-      if (editableCollection && editableCollection !== 'Not set') extraPatch.collection = editableCollection;
+      // Column names verified against the live schema 2026-07-29. These were
+      // `collection` and `user_value`; items has NEITHER — the real columns are
+      // collection_name and estimated_value. Postgres rejects the unknown key,
+      // so editing Collection or Estimated value failed the whole patch and
+      // showed "Failed to save changes" — AFTER updateItem had already written
+      // the name/category, leaving a partial save behind an error toast.
+      if (editableCollection && editableCollection !== 'Not set') extraPatch.collection_name = editableCollection;
       if (editableCondition && editableCondition !== 'Not set') extraPatch.condition = editableCondition;
       const numericValue = parseFloat(editableValue);
-      if (!isNaN(numericValue) && numericValue > 0) extraPatch.user_value = numericValue;
+      if (!isNaN(numericValue) && numericValue > 0) extraPatch.estimated_value = numericValue;
       if (Object.keys(extraPatch).length > 0) {
         // Check the error: this used to discard the result, so a failed or
         // timed-out write fell straight through to "Changes saved" — a false
