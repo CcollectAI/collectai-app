@@ -218,7 +218,7 @@
       "CHECK ((type = ANY (ARRAY['build'::text, 'paint'::text])))"
     ],
     "purchase_mandates.status": [
-      "CHECK ((status = ANY (ARRAY['active'::text, 'paused'::text, 'exhausted'::text, 'expired'::text])))"
+      "CHECK ((status = ANY (ARRAY['active'::text, 'paused'::text, 'exhausted'::text, 'expired'::text, 'archived'::text])))"
     ],
     "ratings.stars": [
       "CHECK (((stars >= 1) AND (stars <= 5)))"
