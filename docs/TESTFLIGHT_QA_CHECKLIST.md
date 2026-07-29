@@ -235,6 +235,20 @@ Sections that are legitimately empty on a fresh account — **not** bugs:
 - **Prediction Accuracy** stays at 0 until you mark an item **sold** on its
   detail screen (that is what records ground truth)
 
+### Currency / region / locale (added 2026-07-30)
+
+Until 2026-07-30 five of these values returned a **500** because the DB CHECK
+was narrower than the code. Walk every one — a 500 here means a constraint
+regressed.
+
+- [ ] Settings → Currency: each of **EUR, USD, GBP, JPY, KRW, AUD, CAD** saves
+      and survives a force-quit + relaunch
+- [ ] Settings → Region: each of **americas, europe, japan, korea, oceania,
+      other** saves. `korea` and `oceania` were the broken ones
+- [ ] Number format: **ko-KR** and **en-AU** save (these were broken too)
+- [ ] Picking region `korea` should default currency to KRW, `oceania` to AUD —
+      and that default must itself save without error
+
 ### Price alerts (added 2026-07-30)
 
 The **only** way to create an alert is a watchlist target price. Free plan =
