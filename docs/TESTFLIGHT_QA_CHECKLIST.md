@@ -198,6 +198,25 @@ This is the most critical flow Apple's reviewer will exercise.
 - [ ] The **portfolio total at the top equals the sum of the item rows** below
       it, and equals the sum of the category breakdown. These came from three
       different queries and disagreed (€55 header vs €0 rows).
+
+### Home value consistency (added 2026-07-29)
+
+> Home shows the collection's value in **five** places fed by four different
+> queries. They must all agree, and they did not. Check them together, on one
+> account, in one sitting — each looks plausible alone.
+
+- [ ] **COLLECTION VALUE** (above the chart) = **Items tab "Portfolio total"**
+- [ ] The **chart's last point** matches that same number (the headline is
+      derived from the curve, so a wrong curve silently moves the headline)
+- [ ] The **change %** is consistent with the curve's first→last points
+- [ ] The **stats row** ("Portfolio") matches the headline
+- [ ] **Portfolio Insights → Total Value** matches the headline
+- [ ] Add a **hand-entered item with an estimated value** (no scan): every one
+      of the five updates by that amount. It used to contribute 0 to the chart
+      and headline while showing on the Items tab.
+- [ ] If any item was priced by **QuickScan**, confirm it also counts on Home —
+      there are two prediction tables and each used to be read by only some
+      surfaces
 - [ ] Add an item **by hand** (no scan, so it has no price prediction) with an
       estimated value → it still contributes its value to the total, the rows
       and the category breakdown, not 0

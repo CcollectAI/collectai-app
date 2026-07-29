@@ -219,6 +219,46 @@ drops uncategorised items, so the parts stop adding up to the total the header
 shows. Group on `COALESCE(NULLIF(category, ''), 'uncategorized')` instead
 (done in `portfolio_router`, `trends_and_deepdive_router`, `insights_router`).
 
+##### There are TWO prediction tables. Use both.
+
+| table | what it is | joined by | historically read by |
+|-------|-----------|-----------|----------------------|
+| `price_predictions` | catalog-model output, partitioned | `items.canonical_ref = item_ref` | `/portfolio/overview`, `/portfolio/items`, `/portfolio/timeseries` |
+| `quick_predictions` | per-item QuickScan output | `item_id = items.id` | `/analytics/portfolio/category-breakdown`, **and the Items tab** (`itemsProvider.mapItemRow`) |
+
+An item priced in one but not the other counted on some Home surfaces and read
+**zero** on others. Measured 2026-07-29 across 11 live items: 1 had a quick
+prediction, 2 had a catalog one — **neither source dominates**, so picking
+either alone loses real value. Every value site must COALESCE over *both*
+before falling back to `predicted_price_eur` / `estimated_value`.
+
+##### The Home curve must value the whole collection
+
+`/portfolio/timeseries` drives three of Home's most prominent numbers at once —
+the headline **COLLECTION VALUE**, the chart, and the **change %**. It summed
+`pp.q50` per day, so a hand-added item contributed 0 to every point while the
+Items tab counted it.
+
+The `len(points) < 2` fallback computed the correct total, which meant the bug
+**only appeared once an account had ≥2 days of prediction history** — a state
+no test account was in. Items without predictions have no history either, so
+their value is now a constant baseline added to every day, which keeps the last
+point equal to `/portfolio/overview`.
+
+Verified on a deliberately mixed account (one item with 2 days of catalog
+predictions at 220, one with a stored value of 120):
+
+| | timeseries | overview | overview rows | category-breakdown | portfolio/items |
+|---|---|---|---|---|---|
+| before | 220 | 340 | 340 | **120** | 340 |
+| after | **340** | 340 | 340 | **340** | 340 |
+
+**Known residual:** the Items tab reads Supabase directly and cannot join
+`price_predictions` (no FK for a PostgREST embed — see
+`learning_listitems_pgrst_embed`), so a catalog-only-priced item still reads 0
+there. Home is internally consistent; closing that last seam needs the Items
+tab to read the server, or a denormalised value column on `items`.
+
 #### Empty is not always broken
 
 Two analytics endpoints return empty for a correct reason. Verified by querying
