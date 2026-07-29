@@ -450,6 +450,45 @@ eas submit --platform android --profile production
 - **Logs**: `docker compose logs -f api` or CloudWatch if configured
 - **Sentry**: Set `SENTRY_DSN` for error tracking
 
+## ⚠️ Three places run code, and they drift independently
+
+This is the single easiest thing to get wrong here. **Deploying to EC2 does not
+update GitHub Actions, and committing does not update EC2.**
+
+| Where | Gets its code from | How to check what it's running |
+|-------|--------------------|-------------------------------|
+| **EC2** — API + bake workers | `scripts/deploy_to_ec2.sh`, which **rsyncs your local working tree** (not a git ref) | `md5sum server/<file>` vs `ssh collectai 'md5sum /opt/collectors/server/<file>'` |
+| **GitHub Actions** — `nightly-ingest`, `ingest-ebay`, `nightly-*` | **the branch the workflow runs on** | `gh run list --workflow=nightly-ingest.yml` — the ref is in the output |
+| **Your working branch** | local commits, frequently unpushed | `git branch --show-current` |
+
+A fix can therefore be **live in the API and completely absent from the nightly
+pipeline** at the same time.
+
+**Worked example (2026-07-29).** The watchdog reported 662 rejected writes/day:
+`category_items violates check constraint category_items_attrs_is_object`.
+Everything on EC2 checked out — `import_common.py` md5 matched the repo, both
+catalog writers posted a JSON object, `category_items` had **zero** corrupt
+rows, and `bake.log` had **zero** occurrences of the error.
+
+The writer wasn't on EC2. `nightly-ingest.yml` (cron `0 3 * * *`) runs from
+`feature/all-enhancements`, which was still at **2026-07-02** and carried the
+pre-fix line:
+
+```python
+row["attributes_json"] = json.dumps(self.attributes_json)   # → JSONB string → 23514
+```
+
+The 2026-07-25 fix (`row["attributes_json"] = self.attributes_json`) had never
+reached that branch, so the ingest silently discarded every attribute-bearing
+catalog row, nightly, for weeks.
+
+> **Diagnostic:** an error Postgres reports that your **application log does not
+> contain** means the writer is not the app. Check GitHub Actions next — and
+> check *which ref* the workflow runs, not just that it ran.
+
+After merging a server fix, ask: does this need to reach EC2 (rsync), the
+scheduled pipelines (branch), or both?
+
 ## CI/CD
 
 GitHub Actions workflows in `.github/workflows/`:
@@ -457,6 +496,7 @@ GitHub Actions workflows in `.github/workflows/`:
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `ci.yml` | Push/PR | Backend tests, frontend tests, Docker build, Trivy scan |
+| `nightly-ingest.yml` | cron `0 3 * * *` | Catalog import (`pipelines.import_all`). **Runs the workflow's branch, NOT what is on EC2.** |
 
 ### Enabling CD
 

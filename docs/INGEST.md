@@ -110,6 +110,26 @@ The remapper:
 - Creates new training candidates
 - Does NOT delete old data (supports rollback)
 
+## Which code the nightly run actually uses
+
+`nightly-ingest.yml` (cron `0 3 * * *`) runs **the branch the workflow is on** —
+it does **not** pick up anything rsynced to EC2 by `scripts/deploy_to_ec2.sh`.
+
+As of 2026-07-29 that branch was `feature/all-enhancements`, ~4 weeks behind the
+active working branch, and was still discarding every attribute-bearing catalog
+row because it lacked the 2026-07-25 `attributes_json` fix (662 rejected writes
+per night, `category_items_attrs_is_object`). The pipeline reported success
+throughout: it logs the rows it *attempted*, not the rows Postgres accepted.
+
+Before trusting a fix to a pipeline in this directory:
+
+```bash
+gh run list --workflow=nightly-ingest.yml --limit 3   # which ref ran
+git show origin/<that-ref>:server/pipelines/<file>.py | grep <the fix>
+```
+
+See the three-way-drift table in `docs/DEPLOYMENT.md`.
+
 ## Safety Guards
 
 | Guard | Flag | Description |
