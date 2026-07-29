@@ -205,8 +205,40 @@ export class ApiError extends Error {
 export async function parseErrorResponse(method: string, path: string, res: Response): Promise<ApiError> {
   try {
     const body = await res.json();
-    const detail = typeof body?.detail === "string" ? body.detail : `${method} ${path} failed`;
-    const code = typeof body?.code === "string" ? body.code : null;
+
+    // FastAPI's own errors put a string in `detail`, but this backend's
+    // error_response() helper puts an OBJECT there:
+    //   {"detail": {"message": "...", "code": "...", "request_id": "..."}}
+    // Only the string form was handled, so every structured error threw away
+    // the message the server had written for the user and showed the useless
+    // fallback instead. Hitting the free-tier mandate cap surfaced as
+    //   "POST /purchase/mandates failed (409): POST /purchase/mandates failed"
+    // when the server had said
+    //   "Mandate limit reached (3). Upgrade your plan or delete existing
+    //    mandates."
+    // This affects every endpoint that uses error_response, not just mandates.
+    const rawDetail = body?.detail;
+    let detail = `${method} ${path} failed`;
+    if (typeof rawDetail === "string") {
+      detail = rawDetail;
+    } else if (rawDetail && typeof rawDetail === "object") {
+      const m = (rawDetail as { message?: unknown }).message;
+      if (typeof m === "string" && m.trim()) detail = m;
+    }
+
+    // `code` likewise travels inside detail for this backend; keep the
+    // top-level read as a fallback for anything that sets it there.
+    const nestedCode =
+      rawDetail && typeof rawDetail === "object"
+        ? (rawDetail as { code?: unknown }).code
+        : undefined;
+    const code =
+      typeof nestedCode === "string"
+        ? nestedCode
+        : typeof body?.code === "string"
+        ? body.code
+        : null;
+
     return new ApiError(method, path, res.status, detail, code);
   } catch (e) {
     logger.error('[silent-catch] httpClient.ts:209:', e);
