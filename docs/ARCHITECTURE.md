@@ -308,23 +308,32 @@ predictions at 220, one with a stored value of 120):
 there. Home is internally consistent; closing that last seam needs the Items
 tab to read the server, or a denormalised value column on `items`.
 
-#### `chat_threads_v1` has no FK to `auth.users` — deleted users leave dangling threads
+#### `chat_threads_v1` user FKs — added 2026-07-31, two different semantics
 
-Measured 2026-07-31: of 7 `kind='dm'` threads, **2 have an orphaned `dm_user_a`
-and 4 an orphaned `dm_user_b`** — ids with no row in `auth.users`. Deleting a
-user cascades to `profiles` (that FK exists) but not to chat threads, so the
-thread survives pointing at nobody.
+The table had **no foreign keys to `auth.users`**, so deleting a user left
+threads pointing at nobody. Before the fix: of 7 `kind='dm'` threads, 2 had an
+orphaned `dm_user_a` and 4 an orphaned `dm_user_b` (5 distinct threads); of 10
+threads total, 8 had an orphaned `created_by`.
 
-Not currently user-visible: `v_chat_inbox_v1` LEFT JOINs `profiles`, so an
-orphan renders via the `'Unknown'` fallback rather than failing. It is data
-hygiene, not a live defect — but any future join that assumes the counterparty
-exists will find these. Adding the FK requires clearing the existing orphans
-first, so it is a migration, not a one-liner.
+Never user-visible — `v_chat_inbox_v1` LEFT JOINs `profiles`, so orphans
+rendered through the `'Unknown'` fallback. It surfaced because `offers.buyer_id`
+**does** have an FK: seeding a test offer against one of those ids failed loudly
+with `offers_buyer_id_fkey`. Same class of reference, opposite behaviour.
 
-Same shape bit the offer seed: `offers.buyer_id` **does** have an FK, so seeding
-an offer against one of these orphaned chat ids failed loudly with
-`offers_buyer_id_fkey` — which is the correct behaviour and how the asymmetry
-was noticed.
+| Column | On user delete | Why |
+|--------|----------------|-----|
+| `dm_user_a`, `dm_user_b` | **CASCADE** | A DM is meaningless once either party is gone, and the view already requires both non-null. Messages/members/reads follow via the existing `thread_id` cascades. |
+| `created_by` | **SET NULL** | CASCADE would be *wrong*: it would destroy shared `category`/`private` threads whose creator merely left, taking every other member's history. Needed `DROP NOT NULL`, safe because `created_by` has **zero readers** in the codebase — it is write-only. |
+
+Migration `20260731_chat_threads_user_fks.sql`; deleted rows backed up to
+`/opt/collectors/logs/chat_orphan_backup_20260731.json`. Proven after applying:
+created a user + DM thread + message, deleted the user, and the thread and
+message both went to 0 with 0 orphans remaining.
+
+**Not added:** `chat_messages_v1.user_id → auth.users`. Zero orphans today, and
+the right semantics are unclear — deleting an author should arguably keep a
+group thread readable rather than punch holes in it. Revisit as a
+tombstone/anonymise decision, not a bare CASCADE.
 
 #### Empty is not always broken
 

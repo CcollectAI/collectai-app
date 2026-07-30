@@ -4283,7 +4283,7 @@
       "type": "timestamptz"
     },
     "chat_threads_v1.created_by": {
-      "nullable": false,
+      "nullable": true,
       "type": "uuid"
     },
     "chat_threads_v1.dm_user_a": {
