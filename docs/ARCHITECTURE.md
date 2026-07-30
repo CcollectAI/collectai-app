@@ -308,6 +308,24 @@ predictions at 220, one with a stored value of 120):
 there. Home is internally consistent; closing that last seam needs the Items
 tab to read the server, or a denormalised value column on `items`.
 
+#### `chat_threads_v1` has no FK to `auth.users` — deleted users leave dangling threads
+
+Measured 2026-07-31: of 7 `kind='dm'` threads, **2 have an orphaned `dm_user_a`
+and 4 an orphaned `dm_user_b`** — ids with no row in `auth.users`. Deleting a
+user cascades to `profiles` (that FK exists) but not to chat threads, so the
+thread survives pointing at nobody.
+
+Not currently user-visible: `v_chat_inbox_v1` LEFT JOINs `profiles`, so an
+orphan renders via the `'Unknown'` fallback rather than failing. It is data
+hygiene, not a live defect — but any future join that assumes the counterparty
+exists will find these. Adding the FK requires clearing the existing orphans
+first, so it is a migration, not a one-liner.
+
+Same shape bit the offer seed: `offers.buyer_id` **does** have an FK, so seeding
+an offer against one of these orphaned chat ids failed loudly with
+`offers_buyer_id_fkey` — which is the correct behaviour and how the asymmetry
+was noticed.
+
 #### Empty is not always broken
 
 Two analytics endpoints return empty for a correct reason. Verified by querying
