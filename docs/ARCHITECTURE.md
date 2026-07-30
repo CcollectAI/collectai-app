@@ -322,6 +322,27 @@ before "fixing" either:
   `POST /feedback/verified-sale` → `record_price_ground_truth`. It only fills
   when a user marks an item sold, which no test data does.
 
+A third case is a **real** mismatch that was still left unwired on purpose:
+
+- `RegionalInsightsSection` ("Popular in Your Region") is never rendered.
+  `marketplace.tsx` reads `resp.items` from
+  `GET /data-moat/demand-heat/by-region`, but that endpoint returns
+  `{regions: [...]}` — grouped by `region, country_code`, with **no
+  `item_key`**. So `items` is always `undefined` and the section self-hides.
+  Verified 2026-07-30.
+
+  It was deliberately **not** wired, because the data cannot support it: over 7
+  days `demand_signals` held 68 rows of which only **9 had a region**, across 8
+  users. A per-item-by-region query returned 4 rows — 3 of them test artifacts
+  (`slot freed`, `test query 2/3`) with a **NULL category**, which the component
+  would have crashed on (`item.category.replace(...)`, no guard — since fixed).
+  Wiring it today would surface junk to users.
+
+  To wire it later: add an `items` array (item_key, category, signal_count,
+  region) to that endpoint **alongside** `regions` so nothing else breaks — the
+  FE is already written for exactly that shape — and only once real regional
+  signal volume exists.
+
 Two binding traps in the same area, both fixed and both worth not repeating:
 
 - **Never bind a bare `datetime.date` to a `timestamptz` column.** asyncpg
