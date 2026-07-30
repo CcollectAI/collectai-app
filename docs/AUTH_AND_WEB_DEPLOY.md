@@ -28,58 +28,61 @@ Universal Link** instead:
 
 If the app isn't installed, `/auth/confirm` is a graceful branded web page.
 
-## ⚠️ The apex domain 307s to `www` — Universal Links are dead at the apex
+## Apex domain serves directly — do not re-add a redirect
 
-**Found 2026-07-30. Not fixed — both fixes are outward-facing config changes.**
+**2026-07-30: the apex `sparrowcollect.com` was redirecting (307) to `www`, which
+silently broke Universal Links. Fixed by clearing the redirect. Do not restore it.**
 
-The verification command at the bottom of this file no longer passes:
+Apple **does not follow redirects** when fetching
+`/.well-known/apple-app-site-association` — the file must be served directly over
+https. While the apex redirected, it had no valid app-site association, so
+`emailRedirectTo` (which targets the apex) could never open the app: iOS opened
+Safari, and only the branded page's `sparrow://` hand-off completed the flow.
+`webcredentials`/Password AutoFill was unassociated at the apex for the same reason.
 
+The redirect was **not** in `web/vercel.json` — it was Vercel project domain config.
+Inspect or change it via the REST API (the CLI cannot show it):
+
+```bash
+TOKEN=$(python3 -c "import json;print(json.load(open('$HOME/Library/Application Support/com.vercel.cli/auth.json'))['token'])")
+TEAM=team_pNV3OxYiiWRDhC96aN2H3Tm5   # collectais-projects
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "https://api.vercel.com/v9/projects/sparrowcollect/domains?teamId=$TEAM"
+# to clear:  -X PATCH -d '{"redirect":null}' .../domains/sparrowcollect.com?teamId=$TEAM
 ```
-curl -sD- -o/dev/null https://sparrowcollect.com/.well-known/apple-app-site-association
-  HTTP/2 307
-  location: https://www.sparrowcollect.com/.well-known/apple-app-site-association
+
+Apex is the right canonical host: every `<link rel="canonical">`, `og:url` and
+`sitemap.xml` entry in `web/` already points at `https://sparrowcollect.com`, and
+so does `emailRedirectTo`. Both apex and `www` now serve directly (200) and both
+are in `app.json` `associatedDomains`.
+
+Verified after the fix — this is the check to re-run:
+```
+curl -sD- -o/dev/null https://sparrowcollect.com/.well-known/apple-app-site-association   # 200, appIDs 3DX8FBF7S6…
+curl -o /dev/null -w "%%{http_code}" https://sparrowcollect.com/auth/confirm              # 200
 ```
 
-`www` serves the file correctly (HTTP 200, right `appIDs`, `/auth/*` present). The
-apex redirects. **Apple does not follow redirects when fetching AASA** — the file
-must be served directly over https — so the apex domain has no valid
-app-site association. `/auth/confirm` behaves the same way (apex 307 → www 200).
+### ⛔ `web/` is deployed from an older commit — do NOT redeploy yet
 
-The redirect is **not** in `web/vercel.json`; it is Vercel domain config
-(apex → www) in the `collectais-projects` dashboard.
+Prod's AASA is missing `/r/*` (referral universal links) that the repo has, and is
+served as `application/octet-stream` even though `web/vercel.json` sets
+`application/json`. Prod predates `8f03de3` (creator-funnel referral + pro pages).
 
-### What this does and does not break
+**A redeploy is blocked on unfinished content, not on the deploy itself.**
+`web/pro.html:212` still contains a literal placeholder:
 
-Traced end-to-end with a real signup (mail.tm + `/auth/v1/signup`) on 2026-07-30:
+```js
+const SUPABASE_ANON_KEY = 'REPLACE_WITH_REAL_ANON_KEY';  // <-- TODO
+```
 
-| Step | Result |
-|------|--------|
-| Supabase `/auth/v1/verify` | **303** → `https://sparrowcollect.com/auth/confirm#access_token=…` |
-| that apex URL | **307** → `https://www.sparrowcollect.com/auth/confirm` |
-| `www` confirm page | **200**, forwards the fragment to `sparrow://` |
+Deploying would publish that Pro landing page plus `pro/success.html` and
+`pro/cancel.html` — a public checkout flow that cannot authenticate. Fill in the
+anon key (public by design; same value as `EXPO_PUBLIC_SUPABASE_ANON_KEY`) and
+verify the purchase path end-to-end **before** running the deploy below.
 
-So **the flow still completes** — the browser reattaches the `#fragment` across a
-redirect whose `Location` carries none, and the branded page hands off to the app.
-What is lost:
-
-- the **direct** app open. `emailRedirectTo` targets the apex, so iOS cannot match
-  it to the app and always opens Safari first — the browser detour this file's
-  design was written to avoid.
-- **`webcredentials`** at the apex (Password AutoFill association).
-
-### Two ways to fix — both need a decision, neither was taken
-
-1. **Serve the apex directly** (stop redirecting apex → www in Vercel). Keeps
-   `emailRedirectTo` as-is and needs no Supabase change. Preferred.
-2. **Point `emailRedirectTo` at `www`** in `register.tsx` + `forgot-password.tsx`.
-   Then `https://www.sparrowcollect.com/**` **must** be added to the Supabase
-   redirect allowlist — the current entry is the apex only, and `www` is a
-   different host, so this fails closed if forgotten.
-
-Also drifted: prod's AASA is missing `/r/*` (referral links) which the repo has,
-and is served as `application/octet-stream` though `web/vercel.json` sets
-`application/json`. Both indicate **`web/` is deployed from an older commit** —
-redeploy per the Vercel section below.
+The outstanding drift is low-impact in the meantime: `/r/*` only affects referral
+deep links opening the app, and unsigned AASA works in practice despite the
+content-type.
 
 ## Supabase auth config (project `ykqrruipzmrrvjcvwfgp`)
 
