@@ -895,7 +895,7 @@ async def list_templates(
                     TemplateResponse(
                         id=str(r["id"]),
                         name=r["name"],
-                        template_data=r["template_data"] if isinstance(r["template_data"], dict) else {},
+                        template_data=_template_data_out(r["template_data"]),
                         use_count=r.get("use_count", 0),
                         created_at=str(r["created_at"]) if r.get("created_at") else None,
                     )
@@ -909,6 +909,27 @@ async def list_templates(
             raise error_response(500, "Failed to list templates", code=ErrorCode.INTERNAL_ERROR)
 
     return []
+
+
+def _template_data_out(value) -> dict:
+    """
+    Normalise `event_templates.template_data` for the response.
+
+    asyncpg returns a `jsonb` column as a **str**, not a dict, so the previous
+    `value if isinstance(value, dict) else {}` fell through to `{}` on every
+    row. The DB held the right payload the whole time and both endpoints
+    reported it empty, so `applyTemplate` in app/create-event.tsx prefilled
+    nothing — "create from template" silently did nothing. Fixed 2026-07-31.
+    """
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, (str, bytes)):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, dict) else {}
+        except (ValueError, TypeError):
+            return {}
+    return {}
 
 
 @core_router.post("/templates", response_model=TemplateResponse, status_code=201, summary="Create event template")
@@ -949,12 +970,18 @@ async def create_template(
                     """,
                     user_id,
                     request.name,
-                    json.dumps(template_data),
+                    # `default=str` because TEMPLATE_FIELDS includes `time`, and
+                    # asyncpg hands back a datetime.time that json.dumps cannot
+                    # serialise — every "save as template" from an event with a
+                    # time set raised TypeError and returned 500. The FE reads
+                    # `d.time as string` (create-event.tsx:99), so the "HH:MM:SS"
+                    # string this produces is exactly the shape it wants.
+                    json.dumps(template_data, default=str),
                 )
                 return TemplateResponse(
                     id=str(row["id"]),
                     name=row["name"],
-                    template_data=row["template_data"] if isinstance(row["template_data"], dict) else {},
+                    template_data=_template_data_out(row["template_data"]),
                     use_count=row.get("use_count", 0),
                     created_at=str(row["created_at"]) if row.get("created_at") else None,
                 )
