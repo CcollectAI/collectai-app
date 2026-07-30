@@ -62,27 +62,48 @@ curl -sD- -o/dev/null https://sparrowcollect.com/.well-known/apple-app-site-asso
 curl -o /dev/null -w "%%{http_code}" https://sparrowcollect.com/auth/confirm              # 200
 ```
 
-### ⛔ `web/` is deployed from an older commit — do NOT redeploy yet
+### `web/` redeployed 2026-07-30 — drift cleared
 
-Prod's AASA is missing `/r/*` (referral universal links) that the repo has, and is
-served as `application/octet-stream` even though `web/vercel.json` sets
-`application/json`. Prod predates `8f03de3` (creator-funnel referral + pro pages).
+Prod had been serving a build older than `8f03de3`. Redeployed per the procedure
+below; verified live afterwards:
 
-**A redeploy is blocked on unfinished content, not on the deploy itself.**
-`web/pro.html:212` still contains a literal placeholder:
+- AASA now lists `/r/*` (referral universal links) — `['/r/*', '/item/*', '/events/*', '/categories/*', '/purchase/*', '/users/*', '/auth/*']`
+- AASA content-type is now `application/json` (was `application/octet-stream`),
+  matching the header rule in `web/vercel.json`
+- `/auth/confirm`, `/pro`, `/` all 200 on both apex and `www`; the confirm page
+  still forwards the fragment to `sparrow://`
 
-```js
-const SUPABASE_ANON_KEY = 'REPLACE_WITH_REAL_ANON_KEY';  // <-- TODO
+`web/pro.html` had a literal `REPLACE_WITH_REAL_ANON_KEY` placeholder; filled in
+with the project anon key (public by design — RLS governs access, and it is the
+same value the app bundles as `EXPO_PUBLIC_SUPABASE_ANON_KEY`). Verified against
+the project before deploying: `/auth/v1/settings` 200, an RLS-scoped
+`/rest/v1/profiles` read 200.
+
+### ⚠️ `/pro` is live but CANNOT take payment — Stripe web prices unset
+
+The page signs in and reaches checkout, then
+`POST /billing/web/checkout-session` returns **503**:
+
+```
+"Web Stripe Price ID not configured for pro/monthly. Set STRIPE_PRICE_PRO_MONTHLY_WEB."
 ```
 
-Deploying would publish that Pro landing page plus `pro/success.html` and
-`pro/cancel.html` — a public checkout flow that cannot authenticate. Fill in the
-anon key (public by design; same value as `EXPO_PUBLIC_SUPABASE_ANON_KEY`) and
-verify the purchase path end-to-end **before** running the deploy below.
+On EC2 (`/opt/collectors/.env`):
 
-The outstanding drift is low-impact in the meantime: `/r/*` only affects referral
-deep links opening the app, and unsigned AASA works in practice despite the
-content-type.
+| Var | State |
+|-----|-------|
+| `STRIPE_SECRET_KEY` | set, but **`sk_test_…` — test mode** |
+| `STRIPE_PRICE_PRO_MONTHLY` / `_YEARLY` | set (`price_1T…`) |
+| `STRIPE_PRICE_PRO_MONTHLY_WEB` / `_YEARLY_WEB` | **empty** — what the web checkout reads |
+
+So web subscriptions cannot be sold yet. Two things are needed: the `_WEB` price
+IDs, and a **live** secret key (`sk_live_…`) before real money can move.
+
+Exposure is limited meanwhile: `/pro` is **not linked from any public page** and
+is **not in `sitemap.xml`** — only `pro/cancel.html` links back to it. If it needs
+to stay hidden until Stripe is live, add `<meta name="robots" content="noindex">`
+to `pro.html`, `pro/success.html` and `pro/cancel.html` — remember to remove it
+when switching on.
 
 ## Supabase auth config (project `ykqrruipzmrrvjcvwfgp`)
 

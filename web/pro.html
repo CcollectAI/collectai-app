@@ -209,7 +209,7 @@
   // Public-by-design: Supabase anon key + URL are safe to commit.
   // The anon key only allows access governed by RLS policies.
   const SUPABASE_URL = 'https://ykqrruipzmrrvjcvwfgp.supabase.co';
-  const SUPABASE_ANON_KEY = 'REPLACE_WITH_REAL_ANON_KEY';  // <-- TODO: paste from .env or Supabase dashboard
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcXJydWlwem1ycnZqY3Z3ZmdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODM4MTMsImV4cCI6MjA2ODY1OTgxM30.UIhV1z7bSAcL1Yr7USB1uQUHF3KDgq0Remt3qa3UYiA';
   const API_BASE = 'https://api.sparrowcollect.com';
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
