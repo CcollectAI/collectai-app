@@ -316,6 +316,14 @@ before "fixing" either:
 
 - `/portfolio/category-health` → `{"health": []}` needs ≥1 `price_predictions`
   row within 30 days to compute volatility and trend.
+- `/sets/auto-progress` → `{"sets": [], ...}` until the user owns **2+ items
+  from the same set**. The handler defaults `min_owned=2` with
+  `HAVING COUNT(*) >= $2`, so one matching item surfaces nothing. Re-verified
+  2026-07-31: seeding a second item with the same `attrs->>'set_name'` returned
+  `owned_count 2 / catalog_total 989 / completion_pct 0.2` immediately. **This
+  paid feature works — do not cut it on the strength of an empty response.**
+  Note the two sides read *different* columns: `items.attrs` but
+  `category_items.attributes_json` (see `learning_verify_table_columns_before_sql`).
 - `/data-moat/prediction-accuracy` → `total_ground_truths: 0` because
   `price_ground_truths` has never had a row. The write chain **is** fully
   wired: item detail (`useItemDetail.ts:289`) → `submitVerifiedSale` →
