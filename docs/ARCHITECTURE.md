@@ -335,6 +335,37 @@ the right semantics are unclear — deleting an author should arguably keep a
 group thread readable rather than punch holes in it. Revisit as a
 tombstone/anonymise decision, not a bare CASCADE.
 
+#### ⛔ Settings → Edit Profile is live UI over a route that does not exist
+
+Found 2026-07-31. **Not fixed — it is unbuilt feature work, not a broken wire.**
+
+`ProfileEditSection` is mounted (`src/screens/Settings.tsx:101`), ungated
+(`BETA_MODE = false`), and saving calls `PATCH /settings/profile`. That route
+**does not exist**: `/settings` exposes only `GET` and `PUT` (currency, region,
+locale) plus `/settings/alert-preferences`. Verified against the live OpenAPI
+and by calling it — **404**.
+
+`bio` has nowhere to go even if the route existed:
+
+- `profiles` columns are `id, username, created_at, display_name, avatar_url,
+  avatar_color, referred_by_code, seller_age_verified_at` — **no `bio`**
+- both public views hardcode it: `NULL::text AS bio`, `NULL::text[] AS interests`
+  (`user_public_profiles`)
+
+`username` at least has a home (`profiles.username`, written at signup by the
+`handle_new_user` trigger) — it simply has no update path.
+
+Until 2026-07-31 this failed **silently**: the raw `fetch` never checked
+`res.ok`, so the 404 was ignored, the modal closed and a *confirmation* haptic
+fired. That half is fixed — `updateProfile` now goes through `httpClient.patch`,
+which throws, so the user sees the error. The feature is still non-functional.
+
+To build it: add `bio` to `profiles` (with a length cap), add
+`PATCH /settings/profile` handling `username` uniqueness (23505 → a usable
+message), and surface `bio` in `user_public_profiles` — the two consumers
+(`PublicUserProfileCard`, `UserCollectionPreview`) already render it behind a
+`{profile.bio && …}` guard, so they light up as soon as it is non-null.
+
 #### Empty is not always broken
 
 Two analytics endpoints return empty for a correct reason. Verified by querying
