@@ -99,11 +99,18 @@ On EC2 (`/opt/collectors/.env`):
 So web subscriptions cannot be sold yet. Two things are needed: the `_WEB` price
 IDs, and a **live** secret key (`sk_live_…`) before real money can move.
 
-Exposure is limited meanwhile: `/pro` is **not linked from any public page** and
-is **not in `sitemap.xml`** — only `pro/cancel.html` links back to it. If it needs
-to stay hidden until Stripe is live, add `<meta name="robots" content="noindex">`
-to `pro.html`, `pro/success.html` and `pro/cancel.html` — remember to remove it
-when switching on.
+Exposure is limited meanwhile, and already handled — verified live 2026-07-31:
+
+- `/pro` is **not linked from any public page** and is **not in `sitemap.xml`**;
+  only `pro/cancel.html` links back to it.
+- all three pages (`pro.html`, `pro/success.html`, `pro/cancel.html`) already
+  ship `<meta name="robots" content="noindex,nofollow">`. Nothing to add.
+- the public pages (`/`, `guides.html`, …) carry no robots meta, so they remain
+  indexable — the noindex is scoped to `/pro*` only.
+
+**When Stripe goes live, removing that `noindex,nofollow` from the three pro
+pages is part of the switch-on** — otherwise the pricing page sells nothing
+because no one can find it.
 
 ## Supabase auth config (project `ykqrruipzmrrvjcvwfgp`)
 
