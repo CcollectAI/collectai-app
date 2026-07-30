@@ -125,6 +125,45 @@ Editing config via the Management API: send a **browser `User-Agent`** or Cloudf
 returns **HTTP 403 error 1010**. `GET/PATCH https://api.supabase.com/v1/projects/ykqrruipzmrrvjcvwfgp/config/auth`,
 fields `site_url`, `uri_allow_list`, `mailer_templates_*_content`, `mailer_subjects_*`.
 
+## MFA (TOTP) — `app/mfa-setup.tsx`
+
+Entirely client-side via the Supabase SDK: `mfa.listFactors()` → `mfa.enroll()`
+→ `mfa.challenge()` → `mfa.verify()` → `mfa.unenroll()`. No EC2 route involved.
+
+Verified end to end 2026-07-31 against prod with a throwaway user and a
+self-generated RFC 6238 code (no authenticator app needed — 20 lines of hmac):
+
+| Step | Result |
+|------|--------|
+| `POST /auth/v1/factors` (enroll) | 200, returns `totp.qr_code` + `totp.secret` |
+| `POST /auth/v1/factors/{id}/challenge` | 200 |
+| verify with a correct TOTP code | 200, elevated token returned |
+| verify with `000000` | **422** — correctly rejected |
+| `DELETE /auth/v1/factors/{id}` (unenroll) | 200 |
+
+`GET /auth/v1/factors` returns **405** — factors are read from the user object,
+which is what `listFactors()` does. Not a bug; don't "fix" it.
+
+### The abandoned-enrollment trap (fixed 2026-07-31)
+
+Tapping **Enable** creates an `unverified` factor immediately. If the user walks
+away without entering a code it persists, and because `friendlyName` is a
+constant the next attempt fails:
+
+```
+422  A factor with the friendly name "Sparrow Collect Authenticator" for this user already exists
+```
+
+The factor list renders only `status === 'verified'` factors, so there was no
+Remove button for it, and `hasVerifiedFactor` stayed false — the user was
+offered **Enable** forever and it failed every time, with no way out of the UI.
+Reproduced against Supabase, then fixed: `handleEnroll` now unenrolls any
+non-verified factor before enrolling (an unverified factor grants nothing).
+Re-verified: the second enroll returns 200 where it previously returned 422.
+
+**If `friendlyName` is ever made user-editable, keep the cleanup** — the
+collision is on that name.
+
 ## Login is email-only (App Store guideline 4.8)
 
 Apple/Google sign-in is hidden behind **`SOCIAL_LOGIN_ENABLED=false`**

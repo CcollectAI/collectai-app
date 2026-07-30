@@ -86,6 +86,23 @@ function MFASetupScreen() {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setEnrolling(true);
     try {
+      // Clear any abandoned enrollment first.
+      //
+      // Tapping Enable creates an `unverified` factor immediately. If the user
+      // walks away without entering a code, that factor persists — and because
+      // `friendlyName` is a constant, Supabase rejects the next attempt with
+      // 422 "A factor with the friendly name ... already exists". The list
+      // below renders only `verified` factors, so there is no Remove button for
+      // it and `hasVerifiedFactor` stays false: the user is offered Enable
+      // forever and it fails every time, with no way out of the UI.
+      // Verified against Supabase 2026-07-31. An unverified factor grants
+      // nothing, so dropping it is safe.
+      const { data: existing } = await supabase.auth.mfa.listFactors();
+      const abandoned = (existing?.totp ?? []).filter((f) => f.status !== 'verified');
+      for (const stale of abandoned) {
+        await supabase.auth.mfa.unenroll({ factorId: stale.id });
+      }
+
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
         friendlyName: 'Sparrow Collect Authenticator',
