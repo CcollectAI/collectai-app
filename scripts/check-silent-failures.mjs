@@ -80,6 +80,30 @@ for (const abs of files) {
     add('unchecked-write', rel, lineOf(src, m.index), `${m[2]}() result discarded — cannot detect failure`);
   }
 
+  // ── C2. raw `fetch` write whose response status is never checked ─────────
+  // Identical hazard, different construct: fetch RESOLVES on 4xx/5xx instead of
+  // throwing, so `await fetch(...)` with no `res.ok` check inside a try/catch
+  // means the catch never fires and the failure leaves no trace at all.
+  //
+  // Rule C only matched `supabase.from()`, so it reported 0 while four real
+  // instances shipped — every one a copy of the same PUT /settings block
+  // (onboarding, AppearanceSection ×2, ProfileEditSection). A Korean user's
+  // region/currency/locale 500'd against the CHECK constraints for months and
+  // the app showed no error, because nobody read the status. Found 2026-07-31.
+  //
+  // Only flags MUTATIONS: a bare GET that degrades to a default is a separate
+  // (often deliberate) choice. `await fetch(...)` that is `return`ed is a
+  // wrapper handing the response to its caller — not a discarded result.
+  for (const m of src.matchAll(/(^|\n)([ \t]*)(return\s+)?await\s+fetch\s*\(/g)) {
+    if (m[3]) continue;                                  // `return await fetch(` — caller checks
+    const start = m.index + m[0].length;
+    const window = src.slice(m.index, start + 500);      // the call + its options object
+    if (!/method\s*:\s*['"`](PUT|POST|PATCH|DELETE)['"`]/i.test(window)) continue;  // reads are out of scope
+    if (/\.(ok|status)\b/.test(window)) continue;        // status is inspected
+    add('unchecked-write', rel, lineOf(src, m.index),
+        'await fetch() response never checked — fetch resolves on 4xx/5xx, so the catch never fires');
+  }
+
 
   // ── E. Fabricated demo/mock data reachable in production ────────────────
   // The worst silent failure: the UI renders invented numbers as the user's

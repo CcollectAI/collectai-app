@@ -26,8 +26,8 @@ import { useAuthContext } from '@/providers/useAuthContext';
 import { useToast } from '@/components/Toast';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { updateProfile } from '@/api/settingsApi';
 import { supabase } from '@/lib/supabase';
-import { API_BASE } from '@/api/config';
 import { deleteAccount, collectorsApi } from '@/api/collectorsApi';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
@@ -128,20 +128,22 @@ function ProfileEditSectionInner() {
     try {
       const auth = await supabase.auth.getSession();
       if (auth.data?.session) {
-        await fetch(`${API_BASE}/settings/profile`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${auth.data.session.access_token}`,
-          },
-          body: JSON.stringify({ username: editUsername.trim(), bio: editBio.trim() }),
-        });
+        // Must throw on failure: `username` is UNIQUE, so a taken name comes
+        // back as a rejection. The raw fetch this replaced ignored the status,
+        // so the modal closed and a CONFIRMATION haptic fired on a write that
+        // never landed.
+        await updateProfile({ username: editUsername.trim(), bio: editBio.trim() });
       }
       setEditProfileVisible(false);
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     } catch (e) {
       logger.error('[Settings] Failed to save profile:', e);
-      showToast({ message: 'Failed to save profile changes', type: 'error' });
+      // Surface the server's reason (e.g. username already taken) instead of a
+      // generic message — the user can only act on the specific one.
+      showToast({
+        message: (e as Error)?.message || 'Failed to save profile changes',
+        type: 'error',
+      });
     } finally {
       setSavingProfile(false);
     }

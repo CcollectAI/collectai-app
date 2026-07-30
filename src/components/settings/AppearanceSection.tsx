@@ -18,8 +18,8 @@ import { useSettings, REGION_DEFAULTS } from '@/lib/settings';
 import type { Region, Currency, LanguagePreference } from '@/lib/settings';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { AnimatedPressable } from '@/motion';
+import { updateUserSettings } from '@/api/settingsApi';
 import { supabase } from '@/lib/supabase';
-import { API_BASE } from '@/api/config';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import { useTranslation } from 'react-i18next';
@@ -64,13 +64,12 @@ function AppearanceSectionInner() {
     try {
       const auth = await supabase.auth.getSession();
       if (auth.data?.session) {
-        await fetch(`${API_BASE}/settings`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${auth.data.session.access_token}`,
-          },
-          body: JSON.stringify({ region, currency: defaults.currency, locale: defaults.numberLocale }),
+        // settingsApi.put throws on non-2xx; the raw fetch this replaced never
+        // read res.ok, so a rejected value was applied locally and lost.
+        await updateUserSettings({
+          region,
+          currency: defaults.currency,
+          locale: defaults.numberLocale,
         });
       }
     } catch (e) {
@@ -91,14 +90,7 @@ function AppearanceSectionInner() {
     try {
       const auth = await supabase.auth.getSession();
       if (auth.data?.session) {
-        await fetch(`${API_BASE}/settings`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${auth.data.session.access_token}`,
-          },
-          body: JSON.stringify({ currency }),
-        });
+        await updateUserSettings({ currency });
       }
     } catch (e) {
       logger.error('[Settings] Failed to persist currency to backend:', e);

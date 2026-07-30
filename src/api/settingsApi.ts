@@ -4,6 +4,34 @@
 import { get, put, patch, post, del } from "./httpClient";
 import { followedCategoriesStore } from "@/data/followedCategoriesStore";
 
+/**
+ * Persist the user's region / currency / number-format locale.
+ *
+ * Use this instead of a raw `fetch` to `${API_BASE}/settings`. Four call sites
+ * (onboarding, AppearanceSection ×2, ProfileEditSection) hand-rolled that fetch
+ * and never read `res.ok` — and `fetch` RESOLVES on 4xx/5xx rather than
+ * throwing, so the surrounding try/catch never fired and the failure left no
+ * trace. A Korean user's `korea` / `KRW` / `ko-KR` was rejected by the DB CHECK
+ * constraints (fixed 2026-07-30) and the app reported nothing at all.
+ *
+ * `put` throws on a non-2xx, so callers' existing catch blocks now work.
+ * Server contract: `user_settings_router.py` accepts only these three keys.
+ */
+export const updateUserSettings = (payload: {
+  currency?: string;
+  region?: string;
+  locale?: string;
+}) => put<{ success: boolean; settings: Record<string, unknown> }>('/settings', payload);
+
+/**
+ * Update the user's public profile. Same reasoning as `updateUserSettings`:
+ * the raw-fetch version swallowed failures, so a rejected username (it is
+ * UNIQUE) closed the edit modal and fired a *confirmation* haptic while the
+ * change never landed.
+ */
+export const updateProfile = (payload: { username?: string; bio?: string }) =>
+  patch<Record<string, unknown>>('/settings/profile', payload);
+
 // Onboarding / category-follow state.
 // PUT /settings only accepts {currency, region, locale} (user_settings_router.py)
 // — `followed_categories` was silently dropped, so onboarding's "save my picks"

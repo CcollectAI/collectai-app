@@ -32,7 +32,7 @@ import type { Region } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { collectorsApi, logActivity } from '@/api/collectorsApi';
-import { API_BASE } from '@/api/config';
+import { updateUserSettings } from '@/api/settingsApi';
 import { supabase } from '@/lib/supabase';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { CATEGORY_VISUAL, type CategoryId } from '@/data/categories';
@@ -267,17 +267,18 @@ function OnboardingScreen() {
     try {
       const auth = await supabase.auth.getSession();
       if (auth.data?.session) {
-        await fetch(`${API_BASE}/settings`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${auth.data.session.access_token}`,
-          },
-          body: JSON.stringify({ region, currency: defaults.currency, locale: defaults.numberLocale }),
+        // Via settingsApi (not a raw fetch): `put` throws on a non-2xx, so this
+        // catch actually fires. The hand-rolled fetch here never read res.ok,
+        // and fetch resolves on 5xx — so a rejected region/currency/locale was
+        // applied locally and silently lost server-side.
+        await updateUserSettings({
+          region,
+          currency: defaults.currency,
+          locale: defaults.numberLocale,
         });
       }
     } catch (e) {
-      logger.error('[silent-fallback] onboarding: step persist failed:', e);
+      logger.error('[onboarding] region persist failed:', e);
     }
   }, [updateSettings]);
 
