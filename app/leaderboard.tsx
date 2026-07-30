@@ -30,6 +30,42 @@ const AvatarCircle = React.memo<{ name: string; color: string }>(({ name, color 
   );
 });
 
+/** One row of the leaderboard, already formatted for display. */
+export type LeaderboardRow = {
+  id: string;
+  displayName: string;
+  handle: string;
+  primary: string;
+  secondary: string;
+  meta: string;
+};
+
+/**
+ * Map an XP-board API entry to display strings.
+ *
+ * Exported and pure so the display seam is testable: the bug this replaced was
+ * invisible to types and to every status-code check, because the wrong value
+ * rendered perfectly — 40 XP as "€40.00".
+ */
+export function apiEntryToRow(entry: {
+  rank: number;
+  user_id: string;
+  display_name: string | null;
+  total_xp: number;
+  level: number;
+  current_streak: number;
+}): LeaderboardRow {
+  const displayName = entry.display_name ?? `Collector ${entry.rank}`;
+  return {
+    id: entry.user_id,
+    displayName,
+    handle: displayName.toLowerCase().replace(/\s+/g, ''),
+    primary: `${entry.total_xp.toLocaleString()} XP`,
+    secondary: `Level ${entry.level}`,
+    meta: entry.current_streak > 0 ? `${entry.current_streak} day streak` : 'No active streak',
+  };
+}
+
 function getMedalColor(index: number, fallback: string): string {
   if (index === 0) return MEDAL_COLORS.gold;
   if (index === 1) return MEDAL_COLORS.silver;
@@ -51,6 +87,7 @@ const LeaderboardScreen: React.FC = () => {
     display_name: string;
     xp: number;
     level: number;
+    streak: number;
     avatar_url: string | null;
   }[] | null>(null);
 
@@ -71,6 +108,9 @@ const LeaderboardScreen: React.FC = () => {
             display_name: r.display_name ?? `Collector ${r.rank}`,
             xp: r.total_xp,
             level: r.level,
+            // Returned by the API and previously dropped on the floor; it is the
+            // natural secondary stat for an XP board.
+            streak: r.current_streak,
             avatar_url: r.avatar_url,
           })),
         );
@@ -98,25 +138,39 @@ const LeaderboardScreen: React.FC = () => {
     setRefreshing(false);
   }, [loadLeaderboard]);
 
-  // Use API data if available, fall back to local USER_PROFILES
+  // Use API data if available, fall back to local USER_PROFILES.
+  //
+  // These two sources measure DIFFERENT things, so each supplies its own
+  // display strings. The API board ranks by XP; the local sample ranks by
+  // collection value. Until 2026-07-31 the API branch was poured into the
+  // sample's shape — `totalEstimatedValueEur: entry.xp` — and the card renders
+  // that field through `formatPrice`, so a collector with 40 XP was shown as
+  // **"€40.00"**, their level as "1 item", and "0 categories" for everyone.
   const rankedUsers = useMemo(() => {
     if (apiEntries?.length) {
-      return apiEntries.map((entry, i) => ({
-        id: entry.user_id,
-        displayName: entry.display_name,
-        handle: entry.display_name.toLowerCase().replace(/\s+/g, ''),
+      return apiEntries.map((entry) => ({
+        ...apiEntryToRow({
+          rank: entry.rank,
+          user_id: entry.user_id,
+          display_name: entry.display_name,
+          total_xp: entry.xp,
+          level: entry.level,
+          current_streak: entry.streak,
+        }),
         avatarColor: colors.accent,
-        stats: {
-          totalEstimatedValueEur: entry.xp,
-          totalItems: entry.level,
-          totalCategories: 0,
-          rarityScore: entry.level,
-        },
       }));
     }
-    return [...USER_PROFILES].sort(
-      (a, b) => b.stats.totalEstimatedValueEur - a.stats.totalEstimatedValueEur,
-    );
+    return [...USER_PROFILES]
+      .sort((a, b) => b.stats.totalEstimatedValueEur - a.stats.totalEstimatedValueEur)
+      .map((u) => ({
+        id: u.id,
+        displayName: u.displayName,
+        handle: u.handle,
+        avatarColor: u.avatarColor,
+        primary: formatPrice(u.stats.totalEstimatedValueEur),
+        secondary: `Rarity ${u.stats.rarityScore}`,
+        meta: `${u.stats.totalItems} ${u.stats.totalItems === 1 ? 'item' : 'items'} · ${u.stats.totalCategories} ${u.stats.totalCategories === 1 ? 'category' : 'categories'}`,
+      }));
   }, [apiEntries, colors.accent]);
 
   const { getItemStyle } = useStaggerReveal({
@@ -166,7 +220,7 @@ const LeaderboardScreen: React.FC = () => {
                 { borderColor: colors.border, backgroundColor: colors.card },
               ]}
               accessibilityRole="button"
-              accessibilityLabel={`Rank ${index + 1}, ${user.displayName}, ${formatPrice(user.stats.totalEstimatedValueEur)}, ${user.stats.totalItems} ${user.stats.totalItems === 1 ? 'item' : 'items'}`}
+              accessibilityLabel={`Rank ${index + 1}, ${user.displayName}, ${user.primary}, ${user.secondary}, ${user.meta}`}
               accessibilityHint="Double tap to view collector profile"
             >
               {/* Rank */}
@@ -189,17 +243,17 @@ const LeaderboardScreen: React.FC = () => {
                   @{user.handle}
                 </Text>
                 <Text style={[styles.userMeta, { color: colors.muted }]} numberOfLines={1}>
-                  {user.stats.totalItems} {user.stats.totalItems === 1 ? 'item' : 'items'} · {user.stats.totalCategories} {user.stats.totalCategories === 1 ? 'category' : 'categories'}
+                  {user.meta}
                 </Text>
               </View>
 
               {/* Value + key score */}
               <View style={styles.valueCol}>
                 <Text style={[styles.valueText, { color: colors.text }]}>
-                  {formatPrice(user.stats.totalEstimatedValueEur)}
+                  {user.primary}
                 </Text>
                 <Text style={[styles.rarityText, { color: colors.muted }]}>
-                  Rarity {user.stats.rarityScore}
+                  {user.secondary}
                 </Text>
               </View>
             </AnimatedPressable>

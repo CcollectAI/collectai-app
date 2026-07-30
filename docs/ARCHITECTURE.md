@@ -322,6 +322,25 @@ before "fixing" either:
   `POST /feedback/verified-sale` → `record_price_ground_truth`. It only fills
   when a user marks an item sold, which no test data does.
 
+The same class, but rendering a *wrong* value rather than none — the leaderboard
+showed **XP as money** (fixed 2026-07-31):
+
+- `/gamification/leaderboard` is an **XP** board (`total_xp`, `level`,
+  `current_streak`). `app/leaderboard.tsx` poured those into the shape of the
+  local `USER_PROFILES` sample, which ranks by collection value —
+  `totalEstimatedValueEur: entry.xp` — and the card renders that field through
+  `formatPrice`. Against the live board, 80 XP displayed as **"€80.00"**, level
+  as "1 item", and every row read "0 categories". `current_streak` was fetched
+  and dropped.
+- Nothing caught it: 200 response, types satisfied (both numbers), no render
+  error. **Only comparing the value to its meaning finds this** — see
+  `learning_validate_values_not_just_structure`.
+- Fixed by giving each source its own display strings via the exported pure
+  `apiEntryToRow`, pinned in `__tests__/screens/leaderboardRow.test.ts` against
+  the live board and mutation-proven (5 of 7 assertions fail on the old
+  behaviour). Two sources that measure different things must not share a
+  view-model.
+
 A third case is a **real** mismatch that was still left unwired on purpose:
 
 - `RegionalInsightsSection` ("Popular in Your Region") is never rendered.
