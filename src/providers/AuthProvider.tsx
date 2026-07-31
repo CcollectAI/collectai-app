@@ -61,6 +61,13 @@ export type Profile = {
   id: string;
   username: string;
   created_at?: string;
+  /**
+   * Public "about you" text. Selected here so Settings → Edit Profile can
+   * PRE-FILL the field: the form initialises from this, and a blank field is
+   * sent as an empty bio, so without it opening the modal and saving would
+   * wipe an existing bio.
+   */
+  bio?: string | null;
   /** Creator affiliate_code this user signed up under, if any. */
   referred_by_code?: string | null;
 };
@@ -93,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await withTimeout(
         supabase
           .from('profiles')
-          .select('id, username, created_at, referred_by_code')
+          .select('id, username, created_at, referred_by_code, bio')
           .eq('id', u.id)
           .single(),
         PROFILE_READ_TIMEOUT_MS,

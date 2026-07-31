@@ -11,8 +11,9 @@ Endpoints:
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Literal, Optional
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException
@@ -404,3 +405,145 @@ async def update_alert_preferences(
     except asyncpg.PostgresError as e:
         logger.error("[settings] Error upserting alert preferences: %s", e)
         raise error_response(500, "Failed to save alert preferences", code="DB_ERROR")
+
+
+# ---------------------------------------------------------------------------
+# Profile (username + bio)
+# ---------------------------------------------------------------------------
+
+# Mirrors profiles_bio_length_check. Validate here so the user gets a clear 400
+# rather than a 23514 surfaced as a generic 500 — the exact shape that hid the
+# currency/region/locale breakage for Korea and Oceania (see the 20260730
+# migrations).
+BIO_MAX_LEN = 300
+USERNAME_MIN_LEN = 3
+USERNAME_MAX_LEN = 30
+_USERNAME_RE = re.compile(r"^[A-Za-z0-9_]+$")
+
+
+class ProfileUpdateRequest(BaseModel):
+    username: Optional[str] = Field(None, max_length=USERNAME_MAX_LEN)
+    bio: Optional[str] = Field(None, max_length=BIO_MAX_LEN)
+
+
+class ProfileResponse(BaseModel):
+    id: str
+    username: Optional[str] = None
+    display_name: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+@router.patch(
+    "/profile",
+    response_model=ProfileResponse,
+    dependencies=[Depends(_settings_user_limit)],
+    summary="Update the current user's profile (username, bio)",
+)
+async def update_profile(
+    request: ProfileUpdateRequest,
+    user_id: str = Depends(get_current_user_id),
+) -> ProfileResponse:
+    """
+    Partial update of the caller's own `profiles` row.
+
+    Added 2026-07-31. `ProfileEditSection` had been calling this path since it
+    shipped, but the route did not exist — a 404 the client never checked, so
+    the modal closed with a success haptic and nothing was saved.
+
+    Only `username` and `bio` are editable. `display_name` follows `username`
+    when it was previously mirroring it (the signup trigger sets both to the
+    username), so a rename does not leave a stale display name behind — but a
+    display_name the user has deliberately diverged from their username is left
+    alone.
+    """
+    update_data = request.model_dump(exclude_none=True)
+    if not update_data:
+        raise error_response(
+            400, "Provide at least one of: username, bio", code="VALIDATION_ERROR"
+        )
+
+    username = request.username.strip() if request.username is not None else None
+    bio = request.bio.strip() if request.bio is not None else None
+
+    if username is not None:
+        if len(username) < USERNAME_MIN_LEN:
+            raise error_response(
+                400,
+                f"Username must be at least {USERNAME_MIN_LEN} characters",
+                code="VALIDATION_ERROR",
+            )
+        if not _USERNAME_RE.match(username):
+            raise error_response(
+                400,
+                "Username may only contain letters, numbers and underscores",
+                code="VALIDATION_ERROR",
+            )
+
+    if bio is not None and len(bio) > BIO_MAX_LEN:
+        raise error_response(
+            400, f"Bio must be {BIO_MAX_LEN} characters or fewer", code="VALIDATION_ERROR"
+        )
+
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+
+    try:
+        async with pool.acquire() as conn:
+            if username is not None:
+                # Case-insensitive, matching what handle_new_user does at signup.
+                # profiles_username_key is case-SENSITIVE, so without this
+                # 'Merle' and 'merle' could both exist.
+                taken = await conn.fetchval(
+                    "SELECT 1 FROM public.profiles WHERE lower(username) = lower($1) AND id <> $2::uuid",
+                    username,
+                    user_id,
+                )
+                if taken:
+                    raise error_response(
+                        409, "That username is already taken", code="USERNAME_TAKEN"
+                    )
+
+            row = await conn.fetchrow(
+                """
+                UPDATE public.profiles
+                   SET username     = COALESCE($2, username),
+                       bio          = CASE WHEN $3::boolean THEN $4 ELSE bio END,
+                       -- Keep display_name aligned only while it mirrors the
+                       -- username; never clobber a deliberately different one.
+                       display_name = CASE
+                                         WHEN $2::text IS NOT NULL
+                                          AND (display_name IS NULL OR display_name = username)
+                                         THEN $2
+                                         ELSE display_name
+                                      END
+                 WHERE id = $1::uuid
+             RETURNING id, username, display_name, bio, avatar_url
+                """,
+                user_id,
+                username,
+                "bio" in update_data,
+                bio,
+            )
+
+        if row is None:
+            raise error_response(404, "Profile not found", code="NOT_FOUND")
+
+        logger.info("[settings] Updated profile for user=%s", user_id)
+        return ProfileResponse(
+            id=str(row["id"]),
+            username=row["username"],
+            display_name=row["display_name"],
+            bio=row["bio"],
+            avatar_url=row["avatar_url"],
+        )
+
+    except HTTPException:
+        raise
+    except asyncpg.UniqueViolationError:
+        # Lost a race between the check above and the UPDATE.
+        raise error_response(409, "That username is already taken", code="USERNAME_TAKEN")
+    except asyncpg.PostgresError as e:
+        logger.error("[settings] Error updating profile: %s", e)
+        raise error_response(500, "Failed to save profile", code="DB_ERROR")

@@ -44,7 +44,7 @@ function ProfileEditSectionInner() {
 
   const [editProfileVisible, setEditProfileVisible] = useState(false);
   const [editUsername, setEditUsername] = useState(profile?.username ?? '');
-  const [editBio, setEditBio] = useState('');
+  const [editBio, setEditBio] = useState(profile?.bio ?? '');
   const [savingProfile, setSavingProfile] = useState(false);
 
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
@@ -200,7 +200,12 @@ function ProfileEditSectionInner() {
         <AnimatedPressable
           style={styles.settingRow}
           onPress={() => {
+            // Prefill BOTH fields. The form posts whatever is in them, so an
+            // unpopulated bio field would save as empty and wipe the existing
+            // one — harmless while PATCH /settings/profile 404'd, real now that
+            // it persists (route added 2026-07-31).
             setEditUsername(profile?.username ?? '');
+            setEditBio(profile?.bio ?? '');
             setEditProfileVisible(true);
           }}
           accessibilityRole="button"

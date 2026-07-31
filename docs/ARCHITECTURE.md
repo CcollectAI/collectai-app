@@ -335,36 +335,41 @@ the right semantics are unclear — deleting an author should arguably keep a
 group thread readable rather than punch holes in it. Revisit as a
 tombstone/anonymise decision, not a bare CASCADE.
 
-#### ⛔ Settings → Edit Profile is live UI over a route that does not exist
+#### Settings → Edit Profile — built 2026-07-31
 
-Found 2026-07-31. **Not fixed — it is unbuilt feature work, not a broken wire.**
+`ProfileEditSection` had been calling `PATCH /settings/profile` since it
+shipped, but the route did not exist (**404**), `profiles` had no `bio` column,
+and both public views hardcoded `NULL::text AS bio`. Live UI over nothing. Now
+built end to end.
 
-`ProfileEditSection` is mounted (`src/screens/Settings.tsx:101`), ungated
-(`BETA_MODE = false`), and saving calls `PATCH /settings/profile`. That route
-**does not exist**: `/settings` exposes only `GET` and `PUT` (currency, region,
-locale) plus `/settings/alert-preferences`. Verified against the live OpenAPI
-and by calling it — **404**.
+**Storage** (`20260731_profiles_bio_and_public_view.sql`): `profiles.bio text`
+with `profiles_bio_length_check` (≤300 chars), and `user_public_profiles` now
+selects `p.bio` instead of a NULL literal. `PublicUserProfileCard` and
+`UserCollectionPreview` already render `{profile.bio && …}`, so they light up as
+soon as it is non-null.
 
-`bio` has nowhere to go even if the route existed:
+**Route** (`user_settings_router.py` → `PATCH /settings/profile`). Partial
+update of the caller's own row; only `username` and `bio` are editable.
 
-- `profiles` columns are `id, username, created_at, display_name, avatar_url,
-  avatar_color, referred_by_code, seller_age_verified_at` — **no `bio`**
-- both public views hardcode it: `NULL::text AS bio`, `NULL::text[] AS interests`
-  (`user_public_profiles`)
+| Case | Result |
+|------|--------|
+| bio only / username only | 200, other field untouched |
+| username already taken | **409 `USERNAME_TAKEN`** |
+| same name, different case | **409** — `profiles_username_key` is case-SENSITIVE, so the handler does its own `lower()` check, matching what `handle_new_user` does at signup |
+| bio > 300 chars | 422 with a clear message, not a 23514 surfaced as 500 |
+| username with punctuation/spaces | 400 |
+| empty payload | 400 |
 
-`username` at least has a home (`profiles.username`, written at signup by the
-`handle_new_user` trigger) — it simply has no update path.
+`display_name` follows a rename **only while it mirrors the username** (the
+signup trigger sets both). A display_name the user has deliberately diverged is
+left alone — verified: renaming to `merle_probe2` kept `display_name = 'Merle S'`.
 
-Until 2026-07-31 this failed **silently**: the raw `fetch` never checked
-`res.ok`, so the 404 was ignored, the modal closed and a *confirmation* haptic
-fired. That half is fixed — `updateProfile` now goes through `httpClient.patch`,
-which throws, so the user sees the error. The feature is still non-functional.
-
-To build it: add `bio` to `profiles` (with a length cap), add
-`PATCH /settings/profile` handling `username` uniqueness (23505 → a usable
-message), and surface `bio` in `user_public_profiles` — the two consumers
-(`PublicUserProfileCard`, `UserCollectionPreview`) already render it behind a
-`{profile.bio && …}` guard, so they light up as soon as it is non-null.
+**The FE half that had to move with it:** `editBio` initialised to `''` and was
+never populated, and the form posts whatever is in the field. That was harmless
+while the route 404'd; the moment it persisted, opening the modal and saving
+would have **wiped an existing bio**. `AuthProvider` now selects `bio` (added to
+`Profile`) and the modal prefills both fields on open. If another editable
+profile field is added, prefill it in the same place.
 
 #### Empty is not always broken
 
