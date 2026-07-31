@@ -15,7 +15,23 @@ export interface PortfolioItem {
   id: string;
   name: string;
   category: string;
-  estimated_value: number;
+  /**
+   * What `GET /portfolio/items` actually returns for value — the canonical
+   * expression COALESCE(l.q50, quick_predictions.q50_eur, predicted_price_eur,
+   * estimated_value, 0) (portfolio_router.py:267), the same one Home and the
+   * Items tab use.
+   *
+   * `estimated_value` was declared REQUIRED here while the endpoint has never
+   * returned it, and `current_value` was missing entirely. The index signature
+   * below meant tsc never complained, so app/sets-to-complete.tsx read
+   * `estimated_value` and got null for every item — its "Est. value" showed 0
+   * regardless of the real portfolio. Fixed 2026-07-31.
+   */
+  current_value?: number;
+  cost_basis?: number;
+  unrealized_pl?: number;
+  /** Not returned by /portfolio/items; kept for callers passing other shapes. */
+  estimated_value?: number;
   image_url?: string;
   change_1d?: number;
   change_7d?: number;
