@@ -29,7 +29,7 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     const res = await withTimeout(
       supabase
         .from('watchlist_items')
-        .select('id,title,priority,owned,target_price,currency,category,notes,created_at'),
+        .select('id,title,priority,owned,target_price,currency,category,notes,created_at,sort_order'),
       SUPABASE_READ_TIMEOUT_MS,
       'listWatchlist',
     );
@@ -58,6 +58,7 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     category?: string | null;
     notes?: string | null;
     created_at?: string | null;
+    sort_order?: number | null;
   }[];
 
   return rows.map((r) => ({
@@ -70,7 +71,9 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     category: r.category ?? undefined,
     notes: r.notes ?? undefined,
     createdAt: r.created_at ?? undefined,
-    sortOrder: 0, // sort_order column doesn't exist on watchlist_items; UI sorts by priority
+    // Real column since 2026-07-31. NULL means the user has never reordered, so
+    // 0 keeps them in the pre-existing priority-based ordering.
+    sortOrder: typeof r.sort_order === 'number' ? r.sort_order : 0,
   }));
 }
 
@@ -141,9 +144,42 @@ export async function updateWatchlistItem(id: string, updates: { targetPrice?: n
   const updatePayload: Record<string, unknown> = {};
   if (updates.targetPrice !== undefined) updatePayload.target_price = updates.targetPrice;
   if (updates.notes !== undefined) updatePayload.notes = updates.notes;
-  // sort_order isn't a column on watchlist_items — accept the param for
-  // API compatibility but ignore it. (Older builds shipped this; the
-  // table never gained the column.)
+  // `sort_order` was dropped here because the column did not exist, which made
+  // watchlist-builder's move up/down buttons fail EVERY time: the payload came
+  // out empty, `.update({})` matched 0 rows, and the chained `.single()` threw
+  // PGRST116 ("The result contains 0 rows", HTTP 406) — so the screen rolled
+  // back the optimistic reorder and showed "Could not reorder. Please try
+  // again." Column added 2026-07-31
+  // (20260731_watchlist_items_sort_order.sql).
+  if (updates.sortOrder !== undefined) updatePayload.sort_order = updates.sortOrder;
+
+  // Nothing to write — return the row unchanged rather than issuing an empty
+  // update, which PostgREST answers with 0 rows and `.single()` turns into a
+  // throw. This is the guard that would have made the bug above impossible.
+  if (Object.keys(updatePayload).length === 0) {
+    const { data: current, error: readErr } = await supabase
+      .from('watchlist_items')
+      .select('id, title, priority, owned, target_price, currency, category, notes, created_at, sort_order')
+      .eq('id', id)
+      .single();
+    if (readErr) {
+      logger.error('[SupabaseDataProvider] updateWatchlistItem no-op read error:', readErr);
+      throw new Error(readErr.message || 'Failed to load watchlist item');
+    }
+    const c = current as Record<string, unknown>;
+    return {
+      id: typeof c.id === 'string' ? c.id : String(c.id ?? ''),
+      title: typeof c.title === 'string' ? c.title : '',
+      priority: (['high', 'medium', 'low'].includes(c.priority as string) ? c.priority as 'high' | 'medium' | 'low' : 'medium'),
+      owned: typeof c.owned === 'boolean' ? c.owned : false,
+      targetPrice: typeof c.target_price === 'number' ? c.target_price : null,
+      currency: (typeof c.currency === 'string' && c.currency ? c.currency as CurrencyCode : 'EUR'),
+      category: typeof c.category === 'string' ? c.category : undefined,
+      notes: typeof c.notes === 'string' ? c.notes : undefined,
+      createdAt: typeof c.created_at === 'string' ? c.created_at : undefined,
+      sortOrder: typeof c.sort_order === 'number' ? c.sort_order : 0,
+    };
+  }
 
   // Real table is `watchlist_items` (the legacy `watchlist` table has a
   // different shape and was returning 400 on every call).
@@ -151,7 +187,7 @@ export async function updateWatchlistItem(id: string, updates: { targetPrice?: n
     .from('watchlist_items')
     .update(updatePayload)
     .eq('id', id)
-    .select('id, title, priority, owned, target_price, currency, category, notes, created_at')
+    .select('id, title, priority, owned, target_price, currency, category, notes, created_at, sort_order')
     .single();
 
   if (error) {

@@ -235,6 +235,21 @@ Sections that are legitimately empty on a fresh account — **not** bugs:
 - **Prediction Accuracy** stays at 0 until you mark an item **sold** on its
   detail screen (that is what records ground truth)
 
+### Watchlist reorder (added 2026-07-31)
+
+Failed every time before today — the buttons showed "Could not reorder."
+
+- [ ] Watchlist builder → **move an item up**, then **down**. No error toast
+- [ ] Leave the screen and come back — **the order you set is still there**
+      (it reverted before, because nothing persisted)
+
+### Barcode scan, unrecognised code (added 2026-07-31)
+
+- [ ] Scan something not in any catalog (any random EAN). The card must say
+      **"Not recognised"**, not "Product Found" with a green tick
+- [ ] The primary button must read **Add Manually** and open add-manual — it
+      previously offered Save, which filed an item called "Unknown item"
+
 ### Currency / region / locale (added 2026-07-30)
 
 Until 2026-07-30 five of these values returned a **500** because the DB CHECK

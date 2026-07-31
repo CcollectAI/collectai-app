@@ -381,6 +381,37 @@ would have **wiped an existing bio**. `AuthProvider` now selects `bio` (added to
 `Profile`) and the modal prefills both fields on open. If another editable
 profile field is added, prefill it in the same place.
 
+#### An empty update payload is a throw, not a no-op
+
+`watchlist-builder`'s move up/down buttons called
+`updateWatchlistItem(id, { sortOrder })`, but `watchlist_items` had no
+`sort_order` column, so the provider deliberately dropped the field. That left
+an **empty payload**, and the rest follows mechanically:
+
+```
+.update({})            -> PostgREST matches 0 rows
+.select(...).single()  -> PGRST116 "The result contains 0 rows" (HTTP 406)
+provider throws        -> the screen's catch rolls back the optimistic reorder
+                       -> "Could not reorder. Please try again."
+```
+
+So reordering failed **every time**, visibly. Verified against prod 2026-07-31
+by issuing the exact PATCH the provider produces — 406 before, 200 after.
+
+Fixed on both sides:
+
+- `sort_order integer` added (`20260731_watchlist_items_sort_order.sql`),
+  nullable with no default so existing rows keep their priority ordering rather
+  than all claiming rank 0. Index on `(user_id, sort_order NULLS LAST)`.
+- `updateWatchlistItem` now writes it, and **returns the row unchanged instead
+  of issuing an empty update** when no known field was supplied. That guard is
+  the general fix: any future field the provider does not map would otherwise
+  reproduce this exact failure.
+- `listWatchlist` reads the real column instead of hardcoding `sortOrder: 0`.
+
+**Rule: never let a mapper build an update payload that can come out empty.**
+Either guard it, or the caller gets a throw for a write it believes succeeded.
+
 #### Empty is not always broken
 
 Two analytics endpoints return empty for a correct reason. Verified by querying

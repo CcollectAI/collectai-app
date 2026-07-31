@@ -21238,6 +21238,10 @@
       "nullable": false,
       "type": "text"
     },
+    "watchlist_items.sort_order": {
+      "nullable": true,
+      "type": "int4"
+    },
     "watchlist_items.target_price": {
       "nullable": true,
       "type": "numeric"
@@ -27607,7 +27611,8 @@
       "item_id",
       "predicted_value",
       "price_trend",
-      "market_hit_count"
+      "market_hit_count",
+      "sort_order"
     ],
     "watchlist_valuation": [
       "user_id",
