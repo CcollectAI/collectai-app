@@ -9,6 +9,38 @@ Data-driven portfolio insights and smart alerts for Sparrow Collect.
 > intent. **The "Actual wiring" section immediately below is the truth.** Trust it
 > over the rest of this file, and over any memory of this file.
 
+## ⛔ `watchlist_monitor_worker` — verified working, deliberately still OFF
+
+Dry-run 2026-07-31 (one bounded cycle, `WATCHLIST_MONITOR_BATCH=1`, never
+enabled in the bake manifest). **The worker itself is fine** — it searched,
+computed a median price and wrote the row back:
+`last_market_price 15.02, market_hit_count 37, price_trend stable`. The alert
+insert targets `alert_trigger_history`, which is exactly what the Alerts screen's
+Recent tab reads, so the delivery path lines up.
+
+**Three things must be true before it is switched on. None are today:**
+
+1. **No item has a `target_price`.** 0 of 12. The alert condition requires
+   `target_price is not None` (`watchlist_monitor_worker.py:246`), so every cycle
+   would fire **zero** alerts. Enabling now is pure outbound cost.
+2. **Titles are `(unnamed)`.** Legacy residue predating the 2026-06-05
+   name-vs-title fix. The worker searches marketplaces for that literal string
+   and persists the results — the dry run wrote **37 junk `market_hits` under
+   `item_ref = "lorcana:(unnamed)"`**, prices €1.83–€417.94, from one item. Those
+   rows were deleted afterwards. Enabling with these titles pollutes the price
+   corpus continuously.
+3. **It fans out to third-party marketplaces per item**, `BATCH_SIZE=100`
+   hourly. That is the same shape that got tcgcsv.com to block us
+   (see `learning_third_party_rate_bans_and_schedule_drift`). Count the outbound
+   volume before, not after.
+
+Also observed: Cardmarket now answers our Crawl4AI scrape with
+**"Blocked by anti-bot protection: Cloudflare JS challenge"**.
+
+**Enable checklist:** real watchlist titles → at least one real `target_price` →
+outbound-request counting in place → then flip the manifest line and watch one
+cycle.
+
 ## Actual wiring (verified E2E against prod 2026-07-30)
 
 There are **two different things** here, and crossing them has broken this
