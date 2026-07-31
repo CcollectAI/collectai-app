@@ -307,6 +307,14 @@ async def create_mandate(
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
         )
         if count >= mandate_limit:
+            # A 0 limit is the free plan, where the feature is not included at
+            # all — "Mandate limit reached (0)" would read as a bug.
+            if mandate_limit == 0:
+                raise error_response(
+                    403,
+                    "The Smart Deal Agent is a Pro feature. Upgrade to create purchase mandates.",
+                    code="PLAN_REQUIRED",
+                )
             raise error_response(409, f"Mandate limit reached ({mandate_limit}). Upgrade your plan or delete existing mandates.")
 
         expires_at = None

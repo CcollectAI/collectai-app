@@ -145,7 +145,13 @@ def _resolve_price_id(plan: str, interval: str = "monthly") -> str | None:
 #                        Premium-only.
 PLAN_LIMITS = {
     "free": {
-        "max_mandates": 3,
+        # 0, not 3. Deal discovery is Pro-only (the worker skips free users'
+        # mandates entirely), so a mandate on the free plan can never produce
+        # a deal — and the Home entry point already routes free users to the
+        # paywall. Allotting 3 meant advertising 3 mandates that were
+        # unreachable through the UI and inert if reached by deep link.
+        # Changed 2026-07-31; MONETIZATION.md updated to match.
+        "max_mandates": 0,
         # Price-alert creation cap per rolling 7 days. None = unlimited.
         "max_alerts_per_week": 1,
         "deal_discovery": False,

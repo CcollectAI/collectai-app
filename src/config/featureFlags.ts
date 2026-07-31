@@ -16,8 +16,18 @@ export const BETA_MODE = false;
  * hands-on testing (verifying chat + events end-to-end). REVISIT before the
  * public App Store launch — flip back to true (or wire the runtime probe) so
  * day-1 users don't see empty social surfaces.
+ *
+ * 2026-07-31: back to TRUE. That testing is done — chat inbox, DM request and
+ * the full event create/RSVP/edit/cancel path were all verified end-to-end
+ * against prod. The condition for flipping it back has been met and the
+ * ghost-town risk is real: **0 of 24 profiles are currently discoverable**
+ * (both public-profile views filter on a non-null display_name/username, and
+ * every legacy row has neither), so a day-one user would open the leaderboard
+ * and Find Collectors to nothing at all. Flip to false again once ~50 public
+ * profiles exist — registration now writes username AND display_name, so real
+ * signups do appear.
  */
-export const COMMUNITY_GATED = false;
+export const COMMUNITY_GATED = true;
 
 /**
  * Social login (Sign in with Apple / Google) on the auth screens.

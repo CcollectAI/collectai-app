@@ -524,6 +524,12 @@ function InboxScreen() {
                   <Ionicons name="search" size={16} color="#fff" style={{ marginRight: 6 }} />
                   <Text style={styles.emptyActionPrimaryText}>Find collectors</Text>
                 </AnimatedPressable>
+                {/* Dev-only. app/chat-demo.tsx is a local-only placeholder whose
+                    own header says "remove once real DM threads exist" — it must
+                    not ship a flask-icon "Open test chat" button to App Store
+                    users. __DEV__ is false in any release build, so this keeps
+                    the affordance for local testing and hides it in production. */}
+                {__DEV__ && (
                 <AnimatedPressable
                   onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/chat-demo' as Href); }}
                   style={[styles.emptyActionSecondary, { borderColor: colors.border }]}
@@ -533,6 +539,7 @@ function InboxScreen() {
                   <Ionicons name="flask-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
                   <Text style={[styles.emptyActionSecondaryText, { color: colors.accent }]}>Open test chat</Text>
                 </AnimatedPressable>
+                )}
               </View>
             }
           />
