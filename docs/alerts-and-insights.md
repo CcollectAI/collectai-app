@@ -134,39 +134,33 @@ Seven types of alerts, all routed through `app/lib/notify.py` for preference-awa
 | Auction Ending | Watched auction ending in <15min | auction_alert_worker | Yes (urgent) |
 | Low Value | Item valued below 10 EUR | alerts_worker | Yes |
 
-### Notification Preferences — API only, **no UI yet** (verified 2026-07-30)
+### Notification Preferences — UI shipped 2026-07-31
 
-`GET`/`PUT /notifications/preferences` both work: all 8 keys round-trip and
-persist (tested against prod). What does **not** exist is a screen to change
-them — `getNotificationPreferences` / `updateNotificationPreferences` are
-exported on `collectorsApi` with **zero screen callers**, `app/notifications.tsx`
-is history-only (no toggles), and neither `app/settings.tsx` nor
-`src/screens/Settings.tsx` has a notification section.
+`src/components/settings/NotificationPreferencesSection.tsx`, mounted in
+`src/screens/Settings.tsx` directly under Privacy. Eight switches, one per
+server key, reading `GET /notifications/preferences` and writing a **single-key**
+`PUT` per toggle.
 
-That is consistent with the pre-launch posture rather than a defect: every
-worker that would *send* these is commented out of the bake manifest under
-`── DISABLED — post-launch features (no users yet) ──`
-(`bake_orchestrator.py:90`) — `alerts_worker`, `price_monitor`,
-`watchlist_monitor_worker`, `scarcity_monitor_worker`, `auction_alert_worker`,
-`signal_alerts_worker`. There is nothing to opt out of yet, and `chat_messages`
-/ `connection_requests` gate features `COMMUNITY_GATED` hides anyway.
+Before this the API worked perfectly and had **zero screen callers** — a user
+had no way to turn any push category off. That was tolerable only because every
+sending worker is disabled; it stops being tolerable the moment one is
+re-enabled, and it is the kind of thing App Store review looks for.
 
-**When the senders are re-enabled, the toggle UI must land in the same wave** —
-shipping notifications with no way to turn them off is the one part of this that
-would be a real defect. The server side is ready; it needs a screen only.
+Verified against prod: a single-key `PUT {"price_alerts": false}` returns 200
+and **leaves the other seven untouched**, so toggles cannot clobber each other.
 
-The 8 keys (enforced by `app/lib/notify.py`, defaults all `true`):
+Two deliberate details:
 
-| Preference Key | Controls |
-|---------------|----------|
-| `price_alerts` | Threshold, anomaly, set completion, watchlist target, auction ending |
-| `deal_alerts` | Deal discovery notifications |
-| `value_changes` | Portfolio value change summaries |
-| `item_value_changes` | Individual item value changes |
-| `weekly_digest` | Weekly collection digest |
-| `chat_messages` | Chat/DM notifications |
-| `connection_requests` | Social connection requests |
-| `event_announcements` | Event announcements |
+- Loaded prefs are **merged over defaults**, so a key the server adds before the
+  client knows about it reads as `true` rather than `false` — showing a category
+  as off while pushes still arrive would be worse than showing it on.
+- It goes through `collectorsApi`, which **throws on a non-2xx**, so a failed
+  save rolls the switch back and toasts. The raw-`fetch` settings writes this
+  replaced did not, and diverged silently (see ARCHITECTURE.md).
+
+Do not invent keys here. The set is fixed by `NotificationPreferencesUpdate`
+(`notification_router.py:236`); an unknown key is silently dropped by Pydantic,
+which is exactly how a toggle becomes a no-op.
 
 ### Frequency Capping
 

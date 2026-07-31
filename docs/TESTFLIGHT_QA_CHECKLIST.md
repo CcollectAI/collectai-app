@@ -400,16 +400,14 @@ unwired), Twitch (out of scope).
 
 ### Pre-launch cleanup items found by the sweep
 
-- [ ] **`COMMUNITY_GATED = false`** exposes social surfaces while 0 of 24 profiles
-      are discoverable. Its own comment says flip it back to `true` before public
-      launch. Threshold in notes: ~50 public profiles
-- [ ] **"Open test chat"** button on the empty Inbox opens `app/chat-demo.tsx`, a
-      self-declared local-only placeholder ("remove once real DM threads exist").
-      Real users would see it
+- [x] ~~`COMMUNITY_GATED`~~ — flipped back to `true` 2026-07-31
+- [x] ~~"Open test chat" button~~ — now `__DEV__`-only, 2026-07-31
 - [ ] **Sponsor checkout** returns 400 "Subscription price not configured for
       tier: featured" — same unset Stripe prices that block `/pro`. Sponsor CRUD
       (register / list / update) all work
-- [ ] **Free plan is allotted 3 mandates it cannot reach** (see MONETIZATION.md)
+- [x] ~~Free plan allotted 3 unreachable mandates~~ — set to 0, 2026-07-31
+- [ ] **Notification toggles** — Settings → Notifications, flip each of the 8 and
+      confirm it sticks after a force-quit. New screen, 2026-07-31
 
 ## What to flag back to me
 

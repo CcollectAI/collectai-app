@@ -18,6 +18,7 @@ import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import { collectorsApi } from '@/api/collectorsApi';
 import { useFeatureTour } from '@/lib/featureTour';
 import { PrivacySettingsSection } from '@/components/settings/PrivacySettingsSection';
+import { NotificationPreferencesSection } from '@/components/settings/NotificationPreferencesSection';
 import { AppearanceSection } from '@/components/settings/AppearanceSection';
 import { ProfileEditSection } from '@/components/settings/ProfileEditSection';
 import { DevForcePlanSection } from '@/components/settings/DevForcePlanSection';
@@ -80,6 +81,11 @@ export default function Settings() {
     >
       {/* Privacy Section */}
       <PrivacySettingsSection />
+
+      {/* Notification category toggles. The API has always supported these; there
+          was simply no screen for them, so a user had no way to turn any push
+          category off. Must stay mounted whenever a sending worker is enabled. */}
+      <NotificationPreferencesSection />
 
       {/* Appearance, Region & Currency, Preferences */}
       <AppearanceSection />
