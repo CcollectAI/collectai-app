@@ -6,6 +6,38 @@
 
 Two-tier model (was three-tier on Stripe; Premium folded into Pro).
 
+### ⚠️ Free gets 3 mandates on paper, but cannot reach the screen
+
+Unresolved product inconsistency, found 2026-07-31. Decide which side is right
+before changing either.
+
+The table below says **Free = 3 purchase mandates, deal discovery = No**, and the
+backend implements exactly that:
+
+| Layer | Behaviour on the free plan | Consistent with the table? |
+|-------|---------------------------|----------------------------|
+| `PLAN_LIMITS["free"]["max_mandates"]` | `3` | ✅ |
+| `POST /purchase/mandates` | allowed (auth + rate limit only, no `require_plan`) | ✅ |
+| `GET /purchase/deals/{id}` | **403 `PLAN_REQUIRED`** (`require_plan("pro")`) | ✅ discovery is paid |
+| `deal_discovery_agent` | skips mandates owned by free users | ✅ |
+| **Home screen entry point** | `router.push(limits.deal_discovery ? "/purchase" : "/subscription")` — free users are sent to the paywall | ❌ **blocks a feature they are allotted** |
+
+So a free user is entitled to 3 mandates they can never create through the UI.
+Either `max_mandates` for free should be `0`, or the deal-agent screen should open
+for free users with discovery disabled and an upgrade prompt.
+
+Two related facts for whichever way this goes:
+
+- **`app/purchase/index.tsx` and `create-mandate.tsx` do not self-gate.** The only
+  check is that one home-screen conditional.
+- **`/purchase/*` is a Universal Link path** (`web/.well-known/apple-app-site-association`),
+  so `https://sparrowcollect.com/purchase/...` opens the app directly at the deal
+  agent and bypasses that conditional entirely. Verified: a free user reaching it
+  can create a mandate, which then never gets scanned and whose deals 403.
+
+Whichever way it is resolved, the screen should enforce it rather than relying on
+the caller — deep links do not go through the caller.
+
 ### Plans
 
 | | Free | Pro (€4.99/mo or €39.99/yr) |
