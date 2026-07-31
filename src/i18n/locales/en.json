@@ -151,7 +151,12 @@
     "scan_another": "Scan Another",
     "save_a11y": "Save to collection",
     "add_watchlist_a11y": "Add to watchlist instead",
-    "add_watchlist_btn": "Add to Watchlist Instead"
+    "add_watchlist_btn": "Add to Watchlist Instead",
+    "not_recognised": "Not recognised",
+    "not_recognised_hint": "We couldn't identify this barcode. You can still add it manually.",
+    "add_manually": "Add Manually",
+    "add_manually_a11y": "Add this item manually",
+    "save": "Save"
   },
   "filters": {
     "close_a11y": "Close filters",

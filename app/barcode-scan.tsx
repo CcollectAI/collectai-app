@@ -7,7 +7,7 @@
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { track } from '@/analytics/track';
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -297,6 +297,22 @@ function BarcodeScanScreen() {
     setScanState('scanning');
   };
 
+  // Hand off an unrecognised scan to manual entry, carrying the barcode so it
+  // is not lost. Mirrors QuickScan's low-confidence path (see ARCHITECTURE.md
+  // "QuickScan client guardrail"); before this, the only option offered was
+  // Save, which filed an item called "Unknown item" with no category.
+  const handleAddManually = useCallback(() => {
+    const code = scannedCode?.value;
+    router.push({
+      pathname: '/add-manual',
+      params: {
+        ...(lookupResult?.categoryId ? { category: lookupResult.categoryId } : {}),
+        ...(lookupResult?.title ? { name: lookupResult.title } : {}),
+        ...(code ? { attrs: JSON.stringify({ barcode: code }) } : {}),
+      },
+    });
+  }, [router, scannedCode, lookupResult]);
+
   // Save item to collection
   const [isSaving, setIsSaving] = useState(false);
 
@@ -462,6 +478,7 @@ function BarcodeScanScreen() {
           hapticsEnabled={settings.hapticsEnabled}
           onRescan={handleRescan}
           onSave={handleSaveToCollection}
+          onAddManually={handleAddManually}
           onAddToWatchlist={handleAddToWatchlist}
         />
       )}
