@@ -355,10 +355,20 @@ update of the caller's own row; only `username` and `bio` are editable.
 |------|--------|
 | bio only / username only | 200, other field untouched |
 | username already taken | **409 `USERNAME_TAKEN`** |
-| same name, different case | **409** — `profiles_username_key` is case-SENSITIVE, so the handler does its own `lower()` check, matching what `handle_new_user` does at signup |
+| same name, different case | **409** — enforced by `profiles_username_lower_key`, a UNIQUE index on `lower(username)` (added 2026-07-31). The handler also checks in code so the user gets a friendly 409 rather than a raw 23505, and `handle_new_user` does the same at signup — but **the database is the authority**, not those checks |
 | bio > 300 chars | 422 with a clear message, not a 23514 surfaced as 500 |
 | username with punctuation/spaces | 400 |
 | empty payload | 400 |
+
+Username uniqueness was case-SENSITIVE at the DB level until 2026-07-31
+(`profiles_username_key`), so `Merle` and `merle` could coexist and only
+application code prevented it — the same "constraint narrower than the code
+assumes" shape as the currency/region/locale breakage. An index on
+`lower(username)` already existed but was not UNIQUE; it now is. Proven by
+bypassing every application check with direct SQL:
+`duplicate key value violates unique constraint "profiles_username_lower_key"`.
+Both compensating paths already handle the violation (`handle_new_user` falls
+back to a nameless profile; `update_profile` maps it to 409 `USERNAME_TAKEN`).
 
 `display_name` follows a rename **only while it mirrors the username** (the
 signup trigger sets both). A display_name the user has deliberately diverged is
