@@ -366,6 +366,51 @@ If you see ANY crash in this section, check Sentry (if configured) or rerun and 
 
 ---
 
+## Screen coverage — full sweep completed 2026-07-31
+
+Every route in `app/` was walked against **prod data**, not mocks. Method that
+found things: seed a real row, call the exact query the screen issues, compare
+the **value** to its meaning. Status codes and types caught none of the bugs.
+
+**Fixed during the sweep** (each has a QA row above or in git):
+
+| Screen | Defect |
+|--------|--------|
+| Alerts / wishlist | price alerts never created (`direction:'below'` → 422); Rules tab read the trigger feed |
+| Leaderboard | XP rendered as currency — 80 XP shown as "€80.00" |
+| Categories | raw slugs (`action_figures`) instead of curated names; search matched slugs |
+| Settings | currency/region/locale saves failed silently (4 unchecked `fetch` writes) |
+| Settings → Edit Profile | `PATCH /settings/profile` did not exist (404); built it |
+| MFA | abandoning enrolment bricked 2FA permanently |
+| Events | templates 500'd on save and read back empty |
+| Barcode scan | "Product Found" + Save on a scan that identified nothing |
+| Watchlist builder | reorder threw HTTP 406 every time (empty update payload) |
+| sets-to-complete | "Est. value" always 0 — read a field the API never returns |
+
+**Verified correct, no change needed:** catalog browse + set grids (incl.
+pagination and 80,720 `tcgplayer:`-keyed rows, all titled), item detail, events
+create/RSVP/edit/cancel, chat inbox + DM request, public profiles, gamification
+profile/achievements, market movers, deal detail, barcode lookup API,
+condition-guide, `home/portfolio` and the `search` tab (both `<Redirect>` stubs).
+
+**Known-empty for correct reasons — do not "fix":** Category Health,
+prediction-accuracy, `/sets/auto-progress` below 2 owned items, challenges
+(content expired Feb 2026, no generator), RegionalInsights (deliberately
+unwired), Twitch (out of scope).
+
+### Pre-launch cleanup items found by the sweep
+
+- [ ] **`COMMUNITY_GATED = false`** exposes social surfaces while 0 of 24 profiles
+      are discoverable. Its own comment says flip it back to `true` before public
+      launch. Threshold in notes: ~50 public profiles
+- [ ] **"Open test chat"** button on the empty Inbox opens `app/chat-demo.tsx`, a
+      self-declared local-only placeholder ("remove once real DM threads exist").
+      Real users would see it
+- [ ] **Sponsor checkout** returns 400 "Subscription price not configured for
+      tier: featured" — same unset Stripe prices that block `/pro`. Sponsor CRUD
+      (register / list / update) all work
+- [ ] **Free plan is allotted 3 mandates it cannot reach** (see MONETIZATION.md)
+
 ## What to flag back to me
 
 When you finish, paste back:
