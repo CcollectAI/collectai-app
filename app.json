@@ -39,7 +39,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Sparrow needs camera access to scan and photograph your collectibles."
+          "cameraPermission": "Sparrow needs camera access to scan and photograph your collectibles.",
+          "recordAudioAndroid": false
         }
       ],
       [
@@ -58,7 +59,14 @@
       "expo-apple-authentication",
       "@sentry/react-native",
       "expo-localization",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Sparrow needs access to your photo library to add item photos and analyze screenshots.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "notification": {
       "iosDisplayInForeground": true,
@@ -196,8 +204,6 @@
         "CAMERA",
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
         "android.permission.READ_CALENDAR",
         "android.permission.WRITE_CALENDAR"
       ],
@@ -272,6 +278,9 @@
             "DEFAULT"
           ]
         }
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "experiments": {

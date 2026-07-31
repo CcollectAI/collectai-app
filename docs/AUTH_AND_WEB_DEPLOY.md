@@ -112,6 +112,31 @@ Exposure is limited meanwhile, and already handled — verified live 2026-07-31:
 pages is part of the switch-on** — otherwise the pricing page sells nothing
 because no one can find it.
 
+## Android: `assetlinks.json` is NOT usable yet
+
+`web/.well-known/assetlinks.json` serves publicly (HTTP 200) but has never been
+completed, so **Android App Links do not verify** — `https://sparrowcollect.com/*`
+links will not open the app, including the auth confirm/reset flow. This is the
+Android twin of the apex-AASA problem above.
+
+Fixed 2026-07-31: `package_name` was `com.sparrowcollect.app`, which does not
+exist — `app.json` declares **`io.sparrowcollect.app`**. Corrected.
+
+**Still blocking:** `sha256_cert_fingerprints` is the literal string
+`FILL_WITH_YOUR_SHA256_FINGERPRINT`. It must be the SHA-256 of the **release
+signing certificate**, which does not exist until an EAS Android build has run
+and generated (or been given) a keystore. Get it with:
+
+```bash
+eas credentials --platform android      # interactive; shows the SHA-256 fingerprint
+```
+
+If Play App Signing is enabled — it is on by default for new apps — the
+fingerprint Google actually serves is the **App Signing key** from
+Play Console → Setup → App integrity, NOT the upload key. Use that one, or
+deep links will fail for installs from the Play Store while working for local
+builds. Redeploy `web/` after filling it in.
+
 ## Supabase auth config (project `ykqrruipzmrrvjcvwfgp`)
 
 - **Site URL**: `https://sparrowcollect.com`
