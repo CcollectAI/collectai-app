@@ -452,3 +452,63 @@ async def check_and_alert_overdue(*, force: bool = False) -> bool:
     except Exception as exc:
         logger.warning("[worker_registry] Failed to send overdue alert: %s", exc)
         return False
+
+
+# ---------------------------------------------------------------------------
+# Restart-proof cadence guard
+# ---------------------------------------------------------------------------
+
+async def seconds_since_last_ok(worker_name: str) -> Optional[float]:
+    """Seconds since this worker's last `ok` run, from `worker_runs`.
+
+    Returns None when there is no successful run on record, or when the DB is
+    unavailable — callers must treat None as "no reason to skip".
+    """
+    try:
+        from app.lib.db_helpers import get_db_pool
+        pool = get_db_pool()
+        if pool is None:
+            return None
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT EXTRACT(EPOCH FROM (now() - max(started_at)))::float AS age_s
+                  FROM public.worker_runs
+                 WHERE worker_name = $1 AND status = 'ok'
+                """,
+                worker_name,
+            )
+        return float(row["age_s"]) if row and row["age_s"] is not None else None
+    except Exception as e:  # never let telemetry break a worker
+        logger.debug("[worker_registry] seconds_since_last_ok(%s) failed: %s", worker_name, e)
+        return None
+
+
+async def should_skip_recent_run(worker_name: str, min_gap_s: float) -> bool:
+    """True when this worker ran successfully less than `min_gap_s` ago.
+
+    `SCHEDULES` sets the sleep BETWEEN cycles, but `_run_worker_loop` runs a
+    worker immediately on start and the interval lives only in memory. So every
+    restart of collectai-bake re-triggers every worker regardless of when it
+    last ran. With 9-12 restarts on a busy day, a worker scheduled `24 * 3600`
+    actually ran 9-12 times.
+
+    That is how tcgcsv_worker reached ~14k requests/day against tcgcsv.com and
+    got the application blocked for overuse on 2026-07-29
+    (see learning_third_party_rate_bans_and_schedule_drift). discogs_worker was
+    on the same trajectory at ~19k/day.
+
+    Any worker that calls a third-party host on a slow schedule should gate its
+    own work on this, so the cadence is a property of the worker rather than of
+    how often the process happens to restart.
+    """
+    age = await seconds_since_last_ok(worker_name)
+    if age is None:
+        return False
+    if age < min_gap_s:
+        logger.info(
+            "[worker_registry] %s skipping — last ok run was %.1fh ago (min gap %.1fh)",
+            worker_name, age / 3600.0, min_gap_s / 3600.0,
+        )
+        return True
+    return False

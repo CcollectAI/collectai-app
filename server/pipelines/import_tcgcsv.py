@@ -79,7 +79,10 @@ CATEGORY_MAP: dict[str, str] = {
 CATALOG_CATEGORIES = {"lorcana", "digimon", "one_piece_tcg", "yugioh"}
 
 HTTP_TIMEOUT = 60.0
-PER_REQUEST_SLEEP = 0.25  # be polite to tcgcsv.com
+PER_REQUEST_SLEEP = 0.5  # be polite to tcgcsv.com — 2/s, was 0.25 (4/s)
+# Raised 2026-07-31 after tcgcsv.com blocked the application for overuse.
+# A full run is ~1,800 requests, so this costs ~7 extra minutes on a job
+# that already takes ~20 and now runs genuinely once a day.
 
 
 # ---------------------------------------------------------------------------
@@ -545,6 +548,20 @@ async def run_once() -> None:
         def record_run(*_a, **_kw):  # fallback if registry missing
             pass
 
+    # Cadence guard. SCHEDULES already says 24h, but _run_worker_loop runs a
+    # worker immediately on start and the interval is in-memory only, so every
+    # bake restart re-triggered this. On 2026-07-27/28 the service restarted
+    # 9 and 12 times, so a "daily" import ran 9-12x — ~1,800 requests each,
+    # ~14k/day — and tcgcsv.com blocked the application for overuse on 07-29.
+    # 20h (not 24h) so a restart near the usual slot does not push the run to
+    # the following day.
+    try:
+        from app.worker_registry import should_skip_recent_run
+        if await should_skip_recent_run("tcgcsv_worker", 20 * 3600):
+            return
+    except ImportError:
+        pass
+
     loop = asyncio.get_running_loop()
     t0 = time.monotonic()
     try:
@@ -557,11 +574,23 @@ async def run_once() -> None:
         summary = await loop.run_in_executor(
             None, lambda: run_pipeline(catalog=True))
         duration = time.monotonic() - t0
-        status = "ok" if summary.get("ok") else "error"
-        record_run("tcgcsv_worker", status, duration_s=duration)
+        if not summary.get("ok"):
+            # Raise instead of recording our own "error" row. bake_orchestrator
+            # already records every worker run, so recording here too wrote TWO
+            # rows per cycle (ours "error", the orchestrator's "ok" because we
+            # returned normally) — which made 3-of-3 failures read as
+            # "3 errors / 6 runs" in the watchdog, i.e. 50% instead of 100%.
+            # Raising gives the orchestrator the real status AND populates
+            # worker_runs.metadata.error_repr, which was `{}` for two days
+            # while the actual cause — an HTTP 403 "flagged for overuse" — sat
+            # in bake.log unread.
+            raise RuntimeError(
+                f"tcgcsv import failed: {summary.get('errors')} market_hits errors, "
+                f"{summary.get('total_hits')} hits, {summary.get('total_upserted')} upserted"
+            )
+        record_run("tcgcsv_worker", "ok", duration_s=duration)
     except Exception as e:
         logger.exception("tcgcsv run_once failed: %s", e)
-        record_run("tcgcsv_worker", "error")
         raise
 
 
