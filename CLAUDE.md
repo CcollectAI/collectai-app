@@ -20,6 +20,32 @@ Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funk
   accounts and items are TEST data** (confirmed 2026-07-25) — treat prod data as disposable.
 - **Builds are LOCAL ONLY** — `npm run build:ios:local`. Never `eas build` without `--local`.
 - **Before any local build:** `npm run verify:prebuild` (tsc + seam tests + live Supabase contract).
+- **Android (assessed 2026-07-31):** the app builds and runs on Android — verified on a
+  device, no crash. `npm run build:android:local` (.aab for Play) /
+  `npm run build:android:apk` (installable, same shipping config). What is missing is
+  console setup only: Play enrolment + service account, `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`,
+  FCM. **Run `npm run preflight:android` before any Android build or submit** — it checks
+  all of those plus the Android-only code traps below. See `docs/ANDROID_LAUNCH.md`.
+
+### The Android variant of the failure mode below
+
+**The one that is NOT silent — and is launch-blocking.** `accessibilityRole="tabbar"`
+is iOS-only; on Android react-native throws `IllegalArgumentException` while creating
+the view, a **FATAL EXCEPTION**. One line in `src/components/QuickNavBar.tsx`, mounted
+by **38 screens**, so the entire app past the five root tabs died on Android. Two
+logged-out launch tests both said "no crash". **Only a real authenticated session
+walking real screens found it** — see [[feedback_never_call_app_ready_without_e2e_verify]].
+Use `"tablist"` for a tab container; the gate now validates every role value.
+
+Android gaps in this codebase are otherwise all the same shape: **a platform-specific
+path that degrades to a no-op instead of an error**, so the app quietly does less on
+Android while iOS looks fine and nothing goes red. Found 2026-07-31, all silent:
+`SafeAreaView` imported from `react-native` (iOS-only, a plain `View` on Android);
+`<Modal>` without `onRequestClose` (back button dead on Android only);
+`expo-store-review` never installed under a guarded `require`; the RevenueCat Android
+key unset so the paywall could not sell; FCM absent so push tokens always threw.
+`scripts/preflight_android.mjs` is the checker — extend it rather than fixing the next
+one by hand.
 
 ### Production watchdog (added 2026-07-25)
 

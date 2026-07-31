@@ -80,6 +80,7 @@ screen with discovery disabled, **not** to leave the two sides disagreeing.
 | Entitlement gating hook | `src/hooks/useBillingLimits.ts` | Done |
 | Beta-unlock flag override | `EXPO_PUBLIC_BETA_UNLOCK_ALL` (eas.json) | Done |
 | EAS env var plumbing | `EXPO_PUBLIC_REVENUECAT_IOS_KEY` | Done |
+| EAS env var plumbing (Android) | `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` | **NOT SET — Android cannot sell** |
 | Stripe Checkout + Portal + Webhook (dormant) | `server/app/billing_router.py` | Done, NOT wired for iOS |
 
 ### To Activate (dashboard side — see `docs/PUBLIC_LAUNCH_CHECKLIST.md` Phases 1–2)
@@ -89,6 +90,29 @@ screen with discovery disabled, **not** to leave the two sides disagreeing.
 3. **revenuecat.com** → Apps → Add iOS app `io.sparrowcollect.app` → upload `.p8` + Key ID + Issuer ID.
 4. **EAS** → `eas env:create --environment production --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value 'appl_...' --visibility sensitive`.
 5. **RC** → Product catalog → import products, create `pro` entitlement, configure `default` offering with `$rc_monthly` + `$rc_annual`.
+
+### To Activate on Android (verified missing 2026-07-31)
+
+`src/lib/purchases.ts` picks the key by platform, so the iOS key does nothing on
+Android. With `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` unset, `initPurchases()`
+returns early and `app/subscription.tsx` renders its `iapUnavailable` state —
+**an Android build ships with no way to take money, and nothing fails loudly.**
+`scripts/preflight_android.mjs` now checks for this key.
+
+1. **Play Console** → Monetize → Products → Subscriptions → create
+   `sparrow_pro_monthly` (€4.99/mo) and `sparrow_pro_yearly` (€39.99/yr). Use the
+   **same product identifiers as iOS** so one RevenueCat `default` offering
+   serves both — `app/subscription.tsx:151` reads `$rc_monthly` / `$rc_annual`
+   by exactly those names.
+2. **Play Console** → Setup → API access → link a GCP project and create the
+   publishing service account (`bash scripts/setup_play_store.sh` walks this).
+3. **revenuecat.com** → Apps → Add app → Google Play → package
+   `io.sparrowcollect.app`, upload that same service-account JSON.
+4. **EAS** → `eas env:create --environment production --name EXPO_PUBLIC_REVENUECAT_ANDROID_KEY --value 'goog_...' --visibility sensitive`.
+5. Re-run `npm run preflight:android` — it must exit 0.
+
+The `pro` entitlement and `default` offering from the iOS setup are shared; you
+are adding a second store to the same entitlement, not building a second one.
 
 ## 2. Stripe (DORMANT — kept for future web/Android)
 

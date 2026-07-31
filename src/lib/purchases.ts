@@ -42,9 +42,15 @@ export function initPurchases(): void {
   if (configured) return;
   const apiKey = getApiKey();
   if (!apiKey) {
-    logger.warn(
-      '[purchases] EXPO_PUBLIC_REVENUECAT_*_KEY not set — IAP disabled. ' +
-        'Free tier still works; users will see "Subscribe" buttons that fail until configured.',
+    // logger.warn is stripped in release builds, so this uses .error — a
+    // missing key is exactly the thing you need visible on a store build.
+    // app/subscription.tsx checks isPurchasesAvailable() and renders its
+    // "unavailable" state rather than dead Subscribe buttons, so this is a
+    // silent no-revenue failure unless something says so out loud.
+    logger.error(
+      `[purchases] EXPO_PUBLIC_REVENUECAT_${Platform.OS === 'ios' ? 'IOS' : 'ANDROID'}_KEY ` +
+        'not set — IAP disabled, the paywall cannot sell. Free tier still works. ' +
+        'Checked by scripts/preflight_android.mjs.',
     );
     return;
   }

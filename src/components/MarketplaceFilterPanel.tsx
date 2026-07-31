@@ -9,7 +9,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
-  SafeAreaView,
   View,
   Text,
   TextInput,
@@ -18,6 +17,10 @@ import {
   Modal,
   StyleSheet,
 } from "react-native";
+// react-native's own SafeAreaView is iOS-only — it renders as a plain View on
+// Android, so content sits under the status bar and gesture nav. Always take it
+// from react-native-safe-area-context (see docs/ui-playbook.md).
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 // ── Constants (kept local so component is self-contained) ───────────────

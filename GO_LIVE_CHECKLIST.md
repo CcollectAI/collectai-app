@@ -188,6 +188,10 @@ Dashboard side ⏳ PENDING (user action — see PUBLIC_LAUNCH_CHECKLIST.md Phase
 iOS-first launch. Play Console scaffolded in `android/fastlane/` for phase 2
 (1-2 weeks post-iOS). Google OAuth client IDs not wired — email/password for v1.
 
+Android readiness was assessed 2026-07-31: the app builds and runs, and what
+remains is console setup (Play enrolment, RevenueCat Android key, FCM). Run
+`npm run preflight:android` for live status — see `docs/ANDROID_LAUNCH.md`.
+
 ================================================================================
  9. SENTRY  ✅ DONE
 ================================================================================

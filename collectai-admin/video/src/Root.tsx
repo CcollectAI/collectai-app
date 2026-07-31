@@ -16,6 +16,58 @@ import { AppStoreScreenshot } from "./compositions/AppStoreScreenshot";
 // App Store screenshot dimensions
 const SCREENSHOT = { width: 1320, height: 2868, fps: 1 }; // iPhone 16 Pro Max 6.9"
 
+// Google Play screenshot dimensions. 9:16 exactly — Play rejects any screenshot
+// whose longest side is more than twice its shortest (the iOS 1320x2868 masters
+// are 2.173 and get rejected), and recommends 9:16 for high-visibility surfaces.
+const PLAY_SCREENSHOT = { width: 1440, height: 2560, fps: 1 };
+
+// The six Play stills mirror the App Store ones; only the size and the device
+// chrome differ. Keeping the copy in one list stops the two stores drifting.
+const PLAY_STILLS = [
+  {
+    id: "Play-1-Home",
+    headline: "Your Collection, One Tap Away",
+    subheadline: "Track value across 54 categories",
+    screenType: "home" as const,
+    badgeText: "AI-Powered",
+  },
+  {
+    id: "Play-2-QuickScan",
+    headline: "Scan. Identify. Value.",
+    subheadline: "Point your camera at any collectible",
+    screenType: "quickscan" as const,
+    accentColor: "#10B981",
+  },
+  {
+    id: "Play-3-ItemDetail",
+    headline: "Know the Real Price",
+    subheadline: "AI valuation backed by market evidence",
+    screenType: "item-detail" as const,
+    badgeText: "14 Sources",
+  },
+  {
+    id: "Play-4-Collection",
+    headline: "Portfolio at a Glance",
+    subheadline: "Every item tracked, every value updated",
+    screenType: "collection" as const,
+  },
+  {
+    id: "Play-5-Marketplace",
+    headline: "37 Marketplaces, One Search",
+    subheadline: "eBay, StockX, TCGPlayer, Chrono24 & more",
+    screenType: "marketplace" as const,
+    badgeText: "Real-Time Prices",
+  },
+  {
+    id: "Play-6-Deals",
+    headline: "Never Miss a Deal",
+    subheadline: "AI scans marketplaces for undervalued finds",
+    screenType: "deals" as const,
+    accentColor: "#10B981",
+    badgeText: "Deal Discovery",
+  },
+];
+
 export const RemotionRoot: React.FC = () => (
   <>
     <Composition
@@ -220,5 +272,20 @@ export const RemotionRoot: React.FC = () => (
         badgeText: "Deal Discovery",
       }}
     />
+
+    {/* ─── Google Play Screenshots (Android device chrome) ─────────── */}
+
+    {PLAY_STILLS.map(({ id, ...defaultProps }) => (
+      <Composition
+        key={id}
+        id={id}
+        component={AppStoreScreenshot}
+        durationInFrames={1}
+        fps={PLAY_SCREENSHOT.fps}
+        width={PLAY_SCREENSHOT.width}
+        height={PLAY_SCREENSHOT.height}
+        defaultProps={{ ...defaultProps, platform: "android" as const }}
+      />
+    ))}
   </>
 );

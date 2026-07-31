@@ -169,6 +169,50 @@ already get their insets from the header. `analytics.tsx` and
 `subscription.tsx` have no `SafeAreaView` and are correct. Check how a screen
 gets its header before "fixing" this.
 
+**But when you do use one, it must come from `react-native-safe-area-context`.**
+react-native ships its own `SafeAreaView`, and importing that one is a bug that
+is invisible on iOS: it applies insets there and renders as a **plain `View` on
+Android**, so the screen looks correct on the platform you develop on and sits
+under the status bar and gesture nav on the other. Four files had it (found
+2026-07-31 by the deprecation warning in an Android logcat, not by review):
+`app/(tabs)/marketplace.tsx`, `BottomSheetModal`, `ContextMenu`,
+`MarketplaceFilterPanel`.
+
+```tsx
+// WRONG — silently no-ops on Android
+import { View, SafeAreaView } from 'react-native';
+
+// RIGHT
+import { SafeAreaView } from 'react-native-safe-area-context';
+```
+
+`scripts/preflight_android.mjs` fails the build on any `SafeAreaView` imported
+from `react-native`, so this cannot come back.
+
+## `accessibilityRole` — an iOS-only value CRASHES Android
+
+Most iOS-only props no-op on Android. `accessibilityRole` does not: react-native
+validates it while creating the view and throws `IllegalArgumentException` from
+`ReactAccessibilityDelegate`, which is an **uncatchable FATAL EXCEPTION** on the
+main thread.
+
+`accessibilityRole="tabbar"` in `QuickNavBar.tsx` did exactly that on
+2026-08-01. **38 screens** mount that component, so every screen past the root
+tabs killed the app on Android — while two logged-out launch tests reported it
+healthy.
+
+```tsx
+<View accessibilityRole="tabbar">   // iOS-only → FATAL EXCEPTION on Android
+<View accessibilityRole="tablist">  // valid on both
+```
+
+Android supports: `none, button, link, search, image, imagebutton, keyboardkey,
+text, adjustable, header, summary, alert, checkbox, combobox, menu, menubar,
+menuitem, progressbar, radio, radiogroup, scrollbar, spinbutton, switch, tab,
+tablist, timer, list, grid, pager, scrollview, horizontalscrollview, viewgroup,
+webview, drawerlayout, slidingdrawer, iconmenu, toolbar`. Anything else crashes.
+`preflight_android.mjs` checks every value against that set.
+
 ## Component Checklist
 
 Before shipping a screen, verify:

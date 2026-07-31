@@ -27,6 +27,12 @@ supa_test.env*
 *.keystore
 *.jks
 google-play-service-account.json
+# The name eas.json and android/fastlane/Appfile actually use. The line above
+# never matched it, so the Play publishing credential was not ignored.
+# (google-services.json is deliberately NOT ignored — it holds public client
+# identifiers, not secrets, and app.json references it, so a clean checkout
+# must be able to build.)
+sparrow-play-service-account.json
 
 # misc
 .DS_Store

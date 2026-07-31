@@ -92,7 +92,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
   const displayFees = backendFeePreview ?? feePreview;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>
