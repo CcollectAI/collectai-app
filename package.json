@@ -8,6 +8,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "build:ios:local": "eas build --platform ios --profile store --local --non-interactive --output ./builds/sparrow-ios-local.ipa",
+    "build:android:local": "JAVA_HOME=/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=/usr/local/share/android-commandlinetools ANDROID_SDK_ROOT=/usr/local/share/android-commandlinetools PATH=\"/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/bin:/usr/local/share/android-commandlinetools/platform-tools:/usr/local/share/android-commandlinetools/cmdline-tools/latest/bin:$PATH\" eas build --platform android --profile store --local --non-interactive --output ./builds/sparrow-android-local.aab",
     "submit:ios": "eas submit --platform ios --profile store --path ./builds/sparrow-ios-local.ipa",
     "release:ios": "npm run build:ios:local && npm run submit:ios",
     "web": "expo start --web",
