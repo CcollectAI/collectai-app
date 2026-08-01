@@ -285,3 +285,45 @@ describe('usePaginatedList — refetches when connectivity returns', () => {
     await waitFor(() => expect(result.current.items).toHaveLength(4));
   });
 });
+
+// The case the first version of the fix got WRONG, caught on device:
+// connectivity returns while the offline fetch is STILL IN FLIGHT (parked on
+// the 15s supabase timeout). Calling fetchPage from the listener then hits its
+// `if (fetchingRef.current) return` guard and the refetch is silently dropped —
+// the offline banner clears but the list stays empty. The reconnect must be
+// deferred and drained when the in-flight fetch settles.
+describe('usePaginatedList — reconnect while a fetch is in flight', () => {
+  beforeEach(() => {
+    mockReconnectListeners.length = 0;
+  });
+
+  it('still refetches when the reconnect lands mid-fetch', async () => {
+    let rejectFirst: (e: Error) => void = () => {};
+    const firstCall = new Promise<never>((_, rej) => {
+      rejectFirst = rej;
+    });
+
+    const fetcher = jest
+      .fn()
+      .mockReturnValueOnce(firstCall) // hangs, like the offline fetch
+      .mockResolvedValueOnce([{ id: 'a' }, { id: 'b' }]);
+
+    const { result } = renderHook(() => usePaginatedList(fetcher));
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+
+    // Reconnect arrives while call #1 is still pending.
+    await act(async () => {
+      mockReconnectListeners.forEach((fn) => fn(true));
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1); // correctly deferred, not dropped
+
+    // The offline fetch finally fails; the deferred refetch must now run.
+    await act(async () => {
+      rejectFirst(new Error('Network request failed'));
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.items).toHaveLength(2));
+  });
+});

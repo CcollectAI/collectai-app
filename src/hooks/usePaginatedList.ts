@@ -79,6 +79,16 @@ export function usePaginatedList<T>(
   // Guard against concurrent fetches
   const fetchingRef = useRef(false);
 
+  // A reconnect that lands while a fetch is still in flight must not be
+  // dropped. The offline fetch is typically STILL RUNNING when connectivity
+  // returns — it is parked on the 15s supabase timeout — so calling fetchPage
+  // straight from the listener hits its `if (fetchingRef.current) return`
+  // guard and the refetch silently never happens. That is exactly what shipped
+  // in the first version of this fix and failed on device: the offline banner
+  // cleared but the list stayed on its empty state.
+  const pendingReconnectRefetchRef = useRef(false);
+
+
   /**
    * Internal fetch helper.
    * @param reset - if true, resets offset to 0 and replaces items
@@ -133,6 +143,12 @@ export function usePaginatedList<T>(
         setIsLoading(false);
         setIsLoadingMore(false);
         fetchingRef.current = false;
+
+        // Drain a reconnect that arrived while this fetch was in flight.
+        if (pendingReconnectRefetchRef.current) {
+          pendingReconnectRefetchRef.current = false;
+          void fetchPage(true);
+        }
       }
     },
     [fetcher, pageSize],
@@ -187,7 +203,12 @@ export function usePaginatedList<T>(
     const unsubscribe = onReconnect(() => {
       // Only for lists that have already tried once — otherwise the initial
       // fetch effect above owns the first load.
-      if (didInitialFetchRef.current) fetchPage(true);
+      if (!didInitialFetchRef.current) return;
+      if (fetchingRef.current) {
+        pendingReconnectRefetchRef.current = true; // drain when the in-flight one settles
+        return;
+      }
+      fetchPage(true);
     });
     return unsubscribe;
   }, [fetchPage]);
