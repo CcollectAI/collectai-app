@@ -67,6 +67,9 @@
     "ingest_runs_v1.status": [
       "CHECK ((status = ANY (ARRAY['running'::text, 'completed'::text, 'failed'::text])))"
     ],
+    "item_images.label": [
+      "CHECK ((label = ANY (ARRAY['front'::text, 'back'::text, 'detail'::text, 'box'::text, 'certificate'::text, 'damage'::text, 'other'::text])))"
+    ],
     "item_provenance_events.event_type": [
       "CHECK ((event_type = ANY (ARRAY['added'::text, 'transferred_in'::text, 'transferred_out'::text, 'sale'::text, 'purchase'::text, 'graded'::text, 'verified'::text, 'updated'::text])))"
     ],
@@ -6459,17 +6462,22 @@
       "nullable": false,
       "type": "uuid"
     },
+    "item_images.image_url": {
+      "nullable": false,
+      "type": "text"
+    },
     "item_images.item_id": {
       "nullable": false,
       "type": "uuid"
     },
-    "item_images.url": {
-      "nullable": false,
+    "item_images.label": {
+      "nullable": true,
       "type": "text"
     },
-    "item_images.user_id": {
+    "item_images.position": {
+      "default": "0",
       "nullable": false,
-      "type": "uuid"
+      "type": "int4"
     },
     "item_latest_price.as_of": {
       "nullable": true,
@@ -17495,15 +17503,7 @@
       "nullable": true,
       "type": "uuid"
     },
-    "v_images_needing_embeddings.item_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
     "v_images_needing_embeddings.path_like": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_images_needing_embeddings.sha256": {
       "nullable": true,
       "type": "text"
     },
@@ -23363,9 +23363,10 @@
     ],
     "item_images": [
       "id",
-      "user_id",
       "item_id",
-      "url",
+      "image_url",
+      "label",
+      "position",
       "created_at"
     ],
     "item_latest_price": [
@@ -26467,9 +26468,7 @@
     ],
     "v_images_needing_embeddings": [
       "image_id",
-      "item_id",
       "path_like",
-      "sha256",
       "created_at"
     ],
     "v_ingest_stats_daily": [

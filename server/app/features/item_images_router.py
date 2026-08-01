@@ -136,17 +136,26 @@ async def list_item_images(
                 raise error_response(404, "Item not found", code=ErrorCode.NOT_FOUND)
 
             async with pool.acquire() as conn:
-                # item_images real columns: id, user_id, item_id, url,
-                # created_at. label/position never existed; image_url is
-                # `url`. The original query 500'd on every call.
+                # 2026-08-01: the aliasing workaround here is gone. It existed
+                # because 20260226_item_images.sql used CREATE TABLE IF NOT
+                # EXISTS against a DIFFERENT pre-existing item_images, so the
+                # migration silently no-opped and the real columns were
+                # (id, user_id, item_id, url, created_at). The read path was
+                # patched to alias `url AS image_url` and hard-code
+                # `NULL::text AS label` — which made GET stop 500ing but meant
+                # label and position were ALWAYS null, so ordering and
+                # front/back never worked even in principle. The write path was
+                # never patched and 500'd on every add.
+                # 20260801_fix_item_images_schema.sql rebuilt the table with the
+                # intended columns, so select them for real and order by
+                # position.
                 rows = await conn.fetch(
                     """
-                    SELECT id, item_id, url AS image_url,
-                           NULL::text AS label, NULL::int AS position,
+                    SELECT id, item_id, image_url, label, position,
                            created_at::text
                     FROM public.item_images
                     WHERE item_id = $1
-                    ORDER BY created_at ASC
+                    ORDER BY position ASC, created_at ASC
                     """,
                     iid,
                 )

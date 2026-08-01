@@ -173,7 +173,7 @@ adb shell pm grant io.sparrowcollect.app android.permission.READ_MEDIA_IMAGES
 |---------|-------|
 | 1 Auth | **Partial** — login verified. Signup + email-confirm NOT run |
 | 2 QuickScan | **PASS** — camera → capture → vision sets category → Add Manually → Save |
-| 3 Photo-library scan | **NOT RUN** |
+| 3 Photo-library scan | **client PASS / server bug found + FIXED** — see below |
 | 4 Collection view | **PASS** — items list, item detail opens, photo, no fatals |
 | 4b Spreadsheet import | **NOT RUN** |
 | 5 Paywall | **PASS (degraded, as expected)** — see below |
@@ -199,6 +199,44 @@ as "you own nothing", not "the fetch failed", so a brief signal drop looks like
 data loss. `onReconnect` existed but its only consumer replayed queued WRITES;
 nothing re-fetched READS. Fixed in `usePaginatedList` so every list screen gets
 it — `e8c73d6`, mutation-proven.
+
+### Section 3 detail — a NOT-Android-only bug, found by driving Android
+
+The client flow is fine: picker → Front/Back label → Android photo picker →
+crop. Then the upload 500'd:
+
+```
+POST /items/{id}/images  ->  500 {"code":"DB_ERROR","detail":"Failed to add item image"}
+```
+
+**`20260226_item_images.sql` had silently no-opped.** It used
+`CREATE TABLE IF NOT EXISTS` and a DIFFERENT `public.item_images` already
+existed — `(id, user_id, item_id, url, created_at)` — so the migration reported
+success and did nothing. The API has always written `(item_id, image_url,
+label, position)`, none of which existed, and never supplied the required
+`user_id`. Adding a photo to an item has therefore **never worked, on either
+platform**.
+
+Worse, the **read** path had already been patched around it — aliasing
+`url AS image_url` and hard-coding `NULL::text AS label`. That stopped GET
+500ing but guaranteed label and position were always null, so front/back and
+ordering could never work even in principle. The write path was never patched.
+
+Fixed 2026-08-01 (table was empty in prod, so rebuilt rather than patched):
+- `20260801_fix_item_images_schema.sql` — correct columns, label CHECK, index, 4 RLS policies
+- `20260801_restore_images_needing_embeddings.sql` — the CASCADE dropped
+  `v_images_needing_embeddings` (consumed by `ops/embed_images.py`); rebuilt
+  against `image_url`
+- `item_images_router.py` — read the real columns, order by position
+- `marketplace_listing_router.py` — also read `item_images.url`; the router-drift
+  gate caught it before restart
+- `schema.lock.json` regenerated; all 9 preflight gates pass; API restarted, healthz 200
+
+**Two lessons worth keeping.** `CREATE TABLE IF NOT EXISTS` is not idempotent
+when a *different* table already owns the name — it is a silent no-op, and the
+migration will report success forever. And a DDL fix must be swept across every
+router: `preflight_router_drift` is what stopped this from hard-downing the API
+on restart.
 
 ### ⚠️ Do not repeat: minting tokens while the app holds a session
 

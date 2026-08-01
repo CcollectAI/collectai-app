@@ -1420,15 +1420,25 @@ async def publish_listing(
                         code=ErrorCode.CONFLICT,
                     )
                 # Pull image URLs from item_images (max 12 — eBay cap).
+                #
+                # 2026-08-01: was `SELECT url ... AND user_id = $2`. Both are
+                # gone: 20260801_fix_item_images_schema.sql rebuilt the table to
+                # the schema the code was always written against (image_url,
+                # label, position) after the 2026-02-26 migration silently
+                # no-opped on a pre-existing table. Ownership is now enforced by
+                # RLS via items, so the user_id predicate is both impossible and
+                # redundant — the caller already owns the draft. Ordering moves
+                # to position, which is what the picker's front/back labels are
+                # for.
                 image_rows = await conn.fetch(
                     """
-                    SELECT url FROM item_images
-                    WHERE item_id = $1 AND user_id = $2
-                    ORDER BY created_at LIMIT 12
+                    SELECT image_url FROM item_images
+                    WHERE item_id = $1
+                    ORDER BY position, created_at LIMIT 12
                     """,
-                    draft["item_id"], user_id,
+                    draft["item_id"],
                 )
-                image_urls = [r["url"] for r in image_rows]
+                image_urls = [r["image_url"] for r in image_rows]
                 # Fall back to the items.image_url primary if nothing in
                 # item_images yet.
                 if not image_urls:
