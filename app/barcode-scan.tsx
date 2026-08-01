@@ -420,27 +420,32 @@ function BarcodeScanScreen() {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 20}
         >
           <View style={styles.cameraContainer}>
+            {/* expo-camera warns "<CameraView> does not support children.
+                This may lead to inconsistent behaviour or crashes." The overlay
+                is therefore a SIBLING positioned over the camera rather than a
+                child. Layering is unchanged: the camera fills the container and
+                the overlay, rendered after it, paints on top. */}
             <CameraView
-              style={styles.camera}
+              style={StyleSheet.absoluteFill}
               facing="back"
               barcodeScannerSettings={{
                 barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128'],
               }}
               onBarcodeScanned={handleBarcodeScanned}
-            >
-              {/* Scan overlay */}
-              <View style={styles.scanOverlay}>
-                <View style={styles.scanFrame}>
-                  <View style={[styles.scanCorner, styles.scanCornerTL]} />
-                  <View style={[styles.scanCorner, styles.scanCornerTR]} />
-                  <View style={[styles.scanCorner, styles.scanCornerBL]} />
-                  <View style={[styles.scanCorner, styles.scanCornerBR]} />
-                </View>
-                <Text style={styles.scanHint}>
-                  Point camera at barcode or ISBN
-                </Text>
+            />
+
+            {/* Scan overlay */}
+            <View style={[StyleSheet.absoluteFill, styles.scanOverlay]} pointerEvents="none">
+              <View style={styles.scanFrame}>
+                <View style={[styles.scanCorner, styles.scanCornerTL]} />
+                <View style={[styles.scanCorner, styles.scanCornerTR]} />
+                <View style={[styles.scanCorner, styles.scanCornerBL]} />
+                <View style={[styles.scanCorner, styles.scanCornerBR]} />
               </View>
-            </CameraView>
+              <Text style={styles.scanHint}>
+                Point camera at barcode or ISBN
+              </Text>
+            </View>
           </View>
 
           <BarcodeModeSelector

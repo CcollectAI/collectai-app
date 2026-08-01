@@ -94,12 +94,17 @@ function CameraViewfinderInner({
   return (
     <View style={styles.cameraRoot}>
       <StatusBar barStyle="light-content" />
+      {/* expo-camera warns "<CameraView> does not support children. This may
+          lead to inconsistent behaviour or crashes." The overlay below is a
+          SIBLING painted over the camera, not a child. Layering is unchanged:
+          both fill the same parent and the overlay renders after. */}
       <CameraView
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
         facing="back"
         enableTorch={enableTorch}
-      >
+      />
+      <>
         {/* Semi-transparent overlay with cutout */}
         <View style={styles.overlay}>
           {/* Top bar */}
@@ -297,7 +302,7 @@ function CameraViewfinderInner({
             />
           )}
         </View>
-      </CameraView>
+      </>
     </View>
   );
 }
