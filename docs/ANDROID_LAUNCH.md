@@ -139,6 +139,90 @@ SHA-256: bfc37f04992e4168f39f159be2f62ea4d1339ba0021d89175c57a6efc28d5ef3
 Once Play App Signing is enabled, Play re-signs with its own key — take the
 *app signing* fingerprint from Play Console for anything user-facing.
 
+## ▶ RESUME HERE — Android QA pass, 2026-08-01 (unfinished)
+
+Driven from `docs/TESTFLIGHT_QA_CHECKLIST.md`, on an Android 16 x86_64 emulator
+with a real logged-in session. **Sections 3, 4b, 5, 6, 9, 10 are NOT run.**
+
+### Setup to get back to where this stopped
+
+```bash
+# 1. Emulator (it hosts a SECOND project's app — see gotchas)
+$ANDROID_HOME/emulator/emulator -avd SammySamPixel -no-snapshot-load -no-boot-anim &
+adb wait-for-device
+adb shell am force-stop com.sammysam.app     # ALWAYS do this first, see gotchas
+
+# 2. Latest APK with every fix in this doc (rebuild if the tree moved on)
+npm run build:android:apk                    # -> builds/sparrow-android-apk<N>.apk
+adb install -r builds/sparrow-android-apk5.apk
+adb shell am force-stop io.sparrowcollect.app   # install -r does NOT swap running code
+adb shell monkey -p io.sparrowcollect.app -c android.intent.category.LAUNCHER 1
+
+# 3. Permissions without fighting dialogs
+adb shell pm grant io.sparrowcollect.app android.permission.CAMERA
+adb shell pm grant io.sparrowcollect.app android.permission.READ_MEDIA_IMAGES
+```
+
+**QA account** (created via anon signup, confirmed with SQL over `DB_DSN_DIRECT`
+— there is no service-role key anywhere): `android-qa-20260801@sparrowcollect.com`
+/ `AndroidQA!20260801x`. It has 3 test items. Delete it when done.
+
+### Coverage so far
+
+| Section | State |
+|---------|-------|
+| 1 Auth | **Partial** — login verified. Signup + email-confirm NOT run |
+| 2 QuickScan | **PASS** — camera → capture → vision sets category → Add Manually → Save |
+| 3 Photo-library scan | **NOT RUN** |
+| 4 Collection view | **PASS** — 3 items list, item detail opens, photo, no fatals |
+| 4b Spreadsheet import | **NOT RUN** |
+| 5 Paywall | **Partial** — free-tier "Upgrade" CTA present (so `BETA_UNLOCK_ALL=false` really applies). Never opened/attempted purchase |
+| 6 Settings / sign-out | **Partial** — Settings renders. Sign-out NOT run |
+| 7 Deep links | **PASS** — both hosts `verified`, link opens the app |
+| 8 Permissions | **Partial** — camera + notifications granted. Calendar/photos NOT run |
+| 9 Network / offline | **NOT RUN** |
+| 10 Crash audit | **PASS** — 30 routes, 0 crashes; background/foreground + rotation NOT run |
+
+Also swept: 21 screens for **error states** (not just crashes) — 0 found.
+
+### Emulator gotchas that cost hours — read before driving the UI
+
+1. **A second app (`com.sammysam.app`) steals foreground.** `am start` returns
+   success while SammySam is actually in front, so taps and typed text land in
+   the wrong app. It happened twice, including typing the QA credentials into
+   it. **Force-stop it first, and screenshot to confirm which app you are in —
+   text-only `uiautomator` dumps cannot tell you.** `monkey -c LAUNCHER`
+   foregrounds reliably where `am start` silently fails.
+2. **`adb install -r` does NOT swap a running process.** Old code keeps
+   executing until `am force-stop`. An install mid-test silently keeps testing
+   the previous APK.
+3. **`pm get-app-links` state `1024` = "approved WITHOUT verification"**, not
+   verified. Only the literal string `verified` counts.
+4. **`adb shell input text` truncates** against a controlled RN `TextInput` —
+   type in ~4-char chunks with sleeps. The device shell also mangles `-`
+   unless the whole string is single-quoted.
+5. **Tap coordinates shift between screens.** Read the target's position from a
+   `uiautomator` dump each time; a hardcoded y-value silently misses and you
+   will think a field is empty when your tap simply landed elsewhere.
+6. **The emulator died twice and lost network once** (ANR storms). If
+   `TypeError: Network request failed` appears, reset the radios:
+   `adb shell svc wifi disable && adb shell svc data disable` then re-enable.
+   Do not file those as app bugs.
+7. **`uiautomator` itself crashes** (`FATAL EXCEPTION ... UiAutomation`). Those
+   fatals are the tooling, not the app — check for `Process: io.sparrowcollect.app`
+   before counting a fatal.
+
+### A false trail, recorded so it is not re-walked
+
+Several cycles went into a "Save to Collection is permanently disabled" bug
+that **does not exist**. The saves were succeeding and the form was resetting,
+so `canSubmit` correctly went false on an empty name. The Items tab would have
+shown 3 saved items in one tap. **Check the destination before theorising about
+the mechanism.**
+
+That hunt did surface a real latent issue by code inspection — the unbounded S3
+PUT in `usePhotoUpload` — fixed in `057038c`, but never reproduced on device.
+
 ## Status
 
 ### Done (in-repo)
