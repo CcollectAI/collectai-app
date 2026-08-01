@@ -326,10 +326,89 @@ function checkAccessibilityRoles() {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
+// 8. Android App Links — assetlinks.json must match app.json
+// ───────────────────────────────────────────────────────────────────────────
+function checkAssetLinks() {
+  // app.json declares intentFilters with autoVerify:true. Android only honours
+  // those if https://<host>/.well-known/assetlinks.json names THIS package and
+  // a real signing fingerprint. Get either wrong and every link silently opens
+  // in the browser instead of the app — no error, nothing in logcat.
+  const app = readJson("app.json").expo ?? readJson("app.json");
+  const android = app.android ?? {};
+  const pkg = android.package;
+  const autoVerify = (android.intentFilters ?? []).some((f) => f.autoVerify);
+  if (!autoVerify || !pkg) return;
+
+  const candidates = ["web/.well-known/assetlinks.json", "public/.well-known/assetlinks.json"]
+    .filter((p) => existsSync(join(REPO, p)));
+  if (candidates.length === 0) {
+    fail(
+      "app.json declares autoVerify intent filters but no assetlinks.json exists.\n" +
+        "        Every https:// deep link will open in the browser, not the app.",
+    );
+    return;
+  }
+
+  for (const rel of candidates) {
+    let entries;
+    try {
+      entries = readJson(rel);
+    } catch {
+      fail(`${rel} is not valid JSON — Android App Links verification will fail.`);
+      continue;
+    }
+    const problems = [];
+    const forPkg = entries.filter((e) => e?.target?.package_name === pkg);
+    if (forPkg.length === 0) {
+      const found = entries.map((e) => e?.target?.package_name).join(", ") || "none";
+      problems.push(`no entry for "${pkg}" (found: ${found})`);
+    }
+    for (const e of forPkg) {
+      for (const fp of e.target.sha256_cert_fingerprints ?? []) {
+        // A real fingerprint is 32 colon-separated hex bytes.
+        if (!/^([0-9A-F]{2}:){31}[0-9A-F]{2}$/i.test(fp)) {
+          problems.push(`placeholder or malformed fingerprint: "${fp.slice(0, 40)}"`);
+        }
+      }
+      if ((e.target.sha256_cert_fingerprints ?? []).length === 0) {
+        problems.push("no sha256_cert_fingerprints");
+      }
+    }
+    if (problems.length) {
+      fail(
+        `${rel} will not verify Android App Links:\n` +
+          problems.map((p) => `        - ${p}`).join("\n") +
+          "\n        Fingerprint of the current local build:\n" +
+          "        apksigner verify --print-certs builds/<apk> | grep SHA-256\n" +
+          "        NOTE: once Play App Signing is on, Play re-signs with ITS key — the\n" +
+          "        Play Console app-signing fingerprint must ALSO be listed here or\n" +
+          "        links break for every store install.",
+      );
+    } else {
+      pass(`${rel} names ${pkg} with a real fingerprint`);
+      // docs/AUTH_AND_WEB_DEPLOY.md: Play App Signing (on by default for new
+      // apps) re-signs with Google's key, so an assetlinks.json listing ONLY
+      // the upload key verifies for local/internal builds and FAILS for every
+      // Play Store install. Passing silently here would recreate that trap.
+      const count = forPkg.reduce((n, e) => n + (e.target.sha256_cert_fingerprints ?? []).length, 0);
+      if (count < 2) {
+        warn(
+          `${rel} lists only ONE fingerprint. Once Play App Signing is enabled, add the\n` +
+            "        Play Console → Setup → App integrity → App signing key SHA-256 alongside the\n" +
+            "        upload key, or App Links break for every Play Store install while still\n" +
+            "        working locally. Then redeploy web/ (docs/AUTH_AND_WEB_DEPLOY.md).",
+        );
+      }
+    }
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
 
 checkAppConfig();
 checkSafeAreaImports();
 checkAccessibilityRoles();
+checkAssetLinks();
 checkSubmitCredentials();
 checkRevenueCatKey();
 checkPlayAssets();

@@ -122,14 +122,32 @@ Android twin of the apex-AASA problem above.
 Fixed 2026-07-31: `package_name` was `com.sparrowcollect.app`, which does not
 exist — `app.json` declares **`io.sparrowcollect.app`**. Corrected.
 
-**Still blocking:** `sha256_cert_fingerprints` is the literal string
-`FILL_WITH_YOUR_SHA256_FINGERPRINT`. It must be the SHA-256 of the **release
-signing certificate**, which does not exist until an EAS Android build has run
-and generated (or been given) a keystore. Get it with:
+**Fingerprint filled 2026-08-01** with the upload key from the local release
+build, read straight off the APK (no interactive `eas credentials` needed):
 
 ```bash
-eas credentials --platform android      # interactive; shows the SHA-256 fingerprint
+apksigner verify --print-certs builds/sparrow-android-apk3.apk | grep SHA-256
+# BF:C3:7F:04:99:2E:41:68:F3:9F:15:9B:E2:F6:2E:A4:D1:33:9B:A0:02:1D:89:17:5C:57:A6:EF:C2:8D:5E:F3
 ```
+
+Confirmed to be the key the device actually sees:
+`adb shell pm get-app-links io.sparrowcollect.app` reports the same `Signatures:`.
+
+**Verified broken before the fix, behaviourally:** firing
+`https://sparrowcollect.com/item/test-123` on the emulator opened **Chrome**,
+not the app. `pm get-app-links` reported domain state `1024` (approved without
+verification) for both hosts, which is NOT the same as verified — do not read
+1024 as success.
+
+**Two things still outstanding:**
+
+1. **Production is serving a stale file.** The live response still has
+   `com.sparrowcollect.app` and the placeholder, i.e. the 2026-07-31 package fix
+   was never deployed. Vercel only auto-deploys the default branch, so the fix
+   is inert until `web/` is redeployed (procedure below).
+2. **The upload key alone is not enough for the Play Store** — see the paragraph
+   below. `scripts/preflight_android.mjs` now WARNs whenever only one
+   fingerprint is listed, so this cannot be quietly forgotten.
 
 If Play App Signing is enabled — it is on by default for new apps — the
 fingerprint Google actually serves is the **App Signing key** from
