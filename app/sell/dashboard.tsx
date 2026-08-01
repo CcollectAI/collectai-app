@@ -38,6 +38,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { MARKETPLACE_BRAND_COLORS } from '@/constants/colors';
 import { useFormField, validateAll } from '@/hooks/useFormField';
 import { SELLING_ENABLED } from '@/config/featureFlags';
+import { SellingUnavailable } from '@/components/sell/SellingUnavailable';
 import { compose, required, maxLength, positiveNumber } from '@/lib/validate';
 import { CreateListingModal } from '@/components/sell/CreateListingModal';
 import { ConnectMarketplaceModal } from '@/components/sell/ConnectMarketplaceModal';
@@ -721,33 +722,6 @@ function SellerDashboardScreen() {
         onConnect={handleConnect}
       />
 
-      <QuickNavBar />
-    </View>
-  );
-}
-
-/**
- * Gated at the WRAPPER, not inside the screen, so the inner component never
- * mounts — that also stops its four marketplace fetches from firing for a
- * feature the user cannot complete.
- *
- * Gating the screen rather than only hiding entry points is deliberate: nothing
- * in the app links to /sell/dashboard today, but it is still reachable by deep
- * link, exactly like the free-tier purchase mandates that were unreachable in
- * the UI yet reachable via a Universal Link (docs/MONETIZATION.md).
- */
-function SellingUnavailable() {
-  const { colors } = useAppTheme();
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ title: 'Selling' }} />
-      <EmptyState
-        icon="construct-outline"
-        title="Selling is coming soon"
-        subtitle="Listing your collection across eBay, Mercari and Cardmarket is still being built. We'll turn it on once marketplace accounts can be connected."
-        colors={colors}
-        style={{ flex: 1 }}
-      />
       <QuickNavBar />
     </View>
   );

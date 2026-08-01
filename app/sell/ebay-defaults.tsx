@@ -41,6 +41,8 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { getEbayDefaults, setEbayDefaults } from '@/api/marketplaceApi';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/components/Toast';
+import { SELLING_ENABLED } from '@/config/featureFlags';
+import { SellingUnavailable } from '@/components/sell/SellingUnavailable';
 
 const FIELDS: Array<{
   key: 'ebay_category_id' | 'fulfillment_policy_id' | 'payment_policy_id' | 'return_policy_id' | 'location_key';
@@ -94,6 +96,7 @@ type FormState = {
 };
 
 export default function EbayDefaultsScreenWithBoundary() {
+  if (!SELLING_ENABLED) return <SellingUnavailable title="eBay Defaults" />;
   return (
     <ScreenErrorBoundary screenName="eBay Defaults">
       <EbayDefaultsScreen />

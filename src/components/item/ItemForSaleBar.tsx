@@ -10,7 +10,7 @@ import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
-import { BETA_MODE } from '@/config/featureFlags';
+import { BETA_MODE, SELLING_ENABLED } from '@/config/featureFlags';
 
 interface ItemForSaleBarProps {
   askingPriceValue: string;
@@ -49,7 +49,9 @@ export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceVa
           Listed{askingPriceValue ? ` ${formatPrice(parseFloat(askingPriceValue), settings.currency)}` : ''}
         </Text>
       </View>
-      {!BETA_MODE && (
+      {/* Routes into the selling flow, so it follows SELLING_ENABLED too —
+          BETA_MODE alone left it live while the rest of selling was gated. */}
+      {!BETA_MODE && SELLING_ENABLED && (
         <AnimatedPressable
           onPress={() => router.push('/sell/offers')}
           style={[styles.editBarBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}

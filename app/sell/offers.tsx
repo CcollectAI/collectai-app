@@ -33,6 +33,8 @@ import type { Offer, OfferStatus } from '@/data/types';
 import { timeAgo } from '@/lib/timeAgo';
 import { STATUS_LABELS } from '@/constants/dealStatus';
 import { radius, text, fontWeight } from '@/theme/tokens';
+import { SELLING_ENABLED } from '@/config/featureFlags';
+import { SellingUnavailable } from '@/components/sell/SellingUnavailable';
 
 // ---------------------------------------------------------------------------
 // Relative time helper
@@ -274,6 +276,7 @@ function OffersInboxScreen() {
 }
 
 export default function OffersInboxWithBoundary() {
+  if (!SELLING_ENABLED) return <SellingUnavailable title="Offers" />;
   return (
     <ScreenErrorBoundary screenName="Offers Inbox">
       <OffersInboxScreen />

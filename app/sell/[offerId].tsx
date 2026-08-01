@@ -44,6 +44,8 @@ import { radius, text, fontWeight } from '@/theme/tokens';
 import { OfferTimeline } from '@/components/sell/OfferTimeline';
 import { CounterOfferForm } from '@/components/sell/CounterOfferForm';
 import { ReputationBadges } from '@/components/sell/ReputationBadges';
+import { SELLING_ENABLED } from '@/config/featureFlags';
+import { SellingUnavailable } from '@/components/sell/SellingUnavailable';
 
 // ---------------------------------------------------------------------------
 // Status config
@@ -685,6 +687,7 @@ function OfferDetailScreen() {
 }
 
 export default function OfferDetailWithBoundary() {
+  if (!SELLING_ENABLED) return <SellingUnavailable title="Offer" />;
   return (
     <ScreenErrorBoundary screenName="Offer Detail">
       <OfferDetailScreen />

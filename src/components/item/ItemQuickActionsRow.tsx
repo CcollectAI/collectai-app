@@ -9,6 +9,7 @@ import { formatPrice } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight as fw, gap } from '@/theme/tokens';
 import { logger } from '@/lib/logger';
+import { SELLING_ENABLED } from '@/config/featureFlags';
 
 interface ItemQuickActionsRowProps {
   editableName: string;
@@ -76,7 +77,10 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
         <Ionicons name="share-outline" size={18} color={theme.accent} />
         <Text style={[styles.quickActionLabel, { color: theme.text }]}>Share</Text>
       </AnimatedPressable>
-      {!isForSale ? (
+      {/* Second selling entry point — gated with the Seller Dashboard, or a user
+          could still create a listing that goes nowhere (no marketplace account
+          can be connected). Gating only the dashboard would have missed this. */}
+      {!SELLING_ENABLED ? null : !isForSale ? (
         <AnimatedPressable
           onPress={onListForSale}
           disabled={busy}
