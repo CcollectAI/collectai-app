@@ -177,7 +177,7 @@ adb shell pm grant io.sparrowcollect.app android.permission.READ_MEDIA_IMAGES
 | 4 Collection view | **PASS** — items list, item detail opens, photo, no fatals |
 | 4b Spreadsheet import | **NOT RUN** |
 | 5 Paywall | **PASS (degraded, as expected)** — see below |
-| 6 Settings / sign-out | **Partial** — sections load (Privacy, Notifications, Appearance, Region). **Sign-out control not located** in the scroll; retry via Account/ProfileEditSection near the TOP of Settings, not the bottom |
+| 6 Settings / sign-out | **Partial** — sections load (Privacy, Notifications, Appearance, Region). Sign-out was **not visible**, but it is NOT missing: it lives in `ProfileEditSection` (rendered near the TOP of Settings) inside `{user && (…)}` at line 185, so a wedged session with a null `user` hides the whole Account block. Retry with a healthy session — see the token-reuse warning below |
 | 7 Deep links | **PASS** — both hosts `verified`, link opens the app |
 | 8 Permissions | **Partial** — camera + notifications granted. Calendar NOT run |
 | 9 Network / offline | **FAILED → FIXED** — see below (`e8c73d6`) |
