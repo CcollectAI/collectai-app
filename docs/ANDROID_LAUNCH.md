@@ -250,6 +250,36 @@ Two things make it hard to reach with adb:
 - Swiping down the CENTRE of the screen drags across switch rows and opens
   sub-modals (Region picker, etc). **Swipe in the left margin (x≈60)** instead.
 
+### Open performance finding — `v_category_summaries_v1` (NOT Android-specific)
+
+Analytics logs `code: '57014' — canceling statement due to statement timeout`
+from `listCategorySummaries` (`categoryProvider.ts:120`). Measured on prod:
+
+```
+SELECT count(*) FROM public.v_category_summaries_v1;   -- 54 rows, 8546 ms cold
+```
+
+`EXPLAIN (ANALYZE, BUFFERS)` shows why:
+
+```
+GroupAggregate (rows=54)
+  -> Incremental Sort (rows=221391)   temp read=394 written=396, peak disk 3152kB
+    -> Nested Loop Left Join (rows=221391)
+       -> Index Scan on category_items ci   (rows=221391)
+       -> Materialize -> Index Scan on items i   (rows=0)   <-- user owns nothing
+Execution Time: 1287 ms (warm)
+```
+
+It scans the **entire 221k-row catalog** to produce 54 rows, left-joining
+against the user's items — even when the user owns none — and spills the sort to
+disk. It therefore gets slower as the catalog grows, and already exceeds the
+client's 15s bound on a cold cache, which is what surfaces as 57014.
+
+Not fixed here: the view drives category-completion stats, so a rewrite needs
+output-equivalence proof before it goes near prod. Fix direction is to aggregate
+`category_items` per category ONCE (matview or pre-aggregated counts) and join
+the user's owned counts onto 54 rows, instead of joining 221k rows per request.
+
 ### ⚠️ Do not repeat: minting tokens while the app holds a session
 
 Late in the run every on-device Supabase query began timing out at 15s
