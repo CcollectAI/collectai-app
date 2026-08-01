@@ -187,15 +187,6 @@
     "price_predictions_default.q90": [
       "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
     ],
-    "price_predictions_y2026m06.q10": [
-      "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
-    ],
-    "price_predictions_y2026m06.q50": [
-      "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
-    ],
-    "price_predictions_y2026m06.q90": [
-      "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
-    ],
     "price_predictions_y2026m07.q10": [
       "CHECK ((((q10 IS NULL) OR (q10 >= (0)::numeric)) AND ((q50 IS NULL) OR (q50 >= (0)::numeric)) AND ((q90 IS NULL) OR (q90 >= (0)::numeric)) AND ((q10 IS NULL) OR (q90 IS NULL) OR (q10 <= q90)) AND ((q10 IS NULL) OR (q50 IS NULL) OR (q10 <= q50)) AND ((q50 IS NULL) OR (q90 IS NULL) OR (q50 <= q90)) AND ((q90 IS NULL) OR (q90 <= (20000000)::numeric))))"
     ],
@@ -11646,97 +11637,6 @@
       "type": "timestamptz"
     },
     "price_predictions_default.ts": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "price_predictions_y2026m06.category": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m06.comps_count": {
-      "nullable": true,
-      "type": "int4"
-    },
-    "price_predictions_y2026m06.conf_score": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_predictions_y2026m06.confidence": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_predictions_y2026m06.created_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "price_predictions_y2026m06.evidence_hit_ids": {
-      "default": "'{}'::text[]",
-      "nullable": true,
-      "type": "_text"
-    },
-    "price_predictions_y2026m06.evidence_summary": {
-      "default": "'{}'::jsonb",
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "price_predictions_y2026m06.explanation": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m06.generated_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "price_predictions_y2026m06.head": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m06.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
-      "type": "uuid"
-    },
-    "price_predictions_y2026m06.item_ref": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m06.model_version": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m06.nk": {
-      "default": "(gen_random_uuid())::text",
-      "nullable": false,
-      "type": "text"
-    },
-    "price_predictions_y2026m06.q10": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_predictions_y2026m06.q50": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_predictions_y2026m06.q90": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "price_predictions_y2026m06.raw": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "price_predictions_y2026m06.source": {
-      "nullable": true,
-      "type": "text"
-    },
-    "price_predictions_y2026m06.training_data_asof": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "price_predictions_y2026m06.ts": {
       "default": "now()",
       "nullable": false,
       "type": "timestamptz"
@@ -24805,29 +24705,6 @@
       "explanation",
       "conf_score"
     ],
-    "price_predictions_y2026m06": [
-      "id",
-      "nk",
-      "q10",
-      "q50",
-      "q90",
-      "confidence",
-      "comps_count",
-      "model_version",
-      "source",
-      "training_data_asof",
-      "created_at",
-      "item_ref",
-      "category",
-      "raw",
-      "ts",
-      "head",
-      "generated_at",
-      "evidence_hit_ids",
-      "evidence_summary",
-      "explanation",
-      "conf_score"
-    ],
     "price_predictions_y2026m07": [
       "id",
       "nk",
@@ -29070,12 +28947,6 @@
       ]
     ],
     "price_predictions_default": [
-      [
-        "id",
-        "generated_at"
-      ]
-    ],
-    "price_predictions_y2026m06": [
       [
         "id",
         "generated_at"
