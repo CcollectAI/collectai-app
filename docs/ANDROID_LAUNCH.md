@@ -142,7 +142,7 @@ Once Play App Signing is enabled, Play re-signs with its own key — take the
 ## ▶ RESUME HERE — Android QA pass, 2026-08-01 (unfinished)
 
 Driven from `docs/TESTFLIGHT_QA_CHECKLIST.md`, on an Android 16 x86_64 emulator
-with a real logged-in session. **Still NOT run: 4b import, 1 signup/email-confirm, 8 calendar.**
+with a real logged-in session. **Still NOT run: 4b spreadsheet import (round-trip), 1 signup + email-confirm.** Everything else in the checklist has been exercised.
 
 ### Setup to get back to where this stopped
 
@@ -174,12 +174,12 @@ adb shell pm grant io.sparrowcollect.app android.permission.READ_MEDIA_IMAGES
 | 1 Auth | **Partial** — login verified. Signup + email-confirm NOT run |
 | 2 QuickScan | **PASS** — camera → capture → vision sets category → Add Manually → Save |
 | 3 Photo-library scan | **client PASS / server bug found + FIXED** — see below |
-| 4 Collection view | **PASS** — items list, item detail opens, photo, no fatals |
+| 4 Collection view | **PASS** — items list, item detail, photo, **edit persists** (name change survived reload), no fatals |
 | 4b Spreadsheet import | **NOT RUN** |
 | 5 Paywall | **PASS (degraded, as expected)** — see below |
 | 6 Settings / sign-out | **PASS** — sections load; sign out shows a confirm dialog, signs out and redirects to login, no crash. Account block also has Change Password / Export Insurance Report / Download inventory CSV / Delete Account |
 | 7 Deep links | **PASS** — both hosts `verified`, link opens the app |
-| 8 Permissions | **Partial** — camera + notifications granted. Calendar NOT run |
+| 8 Permissions | **PASS** — camera, notifications AND calendar all granted and exercised (RSVP writes, shows "1 attending / Going"). Found + fixed: event **reminders** threw an invalid-trigger TypeError (`73548b3`) |
 | 9 Network / offline | **FAILED → FIXED** — see below (`e8c73d6`) |
 | 10 Crash audit | **PASS** — 30 routes 0 crashes; background→foreground keeps pid; rotation clean |
 
@@ -275,10 +275,14 @@ against the user's items — even when the user owns none — and spills the sor
 disk. It therefore gets slower as the catalog grows, and already exceeds the
 client's 15s bound on a cold cache, which is what surfaces as 57014.
 
-Not fixed here: the view drives category-completion stats, so a rewrite needs
-output-equivalence proof before it goes near prod. Fix direction is to aggregate
-`category_items` per category ONCE (matview or pre-aggregated counts) and join
-the user's owned counts onto 54 rows, instead of joining 221k rows per request.
+**FIXED 2026-08-02 (`dd597b2`), applied to prod.** `total_count` is
+user-independent, so the view now aggregates the catalog once per category and
+drives `owned_count` from the user's items. **5029 ms cold → 105 ms steady
+(~47x)**, and the 57014 is gone from the device log. Output-equivalence was
+PROVEN before swapping (EXCEPT diff both ways, 54 categories, with a real
+`auth.uid()` for a user owning matched rows) — see
+`learning_prove_view_equivalence_with_real_auth_context` for how the first
+version of that test silently proved nothing.
 
 ### ⚠️ Do not repeat: minting tokens while the app holds a session
 
