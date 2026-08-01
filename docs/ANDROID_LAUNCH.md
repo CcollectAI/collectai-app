@@ -142,7 +142,7 @@ Once Play App Signing is enabled, Play re-signs with its own key — take the
 ## ▶ RESUME HERE — Android QA pass, 2026-08-01 (unfinished)
 
 Driven from `docs/TESTFLIGHT_QA_CHECKLIST.md`, on an Android 16 x86_64 emulator
-with a real logged-in session. **Sections 3, 4b, 5, 6, 9, 10 are NOT run.**
+with a real logged-in session. **Still NOT run: 4b import, 1 signup/email-confirm, 8 calendar.**
 
 ### Setup to get back to where this stopped
 
