@@ -177,7 +177,7 @@ adb shell pm grant io.sparrowcollect.app android.permission.READ_MEDIA_IMAGES
 | 4 Collection view | **PASS** — items list, item detail opens, photo, no fatals |
 | 4b Spreadsheet import | **NOT RUN** |
 | 5 Paywall | **PASS (degraded, as expected)** — see below |
-| 6 Settings / sign-out | **Partial** — sections load (Privacy, Notifications, Appearance, Region). Sign-out was **not visible**, but it is NOT missing: it lives in `ProfileEditSection` (rendered near the TOP of Settings) inside `{user && (…)}` at line 185, so a wedged session with a null `user` hides the whole Account block. Retry with a healthy session — see the token-reuse warning below |
+| 6 Settings / sign-out | **PASS** — sections load; sign out shows a confirm dialog, signs out and redirects to login, no crash. Account block also has Change Password / Export Insurance Report / Download inventory CSV / Delete Account |
 | 7 Deep links | **PASS** — both hosts `verified`, link opens the app |
 | 8 Permissions | **Partial** — camera + notifications granted. Calendar NOT run |
 | 9 Network / offline | **FAILED → FIXED** — see below (`e8c73d6`) |
@@ -237,6 +237,18 @@ when a *different* table already owns the name — it is a silent no-op, and the
 migration will report success forever. And a DDL fix must be swept across every
 router: `preflight_router_drift` is what stopped this from hard-downing the API
 on restart.
+
+### Driving the Settings screen
+
+Sign-out is near the **BOTTOM** of Settings — order is Privacy → Notifications →
+Appearance → Accessibility → Alerts → **Account** (`ProfileEditSection`). An
+earlier note in this doc said "near the TOP"; that was wrong.
+
+Two things make it hard to reach with adb:
+- The Account block is inside `{user && (…)}`, so a wedged session hides it
+  entirely and it looks like the control is missing.
+- Swiping down the CENTRE of the screen drags across switch rows and opens
+  sub-modals (Region picker, etc). **Swipe in the left margin (x≈60)** instead.
 
 ### ⚠️ Do not repeat: minting tokens while the app holds a session
 
