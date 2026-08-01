@@ -37,6 +37,7 @@ import { SwipeableRow, SwipeActions } from '@/components/SwipeableRow';
 import { useAsync } from '@/hooks/useAsync';
 import { MARKETPLACE_BRAND_COLORS } from '@/constants/colors';
 import { useFormField, validateAll } from '@/hooks/useFormField';
+import { SELLING_ENABLED } from '@/config/featureFlags';
 import { compose, required, maxLength, positiveNumber } from '@/lib/validate';
 import { CreateListingModal } from '@/components/sell/CreateListingModal';
 import { ConnectMarketplaceModal } from '@/components/sell/ConnectMarketplaceModal';
@@ -608,7 +609,7 @@ function SellerDashboardScreen() {
               <EmptyState
                 icon="rocket-outline"
                 title="Ready to start selling?"
-                subtitle="List your collectibles across eBay, Mercari, Cardmarket, and more -- all from one dashboard. Tap the + button to create your first listing!"
+                subtitle="List your collectibles across eBay, Mercari, Cardmarket, and more -- all from one dashboard."
                 colors={colors}
                 action={
                   <Pressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); openCreateModal(); }} accessibilityRole="button" accessibilityLabel="Create your first listing">
@@ -694,18 +695,6 @@ function SellerDashboardScreen() {
         />
       )}
 
-      {/* Create Listing FAB */}
-      {!loading && tab === 'listings' && (
-        <AnimatedPressable
-          style={[styles.fab, { backgroundColor: colors.accent }]}
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); openCreateModal(); }}
-          accessibilityRole="button"
-          accessibilityLabel="Create new listing"
-        >
-          <Ionicons name="add" size={28} color={colors.accentText} />
-        </AnimatedPressable>
-      )}
-
       {/* Create Listing Modal */}
       <CreateListingModal
         visible={showCreateModal}
@@ -737,7 +726,35 @@ function SellerDashboardScreen() {
   );
 }
 
+/**
+ * Gated at the WRAPPER, not inside the screen, so the inner component never
+ * mounts — that also stops its four marketplace fetches from firing for a
+ * feature the user cannot complete.
+ *
+ * Gating the screen rather than only hiding entry points is deliberate: nothing
+ * in the app links to /sell/dashboard today, but it is still reachable by deep
+ * link, exactly like the free-tier purchase mandates that were unreachable in
+ * the UI yet reachable via a Universal Link (docs/MONETIZATION.md).
+ */
+function SellingUnavailable() {
+  const { colors } = useAppTheme();
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ title: 'Selling' }} />
+      <EmptyState
+        icon="construct-outline"
+        title="Selling is coming soon"
+        subtitle="Listing your collection across eBay, Mercari and Cardmarket is still being built. We'll turn it on once marketplace accounts can be connected."
+        colors={colors}
+        style={{ flex: 1 }}
+      />
+      <QuickNavBar />
+    </View>
+  );
+}
+
 export default function SellerDashboardWithBoundary() {
+  if (!SELLING_ENABLED) return <SellingUnavailable />;
   return (
     <ScreenErrorBoundary screenName="Seller Dashboard">
       <SellerDashboardScreen />
@@ -858,18 +875,8 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: text.lg, fontWeight: fontWeight.bold },
   summaryCount: { fontSize: text.xs, marginTop: 10, textAlign: 'center' },
 
-  // FAB
-  fab: {
-    position: 'absolute',
-    bottom: 80,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadow.floating,
-  },
+  // FAB removed 2026-08-01 — the empty state's "Create Your First Listing"
+  // button is the single create entry point.
 
   // Modal styles moved to CreateListingModal and ConnectMarketplaceModal components
   // Prediction comps styles moved to PredictionCompsCard component

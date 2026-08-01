@@ -58,6 +58,29 @@ export const CATEGORY_FOLLOW_ENABLED = false;
 export const COMPARABLE_SALES_ENABLED = false;
 
 /**
+ * The multi-marketplace selling surface (Seller Dashboard, create-listing and
+ * connect-account flows). OFF pre-launch: the whole path is a dead end today.
+ *
+ * - No marketplace account can actually be connected. `ConnectMarketplaceModal`
+ *   collects a seller name, but there is no eBay OAuth flow behind it, and
+ *   `GET /marketplace/listings/accounts` returns `[]` in prod.
+ * - Sold comps, which is what would make listing prices meaningful, is stubbed:
+ *   eBay revoked our Finding API access on 2026-04-26 (verified by OAuth probe;
+ *   `server/app/agents/adapters/ebay_caller.py:387` returns `[]`). Migrating to
+ *   the Marketplace Insights API needs an application to eBay.
+ *
+ * So a user who reaches this screen can create a listing that goes nowhere.
+ * Gating the SCREEN rather than hiding entry points is deliberate: nothing in
+ * the app links to `/sell/dashboard`, but it is still reachable by deep link —
+ * the same mistake as the free-tier purchase mandates, which were unreachable
+ * in the UI yet reachable via a Universal Link (see docs/MONETIZATION.md).
+ *
+ * Flip to true once a real eBay account can be connected end-to-end and sold
+ * comps return data.
+ */
+export const SELLING_ENABLED = false;
+
+/**
  * On-demand "Get fresh comps" live price-fetch (the thin-category prompt on the
  * item detail screen). OFF for now: the live fetch is backed by the paid
  * scrapers (Firecrawl / Scrape.do), which are quota-exhausted / killswitched,
