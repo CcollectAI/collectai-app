@@ -269,10 +269,28 @@ export async function scheduleReminder(params: {
       return { success: false, error: 'Event has already passed' };
     }
 
-    // iOS uses date trigger, Android needs seconds from now
-    const trigger = Platform.OS === 'ios'
-      ? { date: params.triggerDate }
-      : { seconds: Math.max(1, Math.floor((params.triggerDate.getTime() - Date.now()) / 1000)) };
+    // expo-notifications requires a `type` discriminator on every trigger since
+    // SDK 52. The old bare shapes — `{ date }` on iOS, `{ seconds }` on Android
+    // — now throw:
+    //
+    //   TypeError: The `trigger` object you provided is invalid.
+    //
+    // so event reminders failed on BOTH platforms, not just Android (verified
+    // on Android 2026-08-02; the iOS branch was equally invalid). Shapes taken
+    // from the installed expo-notifications types (DateTriggerInput /
+    // TimeIntervalTriggerInput), not from memory.
+    //
+    // DATE is used on both platforms now: it expresses the intent directly
+    // ("fire at this moment") instead of a seconds-from-now delta that skews if
+    // scheduling is slow, and it is supported on Android as well.
+    // The string literal rather than SchedulableTriggerInputTypes.DATE because
+    // expo-notifications is a GUARDED require here (module may be absent), so
+    // there is no typed namespace to read the enum off. `DATE = "date"` in the
+    // installed types, so the literal is the same value.
+    const trigger = {
+      type: 'date' as const,
+      date: params.triggerDate,
+    };
 
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
