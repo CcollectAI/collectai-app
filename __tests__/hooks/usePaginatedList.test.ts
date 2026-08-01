@@ -231,3 +231,57 @@ describe('usePaginatedList — enabled gate', () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Reconnect refetch
+//
+// Android QA 2026-08-01: airplane-mode ON then OFF left the Items tab showing
+// "Start your collection" while the account had 4 items on the server. The
+// offline fetch failed and nothing re-fetched on reconnect — an EMPTY list
+// reads as "you own nothing", not "the fetch failed", so it looks like data
+// loss. Only a manual pull-to-refresh recovered it.
+//
+// `onReconnect` already existed; its only consumer replayed queued WRITES.
+// This pins the READ side, in the hook every list screen shares.
+// ---------------------------------------------------------------------------
+
+// `mock`-prefixed so jest's hoisting of jest.mock() allows the reference.
+const mockReconnectListeners: Array<(online: boolean) => void> = [];
+jest.mock('../../src/hooks/useNetworkStatus', () => ({
+  onReconnect: (fn: (online: boolean) => void) => {
+    mockReconnectListeners.push(fn);
+    return () => {
+      const i = mockReconnectListeners.indexOf(fn);
+      if (i >= 0) mockReconnectListeners.splice(i, 1);
+    };
+  },
+  isDeviceOnline: async () => true,
+  useNetworkStatus: () => ({ isOnline: true }),
+}));
+
+describe('usePaginatedList — refetches when connectivity returns', () => {
+  beforeEach(() => {
+    mockReconnectListeners.length = 0;
+  });
+
+  it('re-runs the fetcher on reconnect, replacing a failed empty result', async () => {
+    const fetcher = jest
+      .fn()
+      .mockRejectedValueOnce(new Error('Network request failed'))
+      .mockResolvedValueOnce([{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }]);
+
+    const { result } = renderHook(() => usePaginatedList(fetcher));
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.items).toEqual([]); // the "looks like data loss" state
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(mockReconnectListeners.length).toBeGreaterThan(0); // hook subscribed
+
+    await act(async () => {
+      mockReconnectListeners.forEach((fn) => fn(true));
+    });
+
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.items).toHaveLength(4));
+  });
+});

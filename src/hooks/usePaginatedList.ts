@@ -14,6 +14,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { withTimeout, TimeoutError } from '../lib/withTimeout';
+import { onReconnect } from './useNetworkStatus';
 
 // Upper bound on any single page fetch. Deliberately looser than an individual
 // provider's own timeout (itemsProvider uses 8s) so this stays a backstop rather
@@ -166,6 +167,30 @@ export function usePaginatedList<T>(
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled]);
+
+  // Refetch when connectivity comes back.
+  //
+  // Without this, a list whose fetch failed while offline stays on its EMPTY
+  // state after reconnect — and an empty list reads as "you own nothing", not
+  // "the fetch failed". Verified on Android 2026-08-01: airplane-mode ON then
+  // OFF left the Items tab showing "Start your collection" while the account
+  // had 4 items on the server; only a manual pull-to-refresh recovered them.
+  // docs/TESTFLIGHT_QA_CHECKLIST.md § 9 requires refresh within ~10s.
+  //
+  // `onReconnect` already existed but its ONLY consumer was the offline
+  // mutation queue, which replays WRITES. Nothing re-fetched READS.
+  //
+  // Lives here rather than in each screen for the same reason the timeout and
+  // the gate deadline do: every list caller gets it, including screens added
+  // later.
+  useEffect(() => {
+    const unsubscribe = onReconnect(() => {
+      // Only for lists that have already tried once — otherwise the initial
+      // fetch effect above owns the first load.
+      if (didInitialFetchRef.current) fetchPage(true);
+    });
+    return unsubscribe;
+  }, [fetchPage]);
 
   const loadMore = useCallback((): Promise<void> => {
     if (!hasMore || isLoadingMore || isLoading) return Promise.resolve();
