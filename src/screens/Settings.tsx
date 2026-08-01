@@ -7,7 +7,7 @@ import { useRouter, type Href } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AccessibilitySettings } from '@/components/AccessibilitySettings';
 import { AlertSettings } from '@/components/AlertSettings';
-import { featureFlags } from '@/config/featureFlags';
+import { featureFlags, SELLING_ENABLED } from '@/config/featureFlags';
 import { DEFAULT_ALERT_PREFERENCES, AlertPreferences } from '@/types/insights';
 import { useSettings } from '@/lib/settings';
 import { AnimatedPressable } from '@/motion';
@@ -106,8 +106,11 @@ export default function Settings() {
       {/* Account Section (profile, password, sign out, billing, etc.) */}
       <ProfileEditSection />
 
-      {/* Marketplace connections (eBay OAuth, defaults, listing chain) */}
-      <MarketplaceConnectionsSection />
+      {/* Marketplace connections (eBay OAuth, defaults, listing chain).
+          Hidden with the rest of selling: the section invites the user to
+          "Sign in with your eBay account to list items directly", and there is
+          no eBay OAuth behind it. */}
+      {SELLING_ENABLED && <MarketplaceConnectionsSection />}
 
       {/* Dev-only: Force subscription tier (for previewing paid views) */}
       <DevForcePlanSection />

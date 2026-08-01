@@ -174,14 +174,47 @@ adb shell pm grant io.sparrowcollect.app android.permission.READ_MEDIA_IMAGES
 | 1 Auth | **Partial** — login verified. Signup + email-confirm NOT run |
 | 2 QuickScan | **PASS** — camera → capture → vision sets category → Add Manually → Save |
 | 3 Photo-library scan | **NOT RUN** |
-| 4 Collection view | **PASS** — 3 items list, item detail opens, photo, no fatals |
+| 4 Collection view | **PASS** — items list, item detail opens, photo, no fatals |
 | 4b Spreadsheet import | **NOT RUN** |
-| 5 Paywall | **Partial** — free-tier "Upgrade" CTA present (so `BETA_UNLOCK_ALL=false` really applies). Never opened/attempted purchase |
-| 6 Settings / sign-out | **Partial** — Settings renders. Sign-out NOT run |
+| 5 Paywall | **PASS (degraded, as expected)** — see below |
+| 6 Settings / sign-out | **Partial** — sections load (Privacy, Notifications, Appearance, Region). **Sign-out control not located** in the scroll; retry via Account/ProfileEditSection near the TOP of Settings, not the bottom |
 | 7 Deep links | **PASS** — both hosts `verified`, link opens the app |
-| 8 Permissions | **Partial** — camera + notifications granted. Calendar/photos NOT run |
-| 9 Network / offline | **NOT RUN** |
-| 10 Crash audit | **PASS** — 30 routes, 0 crashes; background/foreground + rotation NOT run |
+| 8 Permissions | **Partial** — camera + notifications granted. Calendar NOT run |
+| 9 Network / offline | **FAILED → FIXED** — see below (`e8c73d6`) |
+| 10 Crash audit | **PASS** — 30 routes 0 crashes; background→foreground keeps pid; rotation clean |
+
+**Section 5 detail.** `/subscription` renders **"Subscriptions Coming Soon"** —
+the `iapUnavailable` branch, because `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` is
+unset. So **Android cannot take money**, now observed rather than inferred. The
+checklist's *serious* case (no paywall anywhere ⇒ beta flag leaked into a
+shippable profile) is NOT happening: Home shows the free-tier "Upgrade" CTA, so
+`EXPO_PUBLIC_BETA_UNLOCK_ALL=false` really is in effect. Legal copy correctly
+says "Google Play subscriptions", not Apple. Purchase itself is untestable
+until the RevenueCat key exists.
+
+**Section 9 detail — real bug, fixed.** Airplane-mode ON→OFF left Items showing
+"Start your collection" while the server had 4 items (verified directly against
+the REST API). Only a manual pull-to-refresh recovered it. An empty list reads
+as "you own nothing", not "the fetch failed", so a brief signal drop looks like
+data loss. `onReconnect` existed but its only consumer replayed queued WRITES;
+nothing re-fetched READS. Fixed in `usePaginatedList` so every list screen gets
+it — `e8c73d6`, mutation-proven.
+
+### ⚠️ Do not repeat: minting tokens while the app holds a session
+
+Late in the run every on-device Supabase query began timing out at 15s
+(`items`, `profiles`, `v_chat_inbox_v1`, `chat_dm_requests_v1`) while the SAME
+queries returned in **~0.1s** server-side and the device pinged Supabase at
+44ms/0% loss. So it was not the network and not the server.
+
+The likely cause is self-inflicted: this session repeatedly minted tokens via
+`grant_type=password` for the QA account **while the app held a live session**.
+That is the rotating-refresh-token reuse that Supabase treats as theft — see
+`project_2026_07_11_auth_401_root_cause_lock`. Queries then stall behind the
+auth lock exactly as CLAUDE.md § "Loading states" describes.
+
+**When you need a token for server-side checks, use a DIFFERENT account than
+the one signed in on the device.** If the device wedges, sign out and back in.
 
 Also swept: 21 screens for **error states** (not just crashes) — 0 found.
 
