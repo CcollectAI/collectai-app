@@ -139,15 +139,30 @@ not the app. `pm get-app-links` reported domain state `1024` (approved without
 verification) for both hosts, which is NOT the same as verified — do not read
 1024 as success.
 
-**Two things still outstanding:**
+**Deployed and VERIFIED WORKING 2026-08-01.** `web/` was redeployed to
+production (prod had been serving the pre-2026-07-31 file — the package fix was
+never deployed, so it had stayed inert). Three independent confirmations:
 
-1. **Production is serving a stale file.** The live response still has
-   `com.sparrowcollect.app` and the placeholder, i.e. the 2026-07-31 package fix
-   was never deployed. Vercel only auto-deploys the default branch, so the fix
-   is inert until `web/` is redeployed (procedure below).
-2. **The upload key alone is not enough for the Play Store** — see the paragraph
-   below. `scripts/preflight_android.mjs` now WARNs whenever only one
-   fingerprint is listed, so this cannot be quietly forgotten.
+1. **Google's own validator** — the service Android's verifier queries — returns
+   a clean statement for both hosts, no `errorCode`, no `debugString`:
+   ```bash
+   curl "https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://sparrowcollect.com&relation=delegate_permission/common.handle_all_urls"
+   ```
+2. **On device**, after reinstall + `pm verify-app-links --re-verify`:
+   ```
+   sparrowcollect.com:     verified      (was: none / 1024)
+   www.sparrowcollect.com: verified
+   ```
+3. **Behaviourally** — firing `https://sparrowcollect.com/item/test-123` now
+   resolves to `io.sparrowcollect.app/.MainActivity`. Before the fix the same
+   intent opened Chrome. Reproduced in two independent runs.
+
+Note `pm get-app-links` may report `1024` = *approved without verification*.
+That is NOT success — only the literal string `verified` is.
+
+**Still outstanding: the upload key alone is not enough for the Play Store** —
+see the paragraph below. `scripts/preflight_android.mjs` WARNs whenever only one
+fingerprint is listed, so this cannot be quietly forgotten.
 
 If Play App Signing is enabled — it is on by default for new apps — the
 fingerprint Google actually serves is the **App Signing key** from

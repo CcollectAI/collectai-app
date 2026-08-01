@@ -156,6 +156,12 @@ Once Play App Signing is enabled, Play re-signs with its own key — take the
   feature was dead on both platforms.
 - Play listing images render natively at 1440×2560 with Android device chrome
   (`Play-*` compositions in `collectai-admin/video/src/Root.tsx`).
+- **Android App Links work** (fixed + deployed 2026-08-01). `assetlinks.json`
+  had a wrong package and a placeholder fingerprint, so every
+  `https://sparrowcollect.com/*` link opened the browser. Now `verified` on
+  device for both hosts, accepted by Google's Digital Asset Links API, and a
+  fired link resolves to `.MainActivity`. Details + the Play App Signing caveat:
+  `docs/AUTH_AND_WEB_DEPLOY.md`.
 - `android-apk` build profile — an installable twin of `store` that still pins
   `EXPO_PUBLIC_BETA_UNLOCK_ALL=false`. (`store` emits an `.aab` that adb cannot
   install; `preview` emits an `.apk` but does not pin the flag, so it inherits
