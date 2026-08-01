@@ -164,11 +164,17 @@ const styles = StyleSheet.create({
     marginTop: 16,
     padding: 16,
     borderRadius: 16,
-    shadowColor: "#000000",
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
+    // No shadow/elevation on purpose.
+    //
+    // This card's background is translucent (colors.border + '33'). Android
+    // composites an `elevation` shadow as an opaque silhouette BEHIND the view,
+    // so a translucent fill lets it show through as a hard grey ring roughly
+    // 12px wide on every side — reported on Android 2026-08-01. iOS blends the
+    // same shadow softly, so it looked fine there.
+    //
+    // The sibling cards on this screen (barcodeCard, the manual-add row) carry
+    // no shadow at all and read correctly, so matching them also makes the Add
+    // tab visually consistent instead of one card floating.
   },
   title: {
     fontSize: 16,
