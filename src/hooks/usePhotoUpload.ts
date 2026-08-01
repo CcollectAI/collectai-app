@@ -27,6 +27,13 @@ import { useAuthContext } from "@/providers/useAuthContext";
 import { logger } from "@/lib/logger";
 
 /**
+ * Ceiling for the presigned S3 PUT. Generous — a large photo on a weak mobile
+ * connection is legitimately slow — but finite, so the upload can never pin the
+ * "Save to Collection" button on indefinitely.
+ */
+const UPLOAD_TIMEOUT_MS = 60_000;
+
+/**
  * iOS presents each permission dialog only ONCE per install. After a denial the
  * request resolves instantly with `granted: false, canAskAgain: false` and no
  * dialog — so retrying the request is a no-op and the user is stuck with an
@@ -147,13 +154,40 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
         // PUT the raw file bytes (not a blob) — S3 signs `content-type`, so the
         // header must match the presigned content type exactly.
         const bytes = await readFileAsBytes(uri);
-        const uploadResponse = await fetch(presignResponse.upload_url, {
-          method: "PUT",
-          headers: {
-            "Content-Type": mime,
-          },
-          body: bytes as unknown as BodyInit,
-        });
+
+        // BOUNDED. This was the only unbounded await in the upload path, and it
+        // sits between `setUploading(true)` and the `finally` that clears it —
+        // exactly the shape CLAUDE.md § "Loading states" forbids. A stalled S3
+        // PUT (captive portal, dead TLS handshake) would never settle, so
+        // `finally` never ran, `uploading` stayed true, and `canSubmit` in
+        // add-manual.tsx kept "Save to Collection" DISABLED for the rest of the
+        // process — no error, no spinner, nothing in the logs.
+        //
+        // AbortController rather than withTimeout: withTimeout is Promise.race,
+        // which abandons without cancelling, leaving the socket and the file
+        // read alive. abort() actually tears the request down.
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
+        let uploadResponse: Response;
+        try {
+          uploadResponse = await fetch(presignResponse.upload_url, {
+            method: "PUT",
+            headers: {
+              "Content-Type": mime,
+            },
+            body: bytes as unknown as BodyInit,
+            signal: controller.signal,
+          });
+        } catch (e: unknown) {
+          if ((e as Error)?.name === "AbortError") {
+            throw new Error(
+              `Photo upload timed out after ${UPLOAD_TIMEOUT_MS / 1000}s — check your connection and try again.`,
+            );
+          }
+          throw e;
+        } finally {
+          clearTimeout(timer);
+        }
 
         if (!uploadResponse.ok) {
           const detail = await uploadResponse.text().catch(() => "");
