@@ -4,6 +4,33 @@
 
 ---
 
+## ▶ STATUS AS OF 2026-08-02 — read before trusting anything below
+
+The session log below stops at **2026-05-20** and still calls build #14 "in
+flight"; `app.json` is at buildNumber 101. **Treat every Phase 1-4 checkbox
+below as unverified** until re-checked against App Store Connect — they were
+true in May, and nothing has re-confirmed them since.
+
+What IS current:
+
+| | State |
+|---|---|
+| Phases 5-8 (metadata, privacy labels, review info, submit) | **open — this is the remaining work** |
+| `node scripts/check-asc-listing.mjs` | **PASS** 2026-08-02, 9 fields within limits (Keywords 100/100 and Play Short Description 78/80 are at the cap — any edit must re-run it) |
+| Metadata copy | ready in `docs/app-store-aso.md`, nothing to write |
+| Last iOS binary | `builds/sparrow-ios-local.ipa`, **2026-07-31 19:46** — predates the 2026-08-01/02 fixes, so a rebuild is required |
+| Android | blocked on Play enrolment ($25, browser). Not a code problem — `docs/ANDROID_LAUNCH.md` |
+
+**Seven fixes from the Android QA pass are shared or server-side and are not in
+any iOS binary yet**: `item_images` add-photo (dead on BOTH platforms since
+2026-02), the offline reconnect refetch in `usePaginatedList`, event reminders
+throwing on an invalid notification trigger, the nested-`<CameraView>` overlay,
+the Seller-Dashboard envelope unwrap, the presigned-upload bound on Save, and
+`v_category_summaries_v1` (5029ms → 105ms). The next iOS build is the first one
+that carries them.
+
+---
+
 ## Session log — what's shipped since this doc was generated
 
 **2026-05-20 evening** (RevenueCat + TestFlight unblocked, no commits — all ASC/RC dashboard work):
@@ -211,10 +238,22 @@ ASC → Users and Access → **Sandbox → Testers** → "+" → create a tester
 
 ### Phase 3 — Build the store-submission binary
 
+> ⚠️ **Corrected 2026-08-02.** The command here used to be
+> `eas build -p ios --profile store --auto-submit` — a **cloud** build. This
+> Expo account is on the Free plan and builds are LOCAL ONLY (`CLAUDE.md`,
+> `feedback_never_use_expo_paid_cloud_build`). Never run `eas build` without
+> `--local`. Build locally, then submit the resulting `.ipa` as a separate step.
+
 ```bash
 cd /Users/merle/GitHub/CcollectAI
-eas build -p ios --profile store --auto-submit
+npm run verify:prebuild          # tsc + seam tests + live Supabase contract — must pass first
+npm run build:ios:local          # eas build -p ios --profile store --local -> builds/sparrow-ios-local.ipa
+eas submit -p ios --profile store --path builds/sparrow-ios-local.ipa
 ```
+
+Note `appVersionSource: remote` means `app.json`'s `ios.buildNumber` is NOT the
+number that ships — read `CFBundleVersion` out of the built `.ipa` for the real
+one (`learning_eas_remote_appversionsource_ignores_appjson`).
 
 The `store` profile (added 2026-05-12 in `eas.json`) sets `EXPO_PUBLIC_BETA_UNLOCK_ALL=false`, so:
 - Subscription screen renders the real plan cards (not the beta panel)
