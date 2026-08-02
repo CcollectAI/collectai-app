@@ -142,7 +142,7 @@ Once Play App Signing is enabled, Play re-signs with its own key — take the
 ## ▶ RESUME HERE — Android QA pass, 2026-08-01 (unfinished)
 
 Driven from `docs/TESTFLIGHT_QA_CHECKLIST.md`, on an Android 16 x86_64 emulator
-with a real logged-in session. **Still NOT run: 4b spreadsheet import (round-trip), 1 signup + email-confirm.** Everything else in the checklist has been exercised.
+with a real logged-in session. **Still NOT run: 4b spreadsheet import round-trip.** Every other checklist section has been exercised on device.
 
 ### Setup to get back to where this stopped
 
@@ -171,7 +171,7 @@ adb shell pm grant io.sparrowcollect.app android.permission.READ_MEDIA_IMAGES
 
 | Section | State |
 |---------|-------|
-| 1 Auth | **Partial** — login verified. Signup + email-confirm NOT run |
+| 1 Auth | **PASS** — signup creates the account (`confirmed=f`, correctly pending email), writes a profile with BOTH `username` and `display_name`, and returns to login rather than granting access. Login + sign-out verified separately. Note: "Create Account" appears dead until the **terms checkbox** is ticked (`register.tsx:124` shows a transient toast) |
 | 2 QuickScan | **PASS** — camera → capture → vision sets category → Add Manually → Save |
 | 3 Photo-library scan | **client PASS / server bug found + FIXED** — see below |
 | 4 Collection view | **PASS** — items list, item detail, photo, **edit persists** (name change survived reload), no fatals |
