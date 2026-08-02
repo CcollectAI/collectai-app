@@ -16,13 +16,20 @@ npm run preflight:android      # exit 0 = ready to build and submit
 Every Android gap found on 2026-07-31 was **silent**. No crash, no failed build,
 no red test — Android just quietly did less than iOS:
 
-| Gap | Symptom on Android | Why nothing caught it |
-|-----|--------------------|-----------------------|
-| `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` unset | Paywall shows "unavailable"; app cannot take money | `initPurchases()` returns early and logged at `warn`, which is stripped in release builds |
-| No FCM config | Push never works | `getExpoPushTokenAsync()` throws into a `catch` in `usePushNotifications.ts:129` |
-| `sparrow-play-service-account.json` absent | `eas submit` / `fastlane supply` fail | Only surfaces at upload time |
-| Listing screenshots 1320×2868 RGBA | Play rejects the upload | Valid for the App Store, invalid for Play |
-| `<Modal>` without `onRequestClose` | Back button cannot dismiss the sheet | No-op on iOS, so it only manifests on Android |
+| Gap | Symptom on Android | Why nothing caught it | State |
+|-----|--------------------|-----------------------|-------|
+| `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` unset | Paywall shows "unavailable"; app cannot take money | `initPurchases()` returns early, logged at `warn` which release strips | **OPEN — console** |
+| No FCM config | Push never works | `getExpoPushTokenAsync()` throws into a `catch` | **OPEN — console** |
+| `sparrow-play-service-account.json` absent | `eas submit` / `fastlane supply` fail | Only surfaces at upload time | **OPEN — console** |
+| Listing screenshots 1320×2868 RGBA | Play rejects the upload | Valid for the App Store, invalid for Play | FIXED |
+| `<Modal>` without `onRequestClose` | Back button cannot dismiss the sheet | No-op on iOS, so it only manifests on Android | FIXED |
+
+The three OPEN rows are a **chain, not three tasks**:
+`Play enrolment ($25, browser) → service account JSON → { RevenueCat Android key, Firebase/FCM }`.
+Play is the root. `bash scripts/setup_play_store.sh` walks that order. Verified
+2026-08-02 that none can be done from the repo: no RevenueCat credential exists
+locally, and neither `gcloud` nor `firebase` CLI is installed (both need browser
+auth regardless).
 
 That is one pattern, not five bugs: **a platform-specific path that degrades to
 a no-op instead of an error.** `scripts/preflight_android.mjs` exists so the
@@ -283,6 +290,28 @@ PROVEN before swapping (EXCEPT diff both ways, 54 categories, with a real
 `auth.uid()` for a user owning matched rows) — see
 `learning_prove_view_equivalence_with_real_auth_context` for how the first
 version of that test silently proved nothing.
+
+### API surface sweep (2026-08-02) — clean
+
+211 parameterless GET endpoints probed with a real user token: **0 × 5xx, 0
+transport errors, none slower than 5s.** Every non-200 was correct behaviour:
+
+| Code | Endpoints | Verdict |
+|------|-----------|---------|
+| 401 | `/ops/status` | correct — needs an ops key |
+| 403 | `/grading/lookup` `/population` `/services` | correct — "requires pro plan, current: free" |
+| 422 | `/attributes/autocomplete` `/data-moat/supply-trends` `/events/nearby` | correct — required query params not supplied by the probe |
+
+Two things worth knowing that fell out of it:
+- **Plan gating is enforced SERVER-side.** A free account gets 403 calling
+  `/grading/*` directly, so the paywall is not merely a UI state.
+- **The rate limiter works.** A second, faster sweep tripped the app's own
+  limiter (`code: RATE_LIMITED`) on 149 endpoints. Those 429s were
+  self-inflicted, NOT a defect — do not re-run the sweep at speed and do not
+  file them as failures.
+
+Also: Supabase auth rate-limits token minting (429 on `/auth/v1/token`). Cache
+one token and reuse it rather than minting per script.
 
 ### ⚠️ Do not repeat: minting tokens while the app holds a session
 
