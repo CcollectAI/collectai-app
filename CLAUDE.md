@@ -59,6 +59,24 @@ which is the only layer that sees DB rejections and PostgREST failures — the E
 journal cannot. On its first run it surfaced four production errors that every
 app-side audit had missed.
 
+### Partition retention vs `schema.lock.json` (2026-08-02)
+
+`schema.lock.json` no longer locks partition CHILDREN — `regen_schema_lock.py`
+filters `c.relispartition`. Children are created by pg_cron on the 25th and
+dropped by `partition_drop_worker`; locking them made routine retention look
+like schema drift. Before the fix, dropping `market_hits_y2026m07` +
+`price_history_y2026m07` (2.9 GB, correctly exported to S3) left
+`preflight_schema_lock.py` failing — and that gate **only runs at startup**, so
+the API stayed up and the *next* bake restart would have hard-downed it, hours
+after the unrelated-looking cause. The partitioned PARENTS are still locked in
+full. Full writeup + the verification protocol for a destructive drop:
+`docs/DATA_SCALING_PLAN.md` § 10.
+
+**S3 checks against the warehouse bucket must `source /opt/collectors/.env`
+first.** The EC2 instance role has no access; the export worker uses env
+credentials. A bare `aws`/`boto3` call on the box reports `AccessDenied` and
+looks exactly like missing data.
+
 ### The failure mode this codebase is prone to
 
 A writer and a reader that were never connected, plus a construct that turns

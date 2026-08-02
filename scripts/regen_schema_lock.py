@@ -17,6 +17,23 @@ Adding new tables/columns is silent (lock isn't violated). DROPS,
 RENAMES, type changes, NOT NULL flips, unique-key changes, and check
 mutations all flag in `preflight_schema_lock.py` and the FE drift
 scanner.
+
+PARTITION CHILDREN ARE DELIBERATELY EXCLUDED (`NOT c.relispartition`).
+They are created by pg_cron on the 25th and dropped by
+`partition_drop_worker` once the month is in the S3 export manifest —
+routine, by design, every month. Locking them made ordinary retention
+look like schema drift: the 2026-08-02 drop of `market_hits_y2026m07` +
+`price_history_y2026m07` left the lock naming two tables that no longer
+existed, so `preflight_schema_lock.py` failed and the next bake restart
+would have hard-downed the API, hours after the drop that caused it.
+
+Nothing depends on a child by name — no application code references
+`_yYYYYmMM` (verified by grep across app/, src/, server/app/), and the
+partitioned PARENTS (`market_hits`, `price_predictions`, `price_history`)
+are still locked in full, which is where the actual code contract lives.
+`relispartition` is used rather than a name pattern because it is exact:
+it also excludes the `_default` partitions, which a `_yYYYYmMM` regex
+would have silently kept.
 """
 import asyncio, asyncpg, json, os, sys
 from pathlib import Path
@@ -52,6 +69,7 @@ async def main():
               AND a.attnum > 0
               AND NOT a.attisdropped
               AND c.relkind IN ('r','p','v','m','f')
+              AND NOT c.relispartition
             ORDER BY c.relname, a.attnum
             """
         )
@@ -67,6 +85,7 @@ async def main():
             JOIN pg_class i ON i.oid = ix.indexrelid
             JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
             WHERE n.nspname='public' AND ix.indisunique
+              AND NOT t.relispartition
             GROUP BY t.relname, i.relname
             ORDER BY t.relname, i.relname
             """
@@ -81,6 +100,7 @@ async def main():
             JOIN pg_class t ON c.conrelid = t.oid
             JOIN pg_namespace n ON t.relnamespace = n.oid
             WHERE n.nspname='public' AND c.contype = 'c'
+              AND NOT t.relispartition
             ORDER BY t.relname, c.conname
             """
         )
