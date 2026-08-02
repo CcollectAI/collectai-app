@@ -142,7 +142,7 @@ Once Play App Signing is enabled, Play re-signs with its own key — take the
 ## ▶ RESUME HERE — Android QA pass, 2026-08-01 (unfinished)
 
 Driven from `docs/TESTFLIGHT_QA_CHECKLIST.md`, on an Android 16 x86_64 emulator
-with a real logged-in session. **Still NOT run: 4b spreadsheet import round-trip.** Every other checklist section has been exercised on device.
+with a real logged-in session. **All 12 checklist sections have now been exercised.** What remains is device re-verification of the fixes since build #6, and the three console blockers below.
 
 ### Setup to get back to where this stopped
 
@@ -175,7 +175,7 @@ adb shell pm grant io.sparrowcollect.app android.permission.READ_MEDIA_IMAGES
 | 2 QuickScan | **PASS** — camera → capture → vision sets category → Add Manually → Save |
 | 3 Photo-library scan | **client PASS / server bug found + FIXED** — see below |
 | 4 Collection view | **PASS** — items list, item detail, photo, **edit persists** (name change survived reload), no fatals |
-| 4b Spreadsheet import | **NOT RUN** |
+| 4b Spreadsheet import | **PASS** — 2/2 inserted, 0 errors. Values verified in the DB, not just row counts: `name` AND `title` both populated (Home reads one, Items the other), price/currency/condition/grade match, `purchase_date` is the SAME day typed (no timezone off-by-one), and a USD 100.00 row converted to `purchase_price_eur` 87.07 rather than being relabelled. `sealed`/`graded_by` land in `attrs` as designed |
 | 5 Paywall | **PASS (degraded, as expected)** — see below |
 | 6 Settings / sign-out | **PASS** — sections load; sign out shows a confirm dialog, signs out and redirects to login, no crash. Account block also has Change Password / Export Insurance Report / Download inventory CSV / Delete Account |
 | 7 Deep links | **PASS** — both hosts `verified`, link opens the app |
