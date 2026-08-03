@@ -77,6 +77,10 @@ try {
 
 type RangeKey = "1D" | "7D" | "30D" | "90D" | "1Y" | "ALL";
 
+/** Above this item count the "Add to Collection" banner stops rendering — see
+ *  the comment at its call site. The Add tab remains the permanent entry point. */
+const ADD_BANNER_MAX_ITEMS = 3;
+
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -245,6 +249,11 @@ function PortfolioScreen() {
 
   // Followed/personalized categories from onboarding
   const [followedCategories, setFollowedCategories] = useState<string[]>([]);
+
+  // Point under the user's finger on the chart. Drives the big COLLECTION VALUE
+  // figure so it moves with the scrubber; null means "not scrubbing", and the
+  // header falls back to the portfolio total.
+  const [scrubPoint, setScrubPoint] = useState<TimeSeriesPoint | null>(null);
 
   // Notification unread badge
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
@@ -670,12 +679,14 @@ function PortfolioScreen() {
             {/* Collection Value */}
             <PortfolioValueHeader
               theme={colors}
-              total={total}
+              total={scrubPoint ? scrubPoint.v : total}
               delta={delta}
               deltaPct={deltaPct}
               currency={settings.currency}
               formatPrice={formatPrice}
-              animationsEnabled={settings.animationsEnabled}
+              // Counter animation is a tween to a target; while scrubbing the
+              // target changes every few ms, so it lags the finger. Snap instead.
+              animationsEnabled={settings.animationsEnabled && !scrubPoint}
               tier={tierSummary?.tier}
             />
 
@@ -706,6 +717,7 @@ function PortfolioScreen() {
                   gridColor={colors.border}
                   textColor={colors.text}
                   dotFillColor={colors.card}
+                  onScrubChange={setScrubPoint}
                 />
               )}
             </View>
@@ -720,32 +732,32 @@ function PortfolioScreen() {
           </View>
         )}
 
-        {/* Add Item Banner */}
-        <AnimatedPressable
-          onPress={handleOpenAddMenu}
-          style={[styles.addBanner, { backgroundColor: colors.accent + '0D', borderColor: colors.accent + '30' }]}
-          accessibilityRole="button"
-          accessibilityLabel={t('home.add_to_collection_a11y')}
-        >
-          <View style={[styles.addBannerIconWrap, { backgroundColor: colors.accent }]}>
-            <Ionicons name="add" size={18} color={colors.accentText} />
-          </View>
-          <View style={styles.addBannerText}>
-            <Text style={[styles.addBannerTitle, { color: colors.text }]}>{t('home.add_to_collection')}</Text>
-            <Text style={[styles.addBannerSubtitle, { color: colors.muted }]}>{t('home.add_to_collection_subtitle')}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.accent} />
-        </AnimatedPressable>
+        {/* Add Item Banner — an onboarding affordance, not a permanent control.
+            Once the collection is past a few items the user knows where Add is
+            (the centre tab, always visible), so the banner is just a large card
+            pushing real content down. Hidden past ADD_BANNER_MAX_ITEMS. */}
+        {items.length <= ADD_BANNER_MAX_ITEMS && (
+          <AnimatedPressable
+            onPress={handleOpenAddMenu}
+            style={[styles.addBanner, { backgroundColor: colors.accent + '0D', borderColor: colors.accent + '30' }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('home.add_to_collection_a11y')}
+          >
+            <View style={[styles.addBannerIconWrap, { backgroundColor: colors.accent }]}>
+              <Ionicons name="add" size={18} color={colors.accentText} />
+            </View>
+            <View style={styles.addBannerText}>
+              <Text style={[styles.addBannerTitle, { color: colors.text }]}>{t('home.add_to_collection')}</Text>
+              <Text style={[styles.addBannerSubtitle, { color: colors.muted }]}>{t('home.add_to_collection_subtitle')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.accent} />
+          </AnimatedPressable>
+        )}
 
-        {/* Personalized Categories (from onboarding) */}
-        <FollowedCategoriesCarousel
-          theme={colors}
-          categories={followedCategories}
-          onCategoryPress={handleCategoryPress}
-          hapticsEnabled={settings.hapticsEnabled}
-        />
-
-        {/* Category Breakdown lives on the items tab (moved 2026-04-18). */}
+        {/* Your Categories — heading, then the at-a-glance numbers, then the
+            category banners. The stats sit directly under the heading because
+            they summarise the same thing the banners break down. */}
+        <Text style={[styles.categoriesHeading, { color: colors.text }]}>Your Categories</Text>
 
         {/* Global Collection Stats */}
         {categoryBreakdown.length > 0 && (
@@ -770,6 +782,17 @@ function PortfolioScreen() {
             </View>
           </View>
         )}
+
+        {/* Personalized Categories (from onboarding) */}
+        <FollowedCategoriesCarousel
+          theme={colors}
+          categories={followedCategories}
+          onCategoryPress={handleCategoryPress}
+          hapticsEnabled={settings.hapticsEnabled}
+          showHeader={false}
+        />
+
+        {/* Category Breakdown lives on the items tab (moved 2026-04-18). */}
 
         {/* Extended Portfolio Insights CTA — only when InsightsCard below is
             not rendering, so Home never shows two routes to /analytics. */}
@@ -1080,6 +1103,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: text.xl,
     fontWeight: fontWeight.extrabold,
+  },
+  categoriesHeading: {
+    fontSize: text.xl,
+    fontWeight: fontWeight.extrabold,
+    marginTop: 8,
+    marginBottom: 12,
   },
   sectionSubtitle: {
     fontSize: text.sm,

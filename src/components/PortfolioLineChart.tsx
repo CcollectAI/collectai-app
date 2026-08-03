@@ -29,7 +29,21 @@ export type PortfolioLineChartProps = {
 
   /** Fill color for the hover dot (defaults to parent card background) */
   dotFillColor?: string;
+
+  /**
+   * Fires with the point under the user's finger while scrubbing, and with null
+   * on release. Lets the screen's big "COLLECTION VALUE" figure track the
+   * scrubber instead of sitting frozen on the latest value.
+   */
+  onScrubChange?: (point: TimeSeriesPoint | null) => void;
 };
+
+/** Vertical inset of the plot area, in px. Must clear the hover dot (r=4 plus a
+ *  2px stroke) and half the 2.5px line stroke, or both clip against the frame. */
+const PLOT_PAD_Y = 10;
+
+/** Width reserved for the floating value label, used to clamp it on-canvas. */
+const VALUE_LABEL_W = 96;
 
 function formatDateShort(iso: string): string {
   const d = new Date(iso);
@@ -44,15 +58,29 @@ function formatDateShort(iso: string): string {
  * value but no dated history) gets a sensible band AROUND the value so the line
  * sits mid-chart with gridlines above and below rather than pinned to the frame.
  */
-function niceScale(dataMin: number, dataMax: number, targetTicks = 4): {
+export function niceScale(dataMin: number, dataMax: number, targetTicks = 4): {
   yMin: number;
   yMax: number;
   ticks: number[];
 } {
   let min = dataMin;
   let max = dataMax;
-  if (min === max) {
-    const v = min;
+
+  // A series can be "flat enough" without being exactly flat, and that case used
+  // to render as a broken chart. A portfolio that moved EUR 0.01 on EUR 55 has a
+  // genuine spread, so the old `min === max` check missed it — but the domain it
+  // produced was ~0.01 wide, which meant:
+  //   - every gridline label printed the SAME "EUR 55", because formatPrice is
+  //     0-decimals app-wide (deliberate, see lib/format.ts) — so a sub-euro
+  //     domain CANNOT produce distinct labels, and
+  //   - the line spanned the full canvas height over a 1-cent move, gluing it to
+  //     the top and bottom frame.
+  // Treat anything inside 2% of the value as flat and give it a band around the
+  // value instead, so the axis reads low → high in real numbers.
+  const magnitude = Math.max(Math.abs(min), Math.abs(max));
+  const flatEnough = max - min <= (magnitude > 0 ? magnitude * 0.02 : Number.EPSILON);
+  if (flatEnough) {
+    const v = (min + max) / 2;
     const pad = v === 0 ? 1 : Math.abs(v) * 0.6;
     min = v - pad;
     max = v + pad;
@@ -64,7 +92,9 @@ function niceScale(dataMin: number, dataMax: number, targetTicks = 4): {
   const rawStep = range / Math.max(targetTicks, 1);
   const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
   const norm = rawStep / mag;
-  const niceStep = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  // Floored at 1: ticks closer together than one currency unit render as
+  // duplicate labels once formatPrice drops the decimals.
+  const niceStep = Math.max((norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag, 1);
 
   const yMin = Math.floor(min / niceStep) * niceStep;
   const yMax = Math.ceil(max / niceStep) * niceStep;
@@ -84,6 +114,7 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
   gridColor = "#e5e7eb",
   textColor = "#0b1f3a",
   dotFillColor = "#ffffff",
+  onScrubChange,
 }) => {
   const [width, setWidth] = useState(0);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -105,9 +136,14 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
     return niceScale(Math.min(...values), Math.max(...values));
   }, [sorted]);
 
+  // The plot area is inset vertically so a value sitting at the very top or
+  // bottom of the domain still draws in full. Without this the 2.5px stroke and
+  // the r=4 hover dot are clipped by the SVG frame — the line looks sliced off
+  // at the top and the tracker dot loses its upper half.
   const yToPixel = (v: number) => {
     const span = yMax - yMin || 1;
-    return height - ((v - yMin) / span) * height;
+    const usable = height - PLOT_PAD_Y * 2;
+    return PLOT_PAD_Y + usable - ((v - yMin) / span) * usable;
   };
 
   const path = useMemo(() => {
@@ -137,6 +173,12 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
     const idx = Math.round(ratio * (n - 1));
     const safeIdx = Math.min(Math.max(idx, 0), n - 1);
     setHoverIndex(safeIdx);
+    onScrubChange?.(sorted[safeIdx] ?? null);
+  };
+
+  const handleRelease = () => {
+    setHoverIndex(null);
+    onScrubChange?.(null);
   };
 
   if (!sorted.length) {
@@ -176,15 +218,9 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
       onMoveShouldSetResponder={() => true}
       onResponderGrant={(evt) => handleTouch(evt.nativeEvent.locationX)}
       onResponderMove={(evt) => handleTouch(evt.nativeEvent.locationX)}
-      onResponderRelease={() => setHoverIndex(null)}
+      onResponderRelease={handleRelease}
+      onResponderTerminate={handleRelease}
     >
-      {showValueHeader && (
-        <View style={styles.valueRow}>
-          <Text style={[styles.valueText, { color: textColor }]}>{formatPrice(currentPoint.v)}</Text>
-          <Text style={[styles.dateText, { color: axisLabelColor }]}>{formatDateShort(currentPoint.t)}</Text>
-        </View>
-      )}
-
       {width > 0 && (
         <View style={styles.chartWrap}>
           <Svg height={height} width={width}>
@@ -236,6 +272,34 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
             <Circle cx={hoverX} cy={hoverY} r={4} fill={dotFillColor} stroke={accentColor} strokeWidth={2} />
           </Svg>
 
+          {/* Value label rides WITH the tracker instead of sitting in a fixed
+              top-left header. Parked top-left it collided with the y-axis tick
+              labels drawn in the same corner (bold "EUR 8.070" over "EUR 10.000"),
+              which made both unreadable. Anchored to the dot it also answers the
+              question the user is actually asking while scrubbing: "what was it
+              worth HERE?" Clamped so it never leaves the canvas at either end. */}
+          {showValueHeader && (
+            <View
+              pointerEvents="none"
+              style={[
+                styles.floatingValue,
+                {
+                  left: Math.min(Math.max(hoverX - VALUE_LABEL_W / 2, 0), Math.max(width - VALUE_LABEL_W, 0)),
+                  top: Math.min(Math.max(hoverY - 30, 0), height - 20),
+                  width: VALUE_LABEL_W,
+                  backgroundColor: dotFillColor,
+                },
+              ]}
+            >
+              <Text
+                numberOfLines={1}
+                style={[styles.valueText, { color: textColor }]}
+              >
+                {formatPrice(currentPoint.v)}
+              </Text>
+            </View>
+          )}
+
           {showAxisLabels && (
             <View pointerEvents="none" style={styles.xLabels}>
               {xTickLabels.map((lbl, i) => (
@@ -258,17 +322,18 @@ const styles = StyleSheet.create({
   container: {
     marginTop: 0,
   },
-  valueRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 6,
+  floatingValue: {
+    position: "absolute",
+    alignItems: "center",
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 6,
+    zIndex: 30,
   },
   valueText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
-  },
-  dateText: {
-    fontSize: 12,
+    textAlign: "center",
   },
   chartWrap: {
     position: "relative",
