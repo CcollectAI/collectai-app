@@ -117,27 +117,44 @@ async def portfolio_timeseries(
                 -- which is what makes the screens agree.
                 -- Uses the same expression as every other value site — see
                 -- "One valuation expression" in docs/ARCHITECTURE.md.
-                WITH daily AS (
-                    SELECT
-                        DATE(pp.generated_at) AS day,
-                        COALESCE(SUM(pp.q50), 0) AS predicted_total
-                    FROM price_predictions pp
-                    JOIN items i ON i.canonical_ref = pp.item_ref
-                    WHERE i.user_id = $1
-                      AND pp.generated_at >= $2
-                    GROUP BY DATE(pp.generated_at)
+                -- Rewritten 2026-08-03. The previous version had two faults,
+                -- both visible on one screenshot (headline EUR 8.070, the same
+                -- account's breakdown EUR 55, and a curve claiming the user
+                -- owned a just-added item since July):
+                --
+                -- 1. It summed pp.q50 for every prediction row generated that
+                --    day, with NO per-item dedup, while /portfolio/overview and
+                --    /portfolio/category-stats value each item ONCE via
+                --    DISTINCT ON. Any item with more than one prediction in a
+                --    day was counted repeatedly, so this endpoint drifted above
+                --    its siblings. See "One valuation expression, or the screen
+                --    contradicts itself" in docs/ARCHITECTURE.md — the rule is
+                --    to grep the EXPRESSION, not the file.
+                -- 2. price_predictions is CATALOG-wide history keyed by
+                --    item_ref, and nothing tied it to when the user acquired
+                --    the item. Adding an item retroactively injected its whole
+                --    past price curve into the user's history, so a card bought
+                --    today appeared in last week's portfolio value.
+                --
+                -- Now: walk a day grid, hold each item from the day it entered
+                -- the collection (items.created_at), and value it with the last
+                -- prediction known ON OR BEFORE that day, else its stored value
+                -- — the same COALESCE chain the sibling endpoints use. The last
+                -- point therefore equals /portfolio/overview's total, which is
+                -- what keeps the screens agreeing.
+                WITH days AS (
+                    SELECT generate_series($2::date, CURRENT_DATE, INTERVAL '1 day')::date AS day
                 ),
-                unpriced AS (
-                    -- There are TWO prediction sources and they cover
-                    -- different items: price_predictions is catalog-model
-                    -- output joined by canonical_ref, quick_predictions is
-                    -- per-item QuickScan output joined by item_id. Measured
-                    -- 2026-07-29 on 11 live items: 1 had a quick prediction,
-                    -- 2 had a catalog one. Using either alone drops the other
-                    -- group to zero, which is how Home and the Items tab came
-                    -- to disagree. Value the baseline with the SAME superset
-                    -- the Items list uses, then fall back to the stored value.
-                    SELECT COALESCE(SUM(
+                owned AS (
+                    SELECT
+                        i.id,
+                        i.canonical_ref,
+                        i.created_at::date AS since,
+                        -- Stored-value fallback. TWO prediction sources cover
+                        -- different items: price_predictions is catalog-model
+                        -- output joined by canonical_ref, quick_predictions is
+                        -- per-item QuickScan output joined by item_id. Using
+                        -- either alone zeroes the other group.
                         COALESCE(
                             (SELECT qp.q50_eur FROM quick_predictions qp
                               WHERE qp.item_id = i.id
@@ -145,21 +162,36 @@ async def portfolio_timeseries(
                             i.predicted_price_eur,
                             i.estimated_value,
                             0
-                        )
-                    ), 0) AS base
+                        ) AS stored_value
                     FROM items i
                     WHERE i.user_id = $1
-                      AND NOT EXISTS (
-                          SELECT 1 FROM price_predictions pp2
-                          WHERE pp2.item_ref = i.canonical_ref
-                      )
+                ),
+                -- One prediction per item per day (the last of that day), so a
+                -- chatty valuation run cannot multiply an item's contribution.
+                per_day AS (
+                    SELECT DISTINCT ON (o.id, DATE(pp.generated_at))
+                        o.id,
+                        DATE(pp.generated_at) AS day,
+                        pp.q50
+                    FROM owned o
+                    JOIN price_predictions pp ON pp.item_ref = o.canonical_ref
+                    WHERE pp.generated_at >= $2
+                    ORDER BY o.id, DATE(pp.generated_at), pp.generated_at DESC
                 )
                 SELECT
                     d.day AS day,
-                    (d.predicted_total + u.base) AS total_value
-                FROM daily d
-                CROSS JOIN unpriced u
-                ORDER BY day ASC
+                    COALESCE(SUM(
+                        COALESCE(
+                            (SELECT p.q50 FROM per_day p
+                              WHERE p.id = o.id AND p.day <= d.day
+                              ORDER BY p.day DESC LIMIT 1),
+                            o.stored_value
+                        )
+                    ), 0) AS total_value
+                FROM days d
+                LEFT JOIN owned o ON o.since <= d.day
+                GROUP BY d.day
+                ORDER BY d.day ASC
                 """,
                 user_id,
                 since,
@@ -169,6 +201,13 @@ async def portfolio_timeseries(
                 {"t": row["day"].isoformat(), "v": round(float(row["total_value"]), 2)}
                 for row in rows
             ]
+
+            # The day grid always emits a row per day, so an empty portfolio
+            # would now draw a flat line along zero instead of the honest "No
+            # history yet" empty state the FE renders for an empty series.
+            # Collapse an all-zero curve back to no points.
+            if points and not any(p["v"] > 0 for p in points):
+                points = []
 
             # Flat-baseline fallback. Portfolios whose items have no dated
             # price_predictions (e.g. hand-added items carrying only a stored

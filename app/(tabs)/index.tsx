@@ -414,35 +414,42 @@ function PortfolioScreen() {
     }, [loadData, authLoading]),
   );
 
-  // Load category breakdown — also on focus, same cold-start reason as above.
+  // Category breakdown. Extracted from the focus effect so pull-to-refresh can
+  // fire it too: it used to refresh ONLY on focus while the header + chart came
+  // from loadData(), so any path that updated the portfolio without blurring
+  // Home left the two showing different totals. Observed 2026-08-03 — the
+  // header read EUR 8.070 while the summary strip below it still read EUR 55,
+  // and the backend was innocent: /portfolio/overview and
+  // /portfolio/category-stats both returned 8,070.04 when queried directly.
+  const loadCategoryBreakdown = useCallback(async () => {
+    setBreakdownLoading(true);
+    try {
+      const res: unknown = await collectorsApi.getPortfolioCategoryBreakdown();
+      const data = res as Record<string, unknown>;
+      // Backend returns "breakdown", also check "categories" for compat
+      const cats = Array.isArray(data?.breakdown)
+        ? (data.breakdown as Record<string, unknown>[]).map((b) => ({
+            category: String(b.category ?? ''),
+            item_count: Number(b.item_count ?? 0),
+            total_value: Number(b.total_value ?? 0),
+            percentage: Number(b.pct_of_portfolio ?? b.percentage ?? 0),
+          }))
+        : Array.isArray(data?.categories)
+        ? (data.categories as CategoryBreakdownItem[])
+        : [];
+      setCategoryBreakdown(cats);
+    } catch (err: unknown) {
+      logger.warn('[Portfolio] category breakdown fetch failed:', err);
+      setCategoryBreakdown([]);
+    } finally {
+      setBreakdownLoading(false);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-      setBreakdownLoading(true);
-      collectorsApi.getPortfolioCategoryBreakdown()
-        .then((res: unknown) => {
-          if (cancelled) return;
-          const data = res as Record<string, unknown>;
-          // Backend returns "breakdown", also check "categories" for compat
-          const cats = Array.isArray(data?.breakdown)
-            ? (data.breakdown as Record<string, unknown>[]).map((b) => ({
-                category: String(b.category ?? ''),
-                item_count: Number(b.item_count ?? 0),
-                total_value: Number(b.total_value ?? 0),
-                percentage: Number(b.pct_of_portfolio ?? b.percentage ?? 0),
-              }))
-            : Array.isArray(data?.categories)
-            ? data.categories as CategoryBreakdownItem[]
-            : [];
-          setCategoryBreakdown(cats);
-        })
-        .catch((err: unknown) => {
-          logger.warn('[Portfolio] category breakdown fetch failed:', err);
-          if (!cancelled) setCategoryBreakdown([]);
-        })
-        .finally(() => { if (!cancelled) setBreakdownLoading(false); });
-      return () => { cancelled = true; };
-    }, []),
+      loadCategoryBreakdown();
+    }, [loadCategoryBreakdown]),
   );
 
   // Load followed categories from onboarding
@@ -487,10 +494,13 @@ function PortfolioScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadData();
+    // Both, together. Refreshing only loadData() updated the header and chart
+    // while leaving the summary strip on its last focus-time value, which is
+    // how one screen came to show two different portfolio totals.
+    await Promise.all([loadData(), loadCategoryBreakdown()]);
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setRefreshing(false);
-  }, [loadData, settings.hapticsEnabled]);
+  }, [loadData, loadCategoryBreakdown, settings.hapticsEnabled]);
 
   // Determine if positive or negative
   const isPositive = deltaPct >= 0;
