@@ -34,6 +34,13 @@ google-play-service-account.json
 # must be able to build.)
 sparrow-play-service-account.json
 
+# App Store Connect API key (eas submit --platform ios).
+# A .p8 grants App Store Connect access for the whole team — treat it exactly
+# like the Play service-account JSON above. One download only, never committed.
+*.p8
+AuthKey_*.p8
+
+
 # misc
 .DS_Store
 
