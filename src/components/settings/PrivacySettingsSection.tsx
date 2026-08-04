@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
+import { clearProfileCache } from '@/data/providers/userProvider';
 
 type PrivacySettings = {
   showCollectionValue: boolean;
@@ -113,6 +114,11 @@ function PrivacySettingsSectionInner() {
         logger.warn('[Settings] Failed to save privacy setting:', error);
         setPrivacy(prevPrivacy);
         showToast({ message: 'Failed to save privacy setting', type: 'error' });
+      } else {
+        // Profiles are cached for the session and now carry privacy-gated
+        // stats, so without this the user would toggle "Show collection value"
+        // off and still see the number on their own profile.
+        clearProfileCache();
       }
     } catch (err) {
       logger.error('[Settings] Privacy update error:', err);

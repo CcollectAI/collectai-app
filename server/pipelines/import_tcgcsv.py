@@ -90,15 +90,27 @@ PER_REQUEST_SLEEP = 0.5  # be polite to tcgcsv.com — 2/s, was 0.25 (4/s)
 # ---------------------------------------------------------------------------
 
 
+# Last transport-level failure, so the worker can report WHY it got nothing.
+# `_get_json` returns None on failure and only logs — which meant an HTTP 403
+# ("flagged for overuse", ongoing since 2026-07-29) surfaced in worker_runs as
+# "None market_hits errors, None hits, None upserted": three Nones and no cause.
+# The operator then has to go read bake.log to learn anything at all.
+_LAST_HTTP_ERROR: dict[str, str | int | None] = {"url": None, "status": None, "detail": None}
+
+
 def _get_json(client: httpx.Client, url: str):
     """GET a tcgcsv endpoint. Returns None on failure (non-fatal)."""
     try:
         r = client.get(url, timeout=HTTP_TIMEOUT)
     except httpx.HTTPError as e:
         logger.warning("GET %s failed: %s", url, e)
+        _LAST_HTTP_ERROR.update(url=url, status=None, detail=repr(e)[:200])
         return None
     if r.status_code != 200:
         logger.warning("GET %s -> HTTP %d", url, r.status_code)
+        _LAST_HTTP_ERROR.update(
+            url=url, status=r.status_code, detail=(r.text or "")[:200].strip() or None
+        )
         return None
     try:
         body = r.json()
@@ -110,6 +122,21 @@ def _get_json(client: httpx.Client, url: str):
     if isinstance(body, dict) and "results" in body:
         return body["results"]
     return body
+
+
+def _describe_last_http_error(fallback: str) -> str:
+    """Turn the last transport failure into an actionable one-liner."""
+    status = _LAST_HTTP_ERROR.get("status")
+    if status is None and not _LAST_HTTP_ERROR.get("detail"):
+        return fallback
+    parts = [fallback]
+    if status is not None:
+        parts.append(f"HTTP {status}")
+    if _LAST_HTTP_ERROR.get("url"):
+        parts.append(f"on {_LAST_HTTP_ERROR['url']}")
+    if _LAST_HTTP_ERROR.get("detail"):
+        parts.append(f"— {_LAST_HTTP_ERROR['detail']}")
+    return " ".join(str(x) for x in parts)
 
 
 def list_supported_categories(client: httpx.Client) -> list[dict]:
@@ -491,7 +518,7 @@ def run_pipeline(only_game: Optional[str] = None, dry_run: bool = False,
         supported = list_supported_categories(client)
         if not supported:
             logger.error("No supported categories returned by tcgcsv")
-            return {"ok": False, "reason": "no categories"}
+            return {"ok": False, "reason": _describe_last_http_error("no categories")}
 
         if only_game:
             supported = [s for s in supported if s["our_category"] == only_game]
@@ -584,9 +611,15 @@ async def run_once() -> None:
             # worker_runs.metadata.error_repr, which was `{}` for two days
             # while the actual cause — an HTTP 403 "flagged for overuse" — sat
             # in bake.log unread.
+            # Lead with the REASON. The counters are absent on an early bail
+            # (the summary is just {"ok": False, "reason": ...}), so a
+            # counters-only message read "None ... None ... None".
+            reason = summary.get("reason") or "unknown"
             raise RuntimeError(
-                f"tcgcsv import failed: {summary.get('errors')} market_hits errors, "
-                f"{summary.get('total_hits')} hits, {summary.get('total_upserted')} upserted"
+                f"tcgcsv import failed: {reason} "
+                f"[{summary.get('errors')} market_hits errors, "
+                f"{summary.get('total_hits')} hits, "
+                f"{summary.get('total_upserted')} upserted]"
             )
         record_run("tcgcsv_worker", "ok", duration_s=duration)
     except Exception as e:

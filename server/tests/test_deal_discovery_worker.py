@@ -230,3 +230,174 @@ class TestRunOnceAgentError:
 
         # Pool must also be closed (outer finally block)
         mock_pool.close.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# Watchlist snipes
+#
+# Until 2026-08-04 `_check_watchlist_snipes` joined on `mh.category = w.category`
+# alone — the docstring claimed a fuzzy title match that was never in the SQL.
+# Any listing in the category under the target fired: a €8015 target on an MTG
+# dual land alerted on a €0.02 common, with a dead button attached because the
+# matched row was a Scryfall price observation with no URL.
+#
+# These are structural asserts on the query. They cannot prove the join returns
+# the right rows (that needs real data — verified separately against prod), but
+# they do fail loudly if someone widens the join back to category-only.
+# ---------------------------------------------------------------------------
+
+class TestWatchlistSnipeQuery:
+    """The snipe query must require identity, buyability, and a price ceiling."""
+
+    @pytest.mark.asyncio
+    async def test_query_requires_item_identity(self, _patch_retry):
+        mod = _patch_retry
+        _, conn = _build_pool_and_conn()
+
+        await mod._check_watchlist_snipes(conn)
+
+        sql = conn.fetch.await_args.args[0]
+        # Exact catalog identity: item_id is bare, item_ref namespaced.
+        assert "mh.item_ref = w.category || ':' || w.item_id" in sql
+        # Title fallback exists for free-text rows, and is bounded.
+        assert "similarity(mh.title, w.title)" in sql
+        # The old behaviour: category alone must NOT be the whole join condition.
+        assert "ON mh.category = w.category" not in sql
+
+    @pytest.mark.asyncio
+    async def test_query_requires_a_buyable_listing(self, _patch_retry):
+        mod = _patch_retry
+        _, conn = _build_pool_and_conn()
+
+        await mod._check_watchlist_snipes(conn)
+
+        sql = conn.fetch.await_args.args[0]
+        assert "mh.url IS NOT NULL" in sql
+        assert "mh.is_listing IS TRUE" in sql
+
+    @pytest.mark.asyncio
+    async def test_query_excludes_identity_free_titles(self, _patch_retry):
+        """`(unnamed)` legacy rows must not match everything in their category."""
+        mod = _patch_retry
+        _, conn = _build_pool_and_conn()
+
+        await mod._check_watchlist_snipes(conn)
+
+        args = conn.fetch.await_args.args
+        assert args[1] == mod._TITLE_MATCH_THRESHOLD
+        assert "(unnamed)" in args[2]
+
+    @pytest.mark.asyncio
+    async def test_no_rows_sends_nothing(self, _patch_retry):
+        mod = _patch_retry
+        _, conn = _build_pool_and_conn()
+
+        assert await mod._check_watchlist_snipes(conn) == 0
+        conn.execute.assert_not_awaited()
+
+
+class TestWatchlistSnipePayload:
+    """The alert must carry what the Alerts screen needs to render a live link."""
+
+    @staticmethod
+    def _row(**overrides):
+        row = {
+            "watchlist_id": uuid.uuid4(),
+            "user_id": uuid.uuid4(),
+            "title": "Bayou",
+            "category": "mtg",
+            "target_price": 8015.00,
+            "currency": "EUR",
+            "listing_title": "Bayou Revised NM",
+            "listing_price": 6200.00,
+            "listing_url": "https://www.ebay.com/itm/123",
+            "provider": "ebay",
+        }
+        row.update(overrides)
+        return row
+
+    async def _run(self, mod, row):
+        _, conn = _build_pool_and_conn()
+        conn.fetch = AsyncMock(return_value=[row])
+        # tier lookup -> free; today's count -> 0
+        conn.fetchrow = AsyncMock(side_effect=[{"cnt": 0}, {"plan": "pro"}])
+        with patch("app.lib.notify.notify_user", AsyncMock()):
+            sent = await mod._check_watchlist_snipes(conn)
+        return sent, conn
+
+    @pytest.mark.asyncio
+    async def test_trigger_value_carries_listing_source(self, _patch_retry):
+        """app/alerts.tsx reads `listing_source` for the button label.
+
+        Only `provider` was ever written, so every snipe rendered
+        "View on Marketplace" instead of naming the marketplace.
+        """
+        import json
+
+        mod = _patch_retry
+        sent, conn = await self._run(mod, self._row())
+        assert sent == 1
+
+        insert = conn.execute.await_args.args
+        payload = json.loads(insert[3])
+        assert payload["listing_source"] == "ebay"
+        assert payload["listing_url"] == "https://www.ebay.com/itm/123"
+
+    @pytest.mark.asyncio
+    async def test_message_names_the_marketplace(self, _patch_retry):
+        mod = _patch_retry
+        sent, conn = await self._run(mod, self._row())
+        assert sent == 1
+
+        message = conn.execute.await_args.args[4]
+        assert "on ebay" in message
+        assert "Bayou Revised NM" in message
+
+    @pytest.mark.asyncio
+    async def test_item_id_is_the_dedupe_handle(self, _patch_retry):
+        """item_id stays `watchlist_snipe:<uuid>`; app/alerts.tsx must not route on it."""
+        mod = _patch_retry
+        row = self._row()
+        sent, conn = await self._run(mod, row)
+        assert sent == 1
+
+        item_id = conn.execute.await_args.args[2]
+        assert item_id == f"watchlist_snipe:{row['watchlist_id']}"
+
+
+class TestWatchlistSnipeDeepLink:
+    """The notification must land somewhere.
+
+    MEASURED against prod 2026-08-04: all 11 rows in notification_history had
+    deep_link NULL, and app/notifications.tsx::handleTap navigates only when
+    it is set — so every notification in the app was tap-to-nothing.
+    """
+
+    @pytest.mark.asyncio
+    async def test_notification_carries_a_deep_link(self, _patch_retry):
+        mod = _patch_retry
+        _, conn = _build_pool_and_conn()
+        conn.fetch = AsyncMock(return_value=[TestWatchlistSnipePayload._row()])
+        conn.fetchrow = AsyncMock(side_effect=[{"cnt": 0}, {"plan": "pro"}])
+
+        notify = AsyncMock()
+        with patch("app.lib.notify.notify_user", notify):
+            assert await mod._check_watchlist_snipes(conn) == 1
+
+        kwargs = notify.await_args.kwargs
+        assert kwargs["deep_link"], "snipe notification has no deep_link — tapping it does nothing"
+        assert kwargs["deep_link"].startswith("https://")
+
+    @pytest.mark.asyncio
+    async def test_no_listing_url_means_no_deep_link(self, _patch_retry):
+        """Never fabricate a destination. No URL → no link, rather than a dead one."""
+        mod = _patch_retry
+        _, conn = _build_pool_and_conn()
+        conn.fetch = AsyncMock(return_value=[TestWatchlistSnipePayload._row(listing_url=None)])
+        conn.fetchrow = AsyncMock(side_effect=[{"cnt": 0}, {"plan": "pro"}])
+
+        notify = AsyncMock()
+        with patch("app.lib.notify.notify_user", notify):
+            await mod._check_watchlist_snipes(conn)
+
+        assert notify.await_args.kwargs["deep_link"] is None

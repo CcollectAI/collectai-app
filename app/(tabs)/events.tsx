@@ -12,13 +12,13 @@ import {
   Pressable,
   ScrollView,
   SectionList,
+  FlatList,
   StyleSheet,
   Animated,
   ActivityIndicator,
   RefreshControl,
   TextInput,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -696,10 +696,14 @@ function EventsScreen() {
         selectedDate={selectedCalendarDate}
         onSelectDate={setSelectedCalendarDate}
       />
-      {calendarFilteredEvents.length > 0 && (
+      {/* The `length > 0` guard used to wrap this whole label, so tapping a day
+          with no events removed the only textual confirmation that the tap
+          registered — the list just went empty with no header. Always name the
+          selected day; the count tells the user whether it is empty on purpose. */}
+      {(selectedCalendarDate || calendarFilteredEvents.length > 0) && (
         <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 4 }]}>
           {selectedCalendarDate
-            ? `Events on ${selectedCalendarDate}`
+            ? `Events on ${selectedCalendarDate} (${calendarFilteredEvents.length})`
             : `All Events (${calendarFilteredEvents.length})`}
         </Text>
       )}
@@ -784,7 +788,21 @@ function EventsScreen() {
           />
         </View>
       ) : viewMode === 'calendar' ? (
-        <FlashList
+        // FlatList, NOT FlashList, and the calendar is why.
+        //
+        // FlashList v2 positions every cell — ListHeaderComponent included —
+        // with `position: 'absolute'` inside a container it sizes from measured
+        // layout (dist/recyclerview/ViewHolder.js:44). When a tall header
+        // measures short, the overflowing part is still DRAWN but stops
+        // receiving touches: on iOS a subview outside its parent's frame is not
+        // hit-tested. The month grid sits at the bottom of a tall header, so its
+        // day cells were visible and dead while the search box, filter chips and
+        // view-mode tabs above them kept working.
+        //
+        // RN's VirtualizedList renders ListHeaderComponent as a normal in-flow
+        // child, so the whole header stays scrollable AND tappable. Calendar
+        // mode is filtered to a single day, so recycling buys nothing here.
+        <FlatList
           data={calendarFilteredEvents}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => {

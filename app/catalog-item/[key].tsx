@@ -21,7 +21,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -40,12 +39,12 @@ import { colors as tokens } from '@/theme/tokens';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import logger from '@/utils/logger';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
+import ScreenHeader from '@/components/ScreenHeader';
 
 type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
 
 function CatalogItemMuseumScreen() {
   const { colors } = useAppTheme();
-  const insets = useSafeAreaInsets();
   const { settings } = useSettings();
   const { showToast } = useToast();
   const { limits } = useBillingLimits();
@@ -181,16 +180,11 @@ function CatalogItemMuseumScreen() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ paddingBottom: 48 }}>
-      {/* Back */}
-      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-        <AnimatedPressable
-          style={[styles.backBtn, { borderColor: colors.border }]}
-          onPress={() => router.back()}
-          accessibilityRole="button" accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={20} color={colors.text} />
-        </AnimatedPressable>
-      </View>
+      {/* Shared flat header. This screen used to hand-roll a back-only circle,
+          which is why the settings icon was missing here while every other
+          non-tab screen has it — the exact duplication ScreenHeader was written
+          to remove (see its module docstring). */}
+      <ScreenHeader />
 
       {/* Hero */}
       {imageUrl ? (
@@ -325,8 +319,6 @@ function Detail({ label, value, colors }: { label: string; value: string; colors
 }
 
 const styles = StyleSheet.create({
-  topBar: { paddingTop: 56, paddingHorizontal: 16, paddingBottom: 4 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   hero: { width: '100%', height: 280, marginTop: 8 },
   heroEmpty: { alignItems: 'center', justifyContent: 'center' },
   comingSoon: { fontSize: 13, fontWeight: '600', marginTop: 8 },

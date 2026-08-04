@@ -76,6 +76,16 @@ function CategoryBrowseScreen() {
 
   const [items, setItems] = useState<CatalogItemData[]>([]);
   const [total, setTotal] = useState<number | null>(null);
+  // `total` CANNOT be the pagination stop condition. The server's `total` is the
+  // full catalog size for the category ("what exists" — CategoryOverviewRail
+  // renders it), while `items` is the FILTERED page. With sort=value the API
+  // sends priced_only=true, and for a category with no priced rows it answers
+  // {"items": [], "total": 6967} (measured for lorcana, 2026-08-04). The old
+  // guard `items.length >= total` read 0 >= 6967 → false, FlatList re-fired
+  // onEndReached against the empty list, and the footer spinner flickered
+  // forever while re-requesting page after page. A short page is the only
+  // reliable end-of-list signal.
+  const [reachedEnd, setReachedEnd] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -104,6 +114,8 @@ function CategoryBrowseScreen() {
         const page = (res?.items ?? []) as CatalogItemData[];
         setItems((prev) => (mode === "append" ? [...prev, ...page] : page));
         if (typeof res?.total === "number") setTotal(res.total);
+        // Fewer rows than asked for → that was the last page.
+        if (page.length < PAGE_SIZE) setReachedEnd(true);
       } catch (err) {
         logger.error("[CategoryBrowse] load error:", err);
         if (mode === "replace" && id === reqId.current) setItems([]);
@@ -121,21 +133,25 @@ function CategoryBrowseScreen() {
   // First page — refetched on sort change and (debounced) on search input.
   useEffect(() => {
     setLoading(true);
+    setReachedEnd(false);
     const t = setTimeout(() => fetchPage(0, search, sort, "replace"), search ? 400 : 0);
     return () => clearTimeout(t);
   }, [fetchPage, search, sort]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
+    setReachedEnd(false);
     fetchPage(0, search, sort, "replace");
   }, [fetchPage, search, sort]);
 
   const handleEndReached = useCallback(() => {
-    if (loading || loadingMore) return;
-    if (total != null && items.length >= total) return;
+    if (loading || loadingMore || reachedEnd) return;
+    // An empty list still fires onEndReached (its content is shorter than the
+    // viewport), so without this it would spin on nothing.
+    if (items.length === 0) return;
     setLoadingMore(true);
     fetchPage(items.length, search, sort, "append");
-  }, [loading, loadingMore, total, items.length, fetchPage, search, sort]);
+  }, [loading, loadingMore, reachedEnd, items.length, fetchPage, search, sort]);
 
   const handleSortChange = useCallback(
     (next: CatalogSortKey) => {
@@ -218,6 +234,16 @@ function CategoryBrowseScreen() {
   // Square image tile — identical structure to the set-detail grid so "See all"
   // and a collection look and behave the same. Per-tile art only; tap opens the
   // full-screen swipe viewer (price + details are one more tap away).
+  // Catalog art is third-party CDN (TCGPlayer / Scryfall). Some of those URLs
+  // 403 — MEASURED 2026-08-04: 2 of the 40 newest lorcana rows, both TCGPlayer
+  // "Puzzle Insert" products. <Image> with a failing URI renders NOTHING, so the
+  // tile fell back to its own dark card background and read as a black square.
+  // Track failures and show the same placeholder a null image_url gets.
+  const [brokenArt, setBrokenArt] = useState<Set<string>>(new Set());
+  const markArtBroken = useCallback((id: string) => {
+    setBrokenArt((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+  }, []);
+
   const renderItem = useCallback(
     ({ item, index }: { item: CatalogItemData; index: number }) => (
       <AnimatedPressable
@@ -232,8 +258,14 @@ function CategoryBrowseScreen() {
         accessibilityRole="button"
         accessibilityLabel={`View ${item.title}`}
       >
-        {item.image_url ? (
-          <Image source={{ uri: item.image_url }} style={s.fill} resizeMode="contain" accessibilityIgnoresInvertColors />
+        {item.image_url && !brokenArt.has(item.id) ? (
+          <Image
+            source={{ uri: item.image_url }}
+            style={s.fill}
+            resizeMode="contain"
+            onError={() => markArtBroken(item.id)}
+            accessibilityIgnoresInvertColors
+          />
         ) : (
           <View style={[s.fill, s.placeholder, { backgroundColor: tokens.brand.base + "12" }]}>
             <Ionicons name="cube-outline" size={26} color={tokens.brand.base} />
@@ -241,7 +273,7 @@ function CategoryBrowseScreen() {
         )}
       </AnimatedPressable>
     ),
-    [tile, colors.card, openViewer],
+    [tile, colors.card, openViewer, brokenArt, markArtBroken],
   );
 
   return (
@@ -273,7 +305,7 @@ function CategoryBrowseScreen() {
       </View>
 
       {/* Sort chips — same component + order as the category page */}
-      <CategorySortChips sort={sort} onChange={handleSortChange} colors={colors} />
+      <CategorySortChips sort={sort} onChange={handleSortChange} colors={colors} pinned />
 
       {/* Catalog grid */}
       {loading ? (
@@ -307,10 +339,25 @@ function CategoryBrowseScreen() {
             <View style={s.emptyContainer}>
               <Ionicons name="search-outline" size={48} color={colors.muted} />
               <Text style={[s.emptyTitle, { color: colors.text }]}>
-                {search ? "No matching items" : "No catalog items yet"}
+                {search
+                  ? "No matching items"
+                  : sort === "value"
+                    ? "No priced items yet"
+                    : "No catalog items yet"}
               </Text>
               <Text style={[s.emptySubtitle, { color: colors.muted }]}>
-                {search ? "Try a different search term" : "This category's catalog is still being curated"}
+                {search
+                  ? "Try a different search term"
+                  : sort === "value"
+                    // "Most valuable" sends priced_only=true. A category can be
+                    // fully catalogued and still have nothing priced — lorcana
+                    // has 6,967 catalog rows and zero recent comps. Saying "the
+                    // catalog is still being curated" there is simply false, and
+                    // it hides the fix (prices, not catalog entries).
+                    ? total
+                      ? `${total.toLocaleString()} items catalogued — market prices are still being collected. Try All or Newest.`
+                      : "Market prices are still being collected for this category."
+                    : "This category's catalog is still being curated"}
               </Text>
             </View>
           }

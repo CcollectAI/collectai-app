@@ -51,6 +51,7 @@ import {
   EventRelatedCategory,
   EventHostSection,
 } from '@/components/events';
+import { safeGoBack } from '@/lib/goBack';
 
 function EventDetailScreen() {
   const { t } = useTranslation();
@@ -358,7 +359,7 @@ function EventDetailScreen() {
             try {
               await dataProvider.cancelEvent(eventId);
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              router.back();
+              safeGoBack(router);
             } catch (err) {
               logger.error('[EventDetail] cancel error:', err);
               showToast({ message: 'Failed to cancel event.', type: 'error' });
@@ -422,7 +423,7 @@ function EventDetailScreen() {
             This event doesn't exist yet. Try opening it from the Events tab again.
           </Text>
           <AnimatedPressable
-            onPress={() => router.back()}
+            onPress={() => safeGoBack(router)}
             style={[styles.emptyBtn, { borderColor: colors.border }]}
             accessibilityRole="button"
             accessibilityLabel={t('common.go_back_a11y')}

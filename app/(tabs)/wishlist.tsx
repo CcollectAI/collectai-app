@@ -18,7 +18,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
-  Linking,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,6 +36,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
 import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
+import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
 import { WishlistStatsBar } from '@/components/wishlist/WishlistStatsBar';
 import { WishlistSortControls } from '@/components/wishlist/WishlistSortControls';
 
@@ -80,6 +80,9 @@ function WatchlistTabScreen() {
   const [editTargetItem, setEditTargetItem] = useState<WatchlistItem | null>(null);
   const [editTargetValue, setEditTargetValue] = useState('');
   const [editTargetSaving, setEditTargetSaving] = useState(false);
+
+  // Shop state — which watchlist row the marketplace picker is open for
+  const [shopItem, setShopItem] = useState<WatchlistItem | null>(null);
 
   // "I Got It!" acquisition state
   const [acquireModalVisible, openAcquireModal, closeAcquireModal] = useModal();
@@ -280,17 +283,17 @@ function WatchlistTabScreen() {
     }
   };
 
-  // Shop flow — always open external marketplace directly
-  const handleShop = async (item: WatchlistItem) => {
+  // Shop flow — open the marketplace picker for this row.
+  //
+  // This used to fetch the links itself and open `links[0]` blind. Two problems:
+  // eBay was appended first for every category, so an MTG single always landed
+  // on eBay US with Cardmarket unused further down the list; and the raw
+  // Linking.openURL bypassed openAffiliateUrl, so the click never reached
+  // demand_signals. MarketplacePickerSheet does both correctly and was already
+  // built — it just had no callers.
+  const handleShop = (item: WatchlistItem) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    try {
-      const res = await collectorsApi.getAffiliateLinks(item.title, item.category);
-      const url = res.links?.[0]?.affiliate_url || `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`;
-      Linking.openURL(url).catch(() => {});
-    } catch (e) {
-      logger.error('[silent-fallback] wishlist: deep-link failed, falling back to web search:', e);
-      Linking.openURL(`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`).catch(() => {});
-    }
+    setShopItem(item);
   };
 
   // "I Got It!" flow
@@ -798,6 +801,19 @@ function WatchlistTabScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Marketplace picker — opened by the Shop button on a watchlist row.
+          The target price becomes a hard ceiling on the search, so the results
+          are things the user would actually buy rather than every listing that
+          shares a word with the title. */}
+      <MarketplacePickerSheet
+        visible={shopItem !== null}
+        onClose={() => setShopItem(null)}
+        itemTitle={shopItem?.title ?? ''}
+        categoryId={shopItem?.category}
+        maxPrice={shopItem?.targetPrice}
+        maxPriceCurrency={shopItem?.currency}
+      />
 
       {/* Congrats Overlay */}
       {showCongrats && (

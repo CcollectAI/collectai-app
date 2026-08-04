@@ -50,12 +50,23 @@ export default function ScreenHeader({ title, showBack = true, showActions = tru
         },
       ]}
     >
-      <View style={styles.side}>
+      <View style={[styles.side, styles.sideLeft]}>
         {showBack && (
           <AnimatedPressable
             onPress={() => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-              router.back();
+              // `router.back()` is a SILENT no-op when the stack has nothing to
+              // pop — the haptic fires, the button animates, and the screen just
+              // sits there, which reads as "the back button is broken". That
+              // happens whenever a screen is entered without a push behind it:
+              // a deep link, a push-notification tap, or a `router.replace`
+              // (QuickNavBar uses replace for all five tabs). Fall back to the
+              // portfolio tab so the control always does something.
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)');
+              }
             }}
             style={styles.iconBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -75,7 +86,7 @@ export default function ScreenHeader({ title, showBack = true, showActions = tru
         <View style={styles.flex} />
       )}
 
-      <View style={styles.side}>
+      <View style={[styles.side, styles.sideRight]}>
         {showActions && (
           <>
             <InboxHeaderButton color={colors.text} size={22} />
@@ -116,9 +127,18 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
-  // Fixed-width sides keep the title centred and both icon clusters aligned
-  // across every screen regardless of how many icons each side has.
+  // Equal-width sides keep the title centred regardless of how many icons each
+  // side has. Both boxes are the same width, but the CONTENT has to be pinned
+  // to the outer edge or a cluster that doesn't fill its box drifts inward.
+  //
+  // That is what happened when COMMUNITY_GATED suppressed the chat icon:
+  // InboxHeaderButton returns null with 0 unread, so the right box held only
+  // the ~30pt gear inside a 76pt row with default flex-start — leaving ~46pt of
+  // dead space to its right, and the gear no longer lined up with the screen
+  // edge (or with the back chevron on the left).
   side: { flexDirection: 'row', alignItems: 'center', minWidth: 76 },
+  sideLeft: { justifyContent: 'flex-start' },
+  sideRight: { justifyContent: 'flex-end' },
   flex: { flex: 1 },
   title: { flex: 1, fontSize: 18, fontWeight: '800', textAlign: 'center' },
   iconBtn: { padding: 4 },

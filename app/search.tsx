@@ -24,6 +24,7 @@ import { SkeletonList } from '@/components/Skeleton';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
+import { safeGoBack } from '@/lib/goBack';
 
 const RECENT_SEARCHES_KEY = '@sparrowcollect/recent_searches';
 const MAX_RECENT_SEARCHES = 10;
@@ -237,7 +238,7 @@ function SearchScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Search Header */}
       <View style={styles.header}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back')}>
+        <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back')}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>

@@ -113,6 +113,65 @@ To mint a new one: <https://supabase.com/dashboard/account/tokens>
 }
 ```
 
+## Checks must know the schedule they police (2026-08-04)
+
+The partition check flagged **"no partition for next month"** on
+`price_predictions` and `price_history` as `medium`, every day. It was wrong.
+
+Next month's partitions are created by **pg_cron job 32, `0 2 25 * *`** — 2am on
+the 25th. On the 4th of a month there is legitimately no partition for next
+month, and there won't be for another three weeks. The check fired daily from
+the 1st to the 24th, on every partitioned table: ~24 days of false alarms a
+month. That is how a watchdog stops being read, and it devalues the one finding
+in the same report that *was* real.
+
+The check is now schedule-aware:
+
+| Condition | Verdict |
+|---|---|
+| **Current** month's partition missing | `high` — rows are landing in `_default` right now |
+| Next month's missing **and** day ≥ 25 | `medium` — job 32 should already have run |
+| Next month's missing and day < 25 | healthy: *"y2026m08 present; y2026m09 due from pg_cron job 32 on the 25th"* |
+
+Result on the 2026-08-04 run: `bugs_medium` 2 → 0, `what_went_well` 32 → 34.
+
+`market_hits` looked different (it already had `y2026m09`) purely because a
+migration created it ahead of the cron — not because the other two were broken.
+Chasing that apparent inconsistency is what surfaced the real defect: the check,
+not the data.
+
+**The general rule:** a check on a scheduled artefact must encode the schedule.
+"Absent" is only a bug once the thing that creates it should have run.
+
+## A failing worker must say WHY, not just that it failed
+
+`tcgcsv_worker` had been erroring since 2026-08-01 with:
+
+```
+tcgcsv import failed: None market_hits errors, None hits, None upserted
+```
+
+Three `None`s and no cause. The counters aren't in the summary on an early bail
+— that path returns `{"ok": False, "reason": "no categories"}` — so the message
+interpolated fields that were never set, and the actual reason sat unread in
+`bake.log`.
+
+`_get_json` in `server/pipelines/import_tcgcsv.py` returns `None` on any HTTP
+failure and only `logger.warning`s the status, so nothing reached
+`worker_runs.metadata`. It now records the last transport failure (url, status,
+body) and the worker leads its error with it. Verified against the live
+endpoint:
+
+```
+tcgcsv import failed: no categories HTTP 403 on https://tcgcsv.com/tcgplayer/categories
+  — Your application has flagged for overuse and has been blocked. Please reach out
+    on discord or send an email to cptspacetoaster@gmail.com to begin an appeal.
+```
+
+The remedy is now in the alert itself. This finding stays `high` and keeps
+paging — it is genuinely broken and needs an appeal email — but an operator no
+longer has to SSH in to learn that.
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes

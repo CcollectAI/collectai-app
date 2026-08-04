@@ -46,6 +46,7 @@ import {
   PermissionScreen,
 } from '@/components/quickscan';
 import type { BatchScannedItem } from '@/components/quickscan';
+import { safeGoBack } from '@/lib/goBack';
 
 // TIFFANY removed — use colors.accent from theme instead
 
@@ -634,7 +635,7 @@ function QuickScanScreen() {
       setPhase('batch_summary');
       return;
     }
-    router.back();
+    safeGoBack(router);
   }, [settings.hapticsEnabled, batchMode, batchItems.length]);
 
   const handleBatchDone = useCallback(() => {
@@ -644,7 +645,7 @@ function QuickScanScreen() {
 
   const handleFinishBatch = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.back();
+    safeGoBack(router);
   }, [settings.hapticsEnabled]);
 
   const toggleBatchMode = useCallback(() => {

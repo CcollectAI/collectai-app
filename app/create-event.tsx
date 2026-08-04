@@ -46,6 +46,7 @@ import { EventFormHeader } from '@/components/events/EventFormHeader';
 import { EventDateTimePicker } from '@/components/events/EventDateTimePicker';
 import { EventLocationSection } from '@/components/events/EventLocationSection';
 import { EventTicketingSection } from '@/components/events/EventTicketingSection';
+import { safeGoBack } from '@/lib/goBack';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -134,7 +135,7 @@ const CreateEventScreen: React.FC = () => {
         }
       }
 
-      router.back();
+      safeGoBack(router);
     } catch (err: any) {
       logger.error('[CreateEvent] error:', err);
       showToast({ message: err?.message || 'Failed to create event. Please try again.', type: 'error' });

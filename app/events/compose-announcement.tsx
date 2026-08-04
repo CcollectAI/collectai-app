@@ -31,6 +31,7 @@ import { compose, required, maxLength, url } from '@/lib/validate';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { safeGoBack } from '@/lib/goBack';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -87,7 +88,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
         titleField.value.trim() || undefined,
         imageUrlField.value.trim() || undefined,
       );
-      router.back();
+      safeGoBack(router);
     } catch (err: unknown) {
       logger.error('[ComposeAnnouncement] error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to send announcement. Please try again.', type: 'error' });

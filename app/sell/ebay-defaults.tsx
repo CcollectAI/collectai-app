@@ -43,6 +43,7 @@ import { logger } from '@/lib/logger';
 import { useToast } from '@/components/Toast';
 import { SELLING_ENABLED } from '@/config/featureFlags';
 import { SellingUnavailable } from '@/components/sell/SellingUnavailable';
+import { safeGoBack } from '@/lib/goBack';
 
 const FIELDS: Array<{
   key: 'ebay_category_id' | 'fulfillment_policy_id' | 'payment_policy_id' | 'return_policy_id' | 'location_key';
@@ -168,7 +169,7 @@ function EbayDefaultsScreen() {
         location_key: form.location_key.trim() || undefined,
       });
       showToast({ message: 'Defaults saved', type: 'success' });
-      router.back();
+      safeGoBack(router);
     } catch (e) {
       logger.error('set_ebay_defaults_failed', { error: String(e) });
       Alert.alert(

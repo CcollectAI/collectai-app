@@ -43,6 +43,7 @@ import { EventFormHeader } from '@/components/events/EventFormHeader';
 import { EventDateTimePicker } from '@/components/events/EventDateTimePicker';
 import { EventLocationSection } from '@/components/events/EventLocationSection';
 import { FormField as FormFieldComponent } from '@/components/form';
+import { safeGoBack } from '@/lib/goBack';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -133,7 +134,7 @@ const EditEventScreen: React.FC = () => {
       };
 
       await dataProvider.updateEvent(eventId, patch);
-      router.back();
+      safeGoBack(router);
     } catch (err: unknown) {
       logger.error('[EditEvent] error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to update event. Please try again.', type: 'error' });
@@ -158,7 +159,7 @@ const EditEventScreen: React.FC = () => {
             try {
               await dataProvider.cancelEvent(eventId);
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-              router.back();
+              safeGoBack(router);
             } catch (err: unknown) {
               logger.error('[EditEvent] cancel error:', err);
               showToast({ message: (err as Error)?.message || 'Failed to cancel event.', type: 'error' });
@@ -192,7 +193,7 @@ const EditEventScreen: React.FC = () => {
           <Ionicons name="alert-circle-outline" size={48} color={colors.danger} />
           <Text style={[styles.errorTitle, { color: colors.text }]}>{authError}</Text>
           <AnimatedPressable
-            onPress={() => router.back()}
+            onPress={() => safeGoBack(router)}
             style={[styles.errorBtn, { borderColor: colors.border }]}
             accessibilityRole="button"
             accessibilityLabel="Go back"

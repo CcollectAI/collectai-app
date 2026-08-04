@@ -24,6 +24,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { safeGoBack } from '@/lib/goBack';
 
 type BlockedUser = { id: string; name: string };
 
@@ -120,7 +121,7 @@ function BlockedUsersScreen() {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <AnimatedPressable
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }}
+          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); safeGoBack(router); }}
           style={styles.backBtn}
           accessibilityRole="button"
           accessibilityLabel="Go back"

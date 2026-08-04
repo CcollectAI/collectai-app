@@ -33,6 +33,7 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { SelectField, type SelectOption } from '@/components/form/SelectField';
 
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
+import { safeGoBack } from '@/lib/goBack';
 
 const CATEGORY_OPTIONS: SelectOption[] = [
   { label: 'Any', value: '' },
@@ -164,7 +165,7 @@ function CreateMandateScreen() {
         });
         showToast({ message: "Search activated", type: "success" });
       }
-      router.back();
+      safeGoBack(router);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save";
       showToast({ message: msg, type: "error" });
@@ -315,7 +316,7 @@ function CreateMandateScreen() {
               try {
                 await collectorsApi.deleteMandate(params.id!);
                 showToast({ message: "Search paused", type: "success" });
-                router.back();
+                safeGoBack(router);
               } catch {
                 showToast({ message: "Failed to pause", type: "error" });
               }

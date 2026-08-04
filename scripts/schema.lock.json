@@ -14650,6 +14650,14 @@
       "nullable": true,
       "type": "text"
     },
+    "user_public_profile_v1.collection_count": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "user_public_profile_v1.collection_value_eur": {
+      "nullable": true,
+      "type": "numeric"
+    },
     "user_public_profile_v1.created_at": {
       "nullable": true,
       "type": "timestamptz"
@@ -14695,6 +14703,14 @@
     "user_public_profiles.bio": {
       "nullable": true,
       "type": "text"
+    },
+    "user_public_profiles.collection_count": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "user_public_profiles.collection_value_eur": {
+      "nullable": true,
+      "type": "numeric"
     },
     "user_public_profiles.created_at": {
       "nullable": true,
@@ -24599,7 +24615,9 @@
       "display_handle",
       "avatar_url",
       "created_at",
-      "updated_at"
+      "updated_at",
+      "collection_count",
+      "collection_value_eur"
     ],
     "user_public_profile_v1_legacy_20260724": [
       "user_id",
@@ -24617,7 +24635,9 @@
       "bio",
       "location",
       "interests",
-      "created_at"
+      "created_at",
+      "collection_count",
+      "collection_value_eur"
     ],
     "user_public_profiles_legacy_20260724": [
       "id",

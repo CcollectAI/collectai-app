@@ -31,6 +31,7 @@ import { QuickNavBar } from "@/components/QuickNavBar";
 import logger from '@/utils/logger';
 import type { Href } from "expo-router";
 import { timeAgo } from "@/lib/timeAgo";
+import { openAffiliateUrl } from "@/utils/affiliateHelpers";
 import { MS_PER_WEEK } from "@/constants/time";
 
 const PAGE_SIZE = 20;
@@ -156,9 +157,21 @@ function NotificationsScreen() {
     (item: NotificationItem) => {
       handleMarkRead(item);
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-      if (item.deep_link) {
-        router.push(item.deep_link as Href);
+      if (!item.deep_link) return;
+
+      // A deal notification's destination is the marketplace listing, which is
+      // an https URL — router.push would treat it as an in-app route and go
+      // nowhere. openAffiliateUrl validates the scheme and records the click,
+      // so a notification tap counts as routed GMV like any other Shop tap.
+      if (/^https?:\/\//i.test(item.deep_link)) {
+        // No `category` — openAffiliateUrl forwards it to record_demand_signal,
+        // whose `category` column holds a COLLECTIBLE slug (pokemon, lego).
+        // `item.type` is a notification type ('deal_alert'), so passing it would
+        // quietly poison the demand-signal category dimension.
+        openAffiliateUrl(item.deep_link);
+        return;
       }
+      router.push(item.deep_link as Href);
     },
     [handleMarkRead, router],
   );

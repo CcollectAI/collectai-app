@@ -263,10 +263,35 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
             nxt = (datetime.now(timezone.utc).replace(day=1))
             nxt = nxt.replace(year=nxt.year + 1, month=1) if nxt.month == 12 else nxt.replace(month=nxt.month + 1)
             want = "y%04dm%02d" % (nxt.year, nxt.month)
-            if want not in months:
-                bug("medium", "no partition for next month on %s" % parent,
-                    "missing %s — rows will fall into the _default partition, which retention cannot drop" % want,
+            # Next month's partition is CREATED BY pg_cron job 32 on the 25th
+            # ("0 2 25 * *"). Flagging its absence before then is a false alarm
+            # that fires every day from the 1st to the 24th, on every partitioned
+            # table — 24 days of daily noise a month, which is how a watchdog
+            # gets ignored. Only complain once the job should already have run.
+            #
+            # `today` is the current month's partition and must exist NOW; that
+            # is a real incident at any point in the month.
+            today_part = "y%04dm%02d" % (datetime.now(timezone.utc).year,
+                                         datetime.now(timezone.utc).month)
+            day_of_month = datetime.now(timezone.utc).day
+            PARTITION_CRON_DAY = 25
+
+            if today_part not in months:
+                bug("high", "no partition for the CURRENT month on %s" % parent,
+                    "missing %s — rows are landing in the _default partition RIGHT NOW, "
+                    "and retention cannot drop _default" % today_part,
                     sql_link(), "SELECT inhrelid::regclass FROM pg_inherits WHERE inhparent='public.%s'::regclass;" % parent)
+            elif want not in months and day_of_month >= PARTITION_CRON_DAY:
+                bug("medium", "no partition for next month on %s" % parent,
+                    "missing %s and pg_cron job 32 (0 2 25 * *) should already have created it — "
+                    "rows will fall into the _default partition, which retention cannot drop" % want,
+                    sql_link(), "SELECT inhrelid::regclass FROM pg_inherits WHERE inhparent='public.%s'::regclass;" % parent)
+            elif want not in months:
+                healthy.append({
+                    "check": "%s partition runway" % parent,
+                    "detail": "%s present; %s due from pg_cron job 32 on the %dth"
+                              % (today_part, want, PARTITION_CRON_DAY),
+                })
             else:
                 healthy.append({"check": "%s partition runway" % parent, "detail": "%s exists" % want})
     except Exception:

@@ -11,6 +11,20 @@ import logger from '../../utils/logger';
 const profileCache: Map<string, PublicUserProfile | null> = new Map();
 let myProfileCache: PublicUserProfile | null | undefined = undefined;
 
+/**
+ * Drop cached profiles so the next read re-fetches.
+ *
+ * Profiles now carry privacy-gated stats (collection count / value). The cache
+ * lives for the whole session, so without this a user who turns off "Show
+ * collection value" would keep seeing the old number on their own profile and
+ * reasonably conclude the toggle does nothing — which is exactly the bug this
+ * whole change set out to fix.
+ */
+export function clearProfileCache(): void {
+  profileCache.clear();
+  myProfileCache = undefined;
+}
+
 export async function getPublicUserProfile(userId: string): Promise<PublicUserProfile | null> {
   if (!userId) return null;
 
@@ -18,12 +32,19 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
     return profileCache.get(userId) ?? null;
   }
 
-  // user_public_profile_v1 columns: user_id, display_handle,
-  // avatar_url, created_at, updated_at. Earlier code selected display_name,
-  // username, bio, level, total_xp etc. that don't exist on the view —
-  // they 400'd silently. The mapper falls back gracefully when a field
-  // isn't present.
-  const profileCols = 'user_id, display_handle, avatar_url, created_at';
+  // user_public_profile_v1 columns: user_id, display_handle, avatar_url,
+  // created_at, updated_at, collection_count, collection_value_eur. Earlier
+  // code selected display_name, username, bio, level, total_xp etc. that don't
+  // exist on the view — they 400'd silently. The mapper falls back gracefully
+  // when a field isn't present.
+  //
+  // collection_count / collection_value_eur come back NULL when the owner has
+  // turned off "Show item count" / "Show collection value" in Settings →
+  // Privacy. The gate is in the view (20260804_privacy_settings_enforcement),
+  // not here — a check in this file would be advisory, since the app reads the
+  // view directly over PostgREST.
+  const profileCols =
+    'user_id, display_handle, avatar_url, created_at, collection_count, collection_value_eur';
   const { data, error } = await supabase
     .from('user_public_profile_v1')
     .select(profileCols)
@@ -53,8 +74,8 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
     avatarUrl: (row.avatar_url ?? null) as string | null,
     bio: null,
     interests: null,
-    collectionCount: null,
-    collectionValueEur: null,
+    collectionCount: (row.collection_count ?? null) as number | null,
+    collectionValueEur: (row.collection_value_eur ?? null) as number | null,
   };
 
   profileCache.set(userId, profile);
@@ -89,10 +110,16 @@ export async function searchUsers(query: string): Promise<PublicUserProfile[]> {
   let data: unknown;
   let error: unknown;
   try {
+    // `user_public_profiles` already excludes users who turned off "Allow
+    // discovery" (20260804_privacy_settings_enforcement) — the filter is in the
+    // view so it cannot be bypassed by calling PostgREST directly. You still
+    // match yourself, so opting out never hides you from your own search.
     ({ data, error } = await withTimeout(
       supabase
         .from('user_public_profiles')
-        .select('user_id, display_name, handle, avatar_url, bio, interests')
+        .select(
+          'user_id, display_name, handle, avatar_url, bio, interests, collection_count, collection_value_eur',
+        )
         .or(`display_name.ilike.${pattern},handle.ilike.${pattern}`)
         .limit(20),
       5_000,
@@ -117,6 +144,8 @@ export async function searchUsers(query: string): Promise<PublicUserProfile[]> {
     avatarUrl: (row.avatar_url as string | null) ?? null,
     bio: (row.bio as string | null) ?? null,
     interests: (row.interests as string[] | null) ?? null,
+    collectionCount: (row.collection_count ?? null) as number | null,
+    collectionValueEur: (row.collection_value_eur ?? null) as number | null,
   }));
 }
 

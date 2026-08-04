@@ -41,6 +41,48 @@ Also observed: Cardmarket now answers our Crawl4AI scrape with
 outbound-request counting in place → then flip the manifest line and watch one
 cycle.
 
+## 🎯 `watchlist_snipe` — the join was category-only until 2026-08-04
+
+Distinct from `watchlist_monitor_worker` above. Snipes are **Phase 2 of
+`deal_discovery_worker`** (`_check_watchlist_snipes`), which *is* enabled. They
+write `alert_trigger_history` with `trigger_type='watchlist_snipe'` and
+`item_id='watchlist_snipe:<watchlist uuid>'`.
+
+**What was wrong.** The join was `mh.category = w.category` and nothing else.
+The docstring claimed "category + fuzzy title match"; there was no title match
+in the SQL. Any listing in the category under the target fired — a €8015 target
+on an MTG dual land alerted on a €0.02 common, worded "100% below your target".
+Measured over a 7-day window the old predicate matched **220,826** rows.
+
+Three conditions now define a snipe:
+
+| Condition | Predicate | Why |
+|---|---|---|
+| Same item | `mh.item_ref = w.category \|\| ':' \|\| w.item_id`, else `similarity(mh.title, w.title) >= 0.55` within category | `watchlist_items.item_id` holds a **bare** canonical key (`sum-283-bayou`); `market_hits.item_ref` is **namespaced** (`mtg:sum-283-bayou`). See `learning_canonical_key_vs_item_ref_namespace` |
+| Buyable | `mh.url IS NOT NULL AND mh.is_listing IS TRUE` | Most hits are price observations, not offers. Of 276k rows over 2 days only 35k had a URL; the MTG ones are Scryfall price rows. Only **ebay / crawl4ai / discogs_listing** produce URL + `is_listing` |
+| Has identity | `w.title <> '(unnamed)' AND length(w.title) >= 3` | Legacy rows would otherwise match everything via the title arm |
+
+Verified against prod in a rolled-back transaction: exact-id arm fires, title
+arm fires, target-below-price suppressed, unrelated-title suppressed.
+`EXPLAIN ANALYZE` 0.2 ms on the 30-minute window; both arms are index-supported
+(`(item_ref, seen_at DESC)`, `(category, seen_at DESC)` per partition).
+
+> ⚠️ **Expect silence for TCG categories.** There are currently **zero** buyable
+> eBay listings for mtg/pokemon/yugioh — those categories carry Scryfall price
+> rows only. The correct query therefore fires nothing for them, which is the
+> point: the alerts it stops sending were unactionable by construction. Buyable
+> listings do exist for warhammer, hot_toys, gunpla, anime_figures, lego,
+> watches, funko and ~12 more.
+
+**The alert must be clickable.** `trigger_value` now carries `listing_source`
+alongside `provider` — `app/alerts.tsx:335` reads `listing_source` for the
+button label and fell back to the literal word "Marketplace" because only
+`provider` was ever written. And `app/alerts.tsx` no longer routes on
+`item_id` for this trigger type: `watchlist_snipe:<uuid>` is neither an items
+uuid nor a catalog key, so `itemHref` sent it to
+`/catalog-item/watchlist_snipe:<uuid>`, which resolves to nothing. A snipe's
+real destination is the listing; with no listing URL, no button renders.
+
 ## Actual wiring (verified E2E against prod 2026-07-30)
 
 There are **two different things** here, and crossing them has broken this
@@ -351,3 +393,79 @@ npm test src/hooks/usePortfolioInsights
 npm test src/hooks/useAlertsFeed
 npm test src/components/home/InsightsCard
 ```
+
+---
+
+# Privacy toggles (Settings → Privacy)
+
+> Enforcement landed 2026-08-04. Before that, `user_privacy_settings` had
+> **zero readers** — see below. Gate: `server/scripts/verify_privacy_enforcement.py`.
+
+## Where enforcement lives — and why not in React
+
+| Toggle | Default | Enforced by | Effect when off |
+|---|---|---|---|
+| Show collection value | `true` | `user_public_profile_v1` / `user_public_profiles` | `collection_value_eur` returns NULL |
+| Show item count | `true` | same two views | `collection_count` returns NULL |
+| Allow discovery | `true` | `user_public_profiles` WHERE clause | Excluded from `searchUsers` |
+| Show online status | `false` | `rpc_get_presence_v1` + `rpc_get_batch_presence_v1` | RPC returns no row |
+
+The app reads these views **directly over PostgREST**, and the presence RPCs are
+`SECURITY DEFINER` (they bypass RLS by design so one user can see another's
+dot). A check in a React component would therefore be advisory only — anyone
+holding an anon key can call the RPC. The gate has to be in the DB.
+
+**You are always exempt from your own gates**: `p.id = auth.uid()` short-circuits
+the discovery and presence predicates, so opting out never hides you from your
+own search results or your own presence dot.
+
+## Two traps, both load-bearing
+
+1. **`security_invoker` must stay OFF on both views.** `user_privacy_settings`
+   has owner-only SELECT policies. A *non*-invoker view evaluates that RLS as
+   the view owner and can read every row; an invoker view reads nothing for
+   other users, `COALESCE` then supplies the permissive default, and **every
+   gate silently opens** while still looking correct. Pinned by the verify
+   script.
+2. **`user_public_profiles` must stay auto-updatable.**
+   `account_router._do_account_delete` issues `DELETE FROM user_public_profiles`
+   and only catches `UndefinedTableError`. Adding a JOIN or a target-list
+   aggregate makes the view read-only and turns **account deletion into a 500**.
+   That is why the stats are scalar subqueries in the SELECT list rather than a
+   `LEFT JOIN` — one table in the FROM keeps the view updatable. Also pinned.
+
+## Why no test caught the original bug
+
+Every existing check asked a **structural** question — "does the toggle save?"
+It did save; the write path had optimistic update, rollback and a toast, and was
+never broken. The question that mattered was about **values**: with the toggle
+off, is the data actually hidden? Nothing asked it, and `show_online_status`
+(default `false`) failed *open* for months — presence rendered regardless.
+
+`verify_privacy_enforcement.py` asks the value question against the live DB in a
+rolled-back transaction. Note it **stratifies**: presence is tested against a
+user that actually has a `user_presence` row, because any other user returns
+zero rows whether the gate works or not — a valid-looking empty result that
+proves nothing (`learning_validate_values_not_just_structure`).
+
+## Where profiles are actually reachable
+
+`/users/[userId]`, and the app has exactly **one** route to it: the collector
+search inside `CategoryHeaderCard` → `CategoryCollectorSearch` → `searchUsers`.
+It is registered in `app/_layout.tsx` but nothing else links to a profile — not
+items, not events, not the activity feed. Discovery being gated therefore gates
+essentially all third-party profile access today.
+
+## Account deletion — NOT a gap
+
+`user_privacy_settings.user_id` is `REFERENCES auth.users(id) ON DELETE CASCADE`,
+and `account_router` calls `supabase_admin.auth.admin.delete_user(user_id)`, so
+the row goes with the auth user (bucket 1 of the three the audit recognises).
+`audit_account_deletion.py` reports **0 uncovered tables**. The
+`user_privacy_settings_v1` entry in `_ALLOWED_TABLES` refers to a separate,
+empty legacy table and is harmless.
+
+The audit does warn that `item_images` is listed but no longer exists. Left in
+deliberately: the delete loop catches `UndefinedTableError`, so a stale entry
+costs nothing, whereas removing it means a future re-created `item_images` would
+be silently missed. A stale entry fails safe; a missing one does not.

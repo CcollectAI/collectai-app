@@ -349,3 +349,96 @@ class TestGetProgress:
 
         resp = client.get(f"/items/{ITEM_UUID}/progress")
         assert resp.status_code == 503
+
+
+# ---------------------------------------------------------------------------
+# Accessory / packaging-filler suppression
+#
+# The tcgcsv importer ingests TCGPlayer's full product list per game, so the
+# lorcana catalog carried 85 "Puzzle Insert" rows — the cardboard spacer inside
+# a booster box — plus playmats, sleeves and deck boxes, whose dead CDN art
+# rendered as black tiles in the browse grid.
+#
+# The hard part is NOT matching the product words. TCGPlayer also sells promo
+# CARDS named after the accessory they shipped with, and a bare-term filter hid
+# 34 of them. Every "should NOT be filtered" case below is a real row from the
+# live catalog that an earlier revision wrongly hid.
+# ---------------------------------------------------------------------------
+
+def _is_filtered(title: str) -> bool:
+    """Replicate the router's two-part predicate in Python.
+
+    Postgres `\\y` (word boundary) == Python `\\b`; everything else is the same
+    POSIX syntax.
+    """
+    import re
+    from app.features.catalog_browser_router import (
+        _ACCESSORY_TITLE_RE,
+        _CARD_CODE_RE,
+    )
+
+    looks_like_product = re.search(_ACCESSORY_TITLE_RE.replace(r"\y", r"\b"), title, re.I)
+    has_card_code = re.search(_CARD_CODE_RE, title)
+    return bool(looks_like_product) and not bool(has_card_code)
+
+
+class TestAccessoryFilter:
+    @pytest.mark.parametrize("title", [
+        # Product naming: ':' or '-' straight after the item type.
+        "Official Playmat: Boa Hancock",
+        "Official Playmat - Elsa Spirit of Winter",
+        "Tournament Playmat - Nationals 2024",
+        "Championship Playmat: Ace (Marineford)",
+        "Official Card Sleeves - Snow White (65 count)",
+        "Official DCG Card Sleeves: Royal Knights",
+        "Official Deck Box - Rapunzel Sunshine",
+        "Official Portfolio Binder - 9 Pocket",
+        # Puzzle inserts appear mid-title and carry a NUMERIC set number.
+        "Mickey Mouse - Brave Little Tailor Puzzle Insert (Top Right) [1] (Normal)",
+        "Azurite Sea Puzzle Insert (Set of 9) [6] (Normal)",
+    ])
+    def test_filters_accessories_and_filler(self, title):
+        assert _is_filtered(title), f"should be filtered: {title}"
+
+    @pytest.mark.parametrize("title", [
+        # Plain cards.
+        "Elsa - Snow Queen [1] (Normal)",
+        "Let It Go [5] (Normal)",
+        # Sealed product is a collected format — never filtered.
+        "Azurite Sea Booster Pack",
+        "Rise of the Floodborn Booster Box",
+        "Illumineer's Quest Deck Bundle",
+        # Cards whose NAME contains an accessory word. Bare-term matching hid
+        # all of these; "Binder" alone was 34 real cards out of 36 matches.
+        "Dihada, Binder of Wills",
+        "Fiend Binder",
+        "Maliss Q White Binder [MP25] (1st Edition)",
+        # Promo cards named after the product they shipped with. The parenthesis
+        # form has no ':'/'-' separator after the item type...
+        "Crocodile (Seven Warlords of the Sea Binder Set) [OP-PR] (Foil)",
+        "MetalGarurumon (Omnimon Binder Set) [BT-17] (Foil)",
+        "Monkey.D.Luffy (Official Playmat Limited Edition Vol.5) [OP-PR] (Foil)",
+        "Calumon (Digimon Card Game Deck Box Set) [EX-02] (Foil)",
+        # ...and these two DO have a dash, so only the card-set-code guard
+        # keeps them visible. They are why that guard exists.
+        "Usopp (Official Playmat -Limited Edition Vol. 3-) [OP-PR] (Foil)",
+        "Zeus (Official Playmat -Bandai Card Games Fest 24-25 Edition-) [OP-PR] (Foil)",
+    ])
+    def test_spares_real_cards(self, title):
+        assert not _is_filtered(title), f"should NOT be filtered: {title}"
+
+    def test_filter_is_scoped_to_tcg_card_categories(self):
+        """In a merch category the accessory IS the collectible.
+
+        Applied catalogue-wide this would hide "Pokemon Base Set Binder (1999)"
+        from retro_pokemon and "Pikachu Leather Deck Box" from nintendo_merch —
+        both legitimate items in a category that collects merchandise.
+        """
+        from app.features.catalog_browser_router import _ACCESSORY_FILTERED_CATEGORIES
+
+        for cat in ("mtg", "pokemon", "yugioh", "lorcana", "digimon", "one_piece_tcg"):
+            assert cat in _ACCESSORY_FILTERED_CATEGORIES
+
+        for cat in ("retro_pokemon", "nintendo_merch", "pop_fandom", "disney",
+                    "theme_park", "loungefly", "kpop_merch"):
+            assert cat not in _ACCESSORY_FILTERED_CATEGORIES

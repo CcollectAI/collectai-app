@@ -35,6 +35,7 @@ import { BarcodeModeSelector } from '@/components/barcode/BarcodeModeSelector';
 // Imported from the file, not the quickscan barrel, to avoid pulling the whole
 // QuickScan component set into this screen.
 import { PermissionScreen } from '@/components/quickscan/PermissionScreen';
+import { safeGoBack } from '@/lib/goBack';
 
 /** Barcode types accepted by the scanner */
 const SUPPORTED_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'isbn'] as const;
@@ -400,7 +401,7 @@ function BarcodeScanScreen() {
     return (
       <PermissionScreen
         onGrant={requestPermission}
-        onCancel={() => router.back()}
+        onCancel={() => safeGoBack(router)}
         hapticsEnabled={settings.hapticsEnabled}
         canAskAgain={permission.canAskAgain}
         message="We need camera access to scan barcodes and ISBN codes."

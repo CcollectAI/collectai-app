@@ -98,6 +98,7 @@ try {
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
 import { scrubSentryEvent, scrubSentryBreadcrumb } from '@/lib/sentryScrub';
 import { logger } from '@/lib/logger';
+import { safeGoBack } from '@/lib/goBack';
 
 let Sentry: { init: (opts: Record<string, unknown>) => void; wrap: (component: React.ComponentType) => React.ComponentType } | null = null;
 try {
@@ -157,11 +158,34 @@ function SettingsHeaderButton({ color }: { color?: string }) {
   return (
     <Pressable
       onPress={() => router.push('/settings')}
-      style={{ padding: 8, marginRight: 4 }}
+      // Padding must stay SYMMETRIC. iOS 26 draws a circular "liquid glass"
+      // capsule around each bar-button item, sized to the button's frame — a
+      // `marginRight: 4` pushed the glyph 4pt off the capsule's centre, which
+      // is visible as an off-centre gear in its circle. Any asymmetric
+      // padding/margin here reintroduces it.
+      style={{ padding: 8 }}
       accessibilityRole="button"
       accessibilityLabel="Open settings"
     >
       <Ionicons name="settings-outline" size={22} color={color ?? colors.text} />
+    </Pressable>
+  );
+}
+
+/** Native-header back button that cannot dead-end. See `iconOnlyHeader`. */
+function HeaderBackButton({ color }: { color?: string } = {}) {
+  const router = useRouter();
+  const { colors } = useAppTheme();
+  return (
+    <Pressable
+      onPress={() => safeGoBack(router)}
+      // Symmetric padding — iOS 26 centres the glyph in a circular capsule
+      // sized to this frame, so any asymmetry shows as an off-centre icon.
+      style={{ padding: 8 }}
+      accessibilityRole="button"
+      accessibilityLabel="Go back"
+    >
+      <Ionicons name="chevron-back" size={24} color={color ?? colors.text} />
     </Pressable>
   );
 }
@@ -280,11 +304,21 @@ function RootStack() {
   // Heartbeat for online presence tracking
   usePresenceHeartbeat(user?.id ?? null);
 
-  // Shared screen options with icon-only header
+  // Shared screen options with icon-only header.
+  //
+  // `headerLeft` replaces the NATIVE back button on purpose. The native one
+  // calls `goBack()` on the navigator, which is a silent no-op when the stack
+  // has nothing to pop — the chevron is drawn, it animates, and nothing
+  // happens. Reported on settings and notifications, both of which use this
+  // options object. `safeGoBack` falls back to the tabs so the control always
+  // does something. The in-body equivalents (ScreenHeader, and every
+  // `router.back()` call site) are guarded the same way, and
+  // `npm run check:back` keeps them that way.
   const iconOnlyHeader = {
     headerTitle: '',
     headerBackTitle: '',
     headerBackButtonDisplayMode: 'minimal' as const,
+    headerLeft: () => <HeaderBackButton />,
     headerRight: () => <HeaderRight />,
   };
 
@@ -297,6 +331,11 @@ function RootStack() {
     ...iconOnlyHeader,
     headerStyle: { backgroundColor: '#000000' },
     headerTintColor: '#FFFFFF',
+    // headerLeft must be overridden too, not just headerRight. `headerTintColor`
+    // only tints the NATIVE back button; the custom one inherited from
+    // iconOnlyHeader defaults to `colors.text`, which on this black header is
+    // near-invisible in light mode — the same reason headerRight is overridden.
+    headerLeft: () => <HeaderBackButton color="#FFFFFF" />,
     headerRight: () => <HeaderRight color="#FFFFFF" />,
   };
 
@@ -372,6 +411,13 @@ function RootStack() {
 
         {/* Additional screens */}
         <Stack.Screen name="alerts" options={iconOnlyHeader} />
+        {/* `notifications` was never registered here, so it fell through to the
+            bare <Stack> screenOptions instead of the iconOnlyHeader every other
+            pushed screen gets — and its in-component <Stack.Screen options> did
+            not apply either (no "Notifications" title, no "Mark All Read"
+            action rendered). Registering it makes its header identical to
+            `alerts`, which sits one line above and behaves correctly. */}
+        <Stack.Screen name="notifications" options={iconOnlyHeader} />
         <Stack.Screen name="condition-guide" options={iconOnlyHeader} />
         <Stack.Screen name="leaderboard" options={iconOnlyHeader} />
         <Stack.Screen name="sets-to-complete" options={iconOnlyHeader} />

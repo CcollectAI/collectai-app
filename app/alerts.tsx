@@ -349,7 +349,7 @@ function AlertsScreen() {
                 {typeof item.triggerValue.listing_price === 'number' ? ` · ${formatPrice(item.triggerValue.listing_price)}` : ''}
               </Text>
             </AnimatedPressable>
-          ) : item.itemId ? (
+          ) : item.itemId && !item.itemId.startsWith('watchlist_snipe:') ? (
             <AnimatedPressable
               onPress={() => {
                 handleMarkRead(item.id);
@@ -358,6 +358,15 @@ function AlertsScreen() {
                 // an items uuid. Interpolating it into /item/[id] produced
                 // 22P02 and a blank "Unknown item" screen. itemHref picks the
                 // screen that matches the identifier's shape.
+                //
+                // `watchlist_snipe:<uuid>` is neither an items uuid nor a
+                // catalog key — deal_discovery_worker synthesises it as a
+                // dedupe handle. It fell into itemHref's catalog branch and
+                // routed to /catalog-item/watchlist_snipe:<uuid>, which
+                // resolves to nothing. A snipe alert's real destination is the
+                // listing, rendered by the branch above; when the listing URL
+                // is missing there is nothing to open, so render no button
+                // rather than one that dead-ends.
                 const href = itemHref(item.itemId);
                 if (href) router.push(href);
               }}

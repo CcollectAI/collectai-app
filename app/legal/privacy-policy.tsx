@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { safeGoBack } from '@/lib/goBack';
 
 const LAST_UPDATED = 'April 11, 2026';
 
@@ -23,7 +24,7 @@ function PrivacyPolicyScreenInner() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <AnimatedPressable
-          onPress={() => router.back()}
+          onPress={() => safeGoBack(router)}
           accessibilityRole="button"
           accessibilityLabel="Go back"
           style={styles.backBtn}

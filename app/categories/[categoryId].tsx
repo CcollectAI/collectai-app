@@ -54,6 +54,7 @@ import {
   FeaturedCollectionsSection,
 } from '@/components/category';
 import type { CatalogSortKey } from '@/components/category/CategorySortChips';
+import { safeGoBack } from '@/lib/goBack';
 
 function CategoryStoreScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
@@ -175,7 +176,7 @@ function CategoryStoreScreen() {
           <Text style={[styles.errorSubtitle, { color: colors.muted }]}>
             This category doesn&apos;t exist or couldn&apos;t be loaded.
           </Text>
-          <AnimatedPressable style={[styles.backButton, { borderColor: colors.border }]} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
+          <AnimatedPressable style={[styles.backButton, { borderColor: colors.border }]} onPress={() => safeGoBack(router)} accessibilityRole="button" accessibilityLabel="Go back">
             <Text style={[styles.backButtonText, { color: colors.text }]}>Go back</Text>
           </AnimatedPressable>
         </View>

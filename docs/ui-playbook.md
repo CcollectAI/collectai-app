@@ -213,6 +213,87 @@ tablist, timer, list, grid, pager, scrollview, horizontalscrollview, viewgroup,
 webview, drawerlayout, slidingdrawer, iconmenu, toolbar`. Anything else crashes.
 `preflight_android.mjs` checks every value against that set.
 
+## `router.back()` is a SILENT no-op — always use `safeGoBack`
+
+`router.back()` does nothing when the navigation stack has nothing to pop. The
+handler still runs: the haptic fires, the button animates, the screen doesn't
+move. It reads as "the back button is broken", and it strands the user on a
+pushed screen with no way out but the tab bar.
+
+A screen can legitimately have an empty stack: a push-notification tap, any
+`sparrow://` deep link, a cold start restored onto a non-tab route, or a
+`router.replace` (`QuickNavBar` uses replace for all five tabs). None of that is
+visible from the call site, which is why the rule is *always guard*, not *guard
+where it matters*.
+
+```tsx
+import { safeGoBack } from '@/lib/goBack';
+
+onPress={() => safeGoBack(router)}                      // → falls back to /(tabs)
+onPress={() => safeGoBack(router, '/(auth)/login')}     // auth screens: never the tab stack
+```
+
+Reported on three separate screens before anyone traced it to the shared
+pattern. A sweep found **39 bare `router.back()` calls across 24 files, zero
+guarded**, and nothing in the repo used `canGoBack()`.
+
+`npm run check:back` (`scripts/check-unguarded-back.mjs`) fails on any bare
+`router.back()`. It strips comments **and string literals** with a real scanner
+— an `indexOf('//')` version truncated at the `//` inside a URL, so
+
+```ts
+const help = 'https://example.com'; router.back();   // was scanned CLEAN
+```
+
+slipped through. A gate with a false negative is worse than no gate.
+
+**The native header back button has the same defect.** `headerTintColor` only
+styles the native chevron; it still calls the navigator's `goBack()`. Screens
+registered with `iconOnlyHeader` get a custom `headerLeft` that routes through
+`safeGoBack`. Any header options object that overrides `headerRight` for colour
+must override `headerLeft` too — `cameraHeader` renders on black, and the
+inherited default (`colors.text`) is invisible there in light mode.
+
+## iOS 26 wraps header buttons in a circular capsule — keep padding SYMMETRIC
+
+iOS 26 draws a translucent "liquid glass" pill around every native bar-button
+item, sized to the button's frame. Asymmetric padding or margin offsets the
+glyph inside that circle and reads as a mis-aligned icon.
+
+```tsx
+style={{ padding: 8, marginRight: 4 }}   // gear sits 4pt left of its circle
+style={{ padding: 8 }}                   // centred
+```
+
+The same applies to the flat in-body header (`ScreenHeader`): its left/right
+clusters are equal-width boxes, so their **contents** must be pinned to the
+outer edge (`justifyContent: 'flex-start'` / `'flex-end'`). Otherwise a cluster
+that doesn't fill its box drifts inward — which is what happened when
+`COMMUNITY_GATED` suppressed the chat icon and left the settings gear floating
+~46pt from the screen edge.
+
+## Never put a tall interactive component in a FlashList `ListHeaderComponent`
+
+FlashList v2 positions **every** cell with `position: 'absolute'`, header
+included (`dist/recyclerview/ViewHolder.js:44`), inside a container it sizes
+from measured layout. When a tall header measures short, the overflow is still
+**drawn** — but on iOS a subview outside its parent's frame is not hit-tested.
+It renders perfectly and receives no touches.
+
+The events calendar hit exactly this: the month grid sat at the bottom of a
+header that also held the title, search box, filter chips and view-mode tabs.
+The grid was visible and completely dead, while everything above it kept
+working. Reading `CalendarGrid.tsx` found nothing wrong, because nothing was
+wrong — the touch never reached it.
+
+- RN's `VirtualizedList` (`FlatList`, `SectionList`) renders
+  `ListHeaderComponent` as a normal in-flow child and is **not** affected.
+- Calendar mode now uses `FlatList`; the week view keeps its header outside the
+  list entirely. Both are fine.
+- Symptom to recognise: **the top of a long header works and the bottom
+  doesn't.** That is a hit-area/bounds problem, never a wiring problem — stop
+  reading the child component.
+
 ## Component Checklist
 
 Before shipping a screen, verify:
@@ -226,6 +307,10 @@ Before shipping a screen, verify:
 - [ ] **Every fetch that gates a skeleton is bounded** (`withTimeout`, or via `usePaginatedList`)
 - [ ] **First fetch waits for `!authLoading`**, and the gate has a deadline
 - [ ] **Empty state is distinguishable from loading** on screen
+- [ ] **No bare `router.back()`** — `npm run check:back` is green
+- [ ] **Header button padding is symmetric** (iOS 26 capsule centring)
+- [ ] **No tall/interactive `ListHeaderComponent` on a FlashList** (hit-area bug)
+- [ ] **Pagination stops on a short page**, not on a `total` that counts a different set
 
 ## Import Pattern
 

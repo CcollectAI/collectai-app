@@ -13,6 +13,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import { EmptyState } from '@/components/EmptyState';
 import logger from '@/utils/logger';
+import { safeGoBack } from '@/lib/goBack';
 
 type DmStatusState = 'loading' | 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined' | 'blocked';
 
@@ -81,7 +82,7 @@ const NewChatScreen: React.FC = () => {
       fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       setSent(true);
       setTimeout(() => {
-        router.back();
+        safeGoBack(router);
       }, 800);
     } catch (err: unknown) {
       logger.error('[Chat/new] requestDm error:', err);
@@ -101,7 +102,7 @@ const NewChatScreen: React.FC = () => {
           colors={colors}
           action={
             <AnimatedPressable
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router)}
               style={[styles.emptyBtn, { borderColor: colors.border }]}
               accessibilityRole="button"
               accessibilityLabel="Go back"
@@ -135,7 +136,7 @@ const NewChatScreen: React.FC = () => {
           colors={colors}
           action={
             <AnimatedPressable
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router)}
               style={[styles.emptyBtn, { borderColor: colors.border }]}
               accessibilityRole="button"
               accessibilityLabel="Go back"
@@ -159,7 +160,7 @@ const NewChatScreen: React.FC = () => {
           colors={colors}
           action={
             <AnimatedPressable
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router)}
               style={[styles.emptyBtn, { borderColor: colors.border }]}
               accessibilityRole="button"
               accessibilityLabel="Go back"
@@ -215,7 +216,7 @@ const NewChatScreen: React.FC = () => {
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
-            <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+            <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
               <Ionicons name="chevron-back" size={24} color={colors.text} />
             </AnimatedPressable>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Request to Connect</Text>

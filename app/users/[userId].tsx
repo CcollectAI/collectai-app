@@ -38,6 +38,7 @@ import { track } from '@/analytics/track';
 import { UserStatsSection } from '@/components/users/UserStatsSection';
 import { UserAchievementsSection } from '@/components/users/UserAchievementsSection';
 import { UserCollectionPreview } from '@/components/users/UserCollectionPreview';
+import { safeGoBack } from '@/lib/goBack';
 
 type DmStatusType = 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined';
 
@@ -339,7 +340,7 @@ function UserProfileScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.centerContainer}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.floatingBack} accessibilityRole="button" accessibilityLabel={t('common.go_back_a11y')}>
+          <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.floatingBack} accessibilityRole="button" accessibilityLabel={t('common.go_back_a11y')}>
             <Ionicons name="chevron-back" size={22} color={colors.text} />
           </AnimatedPressable>
           <Ionicons name="person-outline" size={48} color={colors.muted} />
@@ -351,7 +352,7 @@ function UserProfileScreen() {
           </Text>
           <AnimatedPressable
             style={[styles.retryBtn, { borderColor: colors.border }]}
-            onPress={() => router.back()}
+            onPress={() => safeGoBack(router)}
             accessibilityRole="button"
             accessibilityLabel={t('common.go_back_a11y')}
           >
@@ -373,7 +374,7 @@ function UserProfileScreen() {
         {/* Top row with back + menu */}
         <View style={styles.topRow}>
           <AnimatedPressable
-            onPress={() => router.back()}
+            onPress={() => safeGoBack(router)}
             style={styles.backRow}
             accessibilityRole="button"
             accessibilityLabel={t('common.go_back_a11y')}
