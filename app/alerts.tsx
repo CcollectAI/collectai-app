@@ -62,9 +62,34 @@ type ActiveTab = 'triggers' | 'rules';
 // Constants — badge colours & icons
 // ---------------------------------------------------------------------------
 
-/** Resolve alert type → theme color. Must be called inside a component with colors. */
+/**
+ * Resolve alert type → theme color. Must be called inside a component with colors.
+ *
+ * Keys are `alert_trigger_history.trigger_type` values. The four marked PRESENT
+ * are the only ones prod has ever written (counted 2026-08-05: low_value 58,
+ * weekly_digest 30, value_change 12, watchlist_snipe 1). Every one of them was
+ * unmapped, so ~100% of the screen rendered `colors.muted` + the generic bell
+ * and read as disabled — while the seven mapped types below had never occurred
+ * once. Same drift the notifications screen hit (see `_FEED_TYPE_BY_CATEGORY`
+ * in server/app/lib/notify.py); icons here match app/notifications.tsx.
+ *
+ * "Present" is not "currently produced": low_value, weekly_digest and
+ * value_change all stop at 2026-04-22 — their workers were commented out of
+ * the bake manifest in the 2026-05-04 pre-launch cut, so those rows are a
+ * backlog. Only watchlist_snipe has been written since. Mapping them is still
+ * correct: the rows are on screen today either way.
+ *
+ * Anything unmapped still falls back to muted — deliberately, so a new
+ * server-side type degrades to plain rather than mis-labelled.
+ */
 function getTypeColor(colors: { success: string; warning: string; info: string; danger: string; accent: string; muted: string }, type: string): { bg: string; text: string } {
   const MAP: Record<string, string> = {
+    // LIVE — written by workers today
+    watchlist_snipe: colors.success,   // deal_discovery_worker, phase 2
+    low_value: colors.warning,         // alerts_worker / signal_alerts_worker
+    value_change: colors.info,         // value_change_worker
+    weekly_digest: colors.accent,      // insights_digest_worker
+    // Designed but never yet written by any worker
     price_drop: colors.success,
     price_spike: colors.warning,
     below_threshold: colors.success,
@@ -78,6 +103,12 @@ function getTypeColor(colors: { success: string; warning: string; info: string; 
 }
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  // LIVE — see getTypeColor above
+  watchlist_snipe: 'flash-outline',
+  low_value: 'trending-down',
+  value_change: 'analytics-outline',  // matches app/notifications.tsx
+  weekly_digest: 'bulb-outline',      // 'insight' there
+  // Designed but never yet written
   price_drop: 'trending-down',
   price_spike: 'trending-up',
   below_threshold: 'trending-down',
@@ -85,6 +116,27 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   drop_detected: 'flash-outline',
   completeness: 'checkmark-circle-outline',
   rarity: 'diamond-outline',
+};
+
+/**
+ * Human labels for `alert_trigger_history.trigger_type`.
+ *
+ * "Snipe" was never a user-facing word — the badge just title-cased the raw
+ * column value, so the screen read "Watchlist Snipe", which describes our
+ * implementation rather than what happened to the user. `watchlist_snipe` stays
+ * as the STORED key (renaming it would orphan every existing row and every
+ * server-side reference); only the label changes.
+ *
+ * "Target Hit" is the whole feature in two words: the price you set has been
+ * met by something you can actually buy right now.
+ */
+const TRIGGER_LABELS: Record<string, string> = {
+  watchlist_snipe: 'Target Hit',
+  value_change: 'Value Change',
+  weekly_digest: 'Weekly Digest',
+  // Retired 2026-08-06 (the worker is deleted), but 58 rows remain in prod
+  // history and must still render with a label rather than a raw column value.
+  low_value: 'Low Value',
 };
 
 /** Human labels for the 3 legal user_price_alerts.trigger_type values. */
@@ -285,9 +337,8 @@ function AlertsScreen() {
     const typeColor = getTypeColor(colors, item.triggerType);
     const typeIcon: keyof typeof Ionicons.glyphMap =
       TYPE_ICONS[item.triggerType] || 'notifications-outline';
-    const typeLabel = item.triggerType
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
+    const typeLabel = TRIGGER_LABELS[item.triggerType]
+      ?? item.triggerType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
     return (
       <AnimatedPressable
@@ -673,20 +724,27 @@ function AlertsScreen() {
                 size={48}
                 color={colors.muted}
               />
+              {/* This tab is empty BY DESIGN as of 2026-08-05: nothing in the
+                  app writes `user_price_alerts` any more, because those rules
+                  could never fire (price_monitor_worker requires item_id, the
+                  wishlist has none — 4 rules, 0 triggers in prod). A watchlist
+                  target price IS the standing rule now, so send the user there
+                  and describe what actually happens. */}
               <Text style={[styles.emptyText, { color: colors.muted }]}>
-                No alert rules yet
+                Your targets live on the watchlist
               </Text>
               <Text style={[styles.emptySubtext, { color: colors.muted }]}>
-                Add items to your watchlist to get price and restock alerts.
+                Set a target price on a watchlist item and we&apos;ll alert you when
+                it&apos;s listed below it.
               </Text>
               <View style={styles.emptyCtaContainer}>
                 <AnimatedPressable
                   onPress={() => router.push('/watchlist-builder')}
                   style={[styles.emptyCtaBtn, { backgroundColor: colors.accent }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Create an alert"
+                  accessibilityLabel="Set a target price"
                 >
-                  <Text style={styles.emptyCtaBtnText}>Create an Alert</Text>
+                  <Text style={styles.emptyCtaBtnText}>Set a Target Price</Text>
                 </AnimatedPressable>
               </View>
             </View>

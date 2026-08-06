@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { getCurrencySymbol } from "@/lib/format";
+import CompactSelect from "@/components/CompactSelect";
 import type { CurrencyCode } from "@/data/types";
 
 type WatchlistPriority = 'high' | 'medium' | 'low';
@@ -36,6 +37,11 @@ type Props = {
   setNewTitle: (v: string) => void;
   newTargetPrice: string;
   setNewTargetPrice: (v: string) => void;
+  /** Display name (not slug) of the chosen category, '' when unset. */
+  newCategory: string;
+  setNewCategory: (v: string) => void;
+  /** All selectable category display names. */
+  categoryOptions: string[];
   newPriority: WatchlistPriority;
   setNewPriority: (v: WatchlistPriority) => void;
   newNotes: string;
@@ -54,6 +60,9 @@ export const WatchlistAddForm = React.memo(function WatchlistAddForm({
   setNewTitle,
   newTargetPrice,
   setNewTargetPrice,
+  newCategory,
+  setNewCategory,
+  categoryOptions,
   newPriority,
   setNewPriority,
   newNotes,
@@ -109,6 +118,29 @@ export const WatchlistAddForm = React.memo(function WatchlistAddForm({
           />
         </View>
         <Text style={[styles.inputHint, { color: colors.muted }]}>{t('watchlist.target_desc')}</Text>
+      </View>
+
+      {/* Category — REQUIRED, and not cosmetic.
+          This form used to have no category field at all, and the builder sent
+          `category: ''`. The snipe check joins a listing to a watchlist row by
+          `mh.category = w.category` (or by item_ref, which the builder never
+          has), so an empty category means the row can never produce an alert.
+          Counted 2026-08-05: 5 of 13 prod rows had an empty category, all of
+          them from this screen — which is exactly where the Alerts tab's
+          "create an alert" CTA sends people. */}
+      <View style={styles.inputGroup}>
+        <Text style={[styles.inputLabel, { color: colors.text }]}>Category (required)</Text>
+        <CompactSelect
+          title="Category"
+          value={newCategory || null}
+          options={categoryOptions}
+          placeholder="Select category"
+          onChange={setNewCategory}
+          searchable
+        />
+        <Text style={[styles.inputHint, { color: colors.muted }]}>
+          We only match listings inside the category you pick.
+        </Text>
       </View>
 
       {/* Priority Selector */}

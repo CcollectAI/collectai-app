@@ -34,6 +34,8 @@ screen with discovery disabled, **not** to leave the two sides disagreeing.
 
 | | Free | Pro (€4.99/mo or €39.99/yr) |
 |--|------|-----------------------------|
+| **Watchlist items** | **25** | **Unlimited** |
+| **Target Hit alerts** | **1 / day** | **Unlimited** |
 | Purchase mandates | 0 | 10 |
 | Deal discovery | No | Yes |
 | Dossier PDF export | No | Yes |
@@ -44,6 +46,18 @@ screen with discovery disabled, **not** to leave the two sides disagreeing.
 | Community events | Yes | Yes |
 | Ads | Yes | No |
 
+> **Watchlist slots are the Target Hit lever (added 2026-08-06).** The alert
+> can only fire on something you are watching, so slots ARE reach — that is why
+> the paid tier gates them rather than gating the notification itself.
+> `max_watchlist_items` (25 / None) and `max_daily_deal_alerts` (1 / None) live
+> in `PLAN_LIMITS` (billing_router.py), are mirrored in `DEFAULT_LIMITS` +
+> `FORCED_LIMITS` (useBillingLimits.ts) and in the `BillingStatus['limits']`
+> type (src/api/types.ts). All three must agree — see
+> `learning_billing_limits_fe_be_contract`. The watchlist cap is enforced
+> server-side in `watchlist_router.add_to_watchlist` (403 `PLAN_LIMIT_WATCHLIST`),
+> not only in the client; the alert cap is read from the same table by
+> `deal_discovery_worker`, which no longer declares its own constants.
+>
 > **Two of these are easy to misread — verified 2026-07-29:**
 >
 > * **Purchase mandates** is **10**, not unlimited. Both

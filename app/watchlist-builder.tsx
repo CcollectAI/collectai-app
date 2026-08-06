@@ -40,7 +40,7 @@ import { useSettings } from "@/lib/settings";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import logger from "@/utils/logger";
 import { QuickNavBar } from "@/components/QuickNavBar";
-import { CATEGORY_SLUG_TO_NAME } from "@/constants/categories";
+import { CATEGORIES as ALL_CATS, CATEGORY_SLUG_TO_NAME, CATEGORY_NAME_TO_SLUG } from "@/constants/categories";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import { saveCSVAndShare } from "@/export/csv";
 import { track } from "@/analytics/track";
@@ -91,6 +91,12 @@ function watchlistToCSV(items: WatchlistItem[], currency: string): string {
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Display names for the category picker. Selection is converted to a slug
+// (CATEGORY_NAME_TO_SLUG) before it is written — `watchlist_items.category`
+// must hold the SAME vocabulary as `market_hits.category` or the snipe's
+// category join silently matches nothing.
+const CATEGORY_OPTIONS = ALL_CATS.map((c) => c.name);
+
 function WatchlistBuilderScreen() {
   const { user } = useAuthContext();
   const userId = user?.id ?? "";
@@ -119,6 +125,10 @@ function WatchlistBuilderScreen() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newTargetPrice, setNewTargetPrice] = useState("");
+  // Display name, converted to a slug on save. Sticky across adds within a
+  // session — bulk entry is usually all one category, and re-picking it for
+  // every row is what makes people skip the field.
+  const [newCategory, setNewCategory] = useState("");
   const [newPriority, setNewPriority] = useState<WatchlistPriority>("high");
   const [newNotes, setNewNotes] = useState("");
 
@@ -230,6 +240,7 @@ function WatchlistBuilderScreen() {
     setNewPriority("high");
     setNewNotes("");
     setShowAddForm(false);
+    // newCategory is deliberately NOT cleared — see its declaration.
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -244,6 +255,16 @@ function WatchlistBuilderScreen() {
     const title = newTitle.trim();
     if (!title) {
       showToast({ message: "Please enter a name for this item.", type: "warning" });
+      return;
+    }
+
+    // Category is required, because a row without one is inert: the snipe
+    // check matches a listing to this row by `mh.category = w.category` (or by
+    // item_ref, which this screen never has). This screen used to send '' and
+    // produced 5 of the 13 rows in prod, every one of them unalertable.
+    const categorySlug = CATEGORY_NAME_TO_SLUG[newCategory];
+    if (!categorySlug) {
+      showToast({ message: "Pick a category so we can watch the right listings.", type: "warning" });
       return;
     }
 
@@ -264,7 +285,7 @@ function WatchlistBuilderScreen() {
       owned: false,
       targetPrice,
       currency: (settings.currency as WatchlistItem['currency']) || 'EUR',
-      category: undefined,
+      category: categorySlug,
       notes: newNotes.trim() || undefined,
       createdAt: new Date().toISOString(),
       sortOrder: items.length,
@@ -281,7 +302,7 @@ function WatchlistBuilderScreen() {
     try {
       const savedItem = await dataProvider.addWatchlistItem({
         title,
-        category: '',
+        category: categorySlug,
         targetPrice,
         priority: newPriority,
         notes: newNotes.trim() || undefined,
@@ -299,7 +320,7 @@ function WatchlistBuilderScreen() {
     } finally {
       setSaving(false);
     }
-  }, [userId, newTitle, newTargetPrice, newPriority, newNotes, items, settings.currency, showToast]);
+  }, [userId, newTitle, newTargetPrice, newCategory, newPriority, newNotes, items, settings.currency, showToast]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // B3.3: Optimistic delete — single item
@@ -642,6 +663,9 @@ function WatchlistBuilderScreen() {
                 setNewTitle={setNewTitle}
                 newTargetPrice={newTargetPrice}
                 setNewTargetPrice={setNewTargetPrice}
+                newCategory={newCategory}
+                setNewCategory={setNewCategory}
+                categoryOptions={CATEGORY_OPTIONS}
                 newPriority={newPriority}
                 setNewPriority={setNewPriority}
                 newNotes={newNotes}

@@ -12,6 +12,7 @@ from app.features.pagination import pagination_params
 from app.lib.bg_tasks import spawn_bg
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
+from app.routes.billing_router import PLAN_LIMITS
 
 import logging
 
@@ -165,6 +166,43 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
     if pool is not None:
         try:
             async with pool.acquire() as conn:
+                # Plan gate — enforced HERE, not only in the app. Watchlist
+                # slots are the Pro lever for Target Hit (the alert can only
+                # fire on something you watch), so a client-side-only cap is
+                # free to bypass. None = unlimited.
+                #
+                # Count and plan in ONE query on the connection we already
+                # hold. An earlier version acquired a second connection and
+                # called app.subscription.get_user_plan; that pulled a fresh
+                # module into the test session and left a pool mock installed,
+                # which made two unrelated quickscan tests return 200 where
+                # they assert 422. One query, one connection, and PLAN_LIMITS
+                # imported at module scope (below) rather than mid-request.
+                gate = await conn.fetchrow(
+                    """
+                    SELECT
+                      (SELECT count(*) FROM public.watchlist_items
+                        WHERE user_id = $1::uuid) AS cnt,
+                      COALESCE((SELECT plan FROM public.subscriptions
+                                 WHERE user_id = $1::uuid
+                                   AND status IN ('active', 'trialing')
+                                 LIMIT 1), 'free') AS plan
+                    """,
+                    user_id,
+                )
+                if gate is not None:
+                    plan = gate["plan"] or "free"
+                    cap = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"]).get("max_watchlist_items")
+                    if cap is not None and (gate["cnt"] or 0) >= cap:
+                        # Bare string code, matching alerts_feature_router's
+                        # PLAN_LIMIT_ALERTS convention.
+                        raise error_response(
+                            403,
+                            f"Your plan includes {cap} watchlist items. "
+                            "Upgrade to Pro to watch as many as you like.",
+                            code="PLAN_LIMIT_WATCHLIST",
+                        )
+
                 await conn.execute(
                     """
                     INSERT INTO public.watchlist_items
@@ -200,6 +238,13 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
                 "watchlist_demand",
             )
             return item
+        except HTTPException:
+            # The plan-limit 403 above is raised INSIDE this try. A bare
+            # `except Exception` would turn it into a 500 "Failed to add to
+            # watchlist" — the user would see a database error instead of
+            # "upgrade to watch more", and the client could not tell the two
+            # apart. Let deliberate HTTP responses through untouched.
+            raise
         except Exception as e:
             logger.error("[watchlist] DB error adding to watchlist: %s", e)
             raise error_response(500, "Failed to add to watchlist", code="DB_ERROR")

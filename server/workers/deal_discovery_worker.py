@@ -29,8 +29,10 @@ DSN = os.getenv("DB_DSN")
 
 
 # Plan-gated daily deal alert limits
+# Fallback only — the live values are PLAN_LIMITS["<tier>"]["max_daily_deal_alerts"]
+# in app/routes/billing_router.py, which is also what /billing/status reports to
+# the app. Kept so the worker still runs if billing_router cannot be imported.
 _FREE_DAILY_DEAL_ALERTS = 1
-_PRO_DAILY_DEAL_ALERTS = 999  # effectively unlimited
 
 
 async def _get_user_deal_alert_count_today(conn, user_id: str) -> int:
@@ -169,8 +171,15 @@ async def _check_watchlist_snipes(conn) -> int:
             user_counts[user_id] = await _get_user_deal_alert_count_today(conn, user_id)
 
         tier = await _get_user_tier(conn, user_id)
-        limit = _PRO_DAILY_DEAL_ALERTS if tier in ("pro", "premium") else _FREE_DAILY_DEAL_ALERTS
-        if user_counts[user_id] >= limit:
+        # Read the cap from PLAN_LIMITS, the same table /billing/status reports
+        # to the client, so the app cannot advertise a different number than
+        # the worker enforces (see learning_billing_limits_fe_be_contract).
+        # None = unlimited. Deferred import: billing_router pulls in app config.
+        from app.routes.billing_router import PLAN_LIMITS
+
+        plan_limits = PLAN_LIMITS.get(tier, PLAN_LIMITS["free"])
+        limit = plan_limits.get("max_daily_deal_alerts", _FREE_DAILY_DEAL_ALERTS)
+        if limit is not None and user_counts[user_id] >= limit:
             continue
 
         listing_title = row["listing_title"] or "Item"
@@ -239,7 +248,7 @@ async def _check_watchlist_snipes(conn) -> int:
             await notify_user(
                 conn,
                 user_id,
-                title="Deal Found!",
+                title="Target hit",
                 body=message,
                 category="deal_alerts",
                 deep_link=deep_link,
@@ -319,7 +328,7 @@ async def run_once():
                     sent = await send_push_to_user(
                         conn,
                         deal["user_id"],
-                        title="Deal Found!",
+                        title="Target hit",
                         body=(
                             f"{deal['listing_title'][:60]} \u2014 \u20ac{deal['listing_price']:.2f}"
                             + (f" ({deal.get('discount_pct', 0):.0f}% below market)" if deal.get('discount_pct') else "")

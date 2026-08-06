@@ -4,10 +4,17 @@ Data-driven portfolio insights and smart alerts for Sparrow Collect.
 
 > **⚠️ Sections below marked _aspirational_ describe components and RPCs that were
 > never deployed** (`rpc_get_alerts_feed_v1`, `rpc_get_portfolio_insights_v1`,
-> `alerts_v1`, `alert_preferences_v1`, `AlertsCard`, `AlertDetailModal`,
-> `AlertSettings`, `FEATURE_DATA_INSIGHTS_ALERTS`). They are kept as design
+> `alerts_v1`, `AlertsCard`, `AlertDetailModal`). They are kept as design
 > intent. **The "Actual wiring" section immediately below is the truth.** Trust it
 > over the rest of this file, and over any memory of this file.
+>
+> **Correction 2026-08-06:** `AlertSettings` and `FEATURE_DATA_INSIGHTS_ALERTS`
+> were listed above as never deployed. That is **false** — the flag is `true`
+> (`src/config/featureFlags.ts:97`) and `src/screens/Settings.tsx:100` mounts
+> `<AlertSettings>` today. Its endpoints exist and work
+> (`GET`/`PATCH /settings/alert-preferences`, `user_settings_router.py:259`,
+> `:308`) and write `user_alert_preferences` — a table with **one writer and
+> zero readers**. See "Two preference stores" below.
 
 ## ⛔ `watchlist_monitor_worker` — verified working, deliberately still OFF
 
@@ -40,6 +47,32 @@ Also observed: Cardmarket now answers our Crawl4AI scrape with
 **Enable checklist:** real watchlist titles → at least one real `target_price` →
 outbound-request counting in place → then flip the manifest line and watch one
 cycle.
+
+## Consolidation 2026-08-06 — one alert, named "Target Hit"
+
+Eight workers implemented four user promises, with three separate answers to
+"has the thing I want hit my price?". Collapsed to one:
+
+| Was | Now |
+|---|---|
+| `watchlist_monitor_worker` → `watchlist_target_met` | **alerting removed.** The worker survives as the demand-driven *supply* feed: it fetches market data for watched items and writes `market_hits`, which is what the snipe reads. That is the only path that reaches mtg/pokemon/yugioh, which `marketplace_scrape_scheduler.SKIP_CATEGORIES` excludes |
+| `price_monitor_worker` → `below_threshold` | still present, still disabled, still dead twice over (no writer for `user_price_alerts`, worker commented out). **Not yet deleted** — 4 test files pin `check_threshold_alerts` |
+| `alerts_worker` → `low_value` | **deleted** |
+| `signal_alerts_worker` → `public.alerts` | **deleted.** Orphan table, 0 rows, no reader anywhere |
+| `deal_discovery_worker` → `watchlist_snipe` | **the survivor** |
+
+"Snipe" was never user-facing — the badge title-cased the raw column, so the
+screen read "Watchlist Snipe". The label is now **"Target Hit"**
+(`TRIGGER_LABELS`, app/alerts.tsx) and the push title is "Target hit". The
+**stored `trigger_type` is unchanged** (`watchlist_snipe`): renaming the column
+value would orphan every existing row and every server-side reference for a
+cosmetic gain.
+
+Why this one survived: it is the only implementation that requires a live,
+buyable listing (`url IS NOT NULL AND is_listing IS TRUE`). The other two fire
+on a computed median or a model prediction, so they can wake a user for
+something that is not for sale anywhere — a notification with no action, which
+is how users learn to ignore notifications.
 
 ## 🎯 `watchlist_snipe` — the join was category-only until 2026-08-04
 
@@ -83,6 +116,51 @@ uuid nor a catalog key, so `itemHref` sent it to
 `/catalog-item/watchlist_snipe:<uuid>`, which resolves to nothing. A snipe's
 real destination is the listing; with no listing URL, no button renders.
 
+## What a snipe-capable watchlist row needs (writer side, 2026-08-05)
+
+The snipe query was fixed on 2026-08-04; the **writers** were still producing
+rows it could never match. Counted in prod that day — 13 rows:
+
+| | count | consequence |
+|---|---|---|
+| empty `category` | **5** | fallback arm joins `mh.category = w.category` → matches nothing. All from `watchlist-builder.tsx`, which hardcoded `category: ''` and had no category field in its form |
+| no `target_price` | **12** | `WHERE w.target_price IS NOT NULL AND > 0` → row is skipped entirely |
+| no `item_id` | **12** | only the exact arm needs it; without it a row falls to the trigram title match |
+
+A row can only ever fire if **all three** hold:
+
+1. `target_price > 0`
+2. `category` is a **slug** (`mtg`), matching `market_hits.category`'s vocabulary
+3. `title` is real (not `(unnamed)`, ≥3 chars) — or `item_id` is set, which is
+   stronger and skips the fuzzy arm
+
+Three writer bugs fixed on 2026-08-05:
+
+- **`watchlist-builder.tsx` sent `category: ''`.** It now has a required
+  category picker (`CompactSelect`, searchable) and refuses to save without
+  one. This screen is where the Alerts tab's CTA sends people, so the app's
+  primary "create an alert" funnel was producing inert rows.
+- **`app/(tabs)/wishlist.tsx` sent the display NAME** (`"Magic: The
+  Gathering"`) because its picker is built from `CATEGORIES.map(c => c.name)`.
+  `market_hits.category` holds slugs, and the server stores `payload.category`
+  verbatim — no normalisation anywhere. It now converts via
+  `CATEGORY_NAME_TO_SLUG`. Note `WatchlistItemCard` already assumed a slug
+  (`categoryDisplayName(item.category)`), so **the display was wrong-by-luck,
+  not the storage contract**. Same shape as
+  `learning_canonical_key_vs_item_ref_namespace`: two ends of a join using
+  different vocabularies for the same concept.
+- **No target price was ever surfaced as a problem.** `WatchlistItemCard` now
+  renders an explicit "No target — won't alert" chip instead of just omitting
+  the target badge.
+
+`catalog-item/[key].tsx` was already correct — it passes `itemId`, a slug
+category, and `targetPrice: estPrice`, and is the source of the single row in
+prod that satisfies all three conditions.
+
+> Rows written before this fix are still inert. Prod is test data, so they were
+> left alone; if that changes, they need a backfill (category ← slug, and a
+> target price) or a delete.
+
 ## Actual wiring (verified E2E against prod 2026-07-30)
 
 There are **two different things** here, and crossing them has broken this
@@ -98,12 +176,37 @@ the **Recent** tab and the Home-screen feed (`useAlertsFeed`) use
 `listAlertsFeed`. `AlertRule` and `AlertFeedItem` are separate types precisely so
 the compiler stops them being swapped.
 
-### The only writer
+### There is now NO writer — and that is deliberate (2026-08-05)
 
-`app/(tabs)/wishlist.tsx` — setting a watchlist **target price** auto-creates a
-`below_threshold` rule (two call sites: add-item and edit-target). There is no
-other way to create an alert in the app; the Alerts screen's "Create an Alert"
-CTA routes to `/watchlist-builder`.
+`app/(tabs)/wishlist.tsx` used to auto-create a `below_threshold` rule from a
+watchlist **target price** (two call sites: add-item and edit-target). **Both
+were removed.** The rule could never fire:
+`price_monitor_worker.check_threshold_alerts` selects
+`WHERE ... AND a.item_id IS NOT NULL` (`:84`), and a watchlist row is not an
+`items` uuid, so the wishlist could not supply one. Counted against prod:
+
+```
+user_price_alerts:     4 rows, all below_threshold, all item_id NULL
+alert_trigger_history: 0 below_threshold rows, ever
+```
+
+The toast said *"Price alert created — we'll notify you when the price drops
+below €X"*. Nothing was watching. It now says *"Target set — we'll alert you if
+it's listed below €X"*, which is what actually happens: the target is read
+directly by `deal_discovery_worker._check_watchlist_snipes`, which needs **no
+rule row at all**.
+
+Consequence: `user_price_alerts` has no writer in the app, so the **Rules tab is
+empty by design**. Do not "fix" it by re-adding the POST. If standing rules are
+ever wanted, the honest source is the watchlist targets themselves.
+
+**Do not** make `check_threshold_alerts` fall back to matching on `category`
+when `item_id` is NULL. That is precisely the over-broad predicate that was cut
+out of the snipe query above (220,826 matching rows over 7 days, a €0.02 common
+alerting against a €8015 target).
+
+This is the third instance of the same bug class in this one feature — see
+[Two bugs this cost](#two-bugs-this-cost), now three.
 
 ### Legal field values — server, DB, and client must all agree
 
@@ -120,17 +223,19 @@ They were `string`, and the wishlist sent `direction: 'below'` — a 422 on ever
 call, caught and only logged, so no alert was ever created and the user saw no
 error. See [Two bugs this cost](#two-bugs-this-cost).
 
-### Plan limit
+### Plan limit (now unreachable from the app)
 
-Free = **1 price alert per week** (`PLAN_LIMIT_ALERTS`, HTTP **403**), so a
-second target price legitimately fails. Both wishlist call sites surface the
-server's message as an `info` toast; the watchlist target itself is already
-saved by then. Do not report this as a success — one site used to show
-"Target price saved" as a `success` toast on alert failure.
+Free = **1 price alert per week** (`PLAN_LIMIT_ALERTS`, HTTP **403**) on
+`POST /alerts/mine`. The endpoint and the cap still exist, but **no client
+calls it** since the wishlist writers were removed, so no user can hit this
+limit today. Kept documented because the server-side enforcement is still
+live — if a rule-creation UI is ever built, it must handle the 403 and must
+not report it as success.
 
-### Two bugs this cost
+### Three bugs this cost
 
-Found 2026-07-30 by seeding a real rule and looking at the screen:
+Found 2026-07-30 by seeding a real rule and looking at the screen (1, 2) and
+2026-08-05 by counting prod (3):
 
 1. **No wishlist alert had ever been created.** `direction: 'below'` → 422 on
    both call sites, swallowed by the catch. Prod contained zero rows with a
@@ -141,10 +246,19 @@ Found 2026-07-30 by seeding a real rule and looking at the screen:
    `DELETE /alerts/mine/{alert_id}` — a 404 every time. `collectorsApi.getMyAlerts`
    (the correct reader) already existed, exported, with **zero callers**.
 
-Both are the house bug class: a reader and a writer that never meet, failing
-silently to empty. Neither is visible on an empty account, and no test caught
-either — the writer's 422 and the reader's wrong endpoint both produced a
-plausible-looking empty list.
+3. **Even after 1 and 2 were fixed, no rule could ever fire.** The writer sent
+   no `item_id`; the worker requires one. Found 2026-08-05 by counting prod
+   rather than reading the code — 4 rules, 0 triggers. Both call sites are now
+   removed (see [There is now NO writer](#there-is-now-no-writer--and-that-is-deliberate-2026-08-05)).
+
+All three are the house bug class: a reader and a writer that never meet,
+failing silently to empty. None is visible on an empty account, and no test
+caught any of them — the writer's 422, the reader's wrong endpoint and the
+`item_id IS NOT NULL` filter each produced a plausible-looking empty list.
+
+For completeness: `price_monitor_worker` is **also commented out of the bake
+manifest** (`bake_orchestrator.py:107`), so the rule path is dead twice over —
+the worker that would skip those rules is not running in the first place.
 
 ## Overview
 
@@ -164,17 +278,38 @@ Displays key metrics about your collection:
 
 ### Smart Alerts
 
-Seven types of alerts, all routed through `app/lib/notify.py` for preference-aware, frequency-capped push delivery:
+Seven types of alerts, all routed through `app/lib/notify.py` for
+preference-aware, frequency-capped push delivery. **The "Enabled" column is the
+one that matters** — this table described capability, and five of the seven
+workers are commented out of `bake_orchestrator.py` (verified 2026-08-06):
 
-| Alert Type | Trigger | Worker | Push |
-|------------|---------|--------|------|
-| Price Threshold | Item drops below user threshold | price_monitor_worker | Yes |
-| Price Anomaly | Z-score > 2.0 (spike/drop) | price_monitor_worker | Yes |
-| Set Completion | User owns >50% of a set | price_monitor_worker | Yes |
-| Watchlist Target Met | Market price ≤ target price | watchlist_monitor_worker | Yes |
-| Deal Found | Mandate match passes policy engine | deal_discovery_worker | Yes |
-| Auction Ending | Watched auction ending in <15min | auction_alert_worker | Yes (urgent) |
-| Low Value | Item valued below 10 EUR | alerts_worker | Yes |
+| Alert Type | Trigger | Worker | Enabled? |
+|------------|---------|--------|----------|
+| Price Threshold | Item drops below user threshold | price_monitor_worker | ❌ `:107` |
+| Price Anomaly | Z-score > 2.0 (spike/drop) | price_monitor_worker | ❌ `:107` |
+| Set Completion | User owns >50% of a set | price_monitor_worker | ❌ `:107` |
+| Watchlist Target Met | Market price ≤ target price | watchlist_monitor_worker | ❌ `:113`, deliberately — see top of file |
+| Deal Found / snipe | Mandate match, or watchlist target met on a buyable listing | deal_discovery_worker | ✅ `:93` |
+| Auction Ending | Watched auction ending in <15min | auction_alert_worker | ❌ `:117` |
+| Low Value | Item valued below 10 EUR | alerts_worker | ❌ `:109` |
+| Value Change | Portfolio >5% or item >15% | value_change_worker | ✅ `:95` |
+| Weekly Digest | Weekly summary | insights_digest_worker | ❌ `:186` |
+
+What that means for the Alerts screen, counted in prod 2026-08-06:
+
+```
+low_value       58   2026-04-19 .. 2026-04-22
+weekly_digest   30   2026-04-20 .. 2026-04-22
+value_change    12   2026-04-20 .. 2026-04-22
+watchlist_snipe  1   2026-08-04 .. 2026-08-04
+```
+
+Everything except the snipe is a **backlog from before the 2026-05-04
+pre-launch manifest cut**. The screen looks populated; nothing has been added
+to it in 3½ months except one snipe. Note `value_change_worker` IS enabled and
+runs clean (10 ok runs in 3 days, `worker_runs`) but has emitted nothing since
+April — plausible on test data, since it needs a >5% portfolio or >15% item
+move, but unverified.
 
 ### Notification Preferences — UI shipped 2026-07-31
 
@@ -204,17 +339,53 @@ Do not invent keys here. The set is fixed by `NotificationPreferencesUpdate`
 (`notification_router.py:236`); an unknown key is silently dropped by Pydantic,
 which is exactly how a toggle becomes a no-op.
 
+### Two preference stores — one is read, one is not (found 2026-08-06)
+
+Settings currently renders **two** notification-preference UIs, one below the
+other, controlling overlapping concepts:
+
+| Section | Endpoint | Table | Read at delivery time? |
+|---|---|---|---|
+| `NotificationPreferencesSection` | `/notifications/preferences` | `user_settings.notification_preferences` | **Yes** — `notify.py::_get_user_prefs` |
+| `AlertSettings` (`FEATURE_DATA_INSIGHTS_ALERTS`, `true`) | `/settings/alert-preferences` | `user_alert_preferences` | **No** |
+
+`grep -rn user_alert_preferences server` returns the PATCH writer, the GET
+reader that serves the same screen back to itself, and one entry in
+`account_router.py`'s deletion list. **No worker and no notify path consults
+it.** Prod has 1 row, so it has been used.
+
+That makes `AlertSettings` a settings panel whose switches do nothing:
+"Price Drops", "Drop threshold" (5–25%), "Price Increases", "Increase
+threshold", "New Listings", milestones, and a frequency selector offering
+Immediate / Daily Digest / Weekly Digest. None of those knobs is consulted by
+anything that sends a notification, and several describe alert types whose
+workers are disabled anyway.
+
+Same class as everything else in this file — a writer with no reader — but
+this one is **user-facing and promises control it does not have**. Options, in
+order of honesty: flip `FEATURE_DATA_INSIGHTS_ALERTS` to `false` (one line,
+removes the panel), delete the component and its endpoints, or wire
+`notify.py` to actually consult `user_alert_preferences`. Do not leave it
+mounted as-is.
+
 ### Frequency Capping
 
 Push notifications are capped per tier to prevent notification fatigue:
 
 | Tier | Daily Cap |
 |------|-----------|
-| Free | 5 pushes/day |
+| Free | **3** pushes/day |
 | Pro | 15 pushes/day |
 | Premium | 30 pushes/day |
 
-Urgent alerts (watchlist target met, auction ending) bypass frequency caps but still respect user preferences.
+Free was documented as 5 until 2026-08-06; the code has always said 3
+(`FREE_DAILY_CAP`, `app/lib/notify.py:26`). The code is the truth.
+
+Urgent alerts bypass the cap (`notify.py:293`, `if not urgent`) but still
+respect preferences. Only two callers pass `urgent=True` —
+`watchlist_monitor_worker:290` and `auction_alert_worker:177` — **and both of
+those workers are commented out of the bake manifest**, so in practice nothing
+currently bypasses the cap.
 
 ## Usage
 

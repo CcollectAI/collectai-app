@@ -32,7 +32,6 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/components/Toast';
-import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
 import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
@@ -41,7 +40,7 @@ import { WishlistStatsBar } from '@/components/wishlist/WishlistStatsBar';
 import { WishlistSortControls } from '@/components/wishlist/WishlistSortControls';
 
 // Pull from single source of truth — all 36 categories + "Other"
-import { CATEGORIES as ALL_CATS } from '@/constants/categories';
+import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 
 const CONGRATS_DISPLAY_DURATION = 2000;
 const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as const };
@@ -147,45 +146,43 @@ function WatchlistTabScreen() {
         ? parseFloat(formTargetPrice.replace(/[^0-9.]/g, ''))
         : null;
 
+      // Write the SLUG, not the display name. `formCategory` comes from
+      // CATEGORIES = ALL_CATS.map(c => c.name), so this used to store
+      // "Magic: The Gathering" while `market_hits.category` holds "mtg" — and
+      // the snipe's fallback arm joins on `mh.category = w.category`, so a row
+      // added here could never match a listing. WatchlistItemCard already
+      // assumed a slug (`categoryDisplayName(item.category)`), so the display
+      // was the thing that was wrong-by-luck, not the storage contract.
+      const categorySlug = CATEGORY_NAME_TO_SLUG[formCategory] ?? 'unknown';
+
       await dataProvider.addWatchlistItem({
         title: formTitle.trim(),
-        category: formCategory,
+        category: categorySlug,
         targetPrice: targetPrice && !isNaN(targetPrice) ? targetPrice : null,
         notes: formNotes.trim() || undefined,
       });
 
-      // Auto-create price alert when a target price is set
+      // The target price IS the alert \u2014 no `user_price_alerts` rule is created.
+      //
+      // This used to also POST /alerts/mine with a `below_threshold` rule and
+      // toast "Price alert created \u2014 we'll notify you...". That rule could
+      // never fire: price_monitor_worker.check_threshold_alerts filters
+      // `AND a.item_id IS NOT NULL` (:84) and a watchlist row is not an `items`
+      // uuid, so the rule was skipped every cycle. Measured against prod
+      // 2026-08-05: 4 rules, all below_threshold, all item_id NULL, and ZERO
+      // below_threshold rows in alert_trigger_history, ever.
+      //
+      // What actually watches this number is deal_discovery_worker's snipe
+      // check, which reads watchlist_items.target_price directly and needs no
+      // rule at all. So promise that, and only that.
       if (targetPrice && !isNaN(targetPrice) && targetPrice > 0) {
-        try {
-          await collectorsApi.createAlert({
-            category: formCategory,
-            trigger_type: 'below_threshold',
-            threshold_value: targetPrice,
-            direction: 'down',
-            metadata: { watchlist_title: formTitle.trim() },
-          });
-          showToast({
-            message: `Price alert created \u2014 we'll notify you when the price drops below ${formatPrice(targetPrice, settings.currency)}`,
-            type: 'success',
-          });
-        } catch (alertErr: unknown) {
-          logger.error('[Watchlist] auto-alert creation failed:', alertErr);
-          // Don't fail the add if the alert fails — but don't stay silent
-          // either. The free plan allows 1 price alert per week
-          // (PLAN_LIMIT_ALERTS, 403), and swallowing that left the user with a
-          // watchlist target and no notification and no way to know. The
-          // watchlist row itself is already saved at this point, so this is a
-          // warning, not an error.
-          showToast({
-            message:
-              (alertErr as Error)?.message ||
-              "Target saved, but the price alert couldn't be created",
-            type: 'info',
-          });
-        }
+        showToast({
+          message: `Target set \u2014 we'll alert you if it's listed below ${formatPrice(targetPrice, settings.currency)}`,
+          type: 'success',
+        });
       }
 
-      track({ name: 'watchlist_item_added', properties: { category: formCategory } });
+      track({ name: 'watchlist_item_added', properties: { category: categorySlug } });
       closeModal();
       resetForm();
       loadItems();
@@ -239,35 +236,15 @@ function WatchlistTabScreen() {
         targetPrice: newTarget && !isNaN(newTarget) ? newTarget : null,
       });
 
-      // Auto-create price alert when target price is set
+      // No `user_price_alerts` rule is created here either — see the
+      // add-item path above for the measurement. The target itself is what
+      // deal_discovery_worker's snipe check reads.
       if (newTarget && !isNaN(newTarget) && newTarget > 0) {
-        try {
-          await collectorsApi.createAlert({
-            category: editTargetItem.category || undefined,
-            trigger_type: 'below_threshold',
-            threshold_value: newTarget,
-            direction: 'down',
-            metadata: { watchlist_title: editTargetItem.title, watchlist_id: editTargetItem.id },
-          });
-          fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-          showToast({
-            message: `Price alert created \u2014 we'll notify you when the price drops below ${formatPrice(newTarget, settings.currency)}`,
-            type: 'success',
-          });
-        } catch (alertErr: unknown) {
-          logger.error('[Watchlist] auto-alert creation failed:', alertErr);
-          // Was a plain `success` toast reading "Target price saved", which
-          // reported the happy path while the alert had in fact failed — the
-          // user believed they'd be notified. The target IS saved, so say only
-          // that, and surface why the alert didn't happen (e.g. the free
-          // plan's 1-alert-per-week PLAN_LIMIT_ALERTS 403).
-          showToast({
-            message:
-              (alertErr as Error)?.message ||
-              "Target saved, but the price alert couldn't be created",
-            type: 'info',
-          });
-        }
+        fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+        showToast({
+          message: `Target set \u2014 we'll alert you if it's listed below ${formatPrice(newTarget, settings.currency)}`,
+          type: 'success',
+        });
       } else {
         showToast({ message: 'Target price updated', type: 'success' });
       }

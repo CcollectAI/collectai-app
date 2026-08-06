@@ -29,7 +29,6 @@ _registry: dict[str, dict] = {}
 # Default schedule intervals (seconds)
 SCHEDULES = {
     "price_monitor": 6 * 3600,          # every 6 hours
-    "alerts_worker": 3600,               # every 1 hour
     "vision_ingest": 0,                  # on-demand only
     "valuation_worker": 3 * 3600,        # every 3h (was 6h — raised drain rate
                                          # 2026-07-02 to catch up with the tcgcsv
@@ -46,7 +45,6 @@ SCHEDULES = {
     "catalog_learning_worker": 1800,     # every 30 minutes
     "scarcity_monitor_worker": 6 * 3600, # every 6 hours
     "category_map_worker": 3600,         # every 1 hour
-    "signal_alerts_worker": 1800,        # every 30 minutes
     "catalog_crawler_worker": 24 * 3600, # daily (nightly crawl)
     "model_retrain_worker": 7 * 24 * 3600,  # weekly
     "auto_delist_worker": 900,               # every 15 minutes

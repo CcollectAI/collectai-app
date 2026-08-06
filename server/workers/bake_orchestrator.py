@@ -68,7 +68,21 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("aggregate_catalog_attributes", "workers.aggregate_catalog_attributes", "run_once", False),
     # tcgcsv + discogs: bulk catalog growth. RE-ENABLED 2026-04-26 with
     # upsert_market_hits_batch RPC. Required for non-skewed catalog at launch.
-    ("tcgcsv_worker",           "pipelines.import_tcgcsv",  "run_once", True),
+    # ("tcgcsv_worker",         "pipelines.import_tcgcsv",  "run_once", True),
+    #   DISABLED 2026-08-04 — tcgcsv.com returns HTTP 403 "Your application has
+    #   flagged for overuse and has been blocked", every run since 2026-08-01
+    #   (last OK 2026-07-31). It is a server-side block on our IP/app, NOT a
+    #   UA or Cloudflare issue, so retrying cannot fix it and every cycle is a
+    #   guaranteed failure that pages the watchdog daily.
+    #
+    #   RE-ENABLE ONLY AFTER the appeal is granted: email
+    #   cptspacetoaster@gmail.com (or their Discord) to lift the block, then
+    #   uncomment this line and restart bake. Re-enabling before that just
+    #   restores the daily false page.
+    #
+    #   Catalog impact while off: no new tcgcsv rows. The existing 221k
+    #   category_items are unaffected — this worker only ADDS. discogs_worker
+    #   below is a separate source and stays on.
     ("discogs_worker",          "pipelines.import_discogs", "run_once", True),
     # Sanity probe — must stay. Observability. If this is off, we're flying blind.
     ("sanity_probe_worker",     "workers.sanity_probe_worker",        "run_once", True),
@@ -92,8 +106,6 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   Nightly full crawl. Catalog imports (tcgcsv/discogs) cover pre-launch needs.
     # ("price_monitor",           "workers.price_monitor_worker",       "run_once", True),
     #   Anomaly detection for user portfolios. No portfolios.
-    # ("alerts_worker",           "workers.alerts_worker",              "run_once", True),
-    #   User-facing low-value alerts. No users.
     # ("scarcity_monitor_worker", "workers.scarcity_monitor_worker",    "run_once", True),
     #   Scarcity feature for users. No users.
     # ("watchlist_monitor_worker", "workers.watchlist_monitor_worker",  "run_once", True),
@@ -104,8 +116,6 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   Disabled 2026-05-04 due to partition-pruning planner regression
     #   (see learning_partition_pruning_planning_cost.md). Re-enable after
     #   query rewrite. Even before this incident: user-facing alerts, no users.
-    # ("signal_alerts_worker",    "workers.signal_alerts_worker",       "run_once", True),
-    #   Disabled 2026-04-21: silent-writer pattern + wrong table reference.
     # ("discovery_audit_worker",  "workers.discovery_audit_worker",     "run_once", True),
     #   Daily broad data sweep. Useful post-scale, not load-bearing pre-launch.
     ("datalake_export_worker",  "workers.datalake_export_worker",     "run_once", True),

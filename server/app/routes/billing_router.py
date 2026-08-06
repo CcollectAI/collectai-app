@@ -152,6 +152,13 @@ PLAN_LIMITS = {
         # unreachable through the UI and inert if reached by deep link.
         # Changed 2026-07-31; MONETIZATION.md updated to match.
         "max_mandates": 0,
+        # Watchlist size is the Pro lever for Target Hit: the alert can only
+        # fire on something you are watching, so slots ARE reach. Added
+        # 2026-08-06. None = unlimited.
+        "max_watchlist_items": 25,
+        # Target Hits per rolling 24h. deal_discovery_worker reads this — do
+        # not re-declare the number in the worker.
+        "max_daily_deal_alerts": 1,
         # Price-alert creation cap per rolling 7 days. None = unlimited.
         "max_alerts_per_week": 1,
         "deal_discovery": False,
@@ -164,6 +171,8 @@ PLAN_LIMITS = {
     },
     "pro": {
         "max_mandates": 10,
+        "max_watchlist_items": None,
+        "max_daily_deal_alerts": None,
         "max_alerts_per_week": None,
         "deal_discovery": True,
         "dossier_pdf": True,
@@ -193,6 +202,8 @@ PLAN_LIMITS = {
     },
     "premium": {
         "max_mandates": 50,
+        "max_watchlist_items": None,
+        "max_daily_deal_alerts": None,
         "max_alerts_per_week": None,
         "deal_discovery": True,
         "dossier_pdf": True,
