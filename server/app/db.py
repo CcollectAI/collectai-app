@@ -10,6 +10,7 @@ Otherwise runs in 'DB disabled' mode with no-ops.
 
 from __future__ import annotations
 
+import json
 import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
@@ -46,6 +47,35 @@ def db_configured() -> bool:
     return DB_ENABLED and bool(DB_DSN)
 
 
+async def _init_conn(conn: asyncpg.Connection) -> None:
+    """Decode json/jsonb into Python objects instead of raw strings.
+
+    asyncpg returns JSONB as `str` unless a codec is registered, and nothing
+    registered one. Every endpoint that hands a JSONB column straight to the
+    client therefore serialised a *quoted JSON string*, and the app's property
+    access silently read `undefined` off it.
+
+    Measured 2026-08-06: `GET /alerts/trigger-history` returns
+    `alert_trigger_history.trigger_value` this way, so `app/alerts.tsx:335`
+    (`typeof item.triggerValue?.listing_url === 'string'`) was false for every
+    row and the snipe alert's "View on <provider>" button could never render.
+    `notification_router.py:430` returns `notification_history.data` the same
+    way (no FE consumer today — it reads the `deep_link` text column).
+
+    Fixed here, at the one chokepoint, rather than at each call site: two
+    routers had already grown local `isinstance(row[...], str)` guards
+    (`alerts_feature_router.py:117`, `provenance_router.py:75`), which is the
+    tell that the drift was being patched downstream instead of at the source.
+    Those guards keep working — they now take the else branch.
+    """
+    await conn.set_type_codec(
+        "jsonb", encoder=json.dumps, decoder=json.loads, schema="pg_catalog"
+    )
+    await conn.set_type_codec(
+        "json", encoder=json.dumps, decoder=json.loads, schema="pg_catalog"
+    )
+
+
 async def connect_pool(app: Optional[FastAPI] = None) -> None:
     """
     Initialize connection pool on startup.
@@ -60,6 +90,7 @@ async def connect_pool(app: Optional[FastAPI] = None) -> None:
             command_timeout=DB_COMMAND_TIMEOUT,
             timeout=DB_CONNECT_TIMEOUT,
             max_inactive_connection_lifetime=DB_IDLE_LIFETIME,
+            init=_init_conn,
         )
     else:
         logger.info("DB stub: connect_pool() called; no DB connection will be created")
@@ -101,8 +132,12 @@ async def get_conn() -> AsyncGenerator[asyncpg.Connection, None]:
         raise RuntimeError("Database not configured (DB_ENABLED=false or DB_DSN missing)")
 
     if _pool is None or isinstance(_pool, _DummyPool):
-        # Fallback: create one-off connection if pool not initialized
+        # Fallback: create one-off connection if pool not initialized.
+        # Must register the same codecs as the pool — otherwise the same
+        # request returns dicts or strings depending on whether the pool
+        # happened to be up, which is worse than being consistently wrong.
         conn = await asyncpg.connect(DB_DSN)
+        await _init_conn(conn)
         try:
             yield conn
         finally:

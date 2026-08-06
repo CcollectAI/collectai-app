@@ -219,10 +219,43 @@ class MarketplaceAgent:
         limit: int,
         region: Optional[str],
         mode: str = "search",
+        only_adapters: Optional[set] = None,
+        exclude_adapters: Optional[set] = None,
+        ignore_region_policy: bool = False,
     ) -> tuple[list[tuple[str, Any]], int]:
         """Build the list of (source_name, coroutine) tasks.
 
         *mode* is "search" for aggregate_search or "sold" for find_sold_comps.
+
+        *only_adapters* restricts the fan-out to the named adapters. Added
+        2026-08-06 for the TCG listings pass: that pass needs eBay and only
+        eBay, because a full fan-out on a TCG query re-queries the very price
+        feeds that already cover those categories (tcgcsv/scryfall/cardmarket)
+        and Cardmarket currently answers our scrape with a Cloudflare
+        challenge. Bounding the fan-out is what keeps the pass cheap enough to
+        run continuously — see learning_third_party_rate_bans_and_schedule_drift.
+
+        *exclude_adapters* is the denylist counterpart, used by
+        marketplace_scrape_scheduler to keep PAID adapters (firecrawl,
+        scrape_do, serpapi, google_shopping) out of the bulk catalog scrape.
+        It replaces a `setattr(agent, f"_{name}_caller", None)` hack in that
+        worker which had NEVER worked: the real attribute is `_firecrawl`, not
+        `_firecrawl_caller`, and the `hasattr` guard turned the wrong name into
+        a silent no-op. Harmless only while FIRECRAWL_ENABLED=false; the moment
+        that flipped (2026-08-06) the worker started spending paid credits on
+        every batch. Nulling the attribute would not work either — the task
+        loop calls `inst.configured` and would raise on None.
+
+        *ignore_region_policy* bypasses `should_use_adapter` ONLY. It exists for
+        one caller: the Cardmarket leg of the TCG listings pass. `_ADAPTER_POLICY`
+        sets `firecrawl: False` in every region because it "used to fire on every
+        marketplace ingest, which burned the free-tier quota and added no signal
+        over Crawl4AI" — a correct decision that is now half-stale, because
+        Crawl4AI is Cloudflare-blocked on cardmarket.com (verified 2026-08-06)
+        and Firecrawl is not. The blanket policy stays; this flag lets one
+        explicitly budgeted, watched-items-only path opt out.
+        **Do not set this from a bulk path** — that recreates the exact quota
+        burn the policy was written to stop.
 
         Returns (tasks, total_sources).
         """
@@ -236,9 +269,13 @@ class MarketplaceAgent:
         amap = self._adapter_map()
 
         for adapter_name, inst in amap.items():
+            if only_adapters is not None and adapter_name not in only_adapters:
+                continue
+            if exclude_adapters and adapter_name in exclude_adapters:
+                continue
             if not inst.configured:
                 continue
-            if not should_use_adapter(region, adapter_name):
+            if not ignore_region_policy and not should_use_adapter(region, adapter_name):
                 continue
             if not adapter_serves_category(adapter_name, category):
                 continue
@@ -308,6 +345,8 @@ class MarketplaceAgent:
         limit: int = 20,
         include_sold: bool = True,
         region: Optional[str] = None,
+        only_adapters: Optional[set] = None,
+        ignore_region_policy: bool = False,
     ) -> AggregationResult:
         """Search across all configured marketplace adapters.
 
@@ -322,7 +361,10 @@ class MarketplaceAgent:
         # Check cache first — identical searches within TTL reuse previous results
         from app.cache import cache_get, cache_set
         _SEARCH_CACHE_TTL = 6 * 3600  # 6 hours
-        cache_key = f"mkt_search:{query}:{category}:{condition}:{region}:{include_sold}"
+        # only_adapters is part of the key: an eBay-only result must never be
+        # served to a caller that asked for the full fan-out (or vice versa).
+        _adapters_key = ",".join(sorted(only_adapters)) if only_adapters else "all"
+        cache_key = f"mkt_search:{query}:{category}:{condition}:{region}:{include_sold}:{_adapters_key}"
         cached = cache_get(cache_key)
         if cached is not None:
             logger.debug("[MarketplaceAgent] cache hit for %s", cache_key)
@@ -339,6 +381,7 @@ class MarketplaceAgent:
         try:
             result = await self._do_aggregate_search(
                 query, category, condition, limit, include_sold, region,
+                only_adapters, ignore_region_policy,
                 cache_key, _SEARCH_CACHE_TTL, cache_set,
             )
             future.set_result(result)
@@ -357,6 +400,8 @@ class MarketplaceAgent:
         limit: int,
         include_sold: bool,
         region: Optional[str],
+        only_adapters: Optional[set],
+        ignore_region_policy: bool,
         cache_key: str,
         cache_ttl: int,
         cache_set_fn,
@@ -364,6 +409,8 @@ class MarketplaceAgent:
         """Internal: perform the actual adapter queries (called after cache miss)."""
         tasks, total_sources = self._build_search_tasks(
             query, category, limit, region, mode="search",
+            only_adapters=only_adapters,
+            ignore_region_policy=ignore_region_policy,
         )
 
         if not tasks:
@@ -472,6 +519,7 @@ class MarketplaceAgent:
         condition: Optional[str] = None,
         limit: int = 20,
         region: Optional[str] = None,
+        exclude_adapters: Optional[set] = None,
     ) -> AggregationResult:
         """Find sold comparables across all adapters.
 
@@ -480,7 +528,11 @@ class MarketplaceAgent:
         """
         from app.cache import cache_get, cache_set
         _COMPS_CACHE_TTL = 12 * 3600  # 12 hours
-        cache_key = f"mkt_comps:{query}:{category}:{condition}:{region}"
+        # Denylist is part of the key for the same reason only_adapters is on
+        # the search side: a paid-adapter-free result must not be served to a
+        # caller that expected the full fan-out.
+        _excl_key = ",".join(sorted(exclude_adapters)) if exclude_adapters else "none"
+        cache_key = f"mkt_comps:{query}:{category}:{condition}:{region}:x={_excl_key}"
         cached = cache_get(cache_key)
         if cached is not None:
             logger.debug("[MarketplaceAgent] comps cache hit for %s", cache_key)
@@ -488,6 +540,7 @@ class MarketplaceAgent:
 
         tasks, total_sources = self._build_search_tasks(
             query, category, limit, region, mode="sold",
+            exclude_adapters=exclude_adapters,
         )
 
         if not tasks:
