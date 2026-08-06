@@ -79,6 +79,12 @@
     "items.build_state": [
       "CHECK (((build_state IS NULL) OR (build_state = ANY (ARRAY['unbuilt'::text, 'in_progress'::text, 'snap_built'::text, 'primed'::text, 'basecoated'::text, 'painted_wip'::text, 'finished'::text, 'varnished'::text, 'custom_mod'::text]))))"
     ],
+    "listing_reports.reason": [
+      "CHECK (((char_length(reason) >= 3) AND (char_length(reason) <= 120)))"
+    ],
+    "listing_reports.status": [
+      "CHECK ((status = ANY (ARRAY['open'::text, 'actioned'::text, 'dismissed'::text])))"
+    ],
     "mandate_deals.status": [
       "CHECK ((status = ANY (ARRAY['discovered'::text, 'notified'::text, 'clicked'::text, 'purchased'::text, 'declined'::text, 'expired'::text])))"
     ],
@@ -118,6 +124,18 @@
     "marketplace_sales.status": [
       "CHECK ((status = ANY (ARRAY['pending'::text, 'paid'::text, 'shipped'::text, 'delivered'::text, 'completed'::text, 'disputed'::text, 'refunded'::text])))"
     ],
+    "member_grades.note": [
+      "CHECK (((note IS NULL) OR (char_length(note) <= 500)))"
+    ],
+    "member_grades.ratee_id": [
+      "CHECK ((rater_id <> ratee_id))"
+    ],
+    "member_grades.rater_id": [
+      "CHECK ((rater_id <> ratee_id))"
+    ],
+    "member_grades.verdict": [
+      "CHECK ((verdict = ANY (ARRAY['positive'::text, 'negative'::text])))"
+    ],
     "notification_interactions.kind": [
       "CHECK ((kind = ANY (ARRAY['open'::text, 'click'::text, 'dismiss'::text, 'snooze'::text])))"
     ],
@@ -128,6 +146,18 @@
       "CHECK ((event_type = ANY (ARRAY['proposed'::text, 'countered'::text, 'accepted'::text, 'declined'::text, 'expired'::text, 'cancelled'::text, 'shipped'::text, 'delivered'::text, 'rated'::text])))"
     ],
     "offers.status": [
+      "CHECK ((status = ANY (ARRAY['pending'::text, 'countered'::text, 'accepted'::text, 'declined'::text, 'cancelled'::text, 'expired'::text, 'shipped'::text, 'completed'::text])))"
+    ],
+    "p2p_offers.amount": [
+      "CHECK ((amount > (0)::numeric))"
+    ],
+    "p2p_offers.buyer_id": [
+      "CHECK ((buyer_id <> seller_id))"
+    ],
+    "p2p_offers.seller_id": [
+      "CHECK ((buyer_id <> seller_id))"
+    ],
+    "p2p_offers.status": [
       "CHECK ((status = ANY (ARRAY['pending'::text, 'countered'::text, 'accepted'::text, 'declined'::text, 'cancelled'::text, 'expired'::text, 'shipped'::text, 'completed'::text])))"
     ],
     "prediction_sessions.category": [
@@ -7317,6 +7347,45 @@
       "nullable": true,
       "type": "text"
     },
+    "listing_reports.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "listing_reports.detail": {
+      "nullable": true,
+      "type": "text"
+    },
+    "listing_reports.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "listing_reports.listing_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "listing_reports.reason": {
+      "nullable": false,
+      "type": "text"
+    },
+    "listing_reports.reporter_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "listing_reports.resolution_note": {
+      "nullable": true,
+      "type": "text"
+    },
+    "listing_reports.resolved_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "listing_reports.status": {
+      "default": "'open'::text",
+      "nullable": false,
+      "type": "text"
+    },
     "listings.category_slug": {
       "nullable": true,
       "type": "text"
@@ -8310,6 +8379,14 @@
       "nullable": true,
       "type": "numeric"
     },
+    "marketplace_listings.canonical_key": {
+      "nullable": true,
+      "type": "text"
+    },
+    "marketplace_listings.category": {
+      "nullable": true,
+      "type": "text"
+    },
     "marketplace_listings.condition_label": {
       "nullable": true,
       "type": "text"
@@ -8327,6 +8404,10 @@
       "default": "'EUR'::text",
       "nullable": false,
       "type": "text"
+    },
+    "marketplace_listings.delisted_at": {
+      "nullable": true,
+      "type": "timestamptz"
     },
     "marketplace_listings.estimated_fees": {
       "nullable": true,
@@ -8400,6 +8481,19 @@
       "nullable": false,
       "type": "int4"
     },
+    "marketplace_listings.reports_count": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "marketplace_listings.reserved_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "marketplace_listings.reserved_offer_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
     "marketplace_listings.returns_accepted": {
       "default": "false",
       "nullable": true,
@@ -8420,10 +8514,23 @@
       "nullable": true,
       "type": "text"
     },
+    "marketplace_listings.ships_from": {
+      "nullable": true,
+      "type": "text"
+    },
+    "marketplace_listings.ships_from_country": {
+      "nullable": true,
+      "type": "text"
+    },
     "marketplace_listings.ships_international": {
       "default": "false",
       "nullable": true,
       "type": "bool"
+    },
+    "marketplace_listings.ships_to": {
+      "default": "'{}'::text[]",
+      "nullable": false,
+      "type": "_text"
     },
     "marketplace_listings.sold_at": {
       "nullable": true,
@@ -8565,6 +8672,36 @@
       "type": "text"
     },
     "marketplaces.name": {
+      "nullable": false,
+      "type": "text"
+    },
+    "member_grades.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "member_grades.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "member_grades.note": {
+      "nullable": true,
+      "type": "text"
+    },
+    "member_grades.offer_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "member_grades.ratee_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "member_grades.rater_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "member_grades.verdict": {
       "nullable": false,
       "type": "text"
     },
@@ -9605,6 +9742,10 @@
       "nullable": false,
       "type": "numeric"
     },
+    "offers.buyer_confirmed_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
     "offers.buyer_id": {
       "nullable": false,
       "type": "uuid"
@@ -9618,6 +9759,11 @@
       "default": "now()",
       "nullable": false,
       "type": "timestamptz"
+    },
+    "offers.currency": {
+      "default": "'EUR'::text",
+      "nullable": false,
+      "type": "text"
     },
     "offers.expires_at": {
       "nullable": true,
@@ -9636,6 +9782,10 @@
       "nullable": true,
       "type": "text"
     },
+    "offers.seller_confirmed_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
     "offers.seller_id": {
       "nullable": false,
       "type": "uuid"
@@ -9649,6 +9799,14 @@
       "default": "now()",
       "nullable": false,
       "type": "timestamptz"
+    },
+    "offers.withdrawn_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "offers.withdrawn_by": {
+      "nullable": true,
+      "type": "uuid"
     },
     "on_demand_lookups.category": {
       "nullable": false,
@@ -9752,6 +9910,76 @@
     "ops_drift_heartbeat_v1.median_cap_pct": {
       "nullable": true,
       "type": "numeric"
+    },
+    "p2p_offers.amount": {
+      "nullable": false,
+      "type": "numeric"
+    },
+    "p2p_offers.buyer_confirmed_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "p2p_offers.buyer_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "p2p_offers.counter_count": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "p2p_offers.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "p2p_offers.currency": {
+      "default": "'EUR'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "p2p_offers.expires_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "p2p_offers.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "p2p_offers.listing_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "p2p_offers.message": {
+      "nullable": true,
+      "type": "text"
+    },
+    "p2p_offers.seller_confirmed_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "p2p_offers.seller_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "p2p_offers.status": {
+      "default": "'pending'::text",
+      "nullable": false,
+      "type": "text"
+    },
+    "p2p_offers.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "p2p_offers.withdrawn_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "p2p_offers.withdrawn_by": {
+      "nullable": true,
+      "type": "uuid"
     },
     "phase_a_audit_v1.checked_at": {
       "nullable": true,
@@ -22566,6 +22794,17 @@
       "version",
       "processed_at"
     ],
+    "listing_reports": [
+      "id",
+      "listing_id",
+      "reporter_id",
+      "reason",
+      "detail",
+      "status",
+      "resolution_note",
+      "created_at",
+      "resolved_at"
+    ],
     "listings": [
       "id",
       "item_id",
@@ -22865,7 +23104,16 @@
       "sold_at",
       "synced_at",
       "created_at",
-      "updated_at"
+      "updated_at",
+      "canonical_key",
+      "category",
+      "ships_from",
+      "delisted_at",
+      "reports_count",
+      "ships_from_country",
+      "ships_to",
+      "reserved_offer_id",
+      "reserved_at"
     ],
     "marketplace_sales": [
       "id",
@@ -22894,6 +23142,15 @@
       "key",
       "name",
       "enabled"
+    ],
+    "member_grades": [
+      "id",
+      "offer_id",
+      "rater_id",
+      "ratee_id",
+      "verdict",
+      "note",
+      "created_at"
     ],
     "meta_training_items_columns": [
       "column_name",
@@ -23214,7 +23471,12 @@
       "message",
       "counter_count",
       "expires_at",
-      "updated_at"
+      "updated_at",
+      "seller_confirmed_at",
+      "buyer_confirmed_at",
+      "withdrawn_by",
+      "withdrawn_at",
+      "currency"
     ],
     "on_demand_lookups": [
       "item_ref",
@@ -23245,6 +23507,24 @@
       "heartbeat_status",
       "heartbeat_note",
       "heartbeat_ts"
+    ],
+    "p2p_offers": [
+      "id",
+      "listing_id",
+      "buyer_id",
+      "seller_id",
+      "amount",
+      "currency",
+      "status",
+      "message",
+      "counter_count",
+      "seller_confirmed_at",
+      "buyer_confirmed_at",
+      "withdrawn_by",
+      "withdrawn_at",
+      "expires_at",
+      "created_at",
+      "updated_at"
     ],
     "phase_a_audit_v1": [
       "name",
@@ -27259,6 +27539,15 @@
         "id"
       ]
     ],
+    "listing_reports": [
+      [
+        "id"
+      ],
+      [
+        "listing_id",
+        "reporter_id"
+      ]
+    ],
     "listings": [
       [
         "id"
@@ -27356,6 +27645,15 @@
       ],
       [
         "key"
+      ]
+    ],
+    "member_grades": [
+      [
+        "id"
+      ],
+      [
+        "offer_id",
+        "rater_id"
       ]
     ],
     "model_catalog": [
@@ -27558,6 +27856,15 @@
     "on_demand_lookups_audit": [
       [
         "id"
+      ]
+    ],
+    "p2p_offers": [
+      [
+        "id"
+      ],
+      [
+        "listing_id",
+        "buyer_id"
       ]
     ],
     "portfolio_items": [

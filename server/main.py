@@ -215,6 +215,8 @@ from app.features.catalog_browser_router import router as catalog_browser_router
 from app.features.grading_router import router as grading_router
 from app.features.export_router import router as export_router
 from app.features.marketplace_listing_router import router as marketplace_listing_router
+from app.features.p2p_listing_router import router as p2p_listing_router
+from app.features.p2p_offers_router import router as p2p_offers_router
 from app.features.chat_router import router as chat_router
 from app.features.admin_health_router import router as admin_health_router
 from app.features.sell_timing_router import router as sell_timing_router
@@ -291,6 +293,11 @@ app.include_router(catalog_browser_router)
 app.include_router(grading_router)
 app.include_router(export_router)
 app.include_router(marketplace_listing_router)
+# P2P member-to-member listings (Stage 1: no payments). See
+# docs/P2P_MARKETPLACE_SPEC.md.
+app.include_router(p2p_listing_router)
+# P2P Stage 2: offers, two-sided completion, mutual grading.
+app.include_router(p2p_offers_router)
 app.include_router(chat_router)
 app.include_router(admin_health_router)
 app.include_router(value_summary_router.router)

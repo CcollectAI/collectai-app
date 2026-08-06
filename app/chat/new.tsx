@@ -18,9 +18,14 @@ import { safeGoBack } from '@/lib/goBack';
 type DmStatusState = 'loading' | 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined' | 'blocked';
 
 const NewChatScreen: React.FC = () => {
-  const { toUserId, contextEventId } = useLocalSearchParams<{
+  const { toUserId, contextEventId, contextListingTitle } = useLocalSearchParams<{
     toUserId?: string;
     contextEventId?: string;
+    /** Marketplace listing title. Prefills the opener so the seller knows
+     *  which item is being asked about — a bare "hi" from a stranger is the
+     *  worst version of this flow. Title rather than id: the id would need a
+     *  fetch here, and the title is all the prefill needs. */
+    contextListingTitle?: string;
   }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -35,7 +40,9 @@ const NewChatScreen: React.FC = () => {
   const [message, setMessage] = useState(
     contextEvent
       ? `Hey, I saw you on the attendee list for "${contextEvent.title}". Want to connect?`
-      : '',
+      : contextListingTitle
+        ? `Hi — is "${contextListingTitle}" still available?`
+        : '',
   );
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);

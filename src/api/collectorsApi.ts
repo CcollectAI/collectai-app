@@ -12,6 +12,7 @@ import * as intakeApi from "./intakeApi";
 import * as itemsApi from "./itemsApi";
 import * as marketplaceApi from "./marketplaceApi";
 import * as dealsApi from "./dealsApi";
+import * as p2pApi from "./p2pApi";
 import * as gamificationApi from "./gamificationApi";
 import * as eventsApi from "./eventsApi";
 import * as chatApi from "./chatApi";
@@ -138,6 +139,25 @@ export const collectorsApi = {
   processIntakeWithImage: intakeApi.processIntakeWithImage,
 
   // Smart Deal Agent — Mandates
+  // P2P member listings (Stage 1: no payments). See docs/P2P_MARKETPLACE_SPEC.md.
+  createListing: p2pApi.createListing,
+  listP2PListings: p2pApi.listListings,
+  getP2PListing: p2pApi.getListing,
+  getDemandPreview: p2pApi.getDemandPreview,
+  // Namespaced `p2p*`: the Deal Desk below already exports proposeOffer /
+  // respondToOffer / completeDeal for the MANDATE system, which is a
+  // different feature on a different table (public.offers vs
+  // public.p2p_offers). Sharing a name here silently shadowed one of them —
+  // tsc caught it as a duplicate key, the same collision the p2p_offers table
+  // hit at the DB layer.
+  p2pCreateOffer: p2pApi.createOffer,
+  p2pListOffers: p2pApi.listOffers,
+  p2pRespondToOffer: p2pApi.respondToOffer,
+  p2pConfirmExchange: p2pApi.confirmExchange,
+  p2pGradeCounterparty: p2pApi.gradeCounterparty,
+  p2pMemberReputation: p2pApi.getMemberReputation,
+  delistListing: p2pApi.delistListing,
+  reportListing: p2pApi.reportListing,
   createMandate: dealsApi.createMandate,
   listMandates: dealsApi.listMandates,
   getMandate: dealsApi.getMandate,
