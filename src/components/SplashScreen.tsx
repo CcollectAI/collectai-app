@@ -146,20 +146,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Sizes bumped 2026-08-05 to sit closer to the native splash (imageWidth 300)
+  // so the logo doesn't visibly shrink when the native splash hands over.
   glowRing: {
     position: 'absolute',
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 148,
+    height: 148,
+    borderRadius: 74,
     backgroundColor: 'rgba(255,255,255,0.15)',
   },
   logoContainer: {
     marginBottom: 24,
   },
   logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 124,
+    height: 124,
+    borderRadius: 62,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -170,9 +172,14 @@ const styles = StyleSheet.create({
     elevation: 10,
     overflow: 'hidden',
   },
+  // Matched to the circle, NOT larger. Overflowing the image to crop icon.png's
+  // ~20% dead margin is tempting, but the clip is a CIRCLE: the art's bounding
+  // box is 612x781 of the 1024 canvas, so its diagonal is 0.97x the image
+  // width — at 146 in a 124 circle the tail and beak get sliced off. At 124 the
+  // diagonal is ~120pt and the whole bird clears the edge.
   logoImage: {
-    width: 60,
-    height: 60,
+    width: 124,
+    height: 124,
   },
   appName: {
     fontSize: 36,

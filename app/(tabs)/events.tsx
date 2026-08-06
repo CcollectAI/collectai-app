@@ -30,6 +30,7 @@ import { useOptimisticRsvpList } from '@/hooks/useOptimisticRsvp';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
 import { useFollowedCategories } from '@/hooks/useFollowedCategories';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
@@ -58,6 +59,11 @@ const VIEW_MODE_TABS = [
 function EventsScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  // ExternalTabBar floats over this screen (absolute, bottom: 0) and reserves
+  // no layout space, so the flat `paddingBottom: 24` below left the last event
+  // card drawn under the bar — visible in calendar mode, where selecting a day
+  // puts a short list right at the bottom of the scroll.
+  const tabBarInset = useTabBarInset();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
   const { t } = useTranslation();
@@ -674,7 +680,9 @@ function EventsScreen() {
           <ActivityIndicator size="small" color={colors.accent} />
         </View>
       )}
-      <View style={{ height: 24 }} />
+      {/* No trailing spacer: `tabBarInset` on contentContainerStyle already
+          reserves the tab bar's height, and a second 24pt gap on top of it
+          just reads as dead space at the end of the list. */}
     </>
   );
 
@@ -715,7 +723,7 @@ function EventsScreen() {
       {viewMode === 'nearby' ? (
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarInset }]}
           showsVerticalScrollIndicator={false}
           refreshControl={refreshControlElement}
         >
@@ -814,7 +822,7 @@ function EventsScreen() {
           ListEmptyComponent={emptyComponent}
           ListFooterComponent={footerComponent}
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarInset }]}
           showsVerticalScrollIndicator={false}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
@@ -834,7 +842,7 @@ function EventsScreen() {
           ListEmptyComponent={emptyComponent}
           ListFooterComponent={footerComponent}
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarInset }]}
           showsVerticalScrollIndicator={false}
           stickySectionHeadersEnabled={false}
           onEndReached={loadMore}

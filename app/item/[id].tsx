@@ -79,6 +79,7 @@ import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
 import { ItemEditBar } from '@/components/item/ItemEditBar';
 import { ItemPriceSection } from '@/components/item/ItemPriceSection';
 import { ItemNotesEditor } from '@/components/item/ItemNotesEditor';
+import { SellOnSparrowSection } from '@/components/item/SellOnSparrowSection';
 import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { ItemCatalogRefresh } from '@/components/item/ItemCatalogRefresh';
 import { supabase } from '@/lib/supabase';
@@ -110,8 +111,11 @@ const toNum = (value: string | number | undefined | null): number | undefined =>
 
 
 
+// Gap left between the bottom of the notes block and the top of the keyboard.
+const NOTES_KEYBOARD_MARGIN = 16;
+
 // Predefined options for dropdown menus
-const COLLECTION_OPTIONS = ['Not set', 'Base Set', 'Jungle', 'Fossil', 'Team Rocket', 'Gym Heroes', 'Neo Genesis', 'Other'];
+const COLLECTION_OPTIONS =['Not set', 'Base Set', 'Jungle', 'Fossil', 'Team Rocket', 'Gym Heroes', 'Neo Genesis', 'Other'];
 const CONDITION_OPTIONS_GENERAL = ['Not set', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
 const CONDITION_OPTIONS_GRADED = ['Not set', 'PSA 10', 'PSA 9', 'PSA 8', 'PSA 7', 'BGS 10', 'BGS 9.5', 'CGC 9.8', 'CGC 9.6', 'Raw', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
 
@@ -353,8 +357,16 @@ function ItemDetailScreen() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fire once on mount
 
   const scrollViewRef = useRef<ScrollView>(null);
-  const notesLayoutY = useRef(0);
+  // Live scroll offset. `scrollToNotes` scrolls by a DELTA (how much of the
+  // notes block the keyboard covers), so it needs the current absolute offset;
+  // the Animated `scrollY` value can't be read synchronously.
+  const scrollOffsetRef = useRef(0);
+  // Mirror of `keyboardHeight` for callbacks that run inside a setTimeout and
+  // would otherwise close over the pre-keyboard value (0).
+  const keyboardHeightRef = useRef(0);
 
+
+  useEffect(() => { keyboardHeightRef.current = keyboardHeight; }, [keyboardHeight]);
 
   // Track item view on mount
   useEffect(() => {
@@ -434,7 +446,7 @@ function ItemDetailScreen() {
     chartData: priceTrendChartData,
     handleHover: handlePriceTrendHover,
   } = priceTrend;
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: windowHeight } = useWindowDimensions();
   const GALLERY_WIDTH = screenWidth - 32; // 16px padding on each side
 
 
@@ -666,17 +678,30 @@ function ItemDetailScreen() {
   }, [priceEstimate, explanation, condition, editableCategory, evidenceData]);
 
 
-  const scrollToNotes = () => {
-    // Delay slightly to let keyboard height settle, then scroll notes into view
-    setTimeout(() => {
-      if (notesLayoutY.current > 0) {
-        (scrollViewRef.current as ScrollView | null)?.scrollTo?.({
-          y: notesLayoutY.current - 60,
-          animated: true,
-        });
-      }
-    }, 300);
-  };
+  // Scroll the notes block clear of the keyboard.
+  //
+  // The previous version scrolled to `notesLayoutY - 60`, where notesLayoutY
+  // came from the block's own `onLayout`. That y is relative to the block's
+  // PARENT — the details card at line ~841 — not to the scroll content, and
+  // the card starts ~700pt down (gallery + title + valuation). So it scrolled
+  // to a point far above the notes and the field stayed under the keyboard.
+  //
+  // ItemNotesEditor now reports its measured on-screen rect instead, and this
+  // scrolls by the OVERLAP only: enough to clear the keyboard, never more.
+  const scrollToNotes = useCallback((rect: { y: number; height: number }) => {
+    const kb = keyboardHeightRef.current;
+    if (kb <= 0) return;
+    // iOS: the keyboard overlays the window, so the visible bottom is
+    // windowHeight - keyboardHeight. Android runs edge-to-edge here too (SDK
+    // 54 default), so the window does not resize and the same math holds.
+    const keyboardTop = windowHeight - kb;
+    const overlap = rect.y + rect.height + NOTES_KEYBOARD_MARGIN - keyboardTop;
+    if (overlap <= 0) return; // already fully visible — don't move the screen
+    scrollViewRef.current?.scrollTo?.({
+      y: scrollOffsetRef.current + overlap,
+      animated: true,
+    });
+  }, [windowHeight]);
 
   // Refresh all AI intelligence data at once
   const refreshAllIntelligence = useCallback(async () => {
@@ -708,7 +733,12 @@ function ItemDetailScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+        // 0, not 80. This screen renders under the native stack header
+        // (`iconOnlyHeader`), so the KAV's own frame already starts below it —
+        // an 80pt offset added 80pt of phantom padding and shoved the whole
+        // screen up that much further than the keyboard needed.
+        // app/chat/[threadId].tsx uses 0 under the same header.
+        keyboardVerticalOffset={0}
       >
         <View style={{ flex: 1 }}>
         {/* Confetti overlay for draft result reveal */}
@@ -720,7 +750,13 @@ function ItemDetailScreen() {
           contentContainerStyle={[
             styles.content,
             { backgroundColor: theme.background },
-            { paddingBottom: keyboardVisible ? keyboardHeight + 40 : 120 },
+            // NOT `keyboardHeight + 40`: on iOS the KeyboardAvoidingView above
+            // already shrinks this ScrollView by the keyboard height, so adding
+            // it again here double-counted it — ~2× the keyboard in dead space
+            // below the content, which is what made the screen lurch. The extra
+            // 80 is just slack so a field near the bottom of the content can
+            // still be scrolled clear of the keyboard.
+            { paddingBottom: keyboardVisible ? 200 : 120 },
           ]}
           keyboardShouldPersistTaps="handled"
           refreshControl={
@@ -739,6 +775,7 @@ function ItemDetailScreen() {
               useNativeDriver: false,
               listener: (event: { nativeEvent: { contentOffset: { y: number } } }) => {
                 const offsetY = event.nativeEvent.contentOffset.y;
+                scrollOffsetRef.current = offsetY;
                 setShowStickyButton(offsetY > 200);
               },
             }
@@ -971,13 +1008,27 @@ function ItemDetailScreen() {
             )}
 
 
+            {/* Sell on the member marketplace (P2P Stage 1). Placed with the
+                other user-OWNED actions, above the paywalled sections: this is
+                something you do with YOUR item, not a feature to unlock.
+                See docs/P2P_MARKETPLACE_SPEC.md. */}
+            {!isDraft && id && !isEditing && (
+              <SellOnSparrowSection
+                itemId={id as string}
+                colors={theme}
+                currency={settings.currency}
+                hapticsEnabled={settings.hapticsEnabled}
+                suggestedPrice={priceEstimate?.priceBand?.q50 ?? null}
+                canonicalKey={savedCanonicalKey}
+              />
+            )}
+
             {/* Notes (editable) — top priority per user feedback */}
             <ItemNotesEditor
               notes={notes}
               onChangeNotes={setNotes}
               onSaveNotes={onSaveNotes}
               keyboardVisible={keyboardVisible}
-              onLayout={(y) => { notesLayoutY.current = y; }}
               onFocus={scrollToNotes}
             />
 

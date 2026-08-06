@@ -2,10 +2,19 @@
 
 The quickscan router attempts to use ML models for price prediction.
 Without a model loaded, it returns 422 for /single and fallback for /batch.
+
+**The no-model tests MOCK the model lookup — they must not depend on whether
+`server/artifacts/` happens to exist on the machine running them.** Before
+2026-08-06 they asserted 422 for category "funko" with no mock, so they passed
+in CI (clean checkout, no artifacts) and failed for anyone who had downloaded
+the 36 model artifacts locally. That is a test asserting an ENVIRONMENT rather
+than a behaviour; it cost a real bisect to rule out as a regression.
 """
 import os
 import sys
 from pathlib import Path
+
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -37,16 +46,25 @@ class TestQuickScanSingle:
         assert "detail" in data
 
     def test_single_scan_with_attributes(self):
-        """Accepts optional attributes; still 422 without model."""
-        resp = client.post(
-            "/quickscan-advanced/single",
-            json={
-                "category": "funko",
-                "edition_guess": "Chase",
-                "condition_guess": "Mint",
-                "rarity_score": 0.8,
-            },
-        )
+        """Accepts optional attributes; 422 when no model is available.
+
+        The absent model is MOCKED. "funko" has a real artifact on any machine
+        with server/artifacts/ populated, where the endpoint correctly returns
+        200 — the unmocked assertion was environment-dependent.
+        """
+        with patch(
+            "app.features.quickscan_advanced_router._get_real_prediction",
+            new=AsyncMock(return_value=None),
+        ):
+            resp = client.post(
+                "/quickscan-advanced/single",
+                json={
+                    "category": "funko",
+                    "edition_guess": "Chase",
+                    "condition_guess": "Mint",
+                    "rarity_score": 0.8,
+                },
+            )
         assert resp.status_code == 422
 
     def test_single_scan_no_body(self):
@@ -93,11 +111,19 @@ class TestQuickScanBatch:
         assert data["results"] == []
 
     def test_batch_scan_no_model_returns_zero_confidence(self):
-        """Without a model, batch results have confidence=0 and zero prices."""
-        resp = client.post(
-            "/quickscan-advanced/batch",
-            json={"image_ids": ["img-001"], "category": "funko"},
-        )
+        """Without a model, batch results have confidence=0 and zero prices.
+
+        Model absence is mocked — see the module docstring.
+        """
+        resp = None
+        with patch(
+            "app.features.quickscan_advanced_router._get_real_prediction",
+            new=AsyncMock(return_value=None),
+        ):
+            resp = client.post(
+                "/quickscan-advanced/batch",
+                json={"image_ids": ["img-001"], "category": "funko"},
+            )
         assert resp.status_code == 200
         result = resp.json()["results"][0]
         assert result["prediction"]["confidence"] == 0.0

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, ScrollView, Text, StyleSheet, Linking } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/components/Toast';
@@ -6,16 +6,12 @@ import Constants from 'expo-constants';
 import { useRouter, type Href } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AccessibilitySettings } from '@/components/AccessibilitySettings';
-import { AlertSettings } from '@/components/AlertSettings';
 import { featureFlags, SELLING_ENABLED } from '@/config/featureFlags';
-import { DEFAULT_ALERT_PREFERENCES, AlertPreferences } from '@/types/insights';
 import { useSettings } from '@/lib/settings';
 import { AnimatedPressable } from '@/motion';
 import { Ionicons } from '@expo/vector-icons';
-import { logger } from '@/lib/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
-import { collectorsApi } from '@/api/collectorsApi';
 import { useFeatureTour } from '@/lib/featureTour';
 import { PrivacySettingsSection } from '@/components/settings/PrivacySettingsSection';
 import { NotificationPreferencesSection } from '@/components/settings/NotificationPreferencesSection';
@@ -32,47 +28,10 @@ export default function Settings() {
   const { settings } = useSettings();
   const { showToast } = useToast();
   const { resetAll: resetFeatureTips } = useFeatureTour();
-  const [alertPrefs, setAlertPrefs] = useState<AlertPreferences>(DEFAULT_ALERT_PREFERENCES);
-
-  useEffect(() => {
-    let cancelled = false;
-    const loadAlertPreferences = async () => {
-      try {
-        const data = await collectorsApi.getAlertPreferences();
-        if (cancelled) return;
-        setAlertPrefs({
-          priceDropEnabled: data.price_drop_enabled,
-          priceDropThreshold: data.price_drop_threshold,
-          newListingEnabled: data.new_listing_enabled,
-          milestoneEnabled: data.milestone_enabled,
-          priceIncreaseEnabled: data.price_increase_enabled,
-          priceIncreaseThreshold: data.price_increase_threshold,
-          frequency: data.frequency,
-        });
-      } catch (err) {
-        logger.error('[Settings] Failed to load alert preferences:', err);
-      }
-    };
-    loadAlertPreferences();
-    return () => { cancelled = true; };
-  }, []);
-
-  const handleAlertPrefsUpdate = async (prefs: AlertPreferences) => {
-    setAlertPrefs(prefs);
-    try {
-      await collectorsApi.updateAlertPreferences({
-        price_drop_enabled: prefs.priceDropEnabled,
-        price_drop_threshold: prefs.priceDropThreshold,
-        new_listing_enabled: prefs.newListingEnabled,
-        milestone_enabled: prefs.milestoneEnabled,
-        price_increase_enabled: prefs.priceIncreaseEnabled,
-        price_increase_threshold: prefs.priceIncreaseThreshold,
-        frequency: prefs.frequency,
-      });
-    } catch (e) {
-      logger.error('[Settings] Failed to persist alert preferences:', e);
-    }
-  };
+  // The alert-preferences load/save pair that used to live here went with the
+  // AlertSettings panel — see the comment at its old mount point below. It hit
+  // GET/PATCH /settings/alert-preferences on every Settings open to populate a
+  // UI whose values nothing consumed.
 
   return (
     <ScrollView
@@ -95,13 +54,20 @@ export default function Settings() {
         <AccessibilitySettings />
       )}
 
-      {/* Alerts Section */}
-      {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && (
-        <AlertSettings
-          preferences={alertPrefs}
-          onUpdate={handleAlertPrefsUpdate}
-        />
-      )}
+      {/* AlertSettings was mounted here until 2026-08-06. Removed, not
+          flag-gated: it wrote `user_alert_preferences`, a table with one writer
+          (its own PATCH) and ZERO readers — no worker and no notify path
+          consults it, verified by grep across server/ plus a prod row count.
+          So its switches ("Price Drops", a 5-25% threshold, "New Listings",
+          Immediate/Daily/Weekly frequency) controlled nothing, while sitting
+          directly below NotificationPreferencesSection, which controls the
+          preferences delivery actually reads.
+
+          NOT done by flipping FEATURE_DATA_INSIGHTS_ALERTS: that flag also
+          gates the Home screen's insights card and alerts feed
+          (app/(tabs)/index.tsx:278-297, 845, 885), which work.
+
+          See docs/alerts-and-insights.md § "Two preference stores". */}
 
       {/* Account Section (profile, password, sign out, billing, etc.) */}
       <ProfileEditSection />

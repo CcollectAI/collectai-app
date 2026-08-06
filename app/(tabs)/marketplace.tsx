@@ -26,7 +26,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { formatPrice, formatDualPrice } from "@/lib/format";
@@ -655,6 +655,36 @@ const SearchScreen: React.FC = () => {
           />
         )}
 
+        {/* Member marketplace entry — P2P Stage 1.
+            Placed above Popular Searches because buying intent is highest
+            before a query is typed, and because a seller needs to SEE that
+            selling happens here: sellers list where they believe buyers are.
+            Links out to a dedicated screen rather than embedding a grid —
+            this file is 1,266 lines and its own external search is disabled
+            pre-launch. See docs/P2P_MARKETPLACE_SPEC.md. */}
+        {!trimmedQuery && (
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.push('/listings' as Href);
+            }}
+            style={[styles.memberMarketRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Browse member listings"
+          >
+            <View style={[styles.memberMarketIcon, { backgroundColor: colors.accent + '18' }]}>
+              <Ionicons name="pricetags-outline" size={18} color={colors.accent} />
+            </View>
+            <View style={styles.memberMarketText}>
+              <Text style={[styles.memberMarketTitle, { color: colors.text }]}>Member marketplace</Text>
+              <Text style={[styles.memberMarketSub, { color: colors.muted }]}>
+                Buy from other collectors — or list something you own
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+          </AnimatedPressable>
+        )}
+
         {/* Popular searches (preset chips) */}
         {!trimmedQuery && (
           <View style={styles.presetChipsSection}>
@@ -1046,6 +1076,22 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 32,
   },
+  memberMarketRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 20,
+  },
+  memberMarketIcon: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  memberMarketText: { flex: 1, gap: 2 },
+  memberMarketTitle: { fontSize: 15, fontWeight: '700' },
+  memberMarketSub: { fontSize: 12 },
   // (headerRow, headerLeft, headerTitle, headerSubtitle, headerIcons moved to MarketplacePageHeader)
   searchRow: {
     flexDirection: "row",

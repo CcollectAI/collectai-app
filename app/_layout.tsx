@@ -152,18 +152,40 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const ONBOARDING_KEY = '@sparrowcollect/onboarding_complete';
 
+// Header bar-button frame. MUST stay square: iOS 26 draws its circular "liquid
+// glass" capsule sized to the button's frame, so a non-square frame renders as
+// an oval with the glyph off its centre. Padding around an icon does NOT give a
+// square — a glyph's advance width is narrower than its line height.
+const HEADER_BTN = {
+  width: 40,
+  height: 40,
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+};
+
+// Optical centring for the back chevron ONLY.
+//
+// Measured (fontTools, Ionicons.ttf, upem 512): `chevron-back` ink spans
+// x[160,352] against a 512 advance — geometrically dead-centre, dx = 0.00pt.
+// But a "<" is not optically centred when it is geometrically centred: the
+// vertex is a single point on the left while both arms terminate on the right,
+// so the mass reads right-of-centre inside a circle. Hence the nudge.
+//
+// It is a TRANSFORM, not margin/padding, on purpose: the iOS 26 capsule is
+// drawn from the Pressable's frame, and transforms are layout-neutral, so the
+// circle stays put and only the glyph inside it moves. Changing padding here
+// would move the capsule too — see docs/ui-playbook.md.
+const BACK_CHEVRON_OPTICAL = { transform: [{ translateX: -1.5 }] };
+
 function SettingsHeaderButton({ color }: { color?: string }) {
   const router = useRouter();
   const { colors } = useAppTheme();
   return (
     <Pressable
       onPress={() => router.push('/settings')}
-      // Padding must stay SYMMETRIC. iOS 26 draws a circular "liquid glass"
-      // capsule around each bar-button item, sized to the button's frame — a
-      // `marginRight: 4` pushed the glyph 4pt off the capsule's centre, which
-      // is visible as an off-centre gear in its circle. Any asymmetric
-      // padding/margin here reintroduces it.
-      style={{ padding: 8 }}
+      // Same square frame as the back button — see HEADER_BTN. A previous
+      // `marginRight: 4` here pushed the gear 4pt off the capsule's centre.
+      style={HEADER_BTN}
       accessibilityRole="button"
       accessibilityLabel="Open settings"
     >
@@ -179,13 +201,21 @@ function HeaderBackButton({ color }: { color?: string } = {}) {
   return (
     <Pressable
       onPress={() => safeGoBack(router)}
-      // Symmetric padding — iOS 26 centres the glyph in a circular capsule
-      // sized to this frame, so any asymmetry shows as an off-centre icon.
-      style={{ padding: 8 }}
+      // FIXED SQUARE, not padding. iOS 26 sizes its capsule to this frame, and
+      // an icon glyph's advance width is narrower than its line height — so
+      // `padding: 8` produced a non-square frame (oval capsule) with the chevron
+      // sitting off its centre. An explicit square + centred content makes the
+      // capsule a true circle and centres the glyph inside it.
+      style={HEADER_BTN}
       accessibilityRole="button"
       accessibilityLabel="Go back"
     >
-      <Ionicons name="chevron-back" size={24} color={color ?? colors.text} />
+      <Ionicons
+        name="chevron-back"
+        size={24}
+        color={color ?? colors.text}
+        style={BACK_CHEVRON_OPTICAL}
+      />
     </Pressable>
   );
 }
@@ -396,6 +426,13 @@ function RootStack() {
         <Stack.Screen name="sponsor/register" options={iconOnlyHeader} />
         <Stack.Screen name="sponsor/dashboard" options={iconOnlyHeader} />
         <Stack.Screen name="watchlist-builder" options={iconOnlyHeader} />
+        {/* Member marketplace (P2P Stage 1). headerShown:false — both screens
+            render their own flat ScreenHeader, and the native stack header
+            would stack a second bar on top of it. */}
+        <Stack.Screen name="listings" options={{ headerShown: false }} />
+        <Stack.Screen name="listing/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="offers" options={{ headerShown: false }} />
+        <Stack.Screen name="legal/marketplace-terms" options={{ headerShown: false }} />
         <Stack.Screen name="purchase/index" options={iconOnlyHeader} />
         <Stack.Screen name="purchase/create-mandate" options={iconOnlyHeader} />
         <Stack.Screen name="purchase/deal/[dealId]" options={iconOnlyHeader} />

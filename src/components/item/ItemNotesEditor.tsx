@@ -12,20 +12,30 @@ interface ItemNotesEditorProps {
   onChangeNotes: (text: string) => void;
   onSaveNotes: () => void;
   keyboardVisible: boolean;
-  onLayout: (y: number) => void;
-  onFocus: () => void;
+  /**
+   * Called on focus with this block's measured position **in window
+   * coordinates**, once the keyboard frame has settled. Window coords, not an
+   * `onLayout` y: this block is nested inside the detail card, so a layout y is
+   * card-relative and useless for scrolling the parent ScrollView.
+   */
+  onFocus: (rect: { y: number; height: number }) => void;
 }
+
+/** ms to wait for the keyboard frame before measuring — matches the iOS
+ *  keyboard show animation (~250ms) with a little slack. */
+const KEYBOARD_SETTLE_MS = 300;
 
 export const ItemNotesEditor = React.memo(function ItemNotesEditor({
   notes,
   onChangeNotes,
   onSaveNotes,
   keyboardVisible,
-  onLayout,
   onFocus,
 }: ItemNotesEditorProps) {
   const { colors: theme } = useAppTheme();
   const notesInputRef = useRef<TextInput | null>(null);
+  const blockRef = useRef<View | null>(null);
+  const measureTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Track last-saved text so the Save button can disable when there's
   // nothing to save. Pre-fix 2026-04-19: button was keyboardVisible-gated,
   // which never fires on web → user had no way to save their notes.
@@ -43,6 +53,24 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
 
   const hasChanges = notes !== lastSaved;
 
+  // Report where this block actually sits on screen so the parent can scroll
+  // it clear of the keyboard. Measuring AFTER the keyboard has settled means
+  // the rect already accounts for whatever the KeyboardAvoidingView did.
+  const handleFocus = useCallback(() => {
+    if (measureTimer.current) clearTimeout(measureTimer.current);
+    measureTimer.current = setTimeout(() => {
+      blockRef.current?.measureInWindow((_x, y, _w, height) => {
+        if (typeof y === 'number' && typeof height === 'number' && height > 0) {
+          onFocus({ y, height });
+        }
+      });
+    }, KEYBOARD_SETTLE_MS);
+  }, [onFocus]);
+
+  useEffect(() => () => {
+    if (measureTimer.current) clearTimeout(measureTimer.current);
+  }, []);
+
   const handleSave = useCallback(() => {
     onSaveNotes();
     setLastSaved(notes);
@@ -51,8 +79,12 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
 
   return (
     <View
+      ref={blockRef}
+      // Android collapses layout-only Views out of the native hierarchy, and a
+      // collapsed view measures as 0 — which would silently disable the
+      // scroll-into-view. Keep it in the tree.
+      collapsable={false}
       style={styles.notesBlock}
-      onLayout={(e) => { onLayout(e.nativeEvent.layout.y); }}
     >
       <View style={styles.notesHeaderRow}>
         <Text style={[styles.label, { color: theme.muted }]}>
@@ -85,7 +117,7 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
         multiline
         value={notes}
         onChangeText={onChangeNotes}
-        onFocus={onFocus}
+        onFocus={handleFocus}
         textAlignVertical="top"
         blurOnSubmit={false}
         accessibilityLabel="Item notes"

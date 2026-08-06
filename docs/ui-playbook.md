@@ -265,12 +265,44 @@ style={{ padding: 8, marginRight: 4 }}   // gear sits 4pt left of its circle
 style={{ padding: 8 }}                   // centred
 ```
 
+**The one legal exception is a TRANSFORM.** The back chevron carries
+`BACK_CHEVRON_OPTICAL` (`app/_layout.tsx`), a `translateX: -1.5`. Measured with
+fontTools against `Ionicons.ttf` (upem 512), `chevron-back`'s ink spans
+x[160,352] inside a 512 advance — geometrically centred, dx = 0.00pt. A "<" is
+still *optically* right-of-centre inside a circle (one vertex on the left, two
+arm ends on the right), which is what reads as mis-aligned. A transform is
+layout-neutral, so the capsule stays where the 40×40 frame puts it and only the
+glyph moves. Do **not** convert it back into padding or margin.
+
 The same applies to the flat in-body header (`ScreenHeader`): its left/right
 clusters are equal-width boxes, so their **contents** must be pinned to the
 outer edge (`justifyContent: 'flex-start'` / `'flex-end'`). Otherwise a cluster
 that doesn't fill its box drifts inward — which is what happened when
 `COMMUNITY_GATED` suppressed the chat icon and left the settings gear floating
 ~46pt from the screen edge.
+
+## The splash logo: `imageWidth` sizes the CANVAS, and `icon.png` is opaque
+
+`assets/icon.png` is 1024×1024 with an **opaque cream background** (sampled
+248,249,244, flat to ±2 across the whole border) and the bird+chest art only
+spans x[207,819] — **60% of the canvas**. Two consequences for the
+`expo-splash-screen` plugin block in `app.json`:
+
+- `imageWidth` is the width of the whole canvas, not of the logo. The old
+  `imageWidth: 64` therefore drew a ~38pt logo. It is now **300** → art ≈180pt
+  wide / 229pt tall, which still fits a 320pt-wide iPhone SE.
+- `backgroundColor` must be the icon's **own** background (`#F8F9F4`). It used
+  to be Tiffany blue `#81D8D0`, and because the PNG is opaque that framed the
+  logo in a visible cream square — the "tiny square box". Making the image
+  bigger without fixing the colour just makes a *bigger* square.
+
+Swap in a transparent-background asset and this constraint goes away — but keep
+a light splash background if you do, because the art is Tiffany blue and would
+vanish on a Tiffany-blue field. `src/components/SplashScreen.tsx` (the animated
+overlay that follows the native splash) sizes the same asset independently;
+change both or the logo jumps size mid-launch.
+
+Splash changes are **native config**: they need a new build, not a reload.
 
 ## Never put a tall interactive component in a FlashList `ListHeaderComponent`
 

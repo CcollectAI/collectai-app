@@ -264,7 +264,6 @@ describe('ItemNotesEditor', () => {
         onChangeNotes={jest.fn()}
         onSaveNotes={jest.fn()}
         keyboardVisible={false}
-        onLayout={jest.fn()}
         onFocus={jest.fn()}
       />,
     );
@@ -278,7 +277,6 @@ describe('ItemNotesEditor', () => {
         onChangeNotes={jest.fn()}
         onSaveNotes={jest.fn()}
         keyboardVisible={false}
-        onLayout={jest.fn()}
         onFocus={jest.fn()}
       />,
     );
@@ -292,7 +290,6 @@ describe('ItemNotesEditor', () => {
         onChangeNotes={jest.fn()}
         onSaveNotes={jest.fn()}
         keyboardVisible={true}
-        onLayout={jest.fn()}
         onFocus={jest.fn()}
       />,
     );
@@ -306,7 +303,6 @@ describe('ItemNotesEditor', () => {
         onChangeNotes={jest.fn()}
         onSaveNotes={jest.fn()}
         keyboardVisible={false}
-        onLayout={jest.fn()}
         onFocus={jest.fn()}
       />,
     );
@@ -320,7 +316,6 @@ describe('ItemNotesEditor', () => {
         onChangeNotes={jest.fn()}
         onSaveNotes={jest.fn()}
         keyboardVisible={true}
-        onLayout={jest.fn()}
         onFocus={jest.fn()}
       />,
     );
