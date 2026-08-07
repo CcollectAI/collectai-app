@@ -415,6 +415,62 @@ org stay on their side of the line.
 - [Belastingdienst — DAC7 for platform operators](https://www.belastingdienst.nl/wps/wcm/connect/en/business/content/information-for-platform-operators-dac7)
 - [MTCA — DAC7 Guidelines (consideration definition)](https://mtca.gov.mt/docs/default-source/documents/top-bar/eservices/international/dac7/dac-7-guidelines-final.pdf)
 
+## 1g. The closed loop — a completed trade is a sold comp (built 2026-08-07)
+
+The marketplace was designed to feed Target Hit with **supply**. It also
+produces something rarer, and until 2026-08-07 it threw it away.
+
+`valuation_worker` selects `WHERE is_listing IS NOT TRUE` — it consumes **sold**
+data and deliberately ignores asking prices. Every row P2P wrote was
+`is_listing = TRUE`. So on two-sided completion the code deleted the buyable row
+and recorded nothing about what the item actually sold for.
+
+That is the exact data the pipeline is starved of. **~62,000 catalogue items
+have no price at all for one reason**: `ebay_caller.py:387 sold_comps()` returns
+`[]`, so those categories have no sold-comp source. A completed Sparrow trade is
+a real sale, at a price both parties confirmed, on an item that already carries
+a canonical identity.
+
+`_sold_comp_hook` now writes it on completion:
+
+| Field | Value | Why |
+|---|---|---|
+| `price` | **`p2p_offers.amount`** | The AGREED figure after any counter. `marketplace_listings.price` is what was hoped for; storing the ask as a sale biases every prediction upward |
+| `is_listing` | **`FALSE`** | What makes valuation_worker read it at all |
+| `source` | `sparrow_p2p` | Separable forever — the lever to exclude P2P prices, and the way to measure the marketplace's contribution |
+| `item_ref` | `category:canonical_key` | Namespaced, same as the publish hook |
+
+Awaited, not fire-and-forget: a lost buyable row is a non-event (the listing is
+gone anyway), a lost sale cannot be reconstructed. Idempotent via `WHERE NOT
+EXISTS`, because `market_hits` has no usable unique key.
+
+Verified on prod: asked €250, agreed €180, comp recorded **180**, and the row
+matches valuation_worker's predicate exactly.
+
+### The manipulation surface, stated plainly
+
+Two colluding accounts can complete a trade at any price and inject a comp. For
+an item with many comps the median absorbs it. **For one of the 62k items with
+zero other comps, a single fake sale becomes the entire price** — which is
+exactly where manipulating pays best.
+
+This ships anyway, because the data is worth having and is fully auditable
+(`listing_id` traces to both parties). `source = 'sparrow_p2p'` is the filter to
+pull if predictions start looking wrong:
+
+```sql
+-- Sold comps contributed by members, and how isolated each one is.
+SELECT mh.item_ref, mh.price_eur, mh.seen_at,
+       (SELECT count(*) FROM public.market_hits o
+         WHERE o.item_ref = mh.item_ref AND o.is_listing IS NOT TRUE
+           AND o.source <> 'sparrow_p2p') AS independent_comps
+FROM public.market_hits mh
+WHERE mh.source = 'sparrow_p2p'
+ORDER BY independent_comps ASC, mh.seen_at DESC;
+```
+
+`independent_comps = 0` is the row to look at: it is setting a price by itself.
+
 ## 5c. The C2C boundary is load-bearing — and currently undefended
 
 Researched 2026-08-07, against the regulations rather than from memory.

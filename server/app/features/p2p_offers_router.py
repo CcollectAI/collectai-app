@@ -654,8 +654,22 @@ async def confirm_exchange(
                 """,
                 str(fresh["listing_id"]),
             )
-            from app.features.p2p_listing_router import _stale_supply_hook
+            from app.features.p2p_listing_router import (
+                _sold_comp_hook, _stale_supply_hook,
+            )
             await _stale_supply_hook(str(fresh["listing_id"]))
+            # The closed loop: the trade just completed at a KNOWN, two-sided
+            # confirmed price, which is exactly the sold-comp data
+            # valuation_worker consumes and cannot get for ~62k catalogue items.
+            # Awaited, not fire-and-forget — a lost buyable row is a non-event
+            # (the listing is gone anyway), but a lost sale is data we can never
+            # reconstruct. `amount` is the AGREED figure after any counter, not
+            # the asking price.
+            await _sold_comp_hook(
+                str(fresh["listing_id"]),
+                float(fresh["amount"]),
+                fresh["currency"] or "EUR",
+            )
             fresh = dict(fresh)
             fresh["status"] = _COMPLETED
 

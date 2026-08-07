@@ -68,7 +68,13 @@ describe('formatPrice', () => {
 
   it('formats JPY amount', () => {
     const result = formatPrice(1234, 'JPY');
-    expect(result).toContain('￥');
+    // U+00A5, not the fullwidth U+FFE5 this used to assert. That expectation
+    // came from what `Intl` emitted under ja-JP, not from a decision the app
+    // made: CURRENCY_SYMBOLS has always declared '¥', and getCurrencySymbol
+    // renders it in the price inputs. So a JPY user saw '¥' while typing and
+    // '￥' in the formatted result. Now both come from the same table.
+    expect(result).toContain('¥');
+    expect(result.startsWith('¥')).toBe(true);
   });
 
   it('formats GBP amount', () => {

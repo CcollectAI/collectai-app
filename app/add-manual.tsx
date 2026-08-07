@@ -48,6 +48,7 @@ import { CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 import { CUSTOM_CATEGORY_SENTINEL } from '@/components/add-manual/CategoryPickerModal';
 import { getCategoryFields } from '@/constants/categoryFields';
 import { dmyToIso } from '@/lib/eventDate';
+import { getCurrencySymbol } from '@/lib/format';
 import { withTimeout, TimeoutError } from '@/lib/withTimeout';
 
 // supabase-js ships NO per-request timeout, and both auth reads below sit
@@ -83,7 +84,10 @@ const ManualAddScreen: React.FC = () => {
   } = useLocalSearchParams<{ imageUri?: string; category?: string; name?: string; condition?: string; attrs?: string }>();
   const handoffConsumedRef = React.useRef(false);
 
-  const currencySymbol = settings.currency === 'EUR' ? '€' : settings.currency === 'USD' ? '$' : settings.currency === 'GBP' ? '£' : settings.currency === 'JPY' ? '¥' : settings.currency === 'KRW' ? '₩' : settings.currency === 'AUD' ? 'A$' : settings.currency === 'CAD' ? 'C$' : settings.currency;
+  // Was a second, inline copy of the CURRENCY_SYMBOLS table. Two symbol tables
+  // drift: add a currency to settings and this ternary silently falls through
+  // to the bare ISO code while every other screen shows a symbol.
+  const currencySymbol = getCurrencySymbol(settings.currency);
 
   const nameField = useFormField(compose(required("Item name"), maxLength("Item name", 255)));
   const [category, setCategory] = useState("");

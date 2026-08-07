@@ -262,3 +262,75 @@ def test_skip_is_logged_loudly_enough_to_see():
     skip_block = src.split("_reaches_target_hit(", 1)[1].split("return", 1)[0]
     assert "logger.warning" in skip_block, "the skip must not be logged at INFO"
     assert "logger.info" not in skip_block
+
+
+# ── 4. The closed loop: a completed trade becomes a sold comp ───────────────
+#
+# Until 2026-08-07 completion deleted the buyable row and recorded NOTHING about
+# the price the item actually sold for. `valuation_worker` selects
+# `WHERE is_listing IS NOT TRUE` — it consumes sold data and ignores asking
+# prices — while every row P2P wrote was `is_listing = TRUE`. So the single
+# highest-quality datum the marketplace produces (a two-sided-confirmed sale at
+# a known price) fed nothing, while ~62k catalogue items have no price at all
+# precisely because `ebay_caller.sold_comps()` returns [].
+
+def test_completion_writes_a_sold_comp():
+    from app.features import p2p_offers_router as offers_mod
+    src = _code_only(inspect.getsource(offers_mod.confirm_exchange))
+    assert "_sold_comp_hook" in src, "completion does not record the sale"
+
+
+def test_sold_comp_is_awaited_not_fire_and_forget():
+    """A lost buyable row is a non-event; a lost sale cannot be reconstructed."""
+    from app.features import p2p_offers_router as offers_mod
+    src = _code_only(inspect.getsource(offers_mod.confirm_exchange))
+    assert "await _sold_comp_hook" in src
+    assert "spawn_bg(_sold_comp_hook" not in src
+
+
+def test_sold_comp_is_not_a_listing_row():
+    """`is_listing = FALSE` is the whole point — TRUE would make it look like
+    supply and valuation_worker would skip it, which is the bug being fixed.
+
+    Asserts on the VALUES tail of the INSERT specifically. A looser grep over
+    the function body matches the docstring, which discusses both spellings —
+    the test passed on the prose and would have passed on wrong SQL.
+    """
+    src = inspect.getsource(listings._sold_comp_hook)
+    assert "now(), now(), FALSE" in src, "sold comp must be is_listing = FALSE"
+    assert "now(), now(), TRUE" not in src, "that is the publish hook's row shape"
+    # And the publish hook still writes the opposite, so the two are distinct.
+    assert "now(), now(), TRUE" in inspect.getsource(listings._publish_supply_hook)
+
+
+def test_sold_comp_uses_the_agreed_amount_not_the_asking_price():
+    """After a counter, `p2p_offers.amount` is what was paid;
+    `marketplace_listings.price` is what was hoped for. Storing the ask as a
+    sale biases every prediction upward."""
+    from app.features import p2p_offers_router as offers_mod
+    call = _code_only(inspect.getsource(offers_mod.confirm_exchange))
+    assert 'fresh["amount"]' in call
+    hook = _code_only(inspect.getsource(listings._sold_comp_hook))
+    assert "l.price" not in hook and "row[\"price\"]" not in hook
+
+
+def test_sold_comp_is_idempotent():
+    """market_hits has no usable unique key, so a re-confirm would otherwise
+    write a second sale — the same trap the publish hook hit with ON CONFLICT."""
+    src = _code_only(inspect.getsource(listings._sold_comp_hook))
+    assert "WHERE NOT EXISTS" in src
+
+
+def test_sold_comp_is_tagged_with_its_own_source():
+    """Separable forever: the lever to exclude P2P prices from valuation if they
+    prove unreliable, and the way to measure the marketplace's contribution."""
+    assert listings.SPARROW_SOLD_SOURCE == "sparrow_p2p"
+    src = _code_only(inspect.getsource(listings._sold_comp_hook))
+    assert "SPARROW_SOLD_SOURCE" in src
+
+
+def test_sold_comp_requires_a_canonical_identity():
+    """No canonical identity means no item_ref, and valuation_worker requires
+    one — the row would be inert. Same predicate as the publish hook."""
+    src = _code_only(inspect.getsource(listings._sold_comp_hook))
+    assert "_reaches_target_hit(" in src
