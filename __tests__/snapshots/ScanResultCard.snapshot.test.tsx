@@ -10,23 +10,36 @@ import type { QuickScanResult, CatalogAlternative } from '../../src/data/types';
 // Mocks
 // ---------------------------------------------------------------------------
 
+// Mocking a MODULE replaces all of it, so every export the component uses has
+// to be here. ScanResultCard gained `useScannerTheme` after this test was last
+// able to run, and a partial module mock fails as "not a function" rather than
+// as a missing mock — which reads like a component bug.
+//
+// Shaped like the real one (src/theme/useAppTheme.ts): scanner theme is the
+// base theme with a dark palette and `isDark: true`. Returning the light colours
+// here would snapshot a card that never renders in the app.
+const __themeColors = () => ({
+  card: '#FFFFFF',
+  text: '#0F172A',
+  muted: '#64748B',
+  background: '#F7FAF9',
+  accent: '#81D8D0',
+  border: '#E2E8F0',
+  skeleton: '#E2E8F0',
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  info: '#3B82F6',
+  brand: { base: '#81D8D0', dark: '#5FBFB6' },
+  accentText: '#FFFFFF',
+});
+
 jest.mock('../../src/hooks/useAppTheme', () => ({
-  useAppTheme: () => ({
-    colors: {
-      card: '#FFFFFF',
-      text: '#0F172A',
-      muted: '#64748B',
-      background: '#F7FAF9',
-      accent: '#81D8D0',
-      border: '#E2E8F0',
-      skeleton: '#E2E8F0',
-      success: '#10B981',
-      warning: '#F59E0B',
-      error: '#EF4444',
-      info: '#3B82F6',
-      brand: { base: '#81D8D0', dark: '#5FBFB6' },
-      accentText: '#FFFFFF',
-    },
+  useAppTheme: () => ({ colors: __themeColors(), isDark: false }),
+  useScannerTheme: () => ({
+    colors: __themeColors(),
+    status: { success: '#10B981', warning: '#F59E0B', error: '#EF4444', info: '#3B82F6' },
+    isDark: true,
   }),
 }));
 
@@ -36,15 +49,6 @@ jest.mock('react-native-svg', () => {
     __esModule: true,
     default: (props: any) => <View testID="svg" {...props} />,
     Circle: (props: any) => <View testID="svg-circle" {...props} />,
-  };
-});
-
-jest.mock('react-native-view-shot', () => {
-  const { View } = require('react-native');
-  const React = require('react');
-  return {
-    __esModule: true,
-    default: React.forwardRef((props: any, ref: any) => <View {...props} ref={ref} />),
   };
 });
 
@@ -100,9 +104,12 @@ jest.mock('../../src/components/quickscan/ScanFeedbackPanel', () => ({
   ScanFeedbackPanel: () => null,
 }));
 
-jest.mock('../../src/components/quickscan/ShareCard', () => ({
-  ShareCard: () => null,
-}));
+// ShareCard was removed entirely in 69c4224, but this mock outlived it. Because
+// jest.mock() resolves the path eagerly, a mock of a deleted module takes the
+// WHOLE suite down — so the ScanResultCard snapshots this file exists for have
+// not run since that commit. Same shape as the react-native-view-shot mock
+// removed alongside it: a mock is a dependency, and a dependency that no longer
+// exists is a broken import wearing a test's clothes.
 
 jest.mock('../../src/api/collectorsApi', () => ({
   submitScanFeedback: jest.fn(),
@@ -166,7 +173,7 @@ describe('ScanResultCard snapshots', () => {
         brand: null,
         rarity: 'Holo Rare',
         setCode: 'base1',
-        imageUrl: 'https://example.com/alt.jpg',
+        hasReferenceImage: true,
         matchScore: 0.82,
         matchReason: 'Similar card variant',
       },
