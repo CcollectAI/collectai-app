@@ -34,6 +34,7 @@ from pydantic import BaseModel, Field, field_validator
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.features.pagination import pagination_params
+from app.lib.blocks import raise_if_blocked
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
 
@@ -284,6 +285,14 @@ async def create_offer(
         if listing["status"] != "active" or listing["delisted_at"] is not None:
             raise error_response(409, "This listing is no longer available",
                                  code="LISTING_INACTIVE")
+
+        # Blocking has to cover the offer path, not just chat and browse.
+        # Without this a blocked member still reaches the person who blocked
+        # them — an offer creates a notification and a row on their Offers
+        # screen, which is precisely the contact blocking is meant to stop.
+        # Symmetric, so it also stops YOU from offering on someone you blocked.
+        await raise_if_blocked(conn, user_id, str(listing["seller_id"]),
+                               "You can't make an offer on this listing")
 
         # One live offer per buyer per listing. Without this a buyer can spam
         # a seller with a ladder of offers and the seller cannot tell which is

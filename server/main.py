@@ -215,6 +215,7 @@ from app.features.catalog_browser_router import router as catalog_browser_router
 from app.features.grading_router import router as grading_router
 from app.features.export_router import router as export_router
 from app.features.marketplace_listing_router import router as marketplace_listing_router
+from app.features.p2p_listing_router import ops_router as p2p_ops_router
 from app.features.p2p_listing_router import router as p2p_listing_router
 from app.features.p2p_offers_router import router as p2p_offers_router
 from app.features.chat_router import router as chat_router
@@ -296,6 +297,11 @@ app.include_router(marketplace_listing_router)
 # P2P member-to-member listings (Stage 1: no payments). See
 # docs/P2P_MARKETPLACE_SPEC.md.
 app.include_router(p2p_listing_router)
+# DSA moderation (Art 16 queue + Art 17 statement of reasons). Prefix-less and
+# Ops-Key authed, so it sits at /ops/listing-reports alongside the other
+# operator endpoints rather than under /p2p. Registered on `app` only, matching
+# its P2P siblings — the P2P surface is deliberately not mounted under /v1.
+app.include_router(p2p_ops_router)
 # P2P Stage 2: offers, two-sided completion, mutual grading.
 app.include_router(p2p_offers_router)
 app.include_router(chat_router)

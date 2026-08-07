@@ -13,7 +13,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { safeGoBack } from '@/lib/goBack';
 
-const LAST_UPDATED = 'April 11, 2026';
+const LAST_UPDATED = 'August 7, 2026';
 
 function UserPolicyScreenInner() {
   const router = useRouter();
@@ -139,6 +139,9 @@ function UserPolicyScreenInner() {
           {'\u2022'} Block users who are harassing you — blocking is immediate and mutual{'\n'}
           {'\u2022'} Contact us at support@sparrowcollect.com for issues not covered by in-app reporting{'\n'}
           {'\u2022'} Provide as much context as possible (screenshots, message history, item links) to help us investigate{'\n\n'}
+          <Text style={styles.bold}>We have zero tolerance for objectionable content and abusive users.</Text> We act on reports of objectionable or unlawful content within 24 hours of receiving them, removing the content and, where warranted, removing the member who posted it.{'\n\n'}
+          Where we act on a report about your own content, we tell you what we decided, the ground for it, whether it was decided automatically or by a person, and how to contest it \u2014 see Appeals below.{'\n\n'}
+          Blocking works in both directions across the whole service: a blocked member&apos;s listings stop appearing for you, they cannot send you an offer, and neither of you can message the other.{'\n\n'}
           We review all reports and take appropriate action. False or malicious reports intended to harm other users are themselves a violation of this Policy.
         </Text>
 
@@ -158,7 +161,7 @@ function UserPolicyScreenInner() {
           If you believe an enforcement action was applied in error, you may appeal:{'\n'}
           {'\u2022'} Send an appeal to support@sparrowcollect.com within 30 days of the action{'\n'}
           {'\u2022'} Include your username, the action taken, and your explanation of why you believe it was in error{'\n'}
-          {'\u2022'} Appeals are reviewed by a different team member than the one who issued the original action{'\n'}
+          {'\u2022'} Your appeal is reviewed afresh, against the evidence you provide{'\n'}
           {'\u2022'} You will receive a response within 14 business days{'\n'}
           {'\u2022'} The appeal decision is final{'\n\n'}
           During an appeal, the enforcement action remains in effect unless otherwise communicated.

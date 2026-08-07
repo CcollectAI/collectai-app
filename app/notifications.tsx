@@ -54,6 +54,10 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   insight: "bulb-outline",
   catalog_mapped: "checkmark-done-outline",
   sponsor_message: "megaphone-outline",
+  // DSA Art 17 statement of reasons — written by /ops/listing-reports/{id}/action
+  // when a reported listing is decided. Distinct from `system` because it is a
+  // decision ABOUT the recipient's own content and carries a redress route.
+  moderation: "shield-outline",
   system: "information-circle-outline",
 };
 

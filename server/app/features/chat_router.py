@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.lib.blocks import is_blocked
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit
@@ -106,18 +107,15 @@ async def _check_not_blocked(
     user_id: str,
     other_user_id: str,
 ) -> None:
-    """Raise 403 if either user has blocked the other."""
-    blocked = await conn.fetchval(
-        """
-        SELECT 1 FROM user_blocks
-        WHERE (blocker_id = $1::uuid AND blocked_id = $2::uuid)
-           OR (blocker_id = $2::uuid AND blocked_id = $1::uuid)
-        LIMIT 1
-        """,
-        user_id,
-        other_user_id,
-    )
-    if blocked:
+    """Raise 403 if either user has blocked the other.
+
+    Delegates to app/lib/blocks.py so chat and the marketplace read `user_blocks`
+    through ONE query. This used to be the only place blocks were enforced, and
+    the P2P surfaces shipped without them — a second private copy is how that
+    happens again. The message and error code stay chat-specific; only the
+    lookup is shared.
+    """
+    if await is_blocked(conn, user_id, other_user_id):
         raise error_response(403, "Cannot message this user", code=ErrorCode.FORBIDDEN)
 
 

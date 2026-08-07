@@ -9,14 +9,25 @@
  * Everything here reflects what the code ACTUALLY does. Specifically:
  *  - Sparrow never touches funds (there is no payment endpoint — enforced by a
  *    test, see server/tests/test_p2p_listing_router.py).
- *  - Reports go to `listing_reports` with a status and a resolution note, which
- *    is what makes a statement of reasons possible.
+ *  - The statement of reasons in §5 is real: POST /ops/listing-reports/{id}/action
+ *    writes it to notification_history in the same transaction as the takedown,
+ *    so a listing cannot be removed with the seller un-notified.
+ *  - Blocking in §5 really is service-wide (app/lib/blocks.py). It was chat-only
+ *    until 2026-08-07, and this section would have overstated it before then.
  *  - Nothing is authenticated or vetted by us, and we do not claim otherwise.
  *
- * ⚠️ NOT legal advice and NOT a substitute for review. Before Stage 3
- * (payments/escrow) a Dutch lawyer must review this — PSD2, DAC7 reporting and
- * consumer-withdrawal rights all change the moment money flows through us.
- * See docs/P2P_MARKETPLACE_SPEC.md §5.
+ * Updated 2026-08-07 after checking the regulations rather than recalling them
+ * (docs/P2P_MARKETPLACE_SPEC.md §5a-§5c):
+ *  - §3/§3a: GPSR covers second-hand goods. A private seller owes nothing under
+ *    it; a trader does. Our exemption from the GPSR/DSA *marketplace* regimes
+ *    rests on being C2C, which is why §3 now asks traders to identify
+ *    themselves and reserves the right to withdraw access if they don't.
+ *  - §6: the old text said reporting obligations would only arise "if we later
+ *    introduce payment processing". That was wrong — DAC7 turns on the
+ *    consideration being KNOWN, which it already is.
+ *
+ * ⚠️ NOT legal advice and NOT a substitute for review. A Dutch lawyer should
+ * review this before real users, not only before Stage 3.
  */
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
@@ -87,14 +98,36 @@ function MarketplaceTermsInner() {
           actual condition clear.{'\n\n'}
           If you sell in the course of a business rather than as a private
           individual, you are a trader under EU consumer law and take on additional
-          obligations — including a 14-day right of withdrawal — that Sparrow does
-          not administer for you. You must identify yourself as a trader if you are one.
+          obligations — including a 14-day right of withdrawal, and product-safety
+          duties under the EU General Product Safety Regulation — that Sparrow does
+          not administer for you.{' '}
+          <Text style={{ color: colors.text }}>
+            The marketplace is for private individuals selling from their own
+            collection. You must tell us if you are a trader.
+          </Text>{' '}
+          We may ask you to confirm your status, and may withdraw marketplace access
+          from a trader who does not identify themselves.
+        </Section>
+
+        <Section title="3a. Product safety">
+          The EU General Product Safety Regulation applies to second-hand goods as
+          well as new ones. A private individual selling from their own collection
+          has no obligations under it; a trader does, and those obligations are
+          theirs, not ours.{'\n\n'}
+          <Text style={{ color: colors.text }}>
+            Sparrow does not inspect, test or verify the safety of any item.
+          </Text>{' '}
+          You must not list an item you know to be unsafe, subject to a safety
+          recall, or withdrawn from sale. If you learn that something you have sold
+          is subject to a recall, tell the buyer and tell us. If you tell us a listed
+          item is unsafe, we will remove it and inform the seller of the reason.
         </Section>
 
         <Section title="4. Prohibited items">
           You may not list: counterfeit, replica or unauthorised reproductions
           presented as genuine; stolen goods; items you do not have; weapons;
-          hazardous materials; anything whose sale is restricted where you or the
+          hazardous materials; items subject to a safety recall or otherwise known
+          to be unsafe; anything whose sale is restricted where you or the
           buyer live; or any item that infringes someone else&apos;s trade mark or
           copyright.{'\n\n'}
           Graded or authenticated items must show the real certification and grader.
@@ -103,9 +136,20 @@ function MarketplaceTermsInner() {
 
         <Section title="5. Reporting and enforcement">
           Every listing has a Report action. Reports are recorded with a reason and
-          reviewed. Where we act on a report we will remove or restrict the listing
-          and record the reason for that decision, and we will inform the affected
-          member.{'\n\n'}
+          reviewed.{' '}
+          <Text style={{ color: colors.text }}>
+            We act on reports of objectionable or unlawful content within 24 hours
+            of receiving them.
+          </Text>{'\n\n'}
+          Where we decide on a reported listing, we tell the seller: what we
+          decided, the ground we relied on, whether the decision was made
+          automatically or by a person, and how to contest it. You will receive
+          that notice in the app. To contest a decision, contact
+          support@sparrowcollect.com and it will be looked at again.{'\n\n'}
+          You can also block another member. Blocking is immediate and works in
+          both directions across the whole service — their listings stop appearing
+          for you, they cannot make you an offer, and neither of you can message
+          the other.{'\n\n'}
           We may remove listings, restrict marketplace access, or close accounts
           where these terms are breached. Repeated or serious breaches — in
           particular counterfeits — will end marketplace access.
@@ -113,10 +157,17 @@ function MarketplaceTermsInner() {
 
         <Section title="6. Taxes">
           You are responsible for any tax arising from your sales, including income
-          tax and VAT where it applies to you. Sparrow does not withhold, collect,
-          or report tax on your behalf at this stage. If we later introduce payment
-          processing, reporting obligations may apply to us and to you, and we will
-          tell you before that happens.
+          tax and VAT where it applies to you. Sparrow does not withhold or collect
+          tax on your behalf.{'\n\n'}
+          <Text style={{ color: colors.text }}>
+            EU rules on platform reporting (DAC7) can require us to collect
+            information about sellers and report it to the Belastingdienst.
+          </Text>{' '}
+          These rules can apply because we know the agreed price of a trade, even
+          though no money passes through us. Most members are below the reporting
+          threshold — fewer than 30 sales and under EUR 2,000 in a year — and are
+          not reported. If you are above it, we will ask you for the information we
+          need and will tell you before anything about you is reported.
         </Section>
 
         <Section title="7. Your data">

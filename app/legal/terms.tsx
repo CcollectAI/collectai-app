@@ -12,7 +12,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { safeGoBack } from '@/lib/goBack';
 
-const LAST_UPDATED = 'April 11, 2026';
+const LAST_UPDATED = 'August 7, 2026';
 
 function TermsOfServiceScreenInner() {
   const router = useRouter();
@@ -107,6 +107,18 @@ function TermsOfServiceScreenInner() {
           {'\u2022'} A platform fee may apply to sales facilitated through the Service — current fee schedules are displayed at listing creation{'\n'}
           {'\u2022'} We reserve the right to modify fee structures with 30 days advance notice{'\n\n'}
           We are not liable for failed transactions, shipping issues, buyer disputes, or any losses arising from peer-to-peer sales. The Deal Desk feature facilitates offers and counteroffers between users but does not guarantee completion of any transaction.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>7a. The Sparrow Member Marketplace</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          Separately from listing on external marketplaces, the Service lets members list collectibles to other members. That relationship is governed by the <Text style={styles.bold}>Marketplace Terms</Text>, which you should read before listing or making an offer. In summary:{'\n\n'}
+          {'•'} <Text style={styles.bold}>We never handle money.</Text> There is no checkout, no escrow and no buyer protection. Payment and delivery are arranged directly between members{'\n'}
+          {'•'} <Text style={styles.bold}>No platform fee applies</Text> to member-to-member listings — the fee schedule in section 7 above relates to external marketplaces only{'\n'}
+          {'•'} The member marketplace is for private individuals selling from their own collection. If you sell in the course of a business you are a trader, you carry the additional obligations that come with that — including consumer-withdrawal rights and product-safety duties under the EU General Product Safety Regulation — and you must tell us{'\n'}
+          {'•'} We do not inspect, test, authenticate or verify the safety of any item. Items subject to a safety recall, or known to be unsafe, may not be listed{'\n'}
+          {'•'} Reported listings are reviewed within 24 hours. Where we act, we tell the seller what we decided, on what ground, whether a person or an automated system decided it, and how to contest it{'\n'}
+          {'•'} EU platform-reporting rules (DAC7) may require us to collect and report seller information to the Belastingdienst. We will tell you before anything about you is reported{'\n\n'}
+          Where these Terms and the Marketplace Terms conflict on a member-to-member sale, the Marketplace Terms apply.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>8. User Corrections & Feedback</Text>

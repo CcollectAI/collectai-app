@@ -415,6 +415,67 @@ org stay on their side of the line.
 - [Belastingdienst — DAC7 for platform operators](https://www.belastingdienst.nl/wps/wcm/connect/en/business/content/information-for-platform-operators-dac7)
 - [MTCA — DAC7 Guidelines (consideration definition)](https://mtca.gov.mt/docs/default-source/documents/top-bar/eservices/international/dac7/dac-7-guidelines-final.pdf)
 
+## 5c. The C2C boundary is load-bearing — and currently undefended
+
+Researched 2026-08-07, against the regulations rather than from memory.
+
+### What being purely C2C buys us
+
+Both **GPSR** and **DSA Arts 29–32** define an online marketplace the same way:
+an intermediary that lets consumers conclude distance contracts **with traders**.
+A platform where every seller is a consumer falls outside *both*.
+
+| Regime | Applies to a marketplace | Applies to Sparrow today |
+|---|---|---|
+| GPSR (in force 13 Dec 2024) — internal safety procedures, Safety Gate registration, seller traceability | yes, if traders sell | **No** — no traders |
+| DSA Arts 29–32 — trader traceability / KYBC | yes, if traders sell | **No** — no traders |
+| GPSR obligations on the *seller* | traders only | **No** — consumers selling second-hand owe nothing |
+| DSA Arts 16–17 — notice-and-action, statement of reasons | **every hosting provider** | **Yes**, regardless of size |
+
+GPSR *does* cover second-hand goods, so "it's all used collectibles" is not the
+reason we are out of scope. **Being C2C is.**
+
+### Why that is fragile
+
+`app/legal/marketplace-terms.tsx` says *"You must identify yourself as a trader
+if you are one."* That is self-declaration with no detection and no consequence.
+One member selling regularly for profit pulls us into GPSR marketplace
+obligations and DSA trader traceability at once — and we would not know.
+
+**This is exactly the boundary Vinted polices.** Vinted Pro verifies a business
+registration number at sign-up, and where Vinted sees trader-like signals —
+sales pattern, volume, sourcing — it *requires* conversion to Pro and **blocks
+accounts that refuse**. Their C2C side stays genuinely C2C because something
+enforces it. We have the clause; they have the mechanism.
+
+**Recommended, and deliberately not Vinted's pipeline:** a threshold alert to
+the founder (e.g. N completed sales by one member in a rolling year), so we
+learn we have a trader before a regulator does. That preserves the posture at
+near-zero cost. Building verification, Pro accounts and trader disclosure is
+Stage 3-scale work and is not justified until the alert actually fires.
+
+### What was built instead (2026-08-07)
+
+Two gaps that were real regardless of the trader question:
+
+- **Blocking now covers the marketplace.** `user_blocks` was enforced only in
+  chat, so a blocked member's listings still showed and they could still send
+  offers. Apple App Review Guideline 1.2 asks for blocking *from the service*.
+  One shared implementation in `app/lib/blocks.py`; chat delegates to it.
+- **DSA Art 17 is implemented.** `listing_reports` had carried `status`,
+  `resolution_note` and `resolved_at` since Stage 1 with nothing writing them.
+  `POST /ops/listing-reports/{id}/action` now resolves reports, removes the
+  listing, awaits the supply hook, and writes a statement of reasons to the
+  seller — all in one transaction, so a removal cannot stand with the seller
+  un-notified.
+
+### Still open
+
+- **Apple 1.2 has two limbs we do not meet**: no filtering of objectionable
+  material in listing titles/descriptions, and no 24-hour action commitment in
+  the terms. The report path and blocking are done; these are not.
+- **Trader detection**, per above.
+
 ## 6. Build order
 
 1. `P2P_MARKETPLACE_ENABLED` flag + `marketplace_id = 'sparrow'` seed

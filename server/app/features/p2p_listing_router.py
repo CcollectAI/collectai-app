@@ -13,6 +13,7 @@ marketplace. Without that this is just a classifieds board.
 """
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -22,10 +23,11 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
-from app.auth import get_current_user_id
+from app.auth import get_current_user_id, require_ops_key
 from app.errors import error_response
 from app.features.pagination import pagination_params
 from app.lib.bg_tasks import spawn_bg
+from app.lib.blocks import blocked_user_ids, is_blocked
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
 
@@ -456,6 +458,7 @@ async def browse_listings(
         return ListingListResponse(listings=[])
 
     async with pool.acquire() as conn:
+        hidden = await blocked_user_ids(conn, user_id)
         rows = await conn.fetch(
             """
             SELECT l.id, l.user_id, l.item_id, l.listing_title,
@@ -515,6 +518,12 @@ async def browse_listings(
               AND ($11::numeric IS NULL
                    OR l.price * COALESCE(fx.rate, 1) <= $11::numeric)
               AND ($14::text IS NULL OR l.listing_title ILIKE $14::text)
+              -- Blocking reaches the marketplace, not just chat. Symmetric:
+              -- $15 carries blocks in BOTH directions, so neither party sees
+              -- the other's listings. An empty array leaves every row (=ANY on
+              -- '{}' is FALSE, so NOT ... is TRUE), which is what an anonymous
+              -- or block-free caller must get. See app/lib/blocks.py.
+              AND NOT (l.user_id = ANY($15::uuid[]))
             -- Whitelisted sort. A CASE over a validated enum rather than
             -- string interpolation: the pattern on the Query already rejects
             -- anything else, but building ORDER BY from a request value is
@@ -527,7 +536,7 @@ async def browse_listings(
             """,
             SPARROW_MARKETPLACE_KEY, _STATUS_ACTIVE,
             cats, canonical_key, mine, user_id, limit, offset, sort,
-            min_dec, max_dec, fx_codes, fx_rates, term,
+            min_dec, max_dec, fx_codes, fx_rates, term, hidden,
         )
 
     return ListingListResponse(listings=[
@@ -757,6 +766,15 @@ async def get_listing(
             """,
             listing_id, SPARROW_MARKETPLACE_KEY,
         )
+        # A block hides the listing on the deep-link path too, otherwise the
+        # browse filter is cosmetic: a Target Hit URL, a shared link or a
+        # guessed id would still open a blocked member's listing.
+        #
+        # Deliberately the SAME 404 as "no such listing", not a 403. A distinct
+        # status would confirm the listing exists to the person who was blocked,
+        # which is exactly what they must not learn.
+        if r is not None and await is_blocked(conn, user_id, str(r["user_id"])):
+            r = None
     if r is None:
         raise error_response(404, "Listing not found", code="LISTING_NOT_FOUND")
 
@@ -881,3 +899,241 @@ async def report_listing(
             )
 
     return {"ok": True}
+
+
+# ── DSA moderation — Article 16 notice-and-action, Article 17 statement of reasons ──
+#
+# Article 17 sits in SECTION 2 of the DSA (hosting services), so the Article 19
+# micro-enterprise exclusion does NOT reach it — that exclusion only covers
+# Section 3 (Arts 20-28). Acting on a report and saying nothing to the seller is
+# therefore not an option available to us at any size.
+#
+# The report intake above already satisfied Art 16. What was missing was the
+# other half: `listing_reports` has had `status`, `resolution_note` and
+# `resolved_at` columns since Stage 1 and NOTHING ever wrote them, and the
+# seller was never told. Storage without a writer and without a reader is the
+# exact shape this codebase keeps shipping (learning_silent_fallbacks_hide_dead_features).
+#
+# Ops Key rather than JWT, and namespaced under /ops/ to match
+# /ops/catalog-suggestions/{id}/action — this is an operator action, not a user
+# one. See docs/API.md "Operations".
+
+_MODERATION_GROUNDS = {
+    # Art 17(3)(d)-(e): the statement must say whether the ground is a legal one
+    # or a contractual one, because the redress route differs.
+    "illegal_content": "the content is unlawful",
+    "terms_breach": "the content breaches the Sparrow marketplace terms",
+    "counterfeit": "the item appears to be counterfeit or a replica",
+    "prohibited_item": "the item is not permitted on Sparrow",
+    "misleading": "the listing description is materially misleading",
+}
+
+
+def _compose_statement(
+    listing_title: str,
+    removed: bool,
+    ground: str,
+    explanation: Optional[str],
+) -> str:
+    """Build the Art 17 statement of reasons.
+
+    A pure function so the required elements can be asserted directly. Art 17(3)
+    lists what a statement MUST contain, and an operator typing free text would
+    omit one of them sooner or later:
+
+      (a) whether the content was removed / access disabled  -> the verb below
+      (c) the facts and circumstances relied on              -> title + ground
+                                                                (+ explanation)
+      (b) whether AUTOMATED MEANS were used                  -> stated explicitly
+      (d)/(e) the legal or contractual ground                -> _MODERATION_GROUNDS
+      (f) redress possibilities                              -> the closing line
+
+    The automated-means sentence is true only while every decision comes from a
+    human calling this endpoint. If automated moderation is ever added, this
+    sentence has to change with it — pinned by
+    test_statement_declares_no_automated_means.
+    """
+    ground_text = _MODERATION_GROUNDS[ground]
+    parts = [
+        f'Your listing "{listing_title}" was '
+        + ("removed" if removed else "reviewed and left online")
+        + f" following a report from another member. Ground: {ground_text}."
+    ]
+    if explanation:
+        parts.append(f"Details: {explanation}")
+    parts.append(
+        "This decision was made by a person, not automatically. "
+        "If you believe it is wrong, contact support and it will be reviewed again."
+    )
+    return " ".join(parts)
+
+
+class ModerationAction(BaseModel):
+    """An operator's decision on a reported listing."""
+
+    # 'remove' takes the listing down; 'dismiss' closes the reports and leaves
+    # it up. Both are decisions, and Art 17 is owed for a removal.
+    action: str = Field(..., pattern=r"^(remove|dismiss)$")
+    ground: str = Field(..., max_length=40)
+    # Free text shown verbatim to the seller. Art 17(3)(c) wants the facts and
+    # circumstances relied on, not just a category.
+    explanation: Optional[str] = Field(None, max_length=1000)
+
+
+# Prefix-less, so the paths land at /ops/... rather than /p2p/ops/... — the
+# convention every other operator endpoint follows (see docs/API.md
+# "Operations" and /ops/catalog-suggestions). Registered separately in main.py.
+ops_router = APIRouter(tags=["P2P Moderation"])
+
+
+@ops_router.get("/ops/listing-reports", summary="Open moderation queue (ops)")
+async def list_open_reports(
+    _: bool = Depends(require_ops_key),
+    pagination: tuple[int, int] = Depends(pagination_params),
+) -> dict:
+    """Reported listings awaiting a decision, oldest first.
+
+    Oldest first on purpose: Art 16 requires timely handling, and a
+    newest-first queue lets the oldest complaint starve
+    (learning_per_category_fairness_in_select_queues).
+    """
+    limit, offset = pagination
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT r.listing_id,
+                   count(*)            AS open_reports,
+                   min(r.created_at)   AS first_reported_at,
+                   array_agg(DISTINCT r.reason) AS reasons,
+                   l.listing_title, l.user_id AS seller_id, l.status
+            FROM public.listing_reports r
+            JOIN public.marketplace_listings l ON l.id = r.listing_id
+            WHERE r.status = 'open'
+            GROUP BY r.listing_id, l.listing_title, l.user_id, l.status
+            ORDER BY min(r.created_at) ASC
+            LIMIT $1 OFFSET $2
+            """,
+            limit, offset,
+        )
+    return {"reports": [
+        {
+            "listing_id": str(r["listing_id"]),
+            "listing_title": r["listing_title"],
+            "seller_id": str(r["seller_id"]),
+            "listing_status": r["status"],
+            "open_reports": int(r["open_reports"]),
+            "first_reported_at": r["first_reported_at"],
+            "reasons": list(r["reasons"] or []),
+        }
+        for r in rows
+    ]}
+
+
+@ops_router.post("/ops/listing-reports/{listing_id}/action",
+                 summary="Decide a reported listing + issue the DSA statement of reasons (ops)")
+async def action_listing_reports(
+    listing_id: str,
+    payload: ModerationAction,
+    _: bool = Depends(require_ops_key),
+) -> dict:
+    """Resolve every open report on a listing, and TELL THE SELLER why.
+
+    The statement of reasons is not a nicety bolted on afterwards — under
+    Art 17 it is the thing that makes the removal lawful. It is written in one
+    transaction with the takedown so a listing cannot end up removed with the
+    seller un-notified.
+
+    Delivered through `notification_history`, which the app already reads and
+    badges (`GET /notifications/history`, rendered by app/notifications.tsx).
+    Storing it only in `listing_reports.resolution_note` would be capture
+    without a consumer — the seller would never see it.
+    """
+    if payload.ground not in _MODERATION_GROUNDS:
+        raise error_response(
+            400,
+            f"Unknown ground. Expected one of: {', '.join(sorted(_MODERATION_GROUNDS))}",
+            code="UNKNOWN_GROUND",
+        )
+
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    removed = payload.action == "remove"
+
+    async with pool.acquire() as conn:
+        listing = await conn.fetchrow(
+            """
+            SELECT id, user_id AS seller_id, listing_title, status, delisted_at
+            FROM public.marketplace_listings
+            WHERE id = $1::uuid AND marketplace_id = $2
+            """,
+            listing_id, SPARROW_MARKETPLACE_KEY,
+        )
+        if listing is None:
+            raise error_response(404, "Listing not found", code="LISTING_NOT_FOUND")
+
+        statement = _compose_statement(
+            listing["listing_title"], removed, payload.ground, payload.explanation
+        )
+
+        async with conn.transaction():
+            resolved = await conn.fetchval(
+                """
+                UPDATE public.listing_reports
+                   SET status = $2, resolution_note = $3, resolved_at = now()
+                 WHERE listing_id = $1::uuid AND status = 'open'
+                RETURNING 1
+                """,
+                listing_id,
+                "actioned" if removed else "dismissed",
+                statement,
+            )
+
+            if removed and listing["delisted_at"] is None:
+                await conn.execute(
+                    """
+                    UPDATE public.marketplace_listings
+                       SET status = 'delisted', delisted_at = now(), updated_at = now()
+                     WHERE id = $1::uuid
+                    """,
+                    listing_id,
+                )
+
+            # Same transaction as the takedown. If the notification insert
+            # fails, the removal rolls back with it — better a listing that is
+            # still up than one removed with the seller never told.
+            await conn.execute(
+                """
+                INSERT INTO public.notification_history
+                    (user_id, type, title, body, data, deep_link)
+                VALUES ($1::uuid, 'moderation', $2, $3, $4::jsonb, $5)
+                """,
+                str(listing["seller_id"]),
+                "Listing removed" if removed else "Report reviewed — no action",
+                statement,
+                json.dumps({
+                    "listing_id": listing_id,
+                    "action": payload.action,
+                    "ground": payload.ground,
+                    "automated": False,
+                }),
+                f"sparrow://listing/{listing_id}",
+            )
+
+    # Awaited, NOT fire-and-forget. A removed listing that keeps its buyable
+    # market_hits row still fires Target Hits at content we just took down —
+    # the same bug the delist path was fixed for in Stage 1.
+    if removed:
+        await _stale_supply_hook(listing_id)
+
+    return {
+        "ok": True,
+        "action": payload.action,
+        "reports_resolved": resolved is not None,
+        "seller_notified": True,
+    }
