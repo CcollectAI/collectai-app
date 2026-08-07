@@ -47,6 +47,10 @@ type Props = {
   canonicalKey?: string | null;
   /** Opens the catalog re-match flow (ItemCatalogRefresh already exists). */
   onRequestCatalogMatch?: () => void;
+  /** Does this item have a photo of its own? The catalogue-consent question is
+   *  only meaningful when there is a photo to consent about — asking otherwise
+   *  is asking about nothing. */
+  hasPhoto?: boolean;
 };
 
 export function SellOnSparrowSection({
@@ -57,6 +61,7 @@ export function SellOnSparrowSection({
   suggestedPrice,
   canonicalKey,
   onRequestCatalogMatch,
+  hasPhoto,
 }: Props) {
   const { showToast } = useToast();
   const [expanded, setExpanded] = useState(false);
@@ -67,6 +72,8 @@ export function SellOnSparrowSection({
   const [saving, setSaving] = useState(false);
   const [listed, setListed] = useState(false);
   const [demand, setDemand] = useState<DemandPreview | null>(null);
+  // Opt-in, unticked. ToS §3 grants catalogue reuse only if the seller says so.
+  const [catalogueConsent, setCatalogueConsent] = useState(false);
 
   // Demand is fetched when the form OPENS, not on mount: it costs a request
   // and most item views never reach the sell flow.
@@ -109,6 +116,9 @@ export function SellOnSparrowSection({
         price: parsedPrice,
         currency,
         condition_label: condition.trim() || undefined,
+        // Only when there IS a photo — sending true otherwise would record a
+        // permission the seller had no reason to consider.
+        photo_catalogue_consent: hasPhoto ? catalogueConsent : false,
       });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: hapticsEnabled });
       setListed(true);
@@ -127,7 +137,8 @@ export function SellOnSparrowSection({
     } finally {
       setSaving(false);
     }
-  }, [parsedPrice, itemId, currency, condition, hapticsEnabled, isMatched, showToast]);
+  }, [parsedPrice, itemId, currency, condition, hapticsEnabled, isMatched, showToast,
+      hasPhoto, catalogueConsent]);
 
   if (listed) {
     return (
@@ -264,6 +275,32 @@ export function SellOnSparrowSection({
         accessibilityLabel="Condition"
       />
 
+      {/* Catalogue contribution. 54,115 of 221,391 catalogue items have no
+          image; a seller photographing a real copy can close that gap. Opt-in
+          and revocable (ToS §3), and shown only when there is a photo. */}
+      {hasPhoto ? (
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
+            setCatalogueConsent((c) => !c);
+          }}
+          style={[styles.consent, { borderColor: colors.border }]}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: catalogueConsent }}
+          accessibilityLabel="Allow this photo to be used as a catalogue reference picture"
+        >
+          <Ionicons
+            name={catalogueConsent ? 'checkbox' : 'square-outline'}
+            size={19}
+            color={catalogueConsent ? colors.accent : colors.muted}
+          />
+          <Text style={[styles.consentText, { color: colors.muted }]}>
+            Let Sparrow use your photo as a reference picture for this product,
+            shown to other members. Optional, and you can turn it off later.
+          </Text>
+        </AnimatedPressable>
+      ) : null}
+
       <AnimatedPressable
         onPress={handleList}
         disabled={saving || !parsedPrice}
@@ -294,6 +331,12 @@ export function SellOnSparrowSection({
 }
 
 const styles = StyleSheet.create({
+  consent: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
+    padding: 11, marginTop: 14,
+  },
+  consentText: { flex: 1, fontSize: textToken.xs, lineHeight: 17 },
   card: { borderWidth: 1, borderRadius: radius.md, padding: 14, marginTop: 16, gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   grow: { flex: 1 },

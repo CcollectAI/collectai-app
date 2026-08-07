@@ -432,6 +432,9 @@ function RootStack() {
         <Stack.Screen name="listings" options={{ headerShown: false }} />
         <Stack.Screen name="listing/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="offers" options={{ headerShown: false }} />
+        {/* Marketplace-only selling: list without a collection item. Renders
+            its own header, same as the other P2P screens. */}
+        <Stack.Screen name="sell/new" options={{ headerShown: false }} />
         <Stack.Screen name="legal/marketplace-terms" options={{ headerShown: false }} />
         <Stack.Screen name="purchase/index" options={iconOnlyHeader} />
         <Stack.Screen name="purchase/create-mandate" options={iconOnlyHeader} />

@@ -89,7 +89,17 @@ export type P2PListing = {
  *                         enforced server-side; do not rely on hiding the UI)
  */
 export const createListing = (payload: {
-  item_id: string;
+  /** List something already in your collection. Omit to sell without one. */
+  item_id?: string;
+  /** Required when `item_id` is omitted — the marketplace-only seller path.
+   *  The server creates the item for you (`source='marketplace'`), so photos,
+   *  the supply hook and the sold-comp hook all work exactly as they do for a
+   *  collection item. */
+  title?: string;
+  category?: string;
+  /** Bare catalogue key. Without it the listing cannot fire a Target Hit —
+   *  the response's `reaches_target_hit` reports this back. */
+  canonical_key?: string;
   price: number;
   currency?: string;
   condition_label?: string;
@@ -97,6 +107,10 @@ export const createListing = (payload: {
   description?: string;
   ships_from?: string;
   shipping_cost?: number;
+  /** Opt in to this listing's photo being reused as catalogue art for the same
+   *  product (ToS §3). Default false — never send true unless the seller
+   *  actually ticked it. Revocable. */
+  photo_catalogue_consent?: boolean;
 }) => post<P2PListing>('/p2p/listings', payload);
 
 /** Browse active member listings. `canonical_key` powers "other members

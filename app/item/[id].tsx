@@ -1030,6 +1030,7 @@ function ItemDetailScreen() {
                 hapticsEnabled={settings.hapticsEnabled}
                 suggestedPrice={priceEstimate?.priceBand?.q50 ?? null}
                 canonicalKey={savedCanonicalKey}
+                hasPhoto={Boolean(imageUri)}
               />
             )}
 

@@ -396,28 +396,34 @@ function MemberMarketplaceScreen() {
   // is how the explanation and the thing it explains drift apart.
   const goSell = useCallback(async () => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    const seen = await AsyncStorage.getItem(SELL_HINT_SEEN_KEY).catch(() => null);
-    if (seen === '1') {
-      router.push('/(tabs)/items');
-      return;
-    }
-    // First time only: say where the action lives, because landing on a plain
-    // collection list with no instruction is a dead end.
+    // Two routes in, and the second one used not to exist. Sending everyone to
+    // their collection assumed everyone HAS one — a marketplace-only seller had
+    // to build a collection they did not want before they could sell a single
+    // thing (docs/P2P_MARKETPLACE_SPEC.md §5c). Asked every time rather than
+    // remembered, because which route is right depends on the item, not on the
+    // person: the same seller lists from their collection one day and something
+    // they just found in a drawer the next.
+    //
+    // Collection first: it produces the better listing. It inherits
+    // `canonical_key`, so the supply hook writes a buyable row and everyone
+    // watching that item is alerted — which is the whole point of the
+    // marketplace. The free-text route cannot do that and says so on the screen.
     Alert.alert(
       'Sell an item',
-      'Pick any item from your collection, then tap “Sell this” on it. We’ll suggest a price and tell you who’s already watching it.',
+      'From your collection we can suggest a price and alert members already watching it. Otherwise just describe what you have.',
       [
-        { text: 'Not now', style: 'cancel' },
         {
-          text: 'Choose an item',
+          text: 'From my collection',
           onPress: () => {
-            // Written only once the user accepts. Marking it seen on a cancel
-            // would burn the explanation on someone who never saw the screen
-            // it describes.
             AsyncStorage.setItem(SELL_HINT_SEEN_KEY, '1').catch(() => {});
             router.push('/(tabs)/items');
           },
         },
+        {
+          text: "It's not in my collection",
+          onPress: () => router.push('/sell/new' as Href),
+        },
+        { text: 'Not now', style: 'cancel' },
       ],
     );
   }, [router, settings.hapticsEnabled]);
