@@ -257,7 +257,13 @@ function NotificationsScreen() {
             {item.body ? (
               <Text
                 style={[s.rowBody, { color: theme.muted }]}
-                numberOfLines={2}
+                // A moderation notice is the DSA Art 17 statement of reasons,
+                // and it is only a valid statement if the recipient can read
+                // it. Truncating at two lines cut it mid-sentence, and the
+                // deep link goes to the listing that was removed, not to the
+                // text — so the required content was unreadable anywhere in
+                // the app. Rare enough that an untruncated row costs nothing.
+                numberOfLines={item.type === 'moderation' ? undefined : 2}
               >
                 {item.body}
               </Text>

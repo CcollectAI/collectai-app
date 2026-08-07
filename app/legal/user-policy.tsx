@@ -140,7 +140,7 @@ function UserPolicyScreenInner() {
           {'\u2022'} Contact us at support@sparrowcollect.com for issues not covered by in-app reporting{'\n'}
           {'\u2022'} Provide as much context as possible (screenshots, message history, item links) to help us investigate{'\n\n'}
           <Text style={styles.bold}>We have zero tolerance for objectionable content and abusive users.</Text> We act on reports of objectionable or unlawful content within 24 hours of receiving them, removing the content and, where warranted, removing the member who posted it.{'\n\n'}
-          Where we act on a report about your own content, we tell you what we decided, the ground for it, whether it was decided automatically or by a person, and how to contest it \u2014 see Appeals below.{'\n\n'}
+          Where we act on a report about your own content, we tell you what we decided, the ground for it, whether it was decided automatically or by a person, and how to contest it {'\u2014'} see Appeals below.{'\n\n'}
           Blocking works in both directions across the whole service: a blocked member&apos;s listings stop appearing for you, they cannot send you an offer, and neither of you can message the other.{'\n\n'}
           We review all reports and take appropriate action. False or malicious reports intended to harm other users are themselves a violation of this Policy.
         </Text>
