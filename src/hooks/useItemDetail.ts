@@ -198,14 +198,35 @@ export function useItemDetail(params: UseItemDetailParams) {
   const [linkedProject, setLinkedProject] = useState<{ id: string; title: string; pct: number } | null>(null);
 
   // ── Notes handler ──────────────────────────────────────────────────────
-  const onSaveNotes = useCallback(() => {
+  //
+  // This used to be a 300ms setTimeout that wrote NOTHING and toasted "Notes
+  // saved locally". Nothing was saved anywhere — not the DB, not AsyncStorage
+  // — so every note was lost on unmount while the user was told it was safe.
+  // The house silent-failure pattern: a writer that never writes, wearing a
+  // success message.
+  const onSaveNotes = useCallback(async () => {
+    if (!id || isDraft) {
+      // A draft has no items row yet, so there is nothing to write to. Say so
+      // rather than implying a save happened.
+      showToast({ message: 'Save the item first, then add notes', type: 'info' });
+      return;
+    }
     setSavingNotes(true);
-    setTimeout(() => {
-      setSavingNotes(false);
+    try {
+      await dataProvider.updateItem(id, { notes });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Notes saved locally', type: 'info' });
-    }, 300);
-  }, [settings.hapticsEnabled, showToast]);
+      showToast({ message: 'Notes saved', type: 'success' });
+    } catch (err: unknown) {
+      logger.error('[useItemDetail] save notes failed:', err);
+      // Never claim success on a failed write — that is the bug this replaced.
+      showToast({
+        message: (err as Error)?.message || "Couldn't save your notes",
+        type: 'error',
+      });
+    } finally {
+      setSavingNotes(false);
+    }
+  }, [id, isDraft, notes, settings.hapticsEnabled, showToast]);
 
   // ── Save draft handler ─────────────────────────────────────────────────
   const onSaveDraft = useCallback(async () => {

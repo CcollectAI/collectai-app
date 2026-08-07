@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
+import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
 import { formatPrice } from "@/lib/format";
 
@@ -29,6 +29,17 @@ export type PortfolioLineChartProps = {
 
   /** Fill color for the hover dot (defaults to parent card background) */
   dotFillColor?: string;
+
+  /**
+   * The series is empty because the request FAILED, not because there is no
+   * history. Without this the chart claims "No history yet" for both, so a
+   * cold-start 401 reads as "you own nothing" — the exact confusion the
+   * ui-playbook's "Empty is not loading" rule exists to prevent.
+   */
+  loadFailed?: boolean;
+
+  /** Retry handler shown alongside the failure message. */
+  onRetry?: () => void;
 
   /**
    * Fires with the point under the user's finger while scrubbing, and with null
@@ -114,6 +125,8 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
   gridColor = "#e5e7eb",
   textColor = "#0b1f3a",
   dotFillColor = "#ffffff",
+  loadFailed = false,
+  onRetry,
   onScrubChange,
 }) => {
   const [width, setWidth] = useState(0);
@@ -182,6 +195,28 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
   };
 
   if (!sorted.length) {
+    // Distinguish "we could not load it" from "there is nothing to show".
+    if (loadFailed) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={[styles.emptyText, { color: axisLabelColor }]}>
+            Couldn&apos;t load your chart.
+          </Text>
+          {onRetry ? (
+            <Pressable
+              onPress={onRetry}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading the portfolio chart"
+              hitSlop={8}
+            >
+              <Text style={[styles.emptyText, { color: accentColor, fontWeight: '700', marginTop: 6 }]}>
+                Retry
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      );
+    }
     return (
       <View style={styles.emptyContainer}>
         <Text style={[styles.emptyText, { color: axisLabelColor }]}>

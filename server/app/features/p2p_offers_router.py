@@ -26,9 +26,10 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from typing import List, Optional
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.auth import get_current_user_id
 from app.errors import error_response
@@ -62,6 +63,68 @@ _SHIPPED, _COMPLETED = "shipped", "completed"
 # a percentage would be actively misleading.
 _MIN_GRADES_TO_SHOW = 3
 
+# The offer column list, in ONE place. It was duplicated verbatim across three
+# queries; adding tracking to two of the three would have produced a KeyError in
+# _row_to_offer on whichever path was missed, and only on that path
+# (learning_duplicate_impl_silently_drops_the_fix). Static text, never
+# user-derived — safe to interpolate.
+_OFFER_COLUMNS = """
+            o.id, o.listing_id, o.buyer_id, o.seller_id, o.amount,
+            o.currency, o.status, o.message, o.counter_count,
+            o.created_at, o.seller_confirmed_at, o.buyer_confirmed_at,
+            o.tracking_carrier, o.tracking_code, o.tracking_set_at,
+            l.listing_title
+"""
+
+# Carrier key -> (display label, tracking URL template or None).
+#
+# None means "we know this carrier but cannot build a working link from the
+# consignment code alone". PostNL and DPD both require the RECIPIENT'S POSTCODE
+# in the URL, and we deliberately do not hold it — so they render a copyable
+# code and no button. A link that 404s is the dead-button failure Stage 1's bug
+# 0 was fixed to avoid, reintroduced from our own side; an absent link is
+# honest, a broken one is not.
+#
+# Adding a carrier is a change HERE ONLY — deliberately not a DB CHECK, see
+# server/migrations/20260807_p2p_offer_tracking.sql.
+#
+# Nothing in this map may ever be polled. Tracking is display-only; see §5b of
+# docs/P2P_MARKETPLACE_SPEC.md.
+_CARRIER_TRACKING: dict[str, tuple[str, Optional[str]]] = {
+    # NL/BE first — that is where ships_from concentrates.
+    "postnl":      ("PostNL", None),          # needs recipient postcode
+    "dpd":         ("DPD", None),             # needs recipient postcode
+    "gls":         ("GLS", None),             # no stable code-only public URL
+    "bpost":       ("bpost", None),
+    "dhl":         ("DHL", "https://www.dhl.com/en/express/tracking.html?AWB={code}"),
+    "dhl_de":      ("DHL Paket", "https://nolp.dhl.de/nextt-online-public/en/search?piececode={code}"),
+    "ups":         ("UPS", "https://www.ups.com/track?tracknum={code}"),
+    "fedex":       ("FedEx", "https://www.fedex.com/fedextrack/?trknbr={code}"),
+    "other":       ("Other carrier", None),
+}
+
+
+def _tracking_url(carrier: Optional[str], code: Optional[str]) -> Optional[str]:
+    """Resolve a carrier + code to the CARRIER's own tracking page, or None.
+
+    Returns None for an unknown carrier as well as a known-but-unlinkable one,
+    so a carrier key that predates a registry entry degrades to a copyable code
+    rather than to a broken link.
+    """
+    if not carrier or not code:
+        return None
+    entry = _CARRIER_TRACKING.get(carrier)
+    if entry is None or entry[1] is None:
+        return None
+    return entry[1].format(code=quote(code, safe=""))
+
+
+def _carrier_label(carrier: Optional[str]) -> Optional[str]:
+    if not carrier:
+        return None
+    entry = _CARRIER_TRACKING.get(carrier)
+    return entry[0] if entry else carrier
+
 
 class OfferCreate(BaseModel):
     listing_id: str
@@ -84,11 +147,58 @@ class OfferOut(BaseModel):
     created_at: Optional[datetime] = None
     seller_confirmed_at: Optional[datetime] = None
     buyer_confirmed_at: Optional[datetime] = None
+    # Shipment visibility. DISPLAY ONLY — no completion may be derived from it;
+    # see docs/P2P_MARKETPLACE_SPEC.md §5b.
+    tracking_carrier: Optional[str] = None
+    tracking_carrier_label: Optional[str] = None
+    tracking_code: Optional[str] = None
+    tracking_set_at: Optional[datetime] = None
+    # Resolved SERVER-side so the carrier URL table exists once. A second copy
+    # in the client would drift, and a stale template there is a dead button we
+    # could not fix without an app release.
+    tracking_url: Optional[str] = None
     # Convenience for the client so it does not re-derive the rules below.
     i_am_buyer: bool = False
     can_confirm: bool = False
     can_grade: bool = False
     already_graded: bool = False
+    # Whether the CALLER may attach tracking right now. Server-computed for the
+    # same reason as can_confirm — the client never re-derives the state machine.
+    can_add_tracking: bool = False
+
+
+class TrackingIn(BaseModel):
+    """Seller-supplied shipment reference.
+
+    max_length values MUST match p2p_offers_tracking_len_check in
+    server/migrations/20260807_p2p_offer_tracking.sql.
+    """
+
+    # Charset-constrained but NOT value-constrained: an unknown key degrades to
+    # a copyable code with no link, which is a strictly better failure than a
+    # 422 the seller cannot act on. The charset still rejects junk — without it
+    # a whitespace-only carrier was accepted and rendered as a blank label.
+    tracking_carrier: str = Field(..., max_length=40, pattern=r"^[a-z0-9][a-z0-9_-]*$")
+    # Consignment codes are alphanumeric with separators across every carrier we
+    # list. Bounding the charset keeps the value safe to render as a link path
+    # segment and stops the field being used as free text.
+    # The upper bound is max_length ALONE. Encoding it in the quantifier too
+    # would give two bounds that can disagree at the boundary — the shape of
+    # learning_guard_must_match_constraint_type_space.
+    tracking_code: str = Field(..., max_length=64, pattern=r"^[A-Za-z0-9][A-Za-z0-9 \-_/]{2,}$")
+
+    @field_validator("tracking_carrier", "tracking_code", mode="before")
+    @classmethod
+    def _strip(cls, v):
+        """Trim BEFORE the pattern runs.
+
+        Carrier emails and tracking pages copy with surrounding whitespace, and
+        a leading space made the pattern reject the value with "string does not
+        match regex" — an unactionable 422 about an invisible character. A
+        trailing space was silently accepted, so the two ends did not even fail
+        the same way. Stripping first makes both ends behave identically.
+        """
+        return v.strip() if isinstance(v, str) else v
 
 
 class OfferListResponse(BaseModel):
@@ -128,12 +238,21 @@ def _row_to_offer(r, me: str) -> OfferOut:
         created_at=r["created_at"],
         seller_confirmed_at=r["seller_confirmed_at"],
         buyer_confirmed_at=r["buyer_confirmed_at"],
+        tracking_carrier=r["tracking_carrier"],
+        tracking_carrier_label=_carrier_label(r["tracking_carrier"]),
+        tracking_code=r["tracking_code"],
+        tracking_set_at=r["tracking_set_at"],
+        tracking_url=_tracking_url(r["tracking_carrier"], r["tracking_code"]),
         i_am_buyer=is_buyer,
         # You may confirm once accepted and until you personally have.
         can_confirm=r["status"] in (_ACCEPTED, _SHIPPED) and mine_confirmed is None,
         # Grading unlocks ONLY on two-sided completion.
         can_grade=both_confirmed and r["status"] == _COMPLETED,
         already_graded=bool(r["already_graded"]) if "already_graded" in r.keys() else False,
+        # Only the seller ships, and only while the trade is live. Editing is
+        # allowed (a mistyped code is the common case), so this stays true after
+        # tracking is already set.
+        can_add_tracking=(not is_buyer) and r["status"] in (_ACCEPTED, _SHIPPED),
     )
 
 
@@ -190,7 +309,15 @@ async def create_offer(
             VALUES ($1::uuid, $2::uuid, $3::uuid, $4, $5, $6, $7, 0, now(), now())
             RETURNING id, listing_id, buyer_id, seller_id, amount, currency,
                       status, message, counter_count, created_at,
-                      seller_confirmed_at, buyer_confirmed_at
+                      seller_confirmed_at, buyer_confirmed_at,
+                      -- Always NULL on a fresh offer, but _row_to_offer reads
+                      -- them unconditionally and a missing key is a KeyError,
+                      -- i.e. a 500 on the primary Stage 2 entry point. RETURNING
+                      -- cannot use _OFFER_COLUMNS because that list is alias-
+                      -- qualified (`o.`), so this is the one place the column
+                      -- set is repeated — pinned by
+                      -- test_create_offer_returning_carries_tracking.
+                      tracking_carrier, tracking_code, tracking_set_at
             """,
             payload.listing_id, user_id, str(listing["seller_id"]),
             payload.amount, payload.currency, _PENDING, payload.message,
@@ -215,11 +342,8 @@ async def list_offers(
 
     async with pool.acquire() as conn:
         rows = await conn.fetch(
-            """
-            SELECT o.id, o.listing_id, o.buyer_id, o.seller_id, o.amount,
-                   o.currency, o.status, o.message, o.counter_count,
-                   o.created_at, o.seller_confirmed_at, o.buyer_confirmed_at,
-                   l.listing_title,
+            f"""
+            SELECT {_OFFER_COLUMNS},
                    EXISTS (
                        SELECT 1 FROM public.member_grades g
                        WHERE g.offer_id = o.id AND g.rater_id = $1::uuid
@@ -354,11 +478,98 @@ async def respond_to_offer(
             )
 
         fresh = await conn.fetchrow(
+            f"""
+            SELECT {_OFFER_COLUMNS}
+            FROM public.p2p_offers o
+            LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
+            WHERE o.id = $1::uuid
+            """,
+            offer_id,
+        )
+    return _row_to_offer(fresh, user_id)
+
+
+class CarrierOut(BaseModel):
+    key: str
+    label: str
+    # False => we cannot build a working link from the code alone, so the client
+    # must render a copyable code instead of a button. Sent rather than inferred
+    # so the client never has to know WHY (postcode, no public URL, …).
+    linkable: bool
+
+
+@router.get("/carriers", response_model=List[CarrierOut],
+            summary="Carriers the seller can pick when attaching tracking")
+async def list_carriers() -> List[CarrierOut]:
+    """Served from `_CARRIER_TRACKING` so the picker cannot drift from the URL
+    table. A hardcoded client list would let a seller choose a carrier the
+    server does not know, which silently degrades to a code with no link."""
+    return [
+        CarrierOut(key=k, label=label, linkable=url is not None)
+        for k, (label, url) in _CARRIER_TRACKING.items()
+    ]
+
+
+@router.post("/offers/{offer_id}/tracking", response_model=OfferOut,
+             summary="Attach a shipment reference to an offer (seller only)")
+async def set_tracking(
+    offer_id: str,
+    payload: TrackingIn,
+    user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_offer_limit),
+) -> OfferOut:
+    """Record carrier + consignment code so the buyer can follow the parcel.
+
+    **Display-only, deliberately.** This endpoint writes nothing but the three
+    tracking columns: it does not touch `status`, `seller_confirmed_at` or
+    `buyer_confirmed_at`, and nothing anywhere may poll the carrier and derive
+    completion from delivery. Doing so would substitute our judgment for the
+    buyer's, and we would own the outcome when the box arrives empty — the same
+    class as labelling a listing "authenticated by Sparrow". See §5b of
+    docs/P2P_MARKETPLACE_SPEC.md.
+
+    Separate from /confirm on purpose: a mistyped code is the common case and
+    must be fixable without re-running the completion state machine, and if one
+    of the two calls fails the seller can retry just that one.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    async with pool.acquire() as conn:
+        o = await conn.fetchrow(
+            "SELECT seller_id, buyer_id, status FROM public.p2p_offers WHERE id = $1::uuid",
+            offer_id,
+        )
+        if o is None:
+            raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
+        # Only the seller ships. Checked here rather than trusted from the
+        # client — can_add_tracking is a UI hint, not the enforcement.
+        if str(o["seller_id"]) != user_id:
+            raise error_response(403, "Only the seller can add tracking",
+                                 code="NOT_THE_SELLER")
+        if o["status"] not in (_ACCEPTED, _SHIPPED):
+            raise error_response(409, "This offer isn't in an exchangeable state",
+                                 code="NOT_EXCHANGEABLE")
+
+        await conn.execute(
             """
-            SELECT o.id, o.listing_id, o.buyer_id, o.seller_id, o.amount,
-                   o.currency, o.status, o.message, o.counter_count,
-                   o.created_at, o.seller_confirmed_at, o.buyer_confirmed_at,
-                   l.listing_title
+            UPDATE public.p2p_offers
+               SET tracking_carrier = $2,
+                   tracking_code    = $3,
+                   tracking_set_at  = now(),
+                   updated_at       = now()
+             WHERE id = $1::uuid
+            """,
+            # Already stripped by TrackingIn._strip — a second .strip() here
+            # would imply the model does not, and invite someone to remove it
+            # from the model.
+            offer_id, payload.tracking_carrier, payload.tracking_code,
+        )
+
+        fresh = await conn.fetchrow(
+            f"""
+            SELECT {_OFFER_COLUMNS}
             FROM public.p2p_offers o
             LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
             WHERE o.id = $1::uuid
@@ -409,11 +620,8 @@ async def confirm_exchange(
         )
 
         fresh = await conn.fetchrow(
-            """
-            SELECT o.id, o.listing_id, o.buyer_id, o.seller_id, o.amount,
-                   o.currency, o.status, o.message, o.counter_count,
-                   o.created_at, o.seller_confirmed_at, o.buyer_confirmed_at,
-                   l.listing_title
+            f"""
+            SELECT {_OFFER_COLUMNS}
             FROM public.p2p_offers o
             LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
             WHERE o.id = $1::uuid

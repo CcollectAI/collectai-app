@@ -108,7 +108,7 @@ export interface DataProvider {
    * @param patch - Partial item fields to update
    * @returns The updated item
    */
-  updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item>;
+  updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>> & { notes?: string | null }): Promise<Item>;
 
   /**
    * Archive an item (soft-delete). Sets attributes_json._archived = true.

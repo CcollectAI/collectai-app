@@ -160,6 +160,12 @@
     "p2p_offers.status": [
       "CHECK ((status = ANY (ARRAY['pending'::text, 'countered'::text, 'accepted'::text, 'declined'::text, 'cancelled'::text, 'expired'::text, 'shipped'::text, 'completed'::text])))"
     ],
+    "p2p_offers.tracking_carrier": [
+      "CHECK ((((tracking_carrier IS NULL) OR (length(tracking_carrier) <= 40)) AND ((tracking_code IS NULL) OR (length(tracking_code) <= 64))))"
+    ],
+    "p2p_offers.tracking_code": [
+      "CHECK ((((tracking_carrier IS NULL) OR (length(tracking_carrier) <= 40)) AND ((tracking_code IS NULL) OR (length(tracking_code) <= 64))))"
+    ],
     "prediction_sessions.category": [
       "CHECK ((category = ANY (ARRAY['pokemon'::text, 'funko'::text, 'diecast'::text])))"
     ],
@@ -9967,6 +9973,18 @@
       "default": "'pending'::text",
       "nullable": false,
       "type": "text"
+    },
+    "p2p_offers.tracking_carrier": {
+      "nullable": true,
+      "type": "text"
+    },
+    "p2p_offers.tracking_code": {
+      "nullable": true,
+      "type": "text"
+    },
+    "p2p_offers.tracking_set_at": {
+      "nullable": true,
+      "type": "timestamptz"
     },
     "p2p_offers.updated_at": {
       "default": "now()",
@@ -23524,7 +23542,10 @@
       "withdrawn_at",
       "expires_at",
       "created_at",
-      "updated_at"
+      "updated_at",
+      "tracking_carrier",
+      "tracking_code",
+      "tracking_set_at"
     ],
     "phase_a_audit_v1": [
       "name",

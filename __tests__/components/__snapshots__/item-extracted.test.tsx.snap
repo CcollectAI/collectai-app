@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ItemNotesEditor matches snapshot with keyboard visible 1`] = `
+exports[`ItemNotesEditor matches snapshot with notes present 1`] = `
 <View
   collapsable={false}
   style={

@@ -26,8 +26,13 @@ import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { safeGoBack } from '@/lib/goBack';
 
-const RECENT_SEARCHES_KEY = '@sparrowcollect/recent_searches';
-const MAX_RECENT_SEARCHES = 10;
+// Recent searches removed 2026-08-07. The AsyncStorage key
+// '@sparrowcollect/recent_searches' is deliberately cleared once on mount
+// below rather than left behind: an orphaned key keeps a user's search
+// history on the device indefinitely after the feature that justified
+// collecting it is gone, which is the kind of quiet data retention a privacy
+// policy should not have to cover.
+const LEGACY_RECENT_SEARCHES_KEY = '@sparrowcollect/recent_searches';
 
 type SearchResults = {
   items: { id: string; name: string; category: string; imageUrl?: string | null; price?: number }[];
@@ -158,41 +163,13 @@ function SearchScreen() {
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const [error, setError] = useState(false);
 
-  // Load recent searches from AsyncStorage on mount
+  // One-time cleanup of the removed recent-searches feature. Cheap, idempotent,
+  // and it means uninstalling the feature also uninstalls the data it kept.
   useEffect(() => {
-    AsyncStorage.getItem(RECENT_SEARCHES_KEY)
-      .then((stored) => {
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed)) setRecentSearches(parsed);
-          } catch (e) {
-            logger.error('[silent-catch] search.tsx:172:', e); /* ignore parse errors */ }
-        }
-      })
-      .catch((err) => logger.warn('[Search] restore recent searches failed:', err));
-  }, []);
-
-  const saveRecentSearch = useCallback((q: string) => {
-    const trimmed = q.trim();
-    if (!trimmed) return;
-    setRecentSearches((prev) => {
-      const filtered = prev.filter((s) => s.toLowerCase() !== trimmed.toLowerCase());
-      const updated = [trimmed, ...filtered].slice(0, MAX_RECENT_SEARCHES);
-      AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated))
-        .catch((err) => logger.warn('[Search] persist recent searches failed:', err));
-      return updated;
-    });
-  }, []);
-
-  const clearRecentSearches = useCallback(() => {
-    setRecentSearches([]);
-    AsyncStorage.removeItem(RECENT_SEARCHES_KEY)
-      .catch((err) => logger.warn('[Search] clear recent searches failed:', err));
+    AsyncStorage.removeItem(LEGACY_RECENT_SEARCHES_KEY).catch(() => {});
   }, []);
 
   const doSearch = useCallback(async (q: string) => {
@@ -206,14 +183,13 @@ function SearchScreen() {
     try {
       const res = await dataProvider.unifiedSearch(q.trim());
       setResults(res ?? null);
-      saveRecentSearch(q);
     } catch {
       setResults(null);
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, [saveRecentSearch]);
+  }, []);
 
   const handleQueryChange = useCallback((text: string) => {
     setQuery(text);
@@ -262,33 +238,6 @@ function SearchScreen() {
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {/* Recent searches — shown when no query and no results */}
-        {!query && !results && recentSearches.length > 0 && (
-          <View style={styles.section}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={[styles.sectionTitle, { color: colors.muted }]} accessibilityRole="header">RECENT SEARCHES</Text>
-              <AnimatedPressable onPress={clearRecentSearches} accessibilityRole="button" accessibilityLabel={t('common.clear_recent')}>
-                <Text style={{ color: colors.accent, fontSize: text.sm, fontWeight: fontWeight.semibold }}>{t('common.clear')}</Text>
-              </AnimatedPressable>
-            </View>
-            {recentSearches.map((term, idx) => (
-              <AnimatedPressable
-                key={`${term}-${idx}`}
-                style={[resultStyles.resultRow, { borderColor: colors.border }]}
-                onPress={() => { setQuery(term); doSearch(term); }}
-                accessibilityRole="button"
-                accessibilityLabel={`Search for ${term}`}
-              >
-                <Ionicons name="time-outline" size={18} color={colors.muted} />
-                <View style={resultStyles.resultInfo}>
-                  <Text style={[resultStyles.resultTitle, { color: colors.text }]}>{term}</Text>
-                </View>
-                <Ionicons name="arrow-forward-outline" size={16} color={colors.muted} />
-              </AnimatedPressable>
-            ))}
-          </View>
-        )}
-
         {loading && (
           <View style={styles.loadingContainer}>
             <SkeletonList count={6} />

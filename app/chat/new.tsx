@@ -6,6 +6,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getUserById } from '@/data/users';
 import { EVENTS } from '@/data/events';
+import { supabase } from '@/lib/supabase';
+import { withTimeout } from '@/lib/withTimeout';
 import { dataProvider } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
@@ -31,7 +33,66 @@ const NewChatScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const { showToast } = useToast();
 
-  const toUser = useMemo(() => getUserById(toUserId ?? null), [toUserId]);
+  // Recipient identity, for DISPLAY only — the name, handle and avatar colour.
+  //
+  // This used to be `getUserById(toUserId)` alone, which searches USER_PROFILES:
+  // a hardcoded array of three demo collectors with ids like "collector-aurora".
+  // Every real caller (marketplace listing, member profile, event attendee)
+  // passes a Supabase auth UUID, which can never match — so the screen fell
+  // through to its "Collector not found" state and messaging was dead for every
+  // real member. It was the marketplace's PRIMARY action, since Stage 1 has no
+  // checkout, and the listing screen still promises "Message a seller to agree
+  // a price".
+  //
+  // So: try the demo array first (mock mode and the demo profiles still work),
+  // then fall back to the real `profiles` row.
+  const demoUser = useMemo(() => getUserById(toUserId ?? null), [toUserId]);
+  const [dbProfile, setDbProfile] = useState<{
+    display_name: string | null; username: string | null; avatar_color: string | null;
+  } | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  useEffect(() => {
+    if (!toUserId || demoUser) return;
+    let cancelled = false;
+    setProfileLoading(true);
+    // Bounded: this gates a spinner, and an unbounded read here would pin it
+    // forever if the session is mid-hydration (see docs/ui-playbook.md).
+    withTimeout(
+      supabase
+        .from('profiles')
+        .select('display_name, username, avatar_color')
+        .eq('id', toUserId)
+        .maybeSingle(),
+      8000,
+      'chat/new.loadRecipientProfile',
+    )
+      .then(({ data }) => {
+        if (!cancelled) setDbProfile((data as typeof dbProfile) ?? null);
+      })
+      .catch((e) => logger.error('[Chat/new] recipient profile load failed:', e))
+      .finally(() => {
+        if (!cancelled) setProfileLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [toUserId, demoUser]);
+
+  // Never block on a missing display name — only on a missing RECIPIENT. A
+  // profile row with no display_name is a normal state (most have none), and
+  // refusing to open the composer over it would recreate the same dead end.
+  const toUser = useMemo(() => {
+    if (demoUser) return demoUser;
+    if (!toUserId || !dbProfile) return null;
+    const name = dbProfile.display_name || dbProfile.username || 'Sparrow member';
+    return {
+      id: toUserId,
+      displayName: name,
+      handle: dbProfile.username || 'member',
+      avatarColor: dbProfile.avatar_color || '#0ea5e9',
+    };
+  }, [demoUser, dbProfile, toUserId]);
   const contextEvent = useMemo(
     () => EVENTS.find((e) => e.id === contextEventId),
     [contextEventId],
@@ -98,6 +159,19 @@ const NewChatScreen: React.FC = () => {
       setSending(false);
     }
   };
+
+  // Wait for the profile read before judging. Deciding "not found" while the
+  // fetch is still in flight is how this screen would flash its dead end at
+  // every real user even after the lookup was fixed.
+  if (!toUser && profileLoading) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!toUser) {
     return (
@@ -318,6 +392,7 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
   },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   keyboardView: {
     flex: 1,
   },

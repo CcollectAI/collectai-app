@@ -1,5 +1,5 @@
 {
-  "_about": "Frozen FastAPI route table. Regenerated 2026-07-25 from the LIVE /openapi.json (523 routes) after the Apr-29 lock drifted to 303 and made audit_fe_api_drift.py report 7 false positives \u2014 all 7 were probed against production and exist. A gate that cries wolf is a gate people stop reading.",
+  "_about": "Frozen FastAPI route table. Regenerated 2026-08-07 from the LIVE /openapi.json (540 routes) after the P2P marketplace Stage 1/2 routes and the tracking endpoints landed; the previous 2026-07-25 snapshot had 523 and predated all of them. DO NOT regenerate this with scripts/regen_api_lock.py: it scans SOURCE and cannot resolve the /v1 mount, so it drops ~250 routes to their unprefixed form and yields 332 \u2014 the same drift as the Apr-29 lock that fell to 303 and made audit_fe_api_drift.py report 7 false positives, all of which existed in production. A gate that cries wolf is a gate people stop reading. Regenerate with: ssh collectai 'curl -s -H \"Host: api.sparrowcollect.com\" http://127.0.0.1:8000/openapi.json' then flatten paths x methods.",
   "routes": [
     {
       "method": "DELETE",
@@ -656,6 +656,34 @@
     {
       "method": "GET",
       "path": "/ops/worker-status"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/carriers"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/demand/{item_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/facets/categories"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/listings"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/listings/{listing_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/members/{member_id}/reputation"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/offers"
     },
     {
       "method": "GET",
@@ -1351,6 +1379,10 @@
     },
     {
       "method": "PATCH",
+      "path": "/settings/profile"
+    },
+    {
+      "method": "PATCH",
       "path": "/sponsor-companies/{company_id}"
     },
     {
@@ -1384,6 +1416,10 @@
     {
       "method": "PATCH",
       "path": "/v1/settings/alert-preferences"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/settings/profile"
     },
     {
       "method": "POST",
@@ -1676,6 +1712,38 @@
     {
       "method": "POST",
       "path": "/ops/seed-users"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/listings"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/listings/{listing_id}/delist"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/listings/{listing_id}/report"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/offers"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/offers/{offer_id}/confirm"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/offers/{offer_id}/grade"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/offers/{offer_id}/respond"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/offers/{offer_id}/tracking"
     },
     {
       "method": "POST",

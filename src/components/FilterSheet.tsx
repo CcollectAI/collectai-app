@@ -43,6 +43,24 @@ interface Props {
   currentConfig: FilterConfig;
   availableCategories: string[];
   availableConditions: string[];
+  /** Display names for `availableCategories`, keyed by the value passed in.
+   *  The VALUE written into FilterConfig.categories is always the key, never
+   *  the label — a picker that writes display names into a slug column kills
+   *  the join silently (learning_join_vocabulary_slug_vs_display_name).
+   *  Unmapped entries fall back to the raw value. */
+  categoryLabels?: Record<string, string>;
+  /** Restricts and relabels the sort list. Callers that support fewer than the
+   *  six default keys MUST narrow this: offering a sort the screen then maps
+   *  onto something else leaves the sheet showing a selection that does not
+   *  match the results. */
+  sortOptions?: { value: SortOption; label: string }[];
+  /** Heading for the `availableConditions` section. Overridable because not
+   *  every caller uses that list for literal item conditions. */
+  conditionsTitle?: string;
+  /** Currency symbol for the price inputs, e.g. '€'. Pass it whenever the
+   *  bounds are interpreted in a specific currency — otherwise the two fields
+   *  are unitless numbers and the user has to guess. */
+  priceCurrencySymbol?: string;
   colors: {
     background: string;
     card: string;
@@ -62,6 +80,11 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'date_asc', label: 'Oldest First' },
 ];
 
+/** Hoisted so the default identity is stable across renders — an inline `{}`
+ *  in the destructure would be a fresh object every time and would defeat the
+ *  memo on this component for callers that omit the prop. */
+const NO_CATEGORY_LABELS: Record<string, string> = {};
+
 const PRESETS_KEY = '@collectai/filter_presets';
 
 const DEFAULT_CONFIG: FilterConfig = {
@@ -79,6 +102,10 @@ function FilterSheetInner({
   currentConfig,
   availableCategories,
   availableConditions,
+  categoryLabels = NO_CATEGORY_LABELS,
+  sortOptions = SORT_OPTIONS,
+  conditionsTitle = 'Condition',
+  priceCurrencySymbol,
   colors,
 }: Props) {
   const { t } = useTranslation();
@@ -281,7 +308,7 @@ function FilterSheetInner({
             </Pressable>
             {expandedSection === 'sort' && (
               <View style={styles.sectionContent}>
-                {SORT_OPTIONS.map((option) => (
+                {sortOptions.map((option) => (
                   <Pressable
                     key={option.value}
                     style={[
@@ -312,7 +339,14 @@ function FilterSheetInner({
               </View>
             )}
 
-            {/* Category Section */}
+            {/* Category Section — hidden when there is nothing to choose from,
+                the same guard the conditions section below already uses. The
+                marketplace feeds this from live-listing facets, so an empty
+                marketplace produced a section that expanded to a blank gap:
+                a control you can open that contains nothing. Caught on device,
+                not by any test. */}
+            {availableCategories.length > 0 && (
+              <>
             <Pressable
               style={[styles.sectionHeader, { borderColor: colors.border }]}
               onPress={() => toggleSection('category')}
@@ -337,7 +371,10 @@ function FilterSheetInner({
             {expandedSection === 'category' && (
               <View style={styles.sectionContent}>
                 <View style={styles.chipGrid}>
-                  {availableCategories.map((category) => (
+                  {availableCategories.map((category) => {
+                    // Label for humans, `category` for the filter value.
+                    const label = categoryLabels[category] ?? category;
+                    return (
                     <Pressable
                       key={category}
                       style={[
@@ -350,7 +387,7 @@ function FilterSheetInner({
                       ]}
                       onPress={() => handleToggleCategory(category)}
                       accessibilityRole="button"
-                      accessibilityLabel={`${category}${config.categories.includes(category) ? ', selected' : ''}`}
+                      accessibilityLabel={`${label}${config.categories.includes(category) ? ', selected' : ''}`}
                     >
                       <Text
                         style={[
@@ -362,12 +399,15 @@ function FilterSheetInner({
                           },
                         ]}
                       >
-                        {category}
+                        {label}
                       </Text>
                     </Pressable>
-                  ))}
+                    );
+                  })}
                 </View>
               </View>
+            )}
+              </>
             )}
 
             {/* Price Range Section */}
@@ -398,6 +438,7 @@ function FilterSheetInner({
                   priceMin={config.priceMin}
                   priceMax={config.priceMax}
                   onPriceChange={handlePriceChange}
+                  currencySymbol={priceCurrencySymbol}
                   colors={colors}
                 />
               </View>
@@ -410,11 +451,11 @@ function FilterSheetInner({
                   style={[styles.sectionHeader, { borderColor: colors.border }]}
                   onPress={() => toggleSection('condition')}
                   accessibilityRole="button"
-                  accessibilityLabel={`Condition filter${expandedSection === 'condition' ? ', expanded' : ', collapsed'}`}
+                  accessibilityLabel={`${conditionsTitle} filter${expandedSection === 'condition' ? ', expanded' : ', collapsed'}`}
                 >
                   <View style={styles.sectionHeaderLeft}>
                     <Ionicons name="star-outline" size={20} color={colors.accent} />
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Condition</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>{conditionsTitle}</Text>
                     {config.conditions.length > 0 && (
                       <View style={[styles.countBadge, { backgroundColor: colors.accent }]}>
                         <Text style={styles.countBadgeText}>{config.conditions.length}</Text>

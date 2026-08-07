@@ -204,6 +204,22 @@ function ListingDetailScreen() {
           <Text style={[styles.price, { color: colors.text }]}>
             {formatPrice(listing.price, settings.currency, settings.numberLocale)}
           </Text>
+          {/* All-in price. `shipping_cost` is NULLABLE and null means "the
+              seller didn't say", which is NOT zero — rendering it as "free
+              shipping" would be the unknown-as-zero class the silent-failure
+              checker exists for. Three distinct states, one of which is
+              silence. Estimates are already disclaimed in app/legal/terms.tsx. */}
+          {listing.shipping_cost != null ? (
+            <Text style={[styles.allIn, { color: colors.muted }]}>
+              {listing.shipping_cost > 0
+                ? `+ ${formatPrice(listing.shipping_cost, settings.currency, settings.numberLocale)} shipping · ${formatPrice(listing.price + listing.shipping_cost, settings.currency, settings.numberLocale)} total`
+                : 'Free shipping'}
+            </Text>
+          ) : (
+            <Text style={[styles.allIn, { color: colors.muted }]}>
+              Shipping not stated — ask the seller
+            </Text>
+          )}
 
           <View style={styles.metaRow}>
             {listing.condition_label ? (
@@ -248,10 +264,37 @@ function ListingDetailScreen() {
               <Ionicons name="person-outline" size={16} color={colors.accent} />
             </View>
             <View style={styles.sellerText}>
-              <Text style={[styles.sellerName, { color: colors.text }]}>
-                {listing.seller_name || 'Sparrow member'}
-                {listing.is_mine ? ' (you)' : ''}
-              </Text>
+              {/* Name and reputation on one line, so the credibility signal is
+                  read WITH the identity rather than as a separate stat. */}
+              <View style={styles.sellerNameRow}>
+                <Text style={[styles.sellerName, { color: colors.text }]} numberOfLines={1}>
+                  {listing.seller_name || 'Sparrow member'}
+                  {listing.is_mine ? ' (you)' : ''}
+                </Text>
+                {/* Gated on having completed a trade. A "no rating yet" badge on
+                    every listing in a young marketplace reads as a warning and
+                    is worse than absence — below the gate the tenure and
+                    collection line underneath is the honest signal, and it
+                    already renders. */}
+                {listing.seller_completed_trades > 0 ? (
+                  <View style={[styles.repPill, { backgroundColor: colors.accent + '18' }]}>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={12}
+                      color={colors.accent}
+                    />
+                    <Text style={[styles.repPillText, { color: colors.accent }]}>
+                      {/* Percentage only once the server says the sample is big
+                          enough (seller_positive_pct is null until then). The
+                          trade count leads because it is a fact at n=1, whereas
+                          "100% positive" off one grade is not credibility. */}
+                      {listing.seller_positive_pct !== null
+                        ? `${listing.seller_positive_pct}% positive · ${listing.seller_completed_trades} trade${listing.seller_completed_trades === 1 ? '' : 's'}`
+                        : `${listing.seller_completed_trades} completed trade${listing.seller_completed_trades === 1 ? '' : 's'}`}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
               <Text style={[styles.sellerMeta, { color: colors.muted }]}>
                 {[
                   listing.seller_since
@@ -374,6 +417,7 @@ const styles = StyleSheet.create({
   bannerText: { fontSize: textToken.sm, flex: 1 },
   title: { fontSize: textToken.xl, fontWeight: fontWeight.bold, marginTop: 12 },
   price: { fontSize: textToken.xl, fontWeight: fontWeight.extrabold },
+  allIn: { fontSize: textToken.xs, marginTop: 2 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   pill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -399,7 +443,17 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   sellerText: { flex: 1, gap: 2 },
-  sellerName: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
+  // Name + reputation share a row. `flexWrap` so a long display name and a long
+  // pill drop to a second line instead of the pill being squeezed to nothing,
+  // and the name gets flexShrink so it truncates before the pill does — the
+  // reputation is the part a buyer cannot infer from anywhere else on screen.
+  sellerNameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
+  sellerName: { fontSize: textToken.md, fontWeight: fontWeight.semibold, flexShrink: 1 },
+  repPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill,
+  },
+  repPillText: { fontSize: 11, fontWeight: fontWeight.bold },
   sellerMeta: { fontSize: textToken.xs, lineHeight: 16 },
   notice: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,

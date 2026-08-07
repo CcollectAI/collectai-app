@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import List, Optional
 from uuid import uuid4
 
@@ -109,16 +110,32 @@ class ListingOut(BaseModel):
     # catalog scans openly; they never imply it is the seller's copy.
     image_is_catalog: bool = False
     # ── Seller credibility ────────────────────────────────────────────────
-    # Stage 1 has no transactions, so no transaction-based trust exists. These
-    # are the signals we genuinely have, and in a collector community they are
-    # meaningful: a 400-item collection maintained over a year is hard to fake
-    # cheaply. Deliberately NOT ratings — with no payment record we cannot
-    # verify a trade happened, so a rating would be gameable from day one and
-    # would imply vetting we do not perform.
+    # Tenure and collection size: meaningful in a collector community, because a
+    # 400-item collection maintained over a year is hard to fake cheaply. These
+    # are the ONLY signals a brand-new seller has, and they are what the UI falls
+    # back to below the reputation threshold.
     seller_name: Optional[str] = None
     seller_since: Optional[datetime] = None
     seller_collection_size: int = 0
     seller_active_listings: int = 0
+    # ── Trade reputation ──────────────────────────────────────────────────
+    # The original note here said "deliberately NOT ratings — with no payment
+    # record we cannot verify a trade happened". That was true in Stage 1 and is
+    # no longer the whole story: a grade can only exist against an offer both
+    # parties confirmed (p2p_offers.status = 'completed'), and member_grades is
+    # unique per (offer_id, rater_id). So a grade is anchored to a real,
+    # two-sided event rather than to a drive-by opinion.
+    #
+    # Still deliberately NOT stars. Completion is two self-confirmations, not a
+    # settled payment, so a 4.7/5 would imply a precision the data cannot carry.
+    # We publish a trade COUNT (a fact, meaningful at n=1) and a positive
+    # percentage only once there are enough grades to mean anything —
+    # `seller_positive_pct` is None below p2p_offers_router._MIN_GRADES_TO_SHOW,
+    # matching /p2p/members/{id}/reputation exactly so the two cannot drift.
+    seller_completed_trades: int = 0
+    seller_total_grades: int = 0
+    seller_positive_grades: int = 0
+    seller_positive_pct: Optional[int] = None
     # ── Demand signal — the thing no generic marketplace can show ─────────
     # We know what members WANT (watchlist rows with a target price), so a
     # seller can be told there is real demand before they list. Facebook has
@@ -343,13 +360,97 @@ async def create_listing(
 @router.get("/listings", response_model=ListingListResponse,
             summary="Browse member listings")
 async def browse_listings(
-    category: Optional[str] = Query(None, max_length=64),
+    # Repeatable: ?category=pokemon&category=lego matches ANY of them. The
+    # filter sheet has always let you tick several categories at once, but this
+    # took a single value, so the screen dropped everything past the first —
+    # silently, and the sheet then reopened showing only the survivor.
+    category: Optional[List[str]] = Query(None),
     canonical_key: Optional[str] = Query(None, max_length=200),
+    # Title search, server-side. It used to be a client-side filter over the
+    # loaded page, which is fine for one un-paged block of 50 and wrong the
+    # moment the list pages: filtering locally searches only what happens to be
+    # downloaded, so "2 listings matching X" meant 2 of the first page, and
+    # scrolling for more of them fetched pages the filter then discarded.
+    q: Optional[str] = Query(None, max_length=100, description="Title search"),
     mine: bool = Query(False, description="Only my own listings (includes sold/delisted)"),
+    sort: str = Query("newest", pattern=r"^(newest|price_asc|price_desc)$"),
+    price_min: Optional[float] = Query(None, ge=0, description="Inclusive lower bound"),
+    price_max: Optional[float] = Query(None, ge=0, description="Inclusive upper bound"),
+    price_currency: str = Query(
+        "EUR", max_length=3, pattern=r"^[A-Z]{3}$",
+        description="Currency the price bounds are expressed in",
+    ),
     user_id: str = Depends(get_current_user_id),
     pagination: tuple[int, int] = Depends(pagination_params),
 ) -> ListingListResponse:
     limit, offset = pagination
+
+    # Widening `category` to a list dropped the per-value max_length the single
+    # string had, so re-assert it here rather than let an unbounded value reach
+    # the query. Also cap the count: the filter sheet offers 54 slugs, and a
+    # request naming thousands is not a user.
+    cats: Optional[List[str]] = None
+    if category:
+        if len(category) > 54 or any(len(c) > 64 for c in category):
+            raise error_response(400, "Too many or overlong category filters",
+                                 code="INVALID_CATEGORY_FILTER")
+        # De-duplicate but keep it a plain list; = ANY() does not care about
+        # order and a repeated slug would only widen the scan for no reason.
+        cats = list(dict.fromkeys(category))
+
+    # Escape LIKE metacharacters before wrapping in %…%. Without this a user
+    # typing '%' matches everything and '_' matches any character — the search
+    # silently stops meaning what they typed.
+    term: Optional[str] = None
+    if q and q.strip():
+        esc = q.strip().replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        term = f"%{esc}%"
+
+    # ── Currency normalisation ────────────────────────────────────────────────
+    # Sellers list in THEIR currency (SellOnSparrowSection sends the seller's
+    # settings.currency), so marketplace_listings.currency is genuinely mixed.
+    # Comparing raw `price` across it is wrong in both directions: ¥8000 sorts
+    # above €50, and "under 100" keeps a ¥9000 card. Both the price sort and
+    # the price bounds therefore run against a EUR-normalised value, using the
+    # same rate source as the rest of the server (fx_service, live with a
+    # config fallback) rather than a second convention invented here.
+    #
+    # The conversion has to happen inside the query, because it must apply
+    # BEFORE the WHERE and the LIMIT — converting the fetched rows in Python
+    # would filter and order the wrong set.
+    #
+    # Rates travel as two PARALLEL ARRAYS (text[] + numeric[]) rather than as
+    # jsonb. That is deliberate: app/db.py registers a jsonb type codec with
+    # `encoder=json.dumps`, so handing it an already-serialised string
+    # double-encodes it into a JSON *string*, `->> 'JPY'` returns NULL, and
+    # COALESCE(..., 1) then silently leaves every foreign price unconverted.
+    # That shipped and passed a direct-connection probe, because a raw asyncpg
+    # connection has no such codec — only a request through the real pool
+    # showed it. Arrays have no custom codec on either, so this cannot diverge
+    # between the pool and a bare connection again.
+    from app.lib.fx_service import convert_to_eur, get_rates
+    rate_map: dict[str, Decimal] = {"EUR": Decimal("1")}
+    for cur, rate in (await get_rates()).items():
+        if rate and rate > 0:
+            # via str: Decimal(float) would carry the float's binary error into
+            # a numeric comparison.
+            rate_map[cur.upper()] = Decimal(str(rate))
+    fx_codes = list(rate_map.keys())
+    fx_rates = [rate_map[c] for c in fx_codes]
+
+    # Bounds arrive in the CALLER's display currency and are converted here, so
+    # there is exactly one rate source. Compare in numeric space, not float8:
+    # `price` is numeric, and a float bound makes Postgres widen it to double
+    # precision — which is how a bound lands ~1e-16 off and a listing priced
+    # exactly at the boundary silently drops out
+    # (learning_guard_must_match_constraint_type_space).
+    async def _to_eur_dec(v: Optional[float]) -> Optional[Decimal]:
+        if v is None:
+            return None
+        return Decimal(str(await convert_to_eur(v, price_currency)))
+
+    min_dec = await _to_eur_dec(price_min)
+    max_dec = await _to_eur_dec(price_max)
     pool = get_db_pool()
     if pool is None:
         return ListingListResponse(listings=[])
@@ -362,8 +463,28 @@ async def browse_listings(
                    l.condition_label, l.category, l.canonical_key,
                    l.ships_from, l.shipping_cost, l.status, l.created_at,
                    COALESCE(i.image_url, ci.image_url) AS image_url,
-                   (i.image_url IS NULL AND ci.image_url IS NOT NULL) AS image_is_catalog
+                   (i.image_url IS NULL AND ci.image_url IS NOT NULL) AS image_is_catalog,
+                   -- Social proof on the tile. It exists on the detail screen
+                   -- already, but a signal a buyer only sees AFTER tapping
+                   -- cannot influence whether they tap. Excludes the seller's
+                   -- own watchlist row — "1 watching" that is you is a lie.
+                   (SELECT count(*) FROM public.watchlist_items w
+                     WHERE w.item_id = l.canonical_key
+                       AND w.category = l.category
+                       AND w.user_id <> l.user_id) AS watchers,
+                   p.display_name, p.username,
+                   -- EUR-normalised price, computed ONCE and then used by both
+                   -- the bounds and the sort below. It used to be the same
+                   -- expression repeated four times, which is precisely why a
+                   -- rate map that silently resolved to NULL was invisible.
+                   l.price * COALESCE(fx.rate, 1) AS price_eur
             FROM public.marketplace_listings l
+            -- Rate lookup as a join over two parallel arrays. LEFT JOIN, so an
+            -- unknown currency keeps the row at rate 1 (wrong by a few percent)
+            -- instead of dropping it, which would make a listing vanish with
+            -- nothing on screen to explain it.
+            LEFT JOIN unnest($12::text[], $13::numeric[]) AS fx(code, rate)
+                   ON fx.code = l.currency
             -- LEFT JOIN: a listing must still render if its source item was
             -- deleted. An inner join would silently drop listings, which is
             -- the empty-result failure mode this codebase keeps hitting.
@@ -375,6 +496,7 @@ async def browse_listings(
             LEFT JOIN public.category_items ci
                    ON ci.item_key = l.canonical_key
                   AND ci.category = l.category
+            LEFT JOIN public.profiles p ON p.id = l.user_id
             WHERE l.marketplace_id = $1
               -- Public browse shows only live listings. `mine` shows the
               -- seller EVERYTHING they have listed, including sold and
@@ -383,14 +505,29 @@ async def browse_listings(
               -- cannot tell "sold" from "never saved".
               AND ($5::boolean IS TRUE
                    OR (l.delisted_at IS NULL AND l.status = $2))
-              AND ($3::text IS NULL OR l.category = $3)
+              AND ($3::text[] IS NULL OR l.category = ANY($3::text[]))
               AND ($4::text IS NULL OR l.canonical_key = $4)
               AND ($5::boolean IS FALSE OR l.user_id = $6::uuid)
-            ORDER BY l.created_at DESC
+              -- Inclusive bounds, so "max 50" keeps a listing priced exactly 50,
+              -- compared against the single price_eur expression in the SELECT.
+              AND ($10::numeric IS NULL
+                   OR l.price * COALESCE(fx.rate, 1) >= $10::numeric)
+              AND ($11::numeric IS NULL
+                   OR l.price * COALESCE(fx.rate, 1) <= $11::numeric)
+              AND ($14::text IS NULL OR l.listing_title ILIKE $14::text)
+            -- Whitelisted sort. A CASE over a validated enum rather than
+            -- string interpolation: the pattern on the Query already rejects
+            -- anything else, but building ORDER BY from a request value is
+            -- how injection gets in even when "it's validated upstream".
+            ORDER BY
+              CASE WHEN $9 = 'price_asc'  THEN l.price * COALESCE(fx.rate, 1) END ASC  NULLS LAST,
+              CASE WHEN $9 = 'price_desc' THEN l.price * COALESCE(fx.rate, 1) END DESC NULLS LAST,
+              l.created_at DESC
             LIMIT $7 OFFSET $8
             """,
             SPARROW_MARKETPLACE_KEY, _STATUS_ACTIVE,
-            category, canonical_key, mine, user_id, limit, offset,
+            cats, canonical_key, mine, user_id, limit, offset, sort,
+            min_dec, max_dec, fx_codes, fx_rates, term,
         )
 
     return ListingListResponse(listings=[
@@ -404,10 +541,65 @@ async def browse_listings(
             shipping_cost=float(r["shipping_cost"]) if r["shipping_cost"] is not None else None,
             image_url=r["image_url"],
             image_is_catalog=bool(r["image_is_catalog"]),
+            watchers=int(r["watchers"] or 0),
+            seller_name=r["display_name"] or r["username"],
             status=r["status"], created_at=r["created_at"],
             is_mine=str(r["user_id"]) == user_id,
         )
         for r in rows
+    ])
+
+
+class CategoryFacet(BaseModel):
+    category: str
+    count: int
+
+
+class CategoryFacetResponse(BaseModel):
+    facets: List[CategoryFacet] = []
+
+
+# Path is /facets/categories, deliberately NOT /listings/facets: the latter
+# would sit in the same namespace as /listings/{listing_id} and depend on route
+# registration order to not be swallowed as a listing id.
+@router.get("/facets/categories", response_model=CategoryFacetResponse,
+            summary="Categories that actually have live listings, with counts")
+async def category_facets(
+    user_id: str = Depends(get_current_user_id),
+) -> CategoryFacetResponse:
+    """Which categories a buyer can usefully filter by.
+
+    The filter sheet used to offer all 54 app categories regardless of stock, so
+    most choices led to a guaranteed empty grid — the user pays a round trip to
+    discover the category was never an option. Offering only categories with
+    live listings, and showing the count, makes the control self-describing.
+
+    Deliberately ignores the caller's other filters (price, search): these are
+    counts of live listings per category, not a full faceted search. A category
+    shown as "3" can still yield nothing under a €5 cap — which is why the empty
+    state distinguishes "no match for your filters" from "marketplace is empty".
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return CategoryFacetResponse(facets=[])
+
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT l.category, count(*) AS n
+            FROM public.marketplace_listings l
+            WHERE l.marketplace_id = $1
+              AND l.status = $2
+              AND l.delisted_at IS NULL
+              AND l.category IS NOT NULL
+            GROUP BY l.category
+            ORDER BY n DESC, l.category ASC
+            """,
+            SPARROW_MARKETPLACE_KEY, _STATUS_ACTIVE,
+        )
+
+    return CategoryFacetResponse(facets=[
+        CategoryFacet(category=r["category"], count=int(r["n"])) for r in rows
     ])
 
 
@@ -525,6 +717,20 @@ async def get_listing(
                    (SELECT count(*) FROM public.marketplace_listings sl
                      WHERE sl.user_id = l.user_id AND sl.status = 'active'
                        AND sl.delisted_at IS NULL) AS seller_listings,
+                   -- Trade reputation. Trades this seller COMPLETED on either
+                   -- side, and the grades others left them. Counted from
+                   -- p2p_offers/member_grades, the same tables
+                   -- /p2p/members/{id}/reputation reads, so the listing screen
+                   -- and the reputation endpoint cannot disagree.
+                   (SELECT count(*) FROM public.p2p_offers so
+                     WHERE so.status = 'completed'
+                       AND (so.seller_id = l.user_id OR so.buyer_id = l.user_id)
+                   ) AS seller_completed_trades,
+                   (SELECT count(*) FROM public.member_grades mg
+                     WHERE mg.ratee_id = l.user_id) AS seller_total_grades,
+                   (SELECT count(*) FROM public.member_grades mg
+                     WHERE mg.ratee_id = l.user_id
+                       AND mg.verdict = 'positive') AS seller_positive_grades,
                    -- Demand. watchlist_items.item_id holds a BARE canonical
                    -- key, same vocabulary as marketplace_listings.canonical_key
                    -- — this joins directly, unlike market_hits.item_ref which
@@ -554,6 +760,13 @@ async def get_listing(
     if r is None:
         raise error_response(404, "Listing not found", code="LISTING_NOT_FOUND")
 
+    # Imported from the offers router rather than redefined, so the listing
+    # screen's "enough grades to show a percentage" rule is the SAME constant the
+    # reputation endpoint uses. Two copies of a threshold drift.
+    from app.features.p2p_offers_router import _MIN_GRADES_TO_SHOW
+
+    _total_grades = int(r["seller_total_grades"] or 0)
+
     return ListingOut(
         id=str(r["id"]), user_id=str(r["user_id"]),
         item_id=str(r["item_id"]) if r["item_id"] else None,
@@ -568,6 +781,15 @@ async def get_listing(
         seller_since=r["seller_since"],
         seller_collection_size=int(r["seller_items"] or 0),
         seller_active_listings=int(r["seller_listings"] or 0),
+        seller_completed_trades=int(r["seller_completed_trades"] or 0),
+        seller_total_grades=_total_grades,
+        seller_positive_grades=int(r["seller_positive_grades"] or 0),
+        # None below the shared threshold. Rounded to a whole number: a decimal
+        # on a sample of four grades is false precision.
+        seller_positive_pct=(
+            round(100.0 * int(r["seller_positive_grades"] or 0) / _total_grades)
+            if _total_grades >= _MIN_GRADES_TO_SHOW else None
+        ),
         watchers=int(r["watchers"] or 0),
         watchers_above_price=int(r["watchers_above"] or 0),
         # A delisted row keeps its stored status ('sold'/'delisted'), so the

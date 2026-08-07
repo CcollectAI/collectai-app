@@ -5,6 +5,10 @@ API, and UI. Stage 3 (payments/escrow) remains a proposal and is deliberately
 not started.
 **Governing decision:** ship **listings without payments** first. Escrow only
 after volume proves it earns its operational cost.
+**Compliance correction (2026-08-07):** §5 was wrong on two counts — Vinted runs
+its own EMI rather than Stripe, and **DAC7 is triggered by Stage 2 as built, not
+by Stage 3**. Read **§5a** before planning any payment or logistics work, and
+**§5b** for the rule that decides what we may facilitate.
 
 ---
 
@@ -297,8 +301,8 @@ non-HTTP URL scheme"), so either accept the log noise or skip the call for
 
 | Risk | Applies at | Mitigation |
 |---|---|---|
-| **PSD2 / payment institution** | Stage 3 only | Stripe Connect Express — Stripe is the regulated party. Never hold funds in our own account |
-| **DAC7** (EU platform tax reporting) | Stage 3, arguably Stage 2 | Applies to platforms facilitating "relevant activity" where we know the consideration. Stage 1 does not process or know the price paid. Stage 3 = collect seller TIN + address, report by 31 Jan |
+| **PSD2 / payment institution** | Stage 3 only | Stripe Connect Express — Stripe is the regulated party. Never hold funds in our own account. **But Stripe explicitly does not offer escrow** — see §5a |
+| **DAC7** (EU platform tax reporting) | **Stage 2 — i.e. NOW.** Not Stage 3 | Corrected 2026-08-07; the earlier "arguably Stage 2" was wrong. `p2p_offers.amount` is communicated to both parties and driven to `completed`, which meets the OECD "reasonably knowable" test with zero money moving. See §5a |
 | **DSA notice-and-action** | Stage 1 | Report button on every listing, act on notice, give a statement of reasons. Micro-enterprise exemption covers *some* Art. 19 obligations but **not** notice-and-action |
 | **Counterfeits** | Stage 1 | Hosting safe harbour holds only while we stay a neutral host. **Never label a listing "authenticated by Sparrow"** — that forfeits it |
 | **Consumer law** | Stage 2+ | Consumer sellers owe no 14-day withdrawal right; traders do. Must not present one as the other |
@@ -308,6 +312,108 @@ non-HTTP URL scheme"), so either accept the log noise or skip the call for
 **The unbounded risk is operational, not legal.** Disputes, "not as described",
 fakes, shipping. Vinted staffs that with hundreds of people. Stage 1 has none of
 it by construction, which is the entire argument for stopping there first.
+
+## 5a. Correction — what Vinted actually is, and what Stage 2 already triggered
+
+Written 2026-08-07 after checking the primary sources rather than reasoning from
+the table above. Two things in §5 were wrong.
+
+### "Stripe Connect Express is how you do the Vinted thing"
+
+Vinted does not use Stripe. **Vinted Pay, UAB holds its own electronic money
+institution licence** from the Bank of Lithuania (granted 25 Sep 2023), plus a
+separate UK EMI licence. The "Vinted wallet" is e-money issuance. Vinted became
+the regulated party rather than renting one.
+
+The other two things that make Vinted feel safe are also entities, not features:
+
+| What the buyer sees | What is actually behind it |
+|---|---|
+| Funds held until delivery | An EMI licence — €350k initial capital (EMD2 Art. 4) is the *floor*, plus fit-and-proper management and an AML function |
+| Integrated shipping labels | **Vinted Go** — a separate company, 60+ carriers, ~600k pickup points, which had to **acquire Homerr** to get NL coverage |
+| Refund if it doesn't arrive | Buyer Protection (~5% + €0.70, non-optional) funding a staffed dispute org, with a 48h post-delivery window |
+
+And **Stripe does not offer escrow** — its own position is that escrow has a
+precise legal definition and Connect is not it. What Connect gives is
+*escrow-like* behaviour via manual payouts and delayed transfers (up to 90 days).
+That distinction matters when we are the ones writing the terms.
+
+So Stripe Connect covers the *licence*, not the *marketplace*. DSA, DAC7,
+consumer law, AML flagging, chargebacks and every dispute still sit with us.
+
+### DAC7 is already live, and it is not about money
+
+DAC7 defines Consideration as compensation *"the amount of which is known or
+reasonably knowable by the Platform Operator."* The OECD lists three ways it
+becomes reasonably knowable. We hit two of them:
+
+1. **The platform communicates the agreed terms including the amount.**
+   `p2p_offers.amount` is shown to both parties, accepted, and driven to
+   `status='completed'` by `confirm_exchange` in `p2p_offers_router.py`. This
+   is the trigger, and it fires with **no funds flow at all**.
+2. *(Not hit, and must stay that way)* the platform commits to a refund or other
+   buyer protection. This is the second reason never to offer one — see §5b.
+
+The third — withholding a commission set against the amount paid — we do not hit
+for the marketplace, but note that `app/legal/terms.tsx:159` already claims a
+**5% platform fee on event tickets**. Whether ticketed events are a DAC7
+relevant activity is genuinely arguable; the clause predates the marketplace and
+should be looked at in the same conversation.
+
+**The mitigation is proportionate, which is the point.** The NL de-minimis
+excludes sellers under 30 sales *and* under €2,000/yr, so at our volume
+essentially every seller is an Excluded Seller and the report is near-empty. The
+cost is registration plus enough data to *demonstrate* exclusion — not a tax
+operation. But it has to actually exist.
+
+**Action:** a Dutch tax adviser on the registration question **before the
+marketplace has real users**, not before Stage 3. One conversation, not a
+retainer.
+
+## 5b. The facilitation rule
+
+> **Sparrow may know everything and do nothing.**
+
+Every risk above comes from one of two things: becoming a **party to a contract**
+(carriage, payment, guarantee), or **assuming an obligation** (refund,
+adjudication, verification). Neither is triggered by knowing, displaying, or
+introducing — which is where nearly all the user value is anyway.
+
+"Zero risk" is not reachable and is the wrong target: DSA is live at Stage 1 and
+DAC7 at Stage 2, both bounded and both already incurred. The target is **no new
+regulated activity, no assumed obligation, no unbounded liability.**
+
+| We may | We may not |
+|---|---|
+| Deep-link out with the amount prefilled — a hyperlink is not payment initiation under PSD2 Art. 4(15); the user's own PSP initiates the order | Hold funds, even momentarily. There is no de-minimis |
+| Compare payment rails **neutrally** (reversible vs not) | Say "we recommend X" — that is a representation |
+| Record a payment *claim* the seller asserts | Issue a receipt in Sparrow's name |
+| Capture a tracking code and link to the **carrier's own** page | Auto-complete a trade from carrier status — see below |
+| Hand over addresses between parties after `accepted` | Generate labels under a Sparrow carrier account — that makes us the contracting party for carriage |
+| Show `completed_trades`, a fact about platform history | Show a "Verified Seller" badge — that is a representation about a person |
+| Point at the payment rail's own dispute process | Mediate, or offer any refund or guarantee |
+| — | Arrange shipping insurance. That is insurance distribution under IDD. The seller buys it from the carrier |
+
+**The trap that looks free: auto-completing on tracking status.** If we poll a
+carrier and flip `buyer_confirmed_at` on "delivered", we have substituted our
+judgment for the buyer's — and we own it when the box arrives empty. Tracking is
+**display-only**; `confirm_exchange` stays the only writer of those columns. This
+is the same class as never labelling a listing "authenticated by Sparrow".
+
+**What this buys.** Two-sided confirmation plus mutual grading is the Vinted
+trust model minus the money — their 48h window is an automated "buyer confirms",
+and we already have the manual version. Tracking visibility and address hand-off
+close most of the *felt* gap while the licence, the subsidiary and the support
+org stay on their side of the line.
+
+### Sources
+
+- [Bank of Lithuania — EMI licence granted to a subsidiary of Vinted](https://www.lb.lt/en/news/electronic-money-institution-licence-granted-to-a-subsidiary-of-vinted)
+- [Vinted — Vinted Pay receives UK EMI licence](https://company.vinted.com/newsroom/vinted-pay-receives-UK-EMI-license)
+- [Silicon Canals — Vinted Go acquires Homerr](https://siliconcanals.com/vinted-go-acquires-homerr/)
+- [Stripe Docs — Using manual payouts](https://docs.stripe.com/connect/manual-payouts)
+- [Belastingdienst — DAC7 for platform operators](https://www.belastingdienst.nl/wps/wcm/connect/en/business/content/information-for-platform-operators-dac7)
+- [MTCA — DAC7 Guidelines (consideration definition)](https://mtca.gov.mt/docs/default-source/documents/top-bar/eservices/international/dac7/dac-7-guidelines-final.pdf)
 
 ## 6. Build order
 
@@ -368,7 +474,13 @@ makes the watchlist weak today — fixing it once helps both.
 
 Still open:
 
-- Shipping: display-only in Stage 1, or structured (carrier/price) from day one?
+- ~~Shipping: display-only in Stage 1, or structured (carrier/price) from day
+  one?~~ **Answered 2026-08-07: structured, but display-only.** `ships_from` and
+  `shipping_cost` already exist on the listing; `tracking_carrier` /
+  `tracking_code` were added to `p2p_offers`. We capture and display, and never
+  become a party to the carriage — see §5b. Note that PostNL and DPD deep links
+  need the **recipient's postcode**, which we deliberately do not hold, so those
+  carriers render a copyable code and no link rather than a link that 404s.
 - Geography: NL-only first? Cross-border consumer law is materially harder
 - Does a `sparrow` listing count toward the free plan's watchlist/alert caps, or
   is listing always free? (Recommend: listing always free — supply is the point)

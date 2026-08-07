@@ -221,6 +221,13 @@ function PortfolioScreen() {
   const valueSummary = useValueSummary();
   const [range, setRange] = useState<RangeKey>("7D");
   const [series, setSeries] = useState<TimeSeriesPoint[]>([]);
+  // Why the series is empty. The chart renders "No history yet" for an empty
+  // array, so without this a failed request (classically a cold-start 401 —
+  // see project_2026_07_14_401_root_cause_tokenless) is displayed as "you have
+  // no history", which is a different and wrong statement. VERIFIED 2026-08-05:
+  // the API returns points for every range (1d=2 … all=3651), so an empty
+  // series on this screen is a transport failure, not absent data.
+  const [seriesFailed, setSeriesFailed] = useState(false);
   const [items, setItems] = useState<ItemRow[]>([]);
   // Persisted "has ever had items" flag. Drives the first-item hero: it shows
   // ONLY for a genuinely-new collection and is replaced by the graph the moment
@@ -321,11 +328,9 @@ function PortfolioScreen() {
           const rangeParam = range.toLowerCase() as "1d" | "7d" | "30d" | "90d" | "1y" | "all";
           const timeseriesData = await collectorsApi.getPortfolioTimeseries(rangeParam);
           const extractedSeries = extractSeries(timeseriesData);
-          if (extractedSeries.length) {
-            setSeries(extractedSeries);
-          } else {
-            setSeries([]);
-          }
+          setSeries(extractedSeries);
+          // The call succeeded. An empty result here really is "no history".
+          setSeriesFailed(false);
 
           const overviewData = await collectorsApi.getPortfolioOverview();
           const extractedItems = extractItems(overviewData);
@@ -342,6 +347,7 @@ function PortfolioScreen() {
         } catch (realErr: unknown) {
           logger.error("[Portfolio] Real backend error, falling back:", realErr);
           setSeries([]);
+          setSeriesFailed(true);
           // Same fallback on a hard failure. Only surface an error if the
           // collection genuinely cannot be read either way — otherwise Home
           // showed "Could not load portfolio data" over a collection the Items
@@ -387,6 +393,7 @@ function PortfolioScreen() {
       logger.error("[Portfolio] Unexpected error:", err);
       setError("Failed to load portfolio data.");
       setSeries([]);
+      setSeriesFailed(true);
       setItems([]);
     } finally {
       setLoading(false);
@@ -439,7 +446,13 @@ function PortfolioScreen() {
         : [];
       setCategoryBreakdown(cats);
     } catch (err: unknown) {
-      logger.warn('[Portfolio] category breakdown fetch failed:', err);
+      // logger.error, not warn — warn is stripped in release builds, so this
+      // failure was invisible on exactly the builds where it matters. The
+      // catch also resets the breakdown to [], which renders as "no
+      // categories" and is indistinguishable from a genuinely empty
+      // portfolio; without a surviving trace there is nothing to tell them
+      // apart after the fact.
+      logger.error('[Portfolio] category breakdown fetch failed:', err);
       setCategoryBreakdown([]);
     } finally {
       setBreakdownLoading(false);
@@ -720,6 +733,8 @@ function PortfolioScreen() {
               ) : (
                 <PortfolioLineChart
                   series={series}
+                  loadFailed={seriesFailed}
+                  onRetry={loadData}
                   accentColor={colors.accent}
                   showValueHeader={true}
                   showAxisLabels={true}

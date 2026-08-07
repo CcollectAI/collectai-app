@@ -244,7 +244,7 @@ export async function deleteItem(itemId: string): Promise<void> {
   }
 }
 
-export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item> {
+export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>> & { notes?: string | null }): Promise<Item> {
   const updatePayload: Record<string, unknown> = {};
   // BOTH halves. items carries name and title as a pair and different readers
   // key on different ones (docs/ARCHITECTURE.md). Writing only `title` left
@@ -259,6 +259,12 @@ export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name
   // items has `image_url` (singular text), not `images` (array). The earlier
   // shape wrote `images: [url]` which silently failed on every save.
   if (patch.imageUrl !== undefined) updatePayload.image_url = patch.imageUrl ?? null;
+  // notes added 2026-08-07. The item-detail notes editor previously called an
+  // onSaveNotes that was a 300ms setTimeout writing NOTHING, while toasting
+  // "Notes saved locally" — so every note a user typed was lost on unmount.
+  // Empty string is stored as NULL so "cleared" and "never set" are the same
+  // state rather than two.
+  if (patch.notes !== undefined) updatePayload.notes = patch.notes?.trim() ? patch.notes : null;
 
   const { data, error } = await supabase
     .from('items')

@@ -142,6 +142,7 @@ export const collectorsApi = {
   // P2P member listings (Stage 1: no payments). See docs/P2P_MARKETPLACE_SPEC.md.
   createListing: p2pApi.createListing,
   listP2PListings: p2pApi.listListings,
+  listP2PCategoryFacets: p2pApi.listCategoryFacets,
   getP2PListing: p2pApi.getListing,
   getDemandPreview: p2pApi.getDemandPreview,
   // Namespaced `p2p*`: the Deal Desk below already exports proposeOffer /
@@ -154,6 +155,8 @@ export const collectorsApi = {
   p2pListOffers: p2pApi.listOffers,
   p2pRespondToOffer: p2pApi.respondToOffer,
   p2pConfirmExchange: p2pApi.confirmExchange,
+  p2pSetOfferTracking: p2pApi.setOfferTracking,
+  p2pListCarriers: p2pApi.listCarriers,
   p2pGradeCounterparty: p2pApi.gradeCounterparty,
   p2pMemberReputation: p2pApi.getMemberReputation,
   delistListing: p2pApi.delistListing,

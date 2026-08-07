@@ -212,7 +212,7 @@ function ItemDetailScreen() {
   // this is the fallback so a bare id is enough.
   const [savedCore, setSavedCore] = useState<{
     name?: string | null; category?: string | null; condition?: string | null;
-    value?: number | null; imageUrl?: string | null;
+    value?: number | null; imageUrl?: string | null; notes?: string | null;
   } | null>(null);
   useEffect(() => {
     if (isDraft || !id) return;
@@ -220,7 +220,7 @@ function ItemDetailScreen() {
     (async () => {
       const { data, error } = await supabase
         .from('items')
-        .select('attrs, collection_name, canonical_key, name, title, category, condition, estimated_value, predicted_price_eur, image_url')
+        .select('attrs, collection_name, canonical_key, name, title, category, condition, estimated_value, predicted_price_eur, image_url, notes')
         .eq('id', id)
         .maybeSingle();
       if (cancelled || error || !data) return;
@@ -228,6 +228,7 @@ function ItemDetailScreen() {
         attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null;
         name?: string | null; title?: string | null; category?: string | null; condition?: string | null;
         estimated_value?: number | null; predicted_price_eur?: number | null; image_url?: string | null;
+        notes?: string | null;
       };
       setSavedCore({
         // name and title are the two halves of the same pair — see the
@@ -237,6 +238,7 @@ function ItemDetailScreen() {
         condition: row.condition ?? null,
         value: row.predicted_price_eur ?? row.estimated_value ?? null,
         imageUrl: row.image_url ?? null,
+        notes: row.notes ?? null,
       });
       setSavedAttrs(row.attrs ?? null);
       setSavedCollectionName(row.collection_name ?? null);
@@ -287,6 +289,14 @@ function ItemDetailScreen() {
     }
     if (savedCore.value != null && (detail.editableValue === "0" || !detail.editableValue)) {
       detail.setEditableValue(String(savedCore.value));
+    }
+    // Notes come from the DB, not just route params. Without this the save
+    // fixed in useItemDetail would still LOOK broken: reopening the item (deep
+    // link, notification tap, app restart) showed an empty box because
+    // `initialNotes` is only ever populated by a navigation param.
+    // Guarded on empty so a user mid-edit is never overwritten by the fetch.
+    if (savedCore.notes && !detail.notes) {
+      detail.setNotes(savedCore.notes);
     }
     adoptedCoreRef.current = true;
   }, [savedCore, detail]);
@@ -1028,7 +1038,6 @@ function ItemDetailScreen() {
               notes={notes}
               onChangeNotes={setNotes}
               onSaveNotes={onSaveNotes}
-              keyboardVisible={keyboardVisible}
               onFocus={scrollToNotes}
             />
 

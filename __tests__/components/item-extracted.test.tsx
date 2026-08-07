@@ -263,7 +263,6 @@ describe('ItemNotesEditor', () => {
         notes=""
         onChangeNotes={jest.fn()}
         onSaveNotes={jest.fn()}
-        keyboardVisible={false}
         onFocus={jest.fn()}
       />,
     );
@@ -276,46 +275,52 @@ describe('ItemNotesEditor', () => {
         notes=""
         onChangeNotes={jest.fn()}
         onSaveNotes={jest.fn()}
-        keyboardVisible={false}
         onFocus={jest.fn()}
       />,
     );
     expect(screen.getByText('Notes')).toBeTruthy();
   });
 
-  it('renders Save button when keyboard is visible', () => {
+  it('renders exactly ONE save control', () => {
+    // There used to be two: a keyboard-gated "Save" in the header AND the
+    // primary "Save notes" below the textarea — two controls for one action,
+    // and the header one never appeared on web (no keyboard events). This
+    // test exists so the duplicate does not come back.
     render(
       <ItemNotesEditor
         notes="Some notes"
         onChangeNotes={jest.fn()}
         onSaveNotes={jest.fn()}
-        keyboardVisible={true}
         onFocus={jest.fn()}
       />,
     );
-    expect(screen.getByText('Save')).toBeTruthy();
-  });
-
-  it('does not render Save button when keyboard is hidden', () => {
-    render(
-      <ItemNotesEditor
-        notes="Some notes"
-        onChangeNotes={jest.fn()}
-        onSaveNotes={jest.fn()}
-        keyboardVisible={false}
-        onFocus={jest.fn()}
-      />,
-    );
+    // The removed header button was labelled exactly "Save"; the surviving
+    // primary button is "Save notes" / "Saved" depending on whether there are
+    // unsaved changes. On mount lastSaved === notes, so it reads "Saved".
     expect(screen.queryByText('Save')).toBeNull();
+    expect(screen.getByText('Saved')).toBeTruthy();
   });
 
-  it('matches snapshot with keyboard visible', () => {
+  it('shows Saved when there is nothing to save', () => {
+    // State, not just an action — this is why the primary button was the one
+    // kept over the header "Save".
+    render(
+      <ItemNotesEditor
+        notes=""
+        onChangeNotes={jest.fn()}
+        onSaveNotes={jest.fn()}
+        onFocus={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('Saved')).toBeTruthy();
+  });
+
+  it('matches snapshot with notes present', () => {
     const tree = render(
       <ItemNotesEditor
         notes="Mint condition, purchased at local shop"
         onChangeNotes={jest.fn()}
         onSaveNotes={jest.fn()}
-        keyboardVisible={true}
         onFocus={jest.fn()}
       />,
     );

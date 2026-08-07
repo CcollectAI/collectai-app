@@ -15,12 +15,16 @@
  *  - `useTabBarInset` for QuickNavBar clearance.
  *  - No `accessibilityRole="tabbar"` (hard-crashes Android).
  */
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, Animated } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  View, Text, FlatList, StyleSheet, RefreshControl, Alert, Animated,
+  Linking, TextInput, ScrollView,
+} from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '@/components/ScreenHeader';
+import { BottomSheetModal } from '@/components/BottomSheetModal';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { EmptyState } from '@/components/EmptyState';
@@ -33,7 +37,7 @@ import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { formatPrice } from '@/lib/format';
 import { collectorsApi } from '@/api/collectorsApi';
-import type { P2POffer } from '@/api/p2pApi';
+import type { P2POffer, P2PCarrier } from '@/api/p2pApi';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
 
@@ -62,6 +66,13 @@ function OffersScreen() {
   const [role, setRole] = useState<Role>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  // Tracking capture. The offer being edited drives the sheet; null = closed.
+  const [trackingFor, setTrackingFor] = useState<P2POffer | null>(null);
+  const [carriers, setCarriers] = useState<P2PCarrier[]>([]);
+  const [carriersState, setCarriersState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
+  const [carrierKey, setCarrierKey] = useState<string | null>(null);
+  const [trackingCode, setTrackingCode] = useState('');
 
   const { data, loading, error, retry } = useAsync(
     async () => (await collectorsApi.p2pListOffers(role))?.offers ?? [],
@@ -110,6 +121,66 @@ function OffersScreen() {
       ],
     );
   }, [act, settings.currency]);
+
+  // Carriers come from the SERVER (`_CARRIER_TRACKING`), not a list hardcoded
+  // here — a client copy would let a seller pick a carrier the server cannot
+  // resolve, which silently degrades to a code with no link. Fetched when the
+  // sheet first opens rather than on mount: most sessions never ship anything.
+  // Tri-state, not a bare list. "Empty" and "still loading" render identically
+  // if you only track the array, and the playbook's rule is that a user who
+  // cannot tell them apart is being lied to (docs/ui-playbook.md, "Empty ≠
+  // loading"). The first version showed "Couldn't load carriers" for the whole
+  // duration of a perfectly healthy fetch.
+  //
+  // The request itself is bounded by construction — httpClient aborts every
+  // fetch at REQUEST_TIMEOUT_MS — so this cannot hang on 'loading' forever.
+  useEffect(() => {
+    if (!trackingFor || carriersState !== 'idle') return;
+    let cancelled = false;
+    setCarriersState('loading');
+    collectorsApi
+      .p2pListCarriers()
+      .then((list) => {
+        if (cancelled) return;
+        setCarriers(list ?? []);
+        setCarriersState('ok');
+      })
+      .catch((e) => {
+        // logger.error, not warn — warn is stripped in release builds, which is
+        // exactly where a silent empty picker would be invisible.
+        logger.error('[offers] carrier list failed:', e);
+        if (!cancelled) setCarriersState('error');
+      });
+    return () => { cancelled = true; };
+  }, [trackingFor, carriersState]);
+
+  const openTracking = useCallback((o: P2POffer) => {
+    setTrackingFor(o);
+    setCarrierKey(o.tracking_carrier ?? null);
+    setTrackingCode(o.tracking_code ?? '');
+  }, []);
+
+  const closeTracking = useCallback(() => setTrackingFor(null), []);
+
+  // ONE definition of "is this saveable", used by the guard, the `disabled`
+  // prop and the disabled styling. Three copies of the same predicate is how
+  // an enabled-looking button that refuses to do anything gets shipped.
+  // Minimum 3 matches TrackingIn.tracking_code's pattern on the server.
+  const canSaveTracking = useMemo(
+    () => Boolean(trackingFor && carrierKey) && trackingCode.trim().length >= 3,
+    [trackingFor, carrierKey, trackingCode],
+  );
+
+  const saveTracking = useCallback(async () => {
+    if (!trackingFor || !carrierKey || !canSaveTracking) return;
+    const offerId = trackingFor.id;
+    setTrackingFor(null);
+    await act(
+      () => collectorsApi.p2pSetOfferTracking(offerId, carrierKey, trackingCode.trim()),
+      offerId,
+      'Tracking added',
+    );
+  }, [act, canSaveTracking, carrierKey, trackingCode, trackingFor]);
 
   const onGrade = useCallback((o: P2POffer) => {
     Alert.alert(
@@ -175,6 +246,48 @@ function OffersScreen() {
           </View>
         ) : null}
 
+        {/* Shipment visibility. DISPLAY ONLY — this never advances the trade.
+            Completion stays the two ticks above, which only a human sets. */}
+        {o.tracking_code ? (
+          <View style={[styles.tracking, { borderColor: colors.border }]}>
+            <Ionicons name="cube-outline" size={14} color={colors.muted} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.trackingLabel, { color: colors.muted }]}>
+                {o.tracking_carrier_label ?? 'Carrier'}
+              </Text>
+              {/* `selectable` rather than a copy button: expo-clipboard is not
+                  installed, and a guarded require of a missing package is a
+                  silent no-op on BOTH platforms (learning_ios_only_apis_
+                  silently_noop_on_android). Selectable text always works. */}
+              <Text selectable style={[styles.trackingCode, { color: colors.text }]}>
+                {o.tracking_code}
+              </Text>
+            </View>
+            {o.tracking_url ? (
+              <AnimatedPressable
+                onPress={() => {
+                  const url = o.tracking_url;
+                  if (!url) return;
+                  Linking.openURL(url).catch((e) =>
+                    logger.error('[offers] tracking link failed:', e));
+                }}
+                accessibilityRole="link"
+                accessibilityLabel={`Track this parcel with ${o.tracking_carrier_label ?? 'the carrier'}`}
+              >
+                <Text style={[styles.trackLink, { color: colors.accent }]}>Track</Text>
+              </AnimatedPressable>
+            ) : (
+              // No link rather than a broken one. PostNL and DPD need the
+              // recipient's postcode in the URL and we deliberately don't hold
+              // it — a 404 button is the dead-button failure Stage 1 bug 0 was
+              // fixed to avoid.
+              <Text style={[styles.trackHint, { color: colors.muted }]}>
+                Search this code{'\n'}on the carrier&apos;s site
+              </Text>
+            )}
+          </View>
+        ) : null}
+
         <View style={styles.actions}>
           {/* Seller decides on an open offer. */}
           {isSeller && open ? (
@@ -228,6 +341,22 @@ function OffersScreen() {
             </AnimatedPressable>
           ) : null}
 
+          {/* can_add_tracking is server-computed (seller, and trade live). It is
+              a hint only — the endpoint enforces both independently. */}
+          {o.can_add_tracking ? (
+            <AnimatedPressable
+              onPress={() => openTracking(o)}
+              disabled={busy}
+              style={[styles.btn, styles.btnGhost, { borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={o.tracking_code ? 'Edit tracking details' : 'Add tracking details'}
+            >
+              <Text style={[styles.btnText, { color: colors.text }]}>
+                {o.tracking_code ? 'Edit tracking' : 'Add tracking'}
+              </Text>
+            </AnimatedPressable>
+          ) : null}
+
           {live ? (
             <AnimatedPressable
               onPress={() => act(() => collectorsApi.p2pRespondToOffer(o.id, 'withdraw'), o.id, 'Withdrawn')}
@@ -266,7 +395,7 @@ function OffersScreen() {
         </AnimatedPressable>
       </View>
     );
-  }, [act, busyId, colors, onCounter, onGrade, router, settings.currency, settings.numberLocale]);
+  }, [act, busyId, colors, onCounter, onGrade, openTracking, router, settings.currency, settings.numberLocale]);
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -351,6 +480,129 @@ function OffersScreen() {
         />
       )}
 
+      {/* BottomSheetModal, not Alert.prompt — the latter is iOS-only, and a
+          consignment code has to be typed so there is no option ladder that
+          would avoid an input. The wrapper already handles onRequestClose
+          (Android back) and safe-area-context. */}
+      <BottomSheetModal
+        visible={trackingFor !== null}
+        onClose={closeTracking}
+        title={trackingFor?.tracking_code ? 'Edit tracking' : 'Add tracking'}
+        colors={colors}
+        maxHeight="70%"
+      >
+        <ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
+          <Text style={[styles.sheetHint, { color: colors.muted }]}>
+            The buyer sees this so they can follow the parcel. Sparrow doesn&apos;t
+            check it and it doesn&apos;t complete the trade — you both still confirm
+            by hand.
+          </Text>
+
+          <Text style={[styles.sheetLabel, { color: colors.text }]}>Carrier</Text>
+          <View style={styles.carrierWrap}>
+            {carriers.map((c) => {
+              const active = carrierKey === c.key;
+              return (
+                <AnimatedPressable
+                  key={c.key}
+                  onPress={() => setCarrierKey(c.key)}
+                  style={[
+                    styles.carrierChip,
+                    { borderColor: active ? colors.accent : colors.border },
+                    active && { backgroundColor: colors.accent + '1E' },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={c.label}
+                >
+                  <Text style={[styles.carrierChipText, { color: active ? colors.accent : colors.text }]}>
+                    {c.label}
+                  </Text>
+                </AnimatedPressable>
+              );
+            })}
+          </View>
+          {/* Loading and failed are DIFFERENT states and must read differently.
+              The retry sets state back to 'idle', which is what re-triggers the
+              effect — the earlier copy said "pull to refresh", which refetches
+              the offers list and would never have fetched carriers again. */}
+          {carriersState === 'loading' ? (
+            <Text style={[styles.sheetHint, { color: colors.muted }]}>Loading carriers…</Text>
+          ) : carriersState === 'error' || (carriersState === 'ok' && carriers.length === 0) ? (
+            // A successful response with an empty list is treated as a failure
+            // on purpose. The server always returns _CARRIER_TRACKING, so empty
+            // means something upstream broke — and rendering a sheet with no
+            // choices and no message is the silent-empty pattern this codebase
+            // keeps getting bitten by.
+            <View style={styles.carrierError}>
+              <Text style={[styles.sheetHint, { color: colors.muted }]}>
+                Couldn&apos;t load the carrier list.
+              </Text>
+              <AnimatedPressable
+                onPress={() => setCarriersState('idle')}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading carriers"
+              >
+                <Text style={[styles.trackLink, { color: colors.accent }]}>Try again</Text>
+              </AnimatedPressable>
+            </View>
+          ) : null}
+
+          <Text style={[styles.sheetLabel, { color: colors.text }]}>Tracking code</Text>
+          <TextInput
+            value={trackingCode}
+            // Masked to the charset TrackingIn.tracking_code accepts on the
+            // server. Without this a typed '.' or '#' left the Save button
+            // enabled and the request came back a 422 whose message names a
+            // regex — unactionable for a seller. Masking fails visibly (the
+            // character just doesn't appear) instead of failing on submit.
+            // Widen the server pattern and this mask must widen with it.
+            onChangeText={(t) => setTrackingCode(t.replace(/[^A-Za-z0-9 \-_/]/g, ''))}
+            placeholder="e.g. 3STBJG123456789"
+            placeholderTextColor={colors.muted}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            maxLength={64}
+            style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
+            accessibilityLabel="Tracking code"
+          />
+          {/* Selected carrier can't produce a code-only link — set expectations
+              in the sheet rather than letting the seller discover it after. */}
+          {carrierKey && carriers.find((c) => c.key === carrierKey)?.linkable === false ? (
+            <Text style={[styles.sheetHint, { color: colors.muted }]}>
+              This carrier needs the delivery postcode to open a tracking page,
+              which Sparrow doesn&apos;t hold. The buyer will see the code to search
+              with instead of a link.
+            </Text>
+          ) : null}
+
+          {/* `colors.accentText` is ONLY valid on an accent/brand fill. Pairing
+              it with the disabled `colors.border` fill is the exact bug the
+              playbook documents from app/subscription.tsx — in high-contrast
+              dark accentText is #000000, in light it is #ffffff, and neither is
+              readable on a border-coloured button. Disabled uses muted-on-card
+              instead, matching btnGhost. */}
+          <AnimatedPressable
+            onPress={saveTracking}
+            disabled={!canSaveTracking}
+            style={[
+              styles.btn,
+              styles.sheetSave,
+              canSaveTracking
+                ? { backgroundColor: colors.accent }
+                : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+            ]}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canSaveTracking }}
+            accessibilityLabel="Save tracking details"
+          >
+            <Text style={[styles.btnText, { color: canSaveTracking ? colors.accentText : colors.muted }]}>
+              Save tracking
+            </Text>
+          </AnimatedPressable>
+        </ScrollView>
+      </BottomSheetModal>
+
       <QuickNavBar />
     </View>
   );
@@ -395,5 +647,31 @@ const styles = StyleSheet.create({
   btnGhost: { borderWidth: 1, backgroundColor: 'transparent' },
   btnText: { fontSize: textToken.sm, fontWeight: fontWeight.bold },
   graded: { fontSize: textToken.xs, paddingVertical: 9 },
+  // Tracking — display-only shipment reference on the card.
+  tracking: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
+    paddingHorizontal: 10, paddingVertical: 8, marginTop: 8,
+  },
+  trackingLabel: { fontSize: 11 },
+  trackingCode: { fontSize: textToken.xs, fontWeight: fontWeight.semibold },
+  trackLink: { fontSize: textToken.xs, fontWeight: fontWeight.bold },
+  trackHint: { fontSize: 10, textAlign: 'right', lineHeight: 13 },
+  // Tracking capture sheet.
+  sheet: { padding: 16, paddingBottom: 32, gap: 10 },
+  sheetHint: { fontSize: textToken.xs, lineHeight: 17 },
+  sheetLabel: { fontSize: textToken.sm, fontWeight: fontWeight.semibold, marginTop: 6 },
+  carrierWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  carrierChip: {
+    borderWidth: 1, borderRadius: radius.pill,
+    paddingHorizontal: 12, paddingVertical: 7,
+  },
+  carrierChipText: { fontSize: textToken.xs, fontWeight: fontWeight.semibold },
+  carrierError: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  input: {
+    borderWidth: 1, borderRadius: radius.sm,
+    paddingHorizontal: 12, paddingVertical: 11, fontSize: textToken.md,
+  },
+  sheetSave: { marginTop: 8 },
   viewLink: { fontSize: textToken.xs, fontWeight: fontWeight.bold, marginTop: 2 },
 });
