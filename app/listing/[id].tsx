@@ -212,7 +212,18 @@ function ListingDetailScreen() {
           {listing.shipping_cost != null ? (
             <Text style={[styles.allIn, { color: colors.muted }]}>
               {listing.shipping_cost > 0
-                ? `+ ${formatPrice(listing.shipping_cost, settings.currency, settings.numberLocale)} shipping · ${formatPrice(listing.price + listing.shipping_cost, settings.currency, settings.numberLocale)} total`
+                ? // ONE derived number, not price + shipping + total.
+                  // `formatPrice` renders 0 decimals for every currency by
+                  // design (src/lib/format.ts), so three independently rounded
+                  // figures can visibly fail to add up: €42.50 + €6.50 renders
+                  // as "43 €" + "7 € shipping" = "49 € total", and 43 + 7 ≠ 49.
+                  // Caught by walking the simulator, not by any test — the
+                  // arithmetic is only wrong once it is rounded for display.
+                  // The total is the number the buyer actually pays, so it is
+                  // the one worth showing. The exact shipping figure is
+                  // deliberately NOT rendered alongside it: any second money
+                  // number here re-creates the sum the reader will check.
+                  `${formatPrice(listing.price + listing.shipping_cost, settings.currency, settings.numberLocale)} total incl. shipping`
                 : 'Free shipping'}
             </Text>
           ) : (
