@@ -1,5 +1,5 @@
 {
-  "_about": "Frozen FastAPI route table. Regenerated 2026-08-07 from the LIVE /openapi.json (540 routes) after the P2P marketplace Stage 1/2 routes and the tracking endpoints landed; the previous 2026-07-25 snapshot had 523 and predated all of them. DO NOT regenerate this with scripts/regen_api_lock.py: it scans SOURCE and cannot resolve the /v1 mount, so it drops ~250 routes to their unprefixed form and yields 332 \u2014 the same drift as the Apr-29 lock that fell to 303 and made audit_fe_api_drift.py report 7 false positives, all of which existed in production. A gate that cries wolf is a gate people stop reading. Regenerate with: ssh collectai 'curl -s -H \"Host: api.sparrowcollect.com\" http://127.0.0.1:8000/openapi.json' then flatten paths x methods.",
+  "_about": "Frozen FastAPI route table. Regenerated 2026-08-07 from the LIVE /openapi.json (542 routes) after the DSA moderation endpoints landed. DO NOT regenerate this with scripts/regen_api_lock.py: it scans SOURCE and cannot resolve the /v1 mount, so it drops ~250 routes to their unprefixed form and yields 332 \u2014 the same drift as the Apr-29 lock that fell to 303 and made audit_fe_api_drift.py report 7 false positives, all of which existed in production. A gate that cries wolf is a gate people stop reading. Regenerate with: ssh collectai 'curl -s -H \"Host: api.sparrowcollect.com\" http://127.0.0.1:8000/openapi.json' then flatten paths x methods.",
   "routes": [
     {
       "method": "DELETE",
@@ -640,6 +640,10 @@
     {
       "method": "GET",
       "path": "/ops/dashboard/workers/health"
+    },
+    {
+      "method": "GET",
+      "path": "/ops/listing-reports"
     },
     {
       "method": "GET",
@@ -1708,6 +1712,10 @@
     {
       "method": "POST",
       "path": "/ops/category-candidates/{candidate_id}/action"
+    },
+    {
+      "method": "POST",
+      "path": "/ops/listing-reports/{listing_id}/action"
     },
     {
       "method": "POST",
