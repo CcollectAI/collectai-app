@@ -28,6 +28,7 @@ from app.errors import error_response
 from app.features.pagination import pagination_params
 from app.lib.bg_tasks import spawn_bg
 from app.lib.blocks import blocked_user_ids, is_blocked
+from app.lib.content_filter import find_blocked_term
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
 
@@ -544,6 +545,56 @@ async def _catalogue_image_hook(listing_id: str) -> None:
         logger.warning("[p2p] catalogue image hook failed for %s: %s", listing_id, exc)
 
 
+async def _page_ops_new_report(listing_id: str, reason: str) -> None:
+    """Tell the operator a listing was reported, so the 24-hour clock is real.
+
+    Sparrow is one person. There is no rota watching a moderation queue, so a
+    promise to act "within 24 hours" only holds if the report finds them rather
+    than waiting to be found. This is that push.
+
+    Includes the listing title and the open-report count because the decision
+    the operator makes next needs both: a first report on an obscure listing and
+    a fifth report on the same one are different situations.
+
+    Never raises — the report is already committed, and a Telegram outage must
+    not surface to the member as a failed report.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT l.listing_title, l.user_id,
+                       (SELECT count(*) FROM public.listing_reports r
+                         WHERE r.listing_id = l.id AND r.status = 'open') AS open_reports
+                FROM public.marketplace_listings l
+                WHERE l.id = $1::uuid
+                """,
+                listing_id,
+            )
+        if row is None:
+            return
+
+        from app.lib.telegram_ops import send_ops_alert
+        await send_ops_alert(
+            (
+                f"<b>{row['listing_title']}</b>\n"
+                f"Reason: {reason}\n"
+                f"Open reports: {row['open_reports']}\n"
+                f"Seller: <code>{row['user_id']}</code>\n"
+                f"Listing: <code>{listing_id}</code>\n\n"
+                f"Terms promise action within 24h. Decide with:\n"
+                f"<code>GET /ops/listing-reports</code> then "
+                f"<code>POST /ops/listing-reports/{listing_id}/action</code>"
+            ),
+            title="\U0001f6a9 Listing reported",
+        )
+    except Exception as exc:
+        logger.warning("[p2p] report paging failed for %s: %s", listing_id, exc)
+
+
 async def contribute_from_item_photo(item_id: str) -> None:
     """Run the catalogue hook for any consenting live listing on this item.
 
@@ -608,6 +659,20 @@ async def create_listing(
     pool = get_db_pool()
     if pool is None:
         raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    # Apple Guideline 1.2: filter objectionable material BEFORE it is posted.
+    # Checked here, at the one write path, rather than at each call site — and
+    # before the item is created, so a rejected listing leaves nothing behind.
+    # The term is returned to the seller: a generic refusal on a listing they
+    # believe is fine reads as the app being broken.
+    bad = find_blocked_term(payload.title, payload.description, payload.condition_notes)
+    if bad:
+        raise error_response(
+            400,
+            f"Your listing contains language we don't allow (\"{bad}\"). "
+            f"Edit it and try again.",
+            code="OBJECTIONABLE_CONTENT",
+        )
 
     if not payload.item_id and not (payload.title or "").strip():
         raise error_response(
@@ -928,6 +993,49 @@ class CategoryFacetResponse(BaseModel):
 # Path is /facets/categories, deliberately NOT /listings/facets: the latter
 # would sit in the same namespace as /listings/{listing_id} and depend on route
 # registration order to not be swallowed as a listing id.
+@router.delete("/catalogue-contributions",
+               summary="Stop using my photos as catalogue art")
+async def withdraw_my_catalogue_photos(
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Revoke the ToS §3 catalogue grant for every photo this member contributed.
+
+    §3 says the grant is revocable — "you can withdraw it at any time". Until
+    this endpoint existed that was a promise the code could not keep:
+    `withdraw_contributed_images` was written and tested, and nothing called it.
+    A licence term the user cannot actually exercise is worse than not offering
+    it, because they relied on it when they ticked the box.
+
+    Also clears the consent flag on their listings, so a later photo upload does
+    not silently re-contribute what they just withdrew — revoking once should
+    mean revoked, not revoked-until-the-next-upload.
+
+    Idempotent: withdrawing twice clears nothing the second time and still
+    returns 200. There is no failure mode a user should have to think about
+    here.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            cleared = await withdraw_contributed_images(conn, user_id)
+            # Same transaction: if the flag survives while the images are gone,
+            # the next upload re-contributes and the withdrawal silently undoes
+            # itself.
+            await conn.execute(
+                """
+                UPDATE public.marketplace_listings
+                   SET photo_catalogue_consent = FALSE, updated_at = now()
+                 WHERE user_id = $1::uuid AND photo_catalogue_consent IS TRUE
+                """,
+                user_id,
+            )
+    logger.info("[p2p] catalogue photos withdrawn for %s (%d images)", user_id, cleared)
+    return {"ok": True, "images_withdrawn": cleared}
+
+
 @router.get("/facets/categories", response_model=CategoryFacetResponse,
             summary="Categories that actually have live listings, with counts")
 async def category_facets(
@@ -1255,6 +1363,20 @@ async def report_listing(
                 "SET reports_count = reports_count + 1 WHERE id = $1::uuid",
                 listing_id,
             )
+
+    # The 24-hour clock has to start somewhere. Both the Marketplace Terms (§5)
+    # and the Acceptable Use Policy (§9) now promise action on objectionable or
+    # unlawful content "within 24 hours of receiving them" — which was a claim
+    # with nothing behind it: reports landed in a table nobody was told about.
+    # A commitment that depends on someone happening to check a queue is not a
+    # commitment. Only on a NEW report (`inserted`), so re-reports cannot be
+    # used to spam the ops channel.
+    #
+    # Fire-and-forget and never raises: a paging failure must not turn a
+    # successful report into an error for the member who filed it. The row is
+    # already committed, so the report survives regardless.
+    if inserted is not None:
+        spawn_bg(_page_ops_new_report(listing_id, payload.reason), "p2p_report_page")
 
     return {"ok": True}
 

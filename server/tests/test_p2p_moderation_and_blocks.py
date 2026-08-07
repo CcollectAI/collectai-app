@@ -420,3 +420,69 @@ def test_catalogue_enrichment_never_blocks_publishing():
     src = _code_only(inspect.getsource(listings.create_listing))
     assert "spawn_bg(_catalogue_image_hook" in src
     assert "await _catalogue_image_hook" not in src
+
+
+# ── 6. Promises the documents make that the code must actually keep ─────────
+#
+# Both were written into user-facing documents before the code did them, which
+# is the worst kind of gap: a term someone relied on that cannot be exercised.
+
+def test_catalogue_consent_is_actually_revocable_by_a_user():
+    """ToS §3: "you can withdraw it at any time". `withdraw_contributed_images`
+    existed and was tested, and NOTHING called it — so no user could."""
+    paths = {r.path for r in listings.router.routes}
+    assert "/p2p/catalogue-contributions" in paths
+    src = _code_only(inspect.getsource(listings.withdraw_my_catalogue_photos))
+    assert "withdraw_contributed_images" in src
+
+
+def test_withdrawal_also_clears_consent_so_it_stays_withdrawn():
+    """Clearing the images but leaving the flag means the next photo upload
+    re-contributes — the withdrawal would silently undo itself."""
+    src = _code_only(inspect.getsource(listings.withdraw_my_catalogue_photos))
+    assert "photo_catalogue_consent = FALSE" in src
+    assert "conn.transaction()" in src, "flag and images must clear together"
+
+
+def test_a_new_report_pages_the_operator():
+    """Marketplace Terms §5 and Acceptable Use §9 both promise action "within
+    24 hours". Sparrow is one person; a queue nobody is told about is not a
+    commitment."""
+    src = _code_only(inspect.getsource(listings.report_listing))
+    assert "_page_ops_new_report" in src
+
+
+def test_only_new_reports_page_so_re_reports_cannot_spam_ops():
+    """Asserts ADJACENCY, not "the guard appears somewhere above".
+
+    The first version split on the function name and checked the text before
+    it contained `if inserted is not None:` — which it always does, because the
+    reports_count update earlier in the function is guarded the same way. It
+    passed with the paging guard removed entirely. A gate with a false negative
+    is worse than no gate.
+    """
+    src = _code_only(inspect.getsource(listings.report_listing))
+    normalised = "\n".join(line.rstrip() for line in src.splitlines())
+    assert "if inserted is not None:\n        spawn_bg(_page_ops_new_report" in normalised, (
+        "the paging call is not directly guarded by the new-report check"
+    )
+
+
+def test_paging_cannot_fail_the_members_report():
+    """The row is already committed. A Telegram outage must not surface to the
+    member as a failed report."""
+    src = _code_only(inspect.getsource(listings.report_listing))
+    assert "spawn_bg(_page_ops_new_report" in src
+    assert "await _page_ops_new_report" not in src
+    page = _code_only(inspect.getsource(listings._page_ops_new_report))
+    assert "except Exception" in page
+
+
+def test_objectionable_content_is_filtered_before_publishing():
+    """Apple Guideline 1.2's fourth limb. Checked at the one write path, before
+    the item is created, so a rejected listing leaves nothing behind."""
+    src = _code_only(inspect.getsource(listings.create_listing))
+    assert "find_blocked_term" in src
+    assert "OBJECTIONABLE_CONTENT" in src
+    before_create = src.split("INSERT INTO public.items", 1)[0]
+    assert "find_blocked_term" in before_create, "filter must run before the item is created"
