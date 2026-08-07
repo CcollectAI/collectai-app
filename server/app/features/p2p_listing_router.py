@@ -149,6 +149,19 @@ class ListingOut(BaseModel):
     # now. That is the number that actually predicts a sale.
     watchers: int = 0
     watchers_above_price: int = 0
+    # ── Does this listing actually reach Target Hit? ──────────────────────
+    # `_publish_supply_hook` writes the buyable market_hits row ONLY when the
+    # listing has a canonical identity; without one it could match only the
+    # fuzzy title arm, which is where false positives live, so it is skipped.
+    # That skip is right, and it was also completely invisible — the seller got
+    # a listing that can never fire an alert and was never told, and the §6
+    # go/no-go metric counted the absence as "no demand".
+    #
+    # Derived, not stored: `canonical_key` IS the record of the skip, so this
+    # needs no column and cannot drift from the hook's own precondition.
+    # Keep this expression identical to the guard in _publish_supply_hook —
+    # pinned by test_reaches_target_hit_matches_the_hook_precondition.
+    reaches_target_hit: bool = False
     status: str
     created_at: Optional[datetime] = None
     is_mine: bool = False
@@ -166,6 +179,17 @@ class ReportCreate(BaseModel):
 # ---------------------------------------------------------------------------
 # Supply hook — the reason this feature exists
 # ---------------------------------------------------------------------------
+
+def _reaches_target_hit(canonical_key: Optional[str], category: Optional[str]) -> bool:
+    """Can a listing with this identity produce a buyable `market_hits` row?
+
+    ONE definition, used by `_publish_supply_hook`'s guard and by every
+    `ListingOut`. Two copies would let the API promise a seller their listing
+    reaches Target Hit while the hook silently skipped it — which is the exact
+    shape of the bug this function was extracted to close.
+    """
+    return bool(canonical_key) and bool(category)
+
 
 async def _publish_supply_hook(listing_id: str) -> None:
     """Write a `market_hits` row so a member listing can fire a Target Hit.
@@ -202,13 +226,32 @@ async def _publish_supply_hook(listing_id: str) -> None:
                 """,
                 listing_id, _STATUS_ACTIVE,
             )
-            if row is None or not row["canonical_key"] or not row["category"]:
+            if row is None or not _reaches_target_hit(row["canonical_key"], row["category"]):
                 # No canonical identity => it could only ever match the fuzzy
                 # title arm, which is where the false-positive risk lives.
                 # Skip rather than write a weakly-identified buyable row.
-                logger.info(
-                    "[p2p] supply hook skipped for %s (no canonical identity)",
+                #
+                # WARNING, not INFO. The line was always written (to
+                # /opt/collectors/bake.log — the unit sets StandardOutput to a
+                # file, NOT journald, so `journalctl` never shows it), but it
+                # sat at INFO inside a 90MB log of INFO. This is not routine:
+                # measured 2026-08-07, only 4 of 16 `items` carry a
+                # canonical_key, so the hook skips the MAJORITY of listings, and
+                # each skip means a listing that can never fire a Target Hit.
+                #
+                # It matters beyond one missing row: §6 of the spec decides
+                # whether Stage 2/3 ever happens by counting buyable `sparrow`
+                # rows, and that count reads near-zero whether nobody listed or
+                # the hook skipped everyone. A go/no-go metric that cannot
+                # distinguish "no supply" from "no canonical key" is worse than
+                # no metric. See docs/P2P_MARKETPLACE_SPEC.md §6.
+                logger.warning(
+                    "[p2p] supply hook SKIPPED for %s — listing has no canonical "
+                    "identity (canonical_key=%r category=%r), so it cannot reach "
+                    "Target Hit. Not a failure; a coverage gap.",
                     listing_id,
+                    row["canonical_key"] if row else None,
+                    row["category"] if row else None,
                 )
                 return
 
@@ -354,6 +397,7 @@ async def create_listing(
         category=item["category"], canonical_key=item["canonical_key"],
         ships_from=payload.ships_from, shipping_cost=payload.shipping_cost,
         image_url=item["image_url"],
+        reaches_target_hit=_reaches_target_hit(item["canonical_key"], item["category"]),
         status=_STATUS_ACTIVE, created_at=datetime.now(timezone.utc),
         is_mine=True,
     )
@@ -553,6 +597,7 @@ async def browse_listings(
             watchers=int(r["watchers"] or 0),
             seller_name=r["display_name"] or r["username"],
             status=r["status"], created_at=r["created_at"],
+            reaches_target_hit=_reaches_target_hit(r["canonical_key"], r["category"]),
             is_mine=str(r["user_id"]) == user_id,
         )
         for r in rows
@@ -813,6 +858,7 @@ async def get_listing(
         # A delisted row keeps its stored status ('sold'/'delisted'), so the
         # client can render "sold" rather than implying it is still buyable.
         status=r["status"], created_at=r["created_at"],
+        reaches_target_hit=_reaches_target_hit(r["canonical_key"], r["category"]),
         is_mine=str(r["user_id"]) == user_id,
     )
 

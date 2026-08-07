@@ -257,6 +257,30 @@ function ListingDetailScreen() {
             <Text style={[styles.body, { color: colors.text }]}>{listing.description}</Text>
           ) : null}
 
+          {/* Only the seller, and only when it matters. A listing with no
+              canonical identity is skipped by the publish supply hook, so it
+              never becomes a buyable market_hits row and can never fire a
+              Target Hit — it is findable by browsing and invisible to everyone
+              watching for exactly this item. That was silent until 2026-08-07;
+              the seller had no way to know their listing reached nobody.
+              Deliberately not shown to buyers: it says nothing about the item. */}
+          {listing.is_mine && !listing.reaches_target_hit && !isGone ? (
+            <View style={[styles.notice, { borderColor: colors.border }]}>
+              <Ionicons name="notifications-off-outline" size={16} color={colors.muted} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.noticeText, { color: colors.muted }]}>
+                  This listing won&apos;t alert members watching for this item — it
+                  isn&apos;t matched to a catalogue entry. It still shows in browse
+                  and search.
+                </Text>
+                <Text style={[styles.noticeText, { color: colors.muted, marginTop: 4 }]}>
+                  Match the item in your collection to a catalogue entry, then
+                  relist, and everyone watching it gets a Target Hit.
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           {listing.watchers > 0 ? (
             <View style={[styles.demandRow, { backgroundColor: colors.accent + '12' }]}>
               <Ionicons name="eye-outline" size={14} color={colors.accent} />

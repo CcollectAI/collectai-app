@@ -19,8 +19,10 @@ export function getCurrencySymbol(currency: Currency): string {
 
 /** Locale lookup for each currency */
 const CURRENCY_LOCALE: Record<Currency, NumberLocale> = {
-  // nl-NL renders EUR with the symbol on the LEFT ("€ 5", "€ 1.234") — de-DE
-  // put it on the right ("5 €"). Euro-on-left is the app-wide convention.
+  // Used for NUMBER formatting only — grouping and decimal separators. The
+  // currency symbol is no longer positioned by the locale: `money()` below
+  // always leads with it. This entry used to be nl-NL specifically to get the
+  // euro on the left, which worked until a caller passed its own locale.
   EUR: 'nl-NL',
   USD: 'en-US',
   JPY: 'ja-JP',
@@ -55,13 +57,37 @@ function getFormatter(
 }
 
 /**
+ * The ONE place a money string is assembled: symbol first, always.
+ *
+ * `Intl.NumberFormat` with `style: 'currency'` puts the symbol wherever the
+ * LOCALE says. That made the app contradict itself — CURRENCY_LOCALE above
+ * picks nl-NL precisely to get "€ 5", but both money formatters accept a
+ * caller-supplied locale that silently overrode it, so screens passing
+ * `settings.numberLocale` rendered "38 €" while Portfolio rendered "€ 0".
+ * Same currency, same app, two conventions, depending only on which argument a
+ * given call site happened to pass.
+ *
+ * So the symbol is no longer positioned by the locale. The locale still formats
+ * the NUMBER (grouping and decimal separators are genuinely locale-specific and
+ * a Dutch user should keep "1.234"), and the symbol is prefixed here.
+ */
+function money(amount: number, currency: Currency, locale: string): string {
+  const num = getFormatter(locale, {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    // All currencies display 0 decimals in this app (intentional).
+    maximumFractionDigits: 0,
+  }).format(amount);
+  return `${getCurrencySymbol(currency)}${num}`;
+}
+
+/**
  * Format a EUR amount into the selected currency using Settings.fxRates.
  * Preferred when you have access to the full Settings context.
  */
 export function fmtCurrency(amountEUR: number, s: Pick<Settings,'currency'|'numberLocale'|'fxRates'>) {
   const val = convertEUR(amountEUR, s);
-  const fmt = getFormatter(s.numberLocale, { style: 'currency', currency: s.currency, maximumFractionDigits: 0 });
-  return fmt.format(val);
+  return money(val, s.currency, s.numberLocale);
 }
 
 /**
@@ -76,17 +102,12 @@ export function formatPrice(amount: number | null | undefined, currency: Currenc
   if (amount == null || !Number.isFinite(amount)) return '—';
   const loc = locale ?? CURRENCY_LOCALE[currency] ?? 'en-US';
   try {
-    const fmt = getFormatter(loc, {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      // All currencies display 0 decimals in this app (intentional).
-      maximumFractionDigits: 0,
-    });
-    return fmt.format(amount);
+    return money(amount, currency, loc);
   } catch (e) {
     logger.error('[silent-catch] format.ts:86:', e);
-    return `${amount.toFixed(0)} ${currency}`;
+    // Fallback also leads with the symbol, so a formatter failure does not
+    // flip the convention on one screen.
+    return `${getCurrencySymbol(currency)}${amount.toFixed(0)}`;
   }
 }
 

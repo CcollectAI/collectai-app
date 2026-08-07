@@ -507,8 +507,44 @@ WHERE trigger_type = 'watchlist_snipe'
 GROUP BY 1;
 ```
 
-If `sparrow` is not a meaningful share of Target Hits after a month of Stage 1,
-**do not build Stage 2 or 3.** Offers and escrow multiply the operational load
+**Run this THIRD query or the first two will lie to you** (added 2026-08-07):
+
+```sql
+-- Did members not list, or did the hook skip them?
+SELECT count(*)                                                   AS listings,
+       count(*) FILTER (WHERE canonical_key IS NOT NULL
+                          AND category IS NOT NULL)               AS could_reach_target_hit,
+       count(*) FILTER (WHERE canonical_key IS NULL
+                           OR category IS NULL)                   AS skipped_no_canonical_key
+FROM public.marketplace_listings
+WHERE marketplace_id = 'sparrow';
+```
+
+`_publish_supply_hook` writes nothing when a listing has no canonical identity —
+correct, because a weakly-identified buyable row can only match the fuzzy title
+arm, which is where the false positives live. But **measured 2026-08-07, only 4
+of 16 `items` carry a `canonical_key`**, so the hook skips the majority, and the
+first query counts that as zero supply.
+
+Zero buyable `sparrow` rows therefore has two completely different meanings —
+"nobody listed" and "everybody listed and we skipped them all" — and only the
+third query separates them. Deciding *"do not build Stage 2 or 3"* off the first
+query alone would be deciding on the wrong number.
+
+The skip now logs at WARNING (it was INFO, inside a 90MB file of INFO) and
+`ListingOut.reaches_target_hit` exposes it per listing, so the seller is told at
+the time rather than discovering their listing reached nobody.
+
+> **Where the server logs actually go.** `collectai-bake.service` sets
+> `StandardOutput=append:/opt/collectors/bake.log` — **not** journald. `journalctl -u
+> collectai-bake` shows systemd's own lines and none of the application's, which
+> reads exactly like "the code never ran". Grep `/opt/collectors/bake.log`.
+
+If `sparrow` is not a meaningful share of Target Hits after a month of Stage 1
+**and `could_reach_target_hit` is healthy**, then the supply thesis genuinely
+failed: **do not build Stage 2 or 3.** If `skipped_no_canonical_key` dominates,
+the thesis was never tested — fix catalogue matching on `items` first and re-run
+the month. Offers and escrow multiply the operational load
 of a marketplace that is not producing alerts, and the scraping path already
 covers the supply need at lower cost.
 

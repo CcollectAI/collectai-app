@@ -64,6 +64,15 @@ export type P2PListing = {
    *  would get a Target Hit for this listing right now. */
   watchers: number;
   watchers_above_price: number;
+  /** False when the listing has no `canonical_key`/`category`, so the publish
+   *  supply hook skipped it and it can NEVER fire a Target Hit. The skip is
+   *  deliberate (a weakly-identified buyable row only matches the fuzzy title
+   *  arm, where false positives live) but it used to be silent: measured
+   *  2026-08-07, only 4 of 16 items carry a canonical_key, so most listings
+   *  were quietly invisible to the one feature the marketplace exists to feed.
+   *  Show this to the seller — it is the difference between a listing that can
+   *  reach watchers and one that only reaches browsers. */
+  reaches_target_hit: boolean;
   status: string;
   created_at: string | null;
   is_mine: boolean;

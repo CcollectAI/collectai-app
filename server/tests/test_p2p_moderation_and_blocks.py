@@ -193,3 +193,72 @@ def test_moderation_queue_is_oldest_first():
     complaint (learning_per_category_fairness_in_select_queues)."""
     src = _code_only(inspect.getsource(listings.list_open_reports))
     assert "ORDER BY min(r.created_at) ASC" in src
+
+
+# ── 3. The supply hook's skip must be visible ───────────────────────────────
+#
+# Found 2026-08-07 by walking the marketplace end-to-end with real user tokens:
+# publishing a listing wrote NO market_hits row. The skip is deliberate — a
+# listing with no canonical identity could only match Target Hit's fuzzy title
+# arm, where the false positives live — and the hook itself is healthy (a
+# listing WITH an identity writes `mtg:sum-283-bayou` correctly). What was
+# missing was visibility:
+#   * the seller got a listing that can never fire an alert and was not told;
+#   * §6's go/no-go metric counts the skip as "no supply", which is the wrong
+#     number to cancel Stage 2/3 on.
+# Only 4 of 16 `items` carry a canonical_key, so this is the majority case.
+#
+# NOTE the log line was never actually missing — `collectai-bake.service` writes
+# StandardOutput to /opt/collectors/bake.log, not journald, so `journalctl`
+# shows none of it and looks like silence. It was at INFO in a 90MB INFO log;
+# WARNING makes a coverage gap greppable at its real severity.
+
+def test_reaches_target_hit_matches_the_hook_precondition():
+    """The flag and the guard must be the SAME rule.
+
+    If they drift, the API tells a seller their listing reaches Target Hit
+    while the hook silently skips it — a worse failure than the original
+    silence, because now it is a false promise.
+    """
+    guard_src = _code_only(inspect.getsource(listings._publish_supply_hook))
+    assert "_reaches_target_hit(" in guard_src, (
+        "the hook no longer uses the shared predicate — the flag can now lie"
+    )
+
+
+@pytest.mark.parametrize("canonical_key,category,expected", [
+    ("sm10-sm10-101", "pokemon", True),
+    (None,            "pokemon", False),
+    ("sm10-sm10-101", None,      False),
+    (None,            None,      False),
+    ("",              "pokemon", False),   # empty string is not an identity
+    ("sm10-sm10-101", "",        False),
+])
+def test_reaches_target_hit_predicate(canonical_key, category, expected):
+    assert listings._reaches_target_hit(canonical_key, category) is expected
+
+
+def test_every_listing_response_carries_the_flag():
+    """All three ListingOut construction sites, not two of three — the same
+    drift that left create_offer's RETURNING behind."""
+    src = _code_only(inspect.getsource(listings))
+    built = src.count("is_mine=")
+    flagged = src.count("reaches_target_hit=_reaches_target_hit(")
+    assert flagged == built, (
+        f"{built} ListingOut construction sites but only {flagged} set "
+        f"reaches_target_hit — a listing would default to False and wrongly "
+        f"warn the seller"
+    )
+
+
+def test_skip_is_logged_loudly_enough_to_see():
+    """A coverage gap that silently defeats the feature's purpose is not INFO.
+
+    bake.log is ~90MB and almost entirely INFO, so an INFO line is written and
+    unread. WARNING is the level at which "this listing can never fire an
+    alert" is greppable.
+    """
+    src = _code_only(inspect.getsource(listings._publish_supply_hook))
+    skip_block = src.split("_reaches_target_hit(", 1)[1].split("return", 1)[0]
+    assert "logger.warning" in skip_block, "the skip must not be logged at INFO"
+    assert "logger.info" not in skip_block

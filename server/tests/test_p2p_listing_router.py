@@ -105,10 +105,22 @@ class TestSupplyHookSemantics:
         assert "{row['category']}:{row['canonical_key']}" in src
 
     def test_publish_skips_without_canonical_identity(self):
-        """A weakly-identified buyable row is what caused false positives."""
+        """A weakly-identified buyable row is what caused false positives.
+
+        The skip is unchanged. What changed on 2026-08-07 is that the condition
+        moved into the shared `_reaches_target_hit` predicate, so the API flag
+        shown to the seller and the hook's own guard cannot drift apart. This
+        test used to grep for the literal `not row["canonical_key"]` and broke
+        on that refactor while the behaviour was identical — so it now asserts
+        the BEHAVIOUR (via the predicate) rather than one spelling of it.
+        """
         import inspect
         src = inspect.getsource(p2p._publish_supply_hook)
-        assert 'not row["canonical_key"]' in src
+        assert "_reaches_target_hit(" in src
+        # And the predicate really does reject a missing identity.
+        assert p2p._reaches_target_hit(None, "pokemon") is False
+        assert p2p._reaches_target_hit("sm10-101", None) is False
+        assert p2p._reaches_target_hit("sm10-101", "pokemon") is True
 
     def test_delist_awaits_the_stale_hook(self):
         """A lingering row sends a buyer to something already sold.

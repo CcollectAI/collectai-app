@@ -6,6 +6,36 @@
 
 ---
 
+## ⛔ Read this before you grep for anything
+
+**Application logs do NOT go to journald.** `collectai-bake.service` sets
+`StandardOutput=append:/opt/collectors/bake.log` (and the same for stderr), so:
+
+```bash
+# WRONG — returns systemd's own lines and none of the app's. Looks like silence.
+ssh collectai 'sudo journalctl -u collectai-bake --since "10 min ago" | grep -i thing'
+
+# RIGHT
+ssh collectai 'grep -i thing /opt/collectors/bake.log | tail -20'
+```
+
+`journalctl` is still correct for **systemd-level** questions — did the unit
+start, did a preflight fail, did it crash-loop:
+
+```bash
+ssh collectai 'sudo systemctl status collectai-bake.service'
+ssh collectai 'sudo journalctl -u collectai-bake.service --since "5 min ago" --no-pager | tail -30'
+```
+
+This trap cost real time on 2026-08-07: a `logger.info` in the P2P supply hook
+was greppable in `bake.log` the whole time, while `journalctl` showed nothing
+and read as "the code never ran". Three separate wrong conclusions came out of
+that before the unit file was checked. **An empty journal is not evidence.**
+
+`bake.log` is ~90MB and append-only — always `tail` or `grep`, never `cat`.
+
+---
+
 ## 🚨 Triage decision tree
 
 **Where did the failure surface?**
@@ -175,8 +205,8 @@ Renew with: `ssh collectai 'sudo certbot renew --nginx'`
 # Probe an authenticated scan endpoint (you need a bearer token first)
 curl -s https://api.sparrowcollect.com/openapi.json | python3 -c "import sys, json; print([p for p in json.load(sys.stdin)['paths'] if 'scan' in p.lower() or 'predict' in p.lower()])"
 
-# Check vision provider state
-ssh collectai 'sudo journalctl -u collectai-bake --since "10 min ago" | grep -iE "openai|vision|prediction" | head'
+# Check vision provider state — grep the LOG FILE, not journald (see below)
+ssh collectai 'grep -iE "openai|vision|prediction" /opt/collectors/bake.log | tail -20'
 
 # Check rate-limit / quota
 ssh collectai 'grep -E "FIRECRAWL_ENABLED|SCRAPEDO_ENABLED|OPENAI_API_KEY" /opt/collectors/.env | head'
