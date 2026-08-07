@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.lib.bg_tasks import spawn_bg
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 from app.config import (
@@ -257,6 +258,15 @@ async def add_item_image(
                     label,
                     next_position,
                 )
+
+                # If this item has a live marketplace listing whose seller opted
+                # in (ToS §3), the photo can fill a catalogue image gap. Fired
+                # HERE because this is when the photo actually exists — the
+                # listing is created first and the upload follows, so the
+                # publish-time call has nothing to work with. Fire-and-forget:
+                # catalogue enrichment must never fail a user's photo upload.
+                from app.features.p2p_listing_router import contribute_from_item_photo
+                spawn_bg(contribute_from_item_photo(str(iid)), "p2p_catalogue_from_photo")
 
                 logger.info(
                     "[item_images] Added image: item=%s, label=%s, position=%d, user=%s",

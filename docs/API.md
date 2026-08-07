@@ -237,7 +237,7 @@ matching how `p2p_listing_router` / `p2p_offers_router` are registered in
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/p2p/listings` | JWT + Rate Limit | List an item you own. 409 `ALREADY_LISTED`, 404 `ITEM_NOT_FOUND` (ownership enforced server-side) |
+| POST | `/p2p/listings` | JWT + Rate Limit | List an item you own (`item_id`) **or** list without a collection (`title` + optional `category`/`canonical_key` — the item is created for you, tagged `source='marketplace'`). 400 `ITEM_OR_TITLE_REQUIRED`, 409 `ALREADY_LISTED`, 404 `ITEM_NOT_FOUND` (ownership enforced server-side). `photo_catalogue_consent` (default **false**) opts the listing photo into catalogue reuse under ToS §3 |
 | GET | `/p2p/listings` | JWT | Browse. Repeatable `category`, `canonical_key`, `q`, `mine`, `sort`, `price_min/max`, `price_currency`. **Excludes blocked members both ways** |
 | GET | `/p2p/listings/{listing_id}` | JWT | Deep-link target for `sparrowcollect.com/l/<id>`. Returns sold/delisted with real status, not 404. A blocked seller's listing 404s (never 403 — that would confirm it exists) |
 | POST | `/p2p/listings/{listing_id}/delist` | JWT | Mark sold/delisted. Removes the buyable `market_hits` row **synchronously** |

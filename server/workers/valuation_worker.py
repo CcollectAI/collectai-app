@@ -103,7 +103,7 @@ def _build_evidence(hits: list[dict]) -> tuple[list[str], dict, str]:
 
     # Human-readable explanation
     _SOURCE_NAMES = {
-        "ebay": "eBay sold",
+        "ebay": "eBay",
         "tcgplayer": "TCGPlayer",
         "cardmarket": "Cardmarket",
         "mercari": "Mercari",
@@ -112,12 +112,19 @@ def _build_evidence(hits: list[dict]) -> tuple[list[str], dict, str]:
         "vinted": "Vinted",
         "stockx": "StockX",
         "discogs": "Discogs",
+        # A completed member-to-member trade (p2p_offers -> _sold_comp_hook).
+        # Named explicitly: the fallback below would render it "Sparrow P2p".
+        "sparrow_p2p": "Sparrow member",
     }
     parts: list[str] = []
     for s in source_summaries:
         src_label = _SOURCE_NAMES.get(s["source"].lower(), s["source"].replace("_", " ").title())
+        # "sale", not "listing". Every row that reaches this function is a SOLD
+        # comp \u2014 the query above filters `is_listing IS NOT TRUE` \u2014 so calling
+        # them listings was wrong for every source, not just the new one. It
+        # also made "eBay sold" read as "3 eBay sold listings".
         parts.append(
-            f"{s['count']} {src_label} listing{'s' if s['count'] != 1 else ''} "
+            f"{s['count']} {src_label} sale{'s' if s['count'] != 1 else ''} "
             f"(avg \u20ac{s['avg_price']:.2f})"
         )
 
@@ -456,7 +463,20 @@ async def run_once():
             #                          real sales get up to +20%; mis-
             #                          calibrated cats get capped to 0.5.
             #                          NULL when no snapshot → boost=1.0.
-            unique_sources = len({h["source"] for h in hits if h["source"]})
+            # `sparrow_p2p` is excluded from DIVERSITY (it still counts toward
+            # `n`, and its price is used normally). Diversity is meant to say
+            # "independent markets agree"; a trade on our own platform is not an
+            # independent market, and a colluding pair could otherwise raise the
+            # CONFIDENCE in a price they set as well as the price itself.
+            #
+            # Measured effect, deliberately narrow: an item whose only comp is a
+            # member sale is unchanged (min(1, 1/2) and the 0-source else branch
+            # are both 0.5). Only the 1-external + 1-member case changes, from
+            # 1.0 back to 0.5 — which is exactly the inflation being removed.
+            unique_sources = len({
+                h["source"] for h in hits
+                if h["source"] and h["source"] != "sparrow_p2p"
+            })
             count_factor = 1.0 - math.exp(-n / 5.0)
             diversity_factor = min(1.0, unique_sources / 2.0) if unique_sources > 0 else 0.5
             avg_weight = total_weight / n if n > 0 else 0.5

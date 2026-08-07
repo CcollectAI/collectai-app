@@ -334,3 +334,89 @@ def test_sold_comp_requires_a_canonical_identity():
     one — the row would be inert. Same predicate as the publish hook."""
     src = _code_only(inspect.getsource(listings._sold_comp_hook))
     assert "_reaches_target_hit(" in src
+
+
+# ── 5. Marketplace-only sellers, and photos enriching the catalogue ─────────
+#
+# Two gaps Merle named on 2026-08-07:
+#   * `item_id` was required and the only entry point is the item-detail
+#     screen, so a marketplace-only seller had to build a collection they did
+#     not want before they could sell one thing.
+#   * The create flow captured NO photo, so the catalogue's 54,115 missing
+#     images could never be filled by the people holding the actual objects.
+
+def test_listing_can_be_created_without_a_collection_item():
+    fields = listings.ListingCreate.model_fields
+    assert fields["item_id"].is_required() is False
+    assert "title" in fields, "no free-text path for a marketplace-only seller"
+
+
+def test_free_text_listing_requires_a_title():
+    """Neither an item nor a title is not a listing, and must fail loudly
+    rather than create an untitled row."""
+    src = _code_only(inspect.getsource(listings.create_listing))
+    assert "ITEM_OR_TITLE_REQUIRED" in src
+
+
+def test_auto_created_item_is_tagged_and_not_archived():
+    """`source='marketplace'` makes these separable from collection adds.
+    Archiving would read as 'the app archived my thing' — archive is a user
+    action everywhere else."""
+    src = _code_only(inspect.getsource(listings.create_listing))
+    assert "'marketplace'" in src
+    assert "archived" not in src
+
+
+def test_listing_keys_off_the_resolved_item_not_the_payload():
+    """On the free-text path `payload.item_id` is None. Any query still using
+    it would silently key on NULL — the dup check would never fire and the
+    listing would be written with a null item_id, breaking every hook."""
+    src = _code_only(inspect.getsource(listings.create_listing))
+    after_resolve = src.split("ITEM_NOT_FOUND", 1)[1]
+    assert "payload.item_id" not in after_resolve, (
+        "create_listing still keys on the payload after resolving the item"
+    )
+
+
+def test_catalogue_consent_defaults_to_off():
+    """Absence of a choice is not consent — defaulted in the model AND the
+    column, so a client that omits the field cannot opt a user in."""
+    assert listings.ListingCreate.model_fields["photo_catalogue_consent"].default is False
+
+
+def test_catalogue_hook_only_fills_gaps_and_never_overwrites():
+    """The whole safety story. Overwriting could displace a licensed asset with
+    a photo of one member's copy."""
+    src = _code_only(inspect.getsource(listings._catalogue_image_hook))
+    assert "image_url IS NULL" in src, "hook could overwrite an existing catalogue image"
+
+
+def test_catalogue_hook_requires_consent_and_a_real_seller_photo():
+    src = _code_only(inspect.getsource(listings._catalogue_image_hook))
+    assert "photo_catalogue_consent IS TRUE" in src
+    # i.image_url, not the COALESCE fallback: copying the catalogue image back
+    # into the catalogue is a no-op that looks like progress.
+    assert "i.image_url IS NOT NULL" in src
+
+
+def test_catalogue_contribution_records_provenance():
+    """'Stop using my photo' is unanswerable without this."""
+    src = _code_only(inspect.getsource(listings._catalogue_image_hook))
+    for col in ("image_source", "image_contributed_by", "image_contributed_at"):
+        assert col in src
+
+
+def test_the_grant_is_actually_revocable():
+    """ToS §3 promises revocation. Without a code path that is a promise we
+    cannot keep."""
+    src = _code_only(inspect.getsource(listings.withdraw_contributed_images))
+    assert "image_contributed_by = $1" in src
+    assert "image_url = NULL" in src
+
+
+def test_catalogue_enrichment_never_blocks_publishing():
+    """Enrichment is not a feature of the listing. It must not be able to fail
+    a seller's publish."""
+    src = _code_only(inspect.getsource(listings.create_listing))
+    assert "spawn_bg(_catalogue_image_hook" in src
+    assert "await _catalogue_image_hook" not in src

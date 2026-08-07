@@ -68,12 +68,43 @@ _FORMAT_FIXED = "fixed_price"
 class ListingCreate(BaseModel):
     """Create a listing from an item the caller owns.
 
-    `item_id` is required: a listing derived from an owned item inherits
-    `canonical_key` and `category`, which is what lets it join Target Hit's
-    EXACT-identity arm instead of the fuzzy title arm. Free-text listings were
-    considered and rejected for Stage 1 — see the spec's open questions.
+    Two ways in, ONE code path after the first few lines:
+
+    * **`item_id`** — list something already in your collection. It inherits
+      `canonical_key` and `category`, which is what lets the listing join Target
+      Hit's EXACT-identity arm instead of the fuzzy title arm.
+
+    * **`title`** (no `item_id`) — the marketplace-only seller. Until
+      2026-08-07 this was impossible: `item_id` was required and the only entry
+      point is the item-detail screen, so someone who wanted to sell a single
+      thing had to first add it to a collection they did not want. That is a
+      funnel blocker on exactly the people most likely to bring supply.
+
+      The item is created for them, tagged `source='marketplace'` and
+      `for_sale=true`. NOT archived — archiving is a user action elsewhere and
+      faking it would read as "the app archived my thing". This is deliberately
+      an `items` row rather than a nullable `marketplace_listings.item_id`:
+      photos (`item_images`), `canonical_ref` resolution, the supply hook and
+      the sold-comp hook are all keyed on an item, so giving the seller a real
+      one means every downstream feature works unchanged instead of needing a
+      second, item-less variant of each.
+
+    Supplying `canonical_key` + `category` on the free-text path is what makes
+    the listing reach Target Hit and produce a usable sold comp — see
+    `reaches_target_hit` on the response.
     """
-    item_id: str = Field(..., description="items.id the caller owns")
+    item_id: Optional[str] = Field(
+        None, description="items.id the caller owns. Omit to list without a collection item.",
+    )
+    title: Optional[str] = Field(
+        None, max_length=200,
+        description="Required when item_id is omitted — what is being sold.",
+    )
+    category: Optional[str] = Field(None, max_length=64)
+    canonical_key: Optional[str] = Field(
+        None, max_length=200,
+        description="Bare catalogue key. Without it the listing cannot fire a Target Hit.",
+    )
     price: float = Field(..., gt=0, le=1_000_000)
     currency: str = Field(default="EUR", max_length=3, pattern=r"^[A-Z]{3}$")
     condition_label: Optional[str] = Field(None, max_length=64)
@@ -81,6 +112,14 @@ class ListingCreate(BaseModel):
     description: Optional[str] = Field(None, max_length=4000)
     ships_from: Optional[str] = Field(None, max_length=120)
     shipping_cost: Optional[float] = Field(None, ge=0, le=100_000)
+    # Opt-in, default OFF. Absence of a choice is not consent, which is why
+    # this defaults false here AND in the column default rather than relying on
+    # the client always sending it. ToS §3 carries the grant.
+    photo_catalogue_consent: bool = Field(
+        False,
+        description="Allow this listing's photo to be reused as catalogue art "
+                    "for the same product. Opt-in and revocable.",
+    )
 
 
 class ListingOut(BaseModel):
@@ -422,6 +461,139 @@ async def _sold_comp_hook(listing_id: str, amount: float, currency: str) -> None
         logger.warning("[p2p] sold comp hook failed for %s: %s", listing_id, exc)
 
 
+async def _catalogue_image_hook(listing_id: str) -> None:
+    """Fill a catalogue image gap from a member's listing photo, with consent.
+
+    54,115 of 221,391 `category_items` have no image. A member selling a real
+    copy has photographed it. That photo can close the gap — but only under
+    conditions that make it lawful and honest:
+
+    * **Consent, per listing.** ToS §3 grants this explicitly, opt-in and
+      revocable. `photo_catalogue_consent` defaults FALSE in both the model and
+      the column: absence of a choice is not consent.
+    * **Gap-filling ONLY — never overwrite.** `WHERE image_url IS NULL` is the
+      whole safety story. It bounds the blast radius to items that show a
+      placeholder today, and means a contributed photo can never displace a
+      licensed catalogue asset or a better one.
+    * **The seller's OWN photo**, not the catalogue fallback. Copying the
+      fallback back into the catalogue would be a no-op that looks like
+      progress; `i.image_url IS NOT NULL` is what makes it a real contribution.
+    * **Provenance recorded**, so "stop using my photo" is answerable —
+      `image_source`, `image_contributed_by`, `image_contributed_at`.
+
+    Fire-and-forget: a missed enrichment is a non-event, and it must never
+    affect whether the seller's listing publishes.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return
+    try:
+        async with pool.acquire() as conn:
+            # The seller's photo lives in EITHER place and both are legitimate:
+            # `items.image_url` is the primary thumbnail (written by the client
+            # via PostgREST), `item_images` is the gallery that
+            # POST /items/{id}/images writes. Reading only the first would have
+            # made this hook near-dead — nothing server-side writes
+            # items.image_url, so a photo uploaded through the documented
+            # endpoint would never have been seen.
+            row = await conn.fetchrow(
+                """
+                SELECT l.user_id, l.canonical_key, l.category,
+                       COALESCE(
+                         i.image_url,
+                         (SELECT im.image_url FROM public.item_images im
+                           WHERE im.item_id = i.id
+                           ORDER BY im.position NULLS LAST, im.created_at
+                           LIMIT 1)
+                       ) AS image_url
+                FROM public.marketplace_listings l
+                JOIN public.items i ON i.id = l.item_id
+                WHERE l.id = $1::uuid
+                  AND l.photo_catalogue_consent IS TRUE
+                  AND l.canonical_key IS NOT NULL
+                  AND l.category IS NOT NULL
+                """,
+                listing_id,
+            )
+            # Checked in Python rather than SQL so "no photo yet" is a normal
+            # early return: the realistic order is publish -> get item_id ->
+            # upload, so at publish time there is usually nothing to contribute.
+            if row is None or not row["image_url"]:
+                return
+
+            filled = await conn.fetchval(
+                """
+                UPDATE public.category_items
+                   SET image_url = $3,
+                       image_source = 'member_listing',
+                       image_contributed_by = $4::uuid,
+                       image_contributed_at = now()
+                 WHERE item_key = $1 AND category = $2
+                   AND image_url IS NULL
+                RETURNING 1
+                """,
+                row["canonical_key"], row["category"],
+                row["image_url"], str(row["user_id"]),
+            )
+            if filled:
+                logger.info(
+                    "[p2p] catalogue image contributed for %s:%s from listing %s",
+                    row["category"], row["canonical_key"], listing_id,
+                )
+    except Exception as exc:
+        logger.warning("[p2p] catalogue image hook failed for %s: %s", listing_id, exc)
+
+
+async def contribute_from_item_photo(item_id: str) -> None:
+    """Run the catalogue hook for any consenting live listing on this item.
+
+    Called when a PHOTO lands, which is the moment that actually matters. The
+    publish-time call alone was an ordering bug: a seller creates the listing,
+    gets `item_id` back, and only THEN uploads — so at publish there is nothing
+    to contribute, and without this the consent they gave would never do
+    anything. Exactly the "capture without a consumer" shape.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return
+    try:
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id FROM public.marketplace_listings
+                WHERE item_id = $1::uuid
+                  AND photo_catalogue_consent IS TRUE
+                  AND status = $2 AND delisted_at IS NULL
+                """,
+                item_id, _STATUS_ACTIVE,
+            )
+        for r in rows:
+            await _catalogue_image_hook(str(r["id"]))
+    except Exception as exc:
+        logger.warning("[p2p] contribute-from-photo failed for item %s: %s", item_id, exc)
+
+
+async def withdraw_contributed_images(conn, user_id: str) -> int:
+    """Stop using a member's photos as catalogue art. Returns rows cleared.
+
+    The counterpart to the ToS §3 grant being *revocable*. Without this the
+    grant is a promise the code cannot keep. Clears the image rather than
+    substituting one, so the catalogue returns to the placeholder it showed
+    before the contribution — the honest previous state.
+    """
+    cleared = await conn.fetch(
+        """
+        UPDATE public.category_items
+           SET image_url = NULL, image_source = NULL,
+               image_contributed_by = NULL, image_contributed_at = NULL
+         WHERE image_contributed_by = $1::uuid
+        RETURNING 1
+        """,
+        user_id,
+    )
+    return len(cleared)
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -437,20 +609,50 @@ async def create_listing(
     if pool is None:
         raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
 
-    async with pool.acquire() as conn:
-        # Ownership is enforced HERE, server-side. The client sending an
-        # item_id it does not own must not be able to list it.
-        item = await conn.fetchrow(
-            """
-            SELECT id, name, category, canonical_key, image_url
-            FROM public.items
-            WHERE id = $1::uuid AND user_id = $2::uuid
-            """,
-            payload.item_id, user_id,
+    if not payload.item_id and not (payload.title or "").strip():
+        raise error_response(
+            400, "Give either an item from your collection or a title",
+            code="ITEM_OR_TITLE_REQUIRED",
         )
-        if item is None:
-            raise error_response(
-                404, "Item not found in your collection", code="ITEM_NOT_FOUND",
+
+    async with pool.acquire() as conn:
+        if payload.item_id:
+            # Ownership is enforced HERE, server-side. The client sending an
+            # item_id it does not own must not be able to list it.
+            item = await conn.fetchrow(
+                """
+                SELECT id, name, category, canonical_key, image_url
+                FROM public.items
+                WHERE id = $1::uuid AND user_id = $2::uuid
+                """,
+                payload.item_id, user_id,
+            )
+            if item is None:
+                raise error_response(
+                    404, "Item not found in your collection", code="ITEM_NOT_FOUND",
+                )
+        else:
+            # Marketplace-only seller: create the item they are selling. They
+            # do own it — that is the premise of listing it — so this is not a
+            # fiction, it is the record catching up with reality.
+            #
+            # `canonical_ref` is left to trg_items_canonical_ref rather than set
+            # here; that trigger owns the bare -> namespaced resolution and the
+            # crosswalk fallback (learning_canonical_key_vs_item_ref_namespace).
+            item = await conn.fetchrow(
+                """
+                INSERT INTO public.items
+                    (user_id, name, category, canonical_key, source, for_sale,
+                     created_at, updated_at)
+                VALUES ($1::uuid, $2, $3, $4, 'marketplace', TRUE, now(), now())
+                RETURNING id, name, category, canonical_key, image_url
+                """,
+                user_id, payload.title.strip(), payload.category,
+                payload.canonical_key,
+            )
+            logger.info(
+                "[p2p] created marketplace-only item %s for %s (canonical_key=%r)",
+                item["id"], user_id, payload.canonical_key,
             )
 
         # One active listing per item — otherwise a member can publish the same
@@ -462,7 +664,7 @@ async def create_listing(
               AND status = $3 AND delisted_at IS NULL
             LIMIT 1
             """,
-            payload.item_id, user_id, _STATUS_ACTIVE,
+            str(item["id"]), user_id, _STATUS_ACTIVE,
         )
         if dup:
             raise error_response(
@@ -477,27 +679,30 @@ async def create_listing(
                  listing_description, price, currency, condition_label,
                  condition_notes, shipping_cost, ships_from, canonical_key,
                  category, format, quantity, status, listed_at,
-                 created_at, updated_at)
+                 created_at, updated_at, photo_catalogue_consent)
             VALUES ($1::uuid, $2::uuid, $3::uuid, $4, $5,
                     $6, $7, $8, $9,
                     $10, $11, $12, $13,
                     $14, $16, 1, $15, now(),
-                    now(), now())
+                    now(), now(), $17)
             """,
-            listing_id, user_id, payload.item_id, SPARROW_MARKETPLACE_KEY,
+            listing_id, user_id, str(item["id"]), SPARROW_MARKETPLACE_KEY,
             item["name"] or "Untitled",
             payload.description, payload.price, payload.currency,
             payload.condition_label, payload.condition_notes,
             payload.shipping_cost, payload.ships_from,
             item["canonical_key"], item["category"], _STATUS_ACTIVE,
-            _FORMAT_FIXED,
+            _FORMAT_FIXED, payload.photo_catalogue_consent,
         )
 
     # Off the critical path — the seller's request returns immediately.
     spawn_bg(_publish_supply_hook(listing_id), "p2p_supply_hook")
+    # Enrichment, not a feature of the listing: a missed catalogue image is a
+    # non-event and must never affect whether the listing publishes.
+    spawn_bg(_catalogue_image_hook(listing_id), "p2p_catalogue_image")
 
     return ListingOut(
-        id=listing_id, user_id=user_id, item_id=payload.item_id,
+        id=listing_id, user_id=user_id, item_id=str(item["id"]),
         title=item["name"] or "Untitled", description=payload.description,
         price=payload.price, currency=payload.currency,
         condition_label=payload.condition_label,

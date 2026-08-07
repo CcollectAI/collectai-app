@@ -458,18 +458,36 @@ This ships anyway, because the data is worth having and is fully auditable
 (`listing_id` traces to both parties). `source = 'sparrow_p2p'` is the filter to
 pull if predictions start looking wrong:
 
+Audit from **`p2p_offers`, not `market_hits`** — `PARTITION_RETENTION_MONTHS_MARKET_HITS=1`,
+so a `market_hits`-based query goes blind after a month and would read as "no
+P2P comps" exactly the way §6's supply count read as "no supply". `p2p_offers`
+keeps completed trades permanently, and both parties are on the row:
+
 ```sql
--- Sold comps contributed by members, and how isolated each one is.
-SELECT mh.item_ref, mh.price_eur, mh.seen_at,
-       (SELECT count(*) FROM public.market_hits o
-         WHERE o.item_ref = mh.item_ref AND o.is_listing IS NOT TRUE
-           AND o.source <> 'sparrow_p2p') AS independent_comps
-FROM public.market_hits mh
-WHERE mh.source = 'sparrow_p2p'
-ORDER BY independent_comps ASC, mh.seen_at DESC;
+-- Every member sale that fed valuation, with who traded and how isolated it was.
+SELECT o.created_at, o.amount, o.currency,
+       l.category || ':' || l.canonical_key AS item_ref,
+       o.buyer_id, o.seller_id,
+       (SELECT count(*) FROM public.market_hits m
+         WHERE m.item_ref = l.category || ':' || l.canonical_key
+           AND m.is_listing IS NOT TRUE
+           AND m.source <> 'sparrow_p2p') AS independent_comps
+FROM public.p2p_offers o
+JOIN public.marketplace_listings l ON l.id = o.listing_id
+WHERE o.status = 'completed' AND l.canonical_key IS NOT NULL
+ORDER BY independent_comps ASC, o.created_at DESC;
 ```
 
-`independent_comps = 0` is the row to look at: it is setting a price by itself.
+`independent_comps = 0` is the row to look at: that sale is setting a price by
+itself. A repeated `(buyer_id, seller_id)` pair across several such rows is the
+collusion signature.
+
+**Confidence is protected separately.** `valuation_worker`'s `diversity_factor`
+counts distinct sources, so a member sale would otherwise have counted as an
+independent market and raised the model's stated confidence as well as its
+price. `sparrow_p2p` is excluded from that count — it still contributes its
+price and to `n`, but it cannot make us more sure of a number a colluding pair
+chose.
 
 ## 5c. The C2C boundary is load-bearing — and currently undefended
 

@@ -53,6 +53,8 @@ function TermsOfServiceScreenInner() {
         <Text style={[styles.heading, { color: colors.text }]}>3. User Content</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           You retain ownership of all content you upload to the Service, including photos, descriptions, collection data, project notes, and messages. By using the Service, you grant us a limited, non-exclusive license to store, display, and process your content solely to provide the Service to you.{'\n\n'}
+          <Text style={styles.bold}>Marketplace photos and the catalogue:</Text> If you publish a photo on a marketplace listing, you additionally grant us a non-exclusive, royalty-free licence to use that photo as a reference image in our product catalogue, shown to other members alongside the same product. This is optional and off by default — you choose it per listing, and you can withdraw it at any time from the listing, after which we stop using the photo as catalogue art. We only ever use it for the product it depicts. You must own the photo or have the right to grant this; do not upload photos taken by someone else.{'\n\n'}
+          A catalogue image is a reference picture of the product, not a picture of any particular copy. Where a listing has no photo of its own we may show the catalogue image, clearly labelled as such, and the seller remains responsible for describing the actual condition of their item.{'\n\n'}
           You agree not to upload content that:{'\n'}
           {'\u2022'} Is illegal, offensive, defamatory, or harassing{'\n'}
           {'\u2022'} Infringes on third-party intellectual property rights{'\n'}

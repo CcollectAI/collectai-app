@@ -3678,6 +3678,18 @@
       "nullable": false,
       "type": "uuid"
     },
+    "category_items.image_contributed_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "category_items.image_contributed_by": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "category_items.image_source": {
+      "nullable": true,
+      "type": "text"
+    },
     "category_items.image_url": {
       "nullable": true,
       "type": "text"
@@ -8477,6 +8489,11 @@
     "marketplace_listings.original_price": {
       "nullable": true,
       "type": "numeric"
+    },
+    "marketplace_listings.photo_catalogue_consent": {
+      "default": "false",
+      "nullable": false,
+      "type": "bool"
     },
     "marketplace_listings.price": {
       "nullable": false,
@@ -21764,7 +21781,10 @@
       "source",
       "verified",
       "last_crawled_at",
-      "last_scrape_attempt_at"
+      "last_scrape_attempt_at",
+      "image_source",
+      "image_contributed_by",
+      "image_contributed_at"
     ],
     "category_leaderboard": [
       "category",
@@ -23131,7 +23151,8 @@
       "ships_from_country",
       "ships_to",
       "reserved_offer_id",
-      "reserved_at"
+      "reserved_at",
+      "photo_catalogue_consent"
     ],
     "marketplace_sales": [
       "id",
