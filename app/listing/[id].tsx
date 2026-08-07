@@ -365,26 +365,6 @@ function ListingDetailScreen() {
             </View>
           </View>
 
-          {/* Stage 1 has no payment protection. Say so rather than let the
-              buyer assume it — an implied guarantee is exactly the liability
-              this stage is scoped to avoid. */}
-          <View style={[styles.notice, { borderColor: colors.border }]}>
-            <Ionicons name="information-circle-outline" size={16} color={colors.muted} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.noticeText, { color: colors.muted }]}>
-                Sparrow doesn&apos;t handle payment or delivery. You arrange those
-                directly with the seller, and there is no buyer protection.
-              </Text>
-              <AnimatedPressable
-                onPress={() => router.push('/legal/marketplace-terms' as Href)}
-                accessibilityRole="link"
-                accessibilityLabel="Read the marketplace terms"
-              >
-                <Text style={[styles.noticeLink, { color: colors.accent }]}>Marketplace terms</Text>
-              </AnimatedPressable>
-            </View>
-          </View>
-
           {listing.is_mine ? (
             !isGone ? (
               <AnimatedPressable
@@ -441,6 +421,33 @@ function ListingDetailScreen() {
               </Text>
             </AnimatedPressable>
           ) : null}
+
+          {/* Stage 1 has no payment protection. Say so rather than let the buyer
+              assume it — an implied guarantee is exactly the liability this stage
+              is scoped to avoid.
+
+              Sits at the very bottom, below the actions and the report row. It is
+              a standing disclosure about how the whole marketplace works, not a
+              consent gate on this listing: there is no checkbox and no "by
+              tapping you agree", so nothing here has to be read before acting.
+              Above the buttons it pushed the primary action down the screen and
+              read as a warning about THIS seller, which it is not. */}
+          <View style={[styles.notice, { borderColor: colors.border }]}>
+            <Ionicons name="information-circle-outline" size={16} color={colors.muted} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.noticeText, { color: colors.muted }]}>
+                Sparrow doesn&apos;t handle payment or delivery. You arrange those
+                directly with the seller, and there is no buyer protection.
+              </Text>
+              <AnimatedPressable
+                onPress={() => router.push('/legal/marketplace-terms' as Href)}
+                accessibilityRole="link"
+                accessibilityLabel="Read the marketplace terms"
+              >
+                <Text style={[styles.noticeLink, { color: colors.accent }]}>Marketplace terms</Text>
+              </AnimatedPressable>
+            </View>
+          </View>
         </Animated.View>
       </ScrollView>
     </View>
@@ -517,7 +524,10 @@ const styles = StyleSheet.create({
   notice: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
-    padding: 10, marginTop: 12,
+    // 20 rather than the old 12: as a footer it needs to read as separated from
+    // the actions above it, and it has to hold that in the `is_mine` branch too,
+    // where the report row (which carried its own marginTop) is not rendered.
+    padding: 10, marginTop: 20,
   },
   noticeText: { fontSize: textToken.xs, lineHeight: 17 },
   noticeLink: { fontSize: textToken.xs, fontWeight: fontWeight.bold, marginTop: 5 },
