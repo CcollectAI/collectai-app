@@ -184,7 +184,24 @@ function ListingDetailScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Animated.View style={animatedStyle}>
           {listing.image_url ? (
-            <Image source={{ uri: listing.image_url }} style={styles.hero} contentFit="cover" transition={150} />
+            <View>
+              <Image source={{ uri: listing.image_url }} style={styles.hero} contentFit="cover" transition={150} />
+              {/* The grid (app/listings.tsx) labelled this and the DETAIL screen
+                  did not — the wrong way round. This is where a buyer studies
+                  the item before messaging or making an offer, so an unlabelled
+                  stock photo here is the one that actually misleads. Per
+                  ListingOut.image_is_catalog: "a stock photo passed off as the
+                  actual item hides condition, which is the one thing a
+                  second-hand buyer needs to see". Found by walking a listing
+                  whose seller had no photo of their own. */}
+              {listing.image_is_catalog ? (
+                <View style={[styles.stockTag, { backgroundColor: colors.background + 'E6' }]}>
+                  <Text style={[styles.stockTagText, { color: colors.muted }]}>
+                    Catalog photo — not the seller&apos;s item
+                  </Text>
+                </View>
+              ) : null}
+            </View>
           ) : (
             <View style={[styles.hero, styles.heroEmpty, { backgroundColor: colors.accent + '12' }]}>
               <Ionicons name="image-outline" size={40} color={colors.muted} />
@@ -444,6 +461,13 @@ const styles = StyleSheet.create({
   muted: { fontSize: textToken.md },
   content: { padding: 16, paddingBottom: 48, gap: 10 },
   hero: { width: '100%', aspectRatio: 1, borderRadius: radius.md },
+  // Same treatment as the grid tile in app/listings.tsx, sized up for a
+  // full-width hero so it is legible rather than decorative.
+  stockTag: {
+    position: 'absolute', left: 10, bottom: 10,
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: radius.xs,
+  },
+  stockTagText: { fontSize: 11, fontWeight: fontWeight.semibold },
   heroEmpty: { alignItems: 'center', justifyContent: 'center' },
   banner: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
