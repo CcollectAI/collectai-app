@@ -231,6 +231,43 @@ prod that satisfies all three conditions.
 > left alone; if that changes, they need a backfill (category ← slug, and a
 > target price) or a delete.
 
+## ⛔ THE PAID FEATURE CANNOT FIRE FOR ANY REAL USER (measured 2026-08-08)
+
+Target Hit is the thing Pro sells. `_check_watchlist_snipes` filters:
+
+```sql
+WHERE w.target_price IS NOT NULL AND w.target_price > 0
+```
+
+Prod, today:
+
+```
+registered users        29
+users with any item      6
+items total             16
+watchlist rows          13
+watchlist WITH a target  0      <-- every row is inert
+Target Hits ever         2      (both from testing, 2026-08-04/07)
+paying subscribers       0
+P2P listings             0
+```
+
+**Zero of thirteen watchlist rows carry a target price**, so the alert cannot
+fire for a single real user, and Pro therefore has nothing to demonstrate.
+
+The cause is not a bug in the worker — the worker is correct and verified. It is
+the ADD FORM: `app/(tabs)/wishlist.tsx` requires a title and a category and
+leaves the target price **optional** (`handleAdd`, the two guards at :167 and
+:171). The one field that arms the feature is the only one you can skip.
+
+`WatchlistItemCard` already renders a "No target — won't alert" chip, added
+2026-08-05. Thirteen rows later, still 0 targets: **telling the user afterwards
+does not work.** The field has to be required at write time, or defaulted to
+something sensible (the current market estimate) and editable.
+
+This outranks every marketplace feature. Supply, price drops, watchlist matches
+and the sold-comp loop all feed an alert that is currently incapable of firing.
+
 ## THE MAP — alerts & notifications end to end (2026-08-08)
 
 Written because the duplicate-screen problem was found by Merle asking, not by
