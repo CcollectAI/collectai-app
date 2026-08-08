@@ -176,6 +176,47 @@ actions. `can_confirm` / `can_grade` come from the SERVER; the client never
 re-derives the state machine, because two implementations of one state machine
 drift apart.
 
+## 1d-bis. Stage 2 walked on a device (2026-08-08)
+
+The 24/24 E2E proves the state machine. It cannot prove the screens, and Merle's
+rule applies: *walking screens catches errors tests don't*. So the whole
+transaction was driven on a booted simulator, one stage at a time, against live
+prod.
+
+| Stage | What the screen shows |
+|---|---|
+| offer received | `Selling` · "Awaiting seller" · Accept / Counter / Decline |
+| accepted | "Agreed — arrange the exchange" · `○ Seller sent` `○ Buyer received` · Mark sent / Add tracking / Withdraw |
+| seller confirmed + tracking | `✓ Seller sent` `○ Buyer received` · PostNL block · **Mark sent replaced by Edit tracking** |
+| completed | "Completed" · **Grade trade** appears |
+| sold listing | "This listing is no longer available (sold)" · **"1 completed trade"** on the seller card |
+
+**No bugs found.** Recording that as a fact rather than a shrug: three things
+were confirmed that no test asserts.
+
+1. **The §7 carrier rule is legible.** PostNL renders the code with *"Search this
+   code on the carrier's site"* and NO button — because it needs the recipient
+   postcode we deliberately do not hold. The E2E asserts `linkable: false`; this
+   is what that means to a user.
+2. **Two-sided completion explains itself.** The `○ Seller sent` / `○ Buyer
+   received` pair makes the model obvious with no copy, and the primary action
+   correctly swaps once one side confirms.
+3. **Reputation lands at the right moment.** "1 completed trade" appears on the
+   seller card immediately after grading — on the same screen that sold the item.
+
+**One detail worth knowing:** the sold listing displays **€420**, the ASKING
+price, while the trade completed at **€380**, the AGREED amount. That is correct
+and deliberate — the listing shows what was asked, and `_sold_comp_hook` writes
+the AGREED figure, which is the one `valuation_worker` consumes (§1g). Verified
+in the same walk:
+
+```
+Charizard  sold    is_listing=f  380  sparrow_p2p    <- the comp
+Bayou      active  is_listing=t  250  sparrow        <- still buyable
+```
+
+Prod restored to 0 listings / 0 offers / 0 grades / 0 sparrow hits afterwards.
+
 ## 1e. The demand signal (built 2026-08-07)
 
 The differentiator, and the reason a seller lists at all:
