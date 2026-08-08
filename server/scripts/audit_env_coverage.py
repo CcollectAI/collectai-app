@@ -51,6 +51,26 @@ EXPECTED_EMPTY: dict[str, str] = {
     # SENTRY_DSN is set in production — kept out of EXPECTED_EMPTY so the stale
     # check stays meaningful.
     "DEV_USER_ID": "DEV_MODE is false in production, so the dev-user path is unreachable.",
+
+    # -- third-party credentials we do not hold an account for (2026-08-08) ---
+    # Each was checked individually rather than blanket-documented: the reason
+    # has to be TRUE, or this list becomes the thing that stops the next
+    # investigation (see audit_rls_coverage.py, where user_notifications was
+    # excused with a false justification and sat unread for seven months).
+    #
+    # These all degrade to keyless/disabled rather than erroring, which is
+    # exactly why they need a line here instead of being noticed in a year.
+    "ANTHROPIC_API_KEY": "claude_estimator.py:477 guards on it and falls back to the Ridge model. Deliberately unset — the paid-scraper/LLM killswitch (project_paid_scraper_killswitches).",
+    "BRICKLINK_CONSUMER_KEY": "No BrickLink developer account. The adapter degrades to keyless; lego supply comes from ebay (3,201 buyable rows, 7d).",
+    "CARDMARKET_APP_TOKEN": "No Cardmarket API account. config.py:252 defaults it to ''. Cardmarket rows are scraped via Firecrawl, and are price-only (0 buyable) regardless.",
+    "DISCOGS_TOKEN": "Dead var — no server code reads it. DISCOGS_AFFILIATE_TOKEN is the one actually used, and it IS set. Remove on the next config sweep.",
+    "PRICECHARTING_API_KEY": "No PriceCharting subscription; the caller runs keyless behind the console guard (learning_keyless_pricecharting_needs_console_guard).",
+    "STOCKX_API_KEY": "No StockX API account. Sneaker/collectible supply comes from ebay instead.",
+    "TCGPLAYER_BEARER_TOKEN": "No TCGplayer API account. Its 256,848 rows arrive via scrape and are price-only (0 buyable), so a token would not change alert coverage.",
+
+    # -- not credentials -----------------------------------------------------
+    "DATABASE_URL": "Alembic CONSTRUCTS this in migrations/env.py from DB_USER/DB_PASS/DB_HOST/DB_PORT/DB_NAME; it is never read from the environment at runtime.",
+    "MATVIEW_REFRESH_INTERVAL": "Read only by test_production_hardening.py as an escape hatch for the interval assertions. No production code path.",
 }
 
 

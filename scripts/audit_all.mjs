@@ -78,7 +78,13 @@ const CHECKS = [
   },
   {
     name: 'fe-rpc-contract',
-    cmd: `${SSH} '${REMOTE_PY} scripts/audit_fe_rpc_contract.py'`,
+    // TWO PHASES. The FE scan MUST happen locally: /opt/collectors/src is a
+    // copy of the frontend from 2026-04-12, and scanning it made this report
+    // 18 "broken" RPCs that were April's code — every one since migrated to
+    // REST and surviving only as a comment. Four months of false criticals.
+    cmd: `python3 server/scripts/audit_fe_rpc_contract.py --dump-fe > /tmp/fe_rpcs.json`
+       + ` && scp -q /tmp/fe_rpcs.json collectai:/tmp/fe_rpcs.json`
+       + ` && ${SSH} '${REMOTE_PY} scripts/audit_fe_rpc_contract.py --fe-file /tmp/fe_rpcs.json'`,
     db: true,
     why: 'a supabase.rpc() the FE calls that is missing or ungranted — 404/42501, swallowed',
   },
