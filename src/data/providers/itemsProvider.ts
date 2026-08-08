@@ -164,8 +164,15 @@ export async function listItems(pagination?: PaginationParams): Promise<Item[]> 
   }
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listItems error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listItems error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load Items',
+    );
   }
 
   return ((data ?? []) as ItemRow[]).map(mapItemRow);

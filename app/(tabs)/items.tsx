@@ -900,6 +900,21 @@ const ItemsScreen: React.FC = () => {
         Try a different keyword or clear filters
       </Text>
     </View>
+  ) : error ? (
+    // FAILED != EMPTY. `error` was destructured from usePaginatedList and never
+    // rendered, so a failed load showed ItemsEmptyState — "add your first item"
+    // to someone who already has a collection. Same shape as the watchlist bug
+    // fixed alongside it, and the same reason it went unnoticed: an empty list
+    // is a plausible screen.
+    <View style={{ alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 }}>
+      <Ionicons name="cloud-offline-outline" size={40} color={colors.danger} />
+      <Text style={{ color: colors.text, fontSize: text.lg, fontWeight: fontWeight.bold, marginTop: 12 }}>
+        Couldn&apos;t load your items
+      </Text>
+      <Text style={{ color: colors.muted, fontSize: text.md, marginTop: 4, textAlign: 'center' }}>
+        Your collection is safe — we just couldn&apos;t reach it. Pull down to try again.
+      </Text>
+    </View>
   ) : <ItemsEmptyState />;
 
   const refreshCtrl = (

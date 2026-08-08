@@ -123,8 +123,15 @@ export async function listCategorySummaries(): Promise<CategorySummary[]> {
     .select('id, name, completion_pct, owned_count, missing_count, total_count');
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listCategorySummaries error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listCategorySummaries error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load CategorySummaries',
+    );
   }
 
   type SummaryRow = { id: string; name: string; completion_pct?: number; owned_count?: number; missing_count?: number; total_count?: number };
@@ -167,8 +174,15 @@ export async function listCategoryMissing(categoryId: string): Promise<CategoryM
   }
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listCategoryMissing error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listCategoryMissing error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load CategoryMissing',
+    );
   }
 
   return (data ?? []).map((row) => ({

@@ -92,8 +92,15 @@ export async function listBuildPaintProjects(): Promise<BuildPaintProject[]> {
     .limit(200);
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listBuildPaintProjects error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listBuildPaintProjects error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load BuildPaintProjects',
+    );
   }
 
   return (data ?? []).map((row: Record<string, unknown>) => ({
@@ -212,8 +219,15 @@ export async function listBuildPaintSteps(projectId: string): Promise<BuildPaint
     .order('step_order', { ascending: true });
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listBuildPaintSteps error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listBuildPaintSteps error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load BuildPaintSteps',
+    );
   }
   type StepRow = { id: string; project_id: string; title: string; status?: string | null; step_order?: number | null; created_at?: string | null };
   return (data ?? []).map((row: StepRow) => ({
@@ -273,8 +287,15 @@ export async function listBuildPaintNotes(projectId: string): Promise<BuildPaint
     .eq('project_id', projectId)
     .order('created_at', { ascending: false });
   if (error) {
-    logger.warn('[SupabaseDataProvider] listBuildPaintNotes error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listBuildPaintNotes error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load BuildPaintNotes',
+    );
   }
   type NoteRow = { id: string; project_id: string; content: string; created_at?: string | null };
   return (data ?? []).map((row: NoteRow) => ({
@@ -314,8 +335,15 @@ export async function listBuildPaintProjectsByCategory(categoryId: string): Prom
     .order('last_updated', { ascending: false });
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listBuildPaintProjectsByCategory error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listBuildPaintProjectsByCategory error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load BuildPaintProjectsByCategory',
+    );
   }
 
   return (data ?? []).map((r: Record<string, unknown>) => ({
@@ -341,8 +369,15 @@ export async function listBuildPaintProjectsByItem(itemId: string): Promise<Buil
     .order('last_updated', { ascending: false });
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listBuildPaintProjectsByItem error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listBuildPaintProjectsByItem error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load BuildPaintProjectsByItem',
+    );
   }
 
   return (data ?? []).map((r: Record<string, unknown>) => ({

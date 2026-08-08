@@ -131,8 +131,15 @@ export async function searchUsers(query: string): Promise<PublicUserProfile[]> {
   }
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] searchUsers error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] searchUsers error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load Users',
+    );
   }
 
   if (!data) return [];
@@ -172,8 +179,15 @@ export async function unblockUser(userId: string): Promise<void> {
 export async function listBlockedUsers(): Promise<{ id: string; name: string }[]> {
   const { data, error } = await supabase.rpc('rpc_list_blocked_v1');
   if (error) {
-    logger.warn('[SupabaseDataProvider] listBlockedUsers error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listBlockedUsers error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load BlockedUsers',
+    );
   }
 
   const rows = (data ?? []) as { blocked_id: string }[];

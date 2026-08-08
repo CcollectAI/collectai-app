@@ -90,11 +90,27 @@ describe('itemsProvider.listItems — purchase field mapping', () => {
     expect(items[0].purchaseNotes).toBeNull();
   });
 
-  it('returns [] on Supabase error without throwing (matches itemsProvider error contract)', async () => {
+  // REWRITTEN 2026-08-08. This used to assert `returns [] on Supabase error
+  // without throwing`, and it passed — which is precisely why the bug survived.
+  // Returning [] made a FAILED read indistinguishable from an empty collection,
+  // so the Items tab rendered "add your first item" to someone who already had
+  // one, and the test protected that. A test that pins the broken behaviour
+  // makes green mean dead (learning_tests_that_pin_a_stub).
+  it('THROWS on a Supabase error — a failed read must not look like an empty collection', async () => {
     mockRows = [];
     mockError = { message: 'PostgREST 400 (column does not exist)' };
 
-    const items = await listItems({ limit: 10, offset: 0 });
-    expect(items).toEqual([]);
+    await expect(listItems({ limit: 10, offset: 0 })).rejects.toThrow(
+      'PostgREST 400 (column does not exist)',
+    );
+  });
+
+  it('still resolves to [] when the collection is genuinely empty', async () => {
+    // The other half of the contract. If this ever starts rejecting, the empty
+    // state becomes unreachable and we have swapped one wrong screen for another.
+    mockRows = [];
+    mockError = null;
+
+    await expect(listItems({ limit: 10, offset: 0 })).resolves.toEqual([]);
   });
 });
