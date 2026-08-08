@@ -172,12 +172,39 @@ function WatchlistTabScreen() {
       showToast({ message: 'Please select a category.', type: 'warning' });
       return;
     }
+    // A target price is REQUIRED, not optional. This is the third guard and it
+    // is the one that decides whether the row does anything at all:
+    // `deal_discovery_worker._check_watchlist_snipes` filters
+    // `WHERE w.target_price IS NOT NULL AND w.target_price > 0`, so a row
+    // without one is skipped forever. It is not a degraded row — it is an
+    // invisible one.
+    //
+    // It used to be optional, and `WatchlistItemCard` rendered a
+    // "No target — won't alert" chip afterwards (added 2026-08-05). Measured
+    // 2026-08-08: still zero rows with a target. Telling someone AFTER they
+    // saved, on a row they have stopped looking at, does not work.
+    //
+    // Blocking here is the smaller cost. Free is capped at ONE Target Hit per
+    // day (`max_daily_deal_alerts`), so a single working row is the entire
+    // demonstration of the paid feature — and a user whose first row is inert
+    // never sees the feature at all, waits, and concludes the alerts are
+    // broken.
+    const parsedTarget = formTargetPrice.trim()
+      ? parseFloat(formTargetPrice.replace(/[^0-9.,]/g, '').replace(',', '.'))
+      : NaN;
+    if (!Number.isFinite(parsedTarget) || parsedTarget <= 0) {
+      showToast({
+        // Says what the number DOES, not that a field is missing. "Required"
+        // reads as bureaucracy; this reads as the reason to type it.
+        message: "Set a target price — that's the price we alert you at.",
+        type: 'warning',
+      });
+      return;
+    }
 
     setSaving(true);
     try {
-      const targetPrice = formTargetPrice.trim()
-        ? parseFloat(formTargetPrice.replace(/[^0-9.]/g, ''))
-        : null;
+      const targetPrice = parsedTarget;
 
       // Write the SLUG, not the display name. `formCategory` comes from
       // CATEGORIES = ALL_CATS.map(c => c.name), so this used to store
@@ -191,7 +218,7 @@ function WatchlistTabScreen() {
       await dataProvider.addWatchlistItem({
         title: formTitle.trim(),
         category: categorySlug,
-        targetPrice: targetPrice && !isNaN(targetPrice) ? targetPrice : null,
+        targetPrice,
         notes: formNotes.trim() || undefined,
       });
 

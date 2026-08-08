@@ -59,6 +59,7 @@ import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { collectorsApi } from '@/api/collectorsApi';
+import { matchCatalog, type CatalogMatchHit } from '@/api/itemsApi';
 import { getCurrencySymbol } from '@/lib/format';
 import { safeGoBack } from '@/lib/goBack';
 import { CATEGORIES } from '@/constants/categories';
@@ -84,6 +85,15 @@ function SellNewScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
   const [saving, setSaving] = useState(false);
+  // The catalogue match. `canonical_key` is what decides whether this listing
+  // can EVER fire a Target Hit: `_publish_supply_hook` writes no buyable
+  // market_hits row without one, so an unmatched listing reaches browsers only.
+  // Measured 2026-08-08: 4 of 16 items carry one, and this screen never sent
+  // one at all — so the marketplace's whole reason to exist (spec §1, supply
+  // for the paid alert) was unreachable from the marketplace-only seller path.
+  const [match, setMatch] = useState<CatalogMatchHit | null>(null);
+  const [matching, setMatching] = useState(false);
+  const [matchTried, setMatchTried] = useState(false);
 
   const parsedPrice = useMemo(() => {
     const n = parseFloat(price.replace(/[^0-9.]/g, ''));
@@ -96,6 +106,35 @@ function SellNewScreen() {
     () => CATEGORIES.find((c) => c.slug === categorySlug)?.name ?? null,
     [categorySlug],
   );
+
+  // Resolve the free text against the catalogue. Same endpoint QuickScan,
+  // add-manual and ItemCatalogRefresh already use — this is wiring, not a new
+  // capability.
+  //
+  // Fires on BLUR of the title once a category is chosen, not per keystroke:
+  // /catalog/match is a real search, and a request per character would be both
+  // wasteful and racy (a late response overwriting a newer one).
+  const runMatch = useCallback(async () => {
+    const t = title.trim();
+    if (t.length < 3 || !categorySlug || matching) return;
+    setMatching(true);
+    try {
+      const res = await matchCatalog(t, categorySlug);
+      // `best` only. The alternatives list is for a picker; offering five
+      // near-identical printings to someone selling one thing is a decision
+      // they cannot make from titles alone, and a WRONG canonical_key is worse
+      // than none — it would point watchers of a different printing at this
+      // listing (learning_keyword_filters_need_per_category_false_positive_audit).
+      setMatch(res.best ?? null);
+    } catch (e) {
+      // Never blocks listing. A catalogue miss costs reach, not the sale.
+      logger.warn('[sell/new] catalogue match failed:', e);
+      setMatch(null);
+    } finally {
+      setMatching(false);
+      setMatchTried(true);
+    }
+  }, [title, categorySlug, matching]);
 
   const pickPhoto = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -148,6 +187,9 @@ function SellNewScreen() {
         price: parsedPrice,
         currency: settings.currency,
         category: categorySlug ?? undefined,
+        // The whole point of the match. Without this the server's supply hook
+        // skips the listing and `reaches_target_hit` comes back false.
+        canonical_key: match?.item_key ?? undefined,
         condition_label: condition ?? undefined,
         description: description.trim() || undefined,
         photo_catalogue_consent: photoUri ? consent : false,
@@ -303,6 +345,9 @@ function SellNewScreen() {
             maxLength={200}
             style={[styles.field, styles.fieldText, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
             accessibilityLabel="What are you selling"
+            // On blur, not per keystroke: /catalog/match is a real search, and
+            // a request per character is wasteful and racy.
+            onBlur={runMatch}
           />
 
           <PickerField
@@ -349,17 +394,43 @@ function SellNewScreen() {
             accessibilityLabel="Description"
           />
 
-          {/* Honest about reach BEFORE they list. A free-text listing has no
-              canonical_key, so the supply hook skips it and nobody watching
-              the item is alerted. */}
-          <View style={[styles.notice, { borderColor: colors.border }]}>
-            <Ionicons name="information-circle-outline" size={16} color={colors.muted} />
-            <Text style={[styles.noticeText, { color: colors.muted }]}>
-              This listing will show in browse and search. To also alert members
-              watching for this exact item, add it to your collection and match it
-              to a catalogue entry first.
-            </Text>
-          </View>
+          {/* Reach, stated BEFORE listing and derived from the ACTUAL match.
+              This used to be a static paragraph telling the seller to "add it to
+              your collection and match it to a catalogue entry first" — which is
+              precisely the friction spec §5c says this screen exists to remove,
+              and it was the only advice available because the screen never ran a
+              match itself. Now it does, so this reports a fact rather than
+              issuing a chore.
+
+              Four distinct states. Empty is NOT loading (docs/ui-playbook.md),
+              and "no match" is not the same as "not checked yet" — collapsing
+              those would tell a seller their item is unmatchable before anything
+              looked. */}
+          {matching ? (
+            <View style={[styles.notice, { borderColor: colors.border }]}>
+              <ActivityIndicator size="small" color={colors.muted} />
+              <Text style={[styles.noticeText, { color: colors.muted }]}>
+                Checking the catalogue…
+              </Text>
+            </View>
+          ) : match ? (
+            <View style={[styles.notice, { borderColor: colors.accent + '55', backgroundColor: colors.accent + '12' }]}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
+              <Text style={[styles.noticeText, { color: colors.text }]}>
+                Matched to <Text style={{ fontWeight: fontWeight.bold }}>{match.title}</Text>.
+                Members watching this item will be alerted when you list it.
+              </Text>
+            </View>
+          ) : matchTried ? (
+            <View style={[styles.notice, { borderColor: colors.border }]}>
+              <Ionicons name="information-circle-outline" size={16} color={colors.muted} />
+              <Text style={[styles.noticeText, { color: colors.muted }]}>
+                No catalogue match for that title. It will still show in browse and
+                search — try the exact product name to also reach members watching
+                for it.
+              </Text>
+            </View>
+          ) : null}
 
           {/* accentText ONLY on the accent fill — on a border fill it is
               invisible in high-contrast dark (docs/ui-playbook.md). */}

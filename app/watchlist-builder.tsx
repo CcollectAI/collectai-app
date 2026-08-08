@@ -268,12 +268,26 @@ function WatchlistBuilderScreen() {
       return;
     }
 
-    let targetPrice: number | null = null;
-    if (newTargetPrice.trim()) {
-      const parsed = parseFloat(newTargetPrice.replace(/[^\d.]/g, "").trim());
-      if (Number.isFinite(parsed) && parsed > 0) {
-        targetPrice = parsed;
-      }
+    // A target price is REQUIRED here for the same reason the category is, one
+    // guard above: `_check_watchlist_snipes` filters
+    // `WHERE w.target_price IS NOT NULL AND > 0`, so a row without one is
+    // skipped forever. Two silent killers on one table — this screen produced
+    // 5 of the 13 prod rows and every one had BOTH problems (no category AND
+    // no target). Those rows were deleted 2026-08-08; this guard is what stops
+    // the screen making more.
+    //
+    // Accepts a comma decimal separator: the app ships in 7 currencies and most
+    // of Europe types "12,50". The previous regex stripped the comma and turned
+    // 12,50 into 1250 — a hundredfold target that would never fire.
+    const targetPrice = parseFloat(
+      newTargetPrice.replace(/[^\d.,]/g, "").replace(",", ".").trim(),
+    );
+    if (!Number.isFinite(targetPrice) || targetPrice <= 0) {
+      showToast({
+        message: "Set a target price — that's the price we alert you at.",
+        type: "warning",
+      });
+      return;
     }
 
     // Optimistic: create a temporary item and show it immediately
