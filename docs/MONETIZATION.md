@@ -357,6 +357,110 @@ aggregate anonymized market intelligence becomes valuable to:
 
 ---
 
+## 7a. CORRECTION — most of §7 does not earn money (2026-08-08)
+
+Merle's response to the list below: *"these are not good monetization ideas.
+nothing earns us money."* He is right, and the critique is worth keeping next to
+the list so it is read with it.
+
+Scoring §7 honestly by **direct cash**:
+
+| § | Idea | Actually earns? |
+|---|---|---|
+| 1 | List an item, earn Pro time | **NO — it COSTS money.** Gives subscription away. It is a growth tactic wearing a monetization hat |
+| 2 | Sold comps as a data product | No. A bet that Pro converts better |
+| 3 | Seller pricing intelligence | No. Same bet |
+| 4 | First-look alert latency | No. Same bet |
+| 5 | Affiliate | **YES — direct cash per click** |
+| 6 | B2B market reports | Yes, but there is no buyer today and it needs sales effort |
+| 7 | Power-seller tooling | No |
+
+So five of seven were "make Pro more attractive", which is the business we
+already have, not a new revenue line — and the top-ranked one is a cost.
+
+### What I got structurally wrong
+
+§8c of the spec rules out marketplace advertising on the grounds that Apple
+takes 30%. That is true of the form I considered — **a seller tapping "boost" in
+the app**, which is the case Apple's guideline names.
+
+It is NOT true of the other form. Advertising sold **B2B, off-platform, invoiced
+or via Stripe Checkout on the web**, is not an in-app purchase. No ad-supported
+app pays Apple 30% of its ad revenue. Apple's clause targets in-app purchase
+flows by individuals and small businesses buying a boost for their own post.
+
+**This codebase already proves the distinction** — §3 above, Sponsored Events:
+€29/€79/€199 tiers, billed through **Stripe**, fully built (checkout endpoint,
+webhook handler, sort boost, expiry filtering, push, admin analytics, ~10 tests)
+and shipped. Apple takes nothing from it.
+
+So the marketplace equivalent is available and I wrongly excluded it:
+**sponsored dealer / shop placement in the marketplace**, sold to businesses on
+the same rails Sponsored Events already uses. That is real revenue, it does not
+touch §5b (we are not a party to any trade), it does not touch DAC7 (no
+consideration is withheld from a member sale), and it does not tax the seller
+(§8a) because members still list free — the buyer of the placement is a business.
+
+### The two revenue systems that are BUILT and switched OFF
+
+Measured on prod 2026-08-08. This is the actual answer to "nothing earns us
+money": two complete systems are sitting at zero.
+
+**1. Sponsored Events — three environment variables from live.**
+
+```
+STRIPE_PRICE_ID_SPONSOR_FEATURED   = (UNSET)
+STRIPE_PRICE_ID_SPONSOR_PROMOTED   = (UNSET)
+STRIPE_PRICE_ID_SPONSOR_SPOTLIGHT  = (UNSET)
+STRIPE_SECRET_KEY                  = SET
+```
+
+Everything else is done and tested. Create three one-time products in the Stripe
+dashboard, set the ids, restart. €29–199 per event, no Apple cut.
+
+**2. Affiliate — 16 providers wired, every one EMPTY.**
+
+`build_affiliate_url` is deployed and called from the alerts screen, the
+notifications screen and the push handler. The env declares 16 affiliate ids —
+`EBAY_AFFILIATE_CAMPAIGN_ID`, `CARDMARKET_AFFILIATE_ID`, `TCGPLAYER_AFFILIATE_ID`,
+`STOCKX_AFFILIATE_ID`, `BRICKLINK_AFFILIATE_ID`, `CHRONO24_AFFILIATE_ID` and ten
+more — **and all of them are set to the empty string.**
+
+Proved on prod rather than inferred:
+
+```
+build_affiliate_url('https://www.ebay.com/itm/123456', 'ebay')
+  -> tagged=False  network=''   (URL returned unchanged)
+```
+
+So **every Target Hit, every Shop tap and every notification tap currently earns
+exactly €0**, and has since launch. `demand_signals` has 370 rows — that is 370
+recorded outbound intents that were all untagged.
+
+> This is the silent-fallback pattern in its purest form: `VAR=` with no value
+> reads as *configured* to `env | grep`, the function returns the input
+> unchanged, nothing logs an error, and the revenue is simply absent. It is the
+> same shape as `learning_hasattr_guard_turns_a_typo_into_a_silent_noop`.
+>
+> **Gate to add:** a preflight that fails when an affiliate id is declared but
+> empty, or a startup warning naming each empty provider. A revenue integration
+> that silently no-ops is worse than one that is absent, because the absent one
+> gets noticed.
+
+### Revised priority
+
+1. **Fill the affiliate ids.** The code is deployed and every click is already
+   being routed through it. This is not a build; it is signing up for the
+   programmes and pasting values. Highest revenue per hour of work in the repo.
+2. **Add the empty-affiliate-id gate**, so this cannot silently revert.
+3. **Set the three Sponsor price ids.** A built product, three fields from live.
+4. **Sponsored dealer placement in the marketplace**, reusing the Sponsored
+   Events rails (Stripe, B2B, no Apple cut).
+5. Everything in §7 below is subscription conversion. Real, but it is the
+   existing business getting better — judge it that way, not as new revenue.
+
+---
+
 ## 7. Marketplace monetization — Vinted's lessons under our constraints (2026-08-08)
 
 Written after researching what actually made Vinted work (`docs/P2P_MARKETPLACE_SPEC.md`
