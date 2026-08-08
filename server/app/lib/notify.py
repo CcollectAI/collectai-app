@@ -266,6 +266,22 @@ async def notify_user(
         prefs = await _get_user_prefs(conn, user_id)
         if not prefs.get(category, True):
             logger.debug("[notify] Skipped: user %s disabled %s", user_id[:8], category)
+            # PERSIST, then skip the push — the same shape as the followed-category
+            # and daily-cap branches below. This branch used to `return 0`
+            # outright, and it was the only one that did.
+            #
+            # The consequence was that muting a category did not mean "do not
+            # interrupt me", it meant "this never happened". Found 2026-08-08 on
+            # prod: user 4a1d7970 has {"deal_alerts": false}, their 2026-08-07
+            # Target Hit produced an `alert_trigger_history` row, and the
+            # Notifications screen had NO record of it — an alert the user paid
+            # for, fired, and could never see.
+            #
+            # Turning off a push is a delivery preference, not a request to be
+            # kept in the dark. The in-app feed is the durable record, and it is
+            # what makes app/notifications.tsx trustworthy enough to consolidate
+            # app/alerts.tsx into (docs/alerts-and-insights.md).
+            await _persist_only(conn, user_id, title, body, category, data, deep_link)
             return 0
 
         # Discovery-style notifications honor the user's followed categories
