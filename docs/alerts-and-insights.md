@@ -231,6 +231,89 @@ prod that satisfies all three conditions.
 > left alone; if that changes, they need a backfill (category ← slug, and a
 > target price) or a delete.
 
+## A THIRD notification system, in the database (investigated 2026-08-08)
+
+Flagged during the screen consolidation as "188 rows, no reader". Investigated;
+it is bigger than that, and the conclusion is **do not wire it up**.
+
+### What exists
+
+An entire parallel notification stack lives in Postgres, not in this repo:
+
+| | RPCs |
+|---|---|
+| **Writers (8)** | `rpc_emit_smart_guidance_v1`, `rpc_emit_next_best_add_v1`, `rpc_emit_progress_guidance_v1`, `rpc_emit_event_notifications_v1`, `rpc_emit_event_reminders_v1` (+`_dev`), `rpc_wishlist_compute_alerts_v1` (+`_dev`), `rpc_wishlist_compute_availability_alerts_v1` (+`_dev`) |
+| **Readers (7)** | `rpc_user_inbox_v1`, `rpc_get_what_matters_now_v1` (+`_dev`), `rpc_mark_notification_read_v1`, `rpc_dismiss_notification_v1`, `rpc_compute_notification_outcomes_v1`/`v2` |
+
+It is not a stub — there is a feed getter, a mark-read, a dismiss, and an
+outcomes computation. It is a finished product.
+
+**`pg_cron` job 30 runs it daily at 09:00 UTC:**
+
+```sql
+insert into public.guidance_runs (user_id, run_date, result)
+select u.user_id, current_date, public.rpc_emit_smart_guidance_v1(u.user_id)
+from public.api_active_users_v1 u
+where not exists (... already ran today ...);
+```
+
+Succeeding every day — 4 users/day, unbroken.
+
+### Nothing has ever read one
+
+```
+188 rows since 2026-01-24
+    0 read
+    0 read_at
+    0 dismissed
+```
+
+The engagement columns are the proof. This is not "I could not find a caller" —
+seven months of writes and the read/dismiss columns have never once moved.
+`grep` agrees: zero callers for any of the 15 RPCs across `app/`, `src/` and
+`server/`.
+
+The RLS audit actively asserted the opposite — `user_notifications` was
+justified as *"In-app notification rows served through /notifications"*. That is
+false: `GET /notifications/history` reads `notification_history`. Corrected in
+`server/scripts/audit_rls_coverage.py`.
+
+### Why NOT to switch it on
+
+The obvious move is "a finished feature is sitting there, wire the UI". Read what
+it actually produces first — the newest rows, three days running, identical:
+
+```
+title    Best next add
+body     BE@RBRICK 100% / 400%
+why      "Missing from your collection; no recent listings yet."
+signals  listings_7d: 0, listings_30d: 0, median_price_eur_30d: null
+```
+
+It recommends an item with **zero availability and no price data**, and
+recommends the same one every day. That is the worst possible recommendation:
+*buy this thing you cannot buy and we cannot price.* Shipping it would be worse
+than the silence.
+
+174 of the 188 rows are this one `guidance` kind. The rest are `event_reminder`
+(7), `event` (3), `checklist` (2), `wishlist_price` (1), `wishlist_available`
+(1) — all from 2026-01-24/25, i.e. a one-off backfill that never repeated.
+
+### Recommendation
+
+1. **Disable `pg_cron` job 30.** It runs an RPC per active user every day to
+   produce rows nobody reads. Not urgent at 4 users; wrong at 4,000.
+2. **Do not wire `rpc_user_inbox_v1`** until the recommendation logic filters on
+   availability. "No recent listings" must disqualify a suggestion, not annotate
+   it.
+3. **Keep the RPCs.** The scaffolding is sound and the read API is complete; it
+   is the ranking that is wrong. Deleting it would throw away the good half.
+
+> Note `cron.job` also carries two INACTIVE alert producers —
+> `produce_alerts_price_drop_30d` (job 21) and `produce_alerts_price_spike_7d`
+> (job 24), both `active = f`. More dead alert paths, consistent with the
+> 2026-08-06 consolidation that cut eight workers to one.
+
 ## Screen consolidation 2026-08-08 — four screens became two
 
 Walked all four on the simulator. One feature was wearing FIVE names:

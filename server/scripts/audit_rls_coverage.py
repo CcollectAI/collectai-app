@@ -109,7 +109,20 @@ DENY_ALL_OK: dict[str, str] = {
     "push_outbox_v1": "Outbound push queue drained by the push worker; a client reader would be a bug.",
     "user_push_tokens": "Device push tokens registered through /notifications/register; backend-only.",
     "user_push_devices": "Device registry companion to user_push_tokens; backend-only.",
-    "user_notifications": "In-app notification rows served through /notifications; no direct client read.",
+    # CORRECTED 2026-08-08. This used to read "served through /notifications",
+    # which is false: GET /notifications/history reads `notification_history`,
+    # a different table. Nothing serves this one.
+    #
+    # It is written daily by pg_cron job 30 -> rpc_emit_smart_guidance_v1, and
+    # has a complete read API in the DB (rpc_user_inbox_v1,
+    # rpc_get_what_matters_now_v1, rpc_mark_notification_read_v1,
+    # rpc_dismiss_notification_v1) with ZERO callers in app/, src/ or server/.
+    # 188 rows since 2026-01-24, of which 0 read, 0 read_at, 0 dismissed — the
+    # engagement columns are the proof, not just a failed grep.
+    #
+    # Left backend-only because that is still the correct RLS posture; the
+    # justification just has to be true. See docs/alerts-and-insights.md.
+    "user_notifications": "Orphaned in-app notification store: written by pg_cron job 30, read by nothing. Backend-only pending a decision to wire or drop it.",
     "drop_follows": "Drop-follow subscriptions written by /alerts and read by the drop worker.",
 
     # -- chat (legacy, superseded by the *_v1 tables) -----------------------
