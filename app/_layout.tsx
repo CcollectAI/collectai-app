@@ -456,6 +456,9 @@ function RootStack() {
             not apply either (no "Notifications" title, no "Mark All Read"
             action rendered). Registering it makes its header identical to
             `alerts`, which sits one line above and behaves correctly. */}
+        {/* Retired screen kept as a Redirect to /notifications; headerShown
+            false so the stub never flashes a header on its way through. */}
+        <Stack.Screen name="alerts" options={{ headerShown: false }} />
         <Stack.Screen name="notifications" options={iconOnlyHeader} />
         <Stack.Screen name="condition-guide" options={iconOnlyHeader} />
         <Stack.Screen name="leaderboard" options={iconOnlyHeader} />

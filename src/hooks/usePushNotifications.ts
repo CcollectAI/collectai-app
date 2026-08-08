@@ -245,7 +245,13 @@ export function usePushNotifications(userId: string | null) {
         } else if (typeof data.thread_id === "string" && data.thread_id) {
           router.push(`/chat/${data.thread_id}` as Href);
         } else if (typeof data.alert_id === "string" && data.alert_id) {
-          router.push(`/(tabs)/alerts` as Href);
+          // `/(tabs)/alerts` never existed — alerts was never a tab, and the
+          // standalone app/alerts.tsx was merged into the notifications screen
+          // on 2026-08-08. A push carrying alert_id landed on an Unmatched
+          // route: the notification arrives, the user taps it, and the app
+          // shows a 404 screen. Caught by `node scripts/check-dead-nav.mjs`,
+          // which is exactly what that gate is for.
+          router.push(`/notifications` as Href);
         } else if (typeof data.connection_request_id === "string") {
           router.push(`/inbox` as Href);
         } else if (typeof data.announcement_id === "string" && data.event_id === undefined) {
