@@ -203,7 +203,7 @@ function ItemDetailScreen() {
   // Core fields fetched by id. The screen takes name/category/condition/value
   // from ROUTE PARAMS, which only works when the caller happens to pass them.
   // Three entry points push just an id — search.tsx, franchise/[id].tsx and
-  // sell/[offerId].tsx — so opening an item from Search, a franchise page or a
+  // the offers screen — so opening an item from Search, a franchise page or a
   // sell offer rendered "Unknown item / Unknown category / 0". Nothing fetched
   // the name: this effect selected only attrs/collection_name/canonical_key and
   // useItemDetail selects only for_sale/asking_price.

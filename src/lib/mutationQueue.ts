@@ -51,12 +51,6 @@ export type MutationType =
   | 'unblockUser'
   | 'requestDm'
   | 'decideDmRequest'
-  | 'proposeOffer'
-  | 'counterOffer'
-  | 'respondToOffer'
-  | 'cancelOffer'
-  | 'markShipped'
-  | 'completeDeal'
   | 'logActivity';
 
 export type QueuedMutation = {

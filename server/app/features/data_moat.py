@@ -477,14 +477,19 @@ async def record_price_ground_truth(
     item_id: str,
     actual_price: float,
     currency: str = "EUR",
-    source: str = "deal_desk",
+    source: str = "sparrow_p2p",
 ) -> bool:
     """
     Record an actual transaction price as ground truth.
 
-    Called when a Deal Desk offer completes. Compares against the most recent
-    price_prediction for the item to compute prediction error, which feeds
-    back into model calibration.
+    Called when a P2P trade completes (`_ground_truth_hook`) and from
+    `feedback_router` when a user reports a real sale price. Compares against
+    the most recent price_prediction for the item to compute prediction error,
+    which feeds back into model calibration.
+
+    The default `source` was "deal_desk" until 2026-08-09; that subsystem was
+    removed and never completed a trade, so the default named a caller that
+    could not exist.
 
     Returns True if recorded, False on failure.
     """

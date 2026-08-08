@@ -1,11 +1,15 @@
 /**
- * Deals domain provider — P2P offers, marketplace listings, sales.
+ * Deals domain provider — marketplace listings, accounts, sales, for-sale flag.
+ *
+ * The Deal Desk offer functions (propose/counter/respond/cancel/ship/complete/
+ * active/history/detail/reputation) were removed 2026-08-09 with the rest of
+ * that subsystem. What remains is unrelated to them: `toggleForSale` drives
+ * `items.for_sale`, and the marketplace* functions drive the external
+ * marketplace-connections feature. Member-to-member offers now live in
+ * `src/api/p2pApi.ts`.
  */
 
 import type {
-  Offer,
-  OfferEvent,
-  UserReputation,
   MarketplaceListing,
   MarketplaceAccount,
   MarketplaceSale,
@@ -13,51 +17,19 @@ import type {
 } from '../types';
 import { collectorsApi } from '../../api/collectorsApi';
 
-export async function proposeOffer(itemId: string, price: number, message?: string): Promise<Offer> {
-  return collectorsApi.proposeOffer({ item_id: itemId, price, message }) as Promise<Offer>;
-}
 
-export async function counterOffer(offerId: string, price: number, message?: string): Promise<Offer> {
-  return collectorsApi.counterOffer(offerId, { price, message }) as Promise<Offer>;
-}
 
-export async function respondToOffer(offerId: string, accept: boolean, message?: string): Promise<void> {
-  await collectorsApi.respondToOffer(offerId, { accept, message });
-}
 
-export async function cancelOffer(offerId: string): Promise<void> {
-  await collectorsApi.cancelOffer(offerId);
-}
 
-export async function listActiveOffers(): Promise<Offer[]> {
-  const result = await collectorsApi.listActiveOffers() as { offers?: Offer[]; total_count?: number } | Offer[];
-  return Array.isArray(result) ? result : (result?.offers ?? []);
-}
 
-export async function listDealHistory(): Promise<Offer[]> {
-  const result = await collectorsApi.listDealHistory() as { offers?: Offer[]; total_count?: number } | Offer[];
-  return Array.isArray(result) ? result : (result?.offers ?? []);
-}
 
-export async function getOfferDetail(offerId: string): Promise<{ offer: Offer; events: OfferEvent[] }> {
-  return collectorsApi.getOfferDetail(offerId) as Promise<{ offer: Offer; events: OfferEvent[] }>;
-}
 
-export async function getUserReputation(userId: string): Promise<UserReputation> {
-  return collectorsApi.getUserReputation(userId) as Promise<UserReputation>;
-}
 
 export async function toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void> {
   await collectorsApi.toggleItemForSale(itemId, { for_sale: forSale, asking_price: askingPrice });
 }
 
-export async function markShipped(offerId: string, trackingInfo?: string): Promise<void> {
-  await collectorsApi.markShipped(offerId, { tracking_info: trackingInfo });
-}
 
-export async function completeDeal(offerId: string, stars: number, comment?: string): Promise<void> {
-  await collectorsApi.completeDeal(offerId, { stars, comment });
-}
 
 // Multi-Marketplace Selling
 /**

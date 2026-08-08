@@ -208,7 +208,6 @@ from app.features.attribute_autocomplete_router import router as attribute_autoc
 from app.features.task_queue_router import router as task_queue_router
 from app.features.activity_router import router as activity_router
 from app.features.search_router import router as search_router
-from app.agents.deal_desk_router import router as deal_desk_router
 from app.features.item_images_router import router as item_images_router
 from app.features.gamification_router import router as gamification_router
 from app.features.catalog_browser_router import router as catalog_browser_router
@@ -287,7 +286,6 @@ app.include_router(attribute_autocomplete_router)
 app.include_router(task_queue_router)
 app.include_router(activity_router)
 app.include_router(search_router)
-app.include_router(deal_desk_router)
 app.include_router(item_images_router)
 app.include_router(gamification_router)
 app.include_router(catalog_browser_router)

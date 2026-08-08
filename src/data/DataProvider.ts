@@ -796,41 +796,25 @@ export interface DataProvider {
   }): Promise<import('./events').CollectorsEvent[]>;
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Deal Desk (P2P Offers)
+  // Selling — for-sale flag + external marketplace connections
+  //
+  // The Deal Desk offer methods were removed 2026-08-09 (never shipped, 0 rows,
+  // superseded by P2P — see src/api/p2pApi.ts). `toggleForSale` stays: it drives
+  // `items.for_sale`, which a DB trigger keeps in sync with live listings.
   // ─────────────────────────────────────────────────────────────────────────────
 
-  /** Propose an offer on an item. */
-  proposeOffer(itemId: string, price: number, message?: string): Promise<Offer>;
 
-  /** Counter an existing offer with a new price. */
-  counterOffer(offerId: string, price: number, message?: string): Promise<Offer>;
 
-  /** Accept or decline an offer. */
-  respondToOffer(offerId: string, accept: boolean, message?: string): Promise<void>;
 
-  /** Cancel a pending offer (buyer only). */
-  cancelOffer(offerId: string): Promise<void>;
 
-  /** List active offers (proposed/countered/accepted). */
-  listActiveOffers(): Promise<Offer[]>;
 
-  /** List completed/cancelled/declined deals. */
-  listDealHistory(): Promise<Offer[]>;
 
-  /** Get offer detail with negotiation timeline. */
-  getOfferDetail(offerId: string): Promise<{ offer: Offer; events: OfferEvent[] }>;
 
-  /** Get user's deal reputation (avg stars, total ratings, completed deals). */
-  getUserReputation(userId: string): Promise<UserReputation>;
 
   /** Toggle an item's for-sale status and set asking price. */
   toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void>;
 
-  /** Mark an accepted offer as shipped (seller only). */
-  markShipped(offerId: string, trackingInfo?: string): Promise<void>;
 
-  /** Confirm delivery and rate the seller (buyer only). */
-  completeDeal(offerId: string, stars: number, comment?: string): Promise<void>;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Multi-Marketplace Selling

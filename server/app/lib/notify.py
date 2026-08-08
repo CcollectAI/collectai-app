@@ -174,6 +174,10 @@ _FEED_TYPE_BY_CATEGORY = {
     "chat_messages": "chat",
     "connection_requests": "connection",
     "event_announcements": "event",
+    # Compliance / account notices (DAC7 threshold, see _dac7_accrue). `system`
+    # rather than a new icon: this is a factual notice about the account, not a
+    # discovery alert, and it must not look like something to act on for profit.
+    "account": "system",
 }
 
 

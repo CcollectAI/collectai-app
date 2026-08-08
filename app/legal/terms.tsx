@@ -116,10 +116,10 @@ function TermsOfServiceScreenInner() {
           Separately from listing on external marketplaces, the Service lets members list collectibles to other members. That relationship is governed by the <Text style={styles.bold}>Marketplace Terms</Text>, which you should read before listing or making an offer. In summary:{'\n\n'}
           {'•'} <Text style={styles.bold}>We never handle money.</Text> There is no checkout, no escrow and no buyer protection. Payment and delivery are arranged directly between members{'\n'}
           {'•'} <Text style={styles.bold}>No platform fee applies</Text> to member-to-member listings — the fee schedule in section 7 above relates to external marketplaces only{'\n'}
-          {'•'} The member marketplace is for private individuals selling from their own collection. If you sell in the course of a business you are a trader, you carry the additional obligations that come with that — including consumer-withdrawal rights and product-safety duties under the EU General Product Safety Regulation — and you must tell us{'\n'}
+          {'•'} The member marketplace is for private individuals selling from their own collection. If you sell in the course of a business you are a trader, you carry the additional obligations that come with that — commonly a buyer cooling-off period and product-safety duties, which in the EU and UK include a 14-day right of withdrawal — and you must tell us{'\n'}
           {'•'} We do not inspect, test, authenticate or verify the safety of any item. Items subject to a safety recall, or known to be unsafe, may not be listed{'\n'}
           {'•'} Reported listings are reviewed within 24 hours. Where we act, we tell the seller what we decided, on what ground, whether a person or an automated system decided it, and how to contest it{'\n'}
-          {'•'} EU platform-reporting rules (DAC7) may require us to collect and report seller information to the Belastingdienst. We will tell you before anything about you is reported{'\n\n'}
+          {'•'} Many countries require marketplaces to report seller information to their tax authority (the EU's DAC7 and the equivalent OECD rules used by the UK, Canada, Australia and others). Sellers under both limits in a calendar year — fewer than 30 sales AND no more than EUR 2,000 — are not reported. We count this automatically and will tell you in the app if you pass either limit, before anything about you is reported{'\n\n'}
           Where these Terms and the Marketplace Terms conflict on a member-to-member sale, the Marketplace Terms apply.
         </Text>
 
@@ -270,7 +270,7 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>26. Governing Law & Disputes</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          These Terms shall be governed by the laws of the Netherlands. Any disputes arising from these Terms or the Service shall be resolved in the courts of the Netherlands. For EU consumers, this does not affect your rights under mandatory consumer protection laws of your country of residence.
+          These Terms shall be governed by the laws of the Netherlands. Any disputes arising from these Terms or the Service shall be resolved in the courts of the Netherlands. If you are a consumer, this does not affect any rights you have under the mandatory consumer protection laws of your country of residence, or your right to bring proceedings there where those laws allow it.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>27. Severability</Text>

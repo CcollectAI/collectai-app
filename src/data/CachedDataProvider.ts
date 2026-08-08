@@ -646,32 +646,11 @@ export class CachedDataProvider implements DataProvider {
   // Event search — pass through
   searchEvents(params: { q?: string; category?: string; eventType?: string; location?: string; upcomingOnly?: boolean; limit?: number; offset?: number }) { return this.inner.searchEvents(params); }
 
-  // Deal Desk (P2P Offers) — mutations invalidate items cache
-  async proposeOffer(itemId: string, price: number, message?: string): Promise<Offer> {
-    const result = await this.inner.proposeOffer(itemId, price, message);
-    return result;
-  }
-  async counterOffer(offerId: string, price: number, message?: string): Promise<Offer> {
-    const result = await this.inner.counterOffer(offerId, price, message);
-    return result;
-  }
-  async respondToOffer(offerId: string, accept: boolean, message?: string): Promise<void> {
-    await this.inner.respondToOffer(offerId, accept, message);
-    // Accepting removes item from sale — invalidate items
-    if (accept) await cacheClear(CK.ITEMS_LIST);
-  }
-  cancelOffer(offerId: string): Promise<void> { return this.inner.cancelOffer(offerId); }
-  listActiveOffers(): Promise<Offer[]> { return this.inner.listActiveOffers(); }
-  listDealHistory(): Promise<Offer[]> { return this.inner.listDealHistory(); }
-  getOfferDetail(offerId: string): Promise<{ offer: Offer; events: OfferEvent[] }> { return this.inner.getOfferDetail(offerId); }
-  getUserReputation(userId: string): Promise<UserReputation> { return this.inner.getUserReputation(userId); }
+  // Deal Desk offer methods removed 2026-08-09. toggleForSale stays — it is
+  // not a Deal Desk method, it flips `items.for_sale` and must still bust the
+  // items cache or the collection shows a stale for-sale badge.
   async toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void> {
     await this.inner.toggleForSale(itemId, forSale, askingPrice);
-    await cacheClear(CK.ITEMS_LIST);
-  }
-  markShipped(offerId: string, trackingInfo?: string): Promise<void> { return this.inner.markShipped(offerId, trackingInfo); }
-  async completeDeal(offerId: string, stars: number, comment?: string): Promise<void> {
-    await this.inner.completeDeal(offerId, stars, comment);
     await cacheClear(CK.ITEMS_LIST);
   }
 

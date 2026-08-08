@@ -462,6 +462,69 @@ async def _sold_comp_hook(listing_id: str, amount: float, currency: str) -> None
         logger.warning("[p2p] sold comp hook failed for %s: %s", listing_id, exc)
 
 
+async def _ground_truth_hook(listing_id: str, amount: float, currency: str) -> None:
+    """Feed a completed trade's agreed price back as model CALIBRATION.
+
+    Rescued from the Deal Desk removal (2026-08-09). Deal Desk's
+    `execute_complete` called `record_price_ground_truth`; P2P's completion did
+    not, so deleting Deal Desk would have quietly dropped the calibration loop
+    on the floor. It never actually carried data — Deal Desk shipped disabled
+    and completed zero trades — but the WIRING was the good part, and P2P is
+    where trades really complete.
+
+    This is NOT a duplicate of `_sold_comp_hook`, which is the neighbouring
+    function and easy to confuse with it:
+
+    * `_sold_comp_hook` writes `market_hits` — a SOLD OBSERVATION that
+      `valuation_worker` consumes to compute what an item is worth.
+    * this writes `price_ground_truths` — a PREDICTION ERROR, comparing what we
+      forecast (`price_predictions.q50`) against what the item actually fetched.
+      That is what tells us the model is drifting.
+
+    Same input, two different consumers. Dropping either loses something the
+    other cannot supply.
+
+    Requires `marketplace_listings.item_id`: `record_price_ground_truth` keys on
+    `items.id` and resolves the prediction through `items.canonical_ref`. A
+    marketplace-only listing (spec §5c — sell something you do not own a
+    collection row for) has no `item_id`, so there is no prediction to score
+    against and this correctly does nothing. That is a real limit, not a bug:
+    calibration needs a predicted item.
+
+    Fire-and-forget in effect — every failure path is swallowed and logged.
+    A lost calibration point is a non-event; a completion that 500s because
+    calibration failed is not.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return
+    try:
+        async with pool.acquire() as conn:
+            item_id = await conn.fetchval(
+                "SELECT item_id FROM public.marketplace_listings WHERE id = $1::uuid",
+                listing_id,
+            )
+        if item_id is None:
+            logger.info(
+                "[p2p] ground truth skipped for %s — marketplace-only listing, "
+                "no items row to score a prediction against.",
+                listing_id,
+            )
+            return
+
+        from app.lib.fx_service import convert_to_eur
+        from app.features.data_moat import record_price_ground_truth
+
+        # EUR because `price_predictions.q50` is EUR; comparing a USD sale
+        # against a EUR forecast would book the FX rate as model error.
+        price_eur = await convert_to_eur(float(amount), currency or "EUR")
+        await record_price_ground_truth(
+            str(item_id), price_eur, "EUR", source="sparrow_p2p",
+        )
+    except Exception as exc:
+        logger.warning("[p2p] ground truth hook failed for %s: %s", listing_id, exc)
+
+
 async def _catalogue_image_hook(listing_id: str) -> None:
     """Fill a catalogue image gap from a member's listing photo, with consent.
 

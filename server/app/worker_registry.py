@@ -61,7 +61,6 @@ SCHEDULES = {
     "partition_drop_worker": 24 * 3600,          # 2026-04-24 — daily detach+drop of >6mo partitions confirmed in S3 manifest
     "ticketmaster_events_worker": 12 * 3600,     # 2026-04-21 — Ticketmaster Discovery API → events (twice daily)
     "seatgeek_events_worker": 12 * 3600,         # 2026-04-21 — SeatGeek Search API → events (twice daily)
-    "offer_expiry_worker": 3600,                 # 2026-04-22 — Deal Desk 48h auto-expire (hourly sweep)
     "search_gap_worker": 6 * 3600,               # 2026-04-25 — turns 0-result searches into category_candidates
     "demand_priority_worker": 1800,              # 2026-04-25 — refreshes top-N items by recent demand_signals (every 30 min)
     "vision_quality_worker": 6 * 3600,           # 2026-04-25 — recomputes vision_category_quality from scan_corrections (6h; was hourly but no data → no signal until users accrue scan_corrections)

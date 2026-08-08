@@ -53,7 +53,7 @@ export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceVa
           BETA_MODE alone left it live while the rest of selling was gated. */}
       {!BETA_MODE && SELLING_ENABLED && (
         <AnimatedPressable
-          onPress={() => router.push('/sell/offers')}
+          onPress={() => router.push('/offers')}
           style={[styles.editBarBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
           accessibilityRole="button"
           accessibilityLabel="View offers"

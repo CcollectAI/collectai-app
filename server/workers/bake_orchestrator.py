@@ -155,7 +155,6 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     # drop to zero is the filter overreaching.
     ("ticketmaster_events_worker", "pipelines.ticketmaster_events",    "run_once", False),
     ("seatgeek_events_worker",  "pipelines.seatgeek_events",          "run_once", False),
-    # ("offer_expiry_worker",     "workers.offer_expiry_worker",        "run_once", True),
     #   Deal Desk offers. No deals.
     # ("search_gap_worker",       "workers.search_gap_worker",          "run_once", True),
     #   Turns user 0-result searches into category candidates. No users searching.

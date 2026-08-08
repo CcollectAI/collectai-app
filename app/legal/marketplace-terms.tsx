@@ -97,10 +97,11 @@ function MarketplaceTermsInner() {
           and is not a picture of your item. You are responsible for making the
           actual condition clear.{'\n\n'}
           If you sell in the course of a business rather than as a private
-          individual, you are a trader under EU consumer law and take on additional
-          obligations — including a 14-day right of withdrawal, and product-safety
-          duties under the EU General Product Safety Regulation — that Sparrow does
-          not administer for you.{' '}
+          individual, you are a trader, and most countries impose additional
+          obligations on traders — commonly a cooling-off period for the buyer and
+          product-safety duties. In the EU and UK that includes a 14-day right of
+          withdrawal. Those obligations are yours; Sparrow does not administer them
+          for you, and which ones apply depends on where you and your buyer are.{' '}
           <Text style={{ color: colors.text }}>
             The marketplace is for private individuals selling from their own
             collection. You must tell us if you are a trader.
@@ -110,10 +111,11 @@ function MarketplaceTermsInner() {
         </Section>
 
         <Section title="3a. Product safety">
-          The EU General Product Safety Regulation applies to second-hand goods as
-          well as new ones. A private individual selling from their own collection
-          has no obligations under it; a trader does, and those obligations are
-          theirs, not ours.{'\n\n'}
+          Product-safety law generally applies to second-hand goods as well as new
+          ones — the EU General Product Safety Regulation is one example, and most
+          countries have an equivalent. A private individual selling from their own
+          collection usually has no obligations under it; a trader does, and those
+          obligations are theirs, not ours.{'\n\n'}
           <Text style={{ color: colors.text }}>
             Sparrow does not inspect, test or verify the safety of any item.
           </Text>{' '}
@@ -160,14 +162,27 @@ function MarketplaceTermsInner() {
           tax and VAT where it applies to you. Sparrow does not withhold or collect
           tax on your behalf.{'\n\n'}
           <Text style={{ color: colors.text }}>
-            EU rules on platform reporting (DAC7) can require us to collect
-            information about sellers and report it to the Belastingdienst.
+            Many countries require marketplaces to report seller information to
+            their tax authority.
           </Text>{' '}
-          These rules can apply because we know the agreed price of a trade, even
-          though no money passes through us. Most members are below the reporting
-          threshold — fewer than 30 sales and under EUR 2,000 in a year — and are
-          not reported. If you are above it, we will ask you for the information we
-          need and will tell you before anything about you is reported.
+          The EU rules (DAC7) and the equivalent OECD model rules adopted by the UK,
+          Canada, Australia, New Zealand, Japan and others work the same way, and
+          they can apply to us because we know the agreed price of a trade — even
+          though no money passes through us.{'\n\n'}
+          Sparrow is established in the Netherlands, so where we report, we report
+          to the Belastingdienst, which passes the information to the tax authority
+          of the country you live in. Where you live determines what that authority
+          then does with it.{'\n\n'}
+          <Text style={{ color: colors.text }}>
+            Most members are never reported.
+          </Text>{' '}
+          Under these rules a seller is excluded while they stay under both limits
+          in a calendar year: fewer than 30 sales, and no more than EUR 2,000 in
+          total. Passing either one — not both — makes a seller reportable.{'\n\n'}
+          We count this for you automatically. If you pass either limit we will
+          notify you in the app at the time it happens, ask you for the details the
+          rules require, and tell you before anything about you is sent. We will not
+          report you without telling you first.
         </Section>
 
         <Section title="7. Your data">

@@ -60,10 +60,6 @@
     "rpc_block_user_v1": [
       "p_target_id"
     ],
-    "rpc_cancel_offer_v1": [
-      "p_actor_id",
-      "p_offer_id"
-    ],
     "rpc_category_item_status_user_v1": [
       "canonical_key",
       "category",
@@ -97,11 +93,6 @@
     ],
     "rpc_clear_typing_v1": [
       "p_thread_id"
-    ],
-    "rpc_complete_deal_v1": [
-      "p_comment",
-      "p_offer_id",
-      "p_stars"
     ],
     "rpc_complete_ingest_job_v1": [
       "p_error",
@@ -145,12 +136,6 @@
     "rpc_confirm_item_suggestion_v1": [
       "p_field",
       "p_item_id"
-    ],
-    "rpc_counter_offer_v1": [
-      "p_actor_id",
-      "p_amount",
-      "p_message",
-      "p_offer_id"
     ],
     "rpc_create_build_paint_project_v1": [
       "p_category",
@@ -589,10 +574,6 @@
       "p_notes",
       "p_quantity"
     ],
-    "rpc_mark_shipped_v1": [
-      "p_offer_id",
-      "p_tracking_info"
-    ],
     "rpc_mark_thread_read_v1": [
       "p_thread_id"
     ],
@@ -620,12 +601,6 @@
     ],
     "rpc_pricing_next_actions_v1": [
       "p_item_id"
-    ],
-    "rpc_propose_offer_v1": [
-      "p_amount",
-      "p_buyer_id",
-      "p_item_id",
-      "p_message"
     ],
     "rpc_prune_maintenance": [],
     "rpc_quickscan_apply_extractions_dev_v1": [
@@ -735,12 +710,6 @@
       "canceled_conflicts",
       "p_minutes",
       "requeued"
-    ],
-    "rpc_respond_offer_v1": [
-      "p_accept",
-      "p_actor_id",
-      "p_message",
-      "p_offer_id"
     ],
     "rpc_run_daily_guidance_v1": [
       "p_user_id"
@@ -913,10 +882,6 @@
     "rpc_block_user_v1": [
       "p_target_id"
     ],
-    "rpc_cancel_offer_v1": [
-      "p_actor_id",
-      "p_offer_id"
-    ],
     "rpc_category_item_status_user_v1": [
       "p_user_id"
     ],
@@ -926,11 +891,6 @@
     ],
     "rpc_clear_typing_v1": [
       "p_thread_id"
-    ],
-    "rpc_complete_deal_v1": [
-      "p_comment",
-      "p_offer_id",
-      "p_stars"
     ],
     "rpc_complete_ingest_job_v1": [
       "p_job_id",
@@ -967,12 +927,6 @@
     "rpc_confirm_item_suggestion_v1": [
       "p_field",
       "p_item_id"
-    ],
-    "rpc_counter_offer_v1": [
-      "p_actor_id",
-      "p_amount",
-      "p_message",
-      "p_offer_id"
     ],
     "rpc_create_build_paint_project_v1": [
       "p_title"
@@ -1203,10 +1157,6 @@
     "rpc_mark_category_item_owned_v1": [
       "p_category_item_id"
     ],
-    "rpc_mark_shipped_v1": [
-      "p_offer_id",
-      "p_tracking_info"
-    ],
     "rpc_mark_thread_read_v1": [
       "p_thread_id"
     ],
@@ -1230,12 +1180,6 @@
     ],
     "rpc_pricing_next_actions_v1": [
       "p_item_id"
-    ],
-    "rpc_propose_offer_v1": [
-      "p_amount",
-      "p_buyer_id",
-      "p_item_id",
-      "p_message"
     ],
     "rpc_quickscan_apply_extractions_dev_v1": [
       "p_item_id",
@@ -1290,12 +1234,6 @@
     ],
     "rpc_request_dm_v1": [
       "p_target_user_id"
-    ],
-    "rpc_respond_offer_v1": [
-      "p_accept",
-      "p_actor_id",
-      "p_message",
-      "p_offer_id"
     ],
     "rpc_run_daily_guidance_v1": [
       "p_user_id"

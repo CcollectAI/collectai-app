@@ -864,7 +864,7 @@ async def _handle_sponsor_checkout_completed(pool: Any, session: dict):
                             f"{sponsor_name} presents: {title}",
                             data={"event_id": event_id, "type": "sponsored_event"},
                             notification_type="sponsored_event",
-                            deep_link=f"sparrow://events/{event_id}",
+                            deep_link=f"/events/{event_id}",
                         )
                     # A paid tier delivering 0 pushes is a billing-visible
                     # failure, not routine info — say so loudly enough to be

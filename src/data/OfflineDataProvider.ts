@@ -278,41 +278,10 @@ async function executeMutation(type: MutationType, args: unknown[]): Promise<voi
       await dataProvider.decideDmRequest(args[0] as string, args[1] as boolean);
       break;
 
-    // ── Deal Desk ──────────────────────────────────────────────────────────
-    case 'proposeOffer':
-      await dataProvider.proposeOffer(
-        args[0] as string,
-        args[1] as number,
-        args[2] as string | undefined,
-      );
-      break;
-    case 'counterOffer':
-      await dataProvider.counterOffer(
-        args[0] as string,
-        args[1] as number,
-        args[2] as string | undefined,
-      );
-      break;
-    case 'respondToOffer':
-      await dataProvider.respondToOffer(
-        args[0] as string,
-        args[1] as boolean,
-        args[2] as string | undefined,
-      );
-      break;
-    case 'cancelOffer':
-      await dataProvider.cancelOffer(args[0] as string);
-      break;
-    case 'markShipped':
-      await dataProvider.markShipped(args[0] as string, args[1] as string | undefined);
-      break;
-    case 'completeDeal':
-      await dataProvider.completeDeal(
-        args[0] as string,
-        args[1] as number,
-        args[2] as string | undefined,
-      );
-      break;
+    // Deal Desk offer mutations removed 2026-08-09. A queued entry of one of
+    // those kinds can only exist on a device that used a build where Deal Desk
+    // was reachable — it never was (SELLING_ENABLED=false) — and the `default`
+    // branch below degrades an unknown kind to a warning, not a crash.
 
     // ── Activity ───────────────────────────────────────────────────────────
     case 'logActivity':

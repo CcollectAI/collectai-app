@@ -201,6 +201,117 @@ class OfferOut(BaseModel):
 MIN_PRICE_SAMPLE = 5
 
 
+# ── DAC7 reportable-seller thresholds ───────────────────────────────────────
+#
+# `app/legal/marketplace-terms.tsx` tells members, in writing, that above 30
+# sales or EUR 2,000 in a year we will ask them for reporting details and warn
+# them before anything is filed. Until now that sentence had NOTHING behind it:
+# no counter, no notice, no way to demonstrate that everyone else was below the
+# line. A promise in a legal screen with no code behind it is the worst version
+# of this — it is the one we would be held to.
+#
+# A seller is an EXCLUDED SELLER only if BOTH limbs hold (fewer than 30 sales
+# AND at most EUR 2,000), so crossing EITHER makes them reportable. The `or`
+# below is the whole rule and the easiest thing to get backwards: `and` would
+# miss a member with 40 sales of EUR 20 each.
+DAC7_SALES_LIMIT = 30
+DAC7_GROSS_EUR_LIMIT = 2000.0
+
+
+async def _dac7_accrue(seller_id: str, amount: float, currency: str) -> None:
+    """Accrue one completed sale against the seller's DAC7 year, and warn once.
+
+    Runs on the completion path because completion is the only moment
+    consideration becomes KNOWN — which is precisely what triggers DAC7 (spec
+    §5a: the obligation is live now, because `p2p_offers.amount` is confirmed by
+    both parties even though no money moves through us).
+
+    Deliberate choices:
+
+    * **EUR.** The threshold is denominated in EUR, so a USD sale must be
+      converted before it is compared, or a member could sit above the limit
+      indefinitely in a weak currency.
+    * **Calendar year**, which is the reporting period.
+    * **Notify once.** `notified_at` is the guard. Without it every subsequent
+      sale re-sends the warning, and the member learns to ignore it.
+    * **`reportable_at` is never cleared.** Crossing the threshold is a fact
+      about the year; a later refund does not un-cross it.
+    * **Swallow failures.** A completed trade must not 500 because a compliance
+      counter could not be written. The counter is reconstructible from
+      `p2p_offers` (that is the point of deriving it from completed rows);
+      a failed completion is not.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return
+    try:
+        from app.lib.fx_service import convert_to_eur
+        from app.lib.notify import notify_user
+
+        amount_eur = await convert_to_eur(float(amount), currency or "EUR")
+
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                INSERT INTO public.dac7_seller_year AS d
+                    (user_id, year, sales_count, gross_eur, updated_at)
+                VALUES ($1::uuid, EXTRACT(YEAR FROM now())::int, 1, $2, now())
+                ON CONFLICT (user_id, year) DO UPDATE
+                   SET sales_count = d.sales_count + 1,
+                       gross_eur   = d.gross_eur + EXCLUDED.gross_eur,
+                       updated_at  = now()
+                RETURNING sales_count, gross_eur, year, reportable_at, notified_at
+                """,
+                seller_id, amount_eur,
+            )
+            if row is None:
+                return
+
+            crossed = (
+                row["sales_count"] >= DAC7_SALES_LIMIT
+                or float(row["gross_eur"]) > DAC7_GROSS_EUR_LIMIT
+            )
+            if not crossed or row["notified_at"] is not None:
+                return
+
+            # Stamp BEFORE sending. If the push fails we have still recorded
+            # that the member crossed, and a duplicate warning is a worse
+            # outcome than a missed one (the in-app row persists regardless —
+            # notify_user writes history even when the push is suppressed).
+            await conn.execute(
+                """
+                UPDATE public.dac7_seller_year
+                   SET reportable_at = COALESCE(reportable_at, now()),
+                       notified_at   = now(),
+                       updated_at    = now()
+                 WHERE user_id = $1::uuid AND year = $2
+                """,
+                seller_id, row["year"],
+            )
+            await notify_user(
+                conn,
+                seller_id,
+                "About your sales and tax reporting",
+                (
+                    f"You've passed {row['sales_count']} sales / "
+                    f"EUR {float(row['gross_eur']):.0f} this year. Marketplaces "
+                    "have to report sellers above that to tax authorities. "
+                    "We'll ask you for a few details first, and we'll tell you "
+                    "before anything is sent."
+                ),
+                category="account",
+                data={"kind": "dac7_threshold", "year": row["year"]},
+                deep_link="/legal/marketplace-terms",
+                urgent=True,  # a compliance notice must not be frequency-capped
+            )
+            logger.info(
+                "[dac7] seller %s crossed for %s (%s sales, EUR %.0f) — notified",
+                seller_id, row["year"], row["sales_count"], float(row["gross_eur"]),
+            )
+    except Exception as exc:
+        logger.warning("[dac7] accrual failed for seller %s: %s", seller_id, exc)
+
+
 def _verdict_from(stat: tuple[float, float, int], amount: float):
     """(avg, stddev, n) + an amount -> ('low'|'normal'|'high', note, n).
 
@@ -751,7 +862,7 @@ async def confirm_exchange(
                 str(fresh["listing_id"]),
             )
             from app.features.p2p_listing_router import (
-                _sold_comp_hook, _stale_supply_hook,
+                _sold_comp_hook, _stale_supply_hook, _ground_truth_hook,
             )
             await _stale_supply_hook(str(fresh["listing_id"]))
             # The closed loop: the trade just completed at a KNOWN, two-sided
@@ -763,6 +874,23 @@ async def confirm_exchange(
             # the asking price.
             await _sold_comp_hook(
                 str(fresh["listing_id"]),
+                float(fresh["amount"]),
+                fresh["currency"] or "EUR",
+            )
+            # Same price, different consumer: the sold comp above feeds
+            # VALUATION, this feeds model CALIBRATION (prediction vs reality).
+            # Rescued from Deal Desk's execute_complete, which was the only
+            # thing wiring completion to price_ground_truths.
+            await _ground_truth_hook(
+                str(fresh["listing_id"]),
+                float(fresh["amount"]),
+                fresh["currency"] or "EUR",
+            )
+            # DAC7: this seller's counters just changed. Must run on the
+            # completion path — it is the only moment consideration becomes
+            # known, and the terms promise notice BEFORE we report anyone.
+            await _dac7_accrue(
+                str(fresh["seller_id"]),
                 float(fresh["amount"]),
                 fresh["currency"] or "EUR",
             )

@@ -68,12 +68,6 @@ const MUTATION_ICONS: Record<MutationType, keyof typeof Ionicons.glyphMap> = {
   sendMessage: 'chatbubble-outline',
   requestDm: 'mail-outline',
   decideDmRequest: 'mail-open-outline',
-  proposeOffer: 'cash-outline',
-  counterOffer: 'cash-outline',
-  respondToOffer: 'cash-outline',
-  cancelOffer: 'close-circle-outline',
-  markShipped: 'airplane-outline',
-  completeDeal: 'ribbon-outline',
   logActivity: 'pulse-outline',
 };
 
@@ -112,12 +106,6 @@ const MUTATION_LABELS: Record<MutationType, string> = {
   sendMessage: 'Send message',
   requestDm: 'Request DM',
   decideDmRequest: 'Decide DM request',
-  proposeOffer: 'Propose offer',
-  counterOffer: 'Counter offer',
-  respondToOffer: 'Respond to offer',
-  cancelOffer: 'Cancel offer',
-  markShipped: 'Mark shipped',
-  completeDeal: 'Complete deal',
   logActivity: 'Log activity',
 };
 

@@ -1116,3 +1116,34 @@ The audit does warn that `item_images` is listed but no longer exists. Left in
 deliberately: the delete loop catches `UndefinedTableError`, so a stale entry
 costs nothing, whereas removing it means a future re-created `item_images` would
 be silently missed. A stale entry fails safe; a missing one does not.
+
+## New notification category: `account` (2026-08-09)
+
+`notify.py`'s `_FEED_TYPE_BY_CATEGORY` gained `"account": "system"`.
+
+**Why it needed an entry at all.** An unmapped category is not an error — it
+passes through, logs a warning, and renders the generic fallback icon. That is
+the silent-degradation shape this file exists to document, so the mapping is
+added at the same time as the first caller rather than after someone notices an
+ugly icon.
+
+Its first (and currently only) sender is `_dac7_accrue` in
+`p2p_offers_router.py`, which warns a seller once when they pass the DAC7
+reporting threshold — see `docs/P2P_MARKETPLACE_SPEC.md` §9d. Two properties of
+that call are deliberate and worth not "cleaning up":
+
+* **`urgent=True`**, so the daily frequency cap cannot suppress it. A compliance
+  notice is not a discovery alert and must not compete with one for a slot.
+* **It survives a muted category.** `prefs.get(category, True)` defaults to
+  allowed, and since 2026-08-08 the muted branch calls `_persist_only` before
+  returning — so even a member who has turned the category off still gets the
+  durable in-app record. That matters here more than anywhere else: this is the
+  notice we would be held to having sent.
+
+**Related fix, same pass.** Two `deep_link` values were written in scheme form
+(`sparrow://events/{id}`, and my own first draft of the DAC7 link). The
+notifications screen dispatches non-http links via `router.push(deep_link)`,
+which needs an expo-router **path** — a `sparrow://` URL resolves to nothing.
+Both were corrected to path form (`/events/{id}`, `/legal/marketplace-terms`).
+The pre-existing one had been shipped in `billing_router` and is exactly the
+dead-button class: a paid-tier sponsored-event push whose tap went nowhere.

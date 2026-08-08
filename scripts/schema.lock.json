@@ -43,12 +43,6 @@
     "chat_rooms.kind": [
       "CHECK ((kind = ANY (ARRAY['lobby'::text, 'category'::text, 'listing'::text, 'dm'::text])))"
     ],
-    "deal_ratings.role": [
-      "CHECK ((role = ANY (ARRAY['buyer'::text, 'seller'::text])))"
-    ],
-    "deal_ratings.stars": [
-      "CHECK (((stars >= 1) AND (stars <= 5)))"
-    ],
     "demand_signals.signal_type": [
       "CHECK ((signal_type = ANY (ARRAY['affiliate_click'::text, 'catalog_browsed'::text, 'category_viewed'::text, 'collection_viewed'::text, 'event_announcement_read'::text, 'event_followed'::text, 'event_viewed'::text, 'feature_gated_attempt'::text, 'item_added'::text, 'item_archived'::text, 'item_deleted'::text, 'item_scanned'::text, 'item_viewed'::text, 'mandate_created'::text, 'marketplace_listing_viewed'::text, 'no_results_search'::text, 'notification_settings_changed'::text, 'paywall_dismissed'::text, 'paywall_viewed'::text, 'price_alert_removed'::text, 'price_alert_set'::text, 'search_query'::text, 'subscription_purchased'::text, 'ticket_clicked'::text, 'watchlist_add'::text, 'watchlist_remove'::text])))"
     ],
@@ -136,12 +130,6 @@
     "member_grades.verdict": [
       "CHECK ((verdict = ANY (ARRAY['positive'::text, 'negative'::text])))"
     ],
-    "offer_events.event_type": [
-      "CHECK ((event_type = ANY (ARRAY['proposed'::text, 'countered'::text, 'accepted'::text, 'declined'::text, 'expired'::text, 'cancelled'::text, 'shipped'::text, 'delivered'::text, 'rated'::text])))"
-    ],
-    "offers.status": [
-      "CHECK ((status = ANY (ARRAY['pending'::text, 'countered'::text, 'accepted'::text, 'declined'::text, 'cancelled'::text, 'expired'::text, 'shipped'::text, 'completed'::text])))"
-    ],
     "p2p_offers.amount": [
       "CHECK ((amount > (0)::numeric))"
     ],
@@ -195,9 +183,6 @@
     ],
     "purchase_mandates.status": [
       "CHECK ((status = ANY (ARRAY['active'::text, 'paused'::text, 'exhausted'::text, 'expired'::text, 'archived'::text])))"
-    ],
-    "ratings.stars": [
-      "CHECK (((stars >= 1) AND (stars <= 5)))"
     ],
     "subscriptions.plan": [
       "CHECK ((plan = ANY (ARRAY['free'::text, 'pro'::text, 'premium'::text])))"
@@ -547,45 +532,6 @@
     "agent_jobs.user_id": {
       "nullable": true,
       "type": "uuid"
-    },
-    "agreements.accepted_at_buyer": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "agreements.accepted_at_seller": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "agreements.buyer_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "agreements.created_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "agreements.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
-      "type": "uuid"
-    },
-    "agreements.listing_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "agreements.price_eur": {
-      "nullable": false,
-      "type": "numeric"
-    },
-    "agreements.seller_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "agreements.status": {
-      "default": "'pending'::text",
-      "nullable": false,
-      "type": "text"
     },
     "alert_endpoints.created_at": {
       "default": "now()",
@@ -4971,39 +4917,40 @@
       "nullable": false,
       "type": "text"
     },
-    "deal_ratings.comment": {
+    "dac7_seller_year.details_provided_at": {
       "nullable": true,
-      "type": "text"
+      "type": "timestamptz"
     },
-    "deal_ratings.created_at": {
+    "dac7_seller_year.gross_eur": {
+      "default": "0",
+      "nullable": false,
+      "type": "numeric"
+    },
+    "dac7_seller_year.notified_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "dac7_seller_year.reportable_at": {
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "dac7_seller_year.sales_count": {
+      "default": "0",
+      "nullable": false,
+      "type": "int4"
+    },
+    "dac7_seller_year.updated_at": {
       "default": "now()",
       "nullable": false,
       "type": "timestamptz"
     },
-    "deal_ratings.id": {
-      "default": "gen_random_uuid()",
+    "dac7_seller_year.user_id": {
       "nullable": false,
       "type": "uuid"
     },
-    "deal_ratings.offer_id": {
+    "dac7_seller_year.year": {
       "nullable": false,
-      "type": "uuid"
-    },
-    "deal_ratings.rated_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "deal_ratings.rater_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "deal_ratings.role": {
-      "nullable": false,
-      "type": "text"
-    },
-    "deal_ratings.stars": {
-      "nullable": false,
-      "type": "int2"
+      "type": "int4"
     },
     "demand_signals.category": {
       "nullable": true,
@@ -7232,76 +7179,6 @@
       "nullable": false,
       "type": "text"
     },
-    "listings.category_slug": {
-      "nullable": true,
-      "type": "text"
-    },
-    "listings.condition": {
-      "nullable": true,
-      "type": "text"
-    },
-    "listings.created_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "listings.currency": {
-      "default": "'USD'::text",
-      "nullable": false,
-      "type": "text"
-    },
-    "listings.description": {
-      "nullable": true,
-      "type": "text"
-    },
-    "listings.external_link": {
-      "nullable": true,
-      "type": "text"
-    },
-    "listings.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
-      "type": "uuid"
-    },
-    "listings.image_url": {
-      "nullable": true,
-      "type": "text"
-    },
-    "listings.item_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "listings.price": {
-      "nullable": false,
-      "type": "numeric"
-    },
-    "listings.quantity": {
-      "default": "1",
-      "nullable": false,
-      "type": "int4"
-    },
-    "listings.seller_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "listings.status": {
-      "default": "'active'::text",
-      "nullable": false,
-      "type": "text"
-    },
-    "listings.title": {
-      "nullable": false,
-      "type": "text"
-    },
-    "listings.type": {
-      "default": "'fixed'::text",
-      "nullable": false,
-      "type": "text"
-    },
-    "listings.user_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
     "mandate_deals.added_item_id": {
       "nullable": true,
       "type": "uuid"
@@ -9524,133 +9401,6 @@
       "nullable": true,
       "type": "int8"
     },
-    "offer_events.actor_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "offer_events.created_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "offer_events.event_type": {
-      "nullable": false,
-      "type": "text"
-    },
-    "offer_events.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
-      "type": "uuid"
-    },
-    "offer_events.message": {
-      "nullable": true,
-      "type": "text"
-    },
-    "offer_events.metadata": {
-      "default": "'{}'::jsonb",
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "offer_events.offer_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "offer_events.price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "offer_evidence.created_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "offer_evidence.dossier_json": {
-      "nullable": false,
-      "type": "jsonb"
-    },
-    "offer_evidence.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
-      "type": "uuid"
-    },
-    "offer_evidence.market_comps": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "offer_evidence.offer_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "offers.amount": {
-      "nullable": false,
-      "type": "numeric"
-    },
-    "offers.buyer_confirmed_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "offers.buyer_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "offers.counter_count": {
-      "default": "0",
-      "nullable": false,
-      "type": "int4"
-    },
-    "offers.created_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "offers.currency": {
-      "default": "'EUR'::text",
-      "nullable": false,
-      "type": "text"
-    },
-    "offers.expires_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "offers.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
-      "type": "uuid"
-    },
-    "offers.listing_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "offers.message": {
-      "nullable": true,
-      "type": "text"
-    },
-    "offers.seller_confirmed_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "offers.seller_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "offers.status": {
-      "default": "'pending'::text",
-      "nullable": false,
-      "type": "text"
-    },
-    "offers.updated_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "offers.withdrawn_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "offers.withdrawn_by": {
-      "nullable": true,
-      "type": "uuid"
-    },
     "on_demand_lookups.category": {
       "nullable": false,
       "type": "text"
@@ -11782,36 +11532,6 @@
       "default": "now()",
       "nullable": false,
       "type": "timestamptz"
-    },
-    "ratings.agreement_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "ratings.comment": {
-      "nullable": true,
-      "type": "text"
-    },
-    "ratings.created_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "ratings.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
-      "type": "uuid"
-    },
-    "ratings.rated_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "ratings.rater_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "ratings.stars": {
-      "nullable": false,
-      "type": "int4"
     },
     "raw_observation_pointers_v1.category_id": {
       "nullable": true,
@@ -17538,98 +17258,6 @@
       "nullable": true,
       "type": "text"
     },
-    "v_offer_summary_v1.amount": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "v_offer_summary_v1.buyer_avatar_url": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_offer_summary_v1.buyer_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_offer_summary_v1.buyer_name": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_offer_summary_v1.buyer_username": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_offer_summary_v1.counter_count": {
-      "nullable": true,
-      "type": "int4"
-    },
-    "v_offer_summary_v1.created_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "v_offer_summary_v1.expires_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "v_offer_summary_v1.id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_offer_summary_v1.item_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_offer_summary_v1.listing_currency": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_offer_summary_v1.listing_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_offer_summary_v1.listing_image_url": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_offer_summary_v1.listing_price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "v_offer_summary_v1.listing_title": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_offer_summary_v1.message": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_offer_summary_v1.offer_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_offer_summary_v1.seller_avatar_url": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_offer_summary_v1.seller_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_offer_summary_v1.seller_name": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_offer_summary_v1.seller_username": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_offer_summary_v1.status": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_offer_summary_v1.updated_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
     "v_orphan_checklist_items_v1.checklist_id": {
       "nullable": true,
       "type": "uuid"
@@ -20388,17 +20016,6 @@
       "result",
       "error"
     ],
-    "agreements": [
-      "id",
-      "buyer_id",
-      "seller_id",
-      "listing_id",
-      "price_eur",
-      "status",
-      "created_at",
-      "accepted_at_buyer",
-      "accepted_at_seller"
-    ],
     "alert_endpoints": [
       "id",
       "user_id",
@@ -21698,15 +21315,15 @@
       "affiliate_payout_pct",
       "created_at"
     ],
-    "deal_ratings": [
-      "id",
-      "offer_id",
-      "rater_id",
-      "rated_id",
-      "role",
-      "stars",
-      "comment",
-      "created_at"
+    "dac7_seller_year": [
+      "user_id",
+      "year",
+      "sales_count",
+      "gross_eur",
+      "reportable_at",
+      "notified_at",
+      "details_provided_at",
+      "updated_at"
     ],
     "demand_signals": [
       "id",
@@ -22347,24 +21964,6 @@
       "created_at",
       "resolved_at"
     ],
-    "listings": [
-      "id",
-      "item_id",
-      "seller_id",
-      "title",
-      "description",
-      "price",
-      "currency",
-      "quantity",
-      "condition",
-      "image_url",
-      "status",
-      "created_at",
-      "user_id",
-      "category_slug",
-      "external_link",
-      "type"
-    ],
     "mandate_deals": [
       "id",
       "mandate_id",
@@ -22985,41 +22584,6 @@
       "deleted_at",
       "metadata"
     ],
-    "offer_events": [
-      "id",
-      "offer_id",
-      "actor_id",
-      "event_type",
-      "price",
-      "message",
-      "metadata",
-      "created_at"
-    ],
-    "offer_evidence": [
-      "id",
-      "offer_id",
-      "dossier_json",
-      "market_comps",
-      "created_at"
-    ],
-    "offers": [
-      "id",
-      "listing_id",
-      "buyer_id",
-      "amount",
-      "status",
-      "created_at",
-      "seller_id",
-      "message",
-      "counter_count",
-      "expires_at",
-      "updated_at",
-      "seller_confirmed_at",
-      "buyer_confirmed_at",
-      "withdrawn_by",
-      "withdrawn_at",
-      "currency"
-    ],
     "on_demand_lookups": [
       "item_ref",
       "category",
@@ -23631,15 +23195,6 @@
       "subject",
       "resource",
       "ts"
-    ],
-    "ratings": [
-      "id",
-      "rater_id",
-      "rated_id",
-      "agreement_id",
-      "stars",
-      "comment",
-      "created_at"
     ],
     "raw_observation_pointers_v1": [
       "observation_id",
@@ -25301,31 +24856,6 @@
       "url",
       "title"
     ],
-    "v_offer_summary_v1": [
-      "id",
-      "offer_id",
-      "listing_id",
-      "seller_id",
-      "buyer_id",
-      "amount",
-      "status",
-      "message",
-      "counter_count",
-      "expires_at",
-      "created_at",
-      "updated_at",
-      "listing_title",
-      "listing_image_url",
-      "listing_price",
-      "listing_currency",
-      "item_id",
-      "seller_name",
-      "seller_username",
-      "seller_avatar_url",
-      "buyer_name",
-      "buyer_username",
-      "buyer_avatar_url"
-    ],
     "v_orphan_checklist_items_v1": [
       "checklist_id",
       "item_count"
@@ -26170,11 +25700,6 @@
         "id"
       ]
     ],
-    "agreements": [
-      [
-        "id"
-      ]
-    ],
     "alert_endpoints": [
       [
         "id"
@@ -26652,13 +26177,10 @@
         "id"
       ]
     ],
-    "deal_ratings": [
+    "dac7_seller_year": [
       [
-        "id"
-      ],
-      [
-        "offer_id",
-        "rater_id"
+        "user_id",
+        "year"
       ]
     ],
     "demand_signals": [
@@ -26979,11 +26501,6 @@
         "reporter_id"
       ]
     ],
-    "listings": [
-      [
-        "id"
-      ]
-    ],
     "mandate_deals": [
       [
         "id"
@@ -27257,21 +26774,6 @@
         "s3_key"
       ]
     ],
-    "offer_events": [
-      [
-        "id"
-      ]
-    ],
-    "offer_evidence": [
-      [
-        "id"
-      ]
-    ],
-    "offers": [
-      [
-        "id"
-      ]
-    ],
     "on_demand_lookups": [
       [
         "item_ref"
@@ -27517,11 +27019,6 @@
       ]
     ],
     "rate_limits": [
-      [
-        "id"
-      ]
-    ],
-    "ratings": [
       [
         "id"
       ]

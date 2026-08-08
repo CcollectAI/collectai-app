@@ -351,12 +351,14 @@ class TestPolicyEngineRecency:
 
 
 # ---------------------------------------------------------------------------
-# Package 4: Trust Wiring (marketplace_trust_router merged into deal_desk_router)
+# Package 4: Trust Wiring (was marketplace_trust_router -> deal_desk_router;
+# Deal Desk removed 2026-08-09, member trust now lives in p2p_offers_router
+# via member_grades)
 # ---------------------------------------------------------------------------
 
 # _compute_badge tests removed — marketplace_trust_router was deleted
-# after merging trust logic into deal_desk_router. Badge computation
-# is tested via deal_desk reputation endpoint tests.
+# after merging trust logic into the offers router. Badge computation
+# is tested via the P2P member-grade endpoints.
 
 
 class TestStubRoutersRemoved:
@@ -686,11 +688,29 @@ class TestPriceFeedbackLoop:
         assert result is False  # No DB pool in test
 
     def test_complete_deal_wires_ground_truth(self):
+        """A completed trade must feed its agreed price back as a sold comp.
+
+        Repointed 2026-08-09 from `app.agents.deal_completion.execute_complete`
+        to the P2P confirmation path. Deal Desk was removed (0 rows, never
+        shipped — `SELLING_ENABLED=false`), but the GUARANTEE it was asserting
+        is not Deal Desk's, it is the marketplace's: a two-sided confirmed price
+        is the only sold-comp source we have for the ~62k catalogue items eBay
+        cannot price, so losing this wiring would silently starve
+        valuation_worker.
+
+        The mechanism changed name — `record_price_ground_truth(actual_price)`
+        became `_sold_comp_hook(listing_id, amount, currency)` — so the test
+        asserts the new one. It must keep failing if the hook is dropped.
+        """
         src = inspect.getsource(
-            __import__("app.agents.deal_completion", fromlist=["execute_complete"]).execute_complete
+            __import__(
+                "app.features.p2p_offers_router", fromlist=["confirm_exchange"]
+            ).confirm_exchange
         )
-        assert "record_price_ground_truth" in src
-        assert "actual_price" in src
+        assert "_sold_comp_hook" in src, "completion no longer records a sold comp"
+        # The AGREED figure, not the asking price. Passing the listing price
+        # here would poison every comp with the pre-negotiation number.
+        assert 'fresh["amount"]' in src, "sold comp is not fed the agreed amount"
 
     def test_prediction_accuracy_endpoint_exists(self):
         from app.features.data_moat import router

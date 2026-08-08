@@ -187,18 +187,9 @@ export const collectorsApi = {
   getAffiliateLinks: marketplaceApi.getAffiliateLinks,
   tagAffiliateUrl: marketplaceApi.tagAffiliateUrl,
 
-  // Deal Desk (P2P Offers)
-  proposeOffer: dealsApi.proposeOffer,
-  counterOffer: dealsApi.counterOffer,
-  respondToOffer: dealsApi.respondToOffer,
-  cancelOffer: dealsApi.cancelOffer,
-  markShipped: dealsApi.markShipped,
-  completeDeal: dealsApi.completeDeal,
-  listActiveOffers: dealsApi.listActiveOffers,
-  listDealHistory: dealsApi.listDealHistory,
-  getOfferDetail: dealsApi.getOfferDetail,
-  getOfferEvidence: dealsApi.getOfferEvidence,
-  getUserReputation: dealsApi.getUserReputation,
+  // Deal Desk offer re-exports removed 2026-08-09 with that subsystem. The
+  // member-to-member equivalents are the `p2p*`-namespaced entries above —
+  // they were namespaced precisely BECAUSE these unnamespaced ones existed.
   toggleItemForSale: itemsApi.toggleItemForSale,
 
   // Item Images (multi-photo per item)
@@ -366,7 +357,6 @@ export const collectorsApi = {
   recordMarketplaceSale: marketplaceApi.recordMarketplaceSale,
 
   // Deal Risk Flags
-  getDealRiskFlags: dealsApi.getDealRiskFlags,
 
   // Mandate Forecast
   getMandateForecast: dealsApi.getMandateForecast,

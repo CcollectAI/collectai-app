@@ -96,37 +96,16 @@ export const getDealStats = () => get("/purchase/stats");
 export const getMandateForecast = (mandateId: string) =>
   get(`/purchase/mandates/${encodeURIComponent(mandateId)}/forecast`);
 
-// Deal Desk (P2P Offers)
-export const proposeOffer = (payload: { item_id: string; price: number; message?: string }) =>
-  post("/deals/offer", payload as Record<string, unknown>);
-
-export const counterOffer = (offerId: string, payload: { price: number; message?: string }) =>
-  post(`/deals/${encodeURIComponent(offerId)}/counter`, payload as Record<string, unknown>);
-
-export const respondToOffer = (offerId: string, payload: { accept: boolean; message?: string }) =>
-  post(`/deals/${encodeURIComponent(offerId)}/respond`, payload as Record<string, unknown>);
-
-export const cancelOffer = (offerId: string) =>
-  post(`/deals/${encodeURIComponent(offerId)}/cancel`);
-
-export const markShipped = (offerId: string, payload: { tracking_info?: string }) =>
-  post(`/deals/${encodeURIComponent(offerId)}/ship`, payload as Record<string, unknown>);
-
-export const completeDeal = (offerId: string, payload: { stars: number; comment?: string }) =>
-  post(`/deals/${encodeURIComponent(offerId)}/complete`, payload as Record<string, unknown>);
-
-export const listActiveOffers = () => get("/deals/active");
-
-export const listDealHistory = () => get("/deals/history");
-
-export const getOfferDetail = (offerId: string) =>
-  get(`/deals/${encodeURIComponent(offerId)}`);
-
-export const getOfferEvidence = (offerId: string) =>
-  get(`/deals/${encodeURIComponent(offerId)}/evidence`);
-
-export const getUserReputation = (userId: string) =>
-  get(`/deals/reputation/${encodeURIComponent(userId)}`);
-
-export const getDealRiskFlags = (offerId: string) =>
-  get(`/deals/${encodeURIComponent(offerId)}/risk-flags`);
+// ── Deal Desk offer functions REMOVED 2026-08-09 ────────────────────────────
+// The `/deals/*` offer endpoints (propose/counter/respond/cancel/ship/complete/
+// active/history/detail/evidence/reputation/risk-flags) are gone: the server
+// router, its tables and its screens were a second, never-shipped
+// implementation of member-to-member trading. `SELLING_ENABLED` was false and
+// all six tables held 0 rows. The live implementation is P2P — see
+// `src/api/p2pApi.ts` and docs/P2P_MARKETPLACE_SPEC.md.
+//
+// This file KEEPS the purchase-mandate functions above. They are a different
+// feature that happens to live in the same file: `purchase_mandates` /
+// `mandate_deals` are written by the LIVE `deal_discovery_worker`, which also
+// drives Target Hit. Deleting the whole file — the obvious move — would have
+// taken those with it.

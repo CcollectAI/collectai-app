@@ -693,7 +693,14 @@ Still open:
   become a party to the carriage — see §5b. Note that PostNL and DPD deep links
   need the **recipient's postcode**, which we deliberately do not hold, so those
   carriers render a copyable code and no link rather than a link that 404s.
-- Geography: NL-only first? Cross-border consumer law is materially harder
+- ~~Geography: NL-only first? Cross-border consumer law is materially harder~~
+  **Answered 2026-08-09: worldwide.** The app ships worldwide, so terms written
+  as if EU/NL were the only jurisdiction were simply wrong for most readers. The
+  legal screens were rewritten to name EU/UK rules as EXAMPLES of a general
+  pattern rather than as the universe, and the governing-law carve-out now
+  protects any consumer's mandatory local rights, not only an EU consumer's.
+  Sparrow remains established in NL, which is a fact about where we report — not
+  a limit on who may use the marketplace.
 - Does a `sparrow` listing count toward the free plan's watchlist/alert caps, or
   is listing always free? (Recommend: listing always free — supply is the point)
 
@@ -915,3 +922,118 @@ the box turns up empty.
 - [Sharetribe — Vinted revenue mix (Buyer Protection ~75–80%)](https://www.sharetribe.com/how-to-build/how-does-vinted-make-money/)
 - [CNBC — Apple's App Store rules on boosted ads (Oct 2022)](https://www.cnbc.com/2022/10/26/apples-new-app-store-rules-over-boosted-ads-provoke-facebook-again-.html)
 - [AppleInsider — Meta billed through Apple for boosts from Feb 2024](https://appleinsider.com/articles/24/02/15/apple-and-metas-latest-fight-is-over-social-media-boosted-post-fees-on-iphone)
+
+## 9. Deal Desk removed, DAC7 implemented (2026-08-09)
+
+### 9a. Three generations of the same feature — two deleted
+
+The app had grown **three** implementations of member-to-member trading. Only
+the third had ever carried a trade:
+
+| Gen | Tables | Code | Rows | Fate |
+|---|---|---|---|---|
+| 1 | `agreements`, `ratings` | none at all | 0 | **deleted** |
+| 2 | `listings`, `offers`, `offer_events`, `offer_evidence`, `deal_ratings` | router + 6 RPCs + 2 screens + 20 tests | 0 | **deleted** |
+| 3 | `marketplace_listings`, `p2p_offers`, `member_grades` | P2P Stage 1+2 | 19 / 4 / 2 | **live** |
+
+Generation 2 ("Deal Desk") shipped behind `SELLING_ENABLED=false` and never
+completed a single trade. Its cost was not runtime, it was attention: every
+schema, RLS, account-deletion and orphan-store audit carried entries a reader
+had to recognise as expected-dead — which is precisely how a gate stops being
+read. Two of its screens were still reachable, from Settings and from the item
+bar, so a user could walk into a subsystem that could not complete a trade.
+
+### 9b. The near-miss: "deal" means two different things
+
+The removal's real risk was vocabulary, not dependencies. **`deal_discovery_worker`
+drives Target Hit — the paid alerting feature — and shares the word "deal" with
+Deal Desk while sharing nothing else.** It reads and writes `purchase_mandates`,
+`mandate_deals`, `watchlist_items`, `alert_trigger_history`, `market_hits` and
+`subscriptions`; it touches none of the seven dropped tables. Its only
+occurrences of "offers"/"listings" are prose in a docstring.
+
+Two more things looked like Deal Desk and were not:
+
+* **`src/api/dealsApi.ts`** held BOTH the Deal Desk offer calls and the
+  purchase-**mandate** calls. Deleting the file — the obvious move — would have
+  broken the live mandate feature. It was split, not deleted.
+* **`dealsProvider.toggleForSale`** drives `items.for_sale`, which a DB trigger
+  keeps in sync with live listings. Kept.
+
+An FK is not a feature boundary, and neither is a filename.
+
+### 9c. What was rescued rather than deleted
+
+Deal Desk's `execute_complete` called `record_price_ground_truth`; the P2P
+completion path did not. Deleting Deal Desk would have quietly dropped the model
+**calibration** loop. It never carried data (0 completions), but the wiring was
+the good part, so it moved to `_ground_truth_hook` in `p2p_listing_router.py`.
+
+This is **not** a duplicate of the neighbouring `_sold_comp_hook`, and the two
+are easy to confuse:
+
+| hook | writes | consumer | answers |
+|---|---|---|---|
+| `_sold_comp_hook` | `market_hits` | `valuation_worker` | what is this item worth? |
+| `_ground_truth_hook` | `price_ground_truths` | calibration | how wrong was our forecast? |
+
+Same input price, two different consumers. Dropping either loses something the
+other cannot supply. `_ground_truth_hook` needs `marketplace_listings.item_id`,
+so a marketplace-only listing (§5c) correctly records nothing — calibration
+needs a predicted item.
+
+The price-outlier detection from `deal_risk.py` had already been ported into
+`p2p_offers_router` (§ price sanity). Its seller-trust half was deliberately not
+ported: `member_grades` already answers that.
+
+### 9d. DAC7 — a written promise that had no code behind it
+
+`app/legal/marketplace-terms.tsx` §6 told members, in writing, that above the
+threshold we would ask them for details and warn them before reporting. **Nothing
+implemented that.** No counter, no notice, and no way to demonstrate that
+everyone else was below the line — which §5a identifies as the actual cost of
+compliance ("registration plus enough data to DEMONSTRATE exclusion").
+
+`dac7_seller_year` (user_id, year) is that data, accrued by `_dac7_accrue` on the
+completion path — the only moment consideration becomes KNOWN, which is what
+triggers DAC7 in the first place.
+
+**The rule, and the one thing that can be wrong.** A seller is an EXCLUDED
+SELLER only when BOTH limbs hold: fewer than 30 sales **and** at most EUR 2,000
+in a calendar year. So a seller becomes reportable when **either** is breached:
+
+```
+reportable  ⇔  sales_count >= 30  OR  gross_eur > 2000
+```
+
+Writing `and` there would under-report every high-volume/low-value seller — 40
+sales at EUR 20 is the exact shape that slips through — and nothing would
+notice, because the failure mode is silence. `server/tests/test_dac7_thresholds.py`
+pins both single-limb cases and both boundaries; the connective was
+mutation-tested (`or` → `and` fails 4 tests) rather than assumed.
+
+Other deliberate choices: amounts converted to EUR before comparison (the limit
+is EUR-denominated); `notified_at` guards against re-warning on every subsequent
+sale; `reportable_at` is never cleared, because crossing is a fact about the year
+that a later refund does not undo; and every failure is swallowed and logged —
+a completed trade must not 500 because a compliance counter could not be written.
+
+### 9e. Verification performed
+
+Before dropping: row counts on all seven tables (0), FKs into the set from
+outside (`ratings -> agreements` only, itself in the set), dependent views
+(`v_offer_summary_v1`), functions referencing the set (exactly 6 RPCs, resolved
+by `oid::regprocedure` — **not** by guessed signatures, since a wrong signature
+makes `DROP FUNCTION` a silent no-op that still reports success), and triggers.
+
+After: all seven tables and the view gone, 6 RPCs gone, survivors intact with
+their rows; `schema.lock` and `rpc.lock` regenerated and installed on EC2 **and**
+in the repo; the 9-stage preflight chain run manually and passing 9/9; service
+restarted; `/healthz` 200; `/deals/*` → 404 and `/p2p/*` → 401.
+
+Two failures were caught by that chain rather than by a user, and both were
+real: `preflight_rpc_lock` still named the 6 dropped RPCs (my first lock diff
+compared top-level JSON keys instead of function names, and wrongly reported "no
+change"), and `preflight_router_drift` correctly refused a DB whose tables no
+longer matched the deployed code. Neither would have been visible without
+running the gate.

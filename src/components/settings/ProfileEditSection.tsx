@@ -314,7 +314,7 @@ function ProfileEditSectionInner() {
 
             <AnimatedPressable
               style={styles.settingRow}
-              onPress={() => router.push('/sell/offers')}
+              onPress={() => router.push('/offers')}
               accessibilityRole="link"
               accessibilityLabel={t('account.my_listings_a11y')}
             >

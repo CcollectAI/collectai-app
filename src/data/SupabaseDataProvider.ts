@@ -290,17 +290,7 @@ export class SupabaseDataProvider implements DataProvider {
   getUnreadAnnouncementCount = eventsProvider.getUnreadAnnouncementCount;
 
   // ─── Deal Desk (P2P Offers) ─────────────────────────────────────────────────
-  proposeOffer = dealsProvider.proposeOffer;
-  counterOffer = dealsProvider.counterOffer;
-  respondToOffer = dealsProvider.respondToOffer;
-  cancelOffer = dealsProvider.cancelOffer;
-  listActiveOffers = dealsProvider.listActiveOffers;
-  listDealHistory = dealsProvider.listDealHistory;
-  getOfferDetail = dealsProvider.getOfferDetail;
-  getUserReputation = dealsProvider.getUserReputation;
   toggleForSale = dealsProvider.toggleForSale;
-  markShipped = dealsProvider.markShipped;
-  completeDeal = dealsProvider.completeDeal;
 
   // ─── Multi-Marketplace Selling ──────────────────────────────────────────────
   listMarketplaceListings = dealsProvider.listMarketplaceListings;

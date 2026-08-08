@@ -164,8 +164,6 @@ DENY_ALL_OK: dict[str, str] = {
     "image_embeddings": "Vision embeddings written by the scan pipeline; ML artefact.",
     "item_embeddings": "Text embeddings written by the matching pipeline; ML artefact.",
     "item_latest_price_mat": "Materialised latest-price helper refreshed by a worker; the app reads items.estimated_value.",
-    "agreements": "Deal-desk agreements; the Deal Hub is served entirely by /purchase on the backend.",
-    "ratings": "Post-deal ratings hanging off agreements; same backend-only Deal Hub surface as its parent.",
     "twitch_events": "Twitch webhook events; the creators feature is stubbed (twitch_creators is empty) and reads go through the API.",
     "twitch_streams_live": "Twitch live-state cache written by the Twitch poller.",
 }

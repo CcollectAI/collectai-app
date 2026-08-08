@@ -446,8 +446,6 @@ function RootStack() {
 
         {/* Deal Desk / P2P Selling / Marketplace */}
         <Stack.Screen name="sell/dashboard" options={iconOnlyHeader} />
-        <Stack.Screen name="sell/offers" options={iconOnlyHeader} />
-        <Stack.Screen name="sell/[offerId]" options={iconOnlyHeader} />
 
         {/* Subscription & Security */}
         <Stack.Screen name="subscription" options={iconOnlyHeader} />

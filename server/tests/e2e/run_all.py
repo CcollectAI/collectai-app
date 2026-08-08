@@ -26,9 +26,6 @@ PER_TEST_TIMEOUT = 180  # seconds; marketplace search can take 90s+
 # then marketplace (slow), then read-only audits. Pre-existing scripts last.
 ORDER = [
     "e2e_chat.py",
-    "e2e_deal_desk.py",
-    "e2e_deal_desk_full.py",
-    "e2e_deal_desk_edges.py",
     "e2e_user_writes.py",
     "e2e_user_writes2.py",
     "e2e_billing.py",
