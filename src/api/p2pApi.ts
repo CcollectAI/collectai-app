@@ -8,7 +8,7 @@
  * returns exactly these keys. Do not camelise here; map at the screen boundary
  * if a screen wants camelCase, the way dataProvider does elsewhere.
  */
-import { get, post } from './httpClient';
+import { get, post, patch } from './httpClient';
 
 /** Listing lifecycle. MUST match marketplace_listings_status_check, which
  *  allows draft | active | sold | expired | delisted | error. 'withdrawn' is
@@ -208,6 +208,25 @@ export const getListing = (listingId: string) =>
  * listing can no longer produce a Target Hit. A snipe that opens a sold
  * listing spends the user's daily alert and their trust.
  */
+/**
+ * Change the asking price on your own live listing.
+ *
+ * Dropping the price is the point: the server re-points the listing's buyable
+ * `market_hits` row at the new figure and refreshes its `seen_at`, which puts it
+ * back inside `deal_discovery_worker`'s 30-minute window. Every member whose
+ * watchlist TARGET the new price now meets gets a Target Hit — not everyone who
+ * favourited, only the people for whom it is actually news.
+ *
+ * Raising the price updates the listing but deliberately does NOT re-enter that
+ * window: "listed below your target" is the promise, and an item getting more
+ * expensive is a notification with no action.
+ *
+ * 404 covers not-yours / gone / already sold, deliberately undistinguished.
+ * Re-saving the SAME price is a 200 no-op, not an error.
+ */
+export const updateListingPrice = (listingId: string, price: number) =>
+  patch<P2PListing>(`/p2p/listings/${encodeURIComponent(listingId)}`, { price });
+
 export const delistListing = (listingId: string, status: 'sold' | 'delisted' = 'sold') =>
   post<{ ok: boolean; status: string }>(
     `/p2p/listings/${encodeURIComponent(listingId)}/delist?status=${status}`,

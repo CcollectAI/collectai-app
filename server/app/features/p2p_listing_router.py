@@ -1326,6 +1326,178 @@ async def get_listing(
     )
 
 
+class ListingPriceUpdate(BaseModel):
+    """A seller changing what they are asking.
+
+    Price only, deliberately. Title, category and canonical_key decide what the
+    listing IS — editing those after members have watched, favourited and been
+    alerted on it turns one listing into a different product with the same
+    history. That is the bait-and-switch shape, and it is not worth having
+    before there is a reason for it.
+    """
+    price: float = Field(..., gt=0, le=1_000_000)
+
+
+async def _price_change_hook(listing_id: str, dropped: bool) -> None:
+    """Re-point the buyable `market_hits` row at the new price.
+
+    This is the whole "price drop alerts watchers" feature. There is no new
+    alert type, no new worker and no `user_price_alerts` row — the last of those
+    is explicitly forbidden by docs/alerts-and-insights.md, which records that
+    the Rules tab is empty BY DESIGN and that a watchlist target IS the rule.
+
+    `deal_discovery_worker._check_watchlist_snipes` already selects
+    `market_hits` rows where `seen_at > now() - interval '30 minutes'` and
+    `price_eur <= w.target_price`. So refreshing this row's price and `seen_at`
+    is sufficient: the next cycle sees it, matches it to every watcher whose
+    declared target the NEW price now meets, and fires Target Hit with the
+    existing 24h-per-watchlist dedupe and plan gating already applied. Nothing
+    here needs to know about users at all.
+
+    That is why this is better than Vinted's version of the same feature, which
+    notifies everyone who favourited. A watchlist row carries a target price, so
+    we notify the people for whom the new price is actually news.
+
+    UPDATE, not INSERT. The publish hook guards with
+    `WHERE NOT EXISTS (provider='sparrow' AND listing_id=...)` precisely because
+    a second buyable row would make Target Hit surface one listing twice.
+    Verified against prod that this works even when `seen_at` moves the row
+    across a monthly partition boundary.
+
+    `seen_at` is refreshed ONLY on a drop. A price RISE must not re-enter the
+    alert window: "listed below your target" is the promise, and waking someone
+    to say an item got more expensive is a notification with no action — the
+    exact thing the alert consolidation deleted three workers to stop doing. The
+    price is still corrected in place so the row never advertises a stale figure.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT l.price, l.currency, l.listing_title
+                FROM public.marketplace_listings l
+                WHERE l.id = $1::uuid AND l.status = $2 AND l.delisted_at IS NULL
+                """,
+                listing_id, _STATUS_ACTIVE,
+            )
+            if row is None:
+                return
+
+            from app.lib.fx_service import convert_to_eur
+            price_eur = await convert_to_eur(float(row["price"]), row["currency"] or "EUR")
+
+            updated = await conn.fetchval(
+                """
+                UPDATE public.market_hits
+                   SET price = $2,
+                       price_eur = $3,
+                       title = $4,
+                       observed_at = now(),
+                       -- Only a drop re-enters the 30-minute snipe window.
+                       seen_at = CASE WHEN $5 THEN now() ELSE seen_at END
+                 WHERE provider = 'sparrow' AND listing_id = $1
+                RETURNING 1
+                """,
+                str(listing_id), float(row["price"]), price_eur,
+                row["listing_title"], dropped,
+            )
+            if updated is None:
+                # No buyable row to update. Normal and expected when the listing
+                # has no canonical identity — the publish hook skipped it (only
+                # 4 of 16 items carry a canonical_key, measured 2026-08-07).
+                # Logged at INFO because it is a coverage gap, not a failure;
+                # the seller is told the same thing by `reaches_target_hit`.
+                logger.info(
+                    "[p2p] price change on %s had no buyable row to update "
+                    "(listing likely has no canonical identity)", listing_id,
+                )
+                return
+            logger.info(
+                "[p2p] price change on %s -> %.2f %s (dropped=%s, alert window %s)",
+                listing_id, float(row["price"]), row["currency"], dropped,
+                "refreshed" if dropped else "unchanged",
+            )
+    except Exception as exc:
+        logger.warning("[p2p] price change hook failed for %s: %s", listing_id, exc)
+
+
+@router.patch("/listings/{listing_id}", response_model=ListingOut,
+              summary="Change a listing's price")
+async def update_listing_price(
+    listing_id: str,
+    payload: ListingPriceUpdate,
+    user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_listing_write_limit),
+) -> ListingOut:
+    """Lower (or raise) the asking price on your own live listing.
+
+    Until this existed there was no price edit of ANY kind — a seller who wanted
+    to drop their price had to delist and relist, and forgetting to delist first
+    returned 409 ALREADY_LISTED, which reads as the app being broken. Dropping
+    the price is the single most effective seller action on Vinted, and we could
+    not do it at all. See docs/P2P_MARKETPLACE_SPEC.md §8b.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    async with pool.acquire() as conn:
+        # Ownership AND liveness in one guarded UPDATE, so there is no window
+        # between checking and writing. `status = active AND delisted_at IS NULL`
+        # matters beyond tidiness: re-pricing a SOLD listing would push a
+        # buyable row back into the snipe window for something that is gone,
+        # which is the failure _stale_supply_hook exists to prevent.
+        row = await conn.fetchrow(
+            """
+            UPDATE public.marketplace_listings
+               SET price = $3, updated_at = now()
+             WHERE id = $1::uuid AND user_id = $2::uuid
+               AND status = $4 AND delisted_at IS NULL
+            RETURNING id, price, currency,
+                      -- The OLD price, captured in the SAME statement. Reading
+                      -- it in a separate SELECT would race two concurrent edits
+                      -- and could report a drop as a rise — which decides
+                      -- whether watchers get alerted.
+                      --
+                      -- A sub-SELECT in RETURNING is evaluated against the
+                      -- statement's snapshot, so it does NOT see this UPDATE's
+                      -- own effect. Verified on the server rather than assumed:
+                      -- new_price 80, subquery_price 100.
+                      (SELECT l2.price FROM public.marketplace_listings l2
+                        WHERE l2.id = $1::uuid) AS previous_price
+            """,
+            listing_id, user_id, payload.price, _STATUS_ACTIVE,
+        )
+
+    if row is None:
+        # Deliberately ONE 404 for "not yours", "does not exist" and "already
+        # sold". Distinguishing the first two would confirm the existence of
+        # another member's listing to someone probing ids.
+        #
+        # Note there is no `price IS DISTINCT FROM` guard in the UPDATE: an
+        # unchanged price must be a 200, not this 404. A seller who re-saves the
+        # same number has done nothing wrong, and answering "no live listing of
+        # yours to update" would be both alarming and false.
+        raise error_response(
+            404, "No live listing of yours to update", code="LISTING_NOT_FOUND",
+        )
+
+    # AWAITED, not fire-and-forget. The publish hook is spawned because a missing
+    # buyable row is a non-event, but here the row already exists and is now
+    # ADVERTISING A PRICE THE SELLER NO LONGER ASKS. A stale higher price is a
+    # missed sale; a stale lower one sends a buyer to a listing that costs more
+    # than the alert promised, which is the trust failure this whole stage is
+    # scoped to avoid.
+    previous = float(row["previous_price"])
+    if float(payload.price) != previous:
+        await _price_change_hook(listing_id, float(payload.price) < previous)
+
+    return await get_listing(listing_id, user_id=user_id)
+
+
 @router.post("/listings/{listing_id}/delist", status_code=200,
              summary="Mark a listing sold or delisted")
 async def delist(
