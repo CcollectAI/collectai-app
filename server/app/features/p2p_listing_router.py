@@ -871,15 +871,8 @@ async def browse_listings(
     # connection has no such codec — only a request through the real pool
     # showed it. Arrays have no custom codec on either, so this cannot diverge
     # between the pool and a bare connection again.
-    from app.lib.fx_service import convert_to_eur, get_rates
-    rate_map: dict[str, Decimal] = {"EUR": Decimal("1")}
-    for cur, rate in (await get_rates()).items():
-        if rate and rate > 0:
-            # via str: Decimal(float) would carry the float's binary error into
-            # a numeric comparison.
-            rate_map[cur.upper()] = Decimal(str(rate))
-    fx_codes = list(rate_map.keys())
-    fx_rates = [rate_map[c] for c in fx_codes]
+    from app.lib.fx_service import convert_to_eur
+    fx_codes, fx_rates = await _fx_arrays()
 
     # Bounds arrive in the CALLER's display currency and are converted here, so
     # there is exactly one rate source. Compare in numeric space, not float8:
@@ -1324,6 +1317,159 @@ async def get_listing(
         reaches_target_hit=_reaches_target_hit(r["canonical_key"], r["category"]),
         is_mine=str(r["user_id"]) == user_id,
     )
+
+
+async def _fx_arrays() -> tuple[list[str], list[Decimal]]:
+    """FX rates as two parallel ARRAYS, for `unnest(...) AS fx(code, rate)`.
+
+    Extracted so the second caller cannot re-derive the trap the first one
+    documents: passing the rate map as **jsonb** looks equivalent and is not.
+    `app/db.py` registers a jsonb codec with `encoder=json.dumps`, so an
+    already-serialised string gets double-encoded into a JSON *string*,
+    `->> 'JPY'` returns NULL, and `COALESCE(..., 1)` then silently leaves every
+    foreign price unconverted. That shipped, and passed a direct-connection
+    probe — a raw asyncpg connection has no such codec, so only a request
+    through the real pool showed it. Arrays have no custom codec on either.
+
+    Decimal via `str`: `Decimal(float)` would carry the float's binary error
+    into a numeric comparison
+    (learning_guard_must_match_constraint_type_space).
+    """
+    from app.lib.fx_service import get_rates
+    rate_map: dict[str, Decimal] = {"EUR": Decimal("1")}
+    for cur, rate in (await get_rates()).items():
+        if rate and rate > 0:
+            rate_map[cur.upper()] = Decimal(str(rate))
+    codes = list(rate_map.keys())
+    return codes, [rate_map[c] for c in codes]
+
+
+class WatchlistMatch(BaseModel):
+    """A live member listing for something the caller is already watching."""
+    # The WATCHLIST row id, not the item's. The client's WatchlistItem type has
+    # no item_id field at all (src/data/types.ts) — it never needed one — so
+    # keying on the row id lets the watchlist screen join these in without
+    # widening that type or re-deriving canonical keys on the client.
+    watchlist_id: str
+    listing_id: str
+    title: str
+    price: float
+    currency: str
+    price_eur: Optional[float] = None
+    image_url: Optional[str] = None
+    condition_label: Optional[str] = None
+    # True when this listing is at or below the target the member set. That is
+    # exactly the condition that fires a Target Hit, so the screen can mark the
+    # ones that already met the user's own number rather than presenting every
+    # match as equally interesting.
+    meets_target: bool = False
+
+
+class WatchlistMatchResponse(BaseModel):
+    matches: List[WatchlistMatch] = []
+
+
+@router.get("/watchlist-matches", response_model=WatchlistMatchResponse,
+            summary="Live member listings for items I'm watching")
+async def watchlist_matches(
+    user_id: str = Depends(get_current_user_id),
+) -> WatchlistMatchResponse:
+    """Join the caller's watchlist to live `sparrow` listings.
+
+    The marketplace and the watchlist were built as separate features and never
+    met on screen. A member could be watching a Bayou while another member had
+    one listed, and the only way to find out was a push notification firing at
+    the right moment — miss it, and the two halves never connect again.
+
+    This is the pull side of Target Hit: same join, no time window, no alert.
+    Someone who opens their watchlist should see what is buyable right now.
+
+    Deliberately reuses the snipe's EXACT-identity arm only
+    (`item_ref = category:item_id`), not its trigram title fallback. The fuzzy
+    arm exists so free-text watchlist rows can still fire an alert, and it is
+    tuned for that with a 0.55 threshold; showing a fuzzy match as "a member is
+    selling this" states something stronger than the data supports. An alert
+    that is occasionally loose is recoverable — the user reads it and moves on.
+    A permanent row on the watchlist screen asserting the wrong item is not.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    async with pool.acquire() as conn:
+        hidden = await blocked_user_ids(conn, user_id)
+        rows = await conn.fetch(
+            """
+            SELECT DISTINCT ON (w.id)
+                   w.id AS watchlist_id, w.target_price,
+                   l.id AS listing_id, l.listing_title, l.price, l.currency,
+                   l.condition_label,
+                   COALESCE(i.image_url, ci.image_url) AS image_url,
+                   l.price * COALESCE(fx.rate, 1) AS price_eur
+            FROM public.watchlist_items w
+            JOIN public.marketplace_listings l
+              -- watchlist_items.item_id is BARE and marketplace_listings
+              -- .canonical_key is BARE too, so these join directly. It is
+              -- market_hits.item_ref that is namespaced
+              -- (learning_canonical_key_vs_item_ref_namespace).
+              ON l.canonical_key = w.item_id
+             AND l.category = w.category
+             AND l.marketplace_id = $2
+             AND l.status = $3
+             AND l.delisted_at IS NULL
+            LEFT JOIN unnest($4::text[], $5::numeric[]) AS fx(code, rate)
+                   ON fx.code = l.currency
+            LEFT JOIN public.items i ON i.id = l.item_id
+            LEFT JOIN public.category_items ci
+                   ON ci.item_key = l.canonical_key AND ci.category = l.category
+            WHERE w.user_id = $1::uuid
+              AND w.item_id IS NOT NULL
+              AND w.category IS NOT NULL
+              -- Never show a member their OWN listing as something they can
+              -- buy. Watching an item you also sell is legitimate, and telling
+              -- someone "a member is selling this" about themselves is the same
+              -- lie the `watchers` count avoids.
+              AND l.user_id <> $1::uuid
+              AND NOT (l.user_id = ANY($6::uuid[]))
+            -- Cheapest per watchlist row. A watchlist screen has one line per
+            -- row, so showing the best available price is the only honest
+            -- single number; DISTINCT ON needs the ORDER BY to lead with the
+            -- same expression it distinguishes on.
+            ORDER BY w.id, l.price * COALESCE(fx.rate, 1) ASC
+            """,
+            user_id, SPARROW_MARKETPLACE_KEY, _STATUS_ACTIVE,
+            *(await _fx_arrays()), hidden,
+        )
+
+    return WatchlistMatchResponse(matches=[
+        WatchlistMatch(
+            watchlist_id=str(r["watchlist_id"]),
+            listing_id=str(r["listing_id"]),
+            title=r["listing_title"],
+            price=float(r["price"]),
+            currency=r["currency"] or "EUR",
+            price_eur=float(r["price_eur"]) if r["price_eur"] is not None else None,
+            image_url=r["image_url"],
+            condition_label=r["condition_label"],
+            # `price_eur <= target_price` — deliberately the SAME comparison
+            # deal_discovery_worker._check_watchlist_snipes makes, character for
+            # character. If this screen and the alert disagreed about whether a
+            # listing meets a target, one of them would be calling the user a
+            # liar about their own number.
+            #
+            # It does mean both treat target_price as EUR while the column is
+            # written in the member's display currency. That is a real
+            # cross-currency gap, but it belongs to the alert, not to this
+            # endpoint — fixing it HERE alone would create the disagreement this
+            # comment exists to prevent. Recorded in docs/alerts-and-insights.md.
+            meets_target=(
+                r["target_price"] is not None
+                and r["price_eur"] is not None
+                and float(r["price_eur"]) <= float(r["target_price"])
+            ),
+        )
+        for r in rows
+    ])
 
 
 class ListingPriceUpdate(BaseModel):

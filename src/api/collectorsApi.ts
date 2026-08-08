@@ -160,6 +160,7 @@ export const collectorsApi = {
   p2pGradeCounterparty: p2pApi.gradeCounterparty,
   p2pMemberReputation: p2pApi.getMemberReputation,
   updateListingPrice: p2pApi.updateListingPrice,
+  listWatchlistMatches: p2pApi.listWatchlistMatches,
   delistListing: p2pApi.delistListing,
   reportListing: p2pApi.reportListing,
   createMandate: dealsApi.createMandate,

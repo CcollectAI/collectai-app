@@ -36,6 +36,9 @@ import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
 import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
 import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
+import { collectorsApi } from '@/api/collectorsApi';
+import type { P2PWatchlistMatch } from '@/api/p2pApi';
+import type { CurrencyCode } from '@/data/types';
 import { WishlistStatsBar } from '@/components/wishlist/WishlistStatsBar';
 import { WishlistSortControls } from '@/components/wishlist/WishlistSortControls';
 
@@ -62,6 +65,8 @@ function WatchlistTabScreen() {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [items, setItems] = useState<WatchlistItem[]>([]);
+  // watchlist row id -> the cheapest live member listing for that item.
+  const [matches, setMatches] = useState<Record<string, P2PWatchlistMatch>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, openModal, closeModal] = useModal();
@@ -114,14 +119,42 @@ function WatchlistTabScreen() {
     }
   }, [user?.id]);
 
+  // Member listings for what the user watches — the pull side of Target Hit.
+  //
+  // Fetched SEPARATELY from the watchlist rather than awaited alongside it, and
+  // deliberately not gating `loading`. A marketplace hiccup must never keep the
+  // watchlist itself off screen: the list is the feature, this is an
+  // enrichment. On failure the rows simply render without the extra line, which
+  // is the honest degrade — no row claims something is for sale that isn't.
+  const loadMatches = useCallback(async () => {
+    try {
+      const { matches: rows } = await collectorsApi.listWatchlistMatches();
+      // Keyed by watchlist row id, which is what renderItem has in hand. The
+      // server already returns the cheapest listing per row, so a plain
+      // last-wins map is correct here rather than a reduce.
+      const byRow: Record<string, P2PWatchlistMatch> = {};
+      for (const m of rows) byRow[m.watchlist_id] = m;
+      setMatches(byRow);
+    } catch (err) {
+      // warn, not error, and no toast: this is additive. Telling the user their
+      // watchlist failed because an enrichment call did would be false.
+      logger.warn('[Watchlist] marketplace matches unavailable:', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadItems();
-  }, [loadItems]);
+    loadMatches();
+  }, [loadItems, loadMatches]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     loadItems();
-  }, [loadItems]);
+    // Refreshed together: a member listing is the most time-sensitive thing on
+    // this screen, and a pull that reloaded stale marketplace data would be
+    // worse than not showing it.
+    loadMatches();
+  }, [loadItems, loadMatches]);
 
   const resetForm = () => {
     setFormTitle('');
@@ -407,6 +440,64 @@ function WatchlistTabScreen() {
             <Ionicons name="pencil-outline" size={12} color={colors.muted} />
           </AnimatedPressable>
         </View>
+
+        {/* A MEMBER is selling this, right now.
+            The marketplace and the watchlist were built separately and never
+            met on screen: someone could be watching a Bayou while another
+            member had one listed, and only a push firing at the right moment
+            would connect them — miss it and the two halves never meet again.
+            This is the pull side of Target Hit, same exact-identity join, no
+            time window.
+            Placed above notes and the date because it is the only line here
+            that is actionable right now. */}
+        {matches[item.id] ? (
+          <AnimatedPressable
+            onPress={() => router.push({
+              pathname: '/listing/[id]',
+              params: { id: matches[item.id].listing_id },
+            })}
+            style={[
+              styles.memberListing,
+              {
+                // Accent only when the user's OWN number is met — that is the
+                // Target Hit condition. Everything else is a plain fact and
+                // must not shout, or the distinction stops meaning anything.
+                backgroundColor: matches[item.id].meets_target
+                  ? colors.accent + '18'
+                  : colors.background,
+                borderColor: matches[item.id].meets_target
+                  ? colors.accent + '55'
+                  : colors.border,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              matches[item.id].meets_target
+                ? `A member is selling ${item.title} for ${formatPrice(matches[item.id].price, matches[item.id].currency as CurrencyCode)}, which meets your target. Open the listing`
+                : `A member is selling ${item.title} for ${formatPrice(matches[item.id].price, matches[item.id].currency as CurrencyCode)}. Open the listing`
+            }
+          >
+            <Ionicons
+              name={matches[item.id].meets_target ? 'flash' : 'storefront-outline'}
+              size={14}
+              color={matches[item.id].meets_target ? colors.accent : colors.muted}
+            />
+            <Text
+              style={[
+                styles.memberListingText,
+                { color: matches[item.id].meets_target ? colors.accent : colors.text },
+              ]}
+              numberOfLines={1}
+            >
+              {matches[item.id].meets_target ? 'Target met — ' : 'A member is selling this — '}
+              {/* The listing's OWN currency, not the viewer's. The server sends
+                  what the seller set; converting here without their rate would
+                  print a number the listing screen then contradicts. */}
+              {formatPrice(matches[item.id].price, matches[item.id].currency as CurrencyCode)}
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.muted} />
+          </AnimatedPressable>
+        ) : null}
 
         {item.notes && (
           <Text style={[styles.notes, { color: colors.muted }]} numberOfLines={2}>
@@ -894,6 +985,15 @@ const styles = StyleSheet.create({
     fontSize: text.sm,
     fontWeight: fontWeight.medium,
   },
+  memberListing: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
+    paddingHorizontal: 10, paddingVertical: 9,
+    marginTop: spacing.xs,
+  },
+  // flex: 1 so the chevron stays pinned right and the title truncates instead
+  // of pushing it off the card.
+  memberListingText: { flex: 1, fontSize: text.xs, fontWeight: fontWeight.semibold },
   notes: {
     fontSize: text.md,
     marginTop: 8,

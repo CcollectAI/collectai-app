@@ -209,6 +209,43 @@ export const getListing = (listingId: string) =>
  * listing spends the user's daily alert and their trust.
  */
 /**
+ * A live member listing for something the user is already watching.
+ *
+ * Keyed by `watchlist_id` — the watchlist ROW's uuid, which is `WatchlistItem.id`
+ * on this side. That type carries no `item_id`, so matching by canonical key on
+ * the client is not possible; the server does the join.
+ */
+export type P2PWatchlistMatch = {
+  watchlist_id: string;
+  listing_id: string;
+  title: string;
+  price: number;
+  currency: string;
+  price_eur: number | null;
+  image_url: string | null;
+  condition_label: string | null;
+  /** At or below the target the member set — the same condition that fires a
+   *  Target Hit. Render these differently: it is the user's own number being
+   *  met, not merely "something is for sale". */
+  meets_target: boolean;
+};
+
+/**
+ * The PULL side of Target Hit: what is buyable right now for items I watch.
+ *
+ * The marketplace and the watchlist were built separately and never met on
+ * screen — a member could be watching a Bayou while another had one listed, and
+ * only a push notification firing at the right moment would connect them. Miss
+ * it and the two halves never meet again.
+ *
+ * Exact-identity matches only. The snipe's fuzzy title arm is fine for an alert
+ * you read once, but a permanent row asserting "a member is selling this" needs
+ * to be right.
+ */
+export const listWatchlistMatches = () =>
+  get<{ matches: P2PWatchlistMatch[] }>('/p2p/watchlist-matches');
+
+/**
  * Change the asking price on your own live listing.
  *
  * Dropping the price is the point: the server re-points the listing's buyable
