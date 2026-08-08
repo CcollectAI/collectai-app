@@ -13,14 +13,15 @@
  * implied guarantee is the fastest way to inherit liability we deliberately
  * scoped out.
  */
-import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Animated, Alert } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Animated, Alert, TextInput, ActivityIndicator } from 'react-native';
 import { useToast } from '@/components/Toast';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '@/components/ScreenHeader';
+import BottomSheetModal from '@/components/BottomSheetModal';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { EmptyState } from '@/components/EmptyState';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
@@ -60,6 +61,9 @@ function ListingDetailScreen() {
   }, [listing, router, settings.hapticsEnabled]);
 
   const [reported, setReported] = useState(false);
+  const [priceOpen, setPriceOpen] = useState(false);
+  const [priceDraft, setPriceDraft] = useState('');
+  const [savingPrice, setSavingPrice] = useState(false);
   const [offered, setOffered] = useState(false);
   const { showToast } = useToast();
 
@@ -126,6 +130,59 @@ function ListingDetailScreen() {
       ],
     );
   }, [listing]);
+
+  // ── Price edit (seller only) ─────────────────────────────────────────────
+  // Until this existed a seller could not change their price at all: they had
+  // to delist and relist, and forgetting to delist first returned 409
+  // ALREADY_LISTED. Dropping the price is the single most effective seller
+  // action on Vinted (spec §8b), and here it does something Vinted's cannot —
+  // it alerts the members whose declared TARGET the new price now meets.
+  const openPriceSheet = useCallback(() => {
+    if (!listing) return;
+    // Seeded with the current price so the common edit is "change one digit"
+    // rather than "retype the number you already set".
+    setPriceDraft(String(listing.price));
+    setPriceOpen(true);
+  }, [listing]);
+
+  const parsedNewPrice = useMemo(() => {
+    // Accept a comma decimal separator: the app ships in 7 currencies and most
+    // of Europe types "12,50". Without this the field silently rejects the way
+    // half the target market writes money.
+    const n = parseFloat(priceDraft.replace(',', '.'));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [priceDraft]);
+
+  const priceChanged = parsedNewPrice !== null && listing !== null
+    && parsedNewPrice !== listing.price;
+
+  const handleSavePrice = useCallback(async () => {
+    if (!listing || parsedNewPrice === null || savingPrice) return;
+    const dropped = parsedNewPrice < listing.price;
+    setSavingPrice(true);
+    try {
+      await collectorsApi.updateListingPrice(listing.id, parsedNewPrice);
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      setPriceOpen(false);
+      // Say what actually happened. Promising alerts on a RISE would be a lie
+      // — the server deliberately does not re-enter the alert window for one —
+      // and promising them on a listing with no canonical identity would be a
+      // lie too, which is what reaches_target_hit records.
+      showToast({
+        message: dropped && listing.reaches_target_hit
+          ? 'Price updated — members watching this at or above your new price have been alerted.'
+          : 'Price updated.',
+        type: 'success',
+      });
+      retry();
+    } catch (e) {
+      logger.error('[listing] price update failed:', e);
+      const detail = e instanceof Error && e.message ? ` (${e.message})` : '';
+      showToast({ message: `Couldn't update the price${detail}`, type: 'error' });
+    } finally {
+      setSavingPrice(false);
+    }
+  }, [listing, parsedNewPrice, savingPrice, retry, settings.hapticsEnabled, showToast]);
 
   const handleDelist = useCallback(async () => {
     if (!listing) return;
@@ -367,14 +424,30 @@ function ListingDetailScreen() {
 
           {listing.is_mine ? (
             !isGone ? (
-              <AnimatedPressable
-                onPress={handleDelist}
-                style={[styles.primaryBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Mark as sold"
-              >
-                <Text style={[styles.primaryBtnText, { color: colors.text }]}>Mark as sold</Text>
-              </AnimatedPressable>
+              <>
+                {/* The seller's PRIMARY action, above Mark as sold. Dropping the
+                    price is the thing that sells the item; marking it sold is
+                    the thing you do afterwards. */}
+                <AnimatedPressable
+                  onPress={openPriceSheet}
+                  style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Change your asking price"
+                >
+                  <Ionicons name="pricetag-outline" size={16} color={colors.accentText} />
+                  <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>
+                    Change price
+                  </Text>
+                </AnimatedPressable>
+                <AnimatedPressable
+                  onPress={handleDelist}
+                  style={[styles.primaryBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Mark as sold"
+                >
+                  <Text style={[styles.primaryBtnText, { color: colors.text }]}>Mark as sold</Text>
+                </AnimatedPressable>
+              </>
             ) : null
           ) : !isGone ? (
             <>
@@ -450,6 +523,99 @@ function ListingDetailScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+
+      <BottomSheetModal
+        visible={priceOpen}
+        onClose={() => setPriceOpen(false)}
+        title="Change price"
+        colors={colors}
+      >
+        <View style={styles.sheetBody}>
+          <Text style={[styles.sheetLabel, { color: colors.muted }]}>
+            Currently {formatPrice(listing.price, settings.currency, settings.numberLocale)}
+          </Text>
+          <View style={[styles.priceField, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.priceCurrency, { color: colors.muted }]}>
+              {listing.currency}
+            </Text>
+            <TextInput
+              value={priceDraft}
+              onChangeText={setPriceDraft}
+              // decimal-pad, not numeric: numeric shows a phone keypad on iOS
+              // with no decimal separator, so a seller cannot type 12.50.
+              keyboardType="decimal-pad"
+              // The listing price is the one number on screen; opening the
+              // keyboard for it saves a tap on the action a seller came here to
+              // do. Safe because the sheet is only mounted when they tap it.
+              autoFocus
+              selectTextOnFocus
+              placeholder="0"
+              placeholderTextColor={colors.muted}
+              style={[styles.priceInput, { color: colors.text }]}
+              accessibilityLabel="New asking price"
+              returnKeyType="done"
+              onSubmitEditing={() => { if (priceChanged) handleSavePrice(); }}
+            />
+          </View>
+
+          {/* What the tap will actually DO, decided before it happens. A seller
+              lowering the price on a listing with real watchers is the whole
+              feature; saying so is what makes them do it. Three genuinely
+              different cases, and conflating them would make one of them a
+              lie. */}
+          {parsedNewPrice !== null && parsedNewPrice < listing.price ? (
+            listing.reaches_target_hit ? (
+              <Text style={[styles.sheetNote, { color: colors.accent }]}>
+                {listing.watchers > 0
+                  ? `We'll alert the ${listing.watchers === 1 ? 'member' : 'members'} watching this whose target your new price meets.`
+                  : "Members watching this item will be alerted if your new price meets their target."}
+              </Text>
+            ) : (
+              // reaches_target_hit false = no canonical identity, so no buyable
+              // row exists and no alert can fire. Promising one here would be
+              // the silent-dead-feature pattern with a confident label on top.
+              <Text style={[styles.sheetNote, { color: colors.muted }]}>
+                This listing isn&apos;t matched to a catalogue item, so it can&apos;t
+                alert watchers. The new price still shows in the marketplace.
+              </Text>
+            )
+          ) : parsedNewPrice !== null && parsedNewPrice > listing.price ? (
+            <Text style={[styles.sheetNote, { color: colors.muted }]}>
+              Raising the price won&apos;t notify anyone.
+            </Text>
+          ) : null}
+
+          <AnimatedPressable
+            onPress={handleSavePrice}
+            disabled={!priceChanged || savingPrice}
+            style={[
+              styles.primaryBtn,
+              {
+                backgroundColor: priceChanged && !savingPrice ? colors.accent : colors.border,
+                marginTop: 16,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !priceChanged || savingPrice }}
+            accessibilityLabel="Save the new price"
+          >
+            {savingPrice ? (
+              // accentText, never a hardcoded white: on a colors.border fill in
+              // high-contrast dark a white spinner is invisible (ui-playbook).
+              <ActivityIndicator size="small" color={colors.accentText} />
+            ) : (
+              <Text
+                style={[
+                  styles.primaryBtnText,
+                  { color: priceChanged ? colors.accentText : colors.muted },
+                ]}
+              >
+                Save price
+              </Text>
+            )}
+          </AnimatedPressable>
+        </View>
+      </BottomSheetModal>
     </View>
   );
 }
@@ -521,6 +687,21 @@ const styles = StyleSheet.create({
   },
   repPillText: { fontSize: 11, fontWeight: fontWeight.bold },
   sellerMeta: { fontSize: textToken.xs, lineHeight: 16 },
+  // 16 is the screen gutter the rest of the app uses (ui-playbook); the sheet
+  // must not sit at a different width from the screen behind it.
+  sheetBody: { paddingHorizontal: 16, paddingBottom: 16, gap: 10 },
+  sheetLabel: { fontSize: textToken.sm },
+  priceField: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md,
+    paddingHorizontal: 14, height: 56,
+  },
+  priceCurrency: { fontSize: textToken.md, fontWeight: fontWeight.bold },
+  // Large because it is the only input in the sheet and the figure is the
+  // decision — a 15pt field for the number that sells the item reads as an
+  // afterthought.
+  priceInput: { flex: 1, fontSize: 24, fontWeight: fontWeight.bold, padding: 0 },
+  sheetNote: { fontSize: textToken.xs, lineHeight: 17 },
   notice: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
