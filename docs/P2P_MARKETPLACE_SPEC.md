@@ -655,3 +655,139 @@ Still open:
 - Geography: NL-only first? Cross-border consumer law is materially harder
 - Does a `sparrow` listing count toward the free plan's watchlist/alert caps, or
   is listing always free? (Recommend: listing always free — supply is the point)
+
+## 8. What actually made Vinted work — and which parts we can copy
+
+Researched 2026-08-08. §5a already covers what Vinted **is** structurally (an
+EMI licence, a logistics subsidiary, a staffed dispute org). This section is the
+other question: what did they *do* that made the marketplace work, and which of
+it is available to us under §5b's facilitation rule.
+
+Sorted by leverage for **this** app, not by how famous the feature is.
+
+### 8a. The finding that reframes everything: they were supply-constrained
+
+Vinted was written down to **zero** by investors in early 2016. The turnaround
+was one decision: **remove seller fees entirely.** Their read was that the
+marketplace was not short of buyers, it was short of *listings* — and that
+casual sellers offloading low-value items were the liquidity engine, while a
+seller fee was taxing exactly that behaviour. Supply rose sharply and the
+flywheel (more listings → more buyers → better matching → more listings) started
+turning.
+
+This is the same diagnosis §1 reaches from a completely different direction:
+**we are building this for supply, and should judge it on `market_hits` created,
+not GMV.** Two independent routes to one conclusion is the strongest signal in
+this document.
+
+**What it forbids, concretely:** never charge to list, and never count a
+`sparrow` listing against a plan cap. The open question at the end of §7 —
+"does a sparrow listing count toward the free plan's watchlist/alert caps?" —
+is answered by this: **no.** Metering supply is the 2015 Vinted mistake.
+
+### 8b. Price drops notify everyone who favourited — and we cannot do it at all
+
+On Vinted, dropping a listing's price **pushes a notification to every member
+who favourited or viewed it**. It is the single most recommended seller action
+in every guide, because it converts stored interest into a sale on demand.
+
+We have the better half of this already and cannot use it:
+
+| Piece | Us | Status |
+|---|---|---|
+| Stored interest | the heart → a `watchlist_items` row with a **target price** | built 2026-08-08 |
+| The alert rail | Target Hit, a paid feature that already fires on price | built |
+| A way to lower a listing's price | — | **does not exist** |
+
+`p2p_listing_router.py` has exactly three write endpoints: `POST /listings`,
+`POST /listings/{id}/delist`, `POST /listings/{id}/report`. **There is no price
+edit of any kind.** A seller who wants to drop their price must delist and
+relist — and if they forget to delist first they hit `409 ALREADY_LISTED`, which
+reads as the app being broken.
+
+Our version is *stronger* than Vinted's when it exists, because a watchlist row
+carries a **target price**: we do not notify everyone, we notify the people whose
+declared target the new price now meets. That is Target Hit firing on a member
+listing, which is the whole thesis of §1.
+
+**This is the highest-leverage missing endpoint in the marketplace.** Not a new
+feature — the connective tissue between three that are already built.
+
+### 8c. Freshness decays, and that is the point
+
+Vinted gives a new listing a visibility boost that **fades within a couple of
+days**, which is why sellers who list a few items several times a week beat
+sellers who dump thirty and vanish.
+
+We sort `created_at DESC` by default, which is the same thing at our volume —
+there is no reason to build decay for a grid that fits on one screen. Worth
+knowing that the mechanism is *decay*, not recency, before anyone tunes ranking
+later.
+
+**Bump / Wardrobe Spotlight — paid visibility — is NOT free money for us.**
+Physical goods between users are outside IAP (§5, and that is the rule, not a
+loophole), but a promotion slot is a **digital service consumed in the app**, so
+Apple would require IAP and take 30%. Selling visibility also cuts against §8a:
+it is a seller fee wearing a different hat. Note it and move on.
+
+### 8d. Listing completeness is measurable, and ours is thin
+
+Two numbers worth designing against:
+
+- listings with **4+ photos sell ~3.5× faster** than single-photo listings
+- **complete** listings get **3–4× more views** than incomplete ones
+
+`app/sell/new.tsx` holds a single `photoUri: string | null` — **one photo, no
+more.** `item_images` supports many (it is keyed on the item, and takes a
+`label`), so this is a client limit, not a schema one.
+
+The Sparrow-specific twist: the field that matters most here is not one Vinted
+has. **`canonical_key` is what decides whether a listing can reach Target Hit at
+all**, and `sell/new.tsx` never sends one — so a marketplace-only listing is
+currently invisible to the alert that is the reason the marketplace exists.
+`reaches_target_hit` reports this back honestly, and the screen shows the notice,
+but honesty about a dead end is not the same as a way out of it.
+
+### 8e. Trust: we must build the felt half without the funded half
+
+Buyer Protection is *why* buyers trust strangers on Vinted — money held until
+the buyer confirms, with a refund path. §5b forbids all of it, and §5a records
+the second reason: committing to buyer protection is DAC7 trigger #2, which we
+must not hit.
+
+So the trust model has to be built from facts we already hold, never from
+representations we would then owe:
+
+| Vinted | Sparrow equivalent | Why it is allowed |
+|---|---|---|
+| Money held until delivery | two-sided `confirm_exchange` | both parties assert; we adjudicate nothing |
+| Refund on "not as described" | **nothing, said plainly** | the listing screen states there is no buyer protection |
+| Ratings | `member_grades` → `completed_trades`, `seller_positive_pct` | a fact about platform history, not a badge about a person (§5b) |
+| Verified seller | **never** | that is a representation, and it forfeits hosting safe harbour |
+
+Their 48h auto-confirm window is an automated "buyer confirms". We have the
+manual version, and §5b explains why the automated one is a trap: auto-completing
+on carrier status substitutes our judgment for the buyer's, and we own it when
+the box turns up empty.
+
+### 8f. Ranked backlog out of this
+
+1. **`PATCH /p2p/listings/{id}` for price** — then wire a price drop into Target
+   Hit for watchers whose target the new price meets (§8b). Highest leverage in
+   this document; three built features currently have no connective tissue.
+2. **Multi-photo listing** in `sell/new.tsx` (§8d). Client-side only.
+3. **Catalogue match in the sell flow**, so a marketplace-only listing can carry
+   a `canonical_key` and actually reach Target Hit (§8d).
+4. Never meter or charge for listing; close §7's open question as "always free"
+   (§8a).
+5. Explicitly **not doing**: paid bumps (§8c), buyer protection (§8e), anything
+   in §5b's right-hand column.
+
+### Sources
+
+- [Sharetribe — How does Vinted make money?](https://www.sharetribe.com/how-to-build/how-does-vinted-make-money/)
+- [Vinted Help — What is an item Bump?](https://www.vinted.com/help/340-what-is-item-bump)
+- [Vinted Help — The Vinted Refund Policy](https://www.vinted.com/help/465-the-vinted-refund-policy)
+- [Vinted — Trust and safety](https://www.vinted.co.uk/safety)
+- [Zipsale — How the Vinted algorithm works](https://www.zipsale.co.uk/blog/how-the-vinted-algorithm-works-2026-tips-to-get-more-views-sales)
+- [Vinta.App — Vinted Buyer Protection: what sellers need to know](https://blog.vinta.app/blog/vinted-buyer-protection-sellers-guide)
