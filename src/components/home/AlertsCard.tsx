@@ -56,11 +56,21 @@ type AlertItemProps = {
   alert: Alert;
   colors: ThemeColors;
   onPress?: () => void;
-  alertActive: boolean;
-  onToggleAlert?: () => void;
 };
 
-function AlertItem({ alert, colors, onPress, alertActive, onToggleAlert }: AlertItemProps) {
+// The bell that used to sit here was REMOVED 2026-08-08.
+//
+// It DID toggle — but only a `Set<string>` held in this component's own state.
+// Nothing was persisted and nothing reached the server, so the "setting" reset
+// the moment the card remounted, and no worker ever consulted it. A control
+// that animates, changes icon, and silently forgets is worse than no control:
+// the user believes they have muted an alert and keeps receiving it.
+//
+// Nothing replaced it because there is nothing to wire. Alerts are armed by a
+// watchlist row's `target_price`, and a per-fired-alert mute is not a concept
+// this data model has. Category-level muting already exists and is real —
+// user_settings.notification_preferences, honoured by notify_user.
+function AlertItem({ alert, colors, onPress }: AlertItemProps) {
   const iconColor = getAlertColor(alert.type, colors);
 
   return (
@@ -88,21 +98,6 @@ function AlertItem({ alert, colors, onPress, alertActive, onToggleAlert }: Alert
         <Text style={[styles.targetPrice, { color: colors.text }]}>
           {formatPrice(alert.value)}
         </Text>
-        <AnimatedPressable
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-            onToggleAlert?.();
-          }}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={alertActive ? 'Disable deal alert' : 'Enable deal alert'}
-        >
-          <Ionicons
-            name={alertActive ? 'notifications' : 'notifications-off-outline'}
-            size={16}
-            color={alertActive ? colors.accent : colors.muted}
-          />
-        </AnimatedPressable>
       </View>
     </AnimatedPressable>
   );
@@ -111,19 +106,6 @@ function AlertItem({ alert, colors, onPress, alertActive, onToggleAlert }: Alert
 function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, showEmptyState = true }: AlertsCardProps) {
   const { colors } = useAppTheme();
   const unreadCount = useMemo(() => alerts.filter((a) => !a.isRead).length, [alerts]);
-  const [activeAlerts, setActiveAlerts] = useState<Set<string>>(() => new Set(alerts.map((a) => a.id)));
-
-  const toggleAlert = (id: string) => {
-    setActiveAlerts((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
 
   // Show card with empty state prompt if no alerts
   if (alerts.length === 0) {
@@ -216,8 +198,6 @@ function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, sh
               alert={alert}
               colors={colors}
               onPress={() => onAlertPress?.(alert)}
-              alertActive={activeAlerts.has(alert.id)}
-              onToggleAlert={() => toggleAlert(alert.id)}
             />
             {idx < Math.min(alerts.length, 3) - 1 && (
               <View style={[styles.separator, { backgroundColor: colors.border }]} />

@@ -480,6 +480,12 @@ export type AlertFeedItem = {
   createdAt: string;
   itemId?: string | null;
   watchlistItemId?: string | null;
+  /** The price the alert actually fired on, from `alert_trigger_history.trigger_value`.
+   *  Was dropped in the mapping, so the Home watchlist card rendered a hardcoded
+   *  `value: 0` — every row showed EUR 0 next to it. */
+  price?: number | null;
+  /** The user's target, for the same reason. */
+  targetPrice?: number | null;
 };
 
 /**

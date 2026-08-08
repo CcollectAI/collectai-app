@@ -37,14 +37,12 @@ import { CATEGORIES } from "@/data/categories";
 import { collectorsApi } from "@/api/collectorsApi";
 import { dataProvider, type Item as DataItem, type PublicUserProfile } from "@/data";
 import { COMMUNITY_GATED } from "@/config/featureFlags";
-import { getJSON, setJSON } from "@/lib/storage";
 import { useToast } from "@/components/Toast";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import logger from "@/utils/logger";
 import { track } from '@/analytics/track';
 import { MarketplaceSearchBar } from '@/components/MarketplaceSearchBar';
 import { MarketplaceFilterPanel } from '@/components/MarketplaceFilterPanel';
-import { RecentSearchesSection } from '@/components/RecentSearchesSection';
 import { SearchResultQuickView } from '@/components/SearchResultQuickView';
 import { SkeletonList } from '@/components/Skeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -108,7 +106,12 @@ type SearchResult = {
   sourceCurrency?: string | null;
 };
 
-const RECENT_SEARCHES_KEY = "collectai_recent_searches";
+// Recent searches REMOVED 2026-08-08, matching app/search.tsx (removed
+// 2026-08-07). The key is cleared once on mount rather than abandoned: an
+// orphaned key keeps a user's search history on the device indefinitely after
+// the feature that justified collecting it is gone, which is the kind of quiet
+// data retention a privacy policy should not have to cover.
+const LEGACY_RECENT_SEARCHES_KEY = "collectai_recent_searches";
 
 // Use category data from the data layer - get all categories for browsing
 const BROWSE_CATEGORIES = CATEGORIES.map((cat) => ({
@@ -136,7 +139,6 @@ const SearchScreen: React.FC = () => {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const [query, setQuery] = useState("");
-  const [recent, setRecent] = useState<string[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   // Escalating status copy for the live aggregation. Marketplace search
   // hits 44 adapters server-side and can legitimately take 30-60 s. A
@@ -308,11 +310,9 @@ const SearchScreen: React.FC = () => {
     return count;
   }, [filterSources, filterConditions, filterMinPrice, filterMaxPrice, filterSort]);
 
-  // Load persisted recent searches on mount
+  // One-shot cleanup of the retired recent-searches key. Not a load.
   useEffect(() => {
-    let cancelled = false;
-    getJSON<string[]>(RECENT_SEARCHES_KEY, []).then((v) => { if (!cancelled) setRecent(v); });
-    return () => { cancelled = true; };
+    AsyncStorage.removeItem(LEGACY_RECENT_SEARCHES_KEY).catch(() => {});
   }, []);
 
   const trimmedQuery = query.trim();
@@ -488,19 +488,12 @@ const SearchScreen: React.FC = () => {
   const handleSubmitSearch = useCallback(() => {
     if (!trimmedQuery) return;
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    // Persist recent search
-    setRecent((prev) => {
-      const existing = prev.filter(
-        (term) => term.toLowerCase() !== trimmedQuery.toLowerCase()
-      );
-      const updated = [trimmedQuery, ...existing].slice(0, 6);
-      setJSON(RECENT_SEARCHES_KEY, updated);
-      return updated;
-    });
     executeSearch(trimmedQuery);
   }, [trimmedQuery, executeSearch, settings.hapticsEnabled]);
 
-  // Also trigger search when tapping a recent search chip
+  // Runs a search from a tapped chip — Popular Searches, the demand-heat
+  // banner and the regional-insights row all use it. (It predates recent
+  // searches, which is why it outlives them.)
   const handleChipPress = useCallback((term: string) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setQuery(term);
@@ -644,15 +637,6 @@ const SearchScreen: React.FC = () => {
             <Text style={[styles.findCollectorsText, { color: colors.accent }]}>{t('marketplace.find_collectors')}</Text>
             <Ionicons name="chevron-forward" size={16} color={colors.accent} />
           </AnimatedPressable>
-        )}
-
-        {/* Recent searches */}
-        {!trimmedQuery && (
-          <RecentSearchesSection
-            theme={colors}
-            recentSearches={recent}
-            onChipPress={handleChipPress}
-          />
         )}
 
         {/* Member marketplace entry — P2P Stage 1.
@@ -1142,7 +1126,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
-  // (chip styles moved to RecentSearchesSection component)
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",

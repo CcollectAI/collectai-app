@@ -93,12 +93,6 @@ const MINE_SECTION_TITLE = 'Show';
  *  furniture the user scrolls past. */
 const INTRO_DISMISSED_KEY = '@sparrowcollect/marketplace_intro_dismissed';
 
-/** Whether the "pick an item, then tap Sell this" handoff has been explained.
- *  It used to be an Alert on EVERY tap, which is the same nagging the intro
- *  banner was made dismissible to avoid — and it put a modal between a seller
- *  and the thing they came to do. Explain once, then get out of the way. */
-const SELL_HINT_SEEN_KEY = '@sparrowcollect/marketplace_sell_hint_seen';
-
 /** The sheet defaults to six sort keys; the marketplace API supports three, so
  *  we narrow the list rather than accept all six and quietly fold four of them
  *  onto 'newest'. That folding is what makes a sheet show "Name (A → Z)" as
@@ -418,10 +412,11 @@ function MemberMarketplaceScreen() {
       [
         {
           text: 'From my collection',
-          onPress: () => {
-            AsyncStorage.setItem(SELL_HINT_SEEN_KEY, '1').catch(() => {});
-            router.push('/(tabs)/items');
-          },
+          // Goes to a PICKER, not the collection tab. Pushing '/(tabs)/items'
+          // dropped the seller into a plain browse screen with no sell mode and
+          // no instruction — and the sell action on an item is far below the
+          // fold, so the flow read as a dead end (reported 2026-08-08).
+          onPress: () => router.push('/sell/pick' as Href),
         },
         {
           text: "It's not in my collection",

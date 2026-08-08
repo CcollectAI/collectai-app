@@ -654,13 +654,6 @@ function WatchlistTabScreen() {
     router.push('/notifications');
   }, [router, settings.hapticsEnabled]);
 
-  // Bulk entry. watchlist-builder was previously reachable ONLY from the alerts
-  // screen; with that screen merged into /notifications this is its sole route.
-  const handleBulkPress = useCallback(() => {
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push('/watchlist-builder');
-  }, [router, settings.hapticsEnabled]);
-
   const handleAddPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     openModal();
@@ -668,7 +661,7 @@ function WatchlistTabScreen() {
 
   const renderHeader = () => (
     <>
-      <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} onBulkPress={handleBulkPress} />
+      <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} />
       <WishlistStatsBar items={items} currency={settings.currency} />
     </>
   );

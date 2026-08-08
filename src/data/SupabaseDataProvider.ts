@@ -117,6 +117,12 @@ export class SupabaseDataProvider implements DataProvider {
         createdAt: t.created_at ?? new Date().toISOString(),
         itemId: t.item_id ?? null,
         watchlistItemId: null,
+        // trigger_value has carried these all along; dropping them is why the
+        // Home watchlist card showed EUR 0 on every row.
+        price: typeof t.trigger_value?.listing_price === 'number'
+          ? t.trigger_value.listing_price : null,
+        targetPrice: typeof t.trigger_value?.target_price === 'number'
+          ? t.trigger_value.target_price : null,
       }));
     } catch (err) {
       logger.error('[SupabaseDataProvider] listAlertsFeed error:', err);

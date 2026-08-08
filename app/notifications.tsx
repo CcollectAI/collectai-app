@@ -66,6 +66,22 @@ function getTypeIcon(type: string): keyof typeof Ionicons.glyphMap {
   return TYPE_ICONS[type] || "notifications-outline";
 }
 
+/** Names where a notification tap will land, so "View" is never a mystery.
+ *
+ *  Our OWN marketplace listings resolve in-app (inAppListingHref); everything
+ *  else is an external marketplace and opens in the browser, so the label says
+ *  which one. A generic "View" hides the difference between staying in the app
+ *  and leaving it — and leaving it is the one a user wants warning about. */
+function ctaLabel(deepLink: string): string {
+  if (inAppListingHref(deepLink)) return 'View listing';
+  const m = /^https?:\/\/(?:www\.)?([^/]+)/i.exec(deepLink);
+  if (!m) return 'Open';
+  // eBay stays "eBay", cardmarket.com stays "cardmarket" — the registrable
+  // name is what a seller recognises, not the full host.
+  const host = m[1].split('.')[0];
+  return `View on ${host.charAt(0).toUpperCase()}${host.slice(1)}`;
+}
+
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   if (diff < MS_PER_WEEK) return timeAgo(iso);
@@ -276,6 +292,27 @@ function NotificationsScreen() {
                 {item.body}
               </Text>
             ) : null}
+            {/* An explicit destination. The whole row has always been
+                pressable and handleTap has always routed correctly — but
+                nothing SAID so, and nothing said where it went, so a deal
+                notification read as a dead banner. Reported 2026-08-08: "no
+                intent behind the notification banner ... a user can actually
+                action on the item".
+                Rendered only when there IS somewhere to go, and it names the
+                destination, because "View" on a row that opens eBay and "View"
+                on one that opens our own listing are different promises. */}
+            {item.deep_link ? (
+              <View style={s.ctaRow}>
+                <Ionicons
+                  name={inAppListingHref(item.deep_link) ? 'pricetag-outline' : 'open-outline'}
+                  size={13}
+                  color={theme.accent}
+                />
+                <Text style={[s.ctaText, { color: theme.accent }]} numberOfLines={1}>
+                  {ctaLabel(item.deep_link)}
+                </Text>
+              </View>
+            ) : null}
             <Text style={[s.rowTime, { color: theme.muted }]}>
               {relativeTime(item.created_at)}
             </Text>
@@ -398,6 +435,8 @@ const s = StyleSheet.create({
     fontSize: textToken.md,
     lineHeight: 18,
   },
+  ctaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  ctaText: { fontSize: textToken.xs, fontWeight: fw.bold },
   rowTime: {
     fontSize: textToken.xs,
     marginTop: 2,

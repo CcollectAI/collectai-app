@@ -47,7 +47,7 @@ import {
   View, Text, TextInput, StyleSheet, ScrollView, ActivityIndicator, Image, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -83,6 +83,15 @@ function SellNewScreen() {
   const [condition, setCondition] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  // Set when arriving from app/sell/pick.tsx. Its presence switches this screen
+  // from "create an item and list it" to "list the item I already own", which
+  // is a materially better listing: it inherits canonical_key and category from
+  // the item, so the supply hook writes a buyable row and everyone watching is
+  // alerted. One composer for both routes — two would drift, and this one
+  // already owns the photo, the consent checkbox and the reach notice.
+  const { itemId } = useLocalSearchParams<{ itemId?: string }>();
+  const fromCollection = typeof itemId === 'string' && itemId.length > 0;
+
   const [consent, setConsent] = useState(false);
   const [saving, setSaving] = useState(false);
   // The catalogue match. `canonical_key` is what decides whether this listing
@@ -100,7 +109,11 @@ function SellNewScreen() {
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [price]);
 
-  const canList = title.trim().length >= 2 && parsedPrice != null && !saving;
+  // From the collection the SERVER supplies the name from the item, so a typed
+  // title is neither required nor used. Requiring one would block the flow on a
+  // field the seller cannot see.
+  const canList = (fromCollection || title.trim().length >= 2)
+    && parsedPrice != null && !saving;
 
   const categoryName = useMemo(
     () => CATEGORIES.find((c) => c.slug === categorySlug)?.name ?? null,
@@ -188,13 +201,21 @@ function SellNewScreen() {
       // there is actually a photo to consent about — sending true with no
       // photo would record a permission the seller never considered.
       const listing = await collectorsApi.createListing({
-        title: title.trim(),
+        // With an item_id the server INHERITS name, category and canonical_key
+        // from the item and ignores the free-text fields — so sending them too
+        // would be dead weight at best and a contradiction at worst. Ownership
+        // is enforced server-side either way.
+        ...(fromCollection
+          ? { item_id: itemId }
+          : {
+              title: title.trim(),
+              category: categorySlug ?? undefined,
+              // The whole point of the match. Without this the server's supply
+              // hook skips the listing and `reaches_target_hit` is false.
+              canonical_key: match?.item_key ?? undefined,
+            }),
         price: parsedPrice,
         currency: settings.currency,
-        category: categorySlug ?? undefined,
-        // The whole point of the match. Without this the server's supply hook
-        // skips the listing and `reaches_target_hit` comes back false.
-        canonical_key: match?.item_key ?? undefined,
         condition_label: condition ?? undefined,
         description: description.trim() || undefined,
         photo_catalogue_consent: photoUri ? consent : false,
@@ -341,6 +362,13 @@ function SellNewScreen() {
             </AnimatedPressable>
           ) : null}
 
+          {/* Hidden when listing something you already own: the server inherits
+              name, category and canonical_key from the item, so showing empty
+              fields here would invite the seller to type values that are
+              silently ignored — and a field whose input does nothing is worse
+              than no field. */}
+          {!fromCollection && (
+          <>
           <Text style={[styles.label, { color: colors.text }]}>What is it?</Text>
           <TextInput
             value={title}
@@ -362,6 +390,8 @@ function SellNewScreen() {
             onPress={pickCategory}
             a11y="Choose a category"
           />
+          </>
+          )}
 
           <Text style={[styles.label, { color: colors.text }]}>Price</Text>
           <View style={[styles.field, { borderColor: colors.border, backgroundColor: colors.card }]}>

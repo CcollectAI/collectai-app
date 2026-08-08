@@ -425,7 +425,6 @@ function RootStack() {
         <Stack.Screen name="edit-event" options={iconOnlyHeader} />
         <Stack.Screen name="sponsor/register" options={iconOnlyHeader} />
         <Stack.Screen name="sponsor/dashboard" options={iconOnlyHeader} />
-        <Stack.Screen name="watchlist-builder" options={iconOnlyHeader} />
         {/* Member marketplace (P2P Stage 1). headerShown:false — both screens
             render their own flat ScreenHeader, and the native stack header
             would stack a second bar on top of it. */}
@@ -435,6 +434,11 @@ function RootStack() {
         {/* Marketplace-only selling: list without a collection item. Renders
             its own header, same as the other P2P screens. */}
         <Stack.Screen name="sell/new" options={{ headerShown: false }} />
+        {/* Same as sell/new: the screen renders its own ScreenHeader, so the
+            native one would stack a SECOND header above it. Caught on the
+            simulator 2026-08-08 — the route rendered a back+gear bar and
+            "Choose an item" underneath it. */}
+        <Stack.Screen name="sell/pick" options={{ headerShown: false }} />
         <Stack.Screen name="legal/marketplace-terms" options={{ headerShown: false }} />
         <Stack.Screen name="purchase/index" options={iconOnlyHeader} />
         <Stack.Screen name="purchase/create-mandate" options={iconOnlyHeader} />
