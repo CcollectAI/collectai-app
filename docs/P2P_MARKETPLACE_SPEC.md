@@ -778,10 +778,34 @@ knowing that the mechanism is *decay*, not recency, before anyone tunes ranking
 later.
 
 **Bump / Wardrobe Spotlight — paid visibility — is NOT free money for us.**
-Physical goods between users are outside IAP (§5, and that is the rule, not a
-loophole), but a promotion slot is a **digital service consumed in the app**, so
-Apple would require IAP and take 30%. Selling visibility also cuts against §8a:
-it is a seller fee wearing a different hat. Note it and move on.
+Checked against the actual guideline 2026-08-08 rather than reasoned about, and
+the wording is decisive. Apple's rule names this case explicitly:
+
+> "Digital purchases for content that is experienced or consumed in an app,
+> **including buying advertisements to display in the same app** (such as sales
+> of 'boosts' for posts in a social media app) must use in-app purchase."
+
+A Sparrow bump is a seller buying an advertisement displayed in Sparrow. That is
+the named case, not an analogy. Physical goods between users stay outside IAP
+(§5) — the ITEM is untaxed, the PROMOTION is not.
+
+This is settled precedent, not a grey area: Apple added the clause in October
+2022 aimed at Meta, and from February 2024 boosting a post in the Facebook or
+Instagram iOS app is billed through Apple with a 30% charge. Meta's response was
+to tell advertisers to buy outside the app, which is the only real workaround and
+is pure friction for a solo founder to build.
+
+**And it cuts against §8a anyway.** Vinted's own numbers: Buyer Protection is
+~75–80% of revenue, and bumps/spotlights/ads are the minority slice of €1.1bn
+(2025). So the stream that actually funds Vinted is the one §5b forbids us
+outright, and the small stream is the one Apple taxes at 30% *and* that §8a
+identifies as a seller fee wearing a different hat — the exact thing that nearly
+killed them in 2015.
+
+Conclusion: **do not build paid bumps.** Not because of the 30% alone, but
+because it is a small, taxed, strategically wrong stream. Sparrow's marketplace
+is judged on `market_hits` created (§1), not on marketplace revenue — the
+revenue lives in the subscription the supply makes worth buying.
 
 ### 8d. Listing completeness is measurable, and ours is thin
 
@@ -847,3 +871,6 @@ the box turns up empty.
 - [Vinted — Trust and safety](https://www.vinted.co.uk/safety)
 - [Zipsale — How the Vinted algorithm works](https://www.zipsale.co.uk/blog/how-the-vinted-algorithm-works-2026-tips-to-get-more-views-sales)
 - [Vinta.App — Vinted Buyer Protection: what sellers need to know](https://blog.vinta.app/blog/vinted-buyer-protection-sellers-guide)
+- [Sharetribe — Vinted revenue mix (Buyer Protection ~75–80%)](https://www.sharetribe.com/how-to-build/how-does-vinted-make-money/)
+- [CNBC — Apple's App Store rules on boosted ads (Oct 2022)](https://www.cnbc.com/2022/10/26/apples-new-app-store-rules-over-boosted-ads-provoke-facebook-again-.html)
+- [AppleInsider — Meta billed through Apple for boosts from Feb 2024](https://appleinsider.com/articles/24/02/15/apple-and-metas-latest-fight-is-over-social-media-boosted-post-fees-on-iphone)
