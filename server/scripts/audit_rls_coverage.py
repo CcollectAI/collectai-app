@@ -149,13 +149,18 @@ DENY_ALL_OK: dict[str, str] = {
     "demand_signals": "Demand telemetry written by the backend (record_demand_signal); feeds mv_demand_heat.",
 
     # -- market data (incl. monthly partitions) -----------------------------
+    # The PARENT table, not just its partitions — deny-all applies to both.
+    "market_hits": "Ingest writes via upsert_market_hits_batch, workers read. No client path.",
+    # NOTE: the monthly partitions below go stale EVERY month as retention
+    # rotates them out (PARTITION_RETENTION_MONTHS_MARKET_HITS=1). Two July
+    # entries were stale when this ran on 2026-08-08. If this keeps costing
+    # maintenance, match on a `market_hits_y%` prefix instead of listing them.
     "market_hits_default": "market_hits partition; ingest writes via upsert_market_hits_batch, workers read. No client path.",
     "market_hits_archive": "market_hits archive partition; warm-tier data, backend-only.",
-    "market_hits_y2026m07": "market_hits monthly partition; backend-only.",
     "market_hits_y2026m08": "market_hits monthly partition; backend-only.",
     "market_hits_y2026m09": "market_hits monthly partition; backend-only.",
     "price_history_default": "price_history partition; chart data is served through the API, never read directly.",
-    "price_history_y2026m07": "price_history monthly partition; backend-only.",
+    "price_history_y2026m08": "price_history monthly partition; backend-only.",
     "price_ground_truths": "Realised-sale ground truth used for model calibration; backend-only.",
 
     # -- collections / items derived data -----------------------------------

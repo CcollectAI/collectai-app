@@ -92,7 +92,14 @@ _ALLOWED_TABLES = (
     "chat_thread_bans_v1",
     # collection, items & media
     "collections",
-    "item_images",
+    # item_images is NOT here: it has no user_id column (it is keyed on
+    # item_id), so `DELETE FROM item_images WHERE user_id = $1` raised
+    # UndefinedColumnError — which the handler below does NOT catch, so the
+    # whole transaction aborted and DELETE /account failed for every user.
+    # App Store Guideline 5.1.1(v) requires account deletion to work.
+    #
+    # Its rows still go: item_images_item_id_fkey is ON DELETE CASCADE to
+    # items, which IS deleted by user_id. Verified on prod.
     "item_notes_v1",
     "item_valuation_history",
     "item_valuation_keys",
@@ -197,7 +204,25 @@ async def _do_account_delete(conn: asyncpg.Connection, user_id: str) -> None:
                     user_id,
                 )
             except asyncpg.UndefinedTableError:
+                # A dropped table is fine — there is nothing left to delete.
                 pass
+            except asyncpg.UndefinedColumnError:
+                # A table in this list with no user_id column. Deliberately NOT
+                # silent: it means the list is wrong, and the row's data may not
+                # be reachable any other way. Swallowing it would turn a broken
+                # erasure into a green one, which is the worst possible outcome
+                # for a GDPR/App-Store deletion path.
+                #
+                # Logged at ERROR (info/warn are stripped in release) and then
+                # re-raised, so the request fails loudly rather than reporting
+                # success on a partial erasure.
+                logger.error(
+                    "[account] %s is in _ALLOWED_TABLES but has no user_id column — "
+                    "account deletion ABORTED. Either remove it from the list (if it "
+                    "cascades) or delete it through its owning table.",
+                    table,
+                )
+                raise
 
         try:
             await conn.execute("DELETE FROM profiles WHERE id = $1", user_id)

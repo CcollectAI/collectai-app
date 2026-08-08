@@ -31,20 +31,43 @@ import json
 import os
 import re
 import sys
+import pathlib
 from pathlib import Path
 
-try:
-    import asyncpg
-except ImportError:  # pragma: no cover
-    print("asyncpg not installed — run on EC2 (/opt/collectors/.venv)", file=sys.stderr)
-    raise SystemExit(2)
+# asyncpg is only needed for the DATABASE half. `--dump-fe` is the frontend
+# scan and must run on the developer's machine, where asyncpg is not installed —
+# guarding the import unconditionally made phase 1 impossible to run from the
+# only place its answer is correct.
+if "--dump-fe" not in sys.argv:
+    try:
+        import asyncpg
+    except ImportError:  # pragma: no cover
+        print("asyncpg not installed — run on EC2 (/opt/collectors/.venv)", file=sys.stderr)
+        raise SystemExit(2)
 
 REPO = Path(__file__).resolve().parents[2]
 RPC_RE = re.compile(r"""\.rpc\(\s*['"`]([a-z0-9_]+)['"`]""")
 
 
 def fe_rpc_names() -> dict[str, list[str]]:
-    """rpc name -> call sites, from app/ and src/."""
+    """rpc name -> call sites, from app/ and src/.
+
+    MUST run against the developer's checkout, never EC2.
+
+    /opt/collectors/src exists and is a copy of the frontend from 2026-04-12 —
+    four months stale. Scanning it made this audit report the APRIL codebase:
+    18 "BROKEN" RPCs that were genuine calls back then and have since been
+    migrated to REST/HTTP, every one of which now survives only as a comment
+    explaining why the RPC was never deployed.
+
+    A gate reporting 18 false criticals is worse than no gate — it is the
+    "cries wolf" failure scripts/api.lock.json's _about note warns about, and
+    it had been doing this for four months. Same shape as
+    learning_three_way_code_split.
+
+    So: this half runs LOCALLY (--dump-fe) and the database half runs on EC2
+    (--fe-file), and the two are joined explicitly.
+    """
     out: dict[str, list[str]] = {}
     for root in ("app", "src"):
         base = REPO / root
@@ -63,16 +86,45 @@ def fe_rpc_names() -> dict[str, list[str]]:
     return out
 
 
+def _dump_fe() -> None:
+    """PHASE 1, run LOCALLY: emit the FE's rpc call sites as JSON."""
+    import json as _json
+    print(_json.dumps(fe_rpc_names(), indent=2))
+
+
 async def main() -> int:
+    if "--dump-fe" in sys.argv:
+        _dump_fe()
+        return 0
+
     dsn = os.environ.get("DB_DSN_DIRECT") or os.environ.get("DB_DSN")
     if not dsn:
         print("DB_DSN_DIRECT not set", file=sys.stderr)
         return 2
 
-    calls = fe_rpc_names()
+    # PHASE 2: take the FE call sites from a local --dump-fe rather than
+    # scanning here. See fe_rpc_names' docstring — the copy of the frontend
+    # under /opt/collectors is four months stale and made this audit report a
+    # codebase that no longer exists.
+    fe_file = None
+    for i, a in enumerate(sys.argv):
+        if a == "--fe-file" and i + 1 < len(sys.argv):
+            fe_file = sys.argv[i + 1]
+    if fe_file:
+        import json as _json
+        calls = _json.loads(pathlib.Path(fe_file).read_text())
+    else:
+        calls = fe_rpc_names()
+        if not calls:
+            print(
+                "no supabase.rpc() calls found. If this ran on EC2, that is the "
+                "BUG, not the answer — pass --fe-file from a local --dump-fe.",
+                file=sys.stderr,
+            )
+            return 2
     if not calls:
-        print("no supabase.rpc() calls found in app/ or src/ — is the repo present?", file=sys.stderr)
-        return 2
+        print("no supabase.rpc() calls in the FE", file=sys.stderr)
+        return 0
 
     conn = await asyncpg.connect(dsn)
     try:

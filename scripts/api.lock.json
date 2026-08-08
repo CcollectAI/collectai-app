@@ -1,5 +1,5 @@
 {
-  "_about": "Frozen FastAPI route table. Regenerated 2026-08-07 from the LIVE /openapi.json (542 routes) after the DSA moderation endpoints landed. DO NOT regenerate this with scripts/regen_api_lock.py: it scans SOURCE and cannot resolve the /v1 mount, so it drops ~250 routes to their unprefixed form and yields 332 \u2014 the same drift as the Apr-29 lock that fell to 303 and made audit_fe_api_drift.py report 7 false positives, all of which existed in production. A gate that cries wolf is a gate people stop reading. Regenerate with: ssh collectai 'curl -s -H \"Host: api.sparrowcollect.com\" http://127.0.0.1:8000/openapi.json' then flatten paths x methods.",
+  "_about": "Frozen FastAPI route table. Regenerated 2026-08-08 from the LIVE /openapi.json (545 routes) after the P2P price-edit and watchlist-matches endpoints landed. DO NOT regenerate this with scripts/regen_api_lock.py: it scans SOURCE and cannot resolve the /v1 mount, so it drops ~250 routes to their unprefixed form and yields 332 \u2014 the same drift as the Apr-29 lock that fell to 303 and made audit_fe_api_drift.py report 7 false positives, all of which existed in production. A gate that cries wolf is a gate people stop reading. Regenerate with: ssh collectai 'curl -s -H \"Host: api.sparrowcollect.com\" http://127.0.0.1:8000/openapi.json' then flatten paths x methods.",
   "routes": [
     {
       "method": "DELETE",
@@ -52,6 +52,10 @@
     {
       "method": "DELETE",
       "path": "/ops/seed-users"
+    },
+    {
+      "method": "DELETE",
+      "path": "/p2p/catalogue-contributions"
     },
     {
       "method": "DELETE",
@@ -688,6 +692,10 @@
     {
       "method": "GET",
       "path": "/p2p/offers"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/watchlist-matches"
     },
     {
       "method": "GET",
@@ -1372,6 +1380,10 @@
     {
       "method": "PATCH",
       "path": "/notifications/{notification_id}/read"
+    },
+    {
+      "method": "PATCH",
+      "path": "/p2p/listings/{listing_id}"
     },
     {
       "method": "PATCH",

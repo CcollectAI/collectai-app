@@ -127,8 +127,13 @@ function SellNewScreen() {
       // listing (learning_keyword_filters_need_per_category_false_positive_audit).
       setMatch(res.best ?? null);
     } catch (e) {
-      // Never blocks listing. A catalogue miss costs reach, not the sale.
-      logger.warn('[sell/new] catalogue match failed:', e);
+      // Never blocks listing — a catalogue miss costs reach, not the sale.
+      //
+      // Still logger.ERROR: warn is stripped in release builds, and an
+      // unmatched listing is precisely the failure worth seeing in production
+      // (it cannot reach Target Hit, spec §8d). Silent in the build that
+      // matters is how the canonical_key gap went unmeasured for months.
+      logger.error('[sell/new] catalogue match failed:', e);
       setMatch(null);
     } finally {
       setMatching(false);

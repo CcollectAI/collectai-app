@@ -136,9 +136,15 @@ function WatchlistTabScreen() {
       for (const m of rows) byRow[m.watchlist_id] = m;
       setMatches(byRow);
     } catch (err) {
-      // warn, not error, and no toast: this is additive. Telling the user their
-      // watchlist failed because an enrichment call did would be false.
-      logger.warn('[Watchlist] marketplace matches unavailable:', err);
+      // NO TOAST — this is additive, and telling the user their watchlist
+      // failed because an enrichment call did would be false.
+      //
+      // But logger.ERROR, not warn: info/warn are stripped from release builds
+      // (CLAUDE.md), so a warn here is invisible on TestFlight and production —
+      // the exact builds where a silently-missing marketplace row matters. The
+      // "don't alarm the user" judgement belongs to the toast, not to whether
+      // the failure leaves a trace at all.
+      logger.error('[Watchlist] marketplace matches unavailable:', err);
     }
   }, []);
 
