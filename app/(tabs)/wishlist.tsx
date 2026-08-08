@@ -36,6 +36,7 @@ import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
 import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
 import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
+import { saveCSVAndShare } from '@/export/csv';
 import { collectorsApi } from '@/api/collectorsApi';
 import type { P2PWatchlistMatch } from '@/api/p2pApi';
 import type { CurrencyCode } from '@/data/types';
@@ -48,6 +49,37 @@ import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG } from '@/constants/categ
 const CONGRATS_DISPLAY_DURATION = 2000;
 const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as const };
 const CATEGORIES = [...ALL_CATS.map((c) => c.name), 'Other'];
+
+/**
+ * Watchlist -> CSV. Recovered verbatim from app/watchlist-builder.tsx when that
+ * screen was deleted 2026-08-08: the SCREEN was redundant, the export was not.
+ *
+ * Quotes any field containing a comma, quote or newline, and doubles inner
+ * quotes — the minimum that survives a round-trip into a spreadsheet. Without
+ * it a title like `Charizard, 1st ed.` silently becomes two columns.
+ */
+function watchlistToCSV(items: WatchlistItem[], currency: string): string {
+  const escape = (v: unknown) => {
+    if (v == null) return '';
+    const str = String(v);
+    return /[,"\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  };
+  const head = ['Title', 'Priority', 'Target Price', 'Market Price', 'Currency', 'Category', 'Notes', 'Created'];
+  const lines = [head.join(',')];
+  for (const item of items) {
+    lines.push([
+      escape(item.title),
+      escape(item.priority),
+      escape(item.targetPrice != null ? item.targetPrice.toFixed(2) : ''),
+      escape(item.lastMarketPrice != null ? item.lastMarketPrice.toFixed(2) : ''),
+      escape(currency),
+      escape(item.category ?? ''),
+      escape(item.notes ?? ''),
+      escape(item.createdAt ?? ''),
+    ].join(','));
+  }
+  return lines.join('\n');
+}
 
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return '';
@@ -83,6 +115,14 @@ function WatchlistTabScreen() {
   const [formCategory, setFormCategory] = useState('');
   const [formTargetPrice, setFormTargetPrice] = useState('');
   const [formNotes, setFormNotes] = useState('');
+  // BULK ADD, recovered from the deleted watchlist-builder as a MODE rather than
+  // a screen. Bulk entry is just rapid repeat entry: the friction was never the
+  // form, it was closing and reopening it. With this on, a successful add clears
+  // only the title and keeps the modal, the category and the target — because
+  // bulk entry is almost always many items of ONE category at ONE budget, which
+  // is exactly what the old screen assumed when it remembered the category for
+  // the session.
+  const [keepAdding, setKeepAdding] = useState(false);
   const [categoryPickerVisible, openCategoryPicker, closeCategoryPicker] = useModal();
 
   // Edit target price state
@@ -259,8 +299,16 @@ function WatchlistTabScreen() {
       }
 
       track({ name: 'watchlist_item_added', properties: { category: categorySlug } });
-      closeModal();
-      resetForm();
+      if (keepAdding) {
+        // Title only. Category and target survive deliberately — retyping them
+        // for every row is the friction the separate bulk screen existed to
+        // remove.
+        setFormTitle('');
+        setFormNotes('');
+      } else {
+        closeModal();
+        resetForm();
+      }
       loadItems();
     } catch (err: any) {
       showToast({ message: err?.message || 'Failed to add item.', type: 'error' });
@@ -654,6 +702,24 @@ function WatchlistTabScreen() {
     router.push('/notifications');
   }, [router, settings.hapticsEnabled]);
 
+  const handleExport = useCallback(async () => {
+    if (items.length === 0) {
+      showToast({ message: 'Nothing to export yet.', type: 'warning' });
+      return;
+    }
+    try {
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      const csv = watchlistToCSV(items, settings.currency);
+      await saveCSVAndShare(
+        `watchlist_${new Date().toISOString().slice(0, 10)}.csv`,
+        csv,
+      );
+    } catch (err) {
+      logger.error('[Watchlist] CSV export failed:', err);
+      showToast({ message: 'Could not export your watchlist.', type: 'error' });
+    }
+  }, [items, settings.currency, settings.hapticsEnabled, showToast]);
+
   const handleAddPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     openModal();
@@ -661,7 +727,7 @@ function WatchlistTabScreen() {
 
   const renderHeader = () => (
     <>
-      <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} />
+      <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} onExportPress={handleExport} />
       <WishlistStatsBar items={items} currency={settings.currency} />
     </>
   );
@@ -758,6 +824,28 @@ function WatchlistTabScreen() {
             />
 
             {/* Save Button */}
+            {/* Bulk add, as a mode. Keeps the sheet, the category and the target
+                after a save so the next row is one field of typing. */}
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                setKeepAdding((v) => !v);
+              }}
+              style={styles.keepAddingRow}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: keepAdding }}
+              accessibilityLabel="Keep adding — stay here after saving so you can add several items"
+            >
+              <Ionicons
+                name={keepAdding ? 'checkbox' : 'square-outline'}
+                size={19}
+                color={keepAdding ? colors.accent : colors.muted}
+              />
+              <Text style={[styles.keepAddingText, { color: colors.muted }]}>
+                Keep adding — stay here and reuse this category and target
+              </Text>
+            </AnimatedPressable>
+
             <AnimatedPressable
               style={[styles.saveBtn, { backgroundColor: colors.accent }]}
               onPress={handleAdd}
@@ -1060,6 +1148,11 @@ const styles = StyleSheet.create({
     fontSize: text.sm,
     fontWeight: fontWeight.medium,
   },
+  keepAddingRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingVertical: 10, marginBottom: 4,
+  },
+  keepAddingText: { flex: 1, fontSize: text.xs, lineHeight: 17 },
   memberListing: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,

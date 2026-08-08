@@ -12,11 +12,15 @@ import { radius, text, fontWeight } from '@/theme/tokens';
 interface WishlistSortControlsProps {
   onAlertsPress: () => void;
   onAddPress: () => void;
+  /** CSV export. Recovered onto this screen when watchlist-builder was deleted —
+   *  the screen was redundant, the export was not. */
+  onExportPress: () => void;
 }
 
 export const WishlistSortControls = React.memo(function WishlistSortControls({
   onAlertsPress,
   onAddPress,
+  onExportPress,
 }: WishlistSortControlsProps) {
   const { colors } = useAppTheme();
 
@@ -33,6 +37,17 @@ export const WishlistSortControls = React.memo(function WishlistSortControls({
       </AnimatedPressable>
 
       <View style={styles.rightGroup}>
+        {/* Icon-only: export is a power action, and a third worded pill would
+            crowd the row the Bulk pill was removed from. */}
+        <AnimatedPressable
+          style={[styles.exportPill, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={onExportPress}
+          accessibilityRole="button"
+          accessibilityLabel="Export your watchlist as a CSV file"
+        >
+          <Ionicons name="download-outline" size={17} color={colors.accent} />
+        </AnimatedPressable>
+
         <AnimatedPressable
           style={[styles.addPill, { backgroundColor: colors.accent }]}
           onPress={onAddPress}
@@ -55,6 +70,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   rightGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  exportPill: {
+    alignItems: 'center', justifyContent: 'center',
+    width: 42, height: 42, borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   alertsPill: {
     flexDirection: 'row',
     alignItems: 'center',
