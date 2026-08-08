@@ -231,6 +231,111 @@ prod that satisfies all three conditions.
 > left alone; if that changes, they need a backfill (category ← slug, and a
 > target price) or a delete.
 
+## THE MAP — alerts & notifications end to end (2026-08-08)
+
+Written because the duplicate-screen problem was found by Merle asking, not by
+any check. Every doc read in this codebase is scoped to the file being edited,
+which is the right rule for editing and is structurally incapable of surfacing
+"there are four stores for one concept". This section is the zoom-out.
+
+### Both stores converge on ONE table
+
+The marketplace has two supply sides and they are deliberately not separate
+pipelines:
+
+```
+EXTERNAL STORE                              INTERNAL STORE
+44 marketplace adapters                     Sparrow P2P listings
+(ebay, cardmarket, crawl4ai, discogs…)      (member sells an item)
+        |                                            |
+        | marketplace_scrape_worker                  | _publish_supply_hook
+        | valuation/ingest RPCs                      | _price_change_hook
+        v                                            v
+        +--------------->  market_hits  <------------+
+                           provider='sparrow' marks ours
+                                  |
+                    is_listing = TRUE and url IS NOT NULL
+                                  |
+                                  v
+              deal_discovery_worker._check_watchlist_snipes
+                 join: mh.item_ref = w.category || ':' || w.item_id
+                 gate: mh.price_eur <= w.target_price
+                 dedupe: 24h per watchlist row + plan cap
+                                  |
+                 +----------------+----------------+
+                 v                                 v
+       alert_trigger_history                  notify_user()
+       (Home AlertsCard reads this)                |
+                                     +-------------+-------------+
+                                     v                           v
+                            notification_history            push_outbox
+                            (Notifications screen)          (device push)
+```
+
+**The single most important property:** an internal listing is not a second
+alert path. It writes the same `market_hits` shape with `provider='sparrow'`,
+so it flows through the exact same detection, dedupe and plan gating as an eBay
+row. That is why the P2P marketplace could be added without touching the alert
+worker at all (spec §1), and it is why a price drop needed only a row UPDATE
+(§8b) rather than a new notification type.
+
+### Every store, and who reads it
+
+Measured on prod 2026-08-08.
+
+| Store | Rows | Written by | Read by | Verdict |
+|---|---:|---|---|---|
+| `market_hits` | 989k | both stores | valuation, snipe, catalog | ✅ the spine |
+| `alert_trigger_history` | 102 | `deal_discovery_worker` | Home `AlertsCard` (`useAlertsFeed`) | ✅ live |
+| `notification_history` | 11 | `notify_user` / `_persist_only` | `GET /notifications/history` → Notifications screen | ✅ live |
+| `push_outbox_v1` | 0 | push worker | push worker | ✅ drains to empty |
+| `user_price_alerts` | 4 | **nothing** (writer removed 2026-08-05, deliberately) | `GET /alerts/mine` | ⚠️ empty by design |
+| `user_notifications` | 188 | pg_cron 30 → `rpc_emit_smart_guidance_v1` | **nothing** — 0/188 read | ❌ orphan, cron DISABLED 2026-08-08 |
+| `alerts_outbox` | 31 | `produce_alerts_price_drop_30d` (job 21, **inactive**), `produce_alerts_price_spike_7d` (job 24, **inactive**) | **nothing** | ❌ orphan; **its janitor `cleanup_alerts_outbox` (job 25) is still ACTIVE**, cleaning a table nothing writes |
+| `alert_delivery_queue` | 27 | `_alerts_enqueue` (DB) | **nothing** — zero repo references | ❌ orphan |
+| `notifications` | 0 | nothing | nothing | ❌ ghost table |
+| `notification_impressions` / `_interactions` / `_outcomes` | 0 | outcome RPCs | outcome RPCs | ⚠️ analytics, never exercised |
+
+**Four dead alert stores** (`user_notifications`, `alerts_outbox`,
+`alert_delivery_queue`, `notifications`) against **two live ones**.
+
+### Why nothing caught this
+
+Every gate in the repo watches PRODUCERS. None watched CONSUMERS.
+
+| Gate | Question it asks | Blind to |
+|---|---|---|
+| `worker_output_registry` + silent_writer probe | "is the declared writer still writing?" | a healthy writer feeding a table nobody reads — it goes GREEN by design |
+| `audit_writer_reader_drift.py` | column read/written mismatch **within `server/`** | writers that are pg_cron jobs or DB functions — not in the repo at all |
+| `audit_full_chain.py` | FE call → BE handler → DB table, traced **downward** | a store with no FE entry point; there is nothing to trace from |
+| `audit_rls_coverage.py` | is RLS enabled, and why is it exempt | it *asked* the right question and accepted a FALSE answer — `user_notifications` was justified as "served through /notifications", which reads a different table |
+
+The last row is the sharpest lesson: the justification list is a good mechanism,
+and a wrong entry in it is worse than no entry, because it answers the
+reviewer's question and ends the investigation.
+
+### The gate that now exists
+
+`server/scripts/audit_orphan_stores.py` — the missing axis. It starts at the
+DATABASE (`cron.job` + `pg_proc`), enumerates what is being written, and demands
+a reader in `server/`, `src/` or `app/`. Where a table has an engagement column
+(`read`, `read_at`, `dismissed_at`) it corroborates with VALUES: 0/188 rows ever
+read is proof, not a failed grep (`learning_validate_values_not_just_structure`).
+
+**Two phases, and that split is load-bearing.** The first version ran entirely on
+EC2 and reported `market_hits`, `items` and `profiles` as orphans — tables read
+on nearly every screen — because `/opt/collectors` has no `src/` or `app/`, so
+every reader lookup silently returned nothing. Same shape as
+`learning_ec2_deploy_path`: it ran, exited 0, and was confidently wrong.
+
+```bash
+ssh collectai '… audit_orphan_stores.py --dump-writers' > /tmp/writers.json
+python3 server/scripts/audit_orphan_stores.py --writers-file /tmp/writers.json
+```
+
+Current state: **17 orphans, 10 with rows.** Known-good ones go in
+`KNOWN_ORPHANS` with a reason that must be TRUE.
+
 ## A THIRD notification system, in the database (investigated 2026-08-08)
 
 Flagged during the screen consolidation as "188 rows, no reader". Investigated;
