@@ -106,3 +106,10 @@ supabase/.temp/
 
 # Local agent worktrees — embedded git repos, never commit
 .claude/worktrees/
+
+# The schema lock lives at scripts/schema.lock.json and nothing reads any other
+# copy — every audit script resolves ROOT/"scripts"/"schema.lock.json". A second
+# copy under server/ got committed once by scp'ing the EC2 file to the wrong
+# path; two lock files that can be regenerated independently is exactly the
+# silent-drift shape this repo keeps paying for.
+server/scripts/schema.lock.json

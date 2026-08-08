@@ -202,26 +202,6 @@ class ListingOut(BaseModel):
     # Keep this expression identical to the guard in _publish_supply_hook —
     # pinned by test_reaches_target_hit_matches_the_hook_precondition.
     reaches_target_hit: bool = False
-    # ── The viewer's own watchlist row for this listing, if any ───────────────
-    # Vinted's grid runs on a heart you can tap WITHOUT opening the item, and a
-    # heart is only honest if it can render already-filled. `watchers` is a
-    # count and cannot answer "am I one of them", so the grid had no way to draw
-    # the filled state and no id to DELETE with.
-    #
-    # This is the watchlist row id, not a bool, precisely because un-hearting
-    # needs it: DELETE /watchlist/mine/{watch_id}. Returning a bool would have
-    # forced the client to re-fetch the whole watchlist just to undo a tap.
-    #
-    # Null for anonymous callers ($6 is NULL, so the subselect is NULL), which
-    # is the correct render: a logged-out browser sees an empty heart that
-    # prompts sign-in rather than a wrong filled one.
-    #
-    # Only meaningful when `reaches_target_hit` — the watchlist is keyed on
-    # (item_id = canonical_key, category), so a listing with no canonical
-    # identity has nothing to watch. Same precondition, deliberately: a heart
-    # that silently does nothing is the silent-fallback failure this codebase
-    # keeps paying for.
-    viewer_watch_id: Optional[str] = None
     status: str
     created_at: Optional[datetime] = None
     is_mine: bool = False
@@ -909,18 +889,6 @@ async def browse_listings(
                      WHERE w.item_id = l.canonical_key
                        AND w.category = l.category
                        AND w.user_id <> l.user_id) AS watchers,
-                   -- The viewer's OWN row, so the grid can draw a filled heart
-                   -- and knows what to DELETE to undo it. Separate subselect
-                   -- rather than a flag on the count above, because that one
-                   -- deliberately EXCLUDES the seller and this one must not:
-                   -- a seller watching their own catalogue item still has a
-                   -- row, and hiding it would make their heart untappable.
-                   -- NULL when $6 is NULL (anonymous) — an empty heart.
-                   (SELECT w2.id FROM public.watchlist_items w2
-                     WHERE w2.item_id = l.canonical_key
-                       AND w2.category = l.category
-                       AND w2.user_id = $6::uuid
-                     LIMIT 1) AS viewer_watch_id,
                    p.display_name, p.username,
                    -- EUR-normalised price, computed ONCE and then used by both
                    -- the bounds and the sort below. It used to be the same
@@ -997,7 +965,6 @@ async def browse_listings(
             image_url=r["image_url"],
             image_is_catalog=bool(r["image_is_catalog"]),
             watchers=int(r["watchers"] or 0),
-            viewer_watch_id=str(r["viewer_watch_id"]) if r["viewer_watch_id"] else None,
             seller_name=r["display_name"] or r["username"],
             status=r["status"], created_at=r["created_at"],
             reaches_target_hit=_reaches_target_hit(r["canonical_key"], r["category"]),
@@ -1246,16 +1213,7 @@ async def get_listing(
                        AND w.category = l.category
                        AND w.user_id <> l.user_id
                        AND w.target_price IS NOT NULL
-                       AND w.target_price >= l.price) AS watchers_above,
-                   -- Same viewer row the browse grid selects, so hearting a
-                   -- tile and then opening it does not show an empty heart.
-                   -- Unlike the two counts above this does NOT exclude the
-                   -- seller — see the model comment on viewer_watch_id.
-                   (SELECT w2.id FROM public.watchlist_items w2
-                     WHERE w2.item_id = l.canonical_key
-                       AND w2.category = l.category
-                       AND w2.user_id = $3::uuid
-                     LIMIT 1) AS viewer_watch_id
+                       AND w.target_price >= l.price) AS watchers_above
             FROM public.marketplace_listings l
             LEFT JOIN public.items i ON i.id = l.item_id
             LEFT JOIN public.category_items ci
@@ -1264,7 +1222,7 @@ async def get_listing(
             LEFT JOIN public.profiles p ON p.id = l.user_id
             WHERE l.id = $1::uuid AND l.marketplace_id = $2
             """,
-            listing_id, SPARROW_MARKETPLACE_KEY, user_id,
+            listing_id, SPARROW_MARKETPLACE_KEY,
         )
         # A block hides the listing on the deep-link path too, otherwise the
         # browse filter is cosmetic: a Target Hit URL, a shared link or a
@@ -1310,7 +1268,6 @@ async def get_listing(
         ),
         watchers=int(r["watchers"] or 0),
         watchers_above_price=int(r["watchers_above"] or 0),
-        viewer_watch_id=str(r["viewer_watch_id"]) if r["viewer_watch_id"] else None,
         # A delisted row keeps its stored status ('sold'/'delisted'), so the
         # client can render "sold" rather than implying it is still buyable.
         status=r["status"], created_at=r["created_at"],

@@ -64,17 +64,6 @@ export type P2PListing = {
    *  would get a Target Hit for this listing right now. */
   watchers: number;
   watchers_above_price: number;
-  /** The VIEWER's own watchlist row for this listing's item, or null.
-   *
-   *  The id rather than a boolean because un-hearting needs it —
-   *  `DELETE /watchlist/mine/{watch_id}`. A bool would force the grid to fetch
-   *  the whole watchlist just to undo one tap.
-   *
-   *  Null for anonymous viewers, and null whenever `reaches_target_hit` is
-   *  false: the watchlist is keyed on (item_id = canonical_key, category), so a
-   *  listing with no canonical identity has nothing to watch and the heart must
-   *  not be offered at all. */
-  viewer_watch_id: string | null;
   /** False when the listing has no `canonical_key`/`category`, so the publish
    *  supply hook skipped it and it can NEVER fire a Target Hit. The skip is
    *  deliberate (a weakly-identified buyable row only matches the fuzzy title

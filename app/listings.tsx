@@ -55,8 +55,6 @@ import { convertCurrency } from '@/lib/fx';
 import { formatPrice, getCurrencySymbol } from '@/lib/format';
 import { timeAgoShort } from '@/lib/timeAgo';
 import { collectorsApi } from '@/api/collectorsApi';
-import { dataProvider } from '@/data';
-import { useToast } from '@/components/Toast';
 import {
   countOffersNeedingAction,
   type P2PListing,
@@ -70,19 +68,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import logger from '@/utils/logger';
 
 const NUM_COLUMNS = 2;
-
-/**
- * Placeholder id held between "user tapped the heart" and "the server told us
- * the row id". Any non-null string fills the heart; this one is recognisable in
- * a debugger and can never collide with a real uuid.
- *
- * It exists so the optimistic state is truthful about what it knows: null means
- * "not watched", a uuid means "watched, and here is the row to delete", and
- * this means "watched, but we cannot undo it yet". Reusing null or an empty
- * string for the pending case would have made the heart render unwatched for
- * the length of the round trip — the exact flicker the optimism is for.
- */
-const PENDING_WATCH = 'pending';
 
 /** 12 rows of a 2-column grid. Divisible by NUM_COLUMNS so a full page never
  *  leaves a half-filled last row mid-list, which reads as the end of the data. */
@@ -150,99 +135,20 @@ const SORT_SUMMARY: Record<P2PSort, string> = {
   price_desc: 'priciest first',
 };
 
-/**
- * The favourite control, overlaid on the tile photo — Vinted's pattern, where
- * saving something never costs you your place in the grid.
- *
- * Ours is the WATCHLIST rather than a like, so the count beside it is the same
- * `watchers` shown on the detail screen and the row it writes is what arms a
- * Target Hit. That makes the heart the cheapest possible entry into the paid
- * feature: one tap from browsing, no form.
- *
- * Sits INSIDE the card's Pressable. React Native gives the touch to the
- * innermost responder, so tapping the heart does not also open the listing —
- * but the hitSlop is deliberately generous because the two targets are
- * adjacent and a mis-tap here navigates away, which is the annoying direction
- * to get wrong.
- */
-function WatchHeart({
-  listing,
-  watched,
-  onToggleWatch,
-}: {
-  listing: P2PListing;
-  watched: boolean;
-  onToggleWatch: () => void;
-}) {
-  const { colors } = useAppTheme();
-  return (
-    <AnimatedPressable
-      onPress={onToggleWatch}
-      // The tile is ~170pt wide; a bare 28pt chip is under the 44pt minimum, so
-      // the slop carries it the rest of the way rather than growing the chip
-      // and covering the photo.
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      style={[styles.heart, { backgroundColor: colors.background + 'E6' }]}
-      accessibilityRole="button"
-      // The STATE has to be in the label, not just the icon fill: to a
-      // screen-reader user a filled heart and an empty one are the same button.
-      accessibilityState={{ selected: watched }}
-      accessibilityLabel={
-        watched
-          ? `Remove ${listing.title} from your watchlist`
-          : `Add ${listing.title} to your watchlist and get alerted on price drops`
-      }
-    >
-      <Ionicons
-        name={watched ? 'heart' : 'heart-outline'}
-        size={15}
-        // Accent when on, muted when off — the same on/off vocabulary the rest
-        // of the app uses. NOT red: red is reserved for destructive and error
-        // states here, and a red heart on every tile would read as alarm.
-        color={watched ? colors.accent : colors.muted}
-      />
-      {listing.watchers > 0 ? (
-        <Text style={[styles.heartCount, { color: watched ? colors.accent : colors.muted }]}>
-          {listing.watchers}
-        </Text>
-      ) : null}
-    </AnimatedPressable>
-  );
-}
-
 function ListingCard({
   listing,
   onPress,
   currency,
   fxRates,
   numberLocale,
-  watchId,
-  onToggleWatch,
 }: {
   listing: P2PListing;
   onPress: () => void;
   currency: CurrencyCode;
   fxRates: Settings['fxRates'];
   numberLocale?: NumberLocale;
-  /** Resolved watch state: the row id when watched, null when not. Comes from
-   *  the parent so an optimistic toggle survives a re-render. */
-  watchId: string | null;
-  onToggleWatch: () => void;
 }) {
   const { colors } = useAppTheme();
-  const watched = watchId !== null;
-  // Vinted's grid runs on a heart you can tap without opening the item, and
-  // ours is the WATCHLIST — the same rows that drive Target Hit. So a heart
-  // here is not a vanity like: it arms the paid alert for that item.
-  //
-  // Hidden in two cases, both because the tap would be a lie:
-  //   - your own listing. `watchers` excludes the seller, so a filled heart
-  //     would never be reflected in the count beside it.
-  //   - !reaches_target_hit. The watchlist is keyed on
-  //     (item_id = canonical_key, category); with no canonical identity there
-  //     is nothing to write, and a heart that silently does nothing is exactly
-  //     the silent-fallback failure this codebase keeps paying for.
-  const canWatch = !listing.is_mine && listing.reaches_target_hit;
   // The seller sets the price in THEIR currency, so a listing can arrive in any
   // of the 7 we support. Formatting `listing.price` with the viewer's currency
   // — which is what this did — printed "€8000" for a ¥8000 card: right number,
@@ -286,17 +192,12 @@ function ListingCard({
               <Text style={[styles.stockTagText, { color: colors.muted }]}>Catalog photo</Text>
             </View>
           ) : null}
-          {canWatch ? <WatchHeart {...{ listing, watched, onToggleWatch }} /> : null}
         </View>
       ) : (
         // Never a blank box: an empty tile reads as a broken image. A tinted
         // placeholder with the category glyph keeps the grid rhythm intact.
-        // The heart lives here too — a photoless listing is still watchable,
-        // and dropping it would make the control flicker in and out of the
-        // grid depending on whether a seller uploaded a picture.
         <View style={[styles.thumb, styles.thumbEmpty, { backgroundColor: colors.accent + '12' }]}>
           <Ionicons name="image-outline" size={26} color={colors.muted} />
-          {canWatch ? <WatchHeart {...{ listing, watched, onToggleWatch }} /> : null}
         </View>
       )}
       <View style={styles.cardBody}>
@@ -310,14 +211,9 @@ function ListingCard({
             screen, but a signal you only see after tapping cannot influence
             whether you tap.
 
-            Kept as a text row IN ADDITION to the count on the heart, because
-            the two say different things: the heart's number is a bare count
-            next to a control, while "3 watching" is the sentence a buyer reads
-            as urgency. Shown only where the heart is NOT — i.e. your own
-            listings and listings with no canonical identity — so the number
-            never appears twice on one tile. A seller in particular needs this:
-            it is the demand on their own item. */}
-        {listing.watchers > 0 && !canWatch ? (
+            "3 watching" is the sentence a buyer reads as urgency, and on your
+            OWN listing it is the demand signal on your item. */}
+        {listing.watchers > 0 ? (
           <View style={styles.watchRow}>
             <Ionicons name="eye-outline" size={11} color={colors.accent} />
             <Text style={[styles.watchText, { color: colors.accent }]}>
@@ -362,7 +258,6 @@ function MemberMarketplaceScreen() {
   const { settings } = useSettings();
   const bottomInset = useTabBarInset();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
-  const { showToast } = useToast();
 
   const [query, setQuery] = useState('');
   // Debounced so typing costs one request per pause, not per keystroke. `query`
@@ -400,80 +295,6 @@ function MemberMarketplaceScreen() {
   // Offers waiting on the user. Drives the badge; 0 renders nothing.
   const [offersToAction, setOffersToAction] = useState(0);
 
-  // Optimistic heart state, keyed by listing id. Absent = "whatever the server
-  // last said"; present = a local toggle that has not been re-fetched yet.
-  //
-  // An override map rather than mutating the paginated list, because
-  // usePaginatedList owns that array and replaces it wholesale on refresh,
-  // sort, filter and every page append — an in-place edit would be silently
-  // discarded by the next fetch, which is precisely the kind of
-  // works-then-doesn't bug that is miserable to trace.
-  //
-  // Value is the watchlist row id (or null for "explicitly unwatched"), so
-  // undoing a heart has the id it needs without a round trip.
-  const [watchOverrides, setWatchOverrides] = useState<Record<string, string | null>>({});
-  // Guards against double-taps racing each other into two watchlist rows.
-  const watchBusy = useRef<Set<string>>(new Set());
-
-  const toggleWatch = useCallback(async (listing: P2PListing) => {
-    if (watchBusy.current.has(listing.id)) return;
-    // The override wins when present — otherwise a second tap would read the
-    // stale server value and toggle back to where it started.
-    const current = listing.id in watchOverrides
-      ? watchOverrides[listing.id]
-      : listing.viewer_watch_id;
-    // Category and canonical_key are both required by the watchlist's
-    // (item_id, category) key. `reaches_target_hit` already guarantees both,
-    // and the heart is only rendered when it is true — this is the belt to
-    // that braces, so a future caller cannot write a keyless row.
-    if (!listing.canonical_key || !listing.category) return;
-
-    watchBusy.current.add(listing.id);
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    try {
-      if (current) {
-        // Optimistic first: a heart that waits for the network feels broken.
-        setWatchOverrides((o) => ({ ...o, [listing.id]: null }));
-        await dataProvider.removeWatchlistItem(current);
-      } else {
-        setWatchOverrides((o) => ({ ...o, [listing.id]: PENDING_WATCH }));
-        // Through the provider, never addToWatchlist directly: the server
-        // contract is `name`, not `title` (miscApi.ts warns about this — the
-        // bug shipped twice), and the provider invalidates the cached
-        // watchlist so app/(tabs)/wishlist.tsx sees the new row.
-        const created = await dataProvider.addWatchlistItem({
-          title: listing.title,
-          category: listing.category,
-          // BARE canonical key: watchlist_items.item_id is bare, unlike
-          // market_hits.item_ref which is namespaced. Getting this wrong is
-          // how 44 joins matched nothing for four months
-          // (learning_canonical_key_vs_item_ref_namespace).
-          itemId: listing.canonical_key,
-        });
-        // Swap the placeholder for the real id, so an immediate un-tap has
-        // something to DELETE.
-        setWatchOverrides((o) => ({ ...o, [listing.id]: created.id }));
-      }
-    } catch (e) {
-      // Put the heart back. Leaving it in the optimistic state would tell the
-      // user their watchlist has a row that does not exist — and they would
-      // then wait for an alert that can never fire.
-      setWatchOverrides((o) => {
-        const next = { ...o };
-        delete next[listing.id];
-        return next;
-      });
-      const detail = e instanceof Error && e.message ? ` (${e.message})` : '';
-      showToast({
-        message: current
-          ? `Couldn't remove from watchlist${detail}`
-          : `Couldn't add to watchlist${detail}`,
-        type: 'error',
-      });
-    } finally {
-      watchBusy.current.delete(listing.id);
-    }
-  }, [watchOverrides, settings.hapticsEnabled, showToast]);
 
   useEffect(() => {
     AsyncStorage.getItem(INTRO_DISMISSED_KEY)
@@ -773,19 +594,12 @@ function MemberMarketplaceScreen() {
         fxRates={settings.fxRates}
         numberLocale={settings.numberLocale}
         onPress={() => openListing(item.id)}
-        watchId={item.id in watchOverrides ? watchOverrides[item.id] : item.viewer_watch_id}
-        onToggleWatch={() => toggleWatch(item)}
       />
     ),
     // fxRates belongs here: SettingsProvider swaps it in when live rates
     // arrive, and without the dep every tile would keep formatting against the
     // rates that happened to be loaded when the screen mounted.
-    // watchOverrides belongs here for the same reason fxRates does: without it
-    // every tile keeps the heart state captured when the callback was created,
-    // so tapping one heart would leave the grid unchanged until some other
-    // state happened to re-render it.
-    [openListing, settings.currency, settings.fxRates, settings.numberLocale,
-     watchOverrides, toggleWatch],
+    [openListing, settings.currency, settings.fxRates, settings.numberLocale],
   );
 
   return (
@@ -1341,16 +1155,6 @@ const styles = StyleSheet.create({
   // first, then reads the name to confirm. Muted-weight title, heavy price.
   cardTitle: { fontSize: textToken.sm, fontWeight: fontWeight.medium, lineHeight: 16 },
   cardPrice: { fontSize: textToken.lg, fontWeight: fontWeight.extrabold, letterSpacing: -0.3 },
-  heart: {
-    position: 'absolute', right: 6, bottom: 6,
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    // Pill, not a circle: it has to hold "heart + 12" without the number
-    // clipping, and a fixed circle would crop at three digits.
-    minWidth: 28, height: 28, paddingHorizontal: 8,
-    borderRadius: 14,
-    justifyContent: 'center',
-  },
-  heartCount: { fontSize: 11, fontWeight: fontWeight.bold },
   watchRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   watchText: { fontSize: 10, fontWeight: fontWeight.bold },
   cardSeller: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
