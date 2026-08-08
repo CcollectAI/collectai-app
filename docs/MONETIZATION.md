@@ -354,3 +354,188 @@ aggregate anonymized market intelligence becomes valuable to:
 | P3 | Apply for TCGPlayer + Cardmarket affiliates | 1 hour | More affiliate sources |
 | P4 | Marketplace referral fees | Depends on Deal Desk | Future |
 | P4 | Data licensing API | 1 week | Future (needs data scale) |
+
+---
+
+## 7. Marketplace monetization — Vinted's lessons under our constraints (2026-08-08)
+
+Written after researching what actually made Vinted work (`docs/P2P_MARKETPLACE_SPEC.md`
+§8) and reading it against §5b's facilitation rule, DAC7, and Apple's IAP rules.
+
+### The reframe that generates everything below
+
+Vinted's real lesson is **not** "buyer protection". It is:
+
+> **Charge the BUYER. Never tax the SELLER.**
+
+Buyer Protection is ~75–80% of their €1.1bn (2025); sellers pay nothing. Removing
+seller fees in 2016 is what took them from a zero valuation to liquidity, because
+they were **supply**-constrained. Every guide-level tactic follows from that.
+
+We are forbidden from their specific implementation — a buyer fee needs funds
+flow (EMI licence), and committing to buyer protection is DAC7 trigger #2 (§5a).
+A commission withheld from the sale amount is DAC7 trigger #3. So the
+transaction is closed to us in every direction.
+
+**But Vinted charges the buyer at the moment of TRANSACTION, and that is not the
+only moment a buyer has willingness to pay.** Ours is earlier:
+
+> **The moment of DISCOVERY — knowing a thing exists, at a price, before someone
+> else does.**
+
+That moment is already our product. It needs no funds flow, no licence, no
+dispute org, and no new regulated activity. Everything below monetizes it.
+
+### The four hard constraints every idea must pass
+
+| Gate | Rule |
+|---|---|
+| **§5b** | May know everything, do nothing. No funds, no guarantee, no carriage, no adjudication, no verification badge |
+| **DAC7** | Do not commit to buyer protection (trigger #2). Do not withhold a commission set against the amount paid (trigger #3) |
+| **Apple** | Anything digital consumed in-app is IAP at 30% — explicitly including "buying advertisements to display in the same app". Physical goods between users are outside IAP |
+| **§8a** | Never charge to list, never meter supply. That is the 2015 Vinted mistake, and it is the one that nearly killed them |
+
+### The list
+
+Ranked by leverage per unit of build and risk.
+
+---
+
+**1. List an item, earn Pro time.** *(supply flywheel — the strongest idea here)*
+
+Listing stays free and uncapped (§8a). But listing **pays the seller in
+subscription**: list an item that reaches Target Hit (`reaches_target_hit`
+true, i.e. it carries a `canonical_key`), get N days of Pro.
+
+Why this is the best one:
+
+- It attacks the **cold-start problem directly**. We are supply-constrained in
+  exactly the way 2015 Vinted was, and the marketplace is judged on
+  `market_hits` created (§1), not GMV.
+- It pays for supply **in kind**, at near-zero marginal cost — Pro is software.
+- It is the *opposite* of a listing fee, so §8a is satisfied in the strongest
+  possible way.
+- Apple: giving away subscription time is not a purchase. No IAP surface.
+- It rewards the RIGHT behaviour: gated on `reaches_target_hit`, so it pays for
+  listings that are canonically identified and can actually feed the alert —
+  not for junk volume. That single gate makes it a data-quality incentive rather
+  than a spam incentive.
+
+Risk to manage: a farm of throwaway listings for free Pro. Mitigated by the
+`canonical_key` gate (junk cannot match the catalogue), the existing one-active-
+listing-per-item rule, and capping earned days per period.
+
+---
+
+**2. Sold comps and price history as the paid data product.** *(the moat)*
+
+`_sold_comp_hook` (§1g) now writes a real, two-sided-confirmed sale price into
+`market_hits` on every completed trade. **~62,000 catalogue items have no price
+data at all** because `ebay_caller.sold_comps()` returns `[]` — so for those
+items a Sparrow trade is the *only* sold comp in existence.
+
+Free sees the current estimate. Pro sees the sold history, the P2P prints, and
+the confidence band (`q10/q50/q90` already exist on the Ridge models).
+
+- Zero regulatory surface: it is our own data about our own platform.
+- The marketplace feeds the paid feature **twice** — supply for alerts, and
+  sold comps for pricing.
+- Nobody else can build this for these categories. Scryfall has prices; nobody
+  has *what collectors actually paid each other*.
+
+---
+
+**3. Seller pricing intelligence — free to list, paid to price well.**
+
+Listing is free and unlimited. What costs money is the answer to *"what should I
+ask?"*: the demand signal (`GET /p2p/demand/{item_id}` — watchers, top target),
+comparable sold prices, and a suggested range.
+
+- Not a listing fee: nothing is metered, nothing is gated behind paying to sell.
+  You pay for **intelligence**, which is the app's actual product.
+- Never touches the transaction, so DAC7 #3 is untouched.
+- Already partly built — the demand preview exists and is ownership-gated.
+
+This is the piece Vinted structurally cannot copy. Their sellers guess; ours
+would be told, from a corpus the platform itself generates.
+
+---
+
+**4. First-look latency on Target Hit.** *(monetizes buyer urgency, no ads)*
+
+In a marketplace where one item has exactly one buyer, **being first is the
+entire value**. Pro alerts fire immediately; free alerts carry a delay.
+
+- **Not advertising.** Nothing is sold to a seller, no listing is promoted, so
+  Apple's "buying advertisements to display in the same app" clause does not
+  apply. It is a subscription tier attribute, already IAP'd through RevenueCat.
+- Precedent is ordinary: real-time vs delayed market data is how every financial
+  terminal is priced.
+- §8a untouched — the seller pays nothing and their reach is not throttled.
+
+> ⚠️ Honest risk: latency tiering can read as hostile in a consumer app in a way
+> it does not in finance. Free is already capped at 1 alert/day
+> (`max_daily_deal_alerts`), so this stacks a second penalty on the same user.
+> Test it as *Pro gets earlier*, framed positively, not as *free gets delayed*.
+
+---
+
+**5. Turn on the affiliate IDs that are already built.** *(money on the floor)*
+
+`build_affiliate_url` exists and is wired into both the alert screen and the push
+deep link — but `project_affiliate_ids_unconfigured` says the IDs are not set.
+Every Target Hit that fires on an eBay or Cardmarket listing currently earns
+**nothing**.
+
+- Outside IAP entirely: the purchase happens on the web, on someone else's site.
+- Outside DAC7: eBay is the platform for that sale, not us.
+- §5b-clean: a hyperlink is not payment initiation (PSD2 Art. 4(15)).
+
+The member marketplace makes the app worth opening; the external marketplaces
+monetize the very same alert. This is the cheapest revenue in the document
+because the code is already deployed.
+
+---
+
+**6. Aggregate market reports, sold OUTSIDE the app.** *(0% Apple)*
+
+The data lake (`s3://collectai-warehouse-prod-eu-north-1`) plus P2P sold comps
+supports anonymised, category-level reporting: "MTG duals +12% this quarter, 340
+member trades." Sell it to shops and dealers **on the web**, not in the app.
+
+- Apple takes **nothing** from a web sale to a business.
+- No personal data, no DAC7 relevance, no §5b exposure — it is aggregate
+  statistics about a market.
+- It is the marketplace earning a second time from data it already produced.
+
+---
+
+**7. Power-seller tooling — bulk, not access.** *(lowest ranked, closest to the line)*
+
+Bulk CSV import, bulk re-price (now that `PATCH /p2p/listings/{id}` exists),
+inventory export. Listing stays free and unlimited; you pay for **efficiency**.
+
+Ranked last deliberately: it is the idea nearest to the 2015 mistake, and the
+volume to justify it does not exist. Revisit only when someone actually has 200
+listings.
+
+### Explicitly rejected — do not revisit without a lawyer
+
+| Idea | Why not |
+|---|---|
+| **Paid bumps / promoted listings** | Apple's guideline names this case: "buying advertisements to display in the same app… must use in-app purchase" → 30%. And it is a seller fee wearing a different hat (§8a). Vinted earns from bumps, but they are the minority slice of a business funded by Buyer Protection |
+| **Buyer protection / escrow / any refund promise** | EMI licence (€350k initial capital, EMD2 Art. 4), a staffed dispute org, and DAC7 trigger #2. §5b's whole point |
+| **Commission on the sale** | DAC7 trigger #3, and it needs funds flow we cannot have |
+| **Shipping insurance** | Insurance distribution under IDD (§5b) |
+| **"Verified seller" / authentication** | Forfeits hosting safe harbour on counterfeits (§5) |
+
+### The shape of the answer
+
+Vinted monetizes the **transaction**, which is closed to us.
+We monetize the **information** — which is the thing we actually have, and the
+thing the marketplace generates more of with every listing and every trade.
+
+Ideas 1 → 2 → 5 are the sequence: **1** buys supply with software, **2** turns
+that supply into a data moat, **5** collects the revenue that is already sitting
+uncollected. None of them touches money moving between two members, which is
+what keeps the whole thing inside §5b.
