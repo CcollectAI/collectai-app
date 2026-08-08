@@ -20,7 +20,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
-import { itemHref } from '@/lib/ids';
+import { itemHref, inAppListingHref } from '@/lib/ids';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type AlertRule } from '@/data';
 import { collectorsApi } from '@/api/collectorsApi';
@@ -388,6 +388,11 @@ function AlertsScreen() {
               onPress={() => {
                 handleMarkRead(item.id);
                 const url = String(item.triggerValue.affiliate_url || item.triggerValue.listing_url);
+                // Our OWN listings open in-app. Without this a member Target
+                // Hit — the alert the marketplace exists to produce — left the
+                // app for sparrowcollect.com/l/<id>, which 404s.
+                const internal = inAppListingHref(url);
+                if (internal) { router.push(internal); return; }
                 Linking.openURL(url).catch(() => {});
               }}
               style={[styles.viewListingBtn, { borderColor: colors.accent + '40' }]}

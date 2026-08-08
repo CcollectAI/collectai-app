@@ -22,7 +22,7 @@ import { useRouter, type Href } from "expo-router";
 import { collectorsApi } from "@/api/collectorsApi";
 import { recordPushImpression, recordPushInteraction } from "@/api/intelligenceApi";
 import { trackTap } from "@/lib/notificationOutcomeTracker";
-import { itemHref } from "@/lib/ids";
+import { itemHref, inAppListingHref } from "@/lib/ids";
 import { logger } from '@/lib/logger';
 
 // ---------------------------------------------------------------------------
@@ -199,6 +199,12 @@ export function usePushNotifications(userId: string | null) {
         const directUrl = (typeof data.affiliate_url === "string" && data.affiliate_url)
           || (typeof data.listing_url === "string" && data.listing_url);
         if (directUrl) {
+          // Our OWN listings resolve to a screen in this app, so route rather
+          // than hand them to the browser — a member Target Hit otherwise left
+          // the app for a URL that 404s. Checked first: the scheme validation
+          // below would happily open it.
+          const internal = inAppListingHref(directUrl);
+          if (internal) { router.push(internal); return; }
           // Validate URL scheme before opening to prevent open redirect attacks
           const ALLOWED_SCHEMES = ["http:", "https:"];
           try {

@@ -32,6 +32,7 @@ import logger from '@/utils/logger';
 import type { Href } from "expo-router";
 import { timeAgo } from "@/lib/timeAgo";
 import { openAffiliateUrl } from "@/utils/affiliateHelpers";
+import { inAppListingHref } from "@/lib/ids";
 import { MS_PER_WEEK } from "@/constants/time";
 
 const PAGE_SIZE = 20;
@@ -167,6 +168,13 @@ function NotificationsScreen() {
       // an https URL — router.push would treat it as an in-app route and go
       // nowhere. openAffiliateUrl validates the scheme and records the click,
       // so a notification tap counts as routed GMV like any other Shop tap.
+      // Our OWN listing links are https too, but they are not external — they
+      // resolve to a screen in this app. Checked BEFORE the https branch below,
+      // which would otherwise hand a member Target Hit to the browser and land
+      // on a 404. See inAppListingHref.
+      const internal = inAppListingHref(item.deep_link);
+      if (internal) { router.push(internal); return; }
+
       if (/^https?:\/\//i.test(item.deep_link)) {
         // No `category` — openAffiliateUrl forwards it to record_demand_signal,
         // whose `category` column holds a COLLECTIBLE slug (pokemon, lego).

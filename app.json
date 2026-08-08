@@ -239,6 +239,11 @@
             },
             {
               "scheme": "https",
+              "host": "sparrowcollect.com",
+              "pathPrefix": "/l"
+            },
+            {
+              "scheme": "https",
               "host": "www.sparrowcollect.com",
               "pathPrefix": "/item"
             },

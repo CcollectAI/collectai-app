@@ -60,3 +60,43 @@ export function itemHref(
     params: { ...params, key: id },
   } as Href;
 }
+
+/**
+ * OUR OWN marketplace listing URLs, so a Target Hit on a member listing opens
+ * the app instead of a browser.
+ *
+ * `_publish_supply_hook` writes `https://sparrowcollect.com/l/<uuid>` into
+ * `market_hits.url`, which is correct — it has to be an https link so it also
+ * works when a seller shares it outside the app, and `build_affiliate_url`
+ * rejects `sparrow://` outright.
+ *
+ * But both consumers of that column treat any https URL as external:
+ *
+ *   - `app/alerts.tsx`        -> `Linking.openURL(url)`
+ *   - `app/notifications.tsx` -> `openAffiliateUrl(deep_link)`
+ *
+ * So the one alert the whole marketplace exists to produce (spec §1) bounced
+ * the user out to a web page that returns **404** — there is no web listing
+ * page, `/l` was not in the Android intent filters, and no `app/l/` route
+ * existed. Sending someone to a browser to view something inside the app they
+ * are already holding is bad; sending them to a 404 is the feature being dead.
+ *
+ * Returns null for every other URL, so callers keep their existing external
+ * behaviour for eBay, Cardmarket and the rest by simply falling through. That
+ * is the point of returning a route rather than a boolean: there is one place
+ * that knows what our own links look like, and adding a second link shape later
+ * means editing this function, not hunting call sites.
+ */
+const SPARROW_LISTING_RE =
+  /^https?:\/\/(?:www\.)?sparrowcollect\.com\/l\/([0-9a-f-]{36})\/?$/i;
+
+export function inAppListingHref(url: string | null | undefined): Href | null {
+  if (typeof url !== 'string') return null;
+  const m = SPARROW_LISTING_RE.exec(url.trim());
+  // The captured group is loosely matched by the regex ([0-9a-f-]{36}), then
+  // checked properly here — a shape check in the pattern would silently accept
+  // 36 hyphens, and routing garbage into /listing/[id] is a 22P02 on the
+  // server, which is exactly the failure this module was written for.
+  if (!m || !isUuid(m[1])) return null;
+  return { pathname: '/listing/[id]', params: { id: m[1] } } as Href;
+}
