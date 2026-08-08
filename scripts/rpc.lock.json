@@ -20,30 +20,10 @@
       "p_id",
       "p_ok"
     ],
-    "rpc_alert_attempt_start": [
-      "p_batch"
-    ],
     "rpc_alert_targets": [
       "auth_header",
-      "endpoint",
-      "kind",
-      "p_alert_id",
       "p_user_id",
-      "secret",
-      "url",
-      "user_id"
-    ],
-    "rpc_alerts_feed_for_user": [
-      "p_kind",
-      "p_limit",
-      "p_since",
-      "p_user_id"
-    ],
-    "rpc_alerts_list": [
-      "p_item_ref",
-      "p_kind",
-      "p_limit",
-      "p_since"
+      "url"
     ],
     "rpc_alerts_mark_delivered": [
       "p_ids"
@@ -145,16 +125,6 @@
       "p_result",
       "p_task_id"
     ],
-    "rpc_compute_notification_outcomes_v1": [
-      "p_action_window",
-      "p_lookback",
-      "p_user_id"
-    ],
-    "rpc_compute_notification_outcomes_v2": [
-      "p_action_window",
-      "p_lookback",
-      "p_user_id"
-    ],
     "rpc_confirm_item_identity_v1": [
       "p_item_id"
     ],
@@ -197,36 +167,10 @@
       "p_approve",
       "p_request_id"
     ],
-    "rpc_dismiss_notification_v1": [
-      "p_notification_id"
-    ],
     "rpc_embed_count": [],
     "rpc_embed_sample_ids": [
       "image_id",
       "p_limit"
-    ],
-    "rpc_emit_event_notifications_v1": [
-      "p_user_id"
-    ],
-    "rpc_emit_event_reminders_all_v1": [
-      "p_max_users",
-      "p_window"
-    ],
-    "rpc_emit_event_reminders_dev_v1": [
-      "p_user_id",
-      "p_window"
-    ],
-    "rpc_emit_event_reminders_v1": [
-      "p_window"
-    ],
-    "rpc_emit_next_best_add_v1": [
-      "p_user_id"
-    ],
-    "rpc_emit_progress_guidance_v1": [
-      "p_user_id"
-    ],
-    "rpc_emit_smart_guidance_v1": [
-      "p_user_id"
     ],
     "rpc_enqueue_market_ingest_v1": [
       "p_force",
@@ -282,9 +226,6 @@
       "p_canonical_key",
       "p_category",
       "p_enabled"
-    ],
-    "rpc_get_alerts_recent": [
-      "p_limit"
     ],
     "rpc_get_batch_presence_v1": [
       "is_online",
@@ -429,13 +370,6 @@
       "p_user_id",
       "title",
       "user_id"
-    ],
-    "rpc_get_what_matters_now_dev_v1": [
-      "p_limit",
-      "p_user_id"
-    ],
-    "rpc_get_what_matters_now_v1": [
-      "p_limit"
     ],
     "rpc_go_offline_v1": [],
     "rpc_heartbeat_v1": [],
@@ -602,6 +536,39 @@
       "blocked_id",
       "created_at"
     ],
+    "rpc_list_personalized_events_v1": [
+      "attendee_count",
+      "category_id",
+      "created_at",
+      "created_by",
+      "date",
+      "description",
+      "end_date",
+      "format",
+      "going_count",
+      "id",
+      "image_url",
+      "interested_count",
+      "is_public",
+      "is_sponsored",
+      "kind",
+      "latitude",
+      "location",
+      "longitude",
+      "max_attendees",
+      "online_url",
+      "p_category_id",
+      "p_include_past",
+      "p_user_id",
+      "source",
+      "sponsor_expires_at",
+      "sponsor_logo_url",
+      "sponsor_name",
+      "status",
+      "time",
+      "title",
+      "user_rsvp_status"
+    ],
     "rpc_lock_item_identity_v1": [
       "p_item_id"
     ],
@@ -612,15 +579,6 @@
       "p_metadata",
       "p_title"
     ],
-    "rpc_log_notification_impression": [
-      "p_client_context",
-      "p_notification_id"
-    ],
-    "rpc_log_notification_interaction": [
-      "p_kind",
-      "p_meta",
-      "p_notification_id"
-    ],
     "rpc_map_prediction_to_item": [
       "p_item_id",
       "p_nk",
@@ -630,9 +588,6 @@
       "p_category_item_id",
       "p_notes",
       "p_quantity"
-    ],
-    "rpc_mark_notification_read_v1": [
-      "p_notification_id"
     ],
     "rpc_mark_shipped_v1": [
       "p_offer_id",
@@ -873,18 +828,6 @@
       "p_set_name",
       "p_variant"
     ],
-    "rpc_user_inbox_v1": [
-      "body",
-      "created_at",
-      "id",
-      "kind",
-      "p_limit",
-      "p_user_id",
-      "payload",
-      "read",
-      "title",
-      "ui_group"
-    ],
     "rpc_user_relevant_events_v1": [
       "canonical_key",
       "category",
@@ -920,20 +863,6 @@
       "p_item_ref",
       "p_user_id"
     ],
-    "rpc_wishlist_compute_alerts_dev_v1": [
-      "p_lookback",
-      "p_user_id"
-    ],
-    "rpc_wishlist_compute_alerts_v1": [
-      "p_lookback"
-    ],
-    "rpc_wishlist_compute_availability_alerts_dev_v1": [
-      "p_lookback",
-      "p_user_id"
-    ],
-    "rpc_wishlist_compute_availability_alerts_v1": [
-      "p_lookback"
-    ],
     "rpc_wishlist_disable_v1": [
       "p_canonical_key"
     ],
@@ -962,7 +891,7 @@
       "p_id",
       "p_ok"
     ],
-    "rpc_alerts_feed_for_user": [
+    "rpc_alert_targets": [
       "p_user_id"
     ],
     "rpc_alerts_mark_delivered": [
@@ -1018,12 +947,6 @@
     "rpc_complete_task_v1": [
       "p_task_id"
     ],
-    "rpc_compute_notification_outcomes_v1": [
-      "p_user_id"
-    ],
-    "rpc_compute_notification_outcomes_v2": [
-      "p_user_id"
-    ],
     "rpc_confirm_item_identity_v1": [
       "p_item_id"
     ],
@@ -1060,24 +983,6 @@
     "rpc_decide_dm_request_v1": [
       "p_approve",
       "p_request_id"
-    ],
-    "rpc_dismiss_notification_v1": [
-      "p_notification_id"
-    ],
-    "rpc_emit_event_notifications_v1": [
-      "p_user_id"
-    ],
-    "rpc_emit_event_reminders_dev_v1": [
-      "p_user_id"
-    ],
-    "rpc_emit_next_best_add_v1": [
-      "p_user_id"
-    ],
-    "rpc_emit_progress_guidance_v1": [
-      "p_user_id"
-    ],
-    "rpc_emit_smart_guidance_v1": [
-      "p_user_id"
     ],
     "rpc_enqueue_market_ingest_v1": [
       "p_item_id"
@@ -1198,9 +1103,6 @@
     "rpc_get_user_activity_v1": [
       "p_user_id"
     ],
-    "rpc_get_what_matters_now_dev_v1": [
-      "p_user_id"
-    ],
     "rpc_home_feed": [
       "p_user_id"
     ],
@@ -1293,13 +1195,6 @@
       "p_activity_type",
       "p_title"
     ],
-    "rpc_log_notification_impression": [
-      "p_notification_id"
-    ],
-    "rpc_log_notification_interaction": [
-      "p_kind",
-      "p_notification_id"
-    ],
     "rpc_map_prediction_to_item": [
       "p_item_id",
       "p_nk",
@@ -1307,9 +1202,6 @@
     ],
     "rpc_mark_category_item_owned_v1": [
       "p_category_item_id"
-    ],
-    "rpc_mark_notification_read_v1": [
-      "p_notification_id"
     ],
     "rpc_mark_shipped_v1": [
       "p_offer_id",
@@ -1452,9 +1344,6 @@
     "rpc_upsert_item_metadata_by_nk": [
       "p_nk"
     ],
-    "rpc_user_inbox_v1": [
-      "p_user_id"
-    ],
     "rpc_user_relevant_events_v1": [
       "p_user_id"
     ],
@@ -1475,12 +1364,6 @@
     ],
     "rpc_watchlist_remove": [
       "p_item_ref",
-      "p_user_id"
-    ],
-    "rpc_wishlist_compute_alerts_dev_v1": [
-      "p_user_id"
-    ],
-    "rpc_wishlist_compute_availability_alerts_dev_v1": [
       "p_user_id"
     ],
     "rpc_wishlist_disable_v1": [

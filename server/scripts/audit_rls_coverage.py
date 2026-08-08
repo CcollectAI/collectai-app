@@ -103,9 +103,6 @@ DENY_ALL_OK: dict[str, str] = {
     "alert_endpoints": "Alert delivery targets managed by /alerts; consumed by the signal-alert worker.",
     "alert_rules": "Alert rule definitions written by /alerts and evaluated server-side.",
     "notification_history": "Notification log written by the push pipeline; the app reads it via /notifications.",
-    "notification_impressions": "Impression telemetry written by the backend from client events; never queried by the client.",
-    "notification_interactions": "Tap/dismiss telemetry written by the backend; never queried by the client.",
-    "notification_outcomes": "Computed notification outcomes written by the outcome worker; analytics only.",
     "push_outbox_v1": "Outbound push queue drained by the push worker; a client reader would be a bug.",
     "user_push_tokens": "Device push tokens registered through /notifications/register; backend-only.",
     "user_push_devices": "Device registry companion to user_push_tokens; backend-only.",
@@ -121,8 +118,6 @@ DENY_ALL_OK: dict[str, str] = {
     # engagement columns are the proof, not just a failed grep.
     #
     # Left backend-only because that is still the correct RLS posture; the
-    # justification just has to be true. See docs/alerts-and-insights.md.
-    "user_notifications": "Orphaned in-app notification store: written by pg_cron job 30, read by nothing. Backend-only pending a decision to wire or drop it.",
     "drop_follows": "Drop-follow subscriptions written by /alerts and read by the drop worker.",
 
     # -- chat (legacy, superseded by the *_v1 tables) -----------------------

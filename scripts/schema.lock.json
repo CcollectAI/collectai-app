@@ -136,12 +136,6 @@
     "member_grades.verdict": [
       "CHECK ((verdict = ANY (ARRAY['positive'::text, 'negative'::text])))"
     ],
-    "notification_interactions.kind": [
-      "CHECK ((kind = ANY (ARRAY['open'::text, 'click'::text, 'dismiss'::text, 'snooze'::text])))"
-    ],
-    "notification_outcomes.outcome": [
-      "CHECK ((outcome = ANY (ARRAY['acted'::text, 'ignored'::text, 'superseded'::text, 'no_action_expected'::text, 'converted'::text, 'expired'::text, 'other'::text])))"
-    ],
     "offer_events.event_type": [
       "CHECK ((event_type = ANY (ARRAY['proposed'::text, 'countered'::text, 'accepted'::text, 'declined'::text, 'expired'::text, 'cancelled'::text, 'shipped'::text, 'delivered'::text, 'rated'::text])))"
     ],
@@ -2513,70 +2507,6 @@
     "api_user_analytics_v1.total_value_eur": {
       "nullable": true,
       "type": "float8"
-    },
-    "api_user_inbox_v1.body": {
-      "nullable": true,
-      "type": "text"
-    },
-    "api_user_inbox_v1.created_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "api_user_inbox_v1.id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "api_user_inbox_v1.kind": {
-      "nullable": true,
-      "type": "text"
-    },
-    "api_user_inbox_v1.payload": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "api_user_inbox_v1.read": {
-      "nullable": true,
-      "type": "bool"
-    },
-    "api_user_inbox_v1.title": {
-      "nullable": true,
-      "type": "text"
-    },
-    "api_user_inbox_v1.user_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "api_user_inbox_v2.body": {
-      "nullable": true,
-      "type": "text"
-    },
-    "api_user_inbox_v2.created_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "api_user_inbox_v2.id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "api_user_inbox_v2.kind": {
-      "nullable": true,
-      "type": "text"
-    },
-    "api_user_inbox_v2.payload": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "api_user_inbox_v2.read": {
-      "nullable": true,
-      "type": "bool"
-    },
-    "api_user_inbox_v2.title": {
-      "nullable": true,
-      "type": "text"
-    },
-    "api_user_inbox_v2.ui_group": {
-      "nullable": true,
-      "type": "text"
     },
     "api_user_price_card_v1.asof": {
       "nullable": true,
@@ -5942,28 +5872,6 @@
       "default": "1",
       "nullable": false,
       "type": "int4"
-    },
-    "guidance_runs.created_at": {
-      "default": "now()",
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "guidance_runs.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
-      "type": "uuid"
-    },
-    "guidance_runs.result": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "guidance_runs.run_date": {
-      "nullable": false,
-      "type": "date"
-    },
-    "guidance_runs.user_id": {
-      "nullable": false,
-      "type": "uuid"
     },
     "harvest_log.canonical_category": {
       "nullable": false,
@@ -9435,19 +9343,13 @@
       "type": "uuid"
     },
     "notification_impressions.client_context": {
-      "default": "'{}'::jsonb",
-      "nullable": false,
+      "nullable": true,
       "type": "jsonb"
     },
     "notification_impressions.first_seen_at": {
       "default": "now()",
       "nullable": false,
       "type": "timestamptz"
-    },
-    "notification_impressions.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
-      "type": "uuid"
     },
     "notification_impressions.last_seen_at": {
       "default": "now()",
@@ -9468,17 +9370,16 @@
       "type": "uuid"
     },
     "notification_interactions.id": {
-      "default": "gen_random_uuid()",
+      "default": "nextval('notification_interactions_id_seq'::regclass)",
       "nullable": false,
-      "type": "uuid"
+      "type": "int8"
     },
     "notification_interactions.kind": {
       "nullable": false,
       "type": "text"
     },
     "notification_interactions.meta": {
-      "default": "'{}'::jsonb",
-      "nullable": false,
+      "nullable": true,
       "type": "jsonb"
     },
     "notification_interactions.notification_id": {
@@ -9499,8 +9400,7 @@
       "type": "timestamptz"
     },
     "notification_outcomes.action_ref": {
-      "default": "'{}'::jsonb",
-      "nullable": false,
+      "nullable": true,
       "type": "jsonb"
     },
     "notification_outcomes.action_type": {
@@ -9513,13 +9413,13 @@
       "type": "timestamptz"
     },
     "notification_outcomes.id": {
-      "default": "gen_random_uuid()",
+      "default": "nextval('notification_outcomes_id_seq'::regclass)",
       "nullable": false,
-      "type": "uuid"
+      "type": "int8"
     },
     "notification_outcomes.latency_seconds": {
       "nullable": true,
-      "type": "int4"
+      "type": "float8"
     },
     "notification_outcomes.notification_id": {
       "nullable": false,
@@ -14647,53 +14547,6 @@
       "nullable": false,
       "type": "int4"
     },
-    "user_notifications.body": {
-      "nullable": true,
-      "type": "text"
-    },
-    "user_notifications.created_at": {
-      "default": "now()",
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "user_notifications.dedupe_key": {
-      "nullable": true,
-      "type": "text"
-    },
-    "user_notifications.dismissed_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "user_notifications.id": {
-      "default": "gen_random_uuid()",
-      "nullable": false,
-      "type": "uuid"
-    },
-    "user_notifications.kind": {
-      "nullable": false,
-      "type": "text"
-    },
-    "user_notifications.payload": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "user_notifications.read": {
-      "default": "false",
-      "nullable": true,
-      "type": "bool"
-    },
-    "user_notifications.read_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "user_notifications.title": {
-      "nullable": false,
-      "type": "text"
-    },
-    "user_notifications.user_id": {
-      "nullable": false,
-      "type": "uuid"
-    },
     "user_presence.is_online": {
       "default": "false",
       "nullable": false,
@@ -16289,46 +16142,6 @@
       "nullable": true,
       "type": "text"
     },
-    "v_guidance_effectiveness_by_kind_v1.act_rate_pct": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "v_guidance_effectiveness_by_kind_v1.acted": {
-      "nullable": true,
-      "type": "int8"
-    },
-    "v_guidance_effectiveness_by_kind_v1.impressed": {
-      "nullable": true,
-      "type": "int8"
-    },
-    "v_guidance_effectiveness_by_kind_v1.kind": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_guidance_effectiveness_by_kind_v1.median_latency_seconds": {
-      "nullable": true,
-      "type": "float8"
-    },
-    "v_guidance_effectiveness_by_kind_v1.notifications": {
-      "nullable": true,
-      "type": "int8"
-    },
-    "v_guidance_top_keys_v1.acted": {
-      "nullable": true,
-      "type": "int8"
-    },
-    "v_guidance_top_keys_v1.canonical_key": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_guidance_top_keys_v1.kind": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_guidance_top_keys_v1.sent": {
-      "nullable": true,
-      "type": "int8"
-    },
     "v_harvest_last24.canonical_category": {
       "nullable": true,
       "type": "text"
@@ -17724,150 +17537,6 @@
     "v_new_listings_radar.url": {
       "nullable": true,
       "type": "text"
-    },
-    "v_notification_feed_empty_state_v1.show_empty_state": {
-      "nullable": true,
-      "type": "bool"
-    },
-    "v_notification_feed_empty_state_v1.user_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_notification_feed_ui_compact_v1.body": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_compact_v1.created_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "v_notification_feed_ui_compact_v1.dedupe_key": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_compact_v1.dismissed_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "v_notification_feed_ui_compact_v1.id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_notification_feed_ui_compact_v1.kind": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_compact_v1.payload": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "v_notification_feed_ui_compact_v1.rank_score": {
-      "nullable": true,
-      "type": "int4"
-    },
-    "v_notification_feed_ui_compact_v1.read": {
-      "nullable": true,
-      "type": "bool"
-    },
-    "v_notification_feed_ui_compact_v1.read_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "v_notification_feed_ui_compact_v1.rn": {
-      "nullable": true,
-      "type": "int8"
-    },
-    "v_notification_feed_ui_compact_v1.section": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_compact_v1.time_label": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_compact_v1.title": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_compact_v1.urgency": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_compact_v1.user_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_notification_feed_ui_v1.body": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_v1.created_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "v_notification_feed_ui_v1.dedupe_key": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_v1.dismissed_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "v_notification_feed_ui_v1.id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_notification_feed_ui_v1.kind": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_v1.payload": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "v_notification_feed_ui_v1.rank_score": {
-      "nullable": true,
-      "type": "int4"
-    },
-    "v_notification_feed_ui_v1.read": {
-      "nullable": true,
-      "type": "bool"
-    },
-    "v_notification_feed_ui_v1.read_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "v_notification_feed_ui_v1.section": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_v1.time_label": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_v1.title": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_v1.urgency": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_feed_ui_v1.user_id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_notification_section_visibility_v1.items_visible": {
-      "nullable": true,
-      "type": "int8"
-    },
-    "v_notification_section_visibility_v1.section": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_notification_section_visibility_v1.show_section": {
-      "nullable": true,
-      "type": "bool"
     },
     "v_offer_summary_v1.amount": {
       "nullable": true,
@@ -21317,26 +20986,6 @@
       "total_value_eur",
       "avg_confidence"
     ],
-    "api_user_inbox_v1": [
-      "id",
-      "user_id",
-      "kind",
-      "title",
-      "body",
-      "payload",
-      "read",
-      "created_at"
-    ],
-    "api_user_inbox_v2": [
-      "id",
-      "kind",
-      "title",
-      "body",
-      "payload",
-      "read",
-      "created_at",
-      "ui_group"
-    ],
     "api_user_price_card_v1": [
       "user_id",
       "item_id",
@@ -22312,13 +21961,6 @@
       "is_approved",
       "created_at"
     ],
-    "guidance_runs": [
-      "id",
-      "user_id",
-      "run_date",
-      "result",
-      "created_at"
-    ],
     "harvest_log": [
       "id",
       "source_code",
@@ -23292,7 +22934,6 @@
       "created_at"
     ],
     "notification_impressions": [
-      "id",
       "notification_id",
       "user_id",
       "first_seen_at",
@@ -24744,19 +24385,6 @@
       "monthly_xp",
       "updated_at"
     ],
-    "user_notifications": [
-      "id",
-      "user_id",
-      "kind",
-      "title",
-      "body",
-      "payload",
-      "read",
-      "created_at",
-      "dedupe_key",
-      "read_at",
-      "dismissed_at"
-    ],
     "user_presence": [
       "user_id",
       "last_seen_at",
@@ -25242,20 +24870,6 @@
       "attendee_count",
       "is_full"
     ],
-    "v_guidance_effectiveness_by_kind_v1": [
-      "kind",
-      "notifications",
-      "impressed",
-      "acted",
-      "act_rate_pct",
-      "median_latency_seconds"
-    ],
-    "v_guidance_top_keys_v1": [
-      "canonical_key",
-      "kind",
-      "sent",
-      "acted"
-    ],
     "v_harvest_last24": [
       "source_code",
       "canonical_category",
@@ -25686,50 +25300,6 @@
       "price_eur",
       "url",
       "title"
-    ],
-    "v_notification_feed_empty_state_v1": [
-      "user_id",
-      "show_empty_state"
-    ],
-    "v_notification_feed_ui_compact_v1": [
-      "id",
-      "user_id",
-      "kind",
-      "title",
-      "body",
-      "payload",
-      "read",
-      "created_at",
-      "dedupe_key",
-      "read_at",
-      "dismissed_at",
-      "urgency",
-      "section",
-      "time_label",
-      "rank_score",
-      "rn"
-    ],
-    "v_notification_feed_ui_v1": [
-      "id",
-      "user_id",
-      "kind",
-      "title",
-      "body",
-      "payload",
-      "read",
-      "created_at",
-      "dedupe_key",
-      "read_at",
-      "dismissed_at",
-      "urgency",
-      "section",
-      "time_label",
-      "rank_score"
-    ],
-    "v_notification_section_visibility_v1": [
-      "section",
-      "items_visible",
-      "show_section"
     ],
     "v_offer_summary_v1": [
       "id",
@@ -27258,15 +26828,6 @@
         "version"
       ]
     ],
-    "guidance_runs": [
-      [
-        "id"
-      ],
-      [
-        "user_id",
-        "run_date"
-      ]
-    ],
     "harvest_log": [
       [
         "id"
@@ -27669,11 +27230,8 @@
     ],
     "notification_impressions": [
       [
-        "id"
-      ],
-      [
-        "user_id",
-        "notification_id"
+        "notification_id",
+        "user_id"
       ]
     ],
     "notification_interactions": [
@@ -27684,10 +27242,6 @@
     "notification_outcomes": [
       [
         "id"
-      ],
-      [
-        "user_id",
-        "notification_id"
       ]
     ],
     "notifications": [
@@ -28376,15 +27930,6 @@
     "user_gamification": [
       [
         "user_id"
-      ]
-    ],
-    "user_notifications": [
-      [
-        "id"
-      ],
-      [
-        "user_id",
-        "dedupe_key"
       ]
     ],
     "user_presence": [

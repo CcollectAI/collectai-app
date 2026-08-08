@@ -373,6 +373,58 @@ python3 server/scripts/audit_orphan_stores.py --writers-file /tmp/writers.json
 Current state: **17 orphans, 10 with rows.** Known-good ones go in
 `KNOWN_ORPHANS` with a reason that must be TRUE.
 
+## The guidance subsystem is GONE too (2026-08-08)
+
+`user_notifications` + `guidance_runs` + 30 functions + 6 views, removed. The
+decision was not "is it an alert" — it is a RECOMMENDATION engine, so that rule
+does not reach it. It goes for a stronger reason: **seven months of daily writes
+and the engagement columns never moved once.**
+
+```
+188 rows since 2026-01-24
+    0 read       0 read_at      0 dismissed
+```
+
+And its output was not worth wiring: "Best next add — BE@RBRICK", for an item
+with `listings_7d: 0` and no price, the same one every day. *Buy this thing you
+cannot buy and we cannot price* is worse than silence.
+
+Deleted rather than left dormant because dormant is not free — it was carrying a
+permanent expected-entry in four gates (RLS, account-deletion, schema.lock,
+orphan-stores), which is how a gate stops being read. Recoverable from git and
+from the database's own function history if a "what should I buy next" feature
+is ever wanted; the ranking has to be rewritten either way.
+
+### I over-deleted, and the gate caught it
+
+The same migration dropped `notification_impressions`, `_interactions` and
+`_outcomes` because they carried an FK to `user_notifications`. **Sharing a
+foreign key is not being the same feature**, and I treated it as if it were.
+
+They belong to the push-engagement loop written by
+`app/features/notification_feedback_router.py`, whose three endpoints are LIVE —
+`/notifications/feedback/{impression,interaction,outcome}` are in the live
+OpenAPI. My "zero callers" check covered the RPCs and the frontend; it did not
+cover a mounted FastAPI router writing raw SQL, and my grep for the mount point
+missed it.
+
+`preflight_router_drift` failed on TABLE_MISSING, which is what caught it. That
+is a HARD gate — the next bake restart would have taken the API down. Tables
+restored from the router's own INSERT statements
+(`20260808_restore_notification_feedback_tables.sql`), without the FK to the
+now-gone parent.
+
+> The lesson, stated plainly: **an FK is not a feature boundary.** Two tables can
+> reference each other and belong to entirely different features, and the second
+> one can have a live consumer the first does not.
+
+### Still open on that loop
+
+All three tables have been EMPTY since 2026-04-25. The endpoints are live, the
+client has `logNotificationImpression` / `Interaction` / `Outcome` in
+`src/api/intelligenceApi.ts` — and **no screen calls them.** The push-quality
+feedback loop is built end to end and never wired to a tap. Not fixed here.
+
 ## The dead alert subsystem is GONE (2026-08-08)
 
 Merle's rule, and it is the right one:
