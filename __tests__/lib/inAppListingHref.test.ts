@@ -5,9 +5,9 @@
  * `https://sparrowcollect.com/l/<uuid>` into `market_hits.url`, and all three
  * consumers treated "starts with https" as "external" —
  *
- *   app/alerts.tsx           -> Linking.openURL
  *   app/notifications.tsx    -> openAffiliateUrl
  *   usePushNotifications.ts  -> Linking.openURL
+ *   app/alerts.tsx           -> Linking.openURL  (screen since merged away)
  *
  * so the one alert the marketplace exists to produce sent the user out to a web
  * page that returns 404. Nothing went red; it just silently left the app.

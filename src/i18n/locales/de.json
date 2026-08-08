@@ -44,8 +44,8 @@
     "add_manually_a11y": "Objekt manuell hinzufügen"
   },
   "wishlist": {
-    "empty_title": "Starte deine Wunschliste",
-    "add_first_a11y": "Erstes Wunschlisten-Objekt hinzufügen",
+    "empty_title": "Starte deine Merkliste",
+    "add_first_a11y": "Erstes Objekt zur Merkliste hinzufügen",
     "add_first": "Erstes Objekt hinzufügen",
     "feature_price_drops": "Preisalarme",
     "feature_target_price": "Zielpreis verfolgen",

@@ -70,10 +70,13 @@ export function itemHref(
  * works when a seller shares it outside the app, and `build_affiliate_url`
  * rejects `sparrow://` outright.
  *
- * But both consumers of that column treat any https URL as external:
+ * But the consumers of that column treat any https URL as external:
  *
- *   - `app/alerts.tsx`        -> `Linking.openURL(url)`
- *   - `app/notifications.tsx` -> `openAffiliateUrl(deep_link)`
+ *   - `app/notifications.tsx`      -> `openAffiliateUrl(deep_link)`
+ *   - `usePushNotifications.ts`    -> `Linking.openURL(url)`
+ *
+ * (`app/alerts.tsx` was a third until it was merged into the notifications
+ * screen on 2026-08-08.)
  *
  * So the one alert the whole marketplace exists to produce (spec §1) bounced
  * the user out to a web page that returns **404** — there is no web listing

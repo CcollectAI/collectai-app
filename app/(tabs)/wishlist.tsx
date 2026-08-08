@@ -574,9 +574,20 @@ function WatchlistTabScreen() {
     </View>
   );
 
+  // ONE inbox. app/alerts.tsx used to live here and rendered
+  // `alert_trigger_history` while app/notifications.tsx rendered
+  // `notification_history` — two screens for one event, since
+  // deal_discovery_worker writes both for every Target Hit. Merged 2026-08-08.
   const handleAlertsPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push('/alerts');
+    router.push('/notifications');
+  }, [router, settings.hapticsEnabled]);
+
+  // Bulk entry. watchlist-builder was previously reachable ONLY from the alerts
+  // screen; with that screen merged into /notifications this is its sole route.
+  const handleBulkPress = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push('/watchlist-builder');
   }, [router, settings.hapticsEnabled]);
 
   const handleAddPress = useCallback(() => {
@@ -586,7 +597,7 @@ function WatchlistTabScreen() {
 
   const renderHeader = () => (
     <>
-      <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} />
+      <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} onBulkPress={handleBulkPress} />
       <WishlistStatsBar items={items} currency={settings.currency} />
     </>
   );

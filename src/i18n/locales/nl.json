@@ -44,8 +44,8 @@
     "add_manually_a11y": "Item handmatig toevoegen"
   },
   "wishlist": {
-    "empty_title": "Start je verlanglijst",
-    "add_first_a11y": "Voeg je eerste verlanglijst-item toe",
+    "empty_title": "Start je volglijst",
+    "add_first_a11y": "Voeg je eerste item aan je volglijst toe",
     "add_first": "Voeg je eerste item toe",
     "feature_price_drops": "Prijswaarschuwingen",
     "feature_target_price": "Streefprijs volgen",

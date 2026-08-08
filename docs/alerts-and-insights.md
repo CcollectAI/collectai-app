@@ -231,6 +231,74 @@ prod that satisfies all three conditions.
 > left alone; if that changes, they need a backfill (category ← slug, and a
 > target price) or a delete.
 
+## Screen consolidation 2026-08-08 — four screens became two
+
+Walked all four on the simulator. One feature was wearing FIVE names:
+
+| route | header | empty state |
+|---|---|---|
+| `(tabs)/wishlist` | *(none)* | "No items in your **wishlist** yet" |
+| `watchlist-builder` | COLLECTOR / **Watchlist** | "Start Your **Watchlist**" |
+| `alerts` | **Alerts** | "No triggered **alerts**" + "Create an Alert" |
+| `notifications` | *(blank — a bug)* | "No **notifications** yet" |
+
+plus the stored trigger `watchlist_snipe`, labelled **Target Hit**.
+
+The first two read the SAME table and rendered near-identical empty states. The
+last two rendered the SAME EVENT — `deal_discovery_worker` writes
+`alert_trigger_history` (:225) and calls `notify_user` (:248) for every Target
+Hit. And "Create an Alert" on the alerts screen routed to `/watchlist-builder`,
+sending the user from "alert" to "watchlist" with no explanation.
+
+### What changed
+
+- **`app/alerts.tsx` is DELETED.** Its Recent tab duplicated the notifications
+  feed; its Rules tab was empty *by design* (see below — `user_price_alerts` has
+  no writer, deliberately), so the whole screen went.
+- The watchlist's **"Alerts" pill is now "Inbox"** and routes to
+  `/notifications`. One inbox.
+- **`watchlist-builder` was reachable ONLY from the alerts screen**, so deleting
+  that screen would have orphaned it — a feature that still exists and cannot be
+  reached is worse than one that was removed. It now has a **"Bulk"** pill on the
+  watchlist header, which is its sole entry point.
+- Vocabulary: the user-visible strings say **watchlist**. Only `en`, `nl` and
+  `de` were wrong — `fr` (*liste de suivi*), `es` (*lista de seguimiento*), `ja`
+  and `ko` already said watchlist.
+
+### Two things deliberately NOT renamed
+
+- **The `/wishlist` route.** Renaming it would break deep links for no
+  user-visible gain; only the strings changed.
+- **"Wishlist" as a BUILD STAGE.** `src/constants/buildStepTemplates.ts` uses it
+  as step 0 of five taxonomies (`Wishlist → Purchased → Unassembled → …` for
+  Warhammer, LEGO, Gunpla, Scale Models, Keycaps — docs/ARCHITECTURE.md). A
+  blanket find-and-replace would have corrupted that vocabulary.
+
+### What was checked before deleting a screen
+
+Counting prod first is what stopped this going wrong — the merge as originally
+proposed would have deleted the WORKING screen:
+
+```
+alert_trigger_history   102 rows   <- the Alerts screen read this
+notification_history     11 rows   <- the Notifications screen reads this
+user_notifications      188 rows   <- NO READER FOUND
+notifications             0 rows   <- ghost table
+```
+
+Four tables for one concept. Decision (Merle, 2026-08-08): **merge anyway, do
+not backfill.** 100 of the 102 rows are `low_value` / `weekly_digest` /
+`value_change` from workers deleted in the 2026-05-04 pre-launch cut — a backlog
+of dead notifications. Only 2 were real Target Hits.
+
+Also verified before deleting: **zero** stored `deep_link` values point at
+`/alerts`, and no server code emits one, so no push or shared link can land on
+the removed route.
+
+> ⚠️ **Still open:** `user_notifications` holds 188 rows across 5 users, still
+> being written today, with no reader found. That is a third notification store
+> and it was NOT resolved here.
+
 ## Actual wiring (verified E2E against prod 2026-07-30)
 
 There are **two different things** here, and crossing them has broken this

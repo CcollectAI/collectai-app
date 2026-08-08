@@ -450,7 +450,6 @@ function RootStack() {
         <Stack.Screen name="mfa-setup" options={iconOnlyHeader} />
 
         {/* Additional screens */}
-        <Stack.Screen name="alerts" options={iconOnlyHeader} />
         {/* `notifications` was never registered here, so it fell through to the
             bare <Stack> screenOptions instead of the iconOnlyHeader every other
             pushed screen gets — and its in-component <Stack.Screen options> did
