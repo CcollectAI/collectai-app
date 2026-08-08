@@ -54,8 +54,26 @@ async def main():
     s2 = await confirm_exchange(o.id, user_id=BUYER)
     chk('completed on both sides', s2.status=='completed', s2.status)
     chk('can_grade now true', s2.can_grade is True)
-    gone = await c.fetchval("SELECT count(*) FROM market_hits WHERE provider='sparrow' AND listing_id=$1", L.id)
-    chk('supply row removed on completion', gone==0)
+    # STRENGTHENED 2026-08-08. This asserted `count(*) == 0` for ALL sparrow rows,
+    # which was right when written and became wrong when _sold_comp_hook landed
+    # (spec §1g): completion now DELETES the buyable row and INSERTS a sold comp,
+    # so one row legitimately remains. The old assertion failed on correct code —
+    # a stale test reporting a bug that is not there, which costs exactly as much
+    # trust as one that hides a bug that is.
+    #
+    # Now checks both halves of the closed loop, which is strictly stronger than
+    # what it replaced.
+    buyable = await c.fetchval(
+        "SELECT count(*) FROM market_hits WHERE provider='sparrow' AND listing_id=$1 "
+        "AND is_listing IS TRUE AND url IS NOT NULL", L.id)
+    chk('buyable row removed on completion', buyable==0, buyable)
+    comp = await c.fetchrow(
+        "SELECT price, source, is_listing FROM market_hits "
+        "WHERE provider='sparrow' AND listing_id=$1 AND is_listing IS FALSE", L.id)
+    chk('sold comp written at the AGREED price', comp is not None and float(comp['price'])==27.0,
+        None if comp is None else float(comp['price']))
+    chk('sold comp tagged sparrow_p2p (separable from scraped supply)',
+        comp is not None and comp['source']=='sparrow_p2p')
 
     print('5. MUTUAL GRADING')
     await grade_counterparty(o.id, GradeCreate(verdict='positive', note='Fast and honest'), user_id=BUYER)
