@@ -593,43 +593,6 @@
       "nullable": false,
       "type": "text"
     },
-    "alert_delivery_queue.alert_id": {
-      "nullable": false,
-      "type": "int8"
-    },
-    "alert_delivery_queue.created_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "alert_delivery_queue.delivered_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "alert_delivery_queue.id": {
-      "default": "nextval('alert_delivery_queue_id_seq'::regclass)",
-      "nullable": false,
-      "type": "int8"
-    },
-    "alert_delivery_queue.last_error": {
-      "nullable": true,
-      "type": "text"
-    },
-    "alert_delivery_queue.next_try_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "alert_delivery_queue.status": {
-      "default": "'pending'::text",
-      "nullable": false,
-      "type": "text"
-    },
-    "alert_delivery_queue.try_count": {
-      "default": "0",
-      "nullable": false,
-      "type": "int4"
-    },
     "alert_endpoints.created_at": {
       "default": "now()",
       "nullable": false,
@@ -846,49 +809,6 @@
     "alerts.watchlist_item_id": {
       "nullable": true,
       "type": "uuid"
-    },
-    "alerts_outbox.alert_date": {
-      "default": "CURRENT_DATE",
-      "nullable": false,
-      "type": "date"
-    },
-    "alerts_outbox.baseline_price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "alerts_outbox.created_at": {
-      "default": "now()",
-      "nullable": false,
-      "type": "timestamptz"
-    },
-    "alerts_outbox.delivered_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "alerts_outbox.id": {
-      "default": "nextval('alerts_outbox_id_seq'::regclass)",
-      "nullable": false,
-      "type": "int8"
-    },
-    "alerts_outbox.item_ref": {
-      "nullable": false,
-      "type": "uuid"
-    },
-    "alerts_outbox.kind": {
-      "nullable": false,
-      "type": "text"
-    },
-    "alerts_outbox.last_price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "alerts_outbox.payload": {
-      "nullable": false,
-      "type": "jsonb"
-    },
-    "alerts_outbox.pct_change": {
-      "nullable": true,
-      "type": "numeric"
     },
     "anonymized_user_bucket_v1.created_at": {
       "default": "now()",
@@ -15497,42 +15417,6 @@
       "nullable": true,
       "type": "text"
     },
-    "v_alerts_pending.alert_date": {
-      "nullable": true,
-      "type": "date"
-    },
-    "v_alerts_pending.baseline_price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "v_alerts_pending.created_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "v_alerts_pending.id": {
-      "nullable": true,
-      "type": "int8"
-    },
-    "v_alerts_pending.item_ref": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "v_alerts_pending.kind": {
-      "nullable": true,
-      "type": "text"
-    },
-    "v_alerts_pending.last_price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "v_alerts_pending.payload": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "v_alerts_pending.pct_change": {
-      "nullable": true,
-      "type": "numeric"
-    },
     "v_backfill_targets.canonical_category": {
       "nullable": true,
       "type": "text"
@@ -20846,16 +20730,6 @@
       "accepted_at_buyer",
       "accepted_at_seller"
     ],
-    "alert_delivery_queue": [
-      "id",
-      "alert_id",
-      "status",
-      "try_count",
-      "next_try_at",
-      "last_error",
-      "created_at",
-      "delivered_at"
-    ],
     "alert_endpoints": [
       "id",
       "user_id",
@@ -20916,18 +20790,6 @@
       "last_triggered_at",
       "watchlist_item_id",
       "updated_at"
-    ],
-    "alerts_outbox": [
-      "id",
-      "kind",
-      "item_ref",
-      "alert_date",
-      "pct_change",
-      "last_price",
-      "baseline_price",
-      "payload",
-      "created_at",
-      "delivered_at"
     ],
     "anonymized_user_bucket_v1": [
       "id",
@@ -25110,17 +24972,6 @@
       "item_ref",
       "kind"
     ],
-    "v_alerts_pending": [
-      "id",
-      "kind",
-      "item_ref",
-      "alert_date",
-      "pct_change",
-      "last_price",
-      "baseline_price",
-      "payload",
-      "created_at"
-    ],
     "v_backfill_targets": [
       "wave",
       "canonical_category",
@@ -26754,14 +26605,6 @@
         "id"
       ]
     ],
-    "alert_delivery_queue": [
-      [
-        "alert_id"
-      ],
-      [
-        "id"
-      ]
-    ],
     "alert_endpoints": [
       [
         "id"
@@ -26801,21 +26644,6 @@
     "alerts": [
       [
         "id"
-      ]
-    ],
-    "alerts_outbox": [
-      [
-        "id"
-      ],
-      [
-        "kind",
-        "item_ref",
-        "alert_date"
-      ],
-      [
-        "kind",
-        "item_ref",
-        "alert_date"
       ]
     ],
     "anonymized_user_bucket_v1": [

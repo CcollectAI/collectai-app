@@ -373,6 +373,67 @@ python3 server/scripts/audit_orphan_stores.py --writers-file /tmp/writers.json
 Current state: **17 orphans, 10 with rows.** Known-good ones go in
 `KNOWN_ORPHANS` with a reason that must be TRUE.
 
+## The dead alert subsystem is GONE (2026-08-08)
+
+Merle's rule, and it is the right one:
+
+> **If it is not an alert that the targeted item is available for the price the
+> user wants, then it is pointless as an alert.**
+
+That is the surviving predicate — `url IS NOT NULL AND is_listing IS TRUE AND
+price_eur <= target_price` — and everything that failed it has now been removed
+rather than left dormant.
+
+### What was in there, and why it was safe to delete
+
+```
+alerts_outbox          31 rows   27 price_drop_30d + 4 price_spike_7d
+                                 2025-10-22 .. 2025-11-21
+alert_delivery_queue   27 rows   ALL status='delivering', delivered_at NULL
+```
+
+So 27 alerts were queued for delivery in October 2025 and **never delivered** —
+the drainer had been removed with the rest of the subsystem and the queue was
+left behind. That is why it looked alarming: a queue with a writer and no reader
+is not the same as an unread log, and it deserved the check.
+
+It was checked. Every one is a `price_drop_30d` / `price_spike_7d` — a **computed
+price movement**, not an offer. A median that moved is not something anyone can
+buy, so under the rule above none of them should ever have been sent. **No user
+is owed a notification.**
+
+Also found: `alert_delivery_queue.alert_id` is BIGINT while `public.alerts.id` is
+UUID. The two could never join. The queue keyed on `alerts_outbox.id`.
+
+### Removed
+
+| | |
+|---|---|
+| cron jobs | 21 `produce_alerts_price_drop_30d`, 24 `produce_alerts_price_spike_7d`, **25 `cleanup_alerts_outbox`** — the janitor was still running daily against a table nothing had written to since November |
+| tables | `alerts_outbox`, `alert_delivery_queue` |
+| functions | `_alerts_enqueue`, the 2 producers, the janitor, and 7 delivery RPCs (`rpc_alert_attempt_start/finish`, `rpc_alerts_mark_delivered`, `rpc_alert_targets`, `rpc_alerts_feed_for_user`, `rpc_alerts_list`, `rpc_get_alerts_recent`) |
+| view | `v_alerts_pending` — a dependent nobody had enumerated |
+
+Three of those RPC names read like live readers, which is exactly why each was
+checked rather than assumed: **zero** appear in the frontend's 16 real
+`supabase.rpc()` names, and none is referenced in `server/app` or
+`server/workers`.
+
+> The view is the lesson. I enumerated the FUNCTIONS that touched the tables and
+> thought that was the dependency set; `CASCADE` then reported a view I had never
+> looked for. **Enumerating functions is not enumerating dependents.**
+
+### Untouched, and verified after the drop
+
+`alert_trigger_history` 102 rows · `notification_history` 11 · `watchlist_items` 8 ·
+`/healthz` 200 · `audit:all` 15/15 · schema.lock regenerated (548 tables) and
+its preflight PASS.
+
+`user_notifications` and the 15 guidance RPCs are **not** covered by the rule
+above — "Best next add" is a RECOMMENDATION, not an alert. Its cron stays
+disabled and the scaffolding stays dormant, pending a decision on whether that
+feature is wanted at all.
+
 ## A THIRD notification system, in the database (investigated 2026-08-08)
 
 Flagged during the screen consolidation as "188 rows, no reader". Investigated;
