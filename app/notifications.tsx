@@ -305,7 +305,7 @@ function NotificationsScreen() {
     <View style={[s.container, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: "Notifications",
+          headerTitle: "Notifications",
           headerRight: () =>
             unreadCount > 0 ? (
               <Pressable

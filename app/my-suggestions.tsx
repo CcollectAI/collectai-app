@@ -215,7 +215,7 @@ function MySuggestionsContent() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          title: "My Suggestions",
+          headerTitle: "My Suggestions",
           headerBackTitle: "Settings",
         }}
       />

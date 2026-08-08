@@ -31,7 +31,6 @@
     "clear_recent": "Letzte Suchen löschen",
     "retry_action": "Erneut"
   },
-
   "add_tab": {
     "subtitle": "Schneller, kamerazuerst Flow.",
     "quickscan_ai": "QuickScan AI",
@@ -44,14 +43,13 @@
     "add_manually": "Manuell hinzufügen",
     "add_manually_a11y": "Objekt manuell hinzufügen"
   },
-
   "wishlist": {
     "empty_title": "Starte deine Wunschliste",
     "add_first_a11y": "Erstes Wunschlisten-Objekt hinzufügen",
     "add_first": "Erstes Objekt hinzufügen",
     "feature_price_drops": "Preisalarme",
     "feature_target_price": "Zielpreis verfolgen",
-    "feature_restock": "Nachschub-Benachrichtigungen",
+    "feature_member_listings": "Sehen, wenn ein Mitglied es verkauft",
     "add_to_watchlist": "Zur Wunschliste hinzufügen",
     "close_add_form_a11y": "Formular schließen",
     "title_required": "Titel *",
@@ -73,7 +71,6 @@
     "save_target_a11y": "Zielpreis speichern",
     "save_target_button": "Zielpreis speichern"
   },
-
   "events": {
     "reminder_a11y": "Erinnerung für Event setzen",
     "create_event": "Event erstellen",
@@ -89,7 +86,6 @@
     "empty_title": "Keine Events in der Nähe",
     "empty_body": "Keine Events innerhalb 50 km von deinem Standort gefunden"
   },
-
   "marketplace": {
     "find_collectors": "Sammler finden",
     "find_collectors_a11y": "Sammler finden",
@@ -98,7 +94,6 @@
     "search_users_placeholder": "Nach Name oder Handle suchen...",
     "search_users_a11y": "Benutzer nach Name oder Handle suchen"
   },
-
   "search": {
     "placeholder": "Objekte, Sammler, Events suchen...",
     "input_a11y": "Suchfeld",
@@ -106,24 +101,20 @@
     "retry_a11y": "Suche erneut versuchen",
     "no_results": "Keine Ergebnisse gefunden"
   },
-
   "item_detail": {
     "valuation_a11y": "Objekt-Bewertung und Details",
     "save_a11y": "In Sammlung speichern",
     "save": "In Sammlung speichern"
   },
-
   "onboarding": {
     "skip_a11y": "Kategorieauswahl überspringen",
     "change_region_a11y": "Region ändern",
     "confirm_age_a11y": "Altersanforderung bestätigen",
     "select_region": "Region auswählen"
   },
-
   "quickscan_screen": {
     "gallery_a11y": "Aus Galerie oder Screenshot scannen"
   },
-
   "add_manual": {
     "discard_draft_a11y": "Entwurf verwerfen",
     "condition_value_title": "Zustand & Wert",
@@ -149,7 +140,6 @@
     "add_custom_field_a11y": "Benutzerdefiniertes Feld hinzufügen",
     "add_field": "Feld hinzufügen"
   },
-
   "items_empty": {
     "hero_title": "Starte deine Sammlung",
     "hero_subtitle": "Füge dein erstes Objekt hinzu, um den Wert zu verfolgen, Sets aufzubauen und Insights freizuschalten.",
@@ -162,7 +152,6 @@
     "scan_barcode": "Barcode scannen",
     "scan_barcode_a11y": "Einen Barcode scannen"
   },
-
   "barcode": {
     "product_found": "Produkt gefunden",
     "estimated_price": "Geschätzter Preis",
@@ -172,7 +161,6 @@
     "add_watchlist_a11y": "Stattdessen zur Wunschliste hinzufügen",
     "add_watchlist_btn": "Zur Wunschliste hinzufügen"
   },
-
   "filters": {
     "close_a11y": "Filter schließen",
     "sort_by": "Sortieren nach",
@@ -185,7 +173,6 @@
     "preset_name_a11y": "Preset-Name",
     "save_preset_btn_a11y": "Preset speichern"
   },
-
   "grading": {
     "lookup_a11y": "Grading-Zertifikat nachschlagen",
     "look_up_certificate": "Zertifikat nachschlagen",
@@ -199,7 +186,6 @@
     "lookup_cert_a11y": "Zertifikat nachschlagen",
     "look_up": "Nachschlagen"
   },
-
   "auth": {
     "sign_in": "Anmelden",
     "sign_up": "Registrieren",
@@ -282,7 +268,6 @@
       "reset_failed": "Zurücksetzen fehlgeschlagen. Unbekannter Fehler."
     }
   },
-
   "nav": {
     "home": "Start",
     "items": "Objekte",
@@ -293,7 +278,6 @@
     "settings": "Einstellungen",
     "profile": "Profil"
   },
-
   "home": {
     "collection_get_started": "Leg los, indem du deinen ersten Artikel hinzufügst",
     "portfolio_value": "Portfoliowert",
@@ -332,7 +316,6 @@
     "deal_agent_open_a11y": "Deal Agent öffnen",
     "deal_agent_upgrade_a11y": "Upgrade, um Deal Agent freizuschalten"
   },
-
   "items": {
     "title": "Objekte",
     "all": "Alle",
@@ -356,7 +339,6 @@
     "archive_a11y": "Ausgewählte Objekte archivieren",
     "delete_a11y": "Ausgewählte Objekte löschen"
   },
-
   "scan": {
     "title": "QuickScan",
     "capture": "Tippen zum Aufnehmen",
@@ -415,7 +397,6 @@
       "keep_b_a11y": "Objekt B behalten"
     }
   },
-
   "settings": {
     "title": "Einstellungen",
     "account": "Konto",
@@ -443,7 +424,6 @@
     "delete_account": "Konto löschen",
     "delete_account_confirm": "Dies löscht dein Konto und alle Daten dauerhaft. Diese Aktion kann nicht rückgängig gemacht werden."
   },
-
   "account": {
     "edit_profile": "Profil bearbeiten",
     "edit_profile_desc": "Ändere deinen Benutzernamen und deine Bio",
@@ -479,7 +459,6 @@
     "confirm_new_password": "Neues Passwort bestätigen",
     "confirm_new_password_placeholder": "Neues Passwort bestätigen"
   },
-
   "billing": {
     "free": "Kostenlos",
     "pro": "Pro",
@@ -495,14 +474,12 @@
     "upgrade_to_plan": "Auf {{plan}} upgraden",
     "unlock_feature": "Upgrade, um diese Funktion freizuschalten"
   },
-
   "set_completion": {
     "title": "Set-Fortschritt",
     "subtitle": "Automatisch aus deinen Objekten erkannt",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
     "no_sets": "Noch keine Sets in Bearbeitung"
   },
-
   "ads": {
     "sponsored": "Gesponsert",
     "ad": "Werbung"

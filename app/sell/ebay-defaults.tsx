@@ -184,7 +184,7 @@ function EbayDefaultsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-        <Stack.Screen options={{ title: 'eBay defaults' }} />
+        <Stack.Screen options={{ headerTitle: 'eBay defaults' }} />
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -194,7 +194,7 @@ function EbayDefaultsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
-      <Stack.Screen options={{ title: 'eBay defaults' }} />
+      <Stack.Screen options={{ headerTitle: 'eBay defaults' }} />
       <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"

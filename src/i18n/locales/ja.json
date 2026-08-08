@@ -31,7 +31,6 @@
     "clear_recent": "最近の検索をクリア",
     "retry_action": "再試行"
   },
-
   "add_tab": {
     "subtitle": "高速、カメラ優先のフロー。",
     "quickscan_ai": "QuickScan AI",
@@ -44,14 +43,13 @@
     "add_manually": "手動で追加",
     "add_manually_a11y": "アイテムを手動で追加"
   },
-
   "wishlist": {
     "empty_title": "ウォッチリストを始めよう",
     "add_first_a11y": "最初のウォッチリストアイテムを追加",
     "add_first": "最初のアイテムを追加",
     "feature_price_drops": "値下げアラート",
     "feature_target_price": "目標価格追跡",
-    "feature_restock": "再入荷通知",
+    "feature_member_listings": "メンバーが出品したら分かる",
     "add_to_watchlist": "ウォッチリストに追加",
     "close_add_form_a11y": "フォームを閉じる",
     "title_required": "タイトル *",
@@ -73,7 +71,6 @@
     "save_target_a11y": "目標価格を保存",
     "save_target_button": "目標価格を保存"
   },
-
   "events": {
     "reminder_a11y": "イベントのリマインダーを設定",
     "create_event": "イベントを作成",
@@ -89,7 +86,6 @@
     "empty_title": "近くにイベントがありません",
     "empty_body": "現在地から50km以内にイベントは見つかりませんでした"
   },
-
   "marketplace": {
     "find_collectors": "コレクターを探す",
     "find_collectors_a11y": "コレクターを探す",
@@ -98,7 +94,6 @@
     "search_users_placeholder": "名前またはハンドル名で検索...",
     "search_users_a11y": "名前またはハンドル名でユーザー検索"
   },
-
   "search": {
     "placeholder": "アイテム、コレクター、イベントを検索...",
     "input_a11y": "検索フィールド",
@@ -106,24 +101,20 @@
     "retry_a11y": "検索を再試行",
     "no_results": "結果が見つかりません"
   },
-
   "item_detail": {
     "valuation_a11y": "アイテムの評価と詳細",
     "save_a11y": "コレクションに保存",
     "save": "コレクションに保存"
   },
-
   "onboarding": {
     "skip_a11y": "カテゴリー選択をスキップ",
     "change_region_a11y": "地域を変更",
     "confirm_age_a11y": "年齢要件を確認",
     "select_region": "地域を選択"
   },
-
   "quickscan_screen": {
     "gallery_a11y": "ギャラリーまたはスクリーンショットからスキャン"
   },
-
   "add_manual": {
     "discard_draft_a11y": "下書きを破棄",
     "condition_value_title": "状態と価値",
@@ -149,7 +140,6 @@
     "add_custom_field_a11y": "カスタムフィールドを追加",
     "add_field": "フィールドを追加"
   },
-
   "items_empty": {
     "hero_title": "コレクションを始めよう",
     "hero_subtitle": "最初のアイテムを追加して、価値を追跡し、セットを完成させ、インサイトを解放しましょう。",
@@ -162,7 +152,6 @@
     "scan_barcode": "バーコードをスキャン",
     "scan_barcode_a11y": "バーコードをスキャン"
   },
-
   "barcode": {
     "product_found": "製品が見つかりました",
     "estimated_price": "推定価格",
@@ -172,7 +161,6 @@
     "add_watchlist_a11y": "代わりにウォッチリストに追加",
     "add_watchlist_btn": "ウォッチリストに追加"
   },
-
   "filters": {
     "close_a11y": "フィルターを閉じる",
     "sort_by": "並び替え",
@@ -185,7 +173,6 @@
     "preset_name_a11y": "プリセット名",
     "save_preset_btn_a11y": "プリセットを保存"
   },
-
   "grading": {
     "lookup_a11y": "グレーディング証明書を検索",
     "look_up_certificate": "証明書を検索",
@@ -199,7 +186,6 @@
     "lookup_cert_a11y": "証明書を検索",
     "look_up": "検索"
   },
-
   "auth": {
     "sign_in": "サインイン",
     "sign_up": "サインアップ",
@@ -282,7 +268,6 @@
       "reset_failed": "リセットに失敗しました。不明なエラー。"
     }
   },
-
   "nav": {
     "home": "ホーム",
     "items": "アイテム",
@@ -293,7 +278,6 @@
     "settings": "設定",
     "profile": "プロフィール"
   },
-
   "home": {
     "collection_get_started": "最初のアイテムを追加して始めましょう",
     "portfolio_value": "ポートフォリオ価値",
@@ -332,7 +316,6 @@
     "deal_agent_open_a11y": "Deal Agentを開く",
     "deal_agent_upgrade_a11y": "アップグレードしてDeal Agentをアンロック"
   },
-
   "items": {
     "title": "アイテム",
     "all": "すべて",
@@ -356,7 +339,6 @@
     "archive_a11y": "選択したアイテムをアーカイブ",
     "delete_a11y": "選択したアイテムを削除"
   },
-
   "scan": {
     "title": "クイックスキャン",
     "capture": "タップで撮影",
@@ -415,7 +397,6 @@
       "keep_b_a11y": "アイテムBを保持"
     }
   },
-
   "settings": {
     "title": "設定",
     "account": "アカウント",
@@ -443,7 +424,6 @@
     "delete_account": "アカウントを削除",
     "delete_account_confirm": "アカウントとすべてのデータが完全に削除されます。この操作は取り消せません。"
   },
-
   "account": {
     "edit_profile": "プロフィールを編集",
     "edit_profile_desc": "ユーザー名と自己紹介を変更",
@@ -479,7 +459,6 @@
     "confirm_new_password": "新しいパスワードを確認",
     "confirm_new_password_placeholder": "新しいパスワードを確認"
   },
-
   "billing": {
     "free": "無料",
     "pro": "Pro",
@@ -495,14 +474,12 @@
     "upgrade_to_plan": "{{plan}}にアップグレード",
     "unlock_feature": "アップグレードしてこの機能をアンロック"
   },
-
   "set_completion": {
     "title": "セット進捗",
     "subtitle": "アイテムから自動検出",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
     "no_sets": "進行中のセットはまだありません"
   },
-
   "ads": {
     "sponsored": "スポンサー",
     "ad": "広告"

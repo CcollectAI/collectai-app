@@ -31,7 +31,6 @@
     "clear_recent": "Borrar búsquedas recientes",
     "retry_action": "Reintentar"
   },
-
   "add_tab": {
     "subtitle": "Flujo rápido, cámara primero.",
     "quickscan_ai": "QuickScan IA",
@@ -44,14 +43,13 @@
     "add_manually": "Añadir manualmente",
     "add_manually_a11y": "Añadir artículo manualmente"
   },
-
   "wishlist": {
     "empty_title": "Comienza tu lista de seguimiento",
     "add_first_a11y": "Añadir tu primer artículo a la lista",
     "add_first": "Añadir tu primer artículo",
     "feature_price_drops": "Alertas de bajada de precio",
     "feature_target_price": "Seguimiento de precio objetivo",
-    "feature_restock": "Notificaciones de reposición",
+    "feature_member_listings": "Ver cuándo un miembro lo vende",
     "add_to_watchlist": "Añadir a la lista",
     "close_add_form_a11y": "Cerrar formulario",
     "title_required": "Título *",
@@ -73,7 +71,6 @@
     "save_target_a11y": "Guardar precio objetivo",
     "save_target_button": "Guardar precio objetivo"
   },
-
   "events": {
     "reminder_a11y": "Fijar recordatorio para evento",
     "create_event": "Crear evento",
@@ -89,7 +86,6 @@
     "empty_title": "No hay eventos cercanos",
     "empty_body": "No se han encontrado eventos en 50 km de tu ubicación"
   },
-
   "marketplace": {
     "find_collectors": "Encontrar coleccionistas",
     "find_collectors_a11y": "Encontrar coleccionistas",
@@ -98,7 +94,6 @@
     "search_users_placeholder": "Buscar por nombre o usuario...",
     "search_users_a11y": "Buscar usuarios por nombre o usuario"
   },
-
   "search": {
     "placeholder": "Buscar artículos, coleccionistas, eventos...",
     "input_a11y": "Campo de búsqueda",
@@ -106,24 +101,20 @@
     "retry_a11y": "Reintentar búsqueda",
     "no_results": "No se encontraron resultados"
   },
-
   "item_detail": {
     "valuation_a11y": "Valoración y detalles del artículo",
     "save_a11y": "Guardar en la colección",
     "save": "Guardar en la colección"
   },
-
   "onboarding": {
     "skip_a11y": "Saltar selección de categoría",
     "change_region_a11y": "Cambiar región",
     "confirm_age_a11y": "Confirmar requisito de edad",
     "select_region": "Seleccionar región"
   },
-
   "quickscan_screen": {
     "gallery_a11y": "Escanear desde galería o captura"
   },
-
   "add_manual": {
     "discard_draft_a11y": "Descartar borrador",
     "condition_value_title": "Condición y valor",
@@ -149,7 +140,6 @@
     "add_custom_field_a11y": "Añadir campo personalizado",
     "add_field": "Añadir campo"
   },
-
   "items_empty": {
     "hero_title": "Empieza tu colección",
     "hero_subtitle": "Añade tu primer artículo para seguir su valor, completar sets y desbloquear estadísticas.",
@@ -162,7 +152,6 @@
     "scan_barcode": "Escanear código",
     "scan_barcode_a11y": "Escanear un código de barras"
   },
-
   "barcode": {
     "product_found": "Producto encontrado",
     "estimated_price": "Precio estimado",
@@ -172,7 +161,6 @@
     "add_watchlist_a11y": "Añadir a la lista de seguimiento",
     "add_watchlist_btn": "Añadir a la lista de seguimiento"
   },
-
   "filters": {
     "close_a11y": "Cerrar filtros",
     "sort_by": "Ordenar por",
@@ -185,7 +173,6 @@
     "preset_name_a11y": "Nombre del preajuste",
     "save_preset_btn_a11y": "Guardar preajuste"
   },
-
   "grading": {
     "lookup_a11y": "Buscar certificado de grading",
     "look_up_certificate": "Buscar certificado",
@@ -199,7 +186,6 @@
     "lookup_cert_a11y": "Buscar certificado",
     "look_up": "Buscar"
   },
-
   "auth": {
     "sign_in": "Iniciar sesión",
     "sign_up": "Registrarse",
@@ -282,7 +268,6 @@
       "reset_failed": "Error al restablecer. Error desconocido."
     }
   },
-
   "nav": {
     "home": "Inicio",
     "items": "Artículos",
@@ -293,7 +278,6 @@
     "settings": "Ajustes",
     "profile": "Perfil"
   },
-
   "home": {
     "collection_get_started": "Empieza añadiendo tu primer artículo",
     "portfolio_value": "Valor del portafolio",
@@ -332,7 +316,6 @@
     "deal_agent_open_a11y": "Abrir Deal Agent",
     "deal_agent_upgrade_a11y": "Mejora para desbloquear Deal Agent"
   },
-
   "items": {
     "title": "Artículos",
     "all": "Todos",
@@ -356,7 +339,6 @@
     "archive_a11y": "Archivar artículos seleccionados",
     "delete_a11y": "Eliminar artículos seleccionados"
   },
-
   "scan": {
     "title": "QuickScan",
     "capture": "Toca para capturar",
@@ -415,7 +397,6 @@
       "keep_b_a11y": "Conservar el artículo B"
     }
   },
-
   "settings": {
     "title": "Ajustes",
     "account": "Cuenta",
@@ -443,7 +424,6 @@
     "delete_account": "Eliminar cuenta",
     "delete_account_confirm": "Esto eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer."
   },
-
   "account": {
     "edit_profile": "Editar perfil",
     "edit_profile_desc": "Cambia tu nombre de usuario y bio",
@@ -479,7 +459,6 @@
     "confirm_new_password": "Confirmar nueva contraseña",
     "confirm_new_password_placeholder": "Confirmar nueva contraseña"
   },
-
   "billing": {
     "free": "Gratis",
     "pro": "Pro",
@@ -495,14 +474,12 @@
     "upgrade_to_plan": "Mejorar a {{plan}}",
     "unlock_feature": "Mejora para desbloquear esta función"
   },
-
   "set_completion": {
     "title": "Progreso de la colección",
     "subtitle": "Detectado automáticamente desde tus artículos",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
     "no_sets": "Todavía no hay colecciones en progreso"
   },
-
   "ads": {
     "sponsored": "Patrocinado",
     "ad": "Anuncio"

@@ -31,7 +31,6 @@
     "clear_recent": "Recente zoekopdrachten wissen",
     "retry_action": "Opnieuw"
   },
-
   "add_tab": {
     "subtitle": "Snelle, camera-gerichte flow.",
     "quickscan_ai": "QuickScan AI",
@@ -44,14 +43,13 @@
     "add_manually": "Handmatig toevoegen",
     "add_manually_a11y": "Item handmatig toevoegen"
   },
-
   "wishlist": {
     "empty_title": "Start je verlanglijst",
     "add_first_a11y": "Voeg je eerste verlanglijst-item toe",
     "add_first": "Voeg je eerste item toe",
     "feature_price_drops": "Prijswaarschuwingen",
     "feature_target_price": "Streefprijs volgen",
-    "feature_restock": "Voorraad-meldingen",
+    "feature_member_listings": "Zie wanneer een lid het verkoopt",
     "add_to_watchlist": "Toevoegen aan verlanglijst",
     "close_add_form_a11y": "Formulier sluiten",
     "title_required": "Titel *",
@@ -73,7 +71,6 @@
     "save_target_a11y": "Streefprijs opslaan",
     "save_target_button": "Streefprijs opslaan"
   },
-
   "events": {
     "reminder_a11y": "Herinnering instellen voor evenement",
     "create_event": "Evenement aanmaken",
@@ -89,7 +86,6 @@
     "empty_title": "Geen evenementen in de buurt",
     "empty_body": "Geen evenementen gevonden binnen 50 km van je locatie"
   },
-
   "marketplace": {
     "find_collectors": "Verzamelaars vinden",
     "find_collectors_a11y": "Verzamelaars vinden",
@@ -98,7 +94,6 @@
     "search_users_placeholder": "Zoek op naam of gebruikersnaam...",
     "search_users_a11y": "Gebruikers zoeken op naam of gebruikersnaam"
   },
-
   "search": {
     "placeholder": "Zoek items, verzamelaars, evenementen...",
     "input_a11y": "Zoekveld",
@@ -106,24 +101,20 @@
     "retry_a11y": "Zoeken opnieuw proberen",
     "no_results": "Geen resultaten gevonden"
   },
-
   "item_detail": {
     "valuation_a11y": "Item-taxatie en details",
     "save_a11y": "Opslaan in collectie",
     "save": "Opslaan in collectie"
   },
-
   "onboarding": {
     "skip_a11y": "Categorie-keuze overslaan",
     "change_region_a11y": "Regio wijzigen",
     "confirm_age_a11y": "Leeftijdsvereiste bevestigen",
     "select_region": "Regio selecteren"
   },
-
   "quickscan_screen": {
     "gallery_a11y": "Scannen vanaf galerij of screenshot"
   },
-
   "add_manual": {
     "discard_draft_a11y": "Concept verwerpen",
     "condition_value_title": "Conditie & waarde",
@@ -149,7 +140,6 @@
     "add_custom_field_a11y": "Aangepast veld toevoegen",
     "add_field": "Veld toevoegen"
   },
-
   "items_empty": {
     "hero_title": "Start je collectie",
     "hero_subtitle": "Voeg je eerste item toe om de waarde te volgen, sets te bouwen en inzichten te ontgrendelen.",
@@ -162,7 +152,6 @@
     "scan_barcode": "Streepjescode scannen",
     "scan_barcode_a11y": "Een streepjescode scannen"
   },
-
   "barcode": {
     "product_found": "Product gevonden",
     "estimated_price": "Geschatte prijs",
@@ -172,7 +161,6 @@
     "add_watchlist_a11y": "Toevoegen aan verlanglijst",
     "add_watchlist_btn": "Toevoegen aan verlanglijst"
   },
-
   "filters": {
     "close_a11y": "Filters sluiten",
     "sort_by": "Sorteer op",
@@ -185,7 +173,6 @@
     "preset_name_a11y": "Presetnaam",
     "save_preset_btn_a11y": "Preset opslaan"
   },
-
   "grading": {
     "lookup_a11y": "Certificaat opzoeken",
     "look_up_certificate": "Certificaat opzoeken",
@@ -199,7 +186,6 @@
     "lookup_cert_a11y": "Certificaat opzoeken",
     "look_up": "Opzoeken"
   },
-
   "auth": {
     "sign_in": "Inloggen",
     "sign_up": "Registreren",
@@ -282,7 +268,6 @@
       "reset_failed": "Reset mislukt. Onbekende fout."
     }
   },
-
   "nav": {
     "home": "Home",
     "items": "Items",
@@ -293,7 +278,6 @@
     "settings": "Instellingen",
     "profile": "Profiel"
   },
-
   "home": {
     "collection_get_started": "Begin door je eerste item toe te voegen",
     "portfolio_value": "Portfoliowaarde",
@@ -332,7 +316,6 @@
     "deal_agent_open_a11y": "Deal Agent openen",
     "deal_agent_upgrade_a11y": "Upgrade om Deal Agent te ontgrendelen"
   },
-
   "items": {
     "title": "Items",
     "all": "Alle",
@@ -356,7 +339,6 @@
     "archive_a11y": "Geselecteerde items archiveren",
     "delete_a11y": "Geselecteerde items verwijderen"
   },
-
   "scan": {
     "title": "QuickScan",
     "capture": "Tik om te fotograferen",
@@ -415,7 +397,6 @@
       "keep_b_a11y": "Item B behouden"
     }
   },
-
   "settings": {
     "title": "Instellingen",
     "account": "Account",
@@ -443,7 +424,6 @@
     "delete_account": "Account verwijderen",
     "delete_account_confirm": "Dit verwijdert je account en alle gegevens permanent. Deze actie kan niet ongedaan worden gemaakt."
   },
-
   "account": {
     "edit_profile": "Profiel bewerken",
     "edit_profile_desc": "Wijzig je gebruikersnaam en bio",
@@ -479,7 +459,6 @@
     "confirm_new_password": "Bevestig nieuw wachtwoord",
     "confirm_new_password_placeholder": "Bevestig nieuw wachtwoord"
   },
-
   "billing": {
     "free": "Gratis",
     "pro": "Pro",
@@ -495,14 +474,12 @@
     "upgrade_to_plan": "Upgraden naar {{plan}}",
     "unlock_feature": "Upgrade om deze functie te ontgrendelen"
   },
-
   "set_completion": {
     "title": "Setvoortgang",
     "subtitle": "Automatisch gedetecteerd uit je items",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
     "no_sets": "Nog geen sets in uitvoering"
   },
-
   "ads": {
     "sponsored": "Gesponsord",
     "ad": "Advertentie"

@@ -568,7 +568,7 @@ function WatchlistTabScreen() {
         </View>
         <View style={styles.emptyFeatureRow}>
           <Ionicons name="flash-outline" size={16} color={colors.muted} />
-          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>{t('wishlist.feature_restock')}</Text>
+          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>{t('wishlist.feature_member_listings')}</Text>
         </View>
       </View>
     </View>

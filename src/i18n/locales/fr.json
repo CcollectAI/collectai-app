@@ -31,7 +31,6 @@
     "clear_recent": "Effacer les recherches récentes",
     "retry_action": "Réessayer"
   },
-
   "add_tab": {
     "subtitle": "Flux rapide, photo d'abord.",
     "quickscan_ai": "QuickScan IA",
@@ -44,14 +43,13 @@
     "add_manually": "Ajouter manuellement",
     "add_manually_a11y": "Ajouter un objet manuellement"
   },
-
   "wishlist": {
     "empty_title": "Commencez votre liste de suivi",
     "add_first_a11y": "Ajouter votre premier objet à la liste",
     "add_first": "Ajouter votre premier objet",
     "feature_price_drops": "Alertes de baisse de prix",
     "feature_target_price": "Suivi du prix cible",
-    "feature_restock": "Notifications de restockage",
+    "feature_member_listings": "Voir quand un membre le vend",
     "add_to_watchlist": "Ajouter à la liste de suivi",
     "close_add_form_a11y": "Fermer le formulaire",
     "title_required": "Titre *",
@@ -73,7 +71,6 @@
     "save_target_a11y": "Enregistrer le prix cible",
     "save_target_button": "Enregistrer le prix cible"
   },
-
   "events": {
     "reminder_a11y": "Définir un rappel pour l'événement",
     "create_event": "Créer un événement",
@@ -89,7 +86,6 @@
     "empty_title": "Aucun événement à proximité",
     "empty_body": "Aucun événement trouvé dans un rayon de 50 km"
   },
-
   "marketplace": {
     "find_collectors": "Trouver des collectionneurs",
     "find_collectors_a11y": "Trouver des collectionneurs",
@@ -98,7 +94,6 @@
     "search_users_placeholder": "Rechercher par nom ou pseudo...",
     "search_users_a11y": "Rechercher des utilisateurs par nom ou pseudo"
   },
-
   "search": {
     "placeholder": "Rechercher objets, collectionneurs, événements...",
     "input_a11y": "Champ de recherche",
@@ -106,24 +101,20 @@
     "retry_a11y": "Réessayer la recherche",
     "no_results": "Aucun résultat trouvé"
   },
-
   "item_detail": {
     "valuation_a11y": "Évaluation et détails de l'objet",
     "save_a11y": "Enregistrer dans la collection",
     "save": "Enregistrer dans la collection"
   },
-
   "onboarding": {
     "skip_a11y": "Passer la sélection de catégorie",
     "change_region_a11y": "Changer de région",
     "confirm_age_a11y": "Confirmer l'exigence d'âge",
     "select_region": "Sélectionner une région"
   },
-
   "quickscan_screen": {
     "gallery_a11y": "Scanner depuis la galerie ou une capture d'écran"
   },
-
   "add_manual": {
     "discard_draft_a11y": "Abandonner le brouillon",
     "condition_value_title": "État et valeur",
@@ -149,7 +140,6 @@
     "add_custom_field_a11y": "Ajouter un champ personnalisé",
     "add_field": "Ajouter un champ"
   },
-
   "items_empty": {
     "hero_title": "Commencez votre collection",
     "hero_subtitle": "Ajoutez votre premier objet pour suivre sa valeur, compléter des sets et débloquer des analyses.",
@@ -162,7 +152,6 @@
     "scan_barcode": "Scanner le code-barres",
     "scan_barcode_a11y": "Scanner un code-barres"
   },
-
   "barcode": {
     "product_found": "Produit trouvé",
     "estimated_price": "Prix estimé",
@@ -172,7 +161,6 @@
     "add_watchlist_a11y": "Ajouter à la liste de suivi à la place",
     "add_watchlist_btn": "Ajouter à la liste de suivi"
   },
-
   "filters": {
     "close_a11y": "Fermer les filtres",
     "sort_by": "Trier par",
@@ -185,7 +173,6 @@
     "preset_name_a11y": "Nom du préréglage",
     "save_preset_btn_a11y": "Enregistrer le préréglage"
   },
-
   "grading": {
     "lookup_a11y": "Rechercher un certificat de grading",
     "look_up_certificate": "Rechercher un certificat",
@@ -199,7 +186,6 @@
     "lookup_cert_a11y": "Rechercher un certificat",
     "look_up": "Rechercher"
   },
-
   "auth": {
     "sign_in": "Se connecter",
     "sign_up": "S'inscrire",
@@ -282,7 +268,6 @@
       "reset_failed": "Échec de la réinitialisation. Erreur inconnue."
     }
   },
-
   "nav": {
     "home": "Accueil",
     "items": "Objets",
@@ -293,7 +278,6 @@
     "settings": "Paramètres",
     "profile": "Profil"
   },
-
   "home": {
     "collection_get_started": "Commencez par ajouter votre premier article",
     "portfolio_value": "Valeur du portefeuille",
@@ -332,7 +316,6 @@
     "deal_agent_open_a11y": "Ouvrir Deal Agent",
     "deal_agent_upgrade_a11y": "Mettre à niveau pour débloquer Deal Agent"
   },
-
   "items": {
     "title": "Objets",
     "all": "Tout",
@@ -356,7 +339,6 @@
     "archive_a11y": "Archiver les objets sélectionnés",
     "delete_a11y": "Supprimer les objets sélectionnés"
   },
-
   "scan": {
     "title": "QuickScan",
     "capture": "Touchez pour capturer",
@@ -415,7 +397,6 @@
       "keep_b_a11y": "Garder l'objet B"
     }
   },
-
   "settings": {
     "title": "Paramètres",
     "account": "Compte",
@@ -443,7 +424,6 @@
     "delete_account": "Supprimer le compte",
     "delete_account_confirm": "Cela supprimera définitivement votre compte et toutes vos données. Cette action est irréversible."
   },
-
   "account": {
     "edit_profile": "Modifier le profil",
     "edit_profile_desc": "Modifier votre nom d'utilisateur et bio",
@@ -479,7 +459,6 @@
     "confirm_new_password": "Confirmer le nouveau mot de passe",
     "confirm_new_password_placeholder": "Confirmer le nouveau mot de passe"
   },
-
   "billing": {
     "free": "Gratuit",
     "pro": "Pro",
@@ -495,14 +474,12 @@
     "upgrade_to_plan": "Passer à {{plan}}",
     "unlock_feature": "Mettez à niveau pour débloquer cette fonctionnalité"
   },
-
   "set_completion": {
     "title": "Progression des séries",
     "subtitle": "Détectée automatiquement depuis vos objets",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
     "no_sets": "Aucune série en cours"
   },
-
   "ads": {
     "sponsored": "Sponsorisé",
     "ad": "Pub"
