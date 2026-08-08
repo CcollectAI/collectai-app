@@ -65,6 +65,12 @@ function WatchlistTabScreen() {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [items, setItems] = useState<WatchlistItem[]>([]);
+  // Distinct from "no items". A failed read used to render the empty state,
+  // which told the user their watchlist was empty when it simply had not
+  // loaded — and the watchlist is the paid feature's input, so "it emptied"
+  // is the worst possible wrong message. docs/ui-playbook.md: Empty != loading,
+  // and by the same argument Empty != failed.
+  const [loadError, setLoadError] = useState<string | null>(null);
   // watchlist row id -> the cheapest live member listing for that item.
   const [matches, setMatches] = useState<Record<string, P2PWatchlistMatch>>({});
   const [loading, setLoading] = useState(true);
@@ -110,8 +116,12 @@ function WatchlistTabScreen() {
     try {
       const data = await dataProvider.listWatchlist(user?.id ?? 'current-user');
       setItems(data);
+      setLoadError(null);
     } catch (err) {
       logger.error('[Watchlist] loadItems error:', err);
+      // Keep whatever was already on screen. Blanking the list on a refresh
+      // failure would reproduce the exact bug this state exists to fix.
+      setLoadError(err instanceof Error ? err.message : 'Could not load your watchlist');
       showToast({ message: 'Failed to load watchlist. Pull down to retry.', type: 'error' });
     } finally {
       setLoading(false);
@@ -570,6 +580,33 @@ function WatchlistTabScreen() {
   };
 
   const renderEmpty = () => (
+    // FAILED and EMPTY are different states and must not share a rendering.
+    // "No items in your watchlist yet" on a failed read tells the user their
+    // saved items are gone — and this list feeds the alert they pay for, so
+    // that message costs trust the app cannot easily win back.
+    loadError ? (
+      <View style={styles.emptyContainer}>
+        <View style={[styles.emptyIconWrap, { backgroundColor: colors.danger + '15' }]}>
+          <Ionicons name="cloud-offline-outline" size={40} color={colors.danger} />
+        </View>
+        <Text style={[styles.emptyTitle, { color: colors.text }]}>
+          Couldn&apos;t load your watchlist
+        </Text>
+        <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+          Your saved items are safe — we just couldn&apos;t reach them. Check your
+          connection and try again.
+        </Text>
+        <AnimatedPressable
+          style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
+          onPress={() => { setLoading(true); loadItems(); loadMatches(); }}
+          accessibilityRole="button"
+          accessibilityLabel="Try loading your watchlist again"
+        >
+          <Ionicons name="refresh" size={18} color={colors.accentText} />
+          <Text style={[styles.emptyBtnText, { color: colors.accentText }]}>Try again</Text>
+        </AnimatedPressable>
+      </View>
+    ) : (
     <View style={styles.emptyContainer}>
       <View style={[styles.emptyIconWrap, { backgroundColor: colors.accent + '15' }]}>
         <Ionicons name="eye-outline" size={40} color={colors.accent} />
@@ -605,6 +642,7 @@ function WatchlistTabScreen() {
         </View>
       </View>
     </View>
+    )
   );
 
   // ONE inbox. app/alerts.tsx used to live here and rendered

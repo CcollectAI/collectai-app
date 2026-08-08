@@ -37,15 +37,34 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     error = res.error;
   } catch (e) {
     if (e instanceof TimeoutError) {
-      logger.error('[SupabaseDataProvider] listWatchlist timed out — returning empty list');
-      return [];
+      // THROW, do not return []. An empty array here is indistinguishable from
+      // "you have not saved anything", so a failed read rendered as
+      // "No items in your watchlist yet" — telling a user their watchlist is
+      // empty when we simply could not fetch it.
+      //
+      // That matters more here than on most screens: the watchlist IS the paid
+      // feature's input (`_check_watchlist_snipes` reads target_price), so a
+      // user who believes it emptied has no reason to keep paying.
+      //
+      // Safe to throw: CachedDataProvider.swr only awaits the fetcher when
+      // there is NO cached value, and keeps serving stale data otherwise — so
+      // this surfaces on a cold read and degrades to stale-plus-log on a warm
+      // one, which is the correct stale-while-revalidate behaviour.
+      logger.error('[SupabaseDataProvider] listWatchlist timed out');
+      throw e;
     }
     throw e;
   }
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listWatchlist error:', error);
-    return [];
+    // logger.ERROR, not warn — warn is stripped in release builds, so this was
+    // invisible on exactly the builds where a vanished watchlist matters.
+    logger.error('[SupabaseDataProvider] listWatchlist error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load your watchlist',
+    );
   }
 
   const rows = (data ?? []) as {
