@@ -15,6 +15,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
+import { parseMoney } from '@/lib/format';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -311,7 +312,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     setFeedbackMessage(null);
     try {
       await dataProvider.submitFeedback(id, 'sale_price', salePrice.trim());
-      const parsedPrice = parseFloat(salePrice.trim().replace(/[^\d.]/g, ''));
+      const parsedPrice = parseFloat(salePrice.trim().replace(/[^0-9.,]/g, '').replace(',', '.'));
       if (parsedPrice > 0) {
         collectorsApi.submitVerifiedSale({
           item_id: id,
@@ -353,7 +354,7 @@ export function useItemDetail(params: UseItemDetailParams) {
   // ── For-sale handlers ──────────────────────────────────────────────────
   const handleListForSale = useCallback(async () => {
     if (!id || isDraft || forSaleLoading) return;
-    const price = parseFloat(askingPriceValue);
+    const price = parseMoney(askingPriceValue) ?? NaN;
     if (isNaN(price) || price <= 0) {
       showToast({ message: 'Enter a valid asking price', type: 'error' });
       return;

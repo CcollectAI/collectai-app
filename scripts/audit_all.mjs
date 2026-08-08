@@ -40,6 +40,11 @@ const CHECKS = [
     why: 'the FE calling an endpoint the backend does not define (404 -> empty state)',
   },
   {
+    name: 'locale-number-parsing',
+    cmd: 'node scripts/check-locale-number-parsing.mjs',
+    why: 'a money field parsed with a regex that drops the comma: "12,50" becomes 1250, silently, and the number still looks plausible',
+  },
+  {
     name: 'dead-nav-targets',
     cmd: 'node scripts/check-dead-nav.mjs',
     why: 'a router.push to a route with no file — a button that goes nowhere',

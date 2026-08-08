@@ -96,7 +96,7 @@ function SellNewScreen() {
   const [matchTried, setMatchTried] = useState(false);
 
   const parsedPrice = useMemo(() => {
-    const n = parseFloat(price.replace(/[^0-9.]/g, ''));
+    const n = parseFloat(price.replace(/[^0-9.,]/g, '').replace(',', '.'));
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [price]);
 

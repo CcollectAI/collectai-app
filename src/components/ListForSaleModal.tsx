@@ -25,7 +25,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
-import { formatPrice, getCurrencySymbol } from '@/lib/format';
+import { formatPrice, getCurrencySymbol, parseMoney } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import {
@@ -87,7 +87,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
   /** Returns an error message if the price string is invalid, or null if valid/empty. */
   const validatePrice = useCallback((price: string): string | null => {
     if (!price || price.trim() === '') return null;
-    const num = parseFloat(price);
+    const num = parseMoney(price) ?? NaN;
     if (isNaN(num)) return 'Enter a valid number';
     if (num <= 0) return 'Price must be greater than 0';
     if (num > 999_999_999) return 'Price is too high';

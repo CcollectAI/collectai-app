@@ -289,7 +289,7 @@ function WatchlistTabScreen() {
     setEditTargetSaving(true);
     try {
       const newTarget = editTargetValue.trim()
-        ? parseFloat(editTargetValue.replace(/[^0-9.]/g, ''))
+        ? parseFloat(editTargetValue.replace(/[^0-9.,]/g, '').replace(',', '.'))
         : null;
 
       await dataProvider.updateWatchlistItem(editTargetItem.id, {
@@ -387,7 +387,7 @@ function WatchlistTabScreen() {
     setAcquiring(true);
     try {
       const actualPrice = acquirePrice.trim()
-        ? parseFloat(acquirePrice.replace(/[^0-9.]/g, ''))
+        ? parseFloat(acquirePrice.replace(/[^0-9.,]/g, '').replace(',', '.'))
         : undefined;
 
       await dataProvider.convertWatchlistToItem(

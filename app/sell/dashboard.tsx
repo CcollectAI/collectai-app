@@ -430,7 +430,7 @@ function SellerDashboardScreen() {
     if (!validateAll(createTitleField, createPriceField)) return;
 
     const title = createTitleField.value.trim();
-    const price = parseFloat(createPriceField.value.replace(/[^\d.]/g, ''));
+    const price = parseFloat(createPriceField.value.replace(/[^0-9.,]/g, '').replace(',', '.'));
 
     setCreating(true);
     try {

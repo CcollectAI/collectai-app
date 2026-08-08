@@ -181,3 +181,44 @@ export function formatDualPrice(
   const origFormatted = formatPrice(origAmount, origCur, origLocale);
   return { primary, secondary: `~${origFormatted}` };
 }
+
+/**
+ * Parse a money value a USER typed. Returns null when it isn't a usable number.
+ *
+ * The app ships in 7 currencies and most of Europe types `12,50`. Every
+ * hand-rolled parse of that string has been wrong in one of four ways, all of
+ * which produce a plausible NUMBER rather than an error, so nothing catches
+ * them:
+ *
+ *   parseFloat(v.replace(/[^\d.]/g, ''))   "12,50" -> 1250   100x too big
+ *   parseFloat(v.replace(/[^\d,]/g, ''))   "12.50" -> 1250   100x too big
+ *   parseFloat(v)                          "12,50" -> 12     truncated
+ *   keeps both separators, normalises      "1,5"   -> 1      stops at the comma
+ *   neither
+ *
+ * The first shipped in `app/watchlist-builder.tsx` and made every European
+ * seller's target price a hundred times too high — a watchlist row that saves
+ * fine and can never fire.
+ *
+ * Use this instead of parsing inline. `npm run check:numbers`
+ * (scripts/check-locale-number-parsing.mjs) fails the build on the raw forms.
+ *
+ * Deliberately NOT locale-aware beyond the separator: guessing whether "1,234"
+ * means 1234 or 1.234 from a device locale is a coin flip on a value that
+ * decides what someone pays. Thousands separators are stripped, the LAST
+ * separator wins as the decimal point, which is what a human means when they
+ * type it.
+ */
+export function parseMoney(value: string | null | undefined): number | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.replace(/[^0-9.,]/g, '');
+  if (!cleaned) return null;
+  // The last separator is the decimal point; anything before it is grouping.
+  const lastSep = Math.max(cleaned.lastIndexOf('.'), cleaned.lastIndexOf(','));
+  const normalised =
+    lastSep === -1
+      ? cleaned
+      : cleaned.slice(0, lastSep).replace(/[.,]/g, '') + '.' + cleaned.slice(lastSep + 1);
+  const n = parseFloat(normalised);
+  return Number.isFinite(n) ? n : null;
+}
