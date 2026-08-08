@@ -685,33 +685,86 @@ this document.
 "does a sparrow listing count toward the free plan's watchlist/alert caps?" —
 is answered by this: **no.** Metering supply is the 2015 Vinted mistake.
 
-### 8b. Price drops notify everyone who favourited — and we cannot do it at all
+### 8b. Price drops alert watchers — BUILT 2026-08-08
 
 On Vinted, dropping a listing's price **pushes a notification to every member
 who favourited or viewed it**. It is the single most recommended seller action
 in every guide, because it converts stored interest into a sale on demand.
 
-We have the better half of this already and cannot use it:
+We had the better half already and could not use it. `p2p_listing_router.py` had
+exactly three write endpoints — create, delist, report — and **no price edit of
+any kind**. A seller who wanted to drop their price had to delist and relist,
+and forgetting to delist first returned `409 ALREADY_LISTED`, which reads as the
+app being broken.
 
 | Piece | Us | Status |
 |---|---|---|
-| Stored interest | the heart → a `watchlist_items` row with a **target price** | built 2026-08-08 |
-| The alert rail | Target Hit, a paid feature that already fires on price | built |
-| A way to lower a listing's price | — | **does not exist** |
+| Stored interest | a `watchlist_items` row with a **target price** | built (watchlist, catalog item page) |
+| The alert rail | Target Hit, which already fires on price | built |
+| A way to change a listing's price | `PATCH /p2p/listings/{id}` | **built 2026-08-08** |
 
-`p2p_listing_router.py` has exactly three write endpoints: `POST /listings`,
-`POST /listings/{id}/delist`, `POST /listings/{id}/report`. **There is no price
-edit of any kind.** A seller who wants to drop their price must delist and
-relist — and if they forget to delist first they hit `409 ALREADY_LISTED`, which
-reads as the app being broken.
+**Ours is stronger than Vinted's**, because a watchlist row carries a *target*:
+we do not notify everyone who saved the item, we notify the people whose declared
+target the new price now meets. That is Target Hit firing on a member listing —
+the whole thesis of §1.
 
-Our version is *stronger* than Vinted's when it exists, because a watchlist row
-carries a **target price**: we do not notify everyone, we notify the people whose
-declared target the new price now meets. That is Target Hit firing on a member
-listing, which is the whole thesis of §1.
+#### How it works, and what it deliberately does NOT add
 
-**This is the highest-leverage missing endpoint in the marketplace.** Not a new
-feature — the connective tissue between three that are already built.
+No new alert type, no new worker, and **no `user_price_alerts` row**.
+`docs/alerts-and-insights.md` records that the Rules tab is empty *by design*,
+that the watchlist target IS the rule, and that re-adding a writer there has now
+been the same bug three times.
+
+`_check_watchlist_snipes` already selects `market_hits` rows with
+`seen_at > now() - interval '30 minutes'` and `price_eur <= w.target_price`. So
+`_price_change_hook` re-points the listing's existing buyable row at the new
+price and refreshes `seen_at`. The next cycle matches it against every watcher
+whose target the new price meets, with the existing 24h-per-watchlist dedupe and
+plan gating already applied. The hook knows nothing about users.
+
+Three decisions worth keeping:
+
+- **UPDATE, never INSERT.** The publish hook guards with
+  `WHERE NOT EXISTS (provider='sparrow' AND listing_id=…)` precisely because a
+  second buyable row makes Target Hit surface one listing twice. Verified on
+  prod that the UPDATE works even when `seen_at` moves the row across a monthly
+  partition boundary.
+- **A price RISE corrects the row but does not refresh `seen_at`.** "Listed
+  below your target" is the promise; waking someone because an item got more
+  expensive is a notification with no action — what the 2026-08-06 consolidation
+  deleted three workers to stop doing.
+- **Price only.** Title, category and `canonical_key` decide what the listing
+  *is*; editing those after members have watched and been alerted turns one
+  listing into a different product with the same history.
+
+#### The pull side: `GET /p2p/watchlist-matches`
+
+The marketplace and the watchlist were built separately and never met on screen.
+Someone could be watching a Bayou while another member had one listed, and only
+a push firing at the right moment would connect them. This is the same join with
+no time window and no alert: open your watchlist, see what is buyable now.
+Rendered on `app/(tabs)/wishlist.tsx`, accented only when the member's own
+target is met.
+
+Exact-identity matches only — deliberately **not** the snipe's trigram title
+fallback. That arm exists so free-text rows can still fire an alert and is tuned
+at 0.55; an alert that is occasionally loose is recoverable, but a permanent row
+asserting "a member is selling this" about the wrong item is not.
+
+#### Not built: the Vinted heart
+
+A favourite heart on the grid tile was built and then **removed 2026-08-08** at
+Merle's decision. Adding to the watchlist stays where it already is — the item
+page and the watchlist screen. Two traps found while it existed, which apply to
+any future version of this control:
+
+1. The optimistic fill and the `watchers` count disagreed, because the count was
+   the raw server figure. At zero watchers the number was hidden entirely, so a
+   freshly-hearted tile showed a filled heart and no count at all.
+2. It wrote a watchlist row with **no target price**, and
+   `_check_watchlist_snipes` requires `target_price IS NOT NULL AND > 0` — so
+   every row it created was inert while its own label promised alerts. Any
+   one-tap "watch this" control must set a target or say plainly that it has not.
 
 ### 8c. Freshness decays, and that is the point
 
@@ -772,12 +825,15 @@ the box turns up empty.
 
 ### 8f. Ranked backlog out of this
 
-1. **`PATCH /p2p/listings/{id}` for price** — then wire a price drop into Target
-   Hit for watchers whose target the new price meets (§8b). Highest leverage in
-   this document; three built features currently have no connective tissue.
-2. **Multi-photo listing** in `sell/new.tsx` (§8d). Client-side only.
-3. **Catalogue match in the sell flow**, so a marketplace-only listing can carry
-   a `canonical_key` and actually reach Target Hit (§8d).
+1. ~~**`PATCH /p2p/listings/{id}` for price**, wired into Target Hit~~ —
+   **DONE 2026-08-08** (§8b), along with the pull side,
+   `GET /p2p/watchlist-matches`.
+2. **Catalogue match in the sell flow**, so a marketplace-only listing can carry
+   a `canonical_key` and actually reach Target Hit (§8d). Now the top item: with
+   the price rail built, this is what decides how many listings can use it.
+   `sell/new.tsx` never sends a `canonical_key`, and the item-id path inherits
+   from the item, which usually has none either — measured 4 of 16.
+3. **Multi-photo listing** in `sell/new.tsx` (§8d). Client-side only.
 4. Never meter or charge for listing; close §7's open question as "always free"
    (§8a).
 5. Explicitly **not doing**: paid bumps (§8c), buyer protection (§8e), anything

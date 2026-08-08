@@ -13,7 +13,8 @@
           "/categories/*",
           "/purchase/*",
           "/users/*",
-          "/auth/*"
+          "/auth/*",
+          "/l/*"
         ]
       }
     ]

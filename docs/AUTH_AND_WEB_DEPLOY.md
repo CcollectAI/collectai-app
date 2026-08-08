@@ -28,6 +28,35 @@ Universal Link** instead:
 
 If the app isn't installed, `/auth/confirm` is a graceful branded web page.
 
+## A deep link needs FOUR things to agree (added 2026-08-08)
+
+Learned by finding one that had **none** of them. `_publish_supply_hook` writes
+`https://sparrowcollect.com/l/<uuid>` into `market_hits.url` — the URL a Target
+Hit opens and the one a seller shares. It went nowhere on every surface, and
+nothing went red.
+
+Adding a path means all four, or it silently half-works:
+
+| # | Where | `/l/*` | What breaks without it |
+|---|---|---|---|
+| 1 | `web/.well-known/apple-app-site-association` → `paths` | added | iOS never opens the app, however correct `associatedDomains` is. It grants the DOMAIN; this file grants the PATH |
+| 2 | `app.json` → `android.intentFilters[].data[].pathPrefix` | added | Android never opens the app |
+| 3 | An expo-router route that matches | `app/l/[id].tsx` | The app opens onto a 404 screen — the worst case, because it looks like OUR bug to the user |
+| 4 | `web/vercel.json` → `rewrites` | added | Anyone WITHOUT the app gets a 404. A seller sharing a listing to recruit a buyer sends them to a dead page |
+
+The failure is asymmetric and that is what hides it: with the app installed and
+1–3 right, it works on your device forever while every non-user gets a 404.
+
+**In-app taps must not rely on any of this.** `inAppListingHref`
+(`src/lib/ids.ts`) turns our own https URLs into routes directly, because all
+three consumers of `market_hits.url` — `app/alerts.tsx`, `app/notifications.tsx`,
+`usePushNotifications.ts` — treated "starts with https" as "external" and handed
+them to the browser. Route first, `Linking.openURL` only as the fallthrough.
+
+> `web/` is a separate Vercel deploy. Changes to `vercel.json` and the AASA file
+> do **not** ship with an EAS build or an EC2 deploy — the web project has to be
+> deployed for 1 and 4 to take effect.
+
 ## Apex domain serves directly — do not re-add a redirect
 
 **2026-07-30: the apex `sparrowcollect.com` was redirecting (307) to `www`, which

@@ -116,6 +116,76 @@ uuid nor a catalog key, so `itemHref` sent it to
 `/catalog-item/watchlist_snipe:<uuid>`, which resolves to nothing. A snipe's
 real destination is the listing; with no listing URL, no button renders.
 
+## The marketplace feeds Target Hit — both directions (2026-08-08)
+
+Two connections between `p2p_listing_router.py` and this feature. Neither adds
+an alert type, a worker, or a `user_price_alerts` row — see
+[There is now NO writer](#there-is-now-no-writer--and-that-is-deliberate-2026-08-05),
+which is still true and still deliberate.
+
+### Push: a seller drops their price
+
+`PATCH /p2p/listings/{id}` (price only) calls `_price_change_hook`, which
+UPDATEs the listing's existing buyable `market_hits` row — new `price`,
+`price_eur`, and `seen_at = now()`.
+
+That is the whole mechanism. `_check_watchlist_snipes` already selects rows with
+`seen_at > now() - interval '30 minutes'` and `price_eur <= w.target_price`, so
+the next cycle matches the listing against every watcher whose target the NEW
+price meets, with the existing 24h-per-watchlist dedupe and plan gating applied
+unchanged. **Nothing in the hook knows about users.**
+
+| Decision | Why |
+|---|---|
+| UPDATE, never INSERT | `_publish_supply_hook` guards on `WHERE NOT EXISTS (provider='sparrow' AND listing_id=…)` because a second buyable row makes Target Hit surface one listing **twice**. Verified on prod that the UPDATE survives `seen_at` moving the row across a monthly partition boundary |
+| A price **rise** does not refresh `seen_at` | "Listed below your target" is the promise. Waking someone because an item got *more expensive* is a notification with no action — exactly what the 2026-08-06 consolidation deleted three workers to stop. The price is still corrected so the row never advertises a stale figure |
+| Awaited, not `spawn_bg` | Unlike the publish hook. A missing buyable row is a non-event; an EXISTING row advertising a price the seller no longer asks is a stale promise in both directions |
+
+Verified end to end against prod: listed at 250 against a 200 target → no match;
+dropped to 180 → matched, one row not two; aged out and raised to 195 → price
+corrected, still no match; dropped to 150 → matched again.
+
+### Pull: `GET /p2p/watchlist-matches`
+
+The same join with **no time window and no alert** — what is buyable right now
+for the items you watch. Rendered on each row of `app/(tabs)/wishlist.tsx`,
+accented only when `meets_target`.
+
+This exists because the alert is a *moment*: a member could be watching a Bayou
+while another had one listed, and only a push firing at the right time would
+connect them. Miss it and the two halves never meet again.
+
+Uses the snipe's **exact-identity arm only** — `canonical_key` + `category`,
+both BARE on `watchlist_items` and `marketplace_listings` (it is
+`market_hits.item_ref` that is namespaced). Deliberately NOT the trigram title
+fallback: that arm exists so free-text rows can still fire an alert and is tuned
+at 0.55, and an alert that is occasionally loose is recoverable — a permanent row
+on the watchlist screen asserting the wrong item is not.
+
+`meets_target` is `price_eur <= target_price`, **character for character the
+comparison `_check_watchlist_snipes` makes**. If the screen and the alert
+disagreed about whether a listing meets a target, one of them would be calling
+the user a liar about their own number.
+
+> ⚠️ **Known gap, shared by both:** that comparison treats `target_price` as EUR,
+> while the column is written in the member's display currency. A €100 target and
+> a ¥100 target are stored identically. This is a real cross-currency bug and it
+> belongs to the ALERT — fixing it in `watchlist-matches` alone would create the
+> screen/alert disagreement the paragraph above exists to prevent. Fix both
+> together or neither.
+
+### A one-tap "watch this" control must set a target
+
+A favourite heart was built on the marketplace grid on 2026-08-08 and removed
+the same day. While it existed it called `addWatchlistItem` with **no
+targetPrice**, so every row it wrote was inert — `_check_watchlist_snipes`
+filters `WHERE w.target_price IS NOT NULL AND w.target_price > 0` — while the
+control's own accessibility label promised "get alerted on price drops".
+
+That is the fourth instance of this exact writer bug (see the 13-row count
+below). Any future one-tap watch control must either set a target price or say
+plainly that it has not.
+
 ## What a snipe-capable watchlist row needs (writer side, 2026-08-05)
 
 The snipe query was fixed on 2026-08-04; the **writers** were still producing

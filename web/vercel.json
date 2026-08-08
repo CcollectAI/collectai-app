@@ -12,6 +12,10 @@
     {
       "source": "/r/:code",
       "destination": "/index.html"
+    },
+    {
+      "source": "/l/:id",
+      "destination": "/index.html"
     }
   ],
   "headers": [
