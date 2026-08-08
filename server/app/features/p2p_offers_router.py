@@ -166,6 +166,62 @@ class OfferOut(BaseModel):
     # Whether the CALLER may attach tracking right now. Server-computed for the
     # same reason as can_confirm — the client never re-derives the state machine.
     can_add_tracking: bool = False
+    # ── Price sanity, ported from the retired Deal Desk (deal_risk.py) ────────
+    # The ONE thing that layer had which P2P did not, and it works better here:
+    # it compares an offer against the SOLD distribution, and P2P is what
+    # produces sold comps in the first place (_sold_comp_hook, spec §1g). Deal
+    # Desk never generated one, so its own check had almost nothing to compare
+    # against.
+    #
+    # null = we could not judge (no canonical identity, or too few comps). That
+    # is deliberately distinct from "fine": a confident-looking "normal price"
+    # computed off two data points is worse than saying nothing.
+    price_verdict: Optional[str] = None          # 'low' | 'normal' | 'high'
+    price_note: Optional[str] = None             # one human sentence, or null
+    price_sample_size: Optional[int] = None
+
+
+# Ported from the retired Deal Desk (`deal_risk.compute_risk_flags`) — the one
+# capability that layer had which P2P did not.
+#
+# It works BETTER here than it ever did there. The check compares an offer to
+# the SOLD distribution, and P2P is what produces sold comps in the first place
+# (`_sold_comp_hook`, spec §1g); Deal Desk generated none, so its own check had
+# almost nothing to compare against.
+#
+# Kept from the original: the 2-sigma / 3-sigma test against `market_hits` rows
+# with `is_listing IS NOT TRUE` over 180 days. Comparing against ASKING prices
+# would just compare hope to hope.
+#
+# Dropped from the original: its seller-trust half, which counted rows in the
+# Deal Desk `offers` table and averaged `deal_ratings`. P2P already answers that
+# through `member_grades` / `completed_trades` / `seller_positive_pct`, with a
+# 3-grade threshold before a percentage is shown at all. Porting it would have
+# been a second implementation of something that already works.
+MIN_PRICE_SAMPLE = 5
+
+
+def _verdict_from(stat: tuple[float, float, int], amount: float):
+    """(avg, stddev, n) + an amount -> ('low'|'normal'|'high', note, n).
+
+    Returns a NULL verdict rather than 'normal' when it cannot judge. The
+    original guarded only on `stddev > 0`, which lets two data points produce a
+    confident-looking answer — and a wrong "this price is suspicious" on a fair
+    offer costs a sale. MIN_PRICE_SAMPLE is the fix.
+    """
+    avg, sd, n = stat
+    if n < MIN_PRICE_SAMPLE or avg <= 0 or sd <= 0:
+        return None, None, n
+    delta = amount - avg
+    if abs(delta) <= 2 * sd:
+        return "normal", None, n
+    direction = "above" if delta > 0 else "below"
+    return (
+        "high" if delta > 0 else "low",
+        f"Well {direction} what this usually sells for "
+        f"(~{avg:.0f} from {n} recent sales).",
+        n,
+    )
 
 
 class TrackingIn(BaseModel):
@@ -353,6 +409,7 @@ async def list_offers(
         rows = await conn.fetch(
             f"""
             SELECT {_OFFER_COLUMNS},
+                   l.canonical_key, l.category,
                    EXISTS (
                        SELECT 1 FROM public.member_grades g
                        WHERE g.offer_id = o.id AND g.rater_id = $1::uuid
@@ -368,7 +425,46 @@ async def list_offers(
             """,
             user_id, role, limit, offset,
         )
-    return OfferListResponse(offers=[_row_to_offer(r, user_id) for r in rows])
+    offers = [_row_to_offer(r, user_id) for r in rows]
+
+    # Price sanity, one distribution fetch per DISTINCT item rather than per
+    # offer. A user's offers list is usually several offers across a few items,
+    # so N+1 here would be mostly the same query repeated — and this runs on
+    # every open of the offers screen.
+    refs = {
+        f"{r['category']}:{r['canonical_key']}"
+        for r in rows if r["canonical_key"] and r["category"]
+    }
+    if refs:
+        async with pool.acquire() as conn:
+            dist = {
+                d["item_ref"]: (float(d["avg_price"]), float(d["sd"] or 0), int(d["n"]))
+                for d in await conn.fetch(
+                    """
+                    SELECT item_ref, avg(price_eur) AS avg_price,
+                           stddev_pop(price_eur) AS sd, count(*) AS n
+                    FROM public.market_hits
+                    WHERE item_ref = ANY($1::text[])
+                      AND price_eur IS NOT NULL
+                      AND is_listing IS NOT TRUE
+                      AND seen_at > now() - interval '180 days'
+                    GROUP BY item_ref
+                    """,
+                    list(refs),
+                )
+            }
+        for off, r in zip(offers, rows):
+            if not (r["canonical_key"] and r["category"]):
+                continue
+            stat = dist.get(f"{r['category']}:{r['canonical_key']}")
+            if not stat:
+                off.price_sample_size = 0
+                continue
+            off.price_verdict, off.price_note, off.price_sample_size = _verdict_from(
+                stat, float(off.amount)
+            )
+
+    return OfferListResponse(offers=offers)
 
 
 @router.post("/offers/{offer_id}/respond", response_model=OfferOut,
