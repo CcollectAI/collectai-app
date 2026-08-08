@@ -25,8 +25,21 @@ const mockColors = {
   brand: { base: '#81D8D0', dark: '#5FBFB6' },
 };
 
+// Mocking a MODULE replaces ALL of it, so every export the components use has
+// to be here. ScanFeedbackPanel uses useScannerTheme, and a partial module mock
+// fails as "not a function" rather than as a missing mock — which reads like a
+// component bug. Same fix as ScanResultCard.snapshot.test.tsx.
+//
+// Shaped like the real hook (src/theme/useAppTheme.ts): the scanner theme is the
+// base theme with a dark palette and isDark: true. Returning the light colours
+// would render a card that never appears in the app.
 jest.mock('../../src/hooks/useAppTheme', () => ({
   useAppTheme: () => ({ colors: mockColors, isDark: false }),
+  useScannerTheme: () => ({
+    colors: mockColors,
+    status: { success: '#10B981', warning: '#F59E0B', error: '#EF4444', info: '#3B82F6' },
+    isDark: true,
+  }),
 }));
 
 jest.mock('../../src/motion', () => {

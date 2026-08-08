@@ -112,9 +112,19 @@ jest.mock('../../src/api/collectorsApi', () => ({
   },
 }));
 
-jest.mock('../../src/lib/logger', () => ({
-  logger: { warn: jest.fn(), debug: jest.fn(), info: jest.fn(), error: jest.fn() },
-}));
+// src/utils/logger re-exports createLogger FROM src/lib/logger, so a mock of
+// lib/logger that omits it makes every `createLogger(...)` call throw
+// "not a function" at import time — taking the whole suite down rather than
+// failing one assertion.
+jest.mock('../../src/lib/logger', () => {
+  const fns = { warn: jest.fn(), debug: jest.fn(), info: jest.fn(), error: jest.fn() };
+  return {
+    logger: fns,
+    createLogger: () => fns,
+    getRecentLogs: () => [],
+    clearRecentLogs: jest.fn(),
+  };
+});
 
 jest.mock('../../src/theme/tokens', () => ({
   radius: { md: 12, sm: 8, lg: 16, xl: 24 },

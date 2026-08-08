@@ -720,8 +720,7 @@ exports[`RegionalInsightsSection renders with sample data and matches snapshot 1
             ]
           }
         >
-          pokemon
-           · 
+          pokemon · 
           Europe
         </Text>
       </View>
@@ -882,8 +881,7 @@ exports[`RegionalInsightsSection renders with sample data and matches snapshot 1
             ]
           }
         >
-          lego
-           · 
+          lego · 
           North America
         </Text>
       </View>

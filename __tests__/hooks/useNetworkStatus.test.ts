@@ -75,9 +75,21 @@ describe('useNetworkStatus', () => {
 
     const { result } = renderHook(() => useNetworkStatus());
 
-    await waitFor(() => {
-      expect(result.current.isOnline).toBe(false);
-    });
+    // The hook does NOT trust a single offline reading: it re-checks ~1.2s later
+    // and only commits offline if still offline (online commits immediately).
+    // That debounce exists because iOS reports offline transiently during cold
+    // start, which flashed the orange "You're offline" banner at login for new
+    // users (2026-06-11).
+    //
+    // waitFor's default timeout is 1000ms — SHORTER than the debounce — so this
+    // test timed out mid-recheck and read as "the hook says online". It was
+    // failing on correct code because it did not model deliberate behaviour.
+    await waitFor(
+      () => {
+        expect(result.current.isOnline).toBe(false);
+      },
+      { timeout: 4000, interval: 100 },
+    );
   });
 
   it('reports online when isInternetReachable is transiently false but isConnected is true', async () => {
@@ -106,10 +118,19 @@ describe('useNetworkStatus', () => {
   });
 
   it('polls network status on interval', async () => {
-    // First call: online.  Second call (poll): offline.
+    // Call 1 (initial): online. Every call after: offline.
+    //
+    // This used exactly TWO mockResolvedValueOnce values, which is one short:
+    // committing offline takes a THIRD call, because the hook re-checks ~1.2s
+    // later before trusting a single offline reading. That third call returned
+    // undefined, computeOnline threw, and the catch committed `true`
+    // optimistically — so the test saw "online" and failed on correct code.
+    //
+    // mockResolvedValue (not Once) for the offline state, so the recheck gets a
+    // real value however many times it runs.
     mockGetNetworkStateAsync
       .mockResolvedValueOnce({ isConnected: true, isInternetReachable: true })
-      .mockResolvedValueOnce({ isConnected: false, isInternetReachable: false });
+      .mockResolvedValue({ isConnected: false, isInternetReachable: false });
 
     const { result } = renderHook(() => useNetworkStatus());
 
@@ -118,9 +139,12 @@ describe('useNetworkStatus', () => {
       expect(result.current.isOnline).toBe(true);
     });
 
-    // Advance past the 10-second polling interval
+    // Advance past the 10s poll AND the 1.2s offline-confirmation recheck.
     await act(async () => {
       jest.advanceTimersByTime(10_000);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(1_500);
     });
 
     await waitFor(() => {

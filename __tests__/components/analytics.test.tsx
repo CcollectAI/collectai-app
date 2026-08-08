@@ -169,12 +169,27 @@ describe('PortfolioTierBadge', () => {
     expect(screen.getByText('Diversity')).toBeTruthy();
   });
 
-  it('has leaderboard accessibility label', () => {
+  // The badge branches on BETA_MODE || COMMUNITY_GATED: while community
+  // features are gated the leaderboard is hidden, and the badge renders
+  // NON-TAPPABLE so we do not dangle a tap hint that goes nowhere
+  // (project_community_gated_flag).
+  //
+  // This test asserted the tappable branch and had been failing since the gate
+  // went in — a stale test reporting a bug that is not there.
+  it('is NOT tappable while community features are gated', () => {
     render(<PortfolioTierBadge tierSummary={makeTierSummary('Gold')} />);
-    expect(
-      screen.getByLabelText('Gold tier \u2014 view leaderboard'),
-    ).toBeTruthy();
+    expect(screen.queryByLabelText('Gold tier \u2014 view leaderboard')).toBeNull();
+    expect(screen.queryByText('Tap to view leaderboard')).toBeNull();
+    // The tier itself must still render — gating hides the ACTION, not the badge.
+    expect(screen.getByText('Gold')).toBeTruthy();
   });
+
+  // The UNGATED branch is deliberately not tested. BETA_MODE and
+  // COMMUNITY_GATED are module-level constants read at import time, so
+  // exercising the other branch needs a module-registry reset that fights the
+  // '@/' alias — and a test I cannot make reliable is worse than none. When the
+  // gate is lifted the assertion above will fail loudly, which is the signal
+  // that matters.
 
   it('matches snapshot for Diamond tier', () => {
     const tree = render(

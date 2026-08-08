@@ -205,7 +205,7 @@ describe('ItemPriceSection', () => {
     expect(screen.getByText('Moderate')).toBeTruthy();
   });
 
-  it('renders market comps', () => {
+  it('hides market comps while COMPARABLE_SALES_ENABLED is off', () => {
     render(
       <ItemPriceSection
         priceEstimate={null}
@@ -220,9 +220,17 @@ describe('ItemPriceSection', () => {
         toNum={toNum}
       />,
     );
-    expect(screen.getByText('eBay Sold Listing')).toBeTruthy();
-    expect(screen.getByText('TCGPlayer Sale')).toBeTruthy();
-    expect(screen.getByText(/Comparable Sales/)).toBeTruthy();
+    // Comparable Sales is gated behind COMPARABLE_SALES_ENABLED, currently OFF:
+    // it was surfacing unrelated EUR 0 comps, so the section is hidden until
+    // match quality is trustworthy (see ItemPriceSection).
+    //
+    // This asserted the comps were VISIBLE and had been failing since the gate
+    // went in — a stale test reporting a bug that is not there. It now pins the
+    // gate itself, so if the section ever renders while the flag is off, or the
+    // flag is flipped without revisiting this, it fails loudly.
+    expect(screen.queryByText('eBay Sold Listing')).toBeNull();
+    expect(screen.queryByText('TCGPlayer Sale')).toBeNull();
+    expect(screen.queryByText(/Comparable Sales/)).toBeNull();
   });
 
   it('matches snapshot with scarcity and comps', () => {
