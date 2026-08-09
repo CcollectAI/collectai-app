@@ -66,7 +66,33 @@ function SellPickScreen() {
     // Hands off to the SAME composer the free-text route uses, with the item's
     // id. One compose screen for both routes — two would drift, and this one
     // already handles the photo, the consent checkbox and the reach notice.
-    router.push({ pathname: '/sell/new', params: { itemId: item.id } } as Href);
+    //
+    // The id alone used to be all that travelled, so the composer opened blank:
+    // no photo, no name, no price, nothing showing WHICH item was picked. The
+    // seller had already given that information once when they added the item,
+    // and the screen asked for it again (reported 2026-08-09 as "double work
+    // and not useful").
+    //
+    // These extra params are a SEED for the editable fields plus the summary
+    // that proves the selection carried. They are not the source of truth:
+    // `POST /p2p/listings` still derives name, category and canonical_key from
+    // `item_id` server-side, so a stale or tampered param cannot change what
+    // gets listed. Everything here is already in hand from `listItems` — no
+    // extra fetch, and no widening of ITEMS_SELECT (see this file's header).
+    router.push({
+      pathname: '/sell/new',
+      params: {
+        itemId: item.id,
+        itemName: item.name,
+        itemCategory: item.category ?? '',
+        itemImage: item.imageUrl ?? '',
+        // Only a usable price seeds the box. `0` is the unpriced case (a
+        // category with no sold-comp source), and a prefilled 0 would both read
+        // as "worthless" and fail the server's `price > 0` on submit.
+        itemValue: item.price > 0 ? String(Math.round(item.price * 100) / 100) : '',
+        itemCondition: item.condition ?? '',
+      },
+    } as Href);
   }, [router, settings.hapticsEnabled]);
 
   const renderItem = useCallback(({ item }: { item: Item }) => {

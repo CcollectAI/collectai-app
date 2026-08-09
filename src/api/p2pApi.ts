@@ -44,6 +44,12 @@ export type P2PListing = {
    *  gameable without a payment record and would imply vetting we don't do.
    *  `seller_name` can be null when a profile has no display name set. */
   seller_name: string | null;
+  /** True only when a STRANGER would see this seller's profile: the server tests
+   *  EXISTS against `user_public_profiles`, which encodes the opt-in (display
+   *  name set AND `user_privacy_settings.allow_discovery` not turned off). Gates
+   *  whether the seller row links to the profile — never re-derive it here, and
+   *  never link when it is false. */
+  seller_profile_public: boolean;
   seller_since: string | null;
   seller_collection_size: number;
   seller_active_listings: number;
@@ -298,6 +304,11 @@ export type P2POffer = {
   seller_id: string;
   amount: number;
   currency: string;
+  /** The listing's ASKING price, so the counter sheet can express its presets as
+   *  a percentage of the thing being sold rather than of the buyer's own offer.
+   *  Null when the listing row is gone — callers must fall back and SAY they
+   *  did, never show a percentage off an unstated basis. */
+  listing_price: number | null;
   /** pending | countered | accepted | declined | cancelled | expired |
    *  shipped | completed. Mirrors p2p_offers_status_check. */
   status: string;
@@ -336,6 +347,37 @@ export type P2PCarrier = {
   /** False => no code-only tracking URL exists, so show a copyable code. */
   linkable: boolean;
 };
+
+/** One calendar year of DAC7 counters for the signed-in member. */
+export type Dac7Year = {
+  year: number;
+  sales_count: number;
+  gross_eur: number;
+  /** Recomputed from the counters, not read off `reportable_at` — that stamp is
+   *  still null in the window between the counter update and the notice. */
+  reportable: boolean;
+  reportable_at: string | null;
+  notified_at: string | null;
+  details_provided_at: string | null;
+  /** Null once reportable: "0 remaining" would read as "one more crosses it". */
+  sales_remaining: number | null;
+  gross_eur_remaining: number | null;
+};
+
+export type Dac7Status = {
+  /** Returned with the data so the screen never hardcodes 30 / 2000 — these are
+   *  figures we state in writing (marketplace-terms §6). */
+  sales_limit: number;
+  gross_eur_limit: number;
+  currency: string;
+  /** Null until a first sale completes. "No sales recorded" is a different
+   *  statement from "0 sales counted", and only the first is true then. */
+  current_year: Dac7Year | null;
+  years: Dac7Year[];
+};
+
+/** Your OWN counters only — the endpoint takes no user id by design. */
+export const getDac7Status = () => get<Dac7Status>('/p2p/dac7/me');
 
 /** Carriers the seller may pick. Served from the server's `_CARRIER_TRACKING`
  *  so the picker cannot drift from the URL table that resolves the link. */

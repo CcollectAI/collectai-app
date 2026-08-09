@@ -26,7 +26,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useRouter, type Href } from "expo-router";
+import { useRouter, useLocalSearchParams, type Href } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { formatPrice, formatDualPrice } from "@/lib/format";
@@ -138,7 +138,14 @@ const SearchScreen: React.FC = () => {
   const { settings } = useSettingsHook();
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const [query, setQuery] = useState("");
+  // Seeded from `?q=`, which `MarketplacePricesSection`'s "See all N results"
+  // link has always sent and this screen never read — so that link landed on an
+  // empty marketplace and the user retyped the name they had just tapped. A lazy
+  // initialiser, not an effect: params are there on the first render, and an
+  // effect that wrote `query` while depending on it is the offers.tsx bug
+  // (scripts/check-self-cancelling-effects.mjs).
+  const { q: initialQuery } = useLocalSearchParams<{ q?: string }>();
+  const [query, setQuery] = useState(() => (typeof initialQuery === 'string' ? initialQuery : ''));
   const [searchLoading, setSearchLoading] = useState(false);
   // Escalating status copy for the live aggregation. Marketplace search
   // hits 44 adapters server-side and can legitimately take 30-60 s. A
@@ -491,9 +498,9 @@ const SearchScreen: React.FC = () => {
     executeSearch(trimmedQuery);
   }, [trimmedQuery, executeSearch, settings.hapticsEnabled]);
 
-  // Runs a search from a tapped chip — Popular Searches, the demand-heat
-  // banner and the regional-insights row all use it. (It predates recent
-  // searches, which is why it outlives them.)
+  // Runs a search from a tapped chip — the demand-heat banner and the
+  // regional-insights row use it. (Popular Searches used it too, until that
+  // section was removed; those two are the only callers now.)
   const handleChipPress = useCallback((term: string) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setQuery(term);
@@ -640,7 +647,7 @@ const SearchScreen: React.FC = () => {
         )}
 
         {/* Member marketplace entry — P2P Stage 1.
-            Placed above Popular Searches because buying intent is highest
+            Placed above Browse by category because buying intent is highest
             before a query is typed, and because a seller needs to SEE that
             selling happens here: sellers list where they believe buyers are.
             Links out to a dedicated screen rather than embedding a grid —
@@ -667,27 +674,6 @@ const SearchScreen: React.FC = () => {
             </View>
             <Ionicons name="chevron-forward" size={16} color={colors.muted} />
           </AnimatedPressable>
-        )}
-
-        {/* Popular searches (preset chips) */}
-        {!trimmedQuery && (
-          <View style={styles.presetChipsSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('marketplace.popular_searches')}</Text>
-            <View style={styles.presetChipsRow}>
-              {['Charizard', 'Black Lotus', 'Funko Pop', 'Jordan 1', 'LEGO Star Wars', 'Pikachu'].map((term) => (
-                <TouchableOpacity
-                  key={term}
-                  onPress={() => handleChipPress(term)}
-                  style={[styles.presetChip, { borderColor: colors.border, backgroundColor: colors.card }]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Search for ${term}`}
-                >
-                  <Ionicons name="search-outline" size={12} color={colors.muted} />
-                  <Text style={[styles.presetChipText, { color: colors.text }]}>{term}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
         )}
 
         {/* Browse by category (Spotify-style grid) */}
@@ -1259,28 +1245,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   // (quick view styles moved to SearchResultQuickView component)
-  presetChipsSection: {
-    marginBottom: 16,
-  },
-  presetChipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  presetChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  presetChipText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  // (presetChipsSection, presetChipsRow, presetChip, presetChipText removed with
+  //  the Popular Searches section — FilterSheet keeps its own presetChip styles)
   // (sectionSubtitle, demandCard, demandRank, demandRankText, demandTitle, demandMeta, demandScore, demandScoreText moved to DemandHeatBanner + RegionalInsightsSection)
 });
 

@@ -157,8 +157,12 @@ const SetsToCompleteScreen: React.FC = () => {
   const openCollection = (collectionName: string) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push({
+      // `collectionName`, not `collection`. app/(tabs)/items.tsx reads
+      // `{ category?, collectionName? }`, so the old key was dropped in transit
+      // and the screen opened unfiltered — silently, because expo-router types
+      // params as an open record and accepts any key (check-route-param-handoff).
       pathname: '/(tabs)/items',
-      params: { collection: collectionName },
+      params: { collectionName },
     });
   };
 

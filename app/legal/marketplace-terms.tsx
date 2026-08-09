@@ -180,9 +180,16 @@ function MarketplaceTermsInner() {
           in a calendar year: fewer than 30 sales, and no more than EUR 2,000 in
           total. Passing either one — not both — makes a seller reportable.{'\n\n'}
           We count this for you automatically. If you pass either limit we will
-          notify you in the app at the time it happens, ask you for the details the
-          rules require, and tell you before anything about you is sent. We will not
-          report you without telling you first.
+          notify you in the app at the time it happens, and tell you before anything
+          about you is sent. We will not report you without telling you first.{'\n\n'}
+          <Text style={{ color: colors.text }}>
+            Passing a limit is your signal to sort out your own tax position.
+          </Text>{' '}
+          Sparrow does not file anything on your behalf, does not give tax advice,
+          and does not hold your tax identification number or bank details. If the
+          rules require information from you, we will tell you what is needed and
+          where it goes — what you do about your own return is between you and your
+          tax authority.
         </Section>
 
         <Section title="7. Your data">

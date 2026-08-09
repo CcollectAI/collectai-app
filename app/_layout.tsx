@@ -431,6 +431,12 @@ function RootStack() {
         <Stack.Screen name="listings" options={{ headerShown: false }} />
         <Stack.Screen name="listing/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="offers" options={{ headerShown: false }} />
+        {/* Renders its own ScreenHeader, so the navigator's must be off — without
+            this it inherits the global header and the screen shows TWO stacked
+            headers, each with its own back chevron and gear. Caught on the
+            simulator; no gate sees it (docs/ui-playbook.md: check how a screen
+            gets its header before adding one). */}
+        <Stack.Screen name="tax-reporting" options={{ headerShown: false }} />
         {/* Marketplace-only selling: list without a collection item. Renders
             its own header, same as the other P2P screens. */}
         <Stack.Screen name="sell/new" options={{ headerShown: false }} />

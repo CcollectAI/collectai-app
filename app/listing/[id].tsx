@@ -14,7 +14,10 @@
  * scoped out.
  */
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Animated, Alert, TextInput, ActivityIndicator } from 'react-native';
+import {
+  View, Text, ScrollView, StyleSheet, Animated, Alert, TextInput, ActivityIndicator,
+  type StyleProp, type ViewStyle,
+} from 'react-native';
 import { useToast } from '@/components/Toast';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
@@ -22,6 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '@/components/ScreenHeader';
 import BottomSheetModal from '@/components/BottomSheetModal';
+import { OfferAmountSheet } from '@/components/p2p/OfferAmountSheet';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { EmptyState } from '@/components/EmptyState';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
@@ -34,6 +38,38 @@ import { collectorsApi } from '@/api/collectorsApi';
 import { CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
+
+/**
+ * The seller row: a plain View, or an AnimatedPressable when the seller's
+ * profile is public.
+ *
+ * One container that switches rather than two copies of the row's children —
+ * duplicating ~50 lines of name/reputation/tenure markup under a ternary is how
+ * one branch gets a fix the other doesn't
+ * (learning_duplicate_impl_silently_drops_the_fix). AnimatedPressable, not
+ * TouchableOpacity, per docs/ui-playbook.md.
+ */
+function SellerBlockContainer({
+  pressable, onPress, style, label, children,
+}: {
+  pressable: boolean;
+  onPress: () => void;
+  style: StyleProp<ViewStyle>;
+  label: string;
+  children: React.ReactNode;
+}) {
+  if (!pressable) return <View style={style}>{children}</View>;
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      style={style}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      {children}
+    </AnimatedPressable>
+  );
+}
 
 function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -67,36 +103,45 @@ function ListingDetailScreen() {
   const [offered, setOffered] = useState(false);
   const { showToast } = useToast();
 
-  // Offer ladder rather than a free-text input: one number, three taps, no
-  // modal. A keyboard for a single figure is friction at exactly the moment
-  // intent is highest.
+  // The amount is chosen in `OfferAmountSheet` — signed percentage presets off
+  // the asking price, plus a custom field.
+  //
+  // It used to be an `Alert.alert` ladder of three hardcoded multipliers
+  // (0.9/0.8/0.7) labelled with money only, and there was no way to offer any
+  // other number. Both limitations came from the container, not the design:
+  // `Alert.prompt` is iOS-only, so a free-text amount was impossible inside an
+  // Alert. Moving to a sheet is what makes "-10%" legible AND lets a buyer
+  // stray from the presets.
+  const [offerOpen, setOfferOpen] = useState(false);
+  const [offerBusy, setOfferBusy] = useState(false);
+
   const handleOffer = useCallback(() => {
     if (!listing) return;
-    const steps = [0.9, 0.8, 0.7].map((f) => Math.round(listing.price * f * 100) / 100);
-    Alert.alert(
-      'Make an offer',
-      `Asking ${formatPrice(listing.price, settings.currency, settings.numberLocale)}. Offer:`,
-      [
-        ...steps.map((amt) => ({
-          text: formatPrice(amt, settings.currency, settings.numberLocale),
-          onPress: async () => {
-            try {
-              await collectorsApi.p2pCreateOffer({
-                listing_id: listing.id, amount: amt, currency: listing.currency,
-              });
-              fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-              setOffered(true);
-              showToast({ message: 'Offer sent — the seller will be notified', type: 'success' });
-            } catch (e: unknown) {
-              logger.error('[listing] offer failed:', e);
-              showToast({ message: (e as Error)?.message || 'Could not send the offer', type: 'error' });
-            }
-          },
-        })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ],
-    );
-  }, [listing, settings, showToast]);
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setOfferOpen(true);
+  }, [listing, settings.hapticsEnabled]);
+
+  const submitOffer = useCallback(async (amount: number) => {
+    if (!listing) return;
+    setOfferBusy(true);
+    try {
+      await collectorsApi.p2pCreateOffer({
+        listing_id: listing.id, amount, currency: listing.currency,
+      });
+      setOfferOpen(false);
+      setOffered(true);
+      showToast({ message: 'Offer sent — the seller will be notified', type: 'success' });
+    } catch (e: unknown) {
+      // Sheet stays OPEN on failure, with the amount still in it. 409
+      // OFFER_EXISTS and a blocked-member rejection are both actionable, and
+      // closing the sheet would make the seller's own message disappear along
+      // with the number they typed.
+      logger.error('[listing] offer failed:', e);
+      showToast({ message: (e as Error)?.message || 'Could not send the offer', type: 'error' });
+    } finally {
+      setOfferBusy(false);
+    }
+  }, [listing, showToast]);
 
   // DSA notice-and-action. The micro-enterprise exemption does NOT cover this
   // obligation, so a report path ships in Stage 1 rather than later. Reasons
@@ -368,7 +413,27 @@ function ListingDetailScreen() {
               a potentially expensive item; these are the only honest signals
               we have without transaction history. Every field degrades: a
               profile with no display name and no items still renders. */}
-          <View style={[styles.seller, { borderColor: colors.border }]}>
+          {/* Tappable ONLY when the seller's profile is visible to strangers.
+              `seller_profile_public` is EXISTS against `user_public_profiles`
+              server-side, which encodes the opt-in (a display name AND
+              `user_privacy_settings.allow_discovery` not turned off). Two things
+              this deliberately does not do: it does not compute the rule
+              client-side, and it does not link when the flag is false — a
+              navigation that exposes a profile the member kept out of discovery
+              publishes it just as surely as a search result would.
+              The stricter of the two profile views is used on purpose: the
+              destination screen reads `user_public_profile_v1`, whose only
+              condition (has a name) is IMPLIED by this one, so a tap that is
+              offered can never dead-end on an empty profile. */}
+          <SellerBlockContainer
+            pressable={!listing.is_mine && listing.seller_profile_public}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.push({ pathname: '/users/[userId]', params: { userId: listing.user_id } });
+            }}
+            style={[styles.seller, { borderColor: colors.border }]}
+            label={`View ${listing.seller_name || 'this member'}'s profile`}
+          >
             <View style={[styles.sellerAvatar, { backgroundColor: colors.accent + '18' }]}>
               <Ionicons name="person-outline" size={16} color={colors.accent} />
             </View>
@@ -420,7 +485,12 @@ function ListingDetailScreen() {
                   .join(' · ')}
               </Text>
             </View>
-          </View>
+            {/* A row that navigates must LOOK like it navigates — the same
+                chevron every other tappable row in the app uses. */}
+            {!listing.is_mine && listing.seller_profile_public ? (
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+            ) : null}
+          </SellerBlockContainer>
 
           {listing.is_mine ? (
             !isGone ? (
@@ -616,6 +686,25 @@ function ListingDetailScreen() {
           </AnimatedPressable>
         </View>
       </BottomSheetModal>
+
+      {/* Buyer side of the negotiation. Reference is the ASKING price, so the
+          presets read as the discount (or premium) being proposed. */}
+      {listing ? (
+        <OfferAmountSheet
+          visible={offerOpen}
+          onClose={() => setOfferOpen(false)}
+          title="Make an offer"
+          reference={listing.price}
+          referenceLabel="Asking"
+          currency={settings.currency}
+          numberLocale={settings.numberLocale}
+          submitLabel="Send offer"
+          busy={offerBusy}
+          colors={colors}
+          hapticsEnabled={settings.hapticsEnabled}
+          onSubmit={submitOffer}
+        />
+      ) : null}
     </View>
   );
 }

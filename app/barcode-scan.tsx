@@ -354,17 +354,31 @@ function BarcodeScanScreen() {
     } catch (err) {
       logger.error('[BarcodeScan] Save to collection error:', err);
       showToast({ message: 'Auto-save failed, opening manual entry', type: 'warning' });
-      // Fallback: navigate to add-manual with prefilled data
+      // Fallback: hand the scan to add-manual so nothing typed or scanned is
+      // lost. Uses the SAME param names as handleAddManually above, which are
+      // the ones app/add-manual.tsx actually reads
+      // (`imageUri | category | name | condition | attrs`).
+      //
+      // It used to send seven `prefill*` keys. add-manual reads none of them, so
+      // every one was dropped in transit and this screen — the recovery path,
+      // reached at the exact moment a save has already failed — opened a
+      // completely empty form. The primary button one function up had the right
+      // names all along: one handoff was fixed and its twin was left behind
+      // (learning_duplicate_impl_silently_drops_the_fix). Nothing errored,
+      // because expo-router types params as an open record; `npm run
+      // check:params` is what fails on it now.
+      //
+      // priceBand.q50, collections, identification_method and subtype_id have no
+      // field on add-manual to land in, so they are deliberately NOT sent rather
+      // than sent under invented names. The estimate is recomputed there anyway.
       router.push({
         pathname: '/add-manual',
         params: {
-          prefillTitle: lookupResult.title || '',
-          prefillCategory: lookupResult.categoryId || '',
-          prefillPrice: lookupResult.priceBand?.q50?.toString() || '',
-          prefillBarcode: scannedCode?.value || '',
-          prefillCollections: lookupResult.collections?.join(',') || '',
-          prefillMethod: intakeResult?.identification_method || 'barcode',
-          prefillSubtype: intakeResult?.subtype_id || '',
+          ...(lookupResult.categoryId ? { category: lookupResult.categoryId } : {}),
+          ...(lookupResult.title ? { name: lookupResult.title } : {}),
+          ...(scannedCode?.value
+            ? { attrs: JSON.stringify({ barcode: scannedCode.value }) }
+            : {}),
         },
       });
     } finally {
@@ -373,19 +387,53 @@ function BarcodeScanScreen() {
   };
 
   // Add to watchlist instead
-  const handleAddToWatchlist = () => {
-    if (!lookupResult) return;
+  // Adds to the WATCHLIST, which is what the button says.
+  //
+  // It used to push `/add-manual` with `mode: 'watchlist'` plus three `prefill*`
+  // params. add-manual reads none of those four keys and has no watchlist mode
+  // at all, so the button opened the empty ADD-TO-COLLECTION form — the opposite
+  // of what a user asking to watch something wants, and it would have filed the
+  // item as owned. Nothing errored: expo-router accepts any param key, so
+  // `mode` looked like a feature and was a no-op (found by
+  // scripts/check-route-param-handoff.mjs, 2026-08-09).
+  //
+  // Writes directly through dataProvider rather than routing anywhere: a
+  // watchlist row needs a title and a category, and both are already in hand
+  // from the lookup. Sending the user to a form to retype them is the same
+  // double work as the sell flow.
+  const [watching, setWatching] = useState(false);
+  const [watched, setWatched] = useState(false);
 
-    router.push({
-      pathname: '/add-manual',
-      params: {
-        prefillTitle: lookupResult.title || '',
-        prefillCategory: lookupResult.categoryId || '',
-        prefillBarcode: scannedCode?.value || '',
-        mode: 'watchlist',
-      },
-    });
-  };
+  const handleAddToWatchlist = useCallback(async () => {
+    if (!lookupResult || watching || watched) return;
+    const title = (lookupResult.title || '').trim();
+    if (!title) {
+      // A watchlist row keyed on an empty title is unmatchable and unreadable.
+      showToast({ message: 'This scan has no title to watch yet', type: 'warning' });
+      return;
+    }
+    setWatching(true);
+    try {
+      await dataProvider.addWatchlistItem({
+        title,
+        // CreateWatchlistInput requires a category; the scan may not have one and
+        // '' would write a row the category filters can never surface.
+        category: lookupResult.categoryId || 'other',
+        notes: scannedCode?.value ? `Barcode ${scannedCode.value}` : undefined,
+      });
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      setWatched(true);
+      showToast({ message: 'Added to your watchlist', type: 'success' });
+    } catch (err) {
+      logger.error('[BarcodeScan] add to watchlist failed:', err);
+      showToast({
+        message: (err as Error)?.message || 'Could not add to your watchlist',
+        type: 'error',
+      });
+    } finally {
+      setWatching(false);
+    }
+  }, [lookupResult, scannedCode, watching, watched, showToast, settings.hapticsEnabled]);
 
   // Permission not determined yet
   if (!permission) {
@@ -486,6 +534,7 @@ function BarcodeScanScreen() {
           onSave={handleSaveToCollection}
           onAddManually={handleAddManually}
           onAddToWatchlist={handleAddToWatchlist}
+          watchlistState={watched ? 'done' : watching ? 'saving' : 'idle'}
         />
       )}
 

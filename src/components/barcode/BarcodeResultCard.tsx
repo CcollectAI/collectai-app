@@ -34,6 +34,11 @@ interface BarcodeResultCardProps {
   /** Handoff when the barcode was not recognised — mirrors QuickScan's low-confidence path. */
   onAddManually: () => void;
   onAddToWatchlist: () => void;
+  /** 'idle' | 'saving' | 'done'. The watchlist add is a real write now (it used
+   *  to navigate away, so the screen unmounting WAS the feedback). A button that
+   *  performs a network write and looks identical before, during and after it
+   *  reads as "nothing happened" and gets pressed again. */
+  watchlistState?: 'idle' | 'saving' | 'done';
 }
 
 export const BarcodeResultCard = React.memo(function BarcodeResultCard({
@@ -48,6 +53,7 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
   onSave,
   onAddManually,
   onAddToWatchlist,
+  watchlistState = 'idle',
 }: BarcodeResultCardProps) {
   const { colors } = useScannerTheme();
   const { t } = useTranslation();
@@ -191,13 +197,36 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
       </View>
 
       <AnimatedPressable
-        style={[styles.watchlistButton, { borderColor: colors.border }]}
-        onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled }); onAddToWatchlist(); }}
+        style={[styles.watchlistButton, { borderColor: watchlistState === 'done' ? colors.accent : colors.border }]}
+        onPress={() => {
+          if (watchlistState !== 'idle') return;
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
+          onAddToWatchlist();
+        }}
+        disabled={watchlistState !== 'idle'}
         accessibilityRole="button"
+        accessibilityState={{ disabled: watchlistState !== 'idle' }}
         accessibilityLabel={t('barcode.add_watchlist_a11y')}
       >
-        <Ionicons name="eye-outline" size={18} color={colors.muted} />
-        <Text style={[styles.watchlistButtonText, { color: colors.muted }]}>{t('barcode.add_watchlist_btn')}</Text>
+        {watchlistState === 'saving' ? (
+          <ActivityIndicator size="small" color={colors.muted} />
+        ) : (
+          <Ionicons
+            name={watchlistState === 'done' ? 'checkmark-circle' : 'eye-outline'}
+            size={18}
+            color={watchlistState === 'done' ? colors.accent : colors.muted}
+          />
+        )}
+        <Text
+          style={[
+            styles.watchlistButtonText,
+            { color: watchlistState === 'done' ? colors.accent : colors.muted },
+          ]}
+        >
+          {watchlistState === 'done'
+            ? t('barcode.add_watchlist_done')
+            : t('barcode.add_watchlist_btn')}
+        </Text>
       </AnimatedPressable>
 
       {affiliateLink && (

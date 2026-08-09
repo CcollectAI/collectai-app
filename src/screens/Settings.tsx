@@ -149,6 +149,24 @@ export default function Settings() {
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
+        {/* Sits with the legal rows because that is where a member looks for
+            "what does Sparrow report about me". Not gated on being a seller: a
+            member deciding WHETHER to sell needs to see the threshold before
+            their first sale, not after it. */}
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => router.push('/tax-reporting')}
+          accessibilityRole="link"
+          accessibilityLabel={t('settings.tax_reporting')}
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.tax_reporting')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
         <AnimatedPressable
           style={styles.settingRow}
           onPress={() => router.push('/legal/privacy-policy')}

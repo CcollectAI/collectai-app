@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -97,6 +97,11 @@ function WatchlistTabScreen() {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [items, setItems] = useState<WatchlistItem[]>([]);
+  // The row an alert tap was about (app/(tabs)/index.tsx sends `?highlightId=`).
+  // Read as an OPTIONAL hint: the sender passes `alert.itemId || alert.id`, so
+  // the value may be an alert id that matches no row — then nothing highlights,
+  // which is the correct outcome and not an error worth surfacing.
+  const { highlightId } = useLocalSearchParams<{ highlightId?: string }>();
   // Distinct from "no items". A failed read used to render the empty state,
   // which told the user their watchlist was empty when it simply had not
   // loaded — and the watchlist is the paid feature's input, so "it emptied"
@@ -486,6 +491,12 @@ function WatchlistTabScreen() {
   }, [items]);
 
   const renderItem = ({ item }: { item: WatchlistItem }) => {
+    // Tapping an alert on the home screen sends `?highlightId=` so this screen
+    // can show WHICH row the alert was about. It was sent from
+    // app/(tabs)/index.tsx and read by nobody — the tap just opened the list and
+    // left the user to find the row themselves (found 2026-08-09 by
+    // scripts/check-route-param-handoff.mjs).
+    const highlighted = highlightId != null && item.id === highlightId;
     const priorityColor =
       item.priority === 'high'
         ? colors.danger
@@ -494,7 +505,16 @@ function WatchlistTabScreen() {
         : colors.success;
 
     return (
-      <View style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View
+        style={[
+          styles.itemCard,
+          { backgroundColor: colors.card, borderColor: colors.border },
+          // Border + tint only, no scroll-to. FlashList's scrollToIndex on a
+          // freshly-mounted list races its own layout pass, and a mis-scroll is
+          // worse than no scroll; the accent edge is enough to find the row.
+          highlighted && { borderColor: colors.accent, backgroundColor: colors.accent + '12' },
+        ]}
+      >
         <View style={styles.itemHeader}>
           <View style={styles.itemTitleRow}>
             <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />

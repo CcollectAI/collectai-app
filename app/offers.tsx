@@ -15,7 +15,7 @@
  *  - `useTabBarInset` for QuickNavBar clearance.
  *  - No `accessibilityRole="tabbar"` (hard-crashes Android).
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, RefreshControl, Alert, Animated,
   Linking, TextInput, ScrollView,
@@ -25,6 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '@/components/ScreenHeader';
 import { BottomSheetModal } from '@/components/BottomSheetModal';
+import { OfferAmountSheet } from '@/components/p2p/OfferAmountSheet';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { EmptyState } from '@/components/EmptyState';
@@ -73,6 +74,12 @@ function OffersScreen() {
   const [carriersState, setCarriersState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
   const [carrierKey, setCarrierKey] = useState<string | null>(null);
   const [trackingCode, setTrackingCode] = useState('');
+  // "Have we already fetched the carriers this session?" — deliberately a ref,
+  // so it is invisible to the fetch effect's dep array. `carrierRetry` is the
+  // only thing that may re-trigger that effect, and only the retry button
+  // bumps it. See the effect below for what putting this in state cost.
+  const carrierFetchRef = useRef(false);
+  const [carrierRetry, setCarrierRetry] = useState(0);
 
   const { data, loading, error, retry } = useAsync(
     async () => (await collectorsApi.p2pListOffers(role))?.offers ?? [],
@@ -105,22 +112,38 @@ function OffersScreen() {
     [retry, showToast, settings.hapticsEnabled],
   );
 
+  // Counter amounts come from `OfferAmountSheet` — signed percentage presets
+  // plus a custom field, the same component the buyer's side uses.
+  //
+  // It was an `Alert.alert` ladder of ×1.1 / ×1.2 / ×1.35 off the BUYER'S offer,
+  // labelled with money only: no percentage, and no way to counter with any
+  // other figure (Alert.prompt is iOS-only, so a text field was impossible in
+  // that container).
+  //
+  // The reference is now the listing's ASKING price, not the buyer's offer.
+  // Against the buyer's own offer a "−5%" preset means "less than they already
+  // offered", which no seller would ever send; against asking, both directions
+  // are real moves and −5% is exactly the concession a counter usually is. Falls
+  // back to the offer amount when `listing_price` is null (a deleted listing
+  // row), and the sheet's label says which basis is in use rather than showing
+  // an unexplained percentage.
+  const [counterFor, setCounterFor] = useState<P2POffer | null>(null);
+
   const onCounter = useCallback((o: P2POffer) => {
-    // Alert.prompt is iOS-only; a simple ladder keeps this cross-platform and
-    // avoids a modal for a one-number decision.
-    const steps = [o.amount * 1.1, o.amount * 1.2, o.amount * 1.35].map((n) => Math.round(n * 100) / 100);
-    Alert.alert(
-      'Counter offer',
-      `They offered ${formatPrice(o.amount, settings.currency)}. Counter with:`,
-      [
-        ...steps.map((amt) => ({
-          text: formatPrice(amt, settings.currency),
-          onPress: () => act(() => collectorsApi.p2pRespondToOffer(o.id, 'counter', amt), o.id, 'Counter sent'),
-        })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ],
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setCounterFor(o);
+  }, [settings.hapticsEnabled]);
+
+  const submitCounter = useCallback(async (amount: number) => {
+    if (!counterFor) return;
+    const offerId = counterFor.id;
+    setCounterFor(null);
+    await act(
+      () => collectorsApi.p2pRespondToOffer(offerId, 'counter', amount),
+      offerId,
+      'Counter sent',
     );
-  }, [act, settings.currency]);
+  }, [act, counterFor]);
 
   // Carriers come from the SERVER (`_CARRIER_TRACKING`), not a list hardcoded
   // here — a client copy would let a seller pick a carrier the server cannot
@@ -132,27 +155,52 @@ function OffersScreen() {
   // loading"). The first version showed "Couldn't load carriers" for the whole
   // duration of a perfectly healthy fetch.
   //
-  // The request itself is bounded by construction — httpClient aborts every
-  // fetch at REQUEST_TIMEOUT_MS — so this cannot hang on 'loading' forever.
+  // The re-entry guard is a REF, and `carriersState` is NOT a dependency.
+  //
+  // It used to be both: the effect read `carriersState !== 'idle'` as its guard
+  // and listed it in the dep array. `setCarriersState('loading')` on the line
+  // below therefore changed a dependency of the effect that had just set it, so
+  // React tore the effect down — running `cancelled = true` — while the request
+  // was still in flight. The `.then` and the `.catch` both no-op'd, the sheet
+  // sat on "Loading carriers…" forever, and the retry was unreachable because
+  // the error branch never rendered. Every seller, every open, since the sheet
+  // shipped; the endpoint was healthy the whole time (reported 2026-08-09).
+  //
+  // Note the old comment's claim that httpClient's REQUEST_TIMEOUT_MS made
+  // hanging impossible. It didn't: a timeout bounds the REQUEST, and the
+  // request was never the problem — the handler that would act on it had been
+  // disarmed. `scripts/check-self-cancelling-effects.mjs` now fails the build
+  // on a dependency the effect writes itself.
   useEffect(() => {
-    if (!trackingFor || carriersState !== 'idle') return;
+    if (!trackingFor || carrierFetchRef.current) return;
+    carrierFetchRef.current = true;
     let cancelled = false;
+    let settled = false;
     setCarriersState('loading');
     collectorsApi
       .p2pListCarriers()
       .then((list) => {
+        settled = true;
         if (cancelled) return;
         setCarriers(list ?? []);
         setCarriersState('ok');
       })
       .catch((e) => {
+        settled = true;
         // logger.error, not warn — warn is stripped in release builds, which is
         // exactly where a silent empty picker would be invisible.
         logger.error('[offers] carrier list failed:', e);
         if (!cancelled) setCarriersState('error');
       });
-    return () => { cancelled = true; };
-  }, [trackingFor, carriersState]);
+    return () => {
+      cancelled = true;
+      // Re-arm only if we tore down BEFORE the response settled — closing the
+      // sheet mid-flight would otherwise latch 'loading' with the guard held,
+      // and reopening would show the same dead spinner the ref exists to
+      // prevent. A settled fetch keeps the guard so reopening is instant.
+      if (!settled) carrierFetchRef.current = false;
+    };
+  }, [trackingFor, carrierRetry]);
 
   const openTracking = useCallback((o: P2POffer) => {
     setTrackingFor(o);
@@ -523,9 +571,10 @@ function OffersScreen() {
             })}
           </View>
           {/* Loading and failed are DIFFERENT states and must read differently.
-              The retry sets state back to 'idle', which is what re-triggers the
-              effect — the earlier copy said "pull to refresh", which refetches
-              the offers list and would never have fetched carriers again. */}
+              The retry releases the ref guard and bumps `carrierRetry`, which is
+              what re-triggers the effect — an earlier copy said "pull to
+              refresh", which refetches the offers list and would never have
+              fetched carriers again. */}
           {carriersState === 'loading' ? (
             <Text style={[styles.sheetHint, { color: colors.muted }]}>Loading carriers…</Text>
           ) : carriersState === 'error' || (carriersState === 'ok' && carriers.length === 0) ? (
@@ -539,7 +588,10 @@ function OffersScreen() {
                 Couldn&apos;t load the carrier list.
               </Text>
               <AnimatedPressable
-                onPress={() => setCarriersState('idle')}
+                onPress={() => {
+                  carrierFetchRef.current = false;
+                  setCarrierRetry((n) => n + 1);
+                }}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading carriers"
               >
@@ -603,6 +655,25 @@ function OffersScreen() {
         </ScrollView>
       </BottomSheetModal>
 
+      {/* Seller side of the negotiation. Same component as the buyer's, so the
+          two ladders cannot drift apart. */}
+      {counterFor ? (
+        <OfferAmountSheet
+          visible={counterFor !== null}
+          onClose={() => setCounterFor(null)}
+          title="Counter offer"
+          reference={counterFor.listing_price ?? counterFor.amount}
+          referenceLabel={counterFor.listing_price != null ? 'Asking' : 'Their offer'}
+          currency={settings.currency}
+          numberLocale={settings.numberLocale}
+          submitLabel="Send counter"
+          busy={busyId === counterFor.id}
+          colors={colors}
+          hapticsEnabled={settings.hapticsEnabled}
+          onSubmit={submitCounter}
+        />
+      ) : null}
+
       <QuickNavBar />
     </View>
   );
@@ -619,59 +690,59 @@ export default function OffersScreenWithBoundary() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   pad: { padding: 16 },
-  loadingText: { fontSize: textToken.md },
+  loadingText: { fontSize: textToken.lg },
   segmentWrap: { paddingHorizontal: 16, paddingTop: 8 },
   segment: {
     flexDirection: 'row', borderWidth: StyleSheet.hairlineWidth,
     borderRadius: radius.pill, padding: 3, marginBottom: 10,
   },
   segmentBtn: { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: radius.pill },
-  segmentText: { fontSize: textToken.sm },
+  segmentText: { fontSize: textToken.md },
   list: { paddingHorizontal: 16, paddingTop: 2 },
   card: {
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md,
     padding: 14, marginBottom: 12, gap: 8,
   },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  title: { flex: 1, fontSize: textToken.md, fontWeight: fontWeight.semibold },
-  amount: { fontSize: textToken.lg, fontWeight: fontWeight.extrabold, letterSpacing: -0.3 },
+  title: { flex: 1, fontSize: textToken.lg, fontWeight: fontWeight.semibold },
+  amount: { fontSize: textToken.xl, fontWeight: fontWeight.extrabold, letterSpacing: -0.3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   rolePill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.xs },
-  rolePillText: { fontSize: textToken.xs, fontWeight: fontWeight.bold },
-  status: { fontSize: textToken.xs, flexShrink: 1 },
-  message: { fontSize: textToken.sm, fontStyle: 'italic', lineHeight: 18 },
+  rolePillText: { fontSize: textToken.sm, fontWeight: fontWeight.bold },
+  status: { fontSize: textToken.sm, flexShrink: 1 },
+  message: { fontSize: textToken.md, fontStyle: 'italic', lineHeight: 20 },
   confirmRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' },
-  confirmText: { fontSize: textToken.xs, marginRight: 8 },
+  confirmText: { fontSize: textToken.sm, marginRight: 8 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },
   btn: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.sm },
   btnGhost: { borderWidth: 1, backgroundColor: 'transparent' },
-  btnText: { fontSize: textToken.sm, fontWeight: fontWeight.bold },
-  graded: { fontSize: textToken.xs, paddingVertical: 9 },
+  btnText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
+  graded: { fontSize: textToken.sm, paddingVertical: 9 },
   // Tracking — display-only shipment reference on the card.
   tracking: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
     paddingHorizontal: 10, paddingVertical: 8, marginTop: 8,
   },
-  trackingLabel: { fontSize: 11 },
-  trackingCode: { fontSize: textToken.xs, fontWeight: fontWeight.semibold },
-  trackLink: { fontSize: textToken.xs, fontWeight: fontWeight.bold },
-  trackHint: { fontSize: 10, textAlign: 'right', lineHeight: 13 },
+  trackingLabel: { fontSize: textToken.sm },
+  trackingCode: { fontSize: textToken.sm, fontWeight: fontWeight.semibold },
+  trackLink: { fontSize: textToken.sm, fontWeight: fontWeight.bold },
+  trackHint: { fontSize: textToken.sm, textAlign: 'right', lineHeight: 15 },
   // Tracking capture sheet.
   sheet: { padding: 16, paddingBottom: 32, gap: 10 },
-  sheetHint: { fontSize: textToken.xs, lineHeight: 17 },
-  sheetLabel: { fontSize: textToken.sm, fontWeight: fontWeight.semibold, marginTop: 6 },
+  sheetHint: { fontSize: textToken.sm, lineHeight: 18 },
+  sheetLabel: { fontSize: textToken.md, fontWeight: fontWeight.semibold, marginTop: 6 },
   carrierWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   carrierChip: {
     borderWidth: 1, borderRadius: radius.pill,
     paddingHorizontal: 12, paddingVertical: 7,
   },
-  carrierChipText: { fontSize: textToken.xs, fontWeight: fontWeight.semibold },
+  carrierChipText: { fontSize: textToken.sm, fontWeight: fontWeight.semibold },
   carrierError: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   input: {
     borderWidth: 1, borderRadius: radius.sm,
-    paddingHorizontal: 12, paddingVertical: 11, fontSize: textToken.md,
+    paddingHorizontal: 12, paddingVertical: 11, fontSize: textToken.lg,
   },
   sheetSave: { marginTop: 8 },
-  viewLink: { fontSize: textToken.xs, fontWeight: fontWeight.bold, marginTop: 2 },
+  viewLink: { fontSize: textToken.sm, fontWeight: fontWeight.bold, marginTop: 2 },
 });

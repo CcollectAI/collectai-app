@@ -62,7 +62,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import { matchCatalog, type CatalogMatchHit } from '@/api/itemsApi';
 import { getCurrencySymbol } from '@/lib/format';
 import { safeGoBack } from '@/lib/goBack';
-import { CATEGORIES } from '@/constants/categories';
+import { CATEGORIES, CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
 
@@ -77,20 +77,56 @@ function SellNewScreen() {
   const { showToast } = useToast();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
+  // Read BEFORE the state below, because the state is SEEDED from it. Params are
+  // available on the first render, so a lazy `useState` initialiser is enough —
+  // no effect, and therefore no effect that writes a value it also depends on
+  // (see app/offers.tsx and scripts/check-self-cancelling-effects.mjs).
+  //
+  // `itemId` set = arriving from app/sell/pick.tsx. Its presence switches this
+  // screen from "create an item and list it" to "list the item I already own",
+  // which is a materially better listing: it inherits canonical_key and category
+  // from the item, so the supply hook writes a buyable row and everyone watching
+  // is alerted. One composer for both routes — two would drift, and this one
+  // already owns the photo, the consent checkbox and the reach notice.
+  //
+  // The rest are the seed from the card the seller just tapped. The server still
+  // derives name/category/canonical_key from `item_id`, so these only spare the
+  // seller from retyping what they already told the app once.
+  const {
+    itemId, itemName, itemCategory, itemImage, itemValue, itemCondition,
+  } = useLocalSearchParams<{
+    itemId?: string; itemName?: string; itemCategory?: string;
+    itemImage?: string; itemValue?: string; itemCondition?: string;
+  }>();
+  const fromCollection = typeof itemId === 'string' && itemId.length > 0;
+
   const [title, setTitle] = useState('');
-  const [price, setPrice] = useState('');
+  // Seeded from the item's valuation — the number the seller was already
+  // looking at on the card. Empty when the item is unpriced (`itemValue` is
+  // only sent when > 0), so the placeholder still reads as "type a price".
+  const [price, setPrice] = useState(() => (fromCollection ? itemValue ?? '' : ''));
   const [categorySlug, setCategorySlug] = useState<string | null>(null);
-  const [condition, setCondition] = useState<string | null>(null);
+  // The item's own condition, verbatim. It may sit outside CONDITIONS ("PSA 9",
+  // a graded slab) and that is fine: `condition_label` is free text server-side,
+  // and replacing the seller's real condition with the nearest vocabulary entry
+  // would be us editing a factual claim about their item. Tapping the field
+  // still offers the standard list.
+  const [condition, setCondition] = useState<string | null>(
+    () => (fromCollection && itemCondition ? itemCondition : null),
+  );
   const [description, setDescription] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  // Set when arriving from app/sell/pick.tsx. Its presence switches this screen
-  // from "create an item and list it" to "list the item I already own", which
-  // is a materially better listing: it inherits canonical_key and category from
-  // the item, so the supply hook writes a buyable row and everyone watching is
-  // alerted. One composer for both routes — two would drift, and this one
-  // already owns the photo, the consent checkbox and the reach notice.
-  const { itemId } = useLocalSearchParams<{ itemId?: string }>();
-  const fromCollection = typeof itemId === 'string' && itemId.length > 0;
+  // The item's existing photo. NOT copied into `photoUri`: that one means "a
+  // new local file to upload after creation", and re-uploading a photo the item
+  // already has would duplicate the row in `item_images`. The listing inherits
+  // this image from the item server-side (`P2PListing.image_url`), so here it
+  // only has to be VISIBLE — the seller should see the picture their listing
+  // will carry, and only pick a new one if they want a different shot.
+  const inheritedImage = fromCollection && itemImage ? itemImage : null;
+  const itemLabel = fromCollection ? (itemName ?? 'Your item') : null;
+  const itemCategoryName = itemCategory
+    ? (CATEGORY_SLUG_TO_NAME[itemCategory] ?? itemCategory)
+    : null;
 
   const [consent, setConsent] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -295,15 +331,82 @@ function SellNewScreen() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Animated.View style={animatedStyle}>
-          <Text style={[styles.lede, { color: colors.muted }]}>
-            For something you own that isn&apos;t in your collection. We&apos;ll add
-            it for you — you don&apos;t have to build a collection to sell.
-          </Text>
+          {/* The lede is route-specific. It used to state the marketplace-only
+              case unconditionally, so a seller who had just picked an item out
+              of their collection was told this screen was "for something that
+              isn't in your collection" — which reads as "you picked wrong" and
+              invites them to type it all in again. */}
+          {fromCollection ? (
+            /* Deliberately does NOT promise a catalogue link. The server does
+               inherit `canonical_key` from the item, but the spec measures only
+               4 of 16 items as carrying one (§7, §8d), so "the catalogue link
+               comes from the item" would advertise Target Hit reach that most
+               listings will not have — the exact overclaim the match notice on
+               the free-text path exists to avoid. */
+            <Text style={[styles.lede, { color: colors.muted }]}>
+              Listing from your collection, so everything you already recorded
+              about it carries over — photo, condition and description included.
+              Set your price, and change anything below you want to say
+              differently.
+            </Text>
+          ) : (
+            <Text style={[styles.lede, { color: colors.muted }]}>
+              For something you own that isn&apos;t in your collection. We&apos;ll add
+              it for you — you don&apos;t have to build a collection to sell.
+            </Text>
+          )}
+
+          {/* What you picked, shown back to you. Without this the composer gave
+              no evidence at all that the selection had carried — same fields as
+              the row that was tapped, so it reads as continuous with it. Not
+              editable on purpose: these come from the item server-side, and a
+              box whose input is silently discarded is worse than no box (the
+              same reason Title and Category are hidden below). Change them by
+              editing the item. */}
+          {fromCollection ? (
+            <View style={[styles.pickedRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              {inheritedImage ? (
+                <Image source={{ uri: inheritedImage }} style={styles.pickedThumb} resizeMode="cover" />
+              ) : (
+                <View style={[styles.pickedThumb, styles.pickedThumbEmpty, { backgroundColor: colors.accent + '12' }]}>
+                  <Ionicons name="image-outline" size={18} color={colors.muted} />
+                </View>
+              )}
+              <View style={styles.pickedBody}>
+                <Text style={[styles.pickedTitle, { color: colors.text }]} numberOfLines={2}>
+                  {itemLabel}
+                </Text>
+                {itemCategoryName ? (
+                  <Text style={[styles.pickedMeta, { color: colors.muted }]} numberOfLines={1}>
+                    {itemCategoryName}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          ) : null}
 
           {/* Photo first: it is the product, and a second-hand listing without
-              one is not a listing. */}
+              one is not a listing. From the collection the item's own photo is
+              what the listing carries, so this section stops demanding one and
+              becomes "use a different shot if you want". */}
           <Text style={[styles.label, { color: colors.text }]}>Photo</Text>
-          {photoUri ? (
+          {!photoUri && inheritedImage ? (
+            <View>
+              <Image source={{ uri: inheritedImage }} style={styles.photo} resizeMode="cover" />
+              <View style={styles.photoActions}>
+                <AnimatedPressable
+                  onPress={pickPhoto}
+                  accessibilityRole="button"
+                  accessibilityLabel="Use a different photo for this listing"
+                >
+                  <Text style={[styles.link, { color: colors.accent }]}>Use a different photo</Text>
+                </AnimatedPressable>
+              </View>
+              <Text style={[styles.fine, { color: colors.muted }]}>
+                Your item&apos;s photo. The listing uses this unless you pick another.
+              </Text>
+            </View>
+          ) : photoUri ? (
             <View>
               <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
               <View style={styles.photoActions}>
@@ -421,7 +524,15 @@ function SellNewScreen() {
           <TextInput
             value={description}
             onChangeText={setDescription}
-            placeholder="Anything a buyer should know — flaws, damage, what's included"
+            // The item's own description is NOT copied into this box: it is not
+            // in ITEMS_SELECT, and widening the app's hottest read to prefill a
+            // textarea is not a proportionate trade (same call as sell/pick.tsx
+            // makes about canonical_key). The SERVER inherits it from the item
+            // when this is left empty, so the placeholder has to say so —
+            // otherwise an empty box reads as "your description was lost".
+            placeholder={fromCollection
+              ? "Using your item's description — type here to replace it"
+              : "Anything a buyer should know — flaws, damage, what's included"}
             placeholderTextColor={colors.muted}
             multiline
             maxLength={4000}
@@ -520,6 +631,18 @@ const styles = StyleSheet.create({
   // 16 is the app-wide screen gutter (docs/ui-playbook.md).
   content: { padding: 16 },
   lede: { fontSize: textToken.sm, lineHeight: 19, marginBottom: 8 },
+  // The picked-item summary. Mirrors the row layout in app/sell/pick.tsx so the
+  // handoff reads as the same object, not a new one.
+  pickedRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md,
+    padding: 10, marginBottom: 4,
+  },
+  pickedThumb: { width: 48, height: 48, borderRadius: radius.sm },
+  pickedThumbEmpty: { alignItems: 'center', justifyContent: 'center' },
+  pickedBody: { flex: 1, gap: 2 },
+  pickedTitle: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
+  pickedMeta: { fontSize: textToken.sm },
   label: { fontSize: textToken.sm, fontWeight: fontWeight.semibold, marginTop: 14, marginBottom: 6 },
   // ONE field shape shared by the text inputs and the pickers, so a form of
   // mixed control types still reads as a single form.
