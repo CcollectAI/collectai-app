@@ -36,6 +36,7 @@ import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useAsync } from '@/hooks/useAsync';
 import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
+import { showActionSheet } from '@/hooks/useActionSheetPicker';
 import { formatPrice } from '@/lib/format';
 import { collectorsApi } from '@/api/collectorsApi';
 import type { P2POffer, P2PCarrier } from '@/api/p2pApi';
@@ -201,6 +202,25 @@ function OffersScreen() {
       if (!settled) carrierFetchRef.current = false;
     };
   }, [trackingFor, carrierRetry]);
+
+  /** Label for the chosen carrier. Derived from the SERVER list rather than
+   *  stored alongside the key, so a key with no matching row (a carrier retired
+   *  server-side) shows the placeholder instead of a stale name. */
+  const carrierLabel = useMemo(
+    () => carriers.find((c) => c.key === carrierKey)?.label ?? null,
+    [carriers, carrierKey],
+  );
+
+  const pickCarrier = useCallback(() => {
+    if (carriers.length === 0) return;
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    // Options are built from the same array the field reads, so the index the
+    // sheet returns cannot address a different carrier than the one displayed.
+    showActionSheet('Carrier', carriers.map((c) => c.label), (i) => {
+      const chosen = carriers[i];
+      if (chosen) setCarrierKey(chosen.key);
+    });
+  }, [carriers, settings.hapticsEnabled]);
 
   const openTracking = useCallback((o: P2POffer) => {
     setTrackingFor(o);
@@ -407,13 +427,19 @@ function OffersScreen() {
 
           {live ? (
             <AnimatedPressable
-              onPress={() => act(() => collectorsApi.p2pRespondToOffer(o.id, 'withdraw'), o.id, 'Withdrawn')}
+              // Labelled "Delete" because that is what a member is doing —
+              // taking their offer off the table. The API action stays
+              // `withdraw` and the resulting row still reads "Withdrawn": the
+              // server writes cancelled + withdrawn_by, since 'withdrawn' is not
+              // a legal p2p_offers status (spec §1d). Renaming the wire format to
+              // match a button label would break that constraint.
+              onPress={() => act(() => collectorsApi.p2pRespondToOffer(o.id, 'withdraw'), o.id, 'Deleted')}
               disabled={busy}
               style={[styles.btn, styles.btnGhost, { borderColor: colors.border }]}
               accessibilityRole="button"
-              accessibilityLabel="Withdraw from this trade"
+              accessibilityLabel="Delete this offer"
             >
-              <Text style={[styles.btnText, { color: colors.muted }]}>Withdraw</Text>
+              <Text style={[styles.btnText, { color: colors.muted }]}>Delete</Text>
             </AnimatedPressable>
           ) : null}
 
@@ -546,30 +572,25 @@ function OffersScreen() {
             by hand.
           </Text>
 
+          {/* A dropdown, not a chip grid — `showActionSheet` is what every other
+              picker in the app uses (native ActionSheetIOS on iOS, an Alert on
+              Android), so a carrier is chosen the same way a category or a
+              condition is in app/sell/new.tsx. The chips also grew with the
+              carrier list; a field does not. */}
           <Text style={[styles.sheetLabel, { color: colors.text }]}>Carrier</Text>
-          <View style={styles.carrierWrap}>
-            {carriers.map((c) => {
-              const active = carrierKey === c.key;
-              return (
-                <AnimatedPressable
-                  key={c.key}
-                  onPress={() => setCarrierKey(c.key)}
-                  style={[
-                    styles.carrierChip,
-                    { borderColor: active ? colors.accent : colors.border },
-                    active && { backgroundColor: colors.accent + '1E' },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                  accessibilityLabel={c.label}
-                >
-                  <Text style={[styles.carrierChipText, { color: active ? colors.accent : colors.text }]}>
-                    {c.label}
-                  </Text>
-                </AnimatedPressable>
-              );
-            })}
-          </View>
+          <AnimatedPressable
+            onPress={pickCarrier}
+            disabled={carriers.length === 0}
+            style={[styles.field, { borderColor: colors.border, backgroundColor: colors.card }]}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: carriers.length === 0 }}
+            accessibilityLabel="Choose the carrier"
+          >
+            <Text style={[styles.fieldText, { color: carrierLabel ? colors.text : colors.muted }]}>
+              {carrierLabel ?? (carriers.length === 0 ? 'No carriers available' : 'Choose a carrier')}
+            </Text>
+            <Ionicons name="chevron-down" size={16} color={colors.muted} />
+          </AnimatedPressable>
           {/* Loading and failed are DIFFERENT states and must read differently.
               The retry releases the ref guard and bumps `carrierRetry`, which is
               what re-triggers the effect — an earlier copy said "pull to
@@ -732,12 +753,13 @@ const styles = StyleSheet.create({
   sheet: { padding: 16, paddingBottom: 32, gap: 10 },
   sheetHint: { fontSize: textToken.sm, lineHeight: 18 },
   sheetLabel: { fontSize: textToken.md, fontWeight: fontWeight.semibold, marginTop: 6 },
-  carrierWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  carrierChip: {
-    borderWidth: 1, borderRadius: radius.pill,
-    paddingHorizontal: 12, paddingVertical: 7,
+  // (carrierWrap/carrierChip/carrierChipText removed with the chip grid)
+  field: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1, borderRadius: radius.sm,
+    paddingHorizontal: 12, paddingVertical: 12,
   },
-  carrierChipText: { fontSize: textToken.sm, fontWeight: fontWeight.semibold },
+  fieldText: { fontSize: textToken.md },
   carrierError: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   input: {
     borderWidth: 1, borderRadius: radius.sm,

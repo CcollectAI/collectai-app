@@ -676,6 +676,35 @@ const SearchScreen: React.FC = () => {
           </AnimatedPressable>
         )}
 
+        {/* Open bids — the way back to a negotiation in progress.
+            /offers had no entry point on this tab at all: a member who made an
+            offer could only reach it from a notification or by remembering the
+            URL, which is precisely the dead-end an offer must not be. Reuses the
+            member-marketplace row shape, directly beneath it, because the two are
+            the same journey seen from either side. */}
+        {!trimmedQuery && (
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.push('/offers' as Href);
+            }}
+            style={[styles.memberMarketRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Open bids — offers you have made or received"
+          >
+            <View style={[styles.memberMarketIcon, { backgroundColor: colors.accent + '18' }]}>
+              <Ionicons name="swap-horizontal-outline" size={18} color={colors.accent} />
+            </View>
+            <View style={styles.memberMarketText}>
+              <Text style={[styles.memberMarketTitle, { color: colors.text }]}>Open bids</Text>
+              <Text style={[styles.memberMarketSub, { color: colors.muted }]}>
+                Offers you&apos;ve made, and offers on your listings
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+          </AnimatedPressable>
+        )}
+
         {/* Browse by category (Spotify-style grid) */}
         {!trimmedQuery && (
           <>

@@ -331,30 +331,16 @@ function SellNewScreen() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Animated.View style={animatedStyle}>
-          {/* The lede is route-specific. It used to state the marketplace-only
-              case unconditionally, so a seller who had just picked an item out
-              of their collection was told this screen was "for something that
-              isn't in your collection" — which reads as "you picked wrong" and
-              invites them to type it all in again. */}
-          {fromCollection ? (
-            /* Deliberately does NOT promise a catalogue link. The server does
-               inherit `canonical_key` from the item, but the spec measures only
-               4 of 16 items as carrying one (§7, §8d), so "the catalogue link
-               comes from the item" would advertise Target Hit reach that most
-               listings will not have — the exact overclaim the match notice on
-               the free-text path exists to avoid. */
-            <Text style={[styles.lede, { color: colors.muted }]}>
-              Listing from your collection, so everything you already recorded
-              about it carries over — photo, condition and description included.
-              Set your price, and change anything below you want to say
-              differently.
-            </Text>
-          ) : (
+          {/* Only the marketplace-only route needs explaining. From the
+              collection the summary card below already says which item is being
+              listed, which is the whole message — a paragraph restating it is
+              noise (removed 2026-08-09: "self explanatory"). */}
+          {!fromCollection ? (
             <Text style={[styles.lede, { color: colors.muted }]}>
               For something you own that isn&apos;t in your collection. We&apos;ll add
               it for you — you don&apos;t have to build a collection to sell.
             </Text>
-          )}
+          ) : null}
 
           {/* What you picked, shown back to you. Without this the composer gave
               no evidence at all that the selection had carried — same fields as

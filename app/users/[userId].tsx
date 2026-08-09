@@ -340,9 +340,6 @@ function UserProfileScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.centerContainer}>
-          <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.floatingBack} accessibilityRole="button" accessibilityLabel={t('common.go_back_a11y')}>
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
-          </AnimatedPressable>
           <Ionicons name="person-outline" size={48} color={colors.muted} />
           <Text style={[styles.errorTitle, { color: colors.text }]}>
             {error || 'Collector not found'}
@@ -371,18 +368,13 @@ function UserProfileScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
-        {/* Top row with back + menu */}
+        {/* No back control: no other screen in the app carries an inline "‹ Back"
+            row, and this one is always reached by a push (a listing's seller, a
+            search result, a chat), so the platform's own affordances apply — the
+            iOS edge swipe and the Android system back, both handled by
+            expo-router. The error state below keeps an explicit "Go back",
+            because a dead end must offer a way out. */}
         <View style={styles.topRow}>
-          <AnimatedPressable
-            onPress={() => safeGoBack(router)}
-            style={styles.backRow}
-            accessibilityRole="button"
-            accessibilityLabel={t('common.go_back_a11y')}
-          >
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
-            <Text style={[styles.backText, { color: colors.text }]}>Back</Text>
-          </AnimatedPressable>
-
           <AnimatedPressable
             onPress={() => setShowMenu(true)}
             style={styles.menuBtn}
@@ -574,28 +566,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
-  floatingBack: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    padding: 8,
-  },
+  // Holds the menu button alone since the inline Back row was removed, so it
+  // pushes to the right rather than justifying two children apart.
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  backRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    alignSelf: 'flex-start',
-    padding: 4,
-  },
-  backText: {
-    fontSize: textToken.lg,
-    fontWeight: fw.medium,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   menuBtn: {
     padding: 8,

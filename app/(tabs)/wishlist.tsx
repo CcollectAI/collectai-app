@@ -36,7 +36,6 @@ import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
 import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
 import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
-import { saveCSVAndShare } from '@/export/csv';
 import { collectorsApi } from '@/api/collectorsApi';
 import type { P2PWatchlistMatch } from '@/api/p2pApi';
 import type { CurrencyCode } from '@/data/types';
@@ -50,36 +49,6 @@ const CONGRATS_DISPLAY_DURATION = 2000;
 const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as const };
 const CATEGORIES = [...ALL_CATS.map((c) => c.name), 'Other'];
 
-/**
- * Watchlist -> CSV. Recovered verbatim from app/watchlist-builder.tsx when that
- * screen was deleted 2026-08-08: the SCREEN was redundant, the export was not.
- *
- * Quotes any field containing a comma, quote or newline, and doubles inner
- * quotes — the minimum that survives a round-trip into a spreadsheet. Without
- * it a title like `Charizard, 1st ed.` silently becomes two columns.
- */
-function watchlistToCSV(items: WatchlistItem[], currency: string): string {
-  const escape = (v: unknown) => {
-    if (v == null) return '';
-    const str = String(v);
-    return /[,"\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-  };
-  const head = ['Title', 'Priority', 'Target Price', 'Market Price', 'Currency', 'Category', 'Notes', 'Created'];
-  const lines = [head.join(',')];
-  for (const item of items) {
-    lines.push([
-      escape(item.title),
-      escape(item.priority),
-      escape(item.targetPrice != null ? item.targetPrice.toFixed(2) : ''),
-      escape(item.lastMarketPrice != null ? item.lastMarketPrice.toFixed(2) : ''),
-      escape(currency),
-      escape(item.category ?? ''),
-      escape(item.notes ?? ''),
-      escape(item.createdAt ?? ''),
-    ].join(','));
-  }
-  return lines.join('\n');
-}
 
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return '';
@@ -722,23 +691,6 @@ function WatchlistTabScreen() {
     router.push('/notifications');
   }, [router, settings.hapticsEnabled]);
 
-  const handleExport = useCallback(async () => {
-    if (items.length === 0) {
-      showToast({ message: 'Nothing to export yet.', type: 'warning' });
-      return;
-    }
-    try {
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      const csv = watchlistToCSV(items, settings.currency);
-      await saveCSVAndShare(
-        `watchlist_${new Date().toISOString().slice(0, 10)}.csv`,
-        csv,
-      );
-    } catch (err) {
-      logger.error('[Watchlist] CSV export failed:', err);
-      showToast({ message: 'Could not export your watchlist.', type: 'error' });
-    }
-  }, [items, settings.currency, settings.hapticsEnabled, showToast]);
 
   const handleAddPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -747,7 +699,7 @@ function WatchlistTabScreen() {
 
   const renderHeader = () => (
     <>
-      <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} onExportPress={handleExport} />
+      <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} />
       <WishlistStatsBar items={items} currency={settings.currency} />
     </>
   );
