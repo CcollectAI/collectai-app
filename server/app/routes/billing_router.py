@@ -41,6 +41,7 @@ from app.config import (
     SUPABASE_URL,
 )
 from app.db import get_pool
+from app.lib.json_safe import json_safe_value
 from app.lib.revenuecat import (
     _RC_ACTIVE_EVENTS,
     _RC_ENDED_EVENTS,
@@ -545,9 +546,10 @@ async def get_billing_status(
     # subscription row had period_end IS NULL, but as soon as a paid
     # user appeared the entire FE billing flow broke. Coerce to ISO-8601
     # string here and let the FE parse if needed.
-    period_end = sub.get("current_period_end")
-    if hasattr(period_end, "isoformat"):
-        period_end = period_end.isoformat()
+    # isinstance, not hasattr: duck-typing a conversion is what shipped every
+    # search price as a string (see app/lib/json_safe.py). Harmless here today —
+    # no float has .isoformat — but it is the shape that gets copy-pasted.
+    period_end = json_safe_value(sub.get("current_period_end"))
 
     return JSONResponse({
         "plan": plan,

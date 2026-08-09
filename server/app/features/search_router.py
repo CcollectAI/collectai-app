@@ -8,15 +8,13 @@ Endpoints:
 from __future__ import annotations
 
 import logging
-import uuid
-from datetime import date, datetime, time
-from decimal import Decimal
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.auth import get_current_user_id
 from app.lib.db_helpers import get_db_pool
+from app.lib.json_safe import json_safe_rows
 from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/search", tags=["Search"])
@@ -224,31 +222,14 @@ async def unified_search(
     except Exception as e:
         logger.warning("unified_search DB error: %s", e)
 
-    # Convert non-serializable types.
-    #
-    # This used to test `hasattr(v, "hex")` to catch UUID and bytes. FLOATS HAVE
-    # A .hex() METHOD — (642.64).hex() == '0x1.4147ae147ae14p+9' — so every float
-    # in every search response was silently turned into a STRING. `price_eur`
-    # arrived as "642.64", and `items[].price` (estimated_value) had been
-    # arriving as a string the whole time. The client tests
-    # `typeof priceEur === 'number'`, so a priced row rendered "No price yet":
-    # a live feature that looked exactly like missing data.
-    #
-    # Found 2026-08-09 by putting a literal 1.5 in the response and watching it
-    # come back as "1.5". Duck-typing a CONVERSION is the bug — `hasattr` asks
-    # "does this quack?" when the question is "what IS this?". Explicit types
-    # only, so a new type has to be added deliberately rather than caught by
-    # accident (learning_hasattr_guard_turns_a_typo_into_a_silent_noop).
-    for lst in [items, catalog, users, events]:
-        for row in lst:
-            for k, v in row.items():
-                if isinstance(v, (datetime, date, time)):
-                    row[k] = v.isoformat()
-                elif isinstance(v, (uuid.UUID, bytes, bytearray, memoryview)):
-                    row[k] = str(v)
-                elif isinstance(v, Decimal):
-                    # JSON has no decimal; float is what every consumer expects.
-                    row[k] = float(v)
+    # Convert non-serializable types. See app/lib/json_safe.py for why this is
+    # a shared helper and not a loop written here: the loop that used to live
+    # here tested `hasattr(v, "hex")`, floats have .hex(), and so every price in
+    # every search response shipped as a STRING.
+    items = json_safe_rows(items)
+    catalog = json_safe_rows(catalog)
+    users = json_safe_rows(users)
+    events = json_safe_rows(events)
 
     # Record demand signal with geo enrichment (best-effort).
     # If 0 results across every source, ALSO record a separate

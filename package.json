@@ -40,7 +40,8 @@
     "check:effects": "node scripts/check-self-cancelling-effects.mjs",
     "check:params": "node scripts/check-route-param-handoff.mjs",
     "i18n:parity": "node scripts/check-i18n-parity.mjs",
-    "check:archived": "node scripts/check-archived-filter.mjs"
+    "check:archived": "node scripts/check-archived-filter.mjs",
+    "check:serialization": "node scripts/check-duck-typed-serialization.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
