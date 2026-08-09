@@ -296,6 +296,174 @@ async def _notify_trade(conn, user_id: str, title: str, body: str, offer_id: str
         logger.error("[p2p] trade notification failed for %s: %s", user_id, exc)
 
 
+async def _settle_completed_trade(conn, offer_id: str, listing_id: str,
+                                  buyer_id: str, seller_id: str,
+                                  amount: float, currency: str) -> None:
+    """Move the object, not just the paperwork.
+
+    Completion used to update `p2p_offers`, mark the listing sold, remove the
+    buyable row and write a sold comp — and leave `items` completely untouched.
+    The seller kept the thing they had sold in their collection (so their
+    portfolio AND their public profile value both still counted it) and the buyer
+    had nothing: no price tracking, no set-completion, no way to relist it. Asked
+    2026-08-09: "does it get removed from the items of the seller and added to
+    buyer items". It did not.
+
+    Four things settle here. A census of prod on 2026-08-09 found the only
+    completed trade there had leaked the first three:
+
+    1. The seller's item is retired (or decremented, if they own several).
+       Prod: the sold item was still unarchived in the seller's collection.
+    2. The buyer gets a NEW item — never the seller's row.
+       Prod: the buyer had nothing at all.
+    3. The listing's soft reservation is released.
+       Prod: `reserved_offer_id` still pointed at the completed offer.
+    4. Every OTHER buyer's live offer on that listing is declined, and they are
+       told. Without this they sit on an open offer for an object that is gone.
+       Prod: 0 rows today, because no listing has yet drawn two live offers.
+
+    WHY A NEW ROW AND NOT A REASSIGNMENT. Handing `items.user_id` to the buyer
+    would hand over the seller's `purchase_price`, `purchase_notes`,
+    `acquired_from` and `cost_basis` — what they paid and where they got it. The
+    buyer receives the PUBLIC facts only: what it is, its catalogue identity, the
+    condition and description the listing advertised, and the price THEY paid.
+
+    The photo is copied only when the seller ticked `photo_catalogue_consent`.
+    Their photograph is theirs otherwise, so the buyer's item falls back to the
+    catalogue image the same way any other item does.
+
+    Never raises. A settled trade is a fact; failing to move an item must not
+    500 a completion that already happened, and it is reconstructible from the
+    offer row.
+    """
+    try:
+        from app.lib.fx_service import convert_to_eur
+
+        l = await conn.fetchrow(
+            """
+            SELECT l.item_id, l.canonical_key, l.category, l.condition_label,
+                   l.listing_description, l.listing_title,
+                   l.photo_catalogue_consent,
+                   i.image_url, COALESCE(i.quantity, 1) AS quantity
+            FROM public.marketplace_listings l
+            LEFT JOIN public.items i ON i.id = l.item_id
+            WHERE l.id = $1::uuid
+            """,
+            listing_id,
+        )
+        if l is None:
+            return
+
+        # 3. Release the soft reserve. Left set, a completed listing still looks
+        #    reserved to anything reading that column.
+        await conn.execute(
+            """
+            UPDATE public.marketplace_listings
+               SET reserved_offer_id = NULL, reserved_at = NULL, updated_at = now()
+             WHERE id = $1::uuid
+            """,
+            listing_id,
+        )
+
+        # 1. Retire the seller's copy. A seller with THREE of something who sells
+        #    one still owns two, so archiving the row would delete two items from
+        #    their collection. Decrement instead.
+        #
+        #    `for_sale` is deliberately NOT touched here. The DB owns it: trigger
+        #    `trg_sync_item_for_sale` on marketplace_listings recomputes it from
+        #    the live listing set (scoped to marketplace_id='sparrow'), and the
+        #    caller marks the listing 'sold' BEFORE calling us, so it has already
+        #    fired and settled the flag. Verified in prod 2026-08-09: the one
+        #    completed trade's item is correctly for_sale=false. Writing it again
+        #    here would be a second, narrower implementation of that rule — it
+        #    omits the 'sparrow' scope — and the two would drift.
+        if l["item_id"]:
+            if int(l["quantity"]) > 1:
+                await conn.execute(
+                    """
+                    UPDATE public.items
+                       SET quantity = GREATEST(COALESCE(quantity, 1) - 1, 0),
+                           updated_at = now()
+                     WHERE id = $1::uuid AND user_id = $2::uuid
+                    """,
+                    str(l["item_id"]), seller_id,
+                )
+            else:
+                # Safe to archive unconditionally: p2p_listing_router enforces one
+                # active listing per item, so there is no sibling listing left
+                # pointing at a row we just retired.
+                await conn.execute(
+                    """
+                    UPDATE public.items
+                       SET archived = TRUE, updated_at = now()
+                     WHERE id = $1::uuid AND user_id = $2::uuid
+                    """,
+                    str(l["item_id"]), seller_id,
+                )
+
+        # 2. Give the buyer their own row. `acquired_from` doubles as the
+        #    idempotency key: re-running a settled trade must not mint a second
+        #    item. `purchased_at` is a timestamptz and the paired-column trigger
+        #    derives `purchase_date` from it — never bind a bare date here
+        #    (learning_items_paired_columns_trigger).
+        marker = f"sparrow:offer:{offer_id}"
+        already = await conn.fetchval(
+            "SELECT 1 FROM public.items WHERE user_id = $1::uuid AND acquired_from = $2",
+            buyer_id, marker,
+        )
+        if not already:
+            amount_eur = await convert_to_eur(float(amount), currency or "EUR")
+            await conn.execute(
+                """
+                INSERT INTO public.items
+                    (user_id, name, category, canonical_key, condition,
+                     description, image_url, source, for_sale, quantity,
+                     purchase_price, purchase_currency, purchase_price_eur,
+                     purchased_at, acquired_from, acquired_condition,
+                     created_at, updated_at)
+                VALUES ($1::uuid, $2, $3, $4, $5,
+                        $6, $7, 'marketplace', FALSE, 1,
+                        $8, $9, $10,
+                        now(), $11, $5,
+                        now(), now())
+                """,
+                buyer_id,
+                l["listing_title"] or "Bought on Sparrow",
+                l["category"],
+                l["canonical_key"],
+                l["condition_label"],
+                l["listing_description"],
+                # The seller's photograph is theirs unless they said otherwise.
+                l["image_url"] if l["photo_catalogue_consent"] else None,
+                float(amount),
+                (currency or "EUR").upper(),
+                amount_eur,
+                marker,
+            )
+
+        # 4. Everyone else who was still negotiating for this object.
+        losers = await conn.fetch(
+            """
+            UPDATE public.p2p_offers
+               SET status = 'declined', updated_at = now()
+             WHERE listing_id = $1::uuid AND id <> $2::uuid
+               AND status IN ('pending', 'countered', 'accepted')
+            RETURNING buyer_id, amount, currency
+            """,
+            listing_id, offer_id,
+        )
+        for r in losers:
+            await _notify_trade(
+                conn, str(r["buyer_id"]),
+                "That item has sold",
+                f"\"{l['listing_title'] or 'An item'}\" sold to another buyer, so "
+                f"your {r['currency']} {float(r['amount']):.2f} offer was closed.",
+                offer_id,
+            )
+    except Exception as exc:
+        logger.error("[p2p] settling completed trade %s failed: %s", offer_id, exc)
+
+
 async def _dac7_accrue(seller_id: str, amount: float, currency: str) -> None:
     """Accrue one completed sale against the seller's DAC7 year, and warn once.
 
@@ -1156,6 +1324,15 @@ async def confirm_exchange(
             )
             fresh = dict(fresh)
             fresh["status"] = _COMPLETED
+
+            # Move the OBJECT, release the reservation, and close out the other
+            # buyers. Before the notifications below, so a completed trade never
+            # announces itself while the item is still in the seller's collection.
+            await _settle_completed_trade(
+                conn, offer_id, str(fresh["listing_id"]),
+                str(fresh["buyer_id"]), str(fresh["seller_id"]),
+                float(fresh["amount"]), fresh["currency"] or "EUR",
+            )
 
             # BOTH sides, because completion unlocks grading for both and each
             # needs to know the other confirmed.

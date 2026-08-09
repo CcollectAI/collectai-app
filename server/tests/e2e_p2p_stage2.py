@@ -79,6 +79,45 @@ async def main():
     chk('BOTH told the trade completed',
         await notif_count(SELLER) == n_seller0 + 2 and await notif_count(BUYER) == n_buyer0 + 4,
         f'seller {await notif_count(SELLER)} (was {n_seller0}), buyer {await notif_count(BUYER)} (was {n_buyer0})')
+    # SETTLEMENT — the object must move, not just the paperwork.
+    seller_item = await c.fetchrow(
+        'select archived, for_sale, quantity from items where id=$1::uuid', ITEM)
+    chk('seller item retired (archived, no longer for sale)',
+        seller_item is not None and seller_item['archived'] is True
+        and seller_item['for_sale'] is not True,
+        dict(seller_item) if seller_item else None)
+    bought = await c.fetchrow(
+        """select name, category, canonical_key, condition, image_url, source,
+                  purchase_price, purchase_price_eur, purchased_at, purchase_date,
+                  acquired_from, description
+             from items where user_id=$1::uuid and acquired_from=$2""",
+        BUYER, f'sparrow:offer:{o.id}')
+    chk('buyer got their own item', bought is not None)
+    if bought:
+        chk('buyer item carries the AGREED price as cost basis',
+            float(bought['purchase_price_eur']) == 27.0, bought['purchase_price_eur'])
+        chk('paired-column trigger derived purchase_date from purchased_at',
+            bought['purchase_date'] is not None and bought['purchased_at'] is not None,
+            f"{bought['purchase_date']} / {bought['purchased_at']}")
+        chk('buyer item is catalogue-identified (prices + set completion work)',
+            bought['canonical_key'] is not None or bought['category'] is not None,
+            f"{bought['canonical_key']} / {bought['category']}")
+        # The listing in this run has photo_catalogue_consent unset, so the
+        # seller's photograph must NOT have been copied.
+        chk('seller photo NOT copied without consent', bought['image_url'] is None,
+            bought['image_url'])
+        chk('buyer item marked source=marketplace', bought['source'] == 'marketplace',
+            bought['source'])
+    # The seller's PRIVATE data must not have travelled.
+    leaked = await c.fetchval(
+        """select count(*) from items where user_id=$1::uuid and acquired_from=$2
+             and (purchase_notes is not null or cost_basis is not null)""",
+        BUYER, f'sparrow:offer:{o.id}')
+    chk('seller purchase notes / cost basis NOT leaked to the buyer', leaked == 0, leaked)
+    resv = await c.fetchval(
+        'select reserved_offer_id from marketplace_listings where id=$1::uuid', L.id)
+    chk('soft reservation released on completion', resv is None, resv)
+
     dac7 = await c.fetchrow(
         'SELECT sales_count, gross_eur FROM dac7_seller_year WHERE user_id=$1::uuid '
         'AND year=EXTRACT(YEAR FROM now())::int', SELLER)
@@ -133,6 +172,11 @@ async def main():
         SELLER)
     await c.execute(
         "DELETE FROM notification_history WHERE data->>'offer_id' = $1", o.id)
+    # Settlement side effects: the buyer's new item, and the seller's item state.
+    await c.execute("DELETE FROM items WHERE user_id=$1::uuid AND acquired_from=$2",
+                    BUYER, f'sparrow:offer:{o.id}')
+    await c.execute(
+        "UPDATE items SET archived = FALSE, for_sale = FALSE WHERE id=$1::uuid", ITEM)
     leftover = await c.fetchval('SELECT count(*) FROM p2p_offers WHERE id=$1::uuid', o.id)
     chk('cleanup removed the test offer', leftover == 0, leftover)
     print()
