@@ -165,10 +165,45 @@ English trap as `'fixed'` vs `'fixed_price'`.
 Reputation hides `positive_pct` below **3 grades**: "0% positive" off one grade
 is a smear, "100%" off one is not credibility.
 
-**E2E: 22/22 passing** (`server/tests/e2e_p2p_stage2.py`), covering offer →
+**E2E: 40/40 passing** (`server/tests/e2e_p2p_stage2.py`), covering offer →
 counter → accept → soft-reserve-does-not-delist → one-sided confirm (grading
-still blocked) → two-sided completion → supply row removed → mutual grading →
-re-grade edits rather than double-votes.
+still blocked) → two-sided completion → supply row removed → **settlement** →
+mutual grading → re-grade edits rather than double-votes.
+
+### Settlement — completion moves the OBJECT, not just the paperwork
+
+Added 2026-08-09. Until then completion updated `p2p_offers`, marked the listing
+sold, removed the buyable row and wrote a sold comp — and left `items` untouched.
+The seller kept what they had sold; the buyer got nothing. A census of prod found
+the only completed trade there had leaked three of the four below.
+
+`_settle_completed_trade` runs before the completion notifications, so a trade
+never announces itself while the object is still in the seller's collection:
+
+| # | What settles | Why it is not the obvious thing |
+|---|---|---|
+| 1 | Seller's item retired — `archived`, or `quantity - 1` if they hold several | Archiving a stack of three would delete two items they still own |
+| 2 | Buyer gets a **NEW** row | Reassigning `items.user_id` would hand over the seller's `purchase_price`, `purchase_notes`, `acquired_from` and `cost_basis`. The buyer receives the PUBLIC facts plus what THEY paid |
+| 3 | `reserved_offer_id` / `reserved_at` cleared | A completed listing otherwise still reads as reserved |
+| 4 | Every OTHER live offer declined + notified | Rival buyers otherwise sit on an open offer for an object that is gone |
+
+`acquired_from = 'sparrow:offer:<id>'` doubles as the idempotency key, so
+re-running settlement mints nothing. The seller's photo is copied only under
+`photo_catalogue_consent`; otherwise the buyer's item falls back to the
+catalogue image. The function never raises — a settled trade is a fact, and
+failing to move an item must not 500 a completion that already happened.
+
+**`for_sale` is deliberately not written here.** Trigger `trg_sync_item_for_sale`
+recomputes it from the live listing set, scoped to `marketplace_id = 'sparrow'`,
+and the caller marks the listing `sold` first, so it has already fired.
+
+**Why archive rather than delete:** 29 tables FK to `items.id`, mostly
+`ON DELETE CASCADE` — including `marketplace_listings`, `price_ground_truths`
+and `verified_sales`. Deleting a sold item would cascade away the listing and
+the exact sold-comp / ground-truth rows the completion had just written for the
+model. Archiving keeps the row addressable. `items.archived` is honoured by
+reads as of the same date, with `/archived` as the route back
+(`npm run check:archived`).
 
 **UI**: `app/offers.tsx` (both sides of every trade in one screen — a member is
 usually both), offer ladder on the listing detail, and the confirm/grade

@@ -310,7 +310,7 @@ async def get_home_widget(
                         pp.q50 AS latest_q50
                     FROM price_predictions pp
                     JOIN items i ON i.canonical_ref = pp.item_ref
-                    WHERE i.user_id = $1
+                    WHERE i.user_id = $1 AND NOT i.archived
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
                 prev AS (
@@ -319,7 +319,7 @@ async def get_home_widget(
                         pp.q50 AS prev_q50
                     FROM price_predictions pp
                     JOIN items i ON i.canonical_ref = pp.item_ref
-                    WHERE i.user_id = $1
+                    WHERE i.user_id = $1 AND NOT i.archived
                       AND pp.generated_at <= $2
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),

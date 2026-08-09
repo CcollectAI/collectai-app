@@ -1006,6 +1006,8 @@ async def browse_listings(
     async with pool.acquire() as conn:
         hidden = await blocked_user_ids(conn, user_id)
         rows = await conn.fetch(
+            # archived-exempt: a LISTING browse. items is joined only for the
+            # photo; what makes a listing visible is its own status.
             """
             SELECT l.id, l.user_id, l.item_id, l.listing_title,
                    l.listing_description, l.price, l.currency,
@@ -1511,6 +1513,8 @@ async def watchlist_matches(
     async with pool.acquire() as conn:
         hidden = await blocked_user_ids(conn, user_id)
         rows = await conn.fetch(
+            # archived-exempt: matches WATCHLIST rows to live listings. Keyed
+            # off the listing, and items is joined only for the photo.
             """
             SELECT DISTINCT ON (w.id)
                    w.id AS watchlist_id, w.target_price,

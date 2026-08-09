@@ -236,6 +236,7 @@ async def detect_anomalies(conn):
               SELECT 1 FROM public.items i
               WHERE i.canonical_ref = ppd.item_ref
                 AND i.user_id IS NOT NULL
+                AND NOT i.archived
             )
             OR EXISTS (
               SELECT 1 FROM public.watchlist_items w
@@ -329,8 +330,9 @@ async def detect_anomalies(conn):
             """
             SELECT DISTINCT user_id, id AS item_id
             FROM public.items
-            WHERE canonical_key = $1
-               OR id::text = $1
+            WHERE NOT archived
+              AND (canonical_key = $1
+               OR id::text = $1)
             """,
             item_ref,
         )
@@ -473,7 +475,7 @@ async def check_set_completions(conn):
             """
             SELECT DISTINCT user_id
             FROM public.items
-            WHERE category = $1
+            WHERE category = $1 AND NOT archived
             """,
             category_id,
         )
@@ -488,7 +490,7 @@ async def check_set_completions(conn):
                 """
                 SELECT canonical_key AS normalized_key, title
                 FROM public.items
-                WHERE user_id = $1
+                WHERE user_id = $1 AND NOT archived
                   AND category = $2
                 """,
                 user_id,

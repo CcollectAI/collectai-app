@@ -19,6 +19,7 @@ async function fetchItems(): Promise<ItemRow[]> {
   const { data, error } = await supabase
     .from("items")
     .select("id,title,image_url,category,estimated_value,updated_at")
+    .eq("archived", false)
     .order("updated_at", { ascending: false })
     .limit(200);
   if (error) throw error;

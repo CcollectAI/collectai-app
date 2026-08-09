@@ -405,7 +405,7 @@ async def export_insurance_report(
                     ORDER BY generated_at DESC
                     LIMIT 1
                 ) pp ON true
-                WHERE i.user_id = $1::uuid
+                WHERE i.user_id = $1::uuid AND NOT i.archived
                 ORDER BY i.category, i.title
                 """,
                 user_id,

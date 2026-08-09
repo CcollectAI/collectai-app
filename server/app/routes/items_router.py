@@ -302,6 +302,9 @@ async def create_item(
                 try:
                     from app.features.gamification_router import record_activity_xp
                     item_count = await conn.fetchval(
+                        # archived-exempt: collector milestones are LIFETIME,
+                        # matching intake_router's scan milestones. Filtering
+                        # here would make the two counters disagree.
                         "SELECT COUNT(*) FROM items WHERE user_id = $1::uuid",
                         user_id,
                     )
@@ -392,7 +395,7 @@ async def list_items(
                         """
                         SELECT id, title, category, notes, collection_name, estimated_value, canonical_key, updated_at
                         FROM items
-                        WHERE user_id = $1::uuid
+                        WHERE user_id = $1::uuid AND NOT archived
                           AND (updated_at, id) < ($2::timestamptz, $3::uuid)
                         ORDER BY updated_at DESC, id DESC
                         LIMIT $4
@@ -404,7 +407,7 @@ async def list_items(
                         """
                         SELECT id, title, category, notes, collection_name, estimated_value, canonical_key, updated_at
                         FROM items
-                        WHERE user_id = $1::uuid
+                        WHERE user_id = $1::uuid AND NOT archived
                         ORDER BY updated_at DESC, id DESC
                         LIMIT $2
                         """,

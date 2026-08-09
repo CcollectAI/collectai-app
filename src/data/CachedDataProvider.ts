@@ -121,6 +121,14 @@ export class CachedDataProvider implements DataProvider {
     return swr(CK.ITEMS_LIST, () => this.inner.listItems(pagination), TTL_MEDIUM);
   }
 
+  // Deliberately UNCACHED. This screen is the only route back to a hidden
+  // item, so a stale list here can read as "your item is gone". Both
+  // archiveItem and unarchiveItem below clear ITEMS_LIST, but this list is the
+  // mirror of that one and must reflect a restore immediately.
+  listArchivedItems(): Promise<Item[]> {
+    return this.inner.listArchivedItems();
+  }
+
   listWatchlist(userId: string): Promise<WatchlistItem[]> {
     return swr(CK.WATCHLIST, () => this.inner.listWatchlist(userId), TTL_SHORT);
   }

@@ -42,7 +42,8 @@ export async function getPortfolioSummary(): Promise<PortfolioSummary> {
     // rather than collapsing to an empty-collection state on a transient 401.
     const { count } = await supabase
       .from('items')
-      .select('id', { count: 'exact', head: true });
+      .select('id', { count: 'exact', head: true })
+      .eq('archived', false);
 
     return { total: 0, deltaPct: 0, itemCount: count ?? 0 };
   }

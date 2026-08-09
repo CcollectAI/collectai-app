@@ -145,6 +145,12 @@ export async function listItems(pagination?: PaginationParams): Promise<Item[]> 
       supabase
         .from('items')
         .select(ITEMS_SELECT)
+        // Your ACTIVE collection. The bulk-archive dialog promises "archived
+        // items will be hidden from your active collection" and, until
+        // 2026-08-09, nothing honoured it: the optimistic update removed the
+        // row and the next refresh brought it straight back. Restore lives on
+        // /archived.
+        .eq('archived', false)
         .order('updated_at', { ascending: false })
         .range(offset, offset + limit - 1),
       ITEMS_READ_TIMEOUT_MS,
@@ -320,6 +326,61 @@ export async function unarchiveItem(itemId: string): Promise<void> {
     logger.error('[SupabaseDataProvider] unarchiveItem error:', error);
     throw new Error(error.message || 'Failed to unarchive item');
   }
+}
+
+/**
+ * The other side of archiving: what `listItems` now hides.
+ *
+ * This function is what makes the filter safe to add. `archiveItem` and the
+ * swipe/bulk actions shipped long before anything honoured the flag, so the
+ * moment reads started excluding archived rows there had to be somewhere to
+ * see them and put them back — otherwise a swipe becomes a one-way trapdoor
+ * over a row that 29 tables still reference.
+ *
+ * Includes items retired by a completed P2P sale, which is why the row shows
+ * WHY it left: `source = 'marketplace'` plus an `acquired_from` marker means
+ * sold, not tidied away.
+ */
+export async function listArchivedItems(): Promise<Item[]> {
+  let data: unknown;
+  let error: unknown;
+  try {
+    const res = await withTimeout(
+      supabase
+        .from('items')
+        .select(ITEMS_SELECT)
+        .eq('archived', true)
+        .order('updated_at', { ascending: false })
+        .limit(API_LIMITS.ITEMS_DEFAULT),
+      ITEMS_READ_TIMEOUT_MS,
+      'listArchivedItems',
+    );
+    data = res.data;
+    error = res.error;
+  } catch (e) {
+    // withTimeout REJECTS on expiry (Promise.race), so an unhandled TimeoutError
+    // would escape to the error boundary and blank the screen. logger.error
+    // because info/warn are stripped in release builds.
+    if (e instanceof TimeoutError) {
+      logger.error('[SupabaseDataProvider] listArchivedItems timed out after %dms', ITEMS_READ_TIMEOUT_MS);
+      throw new Error('Could not load archived items — the request timed out.');
+    }
+    throw e;
+  }
+
+  if (error) {
+    // THROW rather than return []: an empty array here is indistinguishable
+    // from "nothing archived", and this screen is the only route back to a
+    // hidden item. A silent [] would look like the items were destroyed.
+    logger.error('[SupabaseDataProvider] listArchivedItems error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load archived items',
+    );
+  }
+
+  return ((data ?? []) as ItemRow[]).map(mapItemRow);
 }
 
 export async function persistQuickscanDraft(input: QuickscanDraft): Promise<PersistedItem> {
@@ -517,6 +578,7 @@ export async function searchItems(query: string): Promise<Item[]> {
   const { data, error } = await supabase
     .from('items')
     .select(ITEMS_SELECT)
+    .eq('archived', false)
     .ilike('title', `%${escaped}%`)
     .order('updated_at', { ascending: false })
     .limit(API_LIMITS.RECENT_ITEMS);

@@ -61,6 +61,7 @@ WITH latest_predictions AS (
     WHERE pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
       AND i.user_id IS NOT NULL
+      AND NOT i.archived
       -- Partition prune: bake regenerates predictions weekly, so a
       -- 60-day window always contains the latest per-item row. Without
       -- this filter the DISTINCT ON walks all 8 monthly partitions.
@@ -84,7 +85,7 @@ WITH historical_predictions AS (
         pp.q50
     FROM public.price_predictions pp
     JOIN public.items i ON i.canonical_ref = pp.item_ref
-    WHERE i.user_id = $1
+    WHERE i.user_id = $1 AND NOT i.archived
       AND pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
       AND pp.generated_at <= $2
@@ -103,7 +104,7 @@ WITH current_vals AS (
         i.title AS item_name
     FROM public.price_predictions pp
     JOIN public.items i ON i.canonical_ref = pp.item_ref
-    WHERE i.user_id = $1
+    WHERE i.user_id = $1 AND NOT i.archived
       AND pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
       -- Partition prune: latest predictions are always in the last 60d.
@@ -116,7 +117,7 @@ historical_vals AS (
         pp.q50 AS old_q50
     FROM public.price_predictions pp
     JOIN public.items i ON i.canonical_ref = pp.item_ref
-    WHERE i.user_id = $1
+    WHERE i.user_id = $1 AND NOT i.archived
       AND pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
       -- Partition prune: bound the upper edge ($2) AND the lower edge

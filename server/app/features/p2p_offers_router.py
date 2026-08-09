@@ -407,6 +407,9 @@ async def _settle_completed_trade(conn, offer_id: str, listing_id: str,
         #    derives `purchase_date` from it — never bind a bare date here
         #    (learning_items_paired_columns_trigger).
         marker = f"sparrow:offer:{offer_id}"
+        # archived-exempt: an idempotency probe, not a collection read. If the
+        # buyer has already archived what they bought, re-running settlement
+        # must still find it and NOT mint a second copy.
         already = await conn.fetchval(
             "SELECT 1 FROM public.items WHERE user_id = $1::uuid AND acquired_from = $2",
             buyer_id, marker,

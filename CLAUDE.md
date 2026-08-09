@@ -14,6 +14,31 @@ Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funk
 
 ## Current state (2026-08-09)
 
+- **A completed P2P trade now MOVES THE OBJECT.** `_settle_completed_trade`
+  (`p2p_offers_router.py`) retires the seller's item (decrements if they hold
+  several), mints the buyer a NEW row — never the seller's, which would hand
+  over their `purchase_price` / `purchase_notes` / `cost_basis` — releases the
+  soft reservation, and declines + notifies every other live offer. Deployed and
+  verified 40/40 by `server/tests/e2e_p2p_stage2.py` against prod.
+  - **`for_sale` is NOT written there.** Trigger `trg_sync_item_for_sale`
+    recomputes it from the live listing set, scoped to `marketplace_id='sparrow'`.
+    A first draft duplicated that rule *without* the scope; a prod census proved
+    the trigger already handled it. Two impls of one rule is the bug, not the fix.
+  - Archive, not delete: **29 tables FK to `items.id`, mostly ON DELETE CASCADE**
+    — including `marketplace_listings`, `price_ground_truths` and
+    `verified_sales`. Deleting a sold item would erase the sale and the
+    calibration data the completion had just written.
+- **`items.archived` is now honoured** — and `/archived` exists so it is
+  reversible. Archiving is reachable from a SWIPE, so hiding without a restore
+  route would have been a one-way trapdoor. Gate: `npm run check:archived`.
+  - Achievement counters (`items_router`, `intake_router`) are deliberately
+    exempt: milestones are LIFETIME activity, and archiving is not un-scanning.
+  - Aggregates (`data_moat`), the admin dashboard, and listing browse carry
+    `archived-exempt:` markers stating why.
+  - **The valuation/learning loop is unaffected either way** — it runs off
+    `market_hits` and `price_ground_truths` keyed by `item_ref`/`item_id`, and a
+    flag flip cascades nowhere.
+
 - **iOS build 121** built locally; **120 is on TestFlight**. Backups kept as
   `builds/sparrow-ios-local-b120-uploaded.ipa` / `-b121.ipa`, because
   `build:ios:local` overwrites `sparrow-ios-local.ipa` in place.
@@ -128,6 +153,7 @@ each found by a user report and each previously invisible to every check:
 | `npm run check:effects` | an effect that lists a state **it writes** in its own dep array, so React tears it down and its `.then`/`.catch` are disarmed mid-flight | not an unbounded await — the request SUCCEEDS. `app/offers.tsx` carrier picker was dead on every open while the endpoint served 9 carriers to curl |
 | `npm run check:params` | a route param pushed but never read by the destination | `check-dead-nav.mjs` contains the string `params` **zero times** — it only asks whether the route file exists. `typedRoutes` is on but types params as `UnknownInputParams`, an OPEN record, so `prefillTitle` on `/add-manual` is legal TS. 5 live dead handoffs |
 | `npm run i18n:parity` | a key in `en.json` missing from another locale | `i18n:check` finds UNWRAPPED strings — it polices the code, not the files. `fallbackLng: 'en'` means a missing key renders **English**, silently. en had 597 keys, all 6 others had 424 |
+| `npm run check:archived` | a read of `items` that counts **archived** rows as owned | an archived row is a VALID row, so nothing errors. `archived` was written by swipe/bulk archive and respected by 8 VIEWS, but by **no read of the table** — the bulk dialog promised "archived items will be hidden from your active collection" and the next refresh brought them straight back ([[learning_a_written_promise_to_users_is_a_spec]]). 50 reads, all silent |
 
 All three are wired into `verify:prebuild` and each was proven to fail before it
 was fixed. `check:params` compares against the target's **declared** params, not

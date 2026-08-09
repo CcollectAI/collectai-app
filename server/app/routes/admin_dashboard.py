@@ -149,6 +149,8 @@ async def dashboard_users(
         total = await pool.fetchval("SELECT count(*) FROM auth.users") or 0
 
         rows = await pool.fetch(
+        # archived-exempt: operator view. An admin counting a user's items
+        # wants the true total, including what the user has archived.
             """
             SELECT
                 u.id, u.email, u.created_at,

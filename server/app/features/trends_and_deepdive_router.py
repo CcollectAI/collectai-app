@@ -101,7 +101,7 @@ async def get_collection_trends(
                     SUM(pp.q50)                AS total_value
                 FROM price_predictions pp
                 JOIN items i ON i.canonical_ref = pp.item_ref
-                WHERE i.user_id = $1
+                WHERE i.user_id = $1 AND NOT i.archived
                   AND pp.generated_at >= $2
                 GROUP BY date_trunc('day', pp.generated_at)
                 ORDER BY day
@@ -124,7 +124,7 @@ async def get_collection_trends(
                         pp.q50 AS first_value
                     FROM price_predictions pp
                     JOIN items i ON i.canonical_ref = pp.item_ref
-                    WHERE i.user_id = $1 AND pp.generated_at >= $2
+                    WHERE i.user_id = $1 AND NOT i.archived AND pp.generated_at >= $2
                     ORDER BY i.id, pp.generated_at ASC
                 ),
                 latest AS (
@@ -134,7 +134,7 @@ async def get_collection_trends(
                         pp.q50 AS last_value
                     FROM price_predictions pp
                     JOIN items i ON i.canonical_ref = pp.item_ref
-                    WHERE i.user_id = $1 AND pp.generated_at >= $2
+                    WHERE i.user_id = $1 AND NOT i.archived AND pp.generated_at >= $2
                     ORDER BY i.id, pp.generated_at DESC
                 )
                 SELECT
@@ -170,7 +170,7 @@ async def get_collection_trends(
                             -- USD 100 and a EUR 100 each contributed 100.
                             SUM(i.purchase_price_eur) AS day_cost
                         FROM items i
-                        WHERE i.user_id = $1
+                        WHERE i.user_id = $1 AND NOT i.archived
                           AND i.purchase_price_eur IS NOT NULL
                           AND COALESCE(i.purchased_at, i.created_at) >= $2
                         GROUP BY 1
@@ -388,11 +388,14 @@ async def get_portfolio_category_breakdown(
                   -- already maps a null category to 'Uncategorized' for
                   -- display, so the FE needs no change.
                   --
-                  -- NOTE: intentionally NOT filtering i.archived, to stay in
-                  -- exact parity with the Items list (listItems does not filter
-                  -- it either). If archived items should be excluded from
+                  -- Filters i.archived, in exact parity with the Items list.
+                  -- This note used to say the opposite and named its own
+                  -- condition: "if archived items should be excluded from
                   -- portfolio value, add the SAME filter to listItems in the
-                  -- same change so the card/footer/portfolio stay consistent.
+                  -- same change". Done 2026-08-09 — listItems, the portfolio
+                  -- total, the value summary and this breakdown now agree, so
+                  -- an item retired by a completed P2P sale leaves all of them
+                  -- together instead of one at a time.
                 GROUP BY COALESCE(NULLIF(i.category, ''), 'uncategorized')
                 ORDER BY total_value DESC
                 """,

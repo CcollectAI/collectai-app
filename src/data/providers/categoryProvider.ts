@@ -38,6 +38,7 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
         supabase
           .from('items')
           .select('id, name, title, category, updated_at, image_url')
+          .eq('archived', false)
           .eq('category', categoryId)
           .order('updated_at', { ascending: false })
           .limit(20),

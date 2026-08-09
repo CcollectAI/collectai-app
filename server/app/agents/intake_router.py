@@ -798,6 +798,9 @@ async def intake_save(
     try:
         from app.features.gamification_router import record_activity_xp
         async with get_conn() as conn2:
+            # archived-exempt: achievements measure LIFETIME activity, not the
+            # current collection. Archiving an item is not un-scanning it, and
+            # these milestones only ever award, never revoke.
             scan_count = await conn2.fetchval(
                 "SELECT COUNT(*) FROM items WHERE user_id = $1::uuid",
                 user_id,

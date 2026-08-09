@@ -127,7 +127,7 @@ async def get_value_summary(
         # portfolio_items is vestigial demo data (owner_tag='local_demo', 2 rows
         # at audit time). Real user portfolio lives in `items` with user_id.
         items_row = await conn.fetchrow(
-            "SELECT COUNT(*) AS cnt FROM items WHERE user_id = $1::uuid",
+            "SELECT COUNT(*) AS cnt FROM items WHERE user_id = $1::uuid AND NOT archived",
             user_id,
         )
         total_items = items_row["cnt"] if items_row else 0
@@ -197,7 +197,7 @@ async def get_value_summary(
                 ORDER BY generated_at DESC
                 LIMIT 1
             ) pp ON true
-            WHERE i.user_id = $1::uuid
+            WHERE i.user_id = $1::uuid AND NOT i.archived
               AND i.purchase_price_eur IS NOT NULL
               AND i.purchase_price_eur > 0
               AND pp.q50 > i.purchase_price_eur

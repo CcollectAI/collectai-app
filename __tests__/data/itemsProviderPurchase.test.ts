@@ -12,11 +12,20 @@ import { jest } from '@jest/globals';
 
 let mockRows: unknown[] = [];
 let mockError: { message: string } | null = null;
+// Captured so the archived filter is ASSERTED, not merely tolerated. A mock
+// that just accepts `.eq` would let the filter be deleted again without a
+// single test going red — and the whole point of listItems filtering is that
+// nothing else in the app was enforcing it.
+let mockEqCalls: Array<[string, unknown]> = [];
 
 jest.mock('../../src/lib/supabase', () => ({
   supabase: {
     from: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
+    eq: jest.fn(function (this: unknown, col: string, val: unknown) {
+      mockEqCalls.push([col, val]);
+      return this;
+    }),
     order: jest.fn().mockReturnThis(),
     range: jest.fn().mockImplementation(() => Promise.resolve({ data: mockRows, error: mockError })),
   },
@@ -38,6 +47,16 @@ describe('itemsProvider.listItems — purchase field mapping', () => {
   beforeEach(() => {
     mockRows = [];
     mockError = null;
+    mockEqCalls = [];
+  });
+
+  it('excludes archived items — the Items tab is the ACTIVE collection', async () => {
+    mockRows = [];
+    await listItems();
+    // The bulk-archive dialog promises "archived items will be hidden from your
+    // active collection". Until 2026-08-09 nothing honoured it, so an archived
+    // item came straight back on the next refresh. This pins the promise.
+    expect(mockEqCalls).toContainEqual(['archived', false]);
   });
 
   it('maps purchase_price_eur and purchase_currency through to the Item', async () => {

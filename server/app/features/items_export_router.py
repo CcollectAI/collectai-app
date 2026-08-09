@@ -211,7 +211,7 @@ async def export_items_overview(
                     ORDER BY generated_at DESC
                     LIMIT 1
                 ) pp ON true
-                WHERE i.user_id = $1
+                WHERE i.user_id = $1 AND NOT i.archived
                 ORDER BY i.category, i.title
                 """,
                 user_id,
@@ -347,7 +347,7 @@ async def export_items_full(
                     ORDER BY generated_at DESC
                     LIMIT 1
                 ) pp ON true
-                WHERE i.user_id = $1
+                WHERE i.user_id = $1 AND NOT i.archived
                 ORDER BY i.category, i.title
                 """,
                 user_id,

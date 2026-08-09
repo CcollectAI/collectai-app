@@ -65,7 +65,12 @@ export type PortfolioSummary = {
   itemCount: number;
 };
 
-export type ItemSource = 'ai' | 'scan' | 'manual';
+// 'marketplace' is written by the SERVER, not the app: _settle_completed_trade
+// stamps it on the row it mints for the buyer when a P2P trade completes. The
+// column has no CHECK constraint, so this union was the only thing standing
+// between that value and every reader — and it did not list it, which made a
+// legitimate row's source read as an impossible value.
+export type ItemSource = 'ai' | 'scan' | 'manual' | 'marketplace';
 
 export type Item = {
   id: string;

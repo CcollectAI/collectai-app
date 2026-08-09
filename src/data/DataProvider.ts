@@ -55,6 +55,15 @@ export interface DataProvider {
   listItems(pagination?: PaginationParams): Promise<Item[]>;
 
   /**
+   * List the user's ARCHIVED items — what `listItems` hides.
+   *
+   * This is the route back. `listItems` filters `archived`, so without a
+   * screen backed by this method archiving would be a one-way trapdoor over a
+   * row that 29 tables still reference.
+   */
+  listArchivedItems(): Promise<Item[]>;
+
+  /**
    * List watchlist items for a user.
    * @param userId - The user's ID (required for Supabase, ignored in mock)
    */

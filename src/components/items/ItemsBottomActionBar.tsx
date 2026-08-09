@@ -16,6 +16,7 @@ interface ItemsBottomActionBarProps {
   isLoadingMore: boolean;
   onExportCSV: () => void;
   onOpenProjects: () => void;
+  onOpenArchived: () => void;
 }
 
 export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
@@ -24,6 +25,7 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
   isLoadingMore,
   onExportCSV,
   onOpenProjects,
+  onOpenArchived,
 }: ItemsBottomActionBarProps) {
   const { colors } = useAppTheme();
 
@@ -53,6 +55,25 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
             )}
             <Text numberOfLines={1} style={styles.actionButtonPrimaryText}>
               {exporting ? 'Exporting…' : 'Export CSV'}
+            </Text>
+          </AnimatedPressable>
+
+          {/* The way back. The list above now hides archived items, and
+              archiving is a SWIPE — so this entry point is what stops that
+              swipe being a one-way trapdoor. Not behind BETA_MODE: the
+              filter it reverses ships to everyone. */}
+          <AnimatedPressable
+            style={[
+              styles.actionButtonSecondary,
+              { borderColor: colors.accent },
+            ]}
+            onPress={onOpenArchived}
+            accessibilityRole="button"
+            accessibilityLabel="View archived items and restore them"
+          >
+            <Ionicons name="archive-outline" size={18} color={colors.accent} />
+            <Text numberOfLines={1} style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
+              Archived
             </Text>
           </AnimatedPressable>
 

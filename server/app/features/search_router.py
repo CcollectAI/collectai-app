@@ -111,7 +111,7 @@ async def unified_search(
                 """SELECT id, name, category, image_url,
                           estimated_value AS price
                    FROM items
-                   WHERE user_id = $1 AND name ILIKE $2
+                   WHERE user_id = $1 AND NOT archived AND name ILIKE $2
                    LIMIT $3""",
                 user_id,
                 like_pattern,

@@ -63,6 +63,7 @@ export class MockDataProvider implements DataProvider {
 
   // ─── Items ──────────────────────────────────────────────────────────────────
   listItems = itemsProvider.listItems;
+  listArchivedItems = itemsProvider.listArchivedItems;
   createItem = itemsProvider.createItem;
   deleteItem = itemsProvider.deleteItem;
   updateItem = itemsProvider.updateItem;

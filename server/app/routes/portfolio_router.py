@@ -164,7 +164,7 @@ async def portfolio_timeseries(
                             0
                         ) AS stored_value
                     FROM items i
-                    WHERE i.user_id = $1
+                    WHERE i.user_id = $1 AND NOT i.archived
                 ),
                 -- One prediction per item per day (the last of that day), so a
                 -- chatty valuation run cannot multiply an item's contribution.
@@ -234,7 +234,7 @@ async def portfolio_timeseries(
                     ), 0)
                     FROM items i
                     LEFT JOIN latest l ON l.item_ref = i.canonical_ref
-                    WHERE i.user_id = $1
+                    WHERE i.user_id = $1 AND NOT i.archived
                     """,
                     user_id,
                 )
@@ -308,7 +308,7 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
                 FROM items i
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN prev p ON p.item_ref = i.canonical_ref
-                WHERE i.user_id = $1
+                WHERE i.user_id = $1 AND NOT i.archived
                 ORDER BY COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0) DESC
                 """,
                 user_id,
@@ -418,7 +418,7 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                 FROM items i
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN earliest e ON e.item_ref = i.canonical_ref
-                WHERE i.user_id = $1
+                WHERE i.user_id = $1 AND NOT i.archived
                 ORDER BY COALESCE(l.q50, 0) DESC
                 """,
                 user_id,
@@ -467,7 +467,7 @@ async def portfolio_summary(user_id: str = Depends(get_current_user_id)) -> dict
                         WHERE pp.item_ref = i.canonical_ref
                         ORDER BY pp.generated_at DESC LIMIT 1
                     ) lp ON TRUE
-                    WHERE i.user_id = $1
+                    WHERE i.user_id = $1 AND NOT i.archived
                     """,
                     user_id,
                 )
@@ -569,7 +569,7 @@ async def portfolio_category_stats(
                 FROM items i
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN prev_7d p ON p.item_ref = i.canonical_ref
-                WHERE i.user_id = $1
+                WHERE i.user_id = $1 AND NOT i.archived
                 GROUP BY COALESCE(NULLIF(i.category, ''), 'uncategorized')
                 ORDER BY 3 DESC
                 """,
@@ -626,7 +626,7 @@ async def category_health(
                 WITH user_cats AS (
                     SELECT DISTINCT category
                     FROM items
-                    WHERE user_id = $1 AND category IS NOT NULL
+                    WHERE user_id = $1 AND category IS NOT NULL AND NOT archived
                 ),
                 daily_vals AS (
                     SELECT
@@ -733,7 +733,7 @@ async def category_correlation(
                 WITH cat_users AS (
                     SELECT DISTINCT user_id
                     FROM items
-                    WHERE category = $1
+                    WHERE category = $1 AND NOT archived
                 ),
                 cat_user_count AS (
                     SELECT COUNT(*) AS cnt FROM cat_users
@@ -744,7 +744,7 @@ async def category_correlation(
                         COUNT(DISTINCT i.user_id) AS overlap_count
                     FROM items i
                     JOIN cat_users cu ON cu.user_id = i.user_id
-                    WHERE i.category IS NOT NULL
+                    WHERE i.category IS NOT NULL AND NOT i.archived
                       AND i.category != $1
                     GROUP BY i.category
                 )

@@ -323,6 +323,7 @@ async def get_demand_heat(
                 # than an empty rail.
                 rows = await conn.fetch(
                     base_sql.format(
+# archived-exempt: cross-user market intelligence, not one user's collection.
                         where="""WHERE (
                                  h.category IN (
                                      SELECT DISTINCT category FROM items
@@ -575,6 +576,7 @@ async def prediction_accuracy(
                 # collection-scoped screen, a global model-accuracy number read
                 # as if it described their items. Falls back to global when the
                 # account has no categorised items yet.
+# archived-exempt: cross-user market intelligence, not one user's collection.
                 cat_filter = """AND (
                     i.category IN (
                         SELECT DISTINCT category FROM items

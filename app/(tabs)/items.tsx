@@ -887,6 +887,10 @@ const ItemsScreen: React.FC = () => {
         fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
         router.push('/build-paint-projects');
       }}
+      onOpenArchived={() => {
+        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+        router.push('/archived');
+      }}
     />
   );
 
