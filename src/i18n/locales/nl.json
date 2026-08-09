@@ -113,7 +113,8 @@
     "input_a11y": "Zoekveld",
     "unavailable": "Zoeken niet beschikbaar",
     "retry_a11y": "Zoeken opnieuw proberen",
-    "no_results": "Geen resultaten gevonden"
+    "no_results": "Geen resultaten gevonden",
+    "no_price_yet": "Nog geen prijs"
   },
   "item_detail": {
     "valuation_a11y": "Item-taxatie en details",

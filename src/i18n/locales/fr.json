@@ -113,7 +113,8 @@
     "input_a11y": "Champ de recherche",
     "unavailable": "Recherche indisponible",
     "retry_a11y": "Réessayer la recherche",
-    "no_results": "Aucun résultat trouvé"
+    "no_results": "Aucun résultat trouvé",
+    "no_price_yet": "Pas encore de prix"
   },
   "item_detail": {
     "valuation_a11y": "Évaluation et détails de l'objet",

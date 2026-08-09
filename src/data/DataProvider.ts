@@ -783,7 +783,7 @@ export interface DataProvider {
   /** Unified search across items, catalog, users, events, and categories. */
   unifiedSearch(query: string, limit?: number): Promise<{
     items: { id: string; name: string; category: string; imageUrl?: string | null; price?: number }[];
-    catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; imageUrl?: string | null }[];
+    catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; hasReferenceImage?: boolean; priceEur?: number | null }[];
     users: { id: string; displayName: string; handle?: string; avatarUrl?: string | null }[];
     events: { id: string; title: string; startDate?: string; location?: string; category?: string }[];
     categories: { id: string; name: string }[];

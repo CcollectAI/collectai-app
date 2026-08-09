@@ -26,6 +26,8 @@ import { useSlowLoad } from '@/hooks/useSlowLoad';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
+import { fmtCurrency } from '@/lib/format';
+import { useSettings } from '@/lib/settings';
 import { safeGoBack } from '@/lib/goBack';
 
 // Recent searches removed 2026-08-07. The AsyncStorage key
@@ -38,7 +40,7 @@ const LEGACY_RECENT_SEARCHES_KEY = '@sparrowcollect/recent_searches';
 
 type SearchResults = {
   items: { id: string; name: string; category: string; imageUrl?: string | null; price?: number }[];
-  catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; hasReferenceImage?: boolean }[];
+  catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; hasReferenceImage?: boolean; priceEur?: number | null }[];
   users: { id: string; displayName: string; handle?: string; avatarUrl?: string | null }[];
   events: { id: string; title: string; startDate?: string; location?: string; category?: string }[];
   categories: { id: string; name: string }[];
@@ -69,6 +71,12 @@ const ItemSearchResult = React.memo(function ItemSearchResult({ item, colors, on
 });
 
 const CatalogSearchResult = React.memo(function CatalogSearchResult({ item, colors, onPress }: { item: SearchResults['catalog'][number]; colors: ReturnType<typeof useAppTheme>['colors']; onPress: () => void }) {
+  const { t } = useTranslation();
+  // price_eur is EUR-denominated; fmtCurrency converts it into the user's
+  // selected currency with their fxRates and number locale. formatPrice(x,'EUR')
+  // would have shown EUR to a user set to USD or JPY, disagreeing with every
+  // other price in the app.
+  const { settings } = useSettings();
   return (
     <AnimatedPressable
       style={[resultStyles.resultRow, { borderColor: colors.border }]}
@@ -82,6 +90,18 @@ const CatalogSearchResult = React.memo(function CatalogSearchResult({ item, colo
           {item.brand ? `${item.brand} · ${item.category}` : item.category}
         </Text>
       </View>
+      {/* Absent price is stated, never blank. A silent gap reads as a loading
+          bug; "No price yet" says we know the object and not its value — which
+          is the honest position for the categories with no sold-comp source. */}
+      {typeof item.priceEur === 'number' ? (
+        <Text style={[resultStyles.resultPrice, { color: colors.text }]} numberOfLines={1}>
+          {fmtCurrency(item.priceEur, settings)}
+        </Text>
+      ) : (
+        <Text style={[resultStyles.resultNoPrice, { color: colors.muted }]} numberOfLines={1}>
+          {t('search.no_price_yet')}
+        </Text>
+      )}
       <Ionicons name="chevron-forward" size={16} color={colors.muted} />
     </AnimatedPressable>
   );
@@ -155,6 +175,10 @@ const resultStyles = StyleSheet.create({
   resultInfo: { flex: 1 },
   resultTitle: { fontSize: text.lg, fontWeight: fontWeight.medium },
   resultSubtitle: { fontSize: text.md, marginTop: 2 },
+  // Right-aligned with a floor width so a column of prices lines up instead of
+  // jittering with each value's length.
+  resultPrice: { fontSize: text.md, fontWeight: '600', minWidth: 64, textAlign: 'right' },
+  resultNoPrice: { fontSize: text.sm, minWidth: 64, textAlign: 'right' },
 });
 
 function SearchScreen() {

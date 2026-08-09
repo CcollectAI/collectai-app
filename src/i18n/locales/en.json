@@ -113,7 +113,8 @@
     "input_a11y": "Search input",
     "unavailable": "Search unavailable",
     "retry_a11y": "Retry search",
-    "no_results": "No results found"
+    "no_results": "No results found",
+    "no_price_yet": "No price yet"
   },
   "item_detail": {
     "valuation_a11y": "Item valuation and details",

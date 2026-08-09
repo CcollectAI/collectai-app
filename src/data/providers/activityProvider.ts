@@ -62,6 +62,10 @@ export async function unifiedSearch(query: string, limit = 5) {
         brand: (c.brand ?? null) as string | null,
         // R50k: catalog reference images backend-only
         hasReferenceImage: Boolean(c.has_reference_image ?? false),
+        // The catalogue's own price (mv_catalog_item_price), already rounded
+        // server-side. null for the ~62k categories with no sold-comp source —
+        // watches, lego, whiskey — which is a real answer, not a failure.
+        priceEur: (c.price_eur ?? null) as number | null,
       })),
       users: ((resp.users as Record<string, unknown>[]) || []).map((u) => ({
         id: u.id as string,

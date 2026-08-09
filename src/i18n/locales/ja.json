@@ -113,7 +113,8 @@
     "input_a11y": "検索フィールド",
     "unavailable": "検索を利用できません",
     "retry_a11y": "検索を再試行",
-    "no_results": "結果が見つかりません"
+    "no_results": "結果が見つかりません",
+    "no_price_yet": "価格はまだありません"
   },
   "item_detail": {
     "valuation_a11y": "アイテムの評価と詳細",
