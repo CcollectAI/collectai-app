@@ -172,6 +172,37 @@ The remedy is now in the alert itself. This finding stays `high` and keeps
 paging — it is genuinely broken and needs an appeal email — but an operator no
 longer has to SSH in to learn that.
 
+## DAC7: the seller crossing was told, and nobody else was (2026-08-09)
+
+`_dac7_accrue` notifies the **seller** when they pass 30 sales or EUR 2,000 in a
+calendar year, and notified no one else. In practice the founder would have found
+out by querying the table — i.e. when a seller asked. A crossing is the moment a
+decision is needed, which is exactly what spec §5c recommends alerting on: *"so
+we learn we have a trader before a regulator does."*
+
+The check is tiered, because a daily siren is how a channel stops being read:
+
+| Condition | Verdict |
+|---|---|
+| Crossed, `notified_at` still NULL | `high` — §6 promises notice; that promise is unkept right now |
+| Crossed and notified | `medium` — nothing is broken, but there is now a reportable seller, and that is a decision |
+| ≥20 sales or ≥EUR 1,500 | `info` — warning before the decision is forced |
+| Nobody in reach | healthy, **stating the ceiling**: *"busiest is 0 sales / EUR 0 against limits of 30 / EUR 2000"* |
+| The check itself errors | `medium` — reporting nothing must never look like all-clear |
+
+The approach thresholds are **derived** from the live limits (⅔ and ¾), not
+hardcoded: a second copy of 30/2000 in the watchdog is one more place to drift
+from what the terms say in writing.
+
+**Proven before shipping** by inserting each scenario inside a transaction and
+rolling it back, so prod kept its zero rows — all four tiers fired.
+
+`dac7_seller_year` is also on the RLS allowlist next to `subscription_events`:
+RLS-on with no policy denies ALL client access, which is the intent (the table is
+read only through `GET /p2p/dac7/me` on the direct DSN, never PostgREST). Without
+that entry the RLS check flagged it daily, which is the false-alarm pattern this
+doc already warns about.
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes

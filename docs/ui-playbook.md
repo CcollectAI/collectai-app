@@ -356,3 +356,26 @@ import { AnimatedPressable, useEnterReveal } from '@/motion';
 // Safe area
 import { SafeAreaView } from 'react-native-safe-area-context';
 ```
+
+## Type scale: the app's `xs` is 10pt, and 10pt is not readable (2026-08-09)
+
+`src/theme/tokens.ts` is `xs:10 sm:12 md:14 lg:16 xl:20 2xl:24`. Reported on
+`app/offers.tsx`: *"that screen is very small letters"* — and it was, because the
+status line, role pill, confirm row, tracking code, sheet hints and carrier chips
+were all on `xs` (10pt), below Apple's ~11pt floor, with body copy on `sm` (12).
+
+Corrected by moving that screen **one step up the existing scale** rather than
+inventing sizes — `xs`→`sm`, `sm`→`md`, titles `md`→`lg`, the amount `lg`→`xl`,
+and the two hardcoded literals (`11`, `10`) onto tokens. Line-heights tuned with
+them.
+
+**Two rules that follow:**
+
+1. **`xs` (10pt) is for nothing a user needs to read.** Not status, not prices,
+   not hints. It survives only where a glyph-sized label sits beside an icon.
+2. **A new screen starts at `md` for body copy.** `app/tax-reporting.tsx` was
+   written at `sm`/`xs` first and had to be corrected the same day — the default
+   is what to fix, not each screen.
+
+Whitespace was never the problem. The offers cards had plenty; the type was
+simply too small to fill it.

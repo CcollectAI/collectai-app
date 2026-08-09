@@ -1037,3 +1037,122 @@ compared top-level JSON keys instead of function names, and wrongly reported "no
 change"), and `preflight_router_drift` correctly refused a DB whose tables no
 longer matched the deployed code. Neither would have been visible without
 running the gate.
+
+## 10. Six user-reported defects, and what they were instances of (2026-08-09)
+
+Every one came from Merle *using* the app, not from an audit. Each turned out to
+be an instance of a class, so each fix ends in a gate rather than a patch.
+
+### 10a. The carrier picker was dead on every open
+
+"Carriers don't load on add tracking." `GET /p2p/carriers` served 9 carriers to
+curl the whole time and prod hash-matched the repo, which is why reading the
+network layer found nothing. The effect guarded on `carriersState !== 'idle'`
+**and listed `carriersState` in its dep array**, so `setCarriersState('loading')`
+changed a dependency of the effect that had just set it; React tore it down and
+the cleanup set `cancelled = true` while the request was in flight. `.then` and
+`.catch` both no-op'd and the sheet sat on "Loading carriers…" with the retry
+unreachable, because the error branch never rendered.
+
+Its own comment asserted the opposite — *"bounded by construction — httpClient
+aborts every fetch at REQUEST_TIMEOUT_MS — so this cannot hang on 'loading'
+forever."* A timeout bounds the REQUEST; the request was never the problem.
+
+Gate: `npm run check:effects`. Rule: **a state value an effect writes can never
+be that effect's own dependency.** Guard belongs in a `useRef`, retries on a
+separate nonce.
+
+### 10b. Listing from your collection asked for everything again
+
+"It does not take the already filled in information from the item card… this is
+double work." The composer opened blank *and* the server was only inheriting
+three fields:
+
+```sql
+SELECT id, name, category, canonical_key, image_url   -- that was all
+```
+
+`condition_label`, `condition_notes` and `listing_description` came from the
+request only. Prefilling the form would have papered over that and left
+`SellOnSparrowSection` still dropping them, so the fix is server-side:
+`_inherit_from_item(sent, *from_item)` — request wins where it says something,
+the item fills the silence, one direction only so clearing a field on the listing
+does not get the item's old value pushed back. Blank-after-strip counts as
+silence, because `""` is how an untouched input arrives.
+
+Copied **field-for-field, never composed**: brand/year/series exist and are
+deliberately left out. Assembling a description out of them would be writing
+sales copy in the seller's name.
+
+The wiring test earned its keep: the binds were already correct while
+`return ListingOut(...)` still handed back `payload.description`, so the row would
+hold the item's description and the 201 would claim it was empty.
+
+### 10c. Route params: the navigation axis had never been swept
+
+`app/sell/pick.tsx` passed only `itemId`. Writing a checker for the *shape*
+instead of fixing the instance found **five more** dead handoffs — including
+"Add to watchlist" on the barcode scanner, which pushed `mode: 'watchlist'` to a
+screen that has no watchlist mode, so it opened the empty **collection** form and
+would have filed the item as owned.
+
+`typedRoutes` is on, but every static route is typed `params?:
+Router.UnknownInputParams` — an open record — so a wrong key is legal TypeScript,
+and 49 `as Href` casts erase even the pathname check. Gate: `npm run
+check:params`, comparing against the destination's **declared** params.
+
+### 10d. Offer amounts: presets with no percentages and no way out
+
+Both ladders were `Alert.alert` with hardcoded multipliers and money-only labels
+(buyer 0.9/0.8/0.7, seller 1.1/1.2/1.35). Neither limitation was a product
+decision — `Alert.prompt` is iOS-only, so a free-text amount was impossible in
+that container.
+
+`src/components/p2p/OfferAmountSheet.tsx` is one component for both sides:
+−10/−5/+5/+10 with the percentage AND the money on each chip, plus a custom field
+that shows the percentage of whatever you type and enforces the server's own
+`gt=0, le=1_000_000`.
+
+**The counter's reference is the ASKING price, not the buyer's offer.** Against
+the buyer's own offer, "−5%" means *less than they already offered* — a button no
+seller would press. That required `listing_price` on `OfferOut`; the
+`INSERT … RETURNING` cannot join the listing, so that path sets it from the row it
+already fetched and the mapper reads it through a KeyError-tolerant helper.
+
+### 10e. Seller profiles are tappable — gated on the stricter of two views
+
+`seller_profile_public` is `EXISTS` against `user_public_profiles`, never a copy
+of its rule. **There are two profile views and they differ:**
+
+| View | Condition | Used by |
+|---|---|---|
+| `user_public_profiles` | has a name **AND** `allow_discovery` not off | search / find-collectors |
+| `user_public_profile_v1` | has a name | the profile SCREEN |
+
+Gating on the stricter one respects a member who turned discovery off, and
+because its condition implies the screen's, a tap that is offered can never
+dead-end on an empty profile. Present in BOTH listing queries, since a column in
+one read by a mapper used from both is a KeyError on whichever path was missed.
+
+### 10f. DAC7 is inform-only — and the terms had promised otherwise
+
+§6 and the crossing notice both said we would *"ask you for the details the rules
+require."* There is no form and **no column anywhere** for a TIN, address, date of
+birth or IBAN — a promise with no mechanism, the same shape as §6 itself before
+2026-08-09. Both now inform instead, and `app/tax-reporting.tsx` (Settings →
+Sales & tax reporting) shows a member their own counters, the thresholds from the
+SERVER, and that reporting above them is a legal requirement on marketplaces
+rather than a Sparrow policy.
+
+`GET /p2p/dac7/me` is authed and self-only — no `user_id` parameter exists,
+because another member's tax exposure is not something this router will answer.
+
+**What informing does NOT do:** discharge the operator's own duty if a seller
+becomes reportable. Nobody is reportable today (0 completed trades), the counters
+demonstrate exclusion, and the watchdog now pages when that changes — but
+registration and the 5% ticket-fee question remain for the adviser (§5a).
+
+`dac7_reportable()` is now module-level and shared by the accrual, the endpoint
+and the tests. The test file had defined its **own copy** of the predicate, so the
+suite would have stayed green if `or` had become `and` — the one thing it exists
+to prevent. Mutation-proven: that flip now fails 4 tests.

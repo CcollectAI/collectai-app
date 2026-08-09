@@ -12,7 +12,27 @@ Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funk
 - **Payments:** RevenueCat (iOS IAP, shipped 2026-05-09); Stripe dormant for future web/Android
 - **Theme:** Tiffany Blue (#81D8D0) accent, EUR currency, Roboto font
 
-## Current state (2026-07-25)
+## Current state (2026-08-09)
+
+- **iOS build 121** built locally; **120 is on TestFlight**. Backups kept as
+  `builds/sparrow-ios-local-b120-uploaded.ipa` / `-b121.ipa`, because
+  `build:ios:local` overwrites `sparrow-ios-local.ipa` in place.
+- **`appVersionSource: remote`** — `app.json`'s `ios.buildNumber` (101) is NOT
+  what ships. Read `CFBundleVersion` out of the built `.ipa`.
+- **Expo Go cannot host this app.** `react-native-purchases` and
+  `@sentry/react-native` are hard static imports, so the sim needs a native dev
+  build: `SENTRY_DISABLE_AUTO_UPLOAD=true npx expo run:ios --device "iPhone 17"`.
+  Without that env var the build dies at the Sentry phase with *"An organization
+  ID or slug is required"* — the same reason `eas.json`'s dev profiles set it.
+- **DAC7 is inform-only, deliberately.** Counters + notice + a member-facing
+  screen exist; there is **no** column anywhere for a TIN, address or IBAN and
+  that is a decision, not a gap. `marketplace-terms.tsx` §6, the notice in
+  `_dac7_accrue`, and `app/tax-reporting.tsx` must say the same thing — change
+  one, change all three. Open (legal, not code): whether registration is
+  required with only excluded sellers, and whether the 5% event-ticket fee
+  (`terms.tsx:154`, `:173`) pulls events in.
+
+### Earlier (2026-07-25)
 
 - **Active branch:** `feature/micro-interactions-haptics`. iOS build 100 built locally 2026-07-25 (`builds/sparrow-ios-local.ipa`); last on TestFlight was 96.
 - **Apple:** Individual enrollment (Team `3DX8FBF7S6`), App ID `6767359453`, bundle `io.sparrowcollect.app`.
@@ -98,6 +118,21 @@ rest, declare done — then the user hits the next one. `npm run verify:silent`
 | `unknown-as-zero` | "unknown" as "zero" |
 | `swallowed-catch` | no trace at all |
 | `prod-invisible-log` | a trace stripped from release builds |
+
+**Each new AXIS needs its own sweep — the existing gates are axis-shaped and
+report PASS on everything outside their axis** (2026-08-09). Three more classes,
+each found by a user report and each previously invisible to every check:
+
+| gate | class it catches | why nothing else saw it |
+|---|---|---|
+| `npm run check:effects` | an effect that lists a state **it writes** in its own dep array, so React tears it down and its `.then`/`.catch` are disarmed mid-flight | not an unbounded await — the request SUCCEEDS. `app/offers.tsx` carrier picker was dead on every open while the endpoint served 9 carriers to curl |
+| `npm run check:params` | a route param pushed but never read by the destination | `check-dead-nav.mjs` contains the string `params` **zero times** — it only asks whether the route file exists. `typedRoutes` is on but types params as `UnknownInputParams`, an OPEN record, so `prefillTitle` on `/add-manual` is legal TS. 5 live dead handoffs |
+| `npm run i18n:parity` | a key in `en.json` missing from another locale | `i18n:check` finds UNWRAPPED strings — it polices the code, not the files. `fallbackLng: 'en'` means a missing key renders **English**, silently. en had 597 keys, all 6 others had 424 |
+
+All three are wired into `verify:prebuild` and each was proven to fail before it
+was fixed. `check:params` compares against the target's **declared** params, not
+substrings — a substring version passed a genuinely dead `mode: 'watchlist'`
+because the word "mode" appears elsewhere in the file.
 
 The first four are at 0 and each was proven to fail before being fixed. Two real
 bugs it caught: `fetchPortfolioSeries` returned a fabricated €1200→€2050 curve
