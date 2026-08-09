@@ -247,6 +247,55 @@ def dac7_reportable(sales_count: int, gross_eur: float) -> bool:
     return sales_count >= DAC7_SALES_LIMIT or gross_eur > DAC7_GROSS_EUR_LIMIT
 
 
+# ── Trade notifications ─────────────────────────────────────────────────────
+#
+# Until 2026-08-09 a P2P trade sent NO notifications at all: the only notify_user
+# call in this module was the DAC7 threshold notice. An offer arrived as a row on
+# a screen the seller had to think to open, and a buyer learned their offer was
+# accepted the same way. The listing screen even told the buyer "the seller will
+# be notified" — a promise with nothing behind it
+# (learning_a_written_promise_to_users_is_a_spec).
+#
+# Both sides get told about every state change, because a negotiation where one
+# party is waiting on news that never arrives is worse than no negotiation.
+#
+# `category="account"` and `urgent=True`, deliberately:
+#   * account maps to the `system` feed icon (docs/alerts-and-insights.md's
+#     translation table). These are FACTS about a trade the member is party to,
+#     not discovery alerts, and they must not wear a deal-alert badge that reads
+#     as "something to act on for profit".
+#   * NOT `deal_alerts` — that preference is "when the Smart Deal Agent finds a
+#     match". Coupling "your buyer accepted" to that toggle means turning off
+#     discovery silently turns off transactional news.
+#   * urgent skips the per-plan frequency cap (5/15/30 per 24h). A free user
+#     already at their cap must still learn their offer was accepted. Volume is
+#     naturally bounded: one live offer per buyer per listing, and the rest are
+#     responses to it.
+async def _notify_trade(conn, user_id: str, title: str, body: str, offer_id: str) -> None:
+    """Tell one party about a trade event. NEVER raises.
+
+    A notification that fails must not roll back or 500 a trade that already
+    happened — the offer/accept/confirm is the durable fact, this is the courtesy.
+    Logged at error level because warn is stripped in release builds, which is
+    exactly where a silently missing notification would be invisible
+    (learning_prod_logger_strips_info_warn).
+    """
+    try:
+        from app.lib.notify import notify_user
+        await notify_user(
+            conn,
+            user_id,
+            title,
+            body,
+            category="account",
+            data={"kind": "p2p_offer", "offer_id": offer_id},
+            deep_link="/offers",
+            urgent=True,
+        )
+    except Exception as exc:  # best-effort: the trade already succeeded
+        logger.error("[p2p] trade notification failed for %s: %s", user_id, exc)
+
+
 async def _dac7_accrue(seller_id: str, amount: float, currency: str) -> None:
     """Accrue one completed sale against the seller's DAC7 year, and warn once.
 
@@ -566,6 +615,18 @@ async def create_offer(
     # Both come from the listing row above, because the RETURNING cannot join it.
     out.listing_title = listing["listing_title"]
     out.listing_price = float(listing["price"]) if listing["price"] is not None else None
+
+    # The seller has to LEARN an offer arrived. Deliberately no buyer name: a
+    # member's display name may be private (user_privacy_settings.allow_discovery),
+    # and the amount plus the listing is what the seller needs to decide.
+    async with pool.acquire() as nconn:
+        await _notify_trade(
+            nconn, str(listing["seller_id"]),
+            "New offer on your listing",
+            f"{out.currency} {out.amount:.2f} for \"{listing['listing_title'] or 'your item'}\". "
+            "Open bids to accept, counter or decline.",
+            out.id,
+        )
     return out
 
 
@@ -767,6 +828,34 @@ async def respond_to_offer(
             """,
             offer_id,
         )
+
+        # Tell the OTHER party. Every branch notifies, including decline: a buyer
+        # left waiting on silence assumes the app is broken, and "declined" is
+        # information they can act on (offer elsewhere, or higher).
+        title_ = fresh["listing_title"] or "your item"
+        amt = f"{fresh['currency']} {float(fresh['amount']):.2f}"
+        if action == "accept":
+            other, subject, body = str(o["buyer_id"]), "Your offer was accepted", (
+                f"The seller accepted {amt} for \"{title_}\". Arrange the exchange in Open bids."
+            )
+        elif action == "decline":
+            other, subject, body = str(o["buyer_id"]), "Your offer was declined", (
+                f"Your {amt} offer on \"{title_}\" was declined. You can make another one."
+            )
+        elif action == "counter":
+            other, subject, body = str(o["buyer_id"]), "You got a counter-offer", (
+                f"The seller countered with {amt} for \"{title_}\"."
+            )
+        else:  # withdraw — whoever did NOT walk away needs to know
+            walker_is_buyer = user_id == str(o["buyer_id"])
+            other = str(o["seller_id"]) if walker_is_buyer else str(o["buyer_id"])
+            subject = "A trade was called off"
+            body = (
+                f"The {'buyer' if walker_is_buyer else 'seller'} withdrew from the "
+                f"{amt} trade on \"{title_}\"."
+            )
+        await _notify_trade(conn, other, subject, body, offer_id)
+
     return _row_to_offer(fresh, user_id)
 
 
@@ -1067,6 +1156,38 @@ async def confirm_exchange(
             )
             fresh = dict(fresh)
             fresh["status"] = _COMPLETED
+
+            # BOTH sides, because completion unlocks grading for both and each
+            # needs to know the other confirmed.
+            title_ = fresh["listing_title"] or "your item"
+            for party in (str(fresh["buyer_id"]), str(fresh["seller_id"])):
+                await _notify_trade(
+                    conn, party, "Trade completed",
+                    f"You both confirmed the exchange of \"{title_}\". "
+                    "You can now grade each other in Open bids.",
+                    offer_id,
+                )
+        elif not both:
+            # ONE side has confirmed. The other must be told, or the trade stalls
+            # on a step nobody knows is waiting for them — the most common way a
+            # two-sided flow dies.
+            #
+            # `elif not both` rather than a bare `else`: the guarded condition is
+            # `both and status != completed`, so a plain else would ALSO catch
+            # "both confirmed and already completed" and tell someone their
+            # counterparty just confirmed when nothing changed. Double-confirm is
+            # rejected upstream with ALREADY_CONFIRMED so that state is currently
+            # unreachable, but the notification should not depend on that.
+            i_am_buyer = user_id == str(fresh["buyer_id"])
+            other = str(fresh["seller_id"]) if i_am_buyer else str(fresh["buyer_id"])
+            await _notify_trade(
+                conn, other,
+                "The other party confirmed",
+                f"The {'buyer' if i_am_buyer else 'seller'} confirmed the exchange of "
+                f"\"{fresh['listing_title'] or 'your item'}\". Confirm your side to "
+                "complete the trade.",
+                offer_id,
+            )
 
     return _row_to_offer(fresh, user_id)
 

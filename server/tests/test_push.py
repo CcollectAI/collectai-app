@@ -215,9 +215,19 @@ class TestSendPushToUser:
             await send_push_to_user(
                 mock_conn, "user-1", "Title", "Body", data={"item_id": "42"}
             )
-            mock_send.assert_called_once_with(
-                "ExponentPushToken[aaa]", "Title", "Body", data={"item_id": "42"}
-            )
+            # `notification_id` is injected on purpose — it is how the RN
+            # client correlates impression/interaction reports back to the
+            # notification_history row (see _persist_notification's docstring).
+            # This used to assert exact equality against the pre-injection
+            # shape, so it had been failing ever since that feature landed:
+            # a red test that describes behaviour the code deliberately
+            # changed teaches you to ignore the suite
+            # (learning_tests_that_pin_a_stub).
+            mock_send.assert_called_once()
+            args, kwargs = mock_send.call_args
+            assert args == ("ExponentPushToken[aaa]", "Title", "Body")
+            assert kwargs["data"]["item_id"] == "42"
+            assert "notification_id" in kwargs["data"], kwargs["data"]
 
     @pytest.mark.asyncio
     async def test_queries_correct_sql(self):

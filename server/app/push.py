@@ -110,8 +110,6 @@ async def _persist_notification(
     back to the row this push came from. Returns None on failure.
     """
     try:
-        import json as _json
-
         row = await conn.fetchrow(
             """
             INSERT INTO notification_history (user_id, type, title, body, data, deep_link)
@@ -122,7 +120,18 @@ async def _persist_notification(
             notification_type,
             title,
             body,
-            _json.dumps(data) if data else "{}",
+            # The DICT, not json.dumps(dict). `app/db.py` registers a jsonb codec
+            # with `encoder=json.dumps` on every pooled connection, so dumping
+            # here encoded it a SECOND time and the column ended up holding a JSON
+            # *string* — `data->>'kind'` returned NULL and every consumer read
+            # nothing. Found 2026-08-09 when the P2P trade E2E's cleanup, which
+            # deletes by `data->>'offer_id'`, matched zero rows: 6 rows were
+            # jsonb_typeof 'string' while older rows (written off a connection
+            # without the codec) were 'object'.
+            #
+            # This is the ENCODE half of the drift db.py's docstring describes on
+            # the decode side, and it is fixed in the same place: the one INSERT.
+            data or {},
             deep_link,
         )
         return str(row["id"]) if row else None

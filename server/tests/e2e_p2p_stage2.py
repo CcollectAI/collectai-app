@@ -21,6 +21,20 @@ async def main():
     c = await asyncpg.connect(os.getenv('DB_DSN_DIRECT') or os.getenv('DB_DSN'))
     await c.execute("INSERT INTO auth.users (id, email) VALUES ($1::uuid,'e2e-buyer@test.local') ON CONFLICT DO NOTHING", BUYER)
 
+    # NOTIFICATIONS. Asserted per step, because "both parties know what is
+    # happening" is the difference between a marketplace and a form. Nothing
+    # checked this until 2026-08-09, and nothing SENT them either: the only
+    # notify_user call in the offers router was the DAC7 threshold notice, while
+    # the listing screen told buyers "the seller will be notified".
+    async def notif_count(uid):
+        return await c.fetchval(
+            "SELECT count(*) FROM notification_history WHERE user_id=$1::uuid", uid)
+    async def latest_notif(uid):
+        return await c.fetchrow(
+            "SELECT title, body, type FROM notification_history WHERE user_id=$1::uuid "
+            "ORDER BY created_at DESC LIMIT 1", uid)
+    n_seller0, n_buyer0 = await notif_count(SELLER), await notif_count(BUYER)
+
     print('1. LISTING + OFFER')
     L = await create_listing(ListingCreate(item_id=ITEM, price=30.0, currency='EUR'), user_id=SELLER)
     await _publish_supply_hook(L.id)
@@ -28,6 +42,8 @@ async def main():
     chk('offer created', o.status=='pending', o.status)
     chk('buyer flagged as buyer', o.i_am_buyer is True)
     chk('cannot grade yet', o.can_grade is False)
+    chk('SELLER notified of the new offer', await notif_count(SELLER) == n_seller0 + 1,
+        await latest_notif(SELLER))
 
     print('2. GUARDS')
     chk('seller cannot offer on own listing', await err(create_offer(OfferCreate(listing_id=L.id, amount=5.0), user_id=SELLER),'OWN_LISTING'))
@@ -38,8 +54,12 @@ async def main():
     print('3. NEGOTIATE -> ACCEPT')
     ctr = await respond_to_offer(o.id, action='counter', amount=27.0, user_id=SELLER)
     chk('counter recorded', ctr.status=='countered' and ctr.amount==27.0, f'{ctr.status} {ctr.amount}')
+    chk('BUYER notified of the counter', await notif_count(BUYER) == n_buyer0 + 1,
+        await latest_notif(BUYER))
     acc = await respond_to_offer(o.id, action='accept', amount=None, user_id=SELLER)
     chk('accepted', acc.status=='accepted')
+    chk('BUYER notified of the acceptance', await notif_count(BUYER) == n_buyer0 + 2,
+        await latest_notif(BUYER))
     res = await c.fetchval('SELECT reserved_offer_id FROM marketplace_listings WHERE id=$1::uuid', L.id)
     chk('listing soft-reserved', str(res)==o.id)
     still = await c.fetchval("SELECT count(*) FROM marketplace_listings WHERE id=$1::uuid AND status='active' AND delisted_at IS NULL", L.id)
@@ -49,11 +69,22 @@ async def main():
     s1 = await confirm_exchange(o.id, user_id=SELLER)
     chk('seller confirmed', s1.seller_confirmed_at is not None)
     chk('not complete on one side', s1.status!='completed', s1.status)
+    chk('BUYER told the seller confirmed', await notif_count(BUYER) == n_buyer0 + 3,
+        await latest_notif(BUYER))
     chk('grading still blocked', await err(grade_counterparty(o.id, GradeCreate(verdict='positive'), user_id=SELLER),'TRADE_NOT_COMPLETE'))
     chk('cannot double-confirm', await err(confirm_exchange(o.id, user_id=SELLER),'ALREADY_CONFIRMED'))
     s2 = await confirm_exchange(o.id, user_id=BUYER)
     chk('completed on both sides', s2.status=='completed', s2.status)
     chk('can_grade now true', s2.can_grade is True)
+    chk('BOTH told the trade completed',
+        await notif_count(SELLER) == n_seller0 + 2 and await notif_count(BUYER) == n_buyer0 + 4,
+        f'seller {await notif_count(SELLER)} (was {n_seller0}), buyer {await notif_count(BUYER)} (was {n_buyer0})')
+    dac7 = await c.fetchrow(
+        'SELECT sales_count, gross_eur FROM dac7_seller_year WHERE user_id=$1::uuid '
+        'AND year=EXTRACT(YEAR FROM now())::int', SELLER)
+    chk('DAC7 accrued the AGREED amount on completion',
+        dac7 is not None and dac7['sales_count'] == 1 and float(dac7['gross_eur']) == 27.0,
+        None if dac7 is None else f"{dac7['sales_count']} x {float(dac7['gross_eur'])}")
     # STRENGTHENED 2026-08-08. This asserted `count(*) == 0` for ALL sparrow rows,
     # which was right when written and became wrong when _sold_comp_hook landed
     # (spec §1g): completion now DELETES the buyable row and INSERTS a sold comp,
@@ -87,9 +118,23 @@ async def main():
     n2 = await c.fetchval('SELECT count(*) FROM member_grades WHERE offer_id=$1::uuid', o.id)
     chk('re-grade edits, does not double-vote', n==n2==2, f'{n} -> {n2}')
 
+    # CLEANUP. `offers` is the deal-desk table and was DROPPED with Deal Desk on
+    # 2026-08-09, so the old `DELETE FROM offers` raised UndefinedTableError here
+    # and every run since left its offer, listing, market_hits and DAC7 row behind
+    # (prod had 6 stray p2p_offers rows). P2P offers live in `p2p_offers`.
     await c.execute('DELETE FROM member_grades WHERE offer_id=$1::uuid', o.id)
-    await c.execute('DELETE FROM offers WHERE id=$1::uuid', o.id)
+    await c.execute('DELETE FROM p2p_offers WHERE id=$1::uuid', o.id)
+    await c.execute('DELETE FROM market_hits WHERE provider=$1 AND listing_id=$2', 'sparrow', L.id)
     await c.execute('DELETE FROM marketplace_listings WHERE id=$1::uuid', L.id)
+    # Completion accrues DAC7 against the SELLER, so a test trade must not leave a
+    # compliance counter behind claiming a real sale happened.
+    await c.execute(
+        'DELETE FROM dac7_seller_year WHERE user_id=$1::uuid AND year=EXTRACT(YEAR FROM now())::int',
+        SELLER)
+    await c.execute(
+        "DELETE FROM notification_history WHERE data->>'offer_id' = $1", o.id)
+    leftover = await c.fetchval('SELECT count(*) FROM p2p_offers WHERE id=$1::uuid', o.id)
+    chk('cleanup removed the test offer', leftover == 0, leftover)
     print()
     print(f'RESULT: {len(OK)} passed, {len(FAIL)} failed')
     if FAIL: print('FAILED:', FAIL)
