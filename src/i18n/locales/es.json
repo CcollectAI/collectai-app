@@ -32,7 +32,9 @@
     "share": "Compartir",
     "skip": "Omitir",
     "sort": "Ordenar",
-    "yes": "Sí"
+    "yes": "Sí",
+    "slow_load_working": "Estamos haciendo todo lo posible por obtener tus resultados, lo más rápido que podamos.",
+    "slow_load_still_working": "Seguimos en ello. Está tardando más de lo normal, gracias por tu paciencia."
   },
   "add_tab": {
     "subtitle": "Flujo rápido, cámara primero.",

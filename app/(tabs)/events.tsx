@@ -43,6 +43,7 @@ import { CalendarGrid } from '@/components/CalendarGrid';
 import { WeekViewCalendar } from '@/components/events/WeekViewCalendar';
 import { useToast } from '@/components/Toast';
 import { SkeletonList } from '@/components/Skeleton';
+import { SlowLoadNotice } from '@/components/SlowLoadNotice';
 import { collectorsApi } from '@/api/collectorsApi';
 import * as Location from 'expo-location';
 import logger from '@/utils/logger';
@@ -99,6 +100,8 @@ function EventsScreen() {
     loadMore,
     refresh: paginatedRefresh,
     setItems: setEvents,
+    isSlow,
+    isVerySlow,
     // pageSize 100 (server max): the Week/Month calendar filters loaded events by
     // day, so it needs a wide upcoming window or future weeks render empty.
   } = usePaginatedList<CollectorsEvent>(eventFetcher, { pageSize: 100 });
@@ -648,7 +651,10 @@ function EventsScreen() {
   );
 
   const emptyComponent = loading ? (
-    <SkeletonList count={4} type="event" />
+    <>
+      <SkeletonList count={4} type="event" />
+      <SlowLoadNotice isSlow={isSlow} isVerySlow={isVerySlow} />
+    </>
   ) : error ? (
     <View style={styles.emptyContainer}>
       <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />

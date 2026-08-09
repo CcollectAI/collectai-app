@@ -32,7 +32,9 @@
     "share": "공유",
     "skip": "건너뛰기",
     "sort": "정렬",
-    "yes": "예"
+    "yes": "예",
+    "slow_load_working": "결과를 가져오는 중입니다. 최대한 빠르게 처리하고 있습니다.",
+    "slow_load_still_working": "아직 처리 중입니다. 평소보다 오래 걸리고 있어요. 조금만 기다려 주세요."
   },
   "add_tab": {
     "subtitle": "빠른 카메라 우선 흐름.",

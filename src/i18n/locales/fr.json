@@ -32,7 +32,9 @@
     "share": "Partager",
     "skip": "Passer",
     "sort": "Trier",
-    "yes": "Oui"
+    "yes": "Oui",
+    "slow_load_working": "Nous faisons de notre mieux pour récupérer vos résultats — aussi vite que possible.",
+    "slow_load_still_working": "Toujours en cours. Cela prend plus de temps que d'habitude, merci de votre patience."
   },
   "add_tab": {
     "subtitle": "Flux rapide, photo d'abord.",

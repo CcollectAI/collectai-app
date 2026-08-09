@@ -21,6 +21,8 @@ import { AnimatedPressable } from '@/motion';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { SkeletonList } from '@/components/Skeleton';
+import { SlowLoadNotice } from '@/components/SlowLoadNotice';
+import { useSlowLoad } from '@/hooks/useSlowLoad';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
@@ -162,6 +164,7 @@ function SearchScreen() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
+  const { isSlow, isVerySlow } = useSlowLoad(loading);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [error, setError] = useState(false);
@@ -241,6 +244,10 @@ function SearchScreen() {
         {loading && (
           <View style={styles.loadingContainer}>
             <SkeletonList count={6} />
+            {/* Search fans out across items, catalog, users and events, so it
+                is the slowest read in the app and the one most likely to look
+                stuck. Silent under 3s. */}
+            <SlowLoadNotice isSlow={isSlow} isVerySlow={isVerySlow} />
           </View>
         )}
 

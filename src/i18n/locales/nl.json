@@ -32,7 +32,9 @@
     "share": "Delen",
     "skip": "Overslaan",
     "sort": "Sorteren",
-    "yes": "Ja"
+    "yes": "Ja",
+    "slow_load_working": "We doen ons best om je resultaten op te halen — we gaan zo snel als we kunnen.",
+    "slow_load_still_working": "Nog steeds bezig. Dit duurt langer dan normaal, bedankt voor je geduld."
   },
   "add_tab": {
     "subtitle": "Snelle, camera-gerichte flow.",

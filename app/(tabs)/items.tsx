@@ -112,6 +112,8 @@ const ItemsScreen: React.FC = () => {
     loadMore,
     refresh: paginatedRefresh,
     setItems: setProviderItems,
+    isSlow,
+    isVerySlow,
   } = usePaginatedList<Item>(itemFetcher, {
     pageSize: ITEMS_PAGE_SIZE,
     // Don't fire the first Supabase read while the session is still hydrating:
@@ -700,7 +702,7 @@ const ItemsScreen: React.FC = () => {
         </SafeAreaView>
       );
     }
-    return <ItemsLoadingState viewMode={viewMode} />;
+    return <ItemsLoadingState viewMode={viewMode} isSlow={isSlow} isVerySlow={isVerySlow} />;
   }
 
   // Error state

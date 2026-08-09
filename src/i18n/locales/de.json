@@ -32,7 +32,9 @@
     "share": "Teilen",
     "skip": "Überspringen",
     "sort": "Sortieren",
-    "yes": "Ja"
+    "yes": "Ja",
+    "slow_load_working": "Wir geben unser Bestes, um deine Ergebnisse zu laden — so schnell es geht.",
+    "slow_load_still_working": "Wir sind noch dran. Das dauert länger als sonst, danke für deine Geduld."
   },
   "add_tab": {
     "subtitle": "Schneller, kamerazuerst Flow.",

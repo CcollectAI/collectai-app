@@ -14,6 +14,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { withTimeout, TimeoutError } from '../lib/withTimeout';
+import { useSlowLoad } from './useSlowLoad';
 import { onReconnect } from './useNetworkStatus';
 
 // Upper bound on any single page fetch. Deliberately looser than an individual
@@ -59,6 +60,16 @@ export type UsePaginatedListReturn<T> = {
   refresh: () => void;
   /** Replace items list from the outside (used for optimistic mutations) */
   setItems: React.Dispatch<React.SetStateAction<T[]>>;
+  /**
+   * The wait has passed 3s and is still going — render <SlowLoadNotice /> under
+   * the skeleton. Lives here because this hook already owns every list's
+   * loading state, including the `enabled` auth gate: a cold start can sit
+   * gated for up to GATE_MAX_WAIT_MS before a single byte is requested, and
+   * that silence is the longest one a user meets.
+   */
+  isSlow: boolean;
+  /** Past ~10s. Escalates the wording so a long wait does not look frozen. */
+  isVerySlow: boolean;
 };
 
 export function usePaginatedList<T>(
@@ -70,6 +81,8 @@ export function usePaginatedList<T>(
 
   const [items, setItems] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Covers the gated window too: isLoading is true while waiting on `enabled`.
+  const { isSlow, isVerySlow } = useSlowLoad(isLoading);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -231,5 +244,7 @@ export function usePaginatedList<T>(
     loadMore,
     refresh,
     setItems,
+    isSlow,
+    isVerySlow,
   };
 }

@@ -50,6 +50,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
+import { SlowLoadNotice } from '@/components/SlowLoadNotice';
 import { useSettings, type NumberLocale, type Settings } from '@/lib/settings';
 import { convertCurrency } from '@/lib/fx';
 import { formatPrice, getCurrencySymbol } from '@/lib/format';
@@ -541,6 +542,8 @@ function MemberMarketplaceScreen() {
     error,
     loadMore,
     refresh,
+    isSlow,
+    isVerySlow,
   } = usePaginatedList<P2PListing>(fetchListings, { pageSize: PAGE_SIZE });
 
   // The hook fetches once on mount and does NOT re-run when the fetcher
@@ -837,6 +840,7 @@ function MemberMarketplaceScreen() {
               </View>
             </View>
           ))}
+          <SlowLoadNotice isSlow={isSlow} isVerySlow={isVerySlow} />
         </View>
       ) : error ? (
         <EmptyState
