@@ -74,7 +74,13 @@ _OFFER_COLUMNS = """
             o.currency, o.status, o.message, o.counter_count,
             o.created_at, o.seller_confirmed_at, o.buyer_confirmed_at,
             o.tracking_carrier, o.tracking_code, o.tracking_set_at,
-            l.listing_title
+            l.listing_title,
+            -- The ASKING price, so a counter can be expressed as a percentage of
+            -- it. Without this the counter UI could only work off the buyer's own
+            -- offer, where "-5%" means "less than they already offered" — a
+            -- button no seller would ever press. The client must not guess a
+            -- reference price it does not hold.
+            l.price AS listing_price
 """
 
 # Carrier key -> (display label, tracking URL template or None).
@@ -138,6 +144,11 @@ class OfferOut(BaseModel):
     id: str
     listing_id: str
     listing_title: Optional[str] = None
+    # The listing's ASKING price. The counter UI expresses its presets as a
+    # percentage of this; null (a listing row that vanished) means the client
+    # falls back to the offer amount and says so, rather than showing a
+    # percentage computed from nothing.
+    listing_price: Optional[float] = None
     buyer_id: str
     seller_id: str
     amount: float
@@ -218,6 +229,24 @@ DAC7_SALES_LIMIT = 30
 DAC7_GROSS_EUR_LIMIT = 2000.0
 
 
+def dac7_reportable(sales_count: int, gross_eur: float) -> bool:
+    """Is this seller REPORTABLE for the year?
+
+    An EXCLUDED SELLER is one where BOTH limbs hold — fewer than 30 sales AND at
+    most EUR 2,000 — so reportable is **OR**, not AND. Writing `and` here
+    under-reports every high-volume/low-value seller (40 sales at EUR 20 is the
+    shape that slips through) and nothing else in the system would notice,
+    because the failure mode is silence.
+
+    ONE definition, three consumers: the accrual on the completion path, the
+    `GET /p2p/dac7/me` status endpoint, and the tests. It used to be inlined in
+    the accrual with the test file defining its own mirror of it — so the test
+    was asserting a COPY of the rule and could have passed while the real one
+    drifted (learning_tests_that_pin_a_stub).
+    """
+    return sales_count >= DAC7_SALES_LIMIT or gross_eur > DAC7_GROSS_EUR_LIMIT
+
+
 async def _dac7_accrue(seller_id: str, amount: float, currency: str) -> None:
     """Accrue one completed sale against the seller's DAC7 year, and warn once.
 
@@ -267,10 +296,7 @@ async def _dac7_accrue(seller_id: str, amount: float, currency: str) -> None:
             if row is None:
                 return
 
-            crossed = (
-                row["sales_count"] >= DAC7_SALES_LIMIT
-                or float(row["gross_eur"]) > DAC7_GROSS_EUR_LIMIT
-            )
+            crossed = dac7_reportable(int(row["sales_count"]), float(row["gross_eur"]))
             if not crossed or row["notified_at"] is not None:
                 return
 
@@ -292,12 +318,21 @@ async def _dac7_accrue(seller_id: str, amount: float, currency: str) -> None:
                 conn,
                 seller_id,
                 "About your sales and tax reporting",
+                # INFORM, do not promise to collect. The earlier copy said "We'll
+                # ask you for a few details first" — a promise with no form behind
+                # it and nowhere to put the answer (there is no column for a TIN,
+                # an address or an IBAN anywhere in the schema). Sparrow's stance
+                # is that the seller handles their own tax position; this message
+                # exists so they know the threshold is a real obligation, not a
+                # Sparrow policy. Kept in step with marketplace-terms §6 —
+                # if one changes, change both.
                 (
                     f"You've passed {row['sales_count']} sales / "
-                    f"EUR {float(row['gross_eur']):.0f} this year. Marketplaces "
-                    "have to report sellers above that to tax authorities. "
-                    "We'll ask you for a few details first, and we'll tell you "
-                    "before anything is sent."
+                    f"EUR {float(row['gross_eur']):.0f} this year. Above that, "
+                    "marketplaces are required to report sellers to tax "
+                    "authorities, so this is the point to sort out your own tax "
+                    "position. We don't file anything for you, and we'll tell you "
+                    "before anything about you is sent."
                 ),
                 category="account",
                 data={"kind": "dac7_threshold", "year": row["year"]},
@@ -388,6 +423,27 @@ class MemberReputation(BaseModel):
     withdrawn_count: int = 0
 
 
+def _row_opt(r, key: str):
+    """A column that some of the offer queries do not select.
+
+    asyncpg's Record raises KeyError on a missing key, and one of the four offer
+    queries is an `INSERT ... RETURNING` that cannot join the listing at all. A
+    mapper that reads such a column directly turns "this query selects less"
+    into a 500 on whichever path was missed — and only on that path.
+    """
+    if hasattr(r, "get"):
+        return r.get(key)
+    try:
+        return r[key]
+    except (KeyError, IndexError):
+        return None
+
+
+def _row_opt_float(r, key: str) -> Optional[float]:
+    v = _row_opt(r, key)
+    return float(v) if v is not None else None
+
+
 def _row_to_offer(r, me: str) -> OfferOut:
     is_buyer = str(r["buyer_id"]) == me
     both_confirmed = r["seller_confirmed_at"] is not None and r["buyer_confirmed_at"] is not None
@@ -395,7 +451,13 @@ def _row_to_offer(r, me: str) -> OfferOut:
     return OfferOut(
         id=str(r["id"]),
         listing_id=str(r["listing_id"]),
-        listing_title=r.get("listing_title") if hasattr(r, "get") else r["listing_title"],
+        listing_title=_row_opt(r, "listing_title"),
+        # Absent from the create path's RETURNING (an INSERT cannot join the
+        # listing), so this MUST tolerate a missing key — reading it directly
+        # would be a 500 on the primary Stage 2 entry point, which is the trap
+        # the tracking columns document at that RETURNING. create_offer sets it
+        # from the listing row it already fetched.
+        listing_price=_row_opt_float(r, "listing_price"),
         buyer_id=str(r["buyer_id"]),
         seller_id=str(r["seller_id"]),
         amount=float(r["amount"]),
@@ -438,7 +500,8 @@ async def create_offer(
     async with pool.acquire() as conn:
         listing = await conn.fetchrow(
             """
-            SELECT id, user_id AS seller_id, listing_title, status, delisted_at
+            SELECT id, user_id AS seller_id, listing_title, price,
+                   status, delisted_at
             FROM public.marketplace_listings
             WHERE id = $1::uuid
             """,
@@ -500,7 +563,9 @@ async def create_offer(
         )
 
     out = _row_to_offer(row, user_id)
+    # Both come from the listing row above, because the RETURNING cannot join it.
     out.listing_title = listing["listing_title"]
+    out.listing_price = float(listing["price"]) if listing["price"] is not None else None
     return out
 
 
@@ -712,6 +777,112 @@ class CarrierOut(BaseModel):
     # must render a copyable code instead of a button. Sent rather than inferred
     # so the client never has to know WHY (postcode, no public URL, …).
     linkable: bool
+
+
+class Dac7YearOut(BaseModel):
+    year: int
+    sales_count: int
+    gross_eur: float
+    # True by the SAME predicate the accrual uses, RECOMPUTED from the counters
+    # rather than read off `reportable_at`. The stamp records when we noticed;
+    # this records whether it is true now. They differ between the counter update
+    # and the notify stamp, and reading only the stamp would report a seller as
+    # excluded while they are already over.
+    #
+    # A `#` comment, not a bare string: a string literal here is a no-op
+    # expression that LOOKS like a field docstring, and pydantic never sees it.
+    reportable: bool
+    reportable_at: Optional[datetime] = None
+    notified_at: Optional[datetime] = None
+    details_provided_at: Optional[datetime] = None
+    # Headroom. Null once reportable — "0 sales remaining" invites the reading
+    # that one more crosses it, when it has already been crossed.
+    sales_remaining: Optional[int] = None
+    gross_eur_remaining: Optional[float] = None
+
+
+class Dac7StatusOut(BaseModel):
+    """The thresholds are returned with the data on purpose: a client that
+    hardcodes 30/2000 goes stale the moment the rule changes, and this is a
+    figure we tell members in writing (marketplace-terms §6)."""
+    sales_limit: int
+    gross_eur_limit: float
+    currency: str = "EUR"
+    current_year: Optional[Dac7YearOut] = None
+    years: List[Dac7YearOut] = []
+
+
+def _dac7_year_out(r) -> Dac7YearOut:
+    sales = int(r["sales_count"] or 0)
+    gross = float(r["gross_eur"] or 0.0)
+    reportable = dac7_reportable(sales, gross)
+    return Dac7YearOut(
+        year=int(r["year"]),
+        sales_count=sales,
+        gross_eur=round(gross, 2),
+        reportable=reportable,
+        reportable_at=r["reportable_at"],
+        notified_at=r["notified_at"],
+        details_provided_at=r["details_provided_at"],
+        sales_remaining=None if reportable else max(0, DAC7_SALES_LIMIT - sales),
+        gross_eur_remaining=(
+            None if reportable else round(max(0.0, DAC7_GROSS_EUR_LIMIT - gross), 2)
+        ),
+    )
+
+
+@router.get("/dac7/me", response_model=Dac7StatusOut,
+            summary="Your own DAC7 sales counters and reportable status")
+async def dac7_status(
+    user_id: str = Depends(get_current_user_id),
+) -> Dac7StatusOut:
+    """What we have counted about YOUR sales, and whether it crosses the line.
+
+    `app/legal/marketplace-terms.tsx` §6 tells members we count their sales
+    automatically and will warn them before they are reported. `_dac7_accrue`
+    made that true, but there was no way for a member — or the founder — to SEE
+    the counter: the only output was a one-time notification. A promise you
+    cannot inspect is one you cannot verify you are keeping.
+
+    Own rows only. There is deliberately no "all sellers" variant on this
+    router: that is an ops question about other people's tax exposure, and it
+    does not belong on an endpoint any authenticated member can call.
+
+    The year comes from `EXTRACT(YEAR FROM now())` — the SAME derivation the
+    accrual uses — not from Python's clock. The two disagree for the hours
+    around New Year when the server's timezone (Europe/Paris) and UTC are on
+    different sides of midnight, which would show a seller a freshly empty year
+    while their sales were still landing in the previous one.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT year, sales_count, gross_eur, reportable_at, notified_at,
+                   details_provided_at
+            FROM public.dac7_seller_year
+            WHERE user_id = $1::uuid
+            ORDER BY year DESC
+            """,
+            user_id,
+        )
+        this_year = await conn.fetchval("SELECT EXTRACT(YEAR FROM now())::int")
+
+    years = [_dac7_year_out(r) for r in rows]
+    # None, not a fabricated zero row: "no completed sales recorded this year" is
+    # a different statement from "0 sales counted", and only the first is true
+    # before anything has completed.
+    current = next((y for y in years if y.year == this_year), None)
+
+    return Dac7StatusOut(
+        sales_limit=DAC7_SALES_LIMIT,
+        gross_eur_limit=DAC7_GROSS_EUR_LIMIT,
+        current_year=current,
+        years=years,
+    )
 
 
 @router.get("/carriers", response_model=List[CarrierOut],

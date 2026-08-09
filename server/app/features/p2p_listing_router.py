@@ -66,6 +66,46 @@ _FORMAT_FIXED = "fixed_price"
 # Models
 # ---------------------------------------------------------------------------
 
+def _row_get(r, key: str):
+    """A column not every listing query selects.
+
+    asyncpg's Record raises KeyError on a missing key, so a mapper shared by two
+    queries must not read a column directly unless BOTH select it. Both do today;
+    this keeps that from becoming a 500 the day a third query is added.
+    """
+    if hasattr(r, "get"):
+        return r.get(key)
+    try:
+        return r[key]
+    except (KeyError, IndexError):
+        return None
+
+
+def _inherit_from_item(
+    sent: Optional[str], *from_item: Optional[str],
+) -> Optional[str]:
+    """What the request said, or else what the item already recorded.
+
+    Module level rather than a closure so it can be tested as behaviour instead
+    of grepped for in the source (learning_tests_that_pin_a_stub).
+
+    One direction only. The request WINS wherever it says something, and the
+    item only fills a silence — a seller who deliberately cleared a field on the
+    listing must not have the item's old value pushed back in behind them.
+
+    `""` is how a cleared field arrives from the client, so blank-after-strip
+    counts as silence on the way IN; if the item is blank too, the caller's own
+    value (None or "") is handed back unchanged rather than normalised, because
+    normalising here would quietly change what a non-inheriting caller stores.
+    """
+    if sent is not None and sent.strip():
+        return sent
+    for candidate in from_item:
+        if candidate is not None and str(candidate).strip():
+            return candidate
+    return sent
+
+
 class ListingCreate(BaseModel):
     """Create a listing from an item the caller owns.
 
@@ -174,6 +214,10 @@ class ListingOut(BaseModel):
     # percentage only once there are enough grades to mean anything —
     # `seller_positive_pct` is None below p2p_offers_router._MIN_GRADES_TO_SHOW,
     # matching /p2p/members/{id}/reputation exactly so the two cannot drift.
+    # True only when a stranger would see this seller's profile. Drives whether
+    # the seller row on the listing screen is TAPPABLE — linking to a profile the
+    # member did not agree to expose would publish it by navigation.
+    seller_profile_public: bool = False
     seller_completed_trades: int = 0
     seller_total_grades: int = 0
     seller_positive_grades: int = 0
@@ -747,9 +791,21 @@ async def create_listing(
         if payload.item_id:
             # Ownership is enforced HERE, server-side. The client sending an
             # item_id it does not own must not be able to list it.
+            # An item in the collection IS the product being sold, so the listing
+            # inherits everything the seller already recorded about it — not just
+            # its identity. Before 2026-08-09 this SELECT stopped at
+            # (name, category, canonical_key) and `condition_label`,
+            # `condition_notes` and `listing_description` were taken from the
+            # request only, so listing something you own asked you to retype
+            # facts you had already entered once ("double work and not useful").
+            #
+            # Copied field-for-field, never composed: a description assembled
+            # out of brand/year/series would be us writing sales copy in the
+            # seller's name. Those columns exist and are deliberately left out.
             item = await conn.fetchrow(
                 """
-                SELECT id, name, category, canonical_key, image_url
+                SELECT id, name, category, canonical_key, image_url,
+                       condition, condition_grade, condition_notes, description
                 FROM public.items
                 WHERE id = $1::uuid AND user_id = $2::uuid
                 """,
@@ -773,7 +829,8 @@ async def create_listing(
                     (user_id, name, category, canonical_key, source, for_sale,
                      created_at, updated_at)
                 VALUES ($1::uuid, $2, $3, $4, 'marketplace', TRUE, now(), now())
-                RETURNING id, name, category, canonical_key, image_url
+                RETURNING id, name, category, canonical_key, image_url,
+                          condition, condition_grade, condition_notes, description
                 """,
                 user_id, payload.title.strip(), payload.category,
                 payload.canonical_key,
@@ -799,6 +856,14 @@ async def create_listing(
                 409, "This item is already listed", code="ALREADY_LISTED",
             )
 
+        # condition_grade is the second source because add-manual writes the
+        # graded value there ("PSA 9") while `condition` holds the plain label.
+        condition_label = _inherit_from_item(
+            payload.condition_label, item["condition"], item["condition_grade"],
+        )
+        condition_notes = _inherit_from_item(payload.condition_notes, item["condition_notes"])
+        listing_description = _inherit_from_item(payload.description, item["description"])
+
         listing_id = str(uuid4())
         await conn.execute(
             """
@@ -816,8 +881,8 @@ async def create_listing(
             """,
             listing_id, user_id, str(item["id"]), SPARROW_MARKETPLACE_KEY,
             item["name"] or "Untitled",
-            payload.description, payload.price, payload.currency,
-            payload.condition_label, payload.condition_notes,
+            listing_description, payload.price, payload.currency,
+            condition_label, condition_notes,
             payload.shipping_cost, payload.ships_from,
             item["canonical_key"], item["category"], _STATUS_ACTIVE,
             _FORMAT_FIXED, payload.photo_catalogue_consent,
@@ -831,9 +896,13 @@ async def create_listing(
 
     return ListingOut(
         id=listing_id, user_id=user_id, item_id=str(item["id"]),
-        title=item["name"] or "Untitled", description=payload.description,
+        # The INHERITED values, not the request's. Returning payload.* here
+        # would hand back a listing with the blank condition and description the
+        # seller did not type, while the row just written holds the item's — the
+        # screen would show one thing now and another after the next fetch.
+        title=item["name"] or "Untitled", description=listing_description,
         price=payload.price, currency=payload.currency,
-        condition_label=payload.condition_label,
+        condition_label=condition_label,
         category=item["category"], canonical_key=item["canonical_key"],
         ships_from=payload.ships_from, shipping_cost=payload.shipping_cost,
         image_url=item["image_url"],
@@ -957,7 +1026,15 @@ async def browse_listings(
                    -- the bounds and the sort below. It used to be the same
                    -- expression repeated four times, which is precisely why a
                    -- rate map that silently resolved to NULL was invisible.
-                   l.price * COALESCE(fx.rate, 1) AS price_eur
+                   l.price * COALESCE(fx.rate, 1) AS price_eur,
+                   -- Same predicate as get_listing below, EXISTS against the
+                   -- view rather than a copy of its rule. Present in BOTH
+                   -- listing queries on purpose: a column in one, read by a
+                   -- mapper used from both, is a KeyError on whichever path was
+                   -- missed and only on that path
+                   -- (learning_duplicate_impl_silently_drops_the_fix).
+                   EXISTS (SELECT 1 FROM public.user_public_profiles up
+                            WHERE up.user_id = l.user_id) AS seller_profile_public
             FROM public.marketplace_listings l
             -- Rate lookup as a join over two parallel arrays. LEFT JOIN, so an
             -- unknown currency keeps the row at rate 1 (wrong by a few percent)
@@ -1029,6 +1106,7 @@ async def browse_listings(
             image_is_catalog=bool(r["image_is_catalog"]),
             watchers=int(r["watchers"] or 0),
             seller_name=r["display_name"] or r["username"],
+            seller_profile_public=bool(_row_get(r, "seller_profile_public")),
             status=r["status"], created_at=r["created_at"],
             reaches_target_hit=_reaches_target_hit(r["canonical_key"], r["category"]),
             is_mine=str(r["user_id"]) == user_id,
@@ -1252,6 +1330,19 @@ async def get_listing(
                    -- p2p_offers/member_grades, the same tables
                    -- /p2p/members/{id}/reputation reads, so the listing screen
                    -- and the reputation endpoint cannot disagree.
+                   -- Is this seller's profile visible to OTHER members?
+                   --
+                   -- EXISTS against `user_public_profiles` rather than a copy of
+                   -- its rule. That view already encodes the opt-in — a profile
+                   -- appears only when it has a display name AND
+                   -- `user_privacy_settings.allow_discovery` is not false — and
+                   -- because this connection has no `auth.uid()`, the view's
+                   -- `id = auth.uid()` limb is false here, so what EXISTS
+                   -- answers is exactly "would a STRANGER see this profile".
+                   -- Duplicating the predicate would let the tap outlive the
+                   -- consent (learning_prove_view_equivalence_with_real_auth_context).
+                   EXISTS (SELECT 1 FROM public.user_public_profiles up
+                            WHERE up.user_id = l.user_id) AS seller_profile_public,
                    (SELECT count(*) FROM public.p2p_offers so
                      WHERE so.status = 'completed'
                        AND (so.seller_id = l.user_id OR so.buyer_id = l.user_id)
@@ -1317,6 +1408,7 @@ async def get_listing(
         image_url=r["image_url"],
         image_is_catalog=bool(r["image_is_catalog"]),
         seller_name=r["display_name"] or r["username"],
+        seller_profile_public=bool(_row_get(r, "seller_profile_public")),
         seller_since=r["seller_since"],
         seller_collection_size=int(r["seller_items"] or 0),
         seller_active_listings=int(r["seller_listings"] or 0),

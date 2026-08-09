@@ -20,6 +20,7 @@ semantics*, not just happy-path plumbing. Per
 learning_tests_that_pin_a_stub, they assert real behaviour — the source-level
 checks below verify guards exist rather than asserting a stubbed return.
 """
+import inspect
 import os
 import sys
 from pathlib import Path
@@ -173,3 +174,77 @@ class TestOwnershipAndRoutes:
         paths = " ".join(r.path for r in p2p.router.routes)
         for banned in ("checkout", "payment", "pay", "escrow", "payout"):
             assert banned not in paths
+
+
+class TestItemInheritance:
+    """A collection item IS the product, so the listing inherits what the seller
+    already recorded about it.
+
+    Reported 2026-08-09: listing something you own opened a composer with an
+    empty condition and an empty description, so the seller retyped facts they
+    had entered when they added the item. `name`, `category` and `canonical_key`
+    were inherited; `condition_label`, `condition_notes` and `description` were
+    read from the request only, and the request had nothing in them.
+
+    The failure mode is silence — a listing with a blank description is
+    perfectly valid — so these pin the direction of the copy, not just that a
+    copy happens.
+    """
+
+    def test_request_wins_over_the_item(self):
+        """A seller who describes the listing differently keeps their words."""
+        assert p2p._inherit_from_item("Played", "Near Mint") == "Played"
+
+    def test_item_fills_a_missing_field(self):
+        assert p2p._inherit_from_item(None, "Near Mint") == "Near Mint"
+
+    def test_item_fills_a_blank_field(self):
+        """`''` is how an untouched input arrives from the client."""
+        assert p2p._inherit_from_item("", "Near Mint") == "Near Mint"
+        assert p2p._inherit_from_item("   ", "Near Mint") == "Near Mint"
+
+    def test_condition_grade_is_the_second_source(self):
+        """add-manual writes a graded value ("PSA 9") to condition_grade while
+        `condition` holds the plain label, so both are consulted in order."""
+        assert p2p._inherit_from_item(None, None, "PSA 9") == "PSA 9"
+        assert p2p._inherit_from_item(None, "Near Mint", "PSA 9") == "Near Mint"
+
+    def test_nothing_anywhere_returns_the_callers_own_value(self):
+        """Not normalised: a non-inheriting caller must store what it sent."""
+        assert p2p._inherit_from_item(None, None) is None
+        assert p2p._inherit_from_item("", None, "  ") == ""
+
+    def test_the_item_select_reads_the_inherited_columns(self):
+        """Inheriting from a column the SELECT never fetched is a KeyError at
+        best and a silent None at worst."""
+        src = _code_only(inspect.getsource(p2p.create_listing))
+        for col in ("condition", "condition_grade", "condition_notes", "description"):
+            assert col in src, f"create_listing no longer selects {col} from the item"
+
+    def test_the_insert_binds_the_inherited_values(self):
+        """The wiring, not the arithmetic. If the INSERT goes back to binding
+        payload.* directly, every test above still passes and the bug is back.
+
+        Scoped to everything AFTER the SQL string — the bind list and the 201
+        response — because both must carry the inherited value. A whole-function
+        search cannot be used: `payload.condition_label` legitimately appears
+        earlier as an argument to `_inherit_from_item`, and the first version of
+        this test flagged that as the defect it was hunting.
+
+        Worth keeping the response in scope: it is what caught the real one. The
+        binds were already correct while `return ListingOut(...)` still handed
+        back `payload.description`, so the row held the item's description and
+        the reply claimed it was empty.
+        """
+        src = _code_only(inspect.getsource(p2p.create_listing))
+        marker = "INSERT INTO public.marketplace_listings"
+        assert marker in src
+        # Everything after the SQL string closes = the positional binds.
+        binds = src.split(marker, 1)[1].split('"""', 2)[-1]
+
+        assert "condition_label," in binds and "listing_description," in binds, \
+            "INSERT no longer binds the inherited values"
+        for dead in ("payload.condition_label,", "payload.condition_notes,",
+                     "payload.description,"):
+            assert dead not in binds, \
+                f"INSERT binds {dead} again instead of the inherited value"

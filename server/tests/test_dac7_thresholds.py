@@ -29,12 +29,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.features.p2p_offers_router import (  # noqa: E402
     DAC7_SALES_LIMIT,
     DAC7_GROSS_EUR_LIMIT,
+    dac7_reportable as reportable,
 )
 
-
-def reportable(sales: int, gross_eur: float) -> bool:
-    """The predicate exactly as `_dac7_accrue` applies it."""
-    return sales >= DAC7_SALES_LIMIT or gross_eur > DAC7_GROSS_EUR_LIMIT
+# The REAL predicate, imported — not a local mirror of it.
+#
+# This file used to define its own `reportable()` copying the expression out of
+# `_dac7_accrue`. Every test below passed against the copy, so the suite would
+# have stayed green if the connective in the accrual had been changed to `and` —
+# which is the single thing these tests exist to prevent
+# (learning_tests_that_pin_a_stub). `dac7_reportable` is now module-level in the
+# router and used by the accrual, `GET /p2p/dac7/me`, and here.
 
 
 class TestDac7Limits:
@@ -98,3 +103,75 @@ class TestAccrualWiring:
         src = inspect.getsource(confirm_exchange)
         assert "_dac7_accrue" in src, "trade completion no longer accrues DAC7"
         assert 'fresh["seller_id"]' in src, "DAC7 must accrue against the SELLER"
+
+
+class TestDac7StatusEndpoint:
+    """`GET /p2p/dac7/me` — the member-visible half of the §6 promise.
+
+    Terms tell members we count their sales and warn them before reporting.
+    The counter existed and the warning fired, but nothing could SHOW it, so
+    there was no way to verify the promise was being kept.
+    """
+
+    def test_headroom_is_null_once_reportable(self):
+        """"0 sales remaining" would read as "one more crosses it" when it has
+        already been crossed."""
+        from app.features.p2p_offers_router import _dac7_year_out
+
+        row = {
+            "year": 2026, "sales_count": 40, "gross_eur": 800.0,
+            "reportable_at": None, "notified_at": None, "details_provided_at": None,
+        }
+        out = _dac7_year_out(row)
+        assert out.reportable is True
+        assert out.sales_remaining is None
+        assert out.gross_eur_remaining is None
+
+    def test_headroom_counts_down_while_excluded(self):
+        from app.features.p2p_offers_router import _dac7_year_out
+
+        out = _dac7_year_out({
+            "year": 2026, "sales_count": 4, "gross_eur": 500.0,
+            "reportable_at": None, "notified_at": None, "details_provided_at": None,
+        })
+        assert out.reportable is False
+        assert out.sales_remaining == 26        # 30 - 4
+        assert out.gross_eur_remaining == 1500.0
+
+    def test_reportable_is_recomputed_not_read_off_the_stamp(self):
+        """`reportable_at` records WHEN we noticed. Between the counter update
+        and the notify stamp it is still NULL while the seller is already over,
+        and reporting `false` there would tell them the opposite of the truth."""
+        from app.features.p2p_offers_router import _dac7_year_out
+
+        out = _dac7_year_out({
+            "year": 2026, "sales_count": 31, "gross_eur": 10.0,
+            "reportable_at": None,          # not stamped yet
+            "notified_at": None, "details_provided_at": None,
+        })
+        assert out.reportable is True
+
+    def test_zero_row_is_excluded_and_keeps_full_headroom(self):
+        from app.features.p2p_offers_router import _dac7_year_out
+
+        out = _dac7_year_out({
+            "year": 2026, "sales_count": 0, "gross_eur": 0.0,
+            "reportable_at": None, "notified_at": None, "details_provided_at": None,
+        })
+        assert out.reportable is False
+        assert out.sales_remaining == 30
+        assert out.gross_eur_remaining == 2000.0
+
+    def test_endpoint_is_authed_and_self_only(self):
+        """No user_id parameter anywhere: another member's tax exposure is not
+        something an authenticated caller may ask this router for."""
+        import inspect
+        from app.features.p2p_offers_router import dac7_status
+
+        sig = inspect.signature(dac7_status)
+        assert list(sig.parameters) == ["user_id"], sig.parameters
+        src = inspect.getsource(dac7_status)
+        assert "WHERE user_id = $1::uuid" in src
+        # The year must come from the DB, matching the accrual's
+        # EXTRACT(YEAR FROM now()) — not from Python's clock.
+        assert "EXTRACT(YEAR FROM now())" in src

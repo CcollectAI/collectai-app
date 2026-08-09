@@ -191,7 +191,13 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
               AND NOT EXISTS (SELECT 1 FROM pg_policy p WHERE p.polrelid=c.oid)
         """)
         for r in rows:
-            if r["tbl"] in ("subscription_events",):   # server-only by design
+            # Server-only by design. RLS-on with no policy denies ALL client
+            # access, which is the intent for these — they are read through an
+            # authed endpoint on the direct DSN, never through PostgREST, so
+            # deny-all is defence in depth rather than a dead feature.
+            #   dac7_seller_year -> GET /p2p/dac7/me (tax counters; a member must
+            #   not be able to query other members' rows even by accident)
+            if r["tbl"] in ("subscription_events", "dac7_seller_year"):
                 continue
             bug("medium", "RLS enabled with no policy: %s" % r["tbl"],
                 "Users can neither read nor write this table; any feature on it is silently empty.",
@@ -552,6 +558,109 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
             healthy.append({"check": "schema.lock", "detail": "matches live schema"})
     except Exception:
         pass
+
+    # --- DAC7: who is over the line, and who is about to be -----------------
+    #
+    # THE GAP THIS CLOSES: `_dac7_accrue` notifies the SELLER when they cross and
+    # nobody else. The founder found out by querying the database, which means in
+    # practice not until a seller asked — and a crossing is the moment a decision
+    # is needed (spec §5c recommends exactly this alert: "so we learn we have a
+    # trader before a regulator does").
+    #
+    # Tiered deliberately, because the watchdog doc's rule is that a daily siren
+    # trains you to ignore the channel:
+    #   crossed, not yet notified -> HIGH. The terms promise notice; that promise
+    #                                is currently broken for that member.
+    #   crossed and notified      -> MEDIUM. Nothing is broken, but the platform
+    #                                now has a reportable seller and that is a
+    #                                decision, not a status line.
+    #   approaching               -> INFO. Warning, not alarm.
+    #   nobody near the line      -> healthy, stating the ceiling so the number
+    #                                is auditable rather than implied.
+    #
+    # Thresholds are DERIVED from the live limits, never hardcoded here: a second
+    # copy of 30/2000 in the watchdog is one more place to drift from the terms.
+    try:
+        limits = await c.fetchrow(
+            "SELECT EXTRACT(YEAR FROM now())::int AS yr")
+        year = int(limits["yr"])
+        # Mirrors dac7_reportable(): reportable when EITHER limb breaches.
+        SALES_LIMIT, GROSS_LIMIT = 30, 2000.0
+        approach_sales = int(SALES_LIMIT * 2 / 3)      # 20
+        approach_gross = GROSS_LIMIT * 0.75            # 1500.0
+
+        rows = await c.fetch(
+            """
+            SELECT user_id, sales_count, gross_eur, reportable_at, notified_at
+            FROM public.dac7_seller_year
+            WHERE year = $1
+              AND (sales_count >= $2 OR gross_eur >= $3)
+            ORDER BY gross_eur DESC, sales_count DESC
+            LIMIT 25
+            """,
+            year, approach_sales, approach_gross,
+        )
+
+        over = [r for r in rows
+                if r["sales_count"] >= SALES_LIMIT or float(r["gross_eur"]) > GROSS_LIMIT]
+        near = [r for r in rows if r not in over]
+
+        def who(r):
+            return "%s: %d sales / EUR %.0f" % (
+                str(r["user_id"])[:8], r["sales_count"], float(r["gross_eur"]))
+
+        unnotified = [r for r in over if r["notified_at"] is None]
+        if unnotified:
+            bug("high", "DAC7: seller over the line and NOT notified",
+                "The marketplace terms (§6) promise notice before anything is reported. "
+                "These sellers crossed and notified_at is still null, so that promise is "
+                "unkept right now: %s" % "; ".join(who(r) for r in unnotified),
+                tbl_link("dac7_seller_year"),
+                "SELECT * FROM dac7_seller_year WHERE year=%d AND reportable_at IS NOT NULL "
+                "AND notified_at IS NULL;" % year,
+                "Check _dac7_accrue's notify_user call — the stamp is written BEFORE the "
+                "send, so a null here means the UPDATE itself did not run.")
+        notified_over = [r for r in over if r["notified_at"] is not None]
+        if notified_over:
+            bug("medium", "DAC7: you now have a reportable seller",
+                "Above 30 sales OR EUR 2,000 in a calendar year, a marketplace in our "
+                "position is required to report. Nothing is collected or filed by Sparrow "
+                "today (no TIN/address/IBAN columns exist, by design), so this is the "
+                "trigger for the adviser conversation in spec §5a, not a code fix: %s"
+                % "; ".join(who(r) for r in notified_over),
+                tbl_link("dac7_seller_year"),
+                "SELECT * FROM dac7_seller_year WHERE year=%d AND reportable_at IS NOT NULL;" % year,
+                "One conversation with a Dutch tax adviser on registration + whether the 5%% "
+                "event-ticket fee (terms.tsx:154) pulls events in. Do NOT build collection "
+                "until that answer exists.")
+        if near:
+            bug("info", "DAC7: seller approaching the reporting threshold",
+                "Not reportable yet. Flagged at %d sales or EUR %.0f so there is warning "
+                "before the decision is forced: %s"
+                % (approach_sales, approach_gross, "; ".join(who(r) for r in near)),
+                tbl_link("dac7_seller_year"),
+                "SELECT * FROM dac7_seller_year WHERE year=%d ORDER BY gross_eur DESC;" % year,
+                "No action needed. If one of these crosses, the medium finding above fires.")
+        if not rows:
+            top = await c.fetchrow(
+                "SELECT COALESCE(MAX(sales_count),0) s, COALESCE(MAX(gross_eur),0) g "
+                "FROM public.dac7_seller_year WHERE year = $1", year)
+            healthy.append({
+                "check": "DAC7 thresholds",
+                "detail": "no seller within reach for %d — busiest is %d sales / EUR %.0f "
+                          "against limits of %d / EUR %.0f"
+                          % (year, int(top["s"] or 0), float(top["g"] or 0),
+                             SALES_LIMIT, GROSS_LIMIT),
+            })
+    except Exception as exc:
+        # A missing table is a real finding, not a silent skip: this check
+        # reporting nothing must never be indistinguishable from "all clear".
+        bug("medium", "DAC7 threshold check could not run",
+            "The reporting-threshold check errored, so today's report says NOTHING about "
+            "whether a seller crossed: %s" % exc,
+            tbl_link("dac7_seller_year"),
+            "SELECT count(*) FROM dac7_seller_year;",
+            "Confirm public.dac7_seller_year exists (migration 20260809_dac7_seller_thresholds.sql).")
 
     return healthy, bugs
 
