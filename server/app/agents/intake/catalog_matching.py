@@ -221,6 +221,28 @@ async def _match_catalog_items(
                             })
 
             # Strategy 2: Title match (first 4 significant words)
+            #
+            # BOTH sides must be normalised the same way. This used to normalise
+            # only the query and compare it to the RAW column, which made the
+            # strategy structurally incapable of matching any title containing
+            # punctuation:
+            #
+            #   stored   "Naveen's Ukulele [6] (Cold Foil)"
+            #   query    "naveens ukulele 6 cold"   (apostrophe/brackets stripped)
+            #   ILIKE '%naveens ukulele 6 cold%'  ->  never matches
+            #
+            # Seed titles ("Goblin Offensive") are unaffected, which is why mtg
+            # and lego scored 5/5 while every tcgcsv-derived category — lorcana,
+            # digimon, one_piece_tcg, whose titles all carry [set] and (finish)
+            # decorations — scored 0, even when fed their own title verbatim.
+            # Measured by probe_canonical_key_resolution.py, 2026-07-25.
+            #
+            # The SQL below mirrors _normalize_for_search exactly: lowercase,
+            # drop everything outside [a-z0-9 ], collapse whitespace. Keep the
+            # two in sync — divergence silently reintroduces the same dead
+            # strategy. No index: it is filtered by category first
+            # (~10-25k rows) and docs/DATA_SCALING_PLAN.md rule 1 is
+            # "default = refuse to add".
             if suggested_name:
                 words = _normalize_for_search(suggested_name).split()[:4]
                 title_query = " ".join(words)
@@ -231,7 +253,10 @@ async def _match_catalog_items(
                                set_code, image_url, notes
                         FROM category_items
                         WHERE category = $1
-                          AND title ILIKE $2
+                          AND regexp_replace(
+                                regexp_replace(lower(title), '[^a-z0-9[:space:]]', '', 'g'),
+                                '\\s+', ' ', 'g'
+                              ) LIKE $2
                         LIMIT 5
                         """,
                         category_id,

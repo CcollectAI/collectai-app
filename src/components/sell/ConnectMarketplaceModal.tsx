@@ -54,7 +54,7 @@ export const ConnectMarketplaceModal = React.memo(function ConnectMarketplaceMod
   const { colors } = useAppTheme();
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>

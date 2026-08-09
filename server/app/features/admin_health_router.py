@@ -24,6 +24,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from app.db import get_pool
+from app.lib.bg_tasks import spawn_bg
 from app.worker_registry import check_and_alert_overdue, get_worker_health
 
 _log = logging.getLogger("collectai.admin_health")
@@ -345,7 +346,7 @@ async def bake_summary(request: Request) -> JSONResponse:
         "stockx": bool(os.getenv("STOCKX_API_KEY")),
         "pricecharting": bool(os.getenv("PRICECHARTING_API_KEY")),
         "bricklink": bool(os.getenv("BRICKLINK_CONSUMER_KEY")),
-        "fal": bool(os.getenv("FAL_KEY")),
+        # "fal" removed with the CLIP tier — it reported a key that nothing read.
         "telegram": bool(os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID")),
     }
     active_sources = [k for k, v in out["data_sources"].items() if v]
@@ -362,3 +363,280 @@ async def bake_summary(request: Request) -> JSONResponse:
 
     out["ok"] = len(out["warnings"]) == 0
     return JSONResponse(out)
+
+
+# ---------------------------------------------------------------------------
+# GET /admin/models  —  ML model registry
+# ---------------------------------------------------------------------------
+# The admin dashboard's ML Models tab called this and /admin/metrics; neither
+# existed, so every request 404'd and the tab silently rendered a hardcoded
+# DEMO_MODELS list. Both are now served from model_registry / model_metrics.
+
+
+@router.get("/admin/models", summary="Registered ML models per category")
+async def admin_models(request: Request):
+    """Per-category model versions, newest first."""
+    if (err := _check_ops_key(request)) is not None:
+        return err
+
+    pool = await get_pool()
+    if pool is None:
+        return JSONResponse(status_code=503, content={"detail": "Database unavailable"})
+
+    try:
+        # model_metrics is the only per-category source: model_registry rows are
+        # per training run (name='price'), not per collectible category.
+        # DISTINCT ON picks each category's most recently evaluated version.
+        rows = await pool.fetch(
+            """
+            SELECT DISTINCT ON (category)
+                   category,
+                   model_version AS version,
+                   computed_at
+            FROM model_metrics
+            WHERE category IS NOT NULL AND category <> 'unknown'
+            ORDER BY category, computed_at DESC
+            """
+        )
+        registry = await pool.fetch(
+            "SELECT name, version, uri, is_canary, created_at "
+            "FROM model_registry ORDER BY created_at DESC LIMIT 50"
+        )
+    except Exception as exc:
+        _log.exception("admin/models query failed")
+        return JSONResponse(status_code=500, content={"detail": f"Query failed: {exc}"})
+
+    latest = registry[0]["version"] if registry else None
+    models = [
+        {
+            "category": r["category"],
+            "version": r["version"],
+            # "active" means this category's newest evaluated version matches the
+            # newest registry version; anything older is stale, not active.
+            "status": "active" if latest and r["version"] == latest else "stale",
+            "artifact_uri": None,
+            "evaluated_at": r["computed_at"].isoformat() if r["computed_at"] else None,
+        }
+        for r in rows
+    ]
+
+    return JSONResponse(
+        content={
+            "models": models,
+            "registry": [
+                {
+                    "name": r["name"],
+                    "version": r["version"],
+                    "uri": r["uri"],
+                    "is_canary": r["is_canary"],
+                    "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+                }
+                for r in registry
+            ],
+        }
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /admin/metrics  —  model accuracy + recent prediction volume
+# ---------------------------------------------------------------------------
+
+
+_METRICS_CACHE: dict[str, Any] = {"at": 0.0, "payload": None}
+_METRICS_TTL_S = 600  # 10 min: the rollup is refreshed once a day by cron
+_METRICS_REFRESHING = False
+
+
+def _seven_day_window_label() -> str:
+    from datetime import date, timedelta
+    return f"{(date.today() - timedelta(days=7)).isoformat()}..{date.today().isoformat()}"
+
+
+@router.get("/admin/metrics", summary="Model MAE and 7-day prediction counts")
+async def admin_metrics(request: Request):
+    """MAE per category plus 7-day prediction volume.
+
+    Cached for 10 minutes. The underlying scan is ~1-2s over 180k rollup rows,
+    and the admin client aborts at 5s and silently substitutes demo data — so
+    an uncached endpoint would render fabricated numbers most of the time.
+    """
+    if (err := _check_ops_key(request)) is not None:
+        return err
+
+    import time as _time
+
+    fresh = _METRICS_CACHE["payload"] is not None and (
+        _time.monotonic() - _METRICS_CACHE["at"] < _METRICS_TTL_S
+    )
+    if fresh:
+        return JSONResponse(content=_METRICS_CACHE["payload"])
+
+    # Stale-while-revalidate. The scan costs 20s+ through the pooler (which
+    # caps at 30s and returned a 500 on a cold call), while the admin client
+    # aborts at 5s and silently substitutes demo data. So a request must never
+    # wait on it: serve what we have and refresh out of band.
+    if not _METRICS_REFRESHING:
+        spawn_bg(_refresh_metrics_cache(), "admin_metrics_refresh")
+
+    if _METRICS_CACHE["payload"] is not None:
+        stale = dict(_METRICS_CACHE["payload"])
+        stale["stale"] = True
+        return JSONResponse(content=stale)
+
+    # Cold start: empty and explicitly labelled. Empty-and-honest beats
+    # fabricated-and-plausible, which is what the client shows on a timeout.
+    return JSONResponse(
+        content={"mae": [], "counts_7d": [], "warming": True,
+                 "detail": "metrics are being computed — reload in a few seconds"}
+    )
+
+async def _refresh_metrics_cache() -> None:
+    """Recompute the metrics payload out of band. Never raises to the caller.
+
+    The guard flag is reset in a finally that wraps EVERY exit path, including
+    the no-pool early return — leaving it set would permanently block all
+    future refreshes and freeze the cache at whatever it last held.
+    """
+    global _METRICS_REFRESHING
+    from time import monotonic
+
+    _METRICS_REFRESHING = True
+    try:
+        pool = await get_pool()
+        if pool is None:
+            _log.warning("admin/metrics refresh skipped — no DB pool")
+            return
+
+        mae = await pool.fetch(
+            """
+            SELECT DISTINCT ON (category, model_version)
+                   category, model_version, mae, mape, n
+            FROM model_metrics
+            WHERE category IS NOT NULL AND category <> 'unknown'
+            ORDER BY category, model_version, computed_at DESC
+            """
+        )
+        # Grouped by category only: AdminMLModels sums every row for a category
+        # (countForCategory) and never reads the per-day split, so grouping by
+        # day returned 7x the rows for no rendered benefit.
+        #
+        # Reads the price_prediction_daily rollup rather than the raw
+        # partitioned table, and needs idx_ppd_day — without that index this
+        # seq-scans 1.2GB and takes 6.3s.
+        counts = await pool.fetch(
+            """
+            SELECT category, SUM(n_predictions)::int AS n
+            FROM price_prediction_daily
+            WHERE day >= (CURRENT_DATE - 7)
+            GROUP BY category
+            ORDER BY n DESC
+            LIMIT 200
+            """
+        )
+
+        _METRICS_CACHE["payload"] = {
+            "mae": [
+                {
+                    "category": r["category"],
+                    "model_version": r["model_version"],
+                    "mae": float(r["mae"]) if r["mae"] is not None else None,
+                    "mape": float(r["mape"]) if r["mape"] is not None else None,
+                    "n": r["n"] or 0,
+                }
+                for r in mae
+            ],
+            "counts_7d": [
+                {
+                    "category": r["category"] or "unknown",
+                    "model_version": "",
+                    # Kept for the CountsRow shape the client expects; the value
+                    # is the 7-day window, not a single day.
+                    "day": _seven_day_window_label(),
+                    "n": r["n"],
+                }
+                for r in counts
+            ],
+        }
+        _METRICS_CACHE["at"] = monotonic()
+        _log.info(
+            "admin/metrics cache refreshed: %d mae rows, %d category counts",
+            len(mae), len(counts),
+        )
+    except Exception:
+        # Cache left untouched so a failed refresh serves the last good value
+        # rather than reverting to empty.
+        _log.exception("admin/metrics refresh failed")
+    finally:
+        _METRICS_REFRESHING = False
+
+
+# ---------------------------------------------------------------------------
+# GET /admin/kpi-summary  —  real acquisition funnel
+# ---------------------------------------------------------------------------
+# The KPI Funnel tab called this and got 404, so the tab named for the funnel
+# had no backend at all. Built from the app's own tables: profiles for signups
+# and subscription_events for paid conversions. There is deliberately no
+# in-app engagement step here — that needs PostHog, which is not yet wired
+# (EXPO_PUBLIC_POSTHOG_KEY unset), and inventing one would be fiction.
+
+
+@router.get("/admin/kpi-summary", summary="Acquisition funnel summary")
+async def admin_kpi_summary(request: Request, days: int = 30):
+    """Signups, attributed signups, and paid conversions over `days`."""
+    if (err := _check_ops_key(request)) is not None:
+        return err
+
+    pool = await get_pool()
+    if pool is None:
+        return JSONResponse(status_code=503, content={"detail": "Database unavailable"})
+
+    days = max(1, min(int(days or 30), 365))
+
+    try:
+        signups = await pool.fetchrow(
+            """
+            SELECT COUNT(*)::int AS total,
+                   COUNT(referred_by_code)::int AS attributed
+            FROM profiles
+            WHERE created_at >= now() - make_interval(days => $1)
+            """,
+            days,
+        )
+        conv = await pool.fetchrow(
+            """
+            SELECT COUNT(*)::int AS paid_events,
+                   COUNT(DISTINCT user_id)::int AS paying_users,
+                   COALESCE(SUM(revenue_cents), 0)::bigint AS revenue_cents,
+                   COUNT(*) FILTER (WHERE affiliate_code IS NOT NULL)::int AS attributed_events
+            FROM subscription_events
+            WHERE occurred_at >= now() - make_interval(days => $1)
+              AND revenue_cents > 0
+            """,
+            days,
+        )
+        active = await pool.fetchval(
+            "SELECT COUNT(*)::int FROM subscriptions WHERE status = 'active' AND plan <> 'free'"
+        )
+    except Exception as exc:
+        _log.exception("admin/kpi-summary query failed")
+        return JSONResponse(status_code=500, content={"detail": f"Query failed: {exc}"})
+
+    total = signups["total"] or 0
+    paying = conv["paying_users"] or 0
+
+    return JSONResponse(
+        content={
+            "period_days": days,
+            "signups": total,
+            "attributed_signups": signups["attributed"] or 0,
+            "paid_events": conv["paid_events"] or 0,
+            "paying_users": paying,
+            "attributed_paid_events": conv["attributed_events"] or 0,
+            "revenue_eur": round((conv["revenue_cents"] or 0) / 100, 2),
+            "active_subscriptions": active or 0,
+            "signup_to_paid_pct": round((paying / total) * 100, 1) if total else 0.0,
+            # Named so the UI can say WHY a stage is absent instead of showing 0
+            # as though it were measured.
+            "unavailable": ["engagement (needs PostHog: EXPO_PUBLIC_POSTHOG_KEY unset)"],
+        }
+    )

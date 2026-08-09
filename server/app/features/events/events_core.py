@@ -192,21 +192,44 @@ async def list_events(
                 # Get total count for pagination
                 total_count = await count_events_basic(conn, category_id, include_past, user_id=user_id)
 
-                if user_id:
-                    # Try the personalized RPC first
-                    try:
-                        rows = await conn.fetch(
-                            "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM rpc_list_personalized_events_v1($1, $2, $3) LIMIT $4 OFFSET $5",
-                            user_id,
-                            category_id,
-                            include_past,
-                            limit,
-                            offset,
-                        )
-                    except Exception as rpc_err:
-                        logger.warning("[events] Personalized RPC failed, falling back: %s", rpc_err)
-                        rows = await fetch_events_basic(conn, category_id, include_past, limit, offset)
-                else:
+                # The RPC runs for ANONYMOUS callers too (user_id -> NULL).
+                #
+                # It used to be gated on `if user_id:`, sending logged-out
+                # callers down fetch_events_basic() — which reads the bare
+                # table and hardcodes `0 AS attendee_count`. So the same
+                # event returned going=1 to an authenticated request and
+                # going=0 to an anonymous one, measured live 2026-07-27.
+                # That is reachable from the app, not theoretical: this
+                # route depends on get_optional_user_id, so a request that
+                # arrives before the token has hydrated gets 200 + zeroed
+                # counts rather than a 401 — and httpClient's tokenless-401
+                # retry (project_2026_07_14_401_root_cause_tokenless) only
+                # fires on a 401, so nothing corrects it.
+                #
+                # The RPC already handles a NULL caller correctly: the
+                # counts come from a LATERAL that does not reference
+                # p_user_id, and user_rsvp_status is explicitly NULL when
+                # p_user_id is NULL. Only the follows-first ORDER BY term
+                # is personalized, and it degrades to a constant false.
+                #
+                # `user_rsvp_status` arrived with migration
+                # 20260727b_rpc_list_personalized_events_v1_counts.sql.
+                # ORDER OF OPERATIONS MATTERS: apply that BEFORE deploying
+                # this file. Against the old 27-column function this SELECT
+                # raises "column user_rsvp_status does not exist", the
+                # except logs it and falls back — degraded (generic
+                # ordering, zero counts) but not broken.
+                try:
+                    rows = await conn.fetch(
+                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at, user_rsvp_status FROM rpc_list_personalized_events_v1($1, $2, $3) LIMIT $4 OFFSET $5",
+                        user_id,
+                        category_id,
+                        include_past,
+                        limit,
+                        offset,
+                    )
+                except Exception as rpc_err:
+                    logger.warning("[events] Personalized RPC failed, falling back: %s", rpc_err)
                     rows = await fetch_events_basic(conn, category_id, include_past, limit, offset)
 
                 events = []
@@ -290,18 +313,74 @@ async def create_event(
 
     pool = get_db_pool()
 
+    # Event-quality Phase 1 (docs/EVENT_QUALITY_PLAN.md §"Phase 4"): a
+    # user-submitted event is `community` — untrusted by default — and carries
+    # a rule-based score. The ingest pipeline has stamped both since 2026-04-21
+    # (newsletter_scraper.py:1148), but this route never did, so every event a
+    # real user created landed with trust_tier IS NULL / quality_score IS NULL
+    # and fell outside every tier-based filter and index the plan describes.
+    # Note map_source_to_trust_tier() is NOT used here: it keys off the source
+    # string, and this route writes source='user', which is not in its table —
+    # it would silently return 'unverified'. The tier is a property of the
+    # ROUTE (a signed-in human posted this), so it is stated outright.
+    trust_tier = "community"
+    try:
+        from app.lib.event_quality import score_event
+
+        quality_score, _reasons = score_event(
+            {
+                "title": request.title,
+                "date": request.date,
+                "location": request.location or "",
+                "source_url": request.online_url or "",
+                "image_url": request.image_url or "",
+                "description": request.description or "",
+            },
+            trust_tier=trust_tier,
+        )
+    except Exception as e:
+        # Scoring is advisory; never block a create on it. NULL score is the
+        # same "unknown" the column already allows.
+        logger.warning("[events] quality scoring failed: %s", e)
+        quality_score = None
+
     if pool is not None:
         try:
             async with pool.acquire() as conn:
+                # Sponsor association: only the company's own admin may attach
+                # an event to it. is_sponsored is deliberately NOT set — paid
+                # placement is granted exclusively by the Stripe webhook
+                # (billing_router.py:770) or the ownership-checked sponsor
+                # routes, so this cannot be used to self-grant promotion.
+                sponsor_company_id = None
+                sponsor_tier = None
+                if request.sponsor_company_id:
+                    owns = await conn.fetchval(
+                        "SELECT 1 FROM sponsor_companies WHERE id = $1::uuid AND admin_user_id = $2",
+                        request.sponsor_company_id,
+                        user_id,
+                    )
+                    if not owns:
+                        raise error_response(
+                            403,
+                            "Sponsor company not found or not owned by you",
+                            code=ErrorCode.FORBIDDEN,
+                        )
+                    sponsor_company_id = request.sponsor_company_id
+                    sponsor_tier = request.sponsor_tier
+
                 row = await conn.fetchrow(
                     """
                     INSERT INTO events (
                         title, kind, category_id, date, time, end_date,
                         location, online_url, image_url, description, created_by, source,
-                        format, status, is_public, latitude, longitude, ticket_price_cents
+                        format, status, is_public, latitude, longitude, ticket_price_cents,
+                        max_attendees, trust_tier, quality_score,
+                        sponsor_company_id, sponsor_tier
                     )
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'user',
-                            $12, $13, $14, $15, $16, $17)
+                            $12, $13, $14, $15, $16, $17,
+                            $18, $19, $20, $21::uuid, $22)
                     RETURNING *
                     """,
                     request.title,
@@ -324,6 +403,11 @@ async def create_event(
                     request.latitude,
                     request.longitude,
                     request.ticket_price_cents or 0,
+                    request.max_attendees,
+                    trust_tier,
+                    quality_score,
+                    sponsor_company_id,
+                    sponsor_tier,
                 )
                 return row_to_event(dict(row), user_id=user_id)
 
@@ -811,7 +895,7 @@ async def list_templates(
                     TemplateResponse(
                         id=str(r["id"]),
                         name=r["name"],
-                        template_data=r["template_data"] if isinstance(r["template_data"], dict) else {},
+                        template_data=_template_data_out(r["template_data"]),
                         use_count=r.get("use_count", 0),
                         created_at=str(r["created_at"]) if r.get("created_at") else None,
                     )
@@ -825,6 +909,27 @@ async def list_templates(
             raise error_response(500, "Failed to list templates", code=ErrorCode.INTERNAL_ERROR)
 
     return []
+
+
+def _template_data_out(value) -> dict:
+    """
+    Normalise `event_templates.template_data` for the response.
+
+    asyncpg returns a `jsonb` column as a **str**, not a dict, so the previous
+    `value if isinstance(value, dict) else {}` fell through to `{}` on every
+    row. The DB held the right payload the whole time and both endpoints
+    reported it empty, so `applyTemplate` in app/create-event.tsx prefilled
+    nothing — "create from template" silently did nothing. Fixed 2026-07-31.
+    """
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, (str, bytes)):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, dict) else {}
+        except (ValueError, TypeError):
+            return {}
+    return {}
 
 
 @core_router.post("/templates", response_model=TemplateResponse, status_code=201, summary="Create event template")
@@ -865,12 +970,18 @@ async def create_template(
                     """,
                     user_id,
                     request.name,
-                    json.dumps(template_data),
+                    # `default=str` because TEMPLATE_FIELDS includes `time`, and
+                    # asyncpg hands back a datetime.time that json.dumps cannot
+                    # serialise — every "save as template" from an event with a
+                    # time set raised TypeError and returned 500. The FE reads
+                    # `d.time as string` (create-event.tsx:99), so the "HH:MM:SS"
+                    # string this produces is exactly the shape it wants.
+                    json.dumps(template_data, default=str),
                 )
                 return TemplateResponse(
                     id=str(row["id"]),
                     name=row["name"],
-                    template_data=row["template_data"] if isinstance(row["template_data"], dict) else {},
+                    template_data=_template_data_out(row["template_data"]),
                     use_count=row.get("use_count", 0),
                     created_at=str(row["created_at"]) if row.get("created_at") else None,
                 )
@@ -943,13 +1054,26 @@ async def get_event(
                     row = await conn.fetchrow(
                         # `attendees` was non-existent; view exposes
                         # attendee_count / going_count / interested_count.
-                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM v_events_with_attendees_v1 WHERE id = $1",
+                        # source_url added 2026-07-27: the mobile detail screen
+                        # no longer reads the view directly (it was returning
+                        # 0/0 counts under RLS), so anything it used to get off
+                        # the view has to come through here. Column verified
+                        # present on BOTH v_events_with_attendees_v1 and events.
+                        # ticket_price_cents is NOT a column on the view, so it
+                        # comes from a correlated read of `events` rather than a
+                        # bare column ref — a missing column here would raise and
+                        # silently demote every detail request to the count-less
+                        # fallback below. Without it EventResponse defaulted the
+                        # price to 0 and the app could never show "Buy Ticket".
+                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, source_url, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at, "
+                        "(SELECT e2.ticket_price_cents FROM events e2 WHERE e2.id = v.id) AS ticket_price_cents "
+                        "FROM v_events_with_attendees_v1 v WHERE v.id = $1",
                         event_id,
                     )
                 except Exception as view_err:
                     logger.warning("[events] View query failed, falling back to events table: %s", view_err)
                     row = await conn.fetchrow(
-                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, 0 AS attendee_count, 0 AS going_count, 0 AS interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1",
+                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, source_url, 0 AS attendee_count, 0 AS going_count, 0 AS interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at, ticket_price_cents FROM events WHERE id = $1",
                         event_id,
                     )
 

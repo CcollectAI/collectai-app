@@ -94,7 +94,7 @@ function FranchiseDetailScreen() {
 
       setItems(result);
     } catch (err) {
-      logger.warn('[FranchiseDetail] loadItems error:', err);
+      logger.error('[FranchiseDetail] loadItems error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -108,7 +108,7 @@ function FranchiseDetailScreen() {
   if (!franchise) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-        <Stack.Screen options={{ title: 'Franchise' }} />
+        <Stack.Screen options={{ headerTitle: 'Franchise' }} />
         <View style={styles.center}>
           <Text style={{ color: colors.muted }}>Franchise not found</Text>
         </View>
@@ -156,7 +156,7 @@ function FranchiseDetailScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       <Stack.Screen
         options={{
-          title: franchise.name,
+          headerTitle: franchise.name,
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
         }}

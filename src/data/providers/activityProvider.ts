@@ -23,7 +23,8 @@ export async function getUserActivity(userId: string, limit = 20, offset = 0): P
       isPublic: a.is_public as boolean,
       createdAt: a.created_at as string,
     }));
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] activityProvider.ts:26:', e);
     return [];
   }
 }
@@ -38,7 +39,7 @@ export async function logActivity(activityType: string, title: string, descripti
       is_public: isPublic,
     });
   } catch (err: unknown) {
-    logger.warn('[SupabaseDataProvider] logActivity error:', err);
+    logger.error('[SupabaseDataProvider] logActivity error:', err);
   }
 }
 
@@ -61,6 +62,10 @@ export async function unifiedSearch(query: string, limit = 5) {
         brand: (c.brand ?? null) as string | null,
         // R50k: catalog reference images backend-only
         hasReferenceImage: Boolean(c.has_reference_image ?? false),
+        // The catalogue's own price (mv_catalog_item_price), already rounded
+        // server-side. null for the ~62k categories with no sold-comp source —
+        // watches, lego, whiskey — which is a real answer, not a failure.
+        priceEur: (c.price_eur ?? null) as number | null,
       })),
       users: ((resp.users as Record<string, unknown>[]) || []).map((u) => ({
         id: u.id as string,
@@ -77,7 +82,8 @@ export async function unifiedSearch(query: string, limit = 5) {
       })),
       categories: (resp.categories as { id: string; name: string }[]) || [],
     };
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] activityProvider.ts:80:', e);
     return { items: [], catalog: [], users: [], events: [], categories: [] };
   }
 }

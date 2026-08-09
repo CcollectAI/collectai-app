@@ -119,8 +119,14 @@ export const getCollectionTrends = (days = 30) =>
 // after a backend restart) runs a heavy aggregation that can take 10s+, so use
 // a longer-than-default timeout to let Market Insights load rather than failing
 // silently at the 5s default.
-export const getCategoryDeepDive = (categoryId: string) =>
-  get(`/analytics/categories/${encodeURIComponent(categoryId)}/deep-dive`, { timeoutMs: 20_000 });
+// THE single deep-dive call site. `categoryProvider` delegates here rather
+// than rebuilding the URL — a second copy silently lost the timeout below and
+// rendered Market Insights empty for two days (2026-07-18).
+export const getCategoryDeepDive = (categoryId: string, days?: number) =>
+  get(
+    `/analytics/categories/${encodeURIComponent(categoryId)}/deep-dive${days ? `?days=${days}` : ''}`,
+    { timeoutMs: 20_000 },
+  );
 
 export const getItemTrends = (itemId: string) =>
   get(`/analytics/items/${encodeURIComponent(itemId)}/trends`);

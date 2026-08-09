@@ -33,6 +33,7 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { SelectField, type SelectOption } from '@/components/form/SelectField';
 
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
+import { safeGoBack } from '@/lib/goBack';
 
 const CATEGORY_OPTIONS: SelectOption[] = [
   { label: 'Any', value: '' },
@@ -94,12 +95,18 @@ function CreateMandateScreen() {
     if (!params.id) return;
     (async () => {
       try {
-        const m = await collectorsApi.getMandate(params.id!) as { name?: string; category?: string; max_price?: number; min_trust_score?: number; allowed_sources?: string[]; region?: string; status?: string };
+        // camelCase: getMandate() camelises the snake_case API response so it
+        // matches PurchaseMandate (src/data/types.ts). This block read
+        // m.max_price / m.min_trust_score / m.allowed_sources, which became
+        // undefined the moment that mapping landed — opening a search to edit
+        // showed a blank max price and silently reset trust to the 0.6 default,
+        // then saved those over the user's real settings. Fixed same day.
+        const m = await collectorsApi.getMandate(params.id!) as { name?: string; category?: string; maxPrice?: number; minTrustScore?: number; allowedSources?: string[]; region?: string; status?: string };
         nameField.setValue(m.name ?? '');
         setCategory(m.category ?? null);
-        maxPriceField.setValue(String(m.max_price ?? ''));
-        setMinTrust(m.min_trust_score ?? 0.6);
-        setSelectedSources(m.allowed_sources ?? []);
+        maxPriceField.setValue(m.maxPrice != null ? String(m.maxPrice) : '');
+        setMinTrust(m.minTrustScore ?? 0.6);
+        setSelectedSources(m.allowedSources ?? []);
         setRegion(m.region ?? "");
         setStatus(m.status === "paused" ? "paused" : "active");
       } catch {
@@ -158,7 +165,7 @@ function CreateMandateScreen() {
         });
         showToast({ message: "Search activated", type: "success" });
       }
-      router.back();
+      safeGoBack(router);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save";
       showToast({ message: msg, type: "error" });
@@ -309,7 +316,7 @@ function CreateMandateScreen() {
               try {
                 await collectorsApi.deleteMandate(params.id!);
                 showToast({ message: "Search paused", type: "success" });
-                router.back();
+                safeGoBack(router);
               } catch {
                 showToast({ message: "Failed to pause", type: "error" });
               }

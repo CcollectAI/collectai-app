@@ -30,6 +30,7 @@ import { useToast } from '@/components/Toast';
 import { GradientBackground } from '@/components/auth/GradientBackground';
 import { AuthTextInput } from '@/components/auth/AuthTextInput';
 import { fonts } from '@/theme/tokens';
+import { safeGoBack } from '@/lib/goBack';
 
 function ForgotPasswordScreen() {
   const router = useRouter();
@@ -105,7 +106,7 @@ function ForgotPasswordScreen() {
             {/* Back button */}
             <AnimatedPressable
               style={styles.backBtn}
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router, '/(auth)/login')}
               accessibilityRole="button"
               accessibilityLabel={t('common.back')}
             >
@@ -214,7 +215,7 @@ function ForgotPasswordScreen() {
 
                 <AnimatedPressable
                   style={styles.footer}
-                  onPress={() => router.back()}
+                  onPress={() => safeGoBack(router, '/(auth)/login')}
                   accessibilityRole="link"
                   accessibilityLabel={t('auth.forgot.back_to_sign_in')}
                 >

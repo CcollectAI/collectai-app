@@ -81,8 +81,9 @@ async def run_once():
                     -- Item owners (match by normalized_key)
                     SELECT user_id, id
                     FROM public.items
-                    WHERE normalized_key = $1
-                       OR (category = $2 AND normalized_key ILIKE '%' || $1 || '%')
+                    WHERE NOT archived
+                      AND (normalized_key = $1
+                       OR (category = $2 AND normalized_key ILIKE '%' || $1 || '%'))
 
                     UNION
 

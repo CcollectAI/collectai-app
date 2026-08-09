@@ -215,23 +215,51 @@ describe('useItemDetail', () => {
   });
 
   describe('onSaveNotes', () => {
-    it('shows toast after short delay', () => {
+    // This used to assert `message: 'Notes saved locally'` off a 300ms
+    // setTimeout that wrote NOTHING — a test pinning a stub, so it stayed
+    // green while every note a user typed was lost on unmount. It now
+    // asserts the write actually happens.
+    it('persists the note to the item', async () => {
+      mockUpdateItem.mockResolvedValue({ id: 'item-1' });
       const { result } = renderHook(() => useItemDetail(defaultParams));
 
-      act(() => {
-        result.current.onSaveNotes();
+      await act(async () => {
+        await result.current.onSaveNotes();
       });
 
-      expect(result.current.savingNotes).toBe(true);
+      expect(mockUpdateItem).toHaveBeenCalledWith('item-1', { notes: 'Some notes' });
+      expect(result.current.savingNotes).toBe(false);
+      expect(mockShowToast).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Notes saved', type: 'success' })
+      );
+    });
 
-      act(() => {
-        jest.advanceTimersByTime(300);
+    it('reports failure instead of claiming success', async () => {
+      // The whole point of the rewrite: never toast success on a failed write.
+      mockUpdateItem.mockRejectedValue(new Error('network down'));
+      const { result } = renderHook(() => useItemDetail(defaultParams));
+
+      await act(async () => {
+        await result.current.onSaveNotes();
       });
 
       expect(result.current.savingNotes).toBe(false);
       expect(mockShowToast).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'Notes saved locally', type: 'info' })
+        expect.objectContaining({ type: 'error' })
       );
+    });
+
+    it('does not pretend to save a draft', async () => {
+      // A draft has no items row to write to.
+      const { result } = renderHook(() =>
+        useItemDetail({ ...defaultParams, isDraft: true, id: undefined }),
+      );
+
+      await act(async () => {
+        await result.current.onSaveNotes();
+      });
+
+      expect(mockUpdateItem).not.toHaveBeenCalled();
     });
   });
 

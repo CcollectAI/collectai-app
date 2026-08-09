@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { AdminDemoBanner } from "@/components/AdminDemoBanner";
+import { fetchKPIDashboardData, exportCreatorsCSV, type CreatorRow } from "@/lib/kpi";
 
 interface Creator {
   id?: string;
@@ -36,6 +38,9 @@ export function AdminCreatorManager() {
   const [editing, setEditing] = useState<Creator | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [perf, setPerf] = useState<CreatorRow[]>([]);
+  const [exporting, setExporting] = useState(false);
 
   const configured = isSupabaseConfigured();
 
@@ -44,11 +49,23 @@ export function AdminCreatorManager() {
     const sb = getSupabase();
     if (!sb) return;
 
-    const { data } = await sb
+    const { data, error } = await sb
       .from("creators")
       .select("*")
       .order("name");
 
+    if (error) {
+      // Without this the tab renders an empty roster and says nothing — a
+      // missing table looks exactly like "you have no creators yet".
+      setLoadError(
+        error.code === "42P01"
+          ? "The `creators` table does not exist. Run supabase/migrations/*.sql (CUSTOMIZATION.md Step 2)."
+          : `Could not load creators — ${error.code}: ${error.message}`,
+      );
+      return;
+    }
+
+    setLoadError("");
     if (data) setCreators(data);
   }, [configured]);
 
@@ -56,49 +73,71 @@ export function AdminCreatorManager() {
     load();
   }, [load]);
 
+  // Performance rows (signups / revenue / ROI) for the CSV export. Separate
+  // from the roster above: `creators` holds who they are, the leaderboard
+  // holds how they performed, and the export needs both.
+  useEffect(() => {
+    if (!configured) return;
+    let alive = true;
+    fetchKPIDashboardData(30)
+      .then((d) => { if (alive) setPerf(d.creators); })
+      .catch(() => { /* export button stays disabled */ });
+    return () => { alive = false; };
+  }, [configured]);
+
+  const handleExportCsv = () => {
+    setExporting(true);
+    try {
+      const csv = exportCreatorsCSV(perf);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `creators-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!editing || !configured) return;
-    const sb = getSupabase();
-    if (!sb) return;
 
     setSaving(true);
     setMessage("");
 
     try {
-      if (editing.id) {
-        const { error } = await sb
-          .from("creators")
-          .update({
-            name: editing.name,
-            handle: editing.handle,
-            platform: editing.platform,
-            language: editing.language,
-            affiliate_code: editing.affiliate_code,
-            is_active: editing.is_active,
-            kits_sent: editing.kits_sent,
-            cogs_per_kit_cents: editing.cogs_per_kit_cents,
-            affiliate_payout_pct: editing.affiliate_payout_pct,
-          })
-          .eq("id", editing.id);
+      // Writes go through /api/creators, not the anon Supabase client: the
+      // creators table is SELECT-only under RLS, and loosening that would let
+      // anyone with the public anon key edit the roster. The route uses the
+      // service-role key server-side behind the admin session cookie.
+      const payload = {
+        name: editing.name,
+        handle: editing.handle,
+        platform: editing.platform,
+        language: editing.language,
+        affiliate_code: editing.affiliate_code,
+        is_active: editing.is_active,
+        kits_sent: editing.kits_sent,
+        cogs_per_kit_cents: editing.cogs_per_kit_cents,
+        affiliate_payout_pct: editing.affiliate_payout_pct,
+      };
 
-        if (error) throw error;
-        setMessage("Creator updated.");
-      } else {
-        const { error } = await sb.from("creators").insert({
-          name: editing.name,
-          handle: editing.handle,
-          platform: editing.platform,
-          language: editing.language,
-          affiliate_code: editing.affiliate_code,
-          is_active: editing.is_active,
-          kits_sent: editing.kits_sent,
-          cogs_per_kit_cents: editing.cogs_per_kit_cents,
-          affiliate_payout_pct: editing.affiliate_payout_pct,
-        });
+      const res = await fetch("/api/creators", {
+        method: editing.id ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editing.id ? { ...payload, id: editing.id } : payload),
+      });
 
-        if (error) throw error;
-        setMessage("Creator added.");
+      if (!res.ok) {
+        const { error } = (await res.json().catch(() => ({}))) as { error?: string };
+        if (res.status === 401) {
+          throw new Error("Admin session expired — re-enter the PIN to continue.");
+        }
+        throw new Error(error ?? `Request failed (HTTP ${res.status})`);
       }
+      setMessage(editing.id ? "Creator updated." : "Creator added.");
 
       setEditing(null);
       await load();
@@ -124,15 +163,37 @@ export function AdminCreatorManager() {
 
   return (
     <div className="space-y-6">
+      <AdminDemoBanner source="kpi" />
+
+      {loadError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        >
+          {loadError}
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-[#0D1B2A]">Creator Manager</h3>
-        <button
-          type="button"
-          onClick={() => setEditing({ ...EMPTY_CREATOR })}
-          className="px-4 py-2 text-sm font-medium bg-[#0D1B2A] text-white rounded-lg hover:bg-[#1a2d42] transition-colors"
-        >
-          + Add Creator
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={perf.length === 0 || exporting}
+            title={perf.length === 0 ? "No performance data to export yet" : "Download creator performance as CSV"}
+            className="px-4 py-2 text-sm font-medium border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Download CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditing({ ...EMPTY_CREATOR })}
+            className="px-4 py-2 text-sm font-medium bg-[#0D1B2A] text-white rounded-lg hover:bg-[#1a2d42] transition-colors"
+          >
+            + Add Creator
+          </button>
+        </div>
       </div>
 
       {message && (

@@ -1,9 +1,19 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useOptimisticMutation } from '../../src/hooks/useOptimisticMutation';
 
-jest.mock('../../src/lib/logger', () => ({
-  logger: { warn: jest.fn(), info: jest.fn(), error: jest.fn() },
-}));
+// createLogger is re-exported by src/utils/logger FROM src/lib/logger, so a
+// mock omitting it throws "not a function" at IMPORT time — taking the whole
+// suite down rather than failing one assertion. Same gap fixed in
+// settings.test.tsx today; both had been red for the same reason.
+jest.mock('../../src/lib/logger', () => {
+  const fns = { warn: jest.fn(), debug: jest.fn(), info: jest.fn(), error: jest.fn() };
+  return {
+    logger: fns,
+    createLogger: () => fns,
+    getRecentLogs: () => [],
+    clearRecentLogs: jest.fn(),
+  };
+});
 
 describe('useOptimisticMutation', () => {
   it('calls onOptimisticUpdate synchronously before mutationFn', async () => {

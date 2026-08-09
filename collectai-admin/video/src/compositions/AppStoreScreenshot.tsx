@@ -24,16 +24,34 @@ export interface ScreenshotProps {
     | "home";
   accentColor?: string;
   badgeText?: string;
+  /**
+   * Which platform's device chrome to draw. Google Play flags listings whose
+   * screenshots show a competitor's hardware, so the Play renders must not
+   * carry an iPhone Dynamic Island. Defaults to iOS for the App Store renders.
+   */
+  platform?: Platform;
 }
 
-// ─── iPhone Device Frame ────────────────────────────────────────────────
+export type Platform = "ios" | "android";
 
-const DeviceFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+/**
+ * Threads the platform down to StatusBar, which is nested inside each of the
+ * six mock screens. A context avoids adding a prop to all of them.
+ */
+const PlatformContext = React.createContext<Platform>("ios");
+
+// ─── Device Frame ───────────────────────────────────────────────────────
+
+const DeviceFrame: React.FC<{ children: React.ReactNode; platform: Platform }> = ({
+  children,
+  platform,
+}) => (
   <div
     style={{
       width: 340,
       height: 696,
-      borderRadius: 40,
+      // Android hardware reads as slightly less rounded than a modern iPhone.
+      borderRadius: platform === "android" ? 30 : 40,
       border: "6px solid #1A1A1A",
       backgroundColor: "#000",
       overflow: "hidden",
@@ -41,20 +59,37 @@ const DeviceFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       boxShadow: "0 20px 80px rgba(0,0,0,0.35), 0 4px 20px rgba(0,0,0,0.2)",
     }}
   >
-    {/* Dynamic Island */}
-    <div
-      style={{
-        position: "absolute",
-        top: 10,
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: 100,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: "#000",
-        zIndex: 10,
-      }}
-    />
+    {platform === "android" ? (
+      /* Centred punch-hole camera */
+      <div
+        style={{
+          position: "absolute",
+          top: 12,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: "#000",
+          zIndex: 10,
+        }}
+      />
+    ) : (
+      /* Dynamic Island */
+      <div
+        style={{
+          position: "absolute",
+          top: 10,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 100,
+          height: 28,
+          borderRadius: 14,
+          backgroundColor: "#000",
+          zIndex: 10,
+        }}
+      />
+    )}
     {/* Screen content */}
     <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
       {children}
@@ -64,29 +99,43 @@ const DeviceFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 // ─── Mock Screens ───────────────────────────────────────────────────────
 
-const StatusBar: React.FC = () => (
-  <div
-    style={{
-      height: 48,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "0 20px",
-      fontSize: 13,
-      fontWeight: 600,
-      color: Colors.textPrimary,
-      fontFamily: Fonts.body,
-    }}
-  >
-    <span>9:41</span>
-    <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-      <span style={{ fontSize: 11 }}>5G</span>
-      <div style={{ width: 22, height: 11, border: `1.5px solid ${Colors.textPrimary}`, borderRadius: 3, position: "relative" }}>
-        <div style={{ position: "absolute", left: 1.5, top: 1.5, bottom: 1.5, width: "70%", backgroundColor: Colors.success, borderRadius: 1 }} />
+const StatusBar: React.FC = () => {
+  const platform = React.useContext(PlatformContext);
+  const isAndroid = platform === "android";
+  return (
+    <div
+      style={{
+        height: 48,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 20px",
+        fontSize: 13,
+        fontWeight: 600,
+        color: Colors.textPrimary,
+        fontFamily: Fonts.body,
+      }}
+    >
+      {/* "9:41" is Apple's marketing time; Android renders use a neutral one. */}
+      <span>{isAndroid ? "12:30" : "9:41"}</span>
+      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+        <span style={{ fontSize: 11 }}>5G</span>
+        <div
+          style={{
+            width: isAndroid ? 20 : 22,
+            height: 11,
+            border: `1.5px solid ${Colors.textPrimary}`,
+            // Android's battery glyph is squarer than iOS's.
+            borderRadius: isAndroid ? 2 : 3,
+            position: "relative",
+          }}
+        >
+          <div style={{ position: "absolute", left: 1.5, top: 1.5, bottom: 1.5, width: "70%", backgroundColor: Colors.success, borderRadius: 1 }} />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const CollectionScreen: React.FC = () => (
   <div style={{ backgroundColor: Colors.background, height: "100%", fontFamily: Fonts.body }}>
@@ -345,10 +394,12 @@ export const AppStoreScreenshot: React.FC<ScreenshotProps> = ({
   screenType,
   accentColor = Colors.primary,
   badgeText,
+  platform = "ios",
 }) => {
   const ScreenComponent = SCREENS[screenType];
 
   return (
+    <PlatformContext.Provider value={platform}>
     <AbsoluteFill
       style={{
         background: `linear-gradient(180deg, ${Colors.background} 0%, ${accentColor}08 100%)`,
@@ -417,10 +468,11 @@ export const AppStoreScreenshot: React.FC<ScreenshotProps> = ({
 
       {/* Device frame with mock screen */}
       <div style={{ marginTop: 60, transform: "scale(1.6)", transformOrigin: "top center" }}>
-        <DeviceFrame>
+        <DeviceFrame platform={platform}>
           <ScreenComponent />
         </DeviceFrame>
       </div>
     </AbsoluteFill>
+    </PlatformContext.Provider>
   );
 };

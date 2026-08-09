@@ -1,0 +1,95 @@
+{
+  "_comment": "Auth call sites deliberately NOT bounded. Everything else (.from/.rpc) is bounded centrally by installRequestTimeouts() in src/lib/supabase.ts. To add an entry you must state WHY racing it is unsafe \u2014 that requirement is the point of this file.",
+  "entries": [
+    {
+      "file": "app/(auth)/login.tsx",
+      "symbol": "auth",
+      "reason": "Auth operation. withTimeout is Promise.race and abandons rather than cancels, so racing it can leave a second concurrent auth op running and trip Supabase's refresh-token reuse detection, which REVOKES the session (docs/AUTH_AND_WEB_DEPLOY.md). A stall here spins a visible button the user can retry, not a full-screen skeleton."
+    },
+    {
+      "file": "app/(auth)/register.tsx",
+      "symbol": "auth",
+      "reason": "Auth operation. withTimeout is Promise.race and abandons rather than cancels, so racing it can leave a second concurrent auth op running and trip Supabase's refresh-token reuse detection, which REVOKES the session (docs/AUTH_AND_WEB_DEPLOY.md). A stall here spins a visible button the user can retry, not a full-screen skeleton."
+    },
+    {
+      "file": "app/(auth)/forgot-password.tsx",
+      "symbol": "auth",
+      "reason": "Auth operation. withTimeout is Promise.race and abandons rather than cancels, so racing it can leave a second concurrent auth op running and trip Supabase's refresh-token reuse detection, which REVOKES the session (docs/AUTH_AND_WEB_DEPLOY.md). A stall here spins a visible button the user can retry, not a full-screen skeleton."
+    },
+    {
+      "file": "app/(auth)/reset-password.tsx",
+      "symbol": "auth",
+      "reason": "Auth operation. withTimeout is Promise.race and abandons rather than cancels, so racing it can leave a second concurrent auth op running and trip Supabase's refresh-token reuse detection, which REVOKES the session (docs/AUTH_AND_WEB_DEPLOY.md). A stall here spins a visible button the user can retry, not a full-screen skeleton."
+    },
+    {
+      "file": "app/(auth)/verify-email.tsx",
+      "symbol": "auth",
+      "reason": "Auth operation. withTimeout is Promise.race and abandons rather than cancels, so racing it can leave a second concurrent auth op running and trip Supabase's refresh-token reuse detection, which REVOKES the session (docs/AUTH_AND_WEB_DEPLOY.md). A stall here spins a visible button the user can retry, not a full-screen skeleton."
+    },
+    {
+      "file": "app/(auth)/onboarding.tsx",
+      "symbol": "auth",
+      "reason": "Auth operation. withTimeout is Promise.race and abandons rather than cancels, so racing it can leave a second concurrent auth op running and trip Supabase's refresh-token reuse detection, which REVOKES the session (docs/AUTH_AND_WEB_DEPLOY.md). A stall here spins a visible button the user can retry, not a full-screen skeleton."
+    },
+    {
+      "file": "app/mfa-setup.tsx",
+      "symbol": "auth",
+      "reason": "Auth operation. withTimeout is Promise.race and abandons rather than cancels, so racing it can leave a second concurrent auth op running and trip Supabase's refresh-token reuse detection, which REVOKES the session (docs/AUTH_AND_WEB_DEPLOY.md). A stall here spins a visible button the user can retry, not a full-screen skeleton."
+    },
+    {
+      "file": "src/api/httpClient.ts",
+      "symbol": "auth",
+      "reason": "httpClient's own auth-header path, which already applies its own explicit AUTH_HEADER_TIMEOUT_MS / AUTH_HEADER_REFRESH_TIMEOUT_MS bounds and single-flight refresh. Bounding it again here would double-race the refresh."
+    },
+    {
+      "file": "src/providers/AuthProvider.tsx",
+      "symbol": "auth",
+      "reason": "AuthProvider's init path. Already bounded explicitly via AUTH_INIT_TIMEOUT_MS with a documented safety argument (neither call refreshes nor retries, and onAuthStateChange repopulates unconditionally). Listed so the gate does not double-count it."
+    },
+    {
+      "file": "src/auth/useSession.ts",
+      "symbol": "auth",
+      "reason": "Auth operation. withTimeout is Promise.race and abandons rather than cancels, so racing it can leave a second concurrent auth op running and trip Supabase's refresh-token reuse detection, which REVOKES the session (docs/AUTH_AND_WEB_DEPLOY.md). A stall here spins a visible button the user can retry, not a full-screen skeleton."
+    },
+    {
+      "file": "src/hooks/useAuth.ts",
+      "symbol": "auth",
+      "reason": "Auth operation. withTimeout is Promise.race and abandons rather than cancels, so racing it can leave a second concurrent auth op running and trip Supabase's refresh-token reuse detection, which REVOKES the session (docs/AUTH_AND_WEB_DEPLOY.md). A stall here spins a visible button the user can retry, not a full-screen skeleton."
+    },
+    {
+      "file": "src/components/settings/AppearanceSection.tsx",
+      "symbol": "auth",
+      "reason": "Reads the current uid via supabase.auth.getUser()/getSession() before a query. Still an auth op serialized by processLock, so it is not raced for the reason above. The query that follows IS bounded by the client-wide wrapper."
+    },
+    {
+      "file": "src/components/settings/PrivacySettingsSection.tsx",
+      "symbol": "auth",
+      "reason": "Reads the current uid via supabase.auth.getUser()/getSession() before a query. Still an auth op serialized by processLock, so it is not raced for the reason above. The query that follows IS bounded by the client-wide wrapper."
+    },
+    {
+      "file": "src/components/settings/ProfileEditSection.tsx",
+      "symbol": "auth",
+      "reason": "Reads the current uid via supabase.auth.getUser()/getSession() before a query. Still an auth op serialized by processLock, so it is not raced for the reason above. The query that follows IS bounded by the client-wide wrapper."
+    },
+    {
+      "file": "src/data/providers/buildPaintProvider.ts",
+      "symbol": "auth",
+      "reason": "Reads the current uid via supabase.auth.getUser()/getSession() before a query. Still an auth op serialized by processLock, so it is not raced for the reason above. The query that follows IS bounded by the client-wide wrapper."
+    },
+    {
+      "file": "src/data/providers/chatProvider.ts",
+      "symbol": "auth",
+      "reason": "Reads the current uid via supabase.auth.getUser()/getSession() before a query. Still an auth op serialized by processLock, so it is not raced for the reason above. The query that follows IS bounded by the client-wide wrapper."
+    },
+    {
+      "file": "src/data/providers/userProvider.ts",
+      "symbol": "auth",
+      "reason": "Reads the current uid via supabase.auth.getUser()/getSession() before a query. Still an auth op serialized by processLock, so it is not raced for the reason above. The query that follows IS bounded by the client-wide wrapper."
+    },
+    {
+      "file": "src/utils/diagnostics.ts",
+      "symbol": "auth",
+      "reason": "Reads the current uid via supabase.auth.getUser()/getSession() before a query. Still an auth op serialized by processLock, so it is not raced for the reason above. The query that follows IS bounded by the client-wide wrapper."
+    }
+  ]
+}

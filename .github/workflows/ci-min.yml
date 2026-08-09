@@ -10,7 +10,21 @@ jobs:
       - run: python -m venv .venv
       - run: .venv/bin/pip install --upgrade pip
       - run: .venv/bin/pip install --constraint constraints.txt -r requirements.txt -r requirements-dev.txt
-      - run: .venv/bin/pytest -q --timeout=30 --ignore=server/tests/test_inference.py -x
+      # NO `-x`. It was there until 2026-07-27, and with 82 failing tests it
+      # meant CI reported exactly ONE of them and exited — the full list had
+      # never been seen by anyone. `-rf` prints the failed-test summary so the
+      # log is actionable rather than just red.
+      #
+      # `continue-on-error: true` is STILL SET, deliberately and temporarily.
+      # It is the reason this suite went unwatched: the step could not fail
+      # the build, so the result was decorative. Removing it today would turn
+      # every PR red on 27 known-stale failures, which is how a gate gets
+      # ignored a second time.
+      #
+      # ⚠ REMOVE `continue-on-error` once the suite is green. That is the
+      # whole point of this change; leaving it is not "done".
+      # Progress: 82 failing (2026-07-27 start) -> 27 and dropping.
+      - run: .venv/bin/pytest -q -rf --timeout=30 --ignore=server/tests/test_inference.py
         env:
           DB_ENABLED: "false"
           DB_DSN: ""

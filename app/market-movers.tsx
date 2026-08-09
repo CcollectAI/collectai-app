@@ -146,7 +146,7 @@ function MarketMoversScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          title: 'Market Movers',
+          headerTitle: 'Market Movers',
           headerTintColor: colors.text,
           headerStyle: { backgroundColor: colors.background },
         }}

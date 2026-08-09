@@ -46,9 +46,16 @@ jobs:
       - name: Test
         working-directory: server
         run: |
+          # NO `-x`. Removed 2026-07-27: with 82 failing tests it reported
+          # exactly ONE and exited, so the junitxml artifact uploaded below
+          # only ever described the first failure. `-rf` adds the
+          # failed-test summary to the log.
+          #
+          # Unlike ci-min, this step has no continue-on-error, so it DOES
+          # gate. Expect it red until the remaining stale tests are cleared.
           python -m pytest tests/ \
             --ignore=tests/test_inference.py \
-            -x -q \
+            -q -rf \
             --tb=short \
             --junitxml=../test-results/backend.xml
       - name: Upload test results

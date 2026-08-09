@@ -10,7 +10,7 @@ export async function sendHeartbeat(): Promise<void> {
   try {
     await supabase.rpc('rpc_heartbeat_v1');
   } catch (err: unknown) {
-    logger.warn('[SupabaseDataProvider] heartbeat error:', err);
+    logger.error('[SupabaseDataProvider] heartbeat error:', err);
   }
 }
 
@@ -18,7 +18,7 @@ export async function goOffline(): Promise<void> {
   try {
     await supabase.rpc('rpc_go_offline_v1');
   } catch (err: unknown) {
-    logger.warn('[SupabaseDataProvider] goOffline error:', err);
+    logger.error('[SupabaseDataProvider] goOffline error:', err);
   }
 }
 
@@ -33,6 +33,9 @@ export async function getUserPresence(userId: string): Promise<UserPresence | nu
       isOnline: row.is_online,
     };
   } catch {
+    // best-effort: presence is cosmetic (online dot). Failing closed to null
+    // renders as offline, which is the correct degraded state, and this runs
+    // on a heartbeat so logging would be per-tick noise.
     return null;
   }
 }
@@ -45,7 +48,8 @@ export async function getBatchPresence(userIds: string[]): Promise<UserPresence[
       lastSeenAt: row.last_seen_at as string,
       isOnline: row.is_online as boolean,
     }));
-  } catch {
+  } catch (e) {
+    logger.error('[silent-fallback] presence: update failed:', e);
     return [];
   }
 }

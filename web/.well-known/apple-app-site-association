@@ -7,12 +7,14 @@
           "3DX8FBF7S6.io.sparrowcollect.app"
         ],
         "paths": [
+          "/r/*",
           "/item/*",
           "/events/*",
           "/categories/*",
           "/purchase/*",
           "/users/*",
-          "/auth/*"
+          "/auth/*",
+          "/l/*"
         ]
       }
     ]

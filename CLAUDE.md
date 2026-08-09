@@ -8,34 +8,336 @@ Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funk
 ## Tech Stack
 - **Frontend:** Expo SDK 54 (React Native 0.81) with Expo Router, TypeScript
 - **Backend:** FastAPI (Python 3.12) with Supabase/PostgreSQL, asyncpg, partitioned monthly
-- **ML:** 36 Ridge regression models (log-scale for high-variance categories), CLIP vision, OpenAI fallback
+- **ML:** 36 Ridge regression models (log-scale for high-variance categories), OpenAI Vision + heuristic fallback
 - **Payments:** RevenueCat (iOS IAP, shipped 2026-05-09); Stripe dormant for future web/Android
 - **Theme:** Tiffany Blue (#81D8D0) accent, EUR currency, Roboto font
 
-## Current launch state (2026-05-20 evening)
-- **TestFlight build #13** successfully on TestFlight (build id `6609f91e-d09a-4d62-a1a6-90ca80de9688`, commit `d0c4713`). Submitted via ASC API Key `AM32RK7DAY` (regenerated after `VT5SJZ3AUH` returned 401 NOT_AUTHORIZED). General app QA works against #13, but **paywall test won't work** on it — was built before the new RevenueCat key.
-- **TestFlight build #14** building right now (build id `76b78c81-0273-4a95-a245-0d39f6704cca`, auto-submit set). Picks up the new `EXPO_PUBLIC_REVENUECAT_IOS_KEY`. ETA ~30-50 min from kickoff.
-- **Apple Developer:** Individual enrollment approved 2026-05-07 (Team `3DX8FBF7S6`, KvK 99596326).
-- **App Store Connect:** App ID `6767359453`, bundle `io.sparrowcollect.app`, name "Sparrow Collect".
-  - ASC API Key (EAS Submit): `AM32RK7DAY` (active)
-  - In-App Purchase Key: `3LX4HL24FM` (active, named `RevenueCat`)
-  - Issuer ID: `215c3feb-76f3-4399-a0bb-d2385003e1b1`
-- **Domain:** [sparrowcollect.com](https://sparrowcollect.com) live with SSL via Cloudflare DNS-only + Vercel (fixed 2026-05-08).
-- **IAP — RevenueCat wired end-to-end (2026-05-20 evening):**
-  - ASC subscription group `Pro` with `sparrow_pro_monthly` (€4.99/mo) + `sparrow_pro_yearly` (€39.99/yr), both `Ready to Submit`.
-  - RevenueCat project `Sparrow`, App Store-type app pointing to `io.sparrowcollect.app`, `SubscriptionKey_3LX4HL24FM.p8` uploaded.
-  - Entitlement `pro` (lowercase, matches `PRO_ENTITLEMENT_ID` in `src/lib/purchases.ts:5`) attached to both products.
-  - Offering `default` with packages `$rc_monthly` → `sparrow_pro_monthly` and `$rc_annual` → `sparrow_pro_yearly` (swap was corrected mid-session — mappings were inverted initially).
-  - `EXPO_PUBLIC_REVENUECAT_IOS_KEY` updated in EAS `production` env. Active in build #14, NOT in build #13.
-- **Sandbox tester:** `sandbox-merle@sparrowcollect.com` created in ASC Sandbox. Sign into Settings → App Store → Sandbox Account on iPhone before testing IAP flow.
-- **Apple reviewer demo account:** `apple-review@sparrowcollect.com` created in Supabase with Auto-Confirm. To be pasted into ASC App Review Information.
-- **Beta override:** `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` on `production` EAS profile, `false` on `store` profile (App Store submission).
-- **Onboarding rework** shipped 2026-05-18: age→seller-gate (412 + auto-modal), followed-categories drive add-flow / scan / catalog-match / home / Deal Hub, auth bug fixes.
-- **2026-05-19/20 bake fixes (deployed + verified live):**
-  - `calibration_worker.py:131` — added `LIMIT 10000` to bound per-category `market_hits` fetch. Was hitting 2min `statement_timeout` for high-card categories (mtg has 186K item_refs / 1.35M actuals). Now 85ms/category. Commit `c6e83fc`.
-  - `aggregate_catalog_attributes.py:_fetch_groups` — added `seen_at > now() - 90 days` partition-pruning filter. Was hanging on full-table JOIN. Now 15.3s/cycle. Commit `091c377`.
-  - `nightly_health_check.sh` — silenced false-positive Telegram pages: `count=planned` instead of `exact`, healthz via domain not IP, events gated behind `PRE_LAUNCH_MODE`. Commit `9350dae`.
-- **Active branch:** `feature/all-enhancements` (pushed through `04c4039` to origin as of 2026-05-20).
+## Current state (2026-08-09)
+
+- **A completed P2P trade now MOVES THE OBJECT.** `_settle_completed_trade`
+  (`p2p_offers_router.py`) retires the seller's item (decrements if they hold
+  several), mints the buyer a NEW row — never the seller's, which would hand
+  over their `purchase_price` / `purchase_notes` / `cost_basis` — releases the
+  soft reservation, and declines + notifies every other live offer. Deployed and
+  verified 40/40 by `server/tests/e2e_p2p_stage2.py` against prod.
+  - **`for_sale` is NOT written there.** Trigger `trg_sync_item_for_sale`
+    recomputes it from the live listing set, scoped to `marketplace_id='sparrow'`.
+    A first draft duplicated that rule *without* the scope; a prod census proved
+    the trigger already handled it. Two impls of one rule is the bug, not the fix.
+  - Archive, not delete: **29 tables FK to `items.id`, mostly ON DELETE CASCADE**
+    — including `marketplace_listings`, `price_ground_truths` and
+    `verified_sales`. Deleting a sold item would erase the sale and the
+    calibration data the completion had just written.
+- **`items.archived` is now honoured** — and `/archived` exists so it is
+  reversible. Archiving is reachable from a SWIPE, so hiding without a restore
+  route would have been a one-way trapdoor. Gate: `npm run check:archived`.
+  - Achievement counters (`items_router`, `intake_router`) are deliberately
+    exempt: milestones are LIFETIME activity, and archiving is not un-scanning.
+  - Aggregates (`data_moat`), the admin dashboard, and listing browse carry
+    `archived-exempt:` markers stating why.
+  - **The valuation/learning loop is unaffected either way** — it runs off
+    `market_hits` and `price_ground_truths` keyed by `item_ref`/`item_id`, and a
+    flag flip cascades nowhere.
+
+- **iOS build 121** built locally; **120 is on TestFlight**. Backups kept as
+  `builds/sparrow-ios-local-b120-uploaded.ipa` / `-b121.ipa`, because
+  `build:ios:local` overwrites `sparrow-ios-local.ipa` in place.
+- **`appVersionSource: remote`** — `app.json`'s `ios.buildNumber` (101) is NOT
+  what ships. Read `CFBundleVersion` out of the built `.ipa`.
+- **Expo Go cannot host this app.** `react-native-purchases` and
+  `@sentry/react-native` are hard static imports, so the sim needs a native dev
+  build: `SENTRY_DISABLE_AUTO_UPLOAD=true npx expo run:ios --device "iPhone 17"`.
+  Without that env var the build dies at the Sentry phase with *"An organization
+  ID or slug is required"* — the same reason `eas.json`'s dev profiles set it.
+- **DAC7 is inform-only, deliberately.** Counters + notice + a member-facing
+  screen exist; there is **no** column anywhere for a TIN, address or IBAN and
+  that is a decision, not a gap. `marketplace-terms.tsx` §6, the notice in
+  `_dac7_accrue`, and `app/tax-reporting.tsx` must say the same thing — change
+  one, change all three. Open (legal, not code): whether registration is
+  required with only excluded sellers, and whether the 5% event-ticket fee
+  (`terms.tsx:154`, `:173`) pulls events in.
+
+### Earlier (2026-07-25)
+
+- **Active branch:** `feature/micro-interactions-haptics`. iOS build 100 built locally 2026-07-25 (`builds/sparrow-ios-local.ipa`); last on TestFlight was 96.
+- **Apple:** Individual enrollment (Team `3DX8FBF7S6`), App ID `6767359453`, bundle `io.sparrowcollect.app`.
+- **IAP:** RevenueCat Free + Pro (EUR 4.99/mo, EUR 39.99/yr) + Premium. **All current
+  accounts and items are TEST data** (confirmed 2026-07-25) — treat prod data as disposable.
+- **Builds are LOCAL ONLY** — `npm run build:ios:local`. Never `eas build` without `--local`.
+- **Before any local build:** `npm run verify:prebuild` (tsc + seam tests + live Supabase contract).
+- **Android (assessed 2026-07-31):** the app builds and runs on Android — verified on a
+  device, no crash. `npm run build:android:local` (.aab for Play) /
+  `npm run build:android:apk` (installable, same shipping config). What is missing is
+  console setup only: Play enrolment + service account, `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`,
+  FCM. **Run `npm run preflight:android` before any Android build or submit** — it checks
+  all of those plus the Android-only code traps below. See `docs/ANDROID_LAUNCH.md`.
+
+### The Android variant of the failure mode below
+
+**The one that is NOT silent — and is launch-blocking.** `accessibilityRole="tabbar"`
+is iOS-only; on Android react-native throws `IllegalArgumentException` while creating
+the view, a **FATAL EXCEPTION**. One line in `src/components/QuickNavBar.tsx`, mounted
+by **38 screens**, so the entire app past the five root tabs died on Android. Two
+logged-out launch tests both said "no crash". **Only a real authenticated session
+walking real screens found it** — see [[feedback_never_call_app_ready_without_e2e_verify]].
+Use `"tablist"` for a tab container; the gate now validates every role value.
+
+Android gaps in this codebase are otherwise all the same shape: **a platform-specific
+path that degrades to a no-op instead of an error**, so the app quietly does less on
+Android while iOS looks fine and nothing goes red. Found 2026-07-31, all silent:
+`SafeAreaView` imported from `react-native` (iOS-only, a plain `View` on Android);
+`<Modal>` without `onRequestClose` (back button dead on Android only);
+`expo-store-review` never installed under a guarded `require`; the RevenueCat Android
+key unset so the paywall could not sell; FCM absent so push tokens always threw.
+`scripts/preflight_android.mjs` is the checker — extend it rather than fixing the next
+one by hand.
+
+### Production watchdog (added 2026-07-25)
+
+`server/scripts/watchdog.py` — read-only daily report of what users did, what is
+healthy, and what is silently failing. Cron `0 9 * * *` (server TZ Europe/Paris)
+via `/opt/collectors/scripts/watchdog_daily.sh`, Telegram digest, JSON kept 30
+days in `/opt/collectors/logs/`. See `docs/WATCHDOG.md`.
+
+It reads **Supabase Logflare logs** (postgres/edge/auth) via the Management API,
+which is the only layer that sees DB rejections and PostgREST failures — the EC2
+journal cannot. On its first run it surfaced four production errors that every
+app-side audit had missed.
+
+### Partition retention vs `schema.lock.json` (2026-08-02)
+
+`schema.lock.json` no longer locks partition CHILDREN — `regen_schema_lock.py`
+filters `c.relispartition`. Children are created by pg_cron on the 25th and
+dropped by `partition_drop_worker`; locking them made routine retention look
+like schema drift. Before the fix, dropping `market_hits_y2026m07` +
+`price_history_y2026m07` (2.9 GB, correctly exported to S3) left
+`preflight_schema_lock.py` failing — and that gate **only runs at startup**, so
+the API stayed up and the *next* bake restart would have hard-downed it, hours
+after the unrelated-looking cause. The partitioned PARENTS are still locked in
+full. Full writeup + the verification protocol for a destructive drop:
+`docs/DATA_SCALING_PLAN.md` § 10.
+
+**S3 checks against the warehouse bucket must `source /opt/collectors/.env`
+first.** The EC2 instance role has no access; the export worker uses env
+credentials. A bare `aws`/`boto3` call on the box reports `AccessDenied` and
+looks exactly like missing data.
+
+### The failure mode this codebase is prone to
+
+A writer and a reader that were never connected, plus a construct that turns
+"not connected" into an empty result instead of an error: a bare
+`except: pass`, Pydantic or Zod dropping an undeclared field, a CHECK constraint
+narrower than the code, a LEFT JOIN yielding NULL, a `?? 0` default. Nothing
+goes red, so a dead feature is indistinguishable from an unused one.
+
+**Enumerate this class mechanically; never triage it by judgment.** The pattern
+that made bugs surface late was: fix the reported instance, hand-triage the
+rest, declare done — then the user hits the next one. `npm run verify:silent`
+(`scripts/check-silent-failures.mjs`) turns each variant into a check:
+
+| class | what it renders |
+|---|---|
+| `ungated-demo-data` | invented data as the user's real data |
+| `capped-aggregate` | a partial number as the whole truth |
+| `unchecked-write` | success when the write failed |
+| `unknown-as-zero` | "unknown" as "zero" |
+| `swallowed-catch` | no trace at all |
+| `prod-invisible-log` | a trace stripped from release builds |
+
+**Each new AXIS needs its own sweep — the existing gates are axis-shaped and
+report PASS on everything outside their axis** (2026-08-09). Three more classes,
+each found by a user report and each previously invisible to every check:
+
+| gate | class it catches | why nothing else saw it |
+|---|---|---|
+| `npm run check:effects` | an effect that lists a state **it writes** in its own dep array, so React tears it down and its `.then`/`.catch` are disarmed mid-flight | not an unbounded await — the request SUCCEEDS. `app/offers.tsx` carrier picker was dead on every open while the endpoint served 9 carriers to curl |
+| `npm run check:params` | a route param pushed but never read by the destination | `check-dead-nav.mjs` contains the string `params` **zero times** — it only asks whether the route file exists. `typedRoutes` is on but types params as `UnknownInputParams`, an OPEN record, so `prefillTitle` on `/add-manual` is legal TS. 5 live dead handoffs |
+| `npm run i18n:parity` | a key in `en.json` missing from another locale | `i18n:check` finds UNWRAPPED strings — it polices the code, not the files. `fallbackLng: 'en'` means a missing key renders **English**, silently. en had 597 keys, all 6 others had 424 |
+| `npm run check:archived` | a read of `items` that counts **archived** rows as owned | an archived row is a VALID row, so nothing errors. `archived` was written by swipe/bulk archive and respected by 8 VIEWS, but by **no read of the table** — the bulk dialog promised "archived items will be hidden from your active collection" and the next refresh brought them straight back ([[learning_a_written_promise_to_users_is_a_spec]]). 50 reads, all silent |
+
+All three are wired into `verify:prebuild` and each was proven to fail before it
+was fixed. `check:params` compares against the target's **declared** params, not
+substrings — a substring version passed a genuinely dead `mode: 'watchlist'`
+because the word "mode" appears elsewhere in the file.
+
+The first four are at 0 and each was proven to fail before being fixed. Two real
+bugs it caught: `fetchPortfolioSeries` returned a fabricated €1200→€2050 curve
+ungated in production (its `DEMO_ITEMS` sibling *had* been gated — the fix was
+applied to one of three and never swept), and `usePortfolioInsights` summed a
+list capped at `limit: 50` to produce the portfolio total.
+
+Intentional swallows carry a `best-effort:` marker stating why, so a decision is
+distinguishable from an oversight. Remaining and reported, not hidden: 91
+swallowed catches (none touching a backend call) and 181 logging only via
+warn/info.
+
+**One logger, not two.** `@/utils/logger` used to strip `warn` while
+`@/lib/logger` printed it; 102 files imported one and 44 the other, so whether a
+failure survived into a release build depended on which import a file happened
+to have. Collapsed to one implementation; every level is retained in a bounded
+ring buffer readable via `getRecentLogs()`, so a failure is recoverable even
+when it is not printed.
+
+Three advisory audits exist for it — none blocks CI:
+- `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes
+- `server/scripts/audit_column_drift.py` — reader/writer on different columns
+- `server/scripts/audit_key_overlap.py` — **joins whose two sides share no values**
+
+**When something looks empty, check whether it is REJECTED before assuming it is
+unused.** Look at Supabase > Logs > Postgres, not just the app journal.
+
+### Identifier formats — read this before writing a JOIN
+
+The 2026-07-25 incident: every query joining `items.canonical_key =
+price_predictions.item_ref` matched zero rows, for every user, for ~4 months.
+44 sites in 13 files. Portfolio value, category health, category stats,
+timeseries, deep-dives, insights, exports and valuation-on-add were all
+silently empty. **Nothing ever errored** — an empty join is a valid result.
+
+| column | format | example |
+|---|---|---|
+| `items.canonical_key` | **bare** catalog key | `sm10-sm10-101` |
+| `category_items.item_key` | **bare** | `sm10-sm10-101` |
+| `items.canonical_ref` | **resolved price ref** (trigger-maintained) | `pokemon:sm10-sm10-101` |
+| `price_predictions.item_ref` | **namespaced** always (0 bare rows in 1.7M) | `pokemon:sm10-sm10-101` |
+| `price_prediction_daily.item_ref` | **namespaced** always | `pokemon:sm10-sm10-101` |
+| `market_hits.item_ref` | **namespaced** always | `pokemon:ex8-ex8-13` |
+
+Rules:
+- Join predictions/market_hits with **`items.canonical_ref`**, never `canonical_key`.
+- Join the catalog with **`items.canonical_key`** — `v_category_summaries_v1`
+  depends on the bare form. Do NOT "normalise" canonical_key to namespaced.
+- `ItemCreateRequest.canonical_key` documents a namespaced *example* but
+  `/catalog/match` returns a bare key. That contradiction caused this bug.
+  `canonical_ref` passes an already-namespaced key through without
+  double-prefixing, so correcting the writer later is safe.
+- Adding a text-key join? Declare it in `audit_key_overlap.py::PAIRS`.
+- **No index on `canonical_ref`.** One was added, then dropped: EXPLAIN showed
+  the planner seq-scans `items` (already filtered by `user_id`) and drives the
+  join through the existing per-partition `price_predictions_*_item_ref_idx`.
+  Identical plan and cost with and without it — governance rule 1 in
+  `docs/DATA_SCALING_PLAN.md` is "default = refuse to add". Revisit only if a
+  plan shows `items` as the expensive side.
+
+### Loading states — the rule for any screen that fetches
+
+Two bugs on 2026-07-25, both presenting as "stuck on a skeleton", both from the
+same cause: **supabase-js ships NO per-request timeout.** A query fired while the
+session is hydrating does not fail fast — it stalls behind the auth lock.
+
+1. **Every direct Supabase read in a loading-gating path must use
+   `withTimeout`** (`src/lib/withTimeout.ts`). chat/category/user/watchlist
+   providers already did; `listItems` did not, so a stalled read left
+   `isLoading` true forever with no error and nothing in the logs — and
+   `logger.warn` is stripped in release builds, so it was invisible on exactly
+   the builds where it mattered. Log timeouts with `logger.error`.
+2. **Don't fire the first read until auth has hydrated.** Gate on
+   `useAuthContext().loading`: `usePaginatedList` takes `enabled`, and
+   index.tsx's focus effect returns early. This took cold-start auth-window
+   burns from ~46 to 0.
+3. **Any gate needs a deadline.** Gating on auth means a wedged session can pin
+   the skeleton again by another route — `GATE_MAX_WAIT_MS` (5s) fetches anyway.
+
+`usePaginatedList` enforces 1 and 3 for every caller (items, alerts, events, and
+any list screen added later), so this cannot be reintroduced by a new screen.
+Pinned by `__tests__/hooks/usePaginatedList.test.ts` — the three cases nobody had
+covered were: a promise that never settles, a gate that opens, a gate that never
+does. Wired into `verify:prebuild`.
+
+**⚠️ Bounding an AUTH call is not automatically safe.** `withTimeout` is
+`Promise.race`: it abandons the inner call without cancelling it. If a timeout
+then leads to a SECOND concurrent auth op, two refreshes on one rotating
+refresh-token trip Supabase's reuse detection and **revoke the session** — the
+multi-week 401 saga ([[project_2026_07_11_auth_401_root_cause_lock]], why the
+client uses `lock: processLock`). It is safe only when the bounded call neither
+refreshes nor retries, and there is a recovery path. `httpClient.readAccessToken`
+and `AuthProvider` follow that pattern; read `docs/AUTH_AND_WEB_DEPLOY.md` before
+touching any of it.
+
+**4. The bound now lives on the CLIENT, not the call site** (2026-07-25).
+Fixing call sites one at a time did not converge. A hand grep found 49 unbounded
+`await supabase`; a mechanical check found **90** — the grep missed multi-line
+`await supabase\n  .from(...)`. So `installRequestTimeouts()` in
+`src/lib/supabase.ts` wraps `.from()` and `.rpc()`: every PostgREST call is
+bounded by construction (15s), including code not yet written.
+
+On timeout it **resolves** with `{ data: null, error: { code: 'TIMEOUT' } }` —
+the shape callers already destructure — rather than rejecting, which would trade
+silent hangs for unhandled throws. Screens may still set a tighter bound
+(`listItems` uses 8s); the client is the backstop that stops "forever", not
+"slow".
+
+`auth.*` is deliberately NOT wrapped, for the revocation reason above. Those 18
+call sites are listed in `scripts/unbounded-await-allowlist.json`, each with a
+written reason. `npm run verify:unbounded` fails if the central bound is removed
+or a new unallowlisted auth await appears; both regressions were reintroduced to
+prove it bites. Pinned by `__tests__/lib/supabaseTimeout.test.ts`.
+
+**Save paths count too.** `add-manual.tsx` had three unbounded awaits between
+`setSaveState("saving")` and anything clearing it, so the button hung forever:
+nothing saved, no error, nothing logged. Any await between a spinner going up
+and coming down must be bounded.
+
+### The catalog ↔ price crosswalk
+
+Not every category shares a namespace between catalog and predictions. Measured
+catalog→price coverage ("can a user's item get a price?"):
+
+| category | rows | priced | how |
+|---|---|---|---|
+| mtg | 25,407 seed | 98% | same slug both sides, no bridging needed |
+| pokemon | 20,236 seed | 99% | same slug both sides |
+| yugioh | 58,565 tcgcsv | **100%** | derived from the price source (per-PRINTING) |
+| yugioh | 38,312 seed | 88% | via `catalog_price_refs` (per-CARD, approximate) |
+| lorcana / digimon / one_piece_tcg | 22,042 tcgcsv | **100%** | derived from the price source |
+| ⤷ same, old seed rows | 2,302 seed | 0% | superseded; see the seed/tcgcsv split below |
+| lego, watches, whiskey, gunpla, warhammer, … (40+) | ~62,000 | **0%** | **no sold-comp source** — see below |
+
+**The winning move was NOT a crosswalk.** Matching two namespaces was measured
+and rejected (name-only was 224-of-226 ambiguous for lorcana; adding set gave
+8.2% / 1.3% / 0.0%). Instead `import_tcgcsv.py --catalog` DERIVES catalog rows
+from the same products that produce the prices, so
+`category || ':' || item_key == price_predictions.item_ref` holds **by
+construction** — which is exactly why pokemon/mtg never needed bridging. Runs
+daily via `run_once(catalog=True)`, gated to `CATALOG_CATEGORIES`.
+
+`catalog_price_refs` remains for the **seed** yugioh rows only, built by
+`pipelines/build_catalog_price_crosswalk.py`. `items.canonical_ref` is resolved
+by `trg_items_canonical_ref`, preferring the direct key (printing-exact) and
+falling back to the crosswalk.
+
+**Seed vs tcgcsv:** the old `source='seed'` rows still exist alongside the
+derived ones and are mostly unpriceable. Do NOT bulk-delete them — 7.6% are
+non-card merchandise (figures, Digivices) that tcgcsv cannot cover, and user
+items point at seed keys. Deduplicate in the browse query using `source`. An item
+linked to a seed key shows €0 even though its tcgcsv twin is priced — that is the
+known `Azurite Sea Booster Box` case.
+
+**The 62,000 gap is ONE stubbed function, not a sourcing problem.** The scraper
+runs and collects ~74k hits/day for those categories (lego 26,903, warhammer
+18,477 …), but `ebay_caller.py:387 sold_comps()` **returns `[]`** pending
+migration to the Marketplace Insights API, so everything falls back to the Browse
+API = active listings, `is_listing = TRUE`, and `valuation_worker.py:279`
+excludes them. A listings→sold haircut is NOT calibratable: only 205 refs have
+both, and the observed ratio is backwards (1.32–1.60).
+
+**Accuracy limit — do not present yugioh crosswalk prices as printing-exact.**
+The passcode price is per CARD, so every printing of a card shows the SAME
+value: a scarce 1st-edition and a common reprint are indistinguishable. Stored
+with `method='name_slug'`, `confidence=0.75` so it can be filtered later.
+Ambiguous names (8) are skipped, never guessed.
+
+**Rebuilding the crosswalk does NOT refire the trigger** — the builder
+re-touches `items` afterwards. If you change `catalog_price_refs` by hand, run
+`UPDATE items SET canonical_key = canonical_key WHERE canonical_key IS NOT NULL`.
+
+**Structural checks cannot catch this class.** The table existed, was populated,
+the column names matched, the SQL was valid, the endpoint returned 200. Only
+comparing the VALUES on each side reveals it — which is all `audit_key_overlap.py`
+does. Coverage caveat: even with the correct join only ~13% of predicted refs
+are catalog-reachable; TCG categories key predictions by TCGplayer product id
+(`lorcana:tcgplayer:702699:normal`) while the catalog uses set-slugs, so
+lorcana/digimon/one_piece_tcg sit at 0% until an id crosswalk exists.
 
 ## Key Files
 - `app/(tabs)/_layout.tsx` - Main tab navigation (5 visible tabs: Home, Items, Add, Events, Marketplace; wishlist + search are hidden routes)

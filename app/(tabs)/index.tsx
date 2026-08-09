@@ -22,7 +22,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useAuthContext } from "@/providers/useAuthContext";
 import { PortfolioLineChart, type TimeSeriesPoint } from "@/components/PortfolioLineChart";
 import { SkeletonPortfolioHeader } from "@/components/Skeleton";
 import { dataProvider } from "@/data";
@@ -40,6 +41,7 @@ import { getCategoryByName, getCategoryById } from "@/data/categories";
 import { TopItemsList, type ItemRow } from "@/components/home/TopItemsList";
 import { FollowedCategoriesCarousel } from "@/components/home/FollowedCategoriesCarousel";
 import { usePortfolioInsights } from "@/hooks/usePortfolioInsights";
+import { useHasEverHadItems } from "@/hooks/useHasEverHadItems";
 import { useAlertsFeed } from "@/hooks/useAlertsFeed";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
@@ -68,11 +70,16 @@ let analyticsApi: { fetchPortfolioSnapshot?: () => Promise<unknown>; [k: string]
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   analyticsApi = require("@/store/portfolioAnalyticsStore");
-} catch {
+} catch (e) {
+  logger.error('[silent-catch] index.tsx:73:', e);
   analyticsApi = null;
 }
 
 type RangeKey = "1D" | "7D" | "30D" | "90D" | "1Y" | "ALL";
+
+/** Above this item count the "Add to Collection" banner stops rendering — see
+ *  the comment at its call site. The Add tab remains the permanent entry point. */
+const ADD_BANNER_MAX_ITEMS = 3;
 
 
 
@@ -126,6 +133,9 @@ function extractItems(raw: unknown): ItemRow[] {
           ? it.value
           : typeof it?.currentValue === "number"
           ? it.currentValue
+          : // Backend /portfolio/overview returns snake_case current_value.
+          typeof it?.current_value === "number"
+          ? it.current_value
           : typeof it?.marketValue === "number"
           ? it.marketValue
           : typeof it?.totalValue === "number"
@@ -139,6 +149,9 @@ function extractItems(raw: unknown): ItemRow[] {
           ? it.changePct
           : typeof it?.change1dPct === "number"
           ? it.change1dPct
+          : // Backend /portfolio/overview returns snake_case change_1d_pct.
+          typeof it?.change_1d_pct === "number"
+          ? it.change_1d_pct
           : typeof it?.pctChange === "number"
           ? it.pctChange
           : undefined;
@@ -149,6 +162,42 @@ function extractItems(raw: unknown): ItemRow[] {
       return { id, name, category, value, changePct };
     })
     .filter(Boolean) as ItemRow[];
+}
+
+/**
+ * Load the collection from the SAME source the Items tab uses.
+ *
+ * Home and Items read from two different places: Home calls the EC2 API
+ * (/portfolio/overview, which needs a JWT and reads items.name), while the
+ * Items tab reads Supabase directly through dataProvider.listItems() under RLS.
+ * So the two tabs can — and did — disagree: items added manually showed up on
+ * Items while Home said the collection was empty.
+ *
+ * The API path fails empty in several ordinary situations: a request that goes
+ * out before the auth token has hydrated (401), a cold EC2, or any network
+ * blip. Every one of those hit `setItems([])`, which renders as "no items"
+ * rather than as an error — indistinguishable, to the user, from an empty
+ * collection.
+ *
+ * `listItems` is already withTimeout-bounded internally (itemsProvider.ts:144),
+ * so this cannot hang the screen.
+ */
+async function loadItemsFromCollection(): Promise<ItemRow[]> {
+  try {
+    const items = await dataProvider.listItems({ limit: 50, offset: 0 });
+    return (items ?? [])
+      .map((it) => ({
+        id: String(it.id),
+        name: it.name || 'Untitled',
+        category: it.category || undefined,
+        value: Number(it.price ?? 0),
+        changePct: undefined,
+      }))
+      .filter((r) => Number.isFinite(r.value));
+  } catch (e) {
+    logger.error('[Portfolio] Items-tab fallback failed:', e);
+    return [];
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -172,7 +221,20 @@ function PortfolioScreen() {
   const valueSummary = useValueSummary();
   const [range, setRange] = useState<RangeKey>("7D");
   const [series, setSeries] = useState<TimeSeriesPoint[]>([]);
+  // Why the series is empty. The chart renders "No history yet" for an empty
+  // array, so without this a failed request (classically a cold-start 401 —
+  // see project_2026_07_14_401_root_cause_tokenless) is displayed as "you have
+  // no history", which is a different and wrong statement. VERIFIED 2026-08-05:
+  // the API returns points for every range (1d=2 … all=3651), so an empty
+  // series on this screen is a transport failure, not absent data.
+  const [seriesFailed, setSeriesFailed] = useState(false);
   const [items, setItems] = useState<ItemRow[]>([]);
+  // Persisted "has ever had items" flag. Drives the first-item hero: it shows
+  // ONLY for a genuinely-new collection and is replaced by the graph the moment
+  // the first item is added — and never comes back, even if a later portfolio
+  // fetch transiently returns empty (a token cold-start / network blip must not
+  // resurrect "add your first item" for an established collection).
+  const { hasEverHadItems, markHasItems } = useHasEverHadItems();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
@@ -182,12 +244,23 @@ function PortfolioScreen() {
   // Store review prompt (criteria: 10+ items, 3+ days, 90-day cooldown)
   useStoreReview(items.length);
 
+  // Once the portfolio has ever shown items, remember it permanently so the
+  // first-item hero never resurfaces on a later empty fetch.
+  useEffect(() => {
+    if (items.length > 0) markHasItems();
+  }, [items.length, markHasItems]);
+
   // Category breakdown state
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdownItem[]>([]);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
 
   // Followed/personalized categories from onboarding
   const [followedCategories, setFollowedCategories] = useState<string[]>([]);
+
+  // Point under the user's finger on the chart. Drives the big COLLECTION VALUE
+  // figure so it moves with the scrubber; null means "not scrubbing", and the
+  // header falls back to the portfolio total.
+  const [scrubPoint, setScrubPoint] = useState<TimeSeriesPoint | null>(null);
 
   // Notification unread badge
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
@@ -204,6 +277,21 @@ function PortfolioScreen() {
     period: range.toLowerCase() as '7d' | '30d',
     enabled: featureFlags.FEATURE_DATA_INSIGHTS_ALERTS
   });
+  // Home had TWO entry points to the same analytics screen: this CTA banner,
+  // which rendered unconditionally, and <InsightsCard/>, which renders only for
+  // users who actually have advanced_analytics. So every entitled user (and
+  // every beta-unlocked build) saw "Extended Portfolio Insights → View" AND
+  // "Portfolio Insights → View Full Insights" stacked on one screen, both
+  // going to /analytics.
+  //
+  // Show the banner only when the card is NOT rendering. Free users still get
+  // it as the upsell (it routes to /subscription), and an entitled user whose
+  // card is suppressed — feature flag off, or insights failed to load — keeps a
+  // way in rather than losing the entry point entirely.
+  const insightsCardVisible = Boolean(
+    featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && limits.advanced_analytics,
+  );
+
   const { alerts, markAsRead } = useAlertsFeed({
     limit: 5,
     enabled: featureFlags.FEATURE_DATA_INSIGHTS_ALERTS
@@ -225,6 +313,9 @@ function PortfolioScreen() {
     return { total: endVal, delta: d, deltaPct: pct };
   }, [series]);
 
+  const { loading: authLoading } = useAuthContext();
+
+
   // Load data based on mode and range
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -237,24 +328,33 @@ function PortfolioScreen() {
           const rangeParam = range.toLowerCase() as "1d" | "7d" | "30d" | "90d" | "1y" | "all";
           const timeseriesData = await collectorsApi.getPortfolioTimeseries(rangeParam);
           const extractedSeries = extractSeries(timeseriesData);
-          if (extractedSeries.length) {
-            setSeries(extractedSeries);
-          } else {
-            setSeries([]);
-          }
+          setSeries(extractedSeries);
+          // The call succeeded. An empty result here really is "no history".
+          setSeriesFailed(false);
 
           const overviewData = await collectorsApi.getPortfolioOverview();
           const extractedItems = extractItems(overviewData);
           if (extractedItems.length) {
             setItems(extractedItems.sort((a, b) => b.value - a.value));
           } else {
-            setItems([]);
+            // The API said "no items". Before believing it, ask the source the
+            // Items tab uses — an empty answer here is far more often a
+            // tokenless/cold-start 401 than an actually empty collection, and
+            // the two are indistinguishable on screen.
+            const fallback = await loadItemsFromCollection();
+            setItems(fallback.sort((a, b) => b.value - a.value));
           }
         } catch (realErr: unknown) {
-          logger.warn("[Portfolio] Real backend error, falling back:", realErr);
-          setError("Could not load portfolio data.");
+          logger.error("[Portfolio] Real backend error, falling back:", realErr);
           setSeries([]);
-          setItems([]);
+          setSeriesFailed(true);
+          // Same fallback on a hard failure. Only surface an error if the
+          // collection genuinely cannot be read either way — otherwise Home
+          // showed "Could not load portfolio data" over a collection the Items
+          // tab was displaying perfectly well.
+          const fallback = await loadItemsFromCollection();
+          setItems(fallback.sort((a, b) => b.value - a.value));
+          if (!fallback.length) setError("Could not load portfolio data.");
         }
       } else {
         // Mock mode: use analytics store or fallback
@@ -273,7 +373,7 @@ function PortfolioScreen() {
               : [];
             if ((snap as Record<string, unknown>)?.tierSummary) setTierSummary((snap as Record<string, unknown>).tierSummary as typeof tierSummary);
           } catch (mockErr) {
-            logger.warn("[Portfolio] Mock store error:", mockErr);
+            logger.error("[Portfolio] Mock store error:", mockErr);
           }
         }
 
@@ -290,47 +390,80 @@ function PortfolioScreen() {
         setItems(baseItems);
       }
     } catch (err: unknown) {
-      logger.warn("[Portfolio] Unexpected error:", err);
+      logger.error("[Portfolio] Unexpected error:", err);
       setError("Failed to load portfolio data.");
       setSeries([]);
+      setSeriesFailed(true);
       setItems([]);
     } finally {
       setLoading(false);
     }
   }, [range]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Refetch on FOCUS, not just mount. The first mount fires during the
+  // post-login tokenless cold-start window, when the EC2 portfolio endpoints
+  // (getPortfolioTimeseries/getPortfolioOverview) return empty because
+  // getAuthHeaders has no token yet → Home would otherwise show
+  // "add your first item" + no graph permanently, diverging from the Items tab
+  // (which reads Supabase directly AND already refetches on focus via
+  // useFocusEffect). Refetching on focus repopulates Home once the token lands.
+  useFocusEffect(
+    useCallback(() => {
+      // Wait for the session to hydrate before the first load. Firing during the
+      // tokenless cold-start window does not fail fast: getAuthHeaders burns its
+      // 6s refresh window, the request then goes out unauthenticated and 401s,
+      // and `loading` — and therefore the chart skeleton — stays up for the whole
+      // round. Measured on the simulator 2026-07-25: still skeletonised 30s
+      // after launch. useFocusEffect re-runs when authLoading flips, so the load
+      // fires as soon as the session lands.
+      if (authLoading) return;
+      loadData();
+    }, [loadData, authLoading]),
+  );
 
-  // Load category breakdown
-  useEffect(() => {
-    let cancelled = false;
+  // Category breakdown. Extracted from the focus effect so pull-to-refresh can
+  // fire it too: it used to refresh ONLY on focus while the header + chart came
+  // from loadData(), so any path that updated the portfolio without blurring
+  // Home left the two showing different totals. Observed 2026-08-03 — the
+  // header read EUR 8.070 while the summary strip below it still read EUR 55,
+  // and the backend was innocent: /portfolio/overview and
+  // /portfolio/category-stats both returned 8,070.04 when queried directly.
+  const loadCategoryBreakdown = useCallback(async () => {
     setBreakdownLoading(true);
-    collectorsApi.getPortfolioCategoryBreakdown()
-      .then((res: unknown) => {
-        if (cancelled) return;
-        const data = res as Record<string, unknown>;
-        // Backend returns "breakdown", also check "categories" for compat
-        const cats = Array.isArray(data?.breakdown)
-          ? (data.breakdown as Record<string, unknown>[]).map((b) => ({
-              category: String(b.category ?? ''),
-              item_count: Number(b.item_count ?? 0),
-              total_value: Number(b.total_value ?? 0),
-              percentage: Number(b.pct_of_portfolio ?? b.percentage ?? 0),
-            }))
-          : Array.isArray(data?.categories)
-          ? data.categories as CategoryBreakdownItem[]
-          : [];
-        setCategoryBreakdown(cats);
-      })
-      .catch((err: unknown) => {
-        logger.warn('[Portfolio] category breakdown fetch failed:', err);
-        if (!cancelled) setCategoryBreakdown([]);
-      })
-      .finally(() => { if (!cancelled) setBreakdownLoading(false); });
-    return () => { cancelled = true; };
+    try {
+      const res: unknown = await collectorsApi.getPortfolioCategoryBreakdown();
+      const data = res as Record<string, unknown>;
+      // Backend returns "breakdown", also check "categories" for compat
+      const cats = Array.isArray(data?.breakdown)
+        ? (data.breakdown as Record<string, unknown>[]).map((b) => ({
+            category: String(b.category ?? ''),
+            item_count: Number(b.item_count ?? 0),
+            total_value: Number(b.total_value ?? 0),
+            percentage: Number(b.pct_of_portfolio ?? b.percentage ?? 0),
+          }))
+        : Array.isArray(data?.categories)
+        ? (data.categories as CategoryBreakdownItem[])
+        : [];
+      setCategoryBreakdown(cats);
+    } catch (err: unknown) {
+      // logger.error, not warn — warn is stripped in release builds, so this
+      // failure was invisible on exactly the builds where it matters. The
+      // catch also resets the breakdown to [], which renders as "no
+      // categories" and is indistinguishable from a genuinely empty
+      // portfolio; without a surviving trace there is nothing to tell them
+      // apart after the fact.
+      logger.error('[Portfolio] category breakdown fetch failed:', err);
+      setCategoryBreakdown([]);
+    } finally {
+      setBreakdownLoading(false);
+    }
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadCategoryBreakdown();
+    }, [loadCategoryBreakdown]),
+  );
 
   // Load followed categories from onboarding
   useEffect(() => {
@@ -345,7 +478,8 @@ function PortfolioScreen() {
             if (Array.isArray(parsed) && parsed.length > 0) {
               setFollowedCategories(parsed);
             }
-          } catch {}
+          } catch (e) {
+            logger.error('[silent-catch] index.tsx:390:', e);}
         }
       })
       .catch((err) => logger.warn('[Home] followed categories local fetch error:', err));
@@ -373,10 +507,13 @@ function PortfolioScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadData();
+    // Both, together. Refreshing only loadData() updated the header and chart
+    // while leaving the summary strip on its last focus-time value, which is
+    // how one screen came to show two different portfolio totals.
+    await Promise.all([loadData(), loadCategoryBreakdown()]);
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setRefreshing(false);
-  }, [loadData, settings.hapticsEnabled]);
+  }, [loadData, loadCategoryBreakdown, settings.hapticsEnabled]);
 
   // Determine if positive or negative
   const isPositive = deltaPct >= 0;
@@ -423,8 +560,8 @@ function PortfolioScreen() {
 
   const handleInsightsCtaPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push('/analytics');
-  }, [router, settings.hapticsEnabled]);
+    router.push(limits.advanced_analytics ? '/analytics' : '/subscription');
+  }, [router, settings.hapticsEnabled, limits.advanced_analytics]);
 
   const handleAlertPress = useCallback((alert: { id: string; itemId?: string }) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -525,8 +662,13 @@ function PortfolioScreen() {
           </View>
         </View>
 
-        {/* Empty portfolio state OR Collection value + chart */}
-        {items.length === 0 && !loading ? (
+        {/* First-item hero ONLY for a genuinely-new collection (confirmed never
+            had items), else the Collection value + chart. Keyed on the persisted
+            hasEverHadItems===false rather than the live items array so a token
+            cold-start / transient empty fetch can't resurrect the hero for an
+            established portfolio — and the hero is replaced by the graph the
+            instant the first item is added. */}
+        {items.length === 0 && hasEverHadItems === false ? (
           <View style={styles.emptyPortfolio}>
             <View style={[styles.emptyIconCircle, { backgroundColor: colors.accent + '15' }]}>
               <Ionicons name="camera-outline" size={64} color={colors.accent} />
@@ -560,12 +702,14 @@ function PortfolioScreen() {
             {/* Collection Value */}
             <PortfolioValueHeader
               theme={colors}
-              total={total}
+              total={scrubPoint ? scrubPoint.v : total}
               delta={delta}
               deltaPct={deltaPct}
               currency={settings.currency}
               formatPrice={formatPrice}
-              animationsEnabled={settings.animationsEnabled}
+              // Counter animation is a tween to a target; while scrubbing the
+              // target changes every few ms, so it lags the finger. Snap instead.
+              animationsEnabled={settings.animationsEnabled && !scrubPoint}
               tier={tierSummary?.tier}
             />
 
@@ -589,6 +733,8 @@ function PortfolioScreen() {
               ) : (
                 <PortfolioLineChart
                   series={series}
+                  loadFailed={seriesFailed}
+                  onRetry={loadData}
                   accentColor={colors.accent}
                   showValueHeader={true}
                   showAxisLabels={true}
@@ -596,6 +742,7 @@ function PortfolioScreen() {
                   gridColor={colors.border}
                   textColor={colors.text}
                   dotFillColor={colors.card}
+                  onScrubChange={setScrubPoint}
                 />
               )}
             </View>
@@ -610,32 +757,32 @@ function PortfolioScreen() {
           </View>
         )}
 
-        {/* Add Item Banner */}
-        <AnimatedPressable
-          onPress={handleOpenAddMenu}
-          style={[styles.addBanner, { backgroundColor: colors.accent + '0D', borderColor: colors.accent + '30' }]}
-          accessibilityRole="button"
-          accessibilityLabel={t('home.add_to_collection_a11y')}
-        >
-          <View style={[styles.addBannerIconWrap, { backgroundColor: colors.accent }]}>
-            <Ionicons name="add" size={18} color={colors.accentText} />
-          </View>
-          <View style={styles.addBannerText}>
-            <Text style={[styles.addBannerTitle, { color: colors.text }]}>{t('home.add_to_collection')}</Text>
-            <Text style={[styles.addBannerSubtitle, { color: colors.muted }]}>{t('home.add_to_collection_subtitle')}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.accent} />
-        </AnimatedPressable>
+        {/* Add Item Banner — an onboarding affordance, not a permanent control.
+            Once the collection is past a few items the user knows where Add is
+            (the centre tab, always visible), so the banner is just a large card
+            pushing real content down. Hidden past ADD_BANNER_MAX_ITEMS. */}
+        {items.length <= ADD_BANNER_MAX_ITEMS && (
+          <AnimatedPressable
+            onPress={handleOpenAddMenu}
+            style={[styles.addBanner, { backgroundColor: colors.accent + '0D', borderColor: colors.accent + '30' }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('home.add_to_collection_a11y')}
+          >
+            <View style={[styles.addBannerIconWrap, { backgroundColor: colors.accent }]}>
+              <Ionicons name="add" size={18} color={colors.accentText} />
+            </View>
+            <View style={styles.addBannerText}>
+              <Text style={[styles.addBannerTitle, { color: colors.text }]}>{t('home.add_to_collection')}</Text>
+              <Text style={[styles.addBannerSubtitle, { color: colors.muted }]}>{t('home.add_to_collection_subtitle')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.accent} />
+          </AnimatedPressable>
+        )}
 
-        {/* Personalized Categories (from onboarding) */}
-        <FollowedCategoriesCarousel
-          theme={colors}
-          categories={followedCategories}
-          onCategoryPress={handleCategoryPress}
-          hapticsEnabled={settings.hapticsEnabled}
-        />
-
-        {/* Category Breakdown lives on the items tab (moved 2026-04-18). */}
+        {/* Your Categories — heading, then the at-a-glance numbers, then the
+            category banners. The stats sit directly under the heading because
+            they summarise the same thing the banners break down. */}
+        <Text style={[styles.categoriesHeading, { color: colors.text }]}>Your Categories</Text>
 
         {/* Global Collection Stats */}
         {categoryBreakdown.length > 0 && (
@@ -661,7 +808,20 @@ function PortfolioScreen() {
           </View>
         )}
 
-        {/* Extended Portfolio Insights CTA */}
+        {/* Personalized Categories (from onboarding) */}
+        <FollowedCategoriesCarousel
+          theme={colors}
+          categories={followedCategories}
+          onCategoryPress={handleCategoryPress}
+          hapticsEnabled={settings.hapticsEnabled}
+          showHeader={false}
+        />
+
+        {/* Category Breakdown lives on the items tab (moved 2026-04-18). */}
+
+        {/* Extended Portfolio Insights CTA — only when InsightsCard below is
+            not rendering, so Home never shows two routes to /analytics. */}
+        {!insightsCardVisible && (
         <AnimatedPressable
           style={[styles.insightsCta, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={handleInsightsCtaPress}
@@ -685,6 +845,7 @@ function PortfolioScreen() {
             <Text style={[styles.insightsCtaBtnText, { color: colors.accentText }]}>{limits.advanced_analytics ? t('home.view') : t('home.upgrade')}</Text>
           </View>
         </AnimatedPressable>
+        )}
 
         {/* Watchlist Card (always show - has empty state) */}
         {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && (
@@ -967,6 +1128,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: text.xl,
     fontWeight: fontWeight.extrabold,
+  },
+  categoriesHeading: {
+    fontSize: text.xl,
+    fontWeight: fontWeight.extrabold,
+    marginTop: 8,
+    marginBottom: 12,
   },
   sectionSubtitle: {
     fontSize: text.sm,

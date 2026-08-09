@@ -60,10 +60,14 @@ jest.mock('@/analytics/track', () => ({
 }));
 
 const mockInitPurchases = jest.fn();
+const mockSetReferralAttribute = jest.fn();
 const mockIdentifyPurchasesUser = jest.fn((..._args: unknown[]) => Promise.resolve());
 jest.mock('@/lib/purchases', () => ({
   initPurchases: () => mockInitPurchases(),
   identifyUser: (arg: unknown) => mockIdentifyPurchasesUser(arg),
+  // Must be present: a missing export here throws inside loadProfile,
+  // which used to be swallowed into setProfile(null).
+  setReferralAttribute: (arg: unknown) => mockSetReferralAttribute(arg),
 }));
 
 const mockSentrySetUser = jest.fn();

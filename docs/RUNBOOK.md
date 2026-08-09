@@ -6,6 +6,36 @@
 
 ---
 
+## ⛔ Read this before you grep for anything
+
+**Application logs do NOT go to journald.** `collectai-bake.service` sets
+`StandardOutput=append:/opt/collectors/bake.log` (and the same for stderr), so:
+
+```bash
+# WRONG — returns systemd's own lines and none of the app's. Looks like silence.
+ssh collectai 'sudo journalctl -u collectai-bake --since "10 min ago" | grep -i thing'
+
+# RIGHT
+ssh collectai 'grep -i thing /opt/collectors/bake.log | tail -20'
+```
+
+`journalctl` is still correct for **systemd-level** questions — did the unit
+start, did a preflight fail, did it crash-loop:
+
+```bash
+ssh collectai 'sudo systemctl status collectai-bake.service'
+ssh collectai 'sudo journalctl -u collectai-bake.service --since "5 min ago" --no-pager | tail -30'
+```
+
+This trap cost real time on 2026-08-07: a `logger.info` in the P2P supply hook
+was greppable in `bake.log` the whole time, while `journalctl` showed nothing
+and read as "the code never ran". Three separate wrong conclusions came out of
+that before the unit file was checked. **An empty journal is not evidence.**
+
+`bake.log` is ~90MB and append-only — always `tail` or `grep`, never `cat`.
+
+---
+
 ## 🚨 Triage decision tree
 
 **Where did the failure surface?**
@@ -13,6 +43,7 @@
 | Surface | Most likely cause | Jump to |
 |---|---|---|
 | App crash on iPhone (TestFlight or production) | Native bug, missing env var, network down | [§1 App crash](#1-app-crash-on-iphone) |
+| Screen stuck on a loading skeleton | Unbounded Supabase read, or a fetch fired before auth hydrated | [§0 Stuck skeleton](#0-screen-stuck-on-a-skeleton) |
 | App opens but features 404/timeout | Backend down or misconfigured | [§2 Backend down](#2-backend-down) |
 | Sign-up fails | Supabase auth / RLS / email confirm broken | [§3 Auth failure](#3-auth-failure) |
 | Scan times out / wrong identifications | AI provider rate limit, bake worker stuck | [§4 Scan failures](#4-scan-failures) |
@@ -20,6 +51,47 @@
 | App Store Connect rejection | Metadata / IAP / privacy issue | [§6 ASC rejection](#6-asc-rejection) |
 | Slow performance on phone | Backend latency or DB pressure | [§7 Slowness](#7-slowness) |
 | Sentry/PostHog flood of errors | Spike in production crashes or events | [§8 Telemetry spike](#8-telemetry-spike) |
+
+---
+
+## 0. Screen stuck on a skeleton
+
+**Symptoms:** Home and/or Items show grey placeholder blocks indefinitely. No
+error toast. Nothing obviously wrong in the backend.
+
+**First: is it actually stuck, or looping?** Screenshot twice, 15s apart. If they
+are identical it is stuck; if the error count is climbing it is retrying.
+
+```bash
+# On the simulator
+xcrun simctl io <UDID> screenshot /tmp/a.png    # wait 15s
+xcrun simctl io <UDID> screenshot /tmp/b.png
+grep -c "NO TOKEN after refresh" /tmp/expo_ios.log   # run twice — growing = loop
+```
+
+**Rule out the backend before touching the app** — it usually is not the cause:
+
+```bash
+# endpoint latency (FE gives up at ~5s)
+ssh collectai '/opt/collectors/.venv/bin/python /tmp/timing.py'
+# the Items query is a DIRECT PostgREST read, not the API — test it separately
+```
+
+**Most likely causes, in order:**
+
+| Cause | Tell | Fix |
+|---|---|---|
+| **Signed out / session not hydrated** | `[DIAG auth] getAuthHeaders: NO TOKEN` in the log | Sign in. A fresh install has an empty SecureStore, and the app renders a logged-in-looking Portfolio while every request goes out tokenless |
+| **Unbounded Supabase read** | No log line at all, skeleton never clears | The read is missing `withTimeout` — see `docs/ui-playbook.md` "Loading states" |
+| **Fetch fired during auth hydration** | `listItems timed out after 8000ms` | The screen is not gating on `!authLoading` |
+
+**Why the logs may be empty:** `logger.info`/`warn` are stripped in release
+builds. Timeouts must be logged with `logger.error` to be visible in TestFlight.
+
+**Regression guard:** `__tests__/hooks/usePaginatedList.test.ts` pins that a
+hanging fetcher cannot pin the skeleton, and that a never-opening gate still
+fetches. If those are green and a screen still hangs, the screen is not using
+`usePaginatedList` — check its hand-rolled loader.
 
 ---
 
@@ -133,8 +205,8 @@ Renew with: `ssh collectai 'sudo certbot renew --nginx'`
 # Probe an authenticated scan endpoint (you need a bearer token first)
 curl -s https://api.sparrowcollect.com/openapi.json | python3 -c "import sys, json; print([p for p in json.load(sys.stdin)['paths'] if 'scan' in p.lower() or 'predict' in p.lower()])"
 
-# Check vision provider state
-ssh collectai 'sudo journalctl -u collectai-bake --since "10 min ago" | grep -iE "openai|vision|prediction" | head'
+# Check vision provider state — grep the LOG FILE, not journald (see below)
+ssh collectai 'grep -iE "openai|vision|prediction" /opt/collectors/bake.log | tail -20'
 
 # Check rate-limit / quota
 ssh collectai 'grep -E "FIRECRAWL_ENABLED|SCRAPEDO_ENABLED|OPENAI_API_KEY" /opt/collectors/.env | head'

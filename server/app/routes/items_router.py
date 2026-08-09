@@ -9,7 +9,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
@@ -18,10 +18,81 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
+from app.lib.fx_service import convert_to_eur
+
+
+def _parse_purchased_at(value: Optional[str]) -> Optional[datetime]:
+    """Coerce the model's ISO string into the datetime asyncpg requires.
+
+    Accepts both the full timestamp watchlistProvider sends
+    ("2024-06-01T12:34:56.000Z") and a bare "YYYY-MM-DD". A naive value is
+    pinned to UTC rather than the host timezone -- binding a bare date to a
+    timestamptz is what stored purchase dates a day early elsewhere.
+    Unparseable input yields None so the row still saves without the date.
+    """
+    if not value:
+        return None
+    raw = value.strip()
+    if raw.endswith(("Z", "z")):
+        raw = raw[:-1] + "+00:00"
+    parsed: Optional[datetime] = None
+    for candidate in (raw, raw[:10]):
+        try:
+            parsed = datetime.fromisoformat(candidate)
+            break
+        except ValueError:
+            continue
+    if parsed is None:
+        logger.warning("[items] unparseable purchased_at %r, saving without it", value)
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(tags=["Items"])
 logger = logging.getLogger(__name__)
+
+# Score floor for accepting a catalog match. /catalog/match documents
+# >= 0.75 = strong. A WRONG canonical_key is worse than none: it prices the item
+# as a different product and looks authoritative while being silently incorrect.
+_CANONICAL_MATCH_FLOOR = 0.75
+
+
+async def _resolve_canonical_key(title, category, pool):
+    """
+    Best-effort catalog match -> BARE canonical_key, or None.
+
+    canonical_key is BARE (`sm10-sm10-101`), never namespaced -- CLAUDE.md
+    "Identifier formats". The trigger derives canonical_ref from it; never set
+    canonical_ref by hand.
+
+    Never raises: a failed match must not fail item creation. The item is saved
+    unpriced, exactly as it was before this existed.
+    """
+    if not title or not category or pool is None:
+        return None
+    try:
+        from app.agents.intake.catalog_matching import _match_catalog_items
+
+        matches = await _match_catalog_items(
+            category_id=category,
+            suggested_name=title,
+            search_keywords=[],
+            brand=None,
+            set_code=None,
+            pool=pool,
+            extracted_attributes=None,
+        )
+    except Exception as e:
+        logger.warning("[items] catalog match failed for %r: %s", title, e)
+        return None
+    if not matches:
+        return None
+    best = matches[0]
+    if float(best.get("match_score") or 0.0) < _CANONICAL_MATCH_FLOOR:
+        return None
+    return best.get("item_key") or None
+
+
 
 # Per-user: 50 requests per minute for reading items
 _items_read_limit = per_user_rate_limit(50, scope="items_read")
@@ -44,6 +115,32 @@ class ItemCreateRequest(BaseModel):
     # surface that JOINs items → catalog returns empty for paid users.
     # Format example: 'pokemon:base-set-charizard-4-102'.
     canonical_key: Optional[str] = Field(None, max_length=255)
+    # Rich detail — populated by QuickScan / catalog-match / manual form so the
+    # item lands as a FULL card (ItemAttributesSection reads `attrs`; the card
+    # shows `image_url`). Before this, POST /items dropped all of it and every
+    # non-ISBN add landed with empty attrs + no image.
+    image_url: Optional[str] = Field(None, max_length=1000)
+    brand: Optional[str] = Field(None, max_length=128)
+    condition: Optional[str] = Field(None, max_length=64)
+    year: Optional[int] = None
+    series: Optional[str] = Field(None, max_length=255)
+    edition_label: Optional[str] = Field(None, max_length=128)
+    # Category-specific attributes (rarity, set_code, edition, print run,
+    # authenticity, etc.) — stored as items.attrs (jsonb object).
+    attrs: Optional[Dict[str, Any]] = None
+    # What the user actually paid. Added 2026-07-24: the wishlist "I Got It!"
+    # flow (src/data/providers/watchlistProvider.ts:228) has always POSTed
+    # `purchase_price`, but this model never declared it, so Pydantic dropped
+    # it silently and the INSERT below never stored it — the app prompts for
+    # the real acquisition price "to feed the ML model" and then discarded it.
+    # Every reader of items.purchase_price (analytics Cost Basis / DCA,
+    # the value-saved banner, dossier, CSV export) saw NULL as a result.
+    purchase_price: Optional[float] = None
+    purchase_currency: Optional[str] = Field(None, max_length=8)
+    # ISO date. Written to BOTH purchased_at (timestamptz, read by the
+    # analytics DCA series) and purchase_date (date, read by the CSV export)
+    # because the schema carries both and different consumers read each.
+    purchased_at: Optional[str] = None
 
 
 class ItemResponse(ItemCreateRequest):
@@ -79,6 +176,53 @@ def get_demo_items() -> list[ItemResponse]:
     return _DEMO_ITEMS
 
 
+async def write_quick_valuation(conn, item_id: str, user_id: str, canonical_ref: Optional[str]) -> bool:
+    """Best-effort: write a `quick_predictions` row from the catalog market
+    valuation so the item card shows a real value right after add.
+
+    Source is `price_prediction_daily.q50`, which is EUR — valuation_worker
+    predicts on COALESCE(price_eur, price) with an `_MAX_SANE_PRICE_EUR` bound —
+    so it maps directly onto `quick_predictions.q50_eur`. No-op (returns False)
+    when the item isn't catalog-linked or has no daily price; the card then
+    falls back to the user's own estimate. Never raises — a valuation must not
+    block or fail an add.
+
+    Takes the **namespaced** ref (`category:item_key`, i.e. `items.canonical_ref`),
+    NOT the bare `canonical_key`. Every `price_prediction_daily.item_ref` is
+    namespaced — 0 bare rows — so passing the bare key silently matched nothing
+    and this returned False on every add since the column was introduced. See
+    docs/schema-lock.md and the 2026-07-25 keyspace audit.
+    """
+    if not canonical_ref:
+        return False
+    try:
+        row = await conn.fetchrow(
+            """
+            SELECT q50, confidence, model_version
+            FROM public.price_prediction_daily
+            WHERE item_ref = $1 AND q50 IS NOT NULL
+            ORDER BY day DESC
+            LIMIT 1
+            """,
+            canonical_ref,
+        )
+        if not row or row["q50"] is None:
+            return False
+        await conn.execute(
+            """
+            INSERT INTO public.quick_predictions (item_id, user_id, nk, q50_eur, confidence, raw)
+            VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::jsonb)
+            """,
+            item_id, user_id, canonical_ref, float(row["q50"]),
+            float(row["confidence"]) if row["confidence"] is not None else 0.6,
+            json.dumps({"source": "catalog_daily", "model_version": row["model_version"]}),
+        )
+        return True
+    except Exception:
+        logger.debug("[items] quick valuation write skipped (non-critical)")
+        return False
+
+
 # ---- Endpoints ----
 
 @router.post("/items", response_model=ItemResponse, dependencies=[Depends(_items_write_limit)], summary="Create a new item")
@@ -89,17 +233,65 @@ async def create_item(
     """Create a new item in the user's collection."""
     pool = get_db_pool()
 
+    # Resolve canonical_key server-side when the client omits it. Without it the
+    # item can never be priced: canonical_key --trg_items_canonical_ref-->
+    # canonical_ref --join--> price_predictions.item_ref. The item saves fine and
+    # shows "—" forever, with no error and nothing logged.
+    #
+    # This is the CHOKEPOINT, deliberately. Three separate callers had already
+    # been missed one at a time -- /intake/save (barcode+ISBN), import_router
+    # (Excel/CSV), and QuickScan's BATCH save in quickscan.tsx, which omits
+    # canonicalKey while the single-scan path in useItemDetail.ts passes it.
+    # Fixing callers one by one does not converge; resolving here covers every
+    # client, including builds already in the field that can never be updated.
+    #
+    # A client-supplied key always wins: it came from an interactive catalog
+    # match the user could see and correct.
+    if pool is not None and not payload.canonical_key:
+        payload.canonical_key = await _resolve_canonical_key(
+            payload.name, payload.category, pool
+        )
+
+    # items carries BOTH purchase_price (raw, in purchase_currency) and
+    # purchase_price_eur (FX-normalized). The analytics Cost Basis / DCA series
+    # sums the EUR half. add-manual.tsx got this on 2026-07-24; this route and
+    # import_router.py did not, so table-wide `purchase_price_eur` was non-null
+    # on 0 of 5 priced rows and the card could never populate.
+    purchase_price_eur = (
+        await convert_to_eur(payload.purchase_price, payload.purchase_currency or "EUR")
+        if payload.purchase_price is not None
+        else None
+    )
+
     if pool is not None:
         try:
             async with pool.acquire() as conn:
                 item_id = str(uuid4())
                 await conn.execute(
                     """
-                    INSERT INTO items (id, user_id, title, category, notes, collection_name, estimated_value, canonical_key)
-                    VALUES ($1, $2::uuid, $3, $4, $5, $6, $7, $8)
+                    -- purchase_date is deliberately NOT listed: binding one
+                    -- param to both `$N::timestamptz` and `$N::date` made
+                    -- Postgres infer a date/timestamp type for it, and asyncpg
+                    -- then rejected the ISO *string* the model declares --
+                    -- "expected a datetime.date or datetime.datetime
+                    -- instance, got 'str'". Every POST /items carrying a
+                    -- purchased_at 500'd, which is the whole of the watchlist
+                    -- "I Got It!" conversion. Bind a real datetime and let
+                    -- trg_items_sync_paired_columns derive purchase_date.
+                    INSERT INTO items (id, user_id, name, title, category, notes, collection_name, estimated_value, canonical_key,
+                                       image_url, brand, condition, year, series, edition_label, attrs,
+                                       purchase_price, purchase_price_eur, purchase_currency, purchased_at)
+                    VALUES ($1, $2::uuid, $3, $3, $4, $5, $6, $7, $8,
+                            $9, $10, $11, $12, $13, $14, $15::jsonb,
+                            $16, $17, $18, $19)
                     """,
                     item_id, user_id, payload.name, payload.category, payload.notes,
                     payload.collection_name, payload.estimated_value, payload.canonical_key,
+                    payload.image_url, payload.brand, payload.condition, payload.year,
+                    payload.series, payload.edition_label,
+                    json.dumps(payload.attrs) if payload.attrs else None,
+                    payload.purchase_price, purchase_price_eur,
+                    payload.purchase_currency, _parse_purchased_at(payload.purchased_at),
                 )
                 logger.info(
                     "[items] Created item: id=%s, user=%s, canonical_key=%s",
@@ -110,6 +302,9 @@ async def create_item(
                 try:
                     from app.features.gamification_router import record_activity_xp
                     item_count = await conn.fetchval(
+                        # archived-exempt: collector milestones are LIFETIME,
+                        # matching intake_router's scan milestones. Filtering
+                        # here would make the two counters disagree.
                         "SELECT COUNT(*) FROM items WHERE user_id = $1::uuid",
                         user_id,
                     )
@@ -126,15 +321,15 @@ async def create_item(
                 except Exception:
                     logger.debug("[items] Gamification XP award failed (non-critical)")
 
-                return ItemResponse(
-                    id=item_id,
-                    name=payload.name,
-                    category=payload.category,
-                    collection_name=payload.collection_name,
-                    estimated_value=payload.estimated_value,
-                    notes=payload.notes,
-                    canonical_key=payload.canonical_key,
+                # Market valuation for the card (best-effort, EUR, local data).
+                # Namespaced ref — mirrors the items.canonical_ref generated column.
+                _ref = (
+                    f"{payload.category}:{payload.canonical_key}"
+                    if payload.canonical_key and payload.category else None
                 )
+                await write_quick_valuation(conn, item_id, user_id, _ref)
+
+                return ItemResponse(id=item_id, **payload.model_dump())
         except HTTPException:
             raise
         except Exception as e:
@@ -143,17 +338,32 @@ async def create_item(
 
     # In-memory fallback
     new_id = f"demo-{len(_DEMO_ITEMS) + 1}"
-    item = ItemResponse(
-        id=new_id,
-        name=payload.name,
-        category=payload.category,
-        collection_name=payload.collection_name,
-        estimated_value=payload.estimated_value,
-        notes=payload.notes,
-        canonical_key=payload.canonical_key,
-    )
+    item = ItemResponse(id=new_id, **payload.model_dump())
     _DEMO_ITEMS.append(item)
     return item
+
+
+@router.post("/items/{item_id}/revalue", dependencies=[Depends(_items_write_limit)], summary="Compute the card valuation for an item")
+async def revalue_item(item_id: str, user_id: str = Depends(get_current_user_id)):
+    """Write a fresh quick_predictions row from the catalog market valuation.
+
+    The manual-add screen inserts items client-side (direct Supabase), so it
+    can't run the server-side valuation inline the way POST /items does. It
+    calls this right after saving so a catalog-linked item shows a value on its
+    card immediately. No-op (valued=false) when the item isn't catalog-linked.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return {"ok": False, "valued": False}
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT canonical_ref FROM items WHERE id = $1::uuid AND user_id = $2::uuid",
+            item_id, user_id,
+        )
+        if not row:
+            raise error_response(404, "Item not found")
+        valued = await write_quick_valuation(conn, item_id, user_id, row["canonical_ref"])
+    return {"ok": True, "valued": valued}
 
 
 @router.get("/items", response_model=PaginatedItemsResponse, dependencies=[Depends(_items_read_limit)], summary="List user items", description="Returns paginated items for the authenticated user, ordered by most recently updated. Supports cursor-based pagination via `cursor` and `limit` query params.")
@@ -183,9 +393,9 @@ async def list_items(
 
                     rows = await conn.fetch(
                         """
-                        SELECT id, title, category, notes, collection_name, estimated_value, updated_at
+                        SELECT id, title, category, notes, collection_name, estimated_value, canonical_key, updated_at
                         FROM items
-                        WHERE user_id = $1::uuid
+                        WHERE user_id = $1::uuid AND NOT archived
                           AND (updated_at, id) < ($2::timestamptz, $3::uuid)
                         ORDER BY updated_at DESC, id DESC
                         LIMIT $4
@@ -195,9 +405,9 @@ async def list_items(
                 else:
                     rows = await conn.fetch(
                         """
-                        SELECT id, title, category, notes, collection_name, estimated_value, updated_at
+                        SELECT id, title, category, notes, collection_name, estimated_value, canonical_key, updated_at
                         FROM items
-                        WHERE user_id = $1::uuid
+                        WHERE user_id = $1::uuid AND NOT archived
                         ORDER BY updated_at DESC, id DESC
                         LIMIT $2
                         """,
@@ -215,6 +425,7 @@ async def list_items(
                         collection_name=r.get("collection_name"),
                         estimated_value=float(r["estimated_value"]) if r.get("estimated_value") is not None else None,
                         notes=r["notes"],
+                        canonical_key=r.get("canonical_key"),
                     )
                     for r in result_rows
                 ]

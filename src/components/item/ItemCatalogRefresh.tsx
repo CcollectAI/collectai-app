@@ -103,7 +103,7 @@ export const ItemCatalogRefresh = React.memo(function ItemCatalogRefresh({
       const res = await matchCatalog(itemTitle.trim(), itemCategory.trim());
       bestHit = res.best;
     } catch (e) {
-      logger.warn('[ItemCatalogRefresh] match call failed:', e);
+      logger.error('[ItemCatalogRefresh] match call failed:', e);
       showToast({ message: 'Catalog match failed — try again later', type: 'error' });
       setMatching(false);
       return;
@@ -158,7 +158,7 @@ export const ItemCatalogRefresh = React.memo(function ItemCatalogRefresh({
               showToast({ message: 'Catalog data refreshed', type: 'success' });
               onUpdated?.();
             } catch (e) {
-              logger.warn('[ItemCatalogRefresh] apply failed:', e);
+              logger.error('[ItemCatalogRefresh] apply failed:', e);
               showToast({ message: 'Failed to update — try again', type: 'error' });
             }
           },

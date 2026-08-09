@@ -30,7 +30,7 @@ export function useItemGrading(categorySlug: string, itemName: string) {
       const data = await collectorsApi.gradingServices(categorySlug);
       setGradingServices(data.services || []);
     } catch (err) {
-      logger.warn('[useItemGrading] services fetch error:', err);
+      logger.error('[useItemGrading] services fetch error:', err);
     }
   }, [categorySlug, gradingServices.length]);
 
@@ -51,7 +51,7 @@ export function useItemGrading(categorySlug: string, itemName: string) {
         showToast({ message: 'Certificate not found or not verified', type: 'warning' });
       }
     } catch (err) {
-      logger.warn('[useItemGrading] lookup error:', err);
+      logger.error('[useItemGrading] lookup error:', err);
       showToast({ message: 'Failed to look up certificate', type: 'error' });
     } finally {
       setGradingLookupLoading(false);
@@ -65,7 +65,7 @@ export function useItemGrading(categorySlug: string, itemName: string) {
       const data = await collectorsApi.gradingPopulation(itemName, categorySlug);
       setGradingPopulation(data);
     } catch (err) {
-      logger.warn('[useItemGrading] population error:', err);
+      logger.error('[useItemGrading] population error:', err);
     } finally {
       setGradingPopLoading(false);
     }

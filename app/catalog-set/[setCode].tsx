@@ -103,7 +103,7 @@ function CatalogSetScreen() {
           error: err instanceof Error ? err.message : String(err),
           ms: elapsed(),
         });
-        logger.warn("[CatalogSet] load error:", err);
+        logger.error("[CatalogSet] load error:", err);
         if (mode === "replace" && id === reqId.current) setItems([]);
       } finally {
         if (id === reqId.current) {
@@ -293,12 +293,19 @@ function CatalogSetScreen() {
               maxToRenderPerBatch={2}
             />
             <AnimatedPressable
-              style={[styles.viewerClose, { top: insets.top + 8, backgroundColor: colors.card, borderColor: colors.border }]}
+              style={[styles.viewerClose, {
+                // Modal safe-area insets resolve to 0 → top:8 hid the arrow under
+                // the status bar (flagged 3×). Floor it; visible chrome so a dark
+                // arrow can't vanish on a light card.
+                top: Math.max(insets.top, 44) + 8,
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+              }]}
               onPress={closeViewer}
               accessibilityRole="button"
-              accessibilityLabel="Close"
+              accessibilityLabel="Back to set"
             >
-              <Ionicons name="close" size={24} color={colors.text} />
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </AnimatedPressable>
           </View>
         </Modal>
@@ -347,14 +354,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   viewerCtaText: { fontSize: 14, fontWeight: "700" },
+  // Translucent dark scrim + white arrow so the back affordance stays visible
+  // over both the (light) viewer background AND the card art — the old
+  // colors.card fill was a white circle lost on the white background.
   viewerClose: {
     position: "absolute",
-    left: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    left: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
+    // Visible chrome (bg/border set inline for theme) + shadow so the back arrow
+    // is unmistakable on any card background.
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
 });

@@ -67,17 +67,24 @@ def _mock_conn(prefs=None, tier="free", daily_count=0):
 # ---------------------------------------------------------------------------
 
 class TestGetUserPrefs:
-    """`_get_user_prefs` was simplified to a no-op stub during the round-2
-    silent-failure sweep (2026-04-20) — `user_settings` has no
-    notification_preferences column, so the function returns {} always
-    and call sites fall through to all-enabled defaults. These tests
-    assert the stub behavior; they're guards that no one accidentally
-    re-introduces a broken DB lookup."""
+    """`_get_user_prefs` reads user_settings.notification_preferences.
+
+    History worth keeping: this class previously asserted the OPPOSITE — that
+    the function always returned {} and never touched the DB — because it had
+    been stubbed out in the 2026-04-20 sweep on the belief that the column did
+    not exist. The column does exist and PUT /notifications/preferences had
+    been writing it all along, so the stub silently discarded every user's
+    saved preferences on the delivery path: mute a category, still get pushed.
+
+    A test that pins a stub is how a bug becomes permanent. These now assert
+    the behaviour users actually expect, and the last one is the regression
+    guard: a stored `False` MUST be honoured.
+    """
 
     @pytest.mark.asyncio
-    async def test_returns_empty_dict_always(self):
+    async def test_returns_stored_prefs(self):
         conn = _mock_conn(prefs={"price_alerts": False})
-        assert await _get_user_prefs(conn, TEST_USER) == {}
+        assert await _get_user_prefs(conn, TEST_USER) == {"price_alerts": False}
 
     @pytest.mark.asyncio
     async def test_returns_empty_when_no_row(self):
@@ -85,11 +92,24 @@ class TestGetUserPrefs:
         assert await _get_user_prefs(conn, TEST_USER) == {}
 
     @pytest.mark.asyncio
-    async def test_no_db_round_trip(self):
-        # Stub doesn't touch the conn at all
-        conn = _mock_conn(prefs={"deal_alerts": True})
-        await _get_user_prefs(conn, TEST_USER)
-        conn.fetchrow.assert_not_awaited()
+    async def test_parses_jsonb_returned_as_text(self):
+        # asyncpg hands back jsonb as str unless a codec is registered.
+        conn = _mock_conn(prefs='{"deal_alerts": false}')
+        assert await _get_user_prefs(conn, TEST_USER) == {"deal_alerts": False}
+
+    @pytest.mark.asyncio
+    async def test_never_raises_on_db_error(self):
+        # A prefs lookup must never be able to block a notification.
+        conn = _mock_conn(prefs={})
+        conn.fetchrow.side_effect = RuntimeError("connection reset")
+        assert await _get_user_prefs(conn, TEST_USER) == {}
+
+    @pytest.mark.asyncio
+    async def test_disabled_category_actually_blocks_the_push(self):
+        """The regression that mattered: a stored False must reach the gate."""
+        conn = _mock_conn(prefs={"price_alerts": False})
+        prefs = await _get_user_prefs(conn, TEST_USER)
+        assert prefs.get("price_alerts", True) is False
 
 
 # ---------------------------------------------------------------------------
@@ -164,14 +184,23 @@ class TestShouldNotify:
         assert allowed is True
 
     @pytest.mark.asyncio
-    async def test_pref_disabled_no_longer_blocks(self):
-        # Round-2 silent-failure sweep removed the prefs lookup; all
-        # alerts pass the prefs gate now and rely on the daily cap +
-        # alert_trigger_history dedup. Test guards that no one re-adds
-        # the broken prefs filter.
+    async def test_pref_disabled_blocks(self):
+        # Restored 2026-07-25. This previously asserted the opposite
+        # ("no_longer_blocks") because _get_user_prefs had been stubbed to {}
+        # on the belief that the column did not exist — so muting a category
+        # did nothing. The column exists and is written by
+        # PUT /notifications/preferences.
         conn = _mock_conn(prefs={"price_alerts": False}, tier="free", daily_count=0)
-        allowed, _ = await should_notify(conn, TEST_USER, "price_alerts")
-        assert allowed is True
+        allowed, reason = await should_notify(conn, TEST_USER, "price_alerts")
+        assert allowed is False
+        assert "disabled" in reason.lower()
+
+    @pytest.mark.asyncio
+    async def test_pref_enabled_or_absent_allows(self):
+        for prefs in ({"price_alerts": True}, {}, {"deal_alerts": False}):
+            conn = _mock_conn(prefs=prefs, tier="free", daily_count=0)
+            allowed, _ = await should_notify(conn, TEST_USER, "price_alerts")
+            assert allowed is True, f"prefs={prefs} should not block price_alerts"
 
     @pytest.mark.asyncio
     async def test_blocked_free_cap_reached(self):
@@ -242,15 +271,14 @@ class TestNotifyUser:
         mock_push.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_pref_disabled_no_longer_skips(self):
-        # Prefs filter was removed in the round-2 silent-failure sweep
-        # — notify_user no longer reads notification_preferences. Push
-        # is sent; user can mute via daily-cap or via dedup history.
+    async def test_pref_disabled_skips(self):
+        # Restored 2026-07-25 — see TestGetUserPrefs. Muting a category must
+        # stop the push, not merely deprioritise it.
         conn = _mock_conn(prefs={"price_alerts": False}, tier="free", daily_count=0)
         with patch("app.push.send_push_to_user", new_callable=AsyncMock, return_value=1) as mock_push:
             sent = await notify_user(conn, TEST_USER, "Price Alert", "Dropped", category="price_alerts")
-        assert sent == 1
-        mock_push.assert_awaited_once()
+        assert sent == 0
+        mock_push.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_skips_when_daily_cap_reached(self):
@@ -271,9 +299,22 @@ class TestNotifyUser:
         mock_push.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_urgent_sends_regardless_of_pref(self):
-        # Same simplification — prefs filter removed. Urgent always sends.
+    async def test_urgent_bypasses_the_cap_but_not_the_preference(self):
+        """docs/alerts-and-insights.md: urgent alerts "bypass frequency caps but
+        still respect user preferences". notify_user checks the preference
+        unconditionally (`# Check preference (always)`) and only the cap is
+        skipped for urgent."""
+        # Muted category + urgent -> still blocked.
         conn = _mock_conn(prefs={"price_alerts": False}, tier="free", daily_count=0)
+        with patch("app.push.send_push_to_user", new_callable=AsyncMock, return_value=1) as mock_push:
+            sent = await notify_user(
+                conn, TEST_USER, "URGENT", "Body", category="price_alerts", urgent=True
+            )
+        assert sent == 0
+        mock_push.assert_not_awaited()
+
+        # Not muted, but over the daily cap + urgent -> sends anyway.
+        conn = _mock_conn(prefs={}, tier="free", daily_count=FREE_DAILY_CAP)
         with patch("app.push.send_push_to_user", new_callable=AsyncMock, return_value=1) as mock_push:
             sent = await notify_user(
                 conn, TEST_USER, "URGENT", "Body", category="price_alerts", urgent=True

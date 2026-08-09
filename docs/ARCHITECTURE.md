@@ -61,7 +61,7 @@ types/                  # category.ts (36 categories)
 | Pricing | Ridge regression v2, q10/q50/q90 quantile predictions | `app/ml/model_loader.py` |
 | Alert & Insight | Threshold, anomaly, set completion alerts | `app/agents/alert_agent.py` |
 | Learning & Calibration | Feedback loop, calibration gate | `app/agents/calibration_agent.py` |
-| Vision & Classification | 3-tier: CLIP → OpenAI → heuristic (36 categories) | `app/ml/vision_classifier.py` |
+| Vision & Classification | 2-tier: OpenAI Vision → heuristic (54 categories). CLIP/fal.ai tier removed 2026-07-27 — FAL_KEY was never set, so it never ran | `app/ml/vision_classifier.py` |
 | Marketplace Aggregation | Multi-source search, dedup, provenance scoring | `app/agents/marketplace_agent.py` |
 | Smart Deal | Purchase mandates, policy engine, deal discovery | `app/agents/deal_discovery_agent.py` |
 | Catalog Learning | Capture unrecognized items, auto-map by consensus, surface new category candidates | `features/catalog_learning_router.py` |
@@ -127,6 +127,365 @@ Key tables in Supabase PostgreSQL:
 | `user_push_tokens` | Expo push notification tokens per device |
 | `taxonomy_registry` | Category taxonomy versions |
 | `object_pointers` | S3 image references |
+
+### `items` paired columns — read this before adding a writer
+
+`items` deliberately carries **both halves** of three pairs, and different
+readers key on different halves:
+
+| Pair | Who reads which half |
+|------|----------------------|
+| `name` ↔ `title` | Home portfolio and `/portfolio/overview` read `name`; the Items tab falls back to `title` |
+| `purchased_at` ↔ `purchase_date` | `ITEMS_SELECT` (`itemsProvider.ts`) reads `purchased_at`; the CSV export reads `purchase_date` |
+| `purchase_price` ↔ `purchase_price_eur` | The analytics Cost Basis / DCA series sums the EUR half |
+
+Writing one half and not the other **never throws**. A `SELECT` of the
+unwritten half returns NULL and every reader defaults (`?? 0`, `'Untitled'`),
+so the feature renders empty instead of failing. That is why this recurred:
+the 2026-07-24 fix landed on `add-manual.tsx` and was never carried to
+`routes/items_router.py`, `features/import_router.py` or
+`pipelines/seed_beta_users.py`. Measured 2026-07-28, before the fix,
+`purchase_price_eur` was non-null on **0 of 5** priced rows — the Cost Basis
+card could not populate for anyone.
+
+Since 2026-07-28, **`trg_items_sync_paired_columns` (BEFORE INSERT OR UPDATE)
+derives the missing half**, so a new writer no longer has to remember. Two
+things it deliberately does not do:
+
+- it never overwrites a half that *was* supplied — the watchlist "I Got It!"
+  flow sends a real timestamp, not a date, and keeps it
+- it will not treat a non-EUR row as EUR; the database cannot call the FX
+  service. App-side conversion is `app/lib/fx_service.py::convert_to_eur`,
+  wired into all three server writers.
+
+#### `user_settings`: currency / region / locale — code and CHECK must agree
+
+`PUT /settings` writes three constrained columns. Each has a code-side allow-list
+that is the intended contract, and each must match its CHECK exactly:
+
+| Column | Code allow-list | Values |
+|--------|-----------------|--------|
+| `currency` | `CurrencyCode` (`src/data/types.ts`), `VALID_CURRENCIES` | EUR, USD, GBP, JPY, **KRW, AUD, CAD** |
+| `region` | `Region` (`src/lib/settings.tsx`), `VALID_REGIONS` | americas, europe, japan, **korea, oceania**, other |
+| `locale` | `NumberLocale`, `VALID_LOCALES` | en-US, de-DE, ja-JP, nl-NL, **ko-KR, en-AU** |
+
+Until 2026-07-30 **all three CHECKs were missing the bold values** — Korea and
+Oceania support was added throughout the code and the constraints were never
+migrated with it. The handler validated the value as legal, the INSERT then
+raised 23514, and the user got a generic **500 `DB_ERROR`**.
+
+This was not cosmetic. `REGION_DEFAULTS` maps `korea → KRW` and
+`oceania → AUD`, and hands those out as **first-launch defaults**, so a Korean
+user could save neither their currency, nor their region, nor their locale —
+three 500s on the values the app itself chose for them. `docs/store-description.md`
+also promises "seven currencies … you can change them anytime" on the App Store
+listing. Proven on prod: the 4 legacy values 200, the 5 new ones 500.
+
+Migrations `20260730_user_settings_currency_seven.sql` and
+`20260730_user_settings_region_locale_korea_oceania.sql`. All 7 currencies, 6
+regions and 6 locales now return 200; illegal values still 400 with the valid list.
+
+`user_settings.locale` is the **number-format** locale (`NumberLocale`). The UI
+language is a different set — `SUPPORTED_LOCALES` in `src/i18n/index.ts`
+(`en,nl,de,fr,es,ja,ko`). Don't merge them.
+
+Deliberately still 4: `verified_sales.currency`. Its CHECK and
+`feedback_router.ALLOWED_CURRENCIES` **agree**, so there is no silent failure —
+and `miscApi.submitVerifiedSale` has zero FE callers. Widen both together if
+verified sales are ever wired to the UI.
+
+> **Why `check-constraint-drift.mjs` did not catch this, or the alerts
+> `direction: 'below'` bug:** that gate matches a literal only when it can see
+> the constrained column near a mention of its **table**. FE code never mentions
+> a table — it posts to an endpoint. So every constraint reachable only through
+> an API call is invisible to it. Mutation-tested 2026-07-30: reintroducing
+> `direction: 'below'` still reports PASS. The FE-side defence is typing those
+> payload fields as **literal unions rather than `string`** (see
+> `AlertDirection` / `AlertTriggerType` in `src/api/alertsApi.ts`), which `tsc`
+> enforces in `verify:prebuild`. A generic scanner was considered and rejected:
+> matching on column name alone collides badly (FE `category` means `pokemon`,
+> the constrained `category` means `scanning`/`collection`), and 46 of the 46
+> candidates it produced were mostly false positives.
+
+#### Money math: always use the EUR half, never the raw one
+
+`price_predictions.q50` — the source of every "current value", "market value"
+and portfolio total — is **EUR**. `items.purchase_price` is raw, denominated in
+`items.purchase_currency`. Putting the two in one expression silently mixes
+units: a USD 100 and a EUR 100 each contribute 100. Nothing errors, and for a
+EUR-only user the numbers even look right, which is why three separate queries
+carried this defect at once (all fixed 2026-07-28):
+
+| Site | Was | Effect |
+|------|-----|--------|
+| `portfolio_router.py` `/portfolio/items` | `cost_basis = COALESCE(e.first_q50, 0)` | `unrealized_pl` measured **model drift, not profit** — a stable model reported ~break-even no matter what the user paid. Proved on prod: an item bought for €50 with `first_q50` 8.22 reported `cost_basis` 8.22 and P/L **0.00**; correct values are 50.00 and **−41.78**. |
+| `value_summary_router.py` `/value-summary` | `pp.q50 - i.purchase_price` | Smart-buy savings compared EUR against a raw amount, corrupting both the `q50 > purchase_price` filter and the total. |
+| `trends_and_deepdive_router.py` DCA series | `SUM(i.purchase_price)` | Cost-basis line plotted in mixed currencies against an EUR value line. (Endpoint is currently dead code — see `app/analytics.tsx:143`.) |
+
+**Rule: if an expression touches `q50`, use `purchase_price_eur`.** Fall back to
+`first_q50` only when there is no purchase price on file, so items the user
+never priced keep a sensible value instead of dropping to zero.
+
+Two places that correctly use the raw column, so don't "fix" them:
+`items_export_router.py` (exports the amount *with* `purchase_currency`) and
+`dossier_agent.py` (emits `amount` + `currency` as a pair).
+
+Note this class is **invisible to `scripts/audit_column_drift.py`**, which asks
+a structural question — is a column read but never written. Here both columns
+had readers and writers; the defect was choosing the wrong one. Structural
+audits cannot catch a semantic substitution, so this needs the value-level
+check described in the QA checklist.
+
+#### One valuation expression, or the screen contradicts itself
+
+An item's current value is:
+
+```sql
+COALESCE(l.q50, i.predicted_price_eur, i.estimated_value, 0)
+```
+
+a model prediction if one exists, **else the item's own stored value**. Most
+items added by hand have no `price_predictions` row at all, so an endpoint that
+uses `COALESCE(l.q50, 0)` alone values them at zero while a sibling endpoint
+counts them. The screen then disagrees with itself and there is no error
+anywhere.
+
+Measured 2026-07-28 on a live account whose 3 items have **zero**
+`price_predictions` rows:
+
+| | `/portfolio/overview` | `/portfolio/items` | `/portfolio/category-stats` |
+|---|---|---|---|
+| before | 55.00 | rows sum to 0.00 | 0.00 |
+| after | 55.00 | 55.00 | 55.00 |
+
+`/portfolio/overview` had already been fixed for this once — its query still
+carries the comment "Home's COLLECTION VALUE read €0 vs €55 elsewhere" — and
+the fix was never carried to the siblings. **Grep the expression, not the
+file.**
+
+Related: never filter `AND category IS NOT NULL` in a breakdown. It silently
+drops uncategorised items, so the parts stop adding up to the total the header
+shows. Group on `COALESCE(NULLIF(category, ''), 'uncategorized')` instead
+(done in `portfolio_router`, `trends_and_deepdive_router`, `insights_router`).
+
+##### There are TWO prediction tables. Use both.
+
+| table | what it is | joined by | historically read by |
+|-------|-----------|-----------|----------------------|
+| `price_predictions` | catalog-model output, partitioned | `items.canonical_ref = item_ref` | `/portfolio/overview`, `/portfolio/items`, `/portfolio/timeseries` |
+| `quick_predictions` | per-item QuickScan output | `item_id = items.id` | `/analytics/portfolio/category-breakdown`, **and the Items tab** (`itemsProvider.mapItemRow`) |
+
+An item priced in one but not the other counted on some Home surfaces and read
+**zero** on others. Measured 2026-07-29 across 11 live items: 1 had a quick
+prediction, 2 had a catalog one — **neither source dominates**, so picking
+either alone loses real value. Every value site must COALESCE over *both*
+before falling back to `predicted_price_eur` / `estimated_value`.
+
+##### The Home curve must value the whole collection
+
+`/portfolio/timeseries` drives three of Home's most prominent numbers at once —
+the headline **COLLECTION VALUE**, the chart, and the **change %**. It summed
+`pp.q50` per day, so a hand-added item contributed 0 to every point while the
+Items tab counted it.
+
+The `len(points) < 2` fallback computed the correct total, which meant the bug
+**only appeared once an account had ≥2 days of prediction history** — a state
+no test account was in. Items without predictions have no history either, so
+their value is now a constant baseline added to every day, which keeps the last
+point equal to `/portfolio/overview`.
+
+Verified on a deliberately mixed account (one item with 2 days of catalog
+predictions at 220, one with a stored value of 120):
+
+| | timeseries | overview | overview rows | category-breakdown | portfolio/items |
+|---|---|---|---|---|---|
+| before | 220 | 340 | 340 | **120** | 340 |
+| after | **340** | 340 | 340 | **340** | 340 |
+
+**Known residual:** the Items tab reads Supabase directly and cannot join
+`price_predictions` (no FK for a PostgREST embed — see
+`learning_listitems_pgrst_embed`), so a catalog-only-priced item still reads 0
+there. Home is internally consistent; closing that last seam needs the Items
+tab to read the server, or a denormalised value column on `items`.
+
+#### `chat_threads_v1` user FKs — added 2026-07-31, two different semantics
+
+The table had **no foreign keys to `auth.users`**, so deleting a user left
+threads pointing at nobody. Before the fix: of 7 `kind='dm'` threads, 2 had an
+orphaned `dm_user_a` and 4 an orphaned `dm_user_b` (5 distinct threads); of 10
+threads total, 8 had an orphaned `created_by`.
+
+Never user-visible — `v_chat_inbox_v1` LEFT JOINs `profiles`, so orphans
+rendered through the `'Unknown'` fallback. It surfaced because `offers.buyer_id`
+**does** have an FK: seeding a test offer against one of those ids failed loudly
+with `offers_buyer_id_fkey`. Same class of reference, opposite behaviour.
+
+| Column | On user delete | Why |
+|--------|----------------|-----|
+| `dm_user_a`, `dm_user_b` | **CASCADE** | A DM is meaningless once either party is gone, and the view already requires both non-null. Messages/members/reads follow via the existing `thread_id` cascades. |
+| `created_by` | **SET NULL** | CASCADE would be *wrong*: it would destroy shared `category`/`private` threads whose creator merely left, taking every other member's history. Needed `DROP NOT NULL`, safe because `created_by` has **zero readers** in the codebase — it is write-only. |
+
+Migration `20260731_chat_threads_user_fks.sql`; deleted rows backed up to
+`/opt/collectors/logs/chat_orphan_backup_20260731.json`. Proven after applying:
+created a user + DM thread + message, deleted the user, and the thread and
+message both went to 0 with 0 orphans remaining.
+
+**Not added:** `chat_messages_v1.user_id → auth.users`. Zero orphans today, and
+the right semantics are unclear — deleting an author should arguably keep a
+group thread readable rather than punch holes in it. Revisit as a
+tombstone/anonymise decision, not a bare CASCADE.
+
+#### Settings → Edit Profile — built 2026-07-31
+
+`ProfileEditSection` had been calling `PATCH /settings/profile` since it
+shipped, but the route did not exist (**404**), `profiles` had no `bio` column,
+and both public views hardcoded `NULL::text AS bio`. Live UI over nothing. Now
+built end to end.
+
+**Storage** (`20260731_profiles_bio_and_public_view.sql`): `profiles.bio text`
+with `profiles_bio_length_check` (≤300 chars), and `user_public_profiles` now
+selects `p.bio` instead of a NULL literal. `PublicUserProfileCard` and
+`UserCollectionPreview` already render `{profile.bio && …}`, so they light up as
+soon as it is non-null.
+
+**Route** (`user_settings_router.py` → `PATCH /settings/profile`). Partial
+update of the caller's own row; only `username` and `bio` are editable.
+
+| Case | Result |
+|------|--------|
+| bio only / username only | 200, other field untouched |
+| username already taken | **409 `USERNAME_TAKEN`** |
+| same name, different case | **409** — enforced by `profiles_username_lower_key`, a UNIQUE index on `lower(username)` (added 2026-07-31). The handler also checks in code so the user gets a friendly 409 rather than a raw 23505, and `handle_new_user` does the same at signup — but **the database is the authority**, not those checks |
+| bio > 300 chars | 422 with a clear message, not a 23514 surfaced as 500 |
+| username with punctuation/spaces | 400 |
+| empty payload | 400 |
+
+Username uniqueness was case-SENSITIVE at the DB level until 2026-07-31
+(`profiles_username_key`), so `Merle` and `merle` could coexist and only
+application code prevented it — the same "constraint narrower than the code
+assumes" shape as the currency/region/locale breakage. An index on
+`lower(username)` already existed but was not UNIQUE; it now is. Proven by
+bypassing every application check with direct SQL:
+`duplicate key value violates unique constraint "profiles_username_lower_key"`.
+Both compensating paths already handle the violation (`handle_new_user` falls
+back to a nameless profile; `update_profile` maps it to 409 `USERNAME_TAKEN`).
+
+`display_name` follows a rename **only while it mirrors the username** (the
+signup trigger sets both). A display_name the user has deliberately diverged is
+left alone — verified: renaming to `merle_probe2` kept `display_name = 'Merle S'`.
+
+**The FE half that had to move with it:** `editBio` initialised to `''` and was
+never populated, and the form posts whatever is in the field. That was harmless
+while the route 404'd; the moment it persisted, opening the modal and saving
+would have **wiped an existing bio**. `AuthProvider` now selects `bio` (added to
+`Profile`) and the modal prefills both fields on open. If another editable
+profile field is added, prefill it in the same place.
+
+#### An empty update payload is a throw, not a no-op
+
+`watchlist-builder`'s move up/down buttons called
+`updateWatchlistItem(id, { sortOrder })`, but `watchlist_items` had no
+`sort_order` column, so the provider deliberately dropped the field. That left
+an **empty payload**, and the rest follows mechanically:
+
+```
+.update({})            -> PostgREST matches 0 rows
+.select(...).single()  -> PGRST116 "The result contains 0 rows" (HTTP 406)
+provider throws        -> the screen's catch rolls back the optimistic reorder
+                       -> "Could not reorder. Please try again."
+```
+
+So reordering failed **every time**, visibly. Verified against prod 2026-07-31
+by issuing the exact PATCH the provider produces — 406 before, 200 after.
+
+Fixed on both sides:
+
+- `sort_order integer` added (`20260731_watchlist_items_sort_order.sql`),
+  nullable with no default so existing rows keep their priority ordering rather
+  than all claiming rank 0. Index on `(user_id, sort_order NULLS LAST)`.
+- `updateWatchlistItem` now writes it, and **returns the row unchanged instead
+  of issuing an empty update** when no known field was supplied. That guard is
+  the general fix: any future field the provider does not map would otherwise
+  reproduce this exact failure.
+- `listWatchlist` reads the real column instead of hardcoding `sortOrder: 0`.
+
+**Rule: never let a mapper build an update payload that can come out empty.**
+Either guard it, or the caller gets a throw for a write it believes succeeded.
+
+#### Empty is not always broken
+
+Two analytics endpoints return empty for a correct reason. Verified by querying
+the joins directly rather than inferring from the response — check the same way
+before "fixing" either:
+
+- `/portfolio/category-health` → `{"health": []}` needs ≥1 `price_predictions`
+  row within 30 days to compute volatility and trend.
+- `/sets/auto-progress` → `{"sets": [], ...}` until the user owns **2+ items
+  from the same set**. The handler defaults `min_owned=2` with
+  `HAVING COUNT(*) >= $2`, so one matching item surfaces nothing. Re-verified
+  2026-07-31: seeding a second item with the same `attrs->>'set_name'` returned
+  `owned_count 2 / catalog_total 989 / completion_pct 0.2` immediately. **This
+  paid feature works — do not cut it on the strength of an empty response.**
+  Note the two sides read *different* columns: `items.attrs` but
+  `category_items.attributes_json` (see `learning_verify_table_columns_before_sql`).
+- `/data-moat/prediction-accuracy` → `total_ground_truths: 0` because
+  `price_ground_truths` has never had a row. The write chain **is** fully
+  wired: item detail (`useItemDetail.ts:289`) → `submitVerifiedSale` →
+  `POST /feedback/verified-sale` → `record_price_ground_truth`. It only fills
+  when a user marks an item sold, which no test data does.
+
+The same class, but rendering a *wrong* value rather than none — the leaderboard
+showed **XP as money** (fixed 2026-07-31):
+
+- `/gamification/leaderboard` is an **XP** board (`total_xp`, `level`,
+  `current_streak`). `app/leaderboard.tsx` poured those into the shape of the
+  local `USER_PROFILES` sample, which ranks by collection value —
+  `totalEstimatedValueEur: entry.xp` — and the card renders that field through
+  `formatPrice`. Against the live board, 80 XP displayed as **"€80.00"**, level
+  as "1 item", and every row read "0 categories". `current_streak` was fetched
+  and dropped.
+- Nothing caught it: 200 response, types satisfied (both numbers), no render
+  error. **Only comparing the value to its meaning finds this** — see
+  `learning_validate_values_not_just_structure`.
+- Fixed by giving each source its own display strings via the exported pure
+  `apiEntryToRow`, pinned in `__tests__/screens/leaderboardRow.test.ts` against
+  the live board and mutation-proven (5 of 7 assertions fail on the old
+  behaviour). Two sources that measure different things must not share a
+  view-model.
+
+A third case is a **real** mismatch that was still left unwired on purpose:
+
+- `RegionalInsightsSection` ("Popular in Your Region") is never rendered.
+  `marketplace.tsx` reads `resp.items` from
+  `GET /data-moat/demand-heat/by-region`, but that endpoint returns
+  `{regions: [...]}` — grouped by `region, country_code`, with **no
+  `item_key`**. So `items` is always `undefined` and the section self-hides.
+  Verified 2026-07-30.
+
+  It was deliberately **not** wired, because the data cannot support it: over 7
+  days `demand_signals` held 68 rows of which only **9 had a region**, across 8
+  users. A per-item-by-region query returned 4 rows — 3 of them test artifacts
+  (`slot freed`, `test query 2/3`) with a **NULL category**, which the component
+  would have crashed on (`item.category.replace(...)`, no guard — since fixed).
+  Wiring it today would surface junk to users.
+
+  To wire it later: add an `items` array (item_key, category, signal_count,
+  region) to that endpoint **alongside** `regions` so nothing else breaks — the
+  FE is already written for exactly that shape — and only once real regional
+  signal volume exists.
+
+Two binding traps in the same area, both fixed and both worth not repeating:
+
+- **Never bind a bare `datetime.date` to a `timestamptz` column.** asyncpg
+  encodes it as midnight in the *host* timezone, so `purchase_date`
+  2024-06-01 stored `purchased_at` = 2024-05-31 22:00Z — a day early for
+  every UTC reader. Derive it in SQL pinned to UTC instead.
+- **Never bind one parameter to both `$N::timestamptz` and `$N::date`.**
+  Postgres infers a date/timestamp type for the parameter and asyncpg then
+  rejects the ISO *string* a Pydantic model declares (`expected a
+  datetime.date or datetime.datetime instance, got 'str'`). This 500'd every
+  `POST /items` carrying a `purchased_at` — the whole watchlist conversion —
+  silently, because the route caught it as a generic `DB_ERROR`.
 
 ## Data Flow
 

@@ -147,7 +147,25 @@ describe('usePushNotifications', () => {
       },
     });
 
-    expect(mockPush).toHaveBeenCalledWith('/item/abc-123');
+    // 'abc-123' is NOT a uuid, so itemHref routes it to the CATALOG screen.
+    // This asserted '/item/abc-123', which is the behaviour that produced
+    // PostgREST 22P02 "invalid input syntax for type uuid" and a blank
+    // "Unknown item" screen — 58/58 non-null alert_trigger_history rows were
+    // catalog keys, 0 were uuids (src/lib/ids.ts). The test was pinning the bug.
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/catalog-item/[key]',
+      params: { key: 'abc-123' },
+    });
+  });
+
+  it('routes a UUID item_id to the owned-item screen instead', () => {
+    // The other half of itemHref's contract. Without this, someone could
+    // "fix" the assertion above by sending everything to the catalog.
+    const { itemHref } = require('../../src/lib/ids');
+    expect(itemHref('7db74bd9-7939-4929-afcf-473e76954af3')).toEqual({
+      pathname: '/item/[id]',
+      params: { id: '7db74bd9-7939-4929-afcf-473e76954af3' },
+    });
   });
 
   it('navigates to deal screen on notification tap with deal_id data', async () => {
@@ -219,7 +237,12 @@ describe('usePushNotifications', () => {
       },
     });
 
-    expect(mockPush).toHaveBeenCalledWith('/item/item-xyz');
+    // Same itemHref contract: 'item-xyz' is not a uuid, so it belongs on the
+    // catalog screen. See the item_id test above.
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/catalog-item/[key]',
+      params: { key: 'item-xyz' },
+    });
   });
 
   it('navigates to event screen on event_id notification', async () => {
@@ -273,7 +296,13 @@ describe('usePushNotifications', () => {
       },
     });
 
-    expect(mockPush).toHaveBeenCalledWith('/(tabs)/alerts');
+    // '/(tabs)/alerts' NEVER EXISTED — alerts was never a tab — so every push
+    // carrying alert_id landed on expo-router's Unmatched screen: notification
+    // arrives, user taps, 404. Caught by scripts/check-dead-nav.mjs on
+    // 2026-08-08 and repointed at /notifications, which is now the single
+    // inbox after app/alerts.tsx was merged into it. This test had been pinning
+    // the dead route.
+    expect(mockPush).toHaveBeenCalledWith('/notifications');
   });
 
   it('navigates to inbox on connection_request notification', async () => {

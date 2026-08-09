@@ -57,7 +57,7 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
           setSettings({ ...DEFAULTS, ...JSON.parse(stored) });
         }
       } catch (e) {
-        logger.debug('[a11y] Failed to load accessibility settings:', e);
+        logger.error('[a11y] Failed to load accessibility settings:', e);
       }
       setReady(true);
     })();

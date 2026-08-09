@@ -117,19 +117,205 @@ This is the most critical flow Apple's reviewer will exercise.
 
 ---
 
-## Section 5 — Paywalled features (BETA — all should be UNLOCKED)
+## Section 4b — Spreadsheet import + watchlist acquire
 
-This is the test for `EXPO_PUBLIC_BETA_UNLOCK_ALL=true`. **Every paywall
-should be open**, no "Upgrade to Pro" CTAs should be visible.
+> **Added 2026-07-28.** Both flows returned success while silently dropping
+> data, and the watchlist one 500'd outright. Neither had a QA row, and no
+> automated test covered them. Check the **values**, not just that the row
+> appears — a structurally-valid row with a NULL half is exactly what shipped.
 
-- [ ] Bottom nav → **Analytics** tab (or wherever you have it) — should load chart UI, NOT a paywall card
-- [ ] Side drawer → **Deal Discovery** / **Deal Hub** → should show deal listings, NOT a locked state
-- [ ] Side drawer → **Sets to Complete** → should show set tracker UI, NOT "Upgrade to unlock"
-- [ ] Item detail → Advanced Predictions → should show q10/q50/q90 charts, NOT a lock icon
-- [ ] Settings → **Subscription** → should render **"You're in the Sparrow beta — every Pro feature unlocked for free"** info card, NOT plan cards
-- [ ] Verify NO "Upgrade to Pro" button anywhere in the app
+- [ ] Add tab → **Import from spreadsheet** → download the template
+- [ ] Import the filled template as **.csv** → success count matches your rows
+- [ ] Import the same data as **.xlsx** → same result (Excel path uses `openpyxl`)
+- [ ] Imported items appear on the **Home portfolio with their names visible**
+      (not blank / "Untitled" — Home reads `name`, the Items tab reads `title`,
+      so an item can look correct on one screen and blank on the other)
+- [ ] Open an imported item → purchase price, currency, condition, grade and
+      purchase date all match the spreadsheet
+- [ ] The purchase date is the **same day** you typed, not the day before
+      (timezone off-by-one)
+- [ ] Analytics tab → **Cost Basis** reflects the imported purchase prices
+- [ ] Import a row priced in a **non-EUR** currency → cost basis shows the
+      FX-converted amount, not the raw number relabelled as EUR
+- [ ] Watchlist → **"I Got It!"** on an item → converts to a collection item
+      without an error toast, and the watchlist row disappears
+- [ ] That acquired item's cost basis is in **your** currency, converted —
+      set Settings → Currency to USD first to make the bug visible
 
-If a paywall IS showing during beta, that means `EXPO_PUBLIC_BETA_UNLOCK_ALL` didn't reach the build (EAS env miswire). Note which screen and we'll re-trigger a build.
+### Subscription screen (added 2026-07-28)
+
+> The RevenueCat key is injected from the EAS **production** environment, not
+> from local `.env`. A dev/Metro run therefore shows "Subscriptions Coming
+> Soon" — that is expected locally and proves nothing about this build. On
+> TestFlight the offerings should load.
+
+- [ ] Subscription screen shows **plan cards with real prices** (€4.99/mo,
+      €39.99/yr), not "Subscriptions Coming Soon". If it says Coming Soon on
+      TestFlight, `EXPO_PUBLIC_REVENUECAT_IOS_KEY` did not reach the build or
+      the RevenueCat `default` offering is misconfigured.
+- [ ] **Settings → Appearance → High Contrast + Dark**, then reopen this
+      screen: the Upgrade button label and the RECOMMENDED badge must be
+      **readable**. This shipped as white-on-white (invisible) until
+      2026-07-28 — it is invisible in exactly one of four palettes, so it must
+      be checked in that one.
+- [ ] Screen fades/slides in like the rest of the app (it had no enter
+      animation before 2026-07-28)
+- [ ] Restore / Manage buttons align with the content edges on the screens
+      either side of it
+- [ ] Buy a plan with the **sandbox account** (`sandbox-merle@sparrowcollect.com`
+      — sign in first via iPhone Settings → App Store → Sandbox Account).
+      This cannot be tested in the simulator.
+- [ ] After purchase, Pro features unlock (Home "Extended Portfolio Insights"
+      opens **/analytics**, not the paywall)
+- [ ] **Restore Purchases** on a second device / after reinstall re-grants Pro
+
+### Cost basis / P&L (added 2026-07-28)
+
+> Every one of these read a model estimate where it should have read what you
+> actually paid. They looked plausible, which is the problem — check them
+> against a purchase price you know.
+
+- [ ] Add an item with a purchase price **well above or below** its estimated
+      value (e.g. pay €50 for something valued ~€8)
+- [ ] Portfolio / P&L shows a gain or loss reflecting **what you paid**, not
+      roughly zero. (`unrealized_pl` used to be `current_value − first
+      predicted value`, so a stable model always showed ~break-even.)
+- [ ] Items list row shows the **"Paid €X"** line with a gain/loss delta —
+      this never rendered before 2026-07-28 because the EUR column was empty
+      for every item, so it has no prior device coverage
+- [ ] "You saved €X" banner: buy something in a **non-EUR** currency below
+      market value and confirm the saving is the FX-converted difference, not
+      the raw number treated as EUR
+
+### Analytics screen (added 2026-07-28)
+
+> Every endpoint this screen calls was swept live as two users — one with items,
+> one without — because an empty section is ambiguous otherwise. The failures
+> below were all invisible from the app: an HTTP 200 with an empty body, or a
+> total that disagreed with the rows beneath it.
+
+- [ ] Analytics tab opens with **no blank/error sections**
+- [ ] The **portfolio total at the top equals the sum of the item rows** below
+      it, and equals the sum of the category breakdown. These came from three
+      different queries and disagreed (€55 header vs €0 rows).
+
+### Home value consistency (added 2026-07-29)
+
+> Home shows the collection's value in **five** places fed by four different
+> queries. They must all agree, and they did not. Check them together, on one
+> account, in one sitting — each looks plausible alone.
+
+- [ ] **COLLECTION VALUE** (above the chart) = **Items tab "Portfolio total"**
+- [ ] The **chart's last point** matches that same number (the headline is
+      derived from the curve, so a wrong curve silently moves the headline)
+- [ ] The **change %** is consistent with the curve's first→last points
+- [ ] The **stats row** ("Portfolio") matches the headline
+- [ ] **Portfolio Insights → Total Value** matches the headline
+- [ ] Add a **hand-entered item with an estimated value** (no scan): every one
+      of the five updates by that amount. It used to contribute 0 to the chart
+      and headline while showing on the Items tab.
+- [ ] If any item was priced by **QuickScan**, confirm it also counts on Home —
+      there are two prediction tables and each used to be read by only some
+      surfaces
+- [ ] Add an item **by hand** (no scan, so it has no price prediction) with an
+      estimated value → it still contributes its value to the total, the rows
+      and the category breakdown, not 0
+- [ ] An item with **no category** still appears in the category breakdown
+      (as "uncategorized"), so the parts add up to the whole
+- [ ] **Risk notes / insights** section renders. It used to 500 whenever the
+      account held even one uncategorised item, and again whenever the trending
+      query timed out — both showed as a blank section, never an error.
+- [ ] **Trending items** show real names and categories (e.g. "Charizard ★ δ",
+      `pokemon`) — not raw keys like `base6-base6-8`
+- [ ] The screen loads promptly; insights used to take up to 30s and then fail
+
+Sections that are legitimately empty on a fresh account — **not** bugs:
+
+- **Category Health** needs price predictions from the last 30 days
+- **Prediction Accuracy** stays at 0 until you mark an item **sold** on its
+  detail screen (that is what records ground truth)
+
+### Watchlist reorder (added 2026-07-31)
+
+Failed every time before today — the buttons showed "Could not reorder."
+
+- [ ] Watchlist builder → **move an item up**, then **down**. No error toast
+- [ ] Leave the screen and come back — **the order you set is still there**
+      (it reverted before, because nothing persisted)
+
+### Barcode scan, unrecognised code (added 2026-07-31)
+
+- [ ] Scan something not in any catalog (any random EAN). The card must say
+      **"Not recognised"**, not "Product Found" with a green tick
+- [ ] The primary button must read **Add Manually** and open add-manual — it
+      previously offered Save, which filed an item called "Unknown item"
+
+### Currency / region / locale (added 2026-07-30)
+
+Until 2026-07-30 five of these values returned a **500** because the DB CHECK
+was narrower than the code. Walk every one — a 500 here means a constraint
+regressed.
+
+- [ ] Settings → Currency: each of **EUR, USD, GBP, JPY, KRW, AUD, CAD** saves
+      and survives a force-quit + relaunch
+- [ ] Settings → Region: each of **americas, europe, japan, korea, oceania,
+      other** saves. `korea` and `oceania` were the broken ones
+- [ ] Number format: **ko-KR** and **en-AU** save (these were broken too)
+- [ ] Picking region `korea` should default currency to KRW, `oceania` to AUD —
+      and that default must itself save without error
+
+### Price alerts (added 2026-07-30)
+
+The **only** way to create an alert is a watchlist target price. Free plan =
+1 alert/week, so do this on a fresh week or expect the limit toast.
+
+- [ ] Wishlist tab → add an item **with a target price** → a toast confirms
+      *"Price alert created — we'll notify you when the price drops below …"*.
+      A toast reading "Target saved, but the price alert couldn't be created"
+      means the plan limit was hit (fine) — a **silent** result is a bug
+- [ ] Alerts screen → **Rules** tab → the alert appears as one plain sentence,
+      e.g. *"Pokemon drops below €50.00"* with a **Price drop** badge.
+      An empty "No alert rules yet" here after the step above is the 2026-07-30
+      regression (Rules tab reading the trigger feed) — flag it
+- [ ] The **Rules** tab and the **Recent** tab must show **different** content.
+      Identical lists = the two have been crossed again
+- [ ] Swipe a rule → **Delete** → it disappears and stays gone after
+      pull-to-refresh. "Failed to delete alert" means a non-alert id is being
+      sent to `DELETE /alerts/mine/{id}`
+- [ ] Edit an existing watchlist item's target price → same alert behaviour
+
+---
+
+## Section 5 — Paywall (expectation depends on the BUILD PROFILE)
+
+> **Corrected 2026-07-27.** This section used to say every paywall should be
+> UNLOCKED, and that a visible paywall meant `EXPO_PUBLIC_BETA_UNLOCK_ALL`
+> had failed to reach the build. That is wrong for any TestFlight build made
+> with the `store` profile — which is all of them, since
+> `npm run build:ios:local` uses `--profile store`, and that profile pins
+> `EXPO_PUBLIC_BETA_UNLOCK_ALL=false`. Following the old text would have you
+> file a working build as broken.
+
+Check which profile the build came from, then use the matching column:
+
+| Surface | `store` profile (TestFlight + App Store) | `development` / `preview` (internal) |
+|---|---|---|
+| Analytics tab | paywall card **shown** | chart UI, no paywall |
+| Deal Discovery / Deal Hub | locked state **shown** | deal listings |
+| Sets to Complete | "Upgrade to unlock" **shown** | set tracker UI |
+| Item detail → Advanced Predictions | lock icon **shown** | q10/q50/q90 charts |
+| Settings → Subscription | **plan cards** (€4.99/mo, €39.99/yr) | "every Pro feature unlocked for free" card |
+
+For a `store` build (the normal case):
+
+- [ ] Settings → **Subscription** renders real plan cards with prices, not the beta card
+- [ ] At least one gated surface shows its paywall rather than the feature
+- [ ] Tapping a plan opens the Apple IAP sheet (sandbox account required — device only, not simulator)
+
+If a `store` build shows **no** paywall anywhere, that is the serious case:
+it means the beta flag leaked into a shippable profile. Both `store` and
+`production` now pin it to `false` (eas.json), so this should not recur —
+but if it does, do not submit that build.
 
 ---
 
@@ -179,6 +365,49 @@ If you see ANY crash in this section, check Sentry (if configured) or rerun and 
 - Email yourself the .ips file for investigation
 
 ---
+
+## Screen coverage — full sweep completed 2026-07-31
+
+Every route in `app/` was walked against **prod data**, not mocks. Method that
+found things: seed a real row, call the exact query the screen issues, compare
+the **value** to its meaning. Status codes and types caught none of the bugs.
+
+**Fixed during the sweep** (each has a QA row above or in git):
+
+| Screen | Defect |
+|--------|--------|
+| Alerts / wishlist | price alerts never created (`direction:'below'` → 422); Rules tab read the trigger feed |
+| Leaderboard | XP rendered as currency — 80 XP shown as "€80.00" |
+| Categories | raw slugs (`action_figures`) instead of curated names; search matched slugs |
+| Settings | currency/region/locale saves failed silently (4 unchecked `fetch` writes) |
+| Settings → Edit Profile | `PATCH /settings/profile` did not exist (404); built it |
+| MFA | abandoning enrolment bricked 2FA permanently |
+| Events | templates 500'd on save and read back empty |
+| Barcode scan | "Product Found" + Save on a scan that identified nothing |
+| Watchlist builder | reorder threw HTTP 406 every time (empty update payload) |
+| sets-to-complete | "Est. value" always 0 — read a field the API never returns |
+
+**Verified correct, no change needed:** catalog browse + set grids (incl.
+pagination and 80,720 `tcgplayer:`-keyed rows, all titled), item detail, events
+create/RSVP/edit/cancel, chat inbox + DM request, public profiles, gamification
+profile/achievements, market movers, deal detail, barcode lookup API,
+condition-guide, `home/portfolio` and the `search` tab (both `<Redirect>` stubs).
+
+**Known-empty for correct reasons — do not "fix":** Category Health,
+prediction-accuracy, `/sets/auto-progress` below 2 owned items, challenges
+(content expired Feb 2026, no generator), RegionalInsights (deliberately
+unwired), Twitch (out of scope).
+
+### Pre-launch cleanup items found by the sweep
+
+- [x] ~~`COMMUNITY_GATED`~~ — flipped back to `true` 2026-07-31
+- [x] ~~"Open test chat" button~~ — now `__DEV__`-only, 2026-07-31
+- [ ] **Sponsor checkout** returns 400 "Subscription price not configured for
+      tier: featured" — same unset Stripe prices that block `/pro`. Sponsor CRUD
+      (register / list / update) all work
+- [x] ~~Free plan allotted 3 unreachable mandates~~ — set to 0, 2026-07-31
+- [ ] **Notification toggles** — Settings → Notifications, flip each of the 8 and
+      confirm it sticks after a force-quit. New screen, 2026-07-31
 
 ## What to flag back to me
 

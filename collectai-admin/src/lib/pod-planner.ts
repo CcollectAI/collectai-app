@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { noteDemo, clearDemo } from "@/lib/demoState";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -202,10 +203,17 @@ function getDemoPodData(): PodPlannerData {
 // ─── Fetch ──────────────────────────────────────────────────────────────────
 
 export async function fetchPodPlannerData(): Promise<PodPlannerData> {
-  if (!isSupabaseConfigured()) return getDemoPodData();
+  clearDemo("pods");
+  if (!isSupabaseConfigured()) {
+    noteDemo("pods", "Supabase is not configured", null);
+    return getDemoPodData();
+  }
 
   const sb = getSupabase();
-  if (!sb) return getDemoPodData();
+  if (!sb) {
+    noteDemo("pods", "no Supabase client", null);
+    return getDemoPodData();
+  }
 
   // Fetch pods with members
   const { data: podRows } = await sb
@@ -219,7 +227,18 @@ export async function fetchPodPlannerData(): Promise<PodPlannerData> {
     .select("*, ugc_pods(name), creators(name, handle)")
     .order("created_at", { ascending: false });
 
-  if (!podRows || !pipelineRows) return getDemoPodData();
+  if (!podRows || !pipelineRows) {
+    // ugc_pods / ugc_content_pipeline are admin-template tables that were
+    // never provisioned. Falling back silently rendered plausible fake pods
+    // under a demo banner that never fired.
+    noteDemo(
+      "pods",
+      "pods unavailable — ugc_pods / ugc_content_pipeline are not provisioned "
+      + "(collectai-admin/supabase/migrations/004_content_pipeline_pods.sql)",
+      null,
+    );
+    return getDemoPodData();
+  }
 
   const pods: Pod[] = podRows.map((p: Record<string, unknown>) => {
     const members = ((p.ugc_pod_members as Record<string, unknown>[]) ?? []).map((m: Record<string, unknown>) => {

@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 
@@ -31,7 +31,7 @@ export const BarcodeModeSelector = React.memo(function BarcodeModeSelector({
   isSubmitting,
   hapticsEnabled,
 }: BarcodeModeSelectorProps) {
-  const { colors } = useAppTheme();
+  const { colors } = useScannerTheme();
 
   return (
     <ScrollView

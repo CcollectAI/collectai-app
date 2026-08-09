@@ -75,7 +75,7 @@ export function useAutoSetProgress(category?: string): UseAutoSetProgressReturn 
         setTotalCategories(data.total_categories ?? 0);
         setTotalSets(data.total_sets ?? 0);
       } catch (err) {
-        logger.warn('[useAutoSetProgress] fetch failed:', err);
+        logger.error('[useAutoSetProgress] fetch failed:', err);
         if (mounted) {
           setError(err instanceof Error ? err.message : 'Failed to fetch');
           setSets([]);

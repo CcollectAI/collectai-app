@@ -22,6 +22,8 @@ import { useRouter, type Href } from "expo-router";
 import { collectorsApi } from "@/api/collectorsApi";
 import { recordPushImpression, recordPushInteraction } from "@/api/intelligenceApi";
 import { trackTap } from "@/lib/notificationOutcomeTracker";
+import { itemHref, inAppListingHref } from "@/lib/ids";
+import { logger } from '@/lib/logger';
 
 // ---------------------------------------------------------------------------
 // Configure how notifications appear when the app is in the foreground
@@ -122,10 +124,12 @@ export function usePushNotifications(userId: string | null) {
         // Clear badge on app open
         try {
           await Notifications.setBadgeCountAsync(0);
-        } catch {
+        } catch (e) {
+          logger.error('[silent-catch] usePushNotifications.ts:126:', e);
           // Silently ignore
         }
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] usePushNotifications.ts:129:', e);
         // expo-notifications is not available (web, certain Expo Go versions)
         // or another error occurred — silently ignore.
       }
@@ -157,7 +161,8 @@ export function usePushNotifications(userId: string | null) {
         try {
           const badgeCount = await Notifications.getBadgeCountAsync();
           await Notifications.setBadgeCountAsync(badgeCount + 1);
-        } catch {
+        } catch (e) {
+          logger.error('[silent-catch] usePushNotifications.ts:161:', e);
           // Badge count not supported on all platforms
         }
       });
@@ -194,6 +199,12 @@ export function usePushNotifications(userId: string | null) {
         const directUrl = (typeof data.affiliate_url === "string" && data.affiliate_url)
           || (typeof data.listing_url === "string" && data.listing_url);
         if (directUrl) {
+          // Our OWN listings resolve to a screen in this app, so route rather
+          // than hand them to the browser — a member Target Hit otherwise left
+          // the app for a URL that 404s. Checked first: the scheme validation
+          // below would happily open it.
+          const internal = inAppListingHref(directUrl);
+          if (internal) { router.push(internal); return; }
           // Validate URL scheme before opening to prevent open redirect attacks
           const ALLOWED_SCHEMES = ["http:", "https:"];
           try {
@@ -201,7 +212,8 @@ export function usePushNotifications(userId: string | null) {
             if (ALLOWED_SCHEMES.includes(parsed.protocol)) {
               Linking.openURL(directUrl).catch(() => {});
             }
-          } catch {
+          } catch (e) {
+            logger.error('[silent-catch] usePushNotifications.ts:205:', e);
             // Invalid URL — ignore silently
           }
           return;
@@ -213,22 +225,33 @@ export function usePushNotifications(userId: string | null) {
           return;
         }
 
-        // Individual item value change -> open the item
+        // Individual item value change -> open the item.
+        // `data.item_id` is whatever the sending worker put there. Most send an
+        // items uuid, but the low-value worker sends `price_predictions.item_ref`
+        // — a catalog key — so route by identifier shape, not by assumption.
         if (data.type === "item_value_change" && typeof data.item_id === "string" && data.item_id) {
-          router.push(`/item/${data.item_id}` as Href);
+          const href = itemHref(data.item_id);
+          if (href) router.push(href);
           return;
         }
 
         if (typeof data.deal_id === "string" && data.deal_id) {
           router.push(`/purchase/deal/${data.deal_id}` as Href);
         } else if (typeof data.item_id === "string" && data.item_id) {
-          router.push(`/item/${data.item_id}` as Href);
+          const href = itemHref(data.item_id);
+          if (href) router.push(href);
         } else if (typeof data.event_id === "string" && data.event_id) {
           router.push(`/events/${data.event_id}` as Href);
         } else if (typeof data.thread_id === "string" && data.thread_id) {
           router.push(`/chat/${data.thread_id}` as Href);
         } else if (typeof data.alert_id === "string" && data.alert_id) {
-          router.push(`/(tabs)/alerts` as Href);
+          // `/(tabs)/alerts` never existed — alerts was never a tab, and the
+          // standalone app/alerts.tsx was merged into the notifications screen
+          // on 2026-08-08. A push carrying alert_id landed on an Unmatched
+          // route: the notification arrives, the user taps it, and the app
+          // shows a 404 screen. Caught by `node scripts/check-dead-nav.mjs`,
+          // which is exactly what that gate is for.
+          router.push(`/notifications` as Href);
         } else if (typeof data.connection_request_id === "string") {
           router.push(`/inbox` as Href);
         } else if (typeof data.announcement_id === "string" && data.event_id === undefined) {
@@ -249,7 +272,8 @@ export function usePushNotifications(userId: string | null) {
         if (state === "active") {
           try {
             await Notifications.setBadgeCountAsync(0);
-          } catch {
+          } catch (e) {
+            logger.error('[silent-catch] usePushNotifications.ts:258:', e);
             // Silently ignore
           }
         }

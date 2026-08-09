@@ -7,7 +7,7 @@ Renamed from CollectAI 2026-05-04. Domain: [sparrowcollect.com](https://sparrowc
 ## Features
 
 - **Smart Valuation** — 36 Ridge regression models with q10/q50/q90 price bands, confidence scores, partition-pruned price history (~99K predictions, 528K market hits)
-- **Barcode + Vision Scan** — Scan via barcode or photo; 3-tier classification (CLIP, OpenAI, heuristic) across **54 categories** with ~140K curated catalog items
+- **Barcode + Vision Scan** — Scan via barcode or photo; 2-tier classification (OpenAI Vision, heuristic) across **54 categories** with ~140K curated catalog items
 - **Marketplace Aggregation** — 44 adapters covering eBay (Browse), Mercari, Vinted, TCGPlayer (where accessible), Discogs, Catawiki, regional classifieds (Leboncoin, Marktplaats, Kleinanzeigen, Wallapop, Gumtree, Depop, 130point) + 30+ category specialists. Dedup + FX-normalised EUR + provenance scoring.
 - **Smart Deal Hub** — Set purchase mandates, get notified when matching deals appear; ranked by deal score with pagination
 - **Price Monitoring** — Threshold + anomaly alerts on tracked items, calibrated quantile bands
@@ -22,7 +22,7 @@ Renamed from CollectAI 2026-05-04. Domain: [sparrowcollect.com](https://sparrowc
 | Mobile | React Native 0.81, Expo SDK 54, TypeScript, Expo Router |
 | Backend | FastAPI, Python 3.12, Uvicorn, asyncpg |
 | Database | Supabase (PostgreSQL, eu-central-1), partitioned monthly |
-| ML | scikit-learn Ridge regression (36 active models), CLIP vision, OpenAI fallback |
+| ML | scikit-learn Ridge regression (36 active models), OpenAI Vision + heuristic fallback |
 | Storage | AWS S3 (presigned URLs) + data lake (`collectai-warehouse-prod-eu-north-1`, lifecycle: 180d→Glacier IR→730d→Deep Archive) |
 | Payments | RevenueCat (iOS IAP, shipped 2026-05-09); Stripe dormant for future web/Android |
 | Monitoring | Sentry (backend + mobile), PostHog (31+ events), Telegram alerts (spend, circuit breakers, ingest stall) |

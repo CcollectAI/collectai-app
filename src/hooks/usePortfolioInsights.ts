@@ -42,7 +42,13 @@ export function usePortfolioInsights(
         dataProvider.getPortfolioSummary(),
       ]);
 
-      const totalValue = items.reduce((sum, item) => sum + (item.price || 0), 0);
+      // Use the authoritative portfolio total, NOT a sum over `items`.
+      // `items` is deliberately capped at 50 for the movers calculation, so
+      // summing it silently reported the value of only the first 50 items as
+      // the whole portfolio — and `item.price || 0` additionally counted every
+      // unpriced item as worth 0. Both understate the number InsightsCard
+      // renders as the user's total, with nothing on screen to indicate it.
+      const totalValue = summary.total;
       const percentChange = summary.deltaPct ?? 0;
       const valueChange = totalValue > 0 ? totalValue * (percentChange / 100) : 0;
 

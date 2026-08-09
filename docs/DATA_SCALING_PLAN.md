@@ -16,7 +16,7 @@ This document is the answer to the question: "we will have unbelievably large am
 | `category_items` | 140k | mostly static | hot: catalog browse, matching |
 | `items` | small | user-driven | hot: portfolio |
 | `events` | ~300 | 10-50/week | hot: events tab |
-| `label_events` | growing | per QuickScan | hot: feedback loop, train data |
+| `label_events` | static | **not written by the live scan path** | hot: feedback loop, train data |
 | `spend_events` | empty | per paid API call | hot: budget circuit breaker |
 | `calibration_snapshots` | 0 (until today) | 54/day | cold: model health |
 
@@ -227,3 +227,84 @@ change, no schema migration, no bake restart.
 must also `DISTINCT ON` the input by the columns participating in the
 unique key. Defense in depth — even if the caller "should" dedup. The
 atomic-rollback amplification (one bad row → 100 lost) is too costly.
+
+### Retention worked exactly as designed and still armed a landmine (appended 2026-08-02)
+
+The DB reached 7305 MB and read as "near cap". Nothing was broken:
+`market_hits_y2026m07` (2223 MB) and `price_history_y2026m07` (692 MB) were
+past their 1-month retention and fully exported, but `partition_drop_worker`
+had refused to drop them and logged an error:
+
+```
+2026-08-01 16:38:46  error  "2 partitions old enough but missing from
+                             manifest: [market_hits_y2026m07,
+                                        price_history_y2026m07]"
+2026-08-01 16:42:35  market_hits_y2026m07    exported
+2026-08-01 16:45:27  price_history_y2026m07  exported
+```
+
+**The drop worker runs ~30–60s BEFORE the export worker in every cycle** (also
+visible on 07-31 at 17:11/17:12 and 09:33/09:34). Eleven months a year that is
+invisible, because both are no-ops. On the one day a month a month closes, the
+drop checks a manifest that does not yet contain it, refuses, and errors. The
+next cycle succeeds. The gate behaved correctly — it would rather error than
+drop unexported data — but it emits an error row that pages Telegram for a
+condition that resolves itself.
+
+**The real cost was downstream.** `schema.lock.json` locked the partition
+CHILDREN. Dropping two of them left the lock naming tables that no longer
+existed, so `preflight_schema_lock.py` — stage 8 of the 9-stage `ExecStartPre`
+chain — failed:
+
+```
+❌ 2 locked tables MISSING       ❌ 3 locked UNIQUE keys MISSING
+❌ 2 locked CHECK constraints MISSING          verdict: FAIL (exit 1)
+```
+
+That gate **only runs at startup**. The running API was unaffected; the next
+bake restart — a deploy, a reboot, an OOM restart — would have hard-downed it,
+with the cause hours in the past and no obvious link to a routine retention
+drop. This had already happened at least once (`d54e947`, "sync regenerated
+schema.lock after the view + partition drop").
+
+**Fix: `regen_schema_lock.py` now excludes `c.relispartition` rows.** Partition
+children are created by pg_cron on the 25th and dropped by the retention worker
+by design — locking them makes routine churn indistinguishable from schema
+drift. The partitioned PARENTS stay locked in full (`market_hits` 30 cols,
+`price_predictions` 21, `price_history` 11), which is where the code contract
+actually lives; no application code references a child by name (verified by
+grep across `app/`, `src/`, `server/app/` — zero hits for `_y20\d\dm\d\d`).
+
+`relispartition` rather than a name regex, because it is exact — measured on
+live: 3 parents + 304 ordinary tables kept, 8 children excluded, including the
+`_default` partitions that a `_yYYYYmMM` pattern would have silently kept.
+
+**Verification discipline that mattered here**, since the operation deletes
+2.9 GB irreversibly:
+
+1. The manifest is written by the same worker that claims success — it is
+   self-attested, so it is evidence, not proof. Every one of the 122 parquet
+   parts was HEAD-checked individually, the summed object sizes compared to the
+   manifest byte totals (340,483,081 and 92,845,505 — exact match), the part
+   after the last confirmed absent, and the final part's `PAR1` magic read back.
+2. Postgres row counts were compared to manifest rows (4,114,488 and 1,948,837
+   — exact match) BEFORE the drop.
+3. Dry-run first (`PARTITION_DROP_ENABLED=false`) to confirm the target list.
+4. The gate was proven to FAIL after the drop and PASS after the regen, and the
+   narrowed lock was mutation-tested — injecting a fake locked table still
+   produces `verdict: FAIL`, so excluding partitions did not disable drift
+   detection.
+
+**A trap worth recording:** the first S3 verification returned `AccessDenied`
+on all 122 objects and looked like catastrophic data loss. The EC2 instance
+role cannot read the bucket; the export worker uses credentials from
+`/opt/collectors/.env`. **Any S3 check against this bucket must source that
+env first** — a bare `aws`/`boto3` call on the box falls back to the instance
+role and reports missing data that is actually present.
+
+Result: 7305 MB → 4390 MB, API healthy throughout, all 9 preflight stages green.
+
+**Still open (deliberately not folded into the cleanup):** the drop-before-export
+ordering. It is benign — one spurious error per month-close, self-resolving next
+cycle — but it should either run export-before-drop, or the drop should treat
+"eligible but not yet exported this cycle" as info rather than error.

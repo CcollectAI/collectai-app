@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { PriceCard } from '@/components/PriceCard';
 import { PriceConfidenceGauge } from '@/components/PriceConfidenceGauge';
-import { featureFlags } from '@/config/featureFlags';
+import { featureFlags, COMPARABLE_SALES_ENABLED } from '@/config/featureFlags';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
 import { formatPrice } from '@/lib/format';
 import type { PriceEstimate } from '@/types/priceExplanation';
@@ -154,8 +154,9 @@ export const ItemPriceSection = React.memo(function ItemPriceSection({
         </View>
       )}
 
-      {/* Market Comps */}
-      {marketComps.length > 0 && (
+      {/* Market Comps — gated off until match quality is trustworthy
+          (COMPARABLE_SALES_ENABLED). Was surfacing unrelated €0 comps. */}
+      {COMPARABLE_SALES_ENABLED && marketComps.length > 0 && (
         <View style={[styles.compsSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Text style={[styles.compsTitle, { color: theme.text }]}>
             <Ionicons name="stats-chart-outline" size={14} color={theme.accent} /> Comparable Sales

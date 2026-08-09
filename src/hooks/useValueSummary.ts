@@ -43,7 +43,8 @@ export function useValueSummary() {
     setTrigger(null);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, Date.now().toString());
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] useValueSummary.ts:46:', e);
       // Ignore storage errors
     }
   }, []);
@@ -53,7 +54,8 @@ export function useValueSummary() {
       const lastShown = await AsyncStorage.getItem(STORAGE_KEY);
       if (!lastShown) return true;
       return Date.now() - parseInt(lastShown, 10) >= MIN_INTERVAL_MS;
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] useValueSummary.ts:56:', e);
       return true;
     }
   }, []);
@@ -81,7 +83,7 @@ export function useValueSummary() {
 
       logger.info('[ValueSummary] Shown', { trigger: trig, money: summary.total_money_saved, hours: summary.hours_saved });
     } catch (err) {
-      logger.warn('[ValueSummary] Failed to fetch:', err);
+      logger.error('[ValueSummary] Failed to fetch:', err);
     } finally {
       setLoading(false);
       inflightRef.current = false;

@@ -16,7 +16,7 @@ import { router } from 'expo-router';
 import { dataProvider } from '@/data';
 import { featureFlags } from '@/config/featureFlags';
 import { fireHaptic, HapticIntent, confidenceToIntent } from '@/haptics';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { isDeviceOnline } from '@/hooks/useNetworkStatus';
 import { useToast } from '@/components/Toast';
 import { useSettings } from '@/lib/settings';
@@ -27,10 +27,9 @@ import { ComparisonCard } from '@/components/ComparisonCard';
 import { classifyOnDevice, buildCategoryDistribution } from '@/lib/edgeClassifier';
 import type { EdgeClassification } from '@/lib/edgeClassifier';
 import { CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
-import { multiDetect, collectorsApi } from '@/api/collectorsApi';
+import { multiDetect } from '@/api/collectorsApi';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import type { QuickScanResult, CatalogAlternative, DetectedMultiItem } from '@/data/types';
@@ -47,6 +46,7 @@ import {
   PermissionScreen,
 } from '@/components/quickscan';
 import type { BatchScannedItem } from '@/components/quickscan';
+import { safeGoBack } from '@/lib/goBack';
 
 // TIFFANY removed — use colors.accent from theme instead
 
@@ -55,6 +55,9 @@ const ANALYSIS_STEP_INTERVAL = 1500;
 const EDGE_HINT_THRESHOLD = 0.15;
 const VIEWFINDER_HINT_INTERVAL = 2500;
 const PHOTO_QUALITY = 0.8;
+// R48.4 — below this the AI guess is worthless, so we hand off to manual-add
+// pre-filled instead of showing it. Shared by the camera and gallery paths.
+const LOW_CONFIDENCE_THRESHOLD = 0.3;
 // After this long, reassure the user the scan is just running slow.
 const SCAN_SLOW_HINT_MS = 4000;
 // Hard client-side cap: past this we stop waiting and hand off to manual add
@@ -78,7 +81,11 @@ type ScanPhase =
   | 'comparison_result';
 
 function QuickScanScreen() {
-  const { colors } = useAppTheme();
+  // The whole QuickScan flow sits on the black camera viewfinder, so it forces
+  // the black palette instead of following the app's light/dark setting —
+  // otherwise capture (black) → analyzing/result (white) flashes mid-scan.
+  // This is the chokepoint: `colors` is passed down to every child screen.
+  const { colors } = useScannerTheme();
   const { showToast } = useToast();
   const { settings } = useSettings();
   const { t } = useTranslation();
@@ -197,7 +204,8 @@ function QuickScanScreen() {
           try {
             const parsed = JSON.parse(followedRaw);
             if (Array.isArray(parsed)) followed = parsed;
-          } catch {/* ignore */}
+          } catch (e) {
+            logger.error('[silent-catch] quickscan.tsx:200:', e);/* ignore */}
         }
         const list = items ?? [];
         if (list.length === 0 && !followed?.length) return;
@@ -223,7 +231,8 @@ function QuickScanScreen() {
             setEdgeHint(hint);
           }
         }
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] quickscan.tsx:226:', e);
         // Silent — frame capture may fail during transitions
       }
     }, VIEWFINDER_HINT_INTERVAL);
@@ -246,7 +255,6 @@ function QuickScanScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: PHOTO_QUALITY,
-        base64: true,
       });
 
       if (result.canceled || !result.assets?.[0]) return;
@@ -254,33 +262,54 @@ function QuickScanScreen() {
       const asset = result.assets[0];
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
 
-      // If base64 not available, read from URI
-      let base64 = asset.base64;
-      if (!base64 && asset.uri) {
-        base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: 'base64' });
-      }
-
-      if (!base64) {
-        showToast({ message: 'Could not read image', type: 'error' });
-        return;
-      }
+      // Gallery picks and marketplace screenshots both go through the SAME
+      // vision pipeline as the camera path (/intake/image-only). The old
+      // /screenshot-intel/analyze call could never succeed: it sent
+      // {image_base64, source} to an endpoint that requires {screenshot_id},
+      // so every gallery scan 422'd — and its response shape
+      // ({screenshot_id, items[]}) was cast to QuickScanResult, which would
+      // have rendered an empty result card even if the request had worked.
+      const uploadUri = await prepareImageForUpload(asset.uri);
 
       setPhase('analyzing');
       setCapturedUri(asset.uri);
       setAnalysisStepIndex(0);
 
-      const response = await collectorsApi.analyzeScreenshot({ image_base64: base64, source: 'gallery' });
+      const sr = await dataProvider.quickscanSingle(uploadUri);
 
-      // The response should be similar to intake result — set it as scan result
-      if (response) {
-        setScanResult(response as QuickScanResult);
-        setPhase('result');
-      } else {
-        showToast({ message: 'Could not identify items in screenshot', type: 'info' });
+      // Same low-confidence fallback as the camera path: hand off to
+      // manual-add pre-filled rather than show a garbage guess.
+      if (sr.prediction.confidence < LOW_CONFIDENCE_THRESHOLD) {
+        fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+        showToast({
+          message: "Couldn't identify this item — we've pre-filled what we could",
+          type: 'info',
+          duration: 4000,
+        });
+        const visionCategory = sr.attributes.category
+          ? CATEGORY_SLUG_TO_NAME[sr.attributes.category]
+          : undefined;
+        const extracted = sr.attributes.extractedDetails;
+        router.push({
+          pathname: '/add-manual',
+          params: {
+            imageUri: asset.uri,
+            ...(visionCategory ? { category: visionCategory } : null),
+            ...(sr.prediction.name ? { name: sr.prediction.name } : null),
+            ...(sr.attributes.conditionGuess ? { condition: sr.attributes.conditionGuess } : null),
+            ...(extracted && Object.keys(extracted).length ? { attrs: JSON.stringify(extracted) } : null),
+          },
+        });
         setPhase('camera');
+        setCapturedUri(null);
+        return;
       }
+
+      fireHaptic(confidenceToIntent(sr.prediction.confidence), { enabled: settings.hapticsEnabled });
+      setScanResult(sr);
+      setPhase('result');
     } catch (err) {
-      logger.warn('[QuickScan] Screenshot analysis failed:', err);
+      logger.error('[QuickScan] Gallery scan failed:', err);
       showToast({ message: 'Screenshot analysis failed', type: 'error' });
       setPhase('camera');
     }
@@ -310,7 +339,7 @@ function QuickScanScreen() {
       showToast({ message: 'Item saved to collection!', type: 'success' });
       resetCamera();
     } catch (err: unknown) {
-      logger.warn('[QuickScan] batch save error:', err);
+      logger.error('[QuickScan] batch save error:', err);
       showToast({
         message: (err as Error)?.message ?? 'Failed to save item.',
         type: 'error',
@@ -389,8 +418,8 @@ function QuickScanScreen() {
             setCapturedUri(null);
           }
         } catch (err: unknown) {
-          logger.warn('[QuickScan] multi-detect error:', err);
-          showToast({ message: 'Multi-detect failed. Try standard mode.', type: 'error' });
+          logger.error('[QuickScan] multi-detect error:', err);
+          showToast({ message: "All-at-once scan failed. Try one at a time.", type: 'error' });
           setPhase('camera');
           setCapturedUri(null);
         }
@@ -458,7 +487,6 @@ function QuickScanScreen() {
 
       // R48.4 — Low-confidence fallback: if the AI can't identify the item,
       // offer "Add Manually" instead of showing a garbage guess.
-      const LOW_CONFIDENCE_THRESHOLD = 0.3;
       if (sr.prediction.confidence < LOW_CONFIDENCE_THRESHOLD) {
         fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
         showToast({
@@ -524,7 +552,7 @@ function QuickScanScreen() {
         setPhase('result');
       }
     } catch (err: unknown) {
-      logger.warn('[QuickScan] error:', err);
+      logger.error('[QuickScan] error:', err);
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
       showToast({
         message: (err as Error)?.message ?? 'Unable to analyze image. Please try again.',
@@ -607,7 +635,7 @@ function QuickScanScreen() {
       setPhase('batch_summary');
       return;
     }
-    router.back();
+    safeGoBack(router);
   }, [settings.hapticsEnabled, batchMode, batchItems.length]);
 
   const handleBatchDone = useCallback(() => {
@@ -617,7 +645,7 @@ function QuickScanScreen() {
 
   const handleFinishBatch = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.back();
+    safeGoBack(router);
   }, [settings.hapticsEnabled]);
 
   const toggleBatchMode = useCallback(() => {
@@ -719,6 +747,7 @@ function QuickScanScreen() {
         onGrant={requestPermission}
         onCancel={handleCancel}
         hapticsEnabled={settings.hapticsEnabled}
+        canAskAgain={permission.canAskAgain}
         colors={colors}
       />
     );

@@ -174,7 +174,7 @@ For each unique (method, path) called from the FE: does a BE handler exist?
 | POST | `/intake/image-only` | `server/app/agents/intake_router.py:550` | ✓ |
 | POST | `/intake/multi-detect` | `server/app/agents/intake_router.py:792` | ✓ |
 | POST | `/intake/save` | `server/app/agents/intake_router.py:689` | ✓ |
-| POST | `/intake/url` | `server/app/agents/intake_router.py:616` | ✓ |
+| POST | `/intake/url` | `server/app/agents/intake_router.py:616` | ⛔ parked — route exists, feature deferred to a future build; `ssrf.py` blocks all hostnames by design. See docs/API.md |
 | POST | `/intelligence/feature-attempt` | `server/app/features/intelligence_router.py:627` | ✓ |
 | POST | `/intelligence/paywall-event` | `server/app/features/intelligence_router.py:598` | ✓ |
 | POST | `/items/*/images` | `server/app/features/item_images_router.py:181` | ✓ |

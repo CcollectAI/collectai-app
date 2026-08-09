@@ -16,9 +16,12 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   Pressable,
 } from 'react-native';
+// react-native's own SafeAreaView is iOS-only — it renders as a plain View on
+// Android, so content sits under the status bar and gesture nav. Always take it
+// from react-native-safe-area-context (see docs/ui-playbook.md).
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { fireHaptic, HapticIntent } from '@/haptics';
 

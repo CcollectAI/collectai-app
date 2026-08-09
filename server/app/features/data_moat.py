@@ -261,6 +261,7 @@ async def get_supply_trend(
 async def get_demand_heat(
     category: Optional[str] = None,
     limit: int = 20,
+    user_id: Optional[str] = None,
 ) -> list[dict]:
     """
     Get top trending items by demand signal volume.
@@ -273,35 +274,90 @@ async def get_demand_heat(
 
     try:
         async with pool.acquire() as conn:
+            # mv_demand_heat is a raw telemetry counter, not a list of items:
+            # item_key holds sentinels ('general', 'price_alerts'), bare UUIDs
+            # and barcodes, and signal_type includes non-item events like
+            # notification_settings_changed. Returning it verbatim is what put
+            # rows like "8b439f25 a812 46aa a918 28a50e08..." under
+            # "Hot Right Now" on the analytics screen (the FE falls back to
+            # item_key.replace(/-/g,' ') when title is missing).
+            #
+            # Join category_items so a row only survives if it resolves to a
+            # real CATALOG entry. That drops every sentinel/UUID/barcode by
+            # construction, and keeps the rail to public reference data rather
+            # than surfacing other users' private item titles.
+            #
+            # Also aggregate across signal_type: the MV's grain is
+            # (category, item_key, signal_type), so one item appeared once per
+            # signal type -- the duplicate React keys that DemandHeatSection
+            # and DemandHeatBanner both had to work around.
+            base_sql = """
+                SELECT
+                    h.category,
+                    h.item_key,
+                    ci.title,
+                    SUM(h.signal_count)::int  AS signal_count,
+                    SUM(h.unique_users)::int  AS unique_users,
+                    MAX(h.last_signal_at)     AS last_signal_at
+                FROM public.mv_demand_heat h
+                JOIN public.category_items ci
+                  ON ci.category = h.category
+                 AND ci.item_key = h.item_key
+                {where}
+                GROUP BY h.category, h.item_key, ci.title
+                ORDER BY SUM(h.signal_count) DESC
+                LIMIT {limit_param}
+            """
             if category:
                 rows = await conn.fetch(
-                    """
-                    SELECT category, item_key, signal_type,
-                           signal_count, unique_users, last_signal_at
-                    FROM public.mv_demand_heat
-                    WHERE category = $1
-                    ORDER BY signal_count DESC
-                    LIMIT $2
-                    """,
+                    base_sql.format(where="WHERE h.category = $1", limit_param="$2"),
                     category,
                     limit,
                 )
+            elif user_id:
+                # No explicit category: scope to what this user collects. The
+                # rail sits on a screen that is otherwise entirely about the
+                # user's own collection, so a global list read as if it were
+                # theirs. Falls back to global when the account has no
+                # categorised items yet, so a new user sees something rather
+                # than an empty rail.
+                rows = await conn.fetch(
+                    base_sql.format(
+# archived-exempt: cross-user market intelligence, not one user's collection.
+                        where="""WHERE (
+                                 h.category IN (
+                                     SELECT DISTINCT category FROM items
+                                     WHERE user_id = $2::uuid
+                                       AND NULLIF(BTRIM(category), '') IS NOT NULL
+                                 )
+                                 OR NOT EXISTS (
+                                     SELECT 1 FROM items
+                                     WHERE user_id = $2::uuid
+                                       AND NULLIF(BTRIM(category), '') IS NOT NULL
+                                 )
+                               )""",
+                        limit_param="$1",
+                    ),
+                    limit,
+                    user_id,
+                )
             else:
                 rows = await conn.fetch(
-                    """
-                    SELECT category, item_key, signal_type,
-                           signal_count, unique_users, last_signal_at
-                    FROM public.mv_demand_heat
-                    ORDER BY signal_count DESC
-                    LIMIT $1
-                    """,
+                    base_sql.format(where="", limit_param="$1"),
                     limit,
                 )
         return [
             {
                 "category": row["category"],
                 "item_key": row["item_key"],
-                "signal_type": row["signal_type"],
+                # `title` and `search_count` are what the FE reads
+                # (DemandHeatSection's HeatItem). It previously got neither:
+                # title was absent so it rendered the raw key, and it looked for
+                # search_count while this returned only signal_count, so the row
+                # read "unknown - searches" with no number at all.
+                "title": row["title"],
+                "search_count": row["signal_count"],
+                "demand_score": row["signal_count"],
                 "signal_count": row["signal_count"],
                 "unique_users": row["unique_users"],
                 "last_signal_at": row["last_signal_at"].isoformat() if row["last_signal_at"] else None,
@@ -344,7 +400,7 @@ async def demand_heat_endpoint(
 ):
     """Top trending items by demand signal volume."""
     # R48.5 — same as above, accept any category
-    data = await get_demand_heat(category, limit)
+    data = await get_demand_heat(category, limit, user_id=_user)
     return {"category": category, "limit": limit, "items": data}
 
 
@@ -422,14 +478,19 @@ async def record_price_ground_truth(
     item_id: str,
     actual_price: float,
     currency: str = "EUR",
-    source: str = "deal_desk",
+    source: str = "sparrow_p2p",
 ) -> bool:
     """
     Record an actual transaction price as ground truth.
 
-    Called when a Deal Desk offer completes. Compares against the most recent
-    price_prediction for the item to compute prediction error, which feeds
-    back into model calibration.
+    Called when a P2P trade completes (`_ground_truth_hook`) and from
+    `feedback_router` when a user reports a real sale price. Compares against
+    the most recent price_prediction for the item to compute prediction error,
+    which feeds back into model calibration.
+
+    The default `source` was "deal_desk" until 2026-08-09; that subsystem was
+    removed and never completed a trade, so the default named a caller that
+    could not exist.
 
     Returns True if recorded, False on failure.
     """
@@ -440,12 +501,12 @@ async def record_price_ground_truth(
     try:
         async with pool.acquire() as conn:
             # price_predictions: column is generated_at, not asof; lookup
-            # joins via item_ref = items.canonical_key (no item_id col).
+            # joins via item_ref = items.canonical_ref (no item_id col).
             pred = await conn.fetchrow(
                 """
                 SELECT q50, q10, q90, conf_score, generated_at AS asof
                 FROM price_predictions
-                WHERE item_ref = (SELECT canonical_key FROM items WHERE id = $1::uuid)
+                WHERE item_ref = (SELECT canonical_ref FROM items WHERE id = $1::uuid)
                   -- Partition prune: latest predictions are always
                   -- within the last 60 days. Without this filter the
                   -- planner walks all monthly partitions on every
@@ -509,6 +570,26 @@ async def prediction_accuracy(
             if category:
                 cat_filter = "AND i.category = $2"
                 params.append(category)
+            elif _user:
+                # No explicit category: report accuracy for the categories this
+                # user actually collects. Sitting on an otherwise
+                # collection-scoped screen, a global model-accuracy number read
+                # as if it described their items. Falls back to global when the
+                # account has no categorised items yet.
+# archived-exempt: cross-user market intelligence, not one user's collection.
+                cat_filter = """AND (
+                    i.category IN (
+                        SELECT DISTINCT category FROM items
+                        WHERE user_id = $2::uuid
+                          AND NULLIF(BTRIM(category), '') IS NOT NULL
+                    )
+                    OR NOT EXISTS (
+                        SELECT 1 FROM items
+                        WHERE user_id = $2::uuid
+                          AND NULLIF(BTRIM(category), '') IS NOT NULL
+                    )
+                )"""
+                params.append(_user)
 
             row = await conn.fetchrow(
                 f"""
@@ -525,7 +606,7 @@ async def prediction_accuracy(
                 JOIN items i ON i.id = gt.item_id
                 LEFT JOIN LATERAL (
                     SELECT q10, q90 FROM price_predictions pp2
-                    WHERE pp2.item_ref = i.canonical_key
+                    WHERE pp2.item_ref = i.canonical_ref
                       -- Partition prune: latest prediction is always in the
                       -- last 60 days. The LATERAL fires once per ground-truth
                       -- row, so without this filter we walk all monthly
@@ -580,24 +661,24 @@ async def detect_scarcity(
                     SELECT
                         category,
                         item_key,
-                        COUNT(*) FILTER (WHERE created_at >= now() - ($1 || ' days')::interval) AS recent_signals,
-                        COUNT(*) FILTER (WHERE created_at < now() - ($1 || ' days')::interval
-                                           AND created_at >= now() - ($1 * 2 || ' days')::interval) AS prev_signals
+                        COUNT(*) FILTER (WHERE created_at >= now() - make_interval(days => $1)) AS recent_signals,
+                        COUNT(*) FILTER (WHERE created_at < now() - make_interval(days => $1)
+                                           AND created_at >= now() - make_interval(days => $1 * 2)) AS prev_signals
                     FROM demand_signals
                     WHERE item_key IS NOT NULL
-                      AND created_at >= now() - ($1 * 2 || ' days')::interval
+                      AND created_at >= now() - make_interval(days => $1 * 2)
                     GROUP BY category, item_key
-                    HAVING COUNT(*) FILTER (WHERE created_at >= now() - ($1 || ' days')::interval) >= $2
+                    HAVING COUNT(*) FILTER (WHERE created_at >= now() - make_interval(days => $1)) >= $2
                 ),
                 supply AS (
                     SELECT
                         category,
                         item_key,
-                        AVG(listing_count) FILTER (WHERE snapshot_at >= now() - ($1 || ' days')::interval) AS recent_supply,
-                        AVG(listing_count) FILTER (WHERE snapshot_at < now() - ($1 || ' days')::interval
-                                                     AND snapshot_at >= now() - ($1 * 2 || ' days')::interval) AS prev_supply
+                        AVG(listing_count) FILTER (WHERE snapshot_at >= now() - make_interval(days => $1)) AS recent_supply,
+                        AVG(listing_count) FILTER (WHERE snapshot_at < now() - make_interval(days => $1)
+                                                     AND snapshot_at >= now() - make_interval(days => $1 * 2)) AS prev_supply
                     FROM supply_snapshots
-                    WHERE snapshot_at >= now() - ($1 * 2 || ' days')::interval
+                    WHERE snapshot_at >= now() - make_interval(days => $1 * 2)
                     GROUP BY category, item_key
                 )
                 SELECT
@@ -623,7 +704,7 @@ async def detect_scarcity(
                 ORDER BY d.recent_signals DESC
                 LIMIT 20
                 """,
-                str(days),
+                days,
                 min_demand_signals,
                 min_supply_decline_pct,
             )
@@ -681,9 +762,18 @@ async def demand_heat_by_region(
     try:
         async with pool.acquire() as conn:
             cat_filter = ""
-            # str(days) — the query below uses ($1 || ' days')::interval which
-            # requires text. See learning_asyncpg_interval_str_cast.md.
-            params: list = [str(days)]
+            # `days` as an INT. The previous comment here said make_interval
+            # "requires text" and passed str(days); that inverted the lesson it
+            # cited. `($N || ' days')::interval` needs a string because it is
+            # string concatenation — `make_interval(days => $1)` takes an
+            # integer, so str(days) made every call fail with
+            #   invalid input for query argument $1: '7'
+            #   ('str' object cannot be interpreted as an integer)
+            # caught below and returned as {"regions": [], "error": ...} inside
+            # a 200, so nothing ever surfaced. Verified against prod 2026-07-27.
+            # The sibling endpoint at line ~508 already passes [days] correctly;
+            # this was the only site with the inversion.
+            params: list = [days]
             if category:
                 cat_filter = "AND category = $2"
                 params.append(category)
@@ -697,7 +787,7 @@ async def demand_heat_by_region(
                     COUNT(DISTINCT user_id) AS unique_users,
                     COUNT(DISTINCT item_key) AS unique_items
                 FROM demand_signals
-                WHERE created_at >= now() - ($1 || ' days')::interval
+                WHERE created_at >= now() - make_interval(days => $1)
                   AND region IS NOT NULL
                   {cat_filter}
                 GROUP BY region, country_code

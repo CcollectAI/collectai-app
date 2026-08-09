@@ -22,6 +22,7 @@ interface GalleryItem {
   category: string;
   value: number;
   imageUrl?: string;
+  condition?: string;
 }
 
 interface Props {
@@ -174,6 +175,11 @@ export function ItemGalleryGrid({
                     {item.name}
                   </Text>
                   <Text style={styles.itemPrice}>{formatPrice(item.value)}</Text>
+                  {item.condition ? (
+                    <Text style={styles.itemCondition} numberOfLines={1}>
+                      {item.condition}
+                    </Text>
+                  ) : null}
                 </View>
 
                 <View style={[styles.categoryBadge, { backgroundColor: colors.accent }]}>
@@ -243,6 +249,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF', // Overlay text on dark gradient — always white
     fontSize: 14,
     fontWeight: '700',
+  },
+  itemCondition: {
+    color: 'rgba(255,255,255,0.85)', // Overlay subtext on dark gradient
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
   },
   categoryBadge: {
     position: 'absolute',

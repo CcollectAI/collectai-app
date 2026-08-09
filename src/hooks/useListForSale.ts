@@ -168,7 +168,7 @@ export function useListForSale(opts: {
 
   const calculateFee = useCallback(
     (mpId: MarketplaceId, priceStr: string): FeeBreakdown | null => {
-      const price = parseFloat(priceStr.replace(/[^\d.]/g, ''));
+      const price = parseFloat(priceStr.replace(/[^0-9.,]/g, '').replace(',', '.'));
       if (!Number.isFinite(price) || price <= 0) return null;
 
       // Try server schedule first
@@ -221,7 +221,7 @@ export function useListForSale(opts: {
   // ── Submission ────────────────────────────────────────────────────────
 
   const canSubmit = selectedIds.length > 0 && selectedIds.every((mpId) => {
-    const price = parseFloat((marketplaces[mpId]?.price ?? '').replace(/[^\d.]/g, ''));
+    const price = parseFloat((marketplaces[mpId]?.price ?? '').replace(/[^0-9.,]/g, '').replace(',', '.'));
     return Number.isFinite(price) && price > 0;
   });
 
@@ -234,7 +234,7 @@ export function useListForSale(opts: {
       // Create a listing for each selected marketplace (sequentially to avoid rate limiting)
       for (const mpId of selectedIds) {
         const state = marketplaces[mpId];
-        const price = parseFloat((state?.price ?? '').replace(/[^\d.]/g, ''));
+        const price = parseFloat((state?.price ?? '').replace(/[^0-9.,]/g, '').replace(',', '.'));
         const fee = calculateFee(mpId, state?.price ?? '');
 
         await dataProvider.createMarketplaceListing({

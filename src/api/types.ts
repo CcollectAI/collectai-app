@@ -120,6 +120,11 @@ export interface BillingStatus {
   cancel_at_period_end: boolean;
   limits: {
     max_mandates: number;
+    /** Watchlist slots. null = unlimited. Target Hit can only fire on a
+     *  watched item, so slots are the Pro tier's reach lever. */
+    max_watchlist_items?: number | null;
+    /** Target Hits per rolling 24h. null = unlimited. */
+    max_daily_deal_alerts?: number | null;
     deal_discovery: boolean;
     dossier_pdf: boolean;
     advanced_analytics: boolean;

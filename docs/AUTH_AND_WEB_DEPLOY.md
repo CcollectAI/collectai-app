@@ -28,6 +28,177 @@ Universal Link** instead:
 
 If the app isn't installed, `/auth/confirm` is a graceful branded web page.
 
+## A deep link needs FOUR things to agree (added 2026-08-08)
+
+Learned by finding one that had **none** of them. `_publish_supply_hook` writes
+`https://sparrowcollect.com/l/<uuid>` into `market_hits.url` — the URL a Target
+Hit opens and the one a seller shares. It went nowhere on every surface, and
+nothing went red.
+
+Adding a path means all four, or it silently half-works:
+
+| # | Where | `/l/*` | What breaks without it |
+|---|---|---|---|
+| 1 | `web/.well-known/apple-app-site-association` → `paths` | added | iOS never opens the app, however correct `associatedDomains` is. It grants the DOMAIN; this file grants the PATH |
+| 2 | `app.json` → `android.intentFilters[].data[].pathPrefix` | added | Android never opens the app |
+| 3 | An expo-router route that matches | `app/l/[id].tsx` | The app opens onto a 404 screen — the worst case, because it looks like OUR bug to the user |
+| 4 | `web/vercel.json` → `rewrites` | added | Anyone WITHOUT the app gets a 404. A seller sharing a listing to recruit a buyer sends them to a dead page |
+
+The failure is asymmetric and that is what hides it: with the app installed and
+1–3 right, it works on your device forever while every non-user gets a 404.
+
+**In-app taps must not rely on any of this.** `inAppListingHref`
+(`src/lib/ids.ts`) turns our own https URLs into routes directly, because all
+three consumers of `market_hits.url` — `app/alerts.tsx`, `app/notifications.tsx`,
+`usePushNotifications.ts` — treated "starts with https" as "external" and handed
+them to the browser. Route first, `Linking.openURL` only as the fallthrough.
+
+> `web/` is a separate Vercel deploy. Changes to `vercel.json` and the AASA file
+> do **not** ship with an EAS build or an EC2 deploy — the web project has to be
+> deployed for 1 and 4 to take effect.
+
+## Apex domain serves directly — do not re-add a redirect
+
+**2026-07-30: the apex `sparrowcollect.com` was redirecting (307) to `www`, which
+silently broke Universal Links. Fixed by clearing the redirect. Do not restore it.**
+
+Apple **does not follow redirects** when fetching
+`/.well-known/apple-app-site-association` — the file must be served directly over
+https. While the apex redirected, it had no valid app-site association, so
+`emailRedirectTo` (which targets the apex) could never open the app: iOS opened
+Safari, and only the branded page's `sparrow://` hand-off completed the flow.
+`webcredentials`/Password AutoFill was unassociated at the apex for the same reason.
+
+The redirect was **not** in `web/vercel.json` — it was Vercel project domain config.
+Inspect or change it via the REST API (the CLI cannot show it):
+
+```bash
+TOKEN=$(python3 -c "import json;print(json.load(open('$HOME/Library/Application Support/com.vercel.cli/auth.json'))['token'])")
+TEAM=team_pNV3OxYiiWRDhC96aN2H3Tm5   # collectais-projects
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "https://api.vercel.com/v9/projects/sparrowcollect/domains?teamId=$TEAM"
+# to clear:  -X PATCH -d '{"redirect":null}' .../domains/sparrowcollect.com?teamId=$TEAM
+```
+
+Apex is the right canonical host: every `<link rel="canonical">`, `og:url` and
+`sitemap.xml` entry in `web/` already points at `https://sparrowcollect.com`, and
+so does `emailRedirectTo`. Both apex and `www` now serve directly (200) and both
+are in `app.json` `associatedDomains`.
+
+Verified after the fix — this is the check to re-run:
+```
+curl -sD- -o/dev/null https://sparrowcollect.com/.well-known/apple-app-site-association   # 200, appIDs 3DX8FBF7S6…
+curl -o /dev/null -w "%%{http_code}" https://sparrowcollect.com/auth/confirm              # 200
+```
+
+### `web/` redeployed 2026-07-30 — drift cleared
+
+Prod had been serving a build older than `8f03de3`. Redeployed per the procedure
+below; verified live afterwards:
+
+- AASA now lists `/r/*` (referral universal links) — `['/r/*', '/item/*', '/events/*', '/categories/*', '/purchase/*', '/users/*', '/auth/*']`
+- AASA content-type is now `application/json` (was `application/octet-stream`),
+  matching the header rule in `web/vercel.json`
+- `/auth/confirm`, `/pro`, `/` all 200 on both apex and `www`; the confirm page
+  still forwards the fragment to `sparrow://`
+
+`web/pro.html` had a literal `REPLACE_WITH_REAL_ANON_KEY` placeholder; filled in
+with the project anon key (public by design — RLS governs access, and it is the
+same value the app bundles as `EXPO_PUBLIC_SUPABASE_ANON_KEY`). Verified against
+the project before deploying: `/auth/v1/settings` 200, an RLS-scoped
+`/rest/v1/profiles` read 200.
+
+### ⚠️ `/pro` is live but CANNOT take payment — Stripe web prices unset
+
+The page signs in and reaches checkout, then
+`POST /billing/web/checkout-session` returns **503**:
+
+```
+"Web Stripe Price ID not configured for pro/monthly. Set STRIPE_PRICE_PRO_MONTHLY_WEB."
+```
+
+On EC2 (`/opt/collectors/.env`):
+
+| Var | State |
+|-----|-------|
+| `STRIPE_SECRET_KEY` | set, but **`sk_test_…` — test mode** |
+| `STRIPE_PRICE_PRO_MONTHLY` / `_YEARLY` | set (`price_1T…`) |
+| `STRIPE_PRICE_PRO_MONTHLY_WEB` / `_YEARLY_WEB` | **empty** — what the web checkout reads |
+
+So web subscriptions cannot be sold yet. Two things are needed: the `_WEB` price
+IDs, and a **live** secret key (`sk_live_…`) before real money can move.
+
+Exposure is limited meanwhile, and already handled — verified live 2026-07-31:
+
+- `/pro` is **not linked from any public page** and is **not in `sitemap.xml`**;
+  only `pro/cancel.html` links back to it.
+- all three pages (`pro.html`, `pro/success.html`, `pro/cancel.html`) already
+  ship `<meta name="robots" content="noindex,nofollow">`. Nothing to add.
+- the public pages (`/`, `guides.html`, …) carry no robots meta, so they remain
+  indexable — the noindex is scoped to `/pro*` only.
+
+**When Stripe goes live, removing that `noindex,nofollow` from the three pro
+pages is part of the switch-on** — otherwise the pricing page sells nothing
+because no one can find it.
+
+## Android: `assetlinks.json` is NOT usable yet
+
+`web/.well-known/assetlinks.json` serves publicly (HTTP 200) but has never been
+completed, so **Android App Links do not verify** — `https://sparrowcollect.com/*`
+links will not open the app, including the auth confirm/reset flow. This is the
+Android twin of the apex-AASA problem above.
+
+Fixed 2026-07-31: `package_name` was `com.sparrowcollect.app`, which does not
+exist — `app.json` declares **`io.sparrowcollect.app`**. Corrected.
+
+**Fingerprint filled 2026-08-01** with the upload key from the local release
+build, read straight off the APK (no interactive `eas credentials` needed):
+
+```bash
+apksigner verify --print-certs builds/sparrow-android-apk3.apk | grep SHA-256
+# BF:C3:7F:04:99:2E:41:68:F3:9F:15:9B:E2:F6:2E:A4:D1:33:9B:A0:02:1D:89:17:5C:57:A6:EF:C2:8D:5E:F3
+```
+
+Confirmed to be the key the device actually sees:
+`adb shell pm get-app-links io.sparrowcollect.app` reports the same `Signatures:`.
+
+**Verified broken before the fix, behaviourally:** firing
+`https://sparrowcollect.com/item/test-123` on the emulator opened **Chrome**,
+not the app. `pm get-app-links` reported domain state `1024` (approved without
+verification) for both hosts, which is NOT the same as verified — do not read
+1024 as success.
+
+**Deployed and VERIFIED WORKING 2026-08-01.** `web/` was redeployed to
+production (prod had been serving the pre-2026-07-31 file — the package fix was
+never deployed, so it had stayed inert). Three independent confirmations:
+
+1. **Google's own validator** — the service Android's verifier queries — returns
+   a clean statement for both hosts, no `errorCode`, no `debugString`:
+   ```bash
+   curl "https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://sparrowcollect.com&relation=delegate_permission/common.handle_all_urls"
+   ```
+2. **On device**, after reinstall + `pm verify-app-links --re-verify`:
+   ```
+   sparrowcollect.com:     verified      (was: none / 1024)
+   www.sparrowcollect.com: verified
+   ```
+3. **Behaviourally** — firing `https://sparrowcollect.com/item/test-123` now
+   resolves to `io.sparrowcollect.app/.MainActivity`. Before the fix the same
+   intent opened Chrome. Reproduced in two independent runs.
+
+Note `pm get-app-links` may report `1024` = *approved without verification*.
+That is NOT success — only the literal string `verified` is.
+
+**Still outstanding: the upload key alone is not enough for the Play Store** —
+see the paragraph below. `scripts/preflight_android.mjs` WARNs whenever only one
+fingerprint is listed, so this cannot be quietly forgotten.
+
+If Play App Signing is enabled — it is on by default for new apps — the
+fingerprint Google actually serves is the **App Signing key** from
+Play Console → Setup → App integrity, NOT the upload key. Use that one, or
+deep links will fail for installs from the Play Store while working for local
+builds. Redeploy `web/` after filling it in.
+
 ## Supabase auth config (project `ykqrruipzmrrvjcvwfgp`)
 
 - **Site URL**: `https://sparrowcollect.com`
@@ -40,6 +211,45 @@ If the app isn't installed, `/auth/confirm` is a graceful branded web page.
 Editing config via the Management API: send a **browser `User-Agent`** or Cloudflare
 returns **HTTP 403 error 1010**. `GET/PATCH https://api.supabase.com/v1/projects/ykqrruipzmrrvjcvwfgp/config/auth`,
 fields `site_url`, `uri_allow_list`, `mailer_templates_*_content`, `mailer_subjects_*`.
+
+## MFA (TOTP) — `app/mfa-setup.tsx`
+
+Entirely client-side via the Supabase SDK: `mfa.listFactors()` → `mfa.enroll()`
+→ `mfa.challenge()` → `mfa.verify()` → `mfa.unenroll()`. No EC2 route involved.
+
+Verified end to end 2026-07-31 against prod with a throwaway user and a
+self-generated RFC 6238 code (no authenticator app needed — 20 lines of hmac):
+
+| Step | Result |
+|------|--------|
+| `POST /auth/v1/factors` (enroll) | 200, returns `totp.qr_code` + `totp.secret` |
+| `POST /auth/v1/factors/{id}/challenge` | 200 |
+| verify with a correct TOTP code | 200, elevated token returned |
+| verify with `000000` | **422** — correctly rejected |
+| `DELETE /auth/v1/factors/{id}` (unenroll) | 200 |
+
+`GET /auth/v1/factors` returns **405** — factors are read from the user object,
+which is what `listFactors()` does. Not a bug; don't "fix" it.
+
+### The abandoned-enrollment trap (fixed 2026-07-31)
+
+Tapping **Enable** creates an `unverified` factor immediately. If the user walks
+away without entering a code it persists, and because `friendlyName` is a
+constant the next attempt fails:
+
+```
+422  A factor with the friendly name "Sparrow Collect Authenticator" for this user already exists
+```
+
+The factor list renders only `status === 'verified'` factors, so there was no
+Remove button for it, and `hasVerifiedFactor` stayed false — the user was
+offered **Enable** forever and it failed every time, with no way out of the UI.
+Reproduced against Supabase, then fixed: `handleEnroll` now unenrolls any
+non-verified factor before enrolling (an unverified factor grants nothing).
+Re-verified: the second enroll returns 200 where it previously returned 422.
+
+**If `friendlyName` is ever made user-editable, keep the cleanup** — the
+collision is on that name.
 
 ## Login is email-only (App Store guideline 4.8)
 
@@ -81,3 +291,27 @@ mail.tm disposable-inbox API + Supabase `/auth/v1/signup` (public anon key): cre
 inbox → poll `/messages` → read `/sources/{id}` or `/messages/{id}` for headers/HTML.
 Confirms From, DKIM `d=sparrowcollect.com` alignment (passes strict DMARC), and the
 tiffany body. **Always** clean up: `DELETE FROM auth.users WHERE email LIKE 'sparrowtest%@web-library.net'`.
+
+Cleaner cleanup, since deleting from `auth.users` by hand can leave orphans —
+use the admin API with `SUPABASE_SERVICE_KEY` from `/opt/collectors/.env`:
+`DELETE {SUPABASE_URL}/auth/v1/admin/users/{id}` (cascades to `profiles`).
+
+Pass `?redirect_to=<url-encoded>` on `/auth/v1/signup` and `/auth/v1/recover`, or
+Supabase silently falls back to the **Site URL** and you end up testing a link the
+app never sends. That cost a run on 2026-07-30.
+
+### Full chain, verified 2026-07-30 (all green)
+
+| Check | Result |
+|-------|--------|
+| signup | 200, confirmation email sent |
+| login **before** confirming | 400 `email_not_confirmed` — correct, `mailer_autoconfirm=false` |
+| confirm email | from `noreply@sparrowcollect.com`, subject "Confirm Your Sparrow Collect Account", tiffany `#44A9A1` present |
+| confirm link | 303, `#access_token` delivered |
+| login **after** confirming | 200, access + refresh tokens |
+| login with wrong password | 400 |
+| `/auth/v1/recover` | 200, "Reset Your Sparrow Collect Password" |
+| reset link | 303, fragment carries **`type=recovery`** + tokens — what `AuthProvider` needs to set the `recoveryState` flag and route to `reset-password.tsx` |
+| signup trigger | `handle_new_user` wrote both `username` and `display_name` from signup metadata |
+
+The only defect found was the apex-domain redirect documented at the top of this file.

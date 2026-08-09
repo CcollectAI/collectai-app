@@ -19,6 +19,7 @@ import type {
   CategorySummary,
   CategoryMissingItem,
   AlertFeedItem,
+  AlertRule,
   DmThread,
   DmRequest,
   DmMessage,
@@ -52,6 +53,15 @@ export interface DataProvider {
    * Supports optional pagination (limit/offset).
    */
   listItems(pagination?: PaginationParams): Promise<Item[]>;
+
+  /**
+   * List the user's ARCHIVED items — what `listItems` hides.
+   *
+   * This is the route back. `listItems` filters `archived`, so without a
+   * screen backed by this method archiving would be a one-way trapdoor over a
+   * row that 29 tables still reference.
+   */
+  listArchivedItems(): Promise<Item[]>;
 
   /**
    * List watchlist items for a user.
@@ -107,7 +117,7 @@ export interface DataProvider {
    * @param patch - Partial item fields to update
    * @returns The updated item
    */
-  updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item>;
+  updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>> & { notes?: string | null }): Promise<Item>;
 
   /**
    * Archive an item (soft-delete). Sets attributes_json._archived = true.
@@ -199,6 +209,8 @@ export interface DataProvider {
    * Supports optional pagination (limit/offset).
    */
   listAlertsFeed(pagination?: PaginationParams): Promise<AlertFeedItem[]>;
+  /** Standing alert rules (GET /alerts/mine) — NOT the trigger feed above. */
+  listAlertRules(pagination?: PaginationParams): Promise<AlertRule[]>;
 
   // ─────────────────────────────────────────────────────────────────────────────
   // DM / Inbox methods
@@ -520,9 +532,15 @@ export interface DataProvider {
    * Mock: tracks in-memory.
    * Real: calls rpc_rsvp_event_v1.
    * @param eventId - The event ID
-   * @param status - RSVP status ('going' | 'interested'), defaults to 'going'
+   * @param status - RSVP status, defaults to 'going'. There is no 'waitlist'
+   *   value: on a full event the server stores 'interested' and returns
+   *   `waitlisted: true`, which is why this resolves to the server's decision
+   *   rather than void.
    */
-  rsvpEvent(eventId: string, status?: string): Promise<void>;
+  rsvpEvent(
+    eventId: string,
+    status?: 'going' | 'interested' | 'not_going',
+  ): Promise<{ status: string; waitlisted: boolean }>;
 
   /**
    * Remove RSVP from an event.
@@ -765,7 +783,7 @@ export interface DataProvider {
   /** Unified search across items, catalog, users, events, and categories. */
   unifiedSearch(query: string, limit?: number): Promise<{
     items: { id: string; name: string; category: string; imageUrl?: string | null; price?: number }[];
-    catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; imageUrl?: string | null }[];
+    catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; hasReferenceImage?: boolean; priceEur?: number | null }[];
     users: { id: string; displayName: string; handle?: string; avatarUrl?: string | null }[];
     events: { id: string; title: string; startDate?: string; location?: string; category?: string }[];
     categories: { id: string; name: string }[];
@@ -787,41 +805,25 @@ export interface DataProvider {
   }): Promise<import('./events').CollectorsEvent[]>;
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Deal Desk (P2P Offers)
+  // Selling — for-sale flag + external marketplace connections
+  //
+  // The Deal Desk offer methods were removed 2026-08-09 (never shipped, 0 rows,
+  // superseded by P2P — see src/api/p2pApi.ts). `toggleForSale` stays: it drives
+  // `items.for_sale`, which a DB trigger keeps in sync with live listings.
   // ─────────────────────────────────────────────────────────────────────────────
 
-  /** Propose an offer on an item. */
-  proposeOffer(itemId: string, price: number, message?: string): Promise<Offer>;
 
-  /** Counter an existing offer with a new price. */
-  counterOffer(offerId: string, price: number, message?: string): Promise<Offer>;
 
-  /** Accept or decline an offer. */
-  respondToOffer(offerId: string, accept: boolean, message?: string): Promise<void>;
 
-  /** Cancel a pending offer (buyer only). */
-  cancelOffer(offerId: string): Promise<void>;
 
-  /** List active offers (proposed/countered/accepted). */
-  listActiveOffers(): Promise<Offer[]>;
 
-  /** List completed/cancelled/declined deals. */
-  listDealHistory(): Promise<Offer[]>;
 
-  /** Get offer detail with negotiation timeline. */
-  getOfferDetail(offerId: string): Promise<{ offer: Offer; events: OfferEvent[] }>;
 
-  /** Get user's deal reputation (avg stars, total ratings, completed deals). */
-  getUserReputation(userId: string): Promise<UserReputation>;
 
   /** Toggle an item's for-sale status and set asking price. */
   toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void>;
 
-  /** Mark an accepted offer as shipped (seller only). */
-  markShipped(offerId: string, trackingInfo?: string): Promise<void>;
 
-  /** Confirm delivery and rate the seller (buyer only). */
-  completeDeal(offerId: string, stars: number, comment?: string): Promise<void>;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Multi-Marketplace Selling

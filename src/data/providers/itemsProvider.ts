@@ -14,7 +14,18 @@ import type {
 } from '../types';
 import { supabase } from '../../lib/supabase';
 import { collectorsApi } from '../../api/collectorsApi';
+import { withTimeout, TimeoutError } from '../../lib/withTimeout';
 import logger from '../../utils/logger';
+
+// The Items tab gates its skeleton on this query resolving. supabase-js ships
+// NO per-request timeout, so a stalled TLS handshake / captive portal / server
+// hang leaves the promise pending forever — usePaginatedList only clears
+// isLoading in its `finally`, so the skeleton stays up with no error and no
+// retry. That is the "stuck on skeleton" report, and it is exactly what
+// src/lib/withTimeout.ts was written for: "Use on direct supabase queries in
+// loading-gating paths." chatProvider / categoryProvider / userProvider /
+// watchlistProvider all do this; itemsProvider was the one that did not.
+const ITEMS_READ_TIMEOUT_MS = 8_000;
 
 // Shared row types used by listItems and searchItems.
 // items has the columns id/title/category/updated_at/attrs/image_url/
@@ -42,6 +53,14 @@ type ItemRow = {
   attrs?: Record<string, unknown> | null;
   collection_name?: string | null;
   image_url?: string | null;
+  // Rich detail columns (schema-lock-confirmed). Written by POST /items and
+  // the add-manual insert (2026-07-15 enrichment); surfaced on the card so an
+  // enriched item lands as a full card instead of just name + price.
+  condition?: string | null;
+  brand?: string | null;
+  year?: number | null;
+  series?: string | null;
+  edition_label?: string | null;
   // Acquisition columns. Schema-lock-confirmed (scripts/schema.lock.json):
   // items has both purchase_price (raw, in purchase_currency) and
   // purchase_price_eur (FX-normalized for analytics). We only need the EUR
@@ -50,6 +69,12 @@ type ItemRow = {
   purchase_currency?: string | null;
   purchased_at?: string | null;
   purchase_notes?: string | null;
+  // The item's own value, captured by the add flow (user estimate / scan /
+  // catalog). The card shows quick_predictions.q50_eur when a model valuation
+  // exists, and falls back to these so a just-added item shows its value
+  // immediately instead of 0.
+  estimated_value?: number | null;
+  predicted_price_eur?: number | null;
   quick_predictions?: PredRow[];
 };
 
@@ -60,6 +85,11 @@ function mapItemRow(r: ItemRow): Item {
     (a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''),
   );
   const latest = preds[0];
+  // Card value: prefer a model prediction; fall back to the value the add
+  // flow captured so every method shows a price immediately (quick_predictions
+  // is populated asynchronously / for canonical-linked items).
+  const fallbackValue = (r.predicted_price_eur ?? r.estimated_value) ?? undefined;
+  const cardValue = (typeof latest?.q50_eur === 'number' ? latest.q50_eur : undefined) ?? fallbackValue ?? 0;
   const attrs = r.attrs ?? undefined;
   // subtype_id + taxonomy_version were originally bare columns; they now
   // live inside the attrs jsonb when set. Fall back to undefined when missing.
@@ -78,7 +108,7 @@ function mapItemRow(r: ItemRow): Item {
     taxonomyVersion,
     collections,
     attributesJson: attrs,
-    price: latest?.q50_eur ?? 0,
+    price: cardValue,
     // quick_predictions only stores a single point estimate (q50_eur), not
     // a quantile band. Synthesize a degenerate band from q50 alone so
     // downstream consumers that check `priceBand?.confidence` still work.
@@ -86,9 +116,16 @@ function mapItemRow(r: ItemRow): Item {
     // by canonical_key separately.
     priceBand: latest && typeof latest.q50_eur === 'number'
       ? { q10: latest.q50_eur, q50: latest.q50_eur, q90: latest.q50_eur, confidence: latest.confidence ?? 0, currency: 'EUR' }
-      : undefined,
+      : typeof fallbackValue === 'number'
+        ? { q10: fallbackValue, q50: fallbackValue, q90: fallbackValue, confidence: 0, currency: 'EUR' }
+        : undefined,
     imageUrl: r.image_url ?? undefined,
     updatedAt: r.updated_at ?? undefined,
+    condition: r.condition ?? undefined,
+    brand: r.brand ?? undefined,
+    year: typeof r.year === 'number' ? r.year : undefined,
+    series: r.series ?? undefined,
+    editionLabel: r.edition_label ?? undefined,
     purchasePriceEur: r.purchase_price_eur ?? null,
     purchaseCurrency: (r.purchase_currency as Item['purchaseCurrency']) ?? null,
     purchasedAt: r.purchased_at ?? null,
@@ -96,20 +133,52 @@ function mapItemRow(r: ItemRow): Item {
   };
 }
 
-const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
+const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, condition, brand, year, series, edition_label, estimated_value, predicted_price_eur, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
 
 export async function listItems(pagination?: PaginationParams): Promise<Item[]> {
   const limit = pagination?.limit ?? API_LIMITS.ITEMS_DEFAULT;
   const offset = pagination?.offset ?? 0;
-  const { data, error } = await supabase
-    .from('items')
-    .select(ITEMS_SELECT)
-    .order('updated_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+  let data: unknown;
+  let error: unknown;
+  try {
+    const res = await withTimeout(
+      supabase
+        .from('items')
+        .select(ITEMS_SELECT)
+        // Your ACTIVE collection. The bulk-archive dialog promises "archived
+        // items will be hidden from your active collection" and, until
+        // 2026-08-09, nothing honoured it: the optimistic update removed the
+        // row and the next refresh brought it straight back. Restore lives on
+        // /archived.
+        .eq('archived', false)
+        .order('updated_at', { ascending: false })
+        .range(offset, offset + limit - 1),
+      ITEMS_READ_TIMEOUT_MS,
+      'listItems',
+    );
+    data = res.data;
+    error = res.error;
+  } catch (e) {
+    if (e instanceof TimeoutError) {
+      // Surface as an ERROR, not a warn: logger.info/warn are stripped in
+      // TestFlight/production builds, so a warn here would be invisible on the
+      // exact build where this matters most.
+      logger.error('[SupabaseDataProvider] listItems timed out after %dms', ITEMS_READ_TIMEOUT_MS);
+      return [];
+    }
+    throw e;
+  }
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listItems error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listItems error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load Items',
+    );
   }
 
   return ((data ?? []) as ItemRow[]).map(mapItemRow);
@@ -117,15 +186,32 @@ export async function listItems(pagination?: PaginationParams): Promise<Item[]> 
 
 export async function createItem(input: CreateItemInput): Promise<Item> {
   // Server contract (ItemCreateRequest): name, category?, collection_name?,
-  // estimated_value?, notes?. Sending `title` (the DB column name) was
-  // wrong — server expects `name` (the API field) and stores it as
-  // items.title internally. Image URLs are NOT a body field; images are
-  // attached separately via POST /items/{id}/images.
+  // estimated_value?, notes?, canonical_key?, image_url?, brand?, condition?,
+  // year?, series?, edition_label?, attrs?. Server stores `name` as
+  // items.title internally. `attrs` carries the category-specific attributes
+  // (rarity/set_code/edition/…) plus subtype_id/taxonomy_version (which the
+  // read path maps back out of attrs).
+  const attrs: Record<string, unknown> = {
+    ...(input.attributes ?? {}),
+    ...(input.subtypeId ? { subtype_id: input.subtypeId } : {}),
+    ...(input.taxonomyVersion ? { taxonomy_version: input.taxonomyVersion } : {}),
+  };
   let row: Record<string, unknown>;
   try {
     row = await collectorsApi.post<Record<string, unknown>>('/items', {
       name: input.name,
       category: input.category,
+      estimated_value: input.price || undefined,
+      collection_name: input.collections?.[0],
+      notes: input.notes,
+      canonical_key: input.canonicalKey,
+      image_url: input.imageUrl,
+      brand: input.brand,
+      condition: input.condition,
+      year: input.year,
+      series: input.series,
+      edition_label: input.editionLabel,
+      attrs: Object.keys(attrs).length ? attrs : undefined,
     });
   } catch (e) {
     logger.error('[SupabaseDataProvider] createItem error:', e);
@@ -143,7 +229,8 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
     // Lazy import to keep this provider tree-shakeable.
     const { emitOutcome } = await import('@/lib/notificationOutcomeTracker');
     emitOutcome('added', { item_id: itemId });
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] itemsProvider.ts:219:', e);
     // Tracker import failed — best-effort, ignore.
   }
 
@@ -170,13 +257,27 @@ export async function deleteItem(itemId: string): Promise<void> {
   }
 }
 
-export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item> {
+export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>> & { notes?: string | null }): Promise<Item> {
   const updatePayload: Record<string, unknown> = {};
-  if (patch.name !== undefined) updatePayload.title = patch.name;
+  // BOTH halves. items carries name and title as a pair and different readers
+  // key on different ones (docs/ARCHITECTURE.md). Writing only `title` left
+  // `name` at its old value, so renaming an item made the two diverge — the
+  // Home portfolio kept showing the old name. trg_items_sync_paired_columns
+  // only fills a half that is NULL, so it cannot repair an UPDATE like this.
+  if (patch.name !== undefined) {
+    updatePayload.title = patch.name;
+    updatePayload.name = patch.name;
+  }
   if (patch.category !== undefined) updatePayload.category = patch.category;
   // items has `image_url` (singular text), not `images` (array). The earlier
   // shape wrote `images: [url]` which silently failed on every save.
   if (patch.imageUrl !== undefined) updatePayload.image_url = patch.imageUrl ?? null;
+  // notes added 2026-08-07. The item-detail notes editor previously called an
+  // onSaveNotes that was a 300ms setTimeout writing NOTHING, while toasting
+  // "Notes saved locally" — so every note a user typed was lost on unmount.
+  // Empty string is stored as NULL so "cleared" and "never set" are the same
+  // state rather than two.
+  if (patch.notes !== undefined) updatePayload.notes = patch.notes?.trim() ? patch.notes : null;
 
   const { data, error } = await supabase
     .from('items')
@@ -227,6 +328,61 @@ export async function unarchiveItem(itemId: string): Promise<void> {
   }
 }
 
+/**
+ * The other side of archiving: what `listItems` now hides.
+ *
+ * This function is what makes the filter safe to add. `archiveItem` and the
+ * swipe/bulk actions shipped long before anything honoured the flag, so the
+ * moment reads started excluding archived rows there had to be somewhere to
+ * see them and put them back — otherwise a swipe becomes a one-way trapdoor
+ * over a row that 29 tables still reference.
+ *
+ * Includes items retired by a completed P2P sale, which is why the row shows
+ * WHY it left: `source = 'marketplace'` plus an `acquired_from` marker means
+ * sold, not tidied away.
+ */
+export async function listArchivedItems(): Promise<Item[]> {
+  let data: unknown;
+  let error: unknown;
+  try {
+    const res = await withTimeout(
+      supabase
+        .from('items')
+        .select(ITEMS_SELECT)
+        .eq('archived', true)
+        .order('updated_at', { ascending: false })
+        .limit(API_LIMITS.ITEMS_DEFAULT),
+      ITEMS_READ_TIMEOUT_MS,
+      'listArchivedItems',
+    );
+    data = res.data;
+    error = res.error;
+  } catch (e) {
+    // withTimeout REJECTS on expiry (Promise.race), so an unhandled TimeoutError
+    // would escape to the error boundary and blank the screen. logger.error
+    // because info/warn are stripped in release builds.
+    if (e instanceof TimeoutError) {
+      logger.error('[SupabaseDataProvider] listArchivedItems timed out after %dms', ITEMS_READ_TIMEOUT_MS);
+      throw new Error('Could not load archived items — the request timed out.');
+    }
+    throw e;
+  }
+
+  if (error) {
+    // THROW rather than return []: an empty array here is indistinguishable
+    // from "nothing archived", and this screen is the only route back to a
+    // hidden item. A silent [] would look like the items were destroyed.
+    logger.error('[SupabaseDataProvider] listArchivedItems error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load archived items',
+    );
+  }
+
+  return ((data ?? []) as ItemRow[]).map(mapItemRow);
+}
+
 export async function persistQuickscanDraft(input: QuickscanDraft): Promise<PersistedItem> {
   // Server contract: ItemCreateRequest takes `name` (not `title`),
   // category, collection_name, estimated_value, notes, canonical_key.
@@ -257,7 +413,7 @@ export async function persistQuickscanDraft(input: QuickscanDraft): Promise<Pers
         attributes: input.attributes,
       });
     } catch (e) {
-      logger.warn('[SupabaseDataProvider] persistQuickscanDraft attrs PATCH failed (non-fatal):', e);
+      logger.error('[SupabaseDataProvider] persistQuickscanDraft attrs PATCH failed (non-fatal):', e);
     }
   }
 
@@ -422,12 +578,17 @@ export async function searchItems(query: string): Promise<Item[]> {
   const { data, error } = await supabase
     .from('items')
     .select(ITEMS_SELECT)
+    .eq('archived', false)
     .ilike('title', `%${escaped}%`)
     .order('updated_at', { ascending: false })
     .limit(API_LIMITS.RECENT_ITEMS);
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] searchItems error:', error);
+    // logger.error, not warn: info/warn are STRIPPED in release builds, so a
+    // search that silently returns [] would be invisible in exactly the builds
+    // where it matters. Returning [] renders as "no results", which is
+    // indistinguishable from a genuinely empty search unless this is logged.
+    logger.error('[SupabaseDataProvider] searchItems error:', error);
     return [];
   }
 

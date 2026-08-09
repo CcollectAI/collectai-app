@@ -45,7 +45,7 @@ class ClassificationResponse(BaseModel):
     suggested_name: Optional[str] = Field(None, description="Suggested item name")
     attributes: dict[str, Any] = Field(default_factory=dict, description="Extracted attributes")
     embedding_vector: Optional[list[float]] = Field(None, description="Image embedding vector if generated")
-    classification_method: str = Field(..., description="clip, openai_vision, or heuristic")
+    classification_method: str = Field(..., description="openai_vision or heuristic")
 
 
 class CategoryInfo(BaseModel):
@@ -65,13 +65,12 @@ class CategoriesResponse(BaseModel):
 @router.get("/health", summary="Vision service health check")
 async def health():
     """Health check for the vision-predict service."""
-    from app.ml.vision_classifier import FAL_KEY, OPENAI_API_KEY
+    from app.ml.vision_classifier import OPENAI_API_KEY
 
-    tier = "heuristic"
-    if FAL_KEY:
-        tier = "clip"
-    elif OPENAI_API_KEY:
-        tier = "openai_vision"
+    # The CLIP tier is gone; "clip" used to be reported here purely on the
+    # presence of FAL_KEY, which was never set, so this endpoint could never
+    # actually report the tier it was written to advertise.
+    tier = "openai_vision" if OPENAI_API_KEY else "heuristic"
 
     return {
         "ok": True,
@@ -101,18 +100,19 @@ async def list_categories():
     response_model=ClassificationResponse,
     dependencies=[Depends(get_current_user_id), Depends(_vision_user_limit)],
     summary="Classify collectible image",
-    description="Uses a 3-tier classification approach: CLIP embeddings, OpenAI Vision, and heuristic fallback.",
+    description="Uses a 2-tier classification approach: OpenAI Vision, then heuristic fallback.",
 )
 async def classify_image(file: UploadFile = File(..., description="Image of a collectible item")):
     """
     Classify an uploaded image of a collectible item.
 
-    Uses a 3-tier classification approach:
-    1. CLIP (fal.ai) for real image embeddings + zero-shot matching
-    2. OpenAI Vision API for LLM-based classification
-    3. Heuristic fallback using filename keywords and EXIF metadata
+    Uses a 2-tier classification approach:
+    1. OpenAI Vision API for LLM-based classification
+    2. Heuristic fallback using filename keywords and EXIF metadata
 
-    Returns the predicted category, confidence, condition estimate, and optional embeddings.
+    Returns the predicted category, confidence and condition estimate.
+    `embedding_vector` is always null since the CLIP tier was removed — it is
+    retained in the response model only so existing clients don't break.
     """
     # Validate content type
     content_type = (file.content_type or "").lower()

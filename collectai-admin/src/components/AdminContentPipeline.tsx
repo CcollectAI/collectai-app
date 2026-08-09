@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchPodPlannerData, PIPELINE_STAGES } from "@/lib/pod-planner";
 import type { PodPlannerData, PipelineItem, PipelineStatus, Priority } from "@/lib/pod-planner";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { AdminDemoBanner } from "@/components/AdminDemoBanner";
 
 /* ───────────────────────── Constants ───────────────────────── */
 
@@ -92,6 +93,8 @@ function PipelineCard({ item }: { item: PipelineItem }) {
 
   return (
     <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-3 transition hover:shadow-md">
+      <AdminDemoBanner source="pods" />
+
       {/* Priority dot */}
       <span className={`absolute top-3 right-3 h-2 w-2 rounded-full ${PRIORITY_DOT[item.priority]}`} title={item.priority} />
 

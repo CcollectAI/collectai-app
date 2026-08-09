@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -31,7 +31,14 @@ interface BarcodeResultCardProps {
   hapticsEnabled: boolean;
   onRescan: () => void;
   onSave: () => void;
+  /** Handoff when the barcode was not recognised — mirrors QuickScan's low-confidence path. */
+  onAddManually: () => void;
   onAddToWatchlist: () => void;
+  /** 'idle' | 'saving' | 'done'. The watchlist add is a real write now (it used
+   *  to navigate away, so the screen unmounting WAS the feedback). A button that
+   *  performs a network write and looks identical before, during and after it
+   *  reads as "nothing happened" and gets pressed again. */
+  watchlistState?: 'idle' | 'saving' | 'done';
 }
 
 export const BarcodeResultCard = React.memo(function BarcodeResultCard({
@@ -44,23 +51,50 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
   hapticsEnabled,
   onRescan,
   onSave,
+  onAddManually,
   onAddToWatchlist,
+  watchlistState = 'idle',
 }: BarcodeResultCardProps) {
-  const { colors } = useAppTheme();
+  const { colors } = useScannerTheme();
   const { t } = useTranslation();
+
+  // `missingRequired` is built by the scan flow as
+  // (!intake.name ? ['title'] : []).concat(!intake.category_id ? ['categoryId'] : [])
+  // so a missing title means nothing was identified. Fall back to the title
+  // itself in case a caller supplies the result without that array.
+  const recognised = Boolean(lookupResult.title) && !(lookupResult.missingRequired ?? []).includes('title');
 
   return (
     <ScrollView style={styles.resultContainer} contentContainerStyle={styles.resultContent}>
       {/* Product card */}
       <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {/* A lookup that identified nothing still reaches this card — the scan
+            flow sets scanState='result' either way. Until 2026-07-31 it showed a
+            green check and "Product Found" over the title "Unknown Product", and
+            left Save enabled, so tapping it filed an item literally called
+            "Unknown item" with no category. Report the miss honestly and offer
+            the manual path instead, which is what QuickScan already does on a
+            low-confidence result. */}
         <View style={styles.productHeader}>
-          <Ionicons name="checkmark-circle" size={32} color={colors.accent} />
-          <Text style={[styles.productFound, { color: colors.text }]}>{t('barcode.product_found')}</Text>
+          <Ionicons
+            name={recognised ? 'checkmark-circle' : 'help-circle'}
+            size={32}
+            color={recognised ? colors.accent : colors.muted}
+          />
+          <Text style={[styles.productFound, { color: colors.text }]}>
+            {recognised ? t('barcode.product_found') : t('barcode.not_recognised')}
+          </Text>
         </View>
 
-        <Text style={[styles.productTitle, { color: colors.text }]}>
-          {lookupResult.title || 'Unknown Product'}
-        </Text>
+        {recognised ? (
+          <Text style={[styles.productTitle, { color: colors.text }]}>
+            {lookupResult.title}
+          </Text>
+        ) : (
+          <Text style={[styles.productMetaText, { color: colors.muted }]}>
+            {t('barcode.not_recognised_hint')}
+          </Text>
+        )}
 
         {lookupResult.categoryId && (
           <View style={styles.productMeta}>
@@ -112,42 +146,87 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
 
       {/* Action buttons */}
       <View style={styles.actionButtonsRow}>
-        <AnimatedPressable
-          style={[styles.secondaryButtonHalf, { borderColor: colors.border }]}
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled }); onRescan(); }}
-          accessibilityRole="button"
-          accessibilityLabel={t('barcode.scan_another_a11y')}
-        >
-          <Ionicons name="scan-outline" size={18} color={colors.text} />
-          <Text style={[styles.secondaryButtonText, { color: colors.text }]}>{t('barcode.scan_another')}</Text>
-        </AnimatedPressable>
+          <AnimatedPressable
+            style={[styles.secondaryButtonHalf, { borderColor: colors.border }]}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled }); onRescan(); }}
+            accessibilityRole="button"
+            accessibilityLabel={t('barcode.scan_another_a11y')}
+          >
+            <Ionicons name="scan-outline" size={18} color={colors.text} />
+            <Text
+              numberOfLines={1}
+              style={[styles.secondaryButtonText, { color: colors.text, flexShrink: 1 }]}
+            >
+              {t('barcode.scan_another')}
+            </Text>
+          </AnimatedPressable>
 
-        <AnimatedPressable
-          style={[styles.primaryButtonHalf, { backgroundColor: colors.accent, opacity: isSaving ? 0.7 : 1 }]}
-          onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: hapticsEnabled }); onSave(); }}
-          disabled={isSaving}
-          accessibilityRole="button"
-          accessibilityLabel={t('barcode.save_a11y')}
-        >
-          {isSaving ? (
-            <ActivityIndicator size="small" color={colors.card} />
-          ) : (
-            <>
-              <Ionicons name="add-circle-outline" size={18} color={colors.card} />
-              <Text style={[styles.primaryButtonText, { color: colors.card }]}>Save</Text>
-            </>
-          )}
-        </AnimatedPressable>
+          <AnimatedPressable
+            style={[styles.primaryButtonHalf, { backgroundColor: colors.accent, opacity: isSaving ? 0.7 : 1 }]}
+            onPress={() => {
+              fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: hapticsEnabled });
+              // Saving an unidentified scan produced an item called "Unknown
+              // item" with no category — a dead row the user has to clean up.
+              recognised ? onSave() : onAddManually();
+            }}
+            disabled={isSaving}
+            accessibilityRole="button"
+            accessibilityLabel={recognised ? t('barcode.save_a11y') : t('barcode.add_manually_a11y')}
+          >
+            {isSaving ? (
+              <ActivityIndicator size="small" color={colors.accentText} />
+            ) : (
+              <>
+                {/* accentText, NOT colors.card — `card` is a SURFACE token. It
+                    only looked right in light mode because card was near-white;
+                    on the black scanner theme it rendered dark-on-teal. */}
+                <Ionicons
+                  name={recognised ? 'add-circle-outline' : 'create-outline'}
+                  size={18}
+                  color={colors.accentText}
+                />
+                <Text
+                  numberOfLines={1}
+                  style={[styles.primaryButtonText, { color: colors.accentText, flexShrink: 1 }]}
+                >
+                  {recognised ? t('barcode.save') : t('barcode.add_manually')}
+                </Text>
+              </>
+            )}
+          </AnimatedPressable>
       </View>
 
       <AnimatedPressable
-        style={[styles.watchlistButton, { borderColor: colors.border }]}
-        onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled }); onAddToWatchlist(); }}
+        style={[styles.watchlistButton, { borderColor: watchlistState === 'done' ? colors.accent : colors.border }]}
+        onPress={() => {
+          if (watchlistState !== 'idle') return;
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
+          onAddToWatchlist();
+        }}
+        disabled={watchlistState !== 'idle'}
         accessibilityRole="button"
+        accessibilityState={{ disabled: watchlistState !== 'idle' }}
         accessibilityLabel={t('barcode.add_watchlist_a11y')}
       >
-        <Ionicons name="eye-outline" size={18} color={colors.muted} />
-        <Text style={[styles.watchlistButtonText, { color: colors.muted }]}>{t('barcode.add_watchlist_btn')}</Text>
+        {watchlistState === 'saving' ? (
+          <ActivityIndicator size="small" color={colors.muted} />
+        ) : (
+          <Ionicons
+            name={watchlistState === 'done' ? 'checkmark-circle' : 'eye-outline'}
+            size={18}
+            color={watchlistState === 'done' ? colors.accent : colors.muted}
+          />
+        )}
+        <Text
+          style={[
+            styles.watchlistButtonText,
+            { color: watchlistState === 'done' ? colors.accent : colors.muted },
+          ]}
+        >
+          {watchlistState === 'done'
+            ? t('barcode.add_watchlist_done')
+            : t('barcode.add_watchlist_btn')}
+        </Text>
       </AnimatedPressable>
 
       {affiliateLink && (
@@ -248,11 +327,13 @@ const styles = StyleSheet.create({
   },
   primaryButtonHalf: {
     flex: 1,
+    minWidth: 0,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 16,
+    gap: 8,
+    paddingHorizontal: 12,
     borderRadius: 12,
   },
   primaryButtonText: {
@@ -261,11 +342,13 @@ const styles = StyleSheet.create({
   },
   secondaryButtonHalf: {
     flex: 1,
+    minWidth: 0,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 16,
+    gap: 8,
+    paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
   },

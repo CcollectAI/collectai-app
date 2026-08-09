@@ -60,7 +60,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
 
   // Local fee preview
   const feePreview = useMemo(() => {
-    const price = parseFloat(priceField.value.replace(/[^\d.]/g, ''));
+    const price = parseFloat(priceField.value.replace(/[^0-9.,]/g, '').replace(',', '.'));
     if (!Number.isFinite(price) || price <= 0) return null;
     const schedule = feeSchedules.find((f) => f.marketplaceId === marketplace);
     if (!schedule) return null;
@@ -72,7 +72,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
   const [backendFeePreview, setBackendFeePreview] = useState<{ fees: number; net: number } | null>(null);
 
   useEffect(() => {
-    const price = parseFloat(priceField.value.replace(/[^\d.]/g, ''));
+    const price = parseFloat(priceField.value.replace(/[^0-9.,]/g, '').replace(',', '.'));
     if (!Number.isFinite(price) || price <= 0 || !visible) {
       setBackendFeePreview(null);
       return;
@@ -92,7 +92,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
   const displayFees = backendFeePreview ?? feePreview;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>

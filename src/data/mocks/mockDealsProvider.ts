@@ -18,111 +18,19 @@ import {
   mockAccounts,
 } from './mockState';
 
-export async function proposeOffer(itemId: string, price: number, message?: string): Promise<Offer> {
-  const now = new Date().toISOString();
-  return {
-    id: `offer-${Date.now()}`,
-    itemId,
-    itemTitle: 'Mock Item',
-    itemImageUrl: null,
-    sellerId: 'seller-mock',
-    buyerId: 'buyer-mock',
-    status: 'proposed',
-    currentPrice: price,
-    currency: 'EUR',
-    otherUserId: 'seller-mock',
-    otherUserName: 'MockSeller',
-    otherUserAvatarUrl: null,
-    dmThreadId: `thread-${Date.now()}`,
-    createdAt: now,
-    updatedAt: now,
-    expiresAt: null,
-  };
-}
 
-export async function counterOffer(offerId: string, price: number, message?: string): Promise<Offer> {
-  const now = new Date().toISOString();
-  return {
-    id: offerId,
-    itemId: 'item-mock',
-    itemTitle: 'Mock Item',
-    itemImageUrl: null,
-    sellerId: 'seller-mock',
-    buyerId: 'buyer-mock',
-    status: 'countered',
-    currentPrice: price,
-    currency: 'EUR',
-    otherUserId: 'buyer-mock',
-    otherUserName: 'MockBuyer',
-    otherUserAvatarUrl: null,
-    dmThreadId: `thread-${Date.now()}`,
-    createdAt: now,
-    updatedAt: now,
-    expiresAt: null,
-  };
-}
 
-export async function respondToOffer(_offerId: string, _accept: boolean, _message?: string): Promise<void> {
-  /* no-op */
-}
 
-export async function cancelOffer(_offerId: string): Promise<void> {
-  /* no-op */
-}
 
-export async function listActiveOffers(): Promise<Offer[]> {
-  return [];
-}
 
-export async function listDealHistory(): Promise<Offer[]> {
-  return [];
-}
 
-export async function getOfferDetail(offerId: string): Promise<{ offer: Offer; events: OfferEvent[] }> {
-  const now = new Date().toISOString();
-  return {
-    offer: {
-      id: offerId,
-      itemId: 'item-mock',
-      itemTitle: 'Mock Item',
-      itemImageUrl: null,
-      sellerId: 'seller-mock',
-      buyerId: 'buyer-mock',
-      status: 'proposed',
-      currentPrice: 100,
-      currency: 'EUR',
-      otherUserId: 'seller-mock',
-      otherUserName: 'MockSeller',
-      otherUserAvatarUrl: null,
-      dmThreadId: `thread-mock`,
-      createdAt: now,
-      updatedAt: now,
-      expiresAt: null,
-    },
-    events: [],
-  };
-}
 
-export async function getUserReputation(userId: string): Promise<UserReputation> {
-  return {
-    userId,
-    avgStars: 4.5,
-    totalRatings: 0,
-    completedDeals: 0,
-  };
-}
 
 export async function toggleForSale(_itemId: string, _forSale: boolean, _askingPrice?: number): Promise<void> {
   /* no-op */
 }
 
-export async function markShipped(_offerId: string, _trackingInfo?: string): Promise<void> {
-  /* no-op */
-}
 
-export async function completeDeal(_offerId: string, _stars: number, _comment?: string): Promise<void> {
-  /* no-op */
-}
 
 // ─── Multi-Marketplace Selling ──────────────────────────────────────────────
 

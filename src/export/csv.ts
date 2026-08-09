@@ -1,4 +1,5 @@
 import { Alert } from 'react-native';
+import { logger } from '@/lib/logger';
 type Row = { category: string; name: string; priceEUR: number; pct?: number };
 const fmt = (v: unknown) => { if (v==null) return ''; const s=String(v); return /[,"\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
 export function rowsToCSV(rows: Row[]): string {
@@ -17,7 +18,9 @@ export async function saveCSVAndShare(filename: string, csv: string): Promise<st
       if (await SH.isAvailableAsync()) await SH.shareAsync(path, { mimeType:'text/csv', dialogTitle: filename });
       else Alert.alert('Saved', `CSV: ${path}`);
     }
-    catch { Alert.alert('Saved (no sharing module)', `CSV: ${path}`); }
+    catch (e) {
+      logger.error('[silent-catch] csv.ts:20:', e); Alert.alert('Saved (no sharing module)', `CSV: ${path}`); }
     return path;
-  } catch { Alert.alert('Export unavailable', 'FileSystem/Sharing not installed yet.'); return 'unavailable'; }
+  } catch (e) {
+    logger.error('[silent-catch] csv.ts:22:', e); Alert.alert('Export unavailable', 'FileSystem/Sharing not installed yet.'); return 'unavailable'; }
 }

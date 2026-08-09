@@ -99,7 +99,7 @@ export function AdminUGCDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-[#0D1B2A]">UGC / TikTok Analytics</h2>
-          <AdminDemoBanner />
+          <AdminDemoBanner source="ugc" />
         </div>
         <div className="flex items-center gap-2">
           {PERIODS.map((p) => (

@@ -65,9 +65,11 @@ async def pipeline_status() -> dict:
                 "SELECT COUNT(*) FROM public.market_hits"
             ) or 0
 
-            # Latest market_hit timestamp
+            # Latest market_hit timestamp. NB: market_hits uses `seen_at`
+            # (legacy) — there is no `created_at`, so MAX(created_at) 500'd
+            # this endpoint with 42703 (column does not exist).
             latest_hit = await conn.fetchval(
-                "SELECT MAX(created_at) FROM public.market_hits"
+                "SELECT MAX(seen_at) FROM public.market_hits"
             )
 
     except Exception as e:
@@ -106,14 +108,33 @@ async def pipeline_status() -> dict:
             "hours_ago": round(hours_ago, 1) if hours_ago is not None else None,
         }
 
-    # Overall staleness assessment
+    # Overall staleness assessment.
+    #
+    # This derives ONLY from `training`, which is hardcoded to [] above while
+    # model_registry has schema drift. So the endpoint was structurally
+    # incapable of ever reporting "stale" — it answered "healthy"
+    # unconditionally, which is the one thing a staleness monitor must not do.
+    # Observed in prod 2026-07-27: status "healthy" while every ingest
+    # category reported hours_ago ≈ 2435.
+    #
+    # Reports "unknown" rather than inventing an ingest threshold: catalog
+    # rows legitimately do not change daily, so applying the 48h model rule to
+    # them would flag all 54 categories forever — a gate that cries wolf is
+    # worse than none. When model_registry is fixed, this reverts to a real
+    # healthy/stale answer on its own.
     stale_categories = [
         t["category"] for t in training
         if t["hours_ago"] is not None and t["hours_ago"] > 48
     ]
+    if stale_categories:
+        status = "stale"
+    elif not training:
+        status = "unknown"  # nothing to assess — do not claim health
+    else:
+        status = "healthy"
 
     return {
-        "status": "healthy" if not stale_categories else "stale",
+        "status": status,
         "stale_categories": stale_categories,
         "training": {
             "models_count": len(training),

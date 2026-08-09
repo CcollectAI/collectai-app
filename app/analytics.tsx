@@ -28,6 +28,11 @@ import { useSettings } from "@/lib/settings";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { SkeletonList } from "@/components/Skeleton";
 import { useHasEverHadItems } from "@/hooks/useHasEverHadItems";
+import {
+  mapRiskNotes,
+  type PortfolioRiskNote,
+  type RawPersonalizedInsights,
+} from "@/data/personalizedInsights";
 import { ItemsEmptyState } from "@/components/items";
 import { formatPrice } from "@/lib/format";
 import { QuickNavBar } from "@/components/QuickNavBar";
@@ -87,7 +92,12 @@ function AnalyticsScreen() {
   const [refreshKey, setRefreshKey] = useState(0);
   const { hasEverHadItems, markHasItems } = useHasEverHadItems();
 
-  const [collectionTrends, setCollectionTrends] = useState<Record<string, unknown> | null>(null);
+  // Concentration-risk warnings + diversification tips from
+  // /insights/personalized. Previously the ONLY caller of that endpoint was a
+  // marketplace effect that wrote to state nothing rendered (the trending rail
+  // it fed was removed), so all four of its arrays were computed and thrown
+  // away. Mapped through a pure seam fn — see src/data/personalizedInsights.ts.
+  const [riskNotes, setRiskNotes] = useState<PortfolioRiskNote[]>([]);
   const [predictionAccuracy, setPredictionAccuracy] = useState<{ category: string; mae: number; mape: number; r2: number }[] | null>(null);
   const [categoryStats, setCategoryStats] = useState<{ category: string; item_count: number; total_value: number; avg_value: number; change_7d: number; change_7d_pct: number; trend: string; max_item_value: number }[]>([]);
   const [categoryHealth, setCategoryHealth] = useState<{ category: string; volatility: number; trend_strength: number; health: string }[]>([]);
@@ -128,20 +138,27 @@ function AnalyticsScreen() {
     [snapshotData, categoryData],
   );
 
-  // Fetch backend collection trends + prediction accuracy (enrichment) — parallelized
+  // Fetch personalized insights + prediction accuracy (enrichment) — parallelized
+  //
+  // getCollectionTrends(30) used to lead this list. It was dropped 2026-07-24:
+  // its three payloads were each already on this screen from another source —
+  // total_history duplicates the Home portfolio chart, dca_history duplicates
+  // the Cost Basis Summary card below, and per_category_gain_loss duplicates
+  // categoryStats.change_7d_pct. Its result was stored in state nothing read,
+  // so it cost three DB queries per screen open and rendered nothing.
   useEffect(() => {
     let cancelled = false;
     Promise.allSettled([
-      collectorsApi.getCollectionTrends(30),
+      collectorsApi.fetchInsights(),
       collectorsApi.getPredictionAccuracy(),
       collectorsApi.getPortfolioCategoryStats(),
       collectorsApi.getCategoryHealth(),
-    ]).then(([trendsResult, accuracyResult, statsResult, healthResult]) => {
+    ]).then(([insightsResult, accuracyResult, statsResult, healthResult]) => {
       if (cancelled) return;
-      if (trendsResult.status === 'fulfilled' && trendsResult.value) {
-        setCollectionTrends(trendsResult.value as Record<string, unknown>);
-      } else if (trendsResult.status === 'rejected') {
-        logger.warn('[Analytics] collection trends fetch failed:', trendsResult.reason);
+      if (insightsResult.status === 'fulfilled' && insightsResult.value) {
+        setRiskNotes(mapRiskNotes(insightsResult.value as RawPersonalizedInsights));
+      } else if (insightsResult.status === 'rejected') {
+        logger.warn('[Analytics] personalized insights fetch failed:', insightsResult.reason);
       }
       if (accuracyResult.status === 'fulfilled') {
         const data = accuracyResult.value as { categories?: { category: string; mae: number; mape: number; r2: number }[] } | undefined;
@@ -458,6 +475,37 @@ function AnalyticsScreen() {
                 </View>
               ))}
             </View>
+          </View>
+        )}
+
+        {/* Concentration risk & diversification (from /insights/personalized).
+            Sits directly under Category Allocations because it explains the
+            allocation bar the user just looked at. Renders nothing when the
+            backend has no notes — no empty-state card. */}
+        {riskNotes.length > 0 && (
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="shield-outline" size={18} color={colors.accent} />
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Concentration & Balance</Text>
+            </View>
+            {riskNotes.map((note) => (
+              <View key={note.id} style={styles.riskRow}>
+                <View
+                  style={[
+                    styles.riskDot,
+                    {
+                      backgroundColor:
+                        note.level === 'high'
+                          ? colors.danger
+                          : note.level === 'medium'
+                            ? colors.accent
+                            : colors.muted,
+                    },
+                  ]}
+                />
+                <Text style={[styles.riskText, { color: colors.text }]}>{note.text}</Text>
+              </View>
+            ))}
           </View>
         )}
 
@@ -979,6 +1027,26 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: text.md,
     fontWeight: fontWeight.semibold,
+  },
+
+  // Concentration & Balance notes
+  riskRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginTop: 10,
+  },
+  riskDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    // Nudge down so the dot optically centres on the first line of text.
+    marginTop: 6,
+  },
+  riskText: {
+    flex: 1,
+    fontSize: text.sm,
+    lineHeight: 20,
   },
 
   // DCA Cost Basis (M3)

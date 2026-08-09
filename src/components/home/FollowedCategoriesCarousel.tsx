@@ -1,11 +1,18 @@
 /**
- * Followed / personalized categories horizontal carousel.
+ * Followed / personalized categories, as full-width banners.
  *
- * Displays a horizontal FlatList of category cards selected during
- * onboarding. Extracted from app/(tabs)/index.tsx.
+ * Was a horizontal carousel of small square tiles. A square tile wastes the
+ * row it occupies (one short word in a 100pt box) and, with only a couple of
+ * followed categories, a horizontal scroller reads as a stray block rather
+ * than a list. Full-width banners stack, use the row, and leave room for the
+ * name plus a chevron affordance.
+ *
+ * Rendered with .map rather than a FlatList: the list is a handful of items and
+ * the parent is a ScrollView — a nested vertical VirtualizedList there both
+ * warns and breaks scrolling.
  */
 import React, { useCallback } from "react";
-import { View, Text, FlatList, StyleSheet, type ListRenderItemInfo } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
@@ -20,6 +27,9 @@ interface FollowedCategoriesCarouselProps {
   categories: string[];
   onCategoryPress: (categorySlug: string) => void;
   hapticsEnabled?: boolean;
+  /** Home renders its own "Your Categories" heading so the summary stats can
+   *  sit between the heading and these banners. */
+  showHeader?: boolean;
 }
 
 // ── Component ──────────────────────────────────────────────────────────
@@ -29,11 +39,10 @@ function FollowedCategoriesCarouselInner({
   categories,
   onCategoryPress,
   hapticsEnabled = true,
+  showHeader = true,
 }: FollowedCategoriesCarouselProps) {
-  if (categories.length === 0) return null;
-
   const renderItem = useCallback(
-    ({ item: catSlug }: ListRenderItemInfo<string>) => {
+    (catSlug: string) => {
       const visual = CATEGORY_VISUAL[catSlug as CategoryId];
       if (!visual) return null;
       const displayName = catSlug
@@ -41,6 +50,7 @@ function FollowedCategoriesCarouselInner({
         .replace(/\b\w/g, (c) => c.toUpperCase());
       return (
         <AnimatedPressable
+          key={catSlug}
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
             onCategoryPress(catSlug);
@@ -62,31 +72,26 @@ function FollowedCategoriesCarouselInner({
           <Text style={[s.followedCatName, { color: theme.text }]} numberOfLines={1}>
             {displayName}
           </Text>
+          <Ionicons name="chevron-forward" size={18} color={visual.accentColor} />
         </AnimatedPressable>
       );
     },
     [theme.text, onCategoryPress, hapticsEnabled],
   );
 
-  const keyExtractor = useCallback((item: string) => item, []);
+  // After the hooks — an early return above them changes hook order between
+  // renders, which React treats as an error.
+  if (categories.length === 0) return null;
 
   return (
-    <>
-      <View style={s.sectionHeader}>
-        <Text style={[s.sectionTitle, { color: theme.text }]}>Your Categories</Text>
-      </View>
-      <FlatList
-        data={categories}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={s.followedCatsRow}
-        style={s.listContainer}
-        maxToRenderPerBatch={10}
-        windowSize={5}
-      />
-    </>
+    <View style={s.listContainer}>
+      {showHeader && (
+        <View style={s.sectionHeader}>
+          <Text style={[s.sectionTitle, { color: theme.text }]}>Your Categories</Text>
+        </View>
+      )}
+      {categories.map(renderItem)}
+    </View>
   );
 }
 
@@ -99,7 +104,10 @@ const s = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
-    marginBottom: 10,
+    // 10 put the first tile hard under the heading, so the two read as one
+    // clumped block and the tile crowded the section above it.
+    marginTop: 8,
+    marginBottom: 18,
   },
   sectionTitle: {
     fontSize: 18,
@@ -107,18 +115,18 @@ const s = StyleSheet.create({
   },
   listContainer: {
     marginBottom: 12,
-  },
-  followedCatsRow: {
     gap: 10,
-    paddingHorizontal: 2,
-    paddingVertical: 4,
   },
+  // Full-width banner: icon, name, chevron on one row.
   followedCatCard: {
-    width: 100,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 12,
+    width: "100%",
+    flexDirection: "row",
     alignItems: "center",
+    gap: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
   },
   followedCatIcon: {
     width: 40,
@@ -126,11 +134,12 @@ const s = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
   },
   followedCatName: {
-    fontSize: 12,
-    fontWeight: "600",
-    textAlign: "center",
+    // flex:1 pushes the chevron to the trailing edge and lets a long category
+    // name ellipsize instead of shoving it off the banner.
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

@@ -17,6 +17,24 @@ router = APIRouter(prefix="/insights", tags=["Insights"])
 logger = logging.getLogger(__name__)
 
 
+# Transient infrastructure failures where degrading to a partial/empty response
+# is the right behaviour.
+#
+# These handlers used to catch `asyncpg.PostgresError` alone. asyncpg raises a
+# bare `TimeoutError` (asyncio.TimeoutError, which IS the builtin on 3.11+) when
+# a command exceeds the pool timeout, and that is NOT a PostgresError -- so the
+# "best-effort" guard around the trending query did not catch the one failure it
+# existed for. The trending scan over 14 days of market_hits times out against
+# the 30s pooler cap under load, the TimeoutError escaped, and the entire
+# /insights/personalized response 500'd -- blanking the analytics risk-notes
+# section intermittently. Same hole in the /insights/home-widget handler.
+#
+# Deliberately NOT bare `Exception`: a ValidationError or a typo must still fail
+# loudly rather than silently serving an empty insights card forever. See the
+# silent-fallback note in docs/ARCHITECTURE.md.
+_TRANSIENT_DB_ERRORS = (asyncpg.PostgresError, TimeoutError, OSError)
+
+
 # ---------------------------------------------------------------------------
 # Thresholds for insight generation
 # ---------------------------------------------------------------------------
@@ -98,13 +116,20 @@ async def get_personalized_insights(
             # ---- Category exposure from user's items ----
             cat_rows = await conn.fetch(
                 """
+                -- COALESCE, because items.category is nullable and
+                -- CategoryExposure.category is a required str: a single item
+                -- with no category raised a Pydantic ValidationError and the
+                -- whole endpoint 500'd, blanking the risk-notes section of the
+                -- analytics screen for that user. Grouping on the coalesced
+                -- value also stops NULL and '' splitting into two buckets.
+                -- Same fix as trends_and_deepdive_router.py.
                 SELECT
-                    category,
+                    COALESCE(NULLIF(category, ''), 'uncategorized') AS category,
                     COUNT(*)::float AS cnt,
                     SUM(COUNT(*)) OVER ()::float AS total
                 FROM items
                 WHERE user_id = $1
-                GROUP BY category
+                GROUP BY COALESCE(NULLIF(category, ''), 'uncategorized')
                 ORDER BY cnt DESC
                 """,
                 user_id,
@@ -152,104 +177,87 @@ async def get_personalized_insights(
                 )
 
             # ---- Trending items from market_hits (positive price delta, last 14 days) ----
-            cutoff = datetime.now(timezone.utc) - timedelta(days=14)
-            trend_rows = await conn.fetch(
-                """
-                WITH first_last AS (
+            # Self-contained try (like the rare-set block below): a failure here
+            # must NOT discard the already-computed overexposed_categories /
+            # diversification_suggestions — before this was in the function's
+            # outer try, so one bad sub-query zeroed the entire response.
+            trending: List[TrendingItem] = []
+            try:
+                # Read the pre-computed mv_market_top_movers rollup rather than
+                # re-deriving movers from raw market_hits on every request.
+                #
+                # The old query grouped 14 days of market_hits by normalized_key
+                # with two ARRAY_AGGs per group: 1.54M rows / 67.5k keys, scanned
+                # per request, per user, for a result that is GLOBAL and
+                # identical for everyone. It routinely blew the 30s pooler cap
+                # and raised TimeoutError -- see _TRANSIENT_DB_ERRORS above.
+                #
+                # The MV (18.5k rows, unique index on item_ref, refreshed
+                # nightly by pg_cron after the market_hits_daily rollup) already
+                # answers exactly this question, and answers it better: it
+                # applies credibility floors (>=5 comps, >=3 distinct days,
+                # active within 7d, <=500% swing) and joins category_items, so
+                # rows carry a real title and category. The old path fed
+                # _extract_category_from_key(normalized_key), which produced
+                # junk categories like "base6-base6-8" in live responses.
+                #
+                # delta_pct_7d is a PERCENT; TrendingItem.change_pct is a
+                # FRACTION -- personalizedInsights.ts:65 does `change_pct * 100`
+                # to display it. Divide by 100 to keep that contract.
+                trend_rows = await conn.fetch(
+                    """
+                    -- Scoped to the categories this user actually collects.
+                    -- This endpoint is called /personalized, but the movers it
+                    -- returned were the global top 5 -- identical for every
+                    -- user, and usually in categories they do not collect.
+                    WITH user_cats AS (
+                        SELECT DISTINCT category
+                        FROM items
+                        WHERE user_id = $1
+                          AND NULLIF(BTRIM(category), '') IS NOT NULL
+                    )
                     SELECT
-                        normalized_key,
-                        COALESCE(MAX(title), normalized_key) AS item_name,
-                        (ARRAY_AGG(price ORDER BY created_at ASC))[1]  AS first_price,
-                        (ARRAY_AGG(price ORDER BY created_at DESC))[1] AS last_price
-                    FROM market_hits
-                    WHERE created_at >= $1
-                      AND price IS NOT NULL
-                      AND (is_listing IS NOT TRUE)
-                    GROUP BY normalized_key
-                    HAVING COUNT(*) >= 2
+                        m.category,
+                        COALESCE(NULLIF(m.title, ''), m.item_ref) AS item_name,
+                        m.delta_pct_7d
+                    FROM mv_market_top_movers m
+                    WHERE m.delta_pct_7d > 0
+                      AND (
+                            m.category IN (SELECT category FROM user_cats)
+                            -- New/empty account, or one holding only
+                            -- uncategorised items: fall back to the global
+                            -- movers rather than showing an empty rail.
+                            OR NOT EXISTS (SELECT 1 FROM user_cats)
+                          )
+                    ORDER BY m.delta_pct_7d DESC
+                    LIMIT 5
+                    """,
+                    user_id,
                 )
-                SELECT
-                    normalized_key,
-                    item_name,
-                    first_price,
-                    last_price,
-                    CASE WHEN first_price > 0
-                         THEN (last_price - first_price) / first_price
-                         ELSE 0
-                    END AS change_pct
-                FROM first_last
-                WHERE last_price > first_price
-                ORDER BY change_pct DESC
-                LIMIT 5
-                """,
-                cutoff,
-            )
-            trending = [
-                TrendingItem(
-                    category=_extract_category_from_key(row["normalized_key"]),
-                    item_name=row["item_name"] or row["normalized_key"],
-                    change_pct=round(float(row["change_pct"] or 0), 4),
+                trending = [
+                    TrendingItem(
+                        category=row["category"] or "uncategorized",
+                        item_name=row["item_name"],
+                        change_pct=round(float(row["delta_pct_7d"] or 0) / 100.0, 4),
+                    )
+                    for row in trend_rows
+                ]
+            except _TRANSIENT_DB_ERRORS as e:
+                logger.warning(
+                    "[insights] trending fetch failed (best-effort): %s: %s",
+                    type(e).__name__, e,
                 )
-                for row in trend_rows
-            ]
 
             # ---- Rare-set alerts (near-complete sets) ----
+            # DISABLED 2026-07-24. This block ran an N+1: one `items` query per
+            # row of `set_registry` on every call. It only ever emits an alert
+            # when a user owns 80-99% of a registered set, so on today's data it
+            # did that work to return an empty list every time. The response
+            # field is kept (always []) so the contract doesn't change for any
+            # client. Restore behind a cheap pre-filter (a single grouped query
+            # over owned items joined to set_registry) if near-complete-set
+            # nudges are ever worth shipping.
             rare_alerts: List[RareSetAlert] = []
-            try:
-                import json as _json
-                set_rows = await conn.fetch(
-                    """
-                    SELECT sr.id, sr.category_id, sr.set_name, sr.total_items, sr.items_json
-                    FROM set_registry sr
-                    WHERE sr.total_items > 0
-                    """
-                )
-                for sr in set_rows:
-                    total = sr["total_items"]
-                    if total <= 0:
-                        continue
-                    # Parse items_json for set item keys
-                    try:
-                        items_list = sr["items_json"] if isinstance(sr["items_json"], list) else _json.loads(sr["items_json"] or "[]")
-                    except Exception:
-                        continue
-                    set_keys = [it.get("key") or it.get("name", "") for it in items_list if isinstance(it, dict)]
-                    if not set_keys:
-                        continue
-
-                    # items has no `normalized_key` column — canonical_key
-                    # is the equivalent collection-key field.
-                    owned_rows = await conn.fetch(
-                        """
-                        SELECT canonical_key AS normalized_key, title FROM items
-                        WHERE user_id = $1 AND category = $2
-                        """,
-                        user_id, sr["category_id"],
-                    )
-                    if not owned_rows:
-                        continue
-
-                    # Match owned items against set keys
-                    owned_count = 0
-                    for sk in set_keys:
-                        sk_lower = sk.lower()
-                        for orow in owned_rows:
-                            nk = orow["normalized_key"]
-                            title = orow["title"]
-                            if (nk and sk_lower in nk.lower()) or (title and sk_lower in title.lower()):
-                                owned_count += 1
-                                break
-
-                    pct = owned_count / total
-                    if 0.80 <= pct < 1.0:
-                        missing = total - owned_count
-                        rare_alerts.append(RareSetAlert(
-                            category=sr["category_id"],
-                            item_name=sr["set_name"],
-                            note=f"You own {owned_count}/{total} ({pct:.0%}). Only {missing} item{'s' if missing != 1 else ''} to complete!",
-                        ))
-            except Exception as e:
-                logger.debug("[insights] rare-set alert check failed: %s", e)
 
             return PersonalizedInsightsResponse(
                 overexposed_categories=overexposed[offset:offset + limit],
@@ -258,8 +266,8 @@ async def get_personalized_insights(
                 trending_items=trending[offset:offset + limit],
             )
 
-    except asyncpg.PostgresError as e:
-        logger.error(f"[insights/personalized] DB error: {e}")
+    except _TRANSIENT_DB_ERRORS as e:
+        logger.error(f"[insights/personalized] DB error: {type(e).__name__}: {e}")
         return PersonalizedInsightsResponse(
             overexposed_categories=[],
             diversification_suggestions=[],
@@ -301,8 +309,8 @@ async def get_home_widget(
                         pp.item_ref,
                         pp.q50 AS latest_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
-                    WHERE i.user_id = $1
+                    JOIN items i ON i.canonical_ref = pp.item_ref
+                    WHERE i.user_id = $1 AND NOT i.archived
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
                 prev AS (
@@ -310,8 +318,8 @@ async def get_home_widget(
                         pp.item_ref,
                         pp.q50 AS prev_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
-                    WHERE i.user_id = $1
+                    JOIN items i ON i.canonical_ref = pp.item_ref
+                    WHERE i.user_id = $1 AND NOT i.archived
                       AND pp.generated_at <= $2
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
@@ -335,7 +343,7 @@ async def get_home_widget(
                     COALESCE(SUM(c.prev_q50), 0)     AS yesterday_value,
                     COALESCE(
                         (SELECT COALESCE(i.title, i.canonical_key, i.id::text)
-                         FROM mover m JOIN items i ON i.canonical_key = m.item_ref),
+                         FROM mover m JOIN items i ON i.canonical_ref = m.item_ref),
                         '--'
                     ) AS biggest_mover_name,
                     COALESCE(
@@ -362,8 +370,8 @@ async def get_home_widget(
                 currency="EUR",
             )
 
-    except asyncpg.PostgresError as e:
-        logger.error(f"[insights/home-widget] DB error: {e}")
+    except _TRANSIENT_DB_ERRORS as e:
+        logger.error(f"[insights/home-widget] DB error: {type(e).__name__}: {e}")
         return HomeWidgetResponse(
             collection_value=0.0,
             today_change=0.0,
@@ -377,11 +385,8 @@ async def get_home_widget(
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _extract_category_from_key(normalized_key: str) -> str:
-    """
-    normalized_key is typically formatted as 'category|...' (e.g. 'lego|10297|...').
-    Extract the leading category segment.
-    """
-    if normalized_key and "|" in normalized_key:
-        return normalized_key.split("|", 1)[0]
-    return normalized_key or "unknown"
+# _extract_category_from_key was removed 2026-07-28 along with its only caller.
+# It split normalized_key on '|', but the live format is 'category:key'
+# (e.g. 'blind_box:pop-mart-labubu-...'), so the branch never matched and it
+# returned the whole key as the category -- which is why trending_items shipped
+# categories like "base6-base6-8". The MV supplies a real category column.

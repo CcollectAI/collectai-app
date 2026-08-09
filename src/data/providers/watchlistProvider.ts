@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase';
 import { collectorsApi } from '../../api/collectorsApi';
 import { withTimeout, TimeoutError } from '../../lib/withTimeout';
 import logger from '../../utils/logger';
+import { getSettingsSnapshot } from '../../lib/settings';
 
 const SUPABASE_READ_TIMEOUT_MS = 5_000;
 
@@ -28,7 +29,7 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     const res = await withTimeout(
       supabase
         .from('watchlist_items')
-        .select('id,title,priority,owned,target_price,currency,category,notes,created_at'),
+        .select('id,title,priority,owned,target_price,currency,category,notes,created_at,sort_order'),
       SUPABASE_READ_TIMEOUT_MS,
       'listWatchlist',
     );
@@ -36,15 +37,34 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     error = res.error;
   } catch (e) {
     if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] listWatchlist timed out — returning empty list');
-      return [];
+      // THROW, do not return []. An empty array here is indistinguishable from
+      // "you have not saved anything", so a failed read rendered as
+      // "No items in your watchlist yet" — telling a user their watchlist is
+      // empty when we simply could not fetch it.
+      //
+      // That matters more here than on most screens: the watchlist IS the paid
+      // feature's input (`_check_watchlist_snipes` reads target_price), so a
+      // user who believes it emptied has no reason to keep paying.
+      //
+      // Safe to throw: CachedDataProvider.swr only awaits the fetcher when
+      // there is NO cached value, and keeps serving stale data otherwise — so
+      // this surfaces on a cold read and degrades to stale-plus-log on a warm
+      // one, which is the correct stale-while-revalidate behaviour.
+      logger.error('[SupabaseDataProvider] listWatchlist timed out');
+      throw e;
     }
     throw e;
   }
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listWatchlist error:', error);
-    return [];
+    // logger.ERROR, not warn — warn is stripped in release builds, so this was
+    // invisible on exactly the builds where a vanished watchlist matters.
+    logger.error('[SupabaseDataProvider] listWatchlist error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load your watchlist',
+    );
   }
 
   const rows = (data ?? []) as {
@@ -57,6 +77,7 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     category?: string | null;
     notes?: string | null;
     created_at?: string | null;
+    sort_order?: number | null;
   }[];
 
   return rows.map((r) => ({
@@ -69,7 +90,9 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     category: r.category ?? undefined,
     notes: r.notes ?? undefined,
     createdAt: r.created_at ?? undefined,
-    sortOrder: 0, // sort_order column doesn't exist on watchlist_items; UI sorts by priority
+    // Real column since 2026-07-31. NULL means the user has never reordered, so
+    // 0 keeps them in the pre-existing priority-based ordering.
+    sortOrder: typeof r.sort_order === 'number' ? r.sort_order : 0,
   }));
 }
 
@@ -97,6 +120,9 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
       target_price: input.targetPrice ?? null,
       priority: input.priority ?? 'medium',
       notes: input.notes ?? null,
+      // WatchlistCreate.item_id has always existed server-side; nothing ever
+      // sent it, so watchlist_items.item_id was NULL on every row.
+      item_id: input.itemId ?? null,
     }, { timeoutMs: 15_000 });
     r = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
   } catch (e) {
@@ -112,7 +138,8 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
   try {
     const { emitOutcome } = await import('@/lib/notificationOutcomeTracker');
     emitOutcome('followed', { watchlist_id: r.id, title: input.title });
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] watchlistProvider.ts:118:', e);
     // best-effort
   }
 
@@ -136,9 +163,42 @@ export async function updateWatchlistItem(id: string, updates: { targetPrice?: n
   const updatePayload: Record<string, unknown> = {};
   if (updates.targetPrice !== undefined) updatePayload.target_price = updates.targetPrice;
   if (updates.notes !== undefined) updatePayload.notes = updates.notes;
-  // sort_order isn't a column on watchlist_items — accept the param for
-  // API compatibility but ignore it. (Older builds shipped this; the
-  // table never gained the column.)
+  // `sort_order` was dropped here because the column did not exist, which made
+  // watchlist-builder's move up/down buttons fail EVERY time: the payload came
+  // out empty, `.update({})` matched 0 rows, and the chained `.single()` threw
+  // PGRST116 ("The result contains 0 rows", HTTP 406) — so the screen rolled
+  // back the optimistic reorder and showed "Could not reorder. Please try
+  // again." Column added 2026-07-31
+  // (20260731_watchlist_items_sort_order.sql).
+  if (updates.sortOrder !== undefined) updatePayload.sort_order = updates.sortOrder;
+
+  // Nothing to write — return the row unchanged rather than issuing an empty
+  // update, which PostgREST answers with 0 rows and `.single()` turns into a
+  // throw. This is the guard that would have made the bug above impossible.
+  if (Object.keys(updatePayload).length === 0) {
+    const { data: current, error: readErr } = await supabase
+      .from('watchlist_items')
+      .select('id, title, priority, owned, target_price, currency, category, notes, created_at, sort_order')
+      .eq('id', id)
+      .single();
+    if (readErr) {
+      logger.error('[SupabaseDataProvider] updateWatchlistItem no-op read error:', readErr);
+      throw new Error(readErr.message || 'Failed to load watchlist item');
+    }
+    const c = current as Record<string, unknown>;
+    return {
+      id: typeof c.id === 'string' ? c.id : String(c.id ?? ''),
+      title: typeof c.title === 'string' ? c.title : '',
+      priority: (['high', 'medium', 'low'].includes(c.priority as string) ? c.priority as 'high' | 'medium' | 'low' : 'medium'),
+      owned: typeof c.owned === 'boolean' ? c.owned : false,
+      targetPrice: typeof c.target_price === 'number' ? c.target_price : null,
+      currency: (typeof c.currency === 'string' && c.currency ? c.currency as CurrencyCode : 'EUR'),
+      category: typeof c.category === 'string' ? c.category : undefined,
+      notes: typeof c.notes === 'string' ? c.notes : undefined,
+      createdAt: typeof c.created_at === 'string' ? c.created_at : undefined,
+      sortOrder: typeof c.sort_order === 'number' ? c.sort_order : 0,
+    };
+  }
 
   // Real table is `watchlist_items` (the legacy `watchlist` table has a
   // different shape and was returning 400 on every call).
@@ -146,7 +206,7 @@ export async function updateWatchlistItem(id: string, updates: { targetPrice?: n
     .from('watchlist_items')
     .update(updatePayload)
     .eq('id', id)
-    .select('id, title, priority, owned, target_price, currency, category, notes, created_at')
+    .select('id, title, priority, owned, target_price, currency, category, notes, created_at, sort_order')
     .single();
 
   if (error) {
@@ -185,6 +245,7 @@ export async function removeWatchlistItems(ids: string[]): Promise<void> {
     try {
       await removeWatchlistItem(id);
     } catch (err) {
+      logger.error('[silent-catch] watchlistProvider.ts:190:', err);
       errors.push(err instanceof Error ? err.message : String(err));
     }
   }
@@ -220,12 +281,25 @@ export async function convertWatchlistToItem(
   }
   const row = w as { id: string; title: string; category?: string | null };
 
+  // `actualPrice` is denominated in whatever currency the user is running the
+  // app in, so the server needs to be told which one. Until 2026-07-28 this
+  // was omitted — the comment here claimed no settings accessor existed
+  // outside React — and the server fell back to EUR, so a USD user who paid
+  // $100 had €100 booked as their cost basis. getSettingsSnapshot() reads the
+  // same persisted blob SettingsProvider boots from.
+  const { currency } = await getSettingsSnapshot();
+
   let created: Record<string, unknown>;
   try {
     created = await collectorsApi.post<Record<string, unknown>>('/items', {
       name: row.title,
       category: row.category ?? 'uncategorized',
       purchase_price: actualPrice ?? null,
+      purchase_currency: currency,
+      // "I Got It!" means the acquisition happened now. Stamping it gives the
+      // analytics cost-basis series a real date to bucket on instead of
+      // falling back to created_at.
+      purchased_at: new Date().toISOString(),
       notes: notes ?? null,
     });
   } catch (e) {
@@ -239,7 +313,7 @@ export async function convertWatchlistToItem(
   try {
     await collectorsApi.delete(`/watchlist/mine/${encodeURIComponent(watchlistItemId)}`);
   } catch (e) {
-    logger.warn('[SupabaseDataProvider] convertWatchlistToItem delete failed (item created OK):', e);
+    logger.error('[SupabaseDataProvider] convertWatchlistToItem delete failed (item created OK):', e);
   }
 
   return {

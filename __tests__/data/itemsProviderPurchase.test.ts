@@ -12,11 +12,20 @@ import { jest } from '@jest/globals';
 
 let mockRows: unknown[] = [];
 let mockError: { message: string } | null = null;
+// Captured so the archived filter is ASSERTED, not merely tolerated. A mock
+// that just accepts `.eq` would let the filter be deleted again without a
+// single test going red — and the whole point of listItems filtering is that
+// nothing else in the app was enforcing it.
+let mockEqCalls: Array<[string, unknown]> = [];
 
 jest.mock('../../src/lib/supabase', () => ({
   supabase: {
     from: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
+    eq: jest.fn(function (this: unknown, col: string, val: unknown) {
+      mockEqCalls.push([col, val]);
+      return this;
+    }),
     order: jest.fn().mockReturnThis(),
     range: jest.fn().mockImplementation(() => Promise.resolve({ data: mockRows, error: mockError })),
   },
@@ -38,6 +47,16 @@ describe('itemsProvider.listItems — purchase field mapping', () => {
   beforeEach(() => {
     mockRows = [];
     mockError = null;
+    mockEqCalls = [];
+  });
+
+  it('excludes archived items — the Items tab is the ACTIVE collection', async () => {
+    mockRows = [];
+    await listItems();
+    // The bulk-archive dialog promises "archived items will be hidden from your
+    // active collection". Until 2026-08-09 nothing honoured it, so an archived
+    // item came straight back on the next refresh. This pins the promise.
+    expect(mockEqCalls).toContainEqual(['archived', false]);
   });
 
   it('maps purchase_price_eur and purchase_currency through to the Item', async () => {
@@ -90,11 +109,27 @@ describe('itemsProvider.listItems — purchase field mapping', () => {
     expect(items[0].purchaseNotes).toBeNull();
   });
 
-  it('returns [] on Supabase error without throwing (matches itemsProvider error contract)', async () => {
+  // REWRITTEN 2026-08-08. This used to assert `returns [] on Supabase error
+  // without throwing`, and it passed — which is precisely why the bug survived.
+  // Returning [] made a FAILED read indistinguishable from an empty collection,
+  // so the Items tab rendered "add your first item" to someone who already had
+  // one, and the test protected that. A test that pins the broken behaviour
+  // makes green mean dead (learning_tests_that_pin_a_stub).
+  it('THROWS on a Supabase error — a failed read must not look like an empty collection', async () => {
     mockRows = [];
     mockError = { message: 'PostgREST 400 (column does not exist)' };
 
-    const items = await listItems({ limit: 10, offset: 0 });
-    expect(items).toEqual([]);
+    await expect(listItems({ limit: 10, offset: 0 })).rejects.toThrow(
+      'PostgREST 400 (column does not exist)',
+    );
+  });
+
+  it('still resolves to [] when the collection is genuinely empty', async () => {
+    // The other half of the contract. If this ever starts rejecting, the empty
+    // state becomes unreachable and we have swapped one wrong screen for another.
+    mockRows = [];
+    mockError = null;
+
+    await expect(listItems({ limit: 10, offset: 0 })).resolves.toEqual([]);
   });
 });

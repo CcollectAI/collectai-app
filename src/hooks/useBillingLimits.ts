@@ -34,7 +34,8 @@ function getWebLocalStorageOverride(): string {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       return (window.localStorage.getItem('COLLECTAI_FORCE_PLAN') || '').toLowerCase();
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] useBillingLimits.ts:37:', e);
       return '';
     }
   }
@@ -43,6 +44,8 @@ function getWebLocalStorageOverride(): string {
 
 const DEFAULT_LIMITS: BillingStatus['limits'] = {
   max_mandates: 3,
+  max_watchlist_items: 25,
+  max_daily_deal_alerts: 1,
   deal_discovery: false,
   dossier_pdf: false,
   advanced_analytics: false,
@@ -54,6 +57,8 @@ const DEFAULT_LIMITS: BillingStatus['limits'] = {
 const FORCED_LIMITS: Record<'pro' | 'premium', BillingStatus['limits']> = {
   pro: {
     max_mandates: 10,
+    max_watchlist_items: null,
+    max_daily_deal_alerts: null,
     deal_discovery: true,
     dossier_pdf: true,
     advanced_analytics: true,
@@ -63,6 +68,8 @@ const FORCED_LIMITS: Record<'pro' | 'premium', BillingStatus['limits']> = {
   },
   premium: {
     max_mandates: 50,
+    max_watchlist_items: null,
+    max_daily_deal_alerts: null,
     deal_discovery: true,
     dossier_pdf: true,
     advanced_analytics: true,

@@ -64,17 +64,37 @@ export const APP_CONFIG = {
 
 ## Step 2: Run the Supabase Migrations
 
-Run all 5 SQL files in order in your Supabase SQL editor:
+Run all 8 SQL files **in filename order** in your Supabase SQL editor:
 
 ```
-supabase/migrations/001_kpi_tables.sql         → creators, kpi_events, orders
+supabase/migrations/001_kpi_tables.sql          → creators, kpi_events, orders
 supabase/migrations/002_shopify_enhanced_kpis.sql → daily_revenue, market_metrics
 supabase/migrations/003_ugc_video_tracking.sql  → ugc_videos, ugc_daily_snapshots
 supabase/migrations/004_content_pipeline_pods.sql → ugc_pods, ugc_pod_members, ugc_content_pipeline
+supabase/migrations/004b_video_scripts.sql      → ugc_video_scripts, ugc_video_learning,
+                                                   ugc_video_audio, ugc_tiktok_metrics
 supabase/migrations/005_swipefile_accounts_sparkads.sql → ugc_swipe_file, ugc_accounts, boost fields
+supabase/migrations/006_content_machine.sql     → content_accounts, content_pillars, content_niches,
+                                                   content_products, content_ideas, weekly_calendars,
+                                                   calendar_items, generated_captions,
+                                                   content_batches, content_batch_items
+supabase/migrations/007_content_machine_seeds.sql → seed rows for the content machine tables
 ```
 
+26 tables total. Order matters: `005` runs `ALTER TABLE ugc_videos`, so `003` must come first;
+`007` seeds the tables `006` creates.
+
 These create the same schema for any app. The data you put in is what makes it app-specific.
+
+> **Verify the migrations landed** — a missing table does *not* surface as an error. The
+> dashboard silently falls back to demo data. After running them:
+>
+> ```bash
+> npm run test:e2e:creators
+> ```
+>
+> This checks every expected table exists, seeds a throwaway creator, asserts the real
+> creator reaches the dashboard data layer, and cleans up after itself.
 
 ---
 

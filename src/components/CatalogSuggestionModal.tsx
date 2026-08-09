@@ -110,7 +110,7 @@ function CatalogSuggestionModalInner({
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
       showToast({ message: "Thanks for helping improve Sparrow Collect!", type: "success" });
     } catch (err) {
-      logger.warn("[CatalogSuggestion] Submit failed:", err);
+      logger.error("[CatalogSuggestion] Submit failed:", err);
       // Still dismiss — don't block the user
     } finally {
       setIsSubmitting(false);

@@ -26,11 +26,27 @@ import { AnimatedPressable } from '@/motion';
 import logger from '@/utils/logger';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { CATEGORY_VISUAL, CATEGORY_GROUPS, getCategoryById, type CategoryId } from '@/data/categories';
+import { formatCategoryName } from '@/constants/categories';
 import { FRANCHISES } from '@/data/franchises';
 
 type GroupHeader = { type: 'header'; label: string };
 type CategoryRow = { type: 'row'; summary: CategorySummary };
 type ListItem = GroupHeader | CategoryRow;
+
+/**
+ * Display label for a category id.
+ *
+ * `v_category_summaries_v1` sets `name = category`, i.e. the raw slug, so this
+ * screen was rendering `action_figures` / `anime_bluray` verbatim in card titles,
+ * accessibility labels and the search filter. Prefer the curated name from
+ * `@/data/categories` (`pokemon` → "Pokémon Cards", `lorcana` → "Disney
+ * Lorcana"), and title-case the slug for the tail of the 54 categories that has
+ * no curated entry — the same contract `formatCategoryName` documents
+ * ("raw values never surface underscored/lowercase in the UI").
+ */
+function categoryLabel(id: string): string {
+  return getCategoryById(id as CategoryId)?.name ?? formatCategoryName(id);
+}
 
 export default function CategoriesListScreenWithBoundary() {
   return (
@@ -57,7 +73,7 @@ function CategoriesListScreen() {
       const data = await dataProvider.listCategorySummaries();
       setCategories(data);
     } catch (err: unknown) {
-      logger.warn('[CategoriesList] loadCategories error:', err);
+      logger.error('[CategoriesList] loadCategories error:', err);
       setError((err as Error)?.message || 'Failed to load categories');
     } finally {
       setLoading(false);
@@ -91,7 +107,7 @@ function CategoriesListScreen() {
       for (const id of group.ids) {
         const summary = catById.get(id);
         if (!summary) continue;
-        if (q && !summary.name.toLowerCase().includes(q)) continue;
+        if (q && !categoryLabel(summary.id).toLowerCase().includes(q)) continue;
         if (franchiseCategoryIds && !franchiseCategoryIds.has(id)) continue;
         rows.push({ type: 'row', summary });
         placed.add(id);
@@ -106,7 +122,7 @@ function CategoriesListScreen() {
     const ungrouped: CategoryRow[] = [];
     for (const c of categories) {
       if (placed.has(c.id)) continue;
-      if (q && !c.name.toLowerCase().includes(q)) continue;
+      if (q && !categoryLabel(c.id).toLowerCase().includes(q)) continue;
       if (franchiseCategoryIds && !franchiseCategoryIds.has(c.id)) continue;
       ungrouped.push({ type: 'row', summary: c });
     }
@@ -149,7 +165,7 @@ function CategoriesListScreen() {
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={() => router.push(`/categories/${encodeURIComponent(cat.id)}`)}
         accessibilityRole="button"
-        accessibilityLabel={`${cat.name}, ${cat.completionPct}% complete, ${cat.missingCount} missing`}
+        accessibilityLabel={`${categoryLabel(cat.id)}, ${cat.completionPct}% complete, ${cat.missingCount} missing`}
       >
         {/* Category thumbnail */}
         {showImage ? (
@@ -167,7 +183,7 @@ function CategoriesListScreen() {
 
         <View style={styles.cardContent}>
           <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-            {cat.name}
+            {categoryLabel(cat.id)}
           </Text>
 
           {/* Progress bar */}

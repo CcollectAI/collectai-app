@@ -9,6 +9,7 @@
 """
 
 import inspect
+import re
 import math
 import os
 import sys
@@ -47,22 +48,69 @@ class TestDataMoatEndpoints:
         assert "data_moat.router" in src
 
 
+# ---------------------------------------------------------------------------
+# Demand-signal wiring — resolved through the call graph, not by grepping one
+# function body.
+#
+# 2026-07-27: five of these tests were failing because the instrumentation had
+# been REFACTORED INTO HELPERS, not removed. `get_category_deep_dive` calls
+# `spawn_bg(_record_category_view(...))`; `add_to_watchlist` calls
+# `_record_watchlist_demand(...)`; search signals moved to
+# `search_router.unified_search`. Verified against prod before touching these:
+# demand_signals holds 164 rows across 11 signal types, including
+# watchlist_add (25), search_query (22) and category_viewed — so the feature
+# was healthy and the assertions were stale.
+#
+# `inspect.getsource(fn)` + substring is the wrong instrument for "is this
+# wired": it fails on a pure refactor and would equally pass on a helper that
+# is defined but never called. This walks one level of the module's own call
+# graph instead — still fails if the wiring is genuinely deleted, no longer
+# fails when it merely moves.
+# ---------------------------------------------------------------------------
+
+def _records_demand_signal(module_name: str, func_name: str) -> bool:
+    """True if `func_name` records a demand signal, directly or via a helper
+    defined in the same module that it actually calls."""
+    mod = __import__(module_name, fromlist=[func_name])
+    fn = getattr(mod, func_name)
+    src = inspect.getsource(fn)
+    if "record_demand_signal" in src:
+        return True
+
+    module_src = inspect.getsource(mod)
+    for helper in re.findall(r"^(?:async )?def (_\w+)", module_src, re.M):
+        # The helper must be BOTH referenced by the route and itself record.
+        if helper not in src:
+            continue
+        m = re.search(
+            rf"^(?:async )?def {helper}\b.*?(?=^(?:async )?def |\Z)",
+            module_src,
+            re.M | re.S,
+        )
+        if m and "record_demand_signal" in m.group(0):
+            return True
+    return False
+
+
 class TestDemandSignalWiring:
     """Verify demand signals are wired into search, watchlist, and alerts."""
 
-    def test_marketplace_search_records_signal(self):
+    def test_search_records_a_search_query_signal(self):
+        """Search demand is recorded by search_router.unified_search.
+
+        It is NOT in marketplace_router.marketplace_search, which is what
+        this used to assert. Prod carries 22 `search_query` rows, so the
+        signal fires — from the unified search route.
+        """
+        assert _records_demand_signal("app.features.search_router", "unified_search")
         src = inspect.getsource(
-            __import__("app.agents.marketplace_router", fromlist=["marketplace_search"]).marketplace_search
+            __import__("app.features.search_router", fromlist=["unified_search"]).unified_search
         )
-        assert "record_demand_signal" in src
         assert "search_query" in src
 
     def test_watchlist_add_records_signal(self):
-        src = inspect.getsource(
-            __import__("app.features.watchlist_router", fromlist=["add_to_watchlist"]).add_to_watchlist
-        )
-        assert "record_demand_signal" in src
-        assert "watchlist_add" in src
+        """Via the _record_watchlist_demand helper (prod: 25 watchlist_add rows)."""
+        assert _records_demand_signal("app.features.watchlist_router", "add_to_watchlist")
 
     def test_unified_search_records_signal(self):
         src = inspect.getsource(
@@ -163,38 +211,44 @@ class TestTemporalDecay:
 
 
 class TestValuationModelBlending:
-    """Tests for Ridge model blending in valuation worker."""
+    """Ridge model blending in the valuation worker.
 
-    def test_predict_ridge_basic(self):
-        from workers.valuation_worker import _predict_ridge
+    Repointed 2026-07-27: `_predict_ridge` was renamed `_predict_quantile`
+    and its second argument became a feature dict rather than an item_ref
+    plus a raw price. These three had been dead with ImportError since.
+    """
+
+    def test_predict_quantile_basic(self):
+        from workers.valuation_worker import _predict_quantile
         model = {
             "features": ["price"],
             "standardizer": {"mean": [100.0], "std": [50.0]},
             "ridge": {"coef": [1.0], "intercept": 100.0},
         }
-        result = _predict_ridge(model, "pokemon:charizard", 150.0)
+        result = _predict_quantile(model, {"price": 150.0}, "ridge")
         assert result is not None
         assert result > 0
 
-    def test_predict_ridge_mismatched_dimensions(self):
-        from workers.valuation_worker import _predict_ridge
+    def test_predict_quantile_mismatched_dimensions(self):
+        """An older artifact's standardizer vs a newer feature list."""
+        from workers.valuation_worker import _predict_quantile
         model = {
             "features": ["price", "condition"],
-            "standardizer": {"mean": [100.0], "std": [50.0]},  # Wrong dimension
+            "standardizer": {"mean": [100.0], "std": [50.0]},  # wrong dimension
             "ridge": {"coef": [1.0, 0.5], "intercept": 100.0},
         }
-        result = _predict_ridge(model, "pokemon:charizard", 150.0)
-        assert result is None  # Should fail gracefully
+        result = _predict_quantile(model, {"price": 150.0, "condition": 0.8}, "ridge")
+        assert result is None  # skip the model; empirical wins
 
-    def test_predict_ridge_zero_std(self):
-        from workers.valuation_worker import _predict_ridge
+    def test_predict_quantile_zero_std(self):
+        """A feature constant in training must be ignored, not divide by zero."""
+        from workers.valuation_worker import _predict_quantile
         model = {
             "features": ["price"],
             "standardizer": {"mean": [100.0], "std": [0.0]},
             "ridge": {"coef": [1.0], "intercept": 100.0},
         }
-        result = _predict_ridge(model, "pokemon:charizard", 150.0)
-        # Should handle zero std gracefully (x_std = 0)
+        result = _predict_quantile(model, {"price": 150.0}, "ridge")
         assert result is not None
         assert result == 100.0  # intercept only
 
@@ -297,12 +351,14 @@ class TestPolicyEngineRecency:
 
 
 # ---------------------------------------------------------------------------
-# Package 4: Trust Wiring (marketplace_trust_router merged into deal_desk_router)
+# Package 4: Trust Wiring (was marketplace_trust_router -> deal_desk_router;
+# Deal Desk removed 2026-08-09, member trust now lives in p2p_offers_router
+# via member_grades)
 # ---------------------------------------------------------------------------
 
 # _compute_badge tests removed — marketplace_trust_router was deleted
-# after merging trust logic into deal_desk_router. Badge computation
-# is tested via deal_desk reputation endpoint tests.
+# after merging trust logic into the offers router. Badge computation
+# is tested via the P2P member-grade endpoints.
 
 
 class TestStubRoutersRemoved:
@@ -331,11 +387,33 @@ class TestStubRoutersRemoved:
 class TestRareSetAlerts:
     """Verify rare-set alerts are wired."""
 
-    def test_insights_has_set_registry_query(self):
+    def test_rare_set_alerts_are_deliberately_disabled(self):
+        """The near-complete-set query was removed ON PURPOSE, 2026-07-24.
+
+        Rewritten 2026-07-27. This used to assert the `set_registry` query
+        and its 0.80 threshold were present. They were deleted deliberately:
+        the block ran one `items` query per row of set_registry on every
+        call — an N+1 — and only ever emits an alert when a user owns
+        80-99% of a registered set, so on real data it did all that work to
+        return an empty list every time.
+
+        The response FIELD is kept (always []) so no client contract
+        changed. Asserting the deleted code back would be pinning a
+        performance bug. This pins the decision instead: the field exists
+        and the expensive query does not.
+        """
         import app.features.insights_router as ir
+
         src = inspect.getsource(ir.get_personalized_insights)
-        assert "set_registry" in src
-        assert "0.80" in src  # 80% threshold
+        assert "rare_set_alerts=" in src, "response field must stay for clients"
+        assert "DISABLED 2026-07-24" in src, "the rationale must stay with the code"
+        # The alerts are a constant empty list, not the result of a query.
+        # (The comment above them still names set_registry — that IS the
+        # rationale and must stay, so grepping the source for the table name
+        # would assert the wrong thing.)
+        assert re.search(r"rare_alerts:\s*List\[RareSetAlert\]\s*=\s*\[\]", src), (
+            "rare_set_alerts must be a constant [], not a re-added N+1 query"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -544,19 +622,41 @@ class TestNewSignalWiring:
         assert "record_demand_signal" in src
         assert "catalog_browsed" in src
 
-    def test_collection_detail_records_collection_viewed(self):
+    def test_collection_viewed_is_declared_but_deliberately_unwired(self):
+        """`collection_viewed` has no writer, and that is correct today.
+
+        Rewritten 2026-07-27. This used to assert that
+        `get_collection_detail` records the signal. It does not, and it
+        must not: that route is a STUB which raises 404 on every call
+        ("Catalog-of-sets aggregation not built"), as does
+        get_collection_progress. Instrumenting an endpoint that never
+        succeeds would only produce a signal that can never fire.
+
+        The type IS declared in data_moat's allowlist and documented, so
+        this pins the gap rather than hiding it — when the catalog-of-sets
+        feature ships, this test should flip to asserting the wiring.
+        """
+        from app.features import data_moat
+
+        allow_src = inspect.getsource(data_moat)
+        assert "collection_viewed" in allow_src, "signal type should stay declared"
+
         src = inspect.getsource(
             __import__("app.features.collections_router", fromlist=["get_collection_detail"]).get_collection_detail
         )
-        assert "record_demand_signal" in src
-        assert "collection_viewed" in src
+        assert "Collection not found" in src, "route is still a stub"
+        assert "record_demand_signal" not in src
 
     def test_category_deepdive_records_category_viewed(self):
-        src = inspect.getsource(
-            __import__("app.features.trends_and_deepdive_router", fromlist=["get_category_deep_dive"]).get_category_deep_dive
+        """Via the _record_category_view helper, spawned with spawn_bg.
+
+        Prod carries `category_viewed` rows, so the signal fires; the old
+        assertion just grepped the route body, which no longer contains
+        the literal call after the helper extraction.
+        """
+        assert _records_demand_signal(
+            "app.features.trends_and_deepdive_router", "get_category_deep_dive"
         )
-        assert "record_demand_signal" in src
-        assert "category_viewed" in src
 
     def test_price_evidence_records_item_viewed(self):
         src = inspect.getsource(
@@ -588,11 +688,29 @@ class TestPriceFeedbackLoop:
         assert result is False  # No DB pool in test
 
     def test_complete_deal_wires_ground_truth(self):
+        """A completed trade must feed its agreed price back as a sold comp.
+
+        Repointed 2026-08-09 from `app.agents.deal_completion.execute_complete`
+        to the P2P confirmation path. Deal Desk was removed (0 rows, never
+        shipped — `SELLING_ENABLED=false`), but the GUARANTEE it was asserting
+        is not Deal Desk's, it is the marketplace's: a two-sided confirmed price
+        is the only sold-comp source we have for the ~62k catalogue items eBay
+        cannot price, so losing this wiring would silently starve
+        valuation_worker.
+
+        The mechanism changed name — `record_price_ground_truth(actual_price)`
+        became `_sold_comp_hook(listing_id, amount, currency)` — so the test
+        asserts the new one. It must keep failing if the hook is dropped.
+        """
         src = inspect.getsource(
-            __import__("app.agents.deal_completion", fromlist=["execute_complete"]).execute_complete
+            __import__(
+                "app.features.p2p_offers_router", fromlist=["confirm_exchange"]
+            ).confirm_exchange
         )
-        assert "record_price_ground_truth" in src
-        assert "actual_price" in src
+        assert "_sold_comp_hook" in src, "completion no longer records a sold comp"
+        # The AGREED figure, not the asking price. Passing the listing price
+        # here would poison every comp with the pre-negotiation number.
+        assert 'fresh["amount"]' in src, "sold comp is not fed the agreed amount"
 
     def test_prediction_accuracy_endpoint_exists(self):
         from app.features.data_moat import router
@@ -674,12 +792,25 @@ class TestGeoDemandSegmentation:
         routes = [r.path for r in router.routes]
         assert any("by-region" in r for r in routes)
 
-    def test_marketplace_search_enriches_with_geo(self):
+    def test_search_enriches_demand_signals_with_geo(self):
+        """Geo enrichment lives with the search signal, in search_router.
+
+        Repointed 2026-07-27: this asserted `marketplace_router.
+        marketplace_search`, which records no demand signal at all — so
+        there is nothing there to enrich. `unified_search` is the route
+        that writes `search_query`, and it is where get_user_geo is
+        called. Verified against prod: demand_signals rows carry region /
+        country_code.
+        """
         src = inspect.getsource(
-            __import__("app.agents.marketplace_router", fromlist=["marketplace_search"]).marketplace_search
+            __import__("app.features.search_router", fromlist=["unified_search"]).unified_search
         )
-        assert "get_user_geo" in src
-        assert "region" in src
+        # Assert the CALL, not the mention. `"get_user_geo" in src` also
+        # matches the import line, so it survived a mutation that replaced
+        # the call with `region, country = (None, None)` — caught by
+        # mutation-testing this file rather than by it passing.
+        assert re.search(r"await\s+get_user_geo\s*\(", src), "geo lookup must actually run"
+        assert re.search(r"region\s*=\s*region|region=region", src), "region must reach the signal"
 
     def test_migration_adds_geo_columns(self):
         """Verify the migration file exists and adds region/country_code."""

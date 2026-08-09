@@ -109,6 +109,7 @@ async def process_intake(
     user_hints: Optional[dict[str, Any]] = None,
     user_id: Optional[str] = None,
     conn=None,
+    filename: Optional[str] = None,
 ) -> IntakeResult:
     """
     Unified intake orchestrator.
@@ -186,7 +187,24 @@ async def process_intake(
         if (not barcode_found or barcode_partial) and image_bytes:
             result.rationale.append("Attempting vision classification")
 
-            vision_result = await _vision_classify_internal(image_bytes)
+            # The heuristic tier matches on the FILENAME
+            # (confidence_aggregator.classify_heuristic), so calling this with
+            # image bytes alone made the whole fallback structurally dead: it
+            # always saw filename="" and returned unknown/0.0. The parameter
+            # existed the whole way down; nothing ever passed it.
+            #
+            # The user's own category (hints["category"], applied as an
+            # override at Step 5 below) is also passed IN as the vision
+            # category hint. It used to come from the CLIP pre-filter, which
+            # never ran in production (FAL_KEY unset), so the hint was
+            # permanently None and every scan got the generic extraction
+            # prompt. The user already told us the category — using it up front
+            # picks the right per-category field list and enables the B3.2b
+            # confusion hint. build_system_prompt allow-lists it against
+            # ALL_CATEGORIES, so a bogus string is dropped, never prompted.
+            vision_result = await _vision_classify_internal(
+                image_bytes, filename or "", category_hint=hints.get("category"),
+            )
 
             if vision_result:
                 vision_cat = vision_result.get("category_id")
@@ -329,49 +347,16 @@ async def process_intake(
         # Step 2.6: Re-prompt validation — send image + candidates back to
         # the model for a focused visual comparison.
         # -----------------------------------------------------------------
-        _fast_path_applied = False
+        # The F2 "fast-path" that used to sit here (skip the re-prompt when
+        # clip_confidence >= 0.90 AND catalog score >= 0.90) was removed with
+        # the CLIP tier. `attributes["clip_confidence"]` was only ever written
+        # by the fal.ai pre-filter, which never ran in production, so the guard
+        # read the 0.0 default on every scan and the branch never executed once.
+        # It is deleted rather than re-based on the OpenAI confidence: doing
+        # that would ACTIVATE a never-exercised auto-select path, which is a
+        # behaviour change, not a cleanup.
         if (
             image_bytes
-            and result.alternatives
-            and len(result.alternatives) >= 1
-        ):
-            best_alt_score = max(
-                a.get("match_score", 0) for a in result.alternatives
-            )
-            clip_conf = result.attributes.get("clip_confidence", 0.0)
-
-            # Fast-path (F2): if CLIP confidence >= 0.90 AND best catalog
-            # match >= 0.90, auto-select the best match and skip re-prompt.
-            if clip_conf >= 0.90 and best_alt_score >= 0.90:
-                _fast_path_applied = True
-                best_alt = max(result.alternatives, key=lambda a: a.get("match_score", 0))
-                result.catalog_match_id = best_alt.get("catalog_item_id")
-                result.catalog_match_key = best_alt.get("item_key")
-                result.name = best_alt.get("title") or result.name
-                if best_alt.get("brand"):
-                    result.attributes["brand"] = best_alt["brand"]
-                if best_alt.get("rarity"):
-                    result.attributes["rarity"] = best_alt["rarity"]
-                    result.subtype_id = best_alt["rarity"]
-                if best_alt.get("set_code"):
-                    result.attributes["set_code"] = best_alt["set_code"]
-                if result.field_confidence and result.field_confidence.get("name") is not None:
-                    result.field_confidence["name"] = max(
-                        result.field_confidence["name"], best_alt_score,
-                    )
-                result.rationale.append(
-                    f"Fast-path: auto-selected '{best_alt.get('title')}' "
-                    f"(clip_conf={clip_conf:.2f}, catalog_score={best_alt_score:.2f}) — "
-                    f"skipped re-prompt"
-                )
-                logger.info(
-                    "Fast-path activated: clip_conf=%.2f, catalog_score=%.2f — skipping reprompt",
-                    clip_conf, best_alt_score,
-                )
-
-        if (
-            not _fast_path_applied
-            and image_bytes
             and result.alternatives
             and len(result.alternatives) >= 2
         ):

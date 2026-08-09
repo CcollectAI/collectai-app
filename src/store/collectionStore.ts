@@ -42,6 +42,7 @@ export async function fetchCollectionItems(): Promise<CollectionItem[]> {
   const { data, error } = await supabase
     .from("items")
     .select("id,title,image_url,category,estimated_value,updated_at")
+    .eq("archived", false)
     .order("updated_at", { ascending: false })
     .limit(200);
 

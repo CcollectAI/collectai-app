@@ -153,7 +153,7 @@ EXPECTED: list[tuple[str, list[str], str]] = [
             "id", "user_id", "title", "body", "payload", "type",
             "is_read", "created_at",
         ],
-        "workers/{auction_alert,signal_alerts,value_change,watchlist_monitor}_worker.py",
+        "workers/{auction_alert,value_change,watchlist_monitor}_worker.py",
     ),
     (
         "price_ground_truths",

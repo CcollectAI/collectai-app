@@ -30,6 +30,21 @@ type CollectionsResult = Awaited<ReturnType<typeof getCatalogCollections>>;
 // 15 min — matches the TTL_LONG "categories" tier in CachedDataProvider.
 const TTL_MS = 15 * 60 * 1000;
 
+/**
+ * True when a browse/collections payload has no rows. We deliberately DON'T
+ * cache or serve empty results: the backend can transiently return `[]` while
+ * mv_category_top_value / mv_catalog_item_price refresh (00:00 & 03:10 UTC), on
+ * a cold-start race, or after a brief 5xx. Caching that for 15 min pinned the
+ * category rail to "No catalog items" even though the data existed (the full
+ * grid, which fetches uncached, showed the same items fine). Treating empty as
+ * a miss means a populated backend always wins on the very next fetch.
+ */
+function isEmptyResult(r: unknown): boolean {
+  const rows = (r as { items?: unknown[]; collections?: unknown[] } | null)?.items
+    ?? (r as { collections?: unknown[] } | null)?.collections;
+  return !Array.isArray(rows) || rows.length === 0;
+}
+
 function keyFor(categoryId: string, opts?: BrowseOpts): string {
   return [
     'catalog:browse',
@@ -59,17 +74,20 @@ export async function browseCatalogItemsCached(
   const cacheKey = keyFor(categoryId, opts);
   const cached = await cacheGet<BrowseResult>(cacheKey);
 
-  if (cached !== null) {
+  // Serve stale ONLY when it's non-empty. A cached empty is treated as a miss
+  // so a populated backend recovers on this very visit (not a future mount).
+  if (cached !== null && !isEmptyResult(cached)) {
     // Stale-while-revalidate: return the cached page now, refresh in the
     // background so the next mount has fresh prices.
     browseCatalogItems(categoryId, opts)
-      .then((fresh) => cacheSet(cacheKey, fresh, TTL_MS))
+      .then((fresh) => { if (!isEmptyResult(fresh)) return cacheSet(cacheKey, fresh, TTL_MS); })
       .catch((err) => logger.warn(`[catalogBrowseCache] bg revalidate ${cacheKey}:`, err));
     return cached;
   }
 
   const fresh = await browseCatalogItems(categoryId, opts);
-  await cacheSet(cacheKey, fresh, TTL_MS);
+  // Only persist non-empty results — never let a transient [] stick for 15 min.
+  if (!isEmptyResult(fresh)) await cacheSet(cacheKey, fresh, TTL_MS);
   return fresh;
 }
 
@@ -89,15 +107,16 @@ export async function getCatalogCollectionsCached(
   const cacheKey = ['catalog:collections', categoryId, groupBy ?? 'set', limit ?? ''].join(':');
   const cached = await cacheGet<CollectionsResult>(cacheKey);
 
-  if (cached !== null) {
+  // Same empty-is-a-miss rule as browseCatalogItemsCached (Browse by Set).
+  if (cached !== null && !isEmptyResult(cached)) {
     getCatalogCollections(categoryId, limit, groupBy)
-      .then((fresh) => cacheSet(cacheKey, fresh, TTL_MS))
+      .then((fresh) => { if (!isEmptyResult(fresh)) return cacheSet(cacheKey, fresh, TTL_MS); })
       .catch((err) => logger.warn(`[catalogBrowseCache] bg revalidate ${cacheKey}:`, err));
     return cached;
   }
 
   const fresh = await getCatalogCollections(categoryId, limit, groupBy);
-  await cacheSet(cacheKey, fresh, TTL_MS);
+  if (!isEmptyResult(fresh)) await cacheSet(cacheKey, fresh, TTL_MS);
   return fresh;
 }
 

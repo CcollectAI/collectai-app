@@ -22,12 +22,19 @@ type Props = {
   // kept for back-compat with existing call sites; no longer renders previews
   previewType?: 'chart' | 'list' | 'report' | 'history';
   requiredPlan?: string;
+  /**
+   * When set, the card presents several bundled features as one prompt instead
+   * of a single subtitle — so we show ONE upgrade card for a group of paid
+   * sections rather than stacking a full card per section.
+   */
+  features?: Array<{ label: string; description: string }>;
 };
 
 export const LockedPreviewSection = React.memo(function LockedPreviewSection({
   title,
   subtitle,
   requiredPlan = 'Pro',
+  features,
 }: Props) {
   const { colors } = useAppTheme();
 
@@ -44,11 +51,28 @@ export const LockedPreviewSection = React.memo(function LockedPreviewSection({
         </View>
         <View style={styles.text}>
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>
-            {subtitle ?? `Available on ${requiredPlan}.`}
-          </Text>
+          {!features && (
+            <Text style={[styles.subtitle, { color: colors.muted }]}>
+              {subtitle ?? `Available on ${requiredPlan}.`}
+            </Text>
+          )}
         </View>
       </View>
+
+      {features && (
+        <View style={styles.featureList}>
+          {features.map((f) => (
+            <View key={f.label} style={styles.featureRow}>
+              <Ionicons name="checkmark-circle" size={15} color={colors.accent} style={styles.featureIcon} />
+              <Text style={[styles.featureText, { color: colors.muted }]}>
+                <Text style={{ color: colors.text, fontWeight: '600' }}>{f.label}</Text>
+                {`  ${f.description}`}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+
       <Pressable
         onPress={() => router.push('/subscription' as Href)}
         style={[styles.cta, { backgroundColor: colors.accent }]}
@@ -86,6 +110,10 @@ const styles = StyleSheet.create({
   text: { flex: 1 },
   title: { fontSize: 14, fontWeight: '700' },
   subtitle: { fontSize: 12, marginTop: 2 },
+  featureList: { gap: 8, marginBottom: 12 },
+  featureRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  featureIcon: { marginTop: 1, marginRight: 8 },
+  featureText: { flex: 1, fontSize: 12, lineHeight: 17 },
   cta: {
     borderRadius: 8,
     paddingVertical: 9,

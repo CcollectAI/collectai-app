@@ -15,8 +15,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
+from app.lib.bg_tasks import spawn_bg
 from app.agents.adapters.ebay_caller import EbayCaller
 from app.agents.adapters.tcgplayer_caller import TCGPlayerCaller
 from app.agents.adapters.firecrawl_caller import FirecrawlCaller
@@ -84,6 +86,16 @@ from app.agents.marketplace_helpers import (  # noqa: F401
 )
 
 logger = logging.getLogger(__name__)
+
+# Overall wall-clock budget for a live (cache-miss) aggregate search. Fast API
+# adapters (eBay, TCGPlayer) finish in ~1-2s; slow scrapers (crawl4ai, etc.)
+# can take 8s+ and were dragging the whole gather. Cap the wall-clock and
+# return whatever finished in time — stragglers are cancelled for THIS request
+# (the next identical search reuses the 6h cache). Override via env if needed.
+try:
+    _SEARCH_BUDGET_SECONDS = float(os.getenv("MARKETPLACE_SEARCH_BUDGET_S", "5.0"))
+except (TypeError, ValueError):
+    _SEARCH_BUDGET_SECONDS = 5.0
 
 
 # ---------------------------------------------------------------------------
@@ -207,10 +219,43 @@ class MarketplaceAgent:
         limit: int,
         region: Optional[str],
         mode: str = "search",
+        only_adapters: Optional[set] = None,
+        exclude_adapters: Optional[set] = None,
+        ignore_region_policy: bool = False,
     ) -> tuple[list[tuple[str, Any]], int]:
         """Build the list of (source_name, coroutine) tasks.
 
         *mode* is "search" for aggregate_search or "sold" for find_sold_comps.
+
+        *only_adapters* restricts the fan-out to the named adapters. Added
+        2026-08-06 for the TCG listings pass: that pass needs eBay and only
+        eBay, because a full fan-out on a TCG query re-queries the very price
+        feeds that already cover those categories (tcgcsv/scryfall/cardmarket)
+        and Cardmarket currently answers our scrape with a Cloudflare
+        challenge. Bounding the fan-out is what keeps the pass cheap enough to
+        run continuously — see learning_third_party_rate_bans_and_schedule_drift.
+
+        *exclude_adapters* is the denylist counterpart, used by
+        marketplace_scrape_scheduler to keep PAID adapters (firecrawl,
+        scrape_do, serpapi, google_shopping) out of the bulk catalog scrape.
+        It replaces a `setattr(agent, f"_{name}_caller", None)` hack in that
+        worker which had NEVER worked: the real attribute is `_firecrawl`, not
+        `_firecrawl_caller`, and the `hasattr` guard turned the wrong name into
+        a silent no-op. Harmless only while FIRECRAWL_ENABLED=false; the moment
+        that flipped (2026-08-06) the worker started spending paid credits on
+        every batch. Nulling the attribute would not work either — the task
+        loop calls `inst.configured` and would raise on None.
+
+        *ignore_region_policy* bypasses `should_use_adapter` ONLY. It exists for
+        one caller: the Cardmarket leg of the TCG listings pass. `_ADAPTER_POLICY`
+        sets `firecrawl: False` in every region because it "used to fire on every
+        marketplace ingest, which burned the free-tier quota and added no signal
+        over Crawl4AI" — a correct decision that is now half-stale, because
+        Crawl4AI is Cloudflare-blocked on cardmarket.com (verified 2026-08-06)
+        and Firecrawl is not. The blanket policy stays; this flag lets one
+        explicitly budgeted, watched-items-only path opt out.
+        **Do not set this from a bulk path** — that recreates the exact quota
+        burn the policy was written to stop.
 
         Returns (tasks, total_sources).
         """
@@ -224,9 +269,13 @@ class MarketplaceAgent:
         amap = self._adapter_map()
 
         for adapter_name, inst in amap.items():
+            if only_adapters is not None and adapter_name not in only_adapters:
+                continue
+            if exclude_adapters and adapter_name in exclude_adapters:
+                continue
             if not inst.configured:
                 continue
-            if not should_use_adapter(region, adapter_name):
+            if not ignore_region_policy and not should_use_adapter(region, adapter_name):
                 continue
             if not adapter_serves_category(adapter_name, category):
                 continue
@@ -296,6 +345,8 @@ class MarketplaceAgent:
         limit: int = 20,
         include_sold: bool = True,
         region: Optional[str] = None,
+        only_adapters: Optional[set] = None,
+        ignore_region_policy: bool = False,
     ) -> AggregationResult:
         """Search across all configured marketplace adapters.
 
@@ -310,7 +361,10 @@ class MarketplaceAgent:
         # Check cache first — identical searches within TTL reuse previous results
         from app.cache import cache_get, cache_set
         _SEARCH_CACHE_TTL = 6 * 3600  # 6 hours
-        cache_key = f"mkt_search:{query}:{category}:{condition}:{region}:{include_sold}"
+        # only_adapters is part of the key: an eBay-only result must never be
+        # served to a caller that asked for the full fan-out (or vice versa).
+        _adapters_key = ",".join(sorted(only_adapters)) if only_adapters else "all"
+        cache_key = f"mkt_search:{query}:{category}:{condition}:{region}:{include_sold}:{_adapters_key}"
         cached = cache_get(cache_key)
         if cached is not None:
             logger.debug("[MarketplaceAgent] cache hit for %s", cache_key)
@@ -327,6 +381,7 @@ class MarketplaceAgent:
         try:
             result = await self._do_aggregate_search(
                 query, category, condition, limit, include_sold, region,
+                only_adapters, ignore_region_policy,
                 cache_key, _SEARCH_CACHE_TTL, cache_set,
             )
             future.set_result(result)
@@ -345,6 +400,8 @@ class MarketplaceAgent:
         limit: int,
         include_sold: bool,
         region: Optional[str],
+        only_adapters: Optional[set],
+        ignore_region_policy: bool,
         cache_key: str,
         cache_ttl: int,
         cache_set_fn,
@@ -352,6 +409,8 @@ class MarketplaceAgent:
         """Internal: perform the actual adapter queries (called after cache miss)."""
         tasks, total_sources = self._build_search_tasks(
             query, category, limit, region, mode="search",
+            only_adapters=only_adapters,
+            ignore_region_policy=ignore_region_policy,
         )
 
         if not tasks:
@@ -369,21 +428,54 @@ class MarketplaceAgent:
         successful_sources = 0
         source_errors: List[str] = []
 
-        # Execute all adapter queries concurrently
-        results = await asyncio.gather(
-            *[task for _, task in tasks],
-            return_exceptions=True,
+        # Execute all adapter queries concurrently, but cap the overall
+        # wall-clock so one slow scraper can't drag out the whole search.
+        # Anything still pending when the budget elapses is cancelled and
+        # counted as a (soft) source error — the fast adapters' results are
+        # returned immediately. This is the dominant lever on search latency.
+        named = [(name, asyncio.ensure_future(coro)) for name, coro in tasks]
+        _done, pending = await asyncio.wait(
+            [t for _, t in named],
+            timeout=_SEARCH_BUDGET_SECONDS,
+            return_when=asyncio.ALL_COMPLETED,
         )
 
-        for (source_name, _), result in zip(tasks, results):
-            if isinstance(result, Exception):
-                logger.error("[MarketplaceAgent] %s failed: %s", source_name, result)
-                source_errors.append(source_name)
-            elif isinstance(result, list):
+        for name, t in named:
+            if t in pending:
+                t.cancel()
+                source_errors.append(name)
+                logger.info(
+                    "[MarketplaceAgent] %s exceeded %.1fs budget — dropped from this search",
+                    name, _SEARCH_BUDGET_SECONDS,
+                )
+                continue
+            try:
+                result = t.result()
+            except asyncio.CancelledError:
+                source_errors.append(name)
+                continue
+            except Exception as exc:
+                logger.error("[MarketplaceAgent] %s failed: %s", name, exc)
+                source_errors.append(name)
+                continue
+            if isinstance(result, list):
                 successful_sources += 1
                 all_hits.extend(result)
             else:
-                logger.warning("[MarketplaceAgent] %s returned unexpected type: %s", source_name, type(result))
+                logger.warning("[MarketplaceAgent] %s returned unexpected type: %s", name, type(result))
+
+        # Reap cancelled stragglers so the event loop doesn't log
+        # "Task was destroyed but it is pending"; don't block the response on
+        # them (cancellation resolves promptly for cooperative async I/O).
+        if pending:
+            # spawn_bg, not bare ensure_future — a bare task holds no strong
+            # reference and can be GC'd mid-await, and its failures are
+            # swallowed silently. This is the pattern the 2026-07-16 audit
+            # removed everywhere else (see app/lib/bg_tasks.py).
+            spawn_bg(
+                asyncio.gather(*pending, return_exceptions=True),
+                "marketplace_straggler_reap",
+            )
 
         # Deduplicate and score
         scored_hits, dedup_count = dedup_and_score(all_hits, condition=condition)
@@ -427,6 +519,7 @@ class MarketplaceAgent:
         condition: Optional[str] = None,
         limit: int = 20,
         region: Optional[str] = None,
+        exclude_adapters: Optional[set] = None,
     ) -> AggregationResult:
         """Find sold comparables across all adapters.
 
@@ -435,7 +528,11 @@ class MarketplaceAgent:
         """
         from app.cache import cache_get, cache_set
         _COMPS_CACHE_TTL = 12 * 3600  # 12 hours
-        cache_key = f"mkt_comps:{query}:{category}:{condition}:{region}"
+        # Denylist is part of the key for the same reason only_adapters is on
+        # the search side: a paid-adapter-free result must not be served to a
+        # caller that expected the full fan-out.
+        _excl_key = ",".join(sorted(exclude_adapters)) if exclude_adapters else "none"
+        cache_key = f"mkt_comps:{query}:{category}:{condition}:{region}:x={_excl_key}"
         cached = cache_get(cache_key)
         if cached is not None:
             logger.debug("[MarketplaceAgent] comps cache hit for %s", cache_key)
@@ -443,6 +540,7 @@ class MarketplaceAgent:
 
         tasks, total_sources = self._build_search_tasks(
             query, category, limit, region, mode="sold",
+            exclude_adapters=exclude_adapters,
         )
 
         if not tasks:
@@ -532,6 +630,14 @@ class MarketplaceAgent:
         except Exception:
             normalize_attributes = None
 
+        # CJK title enrichment (opt-in; gated inside on CJK_NORMALIZE_ENABLED +
+        # CJK-content + spend budget). Fills structured attrs from Japanese
+        # titles the canonical normalizer can't read. See cjk_normalizer.
+        try:
+            from app.agents.cjk_normalizer import enrich_cjk_attrs
+        except Exception:
+            enrich_cjk_attrs = None
+
         inserted = 0
         # Use DB_DSN_DIRECT instead of the pooler to bypass the 30s
         # statement timeout. The per-row INSERT ... WHERE NOT EXISTS has to
@@ -567,6 +673,64 @@ class MarketplaceAgent:
                     "recently sold", "most watched", "unknown", "n/a",
                 }
 
+                # Cross-source sanity band. Sources that publish a *rolling
+                # aggregate* for a whole product (rather than one observed sale)
+                # are the ones that go catastrophically wrong when their fuzzy
+                # search matches the wrong product: the price is plausible for
+                # SOME item, so the €1M ceiling above never fires. Verified
+                # 2026-07-23: a €9 Funko got PriceCharting comps of €1369-2282
+                # (from a mis-matched Spider-Man) while eBay hits for the same
+                # item sat at €8.78-13.17, and price_predictions valued it at
+                # €1997. The per-source relevance guard is the primary fix; this
+                # is the writer-side backstop that does not trust any adapter.
+                #
+                # Deliberately generous (10×) and only armed when >=2 independent
+                # comps exist: real collectibles do span an order of magnitude
+                # (graded vs raw, sealed vs loose), so this must only catch the
+                # egregious case — the Piccolo was ~150× off.
+                _AGGREGATE_PRICE_SOURCES = {"pricecharting"}
+                _BAND_FACTOR = 10.0
+                _BAND_MIN_REFS = 2
+
+                async def _to_eur(_hit: dict):
+                    _p = _hit.get("price")
+                    _c = _hit.get("currency", "EUR")
+                    if _p and _c != "EUR" and convert_to_eur:
+                        try:
+                            return await convert_to_eur(float(_p), _c)
+                        except Exception:
+                            return _p
+                    return _p
+
+                # Pre-pass: convert once, keyed by identity, so the main loop
+                # reuses the value instead of paying for a second conversion.
+                _eur_cache: dict = {}
+                for _scored in result.hits:
+                    try:
+                        _eur_cache[id(_scored.hit)] = await _to_eur(_scored.hit)
+                    except Exception:
+                        pass
+
+                _ref_prices = []
+                for _scored in result.hits:
+                    _src = str(_scored.hit.get("source") or _scored.hit.get("provider") or "")
+                    if _src in _AGGREGATE_PRICE_SOURCES:
+                        continue
+                    _v = _eur_cache.get(id(_scored.hit))
+                    try:
+                        if _v is not None and float(_v) > 0:
+                            _ref_prices.append(float(_v))
+                    except (TypeError, ValueError):
+                        continue
+                _ref_median = None
+                if len(_ref_prices) >= _BAND_MIN_REFS:
+                    _ref_prices.sort()
+                    _mid = len(_ref_prices) // 2
+                    _ref_median = (
+                        _ref_prices[_mid] if len(_ref_prices) % 2
+                        else (_ref_prices[_mid - 1] + _ref_prices[_mid]) / 2.0
+                    )
+
                 for scored in result.hits:
                     hit = scored.hit
                     # Skip zero/null prices — these skew training and valuations
@@ -577,21 +741,34 @@ class MarketplaceAgent:
                     _title_norm = str(hit.get("title") or "").strip().lower()
                     if _title_norm in _GARBAGE_TITLES or not _title_norm:
                         continue
-                    # Normalize price to EUR
+                    # Normalize price to EUR. Computed in the pre-pass above (which
+                    # needs EUR to build the sanity band); _to_eur is the same
+                    # conversion — convert_to_eur is async, and a missing await
+                    # meant price_eur was a coroutine that serialised into JSON as
+                    # "Object of type coroutine is not JSON serializable" and
+                    # dropped whole batches (learning 2026-04-18).
                     raw_price = hit.get("price")
-                    raw_currency = hit.get("currency", "EUR")
-                    if raw_price and raw_currency != "EUR" and convert_to_eur:
-                        try:
-                            # convert_to_eur is async — missing await meant
-                            # price_eur was a coroutine that serialised into
-                            # JSON as "Object of type coroutine is not JSON
-                            # serializable" and dropped whole batches (learning
-                            # 2026-04-18).
-                            price_eur = await convert_to_eur(float(raw_price), raw_currency)
-                        except Exception:
-                            price_eur = raw_price  # fallback: store as-is
+                    raw_currency = hit.get("currency", "EUR")  # persisted as source_currency below
+                    if id(hit) in _eur_cache:
+                        price_eur = _eur_cache[id(hit)]
                     else:
-                        price_eur = raw_price
+                        price_eur = await _to_eur(hit)
+
+                    # Cross-source sanity band — see _AGGREGATE_PRICE_SOURCES.
+                    hit_source = str(hit.get("source") or hit.get("provider") or "")
+                    if _ref_median and hit_source in _AGGREGATE_PRICE_SOURCES:
+                        try:
+                            _pv = float(price_eur)
+                            if _pv > _ref_median * _BAND_FACTOR or _pv < _ref_median / _BAND_FACTOR:
+                                logger.warning(
+                                    "[MarketplaceAgent] Dropping %s hit: €%.2f outside %.0f× band "
+                                    "around €%.2f median of %d other-source comps (title=%r)",
+                                    hit_source, _pv, _BAND_FACTOR, _ref_median,
+                                    len(_ref_prices), hit.get("title"),
+                                )
+                                continue
+                        except (TypeError, ValueError):
+                            continue
 
                     # Writer-side price ceiling — see _WRITE_PRICE_CEILING_EUR
                     # comment above. Drop obvious parse errors before they
@@ -626,6 +803,20 @@ class MarketplaceAgent:
                     resolved_category = category
                     if not resolved_category and normalized_key and ":" in normalized_key:
                         resolved_category = normalized_key.split(":", 1)[0]
+
+                    # CJK enrichment (opt-in) — structure a Japanese/CJK title
+                    # into attrs via Kimi, then gap-fill: the canonical
+                    # normalizer's values win on key conflicts. No-op unless
+                    # enabled + CJK-present + under budget; never blocks the write.
+                    if enrich_cjk_attrs is not None:
+                        try:
+                            _cjk = await enrich_cjk_attrs(
+                                hit.get("title") or "", resolved_category, raw_attrs,
+                            )
+                            if _cjk:
+                                raw_attrs = {**_cjk, **raw_attrs}
+                        except Exception:
+                            pass
 
                     # item_ref must be the canonical `{category}:{key}` form
                     # (learnings.md §22, §64, root-cause essay post-write rule).

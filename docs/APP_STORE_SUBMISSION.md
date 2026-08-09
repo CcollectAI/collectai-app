@@ -250,3 +250,36 @@ Subsequent submissions can use `eas submit`.
 - Respond promptly to reviewer questions
 - Typical review times: iOS 1-3 days, Android 1-7 days
 - OTA updates via expo-updates for non-native bug fixes after approval
+
+## Android / Play Store — local build
+
+```bash
+npm run build:android:local     # ~25 min, outputs ./builds/sparrow-android-local.aab
+```
+
+Wraps `eas build --platform android --profile store --local`. **Always `--local`** —
+cloud builds are billable. The script bakes in `JAVA_HOME` (openjdk@17) and
+`ANDROID_HOME` (android-commandlinetools) because they are not on the default PATH.
+
+Two machine-level prerequisites live in `~/.gradle` and are NOT in this repo:
+
+- `init.gradle` — sets `crunchPngs = false`. **Required.** aapt2 8.11.0 segfaults
+  (exit 139) crunching Expo's generated `assets_placeholder.png`, failing the build
+  at `:app:mergeReleaseResources`. Kept in `~/.gradle` so it survives the CNG
+  prebuild that regenerates `android/` on every build.
+- `gradle.properties` — `org.gradle.jvmargs=-Xmx5120m -XX:MaxMetaspaceSize=1024m`.
+
+### ⚠️ On build FAILURE the log contains the keystore
+
+`eas-cli-local-build-plugin` prints the job payload — including the **keystore and
+its passwords, base64-encoded** — into the log when a build fails. After any failed
+run, scrub `/tmp/android_build*.log` and treat the log as a secret. The keystore is
+Expo-managed and rotatable via `eas credentials`.
+
+### `android/` is generated
+
+Only `android/fastlane/` is tracked (Play metadata: descriptions, screenshots,
+feature graphic). Everything else under `android/` is produced by prebuild at build
+time. **`expo prebuild --clean` deletes the tracked fastlane directory** — restore
+with `git checkout -- android/fastlane/` if you run it manually.
+

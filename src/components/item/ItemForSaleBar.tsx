@@ -7,10 +7,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, parseMoney } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
-import { BETA_MODE } from '@/config/featureFlags';
+import { BETA_MODE, SELLING_ENABLED } from '@/config/featureFlags';
 
 interface ItemForSaleBarProps {
   askingPriceValue: string;
@@ -41,17 +41,19 @@ export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceVa
       <View
         style={[styles.forSaleBadge, { backgroundColor: theme.successBg }]}
         accessibilityRole="text"
-        accessibilityLabel={`Item listed for sale${askingPriceValue ? ` at ${formatPrice(parseFloat(askingPriceValue), settings.currency)}` : ''}`}
+        accessibilityLabel={`Item listed for sale${askingPriceValue ? ` at ${formatPrice(parseMoney(askingPriceValue) ?? 0, settings.currency)}` : ''}`}
       >
         <RNAnimated.View style={[styles.activeDot, { backgroundColor: theme.success, opacity: pulseAnim }]} />
         <Ionicons name="pricetag" size={14} color={theme.success} />
         <Text style={[styles.forSaleBadgeText, { color: theme.success }]}>
-          Listed{askingPriceValue ? ` ${formatPrice(parseFloat(askingPriceValue), settings.currency)}` : ''}
+          Listed{askingPriceValue ? ` ${formatPrice(parseMoney(askingPriceValue) ?? 0, settings.currency)}` : ''}
         </Text>
       </View>
-      {!BETA_MODE && (
+      {/* Routes into the selling flow, so it follows SELLING_ENABLED too —
+          BETA_MODE alone left it live while the rest of selling was gated. */}
+      {!BETA_MODE && SELLING_ENABLED && (
         <AnimatedPressable
-          onPress={() => router.push('/sell/offers')}
+          onPress={() => router.push('/offers')}
           style={[styles.editBarBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
           accessibilityRole="button"
           accessibilityLabel="View offers"

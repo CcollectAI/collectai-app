@@ -38,8 +38,8 @@ class TestRecordRun:
         assert wr._registry["price_monitor"]["errors"] == 0
 
     def test_error_run_increments_errors(self):
-        wr.record_run("alerts_worker", status="error")
-        entry = wr._registry["alerts_worker"]
+        wr.record_run("category_map_worker", status="error")
+        entry = wr._registry["category_map_worker"]
         assert entry["runs"] == 1
         assert entry["errors"] == 1
         assert entry["last_status"] == "error"
@@ -63,9 +63,9 @@ class TestRecordRun:
 
     def test_independent_workers(self):
         wr.record_run("price_monitor")
-        wr.record_run("alerts_worker")
+        wr.record_run("category_map_worker")
         assert wr._registry["price_monitor"]["runs"] == 1
-        assert wr._registry["alerts_worker"]["runs"] == 1
+        assert wr._registry["category_map_worker"]["runs"] == 1
 
 
 # ---------------------------------------------------------------------------
@@ -120,13 +120,13 @@ class TestGetStatus:
     def test_schedule_intervals_present(self):
         status = wr.get_status()
         assert status["price_monitor"]["schedule_interval_s"] == 6 * 3600
-        assert status["alerts_worker"]["schedule_interval_s"] == 3600
+        assert status["category_map_worker"]["schedule_interval_s"] == 3600
         assert status["vision_ingest"]["schedule_interval_s"] is None
 
     def test_error_count_reflected(self):
-        wr.record_run("alerts_worker", status="error")
-        wr.record_run("alerts_worker", status="error")
-        wr.record_run("alerts_worker", status="ok")
+        wr.record_run("category_map_worker", status="error")
+        wr.record_run("category_map_worker", status="error")
+        wr.record_run("category_map_worker", status="ok")
         status = wr.get_status()
-        assert status["alerts_worker"]["total_runs"] == 3
-        assert status["alerts_worker"]["total_errors"] == 2
+        assert status["category_map_worker"]["total_runs"] == 3
+        assert status["category_map_worker"]["total_errors"] == 2

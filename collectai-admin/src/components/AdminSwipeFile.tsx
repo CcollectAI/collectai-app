@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { fetchSwipeFileData } from "@/lib/kpi";
 import { MetricCard } from "@/components/ui/MetricCard";
 import type { SwipeFileData, SwipeFileEntry } from "@/lib/kpi";
+import { AdminDemoBanner } from "@/components/AdminDemoBanner";
 
 /* ───────────────────────── Helpers ───────────────────────── */
 
@@ -85,6 +86,8 @@ function DistributionCard({
 
   return (
     <div className={cardCls}>
+      <AdminDemoBanner source="swipe" />
+
       <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{title}</h2>
       <div className="space-y-2">
         {entries.map(([name, count]) => (

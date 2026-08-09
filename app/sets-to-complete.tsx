@@ -61,10 +61,22 @@ const SetsToCompleteScreen: React.FC = () => {
           name: it.name ?? (it.title as string | null) ?? null,
           title: (it.title as string | null) ?? it.name ?? null,
           category: it.category ?? (it.category_label as string | null) ?? null,
+          // `/portfolio/items` returns `current_value` — it returns neither
+          // `estimated_value` nor `value`, so this read null for every item and
+          // the screen's "Est. value" always showed 0. current_value IS the
+          // canonical valuation expression
+          // COALESCE(l.q50, quick_predictions.q50_eur, predicted_price_eur,
+          //          estimated_value, 0)
+          // (portfolio_router.py:267), the same one Home and the Items tab use,
+          // so reading it here also keeps this screen consistent with them.
+          // The other two are kept as fallbacks for callers passing a different
+          // item shape.
           value:
-            typeof it.estimated_value === 'number'
-              ? it.estimated_value
-              : (it.value as number | null) ?? null,
+            typeof it.current_value === 'number'
+              ? it.current_value
+              : typeof it.estimated_value === 'number'
+                ? it.estimated_value
+                : (it.value as number | null) ?? null,
           collection: (it.collection as string | null) ?? (it.set_name as string | null) ?? null,
           collection_name: (it.collection_name as string | null) ?? (it.collection as string | null) ?? null,
           set_code: (it.set_code as string | null) ?? null,
@@ -145,8 +157,12 @@ const SetsToCompleteScreen: React.FC = () => {
   const openCollection = (collectionName: string) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push({
+      // `collectionName`, not `collection`. app/(tabs)/items.tsx reads
+      // `{ category?, collectionName? }`, so the old key was dropped in transit
+      // and the screen opened unfiltered — silently, because expo-router types
+      // params as an open record and accepts any key (check-route-param-handoff).
       pathname: '/(tabs)/items',
-      params: { collection: collectionName },
+      params: { collectionName },
     });
   };
 

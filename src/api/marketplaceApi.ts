@@ -35,7 +35,22 @@ export const marketplaceComps = (itemRef: string, category?: string, region?: st
   post(`/marketplace/comps/${encodeURIComponent(itemRef)}`, { category, region }, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 
 // Affiliate links
-export const getAffiliateLinks = (query: string, category?: string, limit = 6, region?: string) =>
+//
+// `links` is ordered by category fit — links[0] is the marketplace that suits
+// this category best (Cardmarket for MTG, BrickLink for LEGO), NOT always eBay.
+// Callers that open a single link should open links[0].
+//
+// `maxPrice` is the buyer's ceiling (e.g. a watchlist target). The server
+// converts it into each destination site's quote currency, so pass it in
+// whatever currency you hold it in and say which via `maxPriceCurrency`.
+export const getAffiliateLinks = (
+  query: string,
+  category?: string,
+  limit = 6,
+  region?: string,
+  maxPrice?: number | null,
+  maxPriceCurrency?: string,
+) =>
   get<{
     links: {
       source: string;
@@ -43,7 +58,14 @@ export const getAffiliateLinks = (query: string, category?: string, limit = 6, r
       affiliate_url: string;
       label: string;
     }[];
-  }>(`/marketplace/affiliate-links?query=${encodeURIComponent(query)}${category ? `&category=${encodeURIComponent(category)}` : ""}&limit=${limit}${region ? `&region=${encodeURIComponent(region)}` : ""}`);
+  }>(
+    `/marketplace/affiliate-links?query=${encodeURIComponent(query)}` +
+      `${category ? `&category=${encodeURIComponent(category)}` : ""}` +
+      `&limit=${limit}` +
+      `${region ? `&region=${encodeURIComponent(region)}` : ""}` +
+      `${maxPrice && maxPrice > 0 ? `&max_price=${encodeURIComponent(String(maxPrice))}` : ""}` +
+      `${maxPrice && maxPrice > 0 && maxPriceCurrency ? `&max_price_currency=${encodeURIComponent(maxPriceCurrency)}` : ""}`,
+  );
 
 export const tagAffiliateUrl = (url: string, source: string) =>
   post<{ url: string; affiliate_url: string; source: string }>(

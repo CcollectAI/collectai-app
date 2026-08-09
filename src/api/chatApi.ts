@@ -3,19 +3,35 @@
  */
 import { get, post, del, put, patch } from "./httpClient";
 
-export const getChatThreads = () =>
-  get<
-    {
-      id: string;
+/** List the current user's DM threads.
+ *
+ *  NOTE: this wrapper currently has no callers — the inbox screen reads
+ *  `v_chat_inbox_v1` directly via dataProvider.listInboxThreads. The declared
+ *  type below was wrong in both shape AND field names, which would have bitten
+ *  whoever wired it up first: it claimed a bare array of threads, while
+ *  chat_router.py:159 returns a `{threads, total_count}` wrapper, so
+ *  `.map()` on the result would have thrown. Corrected against the live
+ *  SELECT in chat_router.py (thread_id / other_display_name /
+ *  other_avatar_url / last_message_body), not against what the old type
+ *  guessed (id / other_user_name / other_user_avatar_url /
+ *  last_message_preview / status — `status` does not exist at all).
+ */
+export const getChatThreads = (limit = 20, offset = 0) =>
+  get<{
+    threads: {
+      thread_id: string;
+      user_id: string;
       other_user_id: string;
-      other_user_name: string;
-      other_user_avatar_url: string | null;
-      status: string;
-      last_message_preview: string | null;
+      other_display_name: string | null;
+      other_avatar_url: string | null;
       last_message_at: string | null;
+      last_message_body: string | null;
       unread_count: number;
-    }[]
-  >("/chat/threads");
+      created_at: string | null;
+      updated_at: string | null;
+    }[];
+    total_count: number;
+  }>(`/chat/threads?limit=${limit}&offset=${offset}`);
 
 export const getChatMessages = (
   threadId: string,

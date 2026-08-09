@@ -30,7 +30,7 @@ import {
   StyleSheet,
   RefreshControl,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type CategoryStoreData } from '@/data';
 import { getCategoryById, getRelatedCategories } from '@/data/categories';
@@ -41,6 +41,7 @@ import { logAuthState, logLoad, startTimer } from '@/utils/diagnostics';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import ScreenHeader from '@/components/ScreenHeader';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import {
   CategoryHeaderCard,
@@ -53,6 +54,7 @@ import {
   FeaturedCollectionsSection,
 } from '@/components/category';
 import type { CatalogSortKey } from '@/components/category/CategorySortChips';
+import { safeGoBack } from '@/lib/goBack';
 
 function CategoryStoreScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
@@ -98,13 +100,16 @@ function CategoryStoreScreen() {
       });
     } catch (err: unknown) {
       logLoad(`category:${categoryId}`, { error: err instanceof Error ? err.message : String(err), ms: elapsed() });
-      logger.warn('[CategoryStore] store fetch error:', err);
+      logger.error('[CategoryStore] store fetch error:', err);
     }
 
     setDeepDiveLoading(true);
     dataProvider.getCategoryDeepDive(categoryId)
       .then(setDeepDive)
-      .catch((err) => { logger.info('[Category] deep dive fetch error:', err); setDeepDive(null); })
+      // logger.error, not .info — info/warn are stripped from TestFlight builds,
+      // so this failure was invisible on device for two days while the card
+      // silently rendered nothing (MarketInsightsSection returns null on !hasData).
+      .catch((err) => { logger.error('[Category] deep dive fetch error:', err); setDeepDive(null); })
       .finally(() => setDeepDiveLoading(false));
   }, [categoryId]);
 
@@ -149,7 +154,7 @@ function CategoryStoreScreen() {
     } catch (err) {
       // Revert on error
       setFollowing(!newFollowing);
-      logger.warn('[Category] Follow toggle failed', err);
+      logger.error('[Category] Follow toggle failed', err);
       // Surface the real failure (status + detail) — a generic message hides
       // whether this is auth, network, or a server error.
       const detail = err instanceof Error && err.message ? ` (${err.message})` : '';
@@ -171,7 +176,7 @@ function CategoryStoreScreen() {
           <Text style={[styles.errorSubtitle, { color: colors.muted }]}>
             This category doesn&apos;t exist or couldn&apos;t be loaded.
           </Text>
-          <AnimatedPressable style={[styles.backButton, { borderColor: colors.border }]} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
+          <AnimatedPressable style={[styles.backButton, { borderColor: colors.border }]} onPress={() => safeGoBack(router)} accessibilityRole="button" accessibilityLabel="Go back">
             <Text style={[styles.backButtonText, { color: colors.text }]}>Go back</Text>
           </AnimatedPressable>
         </View>
@@ -181,6 +186,11 @@ function CategoryStoreScreen() {
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
+      {/* Native header off — flat ScreenHeader instead (no iOS 26 glass on the
+          back/chat/settings icons). Title-less: the teal banner below already
+          names the category. */}
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader />
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}

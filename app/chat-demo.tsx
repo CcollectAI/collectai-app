@@ -24,6 +24,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { radius, text, fontWeight } from '@/theme/tokens';
+import { safeGoBack } from '@/lib/goBack';
 
 type DemoMessage = { id: string; text: string; fromMe: boolean };
 
@@ -79,7 +80,7 @@ function ChatDemoScreen() {
         {/* Header */}
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <AnimatedPressable
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); safeGoBack(router); }}
             style={styles.backBtn}
             accessibilityRole="button"
             accessibilityLabel="Go back"

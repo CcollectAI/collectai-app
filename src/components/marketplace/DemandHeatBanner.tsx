@@ -41,7 +41,13 @@ export const DemandHeatBanner = React.memo(function DemandHeatBanner({
       <View style={{ gap: 6, marginTop: 8 }}>
         {items.map((item, i) => (
           <AnimatedPressable
-            key={item.item_key}
+            // `item_key` is NOT unique on its own. The rows come from
+            // mv_demand_heat, whose grain is (category, item_key,
+            // signal_type), and sentinel keys recur across categories —
+            // live data has `general` under both `unknown` and `mtg`.
+            // Keying on item_key alone produced React's "two children with
+            // the same key" warning 14x on the marketplace tab.
+            key={`${item.category}::${item.item_key}`}
             style={[styles.demandCard, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT);

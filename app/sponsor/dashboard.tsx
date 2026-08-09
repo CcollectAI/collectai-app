@@ -108,7 +108,10 @@ const SponsorDashboardScreen: React.FC = () => {
           const events = await dataProvider.listEvents({ limit: 50 });
           sponsored = events.filter((e) => e.sponsorName === c.name || e.sponsorCompanyId === c.id);
           setSponsoredEvents(sponsored);
-        } catch { setSponsoredEvents([]); }
+        } catch (e) {
+          logger.error('[silent-fallback] sponsor: sponsored events load failed:', e);
+          setSponsoredEvents([]);
+        }
 
         if (sponsored.length > 0) {
           try {
@@ -118,11 +121,14 @@ const SponsorDashboardScreen: React.FC = () => {
             const results = await Promise.all(annPromises);
             const allAnns = results.flat().sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
             setAnnouncements(allAnns.slice(0, 20));
-          } catch { setAnnouncements([]); }
+          } catch (e) {
+            logger.error('[silent-fallback] sponsor: dashboard load failed:', e);
+            setAnnouncements([]);
+          }
         } else { setAnnouncements([]); }
       } else { setCompany(null); }
     } catch (err: unknown) {
-      logger.warn('[SponsorDashboard] loadCompany error:', err);
+      logger.error('[SponsorDashboard] loadCompany error:', err);
     } finally { setLoading(false); }
   }, []);
 
@@ -167,7 +173,7 @@ const SponsorDashboardScreen: React.FC = () => {
       setCompany(updated); setEditing(false);
       track({ name: 'sponsor_profile_updated' });
     } catch (err: unknown) {
-      logger.warn('[SponsorDashboard] save error:', err);
+      logger.error('[SponsorDashboard] save error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to update company. Please try again.', type: 'error' });
     } finally { setSaving(false); }
   };
@@ -189,7 +195,7 @@ const SponsorDashboardScreen: React.FC = () => {
         setShowTierPicker(false);
         if (url) { const { Linking } = require('react-native'); Linking.openURL(url); }
       } catch (err: unknown) {
-        logger.warn('[SponsorDashboard] subscription checkout error:', err);
+        logger.error('[SponsorDashboard] subscription checkout error:', err);
         showToast({ message: (err as Error)?.message || 'Failed to start subscription checkout.', type: 'error' });
       }
     } else {
@@ -220,7 +226,7 @@ const SponsorDashboardScreen: React.FC = () => {
       track({ name: 'sponsor_announcement_sent', properties: { event_id: composeEventId } });
       showToast({ message: 'Announcement sent to all attendees.', type: 'success' });
     } catch (err: unknown) {
-      logger.warn('[SponsorDashboard] send announcement error:', err);
+      logger.error('[SponsorDashboard] send announcement error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to send announcement.', type: 'error' });
     } finally { setComposeSending(false); }
   };

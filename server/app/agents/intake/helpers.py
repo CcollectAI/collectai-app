@@ -4,7 +4,6 @@ Shared utilities, types, and constants for the intake pipeline.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import re
@@ -13,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from app.config import CATALOG_LEARNING_ENABLED
+from app.lib.bg_tasks import spawn_bg
 from app.lib.db_helpers import get_db_pool
 
 logger = logging.getLogger(__name__)
@@ -221,12 +221,12 @@ async def _lookup_taxonomy_corrections(
 # ---------------------------------------------------------------------------
 
 def _fire_catalog_miss(**kwargs) -> None:
-    """Fire-and-forget wrapper for _log_catalog_miss (non-blocking)."""
-    try:
-        loop = asyncio.get_running_loop()
-        loop.create_task(_log_catalog_miss(**kwargs))
-    except RuntimeError:
-        pass  # No running event loop — skip silently
+    """Fire-and-forget wrapper for _log_catalog_miss (non-blocking).
+
+    spawn_bg holds a ref (so the task can't be GC'd mid-INSERT) and logs any
+    failure at WARNING; it no-ops cleanly when there's no running loop.
+    """
+    spawn_bg(_log_catalog_miss(**kwargs), "catalog_miss")
 
 
 async def _log_catalog_miss(

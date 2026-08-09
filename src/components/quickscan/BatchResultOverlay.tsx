@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 12,
   },
   batchDiscardBtn: {
     borderWidth: 1,

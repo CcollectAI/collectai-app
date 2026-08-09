@@ -18,6 +18,7 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
+from app.lib.json_safe import json_safe_rows
 from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/activity", tags=["Activity"])
@@ -64,15 +65,11 @@ async def get_user_activity(
                 limit,
                 offset,
             )
-            activities = [dict(r) for r in rows] if rows else []
-            # Convert UUIDs and datetimes to strings
-            for a in activities:
-                for k, v in a.items():
-                    if hasattr(v, "isoformat"):
-                        a[k] = v.isoformat()
-                    elif hasattr(v, "hex"):
-                        a[k] = str(v)
-            return {"activities": activities}
+            # Shared helper, not a loop here: the loop this replaced decided the
+            # conversion with `hasattr(v, "hex")`, which is also true for float.
+            # No column in this SELECT is numeric today, so it never fired — it
+            # would have the day anyone added a price or a count to the query.
+            return {"activities": json_safe_rows(rows or [])}
     except Exception as e:
         logger.warning("get_user_activity error: %s", e)
         raise error_response(500, "Failed to fetch activity feed")

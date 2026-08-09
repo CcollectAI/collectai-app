@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { router , useLocalSearchParams } from 'expo-router';
+import { router , useLocalSearchParams, Redirect } from 'expo-router';
+import { isUuid } from '@/lib/ids';
 import {
   ScrollView,
   View,
@@ -35,7 +36,7 @@ import {
   getConfidenceTier,
   DEFAULT_DISCLAIMER,
 } from "@/types/priceExplanation";
-import { featureFlags } from "@/config/featureFlags";
+import { featureFlags, LIVE_PRICE_FETCH_ENABLED } from "@/config/featureFlags";
 import { radius, text, fontWeight, gap, shadow } from "@/theme/tokens";
 import { collectorsApi } from "@/api/collectorsApi";
 import { enrichOnDemand } from "@/api/marketplaceApi";
@@ -62,7 +63,9 @@ import type { DossierData } from '@/components/DossierReportSection';
 import { MarketplacePricesSection } from '@/components/MarketplacePricesSection';
 import type { MarketHit } from '@/components/MarketplacePricesSection';
 import { BuildProjectSection } from '@/components/BuildProjectSection';
-import { ProvenanceHistorySection } from '@/components/ProvenanceHistorySection';
+// ProvenanceHistorySection ("Item History") removed 2026-07-22 — it duplicated the
+// dossier's provenance[] and was empty for virtually every item. See render block.
+// import { ProvenanceHistorySection } from '@/components/ProvenanceHistorySection';
 import { track } from '@/analytics/track';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { LockedPreviewSection } from '@/components/LockedPreviewSection';
@@ -76,13 +79,15 @@ import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
 import { ItemEditBar } from '@/components/item/ItemEditBar';
 import { ItemPriceSection } from '@/components/item/ItemPriceSection';
 import { ItemNotesEditor } from '@/components/item/ItemNotesEditor';
+import { SellOnSparrowSection } from '@/components/item/SellOnSparrowSection';
 import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { ItemCatalogRefresh } from '@/components/item/ItemCatalogRefresh';
 import { supabase } from '@/lib/supabase';
 import { PriceTrendChart } from '@/components/PriceTrendChart';
-import { SellTimingBadge } from '@/components/SellTimingBadge';
+// SellTimingBadge hidden 2026-07-22 (see render block below) — restore both together.
+// import { SellTimingBadge } from '@/components/SellTimingBadge';
 // Pull from single source of truth — all 36 categories
-import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG, GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
+import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG, GRADING_ELIGIBLE_CATEGORIES, VALUATION_ELIGIBLE_CATEGORIES } from '@/constants/categories';
 // DossierData and MarketHit types imported from extracted components
 
 // Price trend data shape
@@ -106,8 +111,11 @@ const toNum = (value: string | number | undefined | null): number | undefined =>
 
 
 
+// Gap left between the bottom of the notes block and the top of the keyboard.
+const NOTES_KEYBOARD_MARGIN = 16;
+
 // Predefined options for dropdown menus
-const COLLECTION_OPTIONS = ['Not set', 'Base Set', 'Jungle', 'Fossil', 'Team Rocket', 'Gym Heroes', 'Neo Genesis', 'Other'];
+const COLLECTION_OPTIONS =['Not set', 'Base Set', 'Jungle', 'Fossil', 'Team Rocket', 'Gym Heroes', 'Neo Genesis', 'Other'];
 const CONDITION_OPTIONS_GENERAL = ['Not set', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
 const CONDITION_OPTIONS_GRADED = ['Not set', 'PSA 10', 'PSA 9', 'PSA 8', 'PSA 7', 'BGS 10', 'BGS 9.5', 'CGC 9.8', 'CGC 9.6', 'Raw', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
 
@@ -149,7 +157,7 @@ function ItemDetailScreen() {
     id,
     draft,
     name = "Unknown item",
-    category = "Unknown category",
+    category = "Not set",
     collection = "Not set",
     condition = "Not set",
     value = "0",
@@ -177,7 +185,8 @@ function ItemDetailScreen() {
     if (!initialAttributesJson) return null;
     try {
       return JSON.parse(initialAttributesJson) as Record<string, unknown>;
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] [id].tsx:184:', e);
       return null;
     }
   }, [initialAttributesJson]);
@@ -191,17 +200,46 @@ function ItemDetailScreen() {
   const [savedCollectionName, setSavedCollectionName] = useState<string | null>(null);
   const [savedSubtypeId, setSavedSubtypeId] = useState<string | null>(null);
   const [savedCanonicalKey, setSavedCanonicalKey] = useState<string | null>(null);
+  // Core fields fetched by id. The screen takes name/category/condition/value
+  // from ROUTE PARAMS, which only works when the caller happens to pass them.
+  // Three entry points push just an id — search.tsx, franchise/[id].tsx and
+  // the offers screen — so opening an item from Search, a franchise page or a
+  // sell offer rendered "Unknown item / Unknown category / 0". Nothing fetched
+  // the name: this effect selected only attrs/collection_name/canonical_key and
+  // useItemDetail selects only for_sale/asking_price.
+  //
+  // Params stay the fast path (no flash of placeholder when they are supplied);
+  // this is the fallback so a bare id is enough.
+  const [savedCore, setSavedCore] = useState<{
+    name?: string | null; category?: string | null; condition?: string | null;
+    value?: number | null; imageUrl?: string | null; notes?: string | null;
+  } | null>(null);
   useEffect(() => {
     if (isDraft || !id) return;
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
         .from('items')
-        .select('attrs, collection_name, canonical_key')
+        .select('attrs, collection_name, canonical_key, name, title, category, condition, estimated_value, predicted_price_eur, image_url, notes')
         .eq('id', id)
         .maybeSingle();
       if (cancelled || error || !data) return;
-      const row = data as { attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null };
+      const row = data as {
+        attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null;
+        name?: string | null; title?: string | null; category?: string | null; condition?: string | null;
+        estimated_value?: number | null; predicted_price_eur?: number | null; image_url?: string | null;
+        notes?: string | null;
+      };
+      setSavedCore({
+        // name and title are the two halves of the same pair — see the
+        // paired-columns note in docs/ARCHITECTURE.md.
+        name: row.name || row.title || null,
+        category: row.category ?? null,
+        condition: row.condition ?? null,
+        value: row.predicted_price_eur ?? row.estimated_value ?? null,
+        imageUrl: row.image_url ?? null,
+        notes: row.notes ?? null,
+      });
       setSavedAttrs(row.attrs ?? null);
       setSavedCollectionName(row.collection_name ?? null);
       setSavedCanonicalKey(row.canonical_key ?? null);
@@ -217,6 +255,17 @@ function ItemDetailScreen() {
   const displayAttributes = isDraft ? initialAttributes : savedAttrs;
   const displayCollections = savedCollectionName ? [savedCollectionName] : undefined;
 
+  // Adopt the fetched core fields once they land.
+  //
+  // useItemDetail seeds its editable state with useState(initialName), which
+  // captures the FIRST render only — so passing a better initialName later has
+  // no effect. The screen has to push the values in.
+  //
+  // Guarded on the placeholder so this can never clobber a real route param or
+  // something the user has typed: it only fills in when the field is still
+  // "Unknown item" / "Unknown category" / unset.
+  const adoptedCoreRef = useRef(false);
+
   // ── Consolidated local state (useItemDetail hook) ──────────────────────
   const detail = useItemDetail({
     id, isDraft,
@@ -226,6 +275,31 @@ function ItemDetailScreen() {
     initialAttributes,
     catalogKey,
   });
+
+  useEffect(() => {
+    if (!savedCore || adoptedCoreRef.current) return;
+    if (savedCore.name && detail.editableName === "Unknown item") {
+      detail.setEditableName(savedCore.name);
+    }
+    if (savedCore.category && detail.editableCategory === "Not set") {
+      detail.setEditableCategory(savedCore.category);
+    }
+    if (savedCore.condition && detail.editableCondition === "Not set") {
+      detail.setEditableCondition(savedCore.condition);
+    }
+    if (savedCore.value != null && (detail.editableValue === "0" || !detail.editableValue)) {
+      detail.setEditableValue(String(savedCore.value));
+    }
+    // Notes come from the DB, not just route params. Without this the save
+    // fixed in useItemDetail would still LOOK broken: reopening the item (deep
+    // link, notification tap, app restart) showed an empty box because
+    // `initialNotes` is only ever populated by a navigation param.
+    // Guarded on empty so a user mid-edit is never overwritten by the fetch.
+    if (savedCore.notes && !detail.notes) {
+      detail.setNotes(savedCore.notes);
+    }
+    adoptedCoreRef.current = true;
+  }, [savedCore, detail]);
   const {
     isEditing, setIsEditing,
     editableName, setEditableName,
@@ -293,8 +367,16 @@ function ItemDetailScreen() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fire once on mount
 
   const scrollViewRef = useRef<ScrollView>(null);
-  const notesLayoutY = useRef(0);
+  // Live scroll offset. `scrollToNotes` scrolls by a DELTA (how much of the
+  // notes block the keyboard covers), so it needs the current absolute offset;
+  // the Animated `scrollY` value can't be read synchronously.
+  const scrollOffsetRef = useRef(0);
+  // Mirror of `keyboardHeight` for callbacks that run inside a setTimeout and
+  // would otherwise close over the pre-keyboard value (0).
+  const keyboardHeightRef = useRef(0);
 
+
+  useEffect(() => { keyboardHeightRef.current = keyboardHeight; }, [keyboardHeight]);
 
   // Track item view on mount
   useEffect(() => {
@@ -326,6 +408,7 @@ function ItemDetailScreen() {
         setEnrichResult(t('items_detail.enrich_done', { count: r?.hits_persisted ?? 0 }));
       }
     } catch (e) {
+      logger.error('[silent-catch] [id].tsx:332:', e);
       setEnrichResult(t('items_detail.enrich_error'));
     } finally {
       setEnriching(false);
@@ -361,8 +444,6 @@ function ItemDetailScreen() {
     affiliateLinks,
     dossierData, dossierLoading, dossierExpanded, setDossierExpanded,
     dossierError, loadDossier,
-    provenanceEvents, authenticitySignals,
-    provenanceLoading, provenanceExpanded, setProvenanceExpanded,
   } = marketplace;
 
   // Price trend (extracted to useItemPriceTrend hook)
@@ -375,7 +456,7 @@ function ItemDetailScreen() {
     chartData: priceTrendChartData,
     handleHover: handlePriceTrendHover,
   } = priceTrend;
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: windowHeight } = useWindowDimensions();
   const GALLERY_WIDTH = screenWidth - 32; // 16px padding on each side
 
 
@@ -416,7 +497,7 @@ function ItemDetailScreen() {
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Size saved', type: 'success' });
     } catch (err) {
-      logger.warn('[ItemDetail] size save error:', err);
+      logger.error('[ItemDetail] size save error:', err);
       showToast({ message: 'Failed to save size', type: 'error' });
     } finally {
       setSizeSaving(false);
@@ -607,17 +688,30 @@ function ItemDetailScreen() {
   }, [priceEstimate, explanation, condition, editableCategory, evidenceData]);
 
 
-  const scrollToNotes = () => {
-    // Delay slightly to let keyboard height settle, then scroll notes into view
-    setTimeout(() => {
-      if (notesLayoutY.current > 0) {
-        (scrollViewRef.current as ScrollView | null)?.scrollTo?.({
-          y: notesLayoutY.current - 60,
-          animated: true,
-        });
-      }
-    }, 300);
-  };
+  // Scroll the notes block clear of the keyboard.
+  //
+  // The previous version scrolled to `notesLayoutY - 60`, where notesLayoutY
+  // came from the block's own `onLayout`. That y is relative to the block's
+  // PARENT — the details card at line ~841 — not to the scroll content, and
+  // the card starts ~700pt down (gallery + title + valuation). So it scrolled
+  // to a point far above the notes and the field stayed under the keyboard.
+  //
+  // ItemNotesEditor now reports its measured on-screen rect instead, and this
+  // scrolls by the OVERLAP only: enough to clear the keyboard, never more.
+  const scrollToNotes = useCallback((rect: { y: number; height: number }) => {
+    const kb = keyboardHeightRef.current;
+    if (kb <= 0) return;
+    // iOS: the keyboard overlays the window, so the visible bottom is
+    // windowHeight - keyboardHeight. Android runs edge-to-edge here too (SDK
+    // 54 default), so the window does not resize and the same math holds.
+    const keyboardTop = windowHeight - kb;
+    const overlap = rect.y + rect.height + NOTES_KEYBOARD_MARGIN - keyboardTop;
+    if (overlap <= 0) return; // already fully visible — don't move the screen
+    scrollViewRef.current?.scrollTo?.({
+      y: scrollOffsetRef.current + overlap,
+      animated: true,
+    });
+  }, [windowHeight]);
 
   // Refresh all AI intelligence data at once
   const refreshAllIntelligence = useCallback(async () => {
@@ -631,7 +725,7 @@ function ItemDetailScreen() {
       ]);
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     } catch (err) {
-      logger.warn('[ItemDetail] intelligence refresh error:', err);
+      logger.error('[ItemDetail] intelligence refresh error:', err);
     } finally {
       setAiRefreshing(false);
     }
@@ -649,7 +743,12 @@ function ItemDetailScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+        // 0, not 80. This screen renders under the native stack header
+        // (`iconOnlyHeader`), so the KAV's own frame already starts below it —
+        // an 80pt offset added 80pt of phantom padding and shoved the whole
+        // screen up that much further than the keyboard needed.
+        // app/chat/[threadId].tsx uses 0 under the same header.
+        keyboardVerticalOffset={0}
       >
         <View style={{ flex: 1 }}>
         {/* Confetti overlay for draft result reveal */}
@@ -661,7 +760,13 @@ function ItemDetailScreen() {
           contentContainerStyle={[
             styles.content,
             { backgroundColor: theme.background },
-            { paddingBottom: keyboardVisible ? keyboardHeight + 40 : 120 },
+            // NOT `keyboardHeight + 40`: on iOS the KeyboardAvoidingView above
+            // already shrinks this ScrollView by the keyboard height, so adding
+            // it again here double-counted it — ~2× the keyboard in dead space
+            // below the content, which is what made the screen lurch. The extra
+            // 80 is just slack so a field near the bottom of the content can
+            // still be scrolled clear of the keyboard.
+            { paddingBottom: keyboardVisible ? 200 : 120 },
           ]}
           keyboardShouldPersistTaps="handled"
           refreshControl={
@@ -680,6 +785,7 @@ function ItemDetailScreen() {
               useNativeDriver: false,
               listener: (event: { nativeEvent: { contentOffset: { y: number } } }) => {
                 const offsetY = event.nativeEvent.contentOffset.y;
+                scrollOffsetRef.current = offsetY;
                 setShowStickyButton(offsetY > 200);
               },
             }
@@ -741,6 +847,7 @@ function ItemDetailScreen() {
             <ItemQuickActionsRow
               editableName={editableName}
               editableValue={editableValue}
+              editableCondition={editableCondition}
               isForSale={isForSale}
               onEdit={() => setIsEditing(true)}
               onListForSale={() => listForSaleHook.open()}
@@ -799,7 +906,7 @@ function ItemDetailScreen() {
                 for cats with sparse market data so the "tell us what you paid"
                 signal is more visible. List mirrors BOOST_CATEGORIES in the
                 scrape scheduler. */}
-            {!isDraft && id && (() => {
+            {LIVE_PRICE_FETCH_ENABLED && !isDraft && id && (() => {
               const thinCats = new Set([
                 'ghibli','pens','whiskey','pop_fandom','action_figures',
                 'keycaps','blind_box','taylor_swift',
@@ -911,13 +1018,27 @@ function ItemDetailScreen() {
             )}
 
 
+            {/* Sell on the member marketplace (P2P Stage 1). Placed with the
+                other user-OWNED actions, above the paywalled sections: this is
+                something you do with YOUR item, not a feature to unlock.
+                See docs/P2P_MARKETPLACE_SPEC.md. */}
+            {!isDraft && id && !isEditing && (
+              <SellOnSparrowSection
+                itemId={id as string}
+                colors={theme}
+                currency={settings.currency}
+                hapticsEnabled={settings.hapticsEnabled}
+                suggestedPrice={priceEstimate?.priceBand?.q50 ?? null}
+                canonicalKey={savedCanonicalKey}
+                hasPhoto={Boolean(imageUri)}
+              />
+            )}
+
             {/* Notes (editable) — top priority per user feedback */}
             <ItemNotesEditor
               notes={notes}
               onChangeNotes={setNotes}
               onSaveNotes={onSaveNotes}
-              keyboardVisible={keyboardVisible}
-              onLayout={(y) => { notesLayoutY.current = y; }}
               onFocus={scrollToNotes}
             />
 
@@ -957,12 +1078,14 @@ function ItemDetailScreen() {
               <ItemShopSection affiliateLinks={affiliateLinks} />
             )}
 
-            {/* Sell Timing Badge — Premium-only. Needs canonical_key
-                (`category:item_key`) to query market_hits — won't render
-                for items that haven't been catalog-matched yet. */}
+            {/* Sell Timing Badge — HIDDEN 2026-07-22 (per request). It only ever
+                showed a "Coming soon · Premium" teaser (the feature isn't built),
+                so it read as dead weight on the detail screen. The component +
+                the market_hits query behind it are intentionally untouched — flip
+                this block back on once Sell Timing actually ships.
             {!isDraft && savedCanonicalKey && (
               <SellTimingBadge itemId={savedCanonicalKey} />
-            )}
+            )} */}
 
             {/* Condition Grading — SHELVED 2026-05-02.
                 Other apps (PSA app, CGC app) do this well already; charging
@@ -986,77 +1109,60 @@ function ItemDetailScreen() {
                 on (or per-category gate) once the bake feeds enough
                 comps to every cat. */}
 
-            {/* Item History */}
+            {/* Pro insight sections. CONSOLIDATED 2026-07-22:
+                - "Item History" (provenance) removed — it's a subset of the
+                  dossier (which already returns provenance[]) and is empty for
+                  virtually every user item, so it read as dead weight.
+                - "Valuation Report" (dossier) is now gated to
+                  VALUATION_ELIGIBLE_CATEGORIES — prod price/comps data only
+                  exists for those cats; elsewhere the dossier renders empty.
+                - "Market Prices" always shows for Pro: it's a LIVE marketplace
+                  search (eBay/Cardmarket/…), so it works for any category.
+                Free users get ONE consolidated upgrade card. */}
             {!isDraft && id && (
               limits.advanced_analytics ? (
-                <ProvenanceHistorySection
-                  theme={theme}
-                  hapticsEnabled={settings.hapticsEnabled}
-                  provenanceExpanded={provenanceExpanded}
-                  provenanceLoading={provenanceLoading}
-                  provenanceEvents={provenanceEvents}
-                  authenticitySignals={authenticitySignals}
-                  onToggleExpanded={() => setProvenanceExpanded(!provenanceExpanded)}
-                />
+                <>
+                  {VALUATION_ELIGIBLE_CATEGORIES.has(categorySlug) && (
+                    <DossierReportSection
+                      theme={theme}
+                      dossierData={dossierData}
+                      dossierLoading={dossierLoading}
+                      dossierExpanded={dossierExpanded}
+                      dossierError={dossierError}
+                      onToggleExpanded={() => {
+                        if (!dossierData && !dossierError) loadDossier();
+                        else setDossierExpanded(!dossierExpanded);
+                      }}
+                      onRetry={() => loadDossier()}
+                      itemId={id}
+                      formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
+                      toNum={toNum}
+                    />
+                  )}
+                  <MarketplacePricesSection
+                    theme={theme}
+                    marketResults={marketResults}
+                    marketLoading={marketLoading}
+                    marketExpanded={marketExpanded}
+                    marketError={marketError}
+                    editableName={editableName}
+                    onToggleExpanded={() => {
+                      if (marketResults.length === 0 && !marketError) loadMarketResults();
+                      else setMarketExpanded(!marketExpanded);
+                    }}
+                    onRetry={() => loadMarketResults()}
+                    formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
+                    toNum={toNum}
+                  />
+                </>
               ) : (
                 <LockedPreviewSection
-                  title="Item History"
-                  subtitle="View provenance events and authenticity signals with Pro."
-                  previewType="history"
-                />
-              )
-            )}
-
-            {/* Valuation Report (Dossier) */}
-            {!isDraft && id && (
-              limits.advanced_analytics ? (
-                <DossierReportSection
-                  theme={theme}
-                  dossierData={dossierData}
-                  dossierLoading={dossierLoading}
-                  dossierExpanded={dossierExpanded}
-                  dossierError={dossierError}
-                  onToggleExpanded={() => {
-                    if (!dossierData && !dossierError) loadDossier();
-                    else setDossierExpanded(!dossierExpanded);
-                  }}
-                  onRetry={() => loadDossier()}
-                  itemId={id}
-                  formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
-                  toNum={toNum}
-                />
-              ) : (
-                <LockedPreviewSection
-                  title="Valuation Report"
-                  subtitle="Get a full dossier PDF with comps, confidence, and provenance signals with Pro."
-                  previewType="report"
-                />
-              )
-            )}
-
-            {/* Market Prices */}
-            {!isDraft && id && (
-              limits.advanced_analytics ? (
-                <MarketplacePricesSection
-                  theme={theme}
-                  marketResults={marketResults}
-                  marketLoading={marketLoading}
-                  marketExpanded={marketExpanded}
-                  marketError={marketError}
-                  editableName={editableName}
-                  onToggleExpanded={() => {
-                    if (marketResults.length === 0 && !marketError) loadMarketResults();
-                    else setMarketExpanded(!marketExpanded);
-                  }}
-                  onRetry={() => loadMarketResults()}
-                  formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
-                  toNum={toNum}
-                />
-              ) : (
-                <LockedPreviewSection
-                  title="Market Prices"
-                  subtitle="See live listings from eBay, Mercari, Vinted and more with Pro."
-                  previewType="list"
+                  title="Item Insights"
+                  requiredPlan="Pro"
+                  features={[
+                    { label: 'Market Prices', description: '— live listings from eBay, Mercari, Vinted & more' },
+                    { label: 'Valuation Report', description: '— full dossier with comps & confidence' },
+                  ]}
                 />
               )
             )}
@@ -1131,6 +1237,19 @@ function ItemDetailScreen() {
 }
 
 export default function ItemDetailScreenWithBoundary() {
+  // Backstop for the id-shape seam. This screen is keyed by `items.id` (uuid);
+  // every query below does `.eq('id', id)`, which PostgREST rejects with
+  // `22P02 invalid input syntax for type uuid` for anything else. The call
+  // sites route through `itemHref()` now, but deep links, push payloads and
+  // future callers can still land here directly — so bounce a non-uuid id to
+  // the catalog screen rather than rendering an "Unknown item" shell whose
+  // every fetch fails silently.
+  const { id, draft } = useLocalSearchParams<{ id?: string; draft?: string }>();
+  const isDraftRoute = id === 'draft' || draft === '1';
+  if (id && !isDraftRoute && !isUuid(id)) {
+    return <Redirect href={{ pathname: '/catalog-item/[key]', params: { key: id } }} />;
+  }
+
   return (
     <ScreenErrorBoundary screenName="Item Detail">
       <ItemDetailScreen />

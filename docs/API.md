@@ -47,8 +47,36 @@ In `DEV_MODE=true`, JWT auth falls back to `DEV_USER_ID` without a token.
 | POST | `/intake/process` | JWT + Rate Limit | Full intake (image + barcode + hints) |
 | POST | `/intake/barcode-only` | JWT + Rate Limit | Barcode-only intake |
 | POST | `/intake/image-only` | JWT + Rate Limit | Image-only intake |
-| POST | `/intake/url` | JWT + Rate Limit | Import from marketplace URL |
+| POST | `/intake/url` | JWT + Rate Limit | Import from marketplace URL — **⛔ NOT part of the app. Deferred to a future build.** See note below |
 | POST | `/intake/save` | JWT | Persist intake result as collection item |
+
+### ⛔ URL import (`POST /intake/url`) is deliberately out of scope
+
+**Product decision (Merle, 2026-07-30): the URL-import feature is not part of
+the app. It can be a future build. Do not wire it up, and do not "fix" it.**
+
+State of play, so nobody rediscovers this and mistakes it for a bug:
+
+- `app/import-url.tsx` exists but is **intentionally unreachable** — no
+  `router.push`, no entry in `AddMenuModal`, no `Stack.Screen` in `_layout.tsx`.
+  That is correct, not an oversight.
+- `server/app/ssrf.py::validate_url` currently rejects **every** domain-name URL:
+  `_is_private_ip` returns `True` for anything it cannot parse as an IP, so a
+  hostname is reported as "private/internal IP" and the DNS-resolution check
+  below it never runs. Verified on prod 2026-07-30 — `www.ebay.com` and
+  `cardmarket.com` are both blocked.
+- `server/tests/test_ssrf.py` passes anyway because it patches `_is_private_ip`
+  with `_mock_private_ip_for_domain`, a local reimplementation that returns
+  `False` for domain names. The mock encodes the correct behaviour; the shipped
+  function does not. Treat that suite as **not** covering the real guard.
+- Net effect: the endpoint is closed, which is the safe direction. Nothing is
+  exposed. It simply cannot import.
+
+If URL import is ever picked up, the work is: fix `_is_private_ip` to
+distinguish "not an IP" from "private IP" (so hostnames reach the DNS check),
+drop the mock from the test so it exercises the real function, then add an
+entry point. Until then, leave all three alone.
+
 
 ## QuickScan
 
@@ -92,6 +120,7 @@ In `DEV_MODE=true`, JWT auth falls back to `DEV_USER_ID` without a token.
 | DELETE | `/alerts/mine/{alert_id}` | JWT | Delete/disable alert |
 | GET | `/alerts/trigger-history` | JWT | Alert trigger history |
 | POST | `/alerts/trigger-history/{trigger_id}/read` | JWT | Mark trigger as read |
+
 
 ## Provenance
 
@@ -193,6 +222,57 @@ In `DEV_MODE=true`, JWT auth falls back to `DEV_USER_ID` without a token.
 | POST | `/ops/catalog-suggestions/{id}/action` | Ops Key | Approve/reject/map a suggestion |
 | GET | `/ops/category-candidates` | Ops Key | List new category candidates |
 | POST | `/ops/category-candidates/{id}/action` | Ops Key | Approve/reject/merge a candidate |
+
+## P2P Marketplace (member-to-member)
+
+Governed by `docs/P2P_MARKETPLACE_SPEC.md`. **Sparrow never touches funds** —
+there is no checkout, no escrow and no payout endpoint here by design, and §5b
+of the spec sets out what may and may not be added.
+
+Note these are **not** mounted under `/v1/` (unlike most of the API above),
+matching how `p2p_listing_router` / `p2p_offers_router` are registered in
+`main.py`.
+
+### Listings (Stage 1)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/p2p/listings` | JWT + Rate Limit | List an item you own (`item_id`) **or** list without a collection (`title` + optional `category`/`canonical_key` — the item is created for you, tagged `source='marketplace'`). 400 `ITEM_OR_TITLE_REQUIRED`, 409 `ALREADY_LISTED`, 404 `ITEM_NOT_FOUND` (ownership enforced server-side). `photo_catalogue_consent` (default **false**) opts the listing photo into catalogue reuse under ToS §3 |
+| GET | `/p2p/listings` | JWT | Browse. Repeatable `category`, `canonical_key`, `q`, `mine`, `sort`, `price_min/max`, `price_currency`. **Excludes blocked members both ways** |
+| GET | `/p2p/listings/{listing_id}` | JWT | Deep-link target for `sparrowcollect.com/l/<id>`. Returns sold/delisted with real status, not 404. A blocked seller's listing 404s (never 403 — that would confirm it exists) |
+| POST | `/p2p/listings/{listing_id}/delist` | JWT | Mark sold/delisted. Removes the buyable `market_hits` row **synchronously** |
+| POST | `/p2p/listings/{listing_id}/report` | JWT + Rate Limit | DSA Art 16 notice-and-action. Re-reporting is a no-op and does not inflate the counter |
+| GET | `/p2p/facets/categories` | JWT | Categories that actually have live listings, with counts |
+| GET | `/p2p/demand/{item_id}` | JWT | Pre-listing demand. **Ownership enforced** — demand is competitive information |
+
+### Offers, completion, tracking (Stage 2)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/p2p/offers` | JWT + Rate Limit | Make an offer. 403 `USER_BLOCKED` if either party blocked the other |
+| GET | `/p2p/offers` | JWT | Offers made or received (`role=all\|buying\|selling`) |
+| POST | `/p2p/offers/{offer_id}/respond` | JWT + Rate Limit | `action=accept\|decline\|counter\|withdraw`. Accept reserves softly; it does not delist |
+| POST | `/p2p/offers/{offer_id}/confirm` | JWT + Rate Limit | Seller marks sent, buyer marks received. **Both ⇒ completed** — the only completion writer |
+| POST | `/p2p/offers/{offer_id}/tracking` | JWT + Rate Limit | Attach carrier + consignment code. **Seller only**, while `accepted`/`shipped`. DISPLAY ONLY — never advances the trade |
+| GET | `/p2p/carriers` | No | Carrier picker options. `linkable=false` ⇒ no code-only tracking URL exists (PostNL/DPD need the recipient's postcode), so render a copyable code, not a link |
+| POST | `/p2p/offers/{offer_id}/grade` | JWT + Rate Limit | Grade the counterparty. Only after two-sided completion |
+| GET | `/p2p/members/{member_id}/reputation` | JWT | Trade count + positive %; % hidden below 3 grades |
+
+### Moderation (DSA Art 16/17)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/ops/listing-reports` | Ops Key | Open moderation queue, **oldest first** |
+| POST | `/ops/listing-reports/{listing_id}/action` | Ops Key | `action=remove\|dismiss` + `ground` + optional `explanation`. Resolves every open report, and **issues the Art 17 statement of reasons to the seller** via `notification_history` |
+
+**Art 17 is not optional at our size.** It sits in Section 2 of the DSA, and the
+Art 19 micro-enterprise exclusion reaches only Section 3 (Arts 20–28). Removing
+a listing without telling the seller why is the breach itself, which is why the
+takedown and the notification share one transaction — if the seller cannot be
+told, the removal rolls back.
+
+Valid `ground` values: `illegal_content`, `terms_breach`, `counterfeit`,
+`prohibited_item`, `misleading`. Anything else returns 400 `UNKNOWN_GROUND`.
 
 ## User Settings
 

@@ -4,10 +4,12 @@ import { supabase } from "../lib/supabase";
 
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
 import type { SentryModule } from '@/../types/api';
+import { logger } from '@/lib/logger';
 let Sentry: SentryModule | null = null;
 try {
   Sentry = require("@sentry/react-native");
 } catch (_) {
+  logger.error('[silent-catch] useAuth.ts:10:', _);
   // @sentry/react-native not installed – skip silently
 }
 

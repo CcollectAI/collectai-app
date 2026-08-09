@@ -10,8 +10,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { safeGoBack } from '@/lib/goBack';
 
-const LAST_UPDATED = 'April 11, 2026';
+const LAST_UPDATED = 'August 7, 2026';
 
 function TermsOfServiceScreenInner() {
   const router = useRouter();
@@ -21,7 +22,7 @@ function TermsOfServiceScreenInner() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <AnimatedPressable
-          onPress={() => router.back()}
+          onPress={() => safeGoBack(router)}
           accessibilityRole="button"
           accessibilityLabel="Go back"
           style={styles.backBtn}
@@ -52,6 +53,8 @@ function TermsOfServiceScreenInner() {
         <Text style={[styles.heading, { color: colors.text }]}>3. User Content</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           You retain ownership of all content you upload to the Service, including photos, descriptions, collection data, project notes, and messages. By using the Service, you grant us a limited, non-exclusive license to store, display, and process your content solely to provide the Service to you.{'\n\n'}
+          <Text style={styles.bold}>Marketplace photos and the catalogue:</Text> If you publish a photo on a marketplace listing, you additionally grant us a non-exclusive, royalty-free licence to use that photo as a reference image in our product catalogue, shown to other members alongside the same product. This is optional and off by default — you choose it per listing, and you can withdraw it at any time from the listing, after which we stop using the photo as catalogue art. We only ever use it for the product it depicts. You must own the photo or have the right to grant this; do not upload photos taken by someone else.{'\n\n'}
+          A catalogue image is a reference picture of the product, not a picture of any particular copy. Where a listing has no photo of its own we may show the catalogue image, clearly labelled as such, and the seller remains responsible for describing the actual condition of their item.{'\n\n'}
           You agree not to upload content that:{'\n'}
           {'\u2022'} Is illegal, offensive, defamatory, or harassing{'\n'}
           {'\u2022'} Infringes on third-party intellectual property rights{'\n'}
@@ -106,6 +109,18 @@ function TermsOfServiceScreenInner() {
           {'\u2022'} A platform fee may apply to sales facilitated through the Service — current fee schedules are displayed at listing creation{'\n'}
           {'\u2022'} We reserve the right to modify fee structures with 30 days advance notice{'\n\n'}
           We are not liable for failed transactions, shipping issues, buyer disputes, or any losses arising from peer-to-peer sales. The Deal Desk feature facilitates offers and counteroffers between users but does not guarantee completion of any transaction.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>7a. The Sparrow Member Marketplace</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          Separately from listing on external marketplaces, the Service lets members list collectibles to other members. That relationship is governed by the <Text style={styles.bold}>Marketplace Terms</Text>, which you should read before listing or making an offer. In summary:{'\n\n'}
+          {'•'} <Text style={styles.bold}>We never handle money.</Text> There is no checkout, no escrow and no buyer protection. Payment and delivery are arranged directly between members{'\n'}
+          {'•'} <Text style={styles.bold}>No platform fee applies</Text> to member-to-member listings — the fee schedule in section 7 above relates to external marketplaces only{'\n'}
+          {'•'} The member marketplace is for private individuals selling from their own collection. If you sell in the course of a business you are a trader, you carry the additional obligations that come with that — commonly a buyer cooling-off period and product-safety duties, which in the EU and UK include a 14-day right of withdrawal — and you must tell us{'\n'}
+          {'•'} We do not inspect, test, authenticate or verify the safety of any item. Items subject to a safety recall, or known to be unsafe, may not be listed{'\n'}
+          {'•'} Reported listings are reviewed within 24 hours. Where we act, we tell the seller what we decided, on what ground, whether a person or an automated system decided it, and how to contest it{'\n'}
+          {'•'} Many countries require marketplaces to report seller information to their tax authority (the EU's DAC7 and the equivalent OECD rules used by the UK, Canada, Australia and others). Sellers under both limits in a calendar year — fewer than 30 sales AND no more than EUR 2,000 — are not reported. We count this automatically and will tell you in the app if you pass either limit, before anything about you is reported{'\n\n'}
+          Where these Terms and the Marketplace Terms conflict on a member-to-member sale, the Marketplace Terms apply.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>8. User Corrections & Feedback</Text>
@@ -255,7 +270,7 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>26. Governing Law & Disputes</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          These Terms shall be governed by the laws of the Netherlands. Any disputes arising from these Terms or the Service shall be resolved in the courts of the Netherlands. For EU consumers, this does not affect your rights under mandatory consumer protection laws of your country of residence.
+          These Terms shall be governed by the laws of the Netherlands. Any disputes arising from these Terms or the Service shall be resolved in the courts of the Netherlands. If you are a consumer, this does not affect any rights you have under the mandatory consumer protection laws of your country of residence, or your right to bring proceedings there where those laws allow it.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>27. Severability</Text>

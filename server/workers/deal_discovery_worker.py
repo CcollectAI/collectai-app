@@ -29,8 +29,10 @@ DSN = os.getenv("DB_DSN")
 
 
 # Plan-gated daily deal alert limits
+# Fallback only — the live values are PLAN_LIMITS["<tier>"]["max_daily_deal_alerts"]
+# in app/routes/billing_router.py, which is also what /billing/status reports to
+# the app. Kept so the worker still runs if billing_router cannot be imported.
 _FREE_DAILY_DEAL_ALERTS = 1
-_PRO_DAILY_DEAL_ALERTS = 999  # effectively unlimited
 
 
 async def _get_user_deal_alert_count_today(conn, user_id: str) -> int:
@@ -65,17 +67,47 @@ async def _get_user_tier(conn, user_id: str) -> str:
     return row["plan"] if row else "free"
 
 
+# Minimum trigram similarity for the title fallback. Watchlist rows added as
+# free text have no catalog id, so the only handle on identity is the title.
+# 0.55 keeps "Bayou" from matching "Bayou Dragon"-style near-misses while still
+# tolerating the condition/finish suffixes marketplaces append.
+_TITLE_MATCH_THRESHOLD = 0.55
+
+# Titles that carry no identity. Legacy watchlist rows predating the 2026-06-05
+# name-vs-title fix are literally "(unnamed)"; searching on that matched
+# everything (see docs/alerts-and-insights.md).
+_UNUSABLE_TITLES = ("(unnamed)", "")
+
+
 async def _check_watchlist_snipes(conn) -> int:
-    """Check recent market_hits for listings below watchlist target prices.
+    """Check recent market_hits for *buyable* listings below watchlist targets.
 
     Sends push notifications to users whose watchlist items have active
     listings at or below their target price. Plan-gated: free = 1/day,
     pro/premium = unlimited.
 
+    Three conditions define a snipe, and the original query had none of them:
+
+    1. **It must be the same item.** The join used to be `mh.category =
+       w.category` alone — the docstring claimed a fuzzy title match that was
+       never in the SQL. Any listing in the category under the target fired, so
+       a €8015 target on an MTG dual land alerted on a €0.02 common. Identity
+       now comes from `watchlist_items.item_id`, which holds a **bare**
+       canonical key (`sum-283-bayou`) while `market_hits.item_ref` is
+       **namespaced** (`mtg:sum-283-bayou`) — hence the concatenation. See
+       learning_canonical_key_vs_item_ref_namespace. Free-text rows with no
+       item_id fall back to a trigram title match within the category.
+
+    2. **It must be buyable.** `url IS NOT NULL AND is_listing IS TRUE`. Most
+       market_hits are price observations, not offers: of 276k rows in the last
+       two days only 35k carried a URL, and the MTG ones are Scryfall price
+       rows. An alert with no link renders as a dead "View Item" button and
+       still burns the user's one free alert for the day.
+
+    3. **It must be cheaper than the target**, which was already true.
+
     Returns number of notifications sent.
     """
-    # Find watchlist items with target prices that have recent market hits
-    # below target. We match by category + fuzzy title match on market_hits.
     rows = await conn.fetch(
         """
         SELECT w.id AS watchlist_id, w.user_id, w.title, w.category,
@@ -84,13 +116,29 @@ async def _check_watchlist_snipes(conn) -> int:
                mh.url AS listing_url, mh.provider
         FROM public.watchlist_items w
         JOIN public.market_hits mh
-          ON mh.category = w.category
+          ON mh.seen_at > now() - interval '30 minutes'
           AND mh.price_eur IS NOT NULL
           AND mh.price_eur > 0
           AND mh.price_eur <= w.target_price
-          AND mh.seen_at > now() - interval '30 minutes'
+          -- Buyable, not merely observed: a price row is not an offer.
+          AND mh.url IS NOT NULL
+          AND mh.is_listing IS TRUE
+          AND (
+              -- Exact catalog identity. item_id is bare, item_ref namespaced.
+              (w.item_id IS NOT NULL AND mh.item_ref = w.category || ':' || w.item_id)
+              -- Fallback for free-text watchlist rows: same category, and the
+              -- listing title actually looks like the thing being watched.
+              OR (
+                  w.item_id IS NULL
+                  AND mh.category = w.category
+                  AND similarity(mh.title, w.title) >= $1
+              )
+          )
         WHERE w.target_price IS NOT NULL
           AND w.target_price > 0
+          AND w.title IS NOT NULL
+          AND w.title <> ALL($2::text[])
+          AND length(w.title) >= 3
           AND NOT EXISTS (
               SELECT 1 FROM public.alert_trigger_history ath
               WHERE ath.user_id = w.user_id
@@ -100,11 +148,17 @@ async def _check_watchlist_snipes(conn) -> int:
           )
         ORDER BY mh.price_eur ASC
         LIMIT 50
-        """
+        """,
+        _TITLE_MATCH_THRESHOLD,
+        list(_UNUSABLE_TITLES),
     )
 
     if not rows:
         return 0
+
+    # Deferred import, like the notify_user one below: `app.*` modules pull in
+    # config/DB at import time, and this worker must stay importable standalone.
+    from app.lib.affiliate import build_affiliate_url
 
     notified = 0
     user_counts: dict[str, int] = {}
@@ -117,17 +171,36 @@ async def _check_watchlist_snipes(conn) -> int:
             user_counts[user_id] = await _get_user_deal_alert_count_today(conn, user_id)
 
         tier = await _get_user_tier(conn, user_id)
-        limit = _PRO_DAILY_DEAL_ALERTS if tier in ("pro", "premium") else _FREE_DAILY_DEAL_ALERTS
-        if user_counts[user_id] >= limit:
+        # Read the cap from PLAN_LIMITS, the same table /billing/status reports
+        # to the client, so the app cannot advertise a different number than
+        # the worker enforces (see learning_billing_limits_fe_be_contract).
+        # None = unlimited. Deferred import: billing_router pulls in app config.
+        from app.routes.billing_router import PLAN_LIMITS
+
+        plan_limits = PLAN_LIMITS.get(tier, PLAN_LIMITS["free"])
+        limit = plan_limits.get("max_daily_deal_alerts", _FREE_DAILY_DEAL_ALERTS)
+        if limit is not None and user_counts[user_id] >= limit:
             continue
 
         listing_title = row["listing_title"] or "Item"
         listing_price = float(row["listing_price"])
         target_price = float(row["target_price"])
         discount_pct = ((target_price - listing_price) / target_price) * 100
+        provider = row["provider"] or "Marketplace"
+
+        # Tag once and reuse for BOTH surfaces. app/alerts.tsx:339 opens
+        # `affiliate_url || listing_url`, so without this the Alerts screen
+        # opened the raw URL and earned nothing while the push notification
+        # (which gets the tagged one as its deep_link) did.
+        listing_url = row["listing_url"] or ""
+        affiliate_url = ""
+        if listing_url:
+            affiliate_url, _ = build_affiliate_url(
+                listing_url, provider, subid=str(row["watchlist_id"])
+            )
 
         message = (
-            f"{listing_title[:60]} — \u20ac{listing_price:.2f} "
+            f"{listing_title[:60]} — \u20ac{listing_price:.2f} on {provider} "
             f"({discount_pct:.0f}% below your target of \u20ac{target_price:.2f})"
         )
 
@@ -136,8 +209,13 @@ async def _check_watchlist_snipes(conn) -> int:
             "listing_price": listing_price,
             "target_price": target_price,
             "discount_pct": round(discount_pct, 1),
-            "listing_url": row["listing_url"],
-            "provider": row["provider"],
+            "listing_url": listing_url,
+            "affiliate_url": affiliate_url or listing_url,
+            "provider": provider,
+            # app/alerts.tsx reads `listing_source` for the button label and
+            # falls back to the literal word "Marketplace". Only `provider` was
+            # ever written, so every snipe alert said "View on Marketplace".
+            "listing_source": provider,
         })
 
         item_key = f"watchlist_snipe:{row['watchlist_id']}"
@@ -154,19 +232,30 @@ async def _check_watchlist_snipes(conn) -> int:
             message,
         )
 
-        # Send push notification
+        # Send push notification.
+        #
+        # `deep_link` is what makes the row in app/notifications.tsx do
+        # something: handleTap navigates only when it is set, and MEASURED
+        # 2026-08-04 every one of the 11 notification_history rows in prod had
+        # deep_link NULL — so the whole notifications screen was tap-to-nothing.
+        # A snipe's destination is the listing itself, affiliate-tagged so the
+        # click is attributable and earns.
         try:
             from app.lib.notify import notify_user
+
+            deep_link = affiliate_url or listing_url or None
+
             await notify_user(
                 conn,
                 user_id,
-                title="Deal Found!",
+                title="Target hit",
                 body=message,
                 category="deal_alerts",
+                deep_link=deep_link,
                 data={
                     "type": "watchlist_snipe",
                     "watchlist_id": str(row["watchlist_id"]),
-                    "url": row["listing_url"] or "",
+                    "url": deep_link or listing_url,
                 },
             )
         except Exception as push_err:
@@ -239,7 +328,7 @@ async def run_once():
                     sent = await send_push_to_user(
                         conn,
                         deal["user_id"],
-                        title="Deal Found!",
+                        title="Target hit",
                         body=(
                             f"{deal['listing_title'][:60]} \u2014 \u20ac{deal['listing_price']:.2f}"
                             + (f" ({deal.get('discount_pct', 0):.0f}% below market)" if deal.get('discount_pct') else "")

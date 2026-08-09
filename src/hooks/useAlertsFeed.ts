@@ -8,6 +8,7 @@ import { Alert, AlertType } from '@/types/insights';
 import { featureFlags } from '@/config/featureFlags';
 import { dataProvider } from '@/data';
 import { collectorsApi } from '@/api/collectorsApi';
+import { logger } from '@/lib/logger';
 
 export type UseAlertsFeedOptions = {
   limit?: number;
@@ -55,15 +56,32 @@ export function useAlertsFeed(
             : fi.type === 'restock' ? 'new_listing'
             : 'milestone';
 
+        // `fi.title` is the whole alert SENTENCE — the provider maps it from
+        // alert_trigger_history.message, e.g.
+        //   "Charizard — €195 on eBay (30% below your target of €280)"
+        //
+        // It was being used for BOTH itemName and description, so the Home card
+        // printed that sentence twice, one line above the other, with a
+        // hardcoded €0 beside it. Reported 2026-08-08 as "full item names with a
+        // price in the title ... stuck on zero. this is messy" — accurately.
+        //
+        // The worker builds the message as "<item> — <offer>", so splitting on
+        // the em dash recovers the two halves. Falls back to the whole string
+        // when a future message does not use that shape: a long title is untidy,
+        // an EMPTY one is a broken row.
+        const [namePart, ...restParts] = fi.title.split(' — ');
+        const rest = restParts.join(' — ');
+
         return {
           id: fi.id,
           type: alertType,
           itemId: fi.itemId ?? fi.watchlistItemId ?? '',
-          itemName: fi.title,
+          itemName: namePart || fi.title,
           itemCategory: '',
-          description: fi.title,
+          description: rest || fi.body || '',
           condition: fi.body ?? '',
-          value: 0,
+          // The real price the alert fired on. Was hardcoded 0.
+          value: fi.price ?? 0,
           triggeredAt: fi.createdAt,
           isRead: false,
         };
@@ -137,7 +155,8 @@ export function useAlertsFeed(
     // Persist to backend (fire-and-forget)
     try {
       await collectorsApi.markTriggerRead(alertId);
-    } catch {
+    } catch (e) {
+      logger.error('[silent-fallback] alertsFeed: optimistic action failed to persist:', e);
       // Best-effort — UI already updated optimistically
     }
   }, []);

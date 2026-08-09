@@ -3,7 +3,7 @@ Shared types, constants, and utility functions for the vision classification pip
 
 Contains:
 - ALL_CATEGORIES: canonical category ID list
-- CATEGORY_DESCRIPTIONS: text descriptions for CLIP zero-shot matching
+- CATEGORY_DESCRIPTIONS: human-readable text description per category
 - CATEGORY_PROMPTS: category-specific extraction prompts for OpenAI Vision
 - CONDITION_KEYWORDS: keyword sets for condition detection
 - _HEURISTIC_PATTERNS: filename keyword patterns per category
@@ -62,7 +62,9 @@ ALL_CATEGORIES: list[str] = [
     "oop_board_games", "city_pop_vinyl", "fragrances",
 ]
 
-# Short text descriptions for each category (used by CLIP zero-shot matching).
+# Short text description per category. Written for CLIP zero-shot matching;
+# that tier was removed 2026-07-27, so the only remaining consumer is
+# GET /vision-predict/categories, which returns them to clients.
 CATEGORY_DESCRIPTIONS: dict[str, str] = {
     "pokemon": "Pokemon trading card game card, Pokemon TCG, Pikachu, Charizard collectible card",
     "mtg": "Magic: The Gathering card, MTG collectible card game, Black Lotus, planeswalker",
@@ -477,6 +479,13 @@ class ClassificationResult:
     condition_confidence: float = 0.0
     suggested_name: Optional[str] = None
     attributes: dict[str, Any] = field(default_factory=dict)
+    # DEAD SINCE 2026-07-27: the CLIP tier was the only producer of embeddings
+    # and it was removed (FAL_KEY was never set, so it never produced one in
+    # production either). Every tier now sets this to None, so
+    # vision_ingest_worker's pgvector write and vision_predict's
+    # `embedding_vector` response field are permanently null. Kept as a field
+    # so those call sites and the DB column keep their shape; delete all four
+    # together if an embedding source is never reintroduced.
     embedding_vector: Optional[list[float]] = None
     classification_method: str = "heuristic"
     # R15-11: Track which model(s) were used for reproducibility

@@ -41,3 +41,9 @@ jest.mock('react-i18next', () => {
     Trans: ({ children }: { children: React.ReactNode }) => children,
   };
 });
+
+// AsyncStorage has a native module; without this mock any test that
+// transitively imports it throws at import time.
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);

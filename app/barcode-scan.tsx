@@ -7,7 +7,7 @@
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { track } from '@/analytics/track';
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ import {
 import { router, Stack } from 'expo-router';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { dataProvider, type BarcodeLookupResult } from '@/data';
 import { collectorsApi, type IntakeResultResponse, getBillingStatus, type BillingStatus } from '@/api/collectorsApi';
 import { AnimatedPressable } from '@/motion';
@@ -32,6 +32,10 @@ import { useToast } from '@/components/Toast';
 import CatalogSuggestionModal, { type CatalogSuggestionSource } from '@/components/CatalogSuggestionModal';
 import { BarcodeResultCard } from '@/components/barcode/BarcodeResultCard';
 import { BarcodeModeSelector } from '@/components/barcode/BarcodeModeSelector';
+// Imported from the file, not the quickscan barrel, to avoid pulling the whole
+// QuickScan component set into this screen.
+import { PermissionScreen } from '@/components/quickscan/PermissionScreen';
+import { safeGoBack } from '@/lib/goBack';
 
 /** Barcode types accepted by the scanner */
 const SUPPORTED_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'isbn'] as const;
@@ -40,7 +44,7 @@ type ScanState = 'scanning' | 'loading' | 'result' | 'error';
 type InputMode = 'camera' | 'url';
 
 function BarcodeScanScreen() {
-  const { colors } = useAppTheme();
+  const { colors } = useScannerTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
 
@@ -294,6 +298,22 @@ function BarcodeScanScreen() {
     setScanState('scanning');
   };
 
+  // Hand off an unrecognised scan to manual entry, carrying the barcode so it
+  // is not lost. Mirrors QuickScan's low-confidence path (see ARCHITECTURE.md
+  // "QuickScan client guardrail"); before this, the only option offered was
+  // Save, which filed an item called "Unknown item" with no category.
+  const handleAddManually = useCallback(() => {
+    const code = scannedCode?.value;
+    router.push({
+      pathname: '/add-manual',
+      params: {
+        ...(lookupResult?.categoryId ? { category: lookupResult.categoryId } : {}),
+        ...(lookupResult?.title ? { name: lookupResult.title } : {}),
+        ...(code ? { attrs: JSON.stringify({ barcode: code }) } : {}),
+      },
+    });
+  }, [router, scannedCode, lookupResult]);
+
   // Save item to collection
   const [isSaving, setIsSaving] = useState(false);
 
@@ -334,17 +354,31 @@ function BarcodeScanScreen() {
     } catch (err) {
       logger.error('[BarcodeScan] Save to collection error:', err);
       showToast({ message: 'Auto-save failed, opening manual entry', type: 'warning' });
-      // Fallback: navigate to add-manual with prefilled data
+      // Fallback: hand the scan to add-manual so nothing typed or scanned is
+      // lost. Uses the SAME param names as handleAddManually above, which are
+      // the ones app/add-manual.tsx actually reads
+      // (`imageUri | category | name | condition | attrs`).
+      //
+      // It used to send seven `prefill*` keys. add-manual reads none of them, so
+      // every one was dropped in transit and this screen — the recovery path,
+      // reached at the exact moment a save has already failed — opened a
+      // completely empty form. The primary button one function up had the right
+      // names all along: one handoff was fixed and its twin was left behind
+      // (learning_duplicate_impl_silently_drops_the_fix). Nothing errored,
+      // because expo-router types params as an open record; `npm run
+      // check:params` is what fails on it now.
+      //
+      // priceBand.q50, collections, identification_method and subtype_id have no
+      // field on add-manual to land in, so they are deliberately NOT sent rather
+      // than sent under invented names. The estimate is recomputed there anyway.
       router.push({
         pathname: '/add-manual',
         params: {
-          prefillTitle: lookupResult.title || '',
-          prefillCategory: lookupResult.categoryId || '',
-          prefillPrice: lookupResult.priceBand?.q50?.toString() || '',
-          prefillBarcode: scannedCode?.value || '',
-          prefillCollections: lookupResult.collections?.join(',') || '',
-          prefillMethod: intakeResult?.identification_method || 'barcode',
-          prefillSubtype: intakeResult?.subtype_id || '',
+          ...(lookupResult.categoryId ? { category: lookupResult.categoryId } : {}),
+          ...(lookupResult.title ? { name: lookupResult.title } : {}),
+          ...(scannedCode?.value
+            ? { attrs: JSON.stringify({ barcode: scannedCode.value }) }
+            : {}),
         },
       });
     } finally {
@@ -353,19 +387,53 @@ function BarcodeScanScreen() {
   };
 
   // Add to watchlist instead
-  const handleAddToWatchlist = () => {
-    if (!lookupResult) return;
+  // Adds to the WATCHLIST, which is what the button says.
+  //
+  // It used to push `/add-manual` with `mode: 'watchlist'` plus three `prefill*`
+  // params. add-manual reads none of those four keys and has no watchlist mode
+  // at all, so the button opened the empty ADD-TO-COLLECTION form — the opposite
+  // of what a user asking to watch something wants, and it would have filed the
+  // item as owned. Nothing errored: expo-router accepts any param key, so
+  // `mode` looked like a feature and was a no-op (found by
+  // scripts/check-route-param-handoff.mjs, 2026-08-09).
+  //
+  // Writes directly through dataProvider rather than routing anywhere: a
+  // watchlist row needs a title and a category, and both are already in hand
+  // from the lookup. Sending the user to a form to retype them is the same
+  // double work as the sell flow.
+  const [watching, setWatching] = useState(false);
+  const [watched, setWatched] = useState(false);
 
-    router.push({
-      pathname: '/add-manual',
-      params: {
-        prefillTitle: lookupResult.title || '',
-        prefillCategory: lookupResult.categoryId || '',
-        prefillBarcode: scannedCode?.value || '',
-        mode: 'watchlist',
-      },
-    });
-  };
+  const handleAddToWatchlist = useCallback(async () => {
+    if (!lookupResult || watching || watched) return;
+    const title = (lookupResult.title || '').trim();
+    if (!title) {
+      // A watchlist row keyed on an empty title is unmatchable and unreadable.
+      showToast({ message: 'This scan has no title to watch yet', type: 'warning' });
+      return;
+    }
+    setWatching(true);
+    try {
+      await dataProvider.addWatchlistItem({
+        title,
+        // CreateWatchlistInput requires a category; the scan may not have one and
+        // '' would write a row the category filters can never surface.
+        category: lookupResult.categoryId || 'other',
+        notes: scannedCode?.value ? `Barcode ${scannedCode.value}` : undefined,
+      });
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      setWatched(true);
+      showToast({ message: 'Added to your watchlist', type: 'success' });
+    } catch (err) {
+      logger.error('[BarcodeScan] add to watchlist failed:', err);
+      showToast({
+        message: (err as Error)?.message || 'Could not add to your watchlist',
+        type: 'error',
+      });
+    } finally {
+      setWatching(false);
+    }
+  }, [lookupResult, scannedCode, watching, watched, showToast, settings.hapticsEnabled]);
 
   // Permission not determined yet
   if (!permission) {
@@ -379,28 +447,14 @@ function BarcodeScanScreen() {
   // Permission denied
   if (!permission.granted) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.permissionContainer}>
-          <Ionicons name="camera-outline" size={64} color={colors.muted} />
-          <Text style={[styles.permissionTitle, { color: colors.text }]}>
-            Camera Permission Required
-          </Text>
-          <Text style={[styles.permissionText, { color: colors.muted }]}>
-            We need camera access to scan barcodes and ISBN codes.
-          </Text>
-          <AnimatedPressable
-            style={[styles.permissionButton, { backgroundColor: colors.accent }]}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); requestPermission(); }}
-            accessibilityRole="button"
-            accessibilityLabel="Grant camera permission"
-          >
-            <Text style={[styles.permissionButtonText, { color: colors.card }]}>Grant Permission</Text>
-          </AnimatedPressable>
-          <AnimatedPressable style={styles.backButton} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }} accessibilityRole="button" accessibilityLabel="Go back">
-            <Text style={[styles.backButtonText, { color: colors.muted }]}>Go Back</Text>
-          </AnimatedPressable>
-        </View>
-      </View>
+      <PermissionScreen
+        onGrant={requestPermission}
+        onCancel={() => safeGoBack(router)}
+        hapticsEnabled={settings.hapticsEnabled}
+        canAskAgain={permission.canAskAgain}
+        message="We need camera access to scan barcodes and ISBN codes."
+        colors={colors}
+      />
     );
   }
 
@@ -415,27 +469,32 @@ function BarcodeScanScreen() {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 20}
         >
           <View style={styles.cameraContainer}>
+            {/* expo-camera warns "<CameraView> does not support children.
+                This may lead to inconsistent behaviour or crashes." The overlay
+                is therefore a SIBLING positioned over the camera rather than a
+                child. Layering is unchanged: the camera fills the container and
+                the overlay, rendered after it, paints on top. */}
             <CameraView
-              style={styles.camera}
+              style={StyleSheet.absoluteFill}
               facing="back"
               barcodeScannerSettings={{
                 barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128'],
               }}
               onBarcodeScanned={handleBarcodeScanned}
-            >
-              {/* Scan overlay */}
-              <View style={styles.scanOverlay}>
-                <View style={styles.scanFrame}>
-                  <View style={[styles.scanCorner, styles.scanCornerTL]} />
-                  <View style={[styles.scanCorner, styles.scanCornerTR]} />
-                  <View style={[styles.scanCorner, styles.scanCornerBL]} />
-                  <View style={[styles.scanCorner, styles.scanCornerBR]} />
-                </View>
-                <Text style={styles.scanHint}>
-                  Point camera at barcode or ISBN
-                </Text>
+            />
+
+            {/* Scan overlay */}
+            <View style={[StyleSheet.absoluteFill, styles.scanOverlay]} pointerEvents="none">
+              <View style={styles.scanFrame}>
+                <View style={[styles.scanCorner, styles.scanCornerTL]} />
+                <View style={[styles.scanCorner, styles.scanCornerTR]} />
+                <View style={[styles.scanCorner, styles.scanCornerBL]} />
+                <View style={[styles.scanCorner, styles.scanCornerBR]} />
               </View>
-            </CameraView>
+              <Text style={styles.scanHint}>
+                Point camera at barcode or ISBN
+              </Text>
+            </View>
           </View>
 
           <BarcodeModeSelector
@@ -473,7 +532,9 @@ function BarcodeScanScreen() {
           hapticsEnabled={settings.hapticsEnabled}
           onRescan={handleRescan}
           onSave={handleSaveToCollection}
+          onAddManually={handleAddManually}
           onAddToWatchlist={handleAddToWatchlist}
+          watchlistState={watched ? 'done' : watching ? 'saving' : 'idle'}
         />
       )}
 
@@ -556,39 +617,8 @@ const styles = StyleSheet.create({
   headerRight: {
     width: 32,
   },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  permissionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  permissionText: {
-    fontSize: 15,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  permissionButton: {
-    paddingHorizontal: 28,
-    paddingVertical: 16,
-    borderRadius: 12,
-  },
-  permissionButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  backButton: {
-    marginTop: 16,
-    padding: 8,
-  },
-  backButtonText: {
-    fontSize: 15,
-  },
+  // Permission styles removed — this screen now renders the shared
+  // PermissionScreen component instead of its own copy of that UI.
   cameraContainer: {
     flex: 1,
     borderRadius: 16,

@@ -373,7 +373,7 @@ async def get_auto_set_progress(
                         COUNT(*) AS owned_count,
                         ARRAY_AGG(items.title ORDER BY items.created_at DESC) AS titles
                     FROM items
-                    WHERE items.user_id = $1
+                    WHERE items.user_id = $1 AND NOT items.archived
                       AND items.attrs ->> 'set_name' IS NOT NULL
                       AND items.attrs ->> 'set_name' != ''
                       {cat_clause}

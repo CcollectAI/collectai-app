@@ -25,9 +25,7 @@ pipelines/export_feedback.py:COLUMN_MISSING:user_feedback_events_v1.feedback_typ
 pipelines/export_feedback.py:COLUMN_MISSING:user_feedback_events_v1.incorporated_at (used as f.incorporated_at)
 pipelines/export_feedback.py:COLUMN_MISSING:user_feedback_events_v1.value_json (used as f.value_json)
 
-# workers/signal_alerts_worker.py: de-registered in the bake manifest
 # (commented out 2026-04-21, 3 stacked bugs). SQL drift here is dormant.
-workers/signal_alerts_worker.py:TABLE_MISSING:users
 
 # workers/vision_ingest_worker.py: on-demand only (interval=0), not in
 # active manifest. vision_queue table never created — would need a

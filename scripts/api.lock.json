@@ -1,1823 +1,2185 @@
 {
-  "_about": "Frozen FastAPI route table. Regenerated only after intentional route changes.",
+  "_about": "Frozen FastAPI route table. Regenerated 2026-08-08 from the LIVE /openapi.json (545 routes) after the P2P price-edit and watchlist-matches endpoints landed. DO NOT regenerate this with scripts/regen_api_lock.py: it scans SOURCE and cannot resolve the /v1 mount, so it drops ~250 routes to their unprefixed form and yields 332 \u2014 the same drift as the Apr-29 lock that fell to 303 and made audit_fe_api_drift.py report 7 false positives, all of which existed in production. A gate that cries wolf is a gate people stop reading. Regenerate with: ssh collectai 'curl -s -H \"Host: api.sparrowcollect.com\" http://127.0.0.1:8000/openapi.json' then flatten paths x methods.",
   "routes": [
     {
-      "file": "server/app/routes/account_router.py",
-      "line": 44,
       "method": "DELETE",
       "path": "/account"
     },
     {
-      "file": "server/app/features/alerts_feature_router.py",
-      "line": 214,
       "method": "DELETE",
       "path": "/alerts/mine/{alert_id}"
     },
     {
-      "file": "server/app/features/chat_router.py",
-      "line": 394,
       "method": "DELETE",
       "path": "/chat/messages/{message_id}"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 560,
       "method": "DELETE",
       "path": "/events/categories/{category_id}/follow"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 877,
       "method": "DELETE",
       "path": "/events/templates/{template_id}"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 1082,
       "method": "DELETE",
       "path": "/events/{event_id}"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 739,
       "method": "DELETE",
       "path": "/events/{event_id}/alert"
     },
     {
-      "file": "server/app/features/events/events_rsvp.py",
-      "line": 114,
       "method": "DELETE",
       "path": "/events/{event_id}/rsvp"
     },
     {
-      "file": "server/app/features/item_images_router.py",
-      "line": 287,
       "method": "DELETE",
       "path": "/items/{item_id}/images/{image_id}"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 537,
       "method": "DELETE",
       "path": "/marketplace/listings/accounts/{account_id}"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 948,
       "method": "DELETE",
       "path": "/marketplace/listings/{listing_id}"
     },
     {
-      "file": "server/app/features/notification_router.py",
-      "line": 141,
       "method": "DELETE",
       "path": "/notifications/register"
     },
     {
-      "file": "server/app/routes/seed_router.py",
-      "line": 73,
       "method": "DELETE",
       "path": "/ops/seed-users"
     },
     {
-      "file": "server/app/features/photo_upload_router.py",
-      "line": 328,
       "method": "DELETE",
-      "path": "/photos/{photo_key:path}"
+      "path": "/p2p/catalogue-contributions"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 471,
+      "method": "DELETE",
+      "path": "/photos/{photo_key}"
+    },
+    {
       "method": "DELETE",
       "path": "/purchase/mandates/{mandate_id}"
     },
     {
-      "file": "server/app/features/social_router.py",
-      "line": 194,
       "method": "DELETE",
       "path": "/social/block/{user_id}"
     },
     {
-      "file": "server/app/features/sponsor_company_router.py",
-      "line": 266,
       "method": "DELETE",
       "path": "/sponsor-companies/{company_id}"
     },
     {
-      "file": "server/app/features/storage_router.py",
-      "line": 406,
       "method": "DELETE",
       "path": "/storage/objects/{pointer_id}"
     },
     {
-      "file": "server/app/features/watchlist_router.py",
-      "line": 169,
+      "method": "DELETE",
+      "path": "/v1/account"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/alerts/mine/{alert_id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/chat/messages/{message_id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/events/categories/{category_id}/follow"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/events/templates/{template_id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/events/{event_id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/events/{event_id}/alert"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/events/{event_id}/rsvp"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/items/{item_id}/images/{image_id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/marketplace/listings/accounts/{account_id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/marketplace/listings/{listing_id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/notifications/register"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/photos/{photo_key}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/purchase/mandates/{mandate_id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/storage/objects/{pointer_id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/watchlist/mine/{watch_id}"
+    },
+    {
       "method": "DELETE",
       "path": "/watchlist/mine/{watch_id}"
     },
     {
-      "file": "server/app/features/activity_router.py",
-      "line": 37,
       "method": "GET",
       "path": "/activity/{user_id}"
     },
     {
-      "file": "server/app/features/admin_health_router.py",
-      "line": 261,
       "method": "GET",
       "path": "/admin/bake-summary"
     },
     {
-      "file": "server/app/features/admin_health_router.py",
-      "line": 80,
       "method": "GET",
       "path": "/admin/demand-summary"
     },
     {
-      "file": "server/app/features/admin_health_router.py",
-      "line": 208,
+      "method": "GET",
+      "path": "/admin/kpi-summary"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/metrics"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/models"
+    },
+    {
       "method": "GET",
       "path": "/admin/spend-summary"
     },
     {
-      "file": "server/app/features/admin_health_router.py",
-      "line": 55,
       "method": "GET",
       "path": "/admin/worker-health"
     },
     {
-      "file": "server/app/features/alerts_feature_router.py",
-      "line": 72,
       "method": "GET",
       "path": "/alerts/mine"
     },
     {
-      "file": "server/app/features/alerts_feature_router.py",
-      "line": 269,
       "method": "GET",
       "path": "/alerts/trigger-history"
     },
     {
-      "file": "server/app/features/trends_and_deepdive_router.py",
-      "line": 371,
       "method": "GET",
       "path": "/analytics/categories/{category}/deep-dive"
     },
     {
-      "file": "server/app/features/trends_and_deepdive_router.py",
-      "line": 65,
       "method": "GET",
       "path": "/analytics/collection/trends"
     },
     {
-      "file": "server/app/features/trends_and_deepdive_router.py",
-      "line": 204,
       "method": "GET",
       "path": "/analytics/items/{item_id}/trends"
     },
     {
-      "file": "server/app/features/trends_and_deepdive_router.py",
-      "line": 288,
       "method": "GET",
       "path": "/analytics/portfolio/category-breakdown"
     },
     {
-      "file": "server/app/features/import_router.py",
-      "line": 91,
       "method": "GET",
       "path": "/api/imports/template"
     },
     {
-      "file": "server/app/features/attribute_autocomplete_router.py",
-      "line": 42,
       "method": "GET",
       "path": "/attributes/autocomplete"
     },
     {
-      "file": "server/app/routes/mfa_router.py",
-      "line": 41,
       "method": "GET",
       "path": "/auth/mfa/status"
     },
     {
-      "file": "server/app/routes/billing_router.py",
-      "line": 358,
       "method": "GET",
       "path": "/billing/status"
     },
     {
-      "file": "server/app/features/build_paint_router.py",
-      "line": 231,
       "method": "GET",
       "path": "/build-paint/status-pipelines"
     },
     {
-      "file": "server/app/features/build_paint_router.py",
-      "line": 237,
       "method": "GET",
       "path": "/build-paint/status-pipelines/{category_id}"
     },
     {
-      "file": "server/app/features/build_paint_router.py",
-      "line": 248,
       "method": "GET",
       "path": "/build-paint/step-templates"
     },
     {
-      "file": "server/app/features/build_paint_router.py",
-      "line": 254,
       "method": "GET",
       "path": "/build-paint/step-templates/{category_id}"
     },
     {
-      "file": "server/app/features/catalog_learning_router.py",
-      "line": 223,
       "method": "GET",
       "path": "/catalog/suggestions/mine"
     },
     {
-      "file": "server/app/features/catalog_browser_router.py",
-      "line": 81,
+      "method": "GET",
+      "path": "/catalog/top-movers"
+    },
+    {
+      "method": "GET",
+      "path": "/catalog/{category_id}/collections"
+    },
+    {
       "method": "GET",
       "path": "/catalog/{category_id}/items"
     },
     {
-      "file": "server/routes/categories.py",
-      "line": 6,
       "method": "GET",
-      "path": "/categories"
+      "path": "/catalog/{category_id}/items/{item_key}/price"
     },
     {
-      "file": "server/app/features/chat_router.py",
-      "line": 152,
       "method": "GET",
       "path": "/chat/threads"
     },
     {
-      "file": "server/app/features/chat_router.py",
-      "line": 207,
       "method": "GET",
       "path": "/chat/threads/{thread_id}/messages"
     },
     {
-      "file": "server/app/features/chat_router.py",
-      "line": 537,
       "method": "GET",
       "path": "/chat/unread-count"
     },
     {
-      "file": "server/app/features/collections_router.py",
-      "line": 106,
       "method": "GET",
       "path": "/collections"
     },
     {
-      "file": "server/app/features/collections_router.py",
-      "line": 171,
       "method": "GET",
       "path": "/collections/user/progress"
     },
     {
-      "file": "server/app/features/collections_router.py",
-      "line": 252,
       "method": "GET",
       "path": "/collections/{collection_id}"
     },
     {
-      "file": "server/app/features/collections_router.py",
-      "line": 365,
       "method": "GET",
       "path": "/collections/{collection_id}/progress"
     },
     {
-      "file": "server/app/features/data_moat.py",
-      "line": 338,
       "method": "GET",
       "path": "/data-moat/demand-heat"
     },
     {
-      "file": "server/app/features/data_moat.py",
-      "line": 658,
       "method": "GET",
       "path": "/data-moat/demand-heat/by-region"
     },
     {
-      "file": "server/app/features/data_moat.py",
-      "line": 351,
       "method": "GET",
       "path": "/data-moat/health"
     },
     {
-      "file": "server/app/features/data_moat.py",
-      "line": 483,
       "method": "GET",
       "path": "/data-moat/prediction-accuracy"
     },
     {
-      "file": "server/app/features/data_moat.py",
-      "line": 643,
       "method": "GET",
       "path": "/data-moat/scarcity"
     },
     {
-      "file": "server/app/features/data_moat.py",
-      "line": 321,
       "method": "GET",
       "path": "/data-moat/supply-trends"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 375,
       "method": "GET",
       "path": "/deals/active"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 423,
       "method": "GET",
       "path": "/deals/history"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 593,
       "method": "GET",
       "path": "/deals/reputation/{target_user_id}"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 471,
       "method": "GET",
       "path": "/deals/{offer_id}"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 537,
       "method": "GET",
       "path": "/deals/{offer_id}/evidence"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 613,
       "method": "GET",
       "path": "/deals/{offer_id}/risk-flags"
     },
     {
-      "file": "server/main.py",
-      "line": 465,
-      "method": "GET",
-      "path": "/debug-ping"
-    },
-    {
-      "file": "server/app/rate_limit.py",
-      "line": 250,
-      "method": "GET",
-      "path": "/detect"
-    },
-    {
-      "file": "server/app/agents/dossier_router.py",
-      "line": 66,
       "method": "GET",
       "path": "/dossier/{item_id}"
     },
     {
-      "file": "server/app/agents/dossier_router.py",
-      "line": 124,
       "method": "GET",
       "path": "/dossier/{item_id}/export"
     },
     {
-      "file": "server/app/agents/dossier_router.py",
-      "line": 99,
       "method": "GET",
       "path": "/dossier/{item_id}/summary"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 164,
       "method": "GET",
       "path": "/events"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 486,
       "method": "GET",
       "path": "/events/categories/followed"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 592,
       "method": "GET",
       "path": "/events/categories/{category_id}/following"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 626,
       "method": "GET",
       "path": "/events/my-alerts"
     },
     {
-      "file": "server/app/features/events/events_announcements.py",
-      "line": 165,
       "method": "GET",
       "path": "/events/my-announcements/unread-count"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 370,
       "method": "GET",
       "path": "/events/nearby"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 70,
       "method": "GET",
       "path": "/events/search"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 782,
       "method": "GET",
       "path": "/events/templates"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 914,
       "method": "GET",
       "path": "/events/{event_id}"
     },
     {
-      "file": "server/app/features/events/events_announcements.py",
-      "line": 283,
       "method": "GET",
       "path": "/events/{event_id}/announcements"
     },
     {
-      "file": "server/app/features/export_router.py",
-      "line": 335,
       "method": "GET",
       "path": "/export/insurance-report"
     },
     {
-      "file": "server/app/features/feedback_router.py",
-      "line": 167,
       "method": "GET",
       "path": "/feedback/corrections"
     },
     {
-      "file": "server/app/features/feedback_router.py",
-      "line": 649,
       "method": "GET",
       "path": "/feedback/verified-sales"
     },
     {
-      "file": "server/app/routes/fx_router.py",
-      "line": 24,
       "method": "GET",
       "path": "/fx/rates"
     },
     {
-      "file": "server/app/features/gamification_router.py",
-      "line": 317,
       "method": "GET",
       "path": "/gamification/achievements"
     },
     {
-      "file": "server/app/features/gamification_router.py",
-      "line": 385,
       "method": "GET",
       "path": "/gamification/achievements/recent"
     },
     {
-      "file": "server/app/features/gamification_router.py",
-      "line": 439,
       "method": "GET",
       "path": "/gamification/challenges"
     },
     {
-      "file": "server/app/features/gamification_router.py",
-      "line": 631,
       "method": "GET",
       "path": "/gamification/leaderboard"
     },
     {
-      "file": "server/app/features/gamification_router.py",
-      "line": 160,
       "method": "GET",
       "path": "/gamification/profile"
     },
     {
-      "file": "server/app/features/gamification_router.py",
-      "line": 232,
       "method": "GET",
       "path": "/gamification/profile/{user_id}"
     },
     {
-      "file": "server/app/routes/geo_router.py",
-      "line": 87,
       "method": "GET",
       "path": "/geo/detect"
     },
     {
-      "file": "server/app/features/grading_router.py",
-      "line": 304,
       "method": "GET",
       "path": "/grading/lookup"
     },
     {
-      "file": "server/app/features/grading_router.py",
-      "line": 343,
       "method": "GET",
       "path": "/grading/population"
     },
     {
-      "file": "server/app/features/grading_router.py",
-      "line": 379,
       "method": "GET",
       "path": "/grading/services"
     },
     {
-      "file": "server/main.py",
-      "line": 348,
       "method": "GET",
       "path": "/healthz"
     },
     {
-      "file": "server/app/features/insights_router.py",
-      "line": 270,
       "method": "GET",
       "path": "/insights/home-widget"
     },
     {
-      "file": "server/app/features/insights_router.py",
-      "line": 72,
       "method": "GET",
       "path": "/insights/personalized"
     },
     {
-      "file": "server/app/agents/intake_feedback_router.py",
-      "line": 166,
       "method": "GET",
       "path": "/intake/feedback/prompts/{session_id}"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 873,
       "method": "GET",
       "path": "/intelligence/health"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 218,
       "method": "GET",
       "path": "/intelligence/top-active-threads"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 398,
       "method": "GET",
       "path": "/intelligence/top-affiliates"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 553,
       "method": "GET",
       "path": "/intelligence/top-chat-connections"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 735,
       "method": "GET",
       "path": "/intelligence/top-deleted-items"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 497,
       "method": "GET",
       "path": "/intelligence/top-dm-requests"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 448,
       "method": "GET",
       "path": "/intelligence/top-event-creators"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 313,
       "method": "GET",
       "path": "/intelligence/top-events"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 182,
       "method": "GET",
       "path": "/intelligence/top-followed-categories"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 143,
       "method": "GET",
       "path": "/intelligence/top-followed-events"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 826,
       "method": "GET",
       "path": "/intelligence/top-no-results-searches"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 650,
       "method": "GET",
       "path": "/intelligence/top-paywall-rejections"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 784,
       "method": "GET",
       "path": "/intelligence/top-regret-categories"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 686,
       "method": "GET",
       "path": "/intelligence/top-removed-watchlists"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 40,
       "method": "GET",
       "path": "/intelligence/top-searches"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 261,
       "method": "GET",
       "path": "/intelligence/top-viewed-items"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 91,
       "method": "GET",
       "path": "/intelligence/top-watchlists"
     },
     {
-      "file": "server/app/routes/items_router.py",
-      "line": 147,
       "method": "GET",
       "path": "/items"
     },
     {
-      "file": "server/app/features/items_export_router.py",
-      "line": 52,
+      "method": "GET",
+      "path": "/items-export/full"
+    },
+    {
       "method": "GET",
       "path": "/items-export/overview"
     },
     {
-      "file": "server/app/errors.py",
-      "line": 11,
-      "method": "GET",
-      "path": "/items/{id}"
-    },
-    {
-      "file": "server/routes/item_detail.py",
-      "line": 6,
-      "method": "GET",
-      "path": "/items/{item_id}/detail"
-    },
-    {
-      "file": "server/app/features/item_images_router.py",
-      "line": 121,
       "method": "GET",
       "path": "/items/{item_id}/images"
     },
     {
-      "file": "server/app/features/catalog_browser_router.py",
-      "line": 277,
       "method": "GET",
       "path": "/items/{item_id}/progress"
     },
     {
-      "file": "server/app/agents/marketplace_router.py",
-      "line": 298,
       "method": "GET",
       "path": "/marketplace/adapter-health"
     },
     {
-      "file": "server/app/routes/affiliate_links_router.py",
-      "line": 94,
       "method": "GET",
       "path": "/marketplace/affiliate-links"
     },
     {
-      "file": "server/app/agents/marketplace_router.py",
-      "line": 282,
       "method": "GET",
       "path": "/marketplace/health"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 619,
       "method": "GET",
       "path": "/marketplace/listings"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 293,
       "method": "GET",
       "path": "/marketplace/listings/accounts"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 412,
       "method": "GET",
       "path": "/marketplace/listings/accounts/defaults/ebay"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 361,
       "method": "GET",
       "path": "/marketplace/listings/accounts/oauth/ebay/callback"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 350,
       "method": "GET",
       "path": "/marketplace/listings/accounts/oauth/ebay/start"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 1311,
       "method": "GET",
       "path": "/marketplace/listings/fees"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 1140,
       "method": "GET",
       "path": "/marketplace/listings/sales"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 819,
       "method": "GET",
       "path": "/marketplace/listings/{listing_id}"
     },
     {
-      "file": "server/app/metrics.py",
-      "line": 167,
-      "method": "GET",
-      "path": "/metrics"
-    },
-    {
-      "file": "server/app/features/notification_router.py",
-      "line": 335,
       "method": "GET",
       "path": "/notifications/history"
     },
     {
-      "file": "server/app/features/notification_router.py",
-      "line": 246,
       "method": "GET",
       "path": "/notifications/preferences"
     },
     {
-      "file": "server/app/features/notification_router.py",
-      "line": 190,
       "method": "GET",
       "path": "/notifications/tokens"
     },
     {
-      "file": "server/app/routes/beta_signup_router.py",
-      "line": 121,
       "method": "GET",
       "path": "/ops/beta-signups"
     },
     {
-      "file": "server/main.py",
-      "line": 406,
       "method": "GET",
       "path": "/ops/cache"
     },
     {
-      "file": "server/main.py",
-      "line": 418,
       "method": "GET",
       "path": "/ops/canary-status"
     },
     {
-      "file": "server/app/features/catalog_learning_router.py",
-      "line": 279,
       "method": "GET",
       "path": "/ops/catalog-suggestions"
     },
     {
-      "file": "server/app/features/catalog_learning_router.py",
-      "line": 439,
       "method": "GET",
       "path": "/ops/category-candidates"
     },
     {
-      "file": "server/main.py",
-      "line": 412,
       "method": "GET",
       "path": "/ops/circuits"
     },
     {
-      "file": "server/app/routes/admin_dashboard.py",
-      "line": 449,
       "method": "GET",
       "path": "/ops/dashboard"
     },
     {
-      "file": "server/app/routes/admin_dashboard.py",
-      "line": 254,
       "method": "GET",
       "path": "/ops/dashboard/intel-summary"
     },
     {
-      "file": "server/app/routes/admin_dashboard.py",
-      "line": 190,
       "method": "GET",
       "path": "/ops/dashboard/sponsor-analytics"
     },
     {
-      "file": "server/app/routes/admin_dashboard.py",
-      "line": 33,
       "method": "GET",
       "path": "/ops/dashboard/stats"
     },
     {
-      "file": "server/app/routes/admin_dashboard.py",
-      "line": 125,
       "method": "GET",
       "path": "/ops/dashboard/users"
     },
     {
-      "file": "server/app/routes/admin_dashboard.py",
-      "line": 236,
       "method": "GET",
       "path": "/ops/dashboard/workers/health"
     },
     {
-      "file": "server/main.py",
-      "line": 387,
+      "method": "GET",
+      "path": "/ops/listing-reports"
+    },
+    {
       "method": "GET",
       "path": "/ops/status"
     },
     {
-      "file": "server/app/metrics.py",
-      "line": 171,
-      "method": "GET",
-      "path": "/ops/telemetry"
-    },
-    {
-      "file": "server/main.py",
-      "line": 424,
       "method": "GET",
       "path": "/ops/worker-history"
     },
     {
-      "file": "server/main.py",
-      "line": 398,
       "method": "GET",
       "path": "/ops/worker-overdue"
     },
     {
-      "file": "server/main.py",
-      "line": 392,
       "method": "GET",
       "path": "/ops/worker-status"
     },
     {
-      "file": "server/app/features/photo_upload_router.py",
-      "line": 368,
+      "method": "GET",
+      "path": "/p2p/carriers"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/demand/{item_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/facets/categories"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/listings"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/listings/{listing_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/members/{member_id}/reputation"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/offers"
+    },
+    {
+      "method": "GET",
+      "path": "/p2p/watchlist-matches"
+    },
+    {
       "method": "GET",
       "path": "/photos/list/{item_id}"
     },
     {
-      "file": "server/app/routes/pipeline_status_router.py",
-      "line": 23,
       "method": "GET",
       "path": "/pipeline/status"
     },
     {
-      "file": "server/app/routes/portfolio_router.py",
-      "line": 524,
       "method": "GET",
       "path": "/portfolio/category-correlation"
     },
     {
-      "file": "server/app/routes/portfolio_router.py",
-      "line": 432,
       "method": "GET",
       "path": "/portfolio/category-health"
     },
     {
-      "file": "server/app/routes/portfolio_router.py",
-      "line": 352,
       "method": "GET",
       "path": "/portfolio/category-stats"
     },
     {
-      "file": "server/app/routes/portfolio_router.py",
-      "line": 213,
       "method": "GET",
       "path": "/portfolio/items"
     },
     {
-      "file": "server/app/routes/portfolio_router.py",
-      "line": 132,
       "method": "GET",
       "path": "/portfolio/overview"
     },
     {
-      "file": "server/app/routes/portfolio_router.py",
-      "line": 288,
       "method": "GET",
       "path": "/portfolio/summary"
     },
     {
-      "file": "server/app/routes/portfolio_router.py",
-      "line": 73,
       "method": "GET",
       "path": "/portfolio/timeseries"
     },
     {
-      "file": "server/app/features/predict_router.py",
-      "line": 79,
       "method": "GET",
       "path": "/predict/evidence/{item_id}"
     },
     {
-      "file": "server/app/features/predict_router.py",
-      "line": 188,
       "method": "GET",
       "path": "/predict/trend/{item_id}"
     },
     {
-      "file": "server/app/features/provenance_router.py",
-      "line": 79,
       "method": "GET",
       "path": "/provenance/items/{item_id}"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 500,
       "method": "GET",
       "path": "/purchase/deals"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 549,
       "method": "GET",
       "path": "/purchase/deals/{deal_id}"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 357,
       "method": "GET",
       "path": "/purchase/mandates"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 388,
       "method": "GET",
       "path": "/purchase/mandates/{mandate_id}"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 765,
       "method": "GET",
       "path": "/purchase/mandates/{mandate_id}/forecast"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 715,
       "method": "GET",
       "path": "/purchase/stats"
     },
     {
-      "file": "server/app/features/search_router.py",
-      "line": 74,
       "method": "GET",
       "path": "/search/unified"
     },
     {
-      "file": "server/app/features/sell_timing_router.py",
-      "line": 45,
       "method": "GET",
       "path": "/sell-timing/items/{item_ref}"
     },
     {
-      "file": "server/app/features/set_router.py",
-      "line": 154,
       "method": "GET",
       "path": "/sets"
     },
     {
-      "file": "server/app/features/set_router.py",
-      "line": 587,
       "method": "GET",
       "path": "/sets/auto-progress"
     },
     {
-      "file": "server/app/features/set_router.py",
-      "line": 215,
       "method": "GET",
       "path": "/sets/my-progress"
     },
     {
-      "file": "server/app/features/set_router.py",
-      "line": 316,
       "method": "GET",
       "path": "/sets/{set_id}"
     },
     {
-      "file": "server/app/features/set_router.py",
-      "line": 356,
       "method": "GET",
       "path": "/sets/{set_id}/progress"
     },
     {
-      "file": "server/app/routes/user_settings_router.py",
-      "line": 80,
       "method": "GET",
       "path": "/settings"
     },
     {
-      "file": "server/app/routes/user_settings_router.py",
-      "line": 257,
       "method": "GET",
       "path": "/settings/alert-preferences"
     },
     {
-      "file": "server/app/features/social_router.py",
-      "line": 230,
       "method": "GET",
       "path": "/social/blocked"
     },
     {
-      "file": "server/app/features/social_router.py",
-      "line": 65,
       "method": "GET",
       "path": "/social/users/search"
     },
     {
-      "file": "server/app/features/sponsor_company_router.py",
-      "line": 129,
       "method": "GET",
       "path": "/sponsor-companies/mine"
     },
     {
-      "file": "server/app/features/sponsor_company_router.py",
-      "line": 178,
       "method": "GET",
       "path": "/sponsor-companies/{company_id}"
     },
     {
-      "file": "server/app/features/sponsor_company_router.py",
-      "line": 593,
       "method": "GET",
       "path": "/sponsor-companies/{company_id}/analytics"
     },
     {
-      "file": "server/app/features/storage_router.py",
-      "line": 320,
       "method": "GET",
       "path": "/storage/objects"
     },
     {
-      "file": "server/app/features/storage_router.py",
-      "line": 255,
       "method": "GET",
       "path": "/storage/presign-download/{pointer_id}"
     },
     {
-      "file": "server/app/features/task_queue_router.py",
-      "line": 93,
       "method": "GET",
       "path": "/tasks/{task_id}/status"
     },
     {
-      "file": "server/app/features/taxonomy_router.py",
-      "line": 105,
       "method": "GET",
       "path": "/taxonomy/categories"
     },
     {
-      "file": "server/app/features/taxonomy_router.py",
-      "line": 30,
       "method": "GET",
       "path": "/taxonomy/current"
     },
     {
-      "file": "server/app/features/taxonomy_router.py",
-      "line": 69,
       "method": "GET",
       "path": "/taxonomy/versions"
     },
     {
-      "file": "server/app/features/taxonomy_router.py",
-      "line": 148,
       "method": "GET",
       "path": "/taxonomy/{version}"
     },
     {
-      "file": "server/app/features/value_summary_router.py",
-      "line": 82,
+      "method": "GET",
+      "path": "/v1/alerts/mine"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/alerts/trigger-history"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/analytics/categories/{category}/deep-dive"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/analytics/collection/trends"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/analytics/items/{item_id}/trends"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/analytics/portfolio/category-breakdown"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/auth/mfa/status"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/billing/status"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/catalog/suggestions/mine"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/catalog/top-movers"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/catalog/{category_id}/collections"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/catalog/{category_id}/items"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/catalog/{category_id}/items/{item_key}/price"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/chat/threads"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/chat/threads/{thread_id}/messages"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/chat/unread-count"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/collections"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/collections/user/progress"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/collections/{collection_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/collections/{collection_id}/progress"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/data-moat/demand-heat"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/data-moat/demand-heat/by-region"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/data-moat/health"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/data-moat/prediction-accuracy"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/data-moat/scarcity"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/data-moat/supply-trends"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/dossier/{item_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/dossier/{item_id}/export"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/dossier/{item_id}/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events/categories/followed"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events/categories/{category_id}/following"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events/my-alerts"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events/my-announcements/unread-count"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events/nearby"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events/search"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events/templates"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events/{event_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events/{event_id}/announcements"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/export/insurance-report"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/feedback/corrections"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/feedback/verified-sales"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/fx/rates"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/gamification/achievements"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/gamification/achievements/recent"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/gamification/challenges"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/gamification/leaderboard"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/gamification/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/gamification/profile/{user_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/geo/detect"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/grading/lookup"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/grading/population"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/grading/services"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/insights/home-widget"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/insights/personalized"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intake/feedback/prompts/{session_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/health"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-active-threads"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-affiliates"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-chat-connections"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-deleted-items"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-dm-requests"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-event-creators"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-events"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-followed-categories"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-followed-events"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-no-results-searches"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-paywall-rejections"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-regret-categories"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-removed-watchlists"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-searches"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-viewed-items"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intelligence/top-watchlists"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/items-export/full"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/items-export/overview"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/items/{item_id}/images"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/items/{item_id}/progress"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/adapter-health"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/affiliate-links"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/health"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/listings"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/listings/accounts"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/listings/accounts/defaults/ebay"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/listings/accounts/oauth/ebay/callback"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/listings/accounts/oauth/ebay/start"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/listings/fees"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/listings/sales"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/marketplace/listings/{listing_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/notifications/history"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/notifications/preferences"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/notifications/tokens"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/ops/catalog-suggestions"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/ops/category-candidates"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/photos/list/{item_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/pipeline/status"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/predict/evidence/{item_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/predict/trend/{item_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/provenance/items/{item_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/purchase/deals"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/purchase/deals/{deal_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/purchase/mandates"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/purchase/mandates/{mandate_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/purchase/mandates/{mandate_id}/forecast"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/purchase/stats"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sell-timing/items/{item_ref}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sets"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sets/auto-progress"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sets/my-progress"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sets/{set_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sets/{set_id}/progress"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/settings"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/settings/alert-preferences"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/storage/objects"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/storage/presign-download/{pointer_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/tasks/{task_id}/status"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/taxonomy/categories"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/taxonomy/current"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/taxonomy/versions"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/taxonomy/{version}"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/watchlist/mine"
+    },
+    {
       "method": "GET",
       "path": "/value-summary"
     },
     {
-      "file": "server/main.py",
-      "line": 377,
       "method": "GET",
       "path": "/version"
     },
     {
-      "file": "server/app/routes/vision_predict.py",
-      "line": 84,
       "method": "GET",
       "path": "/vision-predict/categories"
     },
     {
-      "file": "server/app/routes/vision_predict.py",
-      "line": 65,
       "method": "GET",
       "path": "/vision-predict/health"
     },
     {
-      "file": "server/app/features/watchlist_router.py",
-      "line": 54,
       "method": "GET",
       "path": "/watchlist/mine"
     },
     {
-      "file": "server/app/features/chat_router.py",
-      "line": 452,
       "method": "PATCH",
       "path": "/chat/messages/{message_id}"
     },
     {
-      "file": "server/app/features/chat_router.py",
-      "line": 345,
       "method": "PATCH",
       "path": "/chat/threads/{thread_id}/read"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 1010,
       "method": "PATCH",
       "path": "/events/{event_id}"
     },
     {
-      "file": "server/app/routes/items_router.py",
-      "line": 333,
       "method": "PATCH",
       "path": "/items/{item_id}/attributes"
     },
     {
-      "file": "server/app/features/catalog_browser_router.py",
-      "line": 204,
       "method": "PATCH",
       "path": "/items/{item_id}/progress"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 870,
       "method": "PATCH",
       "path": "/marketplace/listings/{listing_id}"
     },
     {
-      "file": "server/app/features/notification_router.py",
-      "line": 442,
       "method": "PATCH",
       "path": "/notifications/{notification_id}/read"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 408,
+      "method": "PATCH",
+      "path": "/p2p/listings/{listing_id}"
+    },
+    {
       "method": "PATCH",
       "path": "/purchase/mandates/{mandate_id}"
     },
     {
-      "file": "server/app/routes/user_settings_router.py",
-      "line": 306,
       "method": "PATCH",
       "path": "/settings/alert-preferences"
     },
     {
-      "file": "server/app/features/sponsor_company_router.py",
-      "line": 205,
+      "method": "PATCH",
+      "path": "/settings/profile"
+    },
+    {
       "method": "PATCH",
       "path": "/sponsor-companies/{company_id}"
     },
     {
-      "file": "server/app/features/activity_router.py",
-      "line": 81,
+      "method": "PATCH",
+      "path": "/v1/chat/messages/{message_id}"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/chat/threads/{thread_id}/read"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/events/{event_id}"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/items/{item_id}/progress"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/marketplace/listings/{listing_id}"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/notifications/{notification_id}/read"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/purchase/mandates/{mandate_id}"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/settings/alert-preferences"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/settings/profile"
+    },
+    {
       "method": "POST",
       "path": "/activity/log"
     },
     {
-      "file": "server/app/features/admin_health_router.py",
-      "line": 217,
       "method": "POST",
       "path": "/admin/spend-budget"
     },
     {
-      "file": "server/app/features/admin_health_router.py",
-      "line": 232,
       "method": "POST",
       "path": "/admin/spend-pause"
     },
     {
-      "file": "server/app/features/admin_health_router.py",
-      "line": 251,
       "method": "POST",
       "path": "/admin/spend-reset"
     },
     {
-      "file": "server/app/features/alerts_feature_router.py",
-      "line": 124,
       "method": "POST",
       "path": "/alerts/mine"
     },
     {
-      "file": "server/app/features/alerts_feature_router.py",
-      "line": 326,
       "method": "POST",
       "path": "/alerts/trigger-history/{trigger_id}/read"
     },
     {
-      "file": "server/app/routes/beta_signup_router.py",
-      "line": 82,
       "method": "POST",
       "path": "/api/beta-signup"
     },
     {
-      "file": "server/app/features/import_router.py",
-      "line": 107,
       "method": "POST",
       "path": "/api/imports/collection"
     },
     {
-      "file": "server/app/routes/mfa_router.py",
-      "line": 77,
       "method": "POST",
       "path": "/auth/mfa/unenroll"
     },
     {
-      "file": "server/app/features/barcode_lookup_router.py",
-      "line": 502,
       "method": "POST",
       "path": "/barcode/lookup"
     },
     {
-      "file": "server/app/routes/billing_router.py",
-      "line": 257,
       "method": "POST",
       "path": "/billing/checkout-session"
     },
     {
-      "file": "server/app/routes/billing_router.py",
-      "line": 321,
       "method": "POST",
       "path": "/billing/portal-session"
     },
     {
-      "file": "server/app/routes/billing_router.py",
-      "line": 390,
+      "method": "POST",
+      "path": "/billing/revenuecat-webhook"
+    },
+    {
+      "method": "POST",
+      "path": "/billing/web/checkout-session"
+    },
+    {
       "method": "POST",
       "path": "/billing/webhook"
     },
     {
-      "file": "server/app/features/catalog_learning_router.py",
-      "line": 128,
+      "method": "POST",
+      "path": "/catalog/match"
+    },
+    {
       "method": "POST",
       "path": "/catalog/suggest"
     },
     {
-      "file": "server/app/features/chat_router.py",
-      "line": 276,
       "method": "POST",
       "path": "/chat/threads/{thread_id}/messages"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 101,
       "method": "POST",
       "path": "/deals/offer"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 255,
       "method": "POST",
       "path": "/deals/{offer_id}/cancel"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 340,
       "method": "POST",
       "path": "/deals/{offer_id}/complete"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 151,
       "method": "POST",
       "path": "/deals/{offer_id}/counter"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 203,
       "method": "POST",
       "path": "/deals/{offer_id}/respond"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 306,
       "method": "POST",
       "path": "/deals/{offer_id}/ship"
     },
     {
-      "file": "server/app/features/enrich_router.py",
-      "line": 66,
       "method": "POST",
       "path": "/enrich/on-demand"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 257,
       "method": "POST",
       "path": "/events"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 513,
       "method": "POST",
       "path": "/events/categories/{category_id}/follow"
     },
     {
-      "file": "server/app/features/sponsor_router.py",
-      "line": 103,
       "method": "POST",
       "path": "/events/sponsor-checkout"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 820,
       "method": "POST",
       "path": "/events/templates"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 675,
       "method": "POST",
       "path": "/events/{event_id}/alert"
     },
     {
-      "file": "server/app/features/events/events_announcements.py",
-      "line": 202,
       "method": "POST",
       "path": "/events/{event_id}/announcements"
     },
     {
-      "file": "server/app/features/events/events_announcements.py",
-      "line": 399,
       "method": "POST",
       "path": "/events/{event_id}/announcements/batch-read"
     },
     {
-      "file": "server/app/features/events/events_announcements.py",
-      "line": 350,
       "method": "POST",
       "path": "/events/{event_id}/announcements/{announcement_id}/read"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 1235,
       "method": "POST",
       "path": "/events/{event_id}/duplicate"
     },
     {
-      "file": "server/app/features/events/events_rsvp.py",
-      "line": 28,
       "method": "POST",
       "path": "/events/{event_id}/rsvp"
     },
     {
-      "file": "server/app/features/events/events_core.py",
-      "line": 1129,
       "method": "POST",
       "path": "/events/{event_id}/ticket-checkout"
     },
     {
-      "file": "server/app/features/feedback_router.py",
-      "line": 488,
       "method": "POST",
       "path": "/feedback/correction"
     },
     {
-      "file": "server/app/features/feedback_router.py",
-      "line": 234,
       "method": "POST",
       "path": "/feedback/submit"
     },
     {
-      "file": "server/app/features/feedback_router.py",
-      "line": 343,
       "method": "POST",
       "path": "/feedback/verified-sale"
     },
     {
-      "file": "server/app/features/gamification_router.py",
-      "line": 518,
       "method": "POST",
       "path": "/gamification/xp"
     },
     {
-      "file": "server/app/agents/intake_router.py",
-      "line": 499,
       "method": "POST",
       "path": "/intake/barcode-only"
     },
     {
-      "file": "server/app/agents/intake_feedback_router.py",
-      "line": 66,
       "method": "POST",
       "path": "/intake/feedback"
     },
     {
-      "file": "server/app/agents/intake_router.py",
-      "line": 550,
       "method": "POST",
       "path": "/intake/image-only"
     },
     {
-      "file": "server/app/agents/intake_router.py",
-      "line": 792,
       "method": "POST",
       "path": "/intake/multi-detect"
     },
     {
-      "file": "server/app/agents/intake_router.py",
-      "line": 423,
       "method": "POST",
       "path": "/intake/process"
     },
     {
-      "file": "server/app/agents/intake_router.py",
-      "line": 689,
       "method": "POST",
       "path": "/intake/save"
     },
     {
-      "file": "server/app/agents/intake_router.py",
-      "line": 616,
       "method": "POST",
       "path": "/intake/url"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 627,
       "method": "POST",
       "path": "/intelligence/feature-attempt"
     },
     {
-      "file": "server/app/features/intelligence_router.py",
-      "line": 598,
       "method": "POST",
       "path": "/intelligence/paywall-event"
     },
     {
-      "file": "server/app/routes/items_router.py",
-      "line": 77,
       "method": "POST",
       "path": "/items"
     },
     {
-      "file": "server/app/routes/items_router.py",
-      "line": 232,
       "method": "POST",
       "path": "/items/batch-archive"
     },
     {
-      "file": "server/app/routes/items_router.py",
-      "line": 278,
       "method": "POST",
       "path": "/items/batch-delete"
     },
     {
-      "file": "server/app/features/item_images_router.py",
-      "line": 181,
       "method": "POST",
       "path": "/items/{item_id}/images"
     },
     {
-      "file": "server/app/routes/affiliate_links_router.py",
-      "line": 246,
+      "method": "POST",
+      "path": "/items/{item_id}/revalue"
+    },
+    {
       "method": "POST",
       "path": "/marketplace/affiliate-click"
     },
     {
-      "file": "server/app/routes/affiliate_links_router.py",
-      "line": 221,
       "method": "POST",
       "path": "/marketplace/affiliate-url"
     },
     {
-      "file": "server/app/agents/marketplace_router.py",
-      "line": 212,
       "method": "POST",
-      "path": "/marketplace/comps/{item_ref:path}"
+      "path": "/marketplace/comps/{item_ref}"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 714,
       "method": "POST",
       "path": "/marketplace/listings"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 464,
       "method": "POST",
       "path": "/marketplace/listings/accounts"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 1350,
+      "method": "POST",
+      "path": "/marketplace/listings/age-verify"
+    },
+    {
       "method": "POST",
       "path": "/marketplace/listings/fees/calculate"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 1210,
       "method": "POST",
       "path": "/marketplace/listings/sales/{listing_id}/record"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 996,
       "method": "POST",
       "path": "/marketplace/listings/{listing_id}/publish"
     },
     {
-      "file": "server/app/agents/marketplace_router.py",
-      "line": 61,
       "method": "POST",
       "path": "/marketplace/search"
     },
     {
-      "file": "server/app/features/notification_feedback_router.py",
-      "line": 57,
       "method": "POST",
       "path": "/notifications/feedback/impression"
     },
     {
-      "file": "server/app/features/notification_feedback_router.py",
-      "line": 88,
       "method": "POST",
       "path": "/notifications/feedback/interaction"
     },
     {
-      "file": "server/app/features/notification_feedback_router.py",
-      "line": 114,
       "method": "POST",
       "path": "/notifications/feedback/outcome"
     },
     {
-      "file": "server/app/features/notification_router.py",
-      "line": 497,
       "method": "POST",
       "path": "/notifications/mark-all-read"
     },
     {
-      "file": "server/app/features/notification_router.py",
-      "line": 106,
       "method": "POST",
       "path": "/notifications/register"
     },
     {
-      "file": "server/app/features/notification_router.py",
-      "line": 168,
       "method": "POST",
       "path": "/notifications/test-push"
     },
     {
-      "file": "server/app/features/catalog_learning_router.py",
-      "line": 376,
       "method": "POST",
       "path": "/ops/catalog-suggestions/{suggestion_id}/action"
     },
     {
-      "file": "server/app/features/catalog_learning_router.py",
-      "line": 510,
       "method": "POST",
       "path": "/ops/category-candidates/{candidate_id}/action"
     },
     {
-      "file": "server/app/routes/seed_router.py",
-      "line": 53,
+      "method": "POST",
+      "path": "/ops/listing-reports/{listing_id}/action"
+    },
+    {
       "method": "POST",
       "path": "/ops/seed-users"
     },
     {
-      "file": "server/app/features/photo_upload_router.py",
-      "line": 139,
+      "method": "POST",
+      "path": "/p2p/listings"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/listings/{listing_id}/delist"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/listings/{listing_id}/report"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/offers"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/offers/{offer_id}/confirm"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/offers/{offer_id}/grade"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/offers/{offer_id}/respond"
+    },
+    {
+      "method": "POST",
+      "path": "/p2p/offers/{offer_id}/tracking"
+    },
+    {
       "method": "POST",
       "path": "/photos/presign-upload"
     },
     {
-      "file": "server/app/features/photo_upload_router.py",
-      "line": 210,
       "method": "POST",
       "path": "/photos/upload"
     },
     {
-      "file": "server/app/rate_limit.py",
-      "line": 157,
-      "method": "POST",
-      "path": "/process"
-    },
-    {
-      "file": "server/app/features/provenance_router.py",
-      "line": 188,
       "method": "POST",
       "path": "/provenance/items/{item_id}/events"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 569,
       "method": "POST",
       "path": "/purchase/deals/{deal_id}/click"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 602,
       "method": "POST",
       "path": "/purchase/deals/{deal_id}/confirm"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 685,
       "method": "POST",
       "path": "/purchase/deals/{deal_id}/decline"
     },
     {
-      "file": "server/app/agents/purchase_router.py",
-      "line": 286,
       "method": "POST",
       "path": "/purchase/mandates"
     },
     {
-      "file": "server/app/features/quickscan_proxy_router.py",
-      "line": 65,
       "method": "POST",
       "path": "/quickscan"
     },
     {
-      "file": "server/app/features/quickscan_advanced_router.py",
-      "line": 268,
       "method": "POST",
       "path": "/quickscan-advanced/batch"
     },
     {
-      "file": "server/app/features/quickscan_advanced_router.py",
-      "line": 224,
       "method": "POST",
       "path": "/quickscan-advanced/single"
     },
     {
-      "file": "server/app/features/quickscan_proxy_router.py",
-      "line": 143,
       "method": "POST",
       "path": "/quickscan/upload-image"
     },
     {
-      "file": "server/app/features/screenshot_intel_router.py",
-      "line": 56,
       "method": "POST",
       "path": "/screenshot-intel/analyze"
     },
     {
-      "file": "server/app/features/social_router.py",
-      "line": 135,
       "method": "POST",
       "path": "/social/block/{user_id}"
     },
     {
-      "file": "server/app/subscription.py",
-      "line": 7,
-      "method": "POST",
-      "path": "/some-premium-feature"
-    },
-    {
-      "file": "server/app/features/sponsor_company_router.py",
-      "line": 150,
       "method": "POST",
       "path": "/sponsor-companies"
     },
     {
-      "file": "server/app/features/sponsor_company_router.py",
-      "line": 306,
       "method": "POST",
       "path": "/sponsor-companies/{company_id}/create-event-checkout"
     },
     {
-      "file": "server/app/features/sponsor_company_router.py",
-      "line": 411,
       "method": "POST",
       "path": "/sponsor-companies/{company_id}/create-event-demo"
     },
     {
-      "file": "server/app/features/sponsor_company_router.py",
-      "line": 488,
       "method": "POST",
       "path": "/sponsor-companies/{company_id}/create-subscription-checkout"
     },
     {
-      "file": "server/app/features/storage_router.py",
-      "line": 167,
       "method": "POST",
       "path": "/storage/presign-upload"
     },
     {
-      "file": "server/app/features/task_queue_router.py",
-      "line": 57,
       "method": "POST",
       "path": "/tasks/enqueue"
     },
     {
-      "file": "server/app/features/uploads_router.py",
-      "line": 41,
       "method": "POST",
       "path": "/uploads/presign"
     },
     {
-      "file": "server/app/features/uploads_router.py",
-      "line": 68,
       "method": "POST",
       "path": "/uploads/signed-get"
     },
     {
-      "file": "server/app/routes/vision_predict.py",
-      "line": 99,
+      "method": "POST",
+      "path": "/v1/alerts/mine"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/alerts/trigger-history/{trigger_id}/read"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/auth/mfa/unenroll"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/barcode/lookup"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/billing/checkout-session"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/billing/portal-session"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/billing/revenuecat-webhook"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/billing/web/checkout-session"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/billing/webhook"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/catalog/match"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/catalog/suggest"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/threads/{thread_id}/messages"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/events"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/events/categories/{category_id}/follow"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/events/sponsor-checkout"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/events/templates"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/events/{event_id}/alert"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/events/{event_id}/announcements"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/events/{event_id}/announcements/batch-read"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/events/{event_id}/announcements/{announcement_id}/read"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/events/{event_id}/duplicate"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/events/{event_id}/rsvp"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/events/{event_id}/ticket-checkout"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/feedback/correction"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/feedback/submit"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/feedback/verified-sale"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/gamification/xp"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intake/barcode-only"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intake/feedback"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intake/image-only"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intake/multi-detect"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intake/process"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intake/save"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intake/url"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intelligence/feature-attempt"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intelligence/paywall-event"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/items/{item_id}/images"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/marketplace/affiliate-click"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/marketplace/affiliate-url"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/marketplace/comps/{item_ref}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/marketplace/listings"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/marketplace/listings/accounts"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/marketplace/listings/age-verify"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/marketplace/listings/fees/calculate"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/marketplace/listings/sales/{listing_id}/record"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/marketplace/listings/{listing_id}/publish"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/marketplace/search"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/notifications/feedback/impression"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/notifications/feedback/interaction"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/notifications/feedback/outcome"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/notifications/mark-all-read"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/notifications/register"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/notifications/test-push"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/ops/catalog-suggestions/{suggestion_id}/action"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/ops/category-candidates/{candidate_id}/action"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/photos/presign-upload"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/photos/upload"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/provenance/items/{item_id}/events"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/purchase/deals/{deal_id}/click"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/purchase/deals/{deal_id}/confirm"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/purchase/deals/{deal_id}/decline"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/purchase/mandates"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/quickscan-advanced/batch"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/quickscan-advanced/single"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/screenshot-intel/analyze"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/storage/presign-upload"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/tasks/enqueue"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/watchlist/mine"
+    },
+    {
       "method": "POST",
       "path": "/vision-predict/classify"
     },
     {
-      "file": "server/app/features/warm_tier_router.py",
-      "line": 62,
       "method": "POST",
       "path": "/warm-tier/count"
     },
     {
-      "file": "server/app/features/warm_tier_router.py",
-      "line": 43,
       "method": "POST",
       "path": "/warm-tier/query"
     },
     {
-      "file": "server/app/features/watchlist_router.py",
-      "line": 112,
       "method": "POST",
       "path": "/watchlist/mine"
     },
     {
-      "file": "server/app/agents/deal_desk_router.py",
-      "line": 647,
       "method": "PUT",
       "path": "/items/{item_id}/for-sale"
     },
     {
-      "file": "server/app/features/item_images_router.py",
-      "line": 356,
       "method": "PUT",
       "path": "/items/{item_id}/images/reorder"
     },
     {
-      "file": "server/app/features/marketplace_listing_router.py",
-      "line": 431,
       "method": "PUT",
       "path": "/marketplace/listings/accounts/defaults/ebay"
     },
     {
-      "file": "server/app/features/notification_router.py",
-      "line": 270,
       "method": "PUT",
       "path": "/notifications/preferences"
     },
     {
-      "file": "server/app/features/set_router.py",
-      "line": 426,
       "method": "PUT",
       "path": "/sets/{set_id}/progress"
     },
     {
-      "file": "server/app/routes/user_settings_router.py",
-      "line": 119,
       "method": "PUT",
       "path": "/settings"
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/items/{item_id}/images/reorder"
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/marketplace/listings/accounts/defaults/ebay"
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/notifications/preferences"
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/sets/{set_id}/progress"
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/settings"
     }
   ]
 }

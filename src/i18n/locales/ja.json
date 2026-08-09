@@ -1,37 +1,41 @@
 {
   "common": {
-    "save": "保存",
-    "cancel": "キャンセル",
-    "delete": "削除",
-    "edit": "編集",
-    "done": "完了",
-    "ok": "OK",
-    "close": "閉じる",
     "back": "戻る",
-    "next": "次へ",
-    "continue": "続ける",
-    "skip": "スキップ",
-    "retry": "再試行",
-    "refresh": "更新",
-    "loading": "読み込み中…",
-    "error": "エラーが発生しました",
-    "empty": "ここにはまだ何もありません",
-    "search": "検索",
-    "filter": "フィルター",
-    "sort": "並び替え",
-    "share": "共有",
-    "export": "エクスポート",
-    "yes": "はい",
-    "no": "いいえ",
-    "optional": "任意",
-    "required": "必須",
-    "go_back": "戻る",
+    "cancel": "キャンセル",
     "clear": "クリア",
-    "clear_search": "検索をクリア",
     "clear_recent": "最近の検索をクリア",
-    "retry_action": "再試行"
+    "clear_search": "検索をクリア",
+    "close": "閉じる",
+    "close_menu_a11y": "メニューを閉じる",
+    "continue": "続ける",
+    "delete": "削除",
+    "done": "完了",
+    "edit": "編集",
+    "empty": "ここにはまだ何もありません",
+    "error": "エラーが発生しました",
+    "export": "エクスポート",
+    "filter": "フィルター",
+    "go_back": "戻る",
+    "go_back_a11y": "戻る",
+    "loading": "読み込み中…",
+    "more_options_a11y": "その他のオプション",
+    "next": "次へ",
+    "no": "いいえ",
+    "ok": "OK",
+    "optional": "任意",
+    "refresh": "更新",
+    "required": "必須",
+    "retry": "再試行",
+    "retry_action": "再試行",
+    "save": "保存",
+    "search": "検索",
+    "share": "共有",
+    "skip": "スキップ",
+    "sort": "並び替え",
+    "yes": "はい",
+    "slow_load_working": "結果を取得しています。できるだけ早くお届けします。",
+    "slow_load_still_working": "まだ処理中です。いつもより時間がかかっていますが、もう少しお待ちください。"
   },
-
   "add_tab": {
     "subtitle": "高速、カメラ優先のフロー。",
     "quickscan_ai": "QuickScan AI",
@@ -44,26 +48,35 @@
     "add_manually": "手動で追加",
     "add_manually_a11y": "アイテムを手動で追加"
   },
-
   "wishlist": {
+    "add_title": "ウォッチリストに追加",
+    "close_add_a11y": "ウォッチリスト追加フォームを閉じる",
+    "title_required": "タイトル *",
+    "item_title_a11y": "アイテム名",
+    "category_required": "カテゴリー *",
+    "target_price_a11y": "目標価格（ユーロ）",
+    "add_button_a11y": "ウォッチリストに追加",
+    "acquire_title": "コレクションに追加",
+    "close_acquire_a11y": "取得フォームを閉じる",
+    "price_paid_a11y": "支払い価格（ユーロ）",
+    "notes_optional": "メモ（任意）",
+    "acquire_notes_a11y": "取得メモ",
+    "acquire_button_a11y": "自分のコレクションに追加",
+    "acquire_button": "自分のコレクションに追加",
     "empty_title": "ウォッチリストを始めよう",
-    "add_first_a11y": "最初のウォッチリストアイテムを追加",
     "add_first": "最初のアイテムを追加",
+    "add_first_a11y": "最初のウォッチリストアイテムを追加",
     "feature_price_drops": "値下げアラート",
     "feature_target_price": "目標価格追跡",
-    "feature_restock": "再入荷通知",
+    "feature_member_listings": "メンバーが出品したら分かる",
     "add_to_watchlist": "ウォッチリストに追加",
-    "close_add_form_a11y": "フォームを閉じる",
-    "title_required": "タイトル *",
-    "title_a11y": "アイテムタイトル",
-    "category_required": "カテゴリー *",
     "add_to_watchlist_a11y": "ウォッチリストに追加",
+    "close_add_form_a11y": "フォームを閉じる",
+    "title_a11y": "アイテムタイトル",
     "close_category_picker_a11y": "カテゴリー選択を閉じる",
     "select_category": "カテゴリーを選択",
     "add_to_collection": "コレクションに追加",
     "close_acquisition_a11y": "取得フォームを閉じる",
-    "price_paid_a11y": "支払い価格（ユーロ）",
-    "notes_optional": "メモ（任意）",
     "notes_a11y": "取得メモ",
     "add_to_my_collection": "マイコレクションに追加",
     "add_to_my_collection_a11y": "マイコレクションに追加",
@@ -73,7 +86,6 @@
     "save_target_a11y": "目標価格を保存",
     "save_target_button": "目標価格を保存"
   },
-
   "events": {
     "reminder_a11y": "イベントのリマインダーを設定",
     "create_event": "イベントを作成",
@@ -89,41 +101,35 @@
     "empty_title": "近くにイベントがありません",
     "empty_body": "現在地から50km以内にイベントは見つかりませんでした"
   },
-
   "marketplace": {
     "find_collectors": "コレクターを探す",
     "find_collectors_a11y": "コレクターを探す",
-    "popular_searches": "人気の検索",
     "close_user_search_a11y": "ユーザー検索を閉じる",
     "search_users_placeholder": "名前またはハンドル名で検索...",
     "search_users_a11y": "名前またはハンドル名でユーザー検索"
   },
-
   "search": {
     "placeholder": "アイテム、コレクター、イベントを検索...",
     "input_a11y": "検索フィールド",
     "unavailable": "検索を利用できません",
     "retry_a11y": "検索を再試行",
-    "no_results": "結果が見つかりません"
+    "no_results": "結果が見つかりません",
+    "no_price_yet": "価格はまだありません"
   },
-
   "item_detail": {
     "valuation_a11y": "アイテムの評価と詳細",
     "save_a11y": "コレクションに保存",
     "save": "コレクションに保存"
   },
-
   "onboarding": {
     "skip_a11y": "カテゴリー選択をスキップ",
     "change_region_a11y": "地域を変更",
     "confirm_age_a11y": "年齢要件を確認",
     "select_region": "地域を選択"
   },
-
   "quickscan_screen": {
     "gallery_a11y": "ギャラリーまたはスクリーンショットからスキャン"
   },
-
   "add_manual": {
     "discard_draft_a11y": "下書きを破棄",
     "condition_value_title": "状態と価値",
@@ -149,7 +155,6 @@
     "add_custom_field_a11y": "カスタムフィールドを追加",
     "add_field": "フィールドを追加"
   },
-
   "items_empty": {
     "hero_title": "コレクションを始めよう",
     "hero_subtitle": "最初のアイテムを追加して、価値を追跡し、セットを完成させ、インサイトを解放しましょう。",
@@ -162,7 +167,6 @@
     "scan_barcode": "バーコードをスキャン",
     "scan_barcode_a11y": "バーコードをスキャン"
   },
-
   "barcode": {
     "product_found": "製品が見つかりました",
     "estimated_price": "推定価格",
@@ -170,9 +174,14 @@
     "scan_another": "もう一度スキャン",
     "save_a11y": "コレクションに保存",
     "add_watchlist_a11y": "代わりにウォッチリストに追加",
-    "add_watchlist_btn": "ウォッチリストに追加"
+    "add_watchlist_btn": "ウォッチリストに追加",
+    "add_watchlist_done": "ウォッチリストに追加済み",
+    "not_recognised": "認識できません",
+    "not_recognised_hint": "このバーコードを識別できませんでした。手動で追加することもできます。",
+    "add_manually": "手動で追加",
+    "add_manually_a11y": "このアイテムを手動で追加",
+    "save": "保存"
   },
-
   "filters": {
     "close_a11y": "フィルターを閉じる",
     "sort_by": "並び替え",
@@ -185,7 +194,6 @@
     "preset_name_a11y": "プリセット名",
     "save_preset_btn_a11y": "プリセットを保存"
   },
-
   "grading": {
     "lookup_a11y": "グレーディング証明書を検索",
     "look_up_certificate": "証明書を検索",
@@ -199,7 +207,6 @@
     "lookup_cert_a11y": "証明書を検索",
     "look_up": "検索"
   },
-
   "auth": {
     "sign_in": "サインイン",
     "sign_up": "サインアップ",
@@ -278,11 +285,11 @@
       "sign_up_no_user": "サインアップ失敗 — ユーザーが返されませんでした。",
       "username_taken": "このユーザー名は使用できません。別のものを選択してください。",
       "sign_up_failed": "サインアップに失敗しました。不明なエラー。",
+      "email_already_registered": "このメールアドレスは既に登録されています。ログインをお試しください。",
       "reset_email_required": "パスワードをリセットするにはメールアドレスを入力してください。",
       "reset_failed": "リセットに失敗しました。不明なエラー。"
     }
   },
-
   "nav": {
     "home": "ホーム",
     "items": "アイテム",
@@ -293,7 +300,6 @@
     "settings": "設定",
     "profile": "プロフィール"
   },
-
   "home": {
     "collection_get_started": "最初のアイテムを追加して始めましょう",
     "portfolio_value": "ポートフォリオ価値",
@@ -332,7 +338,6 @@
     "deal_agent_open_a11y": "Deal Agentを開く",
     "deal_agent_upgrade_a11y": "アップグレードしてDeal Agentをアンロック"
   },
-
   "items": {
     "title": "アイテム",
     "all": "すべて",
@@ -356,7 +361,6 @@
     "archive_a11y": "選択したアイテムをアーカイブ",
     "delete_a11y": "選択したアイテムを削除"
   },
-
   "scan": {
     "title": "クイックスキャン",
     "capture": "タップで撮影",
@@ -415,7 +419,6 @@
       "keep_b_a11y": "アイテムBを保持"
     }
   },
-
   "settings": {
     "title": "設定",
     "account": "アカウント",
@@ -441,9 +444,230 @@
     "about": "アプリについて",
     "version": "バージョン",
     "delete_account": "アカウントを削除",
-    "delete_account_confirm": "アカウントとすべてのデータが完全に削除されます。この操作は取り消せません。"
+    "delete_account_confirm": "アカウントとすべてのデータが完全に削除されます。この操作は取り消せません。",
+    "my_suggestions": "自分の提案",
+    "my_suggestions_desc": "カタログに提案したアイテムを確認",
+    "reset_tips": "機能のヒントをリセット",
+    "reset_tips_a11y": "機能のヒントをリセット",
+    "reset_tips_toast": "機能のヒントをリセットしました。操作に応じて再表示されます。",
+    "report_bug": "不具合を報告",
+    "report_bug_a11y": "不具合を報告",
+    "tax_reporting": "販売と税務報告",
+    "privacy_policy": "プライバシーポリシー",
+    "terms_of_service": "利用規約",
+    "user_policy": "ユーザーポリシー",
+    "data_processing": "データ処理",
+    "condition_guide": "コンディションガイド",
+    "condition_guide_desc": "全カテゴリーのグレーディング基準"
   },
-
+  "sponsor_profile": {
+    "company_name": "会社名",
+    "contact_email": "連絡先メールアドレス",
+    "company_logo": "会社ロゴ",
+    "change_logo_a11y": "会社ロゴを変更",
+    "tap_to_change": "タップして変更",
+    "upload_logo": "ロゴをアップロード",
+    "website_url": "ウェブサイトURL",
+    "description_placeholder": "コレクターにブランドを紹介しましょう…",
+    "description_a11y": "会社概要",
+    "cancel_a11y": "編集をキャンセル",
+    "save_a11y": "変更を保存",
+    "save_changes": "変更を保存"
+  },
+  "projects": {
+    "new_project": "新しいプロジェクト",
+    "select_category_a11y": "カテゴリーを選択",
+    "remove_linked_item": "リンクしたアイテムを解除",
+    "link_to_portfolio_item": "ポートフォリオのアイテムにリンク",
+    "title_required": "タイトル *",
+    "title_a11y": "プロジェクト名",
+    "create_project": "プロジェクトを作成",
+    "select_category": "カテゴリーを選択",
+    "show_all_categories_a11y": "すべてのカテゴリーを表示",
+    "link_item": "アイテムをリンク",
+    "skip_linked_item": "スキップ — リンクなし",
+    "paint_recipes": "塗装レシピ",
+    "recipe_name_placeholder": "レシピ名（例：ベースの肌色）",
+    "recipe_name_a11y": "レシピ名",
+    "paint_brand_a11y": "塗料ブランド",
+    "color_name_placeholder": "色名",
+    "paint_color_a11y": "塗料の色",
+    "add_paint_a11y": "レシピに塗料を追加",
+    "technique_notes_placeholder": "技法メモ（例：薄塗り、ウェットブレンド）",
+    "technique_notes_a11y": "技法メモ",
+    "save_recipe_a11y": "レシピを保存",
+    "save_recipe": "レシピを保存",
+    "add_recipe_a11y": "新しい塗装レシピを追加",
+    "add_paint_recipe": "塗装レシピを追加"
+  },
+  "watchlist": {
+    "add_title": "ウォッチリストに追加",
+    "close_add_a11y": "追加フォームを閉じる",
+    "item_name_required": "アイテム名 *",
+    "item_name_a11y": "アイテム名",
+    "target_desc": "価格が目標に達したら通知します",
+    "notes_optional": "メモ（任意）",
+    "notes_placeholder": "このアイテムについてのメモ…",
+    "add_button": "ウォッチリストに追加"
+  },
+  "event_creator": {
+    "close_menu_a11y": "メニューを閉じる",
+    "edit_a11y": "イベントを編集",
+    "edit": "イベントを編集",
+    "duplicate_a11y": "イベントを複製",
+    "duplicate": "イベントを複製",
+    "cancel_a11y": "イベントを中止",
+    "cancel": "イベントを中止"
+  },
+  "announcement": {
+    "new_title": "新しいお知らせ",
+    "sending_to": "送信先",
+    "subject_placeholder": "件名（任意）",
+    "subject_a11y": "お知らせの件名",
+    "message_placeholder": "お知らせを入力…",
+    "message_a11y": "お知らせの本文",
+    "send_a11y": "お知らせを送信"
+  },
+  "project_header": {
+    "mark_complete_a11y": "プロジェクトを完了にする",
+    "decrease_5_a11y": "進捗を5パーセント下げる",
+    "increase_5_a11y": "進捗を5パーセント上げる",
+    "increase_10_a11y": "進捗を10パーセント上げる",
+    "save_progress_a11y": "進捗を保存",
+    "project_notes": "プロジェクトメモ"
+  },
+  "event_datetime": {
+    "title": "日時",
+    "date_a11y": "イベントの日付",
+    "time_optional": "時刻（任意）",
+    "time_a11y": "イベントの時刻",
+    "end_date_optional": "終了日（任意・複数日の場合）",
+    "end_date_a11y": "イベントの終了日"
+  },
+  "category_picker": {
+    "title": "カテゴリーを選択",
+    "search_placeholder": "カテゴリーを検索…",
+    "search_a11y": "カテゴリーを検索",
+    "none": "なし（選択を解除）",
+    "other": "その他（カスタムカテゴリー）",
+    "suggest_new": "新しいカテゴリーを提案"
+  },
+  "social_proof": {
+    "market_context": "市場の状況",
+    "recent_sales": "最近の落札",
+    "sold_price": "落札価格",
+    "currently_listed": "現在出品中",
+    "list_price_a11y": "出品価格（現在の希望価格。落札実績ではありません）",
+    "list_price": "出品価格"
+  },
+  "price_feedback": {
+    "sale_price_placeholder": "販売価格（例：150.00）",
+    "sale_price_a11y": "販売価格",
+    "submit_a11y": "販売価格を送信",
+    "cancel_a11y": "販売価格の入力をキャンセル",
+    "report_a11y": "販売価格を報告",
+    "price_off_a11y": "価格が不自然だと報告"
+  },
+  "marketplace_filter": {
+    "close_a11y": "フィルターを閉じる",
+    "reset_a11y": "すべてのフィルターをリセット",
+    "min_price_a11y": "最低価格",
+    "max_price_a11y": "最高価格",
+    "apply_a11y": "フィルターを適用",
+    "apply": "フィルターを適用"
+  },
+  "items_list_header": {
+    "search_placeholder": "アイテムを検索",
+    "search_a11y": "アイテムを検索",
+    "open_filters_a11y": "フィルターを開く",
+    "list_view_a11y": "リスト表示",
+    "gallery_view_a11y": "ギャラリー表示",
+    "select_mode_a11y": "選択モードにする"
+  },
+  "empty_state": {
+    "no_items": "アイテムはまだありません",
+    "watchlist_empty": "ウォッチリストは空です",
+    "no_results": "結果が見つかりません",
+    "no_events": "予定されているイベントはありません",
+    "no_messages": "メッセージはありません",
+    "no_projects": "プロジェクトはまだありません"
+  },
+  "dossier": {
+    "valuation_report": "評価レポート",
+    "retry_a11y": "レポートを再読み込み",
+    "estimated_value": "推定価値",
+    "similar_listings": "類似の出品",
+    "export_pdf_a11y": "レポートをPDFで書き出す",
+    "export_report": "レポートを書き出す"
+  },
+  "alert_settings": {
+    "section_a11y": "アラート設定セクション",
+    "price_drops": "値下がり",
+    "drop_threshold": "値下がりのしきい値",
+    "price_increases": "値上がり",
+    "increase_threshold": "値上がりのしきい値",
+    "new_listings": "新着出品"
+  },
+  "marketplace_connections": {
+    "section_title": "マーケットプレイスのアカウント",
+    "connect_ebay": "eBayを連携",
+    "connect_ebay_hint": "eBayアカウントでログインすると直接出品できます",
+    "connect_ebay_a11y": "eBayアカウントを連携",
+    "connect_failed_title": "eBayに接続できませんでした",
+    "connect_failed_body": "もう一度お試しください。繰り返し失敗する場合はインターネット接続をご確認ください。"
+  },
+  "add_manual_basic": {
+    "title": "基本情報",
+    "item_name_a11y": "アイテム名",
+    "custom_category_label": "カスタムカテゴリー名",
+    "custom_category_a11y": "カスタムカテゴリー名",
+    "set_series": "セット／シリーズ",
+    "set_series_a11y": "セットまたはシリーズ"
+  },
+  "wishlist_edit_target": {
+    "title": "目標価格を設定",
+    "close_a11y": "目標価格の編集を閉じる",
+    "input_a11y": "目標価格",
+    "save_a11y": "目標価格を保存",
+    "save_button": "目標価格を保存"
+  },
+  "subscription": {
+    "features_a11y": "プランの機能",
+    "current_plan": "現在のプラン",
+    "past_due": "お支払いが遅延しています。中断を避けるためお支払い方法を更新してください。",
+    "downgrade_pending": "現在の期間の終了時にプランがダウングレードされます。",
+    "coming_soon": "サブスクリプションは近日公開",
+    "manage_a11y": "サブスクリプションを管理",
+    "manage": "サブスクリプションを管理"
+  },
+  "mfa": {
+    "title": "二要素認証",
+    "verify_a11y": "コードを確認",
+    "verify_enable": "確認して有効化",
+    "cancel_a11y": "登録をキャンセル",
+    "remove_a11y": "この認証方法を削除",
+    "enable_a11y": "二要素認証を有効にする",
+    "enable_2fa": "二要素認証を有効化"
+  },
+  "event_detail": {
+    "not_found": "イベントが見つかりません",
+    "promote_a11y": "このイベントを宣伝",
+    "promote_title": "このイベントを宣伝",
+    "promote_subtitle": "スポンサー枠でより多くのコレクターに届けます"
+  },
+  "user_profile": {
+    "blocked_user": "このユーザーをブロックしています"
+  },
+  "items_detail": {
+    "thin_cat_help": "このカテゴリーはデータが不足しています。購入価格を下に入力すると推定精度が上がります。",
+    "enrich_button": "最新の相場を取得",
+    "enrich_button_a11y": "このアイテムの最新価格相場を取得",
+    "enrich_done": "最新の相場を{{count}}件取得しました。更新すると推定額が反映されます。",
+    "enrich_cache": "このアイテムの最新相場はすでに取得済みです。",
+    "enrich_budget": "価格取得の1日の上限に達しました。明日お試しください。",
+    "enrich_unavailable": "リアルタイムの価格取得は現在利用できません。",
+    "enrich_error": "最新の相場を取得できませんでした。もう一度お試しください。"
+  },
   "account": {
     "edit_profile": "プロフィールを編集",
     "edit_profile_desc": "ユーザー名と自己紹介を変更",
@@ -479,7 +703,6 @@
     "confirm_new_password": "新しいパスワードを確認",
     "confirm_new_password_placeholder": "新しいパスワードを確認"
   },
-
   "billing": {
     "free": "無料",
     "pro": "Pro",
@@ -487,22 +710,20 @@
     "upgrade": "アップグレード",
     "upgrade_to_pro": "Proにアップグレード",
     "upgrade_to_premium": "Premiumにアップグレード",
+    "upgrade_to_plan": "{{plan}}にアップグレード",
     "manage_subscription": "サブスクリプションを管理",
     "current_plan": "現在のプラン",
     "feature_requires_pro": "{{feature}}はProが必要です",
     "feature_requires_premium": "{{feature}}はPremiumが必要です",
     "feature_requires_plan": "{{feature}}は{{plan}}が必要です",
-    "upgrade_to_plan": "{{plan}}にアップグレード",
     "unlock_feature": "アップグレードしてこの機能をアンロック"
   },
-
   "set_completion": {
     "title": "セット進捗",
     "subtitle": "アイテムから自動検出",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
     "no_sets": "進行中のセットはまだありません"
   },
-
   "ads": {
     "sponsored": "スポンサー",
     "ad": "広告"

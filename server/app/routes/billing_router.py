@@ -6,11 +6,14 @@ Endpoints:
     POST /billing/portal-session    — Create a Stripe Customer Portal session (manage/cancel)
     GET  /billing/status            — Return current user's subscription status
     POST /billing/webhook           — Stripe webhook (no auth — signature verified)
+    POST /billing/revenuecat-webhook — RevenueCat webhook (no auth — shared-secret header)
 """
 
 from __future__ import annotations
 
 import asyncio
+import hmac
+import json
 import logging
 import time
 from collections import OrderedDict
@@ -33,10 +36,20 @@ from app.config import (
     STRIPE_PRICE_PRO_YEARLY,
     STRIPE_PRICE_PRO_YEARLY_WEB,
     STRIPE_SECRET_KEY,
+    REVENUECAT_WEBHOOK_AUTH,
     STRIPE_WEBHOOK_SECRET,
     SUPABASE_URL,
 )
 from app.db import get_pool
+from app.lib.json_safe import json_safe_value
+from app.lib.revenuecat import (
+    _RC_ACTIVE_EVENTS,
+    _RC_ENDED_EVENTS,
+    _rc_affiliate_code,
+    _rc_ms_to_dt,
+    _rc_plan_from_event,
+    _rc_revenue_cents,
+)
 from app.errors import error_response
 from app.rate_limit import per_user_rate_limit
 
@@ -133,7 +146,22 @@ def _resolve_price_id(plan: str, interval: str = "monthly") -> str | None:
 #                        Premium-only.
 PLAN_LIMITS = {
     "free": {
-        "max_mandates": 3,
+        # 0, not 3. Deal discovery is Pro-only (the worker skips free users'
+        # mandates entirely), so a mandate on the free plan can never produce
+        # a deal — and the Home entry point already routes free users to the
+        # paywall. Allotting 3 meant advertising 3 mandates that were
+        # unreachable through the UI and inert if reached by deep link.
+        # Changed 2026-07-31; MONETIZATION.md updated to match.
+        "max_mandates": 0,
+        # Watchlist size is the Pro lever for Target Hit: the alert can only
+        # fire on something you are watching, so slots ARE reach. Added
+        # 2026-08-06. None = unlimited.
+        "max_watchlist_items": 25,
+        # Target Hits per rolling 24h. deal_discovery_worker reads this — do
+        # not re-declare the number in the worker.
+        "max_daily_deal_alerts": 1,
+        # Price-alert creation cap per rolling 7 days. None = unlimited.
+        "max_alerts_per_week": 1,
         "deal_discovery": False,
         "dossier_pdf": False,
         "detailed_valuation": False,
@@ -144,16 +172,40 @@ PLAN_LIMITS = {
     },
     "pro": {
         "max_mandates": 10,
+        "max_watchlist_items": None,
+        "max_daily_deal_alerts": None,
+        "max_alerts_per_week": None,
         "deal_discovery": True,
         "dossier_pdf": True,
         "detailed_valuation": True,
-        "advanced_analytics": False,
+        # True since 2026-07-28. This was False, a leftover from the old
+        # three-tier model where advanced_analytics was Premium-only. Premium
+        # was folded into Pro (docs/MONETIZATION.md) and is no longer
+        # purchasable -- RevenueCat sells only the `pro` entitlement -- so
+        # while this stayed False NO user could ever be granted it here.
+        #
+        # It disagreed with the front end, which has always had
+        # FORCED_LIMITS.pro.advanced_analytics = true
+        # (src/hooks/useBillingLimits.ts). On iOS that divergence is masked:
+        # RevenueCat resolves the plan and the FE uses its own table. The BE
+        # value is only consumed on the fallback path -- RevenueCat
+        # unconfigured (no EXPO_PUBLIC_REVENUECAT_IOS_KEY) or reporting free --
+        # and there a paying Pro user was told advanced_analytics=False, which
+        # sends the Home "Extended Portfolio Insights" button to the paywall
+        # instead of /analytics (app/(tabs)/index.tsx:470).
+        #
+        # No server route enforces this flag; it is reported to the client
+        # only, so this changes what /billing/status advertises, nothing else.
+        "advanced_analytics": True,
         "condition_grading": True,
         "set_completion": True,
         "show_ads": False,
     },
     "premium": {
         "max_mandates": 50,
+        "max_watchlist_items": None,
+        "max_daily_deal_alerts": None,
+        "max_alerts_per_week": None,
         "deal_discovery": True,
         "dossier_pdf": True,
         "detailed_valuation": True,
@@ -494,9 +546,10 @@ async def get_billing_status(
     # subscription row had period_end IS NULL, but as soon as a paid
     # user appeared the entire FE billing flow broke. Coerce to ISO-8601
     # string here and let the FE parse if needed.
-    period_end = sub.get("current_period_end")
-    if hasattr(period_end, "isoformat"):
-        period_end = period_end.isoformat()
+    # isinstance, not hasattr: duck-typing a conversion is what shipped every
+    # search price as a string (see app/lib/json_safe.py). Harmless here today —
+    # no float has .isoformat — but it is the shape that gets copy-pasted.
+    period_end = json_safe_value(sub.get("current_period_end"))
 
     return JSONResponse({
         "plan": plan,
@@ -783,27 +836,64 @@ async def _handle_sponsor_checkout_completed(pool: Any, session: dict):
                     "SELECT title, category_id FROM events WHERE id = $1", event_id
                 )
                 if row and row["category_id"]:
+                    # Fixed 2026-07-24. This used to JOIN `device_tokens`, a
+                    # table with zero writers anywhere (0 rows) — the real one
+                    # is `user_push_tokens`, and the column differs too
+                    # (`token` vs `push_token`). Every sponsored-event blast
+                    # therefore reached nobody, silently, because the whole
+                    # block is wrapped in the except below.
+                    #
+                    # Do NOT reintroduce a direct join here: user_category_
+                    # follows.user_id is `uuid` while user_push_tokens.user_id
+                    # is `text`, so joining them raises
+                    # "operator does not exist: text = uuid" — which this same
+                    # except would have swallowed again. Select the followers,
+                    # then let send_push_to_user do the token lookup; it owns
+                    # that query and also persists to notification_history, so
+                    # the blast now shows up in the in-app inbox too.
                     follower_rows = await conn.fetch(
-                        """
-                        SELECT DISTINCT dt.token AS push_token
-                        FROM user_category_follows ucf
-                        JOIN device_tokens dt ON dt.user_id = ucf.user_id
-                        WHERE ucf.category_id = $1 AND dt.active = true
-                        """,
+                        "SELECT DISTINCT user_id FROM user_category_follows WHERE category_id = $1",
                         row["category_id"],
                     )
-                    from app.push import send_push
+                    from app.push import send_push_to_user
                     title = row["title"] or "Sponsored Event"
+                    sent = 0
                     for fr in follower_rows:
-                        await send_push(
-                            fr["push_token"],
+                        sent += await send_push_to_user(
+                            conn,
+                            str(fr["user_id"]),
                             f"New {tier.title()} Event",
                             f"{sponsor_name} presents: {title}",
                             data={"event_id": event_id, "type": "sponsored_event"},
+                            notification_type="sponsored_event",
+                            deep_link=f"/events/{event_id}",
                         )
-                    _log.info("Sent push to %d category followers for event %s", len(follower_rows), event_id)
+                    # A paid tier delivering 0 pushes is a billing-visible
+                    # failure, not routine info — say so loudly enough to be
+                    # greppable. This is exactly the state that hid for months.
+                    if follower_rows and sent == 0:
+                        _log.error(
+                            "Sponsor push for event %s reached 0 devices: %d category followers, "
+                            "none with an active push token",
+                            event_id, len(follower_rows),
+                        )
+                    elif not follower_rows:
+                        _log.warning(
+                            "Sponsor push for event %s: no followers for category %s",
+                            event_id, row["category_id"],
+                        )
+                    else:
+                        _log.info(
+                            "Sent %d sponsor pushes to %d category followers for event %s",
+                            sent, len(follower_rows), event_id,
+                        )
         except Exception as push_err:
-            _log.warning("Failed to send sponsor push notifications: %s", push_err)
+            # Keep the sponsorship transaction intact, but do not let a paid
+            # feature fail at WARNING level — this swallowed the bug above.
+            _log.error(
+                "Failed to send sponsor push notifications for event %s: %s",
+                event_id, push_err, exc_info=True,
+            )
 
 
 async def _handle_sponsor_subscription_completed(pool: Any, session: dict):
@@ -912,3 +1002,132 @@ async def _handle_ticket_checkout_completed(pool: Any, session: dict):
             )
 
     _log.info("Ticket purchased: event=%s user=%s amount=%s fee=%s", event_id, user_id, amount, fee_cents)
+
+
+# ---------------------------------------------------------------------------
+# POST /billing/revenuecat-webhook
+# ---------------------------------------------------------------------------
+# Mobile Pro/Premium purchases go through RevenueCat/StoreKit, not Stripe. Until
+# this existed, subscriptions held zero paid rows and mobile revenue was
+# invisible server-side — no creator payout could be computed from anything
+# queryable. This writes both the current-state row (subscriptions) and the
+# append-only ledger (subscription_events) that payouts are summed from.
+#
+# NOTE: RevenueCat's payload field names are read defensively below (COALESCE
+# across the documented aliases) because they differ by event type and API
+# version. Verify against a real sample payload in the RevenueCat dashboard
+# (Integrations -> Webhooks -> Send test event) before trusting the amounts.
+
+@router.post("/revenuecat-webhook", summary="Handle RevenueCat webhook")
+async def revenuecat_webhook(
+    request: Request,
+    authorization: str = Header(None, alias="Authorization"),
+):
+    """Handle RevenueCat webhook events (no user auth — shared-secret header)."""
+    if not REVENUECAT_WEBHOOK_AUTH:
+        # Never accept unauthenticated revenue writes.
+        raise error_response(503, "RevenueCat webhook not configured")
+
+    # compare_digest avoids leaking the secret through timing.
+    if not authorization or not hmac.compare_digest(authorization, REVENUECAT_WEBHOOK_AUTH):
+        _log.warning("revenuecat: rejected webhook with bad Authorization header")
+        raise error_response(401, "Invalid webhook signature")
+
+    try:
+        body = await request.json()
+    except Exception:
+        raise error_response(400, "Malformed JSON body")
+
+    event = body.get("event") or {}
+    event_id = event.get("id")
+    event_type = event.get("type")
+    if not event_id or not event_type:
+        raise error_response(400, "Missing event id or type")
+
+    pool = await get_pool() if DB_ENABLED else None
+    if pool is None:
+        # 503 (not 200) so RevenueCat retries rather than dropping the event.
+        raise error_response(503, "Database unavailable")
+
+    if await _event_already_processed(event_id, f"revenuecat.{event_type}", pool):
+        _log.info("revenuecat: duplicate event %s (%s) ignored", event_id, event_type)
+        return JSONResponse({"ok": True, "duplicate": True})
+
+    app_user_id = event.get("app_user_id")
+    plan = _rc_plan_from_event(event)
+    revenue_cents = _rc_revenue_cents(event)
+    affiliate_code = _rc_affiliate_code(event)
+    occurred_at = _rc_ms_to_dt(event.get("purchased_at_ms")) or datetime.now(timezone.utc)
+    expires_at = _rc_ms_to_dt(event.get("expiration_at_ms"))
+
+    # app_user_id is our auth.users.id (purchases.ts calls Purchases.logIn).
+    # Anonymous RevenueCat ids ($RCAnonymousID:...) cannot be attributed.
+    user_id = app_user_id if app_user_id and not str(app_user_id).startswith("$RCAnonymousID") else None
+
+    # Fall back to the profile's stored code when the subscriber attribute is
+    # missing — e.g. a user who upgraded from a build predating setAttributes.
+    if affiliate_code is None and user_id:
+        try:
+            affiliate_code = await pool.fetchval(
+                "SELECT referred_by_code FROM profiles WHERE id = $1::uuid", user_id
+            )
+        except Exception as exc:
+            _log.warning("revenuecat: profile lookup failed for %s: %s", user_id, exc)
+
+    # Ledger row first: it is the payout source of truth, and its UNIQUE
+    # event_id is what makes a retry safe.
+    try:
+        await pool.execute(
+            """
+            INSERT INTO subscription_events (
+                event_id, event_type, provider, user_id, app_user_id, product_id,
+                plan, store, environment, revenue_cents, currency,
+                takehome_percentage, affiliate_code, occurred_at, raw
+            )
+            VALUES ($1, $2, 'revenuecat', $3::uuid, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb)
+            ON CONFLICT (event_id) DO NOTHING
+            """,
+            event_id, event_type, user_id, app_user_id, event.get("product_id"),
+            plan, event.get("store"), event.get("environment"), revenue_cents,
+            event.get("currency"), event.get("takehome_percentage"),
+            affiliate_code, occurred_at, json.dumps(event),
+        )
+    except Exception as exc:
+        # 500 so RevenueCat retries — losing a revenue event loses a payout.
+        _log.exception("revenuecat: ledger insert failed for %s", event_id)
+        raise error_response(500, "Failed to record subscription event") from exc
+
+    # Current-state row. Only for identified users on entitlement-changing events.
+    if user_id and event_type in (_RC_ACTIVE_EVENTS | _RC_ENDED_EVENTS):
+        is_active = event_type in _RC_ACTIVE_EVENTS
+        status = "active" if is_active else ("paused" if event_type == "SUBSCRIPTION_PAUSED" else "expired")
+        try:
+            await pool.execute(
+                """
+                INSERT INTO subscriptions (
+                    user_id, provider, revenuecat_app_user_id, revenuecat_product_id,
+                    plan, status, current_period_end
+                )
+                VALUES ($1::uuid, 'revenuecat', $2, $3, $4, $5, $6)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    provider = 'revenuecat',
+                    revenuecat_app_user_id = EXCLUDED.revenuecat_app_user_id,
+                    revenuecat_product_id = EXCLUDED.revenuecat_product_id,
+                    plan = EXCLUDED.plan,
+                    status = EXCLUDED.status,
+                    current_period_end = EXCLUDED.current_period_end,
+                    updated_at = now()
+                """,
+                user_id, app_user_id, event.get("product_id"),
+                plan if is_active else "free", status, expires_at,
+            )
+        except Exception:
+            # The ledger already landed, so revenue is not lost. Log loudly and
+            # return 200 — a retry would be a no-op on the ledger anyway.
+            _log.exception("revenuecat: subscriptions upsert failed for user %s", user_id)
+
+    _log.info(
+        "revenuecat: %s user=%s plan=%s revenue=%s%s code=%s",
+        event_type, user_id, plan, revenue_cents, event.get("currency") or "", affiliate_code,
+    )
+    return JSONResponse({"ok": True})

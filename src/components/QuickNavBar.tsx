@@ -48,7 +48,13 @@ export function QuickNavBar() {
           borderTopColor: colors.border,
         },
       ]}
-      accessibilityRole="tabbar"
+      // "tabbar" is an iOS-ONLY accessibilityRole. On Android react-native
+      // throws `IllegalArgumentException: Invalid accessibility role value`
+      // straight out of ReactAccessibilityDelegate and HARD-CRASHES the app
+      // (verified 2026-08-01: FATAL EXCEPTION on navigating with this mounted).
+      // "tablist" is the container role Android actually supports, and it is
+      // valid on both platforms. Guarded by scripts/preflight_android.mjs.
+      accessibilityRole="tablist"
       accessibilityLabel="Main navigation"
     >
       {TABS.map((tab) => {

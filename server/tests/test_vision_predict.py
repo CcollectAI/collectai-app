@@ -55,7 +55,7 @@ def _mock_classification_result():
         suggested_name="Charizard Base Set",
         attributes={"set": "Base Set", "card_number": "4/102"},
         embedding_vector=None,
-        classification_method="clip",
+        classification_method="openai_vision",
     )
 
 
@@ -126,7 +126,7 @@ async def test_classify_valid_jpeg(client: AsyncClient):
     assert data["condition"] == "near_mint"
     assert data["condition_confidence"] == 0.85
     assert data["condition_score"] == 0.85  # near_mint -> 0.85
-    assert data["classification_method"] == "clip"
+    assert data["classification_method"] == "openai_vision"
     assert data["suggested_name"] == "Charizard Base Set"
     assert data["attributes"] == {"set": "Base Set", "card_number": "4/102"}
 
@@ -206,7 +206,7 @@ async def test_classify_valid_png(client: AsyncClient):
     assert resp.status_code == 200
     data = resp.json()
     assert data["category_id"] == "pokemon"
-    assert data["classification_method"] == "clip"
+    assert data["classification_method"] == "openai_vision"
 
 
 # ---------------------------------------------------------------------------
@@ -225,4 +225,4 @@ async def test_classify_valid_webp(client: AsyncClient):
     assert resp.status_code == 200
     data = resp.json()
     assert data["category_id"] == "pokemon"
-    assert data["classification_method"] == "clip"
+    assert data["classification_method"] == "openai_vision"

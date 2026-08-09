@@ -36,6 +36,20 @@ _DECAY_HALF_LIFE = 30.0
 # Model blending weight when calibration gate passes
 _MODEL_BLEND_ALPHA = 0.7
 
+# Model-vs-empirical sanity band. Even a gate-passing model can be degraded —
+# _check_gate_pass reads the LATEST calibration_snapshots.gate_pass and a stale
+# TRUE row keeps a since-broken model live (2026-07-24: comic_books had a
+# 2026-06-30 gate_pass=t row while its artifact had train_mae €33.8k / intercept
+# €24.1k and emitted a flat €44k for every item, pinning q50 near €28k
+# regardless of the real comps). The empirical q50 here is built from
+# >=_MIN_COMPS_FOR_MODEL real sold comps, so it is the trustworthy per-item
+# anchor: if the model's central estimate is more than this factor away from it,
+# refuse to blend and keep empirical. Unit-agnostic (both EUR), self-calibrating,
+# never trips a healthy model (verified 2026-07-24: pokemon/yugioh ratios 0.4-10x
+# pass; comic_books 426-4690x and a mispriced yugioh outlier correctly skip).
+# Generous on purpose — real items span an order of magnitude (graded vs raw).
+_MODEL_SANITY_BAND = 10.0
+
 # Sanity ceiling on predicted prices. Anything above this is almost certainly
 # a feature-extraction NaN/Inf or a log-space blow-up (e.g. expm1 on a large
 # intercept). Lego Ridge model was emitting €1.5B for 65 items in Apr 2026;
@@ -89,7 +103,7 @@ def _build_evidence(hits: list[dict]) -> tuple[list[str], dict, str]:
 
     # Human-readable explanation
     _SOURCE_NAMES = {
-        "ebay": "eBay sold",
+        "ebay": "eBay",
         "tcgplayer": "TCGPlayer",
         "cardmarket": "Cardmarket",
         "mercari": "Mercari",
@@ -98,12 +112,19 @@ def _build_evidence(hits: list[dict]) -> tuple[list[str], dict, str]:
         "vinted": "Vinted",
         "stockx": "StockX",
         "discogs": "Discogs",
+        # A completed member-to-member trade (p2p_offers -> _sold_comp_hook).
+        # Named explicitly: the fallback below would render it "Sparrow P2p".
+        "sparrow_p2p": "Sparrow member",
     }
     parts: list[str] = []
     for s in source_summaries:
         src_label = _SOURCE_NAMES.get(s["source"].lower(), s["source"].replace("_", " ").title())
+        # "sale", not "listing". Every row that reaches this function is a SOLD
+        # comp \u2014 the query above filters `is_listing IS NOT TRUE` \u2014 so calling
+        # them listings was wrong for every source, not just the new one. It
+        # also made "eBay sold" read as "3 eBay sold listings".
         parts.append(
-            f"{s['count']} {src_label} listing{'s' if s['count'] != 1 else ''} "
+            f"{s['count']} {src_label} sale{'s' if s['count'] != 1 else ''} "
             f"(avg \u20ac{s['avg_price']:.2f})"
         )
 
@@ -385,6 +406,20 @@ async def run_once():
                         fv = extract_core_features(rep_condition, merged_attrs)
 
                         m50 = _predict_quantile(model, fv, "ridge")
+                        # Model-vs-empirical sanity band (see _MODEL_SANITY_BAND):
+                        # refuse a model whose central estimate is wildly off the
+                        # item's own comps, so a degraded-but-still-gated model
+                        # falls back to empirical instead of dominating at alpha.
+                        if (
+                            m50 is not None and q50 and q50 > 0
+                            and not (q50 / _MODEL_SANITY_BAND <= m50 <= q50 * _MODEL_SANITY_BAND)
+                        ):
+                            logging.warning(
+                                "valuation: skipping model blend for %s — model q50=%.2f "
+                                "outside %.0fx band around empirical q50=%.2f (n=%d)",
+                                item_ref, m50, _MODEL_SANITY_BAND, q50, n,
+                            )
+                            m50 = None
                         if m50 is not None:
                             # V3: blend each quantile head with its empirical
                             # counterpart; fall back to empirical per-head when a
@@ -428,7 +463,20 @@ async def run_once():
             #                          real sales get up to +20%; mis-
             #                          calibrated cats get capped to 0.5.
             #                          NULL when no snapshot → boost=1.0.
-            unique_sources = len({h["source"] for h in hits if h["source"]})
+            # `sparrow_p2p` is excluded from DIVERSITY (it still counts toward
+            # `n`, and its price is used normally). Diversity is meant to say
+            # "independent markets agree"; a trade on our own platform is not an
+            # independent market, and a colluding pair could otherwise raise the
+            # CONFIDENCE in a price they set as well as the price itself.
+            #
+            # Measured effect, deliberately narrow: an item whose only comp is a
+            # member sale is unchanged (min(1, 1/2) and the 0-source else branch
+            # are both 0.5). Only the 1-external + 1-member case changes, from
+            # 1.0 back to 0.5 — which is exactly the inflation being removed.
+            unique_sources = len({
+                h["source"] for h in hits
+                if h["source"] and h["source"] != "sparrow_p2p"
+            })
             count_factor = 1.0 - math.exp(-n / 5.0)
             diversity_factor = min(1.0, unique_sources / 2.0) if unique_sources > 0 else 0.5
             avg_weight = total_weight / n if n > 0 else 0.5

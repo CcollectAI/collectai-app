@@ -29,6 +29,8 @@ export interface AuthTextInputProps
     | 'autoFocus'
     | 'testID'
     | 'autoCapitalize'
+    // Codes and identifiers must not be autocorrected into something else.
+    | 'autoCorrect'
   > {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;

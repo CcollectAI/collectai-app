@@ -45,7 +45,7 @@ ITEM_DEDUP_HOURS = 72
 # R49 — All 3 queries rewritten against actual prod schema:
 #   pp.item_id  → pp.item_ref (text)
 #   pp.asof     → pp.generated_at
-#   i.id = pp.X → i.canonical_key = pp.item_ref (text = text)
+#   i.id = pp.X → i.canonical_ref = pp.item_ref (text = text)
 #   i.name      → i.title
 
 # Get all users with at least 1 item and their current portfolio value
@@ -57,10 +57,11 @@ WITH latest_predictions AS (
         i.user_id,
         i.title AS item_name
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
     WHERE pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
       AND i.user_id IS NOT NULL
+      AND NOT i.archived
       -- Partition prune: bake regenerates predictions weekly, so a
       -- 60-day window always contains the latest per-item row. Without
       -- this filter the DISTINCT ON walks all 8 monthly partitions.
@@ -83,8 +84,8 @@ WITH historical_predictions AS (
         pp.item_ref,
         pp.q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
-    WHERE i.user_id = $1
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
+    WHERE i.user_id = $1 AND NOT i.archived
       AND pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
       AND pp.generated_at <= $2
@@ -102,8 +103,8 @@ WITH current_vals AS (
         pp.q50 AS current_q50,
         i.title AS item_name
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
-    WHERE i.user_id = $1
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
+    WHERE i.user_id = $1 AND NOT i.archived
       AND pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
       -- Partition prune: latest predictions are always in the last 60d.
@@ -115,8 +116,8 @@ historical_vals AS (
         pp.item_ref AS item_id,
         pp.q50 AS old_q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
-    WHERE i.user_id = $1
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
+    WHERE i.user_id = $1 AND NOT i.archived
       AND pp.q50 IS NOT NULL
       AND pp.item_ref IS NOT NULL
       -- Partition prune: bound the upper edge ($2) AND the lower edge

@@ -63,6 +63,7 @@ export class MockDataProvider implements DataProvider {
 
   // ─── Items ──────────────────────────────────────────────────────────────────
   listItems = itemsProvider.listItems;
+  listArchivedItems = itemsProvider.listArchivedItems;
   createItem = itemsProvider.createItem;
   deleteItem = itemsProvider.deleteItem;
   updateItem = itemsProvider.updateItem;
@@ -93,6 +94,7 @@ export class MockDataProvider implements DataProvider {
 
   // ─── Alerts ─────────────────────────────────────────────────────────────────
   listAlertsFeed = alertProvider.listAlertsFeed;
+  listAlertRules = alertProvider.listAlertRules;
 
   // ─── Chat / DM ──────────────────────────────────────────────────────────────
   listInboxThreads = chatProvider.listInboxThreads;
@@ -189,17 +191,7 @@ export class MockDataProvider implements DataProvider {
   getUnreadAnnouncementCount = eventsProvider.getUnreadAnnouncementCount;
 
   // ─── Deal Desk (P2P Offers) ─────────────────────────────────────────────────
-  proposeOffer = dealsProvider.proposeOffer;
-  counterOffer = dealsProvider.counterOffer;
-  respondToOffer = dealsProvider.respondToOffer;
-  cancelOffer = dealsProvider.cancelOffer;
-  listActiveOffers = dealsProvider.listActiveOffers;
-  listDealHistory = dealsProvider.listDealHistory;
-  getOfferDetail = dealsProvider.getOfferDetail;
-  getUserReputation = dealsProvider.getUserReputation;
   toggleForSale = dealsProvider.toggleForSale;
-  markShipped = dealsProvider.markShipped;
-  completeDeal = dealsProvider.completeDeal;
 
   // ─── Multi-Marketplace Selling ──────────────────────────────────────────────
   listMarketplaceListings = dealsProvider.listMarketplaceListings;

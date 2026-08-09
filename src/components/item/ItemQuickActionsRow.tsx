@@ -8,10 +8,13 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { formatPrice } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight as fw, gap } from '@/theme/tokens';
+import { logger } from '@/lib/logger';
+import { SELLING_ENABLED } from '@/config/featureFlags';
 
 interface ItemQuickActionsRowProps {
   editableName: string;
   editableValue: string;
+  editableCondition?: string;
   isForSale: boolean;
   onEdit: () => void;
   onListForSale: () => void;
@@ -26,22 +29,31 @@ const toNum = (value: string | number | undefined | null): number | undefined =>
 
 export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props: ItemQuickActionsRowProps) {
   const { colors: theme } = useAppTheme();
-  const { editableName, editableValue, isForSale, onEdit, onListForSale } = props;
+  const { editableName, editableValue, editableCondition, isForSale, onEdit, onListForSale } = props;
   const [busy, setBusy] = useState(false);
 
   const handleShare = useCallback(async () => {
     if (busy) return;
     setBusy(true);
     try {
-      await Share.share({
-        message: `Check out ${editableName}${toNum(editableValue) ? ` - valued at ${formatPrice(toNum(editableValue))}` : ''} on Sparrow Collect`,
-      });
-    } catch {
+      // Optimized for messaging (WhatsApp / iMessage), where users actually
+      // share: the details a recipient needs (name, condition, value) on their
+      // own lines + a tappable link. A per-item sparrowcollect.com/item link
+      // opens the app but 404s for recipients without it, so link the site.
+      const val = toNum(editableValue);
+      const message =
+        `Check out my ${editableName} on Sparrow Collect` +
+        (editableCondition ? `\nCondition: ${editableCondition}` : '') +
+        (val ? `\nEstimated value: ${formatPrice(val)}` : '') +
+        `\n\nhttps://sparrowcollect.com`;
+      await Share.share({ message });
+    } catch (e) {
+      logger.error('[silent-catch] ItemQuickActionsRow.tsx:48:', e);
       // User cancelled
     } finally {
       setBusy(false);
     }
-  }, [busy, editableName, editableValue]);
+  }, [busy, editableName, editableValue, editableCondition]);
 
   return (
     <View style={styles.quickActionsRow}>
@@ -65,7 +77,10 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
         <Ionicons name="share-outline" size={18} color={theme.accent} />
         <Text style={[styles.quickActionLabel, { color: theme.text }]}>Share</Text>
       </AnimatedPressable>
-      {!isForSale ? (
+      {/* Second selling entry point — gated with the Seller Dashboard, or a user
+          could still create a listing that goes nowhere (no marketplace account
+          can be connected). Gating only the dashboard would have missed this. */}
+      {!SELLING_ENABLED ? null : !isForSale ? (
         <AnimatedPressable
           onPress={onListForSale}
           disabled={busy}

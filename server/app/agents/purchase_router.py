@@ -307,6 +307,14 @@ async def create_mandate(
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
         )
         if count >= mandate_limit:
+            # A 0 limit is the free plan, where the feature is not included at
+            # all — "Mandate limit reached (0)" would read as a bug.
+            if mandate_limit == 0:
+                raise error_response(
+                    403,
+                    "The Smart Deal Agent is a Pro feature. Upgrade to create purchase mandates.",
+                    code="PLAN_REQUIRED",
+                )
             raise error_response(409, f"Mandate limit reached ({mandate_limit}). Upgrade your plan or delete existing mandates.")
 
         expires_at = None
@@ -371,13 +379,16 @@ async def list_mandates(
     async with get_conn() as conn:
         uid = uuid.UUID(user_id) if _is_uuid(user_id) else user_id
         total = await conn.fetchval(
-            "SELECT count(*) FROM public.purchase_mandates WHERE user_id = $1",
+            # Archived == deleted by the user. Without this filter a deleted
+            # mandate stayed in the list, so delete looked like a no-op.
+            "SELECT count(*) FROM public.purchase_mandates "
+            "WHERE user_id = $1 AND status <> 'archived'",
             uid,
         )
         rows = await conn.fetch(
             f"""
             SELECT {_MANDATE_COLUMNS} FROM public.purchase_mandates
-            WHERE user_id = $1
+            WHERE user_id = $1 AND status <> 'archived'
             ORDER BY created_at DESC
             LIMIT $2 OFFSET $3
             """,
@@ -479,14 +490,23 @@ async def delete_mandate(
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_mandate_write_limit),
 ):
-    """Deactivate (soft-delete) a mandate by setting status='paused'."""
+    """Soft-delete a mandate by setting status='archived'.
+
+    NOT 'paused'. Pausing is a distinct thing the user can do deliberately: the
+    mandate stays listed, keeps its slot, and can be resumed. Deleting must
+    free the slot. Reusing 'paused' for both meant a free user (limit 3) who
+    deleted all three mandates could never create another — the create-limit
+    counts status IN ('active','paused') — and the 409 told them to "delete
+    existing mandates", which is exactly what they had just done.
+    'archived' sits outside that set, so the slot is released.
+    """
     _require_db()
 
     async with get_conn() as conn:
         result = await conn.execute(
             """
             UPDATE public.purchase_mandates
-            SET status = 'paused', updated_at = now()
+            SET status = 'archived', updated_at = now()
             WHERE id = $1 AND user_id = $2
             """,
             _parse_uuid(mandate_id, "mandate_id"),

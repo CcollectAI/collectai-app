@@ -15,6 +15,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
+import { parseMoney } from '@/lib/format';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -198,14 +199,35 @@ export function useItemDetail(params: UseItemDetailParams) {
   const [linkedProject, setLinkedProject] = useState<{ id: string; title: string; pct: number } | null>(null);
 
   // ── Notes handler ──────────────────────────────────────────────────────
-  const onSaveNotes = useCallback(() => {
+  //
+  // This used to be a 300ms setTimeout that wrote NOTHING and toasted "Notes
+  // saved locally". Nothing was saved anywhere — not the DB, not AsyncStorage
+  // — so every note was lost on unmount while the user was told it was safe.
+  // The house silent-failure pattern: a writer that never writes, wearing a
+  // success message.
+  const onSaveNotes = useCallback(async () => {
+    if (!id || isDraft) {
+      // A draft has no items row yet, so there is nothing to write to. Say so
+      // rather than implying a save happened.
+      showToast({ message: 'Save the item first, then add notes', type: 'info' });
+      return;
+    }
     setSavingNotes(true);
-    setTimeout(() => {
-      setSavingNotes(false);
+    try {
+      await dataProvider.updateItem(id, { notes });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Notes saved locally', type: 'info' });
-    }, 300);
-  }, [settings.hapticsEnabled, showToast]);
+      showToast({ message: 'Notes saved', type: 'success' });
+    } catch (err: unknown) {
+      logger.error('[useItemDetail] save notes failed:', err);
+      // Never claim success on a failed write — that is the bug this replaced.
+      showToast({
+        message: (err as Error)?.message || "Couldn't save your notes",
+        type: 'error',
+      });
+    } finally {
+      setSavingNotes(false);
+    }
+  }, [id, isDraft, notes, settings.hapticsEnabled, showToast]);
 
   // ── Save draft handler ─────────────────────────────────────────────────
   const onSaveDraft = useCallback(async () => {
@@ -254,12 +276,23 @@ export function useItemDetail(params: UseItemDetailParams) {
         category: editableCategory,
       });
       const extraPatch: Record<string, unknown> = {};
-      if (editableCollection && editableCollection !== 'Not set') extraPatch.collection = editableCollection;
+      // Column names verified against the live schema 2026-07-29. These were
+      // `collection` and `user_value`; items has NEITHER — the real columns are
+      // collection_name and estimated_value. Postgres rejects the unknown key,
+      // so editing Collection or Estimated value failed the whole patch and
+      // showed "Failed to save changes" — AFTER updateItem had already written
+      // the name/category, leaving a partial save behind an error toast.
+      if (editableCollection && editableCollection !== 'Not set') extraPatch.collection_name = editableCollection;
       if (editableCondition && editableCondition !== 'Not set') extraPatch.condition = editableCondition;
       const numericValue = parseFloat(editableValue);
-      if (!isNaN(numericValue) && numericValue > 0) extraPatch.user_value = numericValue;
+      if (!isNaN(numericValue) && numericValue > 0) extraPatch.estimated_value = numericValue;
       if (Object.keys(extraPatch).length > 0) {
-        await supabase.from('items').update(extraPatch).eq('id', id);
+        // Check the error: this used to discard the result, so a failed or
+        // timed-out write fell straight through to "Changes saved" — a false
+        // success, which is worse than an error. supabase-js resolves rather
+        // than throws, so the only way to notice is to look.
+        const { error: patchError } = await supabase.from('items').update(extraPatch).eq('id', id);
+        if (patchError) throw new Error(patchError.message);
       }
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Changes saved', type: 'success' });
@@ -279,7 +312,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     setFeedbackMessage(null);
     try {
       await dataProvider.submitFeedback(id, 'sale_price', salePrice.trim());
-      const parsedPrice = parseFloat(salePrice.trim().replace(/[^\d.]/g, ''));
+      const parsedPrice = parseFloat(salePrice.trim().replace(/[^0-9.,]/g, '').replace(',', '.'));
       if (parsedPrice > 0) {
         collectorsApi.submitVerifiedSale({
           item_id: id,
@@ -321,7 +354,7 @@ export function useItemDetail(params: UseItemDetailParams) {
   // ── For-sale handlers ──────────────────────────────────────────────────
   const handleListForSale = useCallback(async () => {
     if (!id || isDraft || forSaleLoading) return;
-    const price = parseFloat(askingPriceValue);
+    const price = parseMoney(askingPriceValue) ?? NaN;
     if (isNaN(price) || price <= 0) {
       showToast({ message: 'Enter a valid asking price', type: 'error' });
       return;

@@ -6,6 +6,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { formatPrice } from '@/lib/format';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import type { PublicUserProfile } from '@/data';
 
@@ -30,13 +31,31 @@ export const UserStatsSection = React.memo(function UserStatsSection({
         </View>
         <View style={[styles.quickStatDivider, { backgroundColor: colors.border }]} />
         <View style={styles.quickStat}>
+          {/* The ACTUAL total, not a thousands-rounded one. `Math.round(v/1000)}k`
+              rendered a €450 collection as "€0k" and €1,600 as "€2k" — it never
+              matched the sum of the items on any collection under five figures.
+              Compact form only kicks in where it genuinely helps readability.
+
+              `== null`, not falsy: the view returns NULL when the owner turned
+              off "Show collection value" in Privacy, and 0 is a real answer for
+              a collection of unpriced items. Showing "—" for a true zero would
+              read as "hidden". */}
           <Text style={[styles.quickStatValue, { color: colors.text }]}>
-            {profile.collectionValueEur ? `\u20AC${Math.round(profile.collectionValueEur / 1000)}k` : '\u2014'}
+            {profile.collectionValueEur == null
+              ? '\u2014'
+              : profile.collectionValueEur >= 100000
+                ? `\u20AC${Math.round(profile.collectionValueEur / 1000)}k`
+                : formatPrice(profile.collectionValueEur, 'EUR')}
           </Text>
           <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Value</Text>
         </View>
         <View style={[styles.quickStatDivider, { backgroundColor: colors.border }]} />
-        {gamProfile ? (
+        {/* Either they have XP or they don't. `gamProfile` exists for everyone the
+            moment the row is created, so this used to show "Lv.1 / 0 XP" on a
+            brand-new profile — a stat that says nothing, dressed as an
+            achievement. Below the first point it falls back to Categories, which
+            is a fact about them either way. */}
+        {gamProfile && gamProfile.xp > 0 ? (
           <View style={styles.quickStat}>
             <Text style={[styles.quickStatValue, { color: colors.text }]}>Lv.{gamProfile.level}</Text>
             <Text style={[styles.quickStatLabel, { color: colors.muted }]}>{gamProfile.xp} XP</Text>

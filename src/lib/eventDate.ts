@@ -38,3 +38,17 @@ export function formatDMY(iso: string): string {
   const m = ISO_RE.exec(iso.trim());
   return m ? `${m[3]}-${m[2]}-${m[1]}` : '';
 }
+
+const DMY_RE = /^(\d{2})-(\d{2})-(\d{4})$/;
+
+/**
+ * 'DD-MM-YYYY' (what the user types) → ISO 'YYYY-MM-DD' (the backend contract).
+ * Returns '' when empty or not a real calendar date, so a malformed entry is
+ * stored as no-date rather than a shifted/garbage value.
+ */
+export function dmyToIso(dmy: string): string {
+  const m = DMY_RE.exec(dmy.trim());
+  if (!m) return '';
+  const iso = `${m[3]}-${m[2]}-${m[1]}`;
+  return parseIso(iso) ? iso : '';
+}

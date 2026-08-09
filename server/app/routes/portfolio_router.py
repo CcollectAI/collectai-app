@@ -100,15 +100,98 @@ async def portfolio_timeseries(
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 """
+                -- Every point must value the WHOLE collection, not just the
+                -- items that happen to have a prediction that day.
+                --
+                -- This summed pp.q50 alone, so a hand-added item (no
+                -- price_predictions row, value stored on the item) contributed
+                -- 0 to the curve. Home derives its headline "COLLECTION VALUE",
+                -- the chart, AND the change % from this series, while the Items
+                -- tab sums every item — so the two screens disagreed for any
+                -- account with >= 2 days of prediction history. Below that the
+                -- len(points) < 2 fallback masked it, which is why it survived.
+                --
+                -- Items with no prediction have no history either, so their
+                -- stored value is a constant baseline added to every day. That
+                -- keeps the last point equal to /portfolio/overview's total,
+                -- which is what makes the screens agree.
+                -- Uses the same expression as every other value site — see
+                -- "One valuation expression" in docs/ARCHITECTURE.md.
+                -- Rewritten 2026-08-03. The previous version had two faults,
+                -- both visible on one screenshot (headline EUR 8.070, the same
+                -- account's breakdown EUR 55, and a curve claiming the user
+                -- owned a just-added item since July):
+                --
+                -- 1. It summed pp.q50 for every prediction row generated that
+                --    day, with NO per-item dedup, while /portfolio/overview and
+                --    /portfolio/category-stats value each item ONCE via
+                --    DISTINCT ON. Any item with more than one prediction in a
+                --    day was counted repeatedly, so this endpoint drifted above
+                --    its siblings. See "One valuation expression, or the screen
+                --    contradicts itself" in docs/ARCHITECTURE.md — the rule is
+                --    to grep the EXPRESSION, not the file.
+                -- 2. price_predictions is CATALOG-wide history keyed by
+                --    item_ref, and nothing tied it to when the user acquired
+                --    the item. Adding an item retroactively injected its whole
+                --    past price curve into the user's history, so a card bought
+                --    today appeared in last week's portfolio value.
+                --
+                -- Now: walk a day grid, hold each item from the day it entered
+                -- the collection (items.created_at), and value it with the last
+                -- prediction known ON OR BEFORE that day, else its stored value
+                -- — the same COALESCE chain the sibling endpoints use. The last
+                -- point therefore equals /portfolio/overview's total, which is
+                -- what keeps the screens agreeing.
+                WITH days AS (
+                    SELECT generate_series($2::date, CURRENT_DATE, INTERVAL '1 day')::date AS day
+                ),
+                owned AS (
+                    SELECT
+                        i.id,
+                        i.canonical_ref,
+                        i.created_at::date AS since,
+                        -- Stored-value fallback. TWO prediction sources cover
+                        -- different items: price_predictions is catalog-model
+                        -- output joined by canonical_ref, quick_predictions is
+                        -- per-item QuickScan output joined by item_id. Using
+                        -- either alone zeroes the other group.
+                        COALESCE(
+                            (SELECT qp.q50_eur FROM quick_predictions qp
+                              WHERE qp.item_id = i.id
+                              ORDER BY qp.created_at DESC LIMIT 1),
+                            i.predicted_price_eur,
+                            i.estimated_value,
+                            0
+                        ) AS stored_value
+                    FROM items i
+                    WHERE i.user_id = $1 AND NOT i.archived
+                ),
+                -- One prediction per item per day (the last of that day), so a
+                -- chatty valuation run cannot multiply an item's contribution.
+                per_day AS (
+                    SELECT DISTINCT ON (o.id, DATE(pp.generated_at))
+                        o.id,
+                        DATE(pp.generated_at) AS day,
+                        pp.q50
+                    FROM owned o
+                    JOIN price_predictions pp ON pp.item_ref = o.canonical_ref
+                    WHERE pp.generated_at >= $2
+                    ORDER BY o.id, DATE(pp.generated_at), pp.generated_at DESC
+                )
                 SELECT
-                    DATE(pp.generated_at) AS day,
-                    COALESCE(SUM(pp.q50), 0) AS total_value
-                FROM price_predictions pp
-                JOIN items i ON i.canonical_key = pp.item_ref
-                WHERE i.user_id = $1
-                  AND pp.generated_at >= $2
-                GROUP BY DATE(pp.generated_at)
-                ORDER BY day ASC
+                    d.day AS day,
+                    COALESCE(SUM(
+                        COALESCE(
+                            (SELECT p.q50 FROM per_day p
+                              WHERE p.id = o.id AND p.day <= d.day
+                              ORDER BY p.day DESC LIMIT 1),
+                            o.stored_value
+                        )
+                    ), 0) AS total_value
+                FROM days d
+                LEFT JOIN owned o ON o.since <= d.day
+                GROUP BY d.day
+                ORDER BY d.day ASC
                 """,
                 user_id,
                 since,
@@ -118,6 +201,50 @@ async def portfolio_timeseries(
                 {"t": row["day"].isoformat(), "v": round(float(row["total_value"]), 2)}
                 for row in rows
             ]
+
+            # The day grid always emits a row per day, so an empty portfolio
+            # would now draw a flat line along zero instead of the honest "No
+            # history yet" empty state the FE renders for an empty series.
+            # Collapse an all-zero curve back to no points.
+            if points and not any(p["v"] > 0 for p in points):
+                points = []
+
+            # Flat-baseline fallback. Portfolios whose items have no dated
+            # price_predictions (e.g. hand-added items carrying only a stored
+            # value) produce zero prediction rows → an empty curve → the FE shows
+            # "No history yet". Instead draw a flat line at the CURRENT stored
+            # portfolio value across the range so the graph always reflects the
+            # collection's worth. Same value source as /portfolio/overview
+            # (COALESCE q50 → predicted_price_eur → estimated_value). This is a
+            # synthetic baseline until real history (predictions or a daily
+            # snapshot worker) accrues; a genuinely empty portfolio (value 0)
+            # still yields no points so the honest empty state remains.
+            if len(points) < 2:
+                cur = await conn.fetchval(
+                    """
+                    WITH latest AS (
+                        SELECT DISTINCT ON (pp.item_ref) pp.item_ref, pp.q50
+                        FROM price_predictions pp
+                        JOIN items i ON i.canonical_ref = pp.item_ref
+                        WHERE i.user_id = $1
+                        ORDER BY pp.item_ref, pp.generated_at DESC
+                    )
+                    SELECT COALESCE(SUM(
+                        COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)
+                    ), 0)
+                    FROM items i
+                    LEFT JOIN latest l ON l.item_ref = i.canonical_ref
+                    WHERE i.user_id = $1 AND NOT i.archived
+                    """,
+                    user_id,
+                )
+                cur_v = round(float(cur or 0), 2)
+                if cur_v > 0:
+                    today = datetime.now(timezone.utc)
+                    points = [
+                        {"t": since.date().isoformat(), "v": cur_v},
+                        {"t": today.date().isoformat(), "v": cur_v},
+                    ]
 
             return {"points": points}
     except Exception as e:
@@ -155,7 +282,7 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50, pp.generated_at
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
@@ -163,31 +290,41 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50 AS prev_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                       AND pp.generated_at < CURRENT_DATE
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 )
                 SELECT
                     i.id, i.name, i.category,
-                    COALESCE(l.q50, 0) AS current_value,
-                    COALESCE(p.prev_q50, l.q50, 0) AS prev_value
+                    -- Match the category-breakdown / Items-tab value source: a
+                    -- model prediction if one exists, else the item's own stored
+                    -- value (predicted_price_eur / estimated_value). Without this
+                    -- fallback, hand-added items with no price_predictions row
+                    -- valued at 0 here while the Items tab showed their stored
+                    -- price — Home's "COLLECTION VALUE" read €0 vs €55 elsewhere.
+                    COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0) AS current_value,
+                    COALESCE(p.prev_q50, l.q50, i.predicted_price_eur, i.estimated_value, 0) AS prev_value
                 FROM items i
-                LEFT JOIN latest l ON l.item_ref = i.canonical_key
-                LEFT JOIN prev p ON p.item_ref = i.canonical_key
-                WHERE i.user_id = $1
-                ORDER BY COALESCE(l.q50, 0) DESC
+                LEFT JOIN latest l ON l.item_ref = i.canonical_ref
+                LEFT JOIN prev p ON p.item_ref = i.canonical_ref
+                WHERE i.user_id = $1 AND NOT i.archived
+                ORDER BY COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0) DESC
                 """,
                 user_id,
             )
 
             items = []
             total = 0.0
+            total_prev = 0.0
             for r in rows:
                 cv = float(r["current_value"] or 0)
                 pv = float(r["prev_value"] or 0)
                 change = ((cv - pv) / pv) if pv > 0 else 0.0
                 total += cv
+                # Fall back to cv so an item with no prior valuation contributes
+                # 0% rather than a phantom +100% to the portfolio-level change.
+                total_prev += pv if pv > 0 else cv
                 items.append({
                     "id": r["id"],
                     "name": r["name"],
@@ -196,8 +333,17 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
                     "change_1d_pct": round(change, 4),
                 })
 
+            # Portfolio-level change. Added 2026-07-24: the FE's
+            # getPortfolioSummary derived this from `portfolio_values`, a table
+            # with no writer anywhere (0 rows), so Home's insights card showed
+            # +0.00% / EUR 0 change no matter what the collection did. Serving
+            # it here reuses the same COALESCE valuation the totals use.
+            total_change = ((total - total_prev) / total_prev) if total_prev > 0 else 0.0
+
             return {
                 "total_value": round(total, 2),
+                "total_prev_value": round(total_prev, 2),
+                "change_1d_pct": round(total_change, 4),
                 "item_count": len(items),
                 "items": items,
             }
@@ -233,7 +379,7 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50, pp.q10, pp.q90
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
@@ -241,20 +387,38 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50 AS first_q50
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                     ORDER BY pp.item_ref, pp.generated_at ASC
                 )
                 SELECT
                     i.id, i.name, i.category,
-                    COALESCE(l.q50, 0) AS current_value,
+                    -- Same fallback chain as /portfolio/overview (see the note
+                    -- at its query): a model prediction if one exists, else the
+                    -- item's own stored value. Overview was fixed for this and
+                    -- this sibling was not, so the SAME portfolio read EUR 55
+                    -- in the header and EUR 0 on every row -- verified on a
+                    -- live account whose 3 items have zero price_predictions.
+                    COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0) AS current_value,
                     COALESCE(l.q10, 0) AS q10,
                     COALESCE(l.q90, 0) AS q90,
-                    COALESCE(e.first_q50, 0) AS cost_basis
+                    -- What the user actually PAID, falling back to the earliest
+                    -- prediction only when there is no purchase price on file.
+                    -- This was `COALESCE(e.first_q50, 0)` alone, which made
+                    -- unrealized_pl = current_value - first_predicted_value:
+                    -- model drift, not profit. Someone who paid EUR 50 for an
+                    -- item now worth EUR 200 saw ~0 P/L whenever the model had
+                    -- been stable. Unfixable until 2026-07-28, because
+                    -- purchase_price_eur was non-null on 0 of 5 priced rows;
+                    -- see the paired-columns note in docs/ARCHITECTURE.md.
+                    -- The EUR half is the right one: current_value is q50,
+                    -- which is EUR, so summing raw purchase_price here would
+                    -- mix currencies on the same axis.
+                    COALESCE(i.purchase_price_eur, e.first_q50, 0) AS cost_basis
                 FROM items i
-                LEFT JOIN latest l ON l.item_ref = i.canonical_key
-                LEFT JOIN earliest e ON e.item_ref = i.canonical_key
-                WHERE i.user_id = $1
+                LEFT JOIN latest l ON l.item_ref = i.canonical_ref
+                LEFT JOIN earliest e ON e.item_ref = i.canonical_ref
+                WHERE i.user_id = $1 AND NOT i.archived
                 ORDER BY COALESCE(l.q50, 0) DESC
                 """,
                 user_id,
@@ -300,10 +464,10 @@ async def portfolio_summary(user_id: str = Depends(get_current_user_id)) -> dict
                     FROM items i
                     LEFT JOIN LATERAL (
                         SELECT q50 FROM price_predictions pp
-                        WHERE pp.item_ref = i.canonical_key
+                        WHERE pp.item_ref = i.canonical_ref
                         ORDER BY pp.generated_at DESC LIMIT 1
                     ) lp ON TRUE
-                    WHERE i.user_id = $1
+                    WHERE i.user_id = $1 AND NOT i.archived
                     """,
                     user_id,
                 )
@@ -373,7 +537,7 @@ async def portfolio_category_stats(
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50, pp.generated_at
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
@@ -381,25 +545,33 @@ async def portfolio_category_stats(
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50 AS q50_7d
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                       AND pp.generated_at <= NOW() - INTERVAL '7 days'
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 )
+                -- Same fallback chain as /portfolio/overview: a prediction if
+                -- one exists, else the item's own stored value. Without it this
+                -- endpoint reported total_value 0.00 for categories the header
+                -- valued at EUR 55, because hand-added items have no
+                -- price_predictions row.
+                -- COALESCE on category too: `category IS NOT NULL` silently
+                -- dropped uncategorised items from every category breakdown,
+                -- so the parts did not add up to the whole.
                 SELECT
-                    i.category,
+                    COALESCE(NULLIF(i.category, ''), 'uncategorized') AS category,
                     COUNT(*) AS item_count,
-                    COALESCE(SUM(l.q50), 0) AS total_value,
-                    COALESCE(AVG(l.q50), 0) AS avg_value,
-                    COALESCE(SUM(l.q50), 0) - COALESCE(SUM(p.q50_7d), 0) AS change_7d,
-                    MAX(l.q50) AS max_item_value
+                    COALESCE(SUM(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)), 0) AS total_value,
+                    COALESCE(AVG(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)), 0) AS avg_value,
+                    COALESCE(SUM(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)), 0)
+                        - COALESCE(SUM(p.q50_7d), 0) AS change_7d,
+                    MAX(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)) AS max_item_value
                 FROM items i
-                LEFT JOIN latest l ON l.item_ref = i.canonical_key
-                LEFT JOIN prev_7d p ON p.item_ref = i.canonical_key
-                WHERE i.user_id = $1
-                  AND i.category IS NOT NULL
-                GROUP BY i.category
-                ORDER BY COALESCE(SUM(l.q50), 0) DESC
+                LEFT JOIN latest l ON l.item_ref = i.canonical_ref
+                LEFT JOIN prev_7d p ON p.item_ref = i.canonical_ref
+                WHERE i.user_id = $1 AND NOT i.archived
+                GROUP BY COALESCE(NULLIF(i.category, ''), 'uncategorized')
+                ORDER BY 3 DESC
                 """,
                 user_id,
             )
@@ -454,7 +626,7 @@ async def category_health(
                 WITH user_cats AS (
                     SELECT DISTINCT category
                     FROM items
-                    WHERE user_id = $1 AND category IS NOT NULL
+                    WHERE user_id = $1 AND category IS NOT NULL AND NOT archived
                 ),
                 daily_vals AS (
                     SELECT
@@ -462,32 +634,48 @@ async def category_health(
                         DATE(pp.generated_at) AS day,
                         SUM(pp.q50) AS day_val
                     FROM price_predictions pp
-                    JOIN items i ON i.canonical_key = pp.item_ref
+                    JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
                       AND pp.generated_at >= NOW() - INTERVAL '30 days'
                     GROUP BY i.category, DATE(pp.generated_at)
                 ),
-                stats AS (
-                    SELECT
-                        category,
-                        STDDEV(day_val) AS volatility,
-                        FIRST_VALUE(day_val) OVER (
-                            PARTITION BY category ORDER BY day ASC
-                        ) AS val_30d_ago,
-                        LAST_VALUE(day_val) OVER (
-                            PARTITION BY category
-                            ORDER BY day ASC
-                            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
-                        ) AS val_now
+                -- Volatility (an aggregate) and the first/last values (window
+                -- functions) MUST be computed in separate CTEs. Selecting
+                -- STDDEV(day_val) alongside a bare `category` and two OVER()
+                -- expressions with no GROUP BY is invalid SQL, and Postgres
+                -- rejected it every single call:
+                --   column "daily_vals.category" must appear in the GROUP BY
+                --   clause or be used in an aggregate function
+                -- The except below logs it, but still returns {"health": []}
+                -- with HTTP 200 — so from the client's side the endpoint looked
+                -- healthy and merely empty, and the Category Health card never
+                -- rendered for anyone. Fixed 2026-07-25; it was showing up
+                -- 13x/day in the Supabase Postgres logs.
+                vol AS (
+                    SELECT category, STDDEV(day_val) AS volatility
                     FROM daily_vals
+                    GROUP BY category
+                ),
+                edges AS (
+                    SELECT DISTINCT ON (category)
+                        category,
+                        FIRST_VALUE(day_val) OVER w AS val_30d_ago,
+                        LAST_VALUE(day_val)  OVER w AS val_now
+                    FROM daily_vals
+                    WINDOW w AS (
+                        PARTITION BY category
+                        ORDER BY day ASC
+                        ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+                    )
                 )
-                SELECT DISTINCT
-                    s.category,
-                    COALESCE(s.volatility, 0) AS volatility,
-                    COALESCE(s.val_now, 0) AS val_now,
-                    COALESCE(s.val_30d_ago, 0) AS val_30d_ago
-                FROM stats s
-                JOIN user_cats uc ON uc.category = s.category
+                SELECT
+                    v.category,
+                    COALESCE(v.volatility, 0) AS volatility,
+                    COALESCE(e.val_now, 0) AS val_now,
+                    COALESCE(e.val_30d_ago, 0) AS val_30d_ago
+                FROM vol v
+                JOIN edges e ON e.category = v.category
+                JOIN user_cats uc ON uc.category = v.category
                 """,
                 user_id,
             )
@@ -545,7 +733,7 @@ async def category_correlation(
                 WITH cat_users AS (
                     SELECT DISTINCT user_id
                     FROM items
-                    WHERE category = $1
+                    WHERE category = $1 AND NOT archived
                 ),
                 cat_user_count AS (
                     SELECT COUNT(*) AS cnt FROM cat_users
@@ -556,7 +744,7 @@ async def category_correlation(
                         COUNT(DISTINCT i.user_id) AS overlap_count
                     FROM items i
                     JOIN cat_users cu ON cu.user_id = i.user_id
-                    WHERE i.category IS NOT NULL
+                    WHERE i.category IS NOT NULL AND NOT i.archived
                       AND i.category != $1
                     GROUP BY i.category
                 )

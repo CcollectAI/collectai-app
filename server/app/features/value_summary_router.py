@@ -110,8 +110,15 @@ async def get_value_summary(
             days_as_member = (datetime.now(timezone.utc) - member_row["created_at"]).days
 
         # -- Scan count --
+        # 2026-07-25: was `quickscan_history`, a table with 0 rows and NO writer
+        # anywhere in the codebase — so "scans" on the value screen was pinned to
+        # 0 for every user forever. Scan history actually lands in
+        # `predict_sessions` (101 rows / 47 distinct users at repoint time),
+        # written by the predict pipeline. Same shape as the device_tokens ->
+        # user_push_tokens repoint: an empty parallel schema shadowing the real
+        # one. quickscan_history is now unreferenced and can be dropped.
         scan_row = await conn.fetchrow(
-            "SELECT COUNT(*) AS cnt FROM quickscan_history WHERE user_id = $1",
+            "SELECT COUNT(*) AS cnt FROM public.predict_sessions WHERE user_id = $1::uuid",
             user_id,
         )
         total_scans = scan_row["cnt"] if scan_row else 0
@@ -120,7 +127,7 @@ async def get_value_summary(
         # portfolio_items is vestigial demo data (owner_tag='local_demo', 2 rows
         # at audit time). Real user portfolio lives in `items` with user_id.
         items_row = await conn.fetchrow(
-            "SELECT COUNT(*) AS cnt FROM items WHERE user_id = $1::uuid",
+            "SELECT COUNT(*) AS cnt FROM items WHERE user_id = $1::uuid AND NOT archived",
             user_id,
         )
         total_items = items_row["cnt"] if items_row else 0
@@ -153,7 +160,12 @@ async def get_value_summary(
                 0::numeric AS total_savings
             FROM mandate_deals
             WHERE user_id = $1
-              AND status = 'completed'
+              -- 'completed' is NOT in the mandate_deals status CHECK
+              -- (discovered, notified, clicked, purchased, declined, expired),
+              -- so this counted a value that can never exist and reported 0
+              -- deals forever. A read, so it never errored. 'purchased' is the
+              -- terminal state. Found by check-constraint-drift.mjs 2026-07-25.
+              AND status = 'purchased'
             """,
             user_id,
         )
@@ -169,21 +181,27 @@ async def get_value_summary(
             SELECT
                 COALESCE(i.title, i.manual_name, i.name, '') AS item_name,
                 i.category,
-                i.purchase_price,
+                -- EUR half throughout: pp.q50 is EUR, while purchase_price is
+                -- raw in purchase_currency. Comparing them treated a USD 100
+                -- purchase as EUR 100, which both mis-filtered the "smart buy"
+                -- test (pp.q50 > purchase_price) and overstated the saving for
+                -- any user not on EUR. See the paired-columns note in
+                -- docs/ARCHITECTURE.md.
+                i.purchase_price_eur AS purchase_price,
                 pp.q50 AS market_value,
-                (pp.q50 - i.purchase_price) AS saved
+                (pp.q50 - i.purchase_price_eur) AS saved
             FROM items i
             JOIN LATERAL (
                 SELECT q50 FROM price_predictions
-                WHERE item_ref = i.canonical_key
+                WHERE item_ref = i.canonical_ref
                 ORDER BY generated_at DESC
                 LIMIT 1
             ) pp ON true
-            WHERE i.user_id = $1::uuid
-              AND i.purchase_price IS NOT NULL
-              AND i.purchase_price > 0
-              AND pp.q50 > i.purchase_price
-            ORDER BY (pp.q50 - i.purchase_price) DESC
+            WHERE i.user_id = $1::uuid AND NOT i.archived
+              AND i.purchase_price_eur IS NOT NULL
+              AND i.purchase_price_eur > 0
+              AND pp.q50 > i.purchase_price_eur
+            ORDER BY (pp.q50 - i.purchase_price_eur) DESC
             LIMIT 20
             """,
             user_id,

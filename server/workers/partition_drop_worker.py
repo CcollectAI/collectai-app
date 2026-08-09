@@ -23,8 +23,12 @@ Algorithm per run:
           (e.g. `price_predictions_y2026m01`)
        c. If manifest confirms export: ALTER TABLE parent DETACH PARTITION child;
           DROP TABLE child.
-       d. If manifest missing: log + skip. If this recurs for > 2 cycles
-          in a row, emit 'error' so sanity_probe surfaces it.
+       d. If manifest missing AND the partition has 0 rows: drop it anyway.
+          The exporter writes no manifest entry for an empty partition, so
+          requiring one deadlocks it here permanently (see the empty-partition
+          exemption below). An empty partition cannot lose data.
+       e. If manifest missing and the partition HAS rows: log + skip and emit
+          'error' so sanity_probe surfaces it — the export worker is behind.
 
 Env:
   PARTITION_RETENTION_MONTHS  — global age threshold (default 6)
@@ -159,6 +163,9 @@ async def run_once() -> dict:
         "checked": 0,
         "eligible_by_age": 0,
         "confirmed_in_s3": 0,
+        # Eligible + unexported + genuinely empty -> dropped under the
+        # emptiness exemption rather than blocking the gate forever.
+        "dropped_empty": 0,
         "dropped": 0,
         "skipped_no_manifest": [],
         "dropped_parts": [],
@@ -189,14 +196,45 @@ async def run_once() -> dict:
                 manifest_id = manifest_fmt.format(
                     part_name=part_name, year=year, month=month,
                 )
-                if manifest_id not in exported:
-                    stats["skipped_no_manifest"].append(part_name)
-                    logger.warning(
-                        "[partition_drop] %s is %d months old but not in S3 manifest — skipping",
+                if manifest_id in exported:
+                    stats["confirmed_in_s3"] += 1
+                else:
+                    # EMPTY-PARTITION EXEMPTION (added 2026-07-24).
+                    #
+                    # datalake_export_worker has nothing to export for a 0-row
+                    # partition, so it never writes a manifest entry for one.
+                    # This gate then refuses to drop it — forever. The two
+                    # safety mechanisms deadlocked: 7 empty partitions
+                    # (market_hits_y2026m01..m03, price_predictions_y2025m12..
+                    # y2026m03) were stuck, and because unexported-but-eligible
+                    # partitions force status='error', the worker reported
+                    # 29 errors in 7 days. A permanently-red signal is worse
+                    # than no signal: it trains you to ignore the alert that
+                    # would matter when a NON-empty partition is unexported.
+                    #
+                    # A 0-row partition cannot lose data, so the manifest
+                    # requirement is vacuous for it. Count exactly with
+                    # COUNT(*) rather than pg_class.reltuples — reltuples is an
+                    # estimate that can read 0 for a populated table when stats
+                    # are stale, and this decision DROPS data. On an empty
+                    # partition COUNT(*) is effectively free.
+                    live_rows = await conn.fetchval(
+                        f"SELECT COUNT(*) FROM public.{part_name}"
+                    )
+                    if live_rows != 0:
+                        stats["skipped_no_manifest"].append(part_name)
+                        logger.warning(
+                            "[partition_drop] %s is %d months old, has %d rows, and is "
+                            "not in the S3 manifest — skipping (export worker is behind)",
+                            part_name, age_months, live_rows,
+                        )
+                        continue
+                    stats["dropped_empty"] += 1
+                    logger.info(
+                        "[partition_drop] %s is %d months old and EMPTY (0 rows) — "
+                        "manifest gate is vacuous, proceeding to drop",
                         part_name, age_months,
                     )
-                    continue
-                stats["confirmed_in_s3"] += 1
 
                 if not ENABLED:
                     logger.info(

@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from app.auth import get_current_user_id
 from app.lib.db_helpers import get_db_pool
+from app.lib.json_safe import json_safe_rows
 from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/search", tags=["Search"])
@@ -71,6 +72,11 @@ CATEGORY_LIST = [
 ]
 
 
+# Upper bound on ANDed search terms. Ten is far past a real product name and
+# keeps a pasted paragraph from building a 200-predicate WHERE clause.
+LIKE_TERM_LIMIT = 10
+
+
 @router.get("/unified", response_model=UnifiedSearchResponse)
 async def unified_search(
     q: str = "",
@@ -98,6 +104,34 @@ async def unified_search(
     escaped_q = q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     like_pattern = f"%{escaped_q}%"
 
+    # EVERY WORD, not the phrase. A single `ILIKE '%rolex daytona%'` requires the
+    # words to be adjacent in that order, so it found 5 of the 11 Rolex Daytonas
+    # we hold — the 6 it missed are all titled "Rolex COSMOGRAPH Daytona", where
+    # one word in between kills the match. Catalogue titles are long and
+    # descriptive ("Rolex Cosmograph Daytona Panda Dial Steel (126500LN)"), so
+    # this is the normal case, not an edge case.
+    #
+    # Each term is matched with ILIKE ALL(array) — every term must appear, in any
+    # order and anywhere in the title. Bound to LIKE_TERM_LIMIT so a paragraph
+    # pasted into the search box cannot turn into an unbounded AND-chain.
+    like_terms = [
+        f"%{t}%" for t in escaped_q.split() if t
+    ][:LIKE_TERM_LIMIT] or [like_pattern]
+
+    # And an ANCHOR term, because `ILIKE ALL(array)` alone cannot use the
+    # trigram index. `idx_category_items_title_trgm` (GIN, gin_trgm_ops) is what
+    # makes an unanchored `%...%` search viable over 140k catalogue rows; the
+    # planner can push a plain `title ILIKE $1` into it, but not an ALL(...)
+    # over an array. Measured on prod: ALL-only 229ms, anchor + ALL 24.8ms —
+    # the same as the single-phrase query it replaces. A keystroke-driven search
+    # cannot afford the difference.
+    #
+    # The LONGEST term is the anchor: more trigrams means a more selective index
+    # probe, and it is the cheapest proxy for selectivity available without
+    # statistics. ALL(...) still applies every term, so the anchor only narrows
+    # the candidate set — it never changes which rows qualify.
+    like_anchor = max(like_terms, key=len)
+
     items = []
     catalog = []
     users = []
@@ -111,24 +145,53 @@ async def unified_search(
                 """SELECT id, name, category, image_url,
                           estimated_value AS price
                    FROM items
-                   WHERE user_id = $1 AND name ILIKE $2
+                   WHERE user_id = $1 AND NOT archived AND name ILIKE ALL($2::text[])
                    LIMIT $3""",
                 user_id,
-                like_pattern,
+                like_terms,
                 limit,
             )
             items = [dict(r) for r in item_rows] if item_rows else []
 
             # Search catalog items (category_items — public catalog)
             # R50k: image_url kept backend-only; API returns has_reference_image only
+            # price_eur comes from mv_catalog_item_price — the SAME source the
+            # catalog detail page reads (catalog_browser_router). Deliberately not
+            # price_predictions: the two disagree (yugioh is dense in predictions
+            # and sparse in market hits), and a row that says EUR 12 in search and
+            # EUR 30 when tapped is worse than a row with no price.
+            #
+            # LEFT JOIN, never INNER: filtering to priced rows would make watches
+            # and lego return NOTHING, which reads as broken software rather than
+            # as missing price data. An unpriced row still tells the user we know
+            # the object exists.
+            #
+            # The matview is a unique-index lookup rebuilt nightly by pg_cron; the
+            # lateral over partitioned market_hits it replaced cost ~1.4s for 30
+            # items, which a keystroke-driven search cannot afford.
             catalog_rows = await conn.fetch(
-                """SELECT id, category, item_key, title, brand,
-                          (image_url IS NOT NULL) AS has_reference_image
-                   FROM category_items
-                   WHERE title ILIKE $1
-                   ORDER BY title ASC
-                   LIMIT $2""",
-                like_pattern,
+                """SELECT ci.id, ci.category, ci.item_key, ci.title, ci.brand,
+                          (ci.image_url IS NOT NULL) AS has_reference_image,
+                          -- Rounded HERE, not on the client: price_eur is a
+                          -- float and asyncpg hands back 642.6399999999999863
+                          -- verbatim, which every consumer would have to fix.
+                          -- ::float8 is LOAD-BEARING, not cosmetic. round()
+                          -- returns numeric, asyncpg maps that to Decimal, and
+                          -- `catalog` is an untyped list[dict] so Pydantic would
+                          -- have serialised it as the STRING "642.64". The client
+                          -- tests `typeof priceEur === 'number'`, so every priced
+                          -- row would have rendered "No price yet" — the feature
+                          -- would have shipped dead and looked like missing data.
+                          round(mp.price_eur::numeric, 2)::float8 AS price_eur
+                   FROM category_items ci
+                   LEFT JOIN public.mv_catalog_item_price mp
+                          ON mp.category = ci.category AND mp.item_key = ci.item_key
+                   WHERE ci.title ILIKE $1
+                     AND ci.title ILIKE ALL($2::text[])
+                   ORDER BY (mp.price_eur IS NULL), ci.title ASC
+                   LIMIT $3""",
+                like_anchor,
+                like_terms,
                 limit,
             )
             catalog = [dict(r) for r in catalog_rows] if catalog_rows else []
@@ -149,9 +212,9 @@ async def unified_search(
             event_rows = await conn.fetch(
                 """SELECT id, title, date AS start_date, location, category, status
                    FROM events
-                   WHERE title ILIKE $1 AND status != 'cancelled'
+                   WHERE title ILIKE ALL($1::text[]) AND status != 'cancelled'
                    LIMIT $2""",
-                like_pattern,
+                like_terms,
                 limit,
             )
             events = [dict(r) for r in event_rows] if event_rows else []
@@ -159,14 +222,14 @@ async def unified_search(
     except Exception as e:
         logger.warning("unified_search DB error: %s", e)
 
-    # Convert non-serializable types
-    for lst in [items, catalog, users, events]:
-        for row in lst:
-            for k, v in row.items():
-                if hasattr(v, "isoformat"):
-                    row[k] = v.isoformat()
-                elif hasattr(v, "hex"):
-                    row[k] = str(v)
+    # Convert non-serializable types. See app/lib/json_safe.py for why this is
+    # a shared helper and not a loop written here: the loop that used to live
+    # here tested `hasattr(v, "hex")`, floats have .hex(), and so every price in
+    # every search response shipped as a STRING.
+    items = json_safe_rows(items)
+    catalog = json_safe_rows(catalog)
+    users = json_safe_rows(users)
+    events = json_safe_rows(events)
 
     # Record demand signal with geo enrichment (best-effort).
     # If 0 results across every source, ALSO record a separate

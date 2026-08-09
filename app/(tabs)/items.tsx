@@ -23,6 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { dataProvider, type Item as DataItem } from "@/data";
+import { mapDataItemToScreenItem, type ScreenItem } from "@/data/screenItem";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { AnimatedPressable, useEnterReveal, useStaggerReveal } from "@/motion";
@@ -35,6 +36,7 @@ import {
   useOptimisticBulkArchive,
   useOptimisticBulkDelete,
 } from "@/hooks/useOptimisticItems";
+import { useAuthContext } from '@/providers/useAuthContext';
 import { usePaginatedList } from "@/hooks/usePaginatedList";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
@@ -53,6 +55,7 @@ import {
 import { collectorsApi } from '@/api/collectorsApi';
 import { exportItemsOverview } from '@/api/miscApi';
 import { formatPrice } from '@/lib/format';
+import { formatCategoryName } from '@/constants/categories';
 import { getCategoryById, getCategoryByName } from '@/data/categories';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import {
@@ -65,26 +68,12 @@ import {
   ItemsLoadingState,
   ItemsErrorState,
   ItemsSectionFooter,
-  ItemsFloatingAddButton,
 } from '@/components/items';
 
-type Item = {
-  id: string;
-  name: string;
-  category: string;        // e.g. Pokémon, LEGO, or custom like "vintage_lamps"
-  collectionName: string;  // e.g. "151 Base Set"
-  value: number;
-  condition?: string;
-  notes?: string;
-  imageUrl?: string;
-  source?: string;         // 'ai' | 'scan' | 'manual' — R48
-  isManual?: boolean;      // derived: true when source='manual' and no AI predictions
-  // Acquisition fields surfaced 2026-05-01 (was captured in add-manual but
-  // never read back). null = no purchase data on this item, undefined = not
-  // available in the underlying provider response.
-  purchasePriceEur?: number | null;
-  purchasedAt?: string | null;
-};
+// Screen row shape + the provider→screen mapper live in @/data/screenItem so
+// the mapping is unit-testable (see screenItem.test.ts). Aliased to `Item`
+// here to keep the rest of this file unchanged.
+type Item = ScreenItem;
 
 const VIEW_MODE_KEY = '@sparrowcollect/items_view_mode';
 
@@ -92,7 +81,6 @@ const ITEMS_PAGE_SIZE = 20;
 const STAGGER_MS = 40;
 const STATUS_CLEAR_DELAY_MS = 3000;
 const SCROLL_LOAD_THRESHOLD = 0.5;
-const FLOATING_BUTTON_SCROLL_PX = 100;
 
 const ItemsScreen: React.FC = () => {
   const router = useRouter();
@@ -105,23 +93,12 @@ const ItemsScreen: React.FC = () => {
   const [query, setQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   // Paginated data fetching
+  const { loading: authLoading } = useAuthContext();
+
   const itemFetcher = useCallback(
     async (limit: number, offset: number): Promise<Item[]> => {
       const items = await dataProvider.listItems({ limit, offset });
-      return items.map((it: DataItem) => ({
-        id: it.id,
-        name: it.name || '(Untitled)',
-        category: it.category,
-        collectionName: "",
-        value: it.price,
-        condition: undefined,
-        notes: undefined,
-        imageUrl: it.imageUrl,
-        source: (it as Record<string, unknown>).source as string | undefined,
-        isManual: (it as Record<string, unknown>).source === 'manual' && !it.priceBand,
-        purchasePriceEur: it.purchasePriceEur ?? null,
-        purchasedAt: it.purchasedAt ?? null,
-      }));
+      return items.map(mapDataItemToScreenItem);
     },
     [],
   );
@@ -135,7 +112,15 @@ const ItemsScreen: React.FC = () => {
     loadMore,
     refresh: paginatedRefresh,
     setItems: setProviderItems,
-  } = usePaginatedList<Item>(itemFetcher, { pageSize: ITEMS_PAGE_SIZE });
+    isSlow,
+    isVerySlow,
+  } = usePaginatedList<Item>(itemFetcher, {
+    pageSize: ITEMS_PAGE_SIZE,
+    // Don't fire the first Supabase read while the session is still hydrating:
+    // supabase-js queues it behind the auth lock, so it stalls for the full 8s
+    // timeout and returns empty instead of failing fast.
+    enabled: !authLoading,
+  });
 
   // Stagger animation for list items — compute flat index map
   const { getItemStyle: getStaggerStyle } = useStaggerReveal({
@@ -155,7 +140,6 @@ const ItemsScreen: React.FC = () => {
   }, [providerItems]);
 
   const [refreshing, setRefreshing] = useState(false);
-  const [showFloatingAdd, setShowFloatingAdd] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
@@ -173,9 +157,20 @@ const ItemsScreen: React.FC = () => {
     collectorsApi.getPortfolioCategoryBreakdown()
       .then((data) => {
         if (cancelled) return;
-        const cats = Array.isArray((data as { categories?: unknown })?.categories)
-          ? (data as { categories: CategoryBreakdownItem[] }).categories
+        // Backend (GET /analytics/portfolio/category-breakdown) returns
+        // { breakdown: [{ category, item_count, total_value, pct_of_portfolio }] }.
+        // We previously read `.categories` (never existed) so real data never
+        // populated and the section always fell back to its demo preview. Map
+        // pct_of_portfolio (0–1) → percentage (0–100).
+        const raw = Array.isArray((data as { breakdown?: unknown })?.breakdown)
+          ? (data as { breakdown: Array<Record<string, unknown>> }).breakdown
           : [];
+        const cats: CategoryBreakdownItem[] = raw.map((b) => ({
+          category: String(b.category ?? ''),
+          item_count: Number(b.item_count ?? 0),
+          total_value: Number(b.total_value ?? 0),
+          percentage: Math.round(Number(b.pct_of_portfolio ?? 0) * 1000) / 10,
+        }));
         setCategoryBreakdown(cats);
       })
       .catch((err) => {
@@ -340,7 +335,7 @@ const ItemsScreen: React.FC = () => {
         setExportStatus('Saved (sharing unavailable)');
       }
     } catch (err: unknown) {
-      logger.warn('[Items] export error:', err);
+      logger.error('[Items] export error:', err);
       setExportStatus('Export failed');
       showToast({ message: 'Failed to export items', type: 'error' });
     } finally {
@@ -390,7 +385,7 @@ const ItemsScreen: React.FC = () => {
       }
       exitMultiSelectMode();
     } catch (err: unknown) {
-      logger.warn('[Items] bulk export error:', err);
+      logger.error('[Items] bulk export error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to export selected items', type: 'error' });
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     } finally {
@@ -475,7 +470,7 @@ const ItemsScreen: React.FC = () => {
       showToast({ message: `${count} item${count > 1 ? 's' : ''} moved to ${newCategory}`, type: 'success' });
       await paginatedRefresh();
     } catch (err: unknown) {
-      logger.warn('[Items] bulk category change error:', err);
+      logger.error('[Items] bulk category change error:', err);
       showToast({ message: 'Could not update items', type: 'error' });
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     } finally {
@@ -496,6 +491,14 @@ const ItemsScreen: React.FC = () => {
         value: String(item.value),
         condition: item.condition ?? "",
         notes: item.notes ?? "",
+        // The detail screen takes its photo from this route param
+        // (item/[id].tsx:161 reads `imageUri` out of useLocalSearchParams);
+        // it never fetches items.image_url itself. Omitting it meant opening
+        // an item from this list showed an empty "Add Photo" dropzone even
+        // though the row right above it rendered the thumbnail fine, and the
+        // URL resolves — verified 2026-07-27 against a saved item whose
+        // image_url returns HTTP 200.
+        imageUri: item.imageUrl ?? "",
       },
     });
   }, [router, settings.hapticsEnabled]);
@@ -613,7 +616,9 @@ const ItemsScreen: React.FC = () => {
       group.total += item.value;
     }
 
-    groups.sort((a, b) => a.category.localeCompare(b.category));
+    // Null-safe: an item with no category yields group.category === null, and
+    // null.localeCompare() throws — which blanked the whole Items screen.
+    groups.sort((a, b) => (a.category ?? '').localeCompare(b.category ?? ''));
 
     return groups;
   }, [query, filterCategory, advancedFilter, categoryParam, collectionParam, dataSource]);
@@ -628,6 +633,7 @@ const ItemsScreen: React.FC = () => {
           category: item.category,
           value: item.value,
           imageUrl: item.imageUrl,
+          condition: item.condition,
         }))
       ),
     [filteredAndSortedByCategory]
@@ -656,8 +662,6 @@ const ItemsScreen: React.FC = () => {
       if (distanceFromBottom < layoutMeasurement.height * SCROLL_LOAD_THRESHOLD) {
         loadMore();
       }
-      // Show floating add button when user scrolls down past 100px
-      setShowFloatingAdd(contentOffset.y > FLOATING_BUTTON_SCROLL_PX);
     },
     [loadMore],
   );
@@ -674,7 +678,7 @@ const ItemsScreen: React.FC = () => {
     try {
       router.setParams({ category: undefined, collectionName: undefined });
     } catch (err) {
-      logger.warn('[Items] setParams failed:', err);
+      logger.error('[Items] setParams failed:', err);
     }
   };
 
@@ -687,13 +691,18 @@ const ItemsScreen: React.FC = () => {
     if (hasEverHadItems !== true) {
       return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+          {/* Header (chat + settings) stays put even on the first-frame hero so
+              it never disappears between cold-start states. */}
+          <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+            <ItemsGridHeader portfolioTotal={portfolioTotal} />
+          </View>
           <View style={{ flex: 1, justifyContent: 'center' }}>
             <ItemsEmptyState />
           </View>
         </SafeAreaView>
       );
     }
-    return <ItemsLoadingState viewMode={viewMode} />;
+    return <ItemsLoadingState viewMode={viewMode} isSlow={isSlow} isVerySlow={isVerySlow} />;
   }
 
   // Error state
@@ -728,6 +737,11 @@ const ItemsScreen: React.FC = () => {
   if (isFirstRun) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        {/* Keep the top-right chat + settings icons here too so the empty state
+            matches every other screen (the grid path renders the same header). */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+          <ItemsGridHeader portfolioTotal={portfolioTotal} />
+        </View>
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
           refreshControl={
@@ -840,7 +854,15 @@ const ItemsScreen: React.FC = () => {
         formatPrice={(v) => formatPrice(v)}
         resolveCategoryName={(raw) => {
           const cat = getCategoryById(raw) ?? getCategoryByName(raw);
-          return cat?.name ?? raw;
+          // Fall back to formatCategoryName, not the raw slug. The registry
+          // only knows real categories, so anything else rendered lowercase
+          // and unsplit — visible from 2026-07-27 as a breakdown card reading
+          // "uncategorized" directly above a section header reading
+          // "Uncategorized", once the backend started returning that bucket.
+          // formatCategoryName is already what the section headers (line 952)
+          // and the row pills (ItemsListItem.tsx:126) use, so this makes one
+          // screen agree with itself.
+          return cat?.name ?? formatCategoryName(raw);
         }}
         onCategoryPress={(catRaw) => {
           fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -867,6 +889,10 @@ const ItemsScreen: React.FC = () => {
         fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
         router.push('/build-paint-projects');
       }}
+      onOpenArchived={() => {
+        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+        router.push('/archived');
+      }}
     />
   );
 
@@ -878,6 +904,21 @@ const ItemsScreen: React.FC = () => {
       </Text>
       <Text style={{ color: colors.muted, fontSize: text.md, marginTop: 4 }}>
         Try a different keyword or clear filters
+      </Text>
+    </View>
+  ) : error ? (
+    // FAILED != EMPTY. `error` was destructured from usePaginatedList and never
+    // rendered, so a failed load showed ItemsEmptyState — "add your first item"
+    // to someone who already has a collection. Same shape as the watchlist bug
+    // fixed alongside it, and the same reason it went unnoticed: an empty list
+    // is a plausible screen.
+    <View style={{ alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 }}>
+      <Ionicons name="cloud-offline-outline" size={40} color={colors.danger} />
+      <Text style={{ color: colors.text, fontSize: text.lg, fontWeight: fontWeight.bold, marginTop: 12 }}>
+        Couldn&apos;t load your items
+      </Text>
+      <Text style={{ color: colors.muted, fontSize: text.md, marginTop: 4, textAlign: 'center' }}>
+        Your collection is safe — we just couldn&apos;t reach it. Pull down to try again.
       </Text>
     </View>
   ) : <ItemsEmptyState />;
@@ -937,7 +978,7 @@ const ItemsScreen: React.FC = () => {
           renderSectionHeader={({ section }) => (
             <View style={[styles.categoryBlock, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
               <Text style={[styles.categoryTitle, { color: colors.text }]}>
-                {section.title}
+                {formatCategoryName(section.title)}
               </Text>
             </View>
           )}
@@ -975,15 +1016,6 @@ const ItemsScreen: React.FC = () => {
         />
       )}
 
-      {/* Floating Add Item button — appears when scrolling */}
-      {showFloatingAdd && !isMultiSelectMode && (
-        <ItemsFloatingAddButton
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push('/(tabs)/add');
-          }}
-        />
-      )}
       </KeyboardAvoidingView>
 
       {/* Category Change Modal */}

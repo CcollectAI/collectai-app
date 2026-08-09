@@ -30,6 +30,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useFollowedCategories } from "@/hooks/useFollowedCategories";
 import type { PurchaseMandate, MandateDeal } from "@/data/types";
+import logger from "@/utils/logger";
 
 const DEALS_PAGE_SIZE = 10;
 
@@ -92,6 +93,9 @@ function AgentHubScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreDeals, setHasMoreDeals] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Kept separate from `error` on purpose: a paywall is not a failure and
+  // must not render in the red error banner.
+  const [upgradeNotice, setUpgradeNotice] = useState(false);
   // Default: only deals from mandates whose category the user follows.
   // Toggle flips to "all" when the user explicitly broadens the view.
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -161,26 +165,50 @@ function AgentHubScreen() {
     try {
       setError(null);
       setHasMoreDeals(true);
-      const [mandateRes, dealRes] = await Promise.all([
+      // allSettled, NOT all. These two calls have different entitlements:
+      // /purchase/mandates is available on every plan, /purchase/deals is
+      // Pro-only and 403s for free users. Promise.all rejected the moment the
+      // deals call 403'd, so setMandates was NEVER reached — a free user could
+      // create up to 3 mandates, the API returned them correctly, and the
+      // screen still said "Not watching anything yet". Their own data was
+      // invisible to them. Found 2026-07-29 by seeding a mandate and watching
+      // the screen stay empty.
+      const [mandateRes, dealRes] = await Promise.allSettled([
         collectorsApi.listMandates(20, 0),
         collectorsApi.listDeals({ limit: DEALS_PAGE_SIZE, offset: 0 }),
       ]);
-      const mandateData = mandateRes as { mandates?: typeof mandates } | undefined;
-      const dealData = dealRes as { deals?: typeof deals } | undefined;
-      setMandates(mandateData?.mandates ?? []);
-      const initialDeals = dealData?.deals ?? [];
-      setDeals(initialDeals);
-      if (initialDeals.length < DEALS_PAGE_SIZE) setHasMoreDeals(false);
-    } catch (e) {
-      // D8: a 403 here means the user isn't on a plan that includes deal
-      // discovery — surface that as an upgrade prompt rather than a generic
-      // "couldn't load" error that reads like a bug.
-      const status = (e as { status?: number } | null)?.status;
-      if (status === 403) {
-        setError('Deal discovery is a Sparrow Pro feature. Upgrade to let Sparrow hunt deals for you.');
+
+      if (mandateRes.status === 'fulfilled') {
+        const mandateData = mandateRes.value as { mandates?: typeof mandates } | undefined;
+        setMandates(mandateData?.mandates ?? []);
       } else {
-        setError('Could not load deals. Pull to refresh.');
+        logger.warn('[DealAgent] mandates load failed:', mandateRes.reason);
       }
+
+      if (dealRes.status === 'fulfilled') {
+        const dealData = dealRes.value as { deals?: typeof deals } | undefined;
+        const initialDeals = dealData?.deals ?? [];
+        setDeals(initialDeals);
+        if (initialDeals.length < DEALS_PAGE_SIZE) setHasMoreDeals(false);
+      } else {
+        // A 403 here means the user isn't on a plan that includes deal
+        // discovery — surface that as an upgrade prompt rather than a generic
+        // "couldn't load" error that reads like a bug.
+        const status = (dealRes.reason as { status?: number } | null)?.status;
+        setDeals([]);
+        setHasMoreDeals(false);
+        if (status === 403) {
+          // Upgrade prompt, NOT setError: the error banner is red with a
+          // warning triangle, so routing this through it made a paywall read
+          // as a failure.
+          setUpgradeNotice(true);
+        } else {
+          setError('Could not load deals. Pull to refresh.');
+        }
+      }
+    } catch (e) {
+      logger.error('[DealAgent] unexpected load error:', e);
+      setError('Could not load deals. Pull to refresh.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -300,6 +328,20 @@ function AgentHubScreen() {
           <Text style={{ color: colors.danger, fontSize: 13, flex: 1 }}>{error}</Text>
         </View>
       )}
+      {upgradeNotice && (
+        <AnimatedPressable
+          onPress={() => router.push('/subscription')}
+          style={{ backgroundColor: colors.accent + '14', borderColor: colors.accent + '40', borderWidth: 1, padding: 12, borderRadius: 8, marginHorizontal: 16, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Deal discovery is a Sparrow Pro feature. Tap to upgrade."
+        >
+          <Ionicons name="lock-closed" size={14} color={colors.accent} />
+          <Text style={{ color: colors.text, fontSize: 13, flex: 1 }}>
+            Deal discovery is a Sparrow Pro feature. Upgrade to let Sparrow hunt deals for you.
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.accent} />
+        </AnimatedPressable>
+      )}
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
@@ -327,9 +369,13 @@ function AgentHubScreen() {
           <View style={{ flex: 1 }}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Sparrow's Watch</Text>
             <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
-              A little bird watching the marketplaces for you.
+              We watch marketplaces and alert you when your price is hit.
             </Text>
           </View>
+          {/* Hidden while the empty card is showing: that card's button is the
+              same action with the same accessibilityLabel, so both together
+              gave one screen two identical CTAs. */}
+          {mandates.length > 0 && (
           <AnimatedPressable
             style={[styles.createBtn, { backgroundColor: colors.accent }]}
             onPress={() => {
@@ -337,11 +383,12 @@ function AgentHubScreen() {
               router.push("/purchase/create-mandate");
             }}
             accessibilityRole="button"
-            accessibilityLabel="Tell Sparrow what to watch"
+            accessibilityLabel="Add something to watch"
           >
-            <Ionicons name="add" size={20} color="#fff" />
-            <Text style={styles.createBtnText}>Watch</Text>
+            <Ionicons name="add" size={20} color={colors.accentText} />
+            <Text style={[styles.createBtnText, { color: colors.accentText }]}>Watch</Text>
           </AnimatedPressable>
+          )}
         </View>
 
         {/* Live status — index 1 (sticky). Wrapped in opaque background so
@@ -350,34 +397,39 @@ function AgentHubScreen() {
           <View
             style={[styles.scanStatus, { backgroundColor: colors.card, borderColor: colors.border }]}
             accessibilityRole="text"
-            accessibilityLabel={`Sparrow is watching ${activeMandateCount} ${activeMandateCount === 1 ? 'thing' : 'things'}, last scan ${lastScanLabel ?? 'pending'}`}
+            accessibilityLabel={`Sparrow is watching ${activeMandateCount} ${activeMandateCount === 1 ? 'deal' : 'deals'}, last scan ${lastScanLabel ?? 'pending'}`}
           >
-            <View style={styles.pulseWrap}>
-              {[pulseAnim1, pulseAnim2, pulseAnim3].map((anim, i) => (
-                <Animated.View
-                  key={i}
-                  style={[
-                    styles.pulseRing,
-                    {
-                      borderColor: colors.accent,
-                      transform: [
-                        {
-                          scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 2.6] }),
-                        },
-                      ],
-                      opacity: anim.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 0.55, 0] }),
-                    },
-                  ]}
-                />
-              ))}
-              <View style={[styles.pulseDot, { backgroundColor: colors.accent }]} />
-            </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.scanStatusTitle, { color: colors.text }]}>
-                {activeMandateCount > 0
-                  ? `Watching ${activeMandateCount} ${activeMandateCount === 1 ? 'thing' : 'things'} for you`
-                  : 'Idle'}
-              </Text>
+              {/* Dot sits ON the headline row, not in a column of its own —
+                  it is a live indicator for that sentence, so it has to read
+                  as part of it. */}
+              <View style={styles.scanStatusTitleRow}>
+                <Text style={[styles.scanStatusTitle, { color: colors.text }]}>
+                  {activeMandateCount > 0
+                    ? `Watching ${activeMandateCount} ${activeMandateCount === 1 ? 'deal' : 'deals'} for you`
+                    : 'Idle'}
+                </Text>
+                <View style={styles.pulseWrap}>
+                  {[pulseAnim1, pulseAnim2, pulseAnim3].map((anim, i) => (
+                    <Animated.View
+                      key={i}
+                      style={[
+                        styles.pulseRing,
+                        {
+                          borderColor: colors.accent,
+                          transform: [
+                            {
+                              scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 2.6] }),
+                            },
+                          ],
+                          opacity: anim.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 0.55, 0] }),
+                        },
+                      ]}
+                    />
+                  ))}
+                  <View style={[styles.pulseDot, { backgroundColor: colors.accent }]} />
+                </View>
+              </View>
               <Text style={[styles.scanStatusSub, { color: colors.muted }]} numberOfLines={1}>
                 {lastScanLabel ? `Last scan ${lastScanLabel}` : 'Sparrow will start watching shortly.'}
               </Text>
@@ -391,9 +443,9 @@ function AgentHubScreen() {
         {mandates.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Ionicons name="search-outline" size={32} color={colors.muted} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Sparrow hasn't started watching yet</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Not watching anything yet</Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-              Tell Sparrow what you're hunting and the price you'd pay. You'll hear a chirp the moment something matches.
+              Add an item and your max price.
             </Text>
             <View style={styles.emptyCtaContainer}>
               <AnimatedPressable
@@ -405,7 +457,7 @@ function AgentHubScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Tell Sparrow what to watch"
               >
-                <Text style={styles.emptyCtaBtnText}>Tell Sparrow what to watch</Text>
+                <Text style={[styles.emptyCtaBtnText, { color: colors.accentText }]}>Add something to watch</Text>
               </AnimatedPressable>
             </View>
           </View>
@@ -425,7 +477,7 @@ function AgentHubScreen() {
                   router.push(`/purchase/create-mandate?id=${m.id}`);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel={`Watching: ${m.name}, ${m.dealsFound} spotted, cap ${formatPrice(m.maxPrice)}`}
+                accessibilityLabel={`Watching: ${m.name}, ${m.dealsFound} spotted, limit ${formatPrice(m.maxPrice)} per match`}
               >
                 <View style={styles.mandateHeader}>
                   {/* Category-aware icon prefix — visually differentiates mandate types
@@ -466,7 +518,7 @@ function AgentHubScreen() {
                       <Text style={[styles.statValue, { color: colors.text }]}>
                         {formatPrice(m.maxPrice)}
                       </Text>
-                      <Text style={[styles.statLabel, { color: colors.muted }]}>cap per match</Text>
+                      <Text style={[styles.statLabel, { color: colors.muted }]}>limit</Text>
                     </View>
                   </View>
                 </View>
@@ -532,7 +584,7 @@ function AgentHubScreen() {
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
               {deals.length > 0 && !showAllCategories
                 ? 'Tap "Show all" to see deals from other categories.'
-                : 'Sparrow will leave deals here as it spots them.'}
+                : 'Matches will appear here.'}
             </Text>
           </View>
         ) : (
@@ -667,7 +719,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 4,
   },
-  createBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  // colour comes from colors.accentText at the call site — these sit on an
+  // accent fill, which is #FFFFFF in the high-contrast dark palette.
+  createBtnText: { fontWeight: "700", fontSize: 14 },
 
   // "Sparrow's watching" status row — pulsing dot + last-scan label
   scanStatus: {
@@ -685,6 +739,10 @@ const styles = StyleSheet.create({
     height: 16,
     alignItems: "center",
     justifyContent: "center",
+    // Pin to the trailing edge. Relying on source order alone left the dot
+    // rendering bottom-left; marginLeft:auto makes "right" explicit whatever
+    // the sibling does.
+    marginLeft: "auto",
   },
   pulseDot: {
     width: 10,
@@ -697,6 +755,11 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     borderWidth: 2,
+  },
+  scanStatusTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   scanStatusTitle: { fontSize: 14, fontWeight: "700" },
   scanStatusSub: { fontSize: 12, marginTop: 2 },
@@ -744,7 +807,6 @@ const styles = StyleSheet.create({
   emptyCtaBtnText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
   },
 
   // Mandate card

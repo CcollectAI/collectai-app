@@ -7,10 +7,11 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { featureFlags } from '@/config/featureFlags';
 import { submitScanFeedback } from '@/api/collectorsApi';
+import { logger } from '@/lib/logger';
 
 type EditableField = 'name' | 'category' | 'condition';
 
@@ -37,7 +38,7 @@ function ScanFeedbackPanelInner({
   feedbackEnabled,
   onPressName,
 }: Props) {
-  const { colors } = useAppTheme();
+  const { colors } = useScannerTheme();
 
   const [editingField, setEditingField] = useState<EditableField | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -68,7 +69,8 @@ function ScanFeedbackPanelInner({
       setFeedbackSent(true);
       setEditingField(null);
       Alert.alert('Thanks!', 'Your correction helps improve future scans.');
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] ScanFeedbackPanel.tsx:71:', e);
       Alert.alert('Error', 'Could not submit feedback. Please try again.');
     }
   }, [editingField, editValue, scanSessionId]);

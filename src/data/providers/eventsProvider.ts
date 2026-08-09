@@ -5,7 +5,6 @@
 import { API_LIMITS } from '@/constants/apiLimits';
 import type { PaginationParams } from '../types';
 import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from '../events';
-import { supabase } from '../../lib/supabase';
 import {
   collectorsApi,
   searchEvents as apiSearchEvents,
@@ -14,42 +13,11 @@ import logger from '../../utils/logger';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function mapEventRow(row: Record<string, unknown>): CollectorsEvent {
-  return {
-    id: row.id as string,
-    title: row.title as string,
-    kind: row.kind as CollectorsEvent['kind'],
-    date: row.date as string,
-    time: (row.time as string | null) ?? undefined,
-    endDate: (row.end_date as string | null) ?? undefined,
-    location: (row.location as string | null) ?? undefined,
-    onlineUrl: (row.online_url as string | null) ?? undefined,
-    description: (row.description as string | null) ?? '',
-    categoryId: (row.category_id as string | null) ?? undefined,
-    hostUserId: (row.created_by as string | null) ?? undefined,
-    attendeeIds: [],
-    attendeeCount: (row.attendee_count as number | null) ?? 0,
-    goingCount: (row.going_count as number | null) ?? 0,
-    interestedCount: (row.interested_count as number | null) ?? 0,
-    maxAttendees: (row.max_attendees as number | null) ?? undefined,
-    isFull: (row.is_full as boolean | null) ?? false,
-    isAttending: (row.is_attending as boolean | null) ?? false,
-    myRsvpStatus: (row.my_rsvp_status as string | null) ?? undefined,
-    source: (row.source as string | null) ?? undefined,
-    sourceUrl: (row.source_url as string | null) ?? undefined,
-    imageUrl: (row.image_url as string | null) ?? undefined,
-    createdBy: (row.created_by as string | null) ?? undefined,
-    format: (row.format as CollectorsEvent['format']) ?? undefined,
-    isPublic: (row.is_public as boolean | null) ?? undefined,
-    latitude: (row.latitude as number | null) ?? undefined,
-    longitude: (row.longitude as number | null) ?? undefined,
-    isSponsored: (row.is_sponsored as boolean | null) ?? false,
-    sponsorName: (row.sponsor_name as string | null) ?? undefined,
-    sponsorLogoUrl: (row.sponsor_logo_url as string | null) ?? undefined,
-    sponsorTier: (row.sponsor_tier as CollectorsEvent['sponsorTier']) ?? undefined,
-    sponsorCompanyId: (row.sponsor_company_id as string | null) ?? undefined,
-  };
-}
+// mapEventRow (the v_events_with_attendees_v1 shape) was deleted 2026-07-27
+// together with the last direct supabase-js read of that view — see
+// getEventById below for why. Keeping a second mapper around is how a fix
+// lands on the path nothing calls: every event now arrives in the EC2 API
+// shape, so there is exactly one mapper.
 
 function mapEventApiResponse(row: Record<string, unknown>): CollectorsEvent {
   return {
@@ -70,10 +38,21 @@ function mapEventApiResponse(row: Record<string, unknown>): CollectorsEvent {
     interestedCount: (row.interested_count as number | null) ?? 0,
     maxAttendees: (row.max_attendees as number | null) ?? undefined,
     isFull: (row.is_full as boolean | null) ?? false,
-    isAttending: (row.user_rsvp_status as string | null) != null,
+    // `isAttending` drives the events-tab button, which renders the word
+    // "Going" (app/(tabs)/events.tsx:436) and decides RSVP-vs-un-RSVP. It must
+    // therefore mean *going*, not "has any row". The old `!= null` test also
+    // labelled a `not_going` RSVP as attending. Until the list RPC returns
+    // user_rsvp_status (migration 20260727b) this stays false on the list —
+    // which is the same as today, just no longer silently wrong on detail.
+    isAttending: (row.user_rsvp_status as string | null) === 'going',
     myRsvpStatus: (row.user_rsvp_status as string | null) ?? undefined,
     source: (row.source as string | null) ?? undefined,
+    sourceUrl: (row.source_url as string | null) ?? undefined,
     imageUrl: (row.image_url as string | null) ?? undefined,
+    // Was dropped entirely, so `event.ticketPriceCents` was always undefined:
+    // the "Buy Ticket €X" label and the paid-event checkout branch
+    // (app/events/[eventId].tsx:179) could never fire for a paid event.
+    ticketPriceCents: (row.ticket_price_cents as number | null) ?? undefined,
     createdBy: (row.created_by as string | null) ?? undefined,
     format: (row.format as CollectorsEvent['format']) ?? undefined,
     status: (row.status as CollectorsEvent['status']) ?? undefined,
@@ -105,22 +84,36 @@ function mapSponsorCompany(r: Record<string, unknown>): SponsorCompany {
 // ── Events CRUD ────────────────────────────────────────────────────────────────
 
 export async function getEventById(eventId: string): Promise<CollectorsEvent | null> {
-  // v_events_with_attendees_v1 columns verified 2026-04-29 against live
-  // schema. is_attending / my_rsvp_status are not on the view; mapEventRow
-  // defaults them. organizer_id → created_by; cover_image_url → image_url;
-  // event_date → date; venue_name → location.
-  const { data, error } = await supabase
-    .from('v_events_with_attendees_v1')
-    .select('id, title, kind, description, category_id, date, time, end_date, ends_at, starts_at, location, online_url, image_url, created_by, status, max_attendees, attendee_count, going_count, interested_count, is_full, is_public, is_sponsored, format, latitude, longitude, source, source_url, sponsor_name, sponsor_logo_url, sponsor_tier, created_at, updated_at')
-    .eq('id', eventId)
-    .maybeSingle();
-
-  if (error || !data) {
-    logger.warn('[SupabaseDataProvider] getEventById error:', error);
+  // Reads the EC2 backend, NOT supabase-js. 2026-07-27.
+  //
+  // WHY: this used to select from v_events_with_attendees_v1 with the user's
+  // anon JWT. That view is `security_invoker=true` and event_attendees carries
+  // exactly one RLS policy — `event_attendees_deny_all` (FOR ALL, USING false).
+  // So the view's LEFT JOIN onto event_attendees matched zero rows for every
+  // signed-in user and the COALESCE(...,0) turned that into a *plausible*
+  // answer: 0 going, 0 interested, is_full=false. Silent, every single time —
+  // RSVPs were written correctly and then rendered as if they never happened.
+  //
+  // The view also has no user_rsvp_status column at all, so mapEventRow
+  // defaulted isAttending/myRsvpStatus to false/undefined. The RSVP buttons
+  // could therefore only ever add an RSVP, never show or remove one.
+  //
+  // The deny-all RLS is CORRECT and stays: attendee lists are not public data.
+  // GET /events/{event_id} connects as `postgres` (rolbypassrls), so it reads
+  // the real counts, and it resolves user_rsvp_status explicitly
+  // (events_core.py:966). It also enforces the is_public gate the view bypassed
+  // — the direct view read leaked private events to anyone with the id.
+  try {
+    const data = await collectorsApi.get<Record<string, unknown>>(
+      `/events/${encodeURIComponent(eventId)}`,
+    );
+    if (!data || !data.id) return null;
+    return mapEventApiResponse(data);
+  } catch (e) {
+    // 404 (not found, or private + not yours) is a legitimate null, not a crash.
+    logger.error('[eventsProvider] getEventById error:', e);
     return null;
   }
-
-  return mapEventRow(data);
 }
 
 // Events CRUD lives on the EC2 backend under /events/*. The Supabase
@@ -130,22 +123,36 @@ export async function getEventById(eventId: string): Promise<CollectorsEvent | n
 // the view-shaped row.
 
 export async function listEvents(pagination?: PaginationParams): Promise<CollectorsEvent[]> {
-  const limit = pagination?.limit ?? API_LIMITS.ALERTS_DEFAULT;
+  // Pass limit/offset THROUGH to the server (GET /events defaults to limit=20,
+  // upcoming_only=true, ORDER BY date). Previously this called `/events` with no
+  // params and sliced client-side, so the app only ever held the 20 soonest
+  // events — the Week/Month calendar filters those by day, so any week beyond the
+  // first ~20 events rendered empty ("future weeks show no events"). Server caps
+  // limit at 100; the calendar requests a large page so it spans many weeks.
+  const limit = Math.min(pagination?.limit ?? API_LIMITS.ALERTS_DEFAULT, 100);
   const offset = pagination?.offset ?? 0;
   try {
     const data = await collectorsApi.get<{ events?: Record<string, unknown>[] } | Record<string, unknown>[]>(
-      '/events',
+      `/events?limit=${limit}&offset=${offset}`,
     );
     const rows = Array.isArray(data) ? data : ((data as { events?: Record<string, unknown>[] })?.events ?? []);
-    return rows.slice(offset, offset + limit).map(mapEventApiResponse);
+    // Server already applied limit/offset — do NOT slice again.
+    return rows.map(mapEventApiResponse);
   } catch (e) {
-    logger.warn('[SupabaseDataProvider] listEvents error:', e);
+    logger.error('[SupabaseDataProvider] listEvents error:', e);
     throw e instanceof Error ? e : new Error('Failed to load events');
   }
 }
 
 export async function createEvent(input: CreateEventInput): Promise<CollectorsEvent> {
   try {
+    // 2026-07-27: image_url, ticket_price_cents, max_attendees and the two
+    // sponsor fields were collected by app/create-event.tsx (and packed into
+    // CreateEventInput by buildEventInput) but never put on the wire. Pydantic
+    // ignores unknown keys and supplies defaults for absent ones, so the POST
+    // succeeded and the user's event came back with no image and a €0 ticket
+    // price — no error anywhere. Every field CreateEventRequest accepts is now
+    // sent explicitly.
     const data = await collectorsApi.post<Record<string, unknown>>('/events', {
       title: input.title,
       kind: input.kind,
@@ -155,11 +162,19 @@ export async function createEvent(input: CreateEventInput): Promise<CollectorsEv
       end_date: input.endDate ?? null,
       location: input.location ?? null,
       online_url: input.onlineUrl ?? null,
+      image_url: input.imageUrl ?? null,
       description: input.description,
       format: input.format ?? null,
       is_public: input.isPublic ?? null,
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
+      ticket_price_cents: input.ticketPriceCents ?? null,
+      max_attendees: input.maxAttendees ?? null,
+      // Sponsor fields are ownership-checked server-side (the caller must be
+      // the sponsor company's admin) and do NOT set is_sponsored — paid
+      // placement still comes only from the Stripe webhook.
+      sponsor_company_id: input.sponsorCompanyId ?? null,
+      sponsor_tier: input.sponsorTier ?? null,
     });
     return mapEventApiResponse(data);
   } catch (e) {
@@ -168,9 +183,29 @@ export async function createEvent(input: CreateEventInput): Promise<CollectorsEv
   }
 }
 
-export async function rsvpEvent(eventId: string, status: string = 'going'): Promise<void> {
+/**
+ * RSVP to an event.
+ *
+ * `status` must be one of going | interested | not_going — that is the whole
+ * of RsvpRequest's pattern (events_helpers.py:96) and anything else is a hard
+ * 422. There is deliberately no 'waitlist' value: when the event is full the
+ * SERVER downgrades a 'going' to 'interested' and reports it back as
+ * `waitlisted: true` (events_rsvp.py:65-89). Callers that want the waitlist
+ * send 'going' and read the response — hence the return value.
+ */
+export async function rsvpEvent(
+  eventId: string,
+  status: 'going' | 'interested' | 'not_going' = 'going',
+): Promise<{ status: string; waitlisted: boolean }> {
   try {
-    await collectorsApi.post(`/events/${encodeURIComponent(eventId)}/rsvp`, { status });
+    const r = await collectorsApi.post<Record<string, unknown>>(
+      `/events/${encodeURIComponent(eventId)}/rsvp`,
+      { status },
+    );
+    return {
+      status: (r?.status as string) ?? status,
+      waitlisted: (r?.waitlisted as boolean) ?? false,
+    };
   } catch (e) {
     logger.error('[SupabaseDataProvider] rsvpEvent error:', e);
     throw e instanceof Error ? e : new Error('Failed to RSVP');
@@ -186,7 +221,7 @@ export async function unrsvpEvent(eventId: string): Promise<void> {
   }
 }
 
-export { mapEventRow, mapEventApiResponse, mapSponsorCompany };
+export { mapEventApiResponse, mapSponsorCompany };
 
 // shareEventViaDm depends on chat methods, so it stays in SupabaseDataProvider
 
@@ -397,7 +432,8 @@ export async function searchEvents(params: {
       maxAttendees: (e.max_attendees ?? e.maxAttendees ?? null) as number | null,
       isAttending: false,
     })) as CollectorsEvent[];
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] eventsProvider.ts:407:', e);
     return [];
   }
 }

@@ -1,37 +1,41 @@
 {
   "common": {
-    "save": "Opslaan",
-    "cancel": "Annuleren",
-    "delete": "Verwijderen",
-    "edit": "Bewerken",
-    "done": "Klaar",
-    "ok": "OK",
-    "close": "Sluiten",
     "back": "Terug",
-    "next": "Volgende",
-    "continue": "Doorgaan",
-    "skip": "Overslaan",
-    "retry": "Opnieuw",
-    "refresh": "Vernieuwen",
-    "loading": "Laden…",
-    "error": "Er is iets misgegaan",
-    "empty": "Nog niets hier",
-    "search": "Zoeken",
-    "filter": "Filter",
-    "sort": "Sorteren",
-    "share": "Delen",
-    "export": "Exporteren",
-    "yes": "Ja",
-    "no": "Nee",
-    "optional": "Optioneel",
-    "required": "Verplicht",
-    "go_back": "Terug",
+    "cancel": "Annuleren",
     "clear": "Wissen",
-    "clear_search": "Zoekopdracht wissen",
     "clear_recent": "Recente zoekopdrachten wissen",
-    "retry_action": "Opnieuw"
+    "clear_search": "Zoekopdracht wissen",
+    "close": "Sluiten",
+    "close_menu_a11y": "Menu sluiten",
+    "continue": "Doorgaan",
+    "delete": "Verwijderen",
+    "done": "Klaar",
+    "edit": "Bewerken",
+    "empty": "Nog niets hier",
+    "error": "Er is iets misgegaan",
+    "export": "Exporteren",
+    "filter": "Filter",
+    "go_back": "Terug",
+    "go_back_a11y": "Terug",
+    "loading": "Laden…",
+    "more_options_a11y": "Meer opties",
+    "next": "Volgende",
+    "no": "Nee",
+    "ok": "OK",
+    "optional": "Optioneel",
+    "refresh": "Vernieuwen",
+    "required": "Verplicht",
+    "retry": "Opnieuw",
+    "retry_action": "Opnieuw",
+    "save": "Opslaan",
+    "search": "Zoeken",
+    "share": "Delen",
+    "skip": "Overslaan",
+    "sort": "Sorteren",
+    "yes": "Ja",
+    "slow_load_working": "We doen ons best om je resultaten op te halen — we gaan zo snel als we kunnen.",
+    "slow_load_still_working": "Nog steeds bezig. Dit duurt langer dan normaal, bedankt voor je geduld."
   },
-
   "add_tab": {
     "subtitle": "Snelle, camera-gerichte flow.",
     "quickscan_ai": "QuickScan AI",
@@ -44,26 +48,35 @@
     "add_manually": "Handmatig toevoegen",
     "add_manually_a11y": "Item handmatig toevoegen"
   },
-
   "wishlist": {
-    "empty_title": "Start je verlanglijst",
-    "add_first_a11y": "Voeg je eerste verlanglijst-item toe",
+    "add_title": "Toevoegen aan volglijst",
+    "close_add_a11y": "Formulier voor volglijst sluiten",
+    "title_required": "Titel *",
+    "item_title_a11y": "Titel van item",
+    "category_required": "Categorie *",
+    "target_price_a11y": "Streefprijs in euro's",
+    "add_button_a11y": "Toevoegen aan volglijst",
+    "acquire_title": "Toevoegen aan collectie",
+    "close_acquire_a11y": "Aankoopformulier sluiten",
+    "price_paid_a11y": "Betaalde prijs in euro's",
+    "notes_optional": "Notities (optioneel)",
+    "acquire_notes_a11y": "Aantekeningen bij aankoop",
+    "acquire_button_a11y": "Toevoegen aan mijn collectie",
+    "acquire_button": "Toevoegen aan mijn collectie",
+    "empty_title": "Start je volglijst",
     "add_first": "Voeg je eerste item toe",
+    "add_first_a11y": "Voeg je eerste item aan je volglijst toe",
     "feature_price_drops": "Prijswaarschuwingen",
     "feature_target_price": "Streefprijs volgen",
-    "feature_restock": "Voorraad-meldingen",
+    "feature_member_listings": "Zie wanneer een lid het verkoopt",
     "add_to_watchlist": "Toevoegen aan verlanglijst",
-    "close_add_form_a11y": "Formulier sluiten",
-    "title_required": "Titel *",
-    "title_a11y": "Item-titel",
-    "category_required": "Categorie *",
     "add_to_watchlist_a11y": "Toevoegen aan verlanglijst",
+    "close_add_form_a11y": "Formulier sluiten",
+    "title_a11y": "Item-titel",
     "close_category_picker_a11y": "Categoriekiezer sluiten",
     "select_category": "Categorie selecteren",
     "add_to_collection": "Toevoegen aan collectie",
     "close_acquisition_a11y": "Aanschaf-formulier sluiten",
-    "price_paid_a11y": "Betaalde prijs in euro's",
-    "notes_optional": "Notities (optioneel)",
     "notes_a11y": "Aanschaf-notities",
     "add_to_my_collection": "Toevoegen aan mijn collectie",
     "add_to_my_collection_a11y": "Toevoegen aan mijn collectie",
@@ -73,7 +86,6 @@
     "save_target_a11y": "Streefprijs opslaan",
     "save_target_button": "Streefprijs opslaan"
   },
-
   "events": {
     "reminder_a11y": "Herinnering instellen voor evenement",
     "create_event": "Evenement aanmaken",
@@ -89,41 +101,35 @@
     "empty_title": "Geen evenementen in de buurt",
     "empty_body": "Geen evenementen gevonden binnen 50 km van je locatie"
   },
-
   "marketplace": {
     "find_collectors": "Verzamelaars vinden",
     "find_collectors_a11y": "Verzamelaars vinden",
-    "popular_searches": "Populaire zoekopdrachten",
     "close_user_search_a11y": "Gebruikers-zoekopdracht sluiten",
     "search_users_placeholder": "Zoek op naam of gebruikersnaam...",
     "search_users_a11y": "Gebruikers zoeken op naam of gebruikersnaam"
   },
-
   "search": {
     "placeholder": "Zoek items, verzamelaars, evenementen...",
     "input_a11y": "Zoekveld",
     "unavailable": "Zoeken niet beschikbaar",
     "retry_a11y": "Zoeken opnieuw proberen",
-    "no_results": "Geen resultaten gevonden"
+    "no_results": "Geen resultaten gevonden",
+    "no_price_yet": "Nog geen prijs"
   },
-
   "item_detail": {
     "valuation_a11y": "Item-taxatie en details",
     "save_a11y": "Opslaan in collectie",
     "save": "Opslaan in collectie"
   },
-
   "onboarding": {
     "skip_a11y": "Categorie-keuze overslaan",
     "change_region_a11y": "Regio wijzigen",
     "confirm_age_a11y": "Leeftijdsvereiste bevestigen",
     "select_region": "Regio selecteren"
   },
-
   "quickscan_screen": {
     "gallery_a11y": "Scannen vanaf galerij of screenshot"
   },
-
   "add_manual": {
     "discard_draft_a11y": "Concept verwerpen",
     "condition_value_title": "Conditie & waarde",
@@ -149,7 +155,6 @@
     "add_custom_field_a11y": "Aangepast veld toevoegen",
     "add_field": "Veld toevoegen"
   },
-
   "items_empty": {
     "hero_title": "Start je collectie",
     "hero_subtitle": "Voeg je eerste item toe om de waarde te volgen, sets te bouwen en inzichten te ontgrendelen.",
@@ -162,7 +167,6 @@
     "scan_barcode": "Streepjescode scannen",
     "scan_barcode_a11y": "Een streepjescode scannen"
   },
-
   "barcode": {
     "product_found": "Product gevonden",
     "estimated_price": "Geschatte prijs",
@@ -170,9 +174,14 @@
     "scan_another": "Opnieuw scannen",
     "save_a11y": "Opslaan in collectie",
     "add_watchlist_a11y": "Toevoegen aan verlanglijst",
-    "add_watchlist_btn": "Toevoegen aan verlanglijst"
+    "add_watchlist_btn": "Toevoegen aan verlanglijst",
+    "add_watchlist_done": "Op je volglijst",
+    "not_recognised": "Niet herkend",
+    "not_recognised_hint": "We konden deze barcode niet identificeren. Je kunt het item nog handmatig toevoegen.",
+    "add_manually": "Handmatig toevoegen",
+    "add_manually_a11y": "Dit item handmatig toevoegen",
+    "save": "Opslaan"
   },
-
   "filters": {
     "close_a11y": "Filters sluiten",
     "sort_by": "Sorteer op",
@@ -185,7 +194,6 @@
     "preset_name_a11y": "Presetnaam",
     "save_preset_btn_a11y": "Preset opslaan"
   },
-
   "grading": {
     "lookup_a11y": "Certificaat opzoeken",
     "look_up_certificate": "Certificaat opzoeken",
@@ -199,7 +207,6 @@
     "lookup_cert_a11y": "Certificaat opzoeken",
     "look_up": "Opzoeken"
   },
-
   "auth": {
     "sign_in": "Inloggen",
     "sign_up": "Registreren",
@@ -278,11 +285,11 @@
       "sign_up_no_user": "Registratie mislukt — geen gebruiker ontvangen.",
       "username_taken": "Gebruikersnaam bestaat al. Kies een andere.",
       "sign_up_failed": "Registratie mislukt. Onbekende fout.",
+      "email_already_registered": "Dit e-mailadres is al geregistreerd. Probeer in te loggen.",
       "reset_email_required": "Vul je e-mailadres in om je wachtwoord te resetten.",
       "reset_failed": "Reset mislukt. Onbekende fout."
     }
   },
-
   "nav": {
     "home": "Home",
     "items": "Items",
@@ -293,7 +300,6 @@
     "settings": "Instellingen",
     "profile": "Profiel"
   },
-
   "home": {
     "collection_get_started": "Begin door je eerste item toe te voegen",
     "portfolio_value": "Portfoliowaarde",
@@ -332,7 +338,6 @@
     "deal_agent_open_a11y": "Deal Agent openen",
     "deal_agent_upgrade_a11y": "Upgrade om Deal Agent te ontgrendelen"
   },
-
   "items": {
     "title": "Items",
     "all": "Alle",
@@ -356,7 +361,6 @@
     "archive_a11y": "Geselecteerde items archiveren",
     "delete_a11y": "Geselecteerde items verwijderen"
   },
-
   "scan": {
     "title": "QuickScan",
     "capture": "Tik om te fotograferen",
@@ -415,7 +419,6 @@
       "keep_b_a11y": "Item B behouden"
     }
   },
-
   "settings": {
     "title": "Instellingen",
     "account": "Account",
@@ -441,9 +444,230 @@
     "about": "Over",
     "version": "Versie",
     "delete_account": "Account verwijderen",
-    "delete_account_confirm": "Dit verwijdert je account en alle gegevens permanent. Deze actie kan niet ongedaan worden gemaakt."
+    "delete_account_confirm": "Dit verwijdert je account en alle gegevens permanent. Deze actie kan niet ongedaan worden gemaakt.",
+    "my_suggestions": "Mijn suggesties",
+    "my_suggestions_desc": "Volg items die je hebt voorgesteld voor de catalogus",
+    "reset_tips": "Functietips opnieuw instellen",
+    "reset_tips_a11y": "Functietips opnieuw instellen",
+    "reset_tips_toast": "Functietips opnieuw ingesteld. Ze verschijnen weer terwijl je navigeert.",
+    "report_bug": "Een bug melden",
+    "report_bug_a11y": "Een bug melden",
+    "tax_reporting": "Verkoop & belastingrapportage",
+    "privacy_policy": "Privacybeleid",
+    "terms_of_service": "Servicevoorwaarden",
+    "user_policy": "Gebruikersbeleid",
+    "data_processing": "Gegevensverwerking",
+    "condition_guide": "Conditiegids",
+    "condition_guide_desc": "Naslagwerk voor gradering in alle categorieën"
   },
-
+  "sponsor_profile": {
+    "company_name": "Bedrijfsnaam",
+    "contact_email": "Contact-e-mailadres",
+    "company_logo": "Bedrijfslogo",
+    "change_logo_a11y": "Bedrijfslogo wijzigen",
+    "tap_to_change": "Tik om te wijzigen",
+    "upload_logo": "Logo uploaden",
+    "website_url": "Website-URL",
+    "description_placeholder": "Vertel verzamelaars over je merk...",
+    "description_a11y": "Bedrijfsbeschrijving",
+    "cancel_a11y": "Bewerken annuleren",
+    "save_a11y": "Wijzigingen opslaan",
+    "save_changes": "Wijzigingen opslaan"
+  },
+  "projects": {
+    "new_project": "Nieuw project",
+    "select_category_a11y": "Categorie kiezen",
+    "remove_linked_item": "Gekoppeld item verwijderen",
+    "link_to_portfolio_item": "Koppelen aan item uit portfolio",
+    "title_required": "Titel *",
+    "title_a11y": "Projecttitel",
+    "create_project": "Project aanmaken",
+    "select_category": "Categorie kiezen",
+    "show_all_categories_a11y": "Alle categorieën tonen",
+    "link_item": "Item koppelen",
+    "skip_linked_item": "Overslaan — geen gekoppeld item",
+    "paint_recipes": "Verfrecepten",
+    "recipe_name_placeholder": "Receptnaam (bijv. basis huidtint)",
+    "recipe_name_a11y": "Receptnaam",
+    "paint_brand_a11y": "Verfmerk",
+    "color_name_placeholder": "Kleurnaam",
+    "paint_color_a11y": "Verfkleur",
+    "add_paint_a11y": "Verf toevoegen aan recept",
+    "technique_notes_placeholder": "Techniekaantekeningen (bijv. dunne lagen, wet blend)",
+    "technique_notes_a11y": "Techniekaantekeningen",
+    "save_recipe_a11y": "Recept opslaan",
+    "save_recipe": "Recept opslaan",
+    "add_recipe_a11y": "Een nieuw verfrecept toevoegen",
+    "add_paint_recipe": "Verfrecept toevoegen"
+  },
+  "watchlist": {
+    "add_title": "Toevoegen aan volglijst",
+    "close_add_a11y": "Toevoegformulier sluiten",
+    "item_name_required": "Naam van item *",
+    "item_name_a11y": "Naam van item",
+    "target_desc": "Ontvang een melding zodra de prijs je streefprijs bereikt",
+    "notes_optional": "Aantekeningen (optioneel)",
+    "notes_placeholder": "Aantekeningen over dit item...",
+    "add_button": "Toevoegen aan volglijst"
+  },
+  "event_creator": {
+    "close_menu_a11y": "Menu sluiten",
+    "edit_a11y": "Evenement bewerken",
+    "edit": "Evenement bewerken",
+    "duplicate_a11y": "Evenement dupliceren",
+    "duplicate": "Evenement dupliceren",
+    "cancel_a11y": "Evenement annuleren",
+    "cancel": "Evenement annuleren"
+  },
+  "announcement": {
+    "new_title": "Nieuwe aankondiging",
+    "sending_to": "Verzenden naar",
+    "subject_placeholder": "Onderwerp (optioneel)",
+    "subject_a11y": "Onderwerp van aankondiging",
+    "message_placeholder": "Schrijf je aankondiging...",
+    "message_a11y": "Bericht van aankondiging",
+    "send_a11y": "Aankondiging verzenden"
+  },
+  "project_header": {
+    "mark_complete_a11y": "Project markeren als voltooid",
+    "decrease_5_a11y": "Voortgang met 5 procent verlagen",
+    "increase_5_a11y": "Voortgang met 5 procent verhogen",
+    "increase_10_a11y": "Voortgang met 10 procent verhogen",
+    "save_progress_a11y": "Voortgang opslaan",
+    "project_notes": "Projectaantekeningen"
+  },
+  "event_datetime": {
+    "title": "Datum en tijd",
+    "date_a11y": "Datum van evenement",
+    "time_optional": "Tijd (optioneel)",
+    "time_a11y": "Tijd van evenement",
+    "end_date_optional": "Einddatum (optioneel, voor meerdaagse)",
+    "end_date_a11y": "Einddatum van evenement"
+  },
+  "category_picker": {
+    "title": "Categorie kiezen",
+    "search_placeholder": "Categorieën zoeken...",
+    "search_a11y": "Categorieën zoeken",
+    "none": "Geen (selectie wissen)",
+    "other": "Anders (eigen categorie)",
+    "suggest_new": "Een nieuwe categorie voorstellen"
+  },
+  "social_proof": {
+    "market_context": "Marktcontext",
+    "recent_sales": "Recente verkopen",
+    "sold_price": "Verkoopprijs",
+    "currently_listed": "Nu te koop",
+    "list_price_a11y": "Vraagprijs (huidige vraagprijs, geen verkochte referentie)",
+    "list_price": "Vraagprijs"
+  },
+  "price_feedback": {
+    "sale_price_placeholder": "Verkoopprijs (bijv. 150,00)",
+    "sale_price_a11y": "Verkoopprijs",
+    "submit_a11y": "Verkoopprijs versturen",
+    "cancel_a11y": "Invoer van verkoopprijs annuleren",
+    "report_a11y": "Verkoopprijs doorgeven",
+    "price_off_a11y": "Prijs lijkt niet te kloppen"
+  },
+  "marketplace_filter": {
+    "close_a11y": "Filters sluiten",
+    "reset_a11y": "Alle filters wissen",
+    "min_price_a11y": "Minimumprijs",
+    "max_price_a11y": "Maximumprijs",
+    "apply_a11y": "Filters toepassen",
+    "apply": "Filters toepassen"
+  },
+  "items_list_header": {
+    "search_placeholder": "Items zoeken",
+    "search_a11y": "Items zoeken",
+    "open_filters_a11y": "Filters openen",
+    "list_view_a11y": "Lijstweergave",
+    "gallery_view_a11y": "Galerijweergave",
+    "select_mode_a11y": "Selectiemodus openen"
+  },
+  "empty_state": {
+    "no_items": "Nog geen items",
+    "watchlist_empty": "Volglijst is leeg",
+    "no_results": "Geen resultaten gevonden",
+    "no_events": "Geen aankomende evenementen",
+    "no_messages": "Geen berichten",
+    "no_projects": "Nog geen projecten"
+  },
+  "dossier": {
+    "valuation_report": "Waarderingsrapport",
+    "retry_a11y": "Rapport opnieuw laden",
+    "estimated_value": "Geschatte waarde",
+    "similar_listings": "Vergelijkbare advertenties",
+    "export_pdf_a11y": "Rapport exporteren als pdf",
+    "export_report": "Rapport exporteren"
+  },
+  "alert_settings": {
+    "section_a11y": "Sectie meldingsinstellingen",
+    "price_drops": "Prijsdalingen",
+    "drop_threshold": "Drempel voor daling",
+    "price_increases": "Prijsstijgingen",
+    "increase_threshold": "Drempel voor stijging",
+    "new_listings": "Nieuwe advertenties"
+  },
+  "marketplace_connections": {
+    "section_title": "Marktplaatsaccounts",
+    "connect_ebay": "eBay koppelen",
+    "connect_ebay_hint": "Meld je aan met je eBay-account om items direct te plaatsen",
+    "connect_ebay_a11y": "eBay-account koppelen",
+    "connect_failed_title": "Kon geen verbinding maken met eBay",
+    "connect_failed_body": "Probeer het opnieuw. Blijft het misgaan? Controleer je internetverbinding."
+  },
+  "add_manual_basic": {
+    "title": "Basisgegevens",
+    "item_name_a11y": "Naam van item",
+    "custom_category_label": "Eigen categorienaam",
+    "custom_category_a11y": "Eigen categorienaam",
+    "set_series": "Set / serie",
+    "set_series_a11y": "Set of serie"
+  },
+  "wishlist_edit_target": {
+    "title": "Streefprijs instellen",
+    "close_a11y": "Streefprijs-editor sluiten",
+    "input_a11y": "Streefprijs",
+    "save_a11y": "Streefprijs opslaan",
+    "save_button": "Streefprijs opslaan"
+  },
+  "subscription": {
+    "features_a11y": "Functies van abonnement",
+    "current_plan": "Huidig abonnement",
+    "past_due": "Betaling is achterstallig. Werk je betaalmethode bij om onderbreking te voorkomen.",
+    "downgrade_pending": "Je abonnement wordt aan het einde van de huidige periode verlaagd.",
+    "coming_soon": "Abonnementen komen binnenkort",
+    "manage_a11y": "Abonnement beheren",
+    "manage": "Abonnement beheren"
+  },
+  "mfa": {
+    "title": "Tweestapsverificatie",
+    "verify_a11y": "Code verifiëren",
+    "verify_enable": "Verifiëren en aanzetten",
+    "cancel_a11y": "Inschrijving annuleren",
+    "remove_a11y": "Deze factor verwijderen",
+    "enable_a11y": "Tweestapsverificatie aanzetten",
+    "enable_2fa": "Tweestapsverificatie aanzetten"
+  },
+  "event_detail": {
+    "not_found": "Evenement niet gevonden",
+    "promote_a11y": "Dit evenement promoten",
+    "promote_title": "Dit evenement promoten",
+    "promote_subtitle": "Bereik meer verzamelaars met een gesponsorde plaatsing"
+  },
+  "user_profile": {
+    "blocked_user": "Je hebt deze gebruiker geblokkeerd"
+  },
+  "items_detail": {
+    "thin_cat_help": "Deze categorie heeft je gegevens nodig — geef hieronder aan wat je hebt betaald om de schattingen te verbeteren.",
+    "enrich_button": "Nieuwe referenties ophalen",
+    "enrich_button_a11y": "Nieuwe prijsreferenties voor dit item ophalen",
+    "enrich_done": "{{count}} nieuwe referenties opgehaald. Vernieuw om de bijgewerkte schatting te zien.",
+    "enrich_cache": "Er zijn al recente referenties voor dit item.",
+    "enrich_budget": "Dagelijkse limiet voor prijsopvragingen bereikt. Probeer het morgen opnieuw.",
+    "enrich_unavailable": "Live prijsopvraging is momenteel niet beschikbaar.",
+    "enrich_error": "Kon geen nieuwe referenties ophalen. Probeer het opnieuw."
+  },
   "account": {
     "edit_profile": "Profiel bewerken",
     "edit_profile_desc": "Wijzig je gebruikersnaam en bio",
@@ -479,7 +703,6 @@
     "confirm_new_password": "Bevestig nieuw wachtwoord",
     "confirm_new_password_placeholder": "Bevestig nieuw wachtwoord"
   },
-
   "billing": {
     "free": "Gratis",
     "pro": "Pro",
@@ -487,22 +710,20 @@
     "upgrade": "Upgraden",
     "upgrade_to_pro": "Upgraden naar Pro",
     "upgrade_to_premium": "Upgraden naar Premium",
+    "upgrade_to_plan": "Upgraden naar {{plan}}",
     "manage_subscription": "Abonnement beheren",
     "current_plan": "Huidig abonnement",
     "feature_requires_pro": "{{feature}} vereist Pro",
     "feature_requires_premium": "{{feature}} vereist Premium",
     "feature_requires_plan": "{{feature}} vereist {{plan}}",
-    "upgrade_to_plan": "Upgraden naar {{plan}}",
     "unlock_feature": "Upgrade om deze functie te ontgrendelen"
   },
-
   "set_completion": {
     "title": "Setvoortgang",
     "subtitle": "Automatisch gedetecteerd uit je items",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
     "no_sets": "Nog geen sets in uitvoering"
   },
-
   "ads": {
     "sponsored": "Gesponsord",
     "ad": "Advertentie"

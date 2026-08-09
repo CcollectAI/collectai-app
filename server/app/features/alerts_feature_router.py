@@ -143,8 +143,35 @@ async def create_or_update_alert(
     if payload.item_id is not None and not _UUID_RE.match(payload.item_id):
         raise error_response(400, "Invalid item_id format", code=ErrorCode.INVALID_UUID)
 
+    is_create = alert_id is None
     if alert_id is None:
         alert_id = str(uuid4())
+
+    # Free plan is capped at N price-alert creations per rolling 7 days; Pro /
+    # Premium are unlimited (max_alerts_per_week=None). Enforced only for real
+    # creates on the DB path — the in-memory dev fallback has no durable count.
+    if is_create and db_configured():
+        from app.subscription import get_user_plan
+        from app.routes.billing_router import PLAN_LIMITS
+
+        plan = await get_user_plan(user_id)
+        weekly_cap = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"]).get("max_alerts_per_week")
+        if weekly_cap is not None:
+            async with get_conn() as conn:
+                recent = await conn.fetchval(
+                    """
+                    SELECT count(*) FROM public.user_price_alerts
+                    WHERE user_id = $1 AND created_at >= now() - interval '7 days'
+                    """,
+                    user_id,
+                )
+            if (recent or 0) >= weekly_cap:
+                raise error_response(
+                    403,
+                    f"The free plan includes {weekly_cap} price alert per week. "
+                    "Upgrade to Pro for unlimited alerts.",
+                    code="PLAN_LIMIT_ALERTS",
+                )
 
     now = datetime.now(timezone.utc)
     alert = PriceAlert(

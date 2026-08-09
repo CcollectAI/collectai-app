@@ -42,9 +42,15 @@ export function initPurchases(): void {
   if (configured) return;
   const apiKey = getApiKey();
   if (!apiKey) {
-    logger.warn(
-      '[purchases] EXPO_PUBLIC_REVENUECAT_*_KEY not set — IAP disabled. ' +
-        'Free tier still works; users will see "Subscribe" buttons that fail until configured.',
+    // logger.warn is stripped in release builds, so this uses .error — a
+    // missing key is exactly the thing you need visible on a store build.
+    // app/subscription.tsx checks isPurchasesAvailable() and renders its
+    // "unavailable" state rather than dead Subscribe buttons, so this is a
+    // silent no-revenue failure unless something says so out loud.
+    logger.error(
+      `[purchases] EXPO_PUBLIC_REVENUECAT_${Platform.OS === 'ios' ? 'IOS' : 'ANDROID'}_KEY ` +
+        'not set — IAP disabled, the paywall cannot sell. Free tier still works. ' +
+        'Checked by scripts/preflight_android.mjs.',
     );
     return;
   }
@@ -53,7 +59,7 @@ export function initPurchases(): void {
     Purchases.configure({ apiKey });
     configured = true;
   } catch (e) {
-    logger.warn('[purchases] configure failed:', e);
+    logger.error('[purchases] configure failed:', e);
   }
 }
 
@@ -66,7 +72,24 @@ export async function identifyUser(userId: string | null): Promise<void> {
       await Purchases.logOut();
     }
   } catch (e) {
-    logger.warn('[purchases] identifyUser failed:', e);
+    logger.error('[purchases] identifyUser failed:', e);
+  }
+}
+
+/**
+ * Stamp the creator code as a RevenueCat subscriber attribute so it rides along
+ * on every webhook event for this user.
+ *
+ * Kept separate from identifyUser because the code lives on the profile, which
+ * loads *after* the session — calling it from identifyUser would almost always
+ * pass undefined. AuthProvider calls this once the profile resolves.
+ */
+export async function setReferralAttribute(referralCode: string | null | undefined): Promise<void> {
+  if (!configured || !referralCode) return;
+  try {
+    await Purchases.setAttributes({ affiliate_code: referralCode });
+  } catch (e) {
+    logger.error('[purchases] setReferralAttribute failed:', e);
   }
 }
 
@@ -83,7 +106,7 @@ export async function getCustomerInfo(): Promise<CustomerInfo | null> {
   try {
     return await Purchases.getCustomerInfo();
   } catch (e) {
-    logger.warn('[purchases] getCustomerInfo failed:', e);
+    logger.error('[purchases] getCustomerInfo failed:', e);
     return null;
   }
 }
@@ -93,7 +116,7 @@ export async function getOfferings(): Promise<PurchasesOfferings | null> {
   try {
     return await Purchases.getOfferings();
   } catch (e) {
-    logger.warn('[purchases] getOfferings failed:', e);
+    logger.error('[purchases] getOfferings failed:', e);
     return null;
   }
 }
@@ -111,6 +134,7 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
     const { customerInfo } = await Purchases.purchasePackage(pkg);
     return { ok: true, customerInfo };
   } catch (e) {
+    logger.error('[silent-catch] purchases.ts:130:', e);
     const err = e as { userCancelled?: boolean; message?: string };
     if (err.userCancelled) return { ok: false, cancelled: true };
     return {
@@ -126,7 +150,7 @@ export async function restorePurchases(): Promise<CustomerInfo | null> {
   try {
     return await Purchases.restorePurchases();
   } catch (e) {
-    logger.warn('[purchases] restorePurchases failed:', e);
+    logger.error('[purchases] restorePurchases failed:', e);
     return null;
   }
 }

@@ -26,8 +26,8 @@ import { useAuthContext } from '@/providers/useAuthContext';
 import { useToast } from '@/components/Toast';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { updateProfile } from '@/api/settingsApi';
 import { supabase } from '@/lib/supabase';
-import { API_BASE } from '@/api/config';
 import { deleteAccount, collectorsApi } from '@/api/collectorsApi';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
@@ -44,7 +44,7 @@ function ProfileEditSectionInner() {
 
   const [editProfileVisible, setEditProfileVisible] = useState(false);
   const [editUsername, setEditUsername] = useState(profile?.username ?? '');
-  const [editBio, setEditBio] = useState('');
+  const [editBio, setEditBio] = useState(profile?.bio ?? '');
   const [savingProfile, setSavingProfile] = useState(false);
 
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
@@ -90,7 +90,7 @@ function ProfileEditSectionInner() {
         showToast({ message: `Saved ${filename}`, type: 'info', duration: 4000 });
       }
     } catch (e) {
-      logger.warn('[Settings] full inventory export failed:', e);
+      logger.error('[Settings] full inventory export failed:', e);
       showToast({ message: 'Failed to export inventory', type: 'error' });
     } finally {
       setExportingFullInventory(false);
@@ -113,6 +113,7 @@ function ProfileEditSectionInner() {
       await signOut();
       Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
     } catch (e) {
+      logger.error('[silent-catch] ProfileEditSection.tsx:115:', e);
       Alert.alert(
         'Error',
         e instanceof Error ? e.message : 'Failed to delete account. Please try again.',
@@ -127,20 +128,22 @@ function ProfileEditSectionInner() {
     try {
       const auth = await supabase.auth.getSession();
       if (auth.data?.session) {
-        await fetch(`${API_BASE}/settings/profile`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${auth.data.session.access_token}`,
-          },
-          body: JSON.stringify({ username: editUsername.trim(), bio: editBio.trim() }),
-        });
+        // Must throw on failure: `username` is UNIQUE, so a taken name comes
+        // back as a rejection. The raw fetch this replaced ignored the status,
+        // so the modal closed and a CONFIRMATION haptic fired on a write that
+        // never landed.
+        await updateProfile({ username: editUsername.trim(), bio: editBio.trim() });
       }
       setEditProfileVisible(false);
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     } catch (e) {
-      logger.warn('[Settings] Failed to save profile:', e);
-      showToast({ message: 'Failed to save profile changes', type: 'error' });
+      logger.error('[Settings] Failed to save profile:', e);
+      // Surface the server's reason (e.g. username already taken) instead of a
+      // generic message — the user can only act on the specific one.
+      showToast({
+        message: (e as Error)?.message || 'Failed to save profile changes',
+        type: 'error',
+      });
     } finally {
       setSavingProfile(false);
     }
@@ -197,7 +200,12 @@ function ProfileEditSectionInner() {
         <AnimatedPressable
           style={styles.settingRow}
           onPress={() => {
+            // Prefill BOTH fields. The form posts whatever is in them, so an
+            // unpopulated bio field would save as empty and wipe the existing
+            // one — harmless while PATCH /settings/profile 404'd, real now that
+            // it persists (route added 2026-07-31).
             setEditUsername(profile?.username ?? '');
+            setEditBio(profile?.bio ?? '');
             setEditProfileVisible(true);
           }}
           accessibilityRole="button"
@@ -306,7 +314,7 @@ function ProfileEditSectionInner() {
 
             <AnimatedPressable
               style={styles.settingRow}
-              onPress={() => router.push('/sell/offers')}
+              onPress={() => router.push('/offers')}
               accessibilityRole="link"
               accessibilityLabel={t('account.my_listings_a11y')}
             >

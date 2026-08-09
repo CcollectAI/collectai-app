@@ -1,4 +1,5 @@
 import * as SQLite from "expo-sqlite";
+import { logger } from '@/lib/logger';
 
 let _db: SQLite.SQLiteDatabase | null = null;
 export function db() {
@@ -24,7 +25,8 @@ export function cacheGet<T = unknown>(key: string): { value: T | null; ageMs: nu
   if (!row) return { value: null, ageMs: Infinity };
   try {
     return { value: JSON.parse(row.value), ageMs: Date.now() - row.updated_at };
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] sqlite.ts:27:', e);
     return { value: null, ageMs: Infinity };
   }
 }

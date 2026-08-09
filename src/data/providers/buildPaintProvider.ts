@@ -92,8 +92,15 @@ export async function listBuildPaintProjects(): Promise<BuildPaintProject[]> {
     .limit(200);
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listBuildPaintProjects error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listBuildPaintProjects error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load BuildPaintProjects',
+    );
   }
 
   return (data ?? []).map((row: Record<string, unknown>) => ({
@@ -165,8 +172,19 @@ export async function createBuildPaintProject(input: CreateBuildPaintProjectInpu
 // tables' own policies). Real tables: build_paint_projects,
 // build_paint_steps (status text), build_paint_notes (content text).
 
+// `last_updated` is a DATE column and nothing was maintaining it, so the
+// project card's "Updated {relative}" label rendered the row's original value
+// forever. Observed 2026-07-27: bumped a project 30% -> 40%, the list
+// correctly refetched and showed 40%, and the same card still read "Updated
+// yesterday". The label was not stale — the column genuinely had not moved
+// since the project was created.
+//
+// Stamped by both writers below rather than by a trigger, to keep it in the
+// same place as the other column writes for this table.
+const today = () => new Date().toISOString().slice(0, 10); // DATE, not timestamptz
+
 export async function setBuildPaintProgress(projectId: string, percent: number, status?: string): Promise<void> {
-  const patch: Record<string, unknown> = { progress_pct: percent };
+  const patch: Record<string, unknown> = { progress_pct: percent, last_updated: today() };
   if (status) patch.status = status;
   const { error } = await supabase
     .from('build_paint_projects')
@@ -184,6 +202,7 @@ export async function markBuildPaintProjectComplete(projectId: string, isComplet
     .update({
       status: isCompleted ? 'finished' : 'in_progress',
       progress_pct: isCompleted ? 100 : null,
+      last_updated: today(),
     })
     .eq('id', projectId);
   if (error) {
@@ -200,8 +219,15 @@ export async function listBuildPaintSteps(projectId: string): Promise<BuildPaint
     .order('step_order', { ascending: true });
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listBuildPaintSteps error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listBuildPaintSteps error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load BuildPaintSteps',
+    );
   }
   type StepRow = { id: string; project_id: string; title: string; status?: string | null; step_order?: number | null; created_at?: string | null };
   return (data ?? []).map((row: StepRow) => ({
@@ -261,8 +287,15 @@ export async function listBuildPaintNotes(projectId: string): Promise<BuildPaint
     .eq('project_id', projectId)
     .order('created_at', { ascending: false });
   if (error) {
-    logger.warn('[SupabaseDataProvider] listBuildPaintNotes error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listBuildPaintNotes error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load BuildPaintNotes',
+    );
   }
   type NoteRow = { id: string; project_id: string; content: string; created_at?: string | null };
   return (data ?? []).map((row: NoteRow) => ({
@@ -302,8 +335,15 @@ export async function listBuildPaintProjectsByCategory(categoryId: string): Prom
     .order('last_updated', { ascending: false });
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listBuildPaintProjectsByCategory error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listBuildPaintProjectsByCategory error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load BuildPaintProjectsByCategory',
+    );
   }
 
   return (data ?? []).map((r: Record<string, unknown>) => ({
@@ -329,8 +369,15 @@ export async function listBuildPaintProjectsByItem(itemId: string): Promise<Buil
     .order('last_updated', { ascending: false });
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listBuildPaintProjectsByItem error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listBuildPaintProjectsByItem error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load BuildPaintProjectsByItem',
+    );
   }
 
   return (data ?? []).map((r: Record<string, unknown>) => ({

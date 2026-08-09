@@ -36,6 +36,7 @@ import { LinkedItemCard } from "@/components/projects/LinkedItemCard";
 import { ProjectStepsCard } from "@/components/projects/ProjectStepsCard";
 import { ProjectNotesCard } from "@/components/projects/ProjectNotesCard";
 import { PaintRecipesCard } from "@/components/projects/PaintRecipesCard";
+import { safeGoBack } from '@/lib/goBack';
 
 const PAINT_CATEGORIES = ["warhammer", "gunpla", "scale_models"] as const;
 
@@ -116,7 +117,7 @@ function ProjectDetailScreen() {
       setNotes(notesData);
       setError(null);
     } catch (err: unknown) {
-      logger.warn("[ProjectDetail] loadProject error:", err);
+      logger.error("[ProjectDetail] loadProject error:", err);
       setError((err as Error)?.message || "Failed to load project");
     } finally {
       setLoading(false);
@@ -275,7 +276,7 @@ function ProjectDetailScreen() {
             </Text>
             <AnimatedPressable
               style={[styles.backBtn, { borderColor: colors.border }]}
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router)}
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >

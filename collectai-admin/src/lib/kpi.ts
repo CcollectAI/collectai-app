@@ -3,6 +3,14 @@
 // ---------------------------------------------------------------------------
 
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import {
+  noteDemo as noteDemoSource,
+  noteUnprovisioned as noteUnprovisionedSource,
+  getUnprovisionedTables,
+  getDemoReason,
+  isUsingDemoData as isUsingDemoSource,
+  clearDemo,
+} from "@/lib/demoState";
 
 // ─── Swipe File Types ────────────────────────────────────────────────────────
 
@@ -269,6 +277,57 @@ const AFFILIATE_PCT = 15;
 
 // ─── Demo Data ──────────────────────────────────────────────────────────────
 
+/**
+ * Demo reporting now lives in demoState.ts, keyed per source. It used to be a
+ * single module-global string here, which meant the Creators tab (live rows)
+ * showed "Demo Mode" if you had visited Pods first, and tabs whose modules
+ * never reported rendered fake numbers under a hidden banner.
+ */
+
+/** Records against the "kpi" source: creators / sales / timeline / market. */
+function noteDemo<T>(reason: string, value: T): T {
+  return noteDemoSource("kpi", reason, value);
+}
+
+/**
+ * Tables from the admin template that were deliberately never provisioned:
+ * kpi_events/orders/daily_revenue/market_metrics modelled a physical kit
+ * business and nothing in this app writes them. Their absence means "this
+ * section has no data source", which is NOT the same as "these numbers are
+ * fake" — so it must not trip the demo banner. Rendered as zeros instead.
+ */
+function noteUnprovisioned<T>(table: string, zeroValue: T): T {
+  return noteUnprovisionedSource("kpi", table, zeroValue);
+}
+
+/** Sections with no backing table, for the UI to explain rather than fake. */
+export function getUnprovisionedSections(): string[] {
+  return getUnprovisionedTables("kpi");
+}
+
+const ZERO_FUNNEL: FunnelMetrics = {
+  kitOpens: 0, qrScans: 0, stepStarts: 0, videoPlays: 0, videoWatch90: 0,
+  stepCompletes: 0, kitCompletes: 0, buyClicks: 0, dropLandingViews: 0, orders: 0,
+};
+
+const ZERO_SALES: SalesOverview = {
+  totalRevenue: 0, totalOrders: 0, avgOrderValue: 0,
+  abandonedCartRate: 0, repeatPurchaseRate: 0, topKits: [],
+};
+
+function resetDemoReason(): void {
+  clearDemo("kpi");
+}
+
+/**
+ * Human-readable reason the dashboard is showing demo data, or null when the
+ * numbers are real. Only meaningful after an awaited `fetchKPIDashboardData`.
+ */
+export function getDemoDataReason(): string | null {
+  if (!isSupabaseConfigured()) return "Supabase is not configured";
+  return getDemoReason("kpi");
+}
+
 function getDemoData(days: number): KPIDashboardData {
   const now = new Date();
   const from = new Date(now.getTime() - days * 86400000);
@@ -397,16 +456,24 @@ function getDemoData(days: number): KPIDashboardData {
 
 async function fetchFunnel(days: number): Promise<FunnelMetrics> {
   const sb = getSupabase();
-  if (!sb) return getDemoData(days).funnel;
+  if (!sb) return noteDemo("no Supabase client", getDemoData(days).funnel);
 
   const since = new Date(Date.now() - days * 86400000).toISOString();
 
-  const { data } = await sb
+  const { data, error } = await sb
     .from("kpi_events")
     .select("event_name")
     .gte("created_at", since);
 
-  if (!data) return getDemoData(days).funnel;
+  if (error) {
+    // Deliberately unprovisioned template table -> zeros, not demo numbers.
+    if (error.code === "42P01") return noteUnprovisioned("kpi_events", ZERO_FUNNEL);
+    return noteDemo(
+      `kpi_events unreadable (${error.code ?? "?"}: ${error.message})`,
+      getDemoData(days).funnel,
+    );
+  }
+  if (!data) return noteDemo("kpi_events returned no data", getDemoData(days).funnel);
 
   const counts: Record<string, number> = {};
   for (const row of data) {
@@ -432,54 +499,75 @@ async function fetchFunnel(days: number): Promise<FunnelMetrics> {
   };
 }
 
-async function fetchCreatorLeaderboard(days: number): Promise<CreatorRow[]> {
-  const sb = getSupabase();
-  if (!sb) return getDemoData(days).creators;
+/** Everything /api/kpi-aggregates returns. */
+export interface KPIAggregates {
+  creators: Record<string, any>[];
+  signupCounts: Record<string, number>;
+  revenueAgg: Record<string, { count: number; revenue: number }>;
+  sales: {
+    totalOrders: number; totalRevenue: number;
+    attributedOrders: number; attributedRevenue: number;
+    byPlan: Record<string, { orders: number; revenue: number }>;
+  };
+  timeline: DailyRevenue[];
+  market: Record<string, { signups: number; orders: number; revenue: number }>;
+  totalSignups: number;
+  attributedSignups: number;
+}
 
-  const since = new Date(Date.now() - days * 86400000).toISOString();
-
-  const { data: creators } = await sb
-    .from("creators")
-    .select("*")
-    .eq("is_active", true)
-    .order("name");
-
-  if (!creators || creators.length === 0) return getDemoData(days).creators;
-
-  const { data: events } = await sb
-    .from("kpi_events")
-    .select("event_name, affiliate_code")
-    .gte("created_at", since)
-    .not("affiliate_code", "is", null);
-
-  const { data: orders } = await sb
-    .from("orders")
-    .select("affiliate_code, revenue_cents")
-    .gte("created_at", since)
-    .not("affiliate_code", "is", null);
-
-  const eventCounts: Record<string, Record<string, number>> = {};
-  for (const e of events || []) {
-    if (!e.affiliate_code) continue;
-    if (!eventCounts[e.affiliate_code]) eventCounts[e.affiliate_code] = {};
-    eventCounts[e.affiliate_code][e.event_name] =
-      (eventCounts[e.affiliate_code][e.event_name] || 0) + 1;
+/**
+ * Single server-side fetch backing every revenue-bearing section.
+ *
+ * One call, not four: each section used to read a different table, so a Pro
+ * subscription attributed to a creator appeared on the Creators tab and as 0.00
+ * everywhere else. Server-side because subscription_events is RLS-locked with
+ * no policy — the anon key reads zero rows silently rather than erroring.
+ *
+ * Returns null (with the demo reason recorded) when unavailable, so callers
+ * fall back consistently instead of each inventing its own failure mode.
+ */
+async function fetchAggregates(days: number): Promise<KPIAggregates | null> {
+  try {
+    const res = await fetch(`/api/kpi-aggregates?days=${days}`, {
+      credentials: "same-origin",
+    });
+    if (!res.ok) {
+      const { error: msg } = (await res.json().catch(() => ({}))) as { error?: string };
+      noteDemo(
+        res.status === 401
+          ? "admin session expired — re-enter the PIN to load dashboard data"
+          : (msg ?? `dashboard aggregates unavailable (HTTP ${res.status})`),
+        null,
+      );
+      return null;
+    }
+    return (await res.json()) as KPIAggregates;
+  } catch (e) {
+    noteDemo(
+      `dashboard aggregates request failed: ${e instanceof Error ? e.message : String(e)}`,
+      null,
+    );
+    return null;
   }
+}
 
-  const orderAgg: Record<string, { count: number; revenue: number }> = {};
-  for (const o of orders || []) {
-    if (!o.affiliate_code) continue;
-    if (!orderAgg[o.affiliate_code])
-      orderAgg[o.affiliate_code] = { count: 0, revenue: 0 };
-    orderAgg[o.affiliate_code].count += 1;
-    orderAgg[o.affiliate_code].revenue += o.revenue_cents / 100;
+function buildCreatorRows(agg: KPIAggregates | null, days: number): CreatorRow[] {
+  if (!agg) return getDemoData(days).creators;
+
+  const creators = agg.creators ?? [];
+  const signupCounts = agg.signupCounts ?? {};
+  const orderAgg = agg.revenueAgg ?? {};
+
+  if (creators.length === 0) {
+    return noteDemo("no active creators in the roster", getDemoData(days).creators);
   }
 
   return creators
     .map((c) => {
-      const ec = eventCounts[c.affiliate_code] || {};
       const oa = orderAgg[c.affiliate_code] || { count: 0, revenue: 0 };
-      const scans = ec["qr_scan"] || 0;
+      // `scans` is the CreatorRow field name inherited from the kit template;
+      // here it means attributed signups — the top of our funnel.
+      const scans = signupCounts[c.affiliate_code] || 0;
       const kitsSent = c.kits_sent ?? 2;
       const cogsPerKit = (c.cogs_per_kit_cents ?? KIT_COGS_CENTS) / 100;
       const affiliatePayoutPct = c.affiliate_payout_pct ?? AFFILIATE_PCT;
@@ -491,8 +579,10 @@ async function fetchCreatorLeaderboard(days: number): Promise<CreatorRow[]> {
         language: c.language?.toUpperCase() || "—",
         affiliateCode: c.affiliate_code,
         scans,
-        activations: ec["step_start"] || 0,
-        completions: ec["kit_complete"] || 0,
+        // No equivalent app-side signal yet: the kit template measured
+        // onboarding steps we do not emit. Left at 0 rather than faked.
+        activations: 0,
+        completions: 0,
         purchases: oa.count,
         revenue: oa.revenue,
         conversionRate:
@@ -506,154 +596,80 @@ async function fetchCreatorLeaderboard(days: number): Promise<CreatorRow[]> {
     .sort((a, b) => b.revenue - a.revenue);
 }
 
-async function fetchSalesOverview(
-  days: number,
-  buyClicks: number,
-): Promise<SalesOverview> {
-  const sb = getSupabase();
-  if (!sb) return getDemoData(days).sales;
+/**
+ * Sales from the subscription ledger — the same rows the creator leaderboard
+ * sums, so an attributed Pro subscription reconciles across tabs instead of
+ * showing 4.99 on one and 0.00 on the rest.
+ *
+ * `topKits` now carries the plan mix (pro/premium) rather than kit slugs: this
+ * app sells subscriptions, not physical kits. The field name is retained
+ * because CreatorRow/SalesOverview are consumed by several components.
+ */
+function buildSalesOverview(agg: KPIAggregates | null, days: number): SalesOverview {
+  if (!agg) return getDemoData(days).sales;
 
-  const since = new Date(Date.now() - days * 86400000).toISOString();
+  const { totalOrders, totalRevenue, byPlan } = agg.sales;
+  if (totalOrders === 0) return ZERO_SALES;
 
-  const { data: orders } = await sb
-    .from("orders")
-    .select("kit_slug, revenue_cents, is_repeat_customer")
-    .gte("created_at", since);
-
-  if (!orders || orders.length === 0) return getDemoData(days).sales;
-
-  const totalRevenue = orders.reduce((s, o) => s + o.revenue_cents, 0) / 100;
-  const totalOrders = orders.length;
-  const repeatOrders = orders.filter((o) => o.is_repeat_customer).length;
-
-  const kitAgg: Record<string, { orders: number; revenue: number }> = {};
-  for (const o of orders) {
-    const slug = o.kit_slug || "unknown";
-    if (!kitAgg[slug]) kitAgg[slug] = { orders: 0, revenue: 0 };
-    kitAgg[slug].orders += 1;
-    kitAgg[slug].revenue += o.revenue_cents / 100;
-  }
-
-  const topKits = Object.entries(kitAgg)
-    .map(([kitSlug, agg]) => ({ kitSlug, ...agg }))
+  const topKits = Object.entries(byPlan)
+    .map(([plan, v]) => ({
+      kitSlug: plan,
+      orders: v.orders,
+      revenue: Math.round(v.revenue * 100) / 100,
+    }))
     .sort((a, b) => b.orders - a.orders)
     .slice(0, 5);
 
   return {
     totalRevenue,
     totalOrders,
-    avgOrderValue:
-      totalOrders > 0
-        ? Math.round((totalRevenue / totalOrders) * 100) / 100
-        : 0,
-    abandonedCartRate:
-      buyClicks > 0
-        ? Math.round(((buyClicks - totalOrders) / buyClicks) * 1000) / 10
-        : 0,
+    avgOrderValue: Math.round((totalRevenue / totalOrders) * 100) / 100,
+    // Not derivable without a checkout-intent event; PostHog territory, and
+    // reporting 0 is honest where inventing a rate would not be.
+    abandonedCartRate: 0,
+    // A renewal is the repeat signal. Orders beyond the first per creator code
+    // approximate it until we track per-user transaction sequence.
     repeatPurchaseRate:
       totalOrders > 0
-        ? Math.round((repeatOrders / totalOrders) * 1000) / 10
+        ? Math.round(((totalOrders - Object.keys(agg.revenueAgg).length) / totalOrders) * 1000) / 10
         : 0,
     topKits,
   };
 }
 
-async function fetchRevenueTimeline(days: number): Promise<DailyRevenue[]> {
-  const sb = getSupabase();
-  if (!sb) return getDemoData(days).revenueTimeline;
-
-  const since = new Date(Date.now() - days * 86400000)
-    .toISOString()
-    .slice(0, 10);
-
-  const { data } = await sb
-    .from("daily_revenue")
-    .select("date, orders, revenue_cents")
-    .gte("date", since)
-    .order("date", { ascending: true });
-
-  if (!data || data.length === 0) return getDemoData(days).revenueTimeline;
-
-  return data.map((r) => ({
-    date: r.date,
-    orders: r.orders,
-    revenue: r.revenue_cents / 100,
-  }));
+/** Daily revenue, derived from the ledger rather than the unused daily_revenue table. */
+function buildRevenueTimeline(agg: KPIAggregates | null, days: number): DailyRevenue[] {
+  if (!agg) return getDemoData(days).revenueTimeline;
+  return agg.timeline ?? [];
 }
 
-async function fetchMarketBreakdown(days: number): Promise<MarketMetrics[]> {
-  const sb = getSupabase();
-  if (!sb) return getDemoData(days).marketBreakdown;
+/**
+ * Market breakdown by the creator's language. Signups come from attributed
+ * profiles, revenue from the ledger — both rolled up through creators.language.
+ */
+function buildMarketBreakdown(agg: KPIAggregates | null, days: number): MarketMetrics[] {
+  if (!agg) return getDemoData(days).marketBreakdown;
 
-  const since = new Date(Date.now() - days * 86400000).toISOString();
-
-  // Get events by lang
-  const { data: events } = await sb
-    .from("kpi_events")
-    .select("event_name, lang")
-    .gte("created_at", since)
-    .not("lang", "is", null);
-
-  // Get orders by affiliate_code, then map to creator language
-  const { data: creators } = await sb
-    .from("creators")
-    .select("affiliate_code, language");
-
-  const { data: orders } = await sb
-    .from("orders")
-    .select("affiliate_code, revenue_cents")
-    .gte("created_at", since);
-
-  const codeLang: Record<string, string> = {};
-  for (const c of creators || []) {
-    codeLang[c.affiliate_code] = (c.language || "en").toUpperCase();
-  }
-
-  const langData: Record<string, MarketMetrics> = {};
-
-  const ensureLang = (lang: string) => {
-    if (!langData[lang]) {
-      langData[lang] = {
-        lang,
-        scans: 0,
-        activations: 0,
-        completions: 0,
-        orders: 0,
-        revenue: 0,
-        conversionRate: 0,
-      };
-    }
-  };
-
-  for (const e of events || []) {
-    const lang = (e.lang || "en").toUpperCase();
-    ensureLang(lang);
-    if (e.event_name === "qr_scan") langData[lang].scans++;
-    if (e.event_name === "step_start") langData[lang].activations++;
-    if (e.event_name === "kit_complete") langData[lang].completions++;
-  }
-
-  for (const o of orders || []) {
-    const lang = codeLang[o.affiliate_code || ""] || "OTHER";
-    ensureLang(lang);
-    langData[lang].orders++;
-    langData[lang].revenue += o.revenue_cents / 100;
-  }
-
-  return Object.values(langData)
-    .map((m) => ({
-      ...m,
+  return Object.entries(agg.market ?? {})
+    .map(([lang, m]) => ({
+      lang,
+      scans: m.signups,
+      // No app-side onboarding-step signal yet; 0 rather than fabricated.
+      activations: 0,
+      completions: 0,
+      orders: m.orders,
+      revenue: Math.round(m.revenue * 100) / 100,
       conversionRate:
-        m.scans > 0 ? Math.round((m.orders / m.scans) * 1000) / 10 : 0,
+        m.signups > 0 ? Math.round((m.orders / m.signups) * 1000) / 10 : 0,
     }))
     .sort((a, b) => b.revenue - a.revenue);
 }
 
-// ─── Main Fetch ─────────────────────────────────────────────────────────────
-
 export async function fetchKPIDashboardData(
   days: number = 30,
 ): Promise<KPIDashboardData> {
+  resetDemoReason();
+
   if (!isSupabaseConfigured()) {
     return getDemoData(days);
   }
@@ -661,15 +677,19 @@ export async function fetchKPIDashboardData(
   const now = new Date();
   const from = new Date(now.getTime() - days * 86400000);
 
-  const [funnel, creators, revenueTimeline, marketBreakdown] =
-    await Promise.all([
-      fetchFunnel(days),
-      fetchCreatorLeaderboard(days),
-      fetchRevenueTimeline(days),
-      fetchMarketBreakdown(days),
-    ]);
+  // One aggregates call feeds creators, sales, timeline and market, so every
+  // tab reconciles against the same ledger rows. Previously each section read a
+  // different table and an attributed Pro subscription showed up on the
+  // Creators tab alone.
+  const [funnel, aggregates] = await Promise.all([
+    fetchFunnel(days),
+    fetchAggregates(days),
+  ]);
 
-  const sales = await fetchSalesOverview(days, funnel.buyClicks);
+  const creators = buildCreatorRows(aggregates, days);
+  const sales = buildSalesOverview(aggregates, days);
+  const revenueTimeline = buildRevenueTimeline(aggregates, days);
+  const marketBreakdown = buildMarketBreakdown(aggregates, days);
 
   // Derive pod health from creators
   const langGroups: Record<string, CreatorRow[]> = {};
@@ -707,7 +727,10 @@ export async function fetchKPIDashboardData(
 }
 
 export function isUsingDemoData(): boolean {
-  return !isSupabaseConfigured();
+  // Being configured is not the same as being provisioned. If any fetch fell
+  // back — missing table, unreadable table, empty roster — the numbers on
+  // screen are demo numbers regardless of whether Supabase creds are present.
+  return !isSupabaseConfigured() || isUsingDemoSource("kpi");
 }
 
 // ─── CSV Export ──────────────────────────────────────────────────────────────
@@ -896,20 +919,34 @@ function getUGCDemoData(days: number): UGCDashboardData {
 // ─── UGC Fetch ──────────────────────────────────────────────────────────────
 
 export async function fetchUGCDashboardData(days: number = 30): Promise<UGCDashboardData> {
-  if (!isSupabaseConfigured()) return getUGCDemoData(days);
+  clearDemo("ugc");
+  if (!isSupabaseConfigured()) {
+    return noteDemoSource("ugc", "Supabase is not configured", getUGCDemoData(days));
+  }
 
   const sb = getSupabase();
-  if (!sb) return getUGCDemoData(days);
+  if (!sb) return noteDemoSource("ugc", "no Supabase client", getUGCDemoData(days));
 
   const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
 
-  const { data: rows } = await sb
+  const { data: rows, error } = await sb
     .from("ugc_videos")
     .select("*, creators(name, handle)")
     .gte("date_posted", since)
     .order("date_posted", { ascending: false });
 
-  if (!rows || rows.length === 0) return getUGCDemoData(days);
+  if (error) {
+    return noteDemoSource(
+      "ugc",
+      error.code === "42P01"
+        ? "ugc_videos not provisioned (003_ugc_video_tracking.sql)"
+        : `ugc_videos unreadable (${error.code}: ${error.message})`,
+      getUGCDemoData(days),
+    );
+  }
+  if (!rows || rows.length === 0) {
+    return noteDemoSource("ugc", "no videos in ugc_videos yet — showing sample data", getUGCDemoData(days));
+  }
 
   const videos: UGCVideo[] = rows.map((r: Record<string, unknown>) => ({
     id: r.id as string,
@@ -1078,12 +1115,28 @@ function getDemoSwipeData(): SwipeFileData {
 }
 
 export async function fetchSwipeFileData(): Promise<SwipeFileData> {
-  if (!isSupabaseConfigured()) return getDemoSwipeData();
+  clearDemo("swipe");
+  if (!isSupabaseConfigured()) {
+    return noteDemoSource("swipe", "Supabase is not configured", getDemoSwipeData());
+  }
   const sb = getSupabase();
-  if (!sb) return getDemoSwipeData();
+  if (!sb) return noteDemoSource("swipe", "no Supabase client", getDemoSwipeData());
 
-  const { data } = await sb.from("ugc_swipe_file").select("*").order("created_at", { ascending: false });
-  if (!data || data.length === 0) return getDemoSwipeData();
+  const { data, error } = await sb
+    .from("ugc_swipe_file").select("*").order("created_at", { ascending: false });
+
+  if (error) {
+    return noteDemoSource(
+      "swipe",
+      error.code === "42P01"
+        ? "swipe file unavailable — ugc_swipe_file is not provisioned (005_swipefile_accounts_sparkads.sql)"
+        : `ugc_swipe_file unreadable (${error.code}: ${error.message})`,
+      getDemoSwipeData(),
+    );
+  }
+  if (!data || data.length === 0) {
+    return noteDemoSource("swipe", "swipe file is empty — showing sample entries", getDemoSwipeData());
+  }
 
   const entries: SwipeFileEntry[] = data.map((r: Record<string, unknown>) => ({
     id: r.id as string,
@@ -1114,21 +1167,38 @@ export async function fetchSwipeFileData(): Promise<SwipeFileData> {
 
 // ─── Account Analytics Fetch ────────────────────────────────────────────────
 
-function getDemoAccountData(videos: UGCVideo[]): AccountAnalytics {
+// Default account metadata — used only for the demo path. Real account
+// metadata comes from the ugc_accounts table (see fetchAccountAnalytics).
+const DEMO_ACCOUNT_LANG: Record<string, string> = {
+  "@collectai.eu": "EN", "@collectai.de": "DE", "@collectai.fr": "FR",
+  "@collectai.nl": "NL", "@collectai.es": "ES", "@collectai.it": "IT",
+};
+const DEMO_ACCOUNT_FOLLOWERS: Record<string, number> = {
+  "@collectai.eu": 12400, "@collectai.de": 8900, "@collectai.fr": 7200,
+  "@collectai.nl": 4500, "@collectai.es": 3100, "@collectai.it": 2800,
+};
+
+/**
+ * Aggregate per-account analytics from a set of videos. Pure: `meta` supplies
+ * each account's language and follower count (from ugc_accounts for real data,
+ * or the demo maps above). Performance metrics are computed from the videos.
+ */
+function computeAccountAnalytics(
+  videos: UGCVideo[],
+  meta: Record<string, { language: string; followers: number }>,
+): AccountAnalytics {
   const accountMap: Record<string, UGCVideo[]> = {};
   for (const v of videos) {
     if (!accountMap[v.accountId]) accountMap[v.accountId] = [];
     accountMap[v.accountId].push(v);
   }
 
-  const langMap: Record<string, string> = {
-    "@collectai.eu": "EN", "@collectai.de": "DE", "@collectai.fr": "FR",
-    "@collectai.nl": "NL", "@collectai.es": "ES", "@collectai.it": "IT",
-  };
-  const followerMap: Record<string, number> = {
-    "@collectai.eu": 12400, "@collectai.de": 8900, "@collectai.fr": 7200,
-    "@collectai.nl": 4500, "@collectai.es": 3100, "@collectai.it": 2800,
-  };
+  const langMap: Record<string, string> = {};
+  const followerMap: Record<string, number> = {};
+  for (const [handle, m] of Object.entries(meta)) {
+    langMap[handle] = m.language;
+    followerMap[handle] = m.followers;
+  }
 
   const accounts: TikTokAccount[] = Object.entries(accountMap).map(([handle, vids]) => {
     const totalViews = vids.reduce((s, v) => s + v.viewsTotal, 0);
@@ -1192,8 +1262,50 @@ function getDemoAccountData(videos: UGCVideo[]): AccountAnalytics {
   };
 }
 
+/** Demo path: aggregate demo videos with the hardcoded account metadata. */
+function getDemoAccountData(videos: UGCVideo[]): AccountAnalytics {
+  const meta: Record<string, { language: string; followers: number }> = {};
+  for (const handle of new Set(videos.map((v) => v.accountId))) {
+    meta[handle] = {
+      language: DEMO_ACCOUNT_LANG[handle] ?? "EN",
+      followers: DEMO_ACCOUNT_FOLLOWERS[handle] ?? 1000,
+    };
+  }
+  return computeAccountAnalytics(videos, meta);
+}
+
 export async function fetchAccountAnalytics(videos: UGCVideo[]): Promise<AccountAnalytics> {
-  return getDemoAccountData(videos);
+  const sb = getSupabase();
+  if (!sb) return noteDemoSource("accounts", "no Supabase client", getDemoAccountData(videos));
+
+  // Real account metadata (handle, language, followers) from ugc_accounts;
+  // performance is aggregated from the videos already fetched for this period.
+  const { data: accts, error } = await sb
+    .from("ugc_accounts")
+    .select("handle, language, followers")
+    .eq("is_active", true);
+
+  if (error) {
+    return noteDemoSource(
+      "accounts",
+      error.code === "42P01"
+        ? "ugc_accounts not provisioned (005_swipefile_accounts_sparkads.sql)"
+        : `ugc_accounts unreadable (${error.code}: ${error.message})`,
+      getDemoAccountData(videos),
+    );
+  }
+  if (!accts || accts.length === 0) {
+    return noteDemoSource("accounts", "no accounts in ugc_accounts — showing sample data",
+      getDemoAccountData(videos));
+  }
+
+  const meta: Record<string, { language: string; followers: number }> = {};
+  for (const a of accts as { handle: string; language: string; followers: number }[]) {
+    meta[a.handle] = { language: (a.language || "EN").toUpperCase(), followers: a.followers ?? 0 };
+  }
+  // Real accounts exist → this is live data for the tab.
+  clearDemo("accounts");
+  return computeAccountAnalytics(videos, meta);
 }
 
 // ─── Boost Metrics Fetch ────────────────────────────────────────────────────
@@ -1244,7 +1356,72 @@ function getDemoBoostData(videos: UGCVideo[]): BoostMetrics {
 }
 
 export async function fetchBoostMetrics(videos: UGCVideo[]): Promise<BoostMetrics> {
-  return getDemoBoostData(videos);
+  const sb = getSupabase();
+  if (!sb) return noteDemoSource("boost", "no Supabase client", getDemoBoostData(videos));
+
+  // Real Spark Ads spend lives in the boost_* columns on ugc_videos (added by
+  // migration 005). These are NOT mapped onto UGCVideo, so query them directly.
+  const { data: rows, error } = await sb
+    .from("ugc_videos")
+    .select("video_id, hook_text, views_total, revenue_cents, cost_cents, is_boosted, boost_spend_cents, boost_views, boost_clicks, boost_installs")
+    .eq("is_boosted", true);
+
+  if (error) {
+    return noteDemoSource(
+      "boost",
+      error.code === "42P01"
+        ? "ugc_videos not provisioned (003_ugc_video_tracking.sql)"
+        : `ugc_videos unreadable (${error.code}: ${error.message})`,
+      getDemoBoostData(videos),
+    );
+  }
+  if (!rows || rows.length === 0) {
+    return noteDemoSource("boost", "no boosted videos yet — showing sample data",
+      getDemoBoostData(videos));
+  }
+
+  type BoostRow = {
+    video_id: string; hook_text: string; views_total: number; revenue_cents: number;
+    cost_cents: number; boost_spend_cents: number; boost_views: number;
+    boost_clicks: number; boost_installs: number;
+  };
+  const boosted = (rows as BoostRow[]).map((r) => {
+    const spend = (r.boost_spend_cents ?? 0) / 100;
+    const revenue = (r.revenue_cents ?? 0) / 100;
+    return {
+      videoId: r.video_id,
+      hookText: r.hook_text ?? "",
+      organicViews: r.views_total ?? 0,
+      boostedViews: r.boost_views ?? 0,
+      spend,
+      installs: r.boost_installs ?? 0,
+      revenue,
+      roas: spend > 0 ? Math.round((revenue / spend) * 100) / 100 : 0,
+    };
+  });
+
+  const totalSpend = boosted.reduce((s, b) => s + b.spend, 0);
+  const totalBoostedViews = boosted.reduce((s, b) => s + b.boostedViews, 0);
+  const totalBoostedClicks = (rows as BoostRow[]).reduce((s, r) => s + (r.boost_clicks ?? 0), 0);
+  const totalBoostedInstalls = boosted.reduce((s, b) => s + b.installs, 0);
+  const totalBoostedRevenue = boosted.reduce((s, b) => s + b.revenue, 0);
+  const organicRevenue = videos.reduce((s, v) => s + v.revenueCents, 0) / 100;
+  const organicCost = videos.reduce((s, v) => s + v.costCents, 0) / 100;
+
+  clearDemo("boost");
+  return {
+    totalBoosted: boosted.length,
+    totalSpend: Math.round(totalSpend * 100) / 100,
+    totalBoostedViews,
+    totalBoostedClicks,
+    totalBoostedInstalls,
+    avgCPM: totalBoostedViews > 0 ? Math.round((totalSpend / totalBoostedViews * 1000) * 100) / 100 : 0,
+    avgCPC: totalBoostedClicks > 0 ? Math.round((totalSpend / totalBoostedClicks) * 100) / 100 : 0,
+    avgCPI: totalBoostedInstalls > 0 ? Math.round((totalSpend / totalBoostedInstalls) * 100) / 100 : 0,
+    organicROI: organicCost > 0 ? Math.round((organicRevenue / organicCost) * 100) / 100 : 0,
+    boostedROI: totalSpend > 0 ? Math.round((totalBoostedRevenue / totalSpend) * 100) / 100 : 0,
+    boostedVideos: boosted,
+  };
 }
 
 // ─── UGC CSV Export ─────────────────────────────────────────────────────────

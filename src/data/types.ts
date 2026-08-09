@@ -65,7 +65,12 @@ export type PortfolioSummary = {
   itemCount: number;
 };
 
-export type ItemSource = 'ai' | 'scan' | 'manual';
+// 'marketplace' is written by the SERVER, not the app: _settle_completed_trade
+// stamps it on the row it mints for the buyer when a P2P trade completes. The
+// column has no CHECK constraint, so this union was the only thing standing
+// between that value and every reader — and it did not list it, which made a
+// legitimate row's source read as an impossible value.
+export type ItemSource = 'ai' | 'scan' | 'manual' | 'marketplace';
 
 export type Item = {
   id: string;
@@ -80,6 +85,13 @@ export type Item = {
   priceBand?: PriceBand;        // q10/q50/q90 price estimates
   imageUrl?: string;
   updatedAt?: string;
+  // Rich detail surfaced on the collection card (POST /items enrichment,
+  // 2026-07-15). All optional — legacy or QuickScan-only items may lack them.
+  condition?: string;           // e.g. "Near Mint", "PSA 9"
+  brand?: string;               // manufacturer / publisher
+  year?: number;                // release year
+  series?: string;              // set / series name
+  editionLabel?: string;        // e.g. "1st Edition", "Limited"
   // Acquisition / "what I paid" fields. Captured at add-manual time and stored
   // in the items table; until 2026-05-01 they were never read back into the
   // Item shape, so the items screen showed predicted price only and the user's
@@ -114,6 +126,18 @@ export type CreateWatchlistInput = {
   targetPrice?: number | null;
   notes?: string;
   priority?: 'high' | 'medium' | 'low';
+  /**
+   * Reference to what is being watched — a catalog `item_key` when the add came
+   * from a catalog screen. Maps to `watchlist_items.item_id` (a TEXT column, so
+   * catalog keys are valid there; it is NOT `items.id`).
+   *
+   * The server has accepted `item_id` on POST /watchlist/mine all along, but
+   * this type had no slot for it, so every add wrote NULL — all 12 production
+   * rows had `item_id IS NULL` and no watchlist row could be traced back to
+   * what it watches. Free-text adds (wishlist form, watchlist-builder) have no
+   * reference and correctly leave this undefined.
+   */
+  itemId?: string | null;
 };
 
 // Alias for backwards compatibility
@@ -128,6 +152,17 @@ export type CreateItemInput = {
   price: number;
   priceBand?: PriceBand;
   imageUrl?: string;
+  // Rich detail so the saved item lands as a FULL card (see POST /items).
+  // Populated by QuickScan / catalog-match / the manual form.
+  notes?: string;
+  canonicalKey?: string;
+  brand?: string;
+  condition?: string;
+  year?: number;
+  series?: string;
+  editionLabel?: string;
+  /** Category-specific attributes (rarity, set_code, edition, print run, …). */
+  attributes?: Record<string, unknown>;
 };
 
 /**
@@ -450,6 +485,33 @@ export type AlertFeedItem = {
   createdAt: string;
   itemId?: string | null;
   watchlistItemId?: string | null;
+  /** The price the alert actually fired on, from `alert_trigger_history.trigger_value`.
+   *  Was dropped in the mapping, so the Home watchlist card rendered a hardcoded
+   *  `value: 0` — every row showed EUR 0 next to it. */
+  price?: number | null;
+  /** The user's target, for the same reason. */
+  targetPrice?: number | null;
+};
+
+/**
+ * A standing alert *rule* the user configured — distinct from AlertFeedItem,
+ * which is a record of a rule having fired.
+ *
+ * The Alerts screen's "Rules" tab rendered AlertFeedItem until 2026-07-30, so
+ * it showed the same trigger history as the "Triggers" tab, could never show a
+ * rule, and its swipe-to-delete sent a trigger-history id to
+ * DELETE /alerts/mine/{alert_id} (a 404 every time). Rules come from
+ * GET /alerts/mine; keep the two types separate so they cannot be crossed again.
+ */
+export type AlertRule = {
+  id: string;
+  itemId: string | null;
+  category: string | null;
+  triggerType: string;
+  thresholdValue: number | null;
+  direction: 'up' | 'down' | null;
+  active: boolean;
+  createdAt: string;
 };
 
 /**

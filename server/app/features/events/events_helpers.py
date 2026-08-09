@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import math
+import re
 from datetime import date, datetime, timezone
 from typing import Any, List, Optional
 
@@ -75,6 +76,13 @@ class CreateEventRequest(BaseModel):
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
     ticket_price_cents: Optional[int] = Field(None, ge=0, description="Ticket price in cents (0 = free)")
+    max_attendees: Optional[int] = Field(None, ge=1)
+    # Sponsor association. Accepted here so the create form's sponsor branch
+    # stops losing them, but they are NOT a way to buy placement: create_event
+    # verifies the caller owns the sponsor company and never sets is_sponsored
+    # (only the Stripe webhook, billing_router.py:770, may do that).
+    sponsor_company_id: Optional[str] = Field(None, max_length=64)
+    sponsor_tier: Optional[str] = Field(None, pattern=r"^(featured|promoted|spotlight)$")
 
 
 class UpdateEventRequest(BaseModel):
@@ -119,6 +127,10 @@ class EventResponse(BaseModel):
     longitude: Optional[float] = None
     created_by: Optional[str] = None
     source: str = "user"
+    # The mobile detail screen used to read source_url off
+    # v_events_with_attendees_v1 directly; now that it reads GET /events/{id}
+    # instead, the field has to exist here or it silently disappears.
+    source_url: Optional[str] = None
     attendee_count: int = 0
     going_count: int = 0
     interested_count: int = 0
@@ -204,6 +216,10 @@ IN_MEMORY_DROP_ALERTS: dict[str, dict[str, dict]] = {}  # user_id -> {event_id: 
 # Helper functions
 # ---------------------------------------------------------------------------
 
+# Guards the only values interpolated into SQL by display_gate_sql().
+_SAFE_SOURCE_RE = re.compile(r"^[a-z0-9_]+$")
+
+
 def build_event_conditions(
     category_id: Optional[str],
     include_past: bool,
@@ -237,7 +253,48 @@ def build_event_conditions(
     else:
         conditions.append("is_public = true")
 
+    conditions.append(display_gate_sql())
+
     return conditions, params, param_idx
+
+
+def display_gate_sql() -> str:
+    """SQL predicate for "may appear in the default feed".
+
+    Mirrors `app.lib.event_quality.is_display_ready` and the identical
+    predicate embedded in `rpc_list_personalized_events_v1` (migration
+    20260727c). Three copies exist because three engines evaluate it —
+    Python for in-memory paths, this builder for the basic queries, and
+    PL/pgSQL for the personalized RPC — so any change must touch all
+    three. `test_event_display_gate.py` pins them against each other.
+
+    Added 2026-07-27: `quality_score` and `trust_tier` had been written
+    at ingest since April and read by NOTHING — not one filter, sort or
+    API field, and zero references in the app. The whole Phase-1 scoring
+    system from docs/EVENT_QUALITY_PLAN.md was inert, which is why a row
+    titled "[Nike Vaporposite Pro](https://sneakernews.com/...)" with the
+    venue "es/#main-content)" scored 75 and rendered like any other.
+
+    NULL quality_score passes: rows predating the backfill have no score
+    and failing them closed would empty the feed.
+
+    No bind parameters, deliberately — callers thread `param_idx` through
+    positional placeholders and an extra param here would renumber every
+    downstream one. The source list is a code-owned constant of bare
+    identifiers, asserted below, so it can never carry user input.
+    """
+    from app.lib.event_quality import UNRELIABLE_FREE_TEXT_SOURCES
+
+    unsafe = [s for s in UNRELIABLE_FREE_TEXT_SOURCES if not _SAFE_SOURCE_RE.match(s)]
+    if unsafe:
+        raise ValueError(
+            f"UNRELIABLE_FREE_TEXT_SOURCES must be bare identifiers, got {unsafe!r}"
+        )
+    quoted = ", ".join(f"'{s}'" for s in sorted(UNRELIABLE_FREE_TEXT_SOURCES))
+    return (
+        "(quality_score IS NULL OR quality_score >= 40) "
+        f"AND (source IS NULL OR source NOT IN ({quoted}))"
+    )
 
 
 async def fetch_events_basic(
@@ -370,6 +427,7 @@ def row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventRes
         # is typed as Optional[str], so coerce here. Same pattern as `id` above.
         created_by=str(row["created_by"]) if row.get("created_by") else None,
         source=row.get("source", "user"),
+        source_url=row.get("source_url"),
         attendee_count=row.get("attendee_count", 0),
         going_count=going_count,
         interested_count=interested_count,

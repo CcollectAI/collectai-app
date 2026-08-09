@@ -37,6 +37,7 @@ import { MS_PER_WEEK } from '@/constants/time';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import { supabase } from '@/lib/supabase';
 import { trackScreen } from '@/analytics/track';
+import { safeGoBack } from '@/lib/goBack';
 
 // SWR cache for instant inbox first-paint on revisit (realtime + on-mount
 // revalidate keep it fresh; TTL just bounds offline staleness).
@@ -152,7 +153,7 @@ function InboxScreen() {
       });
     } catch (err) {
       logLoad('inbox', { error: err instanceof Error ? err.message : String(err), ms: elapsed() });
-      logger.warn('[InboxScreen] loadInbox error:', err);
+      logger.error('[InboxScreen] loadInbox error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -279,7 +280,7 @@ function InboxScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); safeGoBack(router); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Inbox</Text>
@@ -301,7 +302,7 @@ function InboxScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); safeGoBack(router); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <View style={styles.headerTitleRow}>
@@ -524,6 +525,12 @@ function InboxScreen() {
                   <Ionicons name="search" size={16} color="#fff" style={{ marginRight: 6 }} />
                   <Text style={styles.emptyActionPrimaryText}>Find collectors</Text>
                 </AnimatedPressable>
+                {/* Dev-only. app/chat-demo.tsx is a local-only placeholder whose
+                    own header says "remove once real DM threads exist" — it must
+                    not ship a flask-icon "Open test chat" button to App Store
+                    users. __DEV__ is false in any release build, so this keeps
+                    the affordance for local testing and hides it in production. */}
+                {__DEV__ && (
                 <AnimatedPressable
                   onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/chat-demo' as Href); }}
                   style={[styles.emptyActionSecondary, { borderColor: colors.border }]}
@@ -533,6 +540,7 @@ function InboxScreen() {
                   <Ionicons name="flask-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
                   <Text style={[styles.emptyActionSecondaryText, { color: colors.accent }]}>Open test chat</Text>
                 </AnimatedPressable>
+                )}
               </View>
             }
           />

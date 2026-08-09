@@ -119,11 +119,15 @@ def warm_tier_read(
         raise ValueError("limit too high — split into chunks")
 
     glob = _build_glob(table, year_from, month_from, year_to, month_to)
+    # Cast the hive partition columns: DuckDB infers `month=05` (zero-padded) as
+    # VARCHAR, so bare `month >= 5` raises a VARCHAR-vs-INTEGER binder error.
+    # CAST(... AS INTEGER) makes the range filter type-stable regardless of how
+    # hive autodetect types the path segments.
     sql = f"""
         SELECT {select}
-        FROM read_parquet('{glob}', hive_partitioning=true)
-        WHERE (year > {int(year_from)} OR (year = {int(year_from)} AND month >= {int(month_from)}))
-          AND (year < {int(year_to)}   OR (year = {int(year_to)}   AND month <= {int(month_to)}))
+        FROM read_parquet('{glob}', hive_partitioning=true, union_by_name=true)
+        WHERE (CAST(year AS INTEGER) > {int(year_from)} OR (CAST(year AS INTEGER) = {int(year_from)} AND CAST(month AS INTEGER) >= {int(month_from)}))
+          AND (CAST(year AS INTEGER) < {int(year_to)}   OR (CAST(year AS INTEGER) = {int(year_to)}   AND CAST(month AS INTEGER) <= {int(month_to)}))
         {("AND (" + where + ")") if where else ""}
         LIMIT {int(limit)}
     """

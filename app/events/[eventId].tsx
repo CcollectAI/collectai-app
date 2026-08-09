@@ -51,6 +51,7 @@ import {
   EventRelatedCategory,
   EventHostSection,
 } from '@/components/events';
+import { safeGoBack } from '@/lib/goBack';
 
 function EventDetailScreen() {
   const { t } = useTranslation();
@@ -82,7 +83,7 @@ function EventDetailScreen() {
       const eventData = await dataProvider.getEventById(eventId);
       setEvent(eventData);
     } catch (err) {
-      logger.warn('[EventDetail] loadEvent error:', err);
+      logger.error('[EventDetail] loadEvent error:', err);
     } finally {
       setLoading(false);
     }
@@ -164,7 +165,8 @@ function EventDetailScreen() {
     try {
       const eventDate = new Date(event.endDate || event.date);
       return eventDate < new Date();
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] [eventId].tsx:167:', e);
       return false;
     }
   }, [event?.date, event?.endDate]);
@@ -182,7 +184,7 @@ function EventDetailScreen() {
           Linking.openURL(url);
         }
       } catch (err) {
-        logger.warn('[EventDetail] ticket checkout error:', err);
+        logger.error('[EventDetail] ticket checkout error:', err);
         showToast({ message: (err as Error)?.message || 'Failed to start ticket checkout.', type: 'error' });
       }
       return;
@@ -216,7 +218,7 @@ function EventDetailScreen() {
         track({ name: 'event_rsvp', properties: { event_id: eventId as string, status: 'going' } });
       }
     } catch (err) {
-      logger.warn('[EventDetail] rsvp going error:', err);
+      logger.error('[EventDetail] rsvp going error:', err);
       loadEvent(); // rollback
     }
   }, [event, eventId, rsvpStatus, settings.hapticsEnabled, showToast, loadEvent]);
@@ -252,22 +254,48 @@ function EventDetailScreen() {
         track({ name: 'event_rsvp', properties: { event_id: eventId as string, status: 'interested' } });
       }
     } catch (err) {
-      logger.warn('[EventDetail] rsvp interested error:', err);
+      logger.error('[EventDetail] rsvp interested error:', err);
       loadEvent(); // rollback
     }
   }, [event, eventId, rsvpStatus, settings.hapticsEnabled, loadEvent]);
 
+  // Join the waitlist for a full event.
+  //
+  // This used to POST status:'waitlist'. RsvpRequest only permits
+  // going|interested|not_going (events_helpers.py:96), so every tap was a hard
+  // 422 that this catch swallowed into a log line — the button changed colour,
+  // said "On Waitlist", and nothing was ever written. There is no 'waitlist'
+  // row type anywhere: the server implements the waitlist by ACCEPTING 'going'
+  // on a full event, storing 'interested', and returning waitlisted:true
+  // (events_rsvp.py:65-89). So we send 'going' and take the server's answer.
+  // Introducing a real 4th status would mean a DDL change plus re-auditing
+  // every consumer of event_attendees.status (v_events_with_attendees_v1's
+  // going/interested counters filter on it), for no behavioural gain.
   const handleJoinWaitlist = useCallback(async () => {
     if (!event || !eventId) return;
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+    const prevStatus = rsvpStatus;
     try {
-      setRsvpStatus('waitlist');
-      await dataProvider.rsvpEvent(eventId, 'waitlist');
+      const res = await dataProvider.rsvpEvent(eventId, 'going');
+      setRsvpStatus(res.status);
+      setEvent((prev) => (prev ? { ...prev, myRsvpStatus: res.status } : prev));
+      showToast({
+        message: res.waitlisted
+          ? "Event is full — you're on the waitlist"
+          : "You're going",
+        type: 'success',
+      });
+      track({ name: 'event_rsvp', properties: { event_id: eventId as string, status: res.status } });
     } catch (err) {
-      logger.warn('[EventDetail] waitlist error:', err);
+      logger.error('[EventDetail] waitlist error:', err);
+      setRsvpStatus(prevStatus);
+      showToast({
+        message: (err as Error)?.message || 'Could not join the waitlist. Please try again.',
+        type: 'error',
+      });
       loadEvent();
     }
-  }, [event, eventId, settings.hapticsEnabled, loadEvent]);
+  }, [event, eventId, rsvpStatus, settings.hapticsEnabled, showToast, loadEvent]);
 
   const handleToggleDropAlert = useCallback(async () => {
     if (!eventId || alertsLoading) return;
@@ -284,7 +312,7 @@ function EventDetailScreen() {
         showToast({ message: "Alert set \u2014 we'll notify you before this drop", type: 'success' });
       }
     } catch (err) {
-      logger.warn('[EventDetail] toggle drop alert error:', err);
+      logger.error('[EventDetail] toggle drop alert error:', err);
       showToast({ message: 'Failed to update drop alert', type: 'error' });
     } finally {
       setAlertsLoading(false);
@@ -311,7 +339,7 @@ function EventDetailScreen() {
       const duplicated = await dataProvider.duplicateEvent(eventId);
       router.push({ pathname: '/edit-event', params: { eventId: duplicated.id } });
     } catch (err) {
-      logger.warn('[EventDetail] duplicate error:', err);
+      logger.error('[EventDetail] duplicate error:', err);
       showToast({ message: 'Failed to duplicate event.', type: 'error' });
     }
   };
@@ -331,9 +359,9 @@ function EventDetailScreen() {
             try {
               await dataProvider.cancelEvent(eventId);
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              router.back();
+              safeGoBack(router);
             } catch (err) {
-              logger.warn('[EventDetail] cancel error:', err);
+              logger.error('[EventDetail] cancel error:', err);
               showToast({ message: 'Failed to cancel event.', type: 'error' });
             }
           },
@@ -395,7 +423,7 @@ function EventDetailScreen() {
             This event doesn't exist yet. Try opening it from the Events tab again.
           </Text>
           <AnimatedPressable
-            onPress={() => router.back()}
+            onPress={() => safeGoBack(router)}
             style={[styles.emptyBtn, { borderColor: colors.border }]}
             accessibilityRole="button"
             accessibilityLabel={t('common.go_back_a11y')}

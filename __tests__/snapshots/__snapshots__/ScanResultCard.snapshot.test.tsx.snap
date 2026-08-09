@@ -389,9 +389,11 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
                 "borderRadius": 12,
                 "flex": 1,
                 "flexDirection": "row",
-                "gap": 6,
+                "gap": 8,
                 "justifyContent": "center",
-                "paddingVertical": 12,
+                "minWidth": 0,
+                "paddingHorizontal": 12,
+                "paddingVertical": 14,
               }
             }
           >
@@ -417,15 +419,17 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
               
             </Text>
             <Text
+              numberOfLines={1}
               style={
                 {
                   "color": "#FFFFFF",
+                  "flexShrink": 1,
                   "fontSize": 14,
                   "fontWeight": "700",
                 }
               }
             >
-              Yes, this is correct
+              Yes, correct
             </Text>
           </View>
           <View
@@ -469,9 +473,11 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
                 "borderWidth": 1.5,
                 "flex": 1,
                 "flexDirection": "row",
-                "gap": 6,
+                "gap": 8,
                 "justifyContent": "center",
-                "paddingVertical": 12,
+                "minWidth": 0,
+                "paddingHorizontal": 12,
+                "paddingVertical": 14,
               }
             }
           >
@@ -497,15 +503,17 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
               
             </Text>
             <Text
+              numberOfLines={1}
               style={
                 {
                   "color": "#64748B",
+                  "flexShrink": 1,
                   "fontSize": 14,
                   "fontWeight": "600",
                 }
               }
             >
-              No, let me correct
+              No, edit
             </Text>
           </View>
         </View>
@@ -514,11 +522,11 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
         style={
           [
             {
-              "borderRadius": 16,
+              "borderRadius": 12,
               "borderWidth": 1,
               "marginHorizontal": 16,
               "marginTop": 12,
-              "padding": 18,
+              "padding": 16,
             },
             {
               "backgroundColor": "#FFFFFF",
@@ -795,7 +803,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
             [
               {
                 "alignItems": "center",
-                "borderRadius": 14,
+                "borderRadius": 12,
                 "flexDirection": "row",
                 "gap": 12,
                 "padding": 12,
@@ -936,7 +944,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
           "bottom": 0,
           "left": 0,
           "paddingBottom": 40,
-          "paddingHorizontal": 20,
+          "paddingHorizontal": 16,
           "paddingTop": 14,
           "position": "absolute",
           "right": 0,
@@ -993,7 +1001,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
           [
             {
               "alignItems": "center",
-              "borderRadius": 16,
+              "borderRadius": 12,
               "borderWidth": 1.5,
               "height": 52,
               "justifyContent": "center",
@@ -1063,13 +1071,13 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
           [
             {
               "alignItems": "center",
-              "borderRadius": 16,
+              "borderRadius": 12,
               "elevation": 4,
               "flex": 1,
               "flexDirection": "row",
               "gap": 8,
+              "height": 52,
               "justifyContent": "center",
-              "paddingVertical": 16,
               "shadowColor": "#81D8D0",
               "shadowOffset": {
                 "height": 4,
@@ -1106,6 +1114,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
           
         </Text>
         <Text
+          numberOfLines={1}
           style={
             {
               "color": "#FFFFFF",
@@ -1119,25 +1128,6 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
         </Text>
       </View>
     </View>
-  </View>
-  <View
-    pointerEvents="none"
-    style={
-      {
-        "left": -9999,
-        "position": "absolute",
-        "top": -9999,
-      }
-    }
-  >
-    <View
-      options={
-        {
-          "format": "png",
-          "quality": 1,
-        }
-      }
-    />
   </View>
 </View>
 `;
@@ -1491,23 +1481,27 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
                 "borderRadius": 12,
                 "flex": 1,
                 "flexDirection": "row",
-                "gap": 6,
+                "gap": 8,
                 "justifyContent": "center",
-                "paddingVertical": 12,
+                "minWidth": 0,
+                "paddingHorizontal": 12,
+                "paddingVertical": 14,
               }
             }
           >
             <Text />
             <Text
+              numberOfLines={1}
               style={
                 {
                   "color": "#FFFFFF",
+                  "flexShrink": 1,
                   "fontSize": 14,
                   "fontWeight": "700",
                 }
               }
             >
-              Yes, this is correct
+              Yes, correct
             </Text>
           </View>
           <View
@@ -1551,23 +1545,27 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
                 "borderWidth": 1.5,
                 "flex": 1,
                 "flexDirection": "row",
-                "gap": 6,
+                "gap": 8,
                 "justifyContent": "center",
-                "paddingVertical": 12,
+                "minWidth": 0,
+                "paddingHorizontal": 12,
+                "paddingVertical": 14,
               }
             }
           >
             <Text />
             <Text
+              numberOfLines={1}
               style={
                 {
                   "color": "#64748B",
+                  "flexShrink": 1,
                   "fontSize": 14,
                   "fontWeight": "600",
                 }
               }
             >
-              No, let me correct
+              No, edit
             </Text>
           </View>
         </View>
@@ -1576,11 +1574,11 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
         style={
           [
             {
-              "borderRadius": 16,
+              "borderRadius": 12,
               "borderWidth": 1,
               "marginHorizontal": 16,
               "marginTop": 12,
-              "padding": 18,
+              "padding": 16,
             },
             {
               "backgroundColor": "#FFFFFF",
@@ -1754,7 +1752,7 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
           "bottom": 0,
           "left": 0,
           "paddingBottom": 40,
-          "paddingHorizontal": 20,
+          "paddingHorizontal": 16,
           "paddingTop": 14,
           "position": "absolute",
           "right": 0,
@@ -1811,7 +1809,7 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
           [
             {
               "alignItems": "center",
-              "borderRadius": 16,
+              "borderRadius": 12,
               "borderWidth": 1.5,
               "height": 52,
               "justifyContent": "center",
@@ -1861,13 +1859,13 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
           [
             {
               "alignItems": "center",
-              "borderRadius": 16,
+              "borderRadius": 12,
               "elevation": 4,
               "flex": 1,
               "flexDirection": "row",
               "gap": 8,
+              "height": 52,
               "justifyContent": "center",
-              "paddingVertical": 16,
               "shadowColor": "#81D8D0",
               "shadowOffset": {
                 "height": 4,
@@ -1884,6 +1882,7 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
       >
         <Text />
         <Text
+          numberOfLines={1}
           style={
             {
               "color": "#FFFFFF",
@@ -1897,25 +1896,6 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
         </Text>
       </View>
     </View>
-  </View>
-  <View
-    pointerEvents="none"
-    style={
-      {
-        "left": -9999,
-        "position": "absolute",
-        "top": -9999,
-      }
-    }
-  >
-    <View
-      options={
-        {
-          "format": "png",
-          "quality": 1,
-        }
-      }
-    />
   </View>
 </View>
 `;
@@ -2309,9 +2289,11 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                 "borderRadius": 12,
                 "flex": 1,
                 "flexDirection": "row",
-                "gap": 6,
+                "gap": 8,
                 "justifyContent": "center",
-                "paddingVertical": 12,
+                "minWidth": 0,
+                "paddingHorizontal": 12,
+                "paddingVertical": 14,
               }
             }
           >
@@ -2337,15 +2319,17 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
               
             </Text>
             <Text
+              numberOfLines={1}
               style={
                 {
                   "color": "#FFFFFF",
+                  "flexShrink": 1,
                   "fontSize": 14,
                   "fontWeight": "700",
                 }
               }
             >
-              Yes, this is correct
+              Yes, correct
             </Text>
           </View>
           <View
@@ -2389,9 +2373,11 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                 "borderWidth": 1.5,
                 "flex": 1,
                 "flexDirection": "row",
-                "gap": 6,
+                "gap": 8,
                 "justifyContent": "center",
-                "paddingVertical": 12,
+                "minWidth": 0,
+                "paddingHorizontal": 12,
+                "paddingVertical": 14,
               }
             }
           >
@@ -2417,15 +2403,17 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
               
             </Text>
             <Text
+              numberOfLines={1}
               style={
                 {
                   "color": "#64748B",
+                  "flexShrink": 1,
                   "fontSize": 14,
                   "fontWeight": "600",
                 }
               }
             >
-              No, let me correct
+              No, edit
             </Text>
           </View>
         </View>
@@ -2434,11 +2422,11 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
         style={
           [
             {
-              "borderRadius": 16,
+              "borderRadius": 12,
               "borderWidth": 1,
               "marginHorizontal": 16,
               "marginTop": 12,
-              "padding": 18,
+              "padding": 16,
             },
             {
               "backgroundColor": "#FFFFFF",
@@ -2632,7 +2620,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
           "bottom": 0,
           "left": 0,
           "paddingBottom": 40,
-          "paddingHorizontal": 20,
+          "paddingHorizontal": 16,
           "paddingTop": 14,
           "position": "absolute",
           "right": 0,
@@ -2689,7 +2677,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
           [
             {
               "alignItems": "center",
-              "borderRadius": 16,
+              "borderRadius": 12,
               "borderWidth": 1.5,
               "height": 52,
               "justifyContent": "center",
@@ -2759,13 +2747,13 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
           [
             {
               "alignItems": "center",
-              "borderRadius": 16,
+              "borderRadius": 12,
               "elevation": 4,
               "flex": 1,
               "flexDirection": "row",
               "gap": 8,
+              "height": 52,
               "justifyContent": "center",
-              "paddingVertical": 16,
               "shadowColor": "#81D8D0",
               "shadowOffset": {
                 "height": 4,
@@ -2802,6 +2790,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
           
         </Text>
         <Text
+          numberOfLines={1}
           style={
             {
               "color": "#FFFFFF",
@@ -2815,25 +2804,6 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
         </Text>
       </View>
     </View>
-  </View>
-  <View
-    pointerEvents="none"
-    style={
-      {
-        "left": -9999,
-        "position": "absolute",
-        "top": -9999,
-      }
-    }
-  >
-    <View
-      options={
-        {
-          "format": "png",
-          "quality": 1,
-        }
-      }
-    />
   </View>
 </View>
 `;

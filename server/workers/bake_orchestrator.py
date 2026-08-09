@@ -68,7 +68,21 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("aggregate_catalog_attributes", "workers.aggregate_catalog_attributes", "run_once", False),
     # tcgcsv + discogs: bulk catalog growth. RE-ENABLED 2026-04-26 with
     # upsert_market_hits_batch RPC. Required for non-skewed catalog at launch.
-    ("tcgcsv_worker",           "pipelines.import_tcgcsv",  "run_once", True),
+    # ("tcgcsv_worker",         "pipelines.import_tcgcsv",  "run_once", True),
+    #   DISABLED 2026-08-04 — tcgcsv.com returns HTTP 403 "Your application has
+    #   flagged for overuse and has been blocked", every run since 2026-08-01
+    #   (last OK 2026-07-31). It is a server-side block on our IP/app, NOT a
+    #   UA or Cloudflare issue, so retrying cannot fix it and every cycle is a
+    #   guaranteed failure that pages the watchdog daily.
+    #
+    #   RE-ENABLE ONLY AFTER the appeal is granted: email
+    #   cptspacetoaster@gmail.com (or their Discord) to lift the block, then
+    #   uncomment this line and restart bake. Re-enabling before that just
+    #   restores the daily false page.
+    #
+    #   Catalog impact while off: no new tcgcsv rows. The existing 221k
+    #   category_items are unaffected — this worker only ADDS. discogs_worker
+    #   below is a separate source and stays on.
     ("discogs_worker",          "pipelines.import_discogs", "run_once", True),
     # Sanity probe — must stay. Observability. If this is off, we're flying blind.
     ("sanity_probe_worker",     "workers.sanity_probe_worker",        "run_once", True),
@@ -92,8 +106,6 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   Nightly full crawl. Catalog imports (tcgcsv/discogs) cover pre-launch needs.
     # ("price_monitor",           "workers.price_monitor_worker",       "run_once", True),
     #   Anomaly detection for user portfolios. No portfolios.
-    # ("alerts_worker",           "workers.alerts_worker",              "run_once", True),
-    #   User-facing low-value alerts. No users.
     # ("scarcity_monitor_worker", "workers.scarcity_monitor_worker",    "run_once", True),
     #   Scarcity feature for users. No users.
     # ("watchlist_monitor_worker", "workers.watchlist_monitor_worker",  "run_once", True),
@@ -104,8 +116,6 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   Disabled 2026-05-04 due to partition-pruning planner regression
     #   (see learning_partition_pruning_planning_cost.md). Re-enable after
     #   query rewrite. Even before this incident: user-facing alerts, no users.
-    # ("signal_alerts_worker",    "workers.signal_alerts_worker",       "run_once", True),
-    #   Disabled 2026-04-21: silent-writer pattern + wrong table reference.
     # ("discovery_audit_worker",  "workers.discovery_audit_worker",     "run_once", True),
     #   Daily broad data sweep. Useful post-scale, not load-bearing pre-launch.
     ("datalake_export_worker",  "workers.datalake_export_worker",     "run_once", True),
@@ -123,16 +133,34 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   retention caps the DB at ~2 months ≈ 9-10GB and covers the FE's 30d
     #   window). Drops ONLY after the month is confirmed in the S3 export
     #   manifest (verified safe via dry-run 2026-06-26). May auto-drops ~Jul 1.
-    # ("ticketmaster_events_worker", "pipelines.ticketmaster_events",    "run_once", False),
-    # ("seatgeek_events_worker",  "pipelines.seatgeek_events",          "run_once", False),
-    #   Events ingest. Events feature gated post-launch.
-    # ("offer_expiry_worker",     "workers.offer_expiry_worker",        "run_once", True),
+    # ── RE-ENABLED 2026-07-27 (first wave off the pre-launch minimum) ──
+    # Both last ran 2026-05-04. Ticketmaster + SeatGeek are 99 of the 102
+    # events in the visible feed, and that feed only reaches 2026-10-30 —
+    # after which it empties, because nothing else fills it. `event_scraper`
+    # still runs but its output is withheld from the feed (see
+    # event_quality.UNRELIABLE_FREE_TEXT_SOURCES).
+    #
+    # Prerequisites checked before flipping these, not assumed:
+    #   - SCHEDULES has both at 12h (worker_registry.py:64-65)
+    #   - TICKETMASTER_* and SEATGEEK_* credentials all SET on EC2
+    #   - both modules import cleanly and expose run_once()
+    #   - needs_db_dsn=False is correct: these write through the Supabase
+    #     REST upserter, not asyncpg
+    #
+    # They have NEVER run with the topicality filter added earlier today
+    # (_keyword_matches_event), which stops a search keyword matching a
+    # VENUE — the bug that filed 55 Everett AquaSox baseball games under
+    # `funko` because they play at Funko Field. Watch the first cycle's
+    # "N raw / M on-topic" log line: a large drop is the filter working, a
+    # drop to zero is the filter overreaching.
+    ("ticketmaster_events_worker", "pipelines.ticketmaster_events",    "run_once", False),
+    ("seatgeek_events_worker",  "pipelines.seatgeek_events",          "run_once", False),
     #   Deal Desk offers. No deals.
     # ("search_gap_worker",       "workers.search_gap_worker",          "run_once", True),
     #   Turns user 0-result searches into category candidates. No users searching.
     # ("demand_priority_worker",  "workers.demand_priority_worker",     "run_once", True),
     #   Refresh top-N items by demand_signals. No demand signals from users.
-    # ("vision_quality_worker",   "workers.vision_quality_worker",      "run_once", True),
+    ("vision_quality_worker",   "workers.vision_quality_worker",      "run_once", True),
     # ("vision_reclassifier_worker", "workers.vision_reclassifier_worker", "run_once", True),
     # ("vision_regret_worker",    "workers.vision_regret_worker",       "run_once", True),
     #   Vision learning loop. Needs scan_corrections from real users to be useful.

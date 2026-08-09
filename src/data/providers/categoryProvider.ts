@@ -38,6 +38,7 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
         supabase
           .from('items')
           .select('id, name, title, category, updated_at, image_url')
+          .eq('archived', false)
           .eq('category', categoryId)
           .order('updated_at', { ascending: false })
           .limit(20),
@@ -47,7 +48,7 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
       return res.data as CatItemRow[] | null;
     } catch (e) {
       if (e instanceof TimeoutError) {
-        logger.warn('[SupabaseDataProvider] getCategoryStore.items timed out');
+        logger.error('[SupabaseDataProvider] getCategoryStore.items timed out');
         return null;
       }
       throw e;
@@ -75,7 +76,7 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
       return (catRes.data ?? []) as EventRow[];
     } catch (e) {
       if (e instanceof TimeoutError) {
-        logger.warn('[SupabaseDataProvider] getCategoryStore.events timed out');
+        logger.error('[SupabaseDataProvider] getCategoryStore.events timed out');
         return null;
       }
       throw e;
@@ -123,8 +124,15 @@ export async function listCategorySummaries(): Promise<CategorySummary[]> {
     .select('id, name, completion_pct, owned_count, missing_count, total_count');
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listCategorySummaries error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listCategorySummaries error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load CategorySummaries',
+    );
   }
 
   type SummaryRow = { id: string; name: string; completion_pct?: number; owned_count?: number; missing_count?: number; total_count?: number };
@@ -160,15 +168,22 @@ export async function listCategoryMissing(categoryId: string): Promise<CategoryM
     error = res.error;
   } catch (e) {
     if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] listCategoryMissing timed out');
+      logger.error('[SupabaseDataProvider] listCategoryMissing timed out');
       return [];
     }
     throw e;
   }
 
   if (error) {
-    logger.warn('[SupabaseDataProvider] listCategoryMissing error:', error);
-    return [];
+    // THROW, not `return []`. An empty array is indistinguishable from "you
+    // have none", so a failed read renders as an empty feature — the house bug
+    // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+    logger.error('[SupabaseDataProvider] listCategoryMissing error:', error);
+    throw new Error(
+      typeof (error as { message?: string })?.message === 'string'
+        ? (error as { message: string }).message
+        : 'Could not load CategoryMissing',
+    );
   }
 
   return (data ?? []).map((row) => ({
@@ -236,7 +251,7 @@ export async function listFollowedCategories(): Promise<string[]> {
     );
     return data?.categories ?? [];
   } catch (e) {
-    logger.warn('[SupabaseDataProvider] listFollowedCategories error:', e);
+    logger.error('[SupabaseDataProvider] listFollowedCategories error:', e);
     return [];
   }
 }
@@ -248,12 +263,17 @@ export async function isFollowingCategory(categoryId: string): Promise<boolean> 
     );
     return Boolean(data?.following);
   } catch (e) {
-    logger.warn('[SupabaseDataProvider] isFollowingCategory error:', e);
+    logger.error('[SupabaseDataProvider] isFollowingCategory error:', e);
     return false;
   }
 }
 
+// Delegates to collectorsApi.getCategoryDeepDive (src/api/miscApi.ts) instead
+// of building the request here. The hand-rolled version inherited httpClient's
+// 5s default, but a cold deep-dive runs a 1M+ row aggregation — so the card
+// timed out, the screen swallowed the rejection into logger.info (stripped in
+// TestFlight), and the section rendered nothing. Keeping one implementation
+// means the 20s timeout and the URL encoding can't drift apart again.
 export async function getCategoryDeepDive(categoryId: string, days?: number): Promise<Record<string, unknown>> {
-  const params = days ? `?days=${days}` : '';
-  return await collectorsApi.get(`/analytics/categories/${categoryId}/deep-dive${params}`) as Record<string, unknown>;
+  return await collectorsApi.getCategoryDeepDive(categoryId, days) as Record<string, unknown>;
 }

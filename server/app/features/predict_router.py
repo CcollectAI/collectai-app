@@ -118,7 +118,7 @@ async def get_price_evidence(
                        evidence_summary, evidence_hit_ids,
                        generated_at AS asof
                 FROM public.price_predictions
-                WHERE item_ref = (SELECT canonical_key FROM items WHERE id = $1::uuid)
+                WHERE item_ref = (SELECT canonical_ref FROM items WHERE id = $1::uuid)
                 ORDER BY generated_at DESC
                 LIMIT 1
                 """,

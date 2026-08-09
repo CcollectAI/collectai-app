@@ -34,22 +34,29 @@ async def run_once():
     total_events = 0
     errors = []
 
-    # 0. Run RSS feed scraper FIRST (free, covers 26+ targets)
+    # 0. Run RSS feed scraper (free, covers 26+ targets).
+    # DISABLED by default 2026-06-15: the anime/news RSS feeds polluted the
+    # events catalog with non-collectible articles ("Yen short bets jump…",
+    # "7-Eleven green tea rice ball"), which surfaced in "New Releases". Set
+    # RSS_EVENTS_ENABLED=1 to re-enable once feeds are curated/filtered.
     rss_events_count = 0
     rss_succeeded_feeds: set[str] = set()
-    try:
-        from pipelines.rss_events import run_rss_scraper, RSS_FEED_TARGETS
-        rss_events = await run_rss_scraper(since_days=30, dry_run=False)
-        rss_events_count = len(rss_events)
-        # Track which category_ids were successfully covered by RSS
-        for evt in rss_events:
-            if evt.category_id:
-                rss_succeeded_feeds.add(evt.category_id)
-        logger.info("RSS scraper: %d events (covered %d categories)", rss_events_count, len(rss_succeeded_feeds))
-        total_events += rss_events_count
-    except Exception as e:
-        logger.warning("RSS scraper failed: %s", e)
-        errors.append(f"rss: {e}")
+    if os.getenv("RSS_EVENTS_ENABLED", "0") == "1":
+        try:
+            from pipelines.rss_events import run_rss_scraper, RSS_FEED_TARGETS
+            rss_events = await run_rss_scraper(since_days=30, dry_run=False)
+            rss_events_count = len(rss_events)
+            # Track which category_ids were successfully covered by RSS
+            for evt in rss_events:
+                if evt.category_id:
+                    rss_succeeded_feeds.add(evt.category_id)
+            logger.info("RSS scraper: %d events (covered %d categories)", rss_events_count, len(rss_succeeded_feeds))
+            total_events += rss_events_count
+        except Exception as e:
+            logger.warning("RSS scraper failed: %s", e)
+            errors.append(f"rss: {e}")
+    else:
+        logger.info("RSS scraper skipped (RSS_EVENTS_ENABLED != 1)")
 
     # 1. Run Firecrawl event crawler
     try:
@@ -91,8 +98,12 @@ async def run_once():
         logger.warning("Limitless TCG scraper failed: %s", e)
         errors.append(f"limitless_tcg: {e}")
 
-    # 3. Run newsletter scraper (if IMAP credentials configured)
-    if os.getenv("SCRAPER_EMAIL_HOST"):
+    # 3. Run newsletter scraper (IMAP inbox → events).
+    # DISABLED by default 2026-06-15: the inbox was ingesting GitHub Actions
+    # failure notifications ("[CcollectAI/…] Run failed: …") as events, which
+    # showed up under "New Releases". Requires BOTH a configured IMAP host AND
+    # NEWSLETTER_EVENTS_ENABLED=1 to run (the inbox needs curating first).
+    if os.getenv("SCRAPER_EMAIL_HOST") and os.getenv("NEWSLETTER_EVENTS_ENABLED", "0") == "1":
         try:
             from pipelines.newsletter_scraper import run_scraper
             events = await run_scraper()
@@ -102,7 +113,7 @@ async def run_once():
             logger.warning("Newsletter scraper failed: %s", e)
             errors.append(f"newsletter: {e}")
     else:
-        logger.info("Newsletter scraper skipped (no SCRAPER_EMAIL_HOST)")
+        logger.info("Newsletter scraper skipped (disabled or no SCRAPER_EMAIL_HOST)")
 
     # 4. Run cross-source deduplication
     try:

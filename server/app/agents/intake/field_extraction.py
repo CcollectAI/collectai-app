@@ -137,15 +137,25 @@ async def _barcode_lookup_internal(
 async def _vision_classify_internal(
     image_bytes: bytes,
     filename: str = "",
+    category_hint: Optional[str] = None,
 ) -> Optional[dict[str, Any]]:
     """
-    Run the 3-tier vision classifier and return structured results.
+    Run the 2-tier vision classifier and return structured results.
+
+    `category_hint` is the category the user already chose in the intake UI
+    (user_hints["category"]). It narrows the extraction prompt to that
+    category's field list and enables the B3.2b confusion hint. It is
+    allow-listed against ALL_CATEGORIES inside build_system_prompt, so an
+    arbitrary user string cannot reach the LLM prompt.
     """
     try:
         from app.ml.vision_classifier import classify_image
 
-        result = await classify_image(image_bytes, filename)
+        result = await classify_image(image_bytes, filename, category_hint)
 
+        # "clip" is gone (the fal.ai tier was removed 2026-07-27) but stays in
+        # the map: historical rows in vision_queue.classification_method still
+        # carry it, and dropping the key would silently relabel them heuristic.
         method_map = {
             "clip": "vision_clip",
             "openai_vision": "vision_openai",

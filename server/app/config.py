@@ -138,6 +138,15 @@ CATALOG_IMAGES_CDN_URL: str = os.environ.get("CATALOG_IMAGES_CDN_URL", "")
 # User uploads (photo_upload_router)
 USER_UPLOADS_S3_BUCKET: str = os.environ.get("USER_UPLOADS_S3_BUCKET", "collectai-artifacts")
 USER_UPLOADS_CDN_URL: str = os.environ.get("USER_UPLOADS_CDN_URL", "")
+
+# Public origin of THIS API, used to build durable photo URLs that are stored
+# on items.image_url. Deliberately NOT read from EXPO_PUBLIC_API_BASE_URL:
+# that variable is set to https://api.collectai.app on EC2, a domain that is
+# not ours (see the collectai.app placeholder note), while the app actually
+# talks to api.sparrowcollect.com.
+PUBLIC_API_BASE_URL: str = os.environ.get(
+    "PUBLIC_API_BASE_URL", "https://api.sparrowcollect.com"
+).rstrip("/")
 USER_UPLOADS_MAX_SIZE: int = int(os.environ.get("USER_UPLOADS_MAX_SIZE", "2097152"))  # 2 MB
 
 # ML model S3
@@ -151,8 +160,9 @@ MODEL_CANARY_TRAFFIC_PCT: float = float(os.getenv("MODEL_CANARY_TRAFFIC_PCT", "5
 VISION_MAX_IMAGE_BYTES: int = int(os.getenv("VISION_MAX_IMAGE_BYTES", str(20 * 1024 * 1024)))
 INTAKE_MAX_IMAGE_BYTES: int = int(os.getenv("INTAKE_MAX_IMAGE_BYTES", str(20 * 1024 * 1024)))
 
-FAL_KEY: str = os.getenv("FAL_KEY", "")
-FAL_CLIP_URL: str = os.getenv("FAL_CLIP_URL", "https://fal.run/fal-ai/clip")
+# FAL_KEY / FAL_CLIP_URL were removed with the CLIP pre-filter tier: fal.ai is
+# no longer a subprocessor and no code path reads them. Do not re-add without
+# also re-adding the tier and the privacy-policy disclosure.
 OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 OPENAI_VISION_MODEL: str = os.getenv("OPENAI_VISION_MODEL", "gpt-4o-mini")
 
@@ -301,6 +311,11 @@ TASK_WORKER_POLL_INTERVAL: float = float(os.getenv("TASK_WORKER_POLL_INTERVAL", 
 
 STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+
+# RevenueCat sends this verbatim as the Authorization header on every webhook.
+# Set it to a long random string in the RevenueCat dashboard and in .env; the
+# webhook 503s while unset rather than accepting unauthenticated revenue writes.
+REVENUECAT_WEBHOOK_AUTH: str = os.getenv("REVENUECAT_WEBHOOK_AUTH", "")
 
 # Plan subscription price IDs (create in Stripe Dashboard → Products → Prices)
 # Pro plan
@@ -466,7 +481,6 @@ def validate_config() -> None:
         "EBAY_CLIENT_SECRET": EBAY_CLIENT_SECRET,
         "EBAY_APP_ID": EBAY_APP_ID,
         "OPENAI_API_KEY": OPENAI_API_KEY,
-        "FAL_KEY": FAL_KEY,
         "TCGPLAYER_BEARER_TOKEN": TCGPLAYER_BEARER_TOKEN,
         "TCGPLAYER_PUBLIC_KEY": TCGPLAYER_PUBLIC_KEY,
         "TCGPLAYER_PRIVATE_KEY": TCGPLAYER_PRIVATE_KEY,

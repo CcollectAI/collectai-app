@@ -9,15 +9,16 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
+  Pressable,
   ScrollView,
   SectionList,
+  FlatList,
   StyleSheet,
   Animated,
   ActivityIndicator,
   RefreshControl,
   TextInput,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +30,7 @@ import { useOptimisticRsvpList } from '@/hooks/useOptimisticRsvp';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
 import { useFollowedCategories } from '@/hooks/useFollowedCategories';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
@@ -41,6 +43,7 @@ import { CalendarGrid } from '@/components/CalendarGrid';
 import { WeekViewCalendar } from '@/components/events/WeekViewCalendar';
 import { useToast } from '@/components/Toast';
 import { SkeletonList } from '@/components/Skeleton';
+import { SlowLoadNotice } from '@/components/SlowLoadNotice';
 import { collectorsApi } from '@/api/collectorsApi';
 import * as Location from 'expo-location';
 import logger from '@/utils/logger';
@@ -57,6 +60,11 @@ const VIEW_MODE_TABS = [
 function EventsScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  // ExternalTabBar floats over this screen (absolute, bottom: 0) and reserves
+  // no layout space, so the flat `paddingBottom: 24` below left the last event
+  // card drawn under the bar — visible in calendar mode, where selecting a day
+  // puts a short list right at the bottom of the scroll.
+  const tabBarInset = useTabBarInset();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
   const { t } = useTranslation();
@@ -92,7 +100,11 @@ function EventsScreen() {
     loadMore,
     refresh: paginatedRefresh,
     setItems: setEvents,
-  } = usePaginatedList<CollectorsEvent>(eventFetcher, { pageSize: 20 });
+    isSlow,
+    isVerySlow,
+    // pageSize 100 (server max): the Week/Month calendar filters loaded events by
+    // day, so it needs a wide upcoming window or future weeks render empty.
+  } = usePaginatedList<CollectorsEvent>(eventFetcher, { pageSize: 100 });
 
 
   const [now, setNow] = useState(() => new Date());
@@ -115,7 +127,11 @@ function EventsScreen() {
     () => events.filter((e) => {
       if (searchQuery && !e.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (kindFilter && e.kind !== kindFilter) return false;
-      if (followedFilterActive && (!e.categoryId || !followedCategoryIds.has(e.categoryId))) return false;
+      // Only hide an event that HAS a category the user doesn't follow. An
+      // event with NO category is unknown, not unwanted — hiding it made every
+      // user-created event invisible, because create-event leaves category_id
+      // null. You'd create an event, it would save fine, and never appear.
+      if (followedFilterActive && e.categoryId && !followedCategoryIds.has(e.categoryId)) return false;
       return true;
     }),
     [events, searchQuery, kindFilter, followedFilterActive, followedCategoryIds],
@@ -163,7 +179,7 @@ function EventsScreen() {
         setNearbyEvents(sorted);
       }
     } catch (err) {
-      logger.warn('[Events] nearby events failed:', err);
+      logger.error('[Events] nearby events failed:', err);
       setNearbyError(true);
       showToast({ message: 'Could not load nearby events', type: 'error' });
     } finally {
@@ -229,11 +245,11 @@ function EventsScreen() {
           });
         } catch (calErr) {
           // Calendar add is non-critical; don't fail the RSVP for this
-          logger.warn('[EventsScreen] calendar add error:', calErr);
+          logger.error('[EventsScreen] calendar add error:', calErr);
         }
       }
     } catch (err: unknown) {
-      logger.warn('[EventsScreen] RSVP error:', err);
+      logger.error('[EventsScreen] RSVP error:', err);
     }
   };
 
@@ -592,24 +608,24 @@ function EventsScreen() {
         </ScrollView>
       )}
 
-      {/* View Mode Tabs — below search */}
-      <View style={[styles.viewModeTabs, { backgroundColor: colors.border + '40' }]}>
+      {/* View Mode Tabs — below search. No track background: a full-width grey
+          bar under the filter chips read as a stray "sliding bar". The active
+          tab is an accent-tinted pill instead, legible on the plain background. */}
+      <View style={styles.viewModeTabs}>
         {VIEW_MODE_TABS.map((tab) => {
           const isActive = viewMode === tab.key;
           return (
-            <AnimatedPressable
+            // Plain Pressable, NOT AnimatedPressable: AnimatedPressable applies
+            // `style` to an inner Animated.View, which breaks `flex: 1` in a row
+            // — the 4 tabs collapsed to ~0 width, leaving an empty band with just
+            // the active tab's tinted pill (the "persistent bar" flagged 4×). Same
+            // fix QuickNavBar already uses for the same reason.
+            <Pressable
               key={tab.key}
               onPress={() => handleViewModeChange(tab.key)}
               style={[
                 styles.viewModeTab,
-                isActive && {
-                  backgroundColor: colors.card,
-                  shadowColor: colors.text,
-                  shadowOpacity: 0.08,
-                  shadowRadius: 4,
-                  shadowOffset: { width: 0, height: 1 },
-                  elevation: 2,
-                },
+                isActive && { backgroundColor: colors.accent + '1E' },
               ]}
               accessibilityRole="button"
               accessibilityLabel={`${tab.label} view`}
@@ -627,7 +643,7 @@ function EventsScreen() {
               ]}>
                 {tab.label}
               </Text>
-            </AnimatedPressable>
+            </Pressable>
           );
         })}
       </View>
@@ -635,7 +651,10 @@ function EventsScreen() {
   );
 
   const emptyComponent = loading ? (
-    <SkeletonList count={4} type="event" />
+    <>
+      <SkeletonList count={4} type="event" />
+      <SlowLoadNotice isSlow={isSlow} isVerySlow={isVerySlow} />
+    </>
   ) : error ? (
     <View style={styles.emptyContainer}>
       <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
@@ -667,7 +686,9 @@ function EventsScreen() {
           <ActivityIndicator size="small" color={colors.accent} />
         </View>
       )}
-      <View style={{ height: 24 }} />
+      {/* No trailing spacer: `tabBarInset` on contentContainerStyle already
+          reserves the tab bar's height, and a second 24pt gap on top of it
+          just reads as dead space at the end of the list. */}
     </>
   );
 
@@ -689,10 +710,14 @@ function EventsScreen() {
         selectedDate={selectedCalendarDate}
         onSelectDate={setSelectedCalendarDate}
       />
-      {calendarFilteredEvents.length > 0 && (
+      {/* The `length > 0` guard used to wrap this whole label, so tapping a day
+          with no events removed the only textual confirmation that the tap
+          registered — the list just went empty with no header. Always name the
+          selected day; the count tells the user whether it is empty on purpose. */}
+      {(selectedCalendarDate || calendarFilteredEvents.length > 0) && (
         <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 4 }]}>
           {selectedCalendarDate
-            ? `Events on ${selectedCalendarDate}`
+            ? `Events on ${selectedCalendarDate} (${calendarFilteredEvents.length})`
             : `All Events (${calendarFilteredEvents.length})`}
         </Text>
       )}
@@ -704,7 +729,7 @@ function EventsScreen() {
       {viewMode === 'nearby' ? (
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarInset }]}
           showsVerticalScrollIndicator={false}
           refreshControl={refreshControlElement}
         >
@@ -766,7 +791,9 @@ function EventsScreen() {
         </ScrollView>
       ) : viewMode === 'week' ? (
         <View style={styles.scrollView}>
-          <View style={styles.scrollContent}>
+          {/* Tight bottom padding: the calendar follows immediately, so the
+              default 24px would open a dead white gap above the week grid. */}
+          <View style={[styles.scrollContent, { paddingBottom: 4 }]}>
             {headerElement}
           </View>
           <WeekViewCalendar
@@ -775,7 +802,21 @@ function EventsScreen() {
           />
         </View>
       ) : viewMode === 'calendar' ? (
-        <FlashList
+        // FlatList, NOT FlashList, and the calendar is why.
+        //
+        // FlashList v2 positions every cell — ListHeaderComponent included —
+        // with `position: 'absolute'` inside a container it sizes from measured
+        // layout (dist/recyclerview/ViewHolder.js:44). When a tall header
+        // measures short, the overflowing part is still DRAWN but stops
+        // receiving touches: on iOS a subview outside its parent's frame is not
+        // hit-tested. The month grid sits at the bottom of a tall header, so its
+        // day cells were visible and dead while the search box, filter chips and
+        // view-mode tabs above them kept working.
+        //
+        // RN's VirtualizedList renders ListHeaderComponent as a normal in-flow
+        // child, so the whole header stays scrollable AND tappable. Calendar
+        // mode is filtered to a single day, so recycling buys nothing here.
+        <FlatList
           data={calendarFilteredEvents}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => {
@@ -787,7 +828,7 @@ function EventsScreen() {
           ListEmptyComponent={emptyComponent}
           ListFooterComponent={footerComponent}
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarInset }]}
           showsVerticalScrollIndicator={false}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
@@ -807,7 +848,7 @@ function EventsScreen() {
           ListEmptyComponent={emptyComponent}
           ListFooterComponent={footerComponent}
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarInset }]}
           showsVerticalScrollIndicator={false}
           stickySectionHeadersEnabled={false}
           onEndReached={loadMore}
@@ -862,7 +903,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: radius.lg,
     padding: 4,
-    marginBottom: 14,
+    marginBottom: 8,
     gap: 4,
   },
   viewModeTab: {
@@ -870,8 +911,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 10,
+    gap: 3,
+    paddingVertical: 7,
     paddingHorizontal: 8,
     borderRadius: radius.sm,
   },

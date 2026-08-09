@@ -19,12 +19,13 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { convertCurrency } from "@/lib/fx";
 import { useTranslation } from "react-i18next";
 import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
 import CatalogSuggestionModal from "@/components/CatalogSuggestionModal";
-import { matchCatalog } from "@/api/itemsApi";
+import { matchCatalog, revalueItem } from "@/api/itemsApi";
 import { checkDuplicate } from "@/lib/duplicateCheck";
 import { dataProvider } from "@/data";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
@@ -46,6 +47,19 @@ import {
 import { CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 import { CUSTOM_CATEGORY_SENTINEL } from '@/components/add-manual/CategoryPickerModal';
 import { getCategoryFields } from '@/constants/categoryFields';
+import { dmyToIso } from '@/lib/eventDate';
+import { getCurrencySymbol } from '@/lib/format';
+import { withTimeout, TimeoutError } from '@/lib/withTimeout';
+
+// supabase-js ships NO per-request timeout, and both auth reads below sit
+// BETWEEN setSaveState("saving") and any state that clears it. A stalled auth
+// lock (cold start, mid-refresh, signed out) therefore leaves the button on
+// "Saving..." forever: the item never saves, no error is shown, and nothing is
+// logged. Reported as "impossible to manually add an item and have it save"
+// (2026-07-25) — the same root cause as the stuck list skeleton the same day.
+// See CLAUDE.md "Loading states".
+const AUTH_RESOLVE_TIMEOUT_MS = 6_000;
+const INSERT_TIMEOUT_MS = 15_000;
 
 type SaveState = "idle" | "saving" | "success" | "error";
 
@@ -70,7 +84,10 @@ const ManualAddScreen: React.FC = () => {
   } = useLocalSearchParams<{ imageUri?: string; category?: string; name?: string; condition?: string; attrs?: string }>();
   const handoffConsumedRef = React.useRef(false);
 
-  const currencySymbol = settings.currency === 'EUR' ? '€' : settings.currency === 'USD' ? '$' : settings.currency === 'GBP' ? '£' : settings.currency === 'JPY' ? '¥' : settings.currency === 'KRW' ? '₩' : settings.currency === 'AUD' ? 'A$' : settings.currency === 'CAD' ? 'C$' : settings.currency;
+  // Was a second, inline copy of the CURRENCY_SYMBOLS table. Two symbol tables
+  // drift: add a currency to settings and this ternary silently falls through
+  // to the bare ISO code while every other screen shows a symbol.
+  const currencySymbol = getCurrencySymbol(settings.currency);
 
   const nameField = useFormField(compose(required("Item name"), maxLength("Item name", 255)));
   const [category, setCategory] = useState("");
@@ -114,7 +131,8 @@ const ManualAddScreen: React.FC = () => {
           }
           if (Object.keys(next).length > 0) setCategoryAttrs(next);
         }
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] add-manual.tsx:130:', e);
         // Malformed handoff payload — ignore, user fills manually.
       }
     }
@@ -242,7 +260,8 @@ const ManualAddScreen: React.FC = () => {
           return next;
         });
         if (best.title) setAutoFilledFromCatalog(best.title);
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] add-manual.tsx:258:', e);
         // Best-effort enrichment — silent on failure.
       }
     }, 600);
@@ -281,6 +300,47 @@ const ManualAddScreen: React.FC = () => {
     setErrorText(null);
 
     try {
+      // Resolve the authenticated user id up front. getSession() reads the
+      // cached session (no network) and refreshes via the processLock if
+      // needed; relying on getUser() alone makes a /auth/v1/user round-trip
+      // that returns null on a token-refresh blip or cold start (the tokenless
+      // cold-start issue). A null user_id then fails the items INSERT RLS
+      // with_check (auth.uid() = user_id) with a cryptic message that reads to
+      // the user as "the item just doesn't save". Fail loud instead.
+      let userId: string | null = null;
+      try {
+        const sessRes = await withTimeout(
+          supabase.auth.getSession(),
+          AUTH_RESOLVE_TIMEOUT_MS,
+          'ManualAdd.getSession',
+        );
+        userId = sessRes.data.session?.user?.id ?? null;
+        if (!userId) {
+          const uRes = await withTimeout(
+            supabase.auth.getUser(),
+            AUTH_RESOLVE_TIMEOUT_MS,
+            'ManualAdd.getUser',
+          );
+          userId = uRes.data.user?.id ?? null;
+        }
+      } catch (e) {
+        // A timeout here is NOT "signed out" — it is "we could not find out in
+        // time". Both fall through to the explicit !userId branch below, which
+        // tells the user something actionable instead of spinning.
+        logger.error(
+          e instanceof TimeoutError
+            ? `[ManualAdd] auth resolution timed out after ${AUTH_RESOLVE_TIMEOUT_MS}ms`
+            : `[ManualAdd] auth resolution failed: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+      if (!userId) {
+        logger.error("[ManualAdd] no authenticated user id — item not saved");
+        setSaveState("error");
+        setErrorText("You appear to be signed out. Please sign in again, then save.");
+        fireHaptic(HapticIntent.ALERT_TRIGGERED);
+        return;
+      }
+
       const purchase = purchasePriceField.value ? Number(purchasePriceField.value) : null;
       const estimated = estimatedValueField.value ? Number(estimatedValueField.value) : null;
 
@@ -292,7 +352,20 @@ const ManualAddScreen: React.FC = () => {
       // R48 — write to `items` table (not the legacy `portfolio_items` which
       // has an incompatible schema on this DB). Column mapping matches the
       // actual items table: title (not name), attrs (not attributes_json),
-      // purchase_price_eur (not purchase_price), image_url (not user_photo_url).
+      // image_url (not user_photo_url).
+      //
+      // Purchase price: the items table deliberately has BOTH
+      // `purchase_price` (raw, denominated in purchase_currency) and
+      // `purchase_price_eur` (FX-normalized) — see itemsProvider.ts:54.
+      // Until 2026-07-24 this path wrote ONLY purchase_price_eur, and wrote
+      // the raw entered amount into it without converting. So for any
+      // non-EUR user the "EUR" column held a non-EUR number, and every
+      // reader of `purchase_price` got NULL: the analytics Cost Basis / DCA
+      // series (trends_and_deepdive_router.py:170), the value-saved banner
+      // (value_summary_router.py:183), the dossier agent, and the CSV export.
+      // Same story for the date — this wrote `purchased_at` while the export
+      // reads `purchase_date` (items_export_router.py:198). Write both halves
+      // of each pair.
       // Merge category-specific attrs with user-defined custom fields
       const mergedAttrs: Record<string, unknown> = { ...attrs };
       for (const cf of customFields) {
@@ -302,6 +375,18 @@ const ManualAddScreen: React.FC = () => {
       }
 
       const qty = parseInt(quantity, 10);
+
+      // Purchase price, written to BOTH columns (see the note above).
+      // `purchase` is whatever the user typed, in settings.currency.
+      const purchaseRaw = Number.isNaN(purchase as number) ? null : (purchase as number);
+      const purchaseEur =
+        purchaseRaw === null
+          ? null
+          : Math.round(
+              convertCurrency(purchaseRaw, settings.currency, 'EUR', settings.fxRates) * 100,
+            ) / 100;
+      // Field is entered as DD-MM-YYYY; both date columns want ISO YYYY-MM-DD.
+      const purchasedIso = dmyToIso(acquisitionDate) || null;
 
       // Match against the catalog so this manually-added item gets a
       // canonical_key — the JOIN key that links it to price_predictions /
@@ -322,29 +407,46 @@ const ManualAddScreen: React.FC = () => {
             canonicalKey = m.best.item_key;
           }
         } catch (e) {
-          logger.warn("[ManualAdd] catalog match failed (saving without canonical_key):", e);
+          logger.error("[ManualAdd] catalog match failed (saving without canonical_key):", e);
         }
       }
 
-      const { error } = await supabase.from("items").insert([
+      const { data: inserted, error } = await withTimeout(
+        supabase.from("items").insert([
         {
-          user_id: (await supabase.auth.getUser()).data.user?.id ?? null,
+          user_id: userId,
+          // Write BOTH name and title. The canonical readers key on `name`
+          // (backend /portfolio/overview reads items.name; FE screenItem mapper
+          // reads it.name), but this path historically wrote only `title` →
+          // items.name stayed NULL → Home's portfolio showed nameless/empty
+          // items while the Items tab (which falls back to title) looked fine.
+          name: trimmedTitle,
           title: trimmedTitle,
           category: effectiveCat || null,
           canonical_key: canonicalKey,
           condition_grade: conditionGrade.trim() || null,
           condition: conditionGrade.trim() || null,
-          purchase_price_eur: Number.isNaN(purchase as number) ? null : purchase,
+          // Raw amount, denominated in purchase_currency below.
+          purchase_price: purchaseRaw,
+          // Same amount normalized to EUR so analytics can sum across
+          // currencies without re-deriving the rate.
+          purchase_price_eur: purchaseEur,
           predicted_price_eur: Number.isNaN(estimated as number) ? null : estimated,
           purchase_currency: settings.currency,
-          purchased_at: acquisitionDate.trim() || null,
+          // Field is entered as DD-MM-YYYY; the backend expects ISO YYYY-MM-DD.
+          purchased_at: purchasedIso,
+          // Same date, `date` column — this is the one the CSV export reads.
+          purchase_date: purchasedIso,
           quantity: Number.isNaN(qty) || qty < 1 ? 1 : qty,
           source: 'manual',
           notes: notes.trim() || null,
           attrs: Object.keys(mergedAttrs).length > 0 ? mergedAttrs : null,
           image_url: photoUrl || null,
         },
-      ]);
+      ]).select("id").single(),
+        INSERT_TIMEOUT_MS,
+        'ManualAdd.insert',
+      );
 
       if (error) {
         logger.warn("[ManualAdd] insert error:", error.message);
@@ -352,6 +454,14 @@ const ManualAddScreen: React.FC = () => {
         setErrorText(error.message || "Couldn't save item — check your connection and try again.");
         fireHaptic(HapticIntent.ALERT_TRIGGERED);
         return;
+      }
+
+      // Market valuation for the card (best-effort). This insert is client-side
+      // so the server can't value it inline like POST /items does; when the
+      // item is catalog-matched (canonicalKey set) ask the server to write a
+      // quick_predictions row so its card shows a value. Fire-and-forget.
+      if (canonicalKey && inserted?.id) {
+        revalueItem(inserted.id).catch(() => { /* non-critical */ });
       }
 
       track({ name: 'item_added', properties: { source: 'manual', category: categorySlug || category } });
@@ -369,9 +479,21 @@ const ManualAddScreen: React.FC = () => {
       setSource("");
       setNotes("");
     } catch (err: any) {
-      logger.warn("[ManualAdd] unexpected error:", err);
+      // A TimeoutError's raw message ("Timed out after 15000ms
+      // (ManualAdd.insert)") is useless to a user, and this string is shown
+      // verbatim on screen. Say what happened and what to do.
+      const isTimeout = err instanceof TimeoutError;
+      logger.error(
+        isTimeout
+          ? `[ManualAdd] save timed out: ${err.label ?? ''}`
+          : `[ManualAdd] unexpected error: ${err?.message ?? String(err)}`,
+      );
       setSaveState("error");
-      setErrorText(err?.message || "Something unexpected happened — try saving again.");
+      setErrorText(
+        isTimeout
+          ? "Saving is taking too long — check your connection and try again. Your details are kept."
+          : (err?.message || "Something unexpected happened — try saving again."),
+      );
       fireHaptic(HapticIntent.ALERT_TRIGGERED);
     } finally {
       setTimeout(() => { setSaveState("idle"); }, 2000);

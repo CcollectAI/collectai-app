@@ -133,7 +133,7 @@ const SponsorRegisterScreen: React.FC = () => {
       track({ name: 'sponsor_company_registered' });
       router.replace('/sponsor/dashboard');
     } catch (err: unknown) {
-      logger.warn('[SponsorRegister] error:', err);
+      logger.error('[SponsorRegister] error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to register company. Please try again.', type: 'error' });
     } finally {
       setSaveState('idle');

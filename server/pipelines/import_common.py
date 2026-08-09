@@ -281,7 +281,23 @@ class CatalogItem:
         if self.barcode:
             row["barcode"] = self.barcode
         if self.attributes_json:
-            row["attributes_json"] = json.dumps(self.attributes_json)
+            # Send the dict, NOT json.dumps(dict).
+            #
+            # The batch is posted with httpx `json=batch` (see upsert_catalog),
+            # so httpx serialises the whole payload itself. Pre-encoding this
+            # value made PostgREST receive a JSON *string* and store a JSONB
+            # string rather than a JSONB object — the "double-stringified"
+            # corruption scripts/repair_attributes_json_types.py was written to
+            # clean up (136K string rows + 4K array rows, 0 objects).
+            #
+            # Once category_items_attrs_is_object was added
+            # (CHECK jsonb_typeof(attributes_json) = 'object') the repair held,
+            # but this writer was never fixed, so every catalog upsert carrying
+            # attributes was rejected 23514 — 597 per day, invisible because the
+            # pipeline logs the count it *attempted*, not the count Postgres
+            # accepted. Verified against the live REST endpoint 2026-07-25:
+            # json.dumps(...) -> HTTP 400 23514, plain dict -> HTTP 201.
+            row["attributes_json"] = self.attributes_json
         return row
 
     def _parse_notes_into_attributes(self) -> None:
@@ -425,7 +441,30 @@ class SupabaseIngest:
         """Upsert catalog items into category_items table. Returns count inserted."""
         if not self.enabled:
             return 0
-        rows = [item.to_row() for item in items]
+        # Deduplicate by the conflict key BEFORE batching.
+        #
+        # The URL below sets on_conflict=category,item_key and the request
+        # carries Prefer: resolution=merge-duplicates, so PostgREST compiles
+        # each batch into a single INSERT ... ON CONFLICT (category, item_key)
+        # DO UPDATE. If one batch contains the same (category, item_key) twice,
+        # Postgres aborts the WHOLE statement with
+        #   ON CONFLICT DO UPDATE command cannot affect row a second time
+        # and all 200 rows in that batch are lost, not just the duplicate.
+        # Pipelines legitimately emit repeats (pagination overlap, retries, the
+        # same card in two sets), so dedupe here rather than trusting callers —
+        # the same defence upsert_market_hits_batch needed after the 2026-05-02
+        # incident. Last occurrence wins, so later/fresher data overwrites.
+        deduped: dict[tuple, dict] = {}
+        for item in items:
+            row = item.to_row()
+            deduped[(row.get("category"), row.get("item_key"))] = row
+        dropped = len(items) - len(deduped)
+        if dropped:
+            logger.info(
+                "[catalog] dropped %d within-batch duplicate row(s) before upsert "
+                "(same category+item_key)", dropped,
+            )
+        rows = list(deduped.values())
         total = 0
         # PostgREST requires ?on_conflict=<columns> AND Prefer: resolution=merge-duplicates
         # for UPSERT behavior. Without this, unique constraint violations return 409.

@@ -4,11 +4,11 @@
 // Video Generator Tab — Remotion video pipeline integrated into UGC dashboard
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   TEMPLATES,
   NICHE_OPTIONS,
-  fetchVideoScripts,
+  fetchVideoScriptsAsync,
   fetchQueueStats,
   fetchAutomationRules,
   type VideoScript,
@@ -17,6 +17,7 @@ import {
   type AutomationRule,
 } from "@/lib/video-generator";
 import { APP_CONFIG } from "../../admin.config";
+import { AdminDemoBanner } from "@/components/AdminDemoBanner";
 
 // ─── Sub-views ───────────────────────────────────────────────────────────
 
@@ -26,7 +27,15 @@ type View = "generate" | "queue" | "performance" | "automation";
 
 export function AdminVideoGenerator() {
   const [view, setView] = useState<View>("generate");
-  const [scripts] = useState<VideoScript[]>(() => fetchVideoScripts());
+  // Load scripts from ugc_video_scripts via the async fetch. The old sync
+  // fetchVideoScripts() never queried the DB, so this tab was always sample
+  // data regardless of what was in the table.
+  const [scripts, setScripts] = useState<VideoScript[]>([]);
+  useEffect(() => {
+    let alive = true;
+    fetchVideoScriptsAsync().then((s) => { if (alive) setScripts(s); });
+    return () => { alive = false; };
+  }, []);
   const stats = useMemo(() => fetchQueueStats(scripts), [scripts]);
   const [rules] = useState<AutomationRule[]>(() => fetchAutomationRules());
 
@@ -39,6 +48,8 @@ export function AdminVideoGenerator() {
 
   return (
     <div className="space-y-6">
+      <AdminDemoBanner source="video" />
+
       {/* Header */}
       <div>
         <h2 className="text-lg font-bold text-gray-900 dark:text-white">

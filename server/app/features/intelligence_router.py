@@ -317,11 +317,23 @@ async def top_events(
     _user: str = Depends(get_current_user_id),
     _rl=Depends(_intel_limit),
 ):
-    """Most-engaged events: combines event_viewed signals + follows + RSVPs.
+    """Most-engaged events: combines event_viewed signals + RSVPs.
 
-    Without this you can only see followers (a thin signal). Most events get
-    viewed many more times than followed; ranking by combined engagement
-    surfaces what's actually drawing attention.
+    Most events get viewed many more times than they are acted on, so ranking by
+    combined engagement surfaces what is actually drawing attention.
+
+    `followers` is reported as a constant 0 and carries no weight in the score.
+    It used to contribute 5x, joined as `event_follows_v1.canonical_key =
+    events.canonical_key` — but events.canonical_key is NULL on all 1,981 rows
+    with no writer, AND event_follows_v1 itself has no writer either (it is read
+    in 4 places and written in none). The term was therefore arithmetically
+    incapable of being non-zero while still advertising itself in the score.
+    Found by audit_key_overlap.py --discover, 2026-07-25.
+
+    Re-enabling event-following is NOT a matter of restoring this SQL: it needs
+    a writer for event_follows_v1 first, and a decision about which key it
+    stores (its siblings here join on e.id::text). Restore the CTE at that
+    point, and only then.
     """
     pool = get_db_pool()
     if pool is None:
@@ -339,13 +351,6 @@ async def top_events(
                   AND created_at >= now() - ($1 || ' days')::interval
                 GROUP BY item_key
             ),
-            follows AS (
-                SELECT canonical_key AS event_id,
-                       COUNT(DISTINCT user_id) AS follower_count
-                FROM public.event_follows_v1
-                WHERE enabled IS NOT FALSE
-                GROUP BY canonical_key
-            ),
             rsvps AS (
                 SELECT event_id::text AS event_id,
                        COUNT(*) AS rsvp_count
@@ -359,17 +364,16 @@ async def top_events(
                 e.starts_at,
                 COALESCE(v.view_count, 0) AS views,
                 COALESCE(v.unique_viewers, 0) AS unique_viewers,
-                COALESCE(f.follower_count, 0) AS followers,
+                -- `followers` is reported as a literal 0, not dropped: the
+                -- response model and its FE consumer both expect the field.
+                0 AS followers,
                 COALESCE(r.rsvp_count, 0) AS rsvps,
                 COALESCE(v.view_count, 0)
-                  + 5 * COALESCE(f.follower_count, 0)
                   + 10 * COALESCE(r.rsvp_count, 0) AS engagement_score
             FROM public.events e
             LEFT JOIN views v ON v.event_id = e.id::text
-            LEFT JOIN follows f ON f.event_id = e.canonical_key
             LEFT JOIN rsvps r ON r.event_id = e.id::text
             WHERE COALESCE(v.view_count, 0)
-                + COALESCE(f.follower_count, 0)
                 + COALESCE(r.rsvp_count, 0) > 0
             ORDER BY engagement_score DESC
             LIMIT $2

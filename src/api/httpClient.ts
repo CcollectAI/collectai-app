@@ -14,7 +14,8 @@ import logger from "@/utils/logger";
 let Sentry: { captureMessage?: (msg: string, level?: string) => void } | null = null;
 try {
   Sentry = require("@sentry/react-native");
-} catch {
+} catch (e) {
+  logger.error('[silent-catch] httpClient.ts:17:', e);
   /* not installed */
 }
 
@@ -55,6 +56,19 @@ const AUTH_HEADER_TIMEOUT_MS = 2_000;
 // in-flight refresh with a longer budget. This slower path runs ONLY after
 // the 2 s fast path already failed, so normal calls are never delayed.
 const AUTH_HEADER_REFRESH_TIMEOUT_MS = 8_000;
+// After a TOKENLESS 401 we already know the request needs auth and failed, so
+// on the recovery path we wait out session hydration with a much larger budget
+// than the fast race above. On cold-start (fresh launch / just after login)
+// getSession() can sit behind processLock while autoRefresh holds it, so the
+// first request of a screen — the portfolio graph's /portfolio/timeseries —
+// would otherwise 401 permanently while a later request in the same batch
+// (/portfolio/overview) succeeds once the session finally resolves ~5 s in.
+// This only extends the WAIT (no extra refresh), so it cannot cause a refresh
+// storm. Kept modest: a stuck (not merely slow) session must NOT hang the
+// screen's loading state for long — fail fast, then useFocusEffect refetches on
+// the next focus once the session has resolved. 6s catches a slow cold-start
+// hydration without pinning a skeleton when the session is genuinely wedged.
+const AUTH_HEADER_COLDSTART_RECOVERY_MS = 6_000;
 
 async function readAccessToken(timeoutMs: number): Promise<string | null> {
   const result = await Promise.race([
@@ -91,13 +105,14 @@ async function recoverAuthAfter401(): Promise<Record<string, string> | null> {
     Sentry?.captureMessage?.(`auth refresh failed after 401: ${error?.message ?? "no session"}`, "warning");
     try {
       await supabase.auth.signOut();
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] httpClient.ts:107:', e);
       /* best effort */
     }
   } catch (e) {
     // Transient (network) failure — surface the 401 but do NOT sign the user
     // out; supabase retries the refresh on its own cadence / next launch.
-    logger.warn("[auth] 401 recovery: refreshSession threw:", e);
+    logger.error("[auth] 401 recovery: refreshSession threw:", e);
     Sentry?.captureMessage?.(`auth refresh threw after 401: ${String(e)}`, "warning");
   }
   return null;
@@ -190,10 +205,43 @@ export class ApiError extends Error {
 export async function parseErrorResponse(method: string, path: string, res: Response): Promise<ApiError> {
   try {
     const body = await res.json();
-    const detail = typeof body?.detail === "string" ? body.detail : `${method} ${path} failed`;
-    const code = typeof body?.code === "string" ? body.code : null;
+
+    // FastAPI's own errors put a string in `detail`, but this backend's
+    // error_response() helper puts an OBJECT there:
+    //   {"detail": {"message": "...", "code": "...", "request_id": "..."}}
+    // Only the string form was handled, so every structured error threw away
+    // the message the server had written for the user and showed the useless
+    // fallback instead. Hitting the free-tier mandate cap surfaced as
+    //   "POST /purchase/mandates failed (409): POST /purchase/mandates failed"
+    // when the server had said
+    //   "Mandate limit reached (3). Upgrade your plan or delete existing
+    //    mandates."
+    // This affects every endpoint that uses error_response, not just mandates.
+    const rawDetail = body?.detail;
+    let detail = `${method} ${path} failed`;
+    if (typeof rawDetail === "string") {
+      detail = rawDetail;
+    } else if (rawDetail && typeof rawDetail === "object") {
+      const m = (rawDetail as { message?: unknown }).message;
+      if (typeof m === "string" && m.trim()) detail = m;
+    }
+
+    // `code` likewise travels inside detail for this backend; keep the
+    // top-level read as a fallback for anything that sets it there.
+    const nestedCode =
+      rawDetail && typeof rawDetail === "object"
+        ? (rawDetail as { code?: unknown }).code
+        : undefined;
+    const code =
+      typeof nestedCode === "string"
+        ? nestedCode
+        : typeof body?.code === "string"
+        ? body.code
+        : null;
+
     return new ApiError(method, path, res.status, detail, code);
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] httpClient.ts:209:', e);
     return new ApiError(method, path, res.status, `${method} ${path} failed`);
   }
 }
@@ -216,7 +264,8 @@ async function maybeHandleSellerAgeGate(res: Response): Promise<boolean> {
     ) {
       return await popSellerAgeGate();
     }
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] httpClient.ts:232:', e);
     // Body wasn't JSON or didn't match — fall through.
   }
   return false;
@@ -237,10 +286,34 @@ async function runWithGate(method: string, path: string, init: RequestInit, time
   return res;
 }
 
+// Single-flight guard around recoverAuthAfter401's refresh. A screen that
+// mounts fires ~10 authenticated requests at once; if the session was
+// momentarily null they ALL 401 together. Without this guard each would call
+// refreshSession() concurrently — N refreshes on one rotating refresh-token
+// trips Supabase's reuse detection and revokes the session. The guard collapses
+// a concurrent burst into ONE refresh whose result every caller shares.
+let inFlightRecovery: Promise<Record<string, string> | null> | null = null;
+function recoverAuthAfter401Once(): Promise<Record<string, string> | null> {
+  if (!inFlightRecovery) {
+    inFlightRecovery = recoverAuthAfter401().finally(() => {
+      inFlightRecovery = null;
+    });
+  }
+  return inFlightRecovery;
+}
+
 // Attach auth headers, run, and recover ONCE from a 401 on an authenticated
-// request: refresh the session and replay with the fresh token. `makeInit`
-// rebuilds the request from the (possibly refreshed) headers so the retry
-// carries the new token.
+// request, then replay with a valid token. `makeInit` rebuilds the request from
+// the (possibly refreshed) headers so the retry carries the new token.
+//
+// Two 401 shapes are recovered (see the httpClient tokenless-401 root cause):
+//   1. A token WAS attached but rejected (expired/stale) → force a refresh.
+//   2. NO token was attached — getAuthHeaders() returned {} because getSession()
+//      was still null when the request fired (cold-start hydration, or a refresh
+//      stuck past the 2s+8s window). This is the DOMINANT case in prod: the
+//      backend rejects it with a silent 401 (no Authorization header). Re-read
+//      the session cheaply first (it has usually hydrated by now → no refresh
+//      needed), and only force a refresh if it is still null.
 async function authedRequest(
   method: string,
   path: string,
@@ -249,8 +322,20 @@ async function authedRequest(
 ): Promise<Response> {
   const auth = await getAuthHeaders();
   let res = await runWithGate(method, path, makeInit(auth), timeoutMs);
-  if (res.status === 401 && auth.Authorization) {
-    const fresh = await recoverAuthAfter401();
+  if (res.status === 401) {
+    let fresh: Record<string, string> | null = null;
+    if (!auth.Authorization) {
+      // Tokenless 401: the session is very likely still hydrating (cold-start /
+      // just-after-login, behind processLock). Wait it out with the generous
+      // cold-start budget rather than the fast 2s/8s race getAuthHeaders uses —
+      // otherwise the first request of a screen permanently 401s. This only
+      // waits for the EXISTING session to resolve (no refresh → no storm).
+      const token = await readAccessToken(AUTH_HEADER_COLDSTART_RECOVERY_MS);
+      if (token) fresh = { Authorization: `Bearer ${token}` };
+    }
+    // Token was rejected, or the cheap re-read still yielded nothing → force a
+    // SINGLE shared refresh (signs out if the refresh-token is unrecoverable).
+    if (!fresh) fresh = await recoverAuthAfter401Once();
     if (fresh) res = await runWithGate(method, path, makeInit(fresh), timeoutMs);
   }
   return res;

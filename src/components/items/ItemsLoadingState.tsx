@@ -7,13 +7,19 @@ import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { SkeletonList, SkeletonCategoryPills, SkeletonGalleryGrid } from '@/components/Skeleton';
+import { SlowLoadNotice } from '@/components/SlowLoadNotice';
 
 interface ItemsLoadingStateProps {
   viewMode: 'list' | 'gallery';
+  /** From usePaginatedList — speaks up once the wait passes 3s. */
+  isSlow?: boolean;
+  isVerySlow?: boolean;
 }
 
 export const ItemsLoadingState = React.memo(function ItemsLoadingState({
   viewMode,
+  isSlow = false,
+  isVerySlow = false,
 }: ItemsLoadingStateProps) {
   const { colors } = useAppTheme();
 
@@ -33,6 +39,7 @@ export const ItemsLoadingState = React.memo(function ItemsLoadingState({
         ) : (
           <SkeletonList count={6} type="row" />
         )}
+        <SlowLoadNotice isSlow={isSlow} isVerySlow={isVerySlow} />
       </View>
     </SafeAreaView>
   );

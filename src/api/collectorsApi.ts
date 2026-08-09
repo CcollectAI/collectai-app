@@ -12,6 +12,7 @@ import * as intakeApi from "./intakeApi";
 import * as itemsApi from "./itemsApi";
 import * as marketplaceApi from "./marketplaceApi";
 import * as dealsApi from "./dealsApi";
+import * as p2pApi from "./p2pApi";
 import * as gamificationApi from "./gamificationApi";
 import * as eventsApi from "./eventsApi";
 import * as chatApi from "./chatApi";
@@ -138,6 +139,31 @@ export const collectorsApi = {
   processIntakeWithImage: intakeApi.processIntakeWithImage,
 
   // Smart Deal Agent — Mandates
+  // P2P member listings (Stage 1: no payments). See docs/P2P_MARKETPLACE_SPEC.md.
+  createListing: p2pApi.createListing,
+  listP2PListings: p2pApi.listListings,
+  listP2PCategoryFacets: p2pApi.listCategoryFacets,
+  getP2PListing: p2pApi.getListing,
+  getDemandPreview: p2pApi.getDemandPreview,
+  // Namespaced `p2p*`: the Deal Desk below already exports proposeOffer /
+  // respondToOffer / completeDeal for the MANDATE system, which is a
+  // different feature on a different table (public.offers vs
+  // public.p2p_offers). Sharing a name here silently shadowed one of them —
+  // tsc caught it as a duplicate key, the same collision the p2p_offers table
+  // hit at the DB layer.
+  p2pCreateOffer: p2pApi.createOffer,
+  p2pListOffers: p2pApi.listOffers,
+  p2pRespondToOffer: p2pApi.respondToOffer,
+  p2pConfirmExchange: p2pApi.confirmExchange,
+  p2pSetOfferTracking: p2pApi.setOfferTracking,
+  p2pListCarriers: p2pApi.listCarriers,
+  p2pDac7Status: p2pApi.getDac7Status,
+  p2pGradeCounterparty: p2pApi.gradeCounterparty,
+  p2pMemberReputation: p2pApi.getMemberReputation,
+  updateListingPrice: p2pApi.updateListingPrice,
+  listWatchlistMatches: p2pApi.listWatchlistMatches,
+  delistListing: p2pApi.delistListing,
+  reportListing: p2pApi.reportListing,
   createMandate: dealsApi.createMandate,
   listMandates: dealsApi.listMandates,
   getMandate: dealsApi.getMandate,
@@ -162,18 +188,9 @@ export const collectorsApi = {
   getAffiliateLinks: marketplaceApi.getAffiliateLinks,
   tagAffiliateUrl: marketplaceApi.tagAffiliateUrl,
 
-  // Deal Desk (P2P Offers)
-  proposeOffer: dealsApi.proposeOffer,
-  counterOffer: dealsApi.counterOffer,
-  respondToOffer: dealsApi.respondToOffer,
-  cancelOffer: dealsApi.cancelOffer,
-  markShipped: dealsApi.markShipped,
-  completeDeal: dealsApi.completeDeal,
-  listActiveOffers: dealsApi.listActiveOffers,
-  listDealHistory: dealsApi.listDealHistory,
-  getOfferDetail: dealsApi.getOfferDetail,
-  getOfferEvidence: dealsApi.getOfferEvidence,
-  getUserReputation: dealsApi.getUserReputation,
+  // Deal Desk offer re-exports removed 2026-08-09 with that subsystem. The
+  // member-to-member equivalents are the `p2p*`-namespaced entries above —
+  // they were namespaced precisely BECAUSE these unnamespaced ones existed.
   toggleItemForSale: itemsApi.toggleItemForSale,
 
   // Item Images (multi-photo per item)
@@ -341,7 +358,6 @@ export const collectorsApi = {
   recordMarketplaceSale: marketplaceApi.recordMarketplaceSale,
 
   // Deal Risk Flags
-  getDealRiskFlags: dealsApi.getDealRiskFlags,
 
   // Mandate Forecast
   getMandateForecast: dealsApi.getMandateForecast,

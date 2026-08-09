@@ -148,7 +148,9 @@ try {
    
   client = require('@/services/collectorsClient');
 } catch (_e) {
-  // Silent fallback to demo data.
+  // best-effort: optional module. If it is absent every loader below returns
+  // null/[] and the UI shows its empty state -- it no longer falls back to
+  // fabricated demo data in production, so this is safe to swallow.
   client = null;
 }
 
@@ -184,7 +186,7 @@ async function loadSeriesFromBackend(): Promise<TimeSeriesPoint[] | null> {
 
     return mapped;
   } catch (error) {
-    logger.warn('[portfolioAnalyticsStore] Timeseries backend error:', error);
+    logger.error('[portfolioAnalyticsStore] Timeseries backend error:', error);
     return null;
   }
 }
@@ -266,7 +268,7 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
 
     return mapped;
   } catch (error) {
-    logger.warn('[portfolioAnalyticsStore] Items backend error:', error);
+    logger.error('[portfolioAnalyticsStore] Items backend error:', error);
     return null;
   }
 }
@@ -278,7 +280,7 @@ async function loadSetsFromBackend(): Promise<
   { setId: string; setName: string; ownedCount: number; totalCount: number }[]
 > {
   if (!client || typeof client.getPortfolioOverview !== 'function') {
-    return DEMO_SETS;
+    return __DEV__ ? DEMO_SETS : [];
   }
 
   try {
@@ -289,7 +291,7 @@ async function loadSetsFromBackend(): Promise<
       ? raw.set_completion
       : [];
 
-    if (!sets.length) return DEMO_SETS;
+    if (!sets.length) return __DEV__ ? DEMO_SETS : [];
 
     return sets.map((s: RawPortfolioSet) => ({
       setId: String(s.set_id ?? s.id ?? 'unknown-set'),
@@ -298,8 +300,10 @@ async function loadSetsFromBackend(): Promise<
       totalCount: Number(s.total_count ?? s.total ?? 1),
     }));
   } catch (error) {
-    logger.warn('[portfolioAnalyticsStore] Sets backend error:', error);
-    return DEMO_SETS;
+    // logger.error, not warn: warn is stripped in release builds, so a backend
+    // failure here left no trace at all in exactly the build that matters.
+    logger.error('[portfolioAnalyticsStore] Sets backend error:', error);
+    return __DEV__ ? DEMO_SETS : [];
   }
 }
 
@@ -313,7 +317,12 @@ async function loadSetsFromBackend(): Promise<
 export async function fetchPortfolioSeries(): Promise<TimeSeriesPoint[]> {
   const series = await loadSeriesFromBackend();
   if (!series || !series.length) {
-    return DEMO_SERIES;
+    // __DEV__-gated, matching the DEMO_ITEMS fix in fetchPortfolioSnapshot.
+    // Returning DEMO_SERIES unconditionally drew a fabricated 1200 -> 2050
+    // curve as the user's real portfolio whenever the backend failed or was
+    // empty, with only a stripped logger.warn to show for it. [] renders the
+    // empty state, which is the honest answer.
+    return __DEV__ ? DEMO_SERIES : [];
   }
   return series;
 }

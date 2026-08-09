@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
@@ -44,6 +45,37 @@ QUERIES: list[tuple[str, str, str, list[str]]] = [
 ]
 
 INTER_CALL_SLEEP_SECONDS = 0.5
+
+
+def _normalise(s: str) -> str:
+    """Lowercase, strip non-alphanumerics — so "k-pop" matches "KPOP"."""
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def _keyword_matches_event(event: dict[str, Any], keyword: str) -> bool:
+    """Whether the search keyword describes the event, not merely its venue.
+
+    Same defect as ticketmaster_events._keyword_matches_event: `category_id`
+    in QUERIES is the keyword we SEARCHED for and was trusted
+    unconditionally, so anything the provider matched for any reason —
+    including a venue name — inherited that category. Ticketmaster's case
+    was "Funko Field" filing baseball games under `funko`.
+
+    Venue is deliberately excluded from the haystack; performers and
+    taxonomies are what say what an event IS.
+    """
+    parts: list[str] = [
+        event.get("title") or "",
+        event.get("short_title") or "",
+    ]
+    for perf in (event.get("performers") or []):
+        parts.append(perf.get("name") or "")
+        for tax in (perf.get("taxonomies") or []):
+            parts.append(tax.get("name") or "")
+    for tax in (event.get("taxonomies") or []):
+        parts.append(tax.get("name") or "")
+
+    return _normalise(keyword) in _normalise(" ".join(p for p in parts if p))
 
 
 def _event_to_scraped(
@@ -107,13 +139,16 @@ async def run_seatgeek_ingest(
                 datetime_utc_lte=lte,
                 per_page=50,
             )
+            on_topic = [e for e in raw if _keyword_matches_event(e, keyword)]
+            dropped = len(raw) - len(on_topic)
             mapped = [
-                ev for ev in (_event_to_scraped(e, category_id, kind_default) for e in raw)
+                ev for ev in (_event_to_scraped(e, category_id, kind_default) for e in on_topic)
                 if ev is not None
             ]
             logger.info(
-                "[SeatGeek] %s/%s → %d raw / %d mapped",
-                keyword, cc, len(raw), len(mapped),
+                "[SeatGeek] %s/%s → %d raw / %d on-topic / %d mapped%s",
+                keyword, cc, len(raw), len(on_topic), len(mapped),
+                f" ({dropped} off-topic dropped)" if dropped else "",
             )
             all_events.extend(mapped)
             await asyncio.sleep(INTER_CALL_SLEEP_SECONDS)

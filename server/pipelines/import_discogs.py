@@ -484,16 +484,32 @@ async def run_once() -> None:
     except Exception:
         def record_run(*_a, **_kw): pass
 
+    # Same restart-triggered over-polling that got tcgcsv.com to block us on
+    # 2026-07-29: SCHEDULES says 24h, but _run_worker_loop runs immediately on
+    # start and the interval is in-memory, so each bake restart re-ran this.
+    # Measured before the guard: ~19k requests/day to api.discogs.com across
+    # 4-6 runs. See learning_third_party_rate_bans_and_schedule_drift.
+    try:
+        from app.worker_registry import should_skip_recent_run
+        if await should_skip_recent_run("discogs_worker", 20 * 3600):
+            return
+    except ImportError:
+        pass
+
     loop = asyncio.get_running_loop()
     t0 = time.monotonic()
     try:
         summary = await loop.run_in_executor(None, run_pipeline)
         dur = time.monotonic() - t0
-        status = "ok" if summary.get("ok") else "error"
-        record_run("discogs_worker", status, duration_s=dur)
+        if not summary.get("ok"):
+            # Raise rather than recording our own row — bake_orchestrator
+            # records every run, so doing both wrote two rows per cycle and
+            # halved the apparent failure rate. Raising also populates
+            # worker_runs.metadata.error_repr with the reason.
+            raise RuntimeError(f"discogs import failed: {summary}")
+        record_run("discogs_worker", "ok", duration_s=dur)
     except Exception as e:
         logger.exception("discogs run_once failed: %s", e)
-        record_run("discogs_worker", "error")
         raise
 
 

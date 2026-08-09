@@ -1,5 +1,10 @@
 /**
  * WishlistSortControls — action row (alerts pill + add pill) and sort/filter for the wishlist.
+ *
+ * The CSV export pill was removed 2026-08-09 as unnecessary. It had been
+ * recovered here when watchlist-builder was deleted; the collection export on
+ * app/(tabs)/items.tsx is unaffected and still server-side via
+ * exportItemsOverview().
  */
 
 import React from 'react';
@@ -26,21 +31,24 @@ export const WishlistSortControls = React.memo(function WishlistSortControls({
         style={[styles.alertsPill, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={onAlertsPress}
         accessibilityRole="button"
-        accessibilityLabel="View price alerts"
+        accessibilityLabel="Open your notifications"
       >
         <Ionicons name="notifications-outline" size={16} color={colors.accent} />
-        <Text style={[styles.alertsPillText, { color: colors.accent }]}>Alerts</Text>
+        <Text style={[styles.alertsPillText, { color: colors.accent }]}>Inbox</Text>
       </AnimatedPressable>
 
-      <AnimatedPressable
-        style={[styles.addPill, { backgroundColor: colors.accent }]}
-        onPress={onAddPress}
-        accessibilityRole="button"
-        accessibilityLabel="Add item to watchlist"
-      >
-        <Ionicons name="add" size={18} color={colors.accentText} />
-        <Text style={[styles.addPillText, { color: colors.accentText }]}>Add</Text>
-      </AnimatedPressable>
+      <View style={styles.rightGroup}>
+
+        <AnimatedPressable
+          style={[styles.addPill, { backgroundColor: colors.accent }]}
+          onPress={onAddPress}
+          accessibilityRole="button"
+          accessibilityLabel="Add item to watchlist"
+        >
+          <Ionicons name="add" size={18} color={colors.accentText} />
+          <Text style={[styles.addPillText, { color: colors.accentText }]}>Add</Text>
+        </AnimatedPressable>
+      </View>
     </View>
   );
 });
@@ -52,6 +60,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  rightGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   alertsPill: {
     flexDirection: 'row',
     alignItems: 'center',

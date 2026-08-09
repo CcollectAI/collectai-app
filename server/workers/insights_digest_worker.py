@@ -39,7 +39,7 @@ LOOKBACK_DAYS = 7
 _USERS_WITH_ITEMS_QUERY = """
 SELECT DISTINCT user_id
 FROM public.items
-WHERE user_id IS NOT NULL
+WHERE user_id IS NOT NULL AND NOT archived
 """
 
 # Current portfolio value for a user.
@@ -50,8 +50,8 @@ FROM (
     SELECT DISTINCT ON (pp.item_ref)
         pp.q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
-    WHERE i.user_id = $1
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
+    WHERE i.user_id = $1 AND NOT i.archived
       AND pp.q50 IS NOT NULL
       AND pp.generated_at > now() - interval '60 days'
     ORDER BY pp.item_ref, pp.generated_at DESC
@@ -66,8 +66,8 @@ FROM (
     SELECT DISTINCT ON (pp.item_ref)
         pp.q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
-    WHERE i.user_id = $1
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
+    WHERE i.user_id = $1 AND NOT i.archived
       AND pp.q50 IS NOT NULL
       AND pp.generated_at > $2 - interval '30 days'
       AND pp.generated_at <= $2
@@ -83,8 +83,8 @@ WITH current_vals AS (
         pp.q50 AS current_q50,
         i.title AS item_name
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
-    WHERE i.user_id = $1
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
+    WHERE i.user_id = $1 AND NOT i.archived
       AND pp.q50 IS NOT NULL
       -- Partition prune: latest predictions are always within last 60d.
       AND pp.generated_at > now() - interval '60 days'
@@ -95,8 +95,8 @@ historical_vals AS (
         pp.item_ref,
         pp.q50 AS old_q50
     FROM public.price_predictions pp
-    JOIN public.items i ON i.canonical_key = pp.item_ref
-    WHERE i.user_id = $1
+    JOIN public.items i ON i.canonical_ref = pp.item_ref
+    WHERE i.user_id = $1 AND NOT i.archived
       AND pp.q50 IS NOT NULL
       AND pp.generated_at <= $2
     ORDER BY pp.item_ref, pp.generated_at DESC
@@ -120,7 +120,7 @@ LIMIT 50
 _NEW_ITEMS_QUERY = """
 SELECT COUNT(*) AS new_count
 FROM public.items
-WHERE user_id = $1
+WHERE user_id = $1 AND NOT archived
   AND created_at >= $2
 """
 

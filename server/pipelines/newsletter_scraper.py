@@ -1050,6 +1050,10 @@ class EventUpserter:
             self.skipped += len(events)
             return
 
+        events = self._sanitise(events)
+        if not events:
+            return
+
         with_url = [e for e in events if e.source_url]
         without_url = [e for e in events if not e.source_url]
 
@@ -1058,12 +1062,93 @@ class EventUpserter:
         if without_url:
             self._upsert_batch(without_url, conflict_key="title,date", source=source)
 
+    def _sanitise(self, events: list[ScrapedEvent]) -> list[ScrapedEvent]:
+        """Repair what can be repaired, drop what cannot, BEFORE storing.
+
+        This is the single point every parser funnels through
+        (NewsletterParser._parse_with_patterns, ._parse_generic and
+        EventbriteParser.parse all reach upsert()), so the rule cannot be
+        bypassed by whichever parser is written next.
+
+        Added 2026-07-27. Until now the parsers emitted whatever their
+        regexes produced and 14 of 14 stored rows were page chrome —
+        "Site Navigation", "We use Cookies", "Visit Usseguici sui social" —
+        because `_parse_generic` falls back to "use the subject as the
+        title" and `EventbriteParser._EVENT_BLOCK_RE` takes any 5-80
+        characters preceding a date. Those parsers still produce noise;
+        this is the layer that stops it becoming a row.
+
+        Repair-before-reject is deliberate: unwrapping the markdown on
+        `[Nike Vaporposite Pro](https://...)` recovers a genuine event
+        rather than discarding one.
+        """
+        from app.lib.event_quality import clean_location, clean_title, reject_reason
+
+        kept: list[ScrapedEvent] = []
+        rejected: dict[str, int] = {}
+
+        for ev in events:
+            ev.title = clean_title(ev.title)
+            ev.location = clean_location(getattr(ev, "location", None))
+
+            # A description that merely repeats the title carries nothing,
+            # and the parsers set it to a 500-char dump of the whole page.
+            desc = (getattr(ev, "description", None) or "").strip()
+            if desc and desc == ev.title:
+                ev.description = None
+
+            reason = reject_reason(ev.title, ev.date)
+            if reason:
+                rejected[reason] = rejected.get(reason, 0) + 1
+                continue
+            kept.append(ev)
+
+        if rejected:
+            # WARNING, not debug: a scraper that suddenly rejects everything
+            # is indistinguishable from a scraper that found nothing, and the
+            # silent version of that is what let this run for months.
+            self.skipped += sum(rejected.values())
+            log.warning(
+                "Rejected %d/%d scraped events before upsert: %s",
+                sum(rejected.values()),
+                len(events),
+                ", ".join(f"{k}={v}" for k, v in sorted(rejected.items())),
+            )
+        return kept
+
     def _upsert_batch(
         self, events: list[ScrapedEvent], conflict_key: str, source: str = "newsletter"
     ) -> None:
         """POST rows to the Supabase PostgREST API."""
         client = self._get_client()
         rows = [self._event_to_row(e, source=source) for e in events]
+
+        # Deduplicate by the conflict key BEFORE batching.
+        #
+        # PostgREST compiles each batch into a single
+        # INSERT ... ON CONFLICT (<conflict_key>) DO UPDATE. If one batch
+        # contains the same key twice Postgres aborts the WHOLE statement with
+        #   ON CONFLICT DO UPDATE command cannot affect row a second time
+        # and all `batch_size` events are lost, not just the duplicate — and
+        # PostgREST reports it to the caller as a 500 on /rest/v1/events.
+        #
+        # Scrapers legitimately emit repeats: the same event appears in two
+        # newsletters, pagination overlaps, a retry re-sends. `upsert_catalog`
+        # in import_common.py was given exactly this guard on 2026-07-25
+        # (ee62c21) but this second copy of the pattern was missed, so the error
+        # kept firing from here — 9 occurrences in a 4h window. Last occurrence
+        # wins so later/fresher data overwrites.
+        key_cols = [k.strip() for k in conflict_key.split(",") if k.strip()]
+        deduped: dict[tuple, dict] = {}
+        for row in rows:
+            deduped[tuple(row.get(k) for k in key_cols)] = row
+        dropped = len(rows) - len(deduped)
+        if dropped:
+            log.info(
+                "[events] dropped %d within-batch duplicate row(s) before upsert "
+                "(same %s)", dropped, conflict_key,
+            )
+        rows = list(deduped.values())
 
         headers = _supabase_headers()
         # Use Prefer header to signal upsert on the desired columns

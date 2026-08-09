@@ -143,7 +143,8 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
     "ktown4u": {"kpop", "kpop_lightsticks", "blind_box"},
     "comicbookrealm": {"comic_books"},
     "masterofmalt": {"whiskey"},
-    "pricecharting": {"retro_games", "retro_handhelds", "pokemon", "nintendo_merch", "sportscards"},
+    "pricecharting": {"retro_games", "retro_handhelds", "pokemon", "nintendo_merch", "sportscards",
+                      "funko", "comic_books"},
     "yahoo_auctions": {
         "bandai_premium", "jp_event", "jp_magazine", "ghibli", "anime_figures",
         "retro_pokemon", "vtuber", "gunpla", "anime_bluray", "anime_soundtrack",
@@ -203,11 +204,15 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
 #   * abebooks — HTTP 200 on search page but prices are now JS-rendered.
 #     Crawl4AI static markdown extraction sees 33 ISBNs + 0 price tokens.
 #     Was 96 comic_books / 30d before going silent.
+# 2026-07-22: pricecharting RE-ENABLED — the caller now scrapes the free public
+# website (loose/CIB/new/graded prices) when there's no API key, verified landing
+# sold comps (is_listing=false) for retro_games/retro_handhelds/etc. which had 0
+# price_predictions. See pricecharting_caller._search_web.
 DISABLED_ADAPTERS: Set[str] = {
     "abebooks", "bezel", "booth", "brickeconomy", "bricklink", "catawiki",
     "chrono24", "comc", "depop", "etsy", "gumtree", "keh", "kleinanzeigen",
     "ktown4u", "leboncoin", "marktplaats", "masterofmalt", "mavin",
-    "mercari_us", "mpb", "popmart", "pricecharting", "scalemates",
+    "mercari_us", "mpb", "popmart", "scalemates",
     "scrapedo", "stockx", "wallapop", "whatnot", "whisky_auctioneer",
     "130point",
 }

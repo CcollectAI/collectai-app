@@ -8,7 +8,10 @@
  *
  * Gating (verified 2026-06-04): the single `estimated_price` (latest comp,
  * public/free) IS shown. The q10/q50/q90 bands + trend are Pro-gated
- * (`limits.detailed_valuation`) — this screen does NOT fetch or render them for
+ * (`limits.advanced_analytics`, line 233 — this comment said
+ * `limits.detailed_valuation` until 2026-07-28, a key the FE's limits tables
+ * do not even define; the code has always read advanced_analytics)
+ * — this screen does NOT fetch or render them for
  * free users; it shows a single locked teaser row instead, so no gated data
  * leaks onto a public catalog screen.
  *
@@ -36,6 +39,7 @@ import { colors as tokens } from '@/theme/tokens';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import logger from '@/utils/logger';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
+import ScreenHeader from '@/components/ScreenHeader';
 
 type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
 
@@ -82,7 +86,7 @@ function CatalogItemMuseumScreen() {
         const data = res as { links?: AffiliateLink[] } | undefined;
         if (!cancelled) setLinks(data?.links ?? []);
       } catch (e) {
-        logger.warn('[museum] affiliate links failed:', e);
+        logger.error('[museum] affiliate links failed:', e);
       } finally {
         if (!cancelled) setLinksLoading(false);
       }
@@ -103,7 +107,7 @@ function CatalogItemMuseumScreen() {
           .slice(0, 10);
         if (!cancelled) setSiblings(sameSet);
       } catch (e) {
-        logger.warn('[museum] siblings fetch failed:', e);
+        logger.error('[museum] siblings fetch failed:', e);
       }
     })();
     return () => { cancelled = true; };
@@ -122,7 +126,7 @@ function CatalogItemMuseumScreen() {
         setPriceDetail({ estimated_price: res.estimated_price, comps_count: res.comps_count });
         if (res.estimated_price != null) setEstPrice(res.estimated_price);
       } catch (e) {
-        logger.warn('[museum] price detail fetch failed:', e);
+        logger.error('[museum] price detail fetch failed:', e);
       }
     })();
     return () => { cancelled = true; };
@@ -138,6 +142,9 @@ function CatalogItemMuseumScreen() {
       // invalidates the cached watchlist.
       await dataProvider.addWatchlistItem({
         title, category, targetPrice: estPrice ?? undefined,
+        // Link the row back to the catalog entry it was added from, so the
+        // watchlist knows *what* it is watching (was NULL on every row).
+        itemId: params.key ?? null,
       });
       showToast({ message: `${title} added to watchlist`, type: 'success' });
     } catch (e) {
@@ -148,7 +155,7 @@ function CatalogItemMuseumScreen() {
     } finally {
       setAdding(false);
     }
-  }, [title, category, estPrice, settings.hapticsEnabled, showToast]);
+  }, [title, category, estPrice, params.key, settings.hapticsEnabled, showToast]);
 
   const openLink = useCallback((link: AffiliateLink) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -173,16 +180,11 @@ function CatalogItemMuseumScreen() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ paddingBottom: 48 }}>
-      {/* Back */}
-      <View style={styles.topBar}>
-        <AnimatedPressable
-          style={[styles.backBtn, { borderColor: colors.border }]}
-          onPress={() => router.back()}
-          accessibilityRole="button" accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={20} color={colors.text} />
-        </AnimatedPressable>
-      </View>
+      {/* Shared flat header. This screen used to hand-roll a back-only circle,
+          which is why the settings icon was missing here while every other
+          non-tab screen has it — the exact duplication ScreenHeader was written
+          to remove (see its module docstring). */}
+      <ScreenHeader />
 
       {/* Hero */}
       {imageUrl ? (
@@ -317,8 +319,6 @@ function Detail({ label, value, colors }: { label: string; value: string; colors
 }
 
 const styles = StyleSheet.create({
-  topBar: { paddingTop: 56, paddingHorizontal: 16, paddingBottom: 4 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   hero: { width: '100%', height: 280, marginTop: 8 },
   heroEmpty: { alignItems: 'center', justifyContent: 'center' },
   comingSoon: { fontSize: 13, fontWeight: '600', marginTop: 8 },

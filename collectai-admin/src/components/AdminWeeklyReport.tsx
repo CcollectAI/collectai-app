@@ -311,7 +311,7 @@ export function AdminWeeklyReport() {
       {/* Header */}
       <div>
         <h2 className="text-lg font-bold text-[#0D1B2A]">Weekly Reports</h2>
-        <AdminDemoBanner />
+        <AdminDemoBanner source="ugc" />
       </div>
 
       {/* Report cards */}

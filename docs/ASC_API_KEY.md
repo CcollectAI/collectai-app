@@ -44,7 +44,11 @@ eas credentials -p ios
 Or in App Store Connect:
 - [Users and Access → Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/integrations/api)
 - Key Name: `[Expo] EAS Submit CA3AAMCGiZ`
-- Key ID: `VT5SJZ3AUH`
+- Key ID: **`AM32RK7DAY`** — observed in a live `eas submit` on 2026-08-09
+  (*"App Store Connect API Key already set up. Using Api Key ID: AM32RK7DAY"*).
+  This doc previously said `VT5SJZ3AUH`; the key was rotated at some point after
+  it was written. **Read the key ID off the submit output, not from here** — EAS
+  holds the key server-side, so this file is a record, not the source of truth.
 
 ## When you'd revoke / rotate
 

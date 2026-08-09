@@ -25,7 +25,7 @@ export function useSWR<T>(key: string, fetcher: Fetcher<T>, opts: Options = {}) 
       setData(fresh);
       cacheSet(key, fresh);
     } catch (err) {
-      logger.warn("[useSWR] fetch failed for", key, err);
+      logger.error("[useSWR] fetch failed for", key, err);
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setLoading(false);

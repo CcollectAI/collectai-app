@@ -17,11 +17,50 @@
  */
 
 import { useState, useCallback } from "react";
+import { Alert, Linking } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
+import { decode as atob } from "base-64";
 import { collectorsApi } from "@/api/collectorsApi";
 import type { ServerUploadResponse } from "@/api/collectorsApi";
 import { useAuthContext } from "@/providers/useAuthContext";
 import { logger } from "@/lib/logger";
+
+/**
+ * Ceiling for the presigned S3 PUT. Generous — a large photo on a weak mobile
+ * connection is legitimately slow — but finite, so the upload can never pin the
+ * "Save to Collection" button on indefinitely.
+ */
+const UPLOAD_TIMEOUT_MS = 60_000;
+
+/**
+ * iOS presents each permission dialog only ONCE per install. After a denial the
+ * request resolves instantly with `granted: false, canAskAgain: false` and no
+ * dialog — so retrying the request is a no-op and the user is stuck with an
+ * error string and no way to act on it. Route them to Settings instead, the
+ * same way src/lib/calendar.ts does for calendar access.
+ */
+function promptOpenSettings(title: string, body: string) {
+  Alert.alert(title, body, [
+    { text: "Cancel", style: "cancel" },
+    { text: "Open Settings", onPress: () => Linking.openSettings() },
+  ]);
+}
+
+/**
+ * Read a local file URI as raw bytes for an S3 PUT. RN's `fetch(uri).blob()`
+ * body is unreliable against S3 (uploads empty / fails), which left every
+ * item's image_url null when the server path fell back to presign. Reading the
+ * file as base64 → Uint8Array and PUTting the bytes is the pattern proven in
+ * src/utils/uploadImageS3.ts.
+ */
+async function readFileAsBytes(uri: string): Promise<Uint8Array> {
+  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: "base64" });
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
 
 /** MIME type mapping from expo-image-picker type field */
 const MIME_MAP: Record<string, string> = {
@@ -100,7 +139,7 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
 
           return response.cdn_url;
         } catch (serverErr: unknown) {
-          logger.warn(
+          logger.error(
             "[usePhotoUpload] Server-side upload failed, falling back to presigned URL:",
             serverErr instanceof Error ? serverErr.message : String(serverErr),
           );
@@ -112,20 +151,48 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
           mime,
         );
 
-        const imageResponse = await fetch(uri);
-        const blob = await imageResponse.blob();
+        // PUT the raw file bytes (not a blob) — S3 signs `content-type`, so the
+        // header must match the presigned content type exactly.
+        const bytes = await readFileAsBytes(uri);
 
-        const uploadResponse = await fetch(presignResponse.upload_url, {
-          method: "PUT",
-          headers: {
-            "Content-Type": mime,
-          },
-          body: blob,
-        });
+        // BOUNDED. This was the only unbounded await in the upload path, and it
+        // sits between `setUploading(true)` and the `finally` that clears it —
+        // exactly the shape CLAUDE.md § "Loading states" forbids. A stalled S3
+        // PUT (captive portal, dead TLS handshake) would never settle, so
+        // `finally` never ran, `uploading` stayed true, and `canSubmit` in
+        // add-manual.tsx kept "Save to Collection" DISABLED for the rest of the
+        // process — no error, no spinner, nothing in the logs.
+        //
+        // AbortController rather than withTimeout: withTimeout is Promise.race,
+        // which abandons without cancelling, leaving the socket and the file
+        // read alive. abort() actually tears the request down.
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
+        let uploadResponse: Response;
+        try {
+          uploadResponse = await fetch(presignResponse.upload_url, {
+            method: "PUT",
+            headers: {
+              "Content-Type": mime,
+            },
+            body: bytes as unknown as BodyInit,
+            signal: controller.signal,
+          });
+        } catch (e: unknown) {
+          if ((e as Error)?.name === "AbortError") {
+            throw new Error(
+              `Photo upload timed out after ${UPLOAD_TIMEOUT_MS / 1000}s — check your connection and try again.`,
+            );
+          }
+          throw e;
+        } finally {
+          clearTimeout(timer);
+        }
 
         if (!uploadResponse.ok) {
+          const detail = await uploadResponse.text().catch(() => "");
           throw new Error(
-            `S3 upload failed with status ${uploadResponse.status}`,
+            `S3 upload failed with status ${uploadResponse.status}${detail ? `: ${detail.slice(0, 120)}` : ""}`,
           );
         }
 
@@ -156,16 +223,29 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
 
       // 1. Request permissions
       if (source === "camera") {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        const { status, canAskAgain } =
+          await ImagePicker.requestCameraPermissionsAsync();
         if (status !== "granted") {
           setError("Camera permission is required to take photos");
+          if (!canAskAgain) {
+            promptOpenSettings(
+              "Camera Access Is Off",
+              "Camera access was turned off for Sparrow. Open Settings and switch Camera on to take photos.",
+            );
+          }
           return null;
         }
       } else {
-        const { status } =
+        const { status, canAskAgain } =
           await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== "granted") {
           setError("Photo library permission is required to select photos");
+          if (!canAskAgain) {
+            promptOpenSettings(
+              "Photo Access Is Off",
+              "Photo library access was turned off for Sparrow. Open Settings and allow Photos to select images.",
+            );
+          }
           return null;
         }
       }

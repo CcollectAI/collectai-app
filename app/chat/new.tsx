@@ -6,6 +6,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getUserById } from '@/data/users';
 import { EVENTS } from '@/data/events';
+import { supabase } from '@/lib/supabase';
+import { withTimeout } from '@/lib/withTimeout';
 import { dataProvider } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
@@ -13,19 +15,84 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import { EmptyState } from '@/components/EmptyState';
 import logger from '@/utils/logger';
+import { safeGoBack } from '@/lib/goBack';
 
 type DmStatusState = 'loading' | 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined' | 'blocked';
 
 const NewChatScreen: React.FC = () => {
-  const { toUserId, contextEventId } = useLocalSearchParams<{
+  const { toUserId, contextEventId, contextListingTitle } = useLocalSearchParams<{
     toUserId?: string;
     contextEventId?: string;
+    /** Marketplace listing title. Prefills the opener so the seller knows
+     *  which item is being asked about — a bare "hi" from a stranger is the
+     *  worst version of this flow. Title rather than id: the id would need a
+     *  fetch here, and the title is all the prefill needs. */
+    contextListingTitle?: string;
   }>();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { showToast } = useToast();
 
-  const toUser = useMemo(() => getUserById(toUserId ?? null), [toUserId]);
+  // Recipient identity, for DISPLAY only — the name, handle and avatar colour.
+  //
+  // This used to be `getUserById(toUserId)` alone, which searches USER_PROFILES:
+  // a hardcoded array of three demo collectors with ids like "collector-aurora".
+  // Every real caller (marketplace listing, member profile, event attendee)
+  // passes a Supabase auth UUID, which can never match — so the screen fell
+  // through to its "Collector not found" state and messaging was dead for every
+  // real member. It was the marketplace's PRIMARY action, since Stage 1 has no
+  // checkout, and the listing screen still promises "Message a seller to agree
+  // a price".
+  //
+  // So: try the demo array first (mock mode and the demo profiles still work),
+  // then fall back to the real `profiles` row.
+  const demoUser = useMemo(() => getUserById(toUserId ?? null), [toUserId]);
+  const [dbProfile, setDbProfile] = useState<{
+    display_name: string | null; username: string | null; avatar_color: string | null;
+  } | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  useEffect(() => {
+    if (!toUserId || demoUser) return;
+    let cancelled = false;
+    setProfileLoading(true);
+    // Bounded: this gates a spinner, and an unbounded read here would pin it
+    // forever if the session is mid-hydration (see docs/ui-playbook.md).
+    withTimeout(
+      supabase
+        .from('profiles')
+        .select('display_name, username, avatar_color')
+        .eq('id', toUserId)
+        .maybeSingle(),
+      8000,
+      'chat/new.loadRecipientProfile',
+    )
+      .then(({ data }) => {
+        if (!cancelled) setDbProfile((data as typeof dbProfile) ?? null);
+      })
+      .catch((e) => logger.error('[Chat/new] recipient profile load failed:', e))
+      .finally(() => {
+        if (!cancelled) setProfileLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [toUserId, demoUser]);
+
+  // Never block on a missing display name — only on a missing RECIPIENT. A
+  // profile row with no display_name is a normal state (most have none), and
+  // refusing to open the composer over it would recreate the same dead end.
+  const toUser = useMemo(() => {
+    if (demoUser) return demoUser;
+    if (!toUserId || !dbProfile) return null;
+    const name = dbProfile.display_name || dbProfile.username || 'Sparrow member';
+    return {
+      id: toUserId,
+      displayName: name,
+      handle: dbProfile.username || 'member',
+      avatarColor: dbProfile.avatar_color || '#0ea5e9',
+    };
+  }, [demoUser, dbProfile, toUserId]);
   const contextEvent = useMemo(
     () => EVENTS.find((e) => e.id === contextEventId),
     [contextEventId],
@@ -34,7 +101,9 @@ const NewChatScreen: React.FC = () => {
   const [message, setMessage] = useState(
     contextEvent
       ? `Hey, I saw you on the attendee list for "${contextEvent.title}". Want to connect?`
-      : '',
+      : contextListingTitle
+        ? `Hi — is "${contextListingTitle}" still available?`
+        : '',
   );
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -57,7 +126,7 @@ const NewChatScreen: React.FC = () => {
           setDmStatus(status);
         }
       } catch (err) {
-        logger.warn('[Chat/new] status check error:', err);
+        logger.error('[Chat/new] status check error:', err);
         setDmStatus('none');
       }
     };
@@ -81,7 +150,7 @@ const NewChatScreen: React.FC = () => {
       fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       setSent(true);
       setTimeout(() => {
-        router.back();
+        safeGoBack(router);
       }, 800);
     } catch (err: unknown) {
       logger.error('[Chat/new] requestDm error:', err);
@@ -90,6 +159,19 @@ const NewChatScreen: React.FC = () => {
       setSending(false);
     }
   };
+
+  // Wait for the profile read before judging. Deciding "not found" while the
+  // fetch is still in flight is how this screen would flash its dead end at
+  // every real user even after the lookup was fixed.
+  if (!toUser && profileLoading) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!toUser) {
     return (
@@ -101,7 +183,7 @@ const NewChatScreen: React.FC = () => {
           colors={colors}
           action={
             <AnimatedPressable
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router)}
               style={[styles.emptyBtn, { borderColor: colors.border }]}
               accessibilityRole="button"
               accessibilityLabel="Go back"
@@ -135,7 +217,7 @@ const NewChatScreen: React.FC = () => {
           colors={colors}
           action={
             <AnimatedPressable
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router)}
               style={[styles.emptyBtn, { borderColor: colors.border }]}
               accessibilityRole="button"
               accessibilityLabel="Go back"
@@ -159,7 +241,7 @@ const NewChatScreen: React.FC = () => {
           colors={colors}
           action={
             <AnimatedPressable
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router)}
               style={[styles.emptyBtn, { borderColor: colors.border }]}
               accessibilityRole="button"
               accessibilityLabel="Go back"
@@ -215,7 +297,7 @@ const NewChatScreen: React.FC = () => {
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
-            <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+            <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
               <Ionicons name="chevron-back" size={24} color={colors.text} />
             </AnimatedPressable>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Request to Connect</Text>
@@ -310,6 +392,7 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
   },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   keyboardView: {
     flex: 1,
   },

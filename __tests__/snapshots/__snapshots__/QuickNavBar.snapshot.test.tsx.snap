@@ -3,7 +3,7 @@
 exports[`QuickNavBar snapshots matches snapshot with Items tab active 1`] = `
 <View
   accessibilityLabel="Main navigation"
-  accessibilityRole="tabbar"
+  accessibilityRole="tablist"
   style={
     [
       {
@@ -416,7 +416,7 @@ exports[`QuickNavBar snapshots matches snapshot with Items tab active 1`] = `
 exports[`QuickNavBar snapshots matches snapshot with Marketplace tab active 1`] = `
 <View
   accessibilityLabel="Main navigation"
-  accessibilityRole="tabbar"
+  accessibilityRole="tablist"
   style={
     [
       {
@@ -829,7 +829,7 @@ exports[`QuickNavBar snapshots matches snapshot with Marketplace tab active 1`] 
 exports[`QuickNavBar snapshots matches snapshot with Portfolio tab active 1`] = `
 <View
   accessibilityLabel="Main navigation"
-  accessibilityRole="tabbar"
+  accessibilityRole="tablist"
   style={
     [
       {
@@ -1242,7 +1242,7 @@ exports[`QuickNavBar snapshots matches snapshot with Portfolio tab active 1`] = 
 exports[`QuickNavBar snapshots matches snapshot with no tab active 1`] = `
 <View
   accessibilityLabel="Main navigation"
-  accessibilityRole="tabbar"
+  accessibilityRole="tablist"
   style={
     [
       {

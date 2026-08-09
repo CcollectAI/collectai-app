@@ -288,7 +288,10 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 32,
+    // Clear the tab bar (`(tabs)/_layout.tsx`: height 58 + bottom inset). At 32
+    // the last card — "Add manually" — was sheared by the bar. 80 is what
+    // items.tsx already uses for the same reason.
+    paddingBottom: 80,
   },
   headerRow: {
     flexDirection: "row",
@@ -315,13 +318,19 @@ const styles = StyleSheet.create({
   quickScanBackdrop: {
     marginHorizontal: -16,
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    // Tightened from 16: the backdrop's top padding stacked on the card's own
+    // 20 gave 36pt of dead space above the scan icon, which read as the hero
+    // floating away from the "Add" title.
+    paddingTop: 8,
+    paddingBottom: 12,
     marginBottom: 16,
     borderRadius: 20,
   },
   quickScanCard: {
     borderRadius: 16,
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 20,
     elevation: 2, // Android
     shadowColor: "#000", // iOS shadow
     shadowOpacity: 0.05,

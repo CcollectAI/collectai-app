@@ -65,6 +65,21 @@ function TopItemsListInner({
     .sort((a, b) => (a.changePct ?? 0) - (b.changePct ?? 0))
     .slice(0, 3);
 
+  // An item whose changePct is 0 or undefined matched NEITHER filter above, so
+  // it rendered nowhere. This component is a top-movers widget, but it sits
+  // under a heading that says "Collection" — so a user whose items simply have
+  // not moved (no price predictions yet, which is every hand-added item) saw an
+  // empty Collection on Home while the Items tab listed everything. Reported
+  // 2026-07-28 as "the collection on the home tab has no items despite items
+  // being added manually".
+  //
+  // When nothing has moved, fall back to showing the collection itself. Sorted
+  // by value like the movers lists, capped the same way.
+  const steady =
+    gainers.length === 0 && losers.length === 0
+      ? [...items].sort((a, b) => b.value - a.value).slice(0, 5)
+      : [];
+
   return (
     <View style={[s.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
       {/* Movers (top gainers) */}
@@ -137,6 +152,39 @@ function TopItemsListInner({
           </AnimatedPressable>
         );
       })}
+
+      {/* Steady holdings — shown only when nothing has moved, so the
+          "Collection" heading is never left with an empty card. No trend icon
+          or percentage: these items have no movement to report, and inventing
+          a 0.0% badge would imply we measured one. */}
+      {steady.map((it, idx) => (
+        <AnimatedPressable
+          key={it.id}
+          style={[
+            s.itemRow,
+            { borderTopColor: theme.border },
+            idx === 0 && s.itemRowFirst,
+          ]}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
+            onItemPress(it);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`${it.name}, ${it.category ?? 'unknown category'}, ${formatPrice(it.value)}`}
+        >
+          <View style={s.itemLeft}>
+            <Text style={[s.itemName, { color: theme.text }]} numberOfLines={1}>
+              {it.name}
+            </Text>
+            <Text style={[s.itemCategory, { color: theme.muted }]} numberOfLines={1}>
+              {it.category ?? "—"}
+            </Text>
+          </View>
+          <View style={s.itemRight}>
+            <Text style={[s.itemValue, { color: theme.text }]}>{formatPrice(it.value)}</Text>
+          </View>
+        </AnimatedPressable>
+      ))}
     </View>
   );
 }

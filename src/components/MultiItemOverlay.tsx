@@ -6,7 +6,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import type { DetectedMultiItem } from '@/data/types';
 
@@ -35,7 +35,7 @@ export function MultiItemOverlay({
   onSelectItem,
   onProcessAll,
 }: Props) {
-  const { colors } = useAppTheme();
+  const { colors } = useScannerTheme();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 16,
-    borderRadius: 16,
+    borderRadius: 12,
   },
   processAllText: {
     color: '#FFFFFF',

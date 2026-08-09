@@ -141,11 +141,23 @@ export const WatchlistItemCard = React.memo(function WatchlistItemCard({
             </Text>
           ) : null}
 
-          {item.targetPrice != null && (
+          {/* A row with no target price CANNOT alert: the snipe check requires
+              `w.target_price IS NOT NULL AND > 0`. 12 of 13 prod rows had none
+              (counted 2026-08-05), which is the single biggest reason the
+              feature looks silent. Say so on the row instead of leaving the
+              user to infer it from an absent badge. */}
+          {item.targetPrice != null ? (
             <View style={[styles.targetBadge, { backgroundColor: colors.accent + '12' }]}>
               <Ionicons name="flag" size={12} color={colors.brand?.dark ?? colors.accent} />
               <Text style={[styles.targetBadgeText, { color: colors.brand?.dark ?? colors.accent }]}>
                 Target: {formatPrice(item.targetPrice, currency)}
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.targetBadge, { backgroundColor: colors.muted + '12' }]}>
+              <Ionicons name="flag-outline" size={12} color={colors.muted} />
+              <Text style={[styles.targetBadgeText, { color: colors.muted }]}>
+                No target — won&apos;t alert
               </Text>
             </View>
           )}

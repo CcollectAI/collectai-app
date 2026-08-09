@@ -28,17 +28,22 @@
     },
     "preview": {
       "distribution": "internal",
+      "environment": "production",
       "ios": {
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_SUPABASE_MODE": "strict"
+        "EXPO_PUBLIC_SUPABASE_MODE": "strict",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "SENTRY_ALLOW_FAILURE": "true"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_SUPABASE_MODE": "strict"
+        "EXPO_PUBLIC_SUPABASE_MODE": "strict",
+        "_comment_beta_unlock": "MUST stay 'false' on any profile that can reach the App Store. The EAS 'production' environment sets EXPO_PUBLIC_BETA_UNLOCK_ALL=true for internal testers; a build profile that does not pin it inherits that true, and BETA_UNLOCK_ALL makes useBillingLimits report every user as 'pro' AND skip RevenueCat entirely (src/hooks/useBillingLimits.ts:102). This profile has a submit config with the same ascAppId as 'store', so it is a shippable path — before 2026-07-27 it would have shipped a build where the paywall did not exist.",
+        "EXPO_PUBLIC_BETA_UNLOCK_ALL": "false"
       }
     },
     "store": {
@@ -46,6 +51,18 @@
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_SUPABASE_MODE": "strict",
+        "EXPO_PUBLIC_BETA_UNLOCK_ALL": "false"
+      }
+    },
+    "android-apk": {
+      "extends": "store",
+      "autoIncrement": false,
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_MODE": "strict",
+        "_comment_apk": "Installable-on-device twin of the 'store' profile. 'store' emits an .aab, which Play needs but adb cannot install, and 'preview' emits an .apk but does NOT pin EXPO_PUBLIC_BETA_UNLOCK_ALL — so it inherits true from the EAS 'production' environment and the paywall silently disappears. Testing the real shipping config on a device needs both: apk output AND the flag pinned false. No autoIncrement, so smoke-testing does not burn Play version codes.",
         "EXPO_PUBLIC_BETA_UNLOCK_ALL": "false"
       }
     }

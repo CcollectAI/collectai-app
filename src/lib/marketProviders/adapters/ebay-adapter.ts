@@ -63,7 +63,8 @@ function getEnv(key: string): string | undefined {
   // Fallback to process.env (works in Node/test environments)
   try {
     return (process.env as Record<string, string | undefined>)[key];
-  } catch {
+  } catch (e) {
+    logger.error('[silent-catch] ebay-adapter.ts:66:', e);
     return undefined;
   }
 }
@@ -405,7 +406,8 @@ export class EbayAdapter implements MarketProviderAdapter {
     try {
       const result = await this.search('collectible', { limit: 1 });
       return result.success;
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] ebay-adapter.ts:408:', e);
       return false;
     }
   }

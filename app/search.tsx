@@ -21,16 +21,26 @@ import { AnimatedPressable } from '@/motion';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { SkeletonList } from '@/components/Skeleton';
+import { SlowLoadNotice } from '@/components/SlowLoadNotice';
+import { useSlowLoad } from '@/hooks/useSlowLoad';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
+import { fmtCurrency } from '@/lib/format';
+import { useSettings } from '@/lib/settings';
+import { safeGoBack } from '@/lib/goBack';
 
-const RECENT_SEARCHES_KEY = '@sparrowcollect/recent_searches';
-const MAX_RECENT_SEARCHES = 10;
+// Recent searches removed 2026-08-07. The AsyncStorage key
+// '@sparrowcollect/recent_searches' is deliberately cleared once on mount
+// below rather than left behind: an orphaned key keeps a user's search
+// history on the device indefinitely after the feature that justified
+// collecting it is gone, which is the kind of quiet data retention a privacy
+// policy should not have to cover.
+const LEGACY_RECENT_SEARCHES_KEY = '@sparrowcollect/recent_searches';
 
 type SearchResults = {
   items: { id: string; name: string; category: string; imageUrl?: string | null; price?: number }[];
-  catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; hasReferenceImage?: boolean }[];
+  catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; hasReferenceImage?: boolean; priceEur?: number | null }[];
   users: { id: string; displayName: string; handle?: string; avatarUrl?: string | null }[];
   events: { id: string; title: string; startDate?: string; location?: string; category?: string }[];
   categories: { id: string; name: string }[];
@@ -61,6 +71,12 @@ const ItemSearchResult = React.memo(function ItemSearchResult({ item, colors, on
 });
 
 const CatalogSearchResult = React.memo(function CatalogSearchResult({ item, colors, onPress }: { item: SearchResults['catalog'][number]; colors: ReturnType<typeof useAppTheme>['colors']; onPress: () => void }) {
+  const { t } = useTranslation();
+  // price_eur is EUR-denominated; fmtCurrency converts it into the user's
+  // selected currency with their fxRates and number locale. formatPrice(x,'EUR')
+  // would have shown EUR to a user set to USD or JPY, disagreeing with every
+  // other price in the app.
+  const { settings } = useSettings();
   return (
     <AnimatedPressable
       style={[resultStyles.resultRow, { borderColor: colors.border }]}
@@ -74,6 +90,18 @@ const CatalogSearchResult = React.memo(function CatalogSearchResult({ item, colo
           {item.brand ? `${item.brand} · ${item.category}` : item.category}
         </Text>
       </View>
+      {/* Absent price is stated, never blank. A silent gap reads as a loading
+          bug; "No price yet" says we know the object and not its value — which
+          is the honest position for the categories with no sold-comp source. */}
+      {typeof item.priceEur === 'number' ? (
+        <Text style={[resultStyles.resultPrice, { color: colors.text }]} numberOfLines={1}>
+          {fmtCurrency(item.priceEur, settings)}
+        </Text>
+      ) : (
+        <Text style={[resultStyles.resultNoPrice, { color: colors.muted }]} numberOfLines={1}>
+          {t('search.no_price_yet')}
+        </Text>
+      )}
       <Ionicons name="chevron-forward" size={16} color={colors.muted} />
     </AnimatedPressable>
   );
@@ -147,6 +175,10 @@ const resultStyles = StyleSheet.create({
   resultInfo: { flex: 1 },
   resultTitle: { fontSize: text.lg, fontWeight: fontWeight.medium },
   resultSubtitle: { fontSize: text.md, marginTop: 2 },
+  // Right-aligned with a floor width so a column of prices lines up instead of
+  // jittering with each value's length.
+  resultPrice: { fontSize: text.md, fontWeight: '600', minWidth: 64, textAlign: 'right' },
+  resultNoPrice: { fontSize: text.sm, minWidth: 64, textAlign: 'right' },
 });
 
 function SearchScreen() {
@@ -156,41 +188,15 @@ function SearchScreen() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
+  const { isSlow, isVerySlow } = useSlowLoad(loading);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const [error, setError] = useState(false);
 
-  // Load recent searches from AsyncStorage on mount
+  // One-time cleanup of the removed recent-searches feature. Cheap, idempotent,
+  // and it means uninstalling the feature also uninstalls the data it kept.
   useEffect(() => {
-    AsyncStorage.getItem(RECENT_SEARCHES_KEY)
-      .then((stored) => {
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed)) setRecentSearches(parsed);
-          } catch { /* ignore parse errors */ }
-        }
-      })
-      .catch((err) => logger.warn('[Search] restore recent searches failed:', err));
-  }, []);
-
-  const saveRecentSearch = useCallback((q: string) => {
-    const trimmed = q.trim();
-    if (!trimmed) return;
-    setRecentSearches((prev) => {
-      const filtered = prev.filter((s) => s.toLowerCase() !== trimmed.toLowerCase());
-      const updated = [trimmed, ...filtered].slice(0, MAX_RECENT_SEARCHES);
-      AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated))
-        .catch((err) => logger.warn('[Search] persist recent searches failed:', err));
-      return updated;
-    });
-  }, []);
-
-  const clearRecentSearches = useCallback(() => {
-    setRecentSearches([]);
-    AsyncStorage.removeItem(RECENT_SEARCHES_KEY)
-      .catch((err) => logger.warn('[Search] clear recent searches failed:', err));
+    AsyncStorage.removeItem(LEGACY_RECENT_SEARCHES_KEY).catch(() => {});
   }, []);
 
   const doSearch = useCallback(async (q: string) => {
@@ -204,14 +210,13 @@ function SearchScreen() {
     try {
       const res = await dataProvider.unifiedSearch(q.trim());
       setResults(res ?? null);
-      saveRecentSearch(q);
     } catch {
       setResults(null);
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, [saveRecentSearch]);
+  }, []);
 
   const handleQueryChange = useCallback((text: string) => {
     setQuery(text);
@@ -236,7 +241,7 @@ function SearchScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Search Header */}
       <View style={styles.header}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back')}>
+        <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back')}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -260,36 +265,13 @@ function SearchScreen() {
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {/* Recent searches — shown when no query and no results */}
-        {!query && !results && recentSearches.length > 0 && (
-          <View style={styles.section}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={[styles.sectionTitle, { color: colors.muted }]} accessibilityRole="header">RECENT SEARCHES</Text>
-              <AnimatedPressable onPress={clearRecentSearches} accessibilityRole="button" accessibilityLabel={t('common.clear_recent')}>
-                <Text style={{ color: colors.accent, fontSize: text.sm, fontWeight: fontWeight.semibold }}>{t('common.clear')}</Text>
-              </AnimatedPressable>
-            </View>
-            {recentSearches.map((term, idx) => (
-              <AnimatedPressable
-                key={`${term}-${idx}`}
-                style={[resultStyles.resultRow, { borderColor: colors.border }]}
-                onPress={() => { setQuery(term); doSearch(term); }}
-                accessibilityRole="button"
-                accessibilityLabel={`Search for ${term}`}
-              >
-                <Ionicons name="time-outline" size={18} color={colors.muted} />
-                <View style={resultStyles.resultInfo}>
-                  <Text style={[resultStyles.resultTitle, { color: colors.text }]}>{term}</Text>
-                </View>
-                <Ionicons name="arrow-forward-outline" size={16} color={colors.muted} />
-              </AnimatedPressable>
-            ))}
-          </View>
-        )}
-
         {loading && (
           <View style={styles.loadingContainer}>
             <SkeletonList count={6} />
+            {/* Search fans out across items, catalog, users and events, so it
+                is the slowest read in the app and the one most likely to look
+                stuck. Silent under 3s. */}
+            <SlowLoadNotice isSlow={isSlow} isVerySlow={isVerySlow} />
           </View>
         )}
 

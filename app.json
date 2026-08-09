@@ -27,8 +27,8 @@
         "expo-splash-screen",
         {
           "image": "./assets/icon.png",
-          "imageWidth": 64,
-          "backgroundColor": "#81D8D0",
+          "imageWidth": 300,
+          "backgroundColor": "#F8F9F4",
           "resizeMode": "contain"
         }
       ],
@@ -39,7 +39,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Sparrow needs camera access to scan and photograph your collectibles."
+          "cameraPermission": "Sparrow needs camera access to scan and photograph your collectibles.",
+          "recordAudioAndroid": false
         }
       ],
       [
@@ -58,7 +59,14 @@
       "expo-apple-authentication",
       "@sentry/react-native",
       "expo-localization",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Sparrow needs access to your photo library to add item photos and analyze screenshots.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "notification": {
       "iosDisplayInForeground": true,
@@ -66,7 +74,7 @@
     },
     "ios": {
       "bundleIdentifier": "io.sparrowcollect.app",
-      "buildNumber": "1",
+      "buildNumber": "101",
       "supportsTablet": true,
       "usesAppleSignIn": true,
       "associatedDomains": [
@@ -196,8 +204,6 @@
         "CAMERA",
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
         "android.permission.READ_CALENDAR",
         "android.permission.WRITE_CALENDAR"
       ],
@@ -233,6 +239,11 @@
             },
             {
               "scheme": "https",
+              "host": "sparrowcollect.com",
+              "pathPrefix": "/l"
+            },
+            {
+              "scheme": "https",
               "host": "www.sparrowcollect.com",
               "pathPrefix": "/item"
             },
@@ -255,6 +266,16 @@
               "scheme": "https",
               "host": "www.sparrowcollect.com",
               "pathPrefix": "/users"
+            },
+            {
+              "scheme": "https",
+              "host": "sparrowcollect.com",
+              "pathPrefix": "/r"
+            },
+            {
+              "scheme": "https",
+              "host": "www.sparrowcollect.com",
+              "pathPrefix": "/r"
             }
           ],
           "category": [
@@ -262,6 +283,9 @@
             "DEFAULT"
           ]
         }
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "experiments": {

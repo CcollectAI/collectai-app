@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
-import { formatPrice, getCurrencySymbol } from '@/lib/format';
+import { formatPrice, getCurrencySymbol, UNPRICED_LABEL, isUnpriced, toPriceNum } from '@/lib/format';
 import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { CategorySpecificSection } from '@/components/CategorySpecificSection';
 import { Skeleton, SkeletonList } from '@/components/Skeleton';
@@ -45,12 +45,10 @@ interface ItemDetailsCardProps {
   onSizeValueChange: (v: string) => void;
 }
 
-const toNum = (value: string | number | undefined | null): number | undefined => {
-  if (value === undefined || value === null || value === '') return undefined;
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(num)) return undefined;
-  return num;
-};
+// UNPRICED_LABEL / isUnpriced / toPriceNum moved to @/lib/format (2026-07-27) so
+// the collection list row can apply the SAME rule instead of growing a second,
+// drifting copy. `toNum` kept as a local alias to avoid churning 20 call sites.
+const toNum = toPriceNum;
 
 export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDetailsCardProps) {
   const { colors: theme } = useAppTheme();
@@ -169,7 +167,14 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
       </View>
 
       {/* Value row */}
-      <View style={styles.row} accessibilityLabel={`Estimated value: ${formatPrice(toNum(editableValue))}`}>
+      <View
+        style={styles.row}
+        accessibilityLabel={
+          isUnpriced(editableValue)
+            ? `Estimated value: ${UNPRICED_LABEL}`
+            : `Estimated value: ${formatPrice(toNum(editableValue), settings.currency)}`
+        }
+      >
         <Text style={[styles.label, { color: theme.muted }]}>Estimated value</Text>
         {isDraft || isEditing ? (
           <View style={styles.editableValueRow}>
@@ -187,11 +192,23 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
           </View>
         ) : (
           <Text
-            style={[styles.valueHighlight, { color: theme.text }]}
+            style={[
+              styles.valueHighlight,
+              // Muted + smaller: it's an absence of data, not a headline figure.
+              isUnpriced(editableValue)
+                ? { color: theme.muted, fontSize: 15 }
+                : { color: theme.text },
+            ]}
             accessibilityRole="text"
-            accessibilityLabel={`Estimated value: ${formatPrice(toNum(editableValue))}`}
+            accessibilityLabel={
+              isUnpriced(editableValue)
+                ? `Estimated value: ${UNPRICED_LABEL}`
+                : `Estimated value: ${formatPrice(toNum(editableValue), settings.currency)}`
+            }
           >
-            {formatPrice(toNum(editableValue))}
+            {isUnpriced(editableValue)
+              ? UNPRICED_LABEL
+              : formatPrice(toNum(editableValue), settings.currency)}
           </Text>
         )}
       </View>

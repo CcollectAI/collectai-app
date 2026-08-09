@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ItemNotesEditor matches snapshot with keyboard visible 1`] = `
+exports[`ItemNotesEditor matches snapshot with notes present 1`] = `
 <View
-  onLayout={[Function]}
+  collapsable={false}
   style={
     {
       "marginTop": 16,
@@ -32,74 +32,13 @@ exports[`ItemNotesEditor matches snapshot with keyboard visible 1`] = `
     >
       Notes
     </Text>
-    <View
-      accessibilityLabel="Save notes"
-      accessibilityRole="button"
-      accessibilityState={
-        {
-          "busy": undefined,
-          "checked": undefined,
-          "disabled": undefined,
-          "expanded": undefined,
-          "selected": undefined,
-        }
-      }
-      accessibilityValue={
-        {
-          "max": undefined,
-          "min": undefined,
-          "now": undefined,
-          "text": undefined,
-        }
-      }
-      accessible={true}
-      collapsable={false}
-      focusable={true}
-      onBlur={[Function]}
-      onClick={[Function]}
-      onFocus={[Function]}
-      onResponderGrant={[Function]}
-      onResponderMove={[Function]}
-      onResponderRelease={[Function]}
-      onResponderTerminate={[Function]}
-      onResponderTerminationRequest={[Function]}
-      onStartShouldSetResponder={[Function]}
-      style={
-        [
-          {
-            "borderRadius": 6,
-            "paddingHorizontal": 14,
-            "paddingVertical": 6,
-          },
-          {
-            "backgroundColor": "#81D8D0",
-          },
-        ]
-      }
-    >
-      <Text
-        style={
-          [
-            {
-              "fontSize": 14,
-              "fontWeight": "600",
-            },
-            {
-              "color": "#FFFFFF",
-            },
-          ]
-        }
-      >
-        Save
-      </Text>
-    </View>
   </View>
   <TextInput
     accessibilityLabel="Item notes"
     blurOnSubmit={false}
     multiline={true}
     onChangeText={[MockFunction]}
-    onFocus={[MockFunction]}
+    onFocus={[Function]}
     placeholder="Add your notes about condition, origin, where you bought it, etc."
     placeholderTextColor="#64748B"
     style={
@@ -125,12 +64,75 @@ exports[`ItemNotesEditor matches snapshot with keyboard visible 1`] = `
     textAlignVertical="top"
     value="Mint condition, purchased at local shop"
   />
+  <View
+    accessibilityLabel="No changes to save"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": true,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 16,
+          "marginTop": 10,
+          "paddingVertical": 10,
+        },
+        {
+          "backgroundColor": "#E2E8F060",
+          "opacity": 0.7,
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 14,
+            "fontWeight": "700",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Saved
+    </Text>
+  </View>
 </View>
 `;
 
 exports[`ItemNotesEditor renders with minimal props and matches snapshot 1`] = `
 <View
-  onLayout={[Function]}
+  collapsable={false}
   style={
     {
       "marginTop": 16,
@@ -166,7 +168,7 @@ exports[`ItemNotesEditor renders with minimal props and matches snapshot 1`] = `
     blurOnSubmit={false}
     multiline={true}
     onChangeText={[MockFunction]}
-    onFocus={[MockFunction]}
+    onFocus={[Function]}
     placeholder="Add your notes about condition, origin, where you bought it, etc."
     placeholderTextColor="#64748B"
     style={
@@ -192,6 +194,69 @@ exports[`ItemNotesEditor renders with minimal props and matches snapshot 1`] = `
     textAlignVertical="top"
     value=""
   />
+  <View
+    accessibilityLabel="No changes to save"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": true,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 16,
+          "marginTop": 10,
+          "paddingVertical": 10,
+        },
+        {
+          "backgroundColor": "#E2E8F060",
+          "opacity": 0.7,
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 14,
+            "fontWeight": "700",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Saved
+    </Text>
+  </View>
 </View>
 `;
 
@@ -483,129 +548,6 @@ exports[`ItemPriceSection matches snapshot with scarcity and comps 1`] = `
         1
          listings · Supply 
         declining
-      </Text>
-    </View>
-  </View>,
-  <View
-    style={
-      [
-        {
-          "borderRadius": 16,
-          "borderWidth": 1,
-          "marginTop": 10,
-          "padding": 12,
-        },
-        {
-          "backgroundColor": "#FFFFFF",
-          "borderColor": "#E2E8F0",
-        },
-      ]
-    }
-  >
-    <Text
-      style={
-        [
-          {
-            "fontSize": 14,
-            "fontWeight": "600",
-            "marginBottom": 8,
-          },
-          {
-            "color": "#0F172A",
-          },
-        ]
-      }
-    >
-      <Text
-        allowFontScaling={false}
-        selectable={false}
-        style={
-          [
-            {
-              "color": "#81D8D0",
-              "fontSize": 14,
-            },
-            undefined,
-            {
-              "fontFamily": "ionicons",
-              "fontStyle": "normal",
-              "fontWeight": "normal",
-            },
-            {},
-          ]
-        }
-      >
-        
-      </Text>
-       Comparable Sales
-    </Text>
-    <View
-      accessibilityLabel="Recent Sale from eBay, EUR 130"
-      style={
-        [
-          {
-            "alignItems": "center",
-            "flexDirection": "row",
-            "paddingVertical": 8,
-          },
-          false,
-        ]
-      }
-    >
-      <View
-        style={
-          {
-            "flex": 1,
-          }
-        }
-      >
-        <Text
-          numberOfLines={1}
-          style={
-            [
-              {
-                "fontSize": 12,
-                "fontWeight": "500",
-              },
-              {
-                "color": "#0F172A",
-              },
-            ]
-          }
-        >
-          Recent Sale
-        </Text>
-        <Text
-          style={
-            [
-              {
-                "fontSize": 10,
-                "marginTop": 1,
-              },
-              {
-                "color": "#64748B",
-              },
-            ]
-          }
-        >
-          eBay
-        </Text>
-      </View>
-      <Text
-        style={
-          [
-            {
-              "fontSize": 14,
-              "fontWeight": "700",
-              "marginLeft": 8,
-            },
-            {
-              "color": "#81D8D0",
-            },
-          ]
-        }
-      >
-        EUR 130
       </Text>
     </View>
   </View>,

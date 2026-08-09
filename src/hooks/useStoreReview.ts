@@ -23,7 +23,8 @@ let StoreReview: { isAvailableAsync?: () => Promise<boolean>; requestReview?: ()
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   StoreReview = require('expo-store-review');
-} catch {
+} catch (e) {
+  logger.error('[silent-catch] useStoreReview.ts:26:', e);
   // expo-store-review not installed — skip silently
 }
 
@@ -76,7 +77,7 @@ export function useStoreReview(itemCount: number) {
       await AsyncStorage.setItem(LAST_PROMPT_KEY, String(Date.now()));
       logger.info('[StoreReview] Review prompt shown');
     } catch (err) {
-      logger.warn('[StoreReview] Failed to prompt:', err);
+      logger.error('[StoreReview] Failed to prompt:', err);
     }
   }, [itemCount]);
 

@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
-"""Watchlist monitor worker — bridges watchlist → MarketplaceAgent → market_hits.
+"""Watchlist monitor worker — demand-driven market supply for watched items.
 
-Scans watchlist items due for a market check, runs aggregate_search via
-the existing MarketplaceAgent, persists comps to market_hits (so the
-valuation_worker + price_monitor_worker pick them up automatically),
-and updates watchlist rows with latest pricing/trend data.
+Scans watchlist items due for a market check, runs aggregate_search via the
+existing MarketplaceAgent, persists comps to market_hits, and updates watchlist
+rows with latest pricing/trend data.
 
-If a watchlist item's target price is met (market price ≤ target),
-an alert is fired to alert_trigger_history.
+**It does not alert.** As of 2026-08-06 the only "your target was hit" alert is
+deal_discovery_worker's snipe, which requires a live, buyable listing. See the
+long comment at the old alert site below.
+
+Why it still exists: it is the only path that fetches market data *because a
+user asked for it*, rather than by walking the catalog. marketplace_scrape_
+scheduler.SKIP_CATEGORIES excludes mtg/pokemon/yugioh (their bulk price feeds
+already give "coverage"), and those three categories had 0 buyable listings out
+of 609k rows on 2026-08-06 — so nothing there can ever produce a snipe. Watched
+items are tens, not the 80k TCG catalog, which is what keeps the outbound
+request volume bounded.
 """
 
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import os
 import statistics
@@ -34,9 +41,6 @@ DSN = os.getenv("DB_DSN")
 
 # How many watchlist items to scan per cycle
 BATCH_SIZE = int(os.getenv("WATCHLIST_MONITOR_BATCH", "100"))
-
-# Dedup window for target-met alerts (hours)
-DEDUP_HOURS = int(os.getenv("WATCHLIST_ALERT_DEDUP_HOURS", "24"))
 
 # Priority tier intervals (minutes)
 HIGH_PRIORITY_INTERVAL = 15   # Items within 10% of target
@@ -59,24 +63,6 @@ def _compute_priority(target_price: float | None, market_price: float | None) ->
     elif diff_pct <= 50:
         return "medium"  # Moderate distance
     return "low"          # Far from target — scan less often
-
-
-async def _already_fired(conn, user_id: str, item_key: str) -> bool:
-    """Check if a watchlist_target_met alert fired recently for this user+item."""
-    row = await conn.fetchrow(
-        """
-        SELECT 1 FROM public.alert_trigger_history
-        WHERE user_id = $1
-          AND item_id = $2
-          AND trigger_type = 'watchlist_target_met'
-          AND created_at > now() - ($3 || ' hours')::interval
-        LIMIT 1
-        """,
-        user_id,
-        item_key,
-        str(DEDUP_HOURS),
-    )
-    return row is not None
 
 
 def _determine_trend(old_price: float | None, new_price: float) -> str:
@@ -114,7 +100,6 @@ async def run_once():
 
     agent = MarketplaceAgent()
     scanned = 0
-    alerts_fired = 0
 
     try:
         # Pass 1: High-priority items (near target, scan every 15min)
@@ -240,63 +225,30 @@ async def run_once():
                         source="watchlist_monitor",
                     )
 
-                # Fire alert if market price drops to or below target
-                if (
-                    current_price is not None
-                    and target_price is not None
-                    and current_price <= target_price
-                ):
-                    item_key = f"watchlist:{wl_id}"
-                    if not await _already_fired(conn, user_id, item_key):
-                        trigger_value = json.dumps({
-                            "current_price": round(current_price, 2),
-                            "target_price": round(target_price, 2),
-                            "hit_count": hit_count,
-                            "watchlist_id": str(wl_id),
-                        })
-                        message = (
-                            f"{title or 'Watchlist item'} is now at "
-                            f"{current_price:.2f}, below your target of "
-                            f"{target_price:.2f}"
-                        )
-                        await conn.execute(
-                            """
-                            INSERT INTO public.alert_trigger_history
-                                (user_id, item_id, trigger_type, trigger_value, message)
-                            VALUES ($1, $2, 'watchlist_target_met', $3::jsonb, $4)
-                            """,
-                            user_id,
-                            item_key,
-                            trigger_value,
-                            message,
-                        )
-                        alerts_fired += 1
-
-                        # Send push notification (P0)
-                        try:
-                            from app.lib.notify import notify_user
-                            await notify_user(
-                                conn,
-                                user_id,
-                                title="\ud83c\udfaf Target Price Met!",
-                                body=message,
-                                category="price_alerts",
-                                data={
-                                    "type": "watchlist_target_met",
-                                    "watchlist_id": str(wl_id),
-                                    "current_price": round(current_price, 2),
-                                    "target_price": round(target_price, 2),
-                                },
-                                urgent=True,  # Target met = urgent
-                            )
-                        except Exception as push_err:
-                            logger.debug("Push skipped for watchlist alert: %s", push_err)
-
-                        logger.info(
-                            "Target met alert: wl=%s price=%.2f target=%.2f",
-                            wl_id, current_price, target_price,
-                        )
-
+                # NO ALERT IS FIRED HERE \u2014 deliberately, since 2026-08-06.
+                #
+                # This worker used to also insert `watchlist_target_met` and
+                # push "\ud83c\udfaf Target Price Met!". That is the same promise the
+                # snipe makes (deal_discovery_worker._check_watchlist_snipes),
+                # from weaker evidence: this fires on a *computed median* of
+                # recent comps, so it can wake a user for something that is not
+                # for sale anywhere. The snipe requires a live listing with a
+                # URL and `is_listing = true`, so its alert always has a buy
+                # button at the end of it.
+                #
+                # Two workers answering "has my target been hit?" also meant two
+                # dedupe windows, two trigger types and two chances to double-
+                # notify the moment both were enabled. Only one survives.
+                #
+                # What this worker is FOR now: it is the demand-driven supply
+                # feed. It searches marketplaces for items people actually watch
+                # and writes the comps to market_hits \u2014 which is the table the
+                # snipe reads. That matters most for mtg/pokemon/yugioh, which
+                # `marketplace_scrape_scheduler.SKIP_CATEGORIES` excludes and
+                # which therefore had 0 buyable listings out of 609k rows
+                # (measured 2026-08-06). Demand-scoping is what keeps the
+                # outbound volume bounded: watched items are tens, the TCG
+                # catalog is 80k+.
                 scanned += 1
 
             except Exception as e:
@@ -310,8 +262,8 @@ async def run_once():
                 )
 
         logger.info(
-            "Watchlist monitor cycle complete: scanned=%d alerts=%d failures=%d",
-            scanned, alerts_fired, per_item_failures,
+            "Watchlist monitor cycle complete: scanned=%d failures=%d",
+            scanned, per_item_failures,
         )
         # If the entire batch failed item-by-item, don't call it 'ok'.
         # Partial failures still count as ok (some items scanned) so the

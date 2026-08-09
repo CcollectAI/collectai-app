@@ -9,6 +9,8 @@ Endpoints:
 
 from __future__ import annotations
 
+import asyncio
+
 import logging
 from datetime import datetime, timezone
 from typing import Any
@@ -47,72 +49,80 @@ async def dashboard_stats(_: bool = Depends(require_ops_key)):
 
     stats["db_status"] = "connected"
 
-    try:
-        # User count
-        stats["total_users"] = await pool.fetchval(
-            "SELECT count(*) FROM auth.users"
-        ) or 0
-
-        # Subscription breakdown
-        rows = await pool.fetch(
-            "SELECT plan, count(*) as cnt FROM subscriptions GROUP BY plan"
-        )
-        stats["subscriptions"] = {r["plan"]: r["cnt"] for r in rows} if rows else {}
-
-        # Active mandates
-        stats["active_mandates"] = await pool.fetchval(
-            "SELECT count(*) FROM purchase_mandates WHERE status = 'active'"
-        ) or 0
-
-        # Items
-        stats["total_items"] = await pool.fetchval(
-            "SELECT count(*) FROM category_items"
-        ) or 0
-
-        # Events
-        stats["total_events"] = await pool.fetchval(
-            "SELECT count(*) FROM events"
-        ) or 0
-
-        # Beta signups
+    # Run every count concurrently. Sequentially these were ~4s of DB time
+    # (category_items count alone is 3.3s), which in prod pushed the endpoint
+    # past the admin client's 5s abort — so the Overview tab silently rendered
+    # DEMO data. asyncio.gather over the pool brings it to ~0.35s. Each helper
+    # swallows its own error so one missing table cannot fail the whole tab.
+    async def _scalar(q: str, default: int = 0) -> int:
         try:
-            stats["beta_signups"] = await pool.fetchval(
-                "SELECT count(*) FROM beta_signups"
-            ) or 0
-        except asyncpg.PostgresError:
-            _log.warning("beta_signups table query failed (table may not exist)")
-            stats["beta_signups"] = 0
+            return await pool.fetchval(q) or default
+        except Exception as exc:  # noqa: BLE001 - one bad count must not 500 the tab
+            _log.warning("dashboard stat query failed (%s): %s", q[:40], exc)
+            return default
 
-        # Recent signups (last 7 days)
-        stats["recent_signups"] = await pool.fetchval(
-            "SELECT count(*) FROM auth.users WHERE created_at > now() - interval '7 days'"
-        ) or 0
-
-        # Catalog learning stats
+    async def _estimate(relname: str) -> int:
+        # planner's row estimate — O(1), no scan. category_items count(*) is a
+        # 3.3s scan cold, which alone pushed this endpoint past the client's 5s
+        # abort. An estimate is fine for a dashboard total that changes slowly.
         try:
-            stats["catalog_suggestions_pending"] = await pool.fetchval(
-                "SELECT count(*) FROM catalog_suggestions WHERE status = 'pending'"
-            ) or 0
-            stats["catalog_suggestions_mapped_week"] = await pool.fetchval(
-                "SELECT count(*) FROM catalog_suggestions WHERE status = 'mapped' AND updated_at > now() - interval '7 days'"
-            ) or 0
-            stats["category_candidates_watching"] = await pool.fetchval(
-                "SELECT count(*) FROM category_candidates WHERE status = 'watching'"
-            ) or 0
-            stats["category_candidates_candidate"] = await pool.fetchval(
-                "SELECT count(*) FROM category_candidates WHERE status = 'candidate'"
-            ) or 0
-        except asyncpg.PostgresError:
-            # Tables may not exist yet
-            _log.warning("Catalog learning tables query failed (tables may not exist yet)")
-            stats["catalog_suggestions_pending"] = 0
-            stats["catalog_suggestions_mapped_week"] = 0
-            stats["category_candidates_watching"] = 0
-            stats["category_candidates_candidate"] = 0
+            v = await pool.fetchval(
+                "SELECT reltuples::bigint FROM pg_class WHERE relname = $1", relname
+            )
+            return int(v) if v and v > 0 else 0
+        except Exception as exc:  # noqa: BLE001
+            _log.warning("estimate for %s failed: %s", relname, exc)
+            return 0
 
-    except Exception as exc:
-        _log.warning("Dashboard stats query failed: %s", exc)
-        stats["db_error"] = str(exc)
+    async def _sub_breakdown() -> dict[str, int]:
+        try:
+            rows = await pool.fetch(
+                "SELECT plan, count(*) AS cnt FROM subscriptions GROUP BY plan"
+            )
+            return {r["plan"]: r["cnt"] for r in rows}
+        except Exception:
+            return {}
+
+    (
+        total_users,
+        subscriptions,
+        active_mandates,
+        total_items,
+        total_events,
+        beta_signups,
+        recent_signups,
+        cat_pending,
+        cat_mapped_week,
+        cand_watching,
+        cand_candidate,
+    ) = await asyncio.gather(
+        _scalar("SELECT count(*) FROM auth.users"),
+        _sub_breakdown(),
+        _scalar("SELECT count(*) FROM purchase_mandates WHERE status = 'active'"),
+        _estimate("category_items"),
+        _scalar("SELECT count(*) FROM events"),
+        _scalar("SELECT count(*) FROM beta_signups"),
+        _scalar("SELECT count(*) FROM auth.users WHERE created_at > now() - interval '7 days'"),
+        _scalar("SELECT count(*) FROM catalog_suggestions WHERE status = 'pending'"),
+        _scalar(
+            "SELECT count(*) FROM catalog_suggestions "
+            "WHERE status = 'mapped' AND updated_at > now() - interval '7 days'"
+        ),
+        _scalar("SELECT count(*) FROM category_candidates WHERE status = 'watching'"),
+        _scalar("SELECT count(*) FROM category_candidates WHERE status = 'candidate'"),
+    )
+
+    stats["total_users"] = total_users
+    stats["subscriptions"] = subscriptions
+    stats["active_mandates"] = active_mandates
+    stats["total_items"] = total_items
+    stats["total_events"] = total_events
+    stats["beta_signups"] = beta_signups
+    stats["recent_signups"] = recent_signups
+    stats["catalog_suggestions_pending"] = cat_pending
+    stats["catalog_suggestions_mapped_week"] = cat_mapped_week
+    stats["category_candidates_watching"] = cand_watching
+    stats["category_candidates_candidate"] = cand_candidate
 
     return JSONResponse(stats)
 
@@ -139,6 +149,8 @@ async def dashboard_users(
         total = await pool.fetchval("SELECT count(*) FROM auth.users") or 0
 
         rows = await pool.fetch(
+        # archived-exempt: operator view. An admin counting a user's items
+        # wants the true total, including what the user has archived.
             """
             SELECT
                 u.id, u.email, u.created_at,

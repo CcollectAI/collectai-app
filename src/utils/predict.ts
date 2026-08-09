@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { logger } from '@/lib/logger';
 
 export type PredictInput = { title:string; category:string; imageUrl?:string|null; purchasePrice?:number|null; };
 export type PredictOut = { estimated_value:number; confidence:number; };
@@ -12,7 +13,10 @@ export async function predictValue(input: PredictInput): Promise<PredictOut>{
     try{
       const resp = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(input) });
       if (resp.ok) return await resp.json() as PredictOut;
-    }catch(e){ /* prediction endpoint unavailable — falling back to heuristic */ }
+    } catch (e) {
+      // Prediction endpoint unavailable — falls back to the local heuristic below.
+      logger.error('[silent-fallback] predict: endpoint unavailable, using heuristic:', e);
+    }
   }
 
   // Local fallback heuristic (stub)

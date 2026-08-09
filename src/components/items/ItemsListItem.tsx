@@ -12,9 +12,9 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
 import { AnimatedPressable } from '@/motion';
 import { CategoryPill } from '@/components/CategoryPill';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, UNPRICED_LABEL, isUnpriced } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
-import { GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
+import { GRADING_ELIGIBLE_CATEGORIES, formatCategoryName } from '@/constants/categories';
 import { SwipeableRow, SwipeActions, type SwipeAction } from '@/components/SwipeableRow';
 
 interface Item {
@@ -26,6 +26,11 @@ interface Item {
   condition?: string;
   notes?: string;
   imageUrl?: string;
+  // Rich detail (2026-07-15 enrichment) — shown as a compact subtitle line.
+  brand?: string;
+  year?: number;
+  series?: string;
+  editionLabel?: string;
   // Purchase data — surfaced 2026-05-01. null = item has no purchase price
   // recorded (most QuickScan-only items); undefined = field not on the row
   // (older callers that haven't been updated). Either case → suppress display.
@@ -58,6 +63,13 @@ export const ItemsListItem = React.memo(function ItemsListItem({
   const { colors } = useAppTheme();
   const { settings } = useSettings();
 
+  // Same rule as ItemDetailsCard: a missing-or-zero per-item value means "we
+  // could not price this", not "this is worth nothing". The row rendered "€ 0"
+  // for every unpriced item while the detail screen for that same item said
+  // "Cannot estimate value" — one of the two was lying.
+  const unpriced = isUnpriced(item.value);
+  const valueLabel = unpriced ? UNPRICED_LABEL : formatPrice(item.value);
+
   const card = (
     <AnimatedPressable
         style={[
@@ -75,7 +87,7 @@ export const ItemsListItem = React.memo(function ItemsListItem({
         onLongPress={() => onLongPress(item.id)}
         delayLongPress={400}
         accessibilityRole="button"
-        accessibilityLabel={`${item.name}, ${formatPrice(item.value)}`}
+        accessibilityLabel={`${item.name}, ${valueLabel}`}
         accessibilityHint={isMultiSelectMode ? 'Tap to select or deselect' : 'Long press to select multiple items'}
       >
         {isMultiSelectMode && (
@@ -111,8 +123,24 @@ export const ItemsListItem = React.memo(function ItemsListItem({
             {item.name}
           </Text>
           <Text style={[styles.itemMeta, { color: colors.muted }]}>
-            <CategoryPill id={item.category} label={item.category} /> – {item.collectionName}
+            <CategoryPill id={item.category} label={formatCategoryName(item.category)} />
+            {item.collectionName ? ` – ${item.collectionName}` : ''}
           </Text>
+          {/* Rich detail subtitle: brand · year · series · edition. Series is
+              dropped when it duplicates the collection name shown above. */}
+          {(() => {
+            const parts = [
+              item.brand,
+              typeof item.year === 'number' ? String(item.year) : null,
+              item.series && item.series !== item.collectionName ? item.series : null,
+              item.editionLabel,
+            ].filter(Boolean);
+            return parts.length ? (
+              <Text style={[styles.itemDetail, { color: colors.muted }]} numberOfLines={1}>
+                {parts.join(' · ')}
+              </Text>
+            ) : null;
+          })()}
           {item.condition ? (
             GRADING_ELIGIBLE_CATEGORIES.has(item.category) ? (
               <View style={[styles.gradeBadge, { backgroundColor: colors.accent + '15' }]}>
@@ -129,8 +157,16 @@ export const ItemsListItem = React.memo(function ItemsListItem({
           ) : null}
         </View>
         <View style={styles.itemRight}>
-          <Text style={[styles.itemValue, { color: colors.text }]}>
-            {formatPrice(item.value)}
+          <Text
+            style={[
+              styles.itemValue,
+              // Muted + smaller: it's an absence of data, not a headline figure.
+              // Mirrors ItemDetailsCard's treatment of the same state.
+              unpriced ? { color: colors.muted, fontSize: 11, fontWeight: '500' as const } : { color: colors.text },
+            ]}
+            numberOfLines={1}
+          >
+            {valueLabel}
           </Text>
           {/* Paid-for line + P/L delta. Hidden when no purchase data, when
               the user added the item without a price, or when the predicted
@@ -225,6 +261,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   itemCondition: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  itemDetail: {
     fontSize: 11,
     marginTop: 2,
   },

@@ -74,6 +74,12 @@ export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name
   return merged;
 }
 
+export async function listArchivedItems(): Promise<Item[]> {
+  // The demo fixture has no archived items. [] is the honest answer here, and
+  // the screen renders its empty state rather than an error.
+  return [];
+}
+
 export async function archiveItem(itemId: string): Promise<void> {
   const idx = mockCreatedItems.findIndex((it) => it.id === itemId);
   if (idx !== -1) {

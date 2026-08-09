@@ -1,4 +1,5 @@
 import { API_BASE } from "./config";
+import { logger } from '@/lib/logger';
 
 const REQUEST_TIMEOUT_MS = 15_000;
 
@@ -44,7 +45,8 @@ async function del(path: string) {
         if (parsed.detail) message = `${message}: ${parsed.detail}`;
         else if (parsed.message) message = `${message}: ${parsed.message}`;
       }
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] storageApi.ts:47:', e);
       // ignore parse errors — use default message
     }
     throw new Error(message);

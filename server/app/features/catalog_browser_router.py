@@ -26,6 +26,73 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Catalog Browser"])
 
+# ---------------------------------------------------------------------------
+# Accessory / packaging-filler suppression
+# ---------------------------------------------------------------------------
+#
+# ⚠️ SCOPED TO TCG CARD CATEGORIES ONLY. In a *merch* category the accessory IS
+# the collectible — a first pass applied this catalogue-wide and would have
+# hidden "Pokemon Base Set Binder (1999)" and "Southern Islands Complete Binder
+# Set (18 Cards)" from retro_pokemon, and "Pikachu Leather Deck Box" from
+# nintendo_merch. Found by sampling the would-be-hidden rows per category rather
+# than trusting the total (learning_validate_values_not_just_structure).
+#
+# These six are exactly the categories the tcgcsv importer feeds, which is where
+# the pollution originates: it ingests TCGPlayer's FULL product list per game,
+# not a list of cards.
+_ACCESSORY_FILTERED_CATEGORIES = frozenset({
+    "mtg", "pokemon", "yugioh", "lorcana", "digimon", "one_piece_tcg",
+})
+
+# Matched against category_items.title with POSIX case-insensitive regexes.
+#
+# Naming a product type is NOT enough — TCGPlayer sells promo CARDS named after
+# the accessory they shipped with, and an earlier revision of this filter hid
+# them. Two signals separate the product from the card, both measured against the
+# live catalog on 2026-08-04:
+#
+#   1. A real product puts a ':' or '-' straight after the item type
+#      ("Official Playmat: Boa Hancock", "Official Card Sleeves - Elsa").
+#      A promo card only mentions it, usually inside parentheses
+#      ("Monkey.D.Luffy (Official Playmat Limited Edition Vol.5)").
+#   2. A bracket whose contents start with a LETTER is a card-set code —
+#      [OP-PR], [BT-17], [EX-02], [MP25]. That row is a card no matter what it
+#      is named after. Puzzle inserts carry numeric-only set numbers ([11], [6]),
+#      so they are unaffected by this guard.
+#
+# "Puzzle Insert" is exempt from rule 1: it is the cardboard spacer from a
+# booster box and is never a card, but it appears mid-title
+# ("Winterspell Snowball Fight Puzzle Insert (Bottom Left) [11]").
+#
+# Result on the live catalog: 194 rows hidden across the six categories, 0 real
+# cards among them. Bare term matching hid 34 real cards — "Dihada, Binder of
+# Wills", "Maliss Q White Binder", and the Digimon / One Piece "Binder Set"
+# promo runs. Re-measure before widening this.
+#
+# Deliberately NOT here: Booster Box / Booster Pack / Bundle / Display. Sealed
+# product is a collected format and the taxonomy has a `*_sealed` subtype for it.
+_ACCESSORY_TERMS = (
+    "Card Sleeves",
+    "Sleeves",
+    "Playmat",
+    "Play Mat",
+    "Deck Box",
+    "Portfolio Binder",
+    "Toploader",
+    "Card Case",
+    "Dice Set",
+    "Life Counter",
+)
+
+_ACCESSORY_TITLE_RE = (
+    r"(\y(?:"
+    + "|".join(t.replace(" ", r"\s+") for t in _ACCESSORY_TERMS)
+    + r")\s*[-:])|(\yPuzzle\s+Insert\y)"
+)
+
+# Rows carrying a card-set code are cards, and are never filtered.
+_CARD_CODE_RE = r"\[[A-Za-z]"
+
 # Note: browse_catalog_items is public (no auth) and protected by the global
 # IP-based rate limit middleware. per_user_rate_limit is used only on
 # authenticated endpoints below.
@@ -136,6 +203,15 @@ async def browse_catalog_items(
             "rail chips (All / Most valuable / Newest / By set)."
         ),
     ),
+    include_accessories: bool = Query(
+        False,
+        description=(
+            "Include accessories and packaging filler (sleeves, playmats, deck "
+            "boxes, binders, puzzle inserts) that the tcgcsv importer pulls in "
+            "with TCGPlayer's full product list. Excluded by default — these "
+            "are not collectibles and carry the catalog's broken art."
+        ),
+    ),
 ):
     """Browse items in the category_items catalog for a given category."""
     pool = get_pool()
@@ -155,6 +231,28 @@ async def browse_catalog_items(
     conditions = ["ci.category = $1"]
     params: list[Any] = [category_id]
     idx = 2
+
+    # Hide accessories and packaging filler in TCG card categories.
+    #
+    # The tcgcsv importer ingests TCGPlayer's FULL product list per game, which
+    # is not a list of cards — it includes sleeves, playmats, deck boxes,
+    # binders, and "Puzzle Insert" rows (the literal cardboard spacer inside a
+    # booster box). MEASURED for lorcana 2026-08-04: 6,172 of 6,967 rows are
+    # tcgcsv-sourced and 145 match this filter, led by 85 puzzle inserts. They
+    # also carry the catalog's only broken art — 2 of the 40 newest rows 403
+    # from TCGPlayer's CDN, both puzzle inserts — so they surfaced in the grid
+    # as black tiles.
+    #
+    # Filtered at READ, not deleted: the rows stay for provenance, and this is
+    # reversible per-request with `include_accessories=true`.
+    if not include_accessories and category_id in _ACCESSORY_FILTERED_CATEGORIES:
+        # Hide it only if it looks like a product AND carries no card-set code.
+        # The second half is what keeps promo cards named after an accessory
+        # ("Usopp (Official Playmat -Limited Edition Vol. 3-) [OP-PR]") visible.
+        conditions.append(f"NOT (ci.title ~* ${idx} AND ci.title !~ ${idx + 1})")
+        params.append(_ACCESSORY_TITLE_RE)
+        params.append(_CARD_CODE_RE)
+        idx += 2
 
     if q and q.strip():
         conditions.append(f"ci.title ILIKE ${idx}")

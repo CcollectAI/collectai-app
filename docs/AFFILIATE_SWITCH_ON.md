@@ -142,6 +142,51 @@ Affiliate revenue ≈ routed GMV × conversion × blended commission. The lever 
 - Prefer routing to high-rate niche networks (Catawiki, Master of Malt) where a
   category match exists.
 
+### 4a. Wishlist Shop — fixed 2026-08-04
+
+`MarketplacePickerSheet` was written but had **zero importers**. The only Shop
+entry point, `app/(tabs)/wishlist.tsx::handleShop`, fetched the links itself and
+opened `links[0]` with a bare `Linking.openURL`. Three consequences, all silent:
+
+1. **Every category routed to eBay.** eBay was appended first unconditionally in
+   `affiliate_links_router.py`, so `links[0]` was always eBay — a EUR-priced MTG
+   single went to eBay US while Cardmarket sat unused at index 2. The response
+   is now **ordered by category fit** (`_CATEGORY_PROFILES[cat].sources`), so
+   `links[0]` is Cardmarket for TCG, BrickLink for LEGO, StockX for sneakers.
+   Callers that open one link should open `links[0]`; that ordering is a
+   contract, not cosmetics.
+2. **The search was unshoppable.** The URL was `?_nkw=<bare title>` and nothing
+   else. A watchlist row titled "Bayou" searched all of eBay. Searches now carry
+   `_sacat` (browse category), `LH_BIN=1`, `_sop=15`, and `_udhi` when the user
+   has a target price, plus a per-category query suffix.
+3. **Clicks were invisible.** `Linking.openURL` bypassed
+   `openAffiliateUrl`, so wishlist Shop taps never reached
+   `demand_signals` — the one signal that tells you which marketplaces convert.
+   Both the sheet and the wishlist now route through it.
+
+**`_sacat` values are derived, not guessed.** They came from eBay's Taxonomy API
+(`/commerce/taxonomy/v1/category_tree/0/get_category_suggestions`) and were then
+widened by hand to the browse level containing the whole collectible type — the
+API's top suggestion for gunpla was `261068` (Action Figures) and for pens
+`14000` (Montblanc), both of which hide most real listings. All 40 were then
+verified against live inventory via the Browse API: filtered vs unfiltered
+result counts, zero empties. **A wrong category id fails silently** — the search
+just looks like "no stock" — so re-derive with the API rather than editing by
+intuition.
+
+**Only nine sources can build a *search* URL** (`_SEARCHABLE_SOURCES`): ebay,
+tcgplayer, cardmarket, mercari, discogs, stockx, bricklink, yahoo_auctions_jp,
+amiami. `affiliate.py` tags six more (chrono24, keh, mpb, masterofmalt, drop,
+popmart) but only for concrete listing URLs, which is what deal discovery hands
+it. Naming one of those six in a category profile makes it silently drop out of
+the response — `test_every_profile_names_only_buildable_sources` guards this.
+Adding their search builders is the obvious next lift for watches, cameras and
+whisky, which currently fall back to eBay.
+
+Also fixed: `_build_cardmarket_search_url` hardcoded `/en/Pokemon/` for every
+category. Cardmarket namespaces its catalogue per game **in the path**, so every
+MTG, Yu-Gi-Oh and Lorcana search ran against the Pokémon catalogue.
+
 ---
 
 ## Status

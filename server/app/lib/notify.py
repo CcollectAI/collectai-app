@@ -15,6 +15,7 @@ Usage:
 """
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Any, Optional
@@ -46,14 +47,42 @@ ALERT_TYPE_TO_PREF = {
 
 
 async def _get_user_prefs(conn, user_id: str) -> dict:
-    """Fetch notification preferences for a user. Returns defaults if not set.
+    """Fetch notification preferences for a user. {} means "no opinion stored".
 
-    user_settings has no notification_preferences column (round-2 silent-
-    failure sweep 2026-04-20). Returns empty dict so call sites fall
-    through to all-enabled defaults. No DB round-trip — the previous
-    probe-for-user-id was dead code the grep flagged in round 4.
+    Call sites do `prefs.get(category, True)`, so an empty dict = all enabled.
+
+    2026-07-25: this was a `return {}` stub whose docstring claimed
+    "user_settings has no notification_preferences column". That was true when
+    it was written and is NOT true now — the jsonb column exists and
+    `PUT /notifications/preferences` has been writing to it correctly all along.
+    So every user's saved preferences were silently ignored on the delivery
+    path: mute a category, still get pushed. Verified against prod before the
+    fix (column present, populated).
+
+    Never raises. A preferences lookup must not be able to block a
+    notification — on a DB error we fall through to all-enabled, which is the
+    same behaviour as no stored prefs.
     """
-    return {}
+    try:
+        row = await conn.fetchrow(
+            "SELECT notification_preferences FROM public.user_settings WHERE user_id = $1",
+            user_id,
+        )
+    except Exception as e:
+        logger.warning("[notify] prefs lookup failed for %s: %s", user_id[:8], e)
+        return {}
+    if not row:
+        return {}
+    prefs = row["notification_preferences"]
+    if prefs is None:
+        return {}
+    if isinstance(prefs, str):  # asyncpg hands back jsonb as text without a codec
+        try:
+            prefs = json.loads(prefs)
+        except (ValueError, TypeError):
+            logger.warning("[notify] unparseable prefs for %s", user_id[:8])
+            return {}
+    return prefs if isinstance(prefs, dict) else {}
 
 
 async def _get_daily_push_count(conn, user_id: str) -> int:
@@ -126,6 +155,84 @@ async def _user_follows_category(conn, user_id: str, category_slug: str) -> bool
         return True
 
 
+# notify_user takes a PREFERENCE key (plural: "price_alerts"); the RN feed maps
+# an icon from a notification TYPE (singular: "price_alert", see
+# app/notifications.tsx TYPE_ICONS). Those two vocabularies drifted apart, so
+# every row written with the raw category fell through to the generic
+# "notifications-outline" fallback. Translate here, at the one place that
+# writes the type, rather than teaching the FE every server-side spelling.
+# Keys here MUST be the preference keys on the right-hand side of
+# ALERT_TYPE_TO_PREF above (that's the existing source of truth for what a
+# category is called); values MUST be keys of TYPE_ICONS in
+# app/notifications.tsx. Anything else silently renders the fallback icon.
+_FEED_TYPE_BY_CATEGORY = {
+    "price_alerts": "price_alert",
+    "deal_alerts": "deal_alert",
+    "value_changes": "value_change",
+    "item_value_changes": "value_change",
+    "weekly_digest": "insight",          # no weekly_digest icon; insight fits
+    "chat_messages": "chat",
+    "connection_requests": "connection",
+    "event_announcements": "event",
+    # Compliance / account notices (DAC7 threshold, see _dac7_accrue). `system`
+    # rather than a new icon: this is a factual notice about the account, not a
+    # discovery alert, and it must not look like something to act on for profit.
+    "account": "system",
+}
+
+
+def _feed_type(category: str) -> str:
+    """Map a notify preference category to an FE-renderable notification type.
+
+    Unmapped categories pass through unchanged AND log a warning — the FE falls
+    back to a generic icon either way, but a silent fallback is how this drift
+    went unnoticed in the first place. A warning here makes the next mismatch
+    visible instead of just ugly. (It also surfaces callers passing a
+    COLLECTIBLE category like "pokemon" into the notification-category slot.)
+    """
+    mapped = _FEED_TYPE_BY_CATEGORY.get(category)
+    if mapped:
+        return mapped
+    if category not in ("test",):
+        logger.warning(
+            "[notify] category %r has no FE icon mapping — feed will show the "
+            "generic fallback. Add it to _FEED_TYPE_BY_CATEGORY or fix the caller.",
+            category,
+        )
+    return category
+
+
+async def _persist_only(
+    conn,
+    user_id: str,
+    title: str,
+    body: str,
+    category: str,
+    data: Optional[dict[str, Any]] = None,
+    deep_link: Optional[str] = None,
+) -> None:
+    """Record a notification in the in-app feed WITHOUT delivering a push.
+
+    Used on the paths where we deliberately decline to interrupt the user
+    (followed-category filter, daily frequency cap) but the event is still
+    worth showing when they open the inbox themselves. Before this, those
+    branches returned early and the event was lost entirely — the cap silenced
+    the record, not just the push.
+
+    Reuses app.push._persist_notification so there is exactly ONE INSERT
+    statement against notification_history in the codebase. Never raises;
+    persistence failures must not break a caller's notification loop.
+    """
+    try:
+        from app.push import _persist_notification
+        await _persist_notification(
+            conn, user_id, title, body,
+            notification_type=_feed_type(category), data=data, deep_link=deep_link,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[notify] in-app persist failed for user %s: %s", user_id[:8], exc)
+
+
 async def notify_user(
     conn,
     user_id: str,
@@ -136,7 +243,7 @@ async def notify_user(
     deep_link: Optional[str] = None,
     urgent: bool = False,
     collectible_category: Optional[str] = None,
-) -> int:
+) -> int:  # noqa: D401 — see _persist_only for the in-app/push split
     """
     Send a preference-aware, frequency-capped push notification.
 
@@ -163,6 +270,22 @@ async def notify_user(
         prefs = await _get_user_prefs(conn, user_id)
         if not prefs.get(category, True):
             logger.debug("[notify] Skipped: user %s disabled %s", user_id[:8], category)
+            # PERSIST, then skip the push — the same shape as the followed-category
+            # and daily-cap branches below. This branch used to `return 0`
+            # outright, and it was the only one that did.
+            #
+            # The consequence was that muting a category did not mean "do not
+            # interrupt me", it meant "this never happened". Found 2026-08-08 on
+            # prod: user 4a1d7970 has {"deal_alerts": false}, their 2026-08-07
+            # Target Hit produced an `alert_trigger_history` row, and the
+            # Notifications screen had NO record of it — an alert the user paid
+            # for, fired, and could never see.
+            #
+            # Turning off a push is a delivery preference, not a request to be
+            # kept in the dark. The in-app feed is the durable record, and it is
+            # what makes app/notifications.tsx trustworthy enough to consolidate
+            # app/alerts.tsx into (docs/alerts-and-insights.md).
+            await _persist_only(conn, user_id, title, body, category, data, deep_link)
             return 0
 
         # Discovery-style notifications honor the user's followed categories
@@ -178,9 +301,13 @@ async def notify_user(
             if has_any_follows:
                 if not await _user_follows_category(conn, user_id, collectible_category):
                     logger.debug(
-                        "[notify] Skipped: user %s does not follow category %s",
+                        "[notify] Skipped push: user %s does not follow category %s",
                         user_id[:8], collectible_category,
                     )
+                    # Still record it in the in-app feed. The follow filter is
+                    # about what we're willing to interrupt someone with, not
+                    # about hiding the event from the inbox they chose to open.
+                    await _persist_only(conn, user_id, title, body, category, data, deep_link)
                     return 0
 
         # Check frequency cap (skip for urgent)
@@ -195,12 +322,19 @@ async def notify_user(
 
             if count >= cap:
                 logger.debug(
-                    "[notify] Skipped: user %s hit daily cap (%d/%d)",
+                    "[notify] Skipped push: user %s hit daily cap (%d/%d)",
                     user_id[:8], count, cap,
                 )
+                # The cap exists to stop us spamming someone's lock screen, not
+                # to erase the event. Record it in-app so it's waiting for them.
+                await _persist_only(conn, user_id, title, body, category, data, deep_link)
                 return 0
 
-        # Send via existing push infrastructure
+        # Send via existing push infrastructure. send_push_to_user persists to
+        # notification_history itself (before it checks for tokens), so this
+        # branch must NOT call _persist_only or the row would be duplicated.
+        # notification_type=category so the feed shows the real kind
+        # (price_alerts, deal_alerts, …) instead of a uniform 'push'.
         from app.push import send_push_to_user
         sent = await send_push_to_user(
             conn,
@@ -208,6 +342,7 @@ async def notify_user(
             title,
             body,
             data=data,
+            notification_type=_feed_type(category),
             deep_link=deep_link,
         )
         if sent > 0:

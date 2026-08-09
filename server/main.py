@@ -28,6 +28,7 @@ from app.config import (
     TASK_WORKER_ENABLED,
     DEBUG,
 )
+from app.lib.bg_tasks import spawn_bg
 from app.middleware_stack import install_middlewares
 from app.db import connect_pool, close_pool, db_configured
 from app.metrics import metrics_middleware, ensure_metrics_once
@@ -87,14 +88,21 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logging.getLogger("uvicorn").debug("[startup] spend hydrate skipped: %s", e)
 
-    # Pre-warm the CLIP category text-embedding cache OUT of the request path
-    # (S3). Fire-and-forget so it never blocks startup; the first user's scan
-    # then hits a warm cache instead of paying the ~40-call fal.ai warm-up.
-    try:
-        from app.ml.clip_predictor import warm_clip_text_embeddings
-        asyncio.create_task(warm_clip_text_embeddings())
-    except Exception as e:
-        logging.getLogger("uvicorn").debug("[startup] CLIP warm-up skipped: %s", e)
+    # (The CLIP text-embedding warm-up used to run here. The CLIP tier was
+    # removed 2026-07-27 — FAL_KEY was never set, so the warm-up no-op'd on
+    # every boot and the tier never classified anything.)
+
+    # Pre-warm the category deep-dive (Market Insights) cache for the busiest
+    # categories OUT of the request path. The cold aggregation scans 1M+
+    # market_hits rows (~30s for pokemon/mtg) which exceeds the FE timeout, so
+    # without this the first viewer in each TTL window gets an empty panel.
+    # Fire-and-forget; loops every 3h (< 6h cache TTL).
+    if DB_ENABLED:
+        try:
+            from app.features.trends_and_deepdive_router import deep_dive_warm_loop
+            spawn_bg(deep_dive_warm_loop(), "deep_dive_warm_loop")
+        except Exception as e:
+            logging.getLogger("uvicorn").debug("[startup] deep-dive warm-up skipped: %s", e)
 
     # ── Bake Orchestrator — unified worker scheduling ──────────────────
     # Replaces all individual scheduler starts (price_monitor, deal_discovery,
@@ -200,13 +208,15 @@ from app.features.attribute_autocomplete_router import router as attribute_autoc
 from app.features.task_queue_router import router as task_queue_router
 from app.features.activity_router import router as activity_router
 from app.features.search_router import router as search_router
-from app.agents.deal_desk_router import router as deal_desk_router
 from app.features.item_images_router import router as item_images_router
 from app.features.gamification_router import router as gamification_router
 from app.features.catalog_browser_router import router as catalog_browser_router
 from app.features.grading_router import router as grading_router
 from app.features.export_router import router as export_router
 from app.features.marketplace_listing_router import router as marketplace_listing_router
+from app.features.p2p_listing_router import ops_router as p2p_ops_router
+from app.features.p2p_listing_router import router as p2p_listing_router
+from app.features.p2p_offers_router import router as p2p_offers_router
 from app.features.chat_router import router as chat_router
 from app.features.admin_health_router import router as admin_health_router
 from app.features.sell_timing_router import router as sell_timing_router
@@ -276,13 +286,22 @@ app.include_router(attribute_autocomplete_router)
 app.include_router(task_queue_router)
 app.include_router(activity_router)
 app.include_router(search_router)
-app.include_router(deal_desk_router)
 app.include_router(item_images_router)
 app.include_router(gamification_router)
 app.include_router(catalog_browser_router)
 app.include_router(grading_router)
 app.include_router(export_router)
 app.include_router(marketplace_listing_router)
+# P2P member-to-member listings (Stage 1: no payments). See
+# docs/P2P_MARKETPLACE_SPEC.md.
+app.include_router(p2p_listing_router)
+# DSA moderation (Art 16 queue + Art 17 statement of reasons). Prefix-less and
+# Ops-Key authed, so it sits at /ops/listing-reports alongside the other
+# operator endpoints rather than under /p2p. Registered on `app` only, matching
+# its P2P siblings — the P2P surface is deliberately not mounted under /v1.
+app.include_router(p2p_ops_router)
+# P2P Stage 2: offers, two-sided completion, mutual grading.
+app.include_router(p2p_offers_router)
 app.include_router(chat_router)
 app.include_router(admin_health_router)
 app.include_router(value_summary_router.router)

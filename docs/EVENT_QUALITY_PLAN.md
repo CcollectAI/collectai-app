@@ -25,7 +25,7 @@ New column `events.trust_tier text` ∈ `verified | publisher | unverified | com
 | `ticketmaster`, `seatgeek`, `musicbrainz`, `bandsintown` | verified |
 | `newsletter`, `rss`, `limitless_tcg`, `pokemon_com`, `wizards_com`, `warhammer_community`, `lego_com`, `funko_blog`, `taylorswift_com` | publisher |
 | `firecrawl`, `crawl4ai`, `scraper`, `eventbrite_scrape` | unverified |
-| `user_submission`, `community` | community |
+| `user_submission`, `community`, `user` (what `POST /events` writes) | community |
 
 Set at ingest time from the `source` string already passed to `EventUpserter.upsert(..., source=...)`.
 
@@ -99,8 +99,17 @@ The 1-attendee edge case the user called out → **low-confidence banner**. Do n
 - Admin queue in `collectai-admin` lists hidden events; admin can delete or restore+whitelist.
 
 ### Phase 4 — User-submitted events (when the feature ships)
-- New submissions default to `trust_tier='community'`, computed score.
-- Creator needs 1 successful event (≥3 saves, no reports) before their 2nd auto-posts; else admin queue.
+- ✅ **Done 2026-07-27.** New submissions default to `trust_tier='community'`, computed score.
+  `POST /events` (`events_core.py::create_event`) stamps both on INSERT. Until then this route
+  wrote neither, so every event a real user created landed with `trust_tier IS NULL` /
+  `quality_score IS NULL` and sat outside every tier filter and both partial indexes from
+  Phase 1 — `newsletter_scraper.py` was the only writer.
+  The tier is stated outright rather than derived via `map_source_to_trust_tier()`: that
+  function keys off the `source` string, and this route writes `source='user'`, which was
+  missing from the §Dimension 1 table above. `'user' → community` has since been added to
+  `_TRUST_TIER_BY_SOURCE` so the lookup no longer silently answers `unverified`, but the
+  route does not depend on it — the tier is a property of the route, not of a string.
+- ⬜ Creator needs 1 successful event (≥3 saves, no reports) before their 2nd auto-posts; else admin queue.
 
 ## What's intentionally NOT in scope
 

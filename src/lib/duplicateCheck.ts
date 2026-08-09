@@ -7,6 +7,7 @@
  */
 
 import type { DataProvider } from '@/data/DataProvider';
+import { logger } from '@/lib/logger';
 
 // ---------------------------------------------------------------------------
 // String similarity (bigram overlap — Dice coefficient)
@@ -95,7 +96,8 @@ export async function checkDuplicate(
         return { isDuplicate: true, existingName: item.name };
       }
     }
-  } catch {
+  } catch (e) {
+    logger.error('[silent-fallback] duplicateCheck: item fetch failed, not blocking creation:', e);
     // If fetching items fails, don't block item creation
   }
 

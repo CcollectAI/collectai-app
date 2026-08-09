@@ -31,21 +31,12 @@ import { QuickNavBar } from "@/components/QuickNavBar";
 import logger from '@/utils/logger';
 import type { Href } from "expo-router";
 import { timeAgo } from "@/lib/timeAgo";
+import { openAffiliateUrl } from "@/utils/affiliateHelpers";
+import { inAppListingHref } from "@/lib/ids";
 import { MS_PER_WEEK } from "@/constants/time";
 
 const PAGE_SIZE = 20;
 
-// Mock data for when backend is unavailable
-const MOCK_NOTIFICATIONS: NotificationItem[] = [
-  { id: "n1", type: "price_alert", title: "Charizard VMAX price drop", body: "Down 12% to $185 — below your $200 target", data: {}, deep_link: null, read_at: null, created_at: new Date(Date.now() - 900000).toISOString() },
-  { id: "n2", type: "deal", title: "New deal on Pikachu Illustrator", body: "Listed at $42,500 on eBay — 15% below market", data: {}, deep_link: null, read_at: null, created_at: new Date(Date.now() - 3600000).toISOString() },
-  { id: "n3", type: "value_change", title: "Portfolio up 3.2% today", body: "Your collection gained $127 in value", data: {}, deep_link: null, read_at: null, created_at: new Date(Date.now() - 7200000).toISOString() },
-  { id: "n4", type: "achievement", title: "Achievement unlocked!", body: "Collector Level 5 — You've added 25 items", data: {}, deep_link: null, read_at: new Date().toISOString(), created_at: new Date(Date.now() - 86400000).toISOString() },
-  { id: "n5", type: "scarcity", title: "Scarcity alert: LEGO UCS Falcon", body: "Only 3 listings remain on tracked marketplaces", data: {}, deep_link: null, read_at: null, created_at: new Date(Date.now() - 172800000).toISOString() },
-  { id: "n6", type: "insight", title: "Weekly portfolio insight", body: "Your top gainer: Star Wars Black Series Boba Fett (+18%)", data: {}, deep_link: null, read_at: new Date().toISOString(), created_at: new Date(Date.now() - 259200000).toISOString() },
-  { id: "n7", type: "connection", title: "New follower", body: "AuroraCollector started following you", data: {}, deep_link: null, read_at: new Date().toISOString(), created_at: new Date(Date.now() - 345600000).toISOString() },
-  { id: "n8", type: "event", title: "Upcoming: Tokyo Toy Show", body: "Starts in 2 days — you marked interested", data: {}, deep_link: null, read_at: null, created_at: new Date(Date.now() - 432000000).toISOString() },
-];
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   price_alert: "trending-up",
@@ -64,11 +55,31 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   insight: "bulb-outline",
   catalog_mapped: "checkmark-done-outline",
   sponsor_message: "megaphone-outline",
+  // DSA Art 17 statement of reasons — written by /ops/listing-reports/{id}/action
+  // when a reported listing is decided. Distinct from `system` because it is a
+  // decision ABOUT the recipient's own content and carries a redress route.
+  moderation: "shield-outline",
   system: "information-circle-outline",
 };
 
 function getTypeIcon(type: string): keyof typeof Ionicons.glyphMap {
   return TYPE_ICONS[type] || "notifications-outline";
+}
+
+/** Names where a notification tap will land, so "View" is never a mystery.
+ *
+ *  Our OWN marketplace listings resolve in-app (inAppListingHref); everything
+ *  else is an external marketplace and opens in the browser, so the label says
+ *  which one. A generic "View" hides the difference between staying in the app
+ *  and leaving it — and leaving it is the one a user wants warning about. */
+function ctaLabel(deepLink: string): string {
+  if (inAppListingHref(deepLink)) return 'View listing';
+  const m = /^https?:\/\/(?:www\.)?([^/]+)/i.exec(deepLink);
+  if (!m) return 'Open';
+  // eBay stays "eBay", cardmarket.com stays "cardmarket" — the registrable
+  // name is what a seller recognises, not the full host.
+  const host = m[1].split('.')[0];
+  return `View on ${host.charAt(0).toUpperCase()}${host.slice(1)}`;
 }
 
 function relativeTime(iso: string): string {
@@ -105,12 +116,16 @@ function NotificationsScreen() {
         setTotalCount(data.total_count);
         setUnreadCount(data.unread_count);
       } catch (err) {
-        logger.warn('[Notifications] fetch failed:', err);
-        // Fall back to mock data when backend is unavailable
+        // logger.error, not .warn — warn is stripped from TestFlight builds.
+        logger.error('[Notifications] fetch failed:', err);
+        // NO mock fallback. This used to substitute 8 fabricated notifications
+        // (invented price drops, deals, followers) that a user could not tell
+        // from real ones — so a total backend outage rendered as a healthy,
+        // populated inbox. An empty list is honest; the empty state renders.
         if (replace && offset === 0) {
-          setNotifications(MOCK_NOTIFICATIONS);
-          setTotalCount(MOCK_NOTIFICATIONS.length);
-          setUnreadCount(MOCK_NOTIFICATIONS.filter((n) => !n.read_at).length);
+          setNotifications([]);
+          setTotalCount(0);
+          setUnreadCount(0);
         }
       }
     },
@@ -163,9 +178,28 @@ function NotificationsScreen() {
     (item: NotificationItem) => {
       handleMarkRead(item);
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-      if (item.deep_link) {
-        router.push(item.deep_link as Href);
+      if (!item.deep_link) return;
+
+      // A deal notification's destination is the marketplace listing, which is
+      // an https URL — router.push would treat it as an in-app route and go
+      // nowhere. openAffiliateUrl validates the scheme and records the click,
+      // so a notification tap counts as routed GMV like any other Shop tap.
+      // Our OWN listing links are https too, but they are not external — they
+      // resolve to a screen in this app. Checked BEFORE the https branch below,
+      // which would otherwise hand a member Target Hit to the browser and land
+      // on a 404. See inAppListingHref.
+      const internal = inAppListingHref(item.deep_link);
+      if (internal) { router.push(internal); return; }
+
+      if (/^https?:\/\//i.test(item.deep_link)) {
+        // No `category` — openAffiliateUrl forwards it to record_demand_signal,
+        // whose `category` column holds a COLLECTIBLE slug (pokemon, lego).
+        // `item.type` is a notification type ('deal_alert'), so passing it would
+        // quietly poison the demand-signal category dimension.
+        openAffiliateUrl(item.deep_link);
+        return;
       }
+      router.push(item.deep_link as Href);
     },
     [handleMarkRead, router],
   );
@@ -188,7 +222,7 @@ function NotificationsScreen() {
     try {
       await markAllNotificationsRead();
     } catch (err) {
-      logger.warn('[Notifications] mark-all-read failed:', err);
+      logger.error('[Notifications] mark-all-read failed:', err);
       // Rollback on failure
       setNotifications(previousNotifications);
       setUnreadCount(previousUnreadCount);
@@ -247,10 +281,37 @@ function NotificationsScreen() {
             {item.body ? (
               <Text
                 style={[s.rowBody, { color: theme.muted }]}
-                numberOfLines={2}
+                // A moderation notice is the DSA Art 17 statement of reasons,
+                // and it is only a valid statement if the recipient can read
+                // it. Truncating at two lines cut it mid-sentence, and the
+                // deep link goes to the listing that was removed, not to the
+                // text — so the required content was unreadable anywhere in
+                // the app. Rare enough that an untruncated row costs nothing.
+                numberOfLines={item.type === 'moderation' ? undefined : 2}
               >
                 {item.body}
               </Text>
+            ) : null}
+            {/* An explicit destination. The whole row has always been
+                pressable and handleTap has always routed correctly — but
+                nothing SAID so, and nothing said where it went, so a deal
+                notification read as a dead banner. Reported 2026-08-08: "no
+                intent behind the notification banner ... a user can actually
+                action on the item".
+                Rendered only when there IS somewhere to go, and it names the
+                destination, because "View" on a row that opens eBay and "View"
+                on one that opens our own listing are different promises. */}
+            {item.deep_link ? (
+              <View style={s.ctaRow}>
+                <Ionicons
+                  name={inAppListingHref(item.deep_link) ? 'pricetag-outline' : 'open-outline'}
+                  size={13}
+                  color={theme.accent}
+                />
+                <Text style={[s.ctaText, { color: theme.accent }]} numberOfLines={1}>
+                  {ctaLabel(item.deep_link)}
+                </Text>
+              </View>
             ) : null}
             <Text style={[s.rowTime, { color: theme.muted }]}>
               {relativeTime(item.created_at)}
@@ -281,7 +342,7 @@ function NotificationsScreen() {
     <View style={[s.container, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: "Notifications",
+          headerTitle: "Notifications",
           headerRight: () =>
             unreadCount > 0 ? (
               <Pressable
@@ -374,6 +435,8 @@ const s = StyleSheet.create({
     fontSize: textToken.md,
     lineHeight: 18,
   },
+  ctaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  ctaText: { fontSize: textToken.xs, fontWeight: fw.bold },
   rowTime: {
     fontSize: textToken.xs,
     marginTop: 2,

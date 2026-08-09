@@ -1,8 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Keyboard, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Keyboard, Platform, Modal, Pressable } from 'react-native';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable } from '@/motion';
+import { dmyToIso, parseIso, toIso, formatDMY } from '@/lib/eventDate';
 
 interface CustomField {
   key: string;
@@ -32,6 +35,29 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
   const { colors } = useAppTheme();
   const { t } = useTranslation();
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // The field's value is DD-MM-YYYY; the picker needs a Date. Round-trip via
+  // the existing helpers rather than hand-rolling a parse: dmyToIso returns ''
+  // for anything malformed, so a half-typed legacy value falls back to today
+  // instead of an Invalid Date.
+  const pickerValue = parseIso(dmyToIso(acquisitionDate)) ?? new Date();
+
+  const onDateChange = useCallback(
+    (event: DateTimePickerEvent, selected?: Date) => {
+      if (Platform.OS === 'android') {
+        // Android's dialog is modal and self-dismissing; 'dismissed' means the
+        // user cancelled, so leave the existing value alone.
+        setShowDatePicker(false);
+        if (event.type === 'set' && selected) onAcquisitionDateChange(formatDMY(toIso(selected)));
+        return;
+      }
+      // iOS: the inline calendar updates live and stays open until Done.
+      if (selected) onAcquisitionDateChange(formatDMY(toIso(selected)));
+    },
+    [onAcquisitionDateChange],
+  );
+
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -58,24 +84,87 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
           </View>
         </View>
 
-        {/* Acquisition date */}
+        {/* Acquisition date — tap to open a calendar rather than typing
+            DD-MM-YYYY by hand. The value stays a DD-MM-YYYY string because
+            add-manual.tsx:385 feeds it straight to dmyToIso() on save; changing
+            the shape here would silently drop the purchase date. */}
         <View style={styles.fieldBlock}>
           <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('add_manual.date_acquired')}</Text>
-          <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+          <AnimatedPressable
+            onPress={() => {
+              Keyboard.dismiss();
+              setShowDatePicker(true);
+            }}
+            style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('add_manual.date_acquired_a11y')}
+            accessibilityHint="Opens a calendar to pick the date you acquired this item"
+            accessibilityValue={{ text: acquisitionDate || 'no date selected' }}
+          >
             <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-            <TextInput
-              value={acquisitionDate}
-              onChangeText={onAcquisitionDateChange}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.muted}
-              keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
-              maxLength={10}
-              style={[styles.input, { color: colors.text }]}
-              accessibilityLabel={t('add_manual.date_acquired_a11y')}
-              returnKeyType="next"
-            />
-          </View>
+            <Text
+              style={[styles.input, styles.dateText, { color: acquisitionDate ? colors.text : colors.muted }]}
+            >
+              {acquisitionDate || 'DD-MM-YYYY'}
+            </Text>
+            {acquisitionDate ? (
+              <AnimatedPressable
+                onPress={() => onAcquisitionDateChange('')}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Clear acquisition date"
+              >
+                <Ionicons name="close-circle" size={18} color={colors.muted} />
+              </AnimatedPressable>
+            ) : null}
+          </AnimatedPressable>
         </View>
+
+        {/* iOS gets the expanded inline calendar in a sheet with Done; Android
+            renders its own dialog. Mirrors EventDateTimePicker.tsx so both
+            date fields in the app behave identically. */}
+        {Platform.OS === 'ios' ? (
+          <Modal
+            visible={showDatePicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowDatePicker(false)}
+          >
+            <Pressable style={styles.modalBackdrop} onPress={() => setShowDatePicker(false)}>
+              <Pressable style={[styles.modalSheet, { backgroundColor: colors.card }]} onPress={() => {}}>
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: colors.text }]}>
+                    {t('add_manual.date_acquired')}
+                  </Text>
+                  <AnimatedPressable
+                    onPress={() => setShowDatePicker(false)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Done"
+                  >
+                    <Text style={[styles.modalDone, { color: colors.accent }]}>Done</Text>
+                  </AnimatedPressable>
+                </View>
+                <DateTimePicker
+                  value={pickerValue}
+                  mode="date"
+                  display="inline"
+                  maximumDate={new Date()}
+                  onChange={onDateChange}
+                />
+              </Pressable>
+            </Pressable>
+          </Modal>
+        ) : (
+          showDatePicker && (
+            <DateTimePicker
+              value={pickerValue}
+              mode="date"
+              display="default"
+              maximumDate={new Date()}
+              onChange={onDateChange}
+            />
+          )
+        )}
 
         {/* Source */}
         <View style={styles.fieldBlock}>
@@ -184,6 +273,36 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
 });
 
 const styles = StyleSheet.create({
+  dateText: {
+    paddingVertical: 12,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 12,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    paddingTop: 14,
+    paddingBottom: 6,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  modalDone: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
   section: { marginBottom: 20 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
   sectionTitle: { fontSize: 14, fontWeight: '600' },

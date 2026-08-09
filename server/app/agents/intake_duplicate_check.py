@@ -55,7 +55,7 @@ async def check_user_duplicates(
                     """
                     SELECT id, title, canonical_key AS normalized_key
                     FROM items
-                    WHERE user_id = $1::uuid
+                    WHERE user_id = $1::uuid AND NOT archived
                       AND category = $2
                       AND canonical_key ILIKE $3
                     LIMIT 5
@@ -80,7 +80,7 @@ async def check_user_duplicates(
                             """
                             SELECT id, title, canonical_key AS normalized_key
                             FROM items
-                            WHERE user_id = $1::uuid
+                            WHERE user_id = $1::uuid AND NOT archived
                               AND category = $2
                               AND canonical_key ILIKE $3
                             LIMIT 3
@@ -107,7 +107,7 @@ async def check_user_duplicates(
             if plan in ("pro", "premium"):
                 try:
                     owned_count = await conn.fetchval(
-                        "SELECT COUNT(*) FROM items WHERE user_id = $1::uuid AND category = $2",
+                        "SELECT COUNT(*) FROM items WHERE user_id = $1::uuid AND category = $2 AND NOT archived",
                         user_id,
                         category_id,
                     )

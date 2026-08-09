@@ -34,8 +34,15 @@ export async function listInboxThreads(): Promise<DmThread[]> {
     );
 
     if (error) {
-      logger.warn('[SupabaseDataProvider] listInboxThreads error:', error);
-      return [];
+      // THROW, not `return []`. An empty array is indistinguishable from "you
+      // have none", so a failed read renders as an empty feature — the house bug
+      // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+      logger.error('[SupabaseDataProvider] listInboxThreads error:', error);
+      throw new Error(
+        typeof (error as { message?: string })?.message === 'string'
+          ? (error as { message: string }).message
+          : 'Could not load InboxThreads',
+      );
     }
 
     if (!data) return [];
@@ -55,7 +62,7 @@ export async function listInboxThreads(): Promise<DmThread[]> {
     }));
   } catch (e) {
     if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] listInboxThreads timed out');
+      logger.error('[SupabaseDataProvider] listInboxThreads timed out');
       return [];
     }
     throw e;
@@ -88,8 +95,15 @@ export async function listIncomingRequests(): Promise<DmRequest[]> {
     );
 
     if (error) {
-      logger.warn('[SupabaseDataProvider] listIncomingRequests error:', error);
-      return [];
+      // THROW, not `return []`. An empty array is indistinguishable from "you
+      // have none", so a failed read renders as an empty feature — the house bug
+      // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+      logger.error('[SupabaseDataProvider] listIncomingRequests error:', error);
+      throw new Error(
+        typeof (error as { message?: string })?.message === 'string'
+          ? (error as { message: string }).message
+          : 'Could not load IncomingRequests',
+      );
     }
 
     if (!data) return [];
@@ -109,7 +123,7 @@ export async function listIncomingRequests(): Promise<DmRequest[]> {
     });
   } catch (e) {
     if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] listIncomingRequests timed out');
+      logger.error('[SupabaseDataProvider] listIncomingRequests timed out');
       return [];
     }
     throw e;
@@ -180,8 +194,15 @@ export async function getThreadMessages(threadId: string): Promise<DmMessage[]> 
     );
 
     if (error) {
-      logger.warn('[SupabaseDataProvider] getThreadMessages error:', error);
-      return [];
+      // THROW, not `return []`. An empty array is indistinguishable from "you
+      // have none", so a failed read renders as an empty feature — the house bug
+      // class (CLAUDE.md). logger.ERROR because warn is stripped in release.
+      logger.error('[SupabaseDataProvider] getThreadMessages error:', error);
+      throw new Error(
+        typeof (error as { message?: string })?.message === 'string'
+          ? (error as { message: string }).message
+          : 'Could not load ThreadMessages',
+      );
     }
 
     if (!data) return [];
@@ -196,7 +217,7 @@ export async function getThreadMessages(threadId: string): Promise<DmMessage[]> 
     }));
   } catch (e) {
     if (e instanceof TimeoutError) {
-      logger.warn('[SupabaseDataProvider] getThreadMessages timed out');
+      logger.error('[SupabaseDataProvider] getThreadMessages timed out');
       return [];
     }
     throw e;

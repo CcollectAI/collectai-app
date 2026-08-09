@@ -11,9 +11,29 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 
+/**
+ * ⚠️ This section is currently NEVER RENDERED, and that is deliberate for now.
+ *
+ * `marketplace.tsx` populates it from `GET /data-moat/demand-heat/by-region`,
+ * reading `resp.items` — but that endpoint returns `{regions: [...]}`, an
+ * aggregate grouped by `region, country_code` with no `item_key` at all. So
+ * `items` is always `undefined`, the array stays empty, and the guard below
+ * returns null. A real reader/writer mismatch (verified 2026-07-30).
+ *
+ * It was NOT wired up, because the data does not support it yet: over 7 days
+ * `demand_signals` held 68 rows of which only **9 had a region**, across 8
+ * users, and a per-item-by-region query returned 4 rows — 3 of them test
+ * artifacts (`slot freed`, `test query 2/3`) with a NULL category. Surfacing
+ * that as "Popular in Your Region" would show junk.
+ *
+ * To wire it later: return an `items` array (item_key, category, signal_count,
+ * region) from that endpoint alongside `regions` — additive, so nothing else
+ * breaks — and only after real regional signal volume exists.
+ */
 export interface RegionalDemandItem {
   item_key: string;
-  category: string;
+  /** Nullable in practice: `demand_signals.category` is NULL on many rows. */
+  category: string | null;
   signal_count: number;
   region: string;
 }
@@ -54,7 +74,12 @@ export const RegionalInsightsSection = React.memo(function RegionalInsightsSecti
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.demandTitle, { color: colors.text }]} numberOfLines={1}>{item.item_key.replace(/-/g, ' ')}</Text>
-              <Text style={[styles.demandMeta, { color: colors.muted }]}>{item.category.replace(/_/g, ' ')} · {item.region}</Text>
+              {/* `category` is NULL on a large share of demand_signals rows;
+                  the bare .replace() here was a TypeError waiting for whoever
+                  wires this section up. */}
+              <Text style={[styles.demandMeta, { color: colors.muted }]}>
+                {item.category ? `${item.category.replace(/_/g, ' ')} · ` : ''}{item.region}
+              </Text>
             </View>
             <View style={[styles.demandScore, { backgroundColor: colors.warning + '15' }]}>
               <Text style={[styles.demandScoreText, { color: colors.warning }]}>{item.signal_count}</Text>

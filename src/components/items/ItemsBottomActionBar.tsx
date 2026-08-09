@@ -16,6 +16,7 @@ interface ItemsBottomActionBarProps {
   isLoadingMore: boolean;
   onExportCSV: () => void;
   onOpenProjects: () => void;
+  onOpenArchived: () => void;
 }
 
 export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
@@ -24,6 +25,7 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
   isLoadingMore,
   onExportCSV,
   onOpenProjects,
+  onOpenArchived,
 }: ItemsBottomActionBarProps) {
   const { colors } = useAppTheme();
 
@@ -51,8 +53,27 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
             ) : (
               <Ionicons name="download-outline" size={18} color="#FFFFFF" />
             )}
-            <Text style={styles.actionButtonPrimaryText}>
-              {exporting ? 'Exporting...' : 'Download overview'}
+            <Text numberOfLines={1} style={styles.actionButtonPrimaryText}>
+              {exporting ? 'Exporting…' : 'Export CSV'}
+            </Text>
+          </AnimatedPressable>
+
+          {/* The way back. The list above now hides archived items, and
+              archiving is a SWIPE — so this entry point is what stops that
+              swipe being a one-way trapdoor. Not behind BETA_MODE: the
+              filter it reverses ships to everyone. */}
+          <AnimatedPressable
+            style={[
+              styles.actionButtonSecondary,
+              { borderColor: colors.accent },
+            ]}
+            onPress={onOpenArchived}
+            accessibilityRole="button"
+            accessibilityLabel="View archived items and restore them"
+          >
+            <Ionicons name="archive-outline" size={18} color={colors.accent} />
+            <Text numberOfLines={1} style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
+              Archived
             </Text>
           </AnimatedPressable>
 
@@ -67,7 +88,7 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
               accessibilityLabel="Open build and paint projects"
             >
               <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
-              <Text style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
+              <Text numberOfLines={1} style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
                 Projects
               </Text>
             </AnimatedPressable>
@@ -108,15 +129,16 @@ const styles = StyleSheet.create({
   },
   bottomActionButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
   actionButtonPrimary: {
     flex: 1,
+    minWidth: 0,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderRadius: 12,
     gap: 8,
   },
@@ -127,11 +149,12 @@ const styles = StyleSheet.create({
   },
   actionButtonSecondary: {
     flex: 1,
+    minWidth: 0,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1.5,
     gap: 8,

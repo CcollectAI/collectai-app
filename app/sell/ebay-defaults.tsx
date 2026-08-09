@@ -41,6 +41,9 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { getEbayDefaults, setEbayDefaults } from '@/api/marketplaceApi';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/components/Toast';
+import { SELLING_ENABLED } from '@/config/featureFlags';
+import { SellingUnavailable } from '@/components/sell/SellingUnavailable';
+import { safeGoBack } from '@/lib/goBack';
 
 const FIELDS: Array<{
   key: 'ebay_category_id' | 'fulfillment_policy_id' | 'payment_policy_id' | 'return_policy_id' | 'location_key';
@@ -94,6 +97,7 @@ type FormState = {
 };
 
 export default function EbayDefaultsScreenWithBoundary() {
+  if (!SELLING_ENABLED) return <SellingUnavailable title="eBay Defaults" />;
   return (
     <ScreenErrorBoundary screenName="eBay Defaults">
       <EbayDefaultsScreen />
@@ -130,7 +134,7 @@ function EbayDefaultsScreen() {
         });
       }
     } catch (e) {
-      logger.warn('get_ebay_defaults_failed', { error: String(e) });
+      logger.error('get_ebay_defaults_failed', { error: String(e) });
     } finally {
       setLoading(false);
     }
@@ -165,9 +169,9 @@ function EbayDefaultsScreen() {
         location_key: form.location_key.trim() || undefined,
       });
       showToast({ message: 'Defaults saved', type: 'success' });
-      router.back();
+      safeGoBack(router);
     } catch (e) {
-      logger.warn('set_ebay_defaults_failed', { error: String(e) });
+      logger.error('set_ebay_defaults_failed', { error: String(e) });
       Alert.alert(
         'Save failed',
         'Could not save eBay defaults. Check your values and try again.',
@@ -180,7 +184,7 @@ function EbayDefaultsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-        <Stack.Screen options={{ title: 'eBay defaults' }} />
+        <Stack.Screen options={{ headerTitle: 'eBay defaults' }} />
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -190,7 +194,7 @@ function EbayDefaultsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
-      <Stack.Screen options={{ title: 'eBay defaults' }} />
+      <Stack.Screen options={{ headerTitle: 'eBay defaults' }} />
       <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"

@@ -1,5 +1,6 @@
 import { API_BASE_URL, API_KEY } from '@/config/api';
 import type { CurrencyCode } from '@/data/types';
+import { logger } from '@/lib/logger';
 
 export interface PortfolioOverview {
   total_value: number;
@@ -14,7 +15,23 @@ export interface PortfolioItem {
   id: string;
   name: string;
   category: string;
-  estimated_value: number;
+  /**
+   * What `GET /portfolio/items` actually returns for value — the canonical
+   * expression COALESCE(l.q50, quick_predictions.q50_eur, predicted_price_eur,
+   * estimated_value, 0) (portfolio_router.py:267), the same one Home and the
+   * Items tab use.
+   *
+   * `estimated_value` was declared REQUIRED here while the endpoint has never
+   * returned it, and `current_value` was missing entirely. The index signature
+   * below meant tsc never complained, so app/sets-to-complete.tsx read
+   * `estimated_value` and got null for every item — its "Est. value" showed 0
+   * regardless of the real portfolio. Fixed 2026-07-31.
+   */
+  current_value?: number;
+  cost_basis?: number;
+  unrealized_pl?: number;
+  /** Not returned by /portfolio/items; kept for callers passing other shapes. */
+  estimated_value?: number;
   image_url?: string;
   change_1d?: number;
   change_7d?: number;
@@ -96,7 +113,8 @@ export async function request<T>(
     try {
       const text = await res.text();
       if (text) message = text;
-    } catch {
+    } catch (e) {
+      logger.error('[silent-catch] collectorsClient.ts:99:', e);
       // ignore
     }
     throw new Error(message);
@@ -175,13 +193,6 @@ export interface ItemDetail {
   [key: string]: unknown;
 }
 
-/**
- * Fetch rich item detail, including category meta, prediction band and signals.
- * Expected backend route (to be implemented): GET /items/{id}/detail
- */
-export function getItemDetail(id: string): Promise<ItemDetail> {
-  return request<ItemDetail>(`/items/${encodeURIComponent(id)}/detail`);
-}
 // --- CollectAI: portfolio & trends extensions --- //
 // (Removed createAlert/getAlerts here — they hit /alerts which was never
 // deployed. The active wire is alertsApi.createAlert → POST /alerts/mine.)
@@ -213,17 +224,6 @@ export type ItemTrendPoint = {
   category_health: number;
 };
 
-export async function getItemTrends(
-  itemId: string,
-  window: '1d' | '7d' | '30d' = '30d',
-) {
-  const qs = `?window=${window}`;
-  return request<{
-    item_id: string;
-    window: string;
-    points: ItemTrendPoint[];
-  }>(`/items/${itemId}/trends${qs}`);
-}
 
 // --- CollectAI: category deep-dive --- //
 
@@ -237,11 +237,6 @@ export type CategoryOverview = {
   top_movers: { name: string; change_pct: number }[];
 };
 
-export async function getCategoryOverview(
-  categoryId: string,
-) {
-  return request<CategoryOverview>(`/categories/${categoryId}/overview`);
-}
 
 // --- CollectAI: provenance & ownership history --- //
 
@@ -380,13 +375,6 @@ export type ItemInsightsResponse = {
   };
 };
 
-export async function getItemInsights(
-  itemId: string,
-  window: '1d' | '7d' | '30d' = '7d',
-): Promise<ItemInsightsResponse> {
-  const qs = `?window=${window}`;
-  return request<ItemInsightsResponse>(`/items/${itemId}/insights${qs}`);
-}
 
 // --- CollectAI: watchlist insights --- //
 
@@ -412,12 +400,6 @@ export type WatchlistInsightsResponse = {
   generated_at: string;
 };
 
-export async function getWatchlistInsights(
-  window: '1d' | '7d' | '30d' = '7d',
-): Promise<WatchlistInsightsResponse> {
-  const qs = `?window=${window}`;
-  return request<WatchlistInsightsResponse>(`/watchlist/insights${qs}`);
-}
 
 // Trust/reputation is now handled by /deals/reputation/{user_id} endpoint
 
@@ -497,12 +479,6 @@ export type CategoriesDeepDiveResponse = {
   categories: CategoryDeepDive[];
 };
 
-export async function getCategoriesDeepDive(
-  window: '1d' | '7d' | '30d' = '7d',
-): Promise<CategoriesDeepDiveResponse> {
-  const qs = `?window=${window}`;
-  return request<CategoriesDeepDiveResponse>(`/categories/deepdive${qs}`);
-}
 
 // --- CollectAI: categories deep-dive (all categories) --- //
 

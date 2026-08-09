@@ -140,3 +140,67 @@ Items store `taxonomy_version` so we can track which version classified them.
 2. **Use confidence scores** - 0.0-1.0, surface low confidence for review
 3. **Prefer specificity** - Better to be specific than generic
 4. **Test edge cases** - Especially for disambiguation (books vs minis)
+
+---
+
+## What belongs in a category's CATALOG (2026-08-04)
+
+`category_items` is the browsable "what exists in this category" catalog, not a
+product feed. The tcgcsv importer feeds six of the categories
+(`mtg`, `pokemon`, `yugioh`, `lorcana`, `digimon`, `one_piece_tcg`) and it
+ingests **TCGPlayer's full product list per game** — which is not a list of
+cards. Lorcana alone carried 85 "Puzzle Insert" rows (the cardboard spacer
+inside a booster box) plus playmats, sleeves, deck boxes and binders. Those rows
+also hold the catalog's only broken art (their TCGPlayer CDN URLs 403), so they
+surfaced in the browse grid as black tiles.
+
+`GET /catalog/{category}/items` now filters them out. Filtered at **read**, not
+deleted — rows stay for provenance, and `?include_accessories=true` restores
+them.
+
+### Two rules, both measured against the live catalog
+
+Naming a product type is **not** sufficient. TCGPlayer sells promo *cards* named
+after the accessory they shipped with, and a bare-term filter hid 34 of them.
+
+1. **A product puts `:` or `-` straight after the item type.**
+   `Official Playmat: Boa Hancock`, `Official Card Sleeves - Elsa (65 count)`.
+   A promo card only mentions it, usually in parentheses:
+   `Monkey.D.Luffy (Official Playmat Limited Edition Vol.5)`.
+2. **A bracket whose contents start with a LETTER is a card-set code** —
+   `[OP-PR]`, `[BT-17]`, `[EX-02]`, `[MP25]`. That row is a card whatever it is
+   named after. Puzzle inserts carry numeric-only set numbers (`[11]`, `[6]`),
+   so this guard doesn't touch them.
+
+`Puzzle Insert` is exempt from rule 1 — it is never a card and appears
+mid-title.
+
+Result: **194 rows hidden across the six categories, 0 real cards among them.**
+
+### Two false-positive classes this cost
+
+Both were found by sampling the would-be-hidden rows **per category**, not by
+trusting the total — the same discipline as
+`learning_validate_values_not_just_structure`.
+
+- **Bare `Binder` matched 36 rows; only 2 were accessories.** The other 34 are
+  real cards: 14 Digimon and 13 One Piece promos from "Omnimon" / "Seven
+  Warlords of the Sea" **Binder Set** releases, MTG's *Dihada, Binder of Wills*
+  and *Fiend Binder*, and 5 printings of Yu-Gi-Oh's *Maliss Q White Binder*.
+  A 94% false-positive rate — the filter would have hidden far more cards than
+  filler.
+- **Merch categories must not be filtered at all.** A first pass ran
+  catalogue-wide and would have hidden `Pokemon Base Set Binder (1999)` and
+  `Southern Islands Complete Binder Set (18 Cards)` from `retro_pokemon`, and
+  `Pikachu Leather Deck Box` from `nintendo_merch`. **In a merch category the
+  accessory IS the collectible.** Hence `_ACCESSORY_FILTERED_CATEGORIES`.
+
+### Deliberately NOT filtered
+
+Sealed product — Booster Box, Booster Pack, Bundle, Display. Sealed is a
+collected format and the taxonomy has an explicit `*_sealed` subtype for it.
+Removing it from browse is a product decision, not a data-quality fix.
+
+**Before widening `_ACCESSORY_TERMS`, re-measure.** Run the candidate regex
+against `category_items` per category and read every match — the term that looks
+obviously safe is the one that eats a card name.

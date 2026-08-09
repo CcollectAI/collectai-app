@@ -261,8 +261,15 @@ def test_build_evidence_structure():
     assert hit_ids == ["h1", "h2", "h3"]
     assert summary["total_comps"] == 3
     assert len(summary["sources"]) == 2  # ebay + mercari
-    assert "eBay sold" in explanation
-    assert "Mercari" in explanation
+    # "eBay sales", not "eBay sold listings". Every row reaching _build_evidence
+    # is a SOLD comp — the query filters `is_listing IS NOT TRUE` — so calling
+    # them listings was wrong for every source, and "eBay sold" + "listings"
+    # read as "2 eBay sold listings". Changed 2026-08-07 alongside adding
+    # `sparrow_p2p`, which would otherwise have rendered "1 Sparrow P2p listing"
+    # for a completed member sale.
+    assert "eBay sales" in explanation
+    assert "Mercari sale" in explanation
+    assert "listing" not in explanation, "a sold comp is not a listing"
     assert "90 days" in explanation
 
 

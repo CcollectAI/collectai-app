@@ -8,9 +8,11 @@ import type { IntakeResultResponse } from "./types";
 // server-side and can legitimately take 30-60 s. Use the long timeout to
 // avoid client-side aborts on slow but valid calls.
 
-// QuickScan
-export const quickscanSingle = () =>
-  post("/quickscan-advanced/single", {}, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
+// QuickScan — legacy no-image fallback. `category` is REQUIRED by the backend
+// (QuickScanSingleRequest.category has no default); posting {} returned a 422
+// "Field required" on every call. Mirrors the /quickscan proxy's own default.
+export const quickscanSingle = (category = "funko") =>
+  post("/quickscan-advanced/single", { category }, { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 
 // Intake — image-only (vision pipeline: CLIP + GPT-4o-mini + heuristic)
 export const intakeImageOnly = (imageUri: string) => {
@@ -122,9 +124,18 @@ export const getMyCatalogSuggestions = (opts?: { limit?: number; offset?: number
   }>(`/catalog/suggestions/mine${query ? `?${query}` : ''}`);
 };
 
-// Screenshot intelligence
-export const analyzeScreenshot = (payload: { image_base64?: string; screenshot_id?: string; source?: string; note?: string }) =>
-  post("/screenshot-intel/analyze", payload as Record<string, unknown>);
+// Screenshot intelligence.
+// The backend (ScreenshotIntelRequest) REQUIRES screenshot_id — an id returned
+// by POST /quickscan/upload-image — and names the other fields source_hint /
+// category_hint. The previous signature allowed {image_base64, source}, which
+// the server rejects with 422 (image_base64 unsupported, screenshot_id
+// missing) while silently dropping `source`. Typed to the real contract so a
+// caller cannot repeat that.
+export const analyzeScreenshot = (payload: {
+  screenshot_id: string;
+  source_hint?: "ebay" | "vinted" | "instagram" | "reddit" | "other";
+  category_hint?: string;
+}) => post("/screenshot-intel/analyze", payload as unknown as Record<string, unknown>);
 
 // Catalog Browser
 export const browseCatalogItems = (categoryId: string, opts?: {

@@ -48,37 +48,65 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
   // total — drives the see-all tile and is reported up for the "All" chip.
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  // A failed fetch must NOT masquerade as an empty category. The catch used to
+  // setItems([]), so a transient abort rendered the same terminal "No catalog
+  // items" text as a genuinely empty catalog. `failed` keeps them distinct so
+  // we can offer a retry instead of lying about what exists.
+  const [failed, setFailed] = useState(false);
+  // Bumped by the retry affordance to re-run the effect.
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setFailed(false);
+
+    // Cold-start contention: the category page fires a burst of requests on
+    // mount, and the heaviest category (pokemon — most events → a ~7s cold
+    // getCategoryStore events query) can push this otherwise-fast catalog call
+    // past the httpClient's 5s timeout, aborting it. A warm revisit returns
+    // every card in ~0.3s, so an abort is transient — retry it rather than
+    // pinning the rail to an empty state on the very visit that failed.
+    const isAbort = (e: unknown) => e instanceof Error && e.name === 'AbortError';
+
     (async () => {
-      try {
-        // Sorting is server-side: 'value' ranks by latest comp price
-        // (priced items only), the rest page the full catalog.
-        const res = await browseCatalogItemsCached(categoryId, {
-          limit: 20,
-          pricedOnly: sort === 'value',
-          sort: sort === 'all' ? 'title' : sort,
-        });
-        if (!cancelled) {
+      for (let attempt = 0; attempt <= 2 && !cancelled; attempt++) {
+        try {
+          // Sorting is server-side: 'value' ranks by latest comp price
+          // (priced items only), the rest page the full catalog.
+          const res = await browseCatalogItemsCached(categoryId, {
+            limit: 20,
+            pricedOnly: sort === 'value',
+            sort: sort === 'all' ? 'title' : sort,
+          });
+          if (cancelled) return;
           setItems((res?.items ?? []) as CatalogItemData[]);
           if (typeof res?.total === 'number') {
             setTotal(res.total);
             onTotal?.(res.total);
           }
+          setLoading(false);
+          return;
+        } catch (e) {
+          // Back off and retry a transient abort (the mount burst clears in
+          // ~1s); surface a retry on a real/last failure.
+          if (isAbort(e) && attempt < 2) {
+            await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+            continue;
+          }
+          logger.error('[CategoryOverviewRail] fetch failed:', e);
+          if (!cancelled) {
+            setFailed(true);
+            setLoading(false);
+          }
+          return;
         }
-      } catch (e) {
-        logger.warn('[CategoryOverviewRail] fetch failed:', e);
-        if (!cancelled) setItems([]);
-      } finally {
-        if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
     // onTotal is a state setter from the page; identity-stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId, sort]);
+  }, [categoryId, sort, reloadKey]);
 
   const fmtPrice = useCallback((p: number | null) => (p == null ? null : `~${formatPrice(p)}`), []);
 
@@ -95,6 +123,16 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
 
       {loading ? (
         <ActivityIndicator color={accentColor} style={{ marginVertical: 28 }} />
+      ) : failed ? (
+        <AnimatedPressable
+          onPress={() => setReloadKey((k) => k + 1)}
+          accessibilityRole="button"
+          accessibilityLabel="Retry loading catalog"
+          style={styles.retry}
+        >
+          <Ionicons name="refresh-outline" size={16} color={accentColor} />
+          <Text style={[styles.retryText, { color: accentColor }]}>Couldn&apos;t load — tap to retry</Text>
+        </AnimatedPressable>
       ) : items.length === 0 ? (
         <Text style={[styles.empty, { color: colors.muted }]}>No catalog items for this category yet.</Text>
       ) : (
@@ -108,7 +146,7 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
               accessibilityLabel={`View ${it.title}`}
             >
               {it.image_url ? (
-                <Image source={{ uri: it.image_url }} style={styles.art} resizeMode="cover" accessibilityIgnoresInvertColors />
+                <Image source={{ uri: it.image_url }} style={styles.art} resizeMode="contain" accessibilityIgnoresInvertColors />
               ) : (
                 <View style={[styles.art, styles.artEmpty, { backgroundColor: accentColor + '12' }]}>
                   <Ionicons name="cube-outline" size={26} color={accentColor} />
@@ -159,7 +197,10 @@ const styles = StyleSheet.create({
   seeAll: { fontSize: 13, fontWeight: '600', color: tokens.brand.deep },
   rail: { gap: 12, paddingHorizontal: 12, paddingBottom: 4 },
   card: { width: 140, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
-  art: { width: '100%', height: 120 },
+  // Full card at the standard 63:88 ratio + `contain` so the whole card shows
+  // (was height:120 + cover, which sliced the name/HP off the top & bottom).
+  // The faint tint fills the gutters for non-portrait cards.
+  art: { width: '100%', aspectRatio: 63 / 88, backgroundColor: tokens.brand.base + '0A' },
   artEmpty: { alignItems: 'center', justifyContent: 'center' },
   comingSoon: { fontSize: 10, fontWeight: '600', marginTop: 6, color: tokens.brand.deep, opacity: 0.7 },
   meta: { paddingVertical: 8, paddingHorizontal: 10 },
@@ -177,6 +218,8 @@ const styles = StyleSheet.create({
   },
   seeAllTileText: { fontSize: 13, fontWeight: '700', textAlign: 'center', color: tokens.brand.deep },
   empty: { fontSize: 13, paddingHorizontal: 12, paddingVertical: 12 },
+  retry: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 20, justifyContent: 'center' },
+  retryText: { fontSize: 13, fontWeight: '600' },
 });
 
 export default React.memo(CategoryOverviewRail);

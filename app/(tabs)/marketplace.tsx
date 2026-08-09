@@ -3,7 +3,6 @@ import { useModal } from '@/hooks/useModal';
 import { useDebounce } from "@/hooks/useDebounce";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
-  SafeAreaView,
   View,
   Text,
   TextInput,
@@ -21,9 +20,13 @@ import {
   Share,
   FlatList,
 } from "react-native";
+// react-native's own SafeAreaView is iOS-only — it renders as a plain View on
+// Android, so content sits under the status bar and gesture nav. Always take it
+// from react-native-safe-area-context (see docs/ui-playbook.md).
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams, type Href } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { formatPrice, formatDualPrice } from "@/lib/format";
@@ -34,15 +37,12 @@ import { CATEGORIES } from "@/data/categories";
 import { collectorsApi } from "@/api/collectorsApi";
 import { dataProvider, type Item as DataItem, type PublicUserProfile } from "@/data";
 import { COMMUNITY_GATED } from "@/config/featureFlags";
-import { getJSON, setJSON } from "@/lib/storage";
 import { useToast } from "@/components/Toast";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import logger from "@/utils/logger";
 import { track } from '@/analytics/track';
 import { MarketplaceSearchBar } from '@/components/MarketplaceSearchBar';
 import { MarketplaceFilterPanel } from '@/components/MarketplaceFilterPanel';
-import { RecentSearchesSection } from '@/components/RecentSearchesSection';
-import type { TrendingCategory } from '@/components/TrendingCategoriesGrid';
 import { SearchResultQuickView } from '@/components/SearchResultQuickView';
 import { SkeletonList } from '@/components/Skeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -106,7 +106,12 @@ type SearchResult = {
   sourceCurrency?: string | null;
 };
 
-const RECENT_SEARCHES_KEY = "collectai_recent_searches";
+// Recent searches REMOVED 2026-08-08, matching app/search.tsx (removed
+// 2026-08-07). The key is cleared once on mount rather than abandoned: an
+// orphaned key keeps a user's search history on the device indefinitely after
+// the feature that justified collecting it is gone, which is the kind of quiet
+// data retention a privacy policy should not have to cover.
+const LEGACY_RECENT_SEARCHES_KEY = "collectai_recent_searches";
 
 // Use category data from the data layer - get all categories for browsing
 const BROWSE_CATEGORIES = CATEGORIES.map((cat) => ({
@@ -114,15 +119,6 @@ const BROWSE_CATEGORIES = CATEGORIES.map((cat) => ({
   name: cat.name,
   imageUrl: cat.bannerImageUrl,
 }));
-
-const FALLBACK_TRENDING = [
-  { id: 'lorcana', name: 'Disney Lorcana', meta: 'Hot right now' },
-  { id: 'pokemon', name: 'Pok\u00e9mon Cards', meta: 'Always popular' },
-  { id: 'lego', name: 'LEGO', meta: 'Growing fast' },
-  { id: 'one_piece', name: 'One Piece', meta: 'Rising demand' },
-  { id: 'kpop_merch', name: 'K-pop Merch', meta: 'Surging' },
-  { id: 'gunpla', name: 'Gunpla & Model Kits', meta: 'Steady growth' },
-];
 
 // Filter options (constants moved to MarketplaceFilterPanel component)
 
@@ -142,8 +138,14 @@ const SearchScreen: React.FC = () => {
   const { settings } = useSettingsHook();
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const [query, setQuery] = useState("");
-  const [recent, setRecent] = useState<string[]>([]);
+  // Seeded from `?q=`, which `MarketplacePricesSection`'s "See all N results"
+  // link has always sent and this screen never read — so that link landed on an
+  // empty marketplace and the user retyped the name they had just tapped. A lazy
+  // initialiser, not an effect: params are there on the first render, and an
+  // effect that wrote `query` while depending on it is the offers.tsx bug
+  // (scripts/check-self-cancelling-effects.mjs).
+  const { q: initialQuery } = useLocalSearchParams<{ q?: string }>();
+  const [query, setQuery] = useState(() => (typeof initialQuery === 'string' ? initialQuery : ''));
   const [searchLoading, setSearchLoading] = useState(false);
   // Escalating status copy for the live aggregation. Marketplace search
   // hits 44 adapters server-side and can legitimately take 30-60 s. A
@@ -214,7 +216,8 @@ const SearchScreen: React.FC = () => {
             return;
           }
         }
-      } catch { /* cache miss, proceed to fetch */ }
+      } catch (e) {
+        logger.error('[silent-catch] marketplace.tsx:207:', e); /* cache miss, proceed to fetch */ }
       try {
         const data = await collectorsApi.getDemandHeat();
         if (cancelled) return;
@@ -225,7 +228,7 @@ const SearchScreen: React.FC = () => {
           setDemandHeat(sliced);
           AsyncStorage.setItem(DEMAND_HEAT_CACHE_KEY, JSON.stringify({ data: sliced, ts: Date.now() })).catch(() => {});
         }
-      } catch (err) { logger.warn('[Marketplace] getDemandHeat error:', err); }
+      } catch (err) { logger.error('[Marketplace] getDemandHeat error:', err); }
     }
 
     async function fetchRegionalDemand() {
@@ -238,7 +241,8 @@ const SearchScreen: React.FC = () => {
             return;
           }
         }
-      } catch { /* cache miss, proceed to fetch */ }
+      } catch (e) {
+        logger.error('[silent-catch] marketplace.tsx:231:', e); /* cache miss, proceed to fetch */ }
       try {
         const data = await collectorsApi.getDemandHeatByRegion();
         if (cancelled) return;
@@ -248,7 +252,7 @@ const SearchScreen: React.FC = () => {
           setRegionalDemand(sliced);
           AsyncStorage.setItem(REGIONAL_DEMAND_CACHE_KEY, JSON.stringify({ data: sliced, ts: Date.now() })).catch(() => {});
         }
-      } catch (err) { logger.warn('[Marketplace] getDemandHeatByRegion error:', err); }
+      } catch (err) { logger.error('[Marketplace] getDemandHeatByRegion error:', err); }
     }
 
     fetchDemandHeat();
@@ -294,32 +298,14 @@ const SearchScreen: React.FC = () => {
   const [filterMaxPrice, setFilterMaxPrice] = useState("");
   const [filterSort, setFilterSort] = useState("relevance");
 
-  // Trending categories — fetch from backend, fall back to hardcoded
-  const [trendingCategories, setTrendingCategories] = useState<TrendingCategory[]>(FALLBACK_TRENDING);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const resp = await collectorsApi.fetchInsights() as { trending_items?: { category?: string; change_pct?: number }[] };
-        if (cancelled || !resp?.trending_items?.length) return;
-        const catMap = CATEGORIES.reduce<Record<string, string>>((m, c) => { m[c.id] = c.name; return m; }, {});
-        const seen = new Set<string>();
-        const items: TrendingCategory[] = [];
-        for (const t of resp.trending_items) {
-          if (!t.category || seen.has(t.category)) continue;
-          seen.add(t.category);
-          const name = catMap[t.category] ?? t.category;
-          const pct = Math.round((t.change_pct ?? 0) * 100);
-          items.push({ id: t.category, name, meta: pct > 0 ? `+${pct}% this month` : 'Popular' });
-        }
-        if (items.length >= 3) setTrendingCategories(items.slice(0, 6));
-      } catch (err) {
-        logger.warn('[Marketplace] trending categories error:', err);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  // Trending-categories fetch removed 2026-07-24. The rail it fed was deleted
+  // from the render (see "Trending categories removed" below), so this effect
+  // called /insights/personalized on every mount and wrote the result into
+  // state no JSX read — the endpoint's four computed arrays were all discarded.
+  // The concentration/diversification half of that payload now renders on the
+  // analytics screen; see app/analytics.tsx "Concentration & Balance" and the
+  // seam fn in src/data/personalizedInsights.ts. Restore a call here only
+  // alongside a rail that actually renders it.
 
   // Count of active filters for badge
   const activeFilterCount = useMemo(() => {
@@ -331,11 +317,9 @@ const SearchScreen: React.FC = () => {
     return count;
   }, [filterSources, filterConditions, filterMinPrice, filterMaxPrice, filterSort]);
 
-  // Load persisted recent searches on mount
+  // One-shot cleanup of the retired recent-searches key. Not a load.
   useEffect(() => {
-    let cancelled = false;
-    getJSON<string[]>(RECENT_SEARCHES_KEY, []).then((v) => { if (!cancelled) setRecent(v); });
-    return () => { cancelled = true; };
+    AsyncStorage.removeItem(LEGACY_RECENT_SEARCHES_KEY).catch(() => {});
   }, []);
 
   const trimmedQuery = query.trim();
@@ -511,19 +495,12 @@ const SearchScreen: React.FC = () => {
   const handleSubmitSearch = useCallback(() => {
     if (!trimmedQuery) return;
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    // Persist recent search
-    setRecent((prev) => {
-      const existing = prev.filter(
-        (term) => term.toLowerCase() !== trimmedQuery.toLowerCase()
-      );
-      const updated = [trimmedQuery, ...existing].slice(0, 6);
-      setJSON(RECENT_SEARCHES_KEY, updated);
-      return updated;
-    });
     executeSearch(trimmedQuery);
   }, [trimmedQuery, executeSearch, settings.hapticsEnabled]);
 
-  // Also trigger search when tapping a recent search chip
+  // Runs a search from a tapped chip — the demand-heat banner and the
+  // regional-insights row use it. (Popular Searches used it too, until that
+  // section was removed; those two are the only callers now.)
   const handleChipPress = useCallback((term: string) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setQuery(term);
@@ -571,7 +548,7 @@ const SearchScreen: React.FC = () => {
         url: quickViewItem.externalUrl,
       });
     } catch (err) {
-      logger.warn('[Marketplace] share error:', err);
+      logger.error('[Marketplace] share error:', err);
     }
   }, [quickViewItem, settings.hapticsEnabled]);
 
@@ -669,34 +646,63 @@ const SearchScreen: React.FC = () => {
           </AnimatedPressable>
         )}
 
-        {/* Recent searches */}
+        {/* Member marketplace entry — P2P Stage 1.
+            Placed above Browse by category because buying intent is highest
+            before a query is typed, and because a seller needs to SEE that
+            selling happens here: sellers list where they believe buyers are.
+            Links out to a dedicated screen rather than embedding a grid —
+            this file is 1,266 lines and its own external search is disabled
+            pre-launch. See docs/P2P_MARKETPLACE_SPEC.md. */}
         {!trimmedQuery && (
-          <RecentSearchesSection
-            theme={colors}
-            recentSearches={recent}
-            onChipPress={handleChipPress}
-          />
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.push('/listings' as Href);
+            }}
+            style={[styles.memberMarketRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Browse member listings"
+          >
+            <View style={[styles.memberMarketIcon, { backgroundColor: colors.accent + '18' }]}>
+              <Ionicons name="pricetags-outline" size={18} color={colors.accent} />
+            </View>
+            <View style={styles.memberMarketText}>
+              <Text style={[styles.memberMarketTitle, { color: colors.text }]}>Member marketplace</Text>
+              <Text style={[styles.memberMarketSub, { color: colors.muted }]}>
+                Buy from other collectors — or list something you own
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+          </AnimatedPressable>
         )}
 
-        {/* Popular searches (preset chips) */}
+        {/* Open bids — the way back to a negotiation in progress.
+            /offers had no entry point on this tab at all: a member who made an
+            offer could only reach it from a notification or by remembering the
+            URL, which is precisely the dead-end an offer must not be. Reuses the
+            member-marketplace row shape, directly beneath it, because the two are
+            the same journey seen from either side. */}
         {!trimmedQuery && (
-          <View style={styles.presetChipsSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('marketplace.popular_searches')}</Text>
-            <View style={styles.presetChipsRow}>
-              {['Charizard', 'Black Lotus', 'Funko Pop', 'Jordan 1', 'LEGO Star Wars', 'Pikachu'].map((term) => (
-                <TouchableOpacity
-                  key={term}
-                  onPress={() => handleChipPress(term)}
-                  style={[styles.presetChip, { borderColor: colors.border, backgroundColor: colors.card }]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Search for ${term}`}
-                >
-                  <Ionicons name="search-outline" size={12} color={colors.muted} />
-                  <Text style={[styles.presetChipText, { color: colors.text }]}>{term}</Text>
-                </TouchableOpacity>
-              ))}
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.push('/offers' as Href);
+            }}
+            style={[styles.memberMarketRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Open bids — offers you have made or received"
+          >
+            <View style={[styles.memberMarketIcon, { backgroundColor: colors.accent + '18' }]}>
+              <Ionicons name="swap-horizontal-outline" size={18} color={colors.accent} />
             </View>
-          </View>
+            <View style={styles.memberMarketText}>
+              <Text style={[styles.memberMarketTitle, { color: colors.text }]}>Open bids</Text>
+              <Text style={[styles.memberMarketSub, { color: colors.muted }]}>
+                Offers you&apos;ve made, and offers on your listings
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+          </AnimatedPressable>
         )}
 
         {/* Browse by category (Spotify-style grid) */}
@@ -1069,6 +1075,22 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 32,
   },
+  memberMarketRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 20,
+  },
+  memberMarketIcon: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  memberMarketText: { flex: 1, gap: 2 },
+  memberMarketTitle: { fontSize: 15, fontWeight: '700' },
+  memberMarketSub: { fontSize: 12 },
   // (headerRow, headerLeft, headerTitle, headerSubtitle, headerIcons moved to MarketplacePageHeader)
   searchRow: {
     flexDirection: "row",
@@ -1119,7 +1141,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
-  // (chip styles moved to RecentSearchesSection component)
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1253,28 +1274,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   // (quick view styles moved to SearchResultQuickView component)
-  presetChipsSection: {
-    marginBottom: 16,
-  },
-  presetChipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  presetChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  presetChipText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  // (presetChipsSection, presetChipsRow, presetChip, presetChipText removed with
+  //  the Popular Searches section — FilterSheet keeps its own presetChip styles)
   // (sectionSubtitle, demandCard, demandRank, demandRankText, demandTitle, demandMeta, demandScore, demandScoreText moved to DemandHeatBanner + RegionalInsightsSection)
 });
 

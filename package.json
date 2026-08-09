@@ -8,16 +8,40 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "build:ios:local": "eas build --platform ios --profile store --local --non-interactive --output ./builds/sparrow-ios-local.ipa",
+    "build:android:local": "JAVA_HOME=/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=/usr/local/share/android-commandlinetools ANDROID_SDK_ROOT=/usr/local/share/android-commandlinetools PATH=\"/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/bin:/usr/local/share/android-commandlinetools/platform-tools:/usr/local/share/android-commandlinetools/cmdline-tools/latest/bin:$PATH\" eas build --platform android --profile store --local --non-interactive --output ./builds/sparrow-android-local.aab",
+    "submit:ios": "eas submit --platform ios --profile store --path ./builds/sparrow-ios-local.ipa",
+    "release:ios": "npm run build:ios:local && npm run submit:ios",
     "web": "expo start --web",
     "lint": "expo lint",
     "precheck": "node scripts/precheck.mjs",
     "dev": "bash scripts/dev.sh",
     "test": "jest",
+    "verify:items-contract": "node scripts/verify_items_contract.mjs",
+    "verify:prebuild": "node scripts/check-unbounded-awaits.mjs && node scripts/check-dead-nav.mjs && node scripts/check-constraint-drift.mjs && node scripts/check-silent-failures.mjs && node scripts/check-self-cancelling-effects.mjs && node scripts/check-route-param-handoff.mjs && node scripts/check-i18n-parity.mjs && node scripts/check-upsert-targets.mjs && node scripts/check-billing-limits-parity.mjs && node scripts/check-archived-filter.mjs && tsc --noEmit && jest __tests__/lib/supabaseTimeout.test.ts __tests__/lib/loggerRetention.test.ts __tests__/data/screenItem.test.ts __tests__/data/itemsProviderPurchase.test.ts __tests__/data/personalizedInsights.test.ts __tests__/data/marketplaceSchema.test.ts __tests__/lib/ids.test.ts __tests__/hooks/usePaginatedList.test.ts __tests__/hooks/useSlowLoad.test.ts __tests__/components/ItemsListItem.test.tsx __tests__/components/marketMovers.test.ts __tests__/screens/categoryLabel.test.ts __tests__/screens/leaderboardRow.test.ts && node scripts/verify_items_contract.mjs",
     "i18n:check": "node scripts/check-i18n-strings.mjs",
     "i18n:check:quiet": "node scripts/check-i18n-strings.mjs --quiet",
     "bundle-size": "node scripts/bundle-size.mjs",
     "bundle-size:update": "node scripts/bundle-size.mjs --update",
-    "postinstall": "node scripts/postinstall-fixes.js"
+    "postinstall": "node scripts/postinstall-fixes.js",
+    "test:web:referral": "node scripts/web-tests/referral.test.js",
+    "audit:drift": "python3 server/scripts/audit_column_drift.py --columns scripts/db_columns.json --scan-only > /tmp/coldrift_refs.json && scp -q /tmp/coldrift_refs.json collectai:/opt/collectors/server/scripts/coldrift_refs.json && ssh collectai 'cd /opt/collectors/server && set -a && . /opt/collectors/.env && set +a && /opt/collectors/.venv/bin/python scripts/audit_column_drift.py --refs scripts/coldrift_refs.json'",
+    "audit:drift:refresh": "ssh collectai 'cd /opt/collectors/server && set -a && . /opt/collectors/.env && set +a && /opt/collectors/.venv/bin/python scripts/audit_column_drift.py --dump-columns' > scripts/db_columns.json && npm run audit:drift",
+    "verify:unbounded": "node scripts/check-unbounded-awaits.mjs",
+    "verify:silent": "node scripts/check-silent-failures.mjs",
+    "audit:all": "node scripts/audit_all.mjs",
+    "verify:nav": "node scripts/check-dead-nav.mjs",
+    "verify:constraints": "node scripts/check-constraint-drift.mjs",
+    "verify:upserts": "node scripts/check-upsert-targets.mjs",
+    "verify:billing-limits": "node scripts/check-billing-limits-parity.mjs",
+    "preflight:android": "node scripts/preflight_android.mjs",
+    "build:android:apk": "JAVA_HOME=/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=/usr/local/share/android-commandlinetools ANDROID_SDK_ROOT=/usr/local/share/android-commandlinetools PATH=\"/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/bin:/usr/local/share/android-commandlinetools/platform-tools:/usr/local/share/android-commandlinetools/cmdline-tools/latest/bin:$PATH\" eas build --platform android --profile android-apk --local --non-interactive --output ./builds/sparrow-android-apk.apk",
+    "check:back": "node scripts/check-unguarded-back.mjs",
+    "check:numbers": "node scripts/check-locale-number-parsing.mjs",
+    "check:effects": "node scripts/check-self-cancelling-effects.mjs",
+    "check:params": "node scripts/check-route-param-handoff.mjs",
+    "i18n:parity": "node scripts/check-i18n-parity.mjs",
+    "check:archived": "node scripts/check-archived-filter.mjs",
+    "check:serialization": "node scripts/check-duck-typed-serialization.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
@@ -63,6 +87,7 @@
     "expo-splash-screen": "~31.0.13",
     "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
+    "expo-store-review": "~9.0.9",
     "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
     "expo-web-browser": "~15.0.10",
@@ -105,6 +130,7 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "globalSetup": "./jest.globalSetup.js",
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|@shopify/flash-list|lucide-react-native|react-native-svg)"
     ],
@@ -123,8 +149,13 @@
     ],
     "testPathIgnorePatterns": [
       "<rootDir>/node_modules/",
+      "<rootDir>/.claude/",
       "<rootDir>/__tests__/setup.ts",
-      "<rootDir>/__tests__/a11y/helpers.ts"
+      "<rootDir>/__tests__/a11y/helpers.ts",
+      "<rootDir>/scripts/web-tests/"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/.claude/"
     ]
   },
   "private": true

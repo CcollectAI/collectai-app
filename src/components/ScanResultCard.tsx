@@ -20,7 +20,7 @@ import {
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useScannerTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { featureFlags } from '@/config/featureFlags';
@@ -75,7 +75,7 @@ function ConfidenceRing({
   label: string;
   borderColor: string;
 }) {
-  const { colors } = useAppTheme();
+  const { colors } = useScannerTheme();
   const { t } = useTranslation();
   const pct = Math.round(value * 100);
   const strokeDash = RING_CIRCUMFERENCE * value;
@@ -139,7 +139,7 @@ function ScanResultCardInner({
   onSelectAlternative,
   onConfirm,
 }: ScanResultCardProps) {
-  const { colors } = useAppTheme();
+  const { colors } = useScannerTheme();
   const { t } = useTranslation();
   const [isSharing, setIsSharing] = useState(false);
   const [showCorrection, setShowCorrection] = useState(false);
@@ -158,7 +158,7 @@ function ScanResultCardInner({
       });
       track({ name: 'scan_result_shared', properties: { method: 'text', category: scanResult.attributes.category } });
     } catch (e) {
-      logger.warn('Share failed', e);
+      logger.error('Share failed', e);
     } finally {
       setIsSharing(false);
     }
@@ -287,13 +287,15 @@ function ScanResultCardInner({
               <AnimatedPressable
                 style={{
                   flex: 1,
+                  minWidth: 0,
                   backgroundColor: TIFFANY,
-                  paddingVertical: 12,
+                  paddingVertical: 14,
+                  paddingHorizontal: 12,
                   borderRadius: 12,
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexDirection: 'row',
-                  gap: 6,
+                  gap: 8,
                 }}
                 onPress={() => {
                   fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
@@ -304,22 +306,27 @@ function ScanResultCardInner({
                 accessibilityLabel={t('scan.confirm_correct_a11y')}
               >
                 <Ionicons name="checkmark-circle" size={18} color={colors.accentText} />
-                <Text style={{ color: colors.accentText, fontSize: 14, fontWeight: '700' }}>
+                <Text
+                  numberOfLines={1}
+                  style={{ color: colors.accentText, fontSize: 14, fontWeight: '700', flexShrink: 1 }}
+                >
                   {t('scan.yes_correct')}
                 </Text>
               </AnimatedPressable>
               <AnimatedPressable
                 style={{
                   flex: 1,
+                  minWidth: 0,
                   backgroundColor: 'transparent',
-                  paddingVertical: 12,
+                  paddingVertical: 14,
+                  paddingHorizontal: 12,
                   borderRadius: 12,
                   borderWidth: 1.5,
                   borderColor: colors.border,
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexDirection: 'row',
-                  gap: 6,
+                  gap: 8,
                 }}
                 onPress={() => {
                   fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
@@ -329,7 +336,10 @@ function ScanResultCardInner({
                 accessibilityLabel={t('scan.open_correction_a11y')}
               >
                 <Ionicons name="create-outline" size={16} color={colors.muted} />
-                <Text style={{ color: colors.muted, fontSize: 14, fontWeight: '600' }}>
+                <Text
+                  numberOfLines={1}
+                  style={{ color: colors.muted, fontSize: 14, fontWeight: '600', flexShrink: 1 }}
+                >
                   {t('scan.no_correct')}
                 </Text>
               </AnimatedPressable>
@@ -536,13 +546,15 @@ function ScanResultCardInner({
             <Ionicons name="share-outline" size={20} color={colors.brand.dark} />
           </AnimatedPressable>
           <AnimatedPressable
-            style={[styles.addBtn, { backgroundColor: colors.brand.base }]}
-            onPress={onConfirm}
-            accessibilityRole="button"
-            accessibilityLabel={t('scan.add_to_collection')}
-          >
-            <Ionicons name="add-circle" size={22} color="#FFFFFF" />
-            <Text style={styles.addBtnText}>{t('scan.add_to_collection')}</Text>
+              style={[styles.addBtn, { backgroundColor: colors.brand.base }]}
+              onPress={onConfirm}
+              accessibilityRole="button"
+              accessibilityLabel={t('scan.add_to_collection')}
+            >
+              <Ionicons name="add-circle" size={22} color="#FFFFFF" />
+            <Text style={styles.addBtnText} numberOfLines={1}>
+              {t('scan.add_to_collection')}
+            </Text>
           </AnimatedPressable>
         </View>
       </View>
@@ -617,8 +629,8 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 12,
     marginHorizontal: 16,
-    padding: 18,
-    borderRadius: 16,
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 1,
   },
   sectionHeader: {
@@ -737,7 +749,7 @@ const styles = StyleSheet.create({
   altCard: {
     flexDirection: 'row',
     padding: 12,
-    borderRadius: 14,
+    borderRadius: 12,
     gap: 12,
     alignItems: 'center',
     position: 'relative',
@@ -809,7 +821,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 40,
     paddingTop: 14,
     borderTopWidth: 1,
@@ -822,19 +834,20 @@ const styles = StyleSheet.create({
   shareBtn: {
     width: 52,
     height: 52,
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addBtn: {
     flex: 1,
+    // Matches shareBtn exactly so the two bottom-bar buttons share a baseline.
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 16,
-    borderRadius: 16,
+    borderRadius: 12,
     shadowColor: TIFFANY,
     shadowOpacity: 0.35,
     shadowRadius: 8,

@@ -57,6 +57,13 @@ export const getProvenance = (itemId: string) =>
   }>(`/provenance/items/${encodeURIComponent(itemId)}`);
 
 // Dossier
+// The dossier is a heavy server-side aggregation (identity + valuation +
+// provenance + price_history + market_comps + completeness). Cold, it routinely
+// exceeds the 5 s default REQUEST_TIMEOUT_MS, which aborted the fetch and made
+// the "Valuation Report" section render "Could not load report" on every open
+// (AbortError, seen 2026-07-22). Give it a report-sized budget; the section
+// shows a loading spinner meanwhile.
+const DOSSIER_TIMEOUT_MS = 30_000;
 export const getDossier = (itemId: string) =>
   get<{
     item_id: string;
@@ -70,7 +77,7 @@ export const getDossier = (itemId: string) =>
     collections: string[];
     authenticity_signals: string[];
     completeness_score: number;
-  }>(`/dossier/${encodeURIComponent(itemId)}`);
+  }>(`/dossier/${encodeURIComponent(itemId)}`, { timeoutMs: DOSSIER_TIMEOUT_MS });
 
 export const getDossierSummary = (itemId: string) =>
   get<{
@@ -188,3 +195,12 @@ export const matchCatalog = (title: string, category: string, opts?: { brand?: s
     ...(opts?.brand ? { brand: opts.brand } : {}),
     ...(opts?.set_code ? { set_code: opts.set_code } : {}),
   });
+
+/**
+ * Compute the card valuation for a just-saved item from the catalog market
+ * price. The manual-add screen inserts items client-side (direct Supabase), so
+ * it calls this right after saving so a catalog-linked item shows a value on
+ * its card immediately. Best-effort; `valued=false` when not catalog-linked.
+ */
+export const revalueItem = (itemId: string) =>
+  post<{ ok: boolean; valued: boolean }>(`/items/${encodeURIComponent(itemId)}/revalue`, {});

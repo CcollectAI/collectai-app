@@ -357,8 +357,12 @@ async def _seed_one_user(
 
         await conn.execute(
             """
-            INSERT INTO items (user_id, category, title, condition, attrs)
-            VALUES ($1, $2, $3, $4, $5::jsonb)
+            -- name AND title: the canonical readers (Home portfolio,
+            -- /portfolio/overview) key on `name`, the Items tab falls back to
+            -- `title`. Seeding only `title` gives every beta persona a
+            -- portfolio of nameless rows. Same pair as add-manual.tsx:414.
+            INSERT INTO items (user_id, category, name, title, condition, attrs)
+            VALUES ($1, $2, $3, $3, $4, $5::jsonb)
             """,
             uuid.UUID(user_id),
             item["category"],

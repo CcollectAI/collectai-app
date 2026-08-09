@@ -18,11 +18,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
-  Linking,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -33,19 +32,23 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/components/Toast';
-import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
 import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
+import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
+import { collectorsApi } from '@/api/collectorsApi';
+import type { P2PWatchlistMatch } from '@/api/p2pApi';
+import type { CurrencyCode } from '@/data/types';
 import { WishlistStatsBar } from '@/components/wishlist/WishlistStatsBar';
 import { WishlistSortControls } from '@/components/wishlist/WishlistSortControls';
 
 // Pull from single source of truth — all 36 categories + "Other"
-import { CATEGORIES as ALL_CATS } from '@/constants/categories';
+import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 
 const CONGRATS_DISPLAY_DURATION = 2000;
 const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as const };
 const CATEGORIES = [...ALL_CATS.map((c) => c.name), 'Other'];
+
 
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return '';
@@ -63,6 +66,19 @@ function WatchlistTabScreen() {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [items, setItems] = useState<WatchlistItem[]>([]);
+  // The row an alert tap was about (app/(tabs)/index.tsx sends `?highlightId=`).
+  // Read as an OPTIONAL hint: the sender passes `alert.itemId || alert.id`, so
+  // the value may be an alert id that matches no row — then nothing highlights,
+  // which is the correct outcome and not an error worth surfacing.
+  const { highlightId } = useLocalSearchParams<{ highlightId?: string }>();
+  // Distinct from "no items". A failed read used to render the empty state,
+  // which told the user their watchlist was empty when it simply had not
+  // loaded — and the watchlist is the paid feature's input, so "it emptied"
+  // is the worst possible wrong message. docs/ui-playbook.md: Empty != loading,
+  // and by the same argument Empty != failed.
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // watchlist row id -> the cheapest live member listing for that item.
+  const [matches, setMatches] = useState<Record<string, P2PWatchlistMatch>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, openModal, closeModal] = useModal();
@@ -73,6 +89,14 @@ function WatchlistTabScreen() {
   const [formCategory, setFormCategory] = useState('');
   const [formTargetPrice, setFormTargetPrice] = useState('');
   const [formNotes, setFormNotes] = useState('');
+  // BULK ADD, recovered from the deleted watchlist-builder as a MODE rather than
+  // a screen. Bulk entry is just rapid repeat entry: the friction was never the
+  // form, it was closing and reopening it. With this on, a successful add clears
+  // only the title and keeps the modal, the category and the target — because
+  // bulk entry is almost always many items of ONE category at ONE budget, which
+  // is exactly what the old screen assumed when it remembered the category for
+  // the session.
+  const [keepAdding, setKeepAdding] = useState(false);
   const [categoryPickerVisible, openCategoryPicker, closeCategoryPicker] = useModal();
 
   // Edit target price state
@@ -80,6 +104,9 @@ function WatchlistTabScreen() {
   const [editTargetItem, setEditTargetItem] = useState<WatchlistItem | null>(null);
   const [editTargetValue, setEditTargetValue] = useState('');
   const [editTargetSaving, setEditTargetSaving] = useState(false);
+
+  // Shop state — which watchlist row the marketplace picker is open for
+  const [shopItem, setShopItem] = useState<WatchlistItem | null>(null);
 
   // "I Got It!" acquisition state
   const [acquireModalVisible, openAcquireModal, closeAcquireModal] = useModal();
@@ -103,8 +130,12 @@ function WatchlistTabScreen() {
     try {
       const data = await dataProvider.listWatchlist(user?.id ?? 'current-user');
       setItems(data);
+      setLoadError(null);
     } catch (err) {
-      logger.warn('[Watchlist] loadItems error:', err);
+      logger.error('[Watchlist] loadItems error:', err);
+      // Keep whatever was already on screen. Blanking the list on a refresh
+      // failure would reproduce the exact bug this state exists to fix.
+      setLoadError(err instanceof Error ? err.message : 'Could not load your watchlist');
       showToast({ message: 'Failed to load watchlist. Pull down to retry.', type: 'error' });
     } finally {
       setLoading(false);
@@ -112,14 +143,48 @@ function WatchlistTabScreen() {
     }
   }, [user?.id]);
 
+  // Member listings for what the user watches — the pull side of Target Hit.
+  //
+  // Fetched SEPARATELY from the watchlist rather than awaited alongside it, and
+  // deliberately not gating `loading`. A marketplace hiccup must never keep the
+  // watchlist itself off screen: the list is the feature, this is an
+  // enrichment. On failure the rows simply render without the extra line, which
+  // is the honest degrade — no row claims something is for sale that isn't.
+  const loadMatches = useCallback(async () => {
+    try {
+      const { matches: rows } = await collectorsApi.listWatchlistMatches();
+      // Keyed by watchlist row id, which is what renderItem has in hand. The
+      // server already returns the cheapest listing per row, so a plain
+      // last-wins map is correct here rather than a reduce.
+      const byRow: Record<string, P2PWatchlistMatch> = {};
+      for (const m of rows) byRow[m.watchlist_id] = m;
+      setMatches(byRow);
+    } catch (err) {
+      // NO TOAST — this is additive, and telling the user their watchlist
+      // failed because an enrichment call did would be false.
+      //
+      // But logger.ERROR, not warn: info/warn are stripped from release builds
+      // (CLAUDE.md), so a warn here is invisible on TestFlight and production —
+      // the exact builds where a silently-missing marketplace row matters. The
+      // "don't alarm the user" judgement belongs to the toast, not to whether
+      // the failure leaves a trace at all.
+      logger.error('[Watchlist] marketplace matches unavailable:', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadItems();
-  }, [loadItems]);
+    loadMatches();
+  }, [loadItems, loadMatches]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     loadItems();
-  }, [loadItems]);
+    // Refreshed together: a member listing is the most time-sensitive thing on
+    // this screen, and a pull that reloaded stale marketplace data would be
+    // worse than not showing it.
+    loadMatches();
+  }, [loadItems, loadMatches]);
 
   const resetForm = () => {
     setFormTitle('');
@@ -137,43 +202,87 @@ function WatchlistTabScreen() {
       showToast({ message: 'Please select a category.', type: 'warning' });
       return;
     }
+    // A target price is REQUIRED, not optional. This is the third guard and it
+    // is the one that decides whether the row does anything at all:
+    // `deal_discovery_worker._check_watchlist_snipes` filters
+    // `WHERE w.target_price IS NOT NULL AND w.target_price > 0`, so a row
+    // without one is skipped forever. It is not a degraded row — it is an
+    // invisible one.
+    //
+    // It used to be optional, and `WatchlistItemCard` rendered a
+    // "No target — won't alert" chip afterwards (added 2026-08-05). Measured
+    // 2026-08-08: still zero rows with a target. Telling someone AFTER they
+    // saved, on a row they have stopped looking at, does not work.
+    //
+    // Blocking here is the smaller cost. Free is capped at ONE Target Hit per
+    // day (`max_daily_deal_alerts`), so a single working row is the entire
+    // demonstration of the paid feature — and a user whose first row is inert
+    // never sees the feature at all, waits, and concludes the alerts are
+    // broken.
+    const parsedTarget = formTargetPrice.trim()
+      ? parseFloat(formTargetPrice.replace(/[^0-9.,]/g, '').replace(',', '.'))
+      : NaN;
+    if (!Number.isFinite(parsedTarget) || parsedTarget <= 0) {
+      showToast({
+        // Says what the number DOES, not that a field is missing. "Required"
+        // reads as bureaucracy; this reads as the reason to type it.
+        message: "Set a target price — that's the price we alert you at.",
+        type: 'warning',
+      });
+      return;
+    }
 
     setSaving(true);
     try {
-      const targetPrice = formTargetPrice.trim()
-        ? parseFloat(formTargetPrice.replace(/[^0-9.]/g, ''))
-        : null;
+      const targetPrice = parsedTarget;
+
+      // Write the SLUG, not the display name. `formCategory` comes from
+      // CATEGORIES = ALL_CATS.map(c => c.name), so this used to store
+      // "Magic: The Gathering" while `market_hits.category` holds "mtg" — and
+      // the snipe's fallback arm joins on `mh.category = w.category`, so a row
+      // added here could never match a listing. WatchlistItemCard already
+      // assumed a slug (`categoryDisplayName(item.category)`), so the display
+      // was the thing that was wrong-by-luck, not the storage contract.
+      const categorySlug = CATEGORY_NAME_TO_SLUG[formCategory] ?? 'unknown';
 
       await dataProvider.addWatchlistItem({
         title: formTitle.trim(),
-        category: formCategory,
-        targetPrice: targetPrice && !isNaN(targetPrice) ? targetPrice : null,
+        category: categorySlug,
+        targetPrice,
         notes: formNotes.trim() || undefined,
       });
 
-      // Auto-create price alert when a target price is set
+      // The target price IS the alert \u2014 no `user_price_alerts` rule is created.
+      //
+      // This used to also POST /alerts/mine with a `below_threshold` rule and
+      // toast "Price alert created \u2014 we'll notify you...". That rule could
+      // never fire: price_monitor_worker.check_threshold_alerts filters
+      // `AND a.item_id IS NOT NULL` (:84) and a watchlist row is not an `items`
+      // uuid, so the rule was skipped every cycle. Measured against prod
+      // 2026-08-05: 4 rules, all below_threshold, all item_id NULL, and ZERO
+      // below_threshold rows in alert_trigger_history, ever.
+      //
+      // What actually watches this number is deal_discovery_worker's snipe
+      // check, which reads watchlist_items.target_price directly and needs no
+      // rule at all. So promise that, and only that.
       if (targetPrice && !isNaN(targetPrice) && targetPrice > 0) {
-        try {
-          await collectorsApi.createAlert({
-            category: formCategory,
-            trigger_type: 'below_threshold',
-            threshold_value: targetPrice,
-            direction: 'below',
-            metadata: { watchlist_title: formTitle.trim() },
-          });
-          showToast({
-            message: `Price alert created \u2014 we'll notify you when the price drops below ${formatPrice(targetPrice, settings.currency)}`,
-            type: 'success',
-          });
-        } catch (alertErr: unknown) {
-          logger.warn('[Watchlist] auto-alert creation failed:', alertErr);
-          // Don't fail the add if alert creation fails
-        }
+        showToast({
+          message: `Target set \u2014 we'll alert you if it's listed below ${formatPrice(targetPrice, settings.currency)}`,
+          type: 'success',
+        });
       }
 
-      track({ name: 'watchlist_item_added', properties: { category: formCategory } });
-      closeModal();
-      resetForm();
+      track({ name: 'watchlist_item_added', properties: { category: categorySlug } });
+      if (keepAdding) {
+        // Title only. Category and target survive deliberately — retyping them
+        // for every row is the friction the separate bulk screen existed to
+        // remove.
+        setFormTitle('');
+        setFormNotes('');
+      } else {
+        closeModal();
+        resetForm();
+      }
       loadItems();
     } catch (err: any) {
       showToast({ message: err?.message || 'Failed to add item.', type: 'error' });
@@ -218,32 +327,22 @@ function WatchlistTabScreen() {
     setEditTargetSaving(true);
     try {
       const newTarget = editTargetValue.trim()
-        ? parseFloat(editTargetValue.replace(/[^0-9.]/g, ''))
+        ? parseFloat(editTargetValue.replace(/[^0-9.,]/g, '').replace(',', '.'))
         : null;
 
       await dataProvider.updateWatchlistItem(editTargetItem.id, {
         targetPrice: newTarget && !isNaN(newTarget) ? newTarget : null,
       });
 
-      // Auto-create price alert when target price is set
+      // No `user_price_alerts` rule is created here either — see the
+      // add-item path above for the measurement. The target itself is what
+      // deal_discovery_worker's snipe check reads.
       if (newTarget && !isNaN(newTarget) && newTarget > 0) {
-        try {
-          await collectorsApi.createAlert({
-            category: editTargetItem.category || undefined,
-            trigger_type: 'below_threshold',
-            threshold_value: newTarget,
-            direction: 'below',
-            metadata: { watchlist_title: editTargetItem.title, watchlist_id: editTargetItem.id },
-          });
-          fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-          showToast({
-            message: `Price alert created \u2014 we'll notify you when the price drops below ${formatPrice(newTarget, settings.currency)}`,
-            type: 'success',
-          });
-        } catch (alertErr: unknown) {
-          logger.warn('[Watchlist] auto-alert creation failed:', alertErr);
-          showToast({ message: 'Target price saved', type: 'success' });
-        }
+        fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+        showToast({
+          message: `Target set \u2014 we'll alert you if it's listed below ${formatPrice(newTarget, settings.currency)}`,
+          type: 'success',
+        });
       } else {
         showToast({ message: 'Target price updated', type: 'success' });
       }
@@ -259,16 +358,17 @@ function WatchlistTabScreen() {
     }
   };
 
-  // Shop flow — always open external marketplace directly
-  const handleShop = async (item: WatchlistItem) => {
+  // Shop flow — open the marketplace picker for this row.
+  //
+  // This used to fetch the links itself and open `links[0]` blind. Two problems:
+  // eBay was appended first for every category, so an MTG single always landed
+  // on eBay US with Cardmarket unused further down the list; and the raw
+  // Linking.openURL bypassed openAffiliateUrl, so the click never reached
+  // demand_signals. MarketplacePickerSheet does both correctly and was already
+  // built — it just had no callers.
+  const handleShop = (item: WatchlistItem) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    try {
-      const res = await collectorsApi.getAffiliateLinks(item.title, item.category);
-      const url = res.links?.[0]?.affiliate_url || `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`;
-      Linking.openURL(url).catch(() => {});
-    } catch {
-      Linking.openURL(`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`).catch(() => {});
-    }
+    setShopItem(item);
   };
 
   // "I Got It!" flow
@@ -325,7 +425,7 @@ function WatchlistTabScreen() {
     setAcquiring(true);
     try {
       const actualPrice = acquirePrice.trim()
-        ? parseFloat(acquirePrice.replace(/[^0-9.]/g, ''))
+        ? parseFloat(acquirePrice.replace(/[^0-9.,]/g, '').replace(',', '.'))
         : undefined;
 
       await dataProvider.convertWatchlistToItem(
@@ -360,6 +460,12 @@ function WatchlistTabScreen() {
   }, [items]);
 
   const renderItem = ({ item }: { item: WatchlistItem }) => {
+    // Tapping an alert on the home screen sends `?highlightId=` so this screen
+    // can show WHICH row the alert was about. It was sent from
+    // app/(tabs)/index.tsx and read by nobody — the tap just opened the list and
+    // left the user to find the row themselves (found 2026-08-09 by
+    // scripts/check-route-param-handoff.mjs).
+    const highlighted = highlightId != null && item.id === highlightId;
     const priorityColor =
       item.priority === 'high'
         ? colors.danger
@@ -368,7 +474,16 @@ function WatchlistTabScreen() {
         : colors.success;
 
     return (
-      <View style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View
+        style={[
+          styles.itemCard,
+          { backgroundColor: colors.card, borderColor: colors.border },
+          // Border + tint only, no scroll-to. FlashList's scrollToIndex on a
+          // freshly-mounted list races its own layout pass, and a mis-scroll is
+          // worse than no scroll; the accent edge is enough to find the row.
+          highlighted && { borderColor: colors.accent, backgroundColor: colors.accent + '12' },
+        ]}
+      >
         <View style={styles.itemHeader}>
           <View style={styles.itemTitleRow}>
             <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
@@ -405,6 +520,64 @@ function WatchlistTabScreen() {
             <Ionicons name="pencil-outline" size={12} color={colors.muted} />
           </AnimatedPressable>
         </View>
+
+        {/* A MEMBER is selling this, right now.
+            The marketplace and the watchlist were built separately and never
+            met on screen: someone could be watching a Bayou while another
+            member had one listed, and only a push firing at the right moment
+            would connect them — miss it and the two halves never meet again.
+            This is the pull side of Target Hit, same exact-identity join, no
+            time window.
+            Placed above notes and the date because it is the only line here
+            that is actionable right now. */}
+        {matches[item.id] ? (
+          <AnimatedPressable
+            onPress={() => router.push({
+              pathname: '/listing/[id]',
+              params: { id: matches[item.id].listing_id },
+            })}
+            style={[
+              styles.memberListing,
+              {
+                // Accent only when the user's OWN number is met — that is the
+                // Target Hit condition. Everything else is a plain fact and
+                // must not shout, or the distinction stops meaning anything.
+                backgroundColor: matches[item.id].meets_target
+                  ? colors.accent + '18'
+                  : colors.background,
+                borderColor: matches[item.id].meets_target
+                  ? colors.accent + '55'
+                  : colors.border,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              matches[item.id].meets_target
+                ? `A member is selling ${item.title} for ${formatPrice(matches[item.id].price, matches[item.id].currency as CurrencyCode)}, which meets your target. Open the listing`
+                : `A member is selling ${item.title} for ${formatPrice(matches[item.id].price, matches[item.id].currency as CurrencyCode)}. Open the listing`
+            }
+          >
+            <Ionicons
+              name={matches[item.id].meets_target ? 'flash' : 'storefront-outline'}
+              size={14}
+              color={matches[item.id].meets_target ? colors.accent : colors.muted}
+            />
+            <Text
+              style={[
+                styles.memberListingText,
+                { color: matches[item.id].meets_target ? colors.accent : colors.text },
+              ]}
+              numberOfLines={1}
+            >
+              {matches[item.id].meets_target ? 'Target met — ' : 'A member is selling this — '}
+              {/* The listing's OWN currency, not the viewer's. The server sends
+                  what the seller set; converting here without their rate would
+                  print a number the listing screen then contradicts. */}
+              {formatPrice(matches[item.id].price, matches[item.id].currency as CurrencyCode)}
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.muted} />
+          </AnimatedPressable>
+        ) : null}
 
         {item.notes && (
           <Text style={[styles.notes, { color: colors.muted }]} numberOfLines={2}>
@@ -444,6 +617,33 @@ function WatchlistTabScreen() {
   };
 
   const renderEmpty = () => (
+    // FAILED and EMPTY are different states and must not share a rendering.
+    // "No items in your watchlist yet" on a failed read tells the user their
+    // saved items are gone — and this list feeds the alert they pay for, so
+    // that message costs trust the app cannot easily win back.
+    loadError ? (
+      <View style={styles.emptyContainer}>
+        <View style={[styles.emptyIconWrap, { backgroundColor: colors.danger + '15' }]}>
+          <Ionicons name="cloud-offline-outline" size={40} color={colors.danger} />
+        </View>
+        <Text style={[styles.emptyTitle, { color: colors.text }]}>
+          Couldn&apos;t load your watchlist
+        </Text>
+        <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+          Your saved items are safe — we just couldn&apos;t reach them. Check your
+          connection and try again.
+        </Text>
+        <AnimatedPressable
+          style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
+          onPress={() => { setLoading(true); loadItems(); loadMatches(); }}
+          accessibilityRole="button"
+          accessibilityLabel="Try loading your watchlist again"
+        >
+          <Ionicons name="refresh" size={18} color={colors.accentText} />
+          <Text style={[styles.emptyBtnText, { color: colors.accentText }]}>Try again</Text>
+        </AnimatedPressable>
+      </View>
+    ) : (
     <View style={styles.emptyContainer}>
       <View style={[styles.emptyIconWrap, { backgroundColor: colors.accent + '15' }]}>
         <Ionicons name="eye-outline" size={40} color={colors.accent} />
@@ -475,16 +675,22 @@ function WatchlistTabScreen() {
         </View>
         <View style={styles.emptyFeatureRow}>
           <Ionicons name="flash-outline" size={16} color={colors.muted} />
-          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>{t('wishlist.feature_restock')}</Text>
+          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>{t('wishlist.feature_member_listings')}</Text>
         </View>
       </View>
     </View>
+    )
   );
 
+  // ONE inbox. app/alerts.tsx used to live here and rendered
+  // `alert_trigger_history` while app/notifications.tsx rendered
+  // `notification_history` — two screens for one event, since
+  // deal_discovery_worker writes both for every Target Hit. Merged 2026-08-08.
   const handleAlertsPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push('/alerts');
+    router.push('/notifications');
   }, [router, settings.hapticsEnabled]);
+
 
   const handleAddPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -590,6 +796,28 @@ function WatchlistTabScreen() {
             />
 
             {/* Save Button */}
+            {/* Bulk add, as a mode. Keeps the sheet, the category and the target
+                after a save so the next row is one field of typing. */}
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                setKeepAdding((v) => !v);
+              }}
+              style={styles.keepAddingRow}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: keepAdding }}
+              accessibilityLabel="Keep adding — stay here after saving so you can add several items"
+            >
+              <Ionicons
+                name={keepAdding ? 'checkbox' : 'square-outline'}
+                size={19}
+                color={keepAdding ? colors.accent : colors.muted}
+              />
+              <Text style={[styles.keepAddingText, { color: colors.muted }]}>
+                Keep adding — stay here and reuse this category and target
+              </Text>
+            </AnimatedPressable>
+
             <AnimatedPressable
               style={[styles.saveBtn, { backgroundColor: colors.accent }]}
               onPress={handleAdd}
@@ -777,6 +1005,19 @@ function WatchlistTabScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* Marketplace picker — opened by the Shop button on a watchlist row.
+          The target price becomes a hard ceiling on the search, so the results
+          are things the user would actually buy rather than every listing that
+          shares a word with the title. */}
+      <MarketplacePickerSheet
+        visible={shopItem !== null}
+        onClose={() => setShopItem(null)}
+        itemTitle={shopItem?.title ?? ''}
+        categoryId={shopItem?.category}
+        maxPrice={shopItem?.targetPrice}
+        maxPriceCurrency={shopItem?.currency}
+      />
+
       {/* Congrats Overlay */}
       {showCongrats && (
         <View style={styles.congratsOverlay}>
@@ -879,6 +1120,20 @@ const styles = StyleSheet.create({
     fontSize: text.sm,
     fontWeight: fontWeight.medium,
   },
+  keepAddingRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingVertical: 10, marginBottom: 4,
+  },
+  keepAddingText: { flex: 1, fontSize: text.xs, lineHeight: 17 },
+  memberListing: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
+    paddingHorizontal: 10, paddingVertical: 9,
+    marginTop: spacing.xs,
+  },
+  // flex: 1 so the chevron stays pinned right and the title truncates instead
+  // of pushing it off the card.
+  memberListingText: { flex: 1, fontSize: text.xs, fontWeight: fontWeight.semibold },
   notes: {
     fontSize: text.md,
     marginTop: 8,

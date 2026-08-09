@@ -24,7 +24,7 @@ import { QuickNavBar } from "@/components/QuickNavBar";
 import { AnimatedPressable } from "@/motion";
 import { logger } from "@/lib/logger";
 import { timeAgo } from "@/lib/timeAgo";
-import type { Href } from "expo-router";
+import { itemHref } from "@/lib/ids";
 
 const PAGE_SIZE = 20;
 
@@ -57,7 +57,7 @@ function MySuggestionsContent() {
         }
         setTotal(data.total);
       } catch (err) {
-        logger.warn("[MySuggestions] Failed to fetch suggestions:", err);
+        logger.error("[MySuggestions] Failed to fetch suggestions:", err);
       } finally {
         if (!cancelledRef.current) {
           setLoading(false);
@@ -110,7 +110,10 @@ function MySuggestionsContent() {
     (item: MySuggestion) => {
       if (item.status === "mapped" && item.mapped_item_key) {
         fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-        router.push(`/item/${encodeURIComponent(item.mapped_item_key)}` as Href);
+        // `catalog_suggestions.mapped_item_key` is TEXT and holds a catalog
+        // key, never an items uuid — /item/[id] would 22P02 on it.
+        const href = itemHref(item.mapped_item_key);
+        if (href) router.push(href);
       }
     },
     [router],
@@ -212,7 +215,7 @@ function MySuggestionsContent() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          title: "My Suggestions",
+          headerTitle: "My Suggestions",
           headerBackTitle: "Settings",
         }}
       />

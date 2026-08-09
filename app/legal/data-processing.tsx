@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { safeGoBack } from '@/lib/goBack';
 
 const LAST_UPDATED = 'April 11, 2026';
 
@@ -21,7 +22,7 @@ function DataProcessingScreenInner() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <AnimatedPressable
-          onPress={() => router.back()}
+          onPress={() => safeGoBack(router)}
           accessibilityRole="button"
           accessibilityLabel="Go back"
           style={styles.backBtn}
@@ -77,7 +78,6 @@ function DataProcessingScreenInner() {
           {'\u2022'} <Text style={styles.bold}>Supabase</Text> — Authentication, PostgreSQL database, row-level security, real-time messaging{'\n'}
           {'\u2022'} <Text style={styles.bold}>Amazon Web Services (AWS)</Text> — Backend hosting (EC2), file storage (S3), infrastructure{'\n'}
           {'\u2022'} <Text style={styles.bold}>OpenAI</Text> — Vision API for item identification and condition grading{'\n'}
-          {'\u2022'} <Text style={styles.bold}>fal.ai</Text> — CLIP text embedding generation for catalog matching{'\n'}
           {'\u2022'} <Text style={styles.bold}>Stripe</Text> — Payment processing for subscriptions, event tickets, and sponsor billing{'\n'}
           {'\u2022'} <Text style={styles.bold}>PostHog</Text> — Product analytics and feature usage tracking (anonymized){'\n'}
           {'\u2022'} <Text style={styles.bold}>Sentry</Text> — Error monitoring and crash reporting{'\n'}

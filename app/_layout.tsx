@@ -78,7 +78,8 @@ try {
       return origInputRender.call(this, { ...props, style }, ref);
     };
   }
-} catch {
+} catch (e) {
+  logger.error('[silent-catch] _layout.tsx:81:', e);
   // Font monkey-patch failed — system font will be used as fallback
 }
 
@@ -90,16 +91,20 @@ let Updates: {
 try {
   Updates = require("expo-updates");
 } catch (_) {
+  logger.error('[silent-catch] _layout.tsx:92:', _);
   // expo-updates not installed or in dev — skip
 }
 
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
 import { scrubSentryEvent, scrubSentryBreadcrumb } from '@/lib/sentryScrub';
+import { logger } from '@/lib/logger';
+import { safeGoBack } from '@/lib/goBack';
 
 let Sentry: { init: (opts: Record<string, unknown>) => void; wrap: (component: React.ComponentType) => React.ComponentType } | null = null;
 try {
   Sentry = require("@sentry/react-native");
 } catch (_) {
+  logger.error('[silent-catch] _layout.tsx:102:', _);
   // @sentry/react-native not installed – skip silently
 }
 
@@ -116,7 +121,8 @@ if (Sentry && SENTRY_DSN) {
     beforeSend: (event: Record<string, any>) => {
       try {
         return scrubSentryEvent(event);
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] _layout.tsx:119:', e);
         // If scrubbing itself throws, drop the event — better to lose
         // a crash report than ship raw PII.
         return null;
@@ -125,7 +131,8 @@ if (Sentry && SENTRY_DSN) {
     beforeBreadcrumb: (breadcrumb: Record<string, any>) => {
       try {
         return scrubSentryBreadcrumb(breadcrumb);
-      } catch {
+      } catch (e) {
+        logger.error('[silent-catch] _layout.tsx:128:', e);
         return null;
       }
     },
@@ -145,26 +152,81 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const ONBOARDING_KEY = '@sparrowcollect/onboarding_complete';
 
-function SettingsHeaderButton() {
+// Header bar-button frame. MUST stay square: iOS 26 draws its circular "liquid
+// glass" capsule sized to the button's frame, so a non-square frame renders as
+// an oval with the glyph off its centre. Padding around an icon does NOT give a
+// square — a glyph's advance width is narrower than its line height.
+const HEADER_BTN = {
+  width: 40,
+  height: 40,
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+};
+
+// Optical centring for the back chevron ONLY.
+//
+// Measured (fontTools, Ionicons.ttf, upem 512): `chevron-back` ink spans
+// x[160,352] against a 512 advance — geometrically dead-centre, dx = 0.00pt.
+// But a "<" is not optically centred when it is geometrically centred: the
+// vertex is a single point on the left while both arms terminate on the right,
+// so the mass reads right-of-centre inside a circle. Hence the nudge.
+//
+// It is a TRANSFORM, not margin/padding, on purpose: the iOS 26 capsule is
+// drawn from the Pressable's frame, and transforms are layout-neutral, so the
+// circle stays put and only the glyph inside it moves. Changing padding here
+// would move the capsule too — see docs/ui-playbook.md.
+const BACK_CHEVRON_OPTICAL = { transform: [{ translateX: -1.5 }] };
+
+function SettingsHeaderButton({ color }: { color?: string }) {
   const router = useRouter();
   const { colors } = useAppTheme();
   return (
     <Pressable
       onPress={() => router.push('/settings')}
-      style={{ padding: 8, marginRight: 4 }}
+      // Same square frame as the back button — see HEADER_BTN. A previous
+      // `marginRight: 4` here pushed the gear 4pt off the capsule's centre.
+      style={HEADER_BTN}
       accessibilityRole="button"
       accessibilityLabel="Open settings"
     >
-      <Ionicons name="settings-outline" size={22} color={colors.text} />
+      <Ionicons name="settings-outline" size={22} color={color ?? colors.text} />
     </Pressable>
   );
 }
 
-function HeaderRight() {
+/** Native-header back button that cannot dead-end. See `iconOnlyHeader`. */
+function HeaderBackButton({ color }: { color?: string } = {}) {
+  const router = useRouter();
+  const { colors } = useAppTheme();
+  return (
+    <Pressable
+      onPress={() => safeGoBack(router)}
+      // FIXED SQUARE, not padding. iOS 26 sizes its capsule to this frame, and
+      // an icon glyph's advance width is narrower than its line height — so
+      // `padding: 8` produced a non-square frame (oval capsule) with the chevron
+      // sitting off its centre. An explicit square + centred content makes the
+      // capsule a true circle and centres the glyph inside it.
+      style={HEADER_BTN}
+      accessibilityRole="button"
+      accessibilityLabel="Go back"
+    >
+      <Ionicons
+        name="chevron-back"
+        size={24}
+        color={color ?? colors.text}
+        style={BACK_CHEVRON_OPTICAL}
+      />
+    </Pressable>
+  );
+}
+
+/** `color` overrides the theme tint — needed on the black camera header,
+ *  where the default `colors.text` is near-invisible in light mode. */
+function HeaderRight({ color }: { color?: string } = {}) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <InboxHeaderButton />
-      <SettingsHeaderButton />
+      <InboxHeaderButton color={color} />
+      <SettingsHeaderButton color={color} />
     </View>
   );
 }
@@ -272,12 +334,39 @@ function RootStack() {
   // Heartbeat for online presence tracking
   usePresenceHeartbeat(user?.id ?? null);
 
-  // Shared screen options with icon-only header
+  // Shared screen options with icon-only header.
+  //
+  // `headerLeft` replaces the NATIVE back button on purpose. The native one
+  // calls `goBack()` on the navigator, which is a silent no-op when the stack
+  // has nothing to pop — the chevron is drawn, it animates, and nothing
+  // happens. Reported on settings and notifications, both of which use this
+  // options object. `safeGoBack` falls back to the tabs so the control always
+  // does something. The in-body equivalents (ScreenHeader, and every
+  // `router.back()` call site) are guarded the same way, and
+  // `npm run check:back` keeps them that way.
   const iconOnlyHeader = {
     headerTitle: '',
     headerBackTitle: '',
     headerBackButtonDisplayMode: 'minimal' as const,
+    headerLeft: () => <HeaderBackButton />,
     headerRight: () => <HeaderRight />,
+  };
+
+  // QuickScan is a full-bleed black camera screen. With the default
+  // `colors.card` header it rendered as a white band above the viewfinder in
+  // light mode. Header stays SHOWN — AnalyzingScreen, BatchSummaryScreen and
+  // MultiItemOverlay have no back affordance of their own, so hiding it would
+  // strand the user on those phases.
+  const cameraHeader = {
+    ...iconOnlyHeader,
+    headerStyle: { backgroundColor: '#000000' },
+    headerTintColor: '#FFFFFF',
+    // headerLeft must be overridden too, not just headerRight. `headerTintColor`
+    // only tints the NATIVE back button; the custom one inherited from
+    // iconOnlyHeader defaults to `colors.text`, which on this black header is
+    // near-invisible in light mode — the same reason headerRight is overridden.
+    headerLeft: () => <HeaderBackButton color="#FFFFFF" />,
+    headerRight: () => <HeaderRight color="#FFFFFF" />,
   };
 
   // Show loading overlay while auth resolves, but ALWAYS render the Stack
@@ -320,10 +409,14 @@ function RootStack() {
         <Stack.Screen name="twitch" options={iconOnlyHeader} />
         <Stack.Screen name="build-paint-projects" options={iconOnlyHeader} />
         <Stack.Screen name="categories/index" options={iconOnlyHeader} />
-        <Stack.Screen name="categories/[categoryId]" options={iconOnlyHeader} />
+        {/* headerShown:false at registration (not just in-component) so the
+            native glass header never flashes during the push transition — the
+            screens render their own flat ScreenHeader instead. */}
+        <Stack.Screen name="categories/[categoryId]" options={{ headerShown: false }} />
+        <Stack.Screen name="category-browse" options={{ headerShown: false }} />
         <Stack.Screen name="projects/[id]" options={iconOnlyHeader} />
-        <Stack.Screen name="barcode-scan" options={iconOnlyHeader} />
-        <Stack.Screen name="quickscan" options={iconOnlyHeader} />
+        <Stack.Screen name="barcode-scan" options={cameraHeader} />
+        <Stack.Screen name="quickscan" options={cameraHeader} />
         <Stack.Screen name="add-manual" options={iconOnlyHeader} />
         <Stack.Screen name="events/[eventId]" options={iconOnlyHeader} />
         <Stack.Screen name="events/[eventId]/announcements" options={iconOnlyHeader} />
@@ -332,22 +425,49 @@ function RootStack() {
         <Stack.Screen name="edit-event" options={iconOnlyHeader} />
         <Stack.Screen name="sponsor/register" options={iconOnlyHeader} />
         <Stack.Screen name="sponsor/dashboard" options={iconOnlyHeader} />
-        <Stack.Screen name="watchlist-builder" options={iconOnlyHeader} />
+        {/* Member marketplace (P2P Stage 1). headerShown:false — both screens
+            render their own flat ScreenHeader, and the native stack header
+            would stack a second bar on top of it. */}
+        <Stack.Screen name="listings" options={{ headerShown: false }} />
+        <Stack.Screen name="listing/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="offers" options={{ headerShown: false }} />
+        {/* Renders its own ScreenHeader, so the navigator's must be off — without
+            this it inherits the global header and the screen shows TWO stacked
+            headers, each with its own back chevron and gear. Caught on the
+            simulator; no gate sees it (docs/ui-playbook.md: check how a screen
+            gets its header before adding one). */}
+        <Stack.Screen name="tax-reporting" options={{ headerShown: false }} />
+        {/* Marketplace-only selling: list without a collection item. Renders
+            its own header, same as the other P2P screens. */}
+        <Stack.Screen name="sell/new" options={{ headerShown: false }} />
+        {/* Same as sell/new: the screen renders its own ScreenHeader, so the
+            native one would stack a SECOND header above it. Caught on the
+            simulator 2026-08-08 — the route rendered a back+gear bar and
+            "Choose an item" underneath it. */}
+        <Stack.Screen name="sell/pick" options={{ headerShown: false }} />
+        <Stack.Screen name="legal/marketplace-terms" options={{ headerShown: false }} />
         <Stack.Screen name="purchase/index" options={iconOnlyHeader} />
         <Stack.Screen name="purchase/create-mandate" options={iconOnlyHeader} />
         <Stack.Screen name="purchase/deal/[dealId]" options={iconOnlyHeader} />
 
         {/* Deal Desk / P2P Selling / Marketplace */}
         <Stack.Screen name="sell/dashboard" options={iconOnlyHeader} />
-        <Stack.Screen name="sell/offers" options={iconOnlyHeader} />
-        <Stack.Screen name="sell/[offerId]" options={iconOnlyHeader} />
 
         {/* Subscription & Security */}
         <Stack.Screen name="subscription" options={iconOnlyHeader} />
         <Stack.Screen name="mfa-setup" options={iconOnlyHeader} />
 
         {/* Additional screens */}
-        <Stack.Screen name="alerts" options={iconOnlyHeader} />
+        {/* `notifications` was never registered here, so it fell through to the
+            bare <Stack> screenOptions instead of the iconOnlyHeader every other
+            pushed screen gets — and its in-component <Stack.Screen options> did
+            not apply either (no "Notifications" title, no "Mark All Read"
+            action rendered). Registering it makes its header identical to
+            `alerts`, which sits one line above and behaves correctly. */}
+        {/* Retired screen kept as a Redirect to /notifications; headerShown
+            false so the stub never flashes a header on its way through. */}
+        <Stack.Screen name="alerts" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={iconOnlyHeader} />
         <Stack.Screen name="condition-guide" options={iconOnlyHeader} />
         <Stack.Screen name="leaderboard" options={iconOnlyHeader} />
         <Stack.Screen name="sets-to-complete" options={iconOnlyHeader} />

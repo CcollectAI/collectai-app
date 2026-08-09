@@ -26,18 +26,46 @@ type Props = {
   sort: CatalogSortKey;
   onChange: (sort: CatalogSortKey) => void;
   colors: AppTheme['colors'];
+  /**
+   * Render as a pinned bar: opaque background + hairline underline, so a
+   * scrolling list passes cleanly UNDER it.
+   *
+   * Only for callers where the chips sit OUTSIDE the scroll container
+   * (category-browse). On the category page the chips scroll with the content,
+   * and the underline would read as a stray divider in the middle of the page.
+   */
+  pinned?: boolean;
 };
 
-function CategorySortChips({ sort, onChange, colors }: Props) {
+function CategorySortChips({ sort, onChange, colors, pinned = false }: Props) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      // A horizontal ScrollView in a flex COLUMN parent has an unconstrained
+      // cross axis and will grow past its content. flexGrow:0 pins it to the
+      // chip height so the grid below starts where it looks like it should.
+      style={[
+        styles.bar,
+        pinned && [styles.pinnedBar, { backgroundColor: colors.background, borderBottomColor: colors.border }],
+      ]}
+      contentContainerStyle={styles.row}
+    >
       {CHIPS.map((c) => {
         const active = c.key === sort;
         const label = c.label;
         const inner = (
           <>
-            <Ionicons name={c.icon} size={13} color={active ? '#fff' : colors.muted} />
-            <Text style={[styles.text, { color: active ? '#fff' : colors.muted }]}>{label}</Text>
+            <Ionicons name={c.icon} size={13} color={active ? '#fff' : colors.muted} allowFontScaling={false} />
+            {/* Cap Dynamic Type on this compact pill: an unbounded system text
+                size scales the label past the chip and overflow:hidden shears
+                the bottoms ("only the tops visible"). 1.2x stays legible. */}
+            <Text
+              maxFontSizeMultiplier={1.2}
+              style={[styles.text, { color: active ? '#fff' : colors.muted }]}
+            >
+              {label}
+            </Text>
           </>
         );
         return (
@@ -79,18 +107,49 @@ function ScrollViewlessChip({ children, colors }: { children: React.ReactNode; c
 }
 
 const styles = StyleSheet.create({
+  // Applies ALWAYS — a horizontal ScrollView in a flex-column parent has an
+  // unconstrained cross axis and grows past its content without this.
+  bar: {
+    flexGrow: 0,
+  },
+  // `pinned` only. When the chips sit outside the scroll container, grid rows
+  // slide up to meet them; with edge-to-edge tiles and no boundary a
+  // half-scrolled row sits flush under the pills and reads as the background
+  // cutting the chip bar off. An opaque background + hairline + zIndex makes
+  // this a defined edge that content passes under — the same treatment
+  // ScreenHeader uses, for the same reason.
+  pinnedBar: {
+    zIndex: 5,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   row: { gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 5,
     paddingVertical: 7,
     paddingHorizontal: 13,
+    // Tall enough for the full label line box.
+    minHeight: 34,
     borderRadius: 999,
-    overflow: 'hidden',
+    // NO `overflow: 'hidden'` — it was shearing the label's bottoms ("words look
+    // halved") whenever the line box was a hair taller than the content area.
+    // borderRadius already rounds the gradient/pill, so hidden overflow bought
+    // nothing but the clipping bug. Text scaling is bounded via
+    // maxFontSizeMultiplier on the <Text>, so nothing overflows the pill anyway.
   },
   inactive: { borderWidth: 1 },
-  text: { fontSize: 12.5, fontWeight: '600' },
+  // No fixed lineHeight — a hard value would itself clip Dynamic-Type-scaled
+  // text. Scaling is bounded via maxFontSizeMultiplier on the <Text> instead,
+  // and the pill grows within that cap (minHeight floor above).
+  // includeFontPadding/textAlignVertical center the glyphs on Android.
+  text: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
   activeShadow: Platform.select({
     ios: {
       shadowColor: '#2C7873',

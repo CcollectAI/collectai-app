@@ -179,7 +179,7 @@ export function AdminPodManager() {
       {/* Header */}
       <div>
         <h2 className="text-lg font-bold text-[#0D1B2A]">Pod Management</h2>
-        <AdminDemoBanner />
+        <AdminDemoBanner source="pods" />
       </div>
 
       {/* Global stats */}
