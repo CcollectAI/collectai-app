@@ -26,6 +26,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useAuthContext } from '@/providers/useAuthContext';
+import { GATE_MAX_WAIT_MS } from '@/hooks/usePaginatedList';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -59,7 +60,7 @@ function formatDate(dateStr: string | undefined): string {
 function WatchlistTabScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { user } = useAuthContext();
+  const { user, loading: authLoading } = useAuthContext();
   const { settings } = useSettings();
   const { t } = useTranslation();
   const { showToast } = useToast();
@@ -172,10 +173,47 @@ function WatchlistTabScreen() {
     }
   }, []);
 
+  /*
+   * Don't fire the first read while the session is still hydrating.
+   *
+   * `listWatchlist` IGNORES its userId argument (watchlistProvider.ts:19 takes
+   * `_userId`) and relies on RLS to scope `watchlist_items` to the caller. So an
+   * unauthenticated read is not an error — it returns ZERO ROWS, which this
+   * screen then renders as "nothing on your watchlist yet". Reported 2026-08-10:
+   * a member with saved items opened the tab from a home-screen alert and saw an
+   * empty list.
+   *
+   * The timeout path in the provider already throws rather than return [] for
+   * exactly this reason ("an empty array is indistinguishable from 'you have not
+   * saved anything'"). This closes the other half of the same hole: empty because
+   * we asked too early.
+   *
+   * The gate has a deadline. A wedged session must not pin the screen forever, so
+   * we fetch anyway after GATE_MAX_WAIT_MS — IMPORTED from usePaginatedList, not
+   * redeclared. CLAUDE.md rule 3 under "Loading states" names that constant, and
+   * "two impls of one rule is the bug, not the fix".
+   *
+   * ⚠️ This is still a SECOND implementation of the gate MECHANISM. CLAUDE.md
+   * says `usePaginatedList` enforces it "for every caller ... so this cannot be
+   * reintroduced by a new screen" — and this screen reintroduced it, because it
+   * hand-rolls its loader. The structural fix is to move this screen onto
+   * `usePaginatedList`; that is a larger change (five mutation paths call
+   * `loadItems()` directly, and `listWatchlist` takes no limit/offset), so it is
+   * flagged rather than done silently here.
+   */
+  const [authGateExpired, setAuthGateExpired] = useState(false);
+
   useEffect(() => {
+    if (!authLoading) return;
+    const id = setTimeout(() => setAuthGateExpired(true), GATE_MAX_WAIT_MS);
+    return () => clearTimeout(id);
+  }, [authLoading]);
+
+  useEffect(() => {
+    if (authLoading && !authGateExpired) return;
     loadItems();
     loadMatches();
-  }, [loadItems, loadMatches]);
+  }, [loadItems, loadMatches, authLoading, authGateExpired]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);

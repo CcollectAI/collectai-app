@@ -26,7 +26,7 @@ const FETCH_TIMEOUT_MS = 12_000;
 // Longest we will wait for `enabled` (auth hydration) before fetching anyway.
 // Comfortably longer than a normal cold-start session read, short enough that a
 // wedged session costs seconds, not a permanently stuck screen.
-const GATE_MAX_WAIT_MS = 5_000;
+export const GATE_MAX_WAIT_MS = 5_000;
 
 const DEFAULT_PAGE_SIZE = 20;
 
