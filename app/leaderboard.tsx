@@ -9,8 +9,8 @@ import { USER_PROFILES } from '@/data/users';
 import { collectorsApi } from '@/api/collectorsApi';
 import { AnimatedPressable, useEnterReveal, useStaggerReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
-import { useSettings } from '@/lib/settings';
-import { formatPrice } from '@/lib/format';
+import { useSettings, type NumberLocale } from '@/lib/settings';
+import { formatPrice, formatNumber } from '@/lib/format';
 import logger from '@/utils/logger';
 import { MEDAL_COLORS, TWITCH_PURPLE } from '@/constants/colors';
 import { BETA_MODE, COMMUNITY_GATED } from '@/config/featureFlags';
@@ -54,13 +54,18 @@ export function apiEntryToRow(entry: {
   total_xp: number;
   level: number;
   current_streak: number;
-}): LeaderboardRow {
+}, locale: NumberLocale = 'de-DE'): LeaderboardRow {
   const displayName = entry.display_name ?? `Collector ${entry.rank}`;
   return {
     id: entry.user_id,
     displayName,
     handle: displayName.toLowerCase().replace(/\s+/g, ''),
-    primary: `${entry.total_xp.toLocaleString()} XP`,
+    // Number formatting follows `user_settings.locale` (NumberLocale), NOT the
+    // device locale and NOT the i18n UI language — see docs/ARCHITECTURE.md
+    // "user_settings: currency / region / locale". A bare `toLocaleString()`
+    // here rendered 12500 as "12.500 XP" on a Dutch phone and "12,500 XP" on a
+    // US one, ignoring the locale the user actually chose.
+    primary: `${formatNumber(entry.total_xp, locale)} XP`,
     secondary: `Level ${entry.level}`,
     meta: entry.current_streak > 0 ? `${entry.current_streak} day streak` : 'No active streak',
   };
@@ -156,7 +161,7 @@ const LeaderboardScreen: React.FC = () => {
           total_xp: entry.xp,
           level: entry.level,
           current_streak: entry.streak,
-        }),
+        }, settings.numberLocale),
         avatarColor: colors.accent,
       }));
     }
@@ -171,7 +176,7 @@ const LeaderboardScreen: React.FC = () => {
         secondary: `Rarity ${u.stats.rarityScore}`,
         meta: `${u.stats.totalItems} ${u.stats.totalItems === 1 ? 'item' : 'items'} · ${u.stats.totalCategories} ${u.stats.totalCategories === 1 ? 'category' : 'categories'}`,
       }));
-  }, [apiEntries, colors.accent]);
+  }, [apiEntries, colors.accent, settings.numberLocale]);
 
   const { getItemStyle } = useStaggerReveal({
     count: rankedUsers.length,

@@ -64,7 +64,31 @@ describe('apiEntryToRow — XP must never render as currency', () => {
     expect(row.handle).toBe('merles');
   });
 
-  it('thousands-separates large XP totals', () => {
-    expect(apiEntryToRow({ ...PROD_BOARD[0], total_xp: 12500 }).primary).toBe('12,500 XP');
+  /*
+   * Locale must come from `user_settings.locale` (NumberLocale), never from the
+   * device. Until 2026-08-10 this read `entry.total_xp.toLocaleString()` with no
+   * locale, so the SAME code produced "12.500 XP" on a Dutch machine and
+   * "12,500 XP" on a US one — and this test passed or failed depending on whose
+   * terminal ran it, which is why it looked flaky rather than broken.
+   *
+   * Pin the locale explicitly on every assertion here. ko-KR and en-AU are the
+   * newest NumberLocale values (added 2026-07-30) and the least exercised.
+   */
+  it('thousands-separates large XP totals in the user-selected locale', () => {
+    expect(apiEntryToRow({ ...PROD_BOARD[0], total_xp: 12500 }, 'en-US').primary).toBe('12,500 XP');
+    expect(apiEntryToRow({ ...PROD_BOARD[0], total_xp: 12500 }, 'de-DE').primary).toBe('12.500 XP');
+    expect(apiEntryToRow({ ...PROD_BOARD[0], total_xp: 12500 }, 'ja-JP').primary).toBe('12,500 XP');
+    expect(apiEntryToRow({ ...PROD_BOARD[0], total_xp: 12500 }, 'ko-KR').primary).toBe('12,500 XP');
+    expect(apiEntryToRow({ ...PROD_BOARD[0], total_xp: 12500 }, 'en-AU').primary).toBe('12,500 XP');
+    expect(apiEntryToRow({ ...PROD_BOARD[0], total_xp: 12500 }, 'nl-NL').primary).toBe('12.500 XP');
+  });
+
+  /*
+   * The small-number assertions above call apiEntryToRow with no locale, so they
+   * exercise the 'de-DE' default. That default must match
+   * DEFAULT_SETTINGS.numberLocale in src/lib/settings.tsx.
+   */
+  it('defaults to the app-wide default locale when none is passed', () => {
+    expect(apiEntryToRow({ ...PROD_BOARD[0], total_xp: 12500 }).primary).toBe('12.500 XP');
   });
 });
