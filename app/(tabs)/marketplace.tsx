@@ -575,11 +575,30 @@ const SearchScreen: React.FC = () => {
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
   }, [trimmedQuery, executeSearch, settings.hapticsEnabled]);
 
+  /*
+   * Submitting the search bar hands the query to the UNIFIED search (2026-08-10).
+   *
+   * Typing still searches in place — the debounced `executeSearch` above keeps
+   * showing your items, categories and member listings as you type. But pressing
+   * search means "find me this thing", and only unified search can answer that:
+   * it is the one query path that reads `category_items`, so it is the only one
+   * that can find a Rolex Daytona among the 140k catalogue rows. This screen's
+   * own search never touches the catalogue, which is why that query came back
+   * empty while the catalogue held 77 Rolexes.
+   *
+   * Routed to `/search`, NOT `/(tabs)/search`. Both render the same component,
+   * but `npm run check:params` resolves a push target to its route FILE, and the
+   * tab file is a one-line re-export containing no `useLocalSearchParams` — so
+   * pushing there reported "that route reads: (none)" and the gate could not
+   * prove `q` is consumed. `app/search.tsx` reads it directly, so the contract
+   * is checkable. The screen renders its own QuickNavBar, so it keeps its
+   * navigation outside the tabs navigator.
+   */
   const handleSubmitSearch = useCallback(() => {
     if (!trimmedQuery) return;
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    executeSearch(trimmedQuery);
-  }, [trimmedQuery, executeSearch, settings.hapticsEnabled]);
+    router.push({ pathname: '/search', params: { q: trimmedQuery } });
+  }, [trimmedQuery, router, settings.hapticsEnabled]);
 
   // Runs a search from a tapped chip — the demand-heat banner and the
   // regional-insights row use it. (Popular Searches used it too, until that

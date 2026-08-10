@@ -12,7 +12,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, type Href } from 'expo-router';
+import { useRouter, useLocalSearchParams, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { dataProvider } from '@/data';
@@ -185,7 +185,14 @@ function SearchScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { t } = useTranslation();
-  const [query, setQuery] = useState('');
+  // Seeded from `?q=`, which the marketplace search bar now sends when a query
+  // is submitted (2026-08-10). A lazy initialiser, NOT an effect: params are
+  // present on the first render, and an effect that wrote `query` while also
+  // depending on it is the self-cancelling pattern
+  // scripts/check-self-cancelling-effects.mjs exists to catch. Same shape the
+  // marketplace screen already uses for its own `?q=`.
+  const { q: initialQuery } = useLocalSearchParams<{ q?: string }>();
+  const [query, setQuery] = useState(() => (typeof initialQuery === 'string' ? initialQuery : ''));
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const { isSlow, isVerySlow } = useSlowLoad(loading);
@@ -223,6 +230,23 @@ function SearchScreen() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => doSearch(text), 300);
   }, [doSearch]);
+
+  // Run a seeded `?q=` once, on mount.
+  //
+  // `doSearch` is otherwise only ever reached through `handleQueryChange`, i.e.
+  // by typing. Without this the incoming query would render in the input and
+  // never search — the param would be accepted and silently dropped, which is
+  // exactly the dead route-param handoff `npm run check:params` exists to catch.
+  //
+  // Mount-only, and it calls `doSearch` directly rather than `setQuery`: it must
+  // not list `query` in its deps while also writing it, which is the
+  // self-cancelling-effect pattern (scripts/check-self-cancelling-effects.mjs).
+  useEffect(() => {
+    if (typeof initialQuery === 'string' && initialQuery.trim()) {
+      doSearch(initialQuery);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Clean up debounce timer on unmount
   useEffect(() => {
