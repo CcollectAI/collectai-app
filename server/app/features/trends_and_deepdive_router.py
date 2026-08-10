@@ -53,30 +53,7 @@ class CollectionTrendResponse(BaseModel):
 class CategoryDeepDiveResponse(BaseModel):
     category: str
     currency: str = "EUR"
-    # KEPT for shipped builds. iOS 126 and earlier render `avg_market_price`
-    # directly, so removing it would blank the category card on those.
-    #
-    # Its arithmetic is FINE — the denominator is COUNT(price), so unpriced rows
-    # are excluded rather than counted as zero (unlike /portfolio/category-stats
-    # before 2026-08-10). The problem is the STATISTIC, not the sum.
-    #
-    # Measured on prod, 30d of market_hits (2026-08-11):
-    #   watches   mean 7,171.94   median   914.24   (7.8x)
-    #   pokemon   mean    14.93   median     0.70   (21x)
-    #   lego      mean   140.21   median    48.75
-    #   whiskey   mean    87.51   median    23.58
-    # The watches card claimed EUR 7,172 while a typical watch is EUR 914. A mean
-    # over a dispersed catalogue describes no object anyone owns.
     avg_market_price: float
-    # Added 2026-08-11 — prefer these. p10/p90 rather than min/max deliberately:
-    # market_hits carries mis-scraped rows at both ends (a EUR 0.01 placeholder,
-    # a mispriced listing), and a raw range would be defined by exactly those.
-    # The same reasoning already governs top_movers below, which uses a
-    # median-of-halves split for robustness.
-    median_market_price: Optional[float] = None
-    p10_market_price: Optional[float] = None
-    p90_market_price: Optional[float] = None
-    priced_hits: int = 0
     value_distribution: List[TimeseriesPoint]
     volume_trend: List[TimeseriesPoint]
     top_traded_items: List[dict]
@@ -512,39 +489,6 @@ async def _compute_category_deep_dive(
             )
 
             avg_market_price = float(daily_rows[0]["overall_avg"] or 0) if daily_rows else 0.0
-
-            # Median + p10/p90 over the SAME filtered set as above.
-            #
-            # A separate statement rather than a window over `daily_rows`:
-            # percentile_cont is an ordered-set aggregate and cannot be used as a
-            # window function, and computing it per-day then averaging would be a
-            # median-of-medians, which is not the median. Same WHERE clause, so
-            # it prunes on the (category, seen_at) partition index exactly like
-            # the query above, and the whole endpoint is cached for
-            # _DEEPDIVE_CACHE_TTL (6h), so the extra pass is paid once.
-            spread_row = await conn.fetchrow(
-                """
-                SELECT
-                    count(price)                                                AS priced_hits,
-                    percentile_cont(0.5) WITHIN GROUP (ORDER BY price)          AS median_price,
-                    percentile_cont(0.1) WITHIN GROUP (ORDER BY price)          AS p10_price,
-                    percentile_cont(0.9) WITHIN GROUP (ORDER BY price)          AS p90_price
-                FROM market_hits
-                WHERE category = $1
-                  AND seen_at >= $2
-                  AND price IS NOT NULL
-                """,
-                category.lower(),
-                cutoff,
-            )
-            # None, not 0.0, when nothing is priced — a category we cannot value
-            # must not claim to be worth nothing. Same rule as the null
-            # median_value in /portfolio/category-stats.
-            _p = lambda k: (float(spread_row[k]) if spread_row and spread_row[k] is not None else None)
-            median_market_price = _p("median_price")
-            p10_market_price = _p("p10_price")
-            p90_market_price = _p("p90_price")
-            priced_hits = int(spread_row["priced_hits"] or 0) if spread_row else 0
             value_distribution = [
                 TimeseriesPoint(ts=row["day"], value=float(row["avg_price"] or 0))
                 for row in daily_rows
@@ -657,10 +601,6 @@ async def _compute_category_deep_dive(
                 category=category,
                 currency=currency,
                 avg_market_price=round(avg_market_price, 2),
-                median_market_price=round(median_market_price, 2) if median_market_price is not None else None,
-                p10_market_price=round(p10_market_price, 2) if p10_market_price is not None else None,
-                p90_market_price=round(p90_market_price, 2) if p90_market_price is not None else None,
-                priced_hits=priced_hits,
                 value_distribution=value_distribution[offset:offset + limit],
                 volume_trend=volume_trend[offset:offset + limit],
                 top_traded_items=top_traded_items[offset:offset + limit],

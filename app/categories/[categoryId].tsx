@@ -7,7 +7,7 @@
  *   2. Category header card (organic header + Follow + Invite/Find friends)
  *   3. Category overview rails (sort chips → main rail, then BY SET rail;
  *      every tap → museum detail → affiliate buy)
- *   4. Market insights (category market value + trend; hidden when empty)
+ *   4. (Market insights — REMOVED 2026-08-11; see below)
  *   — below the fold —
  *   5. Upcoming events (category-tagged first, then the events-tab pool)
  *   6. Related categories
@@ -19,8 +19,8 @@
  *
  * Perf: the page renders instantly from local category metadata
  * (getCategoryById is synchronous) — there is NO full-screen skeleton and no
- * blocking fetch. The rail, insights, and events each load their own data
- * and stream in as they arrive.
+ * blocking fetch. The rail and events each load their own data and stream in as
+ * they arrive.
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -45,7 +45,6 @@ import ScreenHeader from '@/components/ScreenHeader';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import {
   CategoryHeaderCard,
-  MarketInsightsSection,
   CategoryEventsSection,
   RelatedCategoriesSection,
   CategoryOverviewRail,
@@ -75,9 +74,6 @@ function CategoryStoreScreen() {
   // price, so the highest-earning items lead.
   const [catalogSort, setCatalogSort] = useState<CatalogSortKey>('value');
 
-  // Market insights state
-  const [deepDive, setDeepDive] = useState<Record<string, unknown> | null>(null);
-  const [deepDiveLoading, setDeepDiveLoading] = useState(false);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -103,14 +99,9 @@ function CategoryStoreScreen() {
       logger.error('[CategoryStore] store fetch error:', err);
     }
 
-    setDeepDiveLoading(true);
-    dataProvider.getCategoryDeepDive(categoryId)
-      .then(setDeepDive)
-      // logger.error, not .info — info/warn are stripped from TestFlight builds,
-      // so this failure was invisible on device for two days while the card
-      // silently rendered nothing (MarketInsightsSection returns null on !hasData).
-      .catch((err) => { logger.error('[Category] deep dive fetch error:', err); setDeepDive(null); })
-      .finally(() => setDeepDiveLoading(false));
+    // The deep-dive fetch is GONE with the market-value card (2026-08-11).
+    // It existed only to feed MarketInsightsSection; nothing else read it, so
+    // keeping the call would be a request whose response goes nowhere.
   }, [categoryId]);
 
   useEffect(() => {
@@ -259,12 +250,13 @@ function CategoryStoreScreen() {
           } as unknown as Href)}
         />
 
-        {/* 4. Category market value + trend */}
-        <MarketInsightsSection
-          deepDive={deepDive}
-          deepDiveLoading={deepDiveLoading}
-          colors={colors}
-        />
+        {/* 4. Category market value — REMOVED 2026-08-11.
+            A median across a whole category cannot value the object in front of
+            you: "the typical watch is EUR 914" is true and useless when you own
+            a Daytona. The mean it replaced was worse (EUR 7,172 for watches,
+            7.8x the median; pokemon 21x), but fixing the statistic did not make
+            the number answer a question anyone was asking. Removed rather than
+            corrected again. */}
 
         {/* — below the fold — */}
 
