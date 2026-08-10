@@ -226,6 +226,40 @@ carried this defect at once (all fixed 2026-07-28):
 `first_q50` only when there is no purchase price on file, so items the user
 never priced keep a sensible value instead of dropping to zero.
 
+##### The same `, 0` in an AVG, and why SUM was fine (2026-08-10)
+
+`/portfolio/category-stats` closed its fallback chain with `, 0)`:
+
+```sql
+AVG(COALESCE(l.q50, <quick_prediction>, i.predicted_price_eur, i.estimated_value, 0))
+```
+
+`SUM` and `MAX` already ignore NULLs, so the `0` changed nothing for them. In
+`AVG` it is a **sample in the denominator**: every item we cannot price counted
+as EUR 0.00. For the 40+ categories with no sold-comp source (watches, whiskey,
+lego, warhammer — ~62,000 rows at 0% priced, see the crosswalk table in
+CLAUDE.md) the reported average collapsed toward zero. Proven on prod: a user's
+`lego` row returned `avg_value 0.00` across 2 items, 0 of them priced.
+
+Now the chain ends at `i.estimated_value` and **NULL means "we do not know"**.
+`avg_value` is gone; the endpoint returns `median_value` + `min_item_value` /
+`max_item_value` / `priced_count`. A mean is the wrong statistic for a dispersed
+category anyway — a EUR 40 Seiko beside a EUR 18,000 Daytona has no meaningful
+average. A category with nothing priced returns **null, not 0.0**, and the client
+renders "not yet priced".
+
+The value is computed once in a `valued` CTE instead of being copy-pasted into
+five aggregates.
+
+> **Why no gate caught it.** `check-silent-failures.mjs` names this exact class
+> (`unknown-as-zero`) and scans JS/TS. This was SQL inside a Python string.
+> Each new AXIS needs its own sweep.
+
+> **Client compatibility.** Removing `avg_value` breaks any shipped build that
+> reads it. `formatPrice` renders `—` for null so it degrades rather than
+> crashes, but iOS build 125 shows "avg —" until a build carrying the FE half
+> ships. Deploy order matters for response-shape changes.
+
 Two places that correctly use the raw column, so don't "fix" them:
 `items_export_router.py` (exports the amount *with* `purchase_currency`) and
 `dossier_agent.py` (emits `amount` + `currency` as a pair).

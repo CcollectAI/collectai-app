@@ -48,6 +48,45 @@ Also observed: Cardmarket now answers our Crawl4AI scrape with
 outbound-request counting in place → then flip the manifest line and watch one
 cycle.
 
+## The watchlist screen rendered EMPTY on a cold start (fixed 2026-08-10)
+
+Reported as "I press the watchlist item Bayou and it leads to an empty watchlist
+screen". The navigation was fine — `(tabs)/index.tsx:569` pushes
+`/(tabs)/wishlist` with `highlightId`, and `wishlist.tsx:73` reads it.
+`check:params` is green on that handoff. The screen arrived correctly and had
+nothing in it.
+
+**`listWatchlist` ignores its `userId` argument.** `watchlistProvider.ts:19`
+takes `_userId` and relies on **RLS** to scope `watchlist_items` to the caller.
+So a read fired before the session hydrates is not an error and not a timeout —
+it returns **zero rows**, and the screen renders its honest-looking empty state
+to a member who has items.
+
+`wishlist.tsx` destructured only `{ user }` from `useAuthContext`, never
+`loading`, and its load effect ran on mount.
+
+The provider's *timeout* path already threw rather than return `[]`, with a
+comment explaining that an empty array is indistinguishable from "you have not
+saved anything" — and that the watchlist is the paid feature's input, so a user
+who believes it emptied has no reason to keep paying. That reasoning was right;
+it just did not cover **empty because we asked too early**.
+
+Fixed per CLAUDE.md "Loading states" §2 and §3: gate on `authLoading`, with
+`GATE_MAX_WAIT_MS` (imported from `usePaginatedList`, not redeclared) as the
+deadline so a wedged session cannot pin the screen.
+
+> **Still a second implementation.** CLAUDE.md says `usePaginatedList` enforces
+> this "for every caller … so this cannot be reintroduced by a new screen" — and
+> this screen reintroduced it, because it hand-rolls its loader. Moving it onto
+> the hook is the real fix; five mutation paths call `loadItems()` directly and
+> `listWatchlist` takes no limit/offset, so it was flagged rather than done
+> silently.
+
+The same class hit **new** code the same day: the member-listings rail in
+`(tabs)/marketplace.tsx` fired `GET /p2p/listings` on mount and logged its own
+failure twelve times behind the login screen. Found by running the app in the
+simulator, not by any checker.
+
 ## Consolidation 2026-08-06 — one alert, named "Target Hit"
 
 Eight workers implemented four user promises, with three separate answers to

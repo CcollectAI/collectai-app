@@ -1,6 +1,75 @@
 # Sparrow Collect - Project Memory
 
-> Renamed from CollectAI 2026-05-04 · Last refreshed 2026-05-19
+> Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-10
+
+## Current state (2026-08-10)
+
+**iOS build 125 is on TestFlight** (uploaded 20:17 CEST, submission
+`001c0dc3`). 121 and 123 were built locally and **never submitted** — see
+"Submission status is not TestFlight status" below.
+
+Seven fixes landed today; four are instances of classes this file already names.
+
+| What | Class | Where |
+|---|---|---|
+| Category "average value" counted unpriced items as **EUR 0** | `unknown-as-zero` | `portfolio_router.py` — DEPLOYED |
+| Watchlist rendered empty when the read fired before auth | loading-states §2 | `(tabs)/wishlist.tsx` |
+| Member-listings rail 401'd before auth — **same class, new code, same day** | loading-states §2 | `(tabs)/marketplace.tsx` |
+| XP printed `12.500` on a Dutch phone, `12,500` on a US one | device locale ≠ `user_settings.locale` | `leaderboard.tsx` |
+| Unified search reachable from **nowhere** | dead-by-wiring | `(tabs)/search.tsx` |
+
+### An unpriced item is not a zero-euro item (DEPLOYED)
+
+`/portfolio/category-stats` ended its COALESCE chain in `0`, so `AVG` counted
+every unpriceable item as a EUR 0 **sample in the denominator**. For the 40+
+categories with no sold-comp source (~62k rows at 0% priced) the reported
+average collapsed toward zero. `avg_value` is replaced by a **median plus
+min/max**; a category with nothing priced returns `null`, not `0.0`, and reads
+"not yet priced".
+
+**`check-silent-failures.mjs` did not catch it** — the checker reads JS/TS and
+this was SQL inside a Python string. Every new AXIS needs its own sweep; this is
+the third time that sentence has been written here.
+
+⚠️ **Build 125 predates the FE half.** It still reads `avg_value`, which the
+deployed server no longer returns. `formatPrice` renders `—` for null so it
+degrades rather than crashes, but the analytics screen shows "avg —" until the
+next build.
+
+### Submission status is not TestFlight status
+
+`eas submit` runs fastlane pilot with `skip_waiting_for_build_processing:true`
+and `"groups":[]`, so a submission reads **FINISHED the moment Apple accepts the
+bytes** — before processing, and without assigning it to a tester group. For
+`--path` submissions of local IPAs, EAS also records **no build number at all**
+(`appStoreConnectBuildUpload` is null), and `build:list` only shows cloud
+builds. So EAS cannot answer "which build did I last send to Apple?"
+
+Authoritative sources are only App Store Connect and Apple's processing email.
+Keep renaming the shipped artifact to `*-uploaded.ipa` — on 2026-08-10 that
+filename was the only surviving record that 120, not 121 or 123, was the last
+build submitted.
+
+### A feature can be complete, correct, and reachable from nowhere
+
+Distinct from the silent-failure class below, and not caught by any existing
+gate. Three found on 2026-08-10:
+
+- **Unified search** (`app/search.tsx`, `GET /search/unified`, trigram index,
+  built the day before) — **zero** call sites pushed to `/search`, while
+  `(tabs)/search.tsx` redirected to a marketplace screen whose search never
+  reads `category_items`. Reported as "rolex daytona is not in the catalogue".
+  It was: 12 Daytona rows, 77 Rolexes, 1,416 watches.
+- **`WatchlistWidget`** and **`CategoryLeaderboardSection`** — both exported
+  from a barrel, both rendered by no screen.
+
+`check-dead-nav.mjs` reports PASS on all of it: it asks whether a router target
+**resolves**, never whether anything **reaches** it.
+
+**`check:params` resolves a push target to its route FILE.** A one-line
+re-export (`export { default } from '../search'`) therefore reads as "that route
+reads: (none)". Push to the file that actually calls `useLocalSearchParams`, or
+the contract stops being checkable.
 
 ## Overview
 Sparrow Collect is a collector app for tracking collectibles (Pokemon, MTG, Funko, Warhammer, K-pop, etc.) with AI-powered scanning and valuation. **54 categories**, ~140K curated catalog items, **44 marketplace adapters**.

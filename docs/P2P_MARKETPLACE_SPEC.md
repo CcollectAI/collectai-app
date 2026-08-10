@@ -286,6 +286,42 @@ shape (`id, item_id, image_url, label, position, created_at`), the RLS INSERT
 succeeded. The 0 rows simply mean nobody has uploaded in the six days since.
 Do not re-investigate this without first writing a row.
 
+## 1h. Discovery: the entry point was two grey rows (2026-08-10)
+
+Build-order item 6 says "listings surfaced in search". Until today it was not
+built, and the marketplace tab carried the whole feature as **two stacked
+`memberMarketRow`s** — "Member marketplace" and "Open bids" — identical styling,
+chevron on the right. They read as settings entries, so neither was findable.
+They are also not the same kind of thing: one is **discovery**, the other is your
+own **in-flight negotiation state**.
+
+Three changes:
+
+- **Open bids removed from the marketplace tab.** Not lost — `listings.tsx:682`
+  already renders offers as an icon with a live count badge, refreshed on focus.
+  A "Browse | My offers" segment was considered and **rejected**:
+  `listings.tsx:611-627` records that exact control being removed on 2026-08-07
+  because "a first-time user with nothing listed saw a toggle for something they
+  do not have". The same objection applies to offers.
+- **The remaining entry is a rail of real listings** — photo, title, price. When
+  nothing is listed, or the fetch fails, it falls back to the old link row rather
+  than showing an empty shelf, for the same reason as the removed segment.
+  Catalogue images are labelled "Stock photo": passing stock art off as the
+  seller's item hides condition, the one thing a second-hand buyer cannot judge.
+- **Listings appear in search**, as a "From members" group above the external
+  results. A third element of the existing `Promise.allSettled`, not a new
+  effect, so it shares the `searchId` stale-guard — a slow member search cannot
+  overwrite a newer query. Only live listings reach it: browse is restricted to
+  `delisted_at IS NULL AND status = 'active'`.
+
+⚠️ The empty-state condition counted **three** result sets. With a fourth, a
+query matching only a member listing rendered the listing *and* "no results" at
+once. Any new result group must be added there too.
+
+⚠️ The rail fetch shipped without an auth gate and 401'd twelve times behind the
+login screen — found in the simulator, not by a checker. `/p2p/listings` is
+authed; gate any new fetch on `!authLoading && session`.
+
 ## 2. Scope — three stages, each shippable
 
 ### Stage 1 — Listings (no money changes hands)
@@ -634,6 +670,7 @@ Two gaps that were real regardless of the trader question:
 4. Listing detail + "Message seller" → existing chat
 5. Report button + takedown path (DSA)
 6. Listings surfaced in search + catalog item page
+   — **search half DONE 2026-08-10**, catalog item page still open. See below.
 7. *Then measure:* buyable rows created in mtg/pokemon/yugioh, and Target Hits
    fired from `provider = 'sparrow'`. That number decides whether Stage 2/3 ever
    happens.
