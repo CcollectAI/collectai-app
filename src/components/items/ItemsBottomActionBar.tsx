@@ -37,10 +37,19 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
         </Text>
 
         <View style={styles.bottomActionButtons}>
+          {/* Export is NOT a filled accent button (2026-08-11).
+              It used to be the only solid-accent control here while Archived and
+              Projects were outlined, so the section read as "one thing you
+              should do, and two you probably shouldn't". These are three
+              equivalent utilities under one "Actions" heading — none of them is
+              the screen's primary action, and a filled button claims that it is.
+              Also removes the hardcoded '#FFFFFF' on an accent fill: per
+              docs/ui-playbook.md that is the high-contrast-dark bug where the
+              palette turns accent white and the label vanishes. */}
           <AnimatedPressable
             style={[
-              styles.actionButtonPrimary,
-              { backgroundColor: colors.accent },
+              styles.actionButtonSecondary,
+              { borderColor: colors.border },
               exporting && styles.actionButtonDisabled,
             ]}
             onPress={onExportCSV}
@@ -49,12 +58,12 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
             accessibilityLabel="Download collection overview as CSV"
           >
             {exporting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={colors.accent} />
             ) : (
-              <Ionicons name="download-outline" size={18} color="#FFFFFF" />
+              <Ionicons name="download-outline" size={18} color={colors.accent} />
             )}
-            <Text numberOfLines={1} style={styles.actionButtonPrimaryText}>
-              {exporting ? 'Exporting…' : 'Export CSV'}
+            <Text numberOfLines={1} style={[styles.actionButtonSecondaryText, { color: colors.text }]}>
+              {exporting ? 'Exporting…' : 'Export'}
             </Text>
           </AnimatedPressable>
 
@@ -65,15 +74,15 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
           <AnimatedPressable
             style={[
               styles.actionButtonSecondary,
-              { borderColor: colors.accent },
+              { borderColor: colors.border },
             ]}
             onPress={onOpenArchived}
             accessibilityRole="button"
             accessibilityLabel="View archived items and restore them"
           >
             <Ionicons name="archive-outline" size={18} color={colors.accent} />
-            <Text numberOfLines={1} style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
-              Archived
+            <Text numberOfLines={1} style={[styles.actionButtonSecondaryText, { color: colors.text }]}>
+              Archive
             </Text>
           </AnimatedPressable>
 
@@ -81,14 +90,14 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
             <AnimatedPressable
               style={[
                 styles.actionButtonSecondary,
-                { borderColor: colors.accent },
+                { borderColor: colors.border },
               ]}
               onPress={onOpenProjects}
               accessibilityRole="button"
               accessibilityLabel="Open build and paint projects"
             >
               <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
-              <Text numberOfLines={1} style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
+              <Text numberOfLines={1} style={[styles.actionButtonSecondaryText, { color: colors.text }]}>
                 Projects
               </Text>
             </AnimatedPressable>

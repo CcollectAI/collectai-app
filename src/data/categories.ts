@@ -49,6 +49,7 @@ export type CategoryId =
   | 'plush_collectibles'
   | 'pens'
   | 'watches'
+  | 'jewellery'
   | 'sneakers'
   | 'oop_board_games'
   | 'city_pop_vinyl'
@@ -138,6 +139,7 @@ export const CATEGORY_VISUAL: Record<CategoryId, { accentColor: string; iconName
   plush_collectibles: { accentColor: '#F472B6', iconName: 'heart-circle' },
   pens: { accentColor: '#065F46', iconName: 'create' },
   watches: { accentColor: '#92400E', iconName: 'watch' },
+  jewellery: { accentColor: '#0ABAB5', iconName: 'diamond' },
   sneakers: { accentColor: '#1D4ED8', iconName: 'footsteps' },
   oop_board_games: { accentColor: '#6D4C41', iconName: 'dice' },
   city_pop_vinyl: { accentColor: '#E040FB', iconName: 'musical-note' },
@@ -1567,6 +1569,51 @@ export const CATEGORIES: Category[] = [
       },
     ],
     relatedCategoryIds: ['vintage_cameras', 'whiskey', 'diecast'],
+  },
+  {
+    // Added 2026-08-11. Jewellery had no category at all — 54 existed, none
+    // matched jewel/luxury — so a Tiffany piece had nowhere to live and could
+    // not be classified, listed or found.
+    //
+    // NOT added to src/taxonomy/registry.ts. docs/TAXONOMY.md says new
+    // categories go there, but `watches` is absent from it and so are the other
+    // non-TCG categories; registry.ts is the TCG-era list. THIS file (54
+    // categories) is what drives browse and selection.
+    //
+    // `collectionDimension: 'brand'` for the same reason as watches: set_code is
+    // near-unique per piece, brand groups well.
+    id: 'jewellery',
+    name: 'Jewellery',
+    tagline: 'Tiffany blue boxes, Cartier Love screws, and Alhambra clovers that outlive their owners.',
+    bannerImageUrl:
+      'https://images.pexels.com/photos/1191531/pexels-photo-1191531.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    accentColor: '#0ABAB5',
+    iconName: 'diamond',
+    collectionDimension: 'brand',
+    collections: [
+      { id: 'j-necklaces', name: 'Necklaces & Pendants', itemCount: 0 },
+      { id: 'j-bracelets', name: 'Bracelets & Bangles', itemCount: 0 },
+      { id: 'j-rings', name: 'Rings', itemCount: 0 },
+      { id: 'j-earrings', name: 'Earrings', itemCount: 0 },
+    ],
+    externalMarketplaces: [
+      {
+        id: 'the1stdibs',
+        label: '1stDibs',
+        url: 'https://www.1stdibs.com',
+      },
+      {
+        id: 'vestiaire',
+        label: 'Vestiaire Collective',
+        url: 'https://www.vestiairecollective.com',
+      },
+      {
+        id: 'ebay',
+        label: 'eBay',
+        url: 'https://www.ebay.com',
+      },
+    ],
+    relatedCategoryIds: ['watches', 'vintage_cameras', 'whiskey'],
   },
   {
     id: 'watches',

@@ -39,7 +39,7 @@
       }
     },
     "production": {
-      "autoIncrement": true,
+      "autoIncrement": false,
       "env": {
         "EXPO_PUBLIC_SUPABASE_MODE": "strict",
         "_comment_beta_unlock": "MUST stay 'false' on any profile that can reach the App Store. The EAS 'production' environment sets EXPO_PUBLIC_BETA_UNLOCK_ALL=true for internal testers; a build profile that does not pin it inherits that true, and BETA_UNLOCK_ALL makes useBillingLimits report every user as 'pro' AND skip RevenueCat entirely (src/hooks/useBillingLimits.ts:102). This profile has a submit config with the same ascAppId as 'store', so it is a shippable path — before 2026-07-27 it would have shipped a build where the paywall did not exist.",

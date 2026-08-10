@@ -53,7 +53,13 @@ import { DemandHeatBanner } from '@/components/marketplace/DemandHeatBanner';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { RegionalInsightsSection } from '@/components/marketplace/RegionalInsightsSection';
 import { MarketMoversSection } from '@/components/marketplace/MarketMoversSection';
-import { listListings, type P2PListing } from '@/api/p2pApi';
+import {
+  listListings,
+  listOffers,
+  countOffersNeedingAction,
+  type P2PListing,
+  type P2POffer,
+} from '@/api/p2pApi';
 import { useAuthContext } from '@/providers/useAuthContext';
 import { text as textToken, fontWeight } from '@/theme/tokens';
 import type { CurrencyCode } from '@/data/types';
@@ -348,6 +354,20 @@ const SearchScreen: React.FC = () => {
    *  which is the unfiltered rail shown when no query is typed. */
   const [memberResults, setMemberResults] = useState<P2PListing[]>([]);
 
+  /*
+   * Open bids on the marketplace overview (restored 2026-08-11).
+   *
+   * Removed the previous day because it sat in an identical grey `memberMarketRow`
+   * beside the marketplace row and read as a settings entry. Removing it was the
+   * wrong correction: the badged icon on app/listings.tsx is one screen deeper,
+   * so the OVERVIEW had no route to your own negotiations at all.
+   *
+   * Back, but earning its place — it shows the actual state (how many buying,
+   * how many selling, how many need you) in the semantic colours from the
+   * buy/sell treatment, instead of a chevron and a noun.
+   */
+  const [offers, setOffers] = useState<P2POffer[] | null>(null);
+
   useEffect(() => {
     // Don't fire before the session exists. `/p2p/listings` is authed, so a
     // fetch during auth hydration 401s — proven on the simulator 2026-08-10,
@@ -361,6 +381,13 @@ const SearchScreen: React.FC = () => {
     // so a wedged session degrades instead of pinning a skeleton.
     if (authLoading || !session) return;
     let cancelled = false;
+    // Open bids, same auth gate and same reason as the rail below.
+    listOffers('all')
+      .then((res) => { if (!cancelled) setOffers(res?.offers ?? []); })
+      .catch((err) => {
+        logger.error('[Marketplace] open bids unavailable:', err);
+        if (!cancelled) setOffers([]);
+      });
     listListings({ sort: 'newest', limit: 10 })
       .then((res) => {
         if (!cancelled) setMemberListings(res?.listings ?? []);
@@ -846,8 +873,67 @@ const SearchScreen: React.FC = () => {
           )
         )}
 
-        {/* Open bids MOVED to app/listings.tsx (2026-08-10) as a "My offers"
-            segment beside "Browse".
+        {/* Open bids — RESTORED 2026-08-11 after being removed the day before.
+            Removing it was the wrong correction: the badged icon on
+            app/listings.tsx is a screen deeper, so the marketplace OVERVIEW had
+            no route to your own negotiations at all.
+            It earns its place now by showing state rather than a noun — how many
+            you are buying, how many selling, how many need you — in the same
+            semantic colours as the offers screen (info = buying, success =
+            selling). Body copy at `md`, per docs/ui-playbook.md. */}
+        {!trimmedQuery && offers && offers.length > 0 && (() => {
+          const buying = offers.filter((o) => o.i_am_buyer).length;
+          const selling = offers.length - buying;
+          const needsMe = countOffersNeedingAction(offers);
+          return (
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                router.push('/offers' as Href);
+              }}
+              style={[styles.bidsRow, {
+                backgroundColor: colors.card,
+                borderColor: needsMe > 0 ? colors.accent : colors.border,
+              }]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                `Open bids: ${buying} buying, ${selling} selling` +
+                (needsMe > 0 ? `, ${needsMe} waiting for you` : '')
+              }
+            >
+              <View style={styles.bidsHead}>
+                <Text style={[styles.bidsTitle, { color: colors.text }]}>Open bids</Text>
+                {needsMe > 0 && (
+                  <View style={[styles.bidsBadge, { backgroundColor: colors.accent }]}>
+                    <Text style={[styles.bidsBadgeText, { color: colors.accentText }]}>
+                      {needsMe} needs you
+                    </Text>
+                  </View>
+                )}
+                <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+              </View>
+              <View style={styles.bidsCounts}>
+                {buying > 0 && (
+                  <View style={[styles.bidsPill, { backgroundColor: colors.infoBg }]}>
+                    <Text style={[styles.bidsPillText, { color: colors.info }]}>
+                      {buying} buying
+                    </Text>
+                  </View>
+                )}
+                {selling > 0 && (
+                  <View style={[styles.bidsPill, { backgroundColor: colors.successBg }]}>
+                    <Text style={[styles.bidsPillText, { color: colors.success }]}>
+                      {selling} selling
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </AnimatedPressable>
+          );
+        })()}
+
+        {/* Historical note (2026-08-10): this block briefly pointed at
+            app/listings.tsx instead.
 
             It used to sit here, in an identical `memberMarketRow` directly
             beneath the member-marketplace row — and that was the problem. Two
@@ -1296,6 +1382,48 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     marginBottom: 20,
+  },
+  // Open-bids entry. Semantic buy/sell colours, `md` body copy — nothing here
+  // uses `xs`, which the playbook reserves for what no user needs to read.
+  bidsRow: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 20,
+    gap: 8,
+  },
+  bidsHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bidsTitle: {
+    flex: 1,
+    fontSize: textToken.lg,
+    fontWeight: fontWeight.bold,
+    letterSpacing: -0.2,
+  },
+  bidsBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  bidsBadgeText: {
+    fontSize: textToken.sm,
+    fontWeight: fontWeight.bold,
+  },
+  bidsCounts: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  bidsPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  bidsPillText: {
+    fontSize: textToken.md,
+    fontWeight: fontWeight.bold,
   },
   // Member-listing rail. Body copy starts at `md` per docs/ui-playbook.md
   // ("a new screen starts at md"); nothing here uses `xs`, which the playbook

@@ -244,6 +244,72 @@ CATEGORY_PATTERNS = {
         r'travis\s*scott.*shoe|off.?white.*nike|fragment.*jordan',
         r'sneaker\s*collect|sneakerhead|grail.*shoe|hyped\s*sneaker',
     ],
+    # Added 2026-08-11 alongside the `jewellery` category in
+    # src/data/categories.ts. Brand-led, like `watches` — a piece is almost
+    # always named by house and line ("Cartier Love", "Alhambra"), rarely by a
+    # reference number, which is why jewellery rows are name-only.
+    #
+    # Ordered BEFORE 'watches' deliberately: Cartier and Bulgari make both, and
+    # a bare brand name would otherwise classify a Love bracelet as a watch.
+    # The watch patterns are model-anchored (Santos, Tank, Serpenti Tubogas), so
+    # a real watch still matches its own rule.
+    'jewellery': [
+        # BRAND-AND-LINE ANCHORED ONLY. Measured against 4,000 real catalogue
+        # titles on 2026-08-11: a first draft that also matched the bare nouns
+        # (necklace|pendant|bracelet|bangle|earrings|brooch), bare `swarovski`
+        # and `18k...gold` stole **213 rows** from eight other categories —
+        # Yu-Gi-Oh's "Pendulum Pendant" and MTG's "Null Brooch" (both CARDS),
+        # Digimon's "Vital Bracelet DIM Card" (a device), "Swarovski Disney
+        # Moana Crystal Figurine" (a figurine), plus Ghibli and Taylor Swift
+        # merch bracelets.
+        #
+        # Same lesson as the accessory filter in docs/TAXONOMY.md §146: naming a
+        # product TYPE is not sufficient, because other categories sell objects
+        # named after it. A house plus its line is the only signal that is
+        # actually about jewellery. RE-MEASURE before widening this.
+        # `tiffany` and `etoile` are BOTH anchored, not bare. Bare `tiffany`
+        # matched the Funko and action figure "Tiffany (Bride of Chucky)" — the
+        # doll character — and bare `etoile` matched the Yu-Gi-Oh card
+        # "Flowering Etoile the Melodious Magnificat". Both are the
+        # bare-term-hits-a-real-card class from docs/TAXONOMY.md §180.
+        r'tiffany\s*&\s*co|\btiffany\b[\w\s]{0,24}?(ring|necklace|bracelet|bangle|pendant|earrings|charm|band|setting|knot)\b',
+        r'(tiffany|\bt&co\b)\s*[\w\s]{0,12}?\betoile\b|\betoile\b\s*(band|ring|bracelet|necklace)\b',
+        r'\bt\s*smile\b|hardwear|elsa\s*peretti|paloma\s*picasso',
+        r'cartier\s*(love|juste\s*un\s*clou|trinity|clash|panth[eè]re\s*ring)',
+        r'van\s*cleef|alhambra|frivole|perl[eé]e',
+        r'bulgari\s*(b\.?zero1|serpenti\s*viper|divas|monete)|bvlgari\s*(b\.?zero1|serpenti\s*viper)',
+        # DESIGNER / HIGH-ASP MAISONS ONLY (2026-08-11, Merle's call). Pandora and
+        # Swarovski were removed: they are mass-market, and bare `swarovski` was
+        # also stealing "Swarovski Disney Moana Crystal Figurine" from disney.
+        # Niche and independent houses come later, deliberately.
+        r'\bde\s*beers\b|forevermark',
+        r'\bmessika\b|move\s*(romane|uno|classique|noa)',
+        # Pure-jewellery houses: bare brand is safe.
+        r'\b(boucheron|chaumet|mikimoto|buccellati|pomellato|repossi|fred\s*paris|dinh\s*van|david\s*yurman)\b',
+        # DUAL MAKERS — anchored to jewellery lines, never bare. Piaget, Chopard,
+        # Graff and Harry Winston all make watches too, and bare `piaget` stole
+        # "Piaget Altiplano 40mm Rose Gold (G0A38131)" from watches (measured
+        # 2026-08-11). Cartier and Bulgari above are line-anchored for the same
+        # reason.
+        r'piaget\s*(possession|rose\s*(ring|pendant|bracelet)|limelight\s*(necklace|earrings))',
+        r'chopard\s*(happy\s*(diamonds|hearts|spirit)|ice\s*cube|my\s*happy\s*hearts)',
+        r'(harry\s*winston|graff)[\w\s-]{0,24}?(ring|necklace|pendant|bracelet|earrings|studs|brooch)\b',
+        r'\b(engagement\s*ring|eternity\s*band|signet\s*ring|cocktail\s*ring)\b',
+        # FASHION HOUSES — line-anchored, NEVER bare. Chanel, Dior, Hermès,
+        # Louis Vuitton and Gucci sell bags, clothing and watches; a bare brand
+        # name would strip those categories wholesale. Same rule that keeps
+        # Cartier, Bulgari, Piaget and Chopard from stealing watches.
+        r'chanel\s*(coco\s*crush|cam[eé]lia|ultra|comète|comete|1932)',
+        r'dior\s*(rose\s*des\s*vents|bois\s*de\s*rose|mimirose|rose\s*c[eé]leste|gem\s*dior)',
+        r'herm[eè]s\s*(cha[iî]ne\s*d.?ancre|clic\s*h|kelly\s*(pendant|bracelet|ring)|collier\s*de\s*chien|finesse)',
+        r'louis\s*vuitton\s*(empreinte|idylle\s*blossom|color\s*blossom|b\.?blossom|lv\s*volt)',
+        r'gucci\s*(link\s*to\s*love|ouroboros|gg\s*running|icon\s*(ring|bracelet)|flora\s*(ring|necklace))',
+        # Pure-jewellery houses added 2026-08-11: bare brand is safe.
+        r'\b(tasaki|georg\s*jensen|damiani|vhernier|marina\s*b|verdura|seaman\s*schepps|belperron)\b',
+        r'\b(marco\s*bicego|roberto\s*coin|foundrae|spinelli\s*kilcollin|anita\s*ko|suzanne\s*kalan|sydney\s*evan)\b',
+        r'\b(boodles|garrard|asprey|ole\s*lynggaard|asprey\s*london)\b',
+        r'\bfaberg[eé]\b',
+    ],
     'watches': [
         r'\brolex\b|submariner|daytona|datejust|gmt.?master',
         r'\bomega\b|speedmaster|seamaster|moonwatch',

@@ -268,8 +268,19 @@ function OffersScreen() {
     const open = o.status === 'pending' || o.status === 'countered';
     const live = o.status === 'accepted' || o.status === 'shipped';
 
+    // Left edge stripe carries the role at a glance while scanning, so you do
+    // not have to read the pill on every card. Same two semantic colours as the
+    // pill — the treatment reads as one system, not two signals.
     return (
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={[
+        styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          borderLeftWidth: 3,
+          borderLeftColor: o.i_am_buyer ? colors.info : colors.success,
+        },
+      ]}>
         <View style={styles.rowTop}>
           <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
             {o.listing_title || 'Listing'}
@@ -280,8 +291,22 @@ function OffersScreen() {
         </View>
 
         <View style={styles.metaRow}>
-          <View style={[styles.rolePill, { backgroundColor: colors.accent + '18' }]}>
-            <Text style={[styles.rolePillText, { color: colors.accent }]}>
+          {/* Buy/sell told by COLOUR, not just the word (2026-08-11).
+              Both roles used to render `colors.accent + '18'` with accent text —
+              identical fill, identical text colour, distinguished only by
+              "Buying" / "Selling". In a mixed list that is no distinction at all.
+              info = buying, success = selling: both are existing theme tokens
+              with proper light/dark/high-contrast variants, so nothing is
+              hardcoded, and the brand accent stays reserved for CTAs and confirm
+              ticks rather than competing with role. */}
+          <View style={[
+            styles.rolePill,
+            { backgroundColor: o.i_am_buyer ? colors.infoBg : colors.successBg },
+          ]}>
+            <Text style={[
+              styles.rolePillText,
+              { color: o.i_am_buyer ? colors.info : colors.success },
+            ]}>
               {o.i_am_buyer ? 'Buying' : 'Selling'}
             </Text>
           </View>
@@ -486,14 +511,30 @@ function OffersScreen() {
                   fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                   setRole(r);
                 }}
-                style={[styles.segmentBtn, active && { backgroundColor: colors.accent + '1E' }]}
+                style={[
+                  styles.segmentBtn,
+                  // The chips inherit the same role colours as the cards, so
+                  // selecting "Buying" tints the control the same blue the
+                  // buying cards carry. "All" stays on the brand accent.
+                  active && {
+                    backgroundColor:
+                      r === 'buying' ? colors.infoBg
+                      : r === 'selling' ? colors.successBg
+                      : colors.accent + '1E',
+                  },
+                ]}
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={r === 'all' ? 'All offers' : r === 'buying' ? 'Offers I made' : 'Offers I received'}
               >
                 <Text style={[
                   styles.segmentText,
-                  { color: active ? colors.accent : colors.muted },
+                  {
+                    color: !active ? colors.muted
+                      : r === 'buying' ? colors.info
+                      : r === 'selling' ? colors.success
+                      : colors.accent,
+                  },
                   active && { fontWeight: fontWeight.bold },
                 ]}>
                   {r === 'all' ? 'All' : r === 'buying' ? 'Buying' : 'Selling'}
@@ -729,29 +770,29 @@ const styles = StyleSheet.create({
   amount: { fontSize: textToken.xl, fontWeight: fontWeight.extrabold, letterSpacing: -0.3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   rolePill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.xs },
-  rolePillText: { fontSize: textToken.sm, fontWeight: fontWeight.bold },
-  status: { fontSize: textToken.sm, flexShrink: 1 },
+  rolePillText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
+  status: { fontSize: textToken.md, flexShrink: 1 },
   message: { fontSize: textToken.md, fontStyle: 'italic', lineHeight: 20 },
   confirmRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' },
-  confirmText: { fontSize: textToken.sm, marginRight: 8 },
+  confirmText: { fontSize: textToken.md, marginRight: 8 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },
   btn: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.sm },
   btnGhost: { borderWidth: 1, backgroundColor: 'transparent' },
   btnText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
-  graded: { fontSize: textToken.sm, paddingVertical: 9 },
+  graded: { fontSize: textToken.md, paddingVertical: 9 },
   // Tracking — display-only shipment reference on the card.
   tracking: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
     paddingHorizontal: 10, paddingVertical: 8, marginTop: 8,
   },
-  trackingLabel: { fontSize: textToken.sm },
-  trackingCode: { fontSize: textToken.sm, fontWeight: fontWeight.semibold },
-  trackLink: { fontSize: textToken.sm, fontWeight: fontWeight.bold },
-  trackHint: { fontSize: textToken.sm, textAlign: 'right', lineHeight: 15 },
+  trackingLabel: { fontSize: textToken.md },
+  trackingCode: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
+  trackLink: { fontSize: textToken.md, fontWeight: fontWeight.bold },
+  trackHint: { fontSize: textToken.md, textAlign: 'right', lineHeight: 15 },
   // Tracking capture sheet.
   sheet: { padding: 16, paddingBottom: 32, gap: 10 },
-  sheetHint: { fontSize: textToken.sm, lineHeight: 18 },
+  sheetHint: { fontSize: textToken.md, lineHeight: 18 },
   sheetLabel: { fontSize: textToken.md, fontWeight: fontWeight.semibold, marginTop: 6 },
   // (carrierWrap/carrierChip/carrierChipText removed with the chip grid)
   field: {
@@ -766,5 +807,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 11, fontSize: textToken.lg,
   },
   sheetSave: { marginTop: 8 },
-  viewLink: { fontSize: textToken.sm, fontWeight: fontWeight.bold, marginTop: 2 },
+  viewLink: { fontSize: textToken.md, fontWeight: fontWeight.bold, marginTop: 2 },
 });
