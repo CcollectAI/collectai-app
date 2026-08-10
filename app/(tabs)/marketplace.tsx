@@ -53,6 +53,9 @@ import { DemandHeatBanner } from '@/components/marketplace/DemandHeatBanner';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { RegionalInsightsSection } from '@/components/marketplace/RegionalInsightsSection';
 import { MarketMoversSection } from '@/components/marketplace/MarketMoversSection';
+import { listListings, type P2PListing } from '@/api/p2pApi';
+import { text as textToken, fontWeight } from '@/theme/tokens';
+import type { CurrencyCode } from '@/data/types';
 
 // --- Types for marketplace API results ---
 type MarketplaceHit = {
@@ -322,6 +325,43 @@ const SearchScreen: React.FC = () => {
     AsyncStorage.removeItem(LEGACY_RECENT_SEARCHES_KEY).catch(() => {});
   }, []);
 
+  /*
+   * Member listings for the rail (2026-08-10).
+   *
+   * The member marketplace used to be a single grey link-row identical to the
+   * one beside it, so it read as a settings entry rather than as a place to buy.
+   * A rail of real photos and prices IS the marketplace; a row only describes
+   * one.
+   *
+   * `null` means "not loaded yet" and is deliberately distinct from `[]`
+   * ("loaded, nothing listed") — the render below falls back to the plain row
+   * when there is genuinely nothing to show, because an empty rail would be
+   * worse than the link it replaced. Same reasoning as the segment that was
+   * removed from app/listings.tsx on 2026-08-07: never show a member a shelf
+   * for something that does not exist.
+   */
+  const [memberListings, setMemberListings] = useState<P2PListing[] | null>(null);
+
+  /** Member listings matching the CURRENT query — distinct from `memberListings`,
+   *  which is the unfiltered rail shown when no query is typed. */
+  const [memberResults, setMemberResults] = useState<P2PListing[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listListings({ sort: 'newest', limit: 10 })
+      .then((res) => {
+        if (!cancelled) setMemberListings(res?.listings ?? []);
+      })
+      .catch((err) => {
+        // logger.error, not warn: warn is stripped from release builds
+        // (CLAUDE.md), and a silently missing marketplace rail on TestFlight is
+        // exactly the build where it matters. Falls back to the link row.
+        logger.error('[Marketplace] member listings rail unavailable:', err);
+        if (!cancelled) setMemberListings([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   const trimmedQuery = query.trim();
   const debouncedQuery = useDebounce(trimmedQuery, 350);
 
@@ -384,7 +424,22 @@ const SearchScreen: React.FC = () => {
     // marketplace scrape is gated off pre-launch (see flag above) — when
     // disabled it resolves to null instantly so only the fast local "Your items"
     // + instant "Categories" sections populate.
-    const [mktResult, colResult] = await Promise.allSettled([
+    // Member listings are searched ALONGSIDE the two existing sources
+    // (2026-08-10). docs/P2P_MARKETPLACE_SPEC.md §2 Stage 1 says buyer discovery
+    // is "listings appear in search, on the catalog item page, and as
+    // market_hits rows", and build-order item 6 is "Listings surfaced in search
+    // + catalog item page" — that item was never built, so searching for an item
+    // a member had listed returned nothing from the member marketplace.
+    //
+    // Server-side this is an ILIKE on the listing title with LIKE metacharacters
+    // escaped, restricted to `delisted_at IS NULL AND status = 'active'`
+    // (p2p_listing_router.py:1059) — so results are only what is genuinely FOR
+    // SALE right now. Sold and delisted never appear.
+    //
+    // Third element of the SAME Promise.allSettled rather than a separate
+    // effect: it shares the `searchId` stale-guard below, so a slow member
+    // search cannot overwrite the results of a newer query.
+    const [mktResult, colResult, memResult] = await Promise.allSettled([
       EXTERNAL_MARKETPLACE_SEARCH_ENABLED
         ? collectorsApi.marketplaceSearch(q.trim(), searchOpts).catch((err: unknown) => {
             logger.warn("[Search] marketplace search error:", err);
@@ -394,6 +449,13 @@ const SearchScreen: React.FC = () => {
       dataProvider.searchItems(q.trim()).catch((err: unknown) => {
         logger.warn("[Search] collection search error:", err);
         return [] as DataItem[];
+      }),
+      listListings({ q: q.trim(), limit: 10, sort: 'newest' }).catch((err: unknown) => {
+        // logger.error, not warn — warn is stripped from release builds, and a
+        // member's listing silently missing from search is exactly the failure
+        // that must leave a trace on TestFlight.
+        logger.error("[Search] member listing search error:", err);
+        return null;
       }),
     ]);
 
@@ -465,6 +527,13 @@ const SearchScreen: React.FC = () => {
       showToast({ message: 'Collection search failed — showing marketplace results only.', type: 'info' });
     }
 
+    // Member listings matching the query. No toast on failure: this is additive
+    // to a search that still returned its other two sources, and telling someone
+    // their search failed because an enrichment did would be false. The
+    // logger.error above is the trace.
+    const memData = (memResult.status === 'fulfilled' ? memResult.value : null) as { listings?: P2PListing[] } | null;
+    setMemberResults(memData?.listings ?? []);
+
     setMarketplaceResults(mktResults);
     setCollectionResults(colResults);
     setSearchLoading(false);
@@ -479,6 +548,7 @@ const SearchScreen: React.FC = () => {
     } else {
       setMarketplaceResults([]);
       setCollectionResults([]);
+      setMemberResults([]);
     }
   }, [debouncedQuery, executeSearch]);
 
@@ -654,56 +724,111 @@ const SearchScreen: React.FC = () => {
             this file is 1,266 lines and its own external search is disabled
             pre-launch. See docs/P2P_MARKETPLACE_SPEC.md. */}
         {!trimmedQuery && (
-          <AnimatedPressable
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              router.push('/listings' as Href);
-            }}
-            style={[styles.memberMarketRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-            accessibilityRole="button"
-            accessibilityLabel="Browse member listings"
-          >
-            <View style={[styles.memberMarketIcon, { backgroundColor: colors.accent + '18' }]}>
-              <Ionicons name="pricetags-outline" size={18} color={colors.accent} />
+          memberListings && memberListings.length > 0 ? (
+            <View style={styles.memberRailWrap}>
+              <View style={styles.memberRailHead}>
+                <Text style={[styles.memberRailTitle, { color: colors.text }]}>Member marketplace</Text>
+                <AnimatedPressable
+                  onPress={() => {
+                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                    router.push('/listings' as Href);
+                  }}
+                  hitSlop={8}
+                  accessibilityRole="link"
+                  accessibilityLabel="See all member listings"
+                >
+                  <Text style={[styles.memberRailSeeAll, { color: colors.accent }]}>See all →</Text>
+                </AnimatedPressable>
+              </View>
+              <FlatList
+                horizontal
+                data={memberListings}
+                keyExtractor={(l) => l.id}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.memberRailList}
+                renderItem={({ item: l }) => (
+                  <AnimatedPressable
+                    onPress={() => {
+                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                      router.push({ pathname: '/listing/[id]', params: { id: l.id } });
+                    }}
+                    style={[styles.memberRailCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${l.title}, ${formatPrice(l.price, (l.currency as CurrencyCode) || 'EUR', settings.numberLocale)}${l.seller_name ? `, from ${l.seller_name}` : ''}`}
+                  >
+                    {l.image_url ? (
+                      <Image
+                        source={{ uri: l.image_url }}
+                        style={styles.memberRailImg}
+                        contentFit="cover"
+                        transition={120}
+                      />
+                    ) : (
+                      <View style={[styles.memberRailImg, styles.memberRailImgEmpty, { backgroundColor: colors.accent + '12' }]}>
+                        <Ionicons name="image-outline" size={20} color={colors.muted} />
+                      </View>
+                    )}
+                    {/* A catalog image is a STOCK photo, not the seller's item.
+                        Labelled because condition is the one thing a
+                        second-hand buyer cannot judge from stock art — see the
+                        `image_is_catalog` note in src/api/p2pApi.ts. */}
+                    {l.image_is_catalog ? (
+                      <View style={[styles.memberRailStock, { backgroundColor: colors.background + 'E6' }]}>
+                        <Text style={[styles.memberRailStockText, { color: colors.muted }]}>Stock photo</Text>
+                      </View>
+                    ) : null}
+                    <Text numberOfLines={2} style={[styles.memberRailName, { color: colors.text }]}>
+                      {l.title}
+                    </Text>
+                    <Text style={[styles.memberRailPrice, { color: colors.text }]}>
+                      {formatPrice(l.price, (l.currency as CurrencyCode) || 'EUR', settings.numberLocale)}
+                    </Text>
+                  </AnimatedPressable>
+                )}
+              />
             </View>
-            <View style={styles.memberMarketText}>
-              <Text style={[styles.memberMarketTitle, { color: colors.text }]}>Member marketplace</Text>
-              <Text style={[styles.memberMarketSub, { color: colors.muted }]}>
-                Buy from other collectors — or list something you own
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={colors.muted} />
-          </AnimatedPressable>
+          ) : (
+            /* Nothing listed yet (or the fetch failed) — keep the plain row so
+               the surface still explains itself and invites the first listing.
+               An empty rail would be a worse signal than a link. */
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                router.push('/listings' as Href);
+              }}
+              style={[styles.memberMarketRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Browse member listings"
+            >
+              <View style={[styles.memberMarketIcon, { backgroundColor: colors.accent + '18' }]}>
+                <Ionicons name="pricetags-outline" size={18} color={colors.accent} />
+              </View>
+              <View style={styles.memberMarketText}>
+                <Text style={[styles.memberMarketTitle, { color: colors.text }]}>Member marketplace</Text>
+                <Text style={[styles.memberMarketSub, { color: colors.muted }]}>
+                  Buy from other collectors — or list something you own
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+            </AnimatedPressable>
+          )
         )}
 
-        {/* Open bids — the way back to a negotiation in progress.
-            /offers had no entry point on this tab at all: a member who made an
-            offer could only reach it from a notification or by remembering the
-            URL, which is precisely the dead-end an offer must not be. Reuses the
-            member-marketplace row shape, directly beneath it, because the two are
-            the same journey seen from either side. */}
-        {!trimmedQuery && (
-          <AnimatedPressable
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              router.push('/offers' as Href);
-            }}
-            style={[styles.memberMarketRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-            accessibilityRole="button"
-            accessibilityLabel="Open bids — offers you have made or received"
-          >
-            <View style={[styles.memberMarketIcon, { backgroundColor: colors.accent + '18' }]}>
-              <Ionicons name="swap-horizontal-outline" size={18} color={colors.accent} />
-            </View>
-            <View style={styles.memberMarketText}>
-              <Text style={[styles.memberMarketTitle, { color: colors.text }]}>Open bids</Text>
-              <Text style={[styles.memberMarketSub, { color: colors.muted }]}>
-                Offers you&apos;ve made, and offers on your listings
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={colors.muted} />
-          </AnimatedPressable>
-        )}
+        {/* Open bids MOVED to app/listings.tsx (2026-08-10) as a "My offers"
+            segment beside "Browse".
+
+            It used to sit here, in an identical `memberMarketRow` directly
+            beneath the member-marketplace row — and that was the problem. Two
+            stacked grey rows with a chevron read as settings entries, not as a
+            marketplace, so neither was findable. They are also not the same kind
+            of thing: the marketplace row is DISCOVERY, open bids is your own
+            in-flight negotiation state. Giving them equal visual weight on the
+            discovery tab buried the discovery.
+
+            The original comment here was right that /offers must not be
+            reachable only from a notification — hence a segment on the listings
+            screen rather than a deletion. Buying and negotiating over what you
+            bought belong on the same screen. */}
 
         {/* Browse by category (Spotify-style grid) */}
         {!trimmedQuery && (
@@ -975,6 +1100,58 @@ const SearchScreen: React.FC = () => {
                   </>
                 )}
 
+                {/* From members — P2P listings matching the query.
+                    Placed ABOVE "Buy externally" deliberately: these are items a
+                    member can actually buy today, from another member, and the
+                    external section is gated off pre-launch anyway. Only live
+                    listings reach here — the server restricts browse to
+                    `delisted_at IS NULL AND status = 'active'`. */}
+                {memberResults.length > 0 && (
+                  <>
+                    <Text
+                      style={[
+                        styles.sectionTitle,
+                        { color: colors.text, marginTop: collectionResults.length > 0 ? 16 : 0 },
+                      ]}
+                    >
+                      From members
+                    </Text>
+                    {memberResults.map((l) => (
+                      <AnimatedPressable
+                        key={l.id}
+                        onPress={() => {
+                          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                          router.push({ pathname: '/listing/[id]', params: { id: l.id } });
+                        }}
+                        style={[styles.memberHit, { backgroundColor: colors.card, borderColor: colors.border }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${l.title}, ${formatPrice(l.price, (l.currency as CurrencyCode) || 'EUR', settings.numberLocale)}${l.seller_name ? `, from ${l.seller_name}` : ''}`}
+                      >
+                        {l.image_url ? (
+                          <Image source={{ uri: l.image_url }} style={styles.memberHitImg} contentFit="cover" transition={120} />
+                        ) : (
+                          <View style={[styles.memberHitImg, styles.memberRailImgEmpty, { backgroundColor: colors.accent + '12' }]}>
+                            <Ionicons name="image-outline" size={18} color={colors.muted} />
+                          </View>
+                        )}
+                        <View style={styles.memberHitText}>
+                          <Text numberOfLines={2} style={[styles.memberHitName, { color: colors.text }]}>
+                            {l.title}
+                          </Text>
+                          <Text style={[styles.memberHitMeta, { color: colors.muted }]}>
+                            {l.seller_name ? `${l.seller_name}` : 'Member listing'}
+                            {l.condition_label ? ` · ${l.condition_label}` : ''}
+                            {l.image_is_catalog ? ' · Stock photo' : ''}
+                          </Text>
+                        </View>
+                        <Text style={[styles.memberHitPrice, { color: colors.text }]}>
+                          {formatPrice(l.price, (l.currency as CurrencyCode) || 'EUR', settings.numberLocale)}
+                        </Text>
+                      </AnimatedPressable>
+                    ))}
+                  </>
+                )}
+
                 {/* Buy externally — live marketplace listings (external) */}
                 {marketplaceResults.length > 0 && (
                   <>
@@ -992,9 +1169,13 @@ const SearchScreen: React.FC = () => {
                   </>
                 )}
 
-                {/* Nothing matched in any of the three sections */}
+                {/* Nothing matched in any of the FOUR sections. `memberResults`
+                    was added 2026-08-10 and must be counted here — without it a
+                    query that matched ONLY a member listing would render the
+                    listing and the "no results" state at the same time. */}
                 {categoryResults.length === 0 &&
                   collectionResults.length === 0 &&
+                  memberResults.length === 0 &&
                   marketplaceResults.length === 0 && <MarketplaceEmptyState />}
 
                 {/* Cross-border disclaimer */}
@@ -1083,6 +1264,98 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     marginBottom: 20,
+  },
+  // Member-listing rail. Body copy starts at `md` per docs/ui-playbook.md
+  // ("a new screen starts at md"); nothing here uses `xs`, which the playbook
+  // reserves for things no user needs to read.
+  memberRailWrap: {
+    marginBottom: 20,
+  },
+  memberRailHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  memberRailTitle: {
+    fontSize: textToken.lg,
+    fontWeight: fontWeight.bold,
+    letterSpacing: -0.2,
+  },
+  memberRailSeeAll: {
+    fontSize: textToken.md,
+    fontWeight: fontWeight.bold,
+  },
+  memberRailList: {
+    gap: 12,
+    paddingRight: 4,
+  },
+  memberRailCard: {
+    width: 148,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 8,
+    gap: 6,
+  },
+  memberRailImg: {
+    width: '100%',
+    height: 110,
+    borderRadius: 10,
+  },
+  memberRailImgEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  memberRailStock: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  memberRailStockText: {
+    fontSize: textToken.sm,
+    fontWeight: fontWeight.bold,
+  },
+  memberRailName: {
+    fontSize: textToken.md,
+    lineHeight: 18,
+  },
+  memberRailPrice: {
+    fontSize: textToken.lg,
+    fontWeight: fontWeight.bold,
+  },
+  // "From members" search-result row.
+  memberHit: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 10,
+    marginBottom: 8,
+  },
+  memberHitImg: {
+    width: 52,
+    height: 52,
+    borderRadius: 10,
+  },
+  memberHitText: {
+    flex: 1,
+    gap: 2,
+  },
+  memberHitName: {
+    fontSize: textToken.md,
+    fontWeight: fontWeight.bold,
+    lineHeight: 18,
+  },
+  memberHitMeta: {
+    fontSize: textToken.sm,
+  },
+  memberHitPrice: {
+    fontSize: textToken.md,
+    fontWeight: fontWeight.bold,
   },
   memberMarketIcon: {
     width: 36, height: 36, borderRadius: 18,
