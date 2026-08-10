@@ -7,6 +7,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { formatPrice } from '@/lib/format';
+import { GAMIFICATION_UI_ENABLED } from '@/config/featureFlags';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import type { PublicUserProfile } from '@/data';
 
@@ -54,8 +55,13 @@ export const UserStatsSection = React.memo(function UserStatsSection({
             moment the row is created, so this used to show "Lv.1 / 0 XP" on a
             brand-new profile — a stat that says nothing, dressed as an
             achievement. Below the first point it falls back to Categories, which
-            is a fact about them either way. */}
-        {gamProfile && gamProfile.xp > 0 ? (
+            is a fact about them either way.
+
+            2026-08-10: gated off entirely behind GAMIFICATION_UI_ENABLED — XP is
+            not a launch priority. The Categories tile is now what everyone sees,
+            so this row never renders a level. No layout change: the fallback
+            branch already existed and occupied the same slot. */}
+        {GAMIFICATION_UI_ENABLED && gamProfile && gamProfile.xp > 0 ? (
           <View style={styles.quickStat}>
             <Text style={[styles.quickStatValue, { color: colors.text }]}>Lv.{gamProfile.level}</Text>
             <Text style={[styles.quickStatLabel, { color: colors.muted }]}>{gamProfile.xp} XP</Text>

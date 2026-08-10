@@ -1,6 +1,23 @@
 /**
  * CategoryLeaderboardSection — auto-rotating carousel of top collectors.
  * Fetches from gamification leaderboard with category filter.
+ *
+ * GATED OFF (2026-08-10) behind `GAMIFICATION_UI_ENABLED`. Two reasons:
+ *
+ * 1. It was already dead — exported from `src/components/category/index.ts` and
+ *    rendered by **no screen**. The barrel export made it look wired.
+ * 2. It rendered XP through a bare `toLocaleString()` (device locale), the same
+ *    bug fixed in `app/leaderboard.tsx` on 2026-08-10. Gating rather than fixing
+ *    is deliberate: there is no point correcting the formatting of a component
+ *    nothing renders.
+ *
+ * The gate is checked inside the fetch effect as well as at render, so this also
+ * stops the component from calling `GET /gamification/leaderboard` if it is ever
+ * mounted. It cannot wrap the hooks themselves without breaking hook order.
+ *
+ * To revive: flip `GAMIFICATION_UI_ENABLED`, fix the `toLocaleString()` on the
+ * XP line to use `formatNumber(value, settings.numberLocale)`, and actually
+ * render it somewhere.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -11,6 +28,7 @@ import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
 import { collectorsApi } from '@/api/collectorsApi';
 import { MEDAL_COLORS } from '@/constants/colors';
 import logger from '@/utils/logger';
+import { GAMIFICATION_UI_ENABLED } from '@/config/featureFlags';
 
 type LeaderboardEntry = {
   user_id: string;
@@ -31,6 +49,9 @@ export default React.memo(function CategoryLeaderboardSection({ categoryId: _cat
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
+    // Guard inside the effect, not around it — bailing before `useState`/
+    // `useEffect` would change hook order and break the rules of hooks.
+    if (!GAMIFICATION_UI_ENABLED) return;
     let cancelled = false;
     collectorsApi.getLeaderboard('weekly')
       .then((data) => {
@@ -50,6 +71,7 @@ export default React.memo(function CategoryLeaderboardSection({ categoryId: _cat
     return () => { cancelled = true; };
   }, []);
 
+  if (!GAMIFICATION_UI_ENABLED) return null;
   if (entries.length === 0) return null;
 
   return (

@@ -90,6 +90,29 @@ export const SELLING_ENABLED = false;
  */
 export const LIVE_PRICE_FETCH_ENABLED = false;
 
+/**
+ * XP / level surfaces in the UI (the profile quick-stat tile, the category
+ * leaderboard carousel). OFF for now — gamification is not a launch priority
+ * and the surfaces are thin: the category carousel is not rendered by any
+ * screen at all, and the profile tile shows a level for a metric no user is
+ * working toward yet.
+ *
+ * **Deliberately a separate flag from `COMMUNITY_GATED`, not a reuse of it.**
+ * `COMMUNITY_GATED` flips to false the moment ~50 public profiles exist, and
+ * that condition has nothing to do with whether the XP UI is worth showing.
+ * Sharing the flag would silently resurrect both surfaces on that flip.
+ *
+ * Does NOT gate: XP earning//accrual on the server, `app/leaderboard.tsx`
+ * (already deep-link-only behind `COMMUNITY_GATED`), or the XP wording in the
+ * legal screens — `app/legal/terms.tsx:134` and `privacy-policy.tsx:144`
+ * describe XP as a Service feature, which stays true while the data is still
+ * collected. If XP is ever removed rather than hidden, those promises are a
+ * spec that must change with it.
+ *
+ * Flip to true once XP is something the product actually asks users to pursue.
+ */
+export const GAMIFICATION_UI_ENABLED = false;
+
 export const featureFlags = {
   darkMode: false,
   FEATURE_HAPTICS_MICRO_ANIMATIONS: true,
