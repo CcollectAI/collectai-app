@@ -99,7 +99,10 @@ function AnalyticsScreen() {
   // away. Mapped through a pure seam fn — see src/data/personalizedInsights.ts.
   const [riskNotes, setRiskNotes] = useState<PortfolioRiskNote[]>([]);
   const [predictionAccuracy, setPredictionAccuracy] = useState<{ category: string; mae: number; mape: number; r2: number }[] | null>(null);
-  const [categoryStats, setCategoryStats] = useState<{ category: string; item_count: number; total_value: number; avg_value: number; change_7d: number; change_7d_pct: number; trend: string; max_item_value: number }[]>([]);
+  // `avg_value` removed 2026-08-10 — the server counted unpriced items as EUR 0
+  // in the denominator. Replaced by median + spread; null means nothing in the
+  // category is priced. See server/app/routes/portfolio_router.py.
+  const [categoryStats, setCategoryStats] = useState<{ category: string; item_count: number; priced_count: number; total_value: number; median_value: number | null; min_item_value: number | null; max_item_value: number | null; change_7d: number; change_7d_pct: number; trend: string }[]>([]);
   const [categoryHealth, setCategoryHealth] = useState<{ category: string; volatility: number; trend_strength: number; health: string }[]>([]);
 
   // Split fetches so a single endpoint failure doesn't blank the whole screen

@@ -15,15 +15,29 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { formatPrice } from '@/lib/format';
 import { radius, text, fontWeight, shadow } from '@/theme/tokens';
 
+/**
+ * Shape of one row from `GET /portfolio/category-stats`.
+ *
+ * `avg_value` was REMOVED on 2026-08-10. The server averaged unpriced items in
+ * as EUR 0, so for the 40+ categories with no sold-comp source (watches,
+ * whiskey, lego …) the "average" was mostly a count of what we don't know. It
+ * is replaced by a median plus the actual spread.
+ *
+ * median/min/max are `number | null` — null means NOTHING in that category has
+ * a price. That is deliberately not 0: a category we cannot value must not
+ * claim to be worth nothing.
+ */
 interface CategoryStat {
   category: string;
   item_count: number;
+  priced_count: number;
   total_value: number;
-  avg_value: number;
+  median_value: number | null;
+  min_item_value: number | null;
+  max_item_value: number | null;
   change_7d: number;
   change_7d_pct: number;
   trend: string;
-  max_item_value: number;
 }
 
 interface CategoryHealth {
@@ -77,8 +91,20 @@ function CategoryPerformanceSectionInner({
                   <View style={[styles.healthDot, { backgroundColor: healthColor }]} />
                 )}
               </View>
+              {/* Median + spread, not a mean. A EUR 40 Seiko beside a EUR 18,000
+                  Daytona has no meaningful average, and the old one also counted
+                  every unpriced item as EUR 0. When nothing in the category is
+                  priced we say so rather than printing a number. The spread is
+                  only shown once min and max actually differ — on a
+                  single-priced category it would just repeat the median. */}
               <Text style={[styles.catStatMeta, { color: colors.muted }]}>
-                {cat.item_count} items · avg {formatPrice(cat.avg_value, settings.currency ?? 'EUR')}
+                {cat.median_value == null
+                  ? `${cat.item_count} items · not yet priced`
+                  : cat.min_item_value != null &&
+                    cat.max_item_value != null &&
+                    cat.max_item_value > cat.min_item_value
+                    ? `${cat.item_count} items · median ${formatPrice(cat.median_value, settings.currency ?? 'EUR')} · ${formatPrice(cat.min_item_value, settings.currency ?? 'EUR')}–${formatPrice(cat.max_item_value, settings.currency ?? 'EUR')}`
+                    : `${cat.item_count} items · median ${formatPrice(cat.median_value, settings.currency ?? 'EUR')}`}
               </Text>
             </View>
             <View style={styles.catStatRight}>

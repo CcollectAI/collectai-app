@@ -549,29 +549,65 @@ async def portfolio_category_stats(
                     WHERE i.user_id = $1
                       AND pp.generated_at <= NOW() - INTERVAL '7 days'
                     ORDER BY pp.item_ref, pp.generated_at DESC
-                )
+                ),
                 -- Same fallback chain as /portfolio/overview: a prediction if
                 -- one exists, else the item's own stored value. Without it this
                 -- endpoint reported total_value 0.00 for categories the header
                 -- valued at EUR 55, because hand-added items have no
-                -- price_predictions row.
+                -- price_predictions row. Both prediction tables are read, per
+                -- docs/ARCHITECTURE.md "There are TWO prediction tables" —
+                -- neither source dominates.
                 -- COALESCE on category too: `category IS NOT NULL` silently
                 -- dropped uncategorised items from every category breakdown,
                 -- so the parts did not add up to the whole.
+                --
+                -- The chain deliberately does NOT end in 0 any more (2026-08-10).
+                -- It used to, and `AVG` then counted every unpriced item as a
+                -- EUR 0 sample IN THE DENOMINATOR. For the 40+ categories with
+                -- no sold-comp source (watches, whiskey, lego, warhammer … see
+                -- CLAUDE.md "catalog <-> price crosswalk", ~62,000 rows at 0%
+                -- priced) that dragged the reported average to near zero —
+                -- CLAUDE.md's `unknown-as-zero` class, rendering "unknown" as
+                -- "nothing". NULL means "we do not know", and every aggregate
+                -- below skips it. SUM and MAX are unchanged by this: they
+                -- already ignored NULLs, so only the average was ever wrong.
+                --
+                -- The value is computed ONCE in `valued` instead of being
+                -- copy-pasted into five aggregates — the old shape made it
+                -- possible for one copy to drift from the others.
+                valued AS (
+                    SELECT
+                        COALESCE(NULLIF(i.category, ''), 'uncategorized') AS category,
+                        COALESCE(
+                            l.q50,
+                            (SELECT qp.q50_eur FROM quick_predictions qp
+                              WHERE qp.item_id = i.id
+                              ORDER BY qp.created_at DESC LIMIT 1),
+                            i.predicted_price_eur,
+                            i.estimated_value
+                        ) AS value_eur,
+                        p.q50_7d
+                    FROM items i
+                    LEFT JOIN latest l ON l.item_ref = i.canonical_ref
+                    LEFT JOIN prev_7d p ON p.item_ref = i.canonical_ref
+                    WHERE i.user_id = $1 AND NOT i.archived
+                )
+                -- Median, not mean. In a category where prices are genuinely
+                -- dispersed — a EUR 40 Seiko beside a EUR 18,000 Daytona — the
+                -- mean describes neither item. The median names a real middle,
+                -- and min/max carry the spread the mean was hiding.
                 SELECT
-                    COALESCE(NULLIF(i.category, ''), 'uncategorized') AS category,
+                    category,
                     COUNT(*) AS item_count,
-                    COALESCE(SUM(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)), 0) AS total_value,
-                    COALESCE(AVG(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)), 0) AS avg_value,
-                    COALESCE(SUM(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)), 0)
-                        - COALESCE(SUM(p.q50_7d), 0) AS change_7d,
-                    MAX(COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)) AS max_item_value
-                FROM items i
-                LEFT JOIN latest l ON l.item_ref = i.canonical_ref
-                LEFT JOIN prev_7d p ON p.item_ref = i.canonical_ref
-                WHERE i.user_id = $1 AND NOT i.archived
-                GROUP BY COALESCE(NULLIF(i.category, ''), 'uncategorized')
-                ORDER BY 3 DESC
+                    COUNT(value_eur) AS priced_count,
+                    COALESCE(SUM(value_eur), 0) AS total_value,
+                    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY value_eur) AS median_value,
+                    MIN(value_eur) AS min_item_value,
+                    MAX(value_eur) AS max_item_value,
+                    COALESCE(SUM(value_eur), 0) - COALESCE(SUM(q50_7d), 0) AS change_7d
+                FROM valued
+                GROUP BY category
+                ORDER BY total_value DESC
                 """,
                 user_id,
             )
@@ -581,15 +617,25 @@ async def portfolio_category_stats(
                 tv = float(r["total_value"] or 0)
                 c7 = float(r["change_7d"] or 0)
                 trend = "up" if c7 > 0 else ("down" if c7 < 0 else "flat")
+                # `median_value` / `min_item_value` are None for a category where
+                # NOTHING is priced. Emitted as null, NOT 0.0 — a category we
+                # cannot value must not claim to be worth nothing, which is the
+                # whole point of the SQL change above. The client renders the
+                # spread only when it has one.
+                med = r["median_value"]
+                lo = r["min_item_value"]
+                hi = r["max_item_value"]
                 categories.append({
                     "category": r["category"],
                     "item_count": int(r["item_count"]),
+                    "priced_count": int(r["priced_count"]),
                     "total_value": round(tv, 2),
-                    "avg_value": round(float(r["avg_value"] or 0), 2),
+                    "median_value": round(float(med), 2) if med is not None else None,
+                    "min_item_value": round(float(lo), 2) if lo is not None else None,
+                    "max_item_value": round(float(hi), 2) if hi is not None else None,
                     "change_7d": round(c7, 2),
                     "change_7d_pct": round(c7 / tv * 100, 2) if tv > 0 else 0.0,
                     "trend": trend,
-                    "max_item_value": round(float(r["max_item_value"] or 0), 2),
                 })
 
             return {"categories": categories}
