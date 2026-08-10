@@ -54,6 +54,7 @@ import { AdBanner } from '@/components/ads/AdBanner';
 import { RegionalInsightsSection } from '@/components/marketplace/RegionalInsightsSection';
 import { MarketMoversSection } from '@/components/marketplace/MarketMoversSection';
 import { listListings, type P2PListing } from '@/api/p2pApi';
+import { useAuthContext } from '@/providers/useAuthContext';
 import { text as textToken, fontWeight } from '@/theme/tokens';
 import type { CurrencyCode } from '@/data/types';
 
@@ -341,12 +342,24 @@ const SearchScreen: React.FC = () => {
    * for something that does not exist.
    */
   const [memberListings, setMemberListings] = useState<P2PListing[] | null>(null);
+  const { loading: authLoading, session } = useAuthContext();
 
   /** Member listings matching the CURRENT query — distinct from `memberListings`,
    *  which is the unfiltered rail shown when no query is typed. */
   const [memberResults, setMemberResults] = useState<P2PListing[]>([]);
 
   useEffect(() => {
+    // Don't fire before the session exists. `/p2p/listings` is authed, so a
+    // fetch during auth hydration 401s — proven on the simulator 2026-08-10,
+    // which logged this twelve times behind the login screen before anyone had
+    // signed in. Exactly the rule in CLAUDE.md "Loading states" §2, and the same
+    // class as the watchlist bug fixed the same day: a request fired too early
+    // does not fail loudly, it just leaves the surface empty.
+    //
+    // No deadline needed here, unlike the watchlist gate: this is an enrichment
+    // with a fallback (the link row) rather than the screen's primary content,
+    // so a wedged session degrades instead of pinning a skeleton.
+    if (authLoading || !session) return;
     let cancelled = false;
     listListings({ sort: 'newest', limit: 10 })
       .then((res) => {
@@ -360,7 +373,7 @@ const SearchScreen: React.FC = () => {
         if (!cancelled) setMemberListings([]);
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [authLoading, session]);
 
   const trimmedQuery = query.trim();
   const debouncedQuery = useDebounce(trimmedQuery, 350);
