@@ -559,6 +559,21 @@ function PortfolioScreen() {
     router.push({ pathname: '/(tabs)/items', params: { category: categoryId } });
   }, [router, settings.hapticsEnabled]);
 
+  /*
+   * The whole collection, unfiltered, A-Z.
+   *
+   * `sort: 'name_asc'` is a real contract, not decoration: the items screen
+   * defaults to `value_desc`, and "scroll through the collection" is an
+   * alphabetical act, not a rich-first one. The destination READS this param
+   * (see the lazy initialiser in items.tsx) — `npm run check:params` compares
+   * against the target's declared params, so a param the screen ignored would
+   * fail the build rather than be silently dropped.
+   */
+  const handleAllItemsPress = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push({ pathname: '/(tabs)/items', params: { sort: 'name_asc' } });
+  }, [router, settings.hapticsEnabled]);
+
   const handleInsightsCtaPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push(limits.advanced_analytics ? '/analytics' : '/subscription');
@@ -831,6 +846,7 @@ function PortfolioScreen() {
             return cat?.name ?? formatCategoryName(raw);
           }}
           onCategoryPress={handleBreakdownCategoryPress}
+          onAllItemsPress={handleAllItemsPress}
         />
 
         {/* Personalized Categories (from onboarding) */}

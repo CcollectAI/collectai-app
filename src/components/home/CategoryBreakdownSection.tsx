@@ -35,6 +35,8 @@ interface CategoryBreakdownSectionProps {
   loading: boolean;
   formatPrice: (amount: number) => string;
   onCategoryPress?: (categoryName: string) => void;
+  /** Opens the whole collection, unfiltered. Omit to hide the action. */
+  onAllItemsPress?: () => void;
   resolveCategoryName?: (raw: string) => string;
 }
 
@@ -46,6 +48,7 @@ function CategoryBreakdownSectionInner({
   loading,
   formatPrice,
   onCategoryPress,
+  onAllItemsPress,
   resolveCategoryName,
 }: CategoryBreakdownSectionProps) {
   const displayName = (raw: string) => resolveCategoryName?.(raw) ?? raw;
@@ -54,6 +57,23 @@ function CategoryBreakdownSectionInner({
     <>
       <View style={s.sectionHeader}>
         <Text style={[s.sectionTitle, { color: theme.text }]}>Category Breakdown</Text>
+        {/* "All items" — the ONLY unfiltered route into the collection list.
+            Every other push to /(tabs)/items carries a filter param
+            (`category` from here and the Portfolio breakdown, `collectionName`
+            from sets-to-complete and the market screen), so without this the
+            whole collection is reachable only by tapping the Items tab itself
+            — and that tab is on its way off the bar. A category card answers
+            "what's in Pokémon"; this answers "show me everything". */}
+        {onAllItemsPress && !isEmpty && (
+          <AnimatedPressable
+            onPress={onAllItemsPress}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="See all items in your collection, A to Z"
+          >
+            <Text style={[s.sectionAction, { color: theme.accent }]}>All items →</Text>
+          </AnimatedPressable>
+        )}
       </View>
 
       {loading ? (
@@ -159,6 +179,12 @@ const s = StyleSheet.create({
   sectionTitle: {
     fontSize: textToken.xl,
     fontWeight: fw.extrabold,
+  },
+  // md (14), not sm/xs: this is a tap target and a route, and `xs` is banned
+  // for anything a user needs to read (docs/ui-playbook.md type scale).
+  sectionAction: {
+    fontSize: textToken.md,
+    fontWeight: fw.semibold,
   },
   breakdownCard: {
     borderWidth: 1,

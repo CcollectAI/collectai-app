@@ -42,7 +42,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 // formatPrice moved to ItemsSectionFooter
 import { useToast } from "@/components/Toast";
-import { FilterSheet, FilterConfig } from "@/components/FilterSheet";
+import { FilterSheet, FilterConfig, type SortOption } from "@/components/FilterSheet";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import logger from "@/utils/logger";
 import { BulkActionsToolbar } from '@/components/BulkActionsToolbar';
@@ -81,7 +81,7 @@ const SCROLL_LOAD_THRESHOLD = 0.5;
 
 const ItemsScreen: React.FC = () => {
   const router = useRouter();
-  const params = useLocalSearchParams<{ category?: string; collectionName?: string }>();
+  const params = useLocalSearchParams<{ category?: string; collectionName?: string; sort?: string }>();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
@@ -170,12 +170,36 @@ const ItemsScreen: React.FC = () => {
   const [categoryModalVisible, openCategoryModal, closeCategoryModal] = useModal();
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [filterSheetVisible, openFilterSheet, closeFilterSheet] = useModal();
-  const [advancedFilter, setAdvancedFilter] = useState<FilterConfig>({
-    categories: [],
-    priceMin: null,
-    priceMax: null,
-    conditions: [],
-    sortBy: 'value_desc',
+  /*
+   * `?sort=` seeds the initial order. Portfolio's "All items" sends
+   * `name_asc`, because "scroll through the whole collection" is an
+   * alphabetical act while this screen's default is `value_desc`.
+   *
+   * A LAZY INITIALISER, not an effect. An effect that wrote `advancedFilter`
+   * while also depending on it is the self-cancelling pattern
+   * `npm run check:effects` exists to catch — params are already present on the
+   * first render, so there is nothing to wait for. Same shape as `?q=` in
+   * app/search.tsx.
+   *
+   * Validated against SortOption rather than cast: the param crosses a route
+   * boundary as an open string (`typedRoutes` types params as
+   * UnknownInputParams), so an unrecognised value must fall back to the default
+   * rather than reach the sort switch and match no case — which would render an
+   * arbitrarily-ordered list and look like a broken sort.
+   */
+  const [advancedFilter, setAdvancedFilter] = useState<FilterConfig>(() => {
+    const VALID_SORTS: SortOption[] = ['value_desc', 'value_asc', 'name_asc', 'name_desc', 'date_desc', 'date_asc'];
+    const requested = typeof params.sort === 'string' ? params.sort : undefined;
+    const sortBy = VALID_SORTS.includes(requested as SortOption)
+      ? (requested as SortOption)
+      : 'value_desc';
+    return {
+      categories: [],
+      priceMin: null,
+      priceMax: null,
+      conditions: [],
+      sortBy,
+    };
   });
 
   // Multi-select hook
