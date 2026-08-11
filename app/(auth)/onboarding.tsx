@@ -71,13 +71,9 @@ const SLIDES: Slide[] = [
     subtitle: 'Get real-time valuations powered by marketplace data. Track your portfolio over time.',
   },
   {
+    // Was id '5'. The category-picker step (old id '4') was removed
+    // 2026-08-11 — see the note above the slides array.
     id: '4',
-    icon: 'heart-outline',
-    title: 'What Do You Collect?',
-    subtitle: 'Pick your favorite categories so we can personalize your experience.',
-  },
-  {
-    id: '5',
     icon: 'globe-outline',
     title: 'Set Your Region',
     subtitle: 'We\'ll show prices in your local currency and prioritize nearby marketplaces.',
@@ -213,7 +209,6 @@ function OnboardingScreen() {
   const [detectedRegion, setDetectedRegion] = useState<Region>('europe');
   const [detecting, setDetecting] = useState(false);
   const [regionPickerVisible, setRegionPickerVisible] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const { showToast } = useToast();
 
   // Animated dot widths (5 dots)
@@ -238,16 +233,6 @@ function OnboardingScreen() {
       useNativeDriver: true,
     }).start();
   }, []);
-
-  const toggleCategory = useCallback((catSlug: string) => {
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    setSelectedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(catSlug)) next.delete(catSlug);
-      else next.add(catSlug);
-      return next;
-    });
-  }, [settings.hapticsEnabled]);
 
   useEffect(() => {
     let cancelled = false;
@@ -317,23 +302,21 @@ function OnboardingScreen() {
     // reached the flag write, so the gate looped new users back into onboarding
     // forever (reported 2026-06-11). Local writes can't hang the user.
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    if (selectedCategories.size > 0) {
-      await AsyncStorage.setItem('@sparrowcollect/followed_categories', JSON.stringify(Array.from(selectedCategories)));
-    }
+    // The onboarding category picker was removed 2026-08-11, so nothing seeds
+    // '@sparrowcollect/followed_categories' at signup any more. The preference
+    // is still WRITTEN by follow/unfollow on app/categories/[categoryId].tsx and
+    // still READ by quickscan, market-movers, (tabs)/events and purchase — they
+    // simply start unpersonalised instead of pre-seeded.
 
     // Fire-and-forget the server syncs — they must never block leaving onboarding.
     // (confirmRegion applies region/currency locally and synchronously before its fetch.)
     confirmRegion(detectedRegion).catch(() => {});
-    if (selectedCategories.size > 0) {
-      collectorsApi.saveFollowedCategories(Array.from(selectedCategories)).catch(() => {});
-    }
 
-    track({ name: 'onboarding_completed', properties: { categories_selected: selectedCategories.size } });
+    track({ name: 'onboarding_completed' });
 
     logActivity({
       activity_type: 'onboarding_completed',
       title: 'Completed onboarding',
-      metadata: { categories_selected: selectedCategories.size },
     }).catch(() => {});
 
     router.replace('/(tabs)/add');
@@ -442,66 +425,10 @@ function OnboardingScreen() {
                 </Text>
               </Animated.View>
 
-              {/* Category picker on slide 4 (index 3) */}
+              {/* Region detection UI — slide 4 (index 3) since the category
+                  picker was removed. This conditional is POSITIONAL: dropping a
+                  slide above it silently shifts every index below. */}
               {index === 3 && (
-                <ScrollView
-                  style={styles.categoryScrollView}
-                  contentContainerStyle={styles.categoryGrid}
-                  showsVerticalScrollIndicator={false}
-                  nestedScrollEnabled
-                >
-                  {ALL_CATEGORIES.map((cat, catIdx) => {
-                    const visual = CATEGORY_VISUAL[cat.slug as CategoryId];
-                    const isSelected = selectedCategories.has(cat.slug);
-                    const pillStyle = getCategoryStyle(catIdx);
-                    return (
-                      <AnimatedPressable
-                        key={cat.slug}
-                        onPress={() => toggleCategory(cat.slug)}
-                        style={[
-                          styles.categoryPill,
-                          {
-                            borderColor: isSelected ? (visual?.accentColor || colors.brand.base) : colors.border,
-                            backgroundColor: isSelected
-                              ? (visual?.accentColor || colors.brand.base) + '20'
-                              : colors.card,
-                          },
-                          pillStyle,
-                        ]}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: isSelected }}
-                        accessibilityLabel={`${cat.name}${isSelected ? ', selected' : ''}`}
-                      >
-                        <Ionicons
-                          name={(visual?.iconName || 'cube-outline') as keyof typeof Ionicons.glyphMap}
-                          size={16}
-                          color={isSelected ? (visual?.accentColor || colors.brand.base) : colors.muted}
-                        />
-                        <Text
-                          style={[
-                            styles.categoryPillText,
-                            { color: isSelected ? (visual?.accentColor || colors.brand.dark) : colors.text },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {cat.name}
-                        </Text>
-                        {isSelected && (
-                          <Ionicons name="checkmark-circle" size={14} color={visual?.accentColor || colors.brand.base} />
-                        )}
-                      </AnimatedPressable>
-                    );
-                  })}
-                  {selectedCategories.size > 0 && (
-                    <Text style={[styles.categoryCountText, { color: colors.brand.dark }]}>
-                      {selectedCategories.size} selected
-                    </Text>
-                  )}
-                </ScrollView>
-              )}
-
-              {/* Region detection UI on slide 5 (index 4) */}
-              {index === 4 && (
                 <View style={styles.regionContainer}>
                   {detecting ? (
                     <ActivityIndicator size="small" color={colors.brand.base} style={{ marginTop: 24 }} />
