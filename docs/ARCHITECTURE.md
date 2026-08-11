@@ -336,11 +336,37 @@ predictions at 220, one with a stored value of 120):
 | before | 220 | 340 | 340 | **120** | 340 |
 | after | **340** | 340 | 340 | **340** | 340 |
 
-**Known residual:** the Items tab reads Supabase directly and cannot join
-`price_predictions` (no FK for a PostgREST embed — see
-`learning_listitems_pgrst_embed`), so a catalog-only-priced item still reads 0
-there. Home is internally consistent; closing that last seam needs the Items
-tab to read the server, or a denormalised value column on `items`.
+**~~Known residual~~ — CLOSED 2026-08-11 by `public.v_item_values_v1`.**
+
+The residual was real and larger than it read: measured on prod, **15 of 34
+active items (44%)** rendered EUR 0 in the app while the server held a value.
+Per category — one_piece_tcg's tile said EUR 80.64 where the list summed to EUR
+**0.00**; pokemon EUR 55.57 against EUR **15.00**.
+
+Neither fix this note proposed was taken. "Items reads the server" would have
+made `/portfolio/items` — which has **no LIMIT** — return the whole collection
+to price twenty rows. A denormalised column needs a backfill, a maintainer and
+a write-path benchmark, and can go stale.
+
+The third option was a **view**: it executes with its owner's rights, so it can
+read `price_predictions` past `price_predictions_deny_all`, and filters
+`i.user_id = auth.uid()` so a caller sees only their own items. The client reads
+it bounded by the page's ids (~0.55ms/item warm; ~11ms for a 20-item page).
+
+**Note for anyone tempted by the obvious client-side fix:** `price_predictions`
+grants SELECT to `authenticated` *and* denies every row via RLS. A direct read
+from the app therefore **succeeds and returns `[]`** — a fix that changes
+nothing and reports no error. That trap is why this sat open.
+
+`v_item_values_v1` is now the single definition of item value. It was
+EXCEPT-diffed in both directions against **both** live server expressions before
+adoption (all four counts 0), so it could not move a number already on screen.
+Gate: `npm run check:item-values`.
+
+**Still to do (Stage 2):** repoint `/portfolio/items`, `category-breakdown` and
+`/portfolio/overview` at the view. Until then the two server chains still order
+`quick` and `catalog` differently — currently 2 items have both and they agree,
+so it is latent, not live.
 
 #### `chat_threads_v1` user FKs — added 2026-07-31, two different semantics
 

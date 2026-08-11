@@ -17,7 +17,7 @@
     "dev": "bash scripts/dev.sh",
     "test": "jest",
     "verify:items-contract": "node scripts/verify_items_contract.mjs",
-    "verify:prebuild": "node scripts/check-unbounded-awaits.mjs && node scripts/check-dead-nav.mjs && node scripts/check-constraint-drift.mjs && node scripts/check-silent-failures.mjs && node scripts/check-self-cancelling-effects.mjs && node scripts/check-route-param-handoff.mjs && node scripts/check-i18n-parity.mjs && node scripts/check-upsert-targets.mjs && node scripts/check-billing-limits-parity.mjs && node scripts/check-archived-filter.mjs && node scripts/check-search-category-ids.mjs && tsc --noEmit && jest __tests__/lib/supabaseTimeout.test.ts __tests__/lib/loggerRetention.test.ts __tests__/data/screenItem.test.ts __tests__/data/itemsProviderPurchase.test.ts __tests__/data/personalizedInsights.test.ts __tests__/data/marketplaceSchema.test.ts __tests__/lib/ids.test.ts __tests__/hooks/usePaginatedList.test.ts __tests__/hooks/useSlowLoad.test.ts __tests__/components/ItemsListItem.test.tsx __tests__/components/marketMovers.test.ts __tests__/screens/categoryLabel.test.ts __tests__/screens/leaderboardRow.test.ts && node scripts/verify_items_contract.mjs",
+    "verify:prebuild": "node scripts/check-unbounded-awaits.mjs && node scripts/check-dead-nav.mjs && node scripts/check-constraint-drift.mjs && node scripts/check-silent-failures.mjs && node scripts/check-self-cancelling-effects.mjs && node scripts/check-route-param-handoff.mjs && node scripts/check-i18n-parity.mjs && node scripts/check-upsert-targets.mjs && node scripts/check-billing-limits-parity.mjs && node scripts/check-archived-filter.mjs && node scripts/check-search-category-ids.mjs && node scripts/check-item-value-source.mjs && tsc --noEmit && jest __tests__/lib/supabaseTimeout.test.ts __tests__/lib/loggerRetention.test.ts __tests__/data/screenItem.test.ts __tests__/data/itemsProviderPurchase.test.ts __tests__/data/personalizedInsights.test.ts __tests__/data/marketplaceSchema.test.ts __tests__/lib/ids.test.ts __tests__/hooks/usePaginatedList.test.ts __tests__/hooks/useSlowLoad.test.ts __tests__/components/ItemsListItem.test.tsx __tests__/components/marketMovers.test.ts __tests__/screens/categoryLabel.test.ts __tests__/screens/leaderboardRow.test.ts && node scripts/verify_items_contract.mjs",
     "i18n:check": "node scripts/check-i18n-strings.mjs",
     "i18n:check:quiet": "node scripts/check-i18n-strings.mjs --quiet",
     "bundle-size": "node scripts/bundle-size.mjs",
@@ -42,6 +42,7 @@
     "i18n:parity": "node scripts/check-i18n-parity.mjs",
     "check:archived": "node scripts/check-archived-filter.mjs",
     "check:search-categories": "node scripts/check-search-category-ids.mjs",
+    "check:item-values": "node scripts/check-item-value-source.mjs",
     "check:serialization": "node scripts/check-duck-typed-serialization.mjs"
   },
   "dependencies": {

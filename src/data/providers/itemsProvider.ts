@@ -78,7 +78,62 @@ type ItemRow = {
   quick_predictions?: PredRow[];
 };
 
-function mapItemRow(r: ItemRow): Item {
+/**
+ * Canonical per-item values, read from `v_item_values_v1`.
+ *
+ * WHY THIS EXISTS (measured 2026-08-11 on prod): this client used to derive an
+ * item's value itself, as `quick_predictions -> predicted_price_eur ->
+ * estimated_value`. The server's chain has one more link —
+ * `price_predictions`, the catalog model — sitting between the first two. So an
+ * item priced only by the catalog model read **EUR 0 here while the server had
+ * a value for it**: 15 of 34 active items, 44%. Per category the two disagreed
+ * badly enough to be visible on one screen — one_piece_tcg's tile said EUR
+ * 80.64 where this list summed to EUR 0.00, pokemon EUR 55.57 against EUR
+ * 15.00. Nothing errored; an item priced at 0 looks exactly like a free one.
+ *
+ * The client cannot fix that by adding the missing link: `price_predictions`
+ * carries an RLS policy `price_predictions_deny_all` (`USING (false)`), while
+ * SELECT is granted to `authenticated`. A direct read therefore SUCCEEDS and
+ * returns `[]` — a fix that changes nothing and reports no error.
+ *
+ * `v_item_values_v1` is the way through. It runs with its owner's rights, so it
+ * can read the valuation table, and it filters `i.user_id = auth.uid()`, so a
+ * caller sees only their own items — verified as the `authenticated` role:
+ * 0 rows from `price_predictions` directly, 8 rows through the view, 0 rows
+ * belonging to anyone else. It is also now the SINGLE definition of item value;
+ * before adoption it was proven EXCEPT-equal in both directions to both live
+ * server expressions, so switching to it could not move a number already on
+ * screen.
+ *
+ * Bounded to the page's ids on purpose. The alternative — `/portfolio/items` —
+ * has no LIMIT and returns the whole collection to price twenty rows. Warm cost
+ * of this read is ~0.55ms per item (EXPLAIN ANALYZE, per-partition
+ * `item_ref` indexes), so a 20-item page costs ~11ms.
+ */
+async function fetchItemValues(ids: string[]): Promise<Map<string, number>> {
+  if (ids.length === 0) return new Map();
+  // Bounded by construction: installRequestTimeouts() in src/lib/supabase.ts
+  // wraps every .from() at the client, so this cannot hang the list.
+  const { data, error } = await supabase
+    .from('v_item_values_v1')
+    .select('item_id, value_eur')
+    .in('item_id', ids);
+  if (error) {
+    // best-effort: values degrade to the client-side chain below, which is
+    // exactly today's behaviour — never worse, and never a blocked list.
+    // logger.error, not warn: warn is stripped in release builds, and a silent
+    // degradation here is the whole bug this function exists to fix.
+    logger.error('[SupabaseDataProvider] item values read failed:', error);
+    return new Map();
+  }
+  const out = new Map<string, number>();
+  for (const row of (data ?? []) as { item_id: string; value_eur: number | null }[]) {
+    if (typeof row.value_eur === 'number') out.set(row.item_id, row.value_eur);
+  }
+  return out;
+}
+
+function mapItemRow(r: ItemRow, resolvedValue?: number): Item {
   // Prefer the most recently generated quick_prediction. created_at is an
   // ISO string so a string compare gives the right order.
   const preds = (r.quick_predictions ?? []).sort(
@@ -89,7 +144,15 @@ function mapItemRow(r: ItemRow): Item {
   // flow captured so every method shows a price immediately (quick_predictions
   // is populated asynchronously / for canonical-linked items).
   const fallbackValue = (r.predicted_price_eur ?? r.estimated_value) ?? undefined;
-  const cardValue = (typeof latest?.q50_eur === 'number' ? latest.q50_eur : undefined) ?? fallbackValue ?? 0;
+  // `resolvedValue` is the server's answer and wins outright — including when
+  // it is 0, which means "we know this item and it has no price", not "look
+  // somewhere else". `??` (not `||`) is load-bearing for exactly that.
+  // The chain below survives ONLY for when the view read failed; it is a
+  // fallback now, not a second opinion.
+  const cardValue = resolvedValue
+    ?? (typeof latest?.q50_eur === 'number' ? latest.q50_eur : undefined)
+    ?? fallbackValue
+    ?? 0;
   const attrs = r.attrs ?? undefined;
   // subtype_id + taxonomy_version were originally bare columns; they now
   // live inside the attrs jsonb when set. Fall back to undefined when missing.
@@ -114,11 +177,18 @@ function mapItemRow(r: ItemRow): Item {
     // downstream consumers that check `priceBand?.confidence` still work.
     // Detail screens needing the real band fetch from price_predictions
     // by canonical_key separately.
+    // Ordered to match `cardValue` above, or the card and its band would
+    // disagree on the same row: a real quick_prediction first (it is the only
+    // source carrying a confidence), then the server's resolved value, then the
+    // stored fallback. Before this, a catalog-priced item showed the resolved
+    // price with a band built from a DIFFERENT number.
     priceBand: latest && typeof latest.q50_eur === 'number'
       ? { q10: latest.q50_eur, q50: latest.q50_eur, q90: latest.q50_eur, confidence: latest.confidence ?? 0, currency: 'EUR' }
-      : typeof fallbackValue === 'number'
-        ? { q10: fallbackValue, q50: fallbackValue, q90: fallbackValue, confidence: 0, currency: 'EUR' }
-        : undefined,
+      : typeof resolvedValue === 'number'
+        ? { q10: resolvedValue, q50: resolvedValue, q90: resolvedValue, confidence: 0, currency: 'EUR' }
+        : typeof fallbackValue === 'number'
+          ? { q10: fallbackValue, q50: fallbackValue, q90: fallbackValue, confidence: 0, currency: 'EUR' }
+          : undefined,
     imageUrl: r.image_url ?? undefined,
     updatedAt: r.updated_at ?? undefined,
     condition: r.condition ?? undefined,
@@ -131,6 +201,22 @@ function mapItemRow(r: ItemRow): Item {
     purchasedAt: r.purchased_at ?? null,
     purchaseNotes: r.purchase_notes ?? null,
   };
+}
+
+/**
+ * Rows -> Items with canonical values attached.
+ *
+ * ONE place, deliberately. Three separate read paths (listItems, searchItems,
+ * listArchivedItems) each ended in `.map(mapItemRow)`, so attaching values at
+ * each call site would mean a fourth read path added later silently gets the
+ * old, wrong chain — with no error and no failing test, because an item priced
+ * at 0 is a valid item. Prefer one chokepoint over N call sites.
+ */
+async function mapRowsWithValues(data: unknown): Promise<Item[]> {
+  const rows = (data ?? []) as ItemRow[];
+  if (rows.length === 0) return [];
+  const values = await fetchItemValues(rows.map((r) => r.id));
+  return rows.map((r) => mapItemRow(r, values.get(r.id)));
 }
 
 const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, condition, brand, year, series, edition_label, estimated_value, predicted_price_eur, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
@@ -181,7 +267,7 @@ export async function listItems(pagination?: PaginationParams): Promise<Item[]> 
     );
   }
 
-  return ((data ?? []) as ItemRow[]).map(mapItemRow);
+  return mapRowsWithValues(data);
 }
 
 export async function createItem(input: CreateItemInput): Promise<Item> {
@@ -380,7 +466,7 @@ export async function listArchivedItems(): Promise<Item[]> {
     );
   }
 
-  return ((data ?? []) as ItemRow[]).map(mapItemRow);
+  return mapRowsWithValues(data);
 }
 
 export async function persistQuickscanDraft(input: QuickscanDraft): Promise<PersistedItem> {
@@ -592,5 +678,5 @@ export async function searchItems(query: string): Promise<Item[]> {
     return [];
   }
 
-  return ((data ?? []) as ItemRow[]).map(mapItemRow);
+  return mapRowsWithValues(data);
 }

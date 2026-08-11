@@ -16686,6 +16686,14 @@
       "nullable": true,
       "type": "float8"
     },
+    "v_item_values_v1.item_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "v_item_values_v1.value_eur": {
+      "nullable": true,
+      "type": "float8"
+    },
     "v_item_volatility_7d.avg7": {
       "nullable": true,
       "type": "numeric"
@@ -24678,6 +24686,10 @@
       "category_slug",
       "category_name",
       "category_wave"
+    ],
+    "v_item_values_v1": [
+      "item_id",
+      "value_eur"
     ],
     "v_item_volatility_7d": [
       "item_ref_uuid",
