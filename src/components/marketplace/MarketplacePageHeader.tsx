@@ -14,11 +14,15 @@ export const MarketplacePageHeader = React.memo(function MarketplacePageHeader()
   return (
     <View style={styles.headerRow}>
       <View style={styles.headerLeft}>
+        {/* "Market", matching the tab that opens this screen (2026-08-11). The
+            page called itself Search while the tab called itself Search and the
+            app's actual unified search is a different route — so the one word
+            named two things and neither of them was this page. */}
         <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Search
+          Market
         </Text>
         <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
-          Find items, collections, and categories.
+          Buy, sell, and browse collectibles.
         </Text>
       </View>
       <View style={styles.headerIcons}>

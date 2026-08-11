@@ -291,10 +291,12 @@
     }
   },
   "nav": {
+    "portfolio": "ポートフォリオ",
     "home": "ホーム",
     "items": "アイテム",
     "add": "追加",
     "marketplace": "マーケット",
+    "market": "マーケット",
     "wishlist": "ウォッチリスト",
     "search": "検索",
     "settings": "設定",
@@ -577,8 +579,8 @@
     "apply": "フィルターを適用"
   },
   "items_list_header": {
-    "search_placeholder": "アイテムを検索",
-    "search_a11y": "アイテムを検索",
+    "search_placeholder": "自分のアイテムを検索",
+    "search_a11y": "自分のアイテムを検索",
     "open_filters_a11y": "フィルターを開く",
     "list_view_a11y": "リスト表示",
     "gallery_view_a11y": "ギャラリー表示",

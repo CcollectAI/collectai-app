@@ -379,3 +379,37 @@ them.
 
 Whitespace was never the problem. The offers cards had plenty; the type was
 simply too small to fill it.
+
+### …but a uniform bump flattens the hierarchy (2026-08-11)
+
+Same screen, reported again two days later: *"the text sizes are off, the screen
+has unprofessional ui."* Moving **every** style one step up had landed 12 of
+`app/offers.tsx`'s 17 text styles on `md` (14) — status line, role pill, confirm
+ticks, tracking caption, sheet hints, every button label and the view link, all
+the same size as the body copy. Nothing receded, so nothing led. Next to
+`/listings` (card title `sm`, meta `xs`) and `/listing/[id]` (title `xl`, body
+`md`, meta `xs`) it did not read as the same app.
+
+**A screen needs three levels, and the floor is `sm` — not `md`.** Rule 1 above
+still holds: `xs` stays banned for anything a user reads. Build the hierarchy by
+pushing the lead UP, not by pushing everything else down:
+
+| level | token | what belongs there |
+|---|---|---|
+| lead | `xl` / `lg` | the amount, the listing title, a tracking code someone reads aloud |
+| body | `md` | status, prose, button labels, links, sheet copy |
+| caption | `sm` | pills, confirm ticks, field labels, passive notes |
+
+Two defects the flat pass left behind, both worth grepping for elsewhere:
+
+- **`lineHeight` below its own `fontSize` is never intentional.** `trackHint`
+  was `fontSize: 14` / `lineHeight: 15` on a deliberately two-line string, so
+  the lines collided. Keep every line-height at **≥1.35×** its font size.
+- **Two controls in one form must be one size.** The carrier picker rendered at
+  14 with the tracking input directly beneath it at 16.
+
+**Open divergence, not yet fixed:** `app/listings.tsx` still carries raw
+`fontSize: 9`, `10` and `11` literals plus `xs` card meta, which is the very
+thing rule 1 bans. Offers was brought up to the floor; listings has not been.
+Until it is, "match the rest of the app" points in two directions on these two
+screens.

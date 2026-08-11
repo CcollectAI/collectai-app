@@ -31,12 +31,27 @@ class UnifiedSearchResponse(BaseModel):
 # Per-user: 60 unified search requests per minute (runs 4 DB queries per call)
 _search_user_limit = per_user_rate_limit(60, window_seconds=60, scope="unified_search")
 
-# Category reference list for search (subset of the 36 categories)
+# Category reference list for search (subset of the 36 categories).
+#
+# EVERY id here is a ROUTE the app pushes as `/categories/<id>`, and the app
+# resolves it through `getCategoryById` in `src/data/categories.ts`. An id that
+# is not in that file renders "Category not found" — a search result that goes
+# nowhere.
+#
+# Three did, until 2026-08-11: `pokemon_tcg`, `sports_cards` and `kpop`, whose
+# real app ids are `pokemon`, `sportscards` and `kpop_merch`. Searching
+# "pokemon" — the most likely query this app will ever receive — produced a
+# category row that dead-ended.
+#
+# `scripts/check-search-category-ids.mjs` (npm run check:search-categories,
+# wired into verify:prebuild) diffs this list against categories.ts and fails
+# on any id the app cannot route to. Add an entry here only if the id exists
+# there.
 CATEGORY_LIST = [
-    {"id": "pokemon_tcg", "name": "Pokemon TCG"},
+    {"id": "pokemon", "name": "Pokemon TCG"},
     {"id": "mtg", "name": "Magic: The Gathering"},
     {"id": "yugioh", "name": "Yu-Gi-Oh!"},
-    {"id": "sports_cards", "name": "Sports Cards"},
+    {"id": "sportscards", "name": "Sports Cards"},
     {"id": "funko", "name": "Funko Pop!"},
     {"id": "lego", "name": "LEGO"},
     {"id": "hot_toys", "name": "Hot Toys"},
@@ -50,7 +65,7 @@ CATEGORY_LIST = [
     {"id": "vinyl_records", "name": "Vinyl Records"},
     {"id": "sneakers", "name": "Sneakers"},
     {"id": "watches", "name": "Watches"},
-    {"id": "kpop", "name": "K-pop"},
+    {"id": "kpop_merch", "name": "K-pop"},
     {"id": "one_piece", "name": "One Piece"},
     {"id": "bluray_steelbook", "name": "Blu-ray Steelbook"},
     {"id": "disney", "name": "Disney"},

@@ -291,10 +291,12 @@
     }
   },
   "nav": {
+    "portfolio": "Portfolio",
     "home": "Home",
     "items": "Items",
     "add": "Toevoegen",
     "marketplace": "Marktplaats",
+    "market": "Markt",
     "wishlist": "Verlanglijst",
     "search": "Zoeken",
     "settings": "Instellingen",
@@ -577,8 +579,8 @@
     "apply": "Filters toepassen"
   },
   "items_list_header": {
-    "search_placeholder": "Items zoeken",
-    "search_a11y": "Items zoeken",
+    "search_placeholder": "Zoek je items",
+    "search_a11y": "Zoek je items",
     "open_filters_a11y": "Filters openen",
     "list_view_a11y": "Lijstweergave",
     "gallery_view_a11y": "Galerijweergave",

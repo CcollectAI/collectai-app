@@ -291,10 +291,12 @@
     }
   },
   "nav": {
+    "portfolio": "Portfolio",
     "home": "Home",
     "items": "Items",
     "add": "Add",
     "marketplace": "Marketplace",
+    "market": "Market",
     "wishlist": "Watchlist",
     "search": "Search",
     "settings": "Settings",
@@ -577,8 +579,8 @@
     "apply": "Apply filters"
   },
   "items_list_header": {
-    "search_placeholder": "Search items",
-    "search_a11y": "Search items",
+    "search_placeholder": "Search your items",
+    "search_a11y": "Search your items",
     "open_filters_a11y": "Open filters",
     "list_view_a11y": "List view",
     "gallery_view_a11y": "Gallery view",

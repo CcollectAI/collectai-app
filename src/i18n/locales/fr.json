@@ -291,10 +291,12 @@
     }
   },
   "nav": {
+    "portfolio": "Portefeuille",
     "home": "Accueil",
     "items": "Objets",
     "add": "Ajouter",
     "marketplace": "Marché",
+    "market": "Marché",
     "wishlist": "Liste de suivi",
     "search": "Recherche",
     "settings": "Paramètres",
@@ -577,8 +579,8 @@
     "apply": "Appliquer les filtres"
   },
   "items_list_header": {
-    "search_placeholder": "Rechercher des objets",
-    "search_a11y": "Rechercher des objets",
+    "search_placeholder": "Rechercher vos objets",
+    "search_a11y": "Rechercher vos objets",
     "open_filters_a11y": "Ouvrir les filtres",
     "list_view_a11y": "Vue en liste",
     "gallery_view_a11y": "Vue en galerie",

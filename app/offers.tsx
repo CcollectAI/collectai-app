@@ -749,63 +749,107 @@ export default function OffersScreenWithBoundary() {
   );
 }
 
+/*
+ * TYPE SCALE (revised 2026-08-11) — three levels, not one.
+ *
+ * The 2026-08-09 pass fixed "that screen is very small letters" by moving every
+ * style one step UP the scale. That cured the unreadability and replaced it with
+ * the opposite defect: 12 of 17 text styles landed on `md` (14), so the status
+ * line, the role pill, the confirm ticks, the tracking caption, the sheet hints,
+ * every button label and the view link all rendered at the same size as the body
+ * copy. Nothing receded, so nothing led — a card with no hierarchy reads as
+ * unfinished no matter how correct its content is, and next to `/listings`
+ * (card title 12, meta 10) and `/listing/[id]` (title 20, body 14, meta 10) the
+ * screen visibly did not belong to the same app.
+ *
+ * The fix is NOT to undo the bump. `xs` (10) stays banned for anything a user
+ * reads — that rule was written from Merle's own report and it still holds. The
+ * floor here is `sm` (12), and hierarchy is rebuilt by pushing the two things
+ * that matter UP rather than pushing everything else down:
+ *
+ *   lead    xl (20)  the amount · lg (16) the listing title, the tracking CODE
+ *   body    md (14)  status, the buyer's message, buttons, links, sheet copy
+ *   caption sm (12)  role pill, confirm ticks, captions, passive notes
+ *
+ * Two outright bugs went with it:
+ *  - `trackHint` was `fontSize: 14` with `lineHeight: 15` on a deliberately
+ *    two-line string ("Search this code\non the carrier's site"), so the lines
+ *    collided. A lineHeight below its own fontSize is never intentional.
+ *  - the carrier field rendered at 14 while the tracking input directly below it
+ *    rendered at 16 — two controls in one form, two sizes, for no reason.
+ *
+ * Every line-height here is >= 1.35x its font size; the tightest sibling
+ * (`listing/[id].tsx` body) is 14/21.
+ */
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   pad: { padding: 16 },
-  loadingText: { fontSize: textToken.lg },
+  loadingText: { fontSize: textToken.md },
   segmentWrap: { paddingHorizontal: 16, paddingTop: 8 },
   segment: {
     flexDirection: 'row', borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.pill, padding: 3, marginBottom: 10,
+    borderRadius: radius.pill, padding: 3, marginBottom: 12,
   },
-  segmentBtn: { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: radius.pill },
-  segmentText: { fontSize: textToken.md },
+  segmentBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: radius.pill },
+  segmentText: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
   list: { paddingHorizontal: 16, paddingTop: 2 },
   card: {
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md,
     padding: 14, marginBottom: 12, gap: 8,
   },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  title: { flex: 1, fontSize: textToken.lg, fontWeight: fontWeight.semibold },
+  title: { flex: 1, fontSize: textToken.lg, fontWeight: fontWeight.semibold, lineHeight: 22 },
   amount: { fontSize: textToken.xl, fontWeight: fontWeight.extrabold, letterSpacing: -0.3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  rolePill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.xs },
-  rolePillText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
-  status: { fontSize: textToken.md, flexShrink: 1 },
+  // A pill is a LABEL beside body text, not body text. At md/bold it was the
+  // same size as the status it sits next to and competed with the title; `pill`
+  // radius matches the segmented control at the top of the same screen, where
+  // `radius.xs` (6) read as a stray rounded rectangle.
+  rolePill: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: radius.pill },
+  rolePillText: { fontSize: textToken.sm, fontWeight: fontWeight.bold, letterSpacing: 0.3 },
+  status: { fontSize: textToken.md, fontWeight: fontWeight.medium, flexShrink: 1 },
   message: { fontSize: textToken.md, fontStyle: 'italic', lineHeight: 20 },
   confirmRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' },
-  confirmText: { fontSize: textToken.md, marginRight: 8 },
+  confirmText: { fontSize: textToken.sm, lineHeight: 17, marginRight: 8 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },
-  btn: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.sm },
+  btn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.sm },
   btnGhost: { borderWidth: 1, backgroundColor: 'transparent' },
   btnText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
-  graded: { fontSize: textToken.md, paddingVertical: 9 },
+  graded: { fontSize: textToken.sm, paddingVertical: 9 },
   // Tracking — display-only shipment reference on the card.
   tracking: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
-    paddingHorizontal: 10, paddingVertical: 8, marginTop: 8,
+    paddingHorizontal: 10, paddingVertical: 9, marginTop: 8,
   },
-  trackingLabel: { fontSize: textToken.md },
-  trackingCode: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
+  trackingLabel: { fontSize: textToken.sm, lineHeight: 16 },
+  // The code is what a seller reads back and a buyer copies, so it leads its
+  // block — it was the same 14 as its own caption.
+  trackingCode: { fontSize: textToken.lg, fontWeight: fontWeight.semibold, letterSpacing: 0.4 },
   trackLink: { fontSize: textToken.md, fontWeight: fontWeight.bold },
-  trackHint: { fontSize: textToken.md, textAlign: 'right', lineHeight: 15 },
+  trackHint: { fontSize: textToken.sm, textAlign: 'right', lineHeight: 16 },
   // Tracking capture sheet.
   sheet: { padding: 16, paddingBottom: 32, gap: 10 },
-  sheetHint: { fontSize: textToken.md, lineHeight: 18 },
-  sheetLabel: { fontSize: textToken.md, fontWeight: fontWeight.semibold, marginTop: 6 },
+  sheetHint: { fontSize: textToken.md, lineHeight: 20 },
+  // Field captions, so the field VALUE below leads. Uppercase + tracking is the
+  // form-label treatment; at md/semibold the label outweighed its own field.
+  sheetLabel: {
+    fontSize: textToken.sm, fontWeight: fontWeight.bold,
+    textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 8,
+  },
   // (carrierWrap/carrierChip/carrierChipText removed with the chip grid)
   field: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderWidth: 1, borderRadius: radius.sm,
-    paddingHorizontal: 12, paddingVertical: 12,
+    paddingHorizontal: 12, paddingVertical: 13,
   },
-  fieldText: { fontSize: textToken.md },
+  // Matches `input` below — one form, one control size.
+  fieldText: { fontSize: textToken.lg },
   carrierError: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   input: {
     borderWidth: 1, borderRadius: radius.sm,
-    paddingHorizontal: 12, paddingVertical: 11, fontSize: textToken.lg,
+    paddingHorizontal: 12, paddingVertical: 13, fontSize: textToken.lg,
   },
-  sheetSave: { marginTop: 8 },
+  sheetSave: { marginTop: 8, alignItems: 'center', paddingVertical: 13 },
   viewLink: { fontSize: textToken.md, fontWeight: fontWeight.bold, marginTop: 2 },
 });

@@ -291,10 +291,12 @@
     }
   },
   "nav": {
+    "portfolio": "포트폴리오",
     "home": "홈",
     "items": "아이템",
     "add": "추가",
     "marketplace": "마켓플레이스",
+    "market": "마켓",
     "wishlist": "워치리스트",
     "search": "검색",
     "settings": "설정",
@@ -577,8 +579,8 @@
     "apply": "필터 적용"
   },
   "items_list_header": {
-    "search_placeholder": "아이템 검색",
-    "search_a11y": "아이템 검색",
+    "search_placeholder": "내 아이템 검색",
+    "search_a11y": "내 아이템 검색",
     "open_filters_a11y": "필터 열기",
     "list_view_a11y": "목록 보기",
     "gallery_view_a11y": "갤러리 보기",

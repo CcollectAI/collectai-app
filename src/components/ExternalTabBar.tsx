@@ -43,7 +43,8 @@ export function ExternalTabBar() {
   const tabs: TabDef[] = [
     {
       key: "index",
-      label: t("nav.home"),
+      // "Portfolio" — see the note in app/(tabs)/_layout.tsx.
+      label: t("nav.portfolio"),
       icon: "pie-chart-outline",
       iconFocused: "pie-chart",
       href: "/(tabs)",
@@ -75,9 +76,13 @@ export function ExternalTabBar() {
         ]),
     {
       key: "marketplace",
-      label: t("nav.search"),
-      icon: "search-outline",
-      iconFocused: "search",
+      // "Market", not "Search" — see the note in app/(tabs)/_layout.tsx. This
+      // bar, that Tabs.Screen and QuickNavBar all render the same slot, so the
+      // label and icon must be changed in all three or they disagree depending
+      // on which screen the user is standing on.
+      label: t("nav.market"),
+      icon: "storefront-outline",
+      iconFocused: "storefront",
       href: "/(tabs)/marketplace",
     },
   ];

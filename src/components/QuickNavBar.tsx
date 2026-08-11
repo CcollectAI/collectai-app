@@ -26,7 +26,10 @@ const TABS: TabDef[] = [
   { route: '/(tabs)/items', label: 'Items', icon: 'albums-outline', iconFocused: 'albums', matchPrefix: '/items' },
   { route: '/(tabs)/add', label: 'Add', icon: 'add-circle-outline', iconFocused: 'add-circle', matchPrefix: '/add' },
   { route: '/(tabs)/events', label: 'Events', icon: 'calendar-outline', iconFocused: 'calendar', matchPrefix: '/events' },
-  { route: '/(tabs)/marketplace', label: 'Search', icon: 'search-outline', iconFocused: 'search', matchPrefix: '/marketplace' },
+  // "Market", not "Search" — see the note in app/(tabs)/_layout.tsx. These
+  // labels are the one nav surface that is NOT translated (the whole TABS array
+  // is plain English); left as-is rather than half-translating one entry.
+  { route: '/(tabs)/marketplace', label: 'Market', icon: 'storefront-outline', iconFocused: 'storefront', matchPrefix: '/marketplace' },
 ];
 
 export function QuickNavBar() {

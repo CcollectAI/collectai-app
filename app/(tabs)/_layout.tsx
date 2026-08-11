@@ -128,9 +128,14 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: t("nav.home"),
-          tabBarLabel: t("nav.home"),
-          tabBarAccessibilityLabel: t("nav.home"),
+          /* "Portfolio", not "Home" (2026-08-11). The screen's own title is
+             "Portfolio" and QuickNavBar already labelled it that; only the tab
+             bar said Home, so the same destination had two names depending on
+             which bar you read. `nav.home` is left in place — other locales'
+             copy may still reference it. */
+          title: t("nav.portfolio"),
+          tabBarLabel: t("nav.portfolio"),
+          tabBarAccessibilityLabel: t("nav.portfolio"),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "pie-chart" : "pie-chart-outline"}
@@ -195,12 +200,28 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="marketplace"
         options={{
-          title: t("nav.search"),
-          tabBarLabel: t("nav.search"),
-          tabBarAccessibilityLabel: t("nav.search"),
+          /*
+           * Labelled "Market", not "Search" (2026-08-11).
+           *
+           * The slot has always opened `(tabs)/marketplace` while calling
+           * itself Search, so the label described the search BAR at the top of
+           * that screen rather than the screen itself — and the app's actual
+           * unified search (`app/search.tsx`) is a different route entirely.
+           * One name, one destination.
+           *
+           * `nav.market` is a new key, present in all 7 locales. It is NOT
+           * `nav.marketplace` ("Marketplace" / "Marktplaats" / "마켓플레이스"),
+           * which is an orphan key no screen reads: at 11pt in a five-up tab bar
+           * those wrap. Changing the string here means changing it in
+           * ExternalTabBar and QuickNavBar too — three components render this
+           * same slot.
+           */
+          title: t("nav.market"),
+          tabBarLabel: t("nav.market"),
+          tabBarAccessibilityLabel: t("nav.market"),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? "search" : "search-outline"}
+              name={focused ? "storefront" : "storefront-outline"}
               size={Math.max(18, size - 4)}
               color={color}
             />

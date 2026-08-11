@@ -2,7 +2,7 @@
  * Global Unified Search Screen
  * Searches across items, catalog, collectors, events, and categories.
  */
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { useRouter, useLocalSearchParams, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { dataProvider } from '@/data';
+import { getCategoryById } from '@/data/categories';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -217,7 +218,12 @@ function SearchScreen() {
     try {
       const res = await dataProvider.unifiedSearch(q.trim());
       setResults(res ?? null);
-    } catch {
+    } catch (e) {
+      // logger.error, not warn: info/warn are stripped from release builds, so
+      // a failed search would have left no trace on exactly the builds where
+      // "search found nothing" gets reported. The error STATE was already
+      // rendered — this only makes the cause recoverable from getRecentLogs().
+      logger.error('[search] unified search failed:', e);
       setResults(null);
       setError(true);
     } finally {
@@ -255,8 +261,34 @@ function SearchScreen() {
     };
   }, []);
 
+  /*
+   * A category row is the one result kind whose id IS the route, so an id the
+   * app has no screen for renders a result that goes nowhere.
+   *
+   * The server builds its own hand-written CATEGORY_LIST, and three of its 36
+   * ids do not exist in `src/data/categories.ts`: it sends `pokemon_tcg`,
+   * `sports_cards` and `kpop` where the app's ids are `pokemon`, `sportscards`
+   * and `kpop_merch`. Tapping one pushed `/categories/pokemon_tcg`, which
+   * `getCategoryById` cannot resolve, so the screen rendered "Category not
+   * found" — on the single most-searched word in a collectibles app.
+   *
+   * Resolved here against the LOCAL taxonomy, the same source
+   * `app/categories/[categoryId].tsx` routes with, so a category row can only
+   * render when its destination exists. The server list is corrected too, and
+   * `npm run check:search-categories` fails the build if the two drift again —
+   * this filter is what keeps a future drift from reaching a user's thumb
+   * rather than only a CI log.
+   */
+  const routableCategories = useMemo(
+    () => (results?.categories ?? []).filter((c) => getCategoryById(c.id) !== undefined),
+    [results],
+  );
+
+  // Counts what is RENDERED, not what arrived: an unroutable category row is
+  // filtered out above, and counting it here would leave a query whose only
+  // hits were unroutable showing an empty screen with no "no results" state.
   const totalResults = results
-    ? results.items.length + results.catalog.length + results.users.length + results.events.length + results.categories.length
+    ? results.items.length + results.catalog.length + results.users.length + results.events.length + routableCategories.length
     : 0;
 
   const hasResults = results && totalResults > 0;
@@ -331,7 +363,50 @@ function SearchScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.muted }]} accessibilityRole="header">CATALOG</Text>
             {results.catalog.map((catItem) => (
-              <CatalogSearchResult key={catItem.id} item={catItem} colors={colors} onPress={() => router.push(`/categories/${catItem.category}` as Href)} />
+              <CatalogSearchResult
+                key={catItem.id}
+                item={catItem}
+                colors={colors}
+                /*
+                 * Opens the ITEM, not its category (fixed 2026-08-11).
+                 *
+                 * This used to push `/categories/${category}`, so tapping the
+                 * "Rolex Cosmograph Daytona" you had just searched for dropped
+                 * you on the whole Watches category page — the one screen that
+                 * cannot show you the row you tapped. Reported as "the results
+                 * are not pressable": the press fired, the screen changed, and
+                 * the thing the user asked for was nowhere on it.
+                 *
+                 * `/catalog-item/[key]` is the destination every other catalog
+                 * surface already uses (CategoryOverviewRail, catalog-set,
+                 * the museum's own sibling rail) — one destination for "open a
+                 * catalog row", not a second one that only search knows about.
+                 *
+                 * Search returns no image_url (kept backend-only), no rarity and
+                 * no set_code, so those params go empty. The museum degrades
+                 * cleanly: it renders a placeholder thumbnail, skips the
+                 * "from this set" rail, and re-fetches the price itself via
+                 * getCatalogItemPrice(category, key) — so an unpriced row here
+                 * is never LESS informative than the same row reached from a
+                 * category rail.
+                 */
+                onPress={() => router.push({
+                  pathname: '/catalog-item/[key]',
+                  params: {
+                    key: catItem.itemKey,
+                    category: catItem.category,
+                    title: catItem.title,
+                    brand: catItem.brand ?? '',
+                    image_url: '',
+                    rarity: '',
+                    set_code: '',
+                    // Empty, never "0": the museum parses this with parseFloat
+                    // and an unpriced watch must arrive as "no price", not as
+                    // a EUR 0 valuation (unknown-as-zero).
+                    estimated_price: catItem.priceEur != null ? String(catItem.priceEur) : '',
+                  },
+                } as unknown as Href)}
+              />
             ))}
           </View>
         )}
@@ -357,10 +432,10 @@ function SearchScreen() {
         )}
 
         {/* Categories Section */}
-        {results && results.categories.length > 0 && (
+        {routableCategories.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.muted }]} accessibilityRole="header">CATEGORIES</Text>
-            {results.categories.map((cat) => (
+            {routableCategories.map((cat) => (
               <CategorySearchResult key={cat.id} cat={cat} colors={colors} onPress={() => router.push(`/categories/${cat.id}` as Href)} />
             ))}
           </View>

@@ -291,10 +291,12 @@
     }
   },
   "nav": {
+    "portfolio": "Portafolio",
     "home": "Inicio",
     "items": "Artículos",
     "add": "Añadir",
     "marketplace": "Marketplace",
+    "market": "Mercado",
     "wishlist": "Lista de seguimiento",
     "search": "Buscar",
     "settings": "Ajustes",
@@ -577,8 +579,8 @@
     "apply": "Aplicar los filtros"
   },
   "items_list_header": {
-    "search_placeholder": "Buscar artículos",
-    "search_a11y": "Buscar artículos",
+    "search_placeholder": "Buscar tus artículos",
+    "search_a11y": "Buscar tus artículos",
     "open_filters_a11y": "Abrir los filtros",
     "list_view_a11y": "Vista de lista",
     "gallery_view_a11y": "Vista de galería",
