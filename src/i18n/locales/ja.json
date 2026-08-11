@@ -114,7 +114,8 @@
     "unavailable": "検索を利用できません",
     "retry_a11y": "検索を再試行",
     "no_results": "結果が見つかりません",
-    "no_price_yet": "価格はまだありません"
+    "no_price_yet": "価格はまだありません",
+    "browse_by_category": "カテゴリから探す"
   },
   "item_detail": {
     "valuation_a11y": "アイテムの評価と詳細",
@@ -338,7 +339,8 @@
     "insights_view_a11y": "拡張ポートフォリオインサイトを表示",
     "insights_upgrade_a11y": "拡張ポートフォリオインサイトにアップグレード",
     "deal_agent_open_a11y": "Deal Agentを開く",
-    "deal_agent_upgrade_a11y": "アップグレードしてDeal Agentをアンロック"
+    "deal_agent_upgrade_a11y": "アップグレードしてDeal Agentをアンロック",
+    "analytics": "分析"
   },
   "items": {
     "title": "アイテム",
@@ -729,5 +731,21 @@
   "ads": {
     "sponsored": "スポンサー",
     "ad": "広告"
+  },
+  "favorites": {
+    "saved": "お気に入りに保存しました",
+    "removed": "お気に入りから削除しました",
+    "save_failed": "保存できませんでした — もう一度お試しください",
+    "watching": "ウォッチ中 — {{price}} を下回ったらお知らせします",
+    "watch_failed": "ウォッチリストに追加できませんでした",
+    "watch_needs_category": "この出品にはカテゴリがないため、アラートが一致することはありません",
+    "a11y_save": "お気に入りに保存",
+    "a11y_unsave": "お気に入りから削除",
+    "a11y_watch": "出品価格を下回る値下がりをウォッチ",
+    "a11y_watching": "値下がりをウォッチ中",
+    "title": "お気に入り",
+    "empty": "まだ保存されていません",
+    "empty_hint": "出品のハートをタップするとここに保存されます",
+    "unavailable": "現在は利用できません"
   }
 }

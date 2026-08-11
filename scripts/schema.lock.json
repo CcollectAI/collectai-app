@@ -52,6 +52,12 @@
     "events.sponsor_tier": [
       "CHECK (((sponsor_tier IS NULL) OR (sponsor_tier = ANY (ARRAY['featured'::text, 'promoted'::text, 'spotlight'::text]))))"
     ],
+    "favorites.canonical_key": [
+      "CHECK ((num_nonnulls(listing_id, canonical_key) = 1))"
+    ],
+    "favorites.listing_id": [
+      "CHECK ((num_nonnulls(listing_id, canonical_key) = 1))"
+    ],
     "ingest_jobs.job_type": [
       "CHECK ((job_type = ANY (ARRAY['market_hits_ingest_v1'::text, 'market_hit_enrich_v1'::text, 'quantile_rebuild_v1'::text])))"
     ],
@@ -5488,6 +5494,32 @@
       "default": "'public'::text",
       "nullable": true,
       "type": "text"
+    },
+    "favorites.canonical_key": {
+      "nullable": true,
+      "type": "text"
+    },
+    "favorites.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "favorites.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "favorites.id": {
+      "default": "gen_random_uuid()",
+      "nullable": false,
+      "type": "uuid"
+    },
+    "favorites.listing_id": {
+      "nullable": true,
+      "type": "uuid"
+    },
+    "favorites.user_id": {
+      "nullable": false,
+      "type": "uuid"
     },
     "feature_dictionary.category": {
       "nullable": false,
@@ -21483,6 +21515,14 @@
       "ticket_price_cents",
       "engagement_score"
     ],
+    "favorites": [
+      "id",
+      "user_id",
+      "listing_id",
+      "canonical_key",
+      "category",
+      "created_at"
+    ],
     "feature_dictionary": [
       "id",
       "category",
@@ -26290,6 +26330,19 @@
       ],
       [
         "source_url"
+      ]
+    ],
+    "favorites": [
+      [
+        "id"
+      ],
+      [
+        "user_id",
+        "canonical_key"
+      ],
+      [
+        "user_id",
+        "listing_id"
       ]
     ],
     "feature_dictionary": [

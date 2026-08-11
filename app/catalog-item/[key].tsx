@@ -27,6 +27,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
+import { useFavorites } from '@/hooks/useFavorites';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
@@ -67,6 +68,10 @@ function CatalogItemMuseumScreen() {
   const [linksLoading, setLinksLoading] = useState(true);
   const [siblings, setSiblings] = useState<CatalogItemData[]>([]);
   const [adding, setAdding] = useState(false);
+  // Favourites for the CATALOGUE half: keyed by canonical_key (bare), which is
+  // what `params.key` already is on this screen.
+  const { isFavorite, toggle: toggleFavorite } = useFavorites();
+  const favorited = params.key ? isFavorite({ canonical_key: params.key }) : false;
   // Price is seeded from the nav param (instant) but falls back to a fetch
   // when the caller didn't pass one — otherwise a priced item shows "No recent
   // sales data" purely because of how it was navigated to (deep link, older
@@ -156,6 +161,24 @@ function CatalogItemMuseumScreen() {
       setAdding(false);
     }
   }, [title, category, estPrice, params.key, settings.hapticsEnabled, showToast]);
+
+  const onToggleFavorite = useCallback(async () => {
+    if (!params.key) return;
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    try {
+      // `category` is the slug this screen already loads with — the same
+      // vocabulary market_hits and watchlist_items use.
+      const nowFavorite = await toggleFavorite({ canonical_key: params.key }, category);
+      showToast({
+        message: nowFavorite ? 'Saved to favourites' : 'Removed from favourites',
+        type: 'success',
+      });
+    } catch {
+      // useFavorites rolled the optimistic flip back and logged the cause. Say
+      // so — a heart that silently snaps back reads as a broken button.
+      showToast({ message: "Couldn't save — try again", type: 'error' });
+    }
+  }, [params.key, category, toggleFavorite, settings.hapticsEnabled, showToast]);
 
   const openLink = useCallback((link: AffiliateLink) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -295,15 +318,40 @@ function CatalogItemMuseumScreen() {
           )}
         </View>
 
-        {/* Primary CTA */}
-        <AnimatedPressable
-          style={[styles.cta, { backgroundColor: colors.accent, opacity: adding ? 0.6 : 1 }]}
-          onPress={onAddToWatchlist} disabled={adding}
-          accessibilityRole="button" accessibilityLabel="Add to watchlist"
-        >
-          <Ionicons name="heart-outline" size={18} color="#fff" />
-          <Text style={styles.ctaText}>Add to watchlist</Text>
-        </AnimatedPressable>
+        {/* Primary CTA — WATCH, so it carries the eye.
+            It wore a heart until 2026-08-11 while writing a watchlist row,
+            which is the same icon this screen now uses for favouriting: one
+            glyph meaning two different things on one screen. The heart beside
+            it saves; this one sets a target price and can alert.
+
+            The write itself was already correct — `targetPrice: estPrice` and
+            `itemId: params.key` — so only the glyph changed. */}
+        <View style={styles.ctaRow}>
+          <AnimatedPressable
+            style={[styles.cta, { backgroundColor: colors.accent, opacity: adding ? 0.6 : 1 }]}
+            onPress={onAddToWatchlist} disabled={adding}
+            accessibilityRole="button" accessibilityLabel="Add to watchlist"
+          >
+            <Ionicons name="eye-outline" size={18} color="#fff" />
+            <Text style={styles.ctaText}>Add to watchlist</Text>
+          </AnimatedPressable>
+
+          {/* Favourite this CATALOGUE entry — keyed by canonical_key, not by a
+              listing. Saves; promises nothing. */}
+          <AnimatedPressable
+            style={[styles.favBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={onToggleFavorite}
+            accessibilityRole="button"
+            accessibilityLabel={favorited ? 'Remove from favourites' : 'Save to favourites'}
+            accessibilityState={{ selected: favorited }}
+          >
+            <Ionicons
+              name={favorited ? 'heart' : 'heart-outline'}
+              size={20}
+              color={favorited ? colors.accent : colors.muted}
+            />
+          </AnimatedPressable>
+        </View>
       </View>
     </ScrollView>
   );
@@ -342,7 +390,11 @@ const styles = StyleSheet.create({
   siblingName: { fontSize: 11, marginTop: 6 },
   buyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   buyLabel: { fontSize: 15, fontWeight: '600' },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 14, marginTop: 6 },
+  ctaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
+  // flex:1 so the watch CTA keeps the full width it had before the
+  // heart joined it, rather than both shrinking to content.
+  cta: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 14 },
+  favBtn: { width: 52, height: 52, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   ctaText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
 

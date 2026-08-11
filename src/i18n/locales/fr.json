@@ -114,7 +114,8 @@
     "unavailable": "Recherche indisponible",
     "retry_a11y": "Réessayer la recherche",
     "no_results": "Aucun résultat trouvé",
-    "no_price_yet": "Pas encore de prix"
+    "no_price_yet": "Pas encore de prix",
+    "browse_by_category": "Parcourir par catégorie"
   },
   "item_detail": {
     "valuation_a11y": "Évaluation et détails de l'objet",
@@ -338,7 +339,8 @@
     "insights_view_a11y": "Voir les analyses de portefeuille avancées",
     "insights_upgrade_a11y": "Mettre à niveau pour les analyses avancées",
     "deal_agent_open_a11y": "Ouvrir Deal Agent",
-    "deal_agent_upgrade_a11y": "Mettre à niveau pour débloquer Deal Agent"
+    "deal_agent_upgrade_a11y": "Mettre à niveau pour débloquer Deal Agent",
+    "analytics": "Analyses"
   },
   "items": {
     "title": "Objets",
@@ -729,5 +731,21 @@
   "ads": {
     "sponsored": "Sponsorisé",
     "ad": "Pub"
+  },
+  "favorites": {
+    "saved": "Ajouté aux favoris",
+    "removed": "Retiré des favoris",
+    "save_failed": "Échec de l'enregistrement — réessayez",
+    "watching": "Suivi — nous vous alerterons si le prix passe sous {{price}}",
+    "watch_failed": "Impossible d'ajouter à la liste de suivi — réessayez",
+    "watch_needs_category": "Cette annonce n'a pas de catégorie, une alerte ne pourrait jamais correspondre",
+    "a11y_save": "Ajouter aux favoris",
+    "a11y_unsave": "Retirer des favoris",
+    "a11y_watch": "Suivre les baisses de prix sous le prix demandé",
+    "a11y_watching": "Baisses de prix suivies",
+    "title": "Favoris",
+    "empty": "Rien d'enregistré pour l'instant",
+    "empty_hint": "Touchez le cœur d'une annonce pour l'enregistrer ici",
+    "unavailable": "Plus disponible"
   }
 }

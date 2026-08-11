@@ -49,6 +49,7 @@ import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
+import { FavoriteWatchButtons } from '@/components/marketplace/FavoriteWatchButtons';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
 import { SlowLoadNotice } from '@/components/SlowLoadNotice';
 import { useSettings, type NumberLocale, type Settings } from '@/lib/settings';
@@ -242,12 +243,36 @@ function ListingCard({
             </View>
           ) : null}
         </View>
+
+        {/* Heart = save, eye = watch with a target price. Not on your OWN
+            listing: saving your own item means nothing, and the `watchers`
+            count above deliberately excludes the seller's own watchlist row,
+            so letting a seller watch themselves would make that number lie. */}
+        {!listing.is_mine ? (
+          <FavoriteWatchButtons
+            listingId={listing.id}
+            canonicalKey={listing.canonical_key}
+            category={listing.category}
+            price={listing.price}
+            currency={listing.currency}
+            title={listing.title}
+          />
+        ) : null}
       </View>
     </AnimatedPressable>
   );
 }
 
-function MemberMarketplaceScreen() {
+/**
+ * @param asTab Rendered as the Market TAB rather than as a pushed route.
+ *
+ *   Suppresses the two affordances that only make sense when pushed:
+ *   - the in-body QuickNavBar (a tab already sits under ExternalTabBar;
+ *     rendering both stacks two bars and the lower covers the last row)
+ *   - the back chevron (a tab has nothing to go back to, so `safeGoBack`
+ *     would find an empty stack and jump to Portfolio)
+ */
+function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -606,7 +631,7 @@ function MemberMarketplaceScreen() {
     // double-pad the top — the playbook's SafeAreaView rule is for screens
     // WITHOUT this header.
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title="Marketplace" />
+      <ScreenHeader title="Marketplace" showBack={!asTab} />
 
       {/*
         REDESIGNED 2026-08-07 after a UX review. The previous version stacked
@@ -679,42 +704,21 @@ function MemberMarketplaceScreen() {
             ) : null}
           </View>
 
-          {/* Offers as an icon, not a card — but an icon with a COUNT. An
-              unbadged glyph is the weakest possible signal for the one thing on
-              this screen that is time-sensitive: an offer nobody answers is a
-              lost sale. The badge counts only offers waiting on THIS user
-              (offerNeedsMyAction), so it never nags about something that is
-              someone else's turn. */}
+          {/* Favourites. The heart on each tile writes to a list, and a list
+              with no way in is capture-without-consume — the shape this
+              codebase keeps deleting. This is that way in. */}
           <AnimatedPressable
             onPress={() => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              router.push('/offers' as Href);
+              router.push('/favorites' as Href);
             }}
-            style={[
-              styles.iconBtn,
-              { backgroundColor: colors.card,
-                borderColor: offersToAction > 0 ? colors.accent : colors.border },
-            ]}
+            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             accessibilityRole="button"
-            accessibilityLabel={
-              offersToAction > 0
-                ? `Your offers, ${offersToAction} waiting for you`
-                : 'Your offers'
-            }
+            accessibilityLabel="Favourites"
           >
-            <Ionicons
-              name="swap-horizontal-outline"
-              size={18}
-              color={offersToAction > 0 ? colors.accent : colors.text}
-            />
-            {offersToAction > 0 ? (
-              <View style={[styles.badge, { backgroundColor: colors.accent, borderColor: colors.background }]}>
-                <Text style={[styles.badgeText, { color: colors.accentText }]}>
-                  {offersToAction > 9 ? '9+' : offersToAction}
-                </Text>
-              </View>
-            ) : null}
+            <Ionicons name="heart-outline" size={18} color={colors.text} />
           </AnimatedPressable>
+
         </View>
 
         {/* ONE control row. The filter button carries a count so the user can
@@ -734,10 +738,13 @@ function MemberMarketplaceScreen() {
             accessibilityRole="button"
             accessibilityLabel={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filter and sort'}
           >
-            <Ionicons name="options-outline" size={15} color={activeFilterCount > 0 ? colors.accent : colors.text} />
-            <Text style={[styles.filterBtnText, { color: activeFilterCount > 0 ? colors.accent : colors.text }]}>
-              {activeFilterCount > 0 ? `Filters · ${activeFilterCount}` : 'Filter & sort'}
-            </Text>
+            {/* Icon only. The count still shows when filters are on — dropping
+                that would hide the "why are there no results" answer, which is
+                the whole reason this button carries a number. */}
+            <Ionicons name="options-outline" size={17} color={activeFilterCount > 0 ? colors.accent : colors.text} />
+            {activeFilterCount > 0 ? (
+              <Text style={[styles.filterBtnText, { color: colors.accent }]}>{activeFilterCount}</Text>
+            ) : null}
           </AnimatedPressable>
 
           {activeFilterCount > 0 ? (
@@ -752,6 +759,41 @@ function MemberMarketplaceScreen() {
           ) : null}
 
           <View style={styles.grow} />
+
+          {/* Offers, beside Sell: the two things you DO on a marketplace sit
+              together, and the row that was a lone Sell button is now the
+              screen's action row. */}
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.push('/offers' as Href);
+            }}
+            style={[
+              styles.offersBtn,
+              { backgroundColor: colors.card,
+                borderColor: offersToAction > 0 ? colors.accent : colors.border },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              offersToAction > 0 ? `Your offers, ${offersToAction} waiting for you` : 'Your offers'
+            }
+          >
+            <Ionicons
+              name="pricetags-outline"
+              size={15}
+              color={offersToAction > 0 ? colors.accent : colors.text}
+            />
+            <Text style={[styles.offersBtnText, { color: offersToAction > 0 ? colors.accent : colors.text }]}>
+              Offers
+            </Text>
+            {offersToAction > 0 ? (
+              <View style={[styles.badge, { backgroundColor: colors.accent, borderColor: colors.background }]}>
+                <Text style={[styles.badgeText, { color: colors.accentText }]}>
+                  {offersToAction > 9 ? '9+' : offersToAction}
+                </Text>
+              </View>
+            ) : null}
+          </AnimatedPressable>
 
           {/* Sell is the other half of a marketplace and had no entry point on
               this screen at all — a browse-only surface tells a member this is
@@ -1019,15 +1061,15 @@ function MemberMarketplaceScreen() {
         colors={colors}
       />
 
-      <QuickNavBar />
+      {!asTab && <QuickNavBar />}
     </View>
   );
 }
 
-export default function MemberMarketplaceScreenWithBoundary() {
+export default function MemberMarketplaceScreenWithBoundary({ asTab }: { asTab?: boolean } = {}) {
   return (
     <ScreenErrorBoundary screenName="Member Marketplace">
-      <MemberMarketplaceScreen />
+      <MemberMarketplaceScreen asTab={asTab} />
     </ScreenErrorBoundary>
   );
 }
@@ -1049,6 +1091,19 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center', justifyContent: 'center',
   },
+  // Overrides the square icon box: a labelled pill needs to grow with its word,
+  // and `width: 40` would clip "Offers" to a sliver.
+  offersBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginRight: 8,
+  },
+  offersBtnText: { fontSize: textToken.sm, fontWeight: fontWeight.bold },
   // Sits on the button's top-right corner. `overflow` is not clipped on the
   // parent, so the negative offsets are safe; the border matches the screen
   // background so the pill reads as lifted off the button beneath it.
@@ -1073,10 +1128,13 @@ const styles = StyleSheet.create({
   appliedChipText: { fontSize: textToken.sm, fontWeight: fontWeight.semibold, flexShrink: 1 },
   footerLoading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   filterRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  // Square-ish icon button now the label is gone. Kept at 36pt so it lines up
+  // with the Offers pill and Sell button on the same row, and stays a legal
+  // touch target with the glyph at 17.
   filterBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    borderWidth: 1, borderRadius: radius.pill,
-    paddingHorizontal: 12, paddingVertical: 7,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
+    borderWidth: 1, borderRadius: radius.md,
+    height: 36, minWidth: 40, paddingHorizontal: 10,
   },
   filterBtnText: { fontSize: textToken.sm, fontWeight: fontWeight.semibold },
   clearBtn: { paddingHorizontal: 4, paddingVertical: 7 },

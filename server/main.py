@@ -217,6 +217,7 @@ from app.features.marketplace_listing_router import router as marketplace_listin
 from app.features.p2p_listing_router import ops_router as p2p_ops_router
 from app.features.p2p_listing_router import router as p2p_listing_router
 from app.features.p2p_offers_router import router as p2p_offers_router
+from app.features.favorites_router import router as favorites_router
 from app.features.chat_router import router as chat_router
 from app.features.admin_health_router import router as admin_health_router
 from app.features.sell_timing_router import router as sell_timing_router
@@ -302,6 +303,10 @@ app.include_router(p2p_listing_router)
 app.include_router(p2p_ops_router)
 # P2P Stage 2: offers, two-sided completion, mutual grading.
 app.include_router(p2p_offers_router)
+# Favorites — "saved", with no target price and no alert. Deliberately a
+# different table and a different verb from the watchlist; see the module
+# docstring and docs/alerts-and-insights.md.
+app.include_router(favorites_router)
 app.include_router(chat_router)
 app.include_router(admin_health_router)
 app.include_router(value_summary_router.router)

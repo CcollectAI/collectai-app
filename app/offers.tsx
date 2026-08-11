@@ -40,7 +40,7 @@ import { showActionSheet } from '@/hooks/useActionSheetPicker';
 import { formatPrice } from '@/lib/format';
 import { collectorsApi } from '@/api/collectorsApi';
 import type { P2POffer, P2PCarrier } from '@/api/p2pApi';
-import { radius, text as textToken, fontWeight } from '@/theme/tokens';
+import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import logger from '@/utils/logger';
 
 type Role = 'all' | 'buying' | 'selling';
@@ -288,6 +288,22 @@ function OffersScreen() {
           <Text style={[styles.amount, { color: colors.text }]}>
             {formatPrice(o.amount, settings.currency, settings.numberLocale)}
           </Text>
+          {/* The offer ALONE does not decide anything — "EUR 380" is only good
+              or bad against what you asked. The percentage is the number a
+              seller actually judges on, and it is the same reference the
+              counter sheet uses (the ASKING price, never the buyer's own
+              offer — see docs/P2P_MARKETPLACE_SPEC.md 10d). Rendered only when
+              the server sent a listing price; a computed "0%" would be a
+              claim we cannot back. */}
+          {typeof o.listing_price === 'number' && o.listing_price > 0 ? (
+            <Text style={[styles.amountDelta, { color: colors.muted }]}>
+              {(() => {
+                const pct = Math.round(((o.amount - o.listing_price) / o.listing_price) * 100);
+                const sign = pct > 0 ? '+' : '';
+                return `${sign}${pct}% of ${formatPrice(o.listing_price, settings.currency, settings.numberLocale)} asking`;
+              })()}
+            </Text>
+          ) : null}
         </View>
 
         <View style={styles.metaRow}>
@@ -397,20 +413,38 @@ function OffersScreen() {
               <AnimatedPressable
                 onPress={() => onCounter(o)}
                 disabled={busy}
-                style={[styles.btn, styles.btnGhost, { borderColor: colors.border }]}
+                style={[styles.btn, styles.btnGhost, { borderColor: colors.accent }]}
                 accessibilityRole="button"
                 accessibilityLabel="Counter this offer"
               >
-                <Text style={[styles.btnText, { color: colors.text }]}>Counter</Text>
+                <Text style={[styles.btnText, { color: colors.accent }]}>Counter</Text>
               </AnimatedPressable>
+              {/* Tertiary, and CONFIRMED. Declining cannot be undone on that
+                  offer — the buyer has to make a new one — and it sat here as
+                  a same-size button beside Accept, one mis-tap from killing a
+                  sale. docs/ui-playbook.md: confirm destructive actions. */}
               <AnimatedPressable
-                onPress={() => act(() => collectorsApi.p2pRespondToOffer(o.id, 'decline'), o.id, 'Declined')}
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  Alert.alert(
+                    'Decline this offer?',
+                    'The buyer will be told. They can send a new offer, but this one is gone.',
+                    [
+                      { text: 'Keep it', style: 'cancel' },
+                      {
+                        text: 'Decline',
+                        style: 'destructive',
+                        onPress: () => act(() => collectorsApi.p2pRespondToOffer(o.id, 'decline'), o.id, 'Declined'),
+                      },
+                    ],
+                  );
+                }}
                 disabled={busy}
-                style={[styles.btn, styles.btnGhost, { borderColor: colors.border }]}
+                style={[styles.btn, styles.btnQuiet]}
                 accessibilityRole="button"
                 accessibilityLabel="Decline this offer"
               >
-                <Text style={[styles.btnText, { color: colors.muted }]}>Decline</Text>
+                <Text style={[styles.btnText, { color: colors.danger }]}>Decline</Text>
               </AnimatedPressable>
             </>
           ) : null}
@@ -767,7 +801,7 @@ export default function OffersScreenWithBoundary() {
  * floor here is `sm` (12), and hierarchy is rebuilt by pushing the two things
  * that matter UP rather than pushing everything else down:
  *
- *   lead    xl (20)  the amount · lg (16) the listing title, the tracking CODE
+ *   lead    lg (16)  the amount (extrabold) · the listing title, the tracking CODE
  *   body    md (14)  status, the buyer's message, buttons, links, sheet copy
  *   caption sm (12)  role pill, confirm ticks, captions, passive notes
  *
@@ -793,13 +827,24 @@ const styles = StyleSheet.create({
   segmentBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: radius.pill },
   segmentText: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
   list: { paddingHorizontal: 16, paddingTop: 2 },
+  // More room and a softer corner: at 14pt padding with 8pt gaps the card read
+  // as a dense list row rather than a document about one negotiation. The
+  // shadow is the same token the marketplace tiles use, so the two screens
+  // belong to each other.
   card: {
-    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md,
-    padding: 14, marginBottom: 12, gap: 8,
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg,
+    padding: 16, marginBottom: 12, gap: 10,
+    ...shadow.card,
   },
-  rowTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  rowTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   title: { flex: 1, fontSize: textToken.lg, fontWeight: fontWeight.semibold, lineHeight: 22 },
-  amount: { fontSize: textToken.xl, fontWeight: fontWeight.extrabold, letterSpacing: -0.3 },
+  // `lg`, not `xl` (2026-08-11). At 20/extrabold the figure dominated the card
+  // — reported as "the numbers are too big" — and with the percentage line now
+  // sitting under it the amount no longer has to carry the comparison alone.
+  // Still the lead: nothing else on the card is 16/extrabold.
+  amount: { fontSize: textToken.lg, fontWeight: fontWeight.extrabold, letterSpacing: -0.2 },
+  // Caption level: it qualifies the amount above it, it does not compete.
+  amountDelta: { fontSize: textToken.sm, marginTop: 1 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   // A pill is a LABEL beside body text, not body text. At md/bold it was the
   // same size as the status it sits next to and competed with the title; `pill`
@@ -811,9 +856,19 @@ const styles = StyleSheet.create({
   message: { fontSize: textToken.md, fontStyle: 'italic', lineHeight: 20 },
   confirmRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' },
   confirmText: { fontSize: textToken.sm, lineHeight: 17, marginRight: 8 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },
-  btn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.sm },
+  // Right-aligned and divided off the body. Actions floating left under a
+  // paragraph read as more content; on the right of a ruled row they read as
+  // the decision. Empty rows collapse — `gap` on an empty View adds nothing.
+  actions: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 8,
+    justifyContent: 'flex-end', alignItems: 'center',
+    marginTop: 2,
+  },
+  btn: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 9, borderRadius: radius.md },
   btnGhost: { borderWidth: 1, backgroundColor: 'transparent' },
+  // No border and no fill: the third action should read as the way out, not as
+  // a third equal choice. Accept fills, Counter outlines, Decline recedes.
+  btnQuiet: { backgroundColor: 'transparent' },
   btnText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
   graded: { fontSize: textToken.sm, paddingVertical: 9 },
   // Tracking — display-only shipment reference on the card.

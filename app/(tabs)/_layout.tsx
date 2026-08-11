@@ -12,17 +12,21 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 // Map react-navigation route name → expo-router href. Using expo-router's
 // router.replace (same code path as QuickNavBar, which has always worked)
 // instead of react-navigation's navigation.navigate.
+// Must cover exactly the routes the bar RENDERS. A rendered route missing from
+// here has a tab that animates and does not navigate — the press handler looks
+// up an href, finds undefined, and silently does nothing.
 const ROUTE_TO_HREF: Record<string, string> = {
   index: "/(tabs)",
-  items: "/(tabs)/items",
+  marketplace: "/(tabs)/marketplace",
   add: "/(tabs)/add",
   events: "/(tabs)/events",
-  marketplace: "/(tabs)/marketplace",
+  search: "/(tabs)/search",
 };
 
 // Routes registered in (tabs)/ that should NOT render in the bar.
-// Wishlist and search are accessed from inside other screens, not as tabs.
-const HIDDEN_ROUTES = new Set(["wishlist", "search"]);
+// Wishlist is reached from inside other screens; `items` moved off the bar
+// 2026-08-11 and is reached from the Portfolio category breakdown.
+const HIDDEN_ROUTES = new Set(["wishlist", "items"]);
 
 function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -146,15 +150,34 @@ export default function TabsLayout() {
         }}
       />
 
+      {/* Market is slot 2. Tab ORDER is the order of these elements, so moving
+          the slot means moving the element — `href: null` entries render
+          nothing and do not consume a position. */}
       <Tabs.Screen
-        name="items"
+        name="marketplace"
         options={{
-          title: t("nav.items"),
-          tabBarLabel: t("nav.items"),
-          tabBarAccessibilityLabel: t("nav.items"),
+          /*
+           * Labelled "Market", not "Search" (2026-08-11).
+           *
+           * The slot has always opened `(tabs)/marketplace` while calling
+           * itself Search, so the label described the search BAR at the top of
+           * that screen rather than the screen itself — and the app's actual
+           * unified search (`app/search.tsx`) is a different route entirely.
+           * One name, one destination. Search is now its own slot below.
+           *
+           * `nav.market` is a new key, present in all 7 locales. It is NOT
+           * `nav.marketplace` ("Marketplace" / "Marktplaats" / "마켓플레이스"),
+           * which is an orphan key no screen reads: at 11pt in a five-up tab bar
+           * those wrap. Changing the string here means changing it in
+           * ExternalTabBar and QuickNavBar too — three components render this
+           * same slot.
+           */
+          title: t("nav.market"),
+          tabBarLabel: t("nav.market"),
+          tabBarAccessibilityLabel: t("nav.market"),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? "albums" : "albums-outline"}
+              name={focused ? "storefront" : "storefront-outline"}
               size={Math.max(18, size - 4)}
               color={color}
             />
@@ -197,39 +220,38 @@ export default function TabsLayout() {
 
       <Tabs.Screen name="wishlist" options={{ href: null }} />
 
+      {/* Items is OFF the bar (2026-08-11). The collection is reached through
+          the Portfolio category breakdown — a card per category — and through
+          its "All items" action for the whole list. The route stays live and
+          keeps every one of its filters, sorts and bulk operations; it is only
+          the tab that is gone.
+
+          Before hiding it, every push to this route carried a filter
+          (`category`, `collectionName`), so the unfiltered collection was
+          reachable ONLY by tapping this tab. "All items" was added first, in
+          its own commit, precisely so this line could not strand it. */}
+      <Tabs.Screen name="items" options={{ href: null }} />
+
       <Tabs.Screen
-        name="marketplace"
+        name="search"
         options={{
-          /*
-           * Labelled "Market", not "Search" (2026-08-11).
-           *
-           * The slot has always opened `(tabs)/marketplace` while calling
-           * itself Search, so the label described the search BAR at the top of
-           * that screen rather than the screen itself — and the app's actual
-           * unified search (`app/search.tsx`) is a different route entirely.
-           * One name, one destination.
-           *
-           * `nav.market` is a new key, present in all 7 locales. It is NOT
-           * `nav.marketplace` ("Marketplace" / "Marktplaats" / "마켓플레이스"),
-           * which is an orphan key no screen reads: at 11pt in a five-up tab bar
-           * those wrap. Changing the string here means changing it in
-           * ExternalTabBar and QuickNavBar too — three components render this
-           * same slot.
-           */
-          title: t("nav.market"),
-          tabBarLabel: t("nav.market"),
-          tabBarAccessibilityLabel: t("nav.market"),
+          /* Search is a real tab again, restored to what it was built for:
+             ONE query across items, catalogue, collectors, events and
+             categories. It spent its life as a hidden route reachable only by
+             submitting the market screen's search bar — while the tab that
+             said "Search" opened the marketplace instead. */
+          title: t("nav.search"),
+          tabBarLabel: t("nav.search"),
+          tabBarAccessibilityLabel: t("nav.search"),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? "storefront" : "storefront-outline"}
+              name={focused ? "search" : "search-outline"}
               size={Math.max(18, size - 4)}
               color={color}
             />
           ),
         }}
       />
-
-      <Tabs.Screen name="search" options={{ href: null }} />
     </Tabs>
   );
 }

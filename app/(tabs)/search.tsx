@@ -16,12 +16,27 @@
  * returned 12 rows and the catalogue held 77 Rolexes. Nothing was missing from
  * the data; the screen that could find it was simply unwired.
  *
- * Re-exported rather than moved: `/search` stays a valid deep link, and both
- * routes render the same component, so there is ONE implementation of unified
- * search rather than two that can drift.
+ * 2026-08-11: this is a REAL TAB again, restored to what it was built for — one
+ * query across items, catalogue, collectors, events and categories. It stopped
+ * being `href: null` when the fifth slot stopped calling itself Search while
+ * opening the marketplace.
  *
- * The tab itself stays `href: null` in `(tabs)/_layout.tsx` — it is not a
- * sixth tab. It is reached by submitting the marketplace search bar, which
- * forwards the typed query as `?q=`.
+ * It renders the same implementation as `/search` rather than a copy, so there
+ * is ONE unified search, not two that drift. The single difference is
+ * `asTab`, which suppresses the two affordances that only make sense on a
+ * PUSHED screen: the in-body QuickNavBar (this route already has the tab bar —
+ * rendering both stacks two, and the lower covers the last results) and the
+ * back chevron (a tab has nothing to go back to, so `safeGoBack` would find an
+ * empty stack and jump to Portfolio instead).
+ *
+ * `/search` stays a valid route and a valid deep link. The market search bar
+ * keeps pushing THERE, not here: `npm run check:params` resolves a push target
+ * to its route FILE, and this file has no `useLocalSearchParams` of its own — so
+ * pushing here would report "that route reads: (none)" and the `?q=` contract
+ * would stop being checkable.
  */
-export { default } from '../search';
+import SearchScreen from '../search';
+
+export default function SearchTab() {
+  return <SearchScreen asTab />;
+}

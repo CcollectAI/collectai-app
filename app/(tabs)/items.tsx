@@ -3,6 +3,7 @@ import { useModal } from '@/hooks/useModal';
 import { useHasEverHadItems } from '@/hooks/useHasEverHadItems';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import {
   View,
@@ -83,6 +84,9 @@ const ItemsScreen: React.FC = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ category?: string; collectionName?: string; sort?: string }>();
   const { colors } = useAppTheme();
+  // ExternalTabBar is absolute at the root stack and reserves no layout space,
+  // so a literal paddingBottom here draws the last row under the bar. Derive it.
+  const bottomInset = useTabBarInset();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
   const { showToast } = useToast();
@@ -734,8 +738,11 @@ const ItemsScreen: React.FC = () => {
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
           <ItemsGridHeader portfolioTotal={portfolioTotal} />
         </View>
+        {/* Centred inside the space the user can actually SEE: without the
+            inset the empty state centres against the full height and sits
+            ~46pt low, half behind the bar. */}
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingBottom: bottomInset }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -917,7 +924,7 @@ const ItemsScreen: React.FC = () => {
       {viewMode === 'gallery' ? (
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[styles.content, { backgroundColor: colors.background }]}
+          contentContainerStyle={[styles.content, { backgroundColor: colors.background, paddingBottom: bottomInset }]}
           keyboardShouldPersistTaps="handled"
           onScroll={handleScroll}
           scrollEventThrottle={400}
@@ -976,7 +983,7 @@ const ItemsScreen: React.FC = () => {
           ListFooterComponent={footerElement}
           ListEmptyComponent={emptyElement}
           style={styles.scroll}
-          contentContainerStyle={[styles.content, { backgroundColor: colors.background }]}
+          contentContainerStyle={[styles.content, { backgroundColor: colors.background, paddingBottom: bottomInset }]}
           stickySectionHeadersEnabled={false}
           keyboardShouldPersistTaps="handled"
           onEndReached={loadMore}

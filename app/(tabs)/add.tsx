@@ -22,6 +22,7 @@ import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useTabBarInset } from "@/hooks/useTabBarInset";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
@@ -43,6 +44,9 @@ import logger from '@/utils/logger';
 
 const AddScreen: React.FC = () => {
   const { colors } = useAppTheme();
+  // ExternalTabBar is absolute at the root stack and reserves no layout space,
+  // so a literal paddingBottom here draws the last row under the bar. Derive it.
+  const bottomInset = useTabBarInset();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
   const { t } = useTranslation();
@@ -184,7 +188,7 @@ const handleImportCollectionFile = async () => {
   
 return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={[styles.container, { paddingBottom: bottomInset }]}>
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
         {/* Header */}
         <View style={styles.headerRow}>

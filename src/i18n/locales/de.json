@@ -114,7 +114,8 @@
     "unavailable": "Suche nicht verfügbar",
     "retry_a11y": "Suche erneut versuchen",
     "no_results": "Keine Ergebnisse gefunden",
-    "no_price_yet": "Noch kein Preis"
+    "no_price_yet": "Noch kein Preis",
+    "browse_by_category": "Nach Kategorie stöbern"
   },
   "item_detail": {
     "valuation_a11y": "Objekt-Bewertung und Details",
@@ -338,7 +339,8 @@
     "insights_view_a11y": "Erweiterte Portfolio-Insights ansehen",
     "insights_upgrade_a11y": "Upgrade für erweiterte Portfolio-Insights",
     "deal_agent_open_a11y": "Deal Agent öffnen",
-    "deal_agent_upgrade_a11y": "Upgrade, um Deal Agent freizuschalten"
+    "deal_agent_upgrade_a11y": "Upgrade, um Deal Agent freizuschalten",
+    "analytics": "Analysen"
   },
   "items": {
     "title": "Objekte",
@@ -729,5 +731,21 @@
   "ads": {
     "sponsored": "Gesponsert",
     "ad": "Werbung"
+  },
+  "favorites": {
+    "saved": "Zu Favoriten hinzugefügt",
+    "removed": "Aus Favoriten entfernt",
+    "save_failed": "Speichern fehlgeschlagen — bitte erneut versuchen",
+    "watching": "Beobachtet — wir melden uns, wenn der Preis unter {{price}} fällt",
+    "watch_failed": "Konnte nicht zur Beobachtungsliste hinzugefügt werden",
+    "watch_needs_category": "Dieses Angebot hat keine Kategorie, daher könnte eine Benachrichtigung nie greifen",
+    "a11y_save": "Zu Favoriten hinzufügen",
+    "a11y_unsave": "Aus Favoriten entfernen",
+    "a11y_watch": "Preissenkungen unter dem Angebotspreis beobachten",
+    "a11y_watching": "Preissenkungen werden beobachtet",
+    "title": "Favoriten",
+    "empty": "Noch nichts gespeichert",
+    "empty_hint": "Tippe auf das Herz eines Angebots, um es hier zu speichern",
+    "unavailable": "Nicht mehr verfügbar"
   }
 }

@@ -50,11 +50,15 @@ export function ExternalTabBar() {
       href: "/(tabs)",
     },
     {
-      key: "items",
-      label: t("nav.items"),
-      icon: "albums-outline",
-      iconFocused: "albums",
-      href: "/(tabs)/items",
+      // Market is slot 2 and Items is off the bar entirely (2026-08-11) —
+      // the collection is reached from the Portfolio category breakdown. This
+      // array is the bar's ORDER, so it must match the Tabs.Screen order in
+      // app/(tabs)/_layout.tsx and the TABS array in QuickNavBar.
+      key: "marketplace",
+      label: t("nav.market"),
+      icon: "storefront-outline",
+      iconFocused: "storefront",
+      href: "/(tabs)/marketplace",
     },
     {
       key: "add",
@@ -75,15 +79,15 @@ export function ExternalTabBar() {
           },
         ]),
     {
-      key: "marketplace",
-      // "Market", not "Search" — see the note in app/(tabs)/_layout.tsx. This
-      // bar, that Tabs.Screen and QuickNavBar all render the same slot, so the
-      // label and icon must be changed in all three or they disagree depending
-      // on which screen the user is standing on.
-      label: t("nav.market"),
-      icon: "storefront-outline",
-      iconFocused: "storefront",
-      href: "/(tabs)/marketplace",
+      // Search is a real tab again (2026-08-11), restored to what it was built
+      // for: one query across items, catalogue, collectors, events and
+      // categories. It was `href: null` while the slot that SAID Search opened
+      // the marketplace instead.
+      key: "search",
+      label: t("nav.search"),
+      icon: "search-outline",
+      iconFocused: "search",
+      href: "/(tabs)/search",
     },
   ];
 

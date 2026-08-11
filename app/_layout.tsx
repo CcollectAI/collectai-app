@@ -431,6 +431,12 @@ function RootStack() {
         <Stack.Screen name="listings" options={{ headerShown: false }} />
         <Stack.Screen name="listing/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="offers" options={{ headerShown: false }} />
+        {/* Favourites renders its own ScreenHeader; without this the global
+            headerShown:true stacks the native bar on top of it — two headers
+            and a dead gap between them. */}
+        <Stack.Screen name="favorites" options={{ headerShown: false }} />
+        {/* Market hub — was the Market tab until 2026-08-11. */}
+        <Stack.Screen name="market-hub" options={{ headerShown: false }} />
         {/* Renders its own ScreenHeader, so the navigator's must be off — without
             this it inherits the global header and the screen shows TWO stacked
             headers, each with its own back chevron and gear. Caught on the

@@ -114,7 +114,8 @@
     "unavailable": "Zoeken niet beschikbaar",
     "retry_a11y": "Zoeken opnieuw proberen",
     "no_results": "Geen resultaten gevonden",
-    "no_price_yet": "Nog geen prijs"
+    "no_price_yet": "Nog geen prijs",
+    "browse_by_category": "Blader per categorie"
   },
   "item_detail": {
     "valuation_a11y": "Item-taxatie en details",
@@ -338,7 +339,8 @@
     "insights_view_a11y": "Uitgebreide portfolio-inzichten bekijken",
     "insights_upgrade_a11y": "Upgrade voor uitgebreide portfolio-inzichten",
     "deal_agent_open_a11y": "Deal Agent openen",
-    "deal_agent_upgrade_a11y": "Upgrade om Deal Agent te ontgrendelen"
+    "deal_agent_upgrade_a11y": "Upgrade om Deal Agent te ontgrendelen",
+    "analytics": "Analyse"
   },
   "items": {
     "title": "Items",
@@ -729,5 +731,21 @@
   "ads": {
     "sponsored": "Gesponsord",
     "ad": "Advertentie"
+  },
+  "favorites": {
+    "saved": "Bewaard in favorieten",
+    "removed": "Verwijderd uit favorieten",
+    "save_failed": "Bewaren mislukt — probeer opnieuw",
+    "watching": "Je volgt dit — we waarschuwen je als het onder {{price}} zakt",
+    "watch_failed": "Toevoegen aan volglijst mislukt — probeer opnieuw",
+    "watch_needs_category": "Deze advertentie heeft geen categorie, dus een melding kan nooit matchen",
+    "a11y_save": "Bewaar in favorieten",
+    "a11y_unsave": "Verwijder uit favorieten",
+    "a11y_watch": "Volg prijsdalingen onder de vraagprijs",
+    "a11y_watching": "Je volgt prijsdalingen",
+    "title": "Favorieten",
+    "empty": "Nog niets bewaard",
+    "empty_hint": "Tik op het hartje bij een advertentie om het hier te bewaren",
+    "unavailable": "Niet meer beschikbaar"
   }
 }

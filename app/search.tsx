@@ -14,9 +14,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+// react-native's Image is already imported above for the result rows; the
+// tiles want expo-image for caching + transitions, so alias it.
+import { Image as ExpoImage } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { dataProvider } from '@/data';
-import { getCategoryById } from '@/data/categories';
+import { getCategoryById, CATEGORIES } from '@/data/categories';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -24,6 +27,7 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { SkeletonList } from '@/components/Skeleton';
 import { SlowLoadNotice } from '@/components/SlowLoadNotice';
 import { useSlowLoad } from '@/hooks/useSlowLoad';
+import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
@@ -182,9 +186,39 @@ const resultStyles = StyleSheet.create({
   resultNoPrice: { fontSize: text.sm, minWidth: 64, textAlign: 'right' },
 });
 
-function SearchScreen() {
+/**
+ * @param asTab Rendered as the Search TAB rather than as a pushed route.
+ *
+ *   This governs the two affordances that only make sense on a PUSHED screen:
+ *
+ *   - the in-body `QuickNavBar`. The tab already sits inside the tabs
+ *     navigator, so rendering both stacks two navigation bars and the lower one
+ *     covers the last rows of the results list.
+ *   - the back chevron. A tab has nothing to go back TO; `safeGoBack` would
+ *     find an empty stack and fall back to `/(tabs)`, so the control would look
+ *     like "back" and behave like "jump to Portfolio".
+ *
+ *   FALSE for `/search`, which is pushed from the market search bar or opened
+ *   by deep link and genuinely needs both.
+ */
+// Browse-by-category moved here from the Market tab 2026-08-11. Browsing a
+// taxonomy IS a search act, and this screen is where search lives.
+const BROWSE_CATEGORIES = CATEGORIES.map((cat) => ({
+  id: cat.id,
+  name: cat.name,
+  imageUrl: cat.bannerImageUrl,
+}));
+
+function SearchScreen({ asTab = false }: { asTab?: boolean }) {
   const router = useRouter();
-  const { colors } = useAppTheme();
+  // Unconditional, and NOT gated on `asTab`: this screen always has exactly one
+  // absolutely-positioned bar over its bottom edge, and both are the same
+  // height (58 + max(insets.bottom, 10)). As a tab it is `ExternalTabBar`,
+  // rendered at the root stack; pushed it is the `QuickNavBar` below. Neither
+  // reserves layout space, so without this the last result row is drawn
+  // underneath the bar — 36pt of it on a flat phone, 60pt on a notched one.
+  const bottomInset = useTabBarInset();
+  const { colors, isDark } = useAppTheme();
   const { t } = useTranslation();
   // Seeded from `?q=`, which the marketplace search bar now sends when a query
   // is submitted (2026-08-10). A lazy initialiser, NOT an effect: params are
@@ -297,9 +331,11 @@ function SearchScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Search Header */}
       <View style={styles.header}>
-        <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back')}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </AnimatedPressable>
+        {!asTab && (
+          <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back')}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+        )}
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Ionicons name="search" size={18} color={colors.muted} />
           <TextInput
@@ -320,7 +356,52 @@ function SearchScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset }]} keyboardShouldPersistTaps="handled">
+        {/* Idle state: no query typed. A search screen with an empty body is a
+            dead end — the taxonomy gives somewhere to go. Hidden the moment a
+            query exists so it never competes with results. */}
+        {!loading && query.trim().length === 0 && (
+          <View style={styles.browseSection}>
+            <Text style={[styles.browseTitle, { color: colors.text }]}>
+              {t('search.browse_by_category')}
+            </Text>
+            <View style={styles.browseGrid}>
+              {BROWSE_CATEGORIES.map((cat, index) => {
+                const row = Math.floor(index / 2);
+                const col = index % 2;
+                const ci = (row + col) % 2 === 0
+                  ? (row % 2 === 0 ? 0 : 1)
+                  : (row % 2 === 0 ? 2 : 3);
+                const darkTileColors = [colors.accent + '70', colors.accent + '90', colors.accent + 'B0', colors.accent + 'D0'];
+                const bg = isDark ? darkTileColors[ci] : colors.tileScale[ci];
+                return (
+                  <AnimatedPressable
+                    key={cat.id}
+                    style={[styles.categoryTile, { backgroundColor: bg }]}
+                    onPress={() => router.push(`/categories/${cat.id}` as Href)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Browse ${cat.name}`}
+                  >
+                    {cat.imageUrl ? (
+                      <ExpoImage
+                        source={{ uri: cat.imageUrl }}
+                        style={styles.categoryTileImage}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        transition={150}
+                      />
+                    ) : null}
+                    <View style={styles.categoryTileOverlay} />
+                    <Text style={styles.categoryTileText} numberOfLines={2} ellipsizeMode="tail">
+                      {cat.name}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
         {loading && (
           <View style={styles.loadingContainer}>
             <SkeletonList count={6} />
@@ -440,18 +521,20 @@ function SearchScreen() {
             ))}
           </View>
         )}
-
-        <View style={{ height: 32 }} />
+        {/* No trailing spacer: `bottomInset` on contentContainerStyle already
+            clears the bar. A hand-picked height on top of it is the pattern
+            that clipped the last row on five other (tabs) screens — see
+            docs/ui-playbook.md and src/hooks/useTabBarInset.ts. */}
       </ScrollView>
-      <QuickNavBar />
+      {!asTab && <QuickNavBar />}
     </SafeAreaView>
   );
 }
 
-export default function SearchScreenWithBoundary() {
+export default function SearchScreenWithBoundary({ asTab }: { asTab?: boolean } = {}) {
   return (
     <ScreenErrorBoundary screenName="Search">
-      <SearchScreen />
+      <SearchScreen asTab={asTab} />
     </ScreenErrorBoundary>
   );
 }
@@ -463,6 +546,25 @@ const styles = StyleSheet.create({
   searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: radius.md, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
   searchInput: { flex: 1, fontSize: text.lg, padding: 0 },
   scroll: { flex: 1 },
+  browseSection: { paddingTop: 8 },
+  browseTitle: { fontSize: text.lg, fontWeight: fontWeight.bold, marginBottom: 12 },
+  browseGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  categoryTile: {
+    width: '48.5%',
+    height: 96,
+    borderRadius: radius.md,
+    marginBottom: 12,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  categoryTileImage: { ...StyleSheet.absoluteFillObject },
+  categoryTileOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.28)' },
+  categoryTileText: {
+    color: '#fff',
+    fontSize: text.sm,
+    fontWeight: fontWeight.bold,
+    padding: 10,
+  },
   scrollContent: { paddingHorizontal: 16 },
   loadingContainer: { paddingVertical: 32, alignItems: 'center' },
   emptyContainer: { paddingVertical: 48, alignItems: 'center', gap: 12 },

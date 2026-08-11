@@ -22,14 +22,22 @@ type TabDef = {
 };
 
 const TABS: TabDef[] = [
+  // Order and membership must match the Tabs.Screen order in
+  // app/(tabs)/_layout.tsx and the tabs array in ExternalTabBar — three
+  // components render this one bar, and a screen shows whichever it mounts.
+  //
+  // Items came off the bar 2026-08-11: the collection is reached from the
+  // Portfolio category breakdown (a card per category) and its "All items"
+  // action. Search took the fifth slot, restored to the unified search it was
+  // built for.
+  //
+  // These labels are the one nav surface that is NOT translated (the whole
+  // TABS array is plain English); left as-is rather than half-translating.
   { route: '/(tabs)', label: 'Portfolio', icon: 'pie-chart-outline', iconFocused: 'pie-chart', matchPrefix: '/(tabs)' },
-  { route: '/(tabs)/items', label: 'Items', icon: 'albums-outline', iconFocused: 'albums', matchPrefix: '/items' },
+  { route: '/(tabs)/marketplace', label: 'Market', icon: 'storefront-outline', iconFocused: 'storefront', matchPrefix: '/marketplace' },
   { route: '/(tabs)/add', label: 'Add', icon: 'add-circle-outline', iconFocused: 'add-circle', matchPrefix: '/add' },
   { route: '/(tabs)/events', label: 'Events', icon: 'calendar-outline', iconFocused: 'calendar', matchPrefix: '/events' },
-  // "Market", not "Search" — see the note in app/(tabs)/_layout.tsx. These
-  // labels are the one nav surface that is NOT translated (the whole TABS array
-  // is plain English); left as-is rather than half-translating one entry.
-  { route: '/(tabs)/marketplace', label: 'Market', icon: 'storefront-outline', iconFocused: 'storefront', matchPrefix: '/marketplace' },
+  { route: '/(tabs)/search', label: 'Search', icon: 'search-outline', iconFocused: 'search', matchPrefix: '/search' },
 ];
 
 export function QuickNavBar() {

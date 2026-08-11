@@ -225,6 +225,39 @@ That is the fourth instance of this exact writer bug (see the 13-row count
 below). Any future one-tap watch control must either set a target price or say
 plainly that it has not.
 
+### RESOLVED 2026-08-11 — two verbs, two stores
+
+The heart came back, and the rule above is why it is now safe. Favouriting and
+watching are separate controls writing to separate tables, so neither has to
+lie about the other:
+
+| control | writes | promises |
+|---|---|---|
+| ♥ heart | `public.favorites` | saved. No target, no alert, no plan gate |
+| 👁 eye | `watchlist_items` via `addWatchlistItem` | a target price and a Target Hit alert |
+
+The eye sets `targetPrice = listing.price` — the asking price — so the row
+satisfies all three conditions a snipe-capable row needs (`target_price > 0`, a
+slug `category`, an `item_id`). Its accessibility label says *"watch for price
+drops below the asking price"*, which is now literally what it does. If the
+listing has no category the control **refuses and says so**, rather than writing
+the inert row that `watchlist-builder` used to produce.
+
+The heart's label says "save", never "alert", because it does not alert.
+
+- Table: `server/migrations/20260811_favorites.sql` (applied to prod
+  2026-08-11; `favorites_one_target` CHECK, two partial unique indexes making
+  the toggle idempotent, owner-only RLS)
+- API: `server/app/features/favorites_router.py`
+- FE: `src/api/favoritesApi.ts`, `src/hooks/useFavorites.ts` (one shared store,
+  one `/favorites/ids` fetch per screen — not one per card),
+  `src/components/marketplace/FavoriteWatchButtons.tsx`
+- Consumer: `app/favorites.tsx`, reachable from the Market tab's control row
+
+`app/catalog-item/[key].tsx` carried a **heart icon on its "Add to watchlist"
+CTA** — the same glyph, on the same screen, meaning the other thing. It now
+carries the eye. Its write was already correct and was not touched.
+
 ## What a snipe-capable watchlist row needs (writer side, 2026-08-05)
 
 The snipe query was fixed on 2026-08-04; the **writers** were still producing

@@ -326,6 +326,37 @@ wrong — the touch never reached it.
   doesn't.** That is a hit-area/bounds problem, never a wiring problem — stop
   reading the child component.
 
+## The tab bar reserves NO space — and there is now a gate
+
+`ExternalTabBar` is `position:absolute` at the ROOT stack (the navigator's own
+bar dropped touches in production), so **nothing reserves layout space for it**:
+58pt + safe-area = 68pt flat, ~92pt notched. Any `(tabs)` scroll content ending
+in a hand-picked `paddingBottom` draws its last row underneath the bar.
+
+Derive it, never guess it:
+
+```tsx
+import { useTabBarInset } from '@/hooks/useTabBarInset';
+const bottomInset = useTabBarInset();
+contentContainerStyle={[styles.content, { paddingBottom: bottomInset }]}
+```
+
+**`npm run check:tab-inset`** (in `verify:prebuild`) fails on any vertical
+scroller in `app/(tabs)/` whose bottom padding cannot clear the bar. Horizontal
+rails and `scrollEnabled={false}` grids are skipped; a scroller genuinely not
+under the bar (inside a pageSheet `<Modal>`, say) carries
+`// tab-bar-inset-ok: <reason>` — the reason is required.
+
+Written 2026-08-11 after the literal-padding bug was found on 9 scrollers across
+5 screens — grep had suggested 5. Two traps it exposed:
+
+- **A trailing spacer view is invisible to the gate.** Portfolio had BOTH a
+  100pt spacer and the inset, double-padding by ~190pt. The gate reads
+  `contentContainerStyle`, not children — remove the spacer when you add the
+  inset.
+- **`flexGrow:1 + justifyContent:'center'` still needs it.** A centred empty
+  state centres against the full height and sits ~46pt low, half behind the bar.
+
 ## Component Checklist
 
 Before shipping a screen, verify:
@@ -343,6 +374,7 @@ Before shipping a screen, verify:
 - [ ] **Header button padding is symmetric** (iOS 26 capsule centring)
 - [ ] **No tall/interactive `ListHeaderComponent` on a FlashList** (hit-area bug)
 - [ ] **Pagination stops on a short page**, not on a `total` that counts a different set
+- [ ] **`(tabs)` scrollers clear the bar** — `npm run check:tab-inset` is green
 
 ## Import Pattern
 

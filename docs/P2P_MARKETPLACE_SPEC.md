@@ -1228,3 +1228,56 @@ registration and the 5% ticket-fee question remain for the adviser (§5a).
 and the tests. The test file had defined its **own copy** of the predicate, so the
 suite would have stayed green if `or` had become `and` — the one thing it exists
 to prevent. Mutation-proven: that flip now fails 4 tests.
+
+
+## 11. Navigation: the Market tab IS the marketplace (2026-08-11)
+
+The tab called **Market** opened a discovery hub — search bar, find-collectors,
+open bids, demand heat, movers — and the member marketplace sat one tap deeper
+behind a row on it. Same name-vs-destination mismatch as the old "Search" tab
+that opened the marketplace: the word on the bar did not describe the screen it
+produced.
+
+| before | after |
+|---|---|
+| Market tab → discovery hub → row → `/listings` | Market tab → the listings grid |
+| Browse-by-category on the Market tab | on the **Search** tab, as its idle state |
+| hub = `app/(tabs)/marketplace.tsx` | hub = `app/market-hub.tsx` |
+
+`(tabs)/marketplace.tsx` is now a wrapper rendering the SAME component as
+`/listings` with `asTab` — one marketplace, not two that drift. `asTab`
+suppresses the back chevron and the in-body `QuickNavBar`, neither of which
+belongs on a tab. Identical pattern to `(tabs)/search.tsx`.
+
+**The hub was moved, not deleted.** Every section in it is live and rebuilt
+nowhere else. Browse-by-category is the one thing that left it.
+
+⚠️ **Its only entry point is now the "view all marketplace results" link on item
+detail** (`MarketplacePricesSection`), which pushes `/market-hub?q=`. The
+control-row button that also reached it was removed on request the same day. If
+that link ever goes, demand heat / regional insight / market movers / find
+collectors become reachable from nowhere.
+
+`check-route-param-handoff` caught the sharp edge here: that link pushed `?q=`
+at `/(tabs)/marketplace`, which after the swap reads no params — the query would
+have been silently dropped. Repointed to `/market-hub`, which does read `q`.
+
+### 11a. The offers screen — deciding, not just listing
+
+`app/offers.tsx` showed Accept / Counter / Decline as three near-identical
+buttons, and Decline fired instantly.
+
+- **The percentage sits under the amount.** "EUR 380" is neither good nor bad
+  until you know you asked EUR 428. Rendered only when the server sent a
+  `listing_price` — a computed "0%" would be a claim we cannot back. Same
+  reference as the counter sheet: the ASKING price, never the buyer's own offer
+  (§10d).
+- **Decline confirms.** It cannot be undone on that offer, and it sat one
+  mis-tap from Accept.
+- **Hierarchy:** Accept fills, Counter outlines in accent, Decline recedes to
+  plain `danger` text. Per docs/ui-playbook.md, the amount dropped `xl` → `lg`:
+  with the percentage line beneath it, the figure no longer carries the
+  comparison alone.
+
+`OfferAmountSheet` was NOT rebuilt — it already does percentage+money presets
+with a bounded custom field.

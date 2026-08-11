@@ -4,6 +4,30 @@ Notes for Apple App Store Review and Google Play Review teams.
 
 ## Demo Account
 
+> ## ⛔ BROKEN — VERIFIED 2026-08-11. DO NOT SUBMIT UNTIL FIXED.
+>
+> `reviewer@sparrowcollect.com` **does not authenticate**. Posting these exact
+> credentials to `/auth/v1/token?grant_type=password` returns:
+>
+> ```json
+> {"code":400,"error_code":"invalid_credentials","msg":"Invalid login credentials"}
+> ```
+>
+> The account is absent from `auth.users`. A reviewer following this page cannot
+> get past the login screen, which is **guideline 2.1 App Completeness** — the
+> single most common rejection reason for an app that is otherwise fine.
+>
+> No gate catches this: the credentials live in prose, not code, so
+> `verify:prebuild` will stay green while submission stays blocked.
+>
+> **Two things to fix, not one:**
+> 1. Recreate the account (and confirm its email — this project requires
+>    confirmation, and no mail reaches that address).
+> 2. Re-seed its data, or correct the claims below. The list promises 25+ items
+>    across 6 categories; a freshly created account has none, and a reviewer
+>    meeting an empty portfolio after being told to expect a full one is the
+>    same 2.1 problem one step later.
+
 ```
 Email:    reviewer@sparrowcollect.com
 Password: Sparrow Collect-Review-2026!

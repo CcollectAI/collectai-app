@@ -136,8 +136,12 @@ export const MarketplacePricesSection = React.memo(function MarketplacePricesSec
           {marketResults.length > 5 && (
             <AnimatedPressable
               onPress={() => {
+                // /market-hub, not the Market TAB: the tab opens the member
+                // marketplace grid as of 2026-08-11 and reads no params, so a
+                // `q` sent there would be silently dropped. The hub is the
+                // screen that runs this external search and reads `q`.
                 router.push({
-                  pathname: "/(tabs)/marketplace",
+                  pathname: "/market-hub",
                   params: { q: editableName },
                 });
               }}

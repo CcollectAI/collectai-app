@@ -29,6 +29,7 @@ import { SkeletonPortfolioHeader } from "@/components/Skeleton";
 import { dataProvider } from "@/data";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useTabBarInset } from "@/hooks/useTabBarInset";
 import { featureFlags } from "@/config/featureFlags";
 import { InsightsCard } from "@/components/home/InsightsCard";
 import { AdBanner } from "@/components/ads/AdBanner";
@@ -39,8 +40,10 @@ import { ChartRangeSelector } from "@/components/home/ChartRangeSelector";
 import { CategoryBreakdownSection, type CategoryBreakdownItem } from "@/components/home/CategoryBreakdownSection";
 import { formatCategoryName } from "@/constants/categories";
 import { getCategoryByName, getCategoryById } from "@/data/categories";
-import { TopItemsList, type ItemRow } from "@/components/home/TopItemsList";
-import { FollowedCategoriesCarousel } from "@/components/home/FollowedCategoriesCarousel";
+// The Collection block (header + Top Movers list) was removed from Portfolio
+// 2026-08-11. `ItemRow` stays: it types loadItemsFromCollection, extractItems
+// and the `items` state that still drives the value chart and stats tile.
+import { type ItemRow } from "@/components/home/TopItemsList";
 import { usePortfolioInsights } from "@/hooks/usePortfolioInsights";
 import { useHasEverHadItems } from "@/hooks/useHasEverHadItems";
 import { useAlertsFeed } from "@/hooks/useAlertsFeed";
@@ -208,6 +211,9 @@ async function loadItemsFromCollection(): Promise<ItemRow[]> {
 function PortfolioScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  // ExternalTabBar is absolute at the root stack and reserves no layout space,
+  // so a literal paddingBottom here draws the last row under the bar. Derive it.
+  const bottomInset = useTabBarInset();
   const { settings } = useSettings();
   const { t } = useTranslation();
   const { showToast } = useToast();
@@ -255,8 +261,6 @@ function PortfolioScreen() {
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdownItem[]>([]);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
 
-  // Followed/personalized categories from onboarding
-  const [followedCategories, setFollowedCategories] = useState<string[]>([]);
 
   // Point under the user's finger on the chart. Drives the big COLLECTION VALUE
   // figure so it moves with the scrubber; null means "not scrubbing", and the
@@ -273,25 +277,12 @@ function PortfolioScreen() {
     return () => { cancelled = true; };
   }, []);
 
-  // Data insights & alerts (feature flagged)
+  // Data insights & alerts (feature flagged). `insights` still feeds
+  // <InsightsCard/> below; only the duplicate CTA that also read it is gone.
   const { insights } = usePortfolioInsights({
     period: range.toLowerCase() as '7d' | '30d',
     enabled: featureFlags.FEATURE_DATA_INSIGHTS_ALERTS
   });
-  // Home had TWO entry points to the same analytics screen: this CTA banner,
-  // which rendered unconditionally, and <InsightsCard/>, which renders only for
-  // users who actually have advanced_analytics. So every entitled user (and
-  // every beta-unlocked build) saw "Extended Portfolio Insights → View" AND
-  // "Portfolio Insights → View Full Insights" stacked on one screen, both
-  // going to /analytics.
-  //
-  // Show the banner only when the card is NOT rendering. Free users still get
-  // it as the upsell (it routes to /subscription), and an entitled user whose
-  // card is suppressed — feature flag off, or insights failed to load — keeps a
-  // way in rather than losing the entry point entirely.
-  const insightsCardVisible = Boolean(
-    featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && limits.advanced_analytics,
-  );
 
   const { alerts, markAsRead } = useAlertsFeed({
     limit: 5,
@@ -466,35 +457,11 @@ function PortfolioScreen() {
     }, [loadCategoryBreakdown]),
   );
 
-  // Load followed categories from onboarding
-  useEffect(() => {
-    let cancelled = false;
-    // Try local storage first (faster), then backend
-    AsyncStorage.getItem('@sparrowcollect/followed_categories')
-      .then((raw) => {
-        if (cancelled) return;
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setFollowedCategories(parsed);
-            }
-          } catch (e) {
-            logger.error('[silent-catch] index.tsx:390:', e);}
-        }
-      })
-      .catch((err) => logger.warn('[Home] followed categories local fetch error:', err));
-
-    // Also try backend (more authoritative)
-    collectorsApi.getFollowedCategories()
-      .then((data) => {
-        if (!cancelled && data?.followed_categories?.length) {
-          setFollowedCategories(data.followed_categories);
-        }
-      })
-      .catch((err) => logger.warn('[Home] followed categories backend fetch error:', err));
-    return () => { cancelled = true; };
-  }, []);
+  // The followed-categories carousel was removed from Portfolio 2026-08-11.
+  // Its loader went with it: an AsyncStorage read plus a
+  // collectorsApi.getFollowedCategories() call on every Portfolio mount, whose
+  // result nothing rendered any more. Onboarding still WRITES the preference —
+  // this screen just no longer reads it.
 
   // Memoize global stats derived from category breakdown
   const globalStatsTotalItems = useMemo(
@@ -547,11 +514,6 @@ function PortfolioScreen() {
     router.push('/add-manual');
   }, [router, settings.hapticsEnabled]);
 
-  const handleCategoryPress = useCallback((catSlug: string) => {
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push({ pathname: '/categories/[categoryId]', params: { categoryId: catSlug } });
-  }, [router, settings.hapticsEnabled]);
-
   const handleBreakdownCategoryPress = useCallback((catRaw: string) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     const cat = getCategoryById(catRaw) ?? getCategoryByName(catRaw);
@@ -574,11 +536,6 @@ function PortfolioScreen() {
     router.push({ pathname: '/(tabs)/items', params: { sort: 'name_asc' } });
   }, [router, settings.hapticsEnabled]);
 
-  const handleInsightsCtaPress = useCallback(() => {
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push(limits.advanced_analytics ? '/analytics' : '/subscription');
-  }, [router, settings.hapticsEnabled, limits.advanced_analytics]);
-
   const handleAlertPress = useCallback((alert: { id: string; itemId?: string }) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     markAsRead(alert.id);
@@ -587,25 +544,6 @@ function PortfolioScreen() {
       params: { highlightId: alert.itemId || alert.id },
     });
   }, [router, markAsRead, settings.hapticsEnabled]);
-
-  const handleDealAgentPress = useCallback(() => {
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push(limits.deal_discovery ? "/purchase" : "/subscription");
-  }, [router, settings.hapticsEnabled, limits.deal_discovery]);
-
-  // Navigate to item detail
-  const handleItemPress = useCallback((item: ItemRow) => {
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push({
-      pathname: "/item/[id]",
-      params: {
-        id: item.id,
-        name: item.name,
-        category: item.category ?? "",
-        value: String(item.value),
-      },
-    });
-  }, [router, settings.hapticsEnabled]);
 
   // Navigate to analytics
   const handleAnalyticsPress = useCallback(() => {
@@ -631,7 +569,7 @@ function PortfolioScreen() {
     )}
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
       <ScrollView
-        contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={[styles.container, { backgroundColor: colors.background, paddingBottom: bottomInset }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -739,8 +677,11 @@ function PortfolioScreen() {
             />
 
             {/* Chart Card with Interactive Line Chart */}
+            <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {/* The image role stays scoped to the CHART. It used to wrap the
+                whole card; with a button inside the card, that would have
+                announced an interactive control as part of an image. */}
             <View
-              style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               accessibilityRole="image"
               accessibilityLabel={`Portfolio chart: current value ${formatPrice(total)}, ${isPositive ? 'up' : 'down'} ${formatPct(deltaPct)} over ${range}`}
             >
@@ -761,6 +702,30 @@ function PortfolioScreen() {
                   onScrubChange={setScrubPoint}
                 />
               )}
+            </View>
+
+            {/* Analytics entry point, INSIDE the chart area rather than as its
+                own card. The chart is the analytics surface on this screen, so
+                the way deeper into it belongs on the chart — not in a competing
+                block further down. Replaces the standalone "Extended Portfolio
+                Insights" CTA (removed 2026-08-11).
+
+                No plan check here on purpose: /analytics does its own gating
+                with UpgradePrompt per section, so a free member lands on the
+                page and meets the paywall there. Gating the entry point too
+                would mean two places to keep in step. */}
+            <AnimatedPressable
+              style={[styles.chartAnalyticsBtn, { borderTopColor: colors.border }]}
+              onPress={handleAnalyticsPress}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.insights_view_a11y')}
+            >
+              <Ionicons name="analytics-outline" size={16} color={colors.accent} />
+              <Text style={[styles.chartAnalyticsBtnText, { color: colors.accent }]}>
+                {t('home.analytics')}
+              </Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.accent} />
+            </AnimatedPressable>
             </View>
           </>
         )}
@@ -849,42 +814,10 @@ function PortfolioScreen() {
           onAllItemsPress={handleAllItemsPress}
         />
 
-        {/* Personalized Categories (from onboarding) */}
-        <FollowedCategoriesCarousel
-          theme={colors}
-          categories={followedCategories}
-          onCategoryPress={handleCategoryPress}
-          hapticsEnabled={settings.hapticsEnabled}
-          showHeader={false}
-        />
-
-        {/* Extended Portfolio Insights CTA — only when InsightsCard below is
-            not rendering, so Home never shows two routes to /analytics. */}
-        {!insightsCardVisible && (
-        <AnimatedPressable
-          style={[styles.insightsCta, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={handleInsightsCtaPress}
-          accessibilityRole="button"
-          accessibilityLabel={limits.advanced_analytics ? t('home.insights_view_a11y') : t('home.insights_upgrade_a11y')}
-        >
-          <View style={styles.insightsCtaLeft}>
-            <View style={[styles.insightsCtaIcon, { backgroundColor: colors.accent + '15' }]}>
-              <Ionicons name={limits.advanced_analytics ? "analytics" : "lock-closed"} size={18} color={colors.accent} />
-            </View>
-            <View style={styles.insightsCtaTextBlock}>
-              <Text style={[styles.insightsCtaTitle, { color: colors.text }]}>{t('home.extended_insights')}</Text>
-              <Text style={[styles.insightsCtaSub, { color: colors.muted }]}>
-                {limits.advanced_analytics
-                  ? t('home.extended_insights_active')
-                  : t('home.extended_insights_locked')}
-              </Text>
-            </View>
-          </View>
-          <View style={[styles.insightsCtaBtn, { backgroundColor: colors.accent }]}>
-            <Text style={[styles.insightsCtaBtnText, { color: colors.accentText }]}>{limits.advanced_analytics ? t('home.view') : t('home.upgrade')}</Text>
-          </View>
-        </AnimatedPressable>
-        )}
+        {/* The standalone "Extended Portfolio Insights" CTA was removed
+            2026-08-11 — its job is now the Analytics button inside the chart
+            card above, so Home has ONE route to /analytics instead of a card
+            competing with the chart it summarises. */}
 
         {/* Watchlist Card (always show - has empty state) */}
         {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && (
@@ -896,28 +829,9 @@ function PortfolioScreen() {
           />
         )}
 
-        {/* Deal Agent Summary Card */}
-        <AnimatedPressable
-          style={[styles.analyticsBanner, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={handleDealAgentPress}
-          accessibilityRole="button"
-          accessibilityLabel={limits.deal_discovery ? t('home.deal_agent_open_a11y') : t('home.deal_agent_upgrade_a11y')}
-        >
-          <View style={styles.analyticsBannerLeft}>
-            <View style={[styles.analyticsIconWrap, { backgroundColor: colors.accent + '15' }]}>
-              <Ionicons name={limits.deal_discovery ? "flash" : "lock-closed"} size={18} color={colors.accent} />
-            </View>
-            <View style={styles.analyticsBannerText}>
-              <Text style={[styles.analyticsBannerTitle, { color: colors.text }]}>{t('home.deal_agent')}</Text>
-              <Text style={[styles.analyticsBannerSubtitle, { color: colors.muted }]}>
-                {limits.deal_discovery ? t('home.deal_agent_active') : t('home.deal_agent_locked')}
-              </Text>
-            </View>
-          </View>
-          <View style={[styles.analyticsBannerBtn, { backgroundColor: colors.accent }]}>
-            <Text style={[styles.analyticsBannerBtnText, { color: colors.accentText }]}>{limits.deal_discovery ? t('home.view') : t('home.upgrade')}</Text>
-          </View>
-        </AnimatedPressable>
+        {/* The Deal Agent card moved to the Watchlist tab 2026-08-11: it is a
+            watchlist feature (deal discovery against your targets), and it now
+            sits with the list it acts on rather than on Portfolio. */}
 
         {/* Hot Right Now moved to Analytics (paywall-gated) 2026-04-18. */}
 
@@ -935,28 +849,10 @@ function PortfolioScreen() {
           />
         )}
 
-        {/* Collection Section Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Collection</Text>
-        </View>
-        {items.length === 0 && (
-          <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>
-            {t('home.collection_get_started')}
-          </Text>
-        )}
-
-        {/* Top Movers & Shakers */}
-        <TopItemsList
-          theme={colors}
-          items={items}
-          onItemPress={handleItemPress}
-          formatPrice={(v) => formatPrice(v)}
-          hapticsEnabled={settings.hapticsEnabled}
-        />
-
-        {/* Bottom spacing — extra padding so content doesn't render behind
-            the bottom tab bar (~88px on iPhone with home indicator). */}
-        <View style={{ height: Platform.OS === "ios" ? 100 : 80 }} />
+        {/* No spacer: `bottomInset` on contentContainerStyle now reserves the
+            bar's real height. The 100/80 literal that used to live here was a
+            guess at "~88px on iPhone", and keeping both double-padded the
+            scroll by ~190pt. */}
         </View>
       </ScrollView>
 
@@ -1019,6 +915,19 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
   // Chart card
+  chartAnalyticsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: 12,
+    marginTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  chartAnalyticsBtnText: {
+    fontSize: text.sm,
+    fontWeight: fontWeight.bold,
+  },
   chartCard: {
     borderWidth: 1,
     borderRadius: radius.md,
@@ -1157,17 +1066,8 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
 
-  // Section header
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: text.xl,
-    fontWeight: fontWeight.extrabold,
-  },
+  // sectionHeader / sectionTitle / sectionSubtitle removed 2026-08-11 with the
+  // Collection block — they had no other consumer on this screen.
   categoriesHeading: {
     fontSize: text.xl,
     fontWeight: fontWeight.extrabold,

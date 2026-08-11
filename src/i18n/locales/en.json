@@ -114,7 +114,8 @@
     "unavailable": "Search unavailable",
     "retry_a11y": "Retry search",
     "no_results": "No results found",
-    "no_price_yet": "No price yet"
+    "no_price_yet": "No price yet",
+    "browse_by_category": "Browse by category"
   },
   "item_detail": {
     "valuation_a11y": "Item valuation and details",
@@ -338,7 +339,8 @@
     "insights_view_a11y": "View extended portfolio insights",
     "insights_upgrade_a11y": "Upgrade for extended portfolio insights",
     "deal_agent_open_a11y": "Open Deal Agent",
-    "deal_agent_upgrade_a11y": "Upgrade to unlock Deal Agent"
+    "deal_agent_upgrade_a11y": "Upgrade to unlock Deal Agent",
+    "analytics": "Analytics"
   },
   "items": {
     "title": "Items",
@@ -729,5 +731,21 @@
   "ads": {
     "sponsored": "Sponsored",
     "ad": "Ad"
+  },
+  "favorites": {
+    "saved": "Saved to favourites",
+    "removed": "Removed from favourites",
+    "save_failed": "Could not save — try again",
+    "watching": "Watching — we'll alert you if it drops below {{price}}",
+    "watch_failed": "Could not add to watchlist — try again",
+    "watch_needs_category": "This listing has no category, so an alert could never match it",
+    "a11y_save": "Save to favourites",
+    "a11y_unsave": "Remove from favourites",
+    "a11y_watch": "Watch for price drops below the asking price",
+    "a11y_watching": "Watching for price drops",
+    "title": "Favourites",
+    "empty": "Nothing saved yet",
+    "empty_hint": "Tap the heart on a listing to save it here",
+    "unavailable": "No longer available"
   }
 }

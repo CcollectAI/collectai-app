@@ -25,6 +25,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useAuthContext } from '@/providers/useAuthContext';
 import { GATE_MAX_WAIT_MS } from '@/hooks/usePaginatedList';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
@@ -32,6 +33,7 @@ import { formatPrice } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
+import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
@@ -60,9 +62,20 @@ function formatDate(dateStr: string | undefined): string {
 function WatchlistTabScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  // ExternalTabBar is absolute at the root stack and reserves no layout space,
+  // so a literal paddingBottom here draws the last row under the bar. Derive it.
+  const bottomInset = useTabBarInset();
   const { user, loading: authLoading } = useAuthContext();
   const { settings } = useSettings();
   const { t } = useTranslation();
+
+  // Deal Agent lives here as of 2026-08-11 (was on Portfolio). Deal discovery
+  // runs against the targets on THIS list, so the control belongs beside them.
+  const { limits } = useBillingLimits();
+  const handleDealAgentPress = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push(limits.deal_discovery ? '/purchase' : '/subscription');
+  }, [router, settings.hapticsEnabled, limits.deal_discovery]);
   const { showToast } = useToast();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
@@ -755,6 +768,35 @@ function WatchlistTabScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right', 'top']}>
       <Animated.View style={[{ flex: 1 }, animatedStyle]}>
+        {/* Deal Agent — OUTSIDE the FlashList on purpose. FlashList v2 positions
+            every cell including ListHeaderComponent absolutely, and a tall
+            interactive header overflows its measured container and stops being
+            hit-tested on iOS: it renders perfectly and takes no taps
+            (docs/ui-playbook.md). */}
+        <AnimatedPressable
+          style={[styles.dealAgentBanner, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={handleDealAgentPress}
+          accessibilityRole="button"
+          accessibilityLabel={limits.deal_discovery ? t('home.deal_agent_open_a11y') : t('home.deal_agent_upgrade_a11y')}
+        >
+          <View style={styles.dealAgentLeft}>
+            <View style={[styles.dealAgentIconWrap, { backgroundColor: colors.accent + '15' }]}>
+              <Ionicons name={limits.deal_discovery ? 'flash' : 'lock-closed'} size={18} color={colors.accent} />
+            </View>
+            <View style={styles.dealAgentText}>
+              <Text style={[styles.dealAgentTitle, { color: colors.text }]}>{t('home.deal_agent')}</Text>
+              <Text style={[styles.dealAgentSubtitle, { color: colors.muted }]}>
+                {limits.deal_discovery ? t('home.deal_agent_active') : t('home.deal_agent_locked')}
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.dealAgentBtn, { backgroundColor: colors.accent }]}>
+            <Text style={[styles.dealAgentBtnText, { color: colors.accentText }]}>
+              {limits.deal_discovery ? t('home.view') : t('home.upgrade')}
+            </Text>
+          </View>
+        </AnimatedPressable>
+
         <FlashList
           data={sortedItems}
           keyExtractor={(item) => item.id}
@@ -763,6 +805,7 @@ function WatchlistTabScreen() {
           contentContainerStyle={[
             styles.listContent,
             sortedItems.length === 0 && styles.listContentEmpty,
+            { paddingBottom: bottomInset },
           ]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
           ListEmptyComponent={renderEmpty}
@@ -1092,6 +1135,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  dealAgentBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: 14,
+    marginHorizontal: 16,
+    marginTop: 12,
+  },
+  dealAgentLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },
+  dealAgentIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  dealAgentText: { flex: 1 },
+  dealAgentTitle: { fontSize: text.md, fontWeight: fontWeight.bold },
+  dealAgentSubtitle: { fontSize: text.sm, marginTop: 2 },
+  dealAgentBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.sm },
+  dealAgentBtnText: { fontSize: text.sm, fontWeight: fontWeight.bold },
   listContent: {
     padding: 16,
     gap: 12,
