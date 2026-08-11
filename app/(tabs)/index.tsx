@@ -36,7 +36,8 @@ import { AutoSetProgressList } from "@/components/AutoSetProgressList";
 import { AlertsCard } from "@/components/home/AlertsCard";
 import { PortfolioValueHeader } from "@/components/home/PortfolioValueHeader";
 import { ChartRangeSelector } from "@/components/home/ChartRangeSelector";
-import { type CategoryBreakdownItem } from "@/components/home/CategoryBreakdownSection";
+import { CategoryBreakdownSection, type CategoryBreakdownItem } from "@/components/home/CategoryBreakdownSection";
+import { formatCategoryName } from "@/constants/categories";
 import { getCategoryByName, getCategoryById } from "@/data/categories";
 import { TopItemsList, type ItemRow } from "@/components/home/TopItemsList";
 import { FollowedCategoriesCarousel } from "@/components/home/FollowedCategoriesCarousel";
@@ -757,34 +758,7 @@ function PortfolioScreen() {
           </View>
         )}
 
-        {/* Add Item Banner — an onboarding affordance, not a permanent control.
-            Once the collection is past a few items the user knows where Add is
-            (the centre tab, always visible), so the banner is just a large card
-            pushing real content down. Hidden past ADD_BANNER_MAX_ITEMS. */}
-        {items.length <= ADD_BANNER_MAX_ITEMS && (
-          <AnimatedPressable
-            onPress={handleOpenAddMenu}
-            style={[styles.addBanner, { backgroundColor: colors.accent + '0D', borderColor: colors.accent + '30' }]}
-            accessibilityRole="button"
-            accessibilityLabel={t('home.add_to_collection_a11y')}
-          >
-            <View style={[styles.addBannerIconWrap, { backgroundColor: colors.accent }]}>
-              <Ionicons name="add" size={18} color={colors.accentText} />
-            </View>
-            <View style={styles.addBannerText}>
-              <Text style={[styles.addBannerTitle, { color: colors.text }]}>{t('home.add_to_collection')}</Text>
-              <Text style={[styles.addBannerSubtitle, { color: colors.muted }]}>{t('home.add_to_collection_subtitle')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.accent} />
-          </AnimatedPressable>
-        )}
-
-        {/* Your Categories — heading, then the at-a-glance numbers, then the
-            category banners. The stats sit directly under the heading because
-            they summarise the same thing the banners break down. */}
-        <Text style={[styles.categoriesHeading, { color: colors.text }]}>Your Categories</Text>
-
-        {/* Global Collection Stats */}
+        {/* Global Collection Stats — the summary tile. */}
         {categoryBreakdown.length > 0 && (
           <View style={[styles.globalStats, { borderColor: colors.border }]}>
             <View style={styles.globalStatItem}>
@@ -808,6 +782,57 @@ function PortfolioScreen() {
           </View>
         )}
 
+        {/* Add Item Banner — an onboarding affordance, not a permanent control.
+            Once the collection is past a few items the user knows where Add is
+            (the centre tab, always visible), so the banner is just a large card
+            pushing real content down. Hidden past ADD_BANNER_MAX_ITEMS.
+
+            Sits BELOW the summary tile (moved 2026-08-11): it disappears once
+            the collection grows, and anything above the tile would have left a
+            gap at the top of the screen for every established user. */}
+        {items.length <= ADD_BANNER_MAX_ITEMS && (
+          <AnimatedPressable
+            onPress={handleOpenAddMenu}
+            style={[styles.addBanner, { backgroundColor: colors.accent + '0D', borderColor: colors.accent + '30' }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('home.add_to_collection_a11y')}
+          >
+            <View style={[styles.addBannerIconWrap, { backgroundColor: colors.accent }]}>
+              <Ionicons name="add" size={18} color={colors.accentText} />
+            </View>
+            <View style={styles.addBannerText}>
+              <Text style={[styles.addBannerTitle, { color: colors.text }]}>{t('home.add_to_collection')}</Text>
+              <Text style={[styles.addBannerSubtitle, { color: colors.muted }]}>{t('home.add_to_collection_subtitle')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.accent} />
+          </AnimatedPressable>
+        )}
+
+        {/* Category Breakdown — returned here from the items tab (2026-08-11,
+            reversing the 2026-04-18 move), directly under the tile it breaks
+            down, and now PRESSABLE: each card opens that category's own items.
+            Rendered in ONE place only; the items-tab copy is removed in the
+            same change, because two instances of the same section drift.
+
+            The values here and inside the list agree by construction as of
+            2026-08-11 — both resolve through `v_item_values_v1`. Before that
+            they did not, and this tile is exactly where it showed: a card
+            reading EUR 80.64 opening a list that summed to EUR 0.00. */}
+        <CategoryBreakdownSection
+          theme={colors}
+          breakdown={categoryBreakdown}
+          loading={breakdownLoading}
+          formatPrice={(v) => formatPrice(v)}
+          resolveCategoryName={(raw) => {
+            // Same resolution the items-tab copy used: the registry name when
+            // it is a real category, else formatCategoryName — never the raw
+            // slug, which rendered "uncategorized" lowercase and unsplit.
+            const cat = getCategoryById(raw) ?? getCategoryByName(raw);
+            return cat?.name ?? formatCategoryName(raw);
+          }}
+          onCategoryPress={handleBreakdownCategoryPress}
+        />
+
         {/* Personalized Categories (from onboarding) */}
         <FollowedCategoriesCarousel
           theme={colors}
@@ -816,8 +841,6 @@ function PortfolioScreen() {
           hapticsEnabled={settings.hapticsEnabled}
           showHeader={false}
         />
-
-        {/* Category Breakdown lives on the items tab (moved 2026-04-18). */}
 
         {/* Extended Portfolio Insights CTA — only when InsightsCard below is
             not rendering, so Home never shows two routes to /analytics. */}

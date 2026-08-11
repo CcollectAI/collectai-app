@@ -48,15 +48,12 @@ import logger from "@/utils/logger";
 import { BulkActionsToolbar } from '@/components/BulkActionsToolbar';
 import { ItemsListHeader } from '@/components/ItemsListHeader';
 import { AdBanner } from '@/components/ads/AdBanner';
-import {
-  CategoryBreakdownSection,
-  type CategoryBreakdownItem,
-} from '@/components/home/CategoryBreakdownSection';
-import { collectorsApi } from '@/api/collectorsApi';
+// CategoryBreakdownSection / CategoryBreakdownItem / collectorsApi /
+// formatPrice / getCategoryById / getCategoryByName imports removed 2026-08-11
+// with the breakdown section and its fetch — they had no remaining consumer
+// here. formatCategoryName stays: the section headers and row pills use it.
 import { exportItemsOverview } from '@/api/miscApi';
-import { formatPrice } from '@/lib/format';
 import { formatCategoryName } from '@/constants/categories';
-import { getCategoryById, getCategoryByName } from '@/data/categories';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import {
   ItemsGridHeader,
@@ -148,40 +145,11 @@ const ItemsScreen: React.FC = () => {
     if (providerItems.length > 0) markHasItems();
   }, [providerItems.length, markHasItems]);
 
-  // Category breakdown (moved from home tab 2026-04-18)
-  const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdownItem[]>([]);
-  const [breakdownLoading, setBreakdownLoading] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    setBreakdownLoading(true);
-    collectorsApi.getPortfolioCategoryBreakdown()
-      .then((data) => {
-        if (cancelled) return;
-        // Backend (GET /analytics/portfolio/category-breakdown) returns
-        // { breakdown: [{ category, item_count, total_value, pct_of_portfolio }] }.
-        // We previously read `.categories` (never existed) so real data never
-        // populated and the section always fell back to its demo preview. Map
-        // pct_of_portfolio (0–1) → percentage (0–100).
-        const raw = Array.isArray((data as { breakdown?: unknown })?.breakdown)
-          ? (data as { breakdown: Array<Record<string, unknown>> }).breakdown
-          : [];
-        const cats: CategoryBreakdownItem[] = raw.map((b) => ({
-          category: String(b.category ?? ''),
-          item_count: Number(b.item_count ?? 0),
-          total_value: Number(b.total_value ?? 0),
-          percentage: Math.round(Number(b.pct_of_portfolio ?? 0) * 1000) / 10,
-        }));
-        setCategoryBreakdown(cats);
-      })
-      .catch((err) => {
-        logger.warn('[Items] category breakdown fetch failed:', err);
-        if (!cancelled) setCategoryBreakdown([]);
-      })
-      .finally(() => {
-        if (!cancelled) setBreakdownLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, []);
+  // The category-breakdown fetch that lived here is GONE with the section
+  // (2026-08-11). It was a request per Items mount whose response now has no
+  // consumer on this screen — capture without consume, which is the shape this
+  // codebase keeps having to delete. The identical fetch already runs on the
+  // Portfolio tab, which is where the section renders.
 
   // Restore persisted view mode on mount
   useEffect(() => {
@@ -846,29 +814,12 @@ const ItemsScreen: React.FC = () => {
         }}
       />
 
-      {/* Category Breakdown (moved from home tab 2026-04-18) */}
-      <CategoryBreakdownSection
-        theme={colors}
-        breakdown={categoryBreakdown}
-        loading={breakdownLoading}
-        formatPrice={(v) => formatPrice(v)}
-        resolveCategoryName={(raw) => {
-          const cat = getCategoryById(raw) ?? getCategoryByName(raw);
-          // Fall back to formatCategoryName, not the raw slug. The registry
-          // only knows real categories, so anything else rendered lowercase
-          // and unsplit — visible from 2026-07-27 as a breakdown card reading
-          // "uncategorized" directly above a section header reading
-          // "Uncategorized", once the backend started returning that bucket.
-          // formatCategoryName is already what the section headers (line 952)
-          // and the row pills (ItemsListItem.tsx:126) use, so this makes one
-          // screen agree with itself.
-          return cat?.name ?? formatCategoryName(raw);
-        }}
-        onCategoryPress={(catRaw) => {
-          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-          setFilterCategory(catRaw);
-        }}
-      />
+      {/* Category Breakdown moved BACK to the Portfolio tab 2026-08-11,
+          reversing the 2026-04-18 move. It belongs under the summary tile it
+          breaks down, and this screen is now what a breakdown card OPENS —
+          rendering it here too would put the same section on both ends of one
+          tap. Its resolveCategoryName logic (registry name, else
+          formatCategoryName, never the raw slug) moved with it. */}
 
       {/* Ad slot — invisible until FEATURE_ADS is enabled */}
       <AdBanner placement="items_banner" />
