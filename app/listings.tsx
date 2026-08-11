@@ -50,6 +50,13 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { FavoriteWatchButtons } from '@/components/marketplace/FavoriteWatchButtons';
+// Market signals, rehomed from the hub 2026-08-11 (see docs/P2P_MARKETPLACE_SPEC.md §11b).
+// DemandHeatBanner is deliberately NOT among them: app/analytics.tsx already
+// renders DemandHeatSection behind `advanced_analytics` as "Hot Right Now", and
+// putting the same data on a free tab would give the paid feature away.
+import { MarketMoversSection } from '@/components/marketplace/MarketMoversSection';
+import { RegionalInsightsSection } from '@/components/marketplace/RegionalInsightsSection';
+import { useRegionalDemand } from '@/hooks/useRegionalDemand';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
 import { SlowLoadNotice } from '@/components/SlowLoadNotice';
 import { useSettings, type NumberLocale, type Settings } from '@/lib/settings';
@@ -277,6 +284,8 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const bottomInset = useTabBarInset();
+  // Regional demand moved here with its loader (see useRegionalDemand).
+  const { items: regionalDemand } = useRegionalDemand();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [query, setQuery] = useState('');
@@ -986,6 +995,24 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
           ListFooterComponent={
             listings.length > 0 ? (
               <View style={styles.footerWrap}>
+                {/* Market signals under the grid. They were stranded on the hub:
+                    its only entry point pushes `?q=`, and the hub hides these
+                    behind `!trimmedQuery`, so every arrival rendered search
+                    results INSTEAD of them. Reachable again, and they answer
+                    "what else is on this tab" now that it opens as a bare grid.
+                    Only when not searching — a query means the member is
+                    hunting one thing, not browsing the market. */}
+                {/* MarketMovers only. RegionalInsightsSection is NOT here: it
+                    renders null on an empty `items`, and its data came from a
+                    fetch that lived on the hub — moving the component without
+                    the fetch would ship a section that is permanently blank.
+                    It stays on the hub until its loader moves with it. */}
+                {!debouncedQuery ? (
+                  <>
+                    <RegionalInsightsSection items={regionalDemand} onSearchItem={setQuery} />
+                    <MarketMoversSection />
+                  </>
+                ) : null}
                 {/* Paging state, ABOVE the legal note. A grid that silently
                     stops looks identical to a grid that has run out; saying
                     which is the difference between "keep scrolling" and "this
