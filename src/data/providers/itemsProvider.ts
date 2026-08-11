@@ -112,25 +112,40 @@ type ItemRow = {
  */
 async function fetchItemValues(ids: string[]): Promise<Map<string, number>> {
   if (ids.length === 0) return new Map();
-  // Bounded by construction: installRequestTimeouts() in src/lib/supabase.ts
-  // wraps every .from() at the client, so this cannot hang the list.
-  const { data, error } = await supabase
-    .from('v_item_values_v1')
-    .select('item_id, value_eur')
-    .in('item_id', ids);
-  if (error) {
-    // best-effort: values degrade to the client-side chain below, which is
-    // exactly today's behaviour — never worse, and never a blocked list.
-    // logger.error, not warn: warn is stripped in release builds, and a silent
-    // degradation here is the whole bug this function exists to fix.
-    logger.error('[SupabaseDataProvider] item values read failed:', error);
+  try {
+    // Bounded by construction: installRequestTimeouts() in src/lib/supabase.ts
+    // wraps every .from() at the client, so this cannot hang the list.
+    const { data, error } = await supabase
+      .from('v_item_values_v1')
+      .select('item_id, value_eur')
+      .in('item_id', ids);
+    if (error) {
+      // best-effort: values degrade to the client-side chain below, which is
+      // exactly today's behaviour — never worse, and never a blocked list.
+      // logger.error, not warn: warn is stripped in release builds, and a silent
+      // degradation here is the whole bug this function exists to fix.
+      logger.error('[SupabaseDataProvider] item values read failed:', error);
+      return new Map();
+    }
+    const out = new Map<string, number>();
+    for (const row of (data ?? []) as { item_id: string; value_eur: number | null }[]) {
+      if (typeof row.value_eur === 'number') out.set(row.item_id, row.value_eur);
+    }
+    return out;
+  } catch (e) {
+    // best-effort: a THROW must degrade the same way a returned error does.
+    //
+    // It did not, and that is the whole reason this catch exists. The version
+    // above only handled `{ error }`; anything that threw — a client whose
+    // query builder lacks `.in`, a timeout that rejects, a transport fault —
+    // escaped `fetchItemValues`, escaped `mapRowsWithValues`, and made
+    // `listItems` throw. The collection list would have failed outright
+    // because the OPTIONAL price overlay failed, while the comment two lines
+    // up promised a graceful fallback. Caught 2026-08-11 by
+    // itemsProviderPurchase.test.ts, whose Supabase mock has no `.in`.
+    logger.error('[SupabaseDataProvider] item values read threw:', e);
     return new Map();
   }
-  const out = new Map<string, number>();
-  for (const row of (data ?? []) as { item_id: string; value_eur: number | null }[]) {
-    if (typeof row.value_eur === 'number') out.set(row.item_id, row.value_eur);
-  }
-  return out;
 }
 
 function mapItemRow(r: ItemRow, resolvedValue?: number): Item {
