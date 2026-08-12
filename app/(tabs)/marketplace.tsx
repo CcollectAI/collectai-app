@@ -11,8 +11,17 @@
  * is one member marketplace, not two that drift. `asTab` suppresses the back
  * chevron and the in-body QuickNavBar, neither of which belongs on a tab.
  *
- * The hub was moved to `app/market-hub.tsx`, not deleted, and is reachable from
- * the control row on this screen.
+ * The hub was parked at `app/market-hub.tsx` for a day and DELETED 2026-08-12
+ * once its last three modules were resolved: Market Movers and Regional
+ * insights moved onto this screen, and demand heat deliberately did not —
+ * `app/analytics.tsx` already renders it behind `advanced_analytics`, so a free
+ * copy here would have given the paid feature away.
+ *
+ * Its remaining two modules were verified as not worth rehoming: "Open bids"
+ * was a summary card whose only job was to link to `/offers` (this screen
+ * already carries the labelled Offers pill with a needs-you badge), and "Find
+ * Collectors" sat behind COMMUNITY_GATED rendering nothing, duplicating the
+ * unified search that `/search` already runs over users.
  */
 import MemberMarketplace from '../listings';
 

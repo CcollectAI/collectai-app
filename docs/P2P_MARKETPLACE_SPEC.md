@@ -1242,25 +1242,54 @@ produced.
 |---|---|
 | Market tab → discovery hub → row → `/listings` | Market tab → the listings grid |
 | Browse-by-category on the Market tab | on the **Search** tab, as its idle state |
-| hub = `app/(tabs)/marketplace.tsx` | hub = `app/market-hub.tsx` |
+| hub = `app/(tabs)/marketplace.tsx` | hub = `app/market-hub.tsx`, **deleted 2026-08-12** |
 
 `(tabs)/marketplace.tsx` is now a wrapper rendering the SAME component as
 `/listings` with `asTab` — one marketplace, not two that drift. `asTab`
 suppresses the back chevron and the in-body `QuickNavBar`, neither of which
 belongs on a tab. Identical pattern to `(tabs)/search.tsx`.
 
-**The hub was moved, not deleted.** Every section in it is live and rebuilt
-nowhere else. Browse-by-category is the one thing that left it.
+**The hub was parked for a day, then dissolved (2026-08-12).** It was kept only
+until each of its modules had an answer, because deleting it while it still held
+the last of them is the bug this work exists to fix:
 
-⚠️ **Its only entry point is now the "view all marketplace results" link on item
-detail** (`MarketplacePricesSection`), which pushes `/market-hub?q=`. The
-control-row button that also reached it was removed on request the same day. If
-that link ever goes, demand heat / regional insight / market movers / find
-collectors become reachable from nowhere.
+| module | outcome |
+|---|---|
+| Market Movers | moved to the Market tab, under the grid, `!query` only |
+| Regional insights | moved **with its loader** (`src/hooks/useRegionalDemand.ts`) |
+| Demand heat | **deliberately not moved** — `app/analytics.tsx` renders it behind `advanced_analytics`; a free copy would have given the paid feature away |
+| Open bids | deleted. A summary card whose only job was to link to `/offers`; the Market tab already carries the labelled Offers pill with a needs-you badge |
+| Find Collectors | deleted. Behind `COMMUNITY_GATED`, rendering nothing (<50 public profiles ⇒ 0 results), duplicating the user search `/search` already runs |
 
-`check-route-param-handoff` caught the sharp edge here: that link pushed `?q=`
-at `/(tabs)/marketplace`, which after the swap reads no params — the query would
-have been silently dropped. Repointed to `/market-hub`, which does read `q`.
+Deleting the screen also stranded seven components nothing else imported
+(`DemandHeatBanner`, `MarketplaceFilterPanel`, `MarketplaceSearchBar`,
+`MarketplaceResultCard`, `MarketplaceEmptyState`, `MarketplacePageHeader`,
+`SearchResultQuickView`); they went with it rather than being left as a feature
+reachable from nowhere.
+
+⚠️ **The "view all marketplace results" link on item detail**
+(`MarketplacePricesSection`) now pushes **`/search?q=`**, and specifically not
+`/(tabs)/search`. This link has had three targets and the constraint never
+changed: it must land somewhere that RUNS a query and READS `q`.
+
+`check-route-param-handoff` caught the sharp edge twice. First when it pushed
+`?q=` at `/(tabs)/marketplace`, which after the swap reads no params — the query
+would have been silently dropped. And it is why the target is `/search` rather
+than the Search tab: the gate resolves a push target to its route FILE, and
+`(tabs)/search.tsx` is a one-line re-export with no `useLocalSearchParams` of
+its own, so pushing there would report "that route reads: (none)" and this
+contract would stop being checkable. `app/search.tsx:229` reads it.
+
+**New gate:** `npm run check:reachable`
+(`scripts/check-unreachable-screens.mjs`) builds the push/`Link`/`Redirect`
+graph over `app/**` and reports screens with no inbound edge — the question
+`check-dead-nav` cannot answer, since it only proves a target RESOLVES, never
+that anyone can arrive. Verified against this very case: with `market-hub.tsx`
+restored and its entry point repointed, the gate names it. It is **advisory**
+(exit 0) like `audit_orphan_tables.py`, because it currently reports a backlog
+of four pre-existing orphans — `/franchise/[id]`, `/sell/dashboard`,
+`/sets-to-complete`, `/twitch`. Flip `--strict` on and add it to
+`verify:prebuild` once that list is empty.
 
 ### 11a. The offers screen — deciding, not just listing
 

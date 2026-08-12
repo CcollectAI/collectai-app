@@ -44,7 +44,8 @@
     "check:archived": "node scripts/check-archived-filter.mjs",
     "check:search-categories": "node scripts/check-search-category-ids.mjs",
     "check:item-values": "node scripts/check-item-value-source.mjs",
-    "check:serialization": "node scripts/check-duck-typed-serialization.mjs"
+    "check:serialization": "node scripts/check-duck-typed-serialization.mjs",
+    "check:reachable": "node scripts/check-unreachable-screens.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",

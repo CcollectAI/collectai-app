@@ -136,12 +136,23 @@ export const MarketplacePricesSection = React.memo(function MarketplacePricesSec
           {marketResults.length > 5 && (
             <AnimatedPressable
               onPress={() => {
-                // /market-hub, not the Market TAB: the tab opens the member
-                // marketplace grid as of 2026-08-11 and reads no params, so a
-                // `q` sent there would be silently dropped. The hub is the
-                // screen that runs this external search and reads `q`.
+                // `/search`, and specifically NOT `/(tabs)/search`.
+                //
+                // This link has now had three targets, and the reason is the
+                // same each time: it must land on a screen that RUNS a query
+                // and READS `q`. The Market tab reads no params (a `q` sent
+                // there was silently dropped); market-hub read `q` but was
+                // deleted 2026-08-12 when the Market tab became the grid.
+                //
+                // The tab file `(tabs)/search.tsx` is a one-line re-export of
+                // this same screen, so it would work at runtime — but
+                // `npm run check:params` resolves a push target to its route
+                // FILE, and that file has no `useLocalSearchParams` of its
+                // own, so it would report "that route reads: (none)" and this
+                // `?q=` contract would stop being checkable. `/search` reads it
+                // at app/search.tsx:229 and stays a valid deep link.
                 router.push({
-                  pathname: "/market-hub",
+                  pathname: "/search",
                   params: { q: editableName },
                 });
               }}
