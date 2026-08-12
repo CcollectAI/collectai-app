@@ -126,7 +126,17 @@ in the same window was `ok`.
 laptop lands in the same table the health check reads, and poisons it for 24h.
 
 - `worker_registry._async_persist_run` now stamps `metadata.host` on **every**
-  row, not just error rows.
+  row, not just error rows. It builds the JSON **server-side** with
+  `jsonb_build_object` and must stay that way: `app/db.py:71` registers a jsonb
+  codec with `encoder=json.dumps`, so handing a `json.dumps(...)` string to a
+  `$n::jsonb` parameter encodes it twice and stores a jsonb *string* —
+  `jsonb_typeof = 'string'` — after which every `metadata->>'host'` and
+  `metadata->>'error_repr'` reads NULL in silence. That shipped for three
+  minutes on 2026-08-12 (13 rows, repaired with `(metadata #>> '{}')::jsonb`).
+  It is the same defect as `attributes_json = json.dumps(...)` two sections
+  down, and it survived a rollback test that used a bare `asyncpg.connect()`
+  instead of the app's pool. **Verify jsonb writes with
+  `jsonb_typeof(col) = 'object'`, through a pool built by `app.db`.**
 - The check counts only rows this machine recorded. Rows with no host (legacy)
   count as ours — **a legacy row must fail toward alerting, never toward
   silence.**
