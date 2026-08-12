@@ -497,18 +497,27 @@ async def update_mandate(
 
     # Build dynamic SET clause from non-None fields (whitelist only)
     updates = body.model_dump(exclude_none=True)
-    if not updates:
-        raise error_response(400, "No fields to update")
 
     # `canonical_key` is not a column — it is the BARE key the picker sends, and
     # it resolves into `canonical_ref` + `category` exactly as it does on create.
-    # It is deliberately kept out of _UPDATABLE_MANDATE_COLUMNS so a caller can
-    # never PATCH a raw `canonical_ref` straight in: a hand-written namespace is
-    # how you get a ref that matches zero prediction rows and fails silently.
-    # Sending `canonical_key: null` explicitly clears the key, turning a keyed
-    # mandate back into a free-text one.
-    canonical_key_sent = "canonical_key" in updates
+    # It is deliberately kept out of the body-driven path so a caller can never
+    # PATCH a raw `canonical_ref` straight in: a hand-written namespace is how
+    # you get a ref that matches zero prediction rows and fails silently.
+    #
+    # Detected via `model_fields_set`, NOT via `updates`. `model_dump(
+    # exclude_none=True)` drops an explicit null, so reading it from `updates`
+    # made `canonical_key: null` indistinguishable from "not sent" and clearing
+    # a key impossible — and a request carrying ONLY that null would have been
+    # rejected as "No fields to update" before ever reaching this. Pydantic's
+    # `model_fields_set` holds every field the caller actually supplied,
+    # including the ones set to None, which is exactly the distinction needed.
+    canonical_key_sent = "canonical_key" in body.model_fields_set
     canonical_key_val = updates.pop("canonical_key", None)
+
+    # Checked AFTER canonical_key is accounted for: clearing a key is a real
+    # update even though it leaves `updates` empty.
+    if not updates and not canonical_key_sent:
+        raise error_response(400, "No fields to update")
 
     # Reject any keys not in the whitelist
     bad_keys = set(updates.keys()) - _UPDATABLE_MANDATE_COLUMNS
