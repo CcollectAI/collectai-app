@@ -51,7 +51,7 @@ class ValueSummaryResponse(BaseModel):
     hours_saved: float = 0.0
 
     # Money saved
-    deal_savings: float = 0.0          # Sum of (initial_ask - final_price) on deals
+    deal_savings: float = 0.0          # Sum of (predicted_q50 - price paid) on PURCHASED deals, EUR only, never negative
     deal_count: int = 0
     smart_buy_savings: float = 0.0     # Sum of (market_value - purchase_price) where purchase < market
     smart_buy_count: int = 0
@@ -146,26 +146,54 @@ async def get_value_summary(
         )
         duplicates_prevented = dupes_row["cnt"] if dupes_row else 0
 
-        # -- Deal Desk savings --
-        # Original query referenced a `deals` table that doesn't exist + an
-        # ask-vs-final price-savings column that was never built. The closest
-        # real table (mandate_deals) tracks listing_price only — no negotiation
-        # delta. Until the offer-flow feature ships (deferred per learnings.md
-        # 2026-04-22 chat-fix pass), count completed mandate_deals and return
-        # 0 savings. Replace with the real calculation when offers go live.
+        # -- Deal savings: market median vs what you actually paid --
+        #
+        # This returned a hardcoded `0::numeric` until 2026-08-12, on the
+        # grounds that "mandate_deals tracks listing_price only — no
+        # negotiation delta". That stopped being true: the table now carries
+        # `predicted_q50`, `price_vs_q50_pct` and `confirmed_price`, so the
+        # saving on a purchased deal is measurable without any offer flow.
+        # Every user reading "Sparrow saved you X" was getting the smart-buy
+        # half only, with the deal half silently contributing zero.
+        #
+        # The definition is deliberately the SAME shape as smart_buy_savings
+        # below — market q50 minus what you paid — so one banner never adds two
+        # different meanings of "saved" together:
+        #
+        #   `confirmed_price` over `listing_price` — what they actually paid
+        #     beats the asking price; falls back when unconfirmed.
+        #   `GREATEST(…, 0)` — buying ABOVE market is not a negative saving.
+        #     Summing signed deltas would let one bad buy silently cancel out
+        #     real savings and quietly understate the total.
+        #   `predicted_q50 IS NOT NULL` — no model estimate, no claim.
+        #   EUR only — `q50` is EUR (valuation_worker trains on
+        #     `COALESCE(price_eur, price)`, and the smart-buy query below
+        #     already compares it against `purchase_price_eur`), while
+        #     `listing_price` is in `listing_currency`. `fx_rates_v1` holds a
+        #     single row, EUR=1.0, so a non-EUR deal cannot be converted
+        #     honestly today. Undercounting is the only safe direction for a
+        #     number shown to a user as money we saved them.
         deals_row = await conn.fetchrow(
             """
             SELECT
                 COUNT(*) AS deal_count,
-                0::numeric AS total_savings
-            FROM mandate_deals
-            WHERE user_id = $1
+                COALESCE(SUM(
+                    GREATEST(
+                        d.predicted_q50 - COALESCE(d.confirmed_price, d.listing_price),
+                        0
+                    )
+                ) FILTER (
+                    WHERE d.predicted_q50 IS NOT NULL
+                      AND d.listing_currency = 'EUR'
+                ), 0)::numeric AS total_savings
+            FROM mandate_deals d
+            WHERE d.user_id = $1
               -- 'completed' is NOT in the mandate_deals status CHECK
               -- (discovered, notified, clicked, purchased, declined, expired),
               -- so this counted a value that can never exist and reported 0
               -- deals forever. A read, so it never errored. 'purchased' is the
               -- terminal state. Found by check-constraint-drift.mjs 2026-07-25.
-              AND status = 'purchased'
+              AND d.status = 'purchased'
             """,
             user_id,
         )

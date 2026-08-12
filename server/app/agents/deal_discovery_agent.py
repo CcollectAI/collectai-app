@@ -586,19 +586,28 @@ class DealDiscoveryAgent:
             # can split on it (matches the convention in marketplace_scrape_scheduler).
             normalized_key = f"{category}:{query[:100]}" if (category and query) else None
 
-            # market_hits has `shipping` (jsonb) but no `ships_from`/`domestic_only`
-            # columns. Earlier code tried to INSERT all three; the INSERT silently
-            # failed every batch (try/except swallowed the column-missing error)
-            # which is why mandate_deals.discovered_at was perpetually stale even
-            # though the worker reported `ok`. Roll the per-listing shipping
-            # metadata into a single jsonb on the `shipping` column so we keep
-            # the geo info for downstream policy filtering — region-of-origin
-            # decisions look at hits.shipping->>'ships_from' etc.
-            shipping_json = {
-                "cost": hit.get("shipping_cost"),
-                "ships_from": hit.get("ships_from"),
-                "domestic_only": bool(hit.get("domestic_only", False)),
-            }
+            # `market_hits.shipping` is **double precision** — a cost, nothing
+            # more. Verified against the live column and docs/schema-lock-matrix.json,
+            # which records it `be_w: true, be_r: false`: written, never read.
+            #
+            # This line has now failed three ways, each time silently, because the
+            # except below only WARNs:
+            #   1. INSERTed `ships_from`/`domestic_only` as columns — they do not
+            #      exist. Swallowed.
+            #   2. "Fixed" by rolling all three into `shipping` as jsonb, on the
+            #      belief that the column was jsonb and that region-of-origin
+            #      policy read `hits.shipping->>'ships_from'`. Both were untrue —
+            #      the only `ships_from` readers are on `marketplace_listings`
+            #      (p2p_listing_router), a different table. Result:
+            #      `column "shipping" is of type double precision but expression
+            #      is of type jsonb`, 5x/day in the watchdog's Postgres errors,
+            #      and every deal-discovery listing lost from the price feed.
+            #   3. This: send the number the column is typed for.
+            #
+            # The geo metadata is dropped deliberately rather than parked in a
+            # column nothing reads. If region-of-origin filtering is ever wanted
+            # on market_hits, it needs a column and a reader, in that order.
+            shipping_cost = hit.get("shipping_cost")
             rows.append((
                 source,
                 listing_id,
@@ -610,7 +619,7 @@ class DealDiscoveryAgent:
                 normalized_key,
                 normalized_key,  # item_ref mirrors normalized_key for the valuation worker
                 category,
-                json.dumps(shipping_json),
+                float(shipping_cost) if shipping_cost is not None else None,
             ))
 
         if not rows:
@@ -635,7 +644,7 @@ class DealDiscoveryAgent:
                     (provider, listing_id, title, price, currency, condition, url,
                      normalized_key, item_ref, category,
                      shipping)
-                SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb
+                SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::double precision
                 WHERE NOT EXISTS (
                     SELECT 1 FROM public.market_hits
                      WHERE provider = $1 AND listing_id = $2
@@ -645,7 +654,15 @@ class DealDiscoveryAgent:
             )
             logger.info("[DealDiscovery] Fed %d listings into market_hits", len(rows))
         except Exception as exc:
-            logger.warning("[DealDiscovery] market_hits feed failed: %s", exc)
+            # ERROR, not WARNING. This feed failed on every single run for months
+            # and nothing noticed, because a WARNING in bake.log is something
+            # nobody greps and the watchdog's journal check counts errors. The
+            # write is still best-effort — a broken feed must not take down deal
+            # discovery — but "best-effort" is not a licence to fail quietly.
+            logger.error(
+                "[DealDiscovery] market_hits feed FAILED for %d listing(s): %s",
+                len(rows), exc,
+            )
 
     async def _cache_deal_images(
         self, conn, batch_rows: List[tuple], category: Optional[str]

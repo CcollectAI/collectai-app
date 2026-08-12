@@ -53,7 +53,15 @@ function getSavingsMessage(
     case 'deal_complete':
       return {
         headline: hasMoney ? `You've saved ${formatPrice(data.total_money_saved, currency)}` : 'Deal closed!',
-        subline: `${data.deal_count} deal${data.deal_count !== 1 ? 's' : ''} negotiated below asking price`,
+        // "below market value", NOT "negotiated below asking price". Nothing in
+        // this product negotiates, and `deal_savings` does not measure a
+        // negotiation: it is the model's median (`predicted_q50`) minus what
+        // was actually paid on a PURCHASED mandate deal. The old copy described
+        // a feature that does not exist, which makes it a promise we would be
+        // failing (see the DAC7 §6 lesson in docs/alerts-and-insights.md — prose
+        // shown to a user is a spec). Keep this sentence true to the SQL in
+        // server/app/features/value_summary_router.py.
+        subline: `${data.deal_count} deal${data.deal_count !== 1 ? 's' : ''} bought below market value`,
       };
     case 'item_milestone':
       return {
