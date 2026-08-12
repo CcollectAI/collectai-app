@@ -4229,6 +4229,146 @@ def _haute_horlogerie_depth_watches() -> list[tuple]:
     ]
 
 
+def _independent_haute_horlogerie_watches() -> list[tuple]:
+    """The independent haute-horlogerie maisons, all absent until 2026-08-12.
+
+    Checked before writing: Greubel Forsey, De Bethune, Urwerk, Laurent Ferrier,
+    Voutilainen, Akrivia, Parmigiani Fleurier, Bovet, Ressence, Czapek, Moritz
+    Grossmann, Armin Strom, Roger Dubuis, Arnold & Son and Chronoswiss returned
+    ZERO rows each. For a collectibles catalogue that is a conspicuous hole —
+    these are the names that carry the highest ASPs on Chrono24 and the ones the
+    price-gated where-to-buy routing now sends there.
+
+    Also deepens A. Lange & Sohne (10), Girard-Perregaux (7) and Ulysse Nardin
+    (7), each of which had one or two families represented and the rest missing.
+    Their existing references were pulled first — `get_curated_catalog()`
+    deduplicates by REFERENCE, keep-first, so a repeat disappears in silence.
+
+    Independents often use a model NAME rather than a numeric reference; where
+    no public reference exists the model name is used as the reference, which is
+    what the F.P. Journe rows above already do (CB, CS, OA). That keeps the
+    dedup key meaningful instead of inventing a number that looks authoritative.
+
+    Standing caveat: curated from knowledge, not a source feed. A wrong
+    reference is invisible to every gate here.
+    """
+    return [
+        # --- Greubel Forsey ---------------------------------------------------
+        ("Greubel Forsey", "Double Balancier Convexe", "Double Balancier Convexe",
+         "Manual In-House", "18k White Gold", "Limited Edition", 420000),
+        ("Greubel Forsey", "Tourbillon 24 Secondes Vision", "Tourbillon 24 Secondes Vision",
+         "Manual In-House", "18k White Gold", "Limited Edition", 480000),
+        ("Greubel Forsey", "GMT Sport", "GMT Sport",
+         "Manual In-House", "Titanium", "Limited Edition", 550000),
+        # --- De Bethune --------------------------------------------------------
+        ("De Bethune", "DB28 Kind of Blue", "DB28",
+         "Manual Cal. DB2115", "Titanium", "Limited Edition", 185000),
+        ("De Bethune", "DB25 Starry Varius", "DB25",
+         "Manual Cal. DB2105", "18k White Gold", "Limited Edition", 105000),
+        ("De Bethune", "DB Eight Titanium", "DB8",
+         "Manual Cal. DB2019", "Titanium", "Limited Edition", 95000),
+        # --- Urwerk ------------------------------------------------------------
+        ("Urwerk", "UR-105 CT Kryptonite", "UR-105 CT",
+         "Automatic Cal. 5.02", "Titanium", "Limited Edition", 78000),
+        ("Urwerk", "UR-210 Black Platinum", "UR-210",
+         "Automatic Cal. 7.10", "Platinum", "Limited Edition", 165000),
+        ("Urwerk", "UR-100V Blue Planet", "UR-100V",
+         "Automatic Cal. 12.01", "Titanium", "Limited Edition", 68000),
+        # --- Laurent Ferrier ---------------------------------------------------
+        ("Laurent Ferrier", "Galet Classic Micro-Rotor", "Galet Classic",
+         "Automatic Cal. LF229.01", "18k White Gold", "Current Production", 62000),
+        ("Laurent Ferrier", "Sport Auto 40", "Sport Auto 40",
+         "Automatic Cal. LF270.01", "Stainless Steel", "Current Production", 58000),
+        # --- Voutilainen -------------------------------------------------------
+        ("Voutilainen", "Vingt-8", "Vingt-8",
+         "Manual Cal. 28", "18k White Gold", "Limited Edition", 195000),
+        ("Voutilainen", "28ti", "28ti",
+         "Manual Cal. 28", "Titanium", "Limited Edition", 240000),
+        # --- Akrivia (Rexhep Rexhepi) -----------------------------------------
+        ("Akrivia", "Chronometre Contemporain II", "RRCC II",
+         "Manual In-House", "Platinum", "Limited Edition", 320000),
+        ("Akrivia", "Chronometre Antimagnetique", "RRCA",
+         "Manual In-House", "Stainless Steel", "Limited Edition", 280000),
+        # --- Parmigiani Fleurier ----------------------------------------------
+        ("Parmigiani Fleurier", "Tonda PF Micro-Rotor", "PFC914-1020001-100182",
+         "Automatic Cal. PF703", "Stainless Steel", "Current Production", 24500),
+        ("Parmigiani Fleurier", "Tonda PF GMT Rattrapante", "PFC905-1020001-100182",
+         "Automatic Cal. PF051", "Stainless Steel", "Current Production", 34000),
+        ("Parmigiani Fleurier", "Toric Chronometre", "PFC423-1200300-HA1441",
+         "Manual Cal. PF780", "18k Rose Gold", "Current Production", 42000),
+        # --- Bovet --------------------------------------------------------------
+        ("Bovet", "Recital 22 Grand Recital", "R22",
+         "Manual Cal. 17DM02-HU", "18k Red Gold", "Limited Edition", 480000),
+        ("Bovet", "Virtuoso VIII Chapter Two", "Virtuoso VIII",
+         "Manual Cal. 17BM02AI22J", "18k Red Gold", "Limited Edition", 92000),
+        # --- Ressence ----------------------------------------------------------
+        ("Ressence", "Type 1 Squared", "Type 1 Squared",
+         "Automatic ROCS 1", "Titanium", "Current Production", 24000),
+        ("Ressence", "Type 3 BB", "Type 3",
+         "Automatic ROCS 3", "Titanium", "Current Production", 42000),
+        ("Ressence", "Type 5 Night Blue", "Type 5",
+         "Automatic ROCS 5", "Titanium", "Current Production", 39000),
+        # --- Czapek -------------------------------------------------------------
+        ("Czapek", "Antarctique Terre Adelie", "Antarctique",
+         "Automatic Cal. SXH5", "Stainless Steel", "Current Production", 21000),
+        ("Czapek", "Quai des Bergues No 33bis", "Quai des Bergues",
+         "Manual Cal. SXH3", "18k Rose Gold", "Limited Edition", 48000),
+        # --- Moritz Grossmann ---------------------------------------------------
+        ("Moritz Grossmann", "Benu Power Reserve", "Benu",
+         "Manual Cal. 100.1", "18k Rose Gold", "Current Production", 32000),
+        ("Moritz Grossmann", "Atum Pure M", "Atum",
+         "Manual Cal. 201.0", "18k White Gold", "Current Production", 28000),
+        # --- Armin Strom --------------------------------------------------------
+        ("Armin Strom", "Mirrored Force Resonance", "Mirrored Force Resonance",
+         "Manual Cal. ARF15", "Stainless Steel", "Limited Edition", 68000),
+        ("Armin Strom", "Gravity Equal Force", "Gravity Equal Force",
+         "Automatic Cal. AMR13", "Stainless Steel", "Current Production", 19500),
+        # --- Roger Dubuis -------------------------------------------------------
+        ("Roger Dubuis", "Excalibur Spider Huracan", "RDDBEX0748",
+         "Manual Cal. RD630", "Titanium", "Limited Edition", 78000),
+        ("Roger Dubuis", "Excalibur Double Tourbillon", "RDDBEX0396",
+         "Manual Cal. RD100", "18k Rose Gold", "Limited Edition", 195000),
+        # --- Arnold & Son --------------------------------------------------------
+        ("Arnold & Son", "Perpetual Moon 41.5", "1GLAR.U01A.C122A",
+         "Manual Cal. A&S1512", "Stainless Steel", "Current Production", 32000),
+        ("Arnold & Son", "Ultrathin Tourbillon", "1UTAS.B01A.C112A",
+         "Manual Cal. A&S8200", "18k Rose Gold", "Limited Edition", 68000),
+        # --- Chronoswiss ---------------------------------------------------------
+        ("Chronoswiss", "Regulator Classic 40", "CH-8773",
+         "Automatic Cal. C.299", "Stainless Steel", "Current Production", 8900),
+        ("Chronoswiss", "Open Gear ReSec Flying Grand Regulator", "CH-6925",
+         "Automatic Cal. C.6000", "Stainless Steel", "Limited Edition", 13500),
+
+        # --- A. Lange & Sohne depth ---------------------------------------------
+        ("A. Lange & Sohne", "Odysseus Steel", "363.179",
+         "Automatic Cal. L155.1", "Stainless Steel", "Current Production", 78000),
+        ("A. Lange & Sohne", "Datograph Perpetual Tourbillon", "740.036",
+         "Manual Cal. L952.2", "Platinum", "Limited Edition", 340000),
+        ("A. Lange & Sohne", "Zeitwerk Date", "148.038",
+         "Manual Cal. L043.8", "18k White Gold", "Limited Edition", 120000),
+        ("A. Lange & Sohne", "Lange 1 Time Zone", "136.021",
+         "Manual Cal. L141.1", "18k Rose Gold", "Current Production", 62000),
+        ("A. Lange & Sohne", "Saxonia Outsize Date", "381.026",
+         "Manual Cal. L086.8", "18k White Gold", "Current Production", 32000),
+        ("A. Lange & Sohne", "1815 Rattrapante Perpetual Calendar", "421.032",
+         "Manual Cal. L101.1", "Platinum", "Limited Edition", 280000),
+        # --- Girard-Perregaux depth ----------------------------------------------
+        ("Girard-Perregaux", "Tourbillon with Three Flying Bridges", "99295-21-000-BA6A",
+         "Automatic Cal. GP09400", "Titanium", "Limited Edition", 245000),
+        ("Girard-Perregaux", "Laureato 38mm Steel", "81005-11-431-11A",
+         "Automatic Cal. GP01800", "Stainless Steel", "Current Production", 12500),
+        ("Girard-Perregaux", "Casquette 2.0", "80491-21-001-CD3A",
+         "Quartz Cal. GP03980", "Ceramic", "Limited Edition", 4900),
+        # --- Ulysse Nardin depth --------------------------------------------------
+        ("Ulysse Nardin", "Freak S Nomad", "2513-500/2A-NOMAD",
+         "Manual Cal. UN-251", "Titanium", "Limited Edition", 145000),
+        ("Ulysse Nardin", "Diver X Skeleton 44mm", "3713-260-3A/03",
+         "Automatic Cal. UN-372", "Titanium", "Limited Edition", 42000),
+        ("Ulysse Nardin", "Blast Moonstruck", "1063-400/MSK",
+         "Automatic Cal. UN-106", "Titanium", "Limited Edition", 98000),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Return the full curated watch catalog as a list of dicts.
 
@@ -4339,6 +4479,7 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_timex_expansion2_watches())
     all_tuples.extend(_citizen_expansion2_watches())
     all_tuples.extend(_haute_horlogerie_depth_watches())
+    all_tuples.extend(_independent_haute_horlogerie_watches())
 
     catalog: list[dict] = []
     for brand, model, reference, movement, material, watch_type, price_eur in all_tuples:
