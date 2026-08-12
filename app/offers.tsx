@@ -18,7 +18,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, RefreshControl, Alert, Animated,
-  Linking, TextInput, ScrollView,
+  Linking, TextInput, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,7 +39,8 @@ import { useToast } from '@/components/Toast';
 import { showActionSheet } from '@/hooks/useActionSheetPicker';
 import { formatPrice } from '@/lib/format';
 import { collectorsApi } from '@/api/collectorsApi';
-import type { P2POffer, P2PCarrier } from '@/api/p2pApi';
+import { offerNeedsMyAction, type P2POffer, type P2PCarrier } from '@/api/p2pApi';
+import { timeAgo } from '@/lib/timeAgo';
 import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import logger from '@/utils/logger';
 
@@ -86,7 +87,31 @@ function OffersScreen() {
     async () => (await collectorsApi.p2pListOffers(role))?.offers ?? [],
     [role],
   );
-  const offers = useMemo(() => data ?? [], [data]);
+  // Ordered, not raw. `/listings` badges "N offers need you" and this is the
+  // screen that badge opens — it used to hand over an undifferentiated list, so
+  // the user was told a number and then had to read every card's status line to
+  // find which ones it meant. `offerNeedsMyAction` is the SAME helper the badge
+  // counts with (src/api/p2pApi.ts), deliberately, so the two cannot disagree
+  // about what "needs you" means.
+  //
+  // Four ranks: your move → live trade → waiting on them → finished. Newest
+  // first inside a rank; a null `created_at` sorts last rather than throwing
+  // the order away.
+  const offers = useMemo(() => {
+    const rank = (o: P2POffer) => {
+      if (offerNeedsMyAction(o)) return 0;
+      if (o.status === 'accepted' || o.status === 'shipped') return 1;
+      if (o.status === 'pending' || o.status === 'countered') return 2;
+      return 3;
+    };
+    const at = (o: P2POffer) => (o.created_at ? Date.parse(o.created_at) : 0);
+    return [...(data ?? [])].sort((a, b) => rank(a) - rank(b) || at(b) - at(a));
+  }, [data]);
+
+  const needsAction = useMemo(
+    () => offers.reduce((n, o) => (offerNeedsMyAction(o) ? n + 1 : n), 0),
+    [offers],
+  );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -267,6 +292,16 @@ function OffersScreen() {
     const isSeller = !o.i_am_buyer;
     const open = o.status === 'pending' || o.status === 'countered';
     const live = o.status === 'accepted' || o.status === 'shipped';
+    const mine = offerNeedsMyAction(o);
+    // Declined, withdrawn, expired, and completed-and-graded are all read-only
+    // history. They stay in the list — a trade you can no longer act on is
+    // still a trade you may want to look up — but they must not carry the same
+    // weight as a live negotiation, or a screen of six dead offers and one open
+    // one looks like seven equally urgent things.
+    // `mine` wins: a completed trade you have not graded is terminal by status
+    // but still needs you, and dimming it while stamping YOUR MOVE on it says
+    // both things at once.
+    const done = !open && !live && !mine;
 
     // Left edge stripe carries the role at a glance while scanning, so you do
     // not have to read the pill on every card. Same two semantic colours as the
@@ -279,6 +314,18 @@ function OffersScreen() {
           borderColor: colors.border,
           borderLeftWidth: 3,
           borderLeftColor: o.i_am_buyer ? colors.info : colors.success,
+        },
+        // Emphasis by shadow and opacity, not by colour: the stripe still has
+        // to read as the same role token, and dropping the card's elevation is
+        // what actually makes the live ones sit forward.
+        done && styles.cardDone,
+        mine && {
+          borderColor: colors.accent,
+          // Re-asserted: `borderColor` sets all four edges, and losing the left
+          // one here would erase the buying/selling signal on exactly the cards
+          // a user looks at hardest.
+          borderLeftColor: o.i_am_buyer ? colors.info : colors.success,
+          ...shadow.card,
         },
       ]}>
         <View style={styles.rowTop}>
@@ -315,6 +362,14 @@ function OffersScreen() {
               with proper light/dark/high-contrast variants, so nothing is
               hardcoded, and the brand accent stays reserved for CTAs and confirm
               ticks rather than competing with role. */}
+          {/* Leads the row when it applies. The accent is the same one the
+              action buttons use — "this is yours to move" and "this is the
+              button that moves it" being one colour is the point. */}
+          {mine ? (
+            <View style={[styles.movePill, { backgroundColor: colors.accent }]}>
+              <Text style={[styles.movePillText, { color: colors.accentText }]}>YOUR MOVE</Text>
+            </View>
+          ) : null}
           <View style={[
             styles.rolePill,
             { backgroundColor: o.i_am_buyer ? colors.infoBg : colors.successBg },
@@ -329,6 +384,11 @@ function OffersScreen() {
           <Text style={[styles.status, { color: colors.muted }]}>
             {STATUS_LABEL[o.status] ?? o.status}
             {o.counter_count > 0 ? ` · ${o.counter_count} counter${o.counter_count === 1 ? '' : 's'}` : ''}
+            {/* An offer with no age can't be judged: "Awaiting seller" reads
+                very differently at two hours than at three weeks, and the
+                server has sent `created_at` all along without anything
+                rendering it. Guarded — the field is nullable. */}
+            {o.created_at ? ` · ${timeAgo(o.created_at)}` : ''}
           </Text>
         </View>
 
@@ -398,6 +458,20 @@ function OffersScreen() {
         ) : null}
 
         <View style={styles.actions}>
+          {/* Every action here is a round trip plus a refetch of the whole
+              list. Until now the only feedback was `disabled` dimming each
+              button to 50%, which reads as "these went dead", not as "this is
+              working" — the two look identical and one of them is alarming.
+              The awaits are bounded by httpClient's request timeout, so this
+              spinner cannot outlive the call (docs/ui-playbook.md, "any await
+              between a spinner going up and coming down must be bounded"). */}
+          {busy ? (
+            <View style={styles.working}>
+              <ActivityIndicator size="small" color={colors.accent} />
+              <Text style={[styles.workingText, { color: colors.muted }]}>Working…</Text>
+            </View>
+          ) : null}
+
           {/* Seller decides on an open offer. */}
           {isSeller && open ? (
             <>
@@ -528,7 +602,11 @@ function OffersScreen() {
         </AnimatedPressable>
       </View>
     );
-  }, [act, busyId, colors, onCounter, onGrade, openTracking, router, settings.currency, settings.numberLocale]);
+    // `settings.hapticsEnabled` is in here because the Decline confirmation
+    // fires a haptic directly. Without it a member who turns haptics off keeps
+    // feeling that one tap until something else re-renders the row.
+  }, [act, busyId, colors, onCounter, onGrade, openTracking, router,
+      settings.currency, settings.numberLocale, settings.hapticsEnabled]);
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -578,6 +656,15 @@ function OffersScreen() {
           })}
         </View>
       </Animated.View>
+
+      {/* Reconciles with the marketplace badge. Tapping "3" and landing on a
+          screen that never says three again is what made the badge feel
+          untrustworthy; this is the same count, from the same helper. */}
+      {!loading && !error && needsAction > 0 ? (
+        <Text style={[styles.needsLine, { color: colors.accent }]}>
+          {needsAction} {needsAction === 1 ? 'offer needs' : 'offers need'} you
+        </Text>
+      ) : null}
 
       {loading && !refreshing ? (
         <View style={styles.pad}>
@@ -836,6 +923,14 @@ const styles = StyleSheet.create({
     padding: 16, marginBottom: 12, gap: 10,
     ...shadow.card,
   },
+  // History, not a live negotiation: flat, and one step back. Kept above 0.6
+  // so the text stays legible against the card — this is de-emphasis, not a
+  // disabled state, and the card is still readable and still scrolls.
+  cardDone: { opacity: 0.68, shadowOpacity: 0, elevation: 0 },
+  needsLine: {
+    fontSize: textToken.md, fontWeight: fontWeight.bold,
+    paddingHorizontal: 16, paddingBottom: 8, marginTop: -4,
+  },
   rowTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   title: { flex: 1, fontSize: textToken.lg, fontWeight: fontWeight.semibold, lineHeight: 22 },
   // `lg`, not `xl` (2026-08-11). At 20/extrabold the figure dominated the card
@@ -851,6 +946,10 @@ const styles = StyleSheet.create({
   // radius matches the segmented control at the top of the same screen, where
   // `radius.xs` (6) read as a stray rounded rectangle.
   rolePill: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: radius.pill },
+  // Filled where the role pill is tinted — it has to out-rank the role, which
+  // is context, not a call to act.
+  movePill: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: radius.pill },
+  movePillText: { fontSize: textToken.sm, fontWeight: fontWeight.extrabold, letterSpacing: 0.4 },
   rolePillText: { fontSize: textToken.sm, fontWeight: fontWeight.bold, letterSpacing: 0.3 },
   status: { fontSize: textToken.md, fontWeight: fontWeight.medium, flexShrink: 1 },
   message: { fontSize: textToken.md, fontStyle: 'italic', lineHeight: 20 },
@@ -864,6 +963,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end', alignItems: 'center',
     marginTop: 2,
   },
+  // Left of the right-aligned buttons, so it explains the dimming beside it.
+  working: { flexDirection: 'row', alignItems: 'center', gap: 7, marginRight: 'auto' },
+  workingText: { fontSize: textToken.sm },
   btn: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 9, borderRadius: radius.md },
   btnGhost: { borderWidth: 1, backgroundColor: 'transparent' },
   // No border and no fill: the third action should read as the way out, not as

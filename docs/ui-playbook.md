@@ -481,3 +481,59 @@ Two defects the flat pass left behind, both worth grepping for elsewhere:
 thing rule 1 bans. Offers was brought up to the floor; listings has not been.
 Until it is, "match the rest of the app" points in two directions on these two
 screens.
+
+## A count in a badge is a promise the destination has to keep (2026-08-13)
+
+`/listings` renders an offers badge whose number comes from
+`countOffersNeedingAction` (`src/api/p2pApi.ts`). Tapping it opened
+`app/offers.tsx` — which never called that helper. The screen listed every
+offer in server order, all rendered identically, so a member was told "3 need
+you" and then had to read the status line on each card to work out which three.
+The helper existed, the badge used it, and the destination didn't.
+
+That is the [[learning_complete_feature_reachable_from_nowhere]] shape at UI
+scale: correct code, connected to nothing on the screen where it matters.
+
+**The rule: the destination of a count uses the same predicate the count does.**
+Not a re-implementation of it, the same exported function — a second copy of
+"needs my action" drifts from the badge and then the badge is a lie.
+
+What that looked like here:
+
+- **Order by rank, not by recency alone.** Your move → live trade → waiting on
+  them → finished, newest first inside each rank. Recency-only ordering buries
+  a decision under six things you can't act on.
+- **Mark the rows, don't just move them.** A `YOUR MOVE` pill in `colors.accent`
+  with `colors.accentText`, the same accent the action buttons carry, so "this
+  is yours to move" and "this is the button that moves it" read as one thing.
+- **Restate the count on arrival.** "2 offers need you" under the segmented
+  control, from the same helper. Landing on a screen that never mentions the
+  number again is what made the badge feel untrustworthy.
+- **Recede what's finished.** `opacity: 0.68` and no shadow for terminal
+  offers. De-emphasis, not disabling — the card stays readable, it just stops
+  competing.
+
+### Two traps in that de-emphasis, both of which I shipped and had to fix
+
+**A card can be terminal by status and still need you.** A completed trade you
+have not graded yet is `status: 'completed'` — terminal — and `can_grade`, which
+means it needs action. Written as `!open && !live` it rendered dimmed history
+*and* an accent YOUR MOVE pill: two contradictory claims on one card. Needing
+action has to win: `!open && !live && !mine`.
+
+**`borderColor` is a four-edge shorthand.** The role stripe is
+`borderLeftColor`, and a highlight style applied later in the array set
+`borderColor` — which addresses the left edge too. RN's edge-specific props do
+take precedence, but relying on that is invisible to the next reader and one
+refactor away from erasing the buying/selling signal on exactly the cards a
+user studies hardest. Re-assert the stripe in the same object.
+
+### Feedback during an action is not the same as disabling the buttons
+
+Every action on that screen is a request plus a refetch of the whole list, and
+the only feedback was `AnimatedPressable`'s `disabled` styling — every button on
+the card at 50% opacity. "These went dead" and "this is working" looked
+identical, and one of them is alarming. A labelled `ActivityIndicator` in the
+action row says which it is. The awaits are bounded by httpClient's request
+timeout, per the "Loading states" rule above — a spinner that can outlive its
+call is the bug that rule exists for.
