@@ -34,11 +34,29 @@ _VINYL_MUSIC_CATEGORIES = {"vinyl_records", "anime_soundtrack", "anime_ost_vinyl
 _SNEAKER_STREETWEAR_CATEGORIES = {"sneakers", "designer_toys"}
 _LEGO_CATEGORIES = {"lego"}
 
-# High-value categories where a general classifieds listing is not a credible
-# place to buy, and recommending one damages trust more than an empty rail
-# would. See _eligible_sources for the reasoning per category.
-_LUXURY_NO_GENERAL_MARKETPLACE = {"watches", "jewellery"}
-_LUXURY_EBAY_ONLY = {"pens"}
+# Categories where a HIGH-VALUE example stops being credibly sold on a general
+# classifieds site. The category alone is not the test — price is.
+#
+# A EUR 45 Casio and a EUR 184,194 Rolex Cosmograph Daytona Le Mans are both
+# "watches", and the first genuinely trades on eBay every day. Gating the whole
+# category would strip the honest answer from the cheap end to protect the
+# expensive end. So the rule is: these categories, ABOVE the threshold.
+_HIGH_VALUE_CATEGORIES = {"watches", "jewellery", "pens"}
+
+# Where "expensive enough that provenance beats reach" starts, in EUR.
+# Above this, an authentication guarantee IS the product: Chrono24 holds funds
+# until the buyer authenticates, Catawiki has expert vetting per lot. Below it,
+# eBay's reach is worth more than a specialist's assurance.
+_HIGH_VALUE_EUR = 1000.0
+
+# Sources offered instead, per category, once past the threshold.
+_HIGH_VALUE_SOURCES = {
+    "watches": ("chrono24", "catawiki", "google"),
+    "jewellery": ("catawiki", "google"),
+    # Pens keep eBay even at the top end — a grail Montblanc or Nakaya is
+    # genuinely traded there, which is not true of a six-figure watch.
+    "pens": ("catawiki", "ebay", "google"),
+}
 _FIGURE_CATEGORIES = {"anime_figures", "hot_toys", "gunpla", "bandai_premium", "one_piece", "ghibli", "vtuber"}
 _JP_CATEGORIES = {
     "anime_figures", "hot_toys", "gunpla", "bandai_premium", "one_piece",
@@ -159,18 +177,17 @@ _CATEGORY_PROFILES: dict[str, _CategoryProfile] = {
     "theme_park": _CategoryProfile(ebay_sacat="1369"),
     "loungefly": _CategoryProfile(ebay_sacat="169291", suffix="Loungefly"),
     # --- Lifestyle ----------------------------------------------------------
-    # Luxury: specialist first, and no general classifieds at all. The
-    # ebay_sacat is kept for reference but eBay is not eligible here, so it is
-    # never used — see _LUXURY_NO_GENERAL_MARKETPLACE.
-    "watches": _CategoryProfile(ebay_sacat="31387", sources=("chrono24", "catawiki", "google")),
-    "jewellery": _CategoryProfile(sources=("catawiki", "google")),
+    # Ordering covers BOTH paths: below the high-value threshold the specialist
+    # names are simply not eligible and drop out, leaving eBay/Mercari; above
+    # it, the general ones drop out. One tuple, filtered by _eligible_sources.
+    "watches": _CategoryProfile(
+        ebay_sacat="31387", sources=("chrono24", "catawiki", "ebay", "mercari", "google")),
+    "jewellery": _CategoryProfile(sources=("catawiki", "ebay", "mercari", "google")),
     "vintage_cameras": _CategoryProfile(ebay_sacat="15230"),
     "whiskey": _CategoryProfile(ebay_sacat="13916"),
     "fragrances": _CategoryProfile(ebay_sacat="180345"),
     "sneakers": _CategoryProfile(ebay_sacat="15709", sources=("stockx", "ebay", "mercari")),
-    # eBay stays for pens (a EUR 400-900 Montblanc genuinely trades there),
-    # Catawiki leads for the vintage/limited end, Mercari is dropped.
-    "pens": _CategoryProfile(ebay_sacat="966", sources=("catawiki", "ebay")),
+    "pens": _CategoryProfile(ebay_sacat="966", sources=("catawiki", "ebay", "mercari", "google")),
 }
 
 _FALLBACK_PROFILE = _CategoryProfile()
@@ -361,37 +378,40 @@ _SOURCE_LABELS = {
 }
 
 
-def _eligible_sources(cat: str, rgn: str) -> set[str]:
-    """Which marketplaces make sense at all for this category/region.
+def _is_high_value(cat: str, value_eur: Optional[float]) -> bool:
+    """A high-value example of a category where provenance beats reach.
 
-    eBay and Mercari are the floor for MOST categories, not all of them. A
-    EUR 184,194 Rolex Cosmograph Daytona Le Mans is not sold on a general
-    classifieds site, and offering one as "where to buy" is worse than offering
-    nothing: it attaches our recommendation to the venue where that price point
-    is least verifiable. High-value goods are exactly where a marketplace's
-    authentication guarantee IS the product.
+    PRICE is the test, not the category. Unknown value falls through to the
+    normal path deliberately: most watches, pens and jewellery in a collection
+    are ordinary, so guessing "luxury" on missing data would strip eBay from
+    the common case to protect the rare one.
+    """
+    return (
+        cat in _HIGH_VALUE_CATEGORIES
+        and value_eur is not None
+        and value_eur >= _HIGH_VALUE_EUR
+    )
 
-    So the floor is conditional:
-      watches, jewellery -> neither. Chrono24 (watch-specialist, escrow) and
-                            Catawiki (curated auction house, expert-vetted)
-                            replace them, with Google as the pointer to the
-                            brand and its authorised dealers.
-      pens              -> eBay stays, Mercari goes. A Montblanc 149 at
-                            EUR 400-900 is genuinely traded on eBay; Mercari
-                            adds nothing at that price and carries the same
-                            authentication gap.
 
-    Both replacements already have taggers in app/lib/affiliate.py
-    (CATAWIKI_AFFILIATE_ID ~7-10%, CHRONO24_AFFILIATE_ID), so this is not a
+def _eligible_sources(cat: str, rgn: str, value_eur: Optional[float] = None) -> set[str]:
+    """Which marketplaces make sense at all for this category/region/price.
+
+    eBay and Mercari are the floor for almost everything — reach is genuinely
+    what a buyer wants for a EUR 30 Funko. They stop being the right answer at
+    the top of a few categories: offering a general classifieds search for a
+    EUR 184,194 Daytona is worse than offering nothing, because it attaches our
+    recommendation to the venue where that price point is least verifiable.
+    Above the threshold an authentication guarantee IS the product.
+
+    Chrono24 and Catawiki already have taggers in app/lib/affiliate.py
+    (CATAWIKI_AFFILIATE_ID ~7-10%, CHRONO24_AFFILIATE_ID), so the swap is not a
     revenue sacrifice — an unset env var emits the link untagged and working,
     per docs/AFFILIATE_SWITCH_ON.md.
     """
-    if cat in _LUXURY_NO_GENERAL_MARKETPLACE:
-        return {"chrono24", "catawiki", "google"} if cat == "watches" else {"catawiki", "google"}
+    if _is_high_value(cat, value_eur):
+        return set(_HIGH_VALUE_SOURCES[cat])
 
-    eligible = {"ebay"} if cat in _LUXURY_EBAY_ONLY else {"ebay", "mercari"}
-    if cat in _LUXURY_EBAY_ONLY:
-        eligible.add("catawiki")
+    eligible = {"ebay", "mercari"}
     if cat in _TCG_CATEGORIES:
         eligible.add("cardmarket")
         if rgn != "japan":
@@ -421,6 +441,16 @@ async def get_affiliate_links(
     max_price_currency: str = Query(
         "EUR", max_length=3, description="Currency of max_price; converted per destination site"
     ),
+    item_value_eur: Optional[float] = Query(
+        None,
+        gt=0,
+        description=(
+            "The item's own estimated market value in EUR. Distinct from max_price "
+            "(the buyer's ceiling): this describes the THING. Above a threshold, "
+            "watches/jewellery/pens route to authenticated specialists instead of "
+            "general classifieds. Omit and the normal sources are returned."
+        ),
+    ),
     user_id: Optional[str] = Depends(get_optional_user_id),
 ):
     """Build affiliate-tagged marketplace search URLs.
@@ -444,7 +474,7 @@ async def get_affiliate_links(
         await _to_site_currency(max_price, max_price_currency, "USD") if max_price else None
     )
 
-    eligible = _eligible_sources(cat, rgn) & _SEARCHABLE_SOURCES
+    eligible = _eligible_sources(cat, rgn, item_value_eur) & _SEARCHABLE_SOURCES
 
     builders = {
         "ebay": lambda: _build_ebay_search_url(q, profile.ebay_sacat, usd_cap),
