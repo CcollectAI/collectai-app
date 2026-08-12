@@ -11,7 +11,6 @@ and also tracked in-memory for fast access.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import socket
 import time
@@ -271,18 +270,34 @@ async def _async_persist_run(
     # `host` on EVERY row, not just error rows: the watchdog scopes the
     # prod failure ratio to rows this machine recorded, and a row with no
     # host at all is indistinguishable from a legacy row.
-    meta: dict = {"host": _HOST}
-    if error_repr:
-        meta["error_repr"] = error_repr
+    #
+    # BUILT SERVER-SIDE, and it must stay that way. `db.py:71` registers a
+    # jsonb codec with `encoder=json.dumps` on this pool, so passing a
+    # json.dumps(...) STRING to a `$n::jsonb` parameter is encoded twice and
+    # lands as a jsonb *string* — `"{\"host\": \"ip-…\"}"` with
+    # jsonb_typeof = 'string' — instead of an object. Every `metadata->>'host'`
+    # and `metadata->>'error_repr'` then reads NULL, silently.
+    #
+    # That is the same defect as `attributes_json = json.dumps(...)` against
+    # category_items' `jsonb_typeof(...) = 'object'` CHECK, and it shipped here
+    # on 2026-08-12 within an hour of fixing that one. It survived a
+    # transaction-rollback test because the test used a BARE asyncpg
+    # connection, which has no codec and parses the string correctly — the
+    # app's pool does not. Prove jsonb writes through a pool built by
+    # `app.db`, never through a plain connect().
     async with pool.acquire() as conn:
         await conn.execute(
             """
             INSERT INTO public.worker_runs (worker_name, status, metadata)
-            VALUES ($1, $2, $3::jsonb)
+            VALUES ($1, $2,
+                    jsonb_build_object('host', $3::text)
+                    || CASE WHEN $4::text IS NULL THEN '{}'::jsonb
+                            ELSE jsonb_build_object('error_repr', $4::text) END)
             """,
             worker_name,
             status,
-            json.dumps(meta),
+            _HOST,
+            error_repr,
         )
 
 
