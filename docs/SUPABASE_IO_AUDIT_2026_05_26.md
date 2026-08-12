@@ -401,9 +401,34 @@ the same relief. `preflight_schema_lock` still PASSes (views aren't in the lock)
 
     140.5 s -> 72.7 s   (measured REFRESH on the live DB)
 
-**This is relief, not the cure.** 72.7 s against a 120 s ceiling is a 47 s margin
-on a table that went 56.7 s → 140.5 s in under three months. The durable fix is
-to stop scanning `market_hits` once per item and aggregate it ONCE:
+That was relief, not the cure — 72.7 s against a 120 s ceiling is a 47 s margin
+on a table that went 56.7 s → 140.5 s in under three months. **The cure was
+applied the same day** (`20260812b_best_comp_aggregate_once.sql`): stop scanning
+`market_hits` once per item and aggregate it ONCE.
+
+    140.5 s  ->  72.7 s  (view fix)  ->  7.6 s  (this)
+
+The swap avoided `DROP … CASCADE` entirely: build the new matview alongside,
+repoint the three dependents with `CREATE OR REPLACE VIEW` (in place, so their
+96 grants never move), drop the old, then `RENAME` the new into its place. View
+dependencies are by OID, so after the rename the dependents reference the
+original name again and pg_cron job 16's command text needs no edit. All of it
+in one transaction.
+
+**Two things the dry run caught that the plan did not anticipate:**
+
+1. **Recreating a relation RESETS its ACL.** The fresh matview picked up
+   Supabase's schema DEFAULT PRIVILEGES and came out with `anon=arwdDxtm` and
+   `authenticated=arwdDxtm` — rights the original never had, on a relation that
+   *cannot carry RLS*, in the PostgREST-exposed `public` schema. A performance
+   fix would have silently granted anonymous read. An explicit `REVOKE` is in
+   the migration, and the final ACL is diffed against the original
+   programmatically: 0 added, 0 removed. **Never eyeball an ACL after a
+   recreate.**
+2. The old matview carried **two identical unique indexes** on `(item_id)`, both
+   maintained on every refresh. One now.
+
+The definition that replaced it:
 
 ```sql
 SELECT i.id AS item_id, b.hit_id
@@ -416,15 +441,14 @@ JOIN (SELECT COALESCE(m.canonical_category, lower(mh.category)) AS canonical_cat
       GROUP BY 1) b ON b.canonical_category = i.canonical_category
 ```
 
-Measured **5.7 s (~25x)**, with an `EXCEPT` diff of **0 rows in both
-directions** against the current definition. It is not applied because it
-changes `mv_item_best_comp_canon` itself, and a matview cannot be replaced in
-place — `DROP … CASCADE` would take `v_category_comp_coverage`,
-`v_category_comp_coverage_canon` and `v_item_best_comp_full` with it, and those
-carry **96 grants** between them. The safe route, when someone wants the other
-20x: build `mv_item_best_comp_canon_v2` alongside, `CREATE OR REPLACE VIEW` the
-three dependents onto it (in place, so grants survive), `cron.alter_job(16, …)`,
-then drop the old one. Each step is independently reversible.
+`max(mh.id)` is exactly `ORDER BY id DESC LIMIT 1` for a `NOT NULL` bigint, and
+the inner join drops items-with-no-hits exactly as the LATERAL did. Equivalence
+was `EXCEPT`-diffed in **both directions (0 rows each way)** against the old
+definition over the same snapshot, before the swap.
+
+Verified after applying: `REFRESH … CONCURRENTLY` **7.6 s**, `preflight_schema_lock`,
+`preflight_rls_check` and `schema_drift_check` all PASS, ACL unchanged, three
+dependents still resolve to `mv_item_best_comp_canon` (no `_v2` left behind).
 
 ---
 
