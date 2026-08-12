@@ -108,7 +108,37 @@ BRAND_REF_PATTERNS: dict[str, re.Pattern] = {
     "Hublot": re.compile(r"^\d{3}\.[A-Z]{2}\.[\dA-Z.]{4,14}$", re.I),
     "Vostok": re.compile(r"^\d{6}$"),
     "Zodiac": re.compile(r"^ZO\d{4}$", re.I),
+    # Added 2026-08-13 after reading the medium-confidence tier per brand. These
+    # were all producing correct references that only missed 'high' because no
+    # grammar existed for the house — not because the extraction was wrong.
+    # Widening the grammar is the precise fix; blanket-promoting 'medium' would
+    # have taken the junk with it (Doxa "200T" is a model family, Seiko
+    # "SART013/SPB537" is two references joined by a slash).
+    "Orient Star": re.compile(r"^R[EK]-?[A-Z]{2}\d{4}[A-Z]$", re.I),
+    "Orient": re.compile(r"^R[AENK]-?[A-Z]{2}\d{4}[A-Z]$", re.I),
+    "Bulova": re.compile(r"^(\d{2}[A-Z]\d{3}|C\d{6})$", re.I),
+    "Certina": re.compile(r"^C\d{3}[\d.]{8,14}$", re.I),
+    "Doxa": re.compile(r"^\d{3}\.\d{2}\.\d{3}\.\d{2}$"),
+    "Steinhart": re.compile(r"^10\d-\d{4}$"),
+    "Mido": re.compile(r"^M\d{3}[\d.]{6,14}$", re.I),
+    "Rado": re.compile(r"^R\d{8}$", re.I),
+    "Frederique Constant": re.compile(r"^FC-\d{3}[A-Z0-9]{2,8}$", re.I),
+    "Alpina": re.compile(r"^AL-\d{3}[A-Z0-9]{2,8}$", re.I),
 }
+
+# Widenings of grammars that were too tight on the first pass. Kept separate so
+# the diff shows WHY each changed.
+BRAND_REF_PATTERNS.update({
+    # OCW-T2600, GMW-B5000EH-1JR, ECB-2200 — the original ^[A-Z]{1,3}-?\d{3,5}
+    # could not see a letter inside the numeric block.
+    "Casio": re.compile(r"^[A-Z]{2,4}-?[A-Z]?\d{3,5}[A-Z0-9\-]{0,10}$", re.I),
+    "G-Shock": re.compile(r"^[A-Z]{2,4}-?[A-Z]?\d{3,5}[A-Z0-9\-]{0,10}$", re.I),
+    # SRPF79K1 / SRPE33K1: 4 letters then only TWO digits then a K1 suffix.
+    "Seiko": re.compile(r"^S[A-Z]{2,3}\d{2,4}[A-Z]?\d?$", re.I),
+    "Grand Seiko": re.compile(r"^S[A-Z]{2,4}\d{2,4}[A-Z]?\d?$", re.I),
+    # 174.8.90.S and 344.2.37.S alongside the Q-prefixed form.
+    "Jaeger-LeCoultre": re.compile(r"^(Q?\d{6,7}|\d{3}\.\d\.\d{2}\.[A-Z]|Q\d{3}[A-Z]\d{3})$", re.I),
+})
 
 # Generic fallback: reference-SHAPED, but unverified against a brand grammar.
 GENERIC_REF = re.compile(r"^[A-Z0-9][A-Z0-9./\-]{3,24}$", re.I)
