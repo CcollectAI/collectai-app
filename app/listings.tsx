@@ -254,16 +254,28 @@ function ListingCard({
         {/* Heart = save, eye = watch with a target price. Not on your OWN
             listing: saving your own item means nothing, and the `watchers`
             count above deliberately excludes the seller's own watchlist row,
-            so letting a seller watch themselves would make that number lie. */}
+            so letting a seller watch themselves would make that number lie.
+
+            The wrapper is what fixes the cluster to the BOTTOM-RIGHT corner
+            rather than letting it float wherever the text above happens to
+            end. Four rows above it are conditional or variable-height — a
+            1-line vs 2-line title, "n watching", the seller name, the "You"
+            pill — so in a 2-up grid the two tiles beside each other put their
+            hearts at different heights, which reads as misalignment even
+            though each tile is internally correct. `marginTop: 'auto'` pushes
+            the cluster to the floor of the body (see `cardBody.flex`) so it
+            lands on one line across the row. */}
         {!listing.is_mine ? (
-          <FavoriteWatchButtons
-            listingId={listing.id}
-            canonicalKey={listing.canonical_key}
-            category={listing.category}
-            price={listing.price}
-            currency={listing.currency}
-            title={listing.title}
-          />
+          <View style={styles.cardActions}>
+            <FavoriteWatchButtons
+              listingId={listing.id}
+              canonicalKey={listing.canonical_key}
+              category={listing.category}
+              price={listing.price}
+              currency={listing.currency}
+              title={listing.title}
+            />
+          </View>
         ) : null}
       </View>
     </AnimatedPressable>
@@ -1234,7 +1246,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6, paddingVertical: 3, borderRadius: radius.xs,
   },
   stockTagText: { fontSize: 9, fontWeight: fontWeight.semibold },
-  cardBody: { padding: 11, gap: 4 },
+  // `flex: 1` is what gives the action cluster below a floor to sit on. A
+  // FlatList `columnWrapperStyle` row is `alignItems: 'stretch'` by default, so
+  // the two tiles in a row are ALREADY the same height — the shorter one just
+  // left its spare height as dead space under the text. Claiming it here means
+  // `cardActions.marginTop: 'auto'` has somewhere to push to.
+  cardBody: { padding: 11, gap: 4, flex: 1 },
   // Title is secondary to price: a buyer scanning a grid decides on price
   // first, then reads the name to confirm. Muted-weight title, heavy price.
   cardTitle: { fontSize: textToken.sm, fontWeight: fontWeight.medium, lineHeight: 16 },
@@ -1245,6 +1262,13 @@ const styles = StyleSheet.create({
   cardSellerName: { flex: 1, fontSize: 11 },
   cardMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
   cardMeta: { fontSize: textToken.xs, flexShrink: 1, letterSpacing: 0.2 },
+  // Bottom-right, on every tile, regardless of what the tile says above.
+  // `marginTop: 'auto'` = pinned to the floor of `cardBody`; `alignSelf:
+  // 'flex-end'` = pinned to the right edge. The negative right margin pulls the
+  // 32pt touch box's padding back out to the tile edge so the GLYPH lines up
+  // with the text's 11pt gutter instead of sitting ~6pt inboard of it — the
+  // touch target itself is untouched, and hitSlop still extends past it.
+  cardActions: { marginTop: 'auto', alignSelf: 'flex-end', paddingTop: 2, marginRight: -5 },
   youPill: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: radius.xs },
   youPillText: { fontSize: textToken.xs, fontWeight: fontWeight.bold },
   empty: { alignItems: 'center', paddingHorizontal: 32, paddingTop: 56, gap: 10 },
