@@ -355,7 +355,9 @@ _SOURCE_LABELS = {
     "amiami": "AmiAmi",
     "chrono24": "Chrono24",
     "catawiki": "Catawiki",
-    "google": "Search the web",
+    # Labels are rendered as "Find on {label}", so this must be a NOUN, not a
+    # verb phrase — "Find on Search the web" shipped for one deploy.
+    "google": "Google Shopping",
 }
 
 
