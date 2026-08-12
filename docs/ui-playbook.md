@@ -176,7 +176,7 @@ Android**, so the screen looks correct on the platform you develop on and sits
 under the status bar and gesture nav on the other. Four files had it (found
 2026-07-31 by the deprecation warning in an Android logcat, not by review):
 `app/(tabs)/marketplace.tsx`, `BottomSheetModal`, `ContextMenu`,
-`MarketplaceFilterPanel`.
+`MarketplaceFilterPanel` (deleted 2026-08-12 with the market hub).
 
 ```tsx
 // WRONG — silently no-ops on Android
@@ -356,6 +356,42 @@ Written 2026-08-11 after the literal-padding bug was found on 9 scrollers across
   inset.
 - **`flexGrow:1 + justifyContent:'center'` still needs it.** A centred empty
   state centres against the full height and sits ~46pt low, half behind the bar.
+
+## Grid cards are already equal height — claim the space, don't fake it (2026-08-12)
+
+The heart/eye cluster on the marketplace tiles sat at a different height on
+every card, which reads as sloppy alignment even though each tile was
+internally correct. The cluster was simply the last child of a top-down stack,
+so its position depended on how much text happened to sit above it: a 1- vs
+2-line title, the optional "n watching" row, the optional seller name, the
+"You" pill.
+
+**The fix is not a fixed height, a minHeight, or a measured layout.** A
+FlatList `columnWrapperStyle` row is a flex row, and a flex row's default is
+`alignItems: 'stretch'` — so the two tiles beside each other were **already**
+the same height. The shorter one just left its spare height as dead space under
+the text and nobody claimed it.
+
+```tsx
+// the card body claims the leftover height…
+cardBody:    { padding: 11, gap: 4, flex: 1 },
+// …so the action cluster has a floor to sit on
+cardActions: { marginTop: 'auto', alignSelf: 'flex-end' },
+```
+
+`marginTop: 'auto'` pins to the bottom, `alignSelf: 'flex-end'` to the right.
+Both tiles in a row then land their controls on one line, for free, at any
+content length.
+
+Two things worth carrying to the next card grid:
+
+- **`minHeight` is the wrong instinct here.** It picks a number that is wrong
+  for one of the two tiles and re-breaks the moment the type scale changes.
+- **A negative margin on the action row is a glyph-alignment tool, not a layout
+  one.** A 32pt touch target around a 20pt icon puts 6pt of padding inside the
+  box, so the glyph sits ~6pt inboard of the text gutter. `marginRight: -5`
+  pulls the *box* out so the *glyph* lines up with the text above it; the touch
+  target and `hitSlop` are unchanged.
 
 ## Component Checklist
 

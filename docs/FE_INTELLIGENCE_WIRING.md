@@ -14,6 +14,16 @@ All paths assume the existing API base URL helper (`src/api/apiBase.ts` or where
 
 **Tables it writes**: `notification_impressions`, `notification_interactions`, `notification_outcomes` (currently 0 rows each).
 
+⚠️ **All three are RLS-enabled with NO policy, and that is correct — do not "fix"
+it by adding one.** RLS-on-with-no-policy denies all client access, which is the
+intent: every read and write goes through `pool.acquire()` + raw SQL in
+`notification_feedback_router.py:63-127`, i.e. asyncpg on the direct DSN, never
+PostgREST. Verified 2026-08-12 and allowlisted in `server/scripts/watchdog.py`,
+where they had been reported as three `medium` findings every day. The test that
+matters is not "an endpoint exists" but "**this table's own** reader and writer
+bypass RLS" — the allowlist previously accepted "served through /notifications"
+for `user_notifications`, which reads a different table.
+
 ### 1a. Impression — push DELIVERED to device
 
 **RN file**: `src/hooks/usePushNotifications.ts`
@@ -119,7 +129,7 @@ export function emitOutcome(actionType: "bought" | "followed" | "sold" | "added"
 
 **Trigger**: every time the user taps an external marketplace link. The current FE has affiliate URLs in 7+ components but no tracking when they're opened.
 
-**RN file to add the call to**: `src/utils/affiliateHelpers.ts` — wrap the existing helper that calls `Linking.openURL`. ALL the components that use this helper (ItemShopSection, MarketplacePickerSheet, MarketplaceResultCard, BarcodeResultCard, SearchResultQuickView, MarketplacePricesSection, the catalog museum screen `app/catalog-item/[key].tsx`) get the tracking automatically. (ExternalMarketplacesSection was removed from the category page in the 2026-06-05 museum redesign — the museum's "Where to buy" rail is the affiliate surface there now.)
+**RN file to add the call to**: `src/utils/affiliateHelpers.ts` — wrap the existing helper that calls `Linking.openURL`. ALL the components that use this helper (ItemShopSection, MarketplacePickerSheet, BarcodeResultCard, MarketplacePricesSection, the catalog museum screen `app/catalog-item/[key].tsx`) get the tracking automatically. (`MarketplaceResultCard` and `SearchResultQuickView` were on this list until 2026-08-12; both were deleted with `app/market-hub.tsx`, which was their only importer.) (ExternalMarketplacesSection was removed from the category page in the 2026-06-05 museum redesign — the museum's "Where to buy" rail is the affiliate surface there now.)
 
 **Implementation**:
 ```ts

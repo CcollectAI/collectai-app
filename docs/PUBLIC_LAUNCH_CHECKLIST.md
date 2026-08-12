@@ -247,9 +247,17 @@ ASC → Users and Access → **Sandbox → Testers** → "+" → create a tester
 ```bash
 cd /Users/merle/GitHub/CcollectAI
 npm run verify:prebuild          # tsc + seam tests + live Supabase contract — must pass first
+npm run check:reachable          # ADVISORY, exit 0 — read it, don't just run it (see below)
 npm run build:ios:local          # eas build -p ios --profile store --local -> builds/sparrow-ios-local.ipa
 eas submit -p ios --profile store --path builds/sparrow-ios-local.ipa
 ```
+
+`check:reachable` is deliberately advisory, so it will **not** stop a build —
+which is exactly why it belongs in a checklist a human reads. It lists screens
+that ship in the binary and cannot be navigated to. As of 2026-08-12 that is
+four: `/franchise/[id]`, `/sell/dashboard`, `/sets-to-complete`, `/twitch`.
+Shipping a store build containing screens no user can open is a decision, not
+an accident — either wire an entry point or delete them before submitting.
 
 Note `appVersionSource: remote` means `app.json`'s `ios.buildNumber` is NOT the
 number that ships — read `CFBundleVersion` out of the built `.ipa` for the real

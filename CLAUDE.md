@@ -66,6 +66,19 @@ gate. Three found on 2026-08-10:
 `check-dead-nav.mjs` reports PASS on all of it: it asks whether a router target
 **resolves**, never whether anything **reaches** it.
 
+**`npm run check:reachable` now asks the other half** (added 2026-08-12,
+`scripts/check-unreachable-screens.mjs`): it builds the push/`Link`/`Redirect`
+graph over `app/**` and reports any screen with no inbound edge. Proved against
+`app/market-hub.tsx` — restore it with its entry point repointed and the gate
+names it. **Advisory (exit 0)** like `audit_orphan_tables.py`, because it
+currently reports a real backlog: `/franchise/[id]`, `/sell/dashboard`,
+`/sets-to-complete`, `/twitch` are all live screens nothing navigates to. Flip
+`--strict` and add it to `verify:prebuild` once that list is empty.
+
+It does **not** catch the second half of the 2026-08-10 finding: a component
+exported from a barrel and rendered by no screen is not a route, so nothing in
+the route graph sees it. That gap is still open.
+
 **`check:params` resolves a push target to its route FILE.** A one-line
 re-export (`export { default } from '../search'`) therefore reads as "that route
 reads: (none)". Push to the file that actually calls `useLocalSearchParams`, or
@@ -223,9 +236,18 @@ each found by a user report and each previously invisible to every check:
 | `npm run check:params` | a route param pushed but never read by the destination | `check-dead-nav.mjs` contains the string `params` **zero times** — it only asks whether the route file exists. `typedRoutes` is on but types params as `UnknownInputParams`, an OPEN record, so `prefillTitle` on `/add-manual` is legal TS. 5 live dead handoffs |
 | `npm run i18n:parity` | a key in `en.json` missing from another locale | `i18n:check` finds UNWRAPPED strings — it polices the code, not the files. `fallbackLng: 'en'` means a missing key renders **English**, silently. en had 597 keys, all 6 others had 424 |
 | `npm run check:archived` | a read of `items` that counts **archived** rows as owned | an archived row is a VALID row, so nothing errors. `archived` was written by swipe/bulk archive and respected by 8 VIEWS, but by **no read of the table** — the bulk dialog promised "archived items will be hidden from your active collection" and the next refresh brought them straight back ([[learning_a_written_promise_to_users_is_a_spec]]). 50 reads, all silent |
+| `npm run check:reachable` **(advisory)** | a screen with **no inbound navigation edge** — it exists, compiles, resolves, and cannot be arrived at | `check-dead-nav` asks the opposite question and passes forever. The Market hub's three signal modules were unreachable for a day; `/franchise/[id]`, `/sell/dashboard`, `/sets-to-complete` and `/twitch` still are. **Not in `verify:prebuild`** — it reports a backlog, and a blocking gate would wedge every deploy until that backlog is zero (same reasoning as `audit_orphan_tables.py`) |
 
-All three are wired into `verify:prebuild` and each was proven to fail before it
-was fixed. `check:params` compares against the target's **declared** params, not
+All except `check:reachable` are wired into `verify:prebuild`, and each was
+proven to fail before it was fixed.
+
+**Writing a graph-shaped gate: match the literal, not the call.** Two false
+positives had to be killed before `check:reachable` was trustworthy, and both
+generalise — an edge inside a **ternary**
+(`router.push(cond ? '/purchase' : '/subscription')`) is invisible to any
+call-shaped regex, and a **template literal carrying a query**
+(`` `/events/x?eventId=${id}` ``) dies on a character class that stops at `?`.
+A gate that cries wolf stops being read, which costs more than the bug. `check:params` compares against the target's **declared** params, not
 substrings — a substring version passed a genuinely dead `mode: 'watchlist'`
 because the word "mode" appears elsewhere in the file.
 
