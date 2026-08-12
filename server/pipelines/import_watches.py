@@ -4492,11 +4492,18 @@ def get_curated_catalog() -> list[dict]:
             "watch_type": watch_type,
             "price_eur": price_eur,
         })
-    # Deduplicate by ('reference',) (keep first occurrence)
+    # Deduplicate by NORMALISED reference (keep first occurrence).
+    #
+    # Was keyed on the raw string, which let hyphenation variants of one watch
+    # both through: `MRGB5000BA-1` and `MRG-B5000BA-1` are the same MR-G, and
+    # `DW5600NASA21-1` and `DW-5600NASA21-1` the same NASA DW-5600. Both pairs
+    # sat in the live catalogue as four products until the 2026-08-12 mining
+    # pass diffed normalised references and found them.
+    import re as _re
     _seen: set = set()
     _deduped: list = []
     for item in catalog:
-        _key = item["reference"]
+        _key = _re.sub(r"[^A-Za-z0-9]", "", str(item["reference"])).upper()
         if _key not in _seen:
             _seen.add(_key)
             _deduped.append(item)
