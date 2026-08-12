@@ -276,8 +276,10 @@ async def mine(category: str, promote: bool, include_medium: bool, limit: int | 
     # first 592 promoted were this shape. They pass the exact-match and
     # cross-brand checks because the STRINGS genuinely differ — only the
     # containment test sees them.
-    partial = {n for n in list(found and {k[1] for k in found})
-               if any(n != e and n in e for e in existing_refs)}
+    partial = {
+        nref for (_brand, nref) in found
+        if any(nref != e and nref in e for e in existing_refs)
+    }
     if partial:
         print(f"\n  ! {len(partial)} reference(s) are partials of an existing row — skipped:")
         for n in list(partial)[:6]:

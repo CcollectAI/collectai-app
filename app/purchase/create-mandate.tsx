@@ -97,6 +97,11 @@ function CreateMandateScreen() {
   // ILIKE on the search string which returns one prediction for the whole query.
   const [canonicalKey, setCanonicalKey] = useState<string | null>(null);
   const [matchTitle, setMatchTitle] = useState<string | null>(null);
+  // The name the key was picked FOR. If the name later changes, the key is
+  // stale and would value the search against a different item than the one the
+  // user is now describing — the exact silent-wrong-key failure the picker
+  // exists to avoid. Cleared on edit rather than guessed.
+  const [matchedForName, setMatchedForName] = useState<string | null>(null);
   const [matches, setMatches] = useState<CatalogMatchHit[] | null>(null);
   const [matching, setMatching] = useState(false);
 
@@ -127,6 +132,7 @@ function CreateMandateScreen() {
           const bare = m.canonicalRef.includes(':') ? m.canonicalRef.split(':').slice(1).join(':') : m.canonicalRef;
           setCanonicalKey(bare);
           setMatchTitle(bare);
+          setMatchedForName((m.name ?? '').trim());
         }
       } catch {
         showToast({ message: "Failed to load search", type: "error" });
@@ -211,9 +217,13 @@ function CreateMandateScreen() {
     setMatching(true);
     try {
       const res = await collectorsApi.matchCatalog(q, category);
-      const hits = [res?.best, ...(res?.alternatives ?? [])].filter(
+      const all = [res?.best, ...(res?.alternatives ?? [])].filter(
         (h): h is CatalogMatchHit => !!h && !!h.item_key,
       );
+      // `best` is frequently ALSO the first alternative. Left as-is that
+      // renders the same item twice and hands React two identical keys.
+      const seen = new Set<string>();
+      const hits = all.filter((h) => !seen.has(h.item_key!) && seen.add(h.item_key!));
       setMatches(hits);
       if (!hits.length) showToast({ message: "No catalogue match — the search still works without one" });
     } catch {
@@ -257,7 +267,16 @@ function CreateMandateScreen() {
           placeholder="e.g. Pokemon Grails under 200"
           placeholderTextColor={colors.muted}
           value={nameField.value}
-          onChangeText={nameField.onChange}
+          onChangeText={(v) => {
+            nameField.onChange(v);
+            // Drop a key that was picked for a different name.
+            if (matchedForName !== null && v.trim() !== matchedForName) {
+              setCanonicalKey(null);
+              setMatchTitle(null);
+              setMatchedForName(null);
+              setMatches(null);
+            }
+          }}
           onBlur={nameField.onBlur}
           accessibilityLabel="Search name"
         />
@@ -323,6 +342,7 @@ function CreateMandateScreen() {
                 onPress={() => {
                   setCanonicalKey(h.item_key!);
                   setMatchTitle(h.title ?? h.item_key!);
+                  setMatchedForName(nameField.value.trim());
                   setMatches(null);
                   fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 }}
