@@ -281,7 +281,20 @@ class CatalogItem:
         if self.barcode:
             row["barcode"] = self.barcode
         if self.attributes_json:
-            row["attributes_json"] = json.dumps(self.attributes_json)
+            # Pass the dict, NOT json.dumps(dict). PostgREST already serialises
+            # the row as JSON, so dumping here produces a JSON *string* in a
+            # jsonb column — `"{\"set\": \"base\"}"` instead of `{"set": ...}`.
+            # `category_items` has CHECK (jsonb_typeof(attributes_json) =
+            # 'object'), so Postgres rejects every attribute-bearing row while
+            # the pipeline reports success: it logs rows ATTEMPTED, not rows
+            # accepted.
+            #
+            # Fixed on the working branch 2026-07-25 and never reached this one.
+            # This branch is the repo DEFAULT branch, and GitHub runs
+            # `schedule:` workflows from the default branch — so nightly-ingest
+            # has run this line every night since. Still 680 rejected writes/day
+            # on 2026-08-12. See docs/DEPLOYMENT.md "Three places run code".
+            row["attributes_json"] = self.attributes_json
         return row
 
     def _parse_notes_into_attributes(self) -> None:
