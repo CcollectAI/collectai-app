@@ -47,11 +47,9 @@ VALUES
   ('jewellery','tiffany-and-co-elsa-peretti-diamonds-by-the-yard-necklace-18k-yellow-gold','Elsa Peretti Diamonds by the Yard Necklace, 18k Yellow Gold','Tiffany & Co.','Elsa Peretti','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "elsa_peretti"}'::jsonb),
   ('jewellery','tiffany-and-co-elsa-peretti-diamonds-by-the-yard-bracelet-platinum','Elsa Peretti Diamonds by the Yard Bracelet, Platinum','Tiffany & Co.','Elsa Peretti','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "elsa_peretti"}'::jsonb),
   -- Jean Schlumberger — the house's haute joaillerie signature.
-  ('jewellery','tiffany-and-co-jean-schlumberger-bird-on-a-rock-brooch-18k-yellow-gold-and-platinum','Jean Schlumberger Bird on a Rock Brooch, 18k Yellow Gold and Platinum','Tiffany & Co.','Jean Schlumberger','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "schlumberger"}'::jsonb),
-  ('jewellery','tiffany-and-co-jean-schlumberger-sixteen-stone-ring-18k-yellow-gold-and-platinum','Jean Schlumberger Sixteen Stone Ring, 18k Yellow Gold and Platinum','Tiffany & Co.','Jean Schlumberger','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "schlumberger"}'::jsonb),
-  ('jewellery','tiffany-and-co-jean-schlumberger-rope-two-row-ring-18k-yellow-gold','Jean Schlumberger Rope Two-Row Ring, 18k Yellow Gold','Tiffany & Co.','Jean Schlumberger','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "schlumberger"}'::jsonb),
-  ('jewellery','tiffany-and-co-jean-schlumberger-lynn-earrings-18k-yellow-gold-and-platinum','Jean Schlumberger Lynn Earrings, 18k Yellow Gold and Platinum','Tiffany & Co.','Jean Schlumberger','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "schlumberger"}'::jsonb),
-  ('jewellery','tiffany-and-co-jean-schlumberger-croisillon-bracelet-red-enamel-and-18k-yellow-gold','Jean Schlumberger Croisillon Bracelet, Red Enamel and 18k Yellow Gold','Tiffany & Co.','Jean Schlumberger','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "schlumberger"}'::jsonb),
+  ('jewellery','tiffany-and-co-jean-schlumberger-rope-two-row-ring-18k-yellow-gold','Schlumberger Rope Two-Row Ring, 18k Yellow Gold','Tiffany & Co.','Jean Schlumberger','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "schlumberger"}'::jsonb),
+  ('jewellery','tiffany-and-co-jean-schlumberger-lynn-earrings-18k-yellow-gold-and-platinum','Schlumberger Lynn Earrings, 18k Yellow Gold and Platinum','Tiffany & Co.','Jean Schlumberger','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "schlumberger"}'::jsonb),
+  ('jewellery','tiffany-and-co-jean-schlumberger-croisillon-bracelet-red-enamel-and-18k-yellow-gold','Schlumberger Croisillon Bracelet, Red Enamel and 18k Yellow Gold','Tiffany & Co.','Jean Schlumberger','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "schlumberger"}'::jsonb),
   -- Paloma Picasso.
   ('jewellery','tiffany-and-co-paloma-picasso-graffiti-love-pendant-18k-yellow-gold','Paloma Picasso Graffiti Love Pendant, 18k Yellow Gold','Tiffany & Co.','Paloma Picasso','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "paloma_picasso"}'::jsonb),
   -- Core house lines absent from 08-11.
@@ -60,7 +58,6 @@ VALUES
   ('jewellery','tiffany-and-co-tiffany-infinity-pendant-sterling-silver','Tiffany Infinity Pendant, Sterling Silver','Tiffany & Co.','Infinity','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "infinity"}'::jsonb),
   ('jewellery','tiffany-and-co-tiffany-infinity-bracelet-18k-yellow-gold','Tiffany Infinity Bracelet, 18k Yellow Gold','Tiffany & Co.','Infinity','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "infinity"}'::jsonb),
   ('jewellery','tiffany-and-co-tiffany-hardwear-graduated-link-necklace-18k-yellow-gold','Tiffany HardWear Graduated Link Necklace, 18k Yellow Gold','Tiffany & Co.','HardWear','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "hardwear"}'::jsonb),
-  ('jewellery','tiffany-and-co-tiffany-lock-bangle-18k-rose-gold-with-diamonds','Tiffany Lock Bangle, 18k Rose Gold with Diamonds','Tiffany & Co.','Lock','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "lock"}'::jsonb),
   ('jewellery','tiffany-and-co-tiffany-knot-double-row-hinged-bangle-18k-yellow-gold-with-diamonds','Tiffany Knot Double Row Hinged Bangle, 18k Yellow Gold with Diamonds','Tiffany & Co.','Knot','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "knot"}'::jsonb),
   ('jewellery','tiffany-and-co-tiffany-victoria-cluster-pendant-platinum-with-diamonds','Tiffany Victoria Cluster Pendant, Platinum with Diamonds','Tiffany & Co.','Victoria','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "victoria"}'::jsonb),
   -- Bridal.
@@ -69,7 +66,6 @@ VALUES
   ('jewellery','tiffany-and-co-tiffany-soleste-halo-engagement-ring-platinum','Tiffany Soleste Halo Engagement Ring, Platinum','Tiffany & Co.','Soleste','seed',false,'{"seed_batch": "jewellery_2026_08_12", "line": "bridal"}'::jsonb),
 
   -- --------------------------------------------- Depth for thin maisons (1-2 rows at 08-11)
-  ('jewellery','verdura-verdura-maltese-cross-cuff','Verdura Maltese Cross Cuff','Verdura','Maltese Cross','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','verdura-verdura-curb-link-bracelet-18k-yellow-gold','Verdura Curb-Link Bracelet, 18k Yellow Gold','Verdura','Curb-Link','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','seaman-schepps-seaman-schepps-turbo-shell-earrings','Seaman Schepps Turbo Shell Earrings','Seaman Schepps','Turbo Shell','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','seaman-schepps-seaman-schepps-rivoli-ring','Seaman Schepps Rivoli Ring','Seaman Schepps','Rivoli','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
@@ -80,14 +76,12 @@ VALUES
   ('jewellery','faberge-faberge-colours-of-love-ring-18k-white-gold','Fabergé Colours of Love Ring, 18k White Gold','Fabergé','Colours of Love','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','asprey-asprey-chaos-ring-18k-yellow-gold','Asprey Chaos Ring, 18k Yellow Gold','Asprey','Chaos','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','asprey-asprey-woodland-pendant-18k-white-gold','Asprey Woodland Pendant, 18k White Gold','Asprey','Woodland','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
-  ('jewellery','damiani-damiani-belle-epoque-ring-18k-white-gold-with-diamonds','Damiani Belle Époque Ring, 18k White Gold with Diamonds','Damiani','Belle Époque','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','damiani-damiani-margherita-ring-18k-rose-gold','Damiani Margherita Ring, 18k Rose Gold','Damiani','Margherita','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','repossi-repossi-berbere-ring-18k-rose-gold','Repossi Berbère Ring, 18k Rose Gold','Repossi','Berbère','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','repossi-repossi-antifer-ring-18k-white-gold','Repossi Antifer Ring, 18k White Gold','Repossi','Antifer','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','vhernier-vhernier-calla-earrings-18k-rose-gold','Vhernier Calla Earrings, 18k Rose Gold','Vhernier','Calla','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','vhernier-vhernier-freccia-ring-titanium','Vhernier Freccia Ring, Titanium','Vhernier','Freccia','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','spinelli-kilcollin-spinelli-kilcollin-raneth-linked-ring-sterling-silver','Spinelli Kilcollin Raneth Linked Ring, Sterling Silver','Spinelli Kilcollin','Raneth','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
-  ('jewellery','foundrae-foundrae-karma-medallion-18k-yellow-gold','Foundrae Karma Medallion, 18k Yellow Gold','Foundrae','Medallion','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','anita-ko-anita-ko-hedges-earrings-18k-yellow-gold','Anita Ko Hedges Earrings, 18k Yellow Gold','Anita Ko','Hedges','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','suzanne-kalan-suzanne-kalan-fireworks-eternity-band-18k-yellow-gold','Suzanne Kalan Fireworks Eternity Band, 18k Yellow Gold','Suzanne Kalan','Fireworks','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
   ('jewellery','buccellati-buccellati-opera-tulle-ring-18k-yellow-gold','Buccellati Opera Tulle Ring, 18k Yellow Gold','Buccellati','Opera','seed',false,'{"seed_batch": "jewellery_2026_08_12"}'::jsonb),
