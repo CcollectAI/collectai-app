@@ -337,3 +337,63 @@ Result: 7305 MB → 4390 MB, API healthy throughout, all 9 preflight stages gree
 ordering. It is benign — one spurious error per month-close, self-resolving next
 cycle — but it should either run export-before-drop, or the drop should treat
 "eligible but not yet exported this cycle" as info rather than error.
+
+---
+
+## Growing the catalogue from what we already collect (appended 2026-08-12)
+
+`server/pipelines/mine_catalog_from_market_hits.py`
+
+Hand-typing catalogue rows does not scale — a batch of 15 against a market that
+holds thousands. Every marketplace title we already store names a real product,
+so the catalogue is derivable from `market_hits` rather than authored.
+
+The miner reads titles, extracts `(brand, reference)` with a **per-brand
+grammar** — Rolex six digits, Omega dotted `310.30.42.50.01.002`, Cartier
+`W`/`WS`/`CRW` codes, and so on — and diffs the result against `category_items`.
+One grammar per brand, not one regex for all: `116610LN` and `5711/1A-010` have
+nothing structurally in common, and a permissive pattern is what produced the
+first run's garbage.
+
+Run it read-only, read the output, then promote:
+
+```bash
+python -m pipelines.mine_catalog_from_market_hits --category watches
+python -m pipelines.mine_catalog_from_market_hits --category watches --promote
+```
+
+Default `--promote` writes **high-confidence only** (a brand-specific grammar hit,
+unambiguous, not a partial). `--include-medium` also writes titles matched by the
+generic fallback — those need eyes on them first.
+
+### Four filters, each of which exists because of a bug it let through
+
+| Filter | What it stopped |
+|---|---|
+| ≥2 digits in the reference | The Cartier grammar matched the literal word `WATCHES` |
+| `^\d{2,4}M$` rejected | `200M` is water resistance; nine different brands "made" it |
+| Cross-brand ambiguity → skip | One string claimed by several grammars is not a reference |
+| Containment → skip | `Casio GA-110` is a partial of three catalogued collabs, not a new row |
+
+### Two things this does NOT do
+
+**It does not make the rows priceable.** eBay's Browse API returns 100% live
+listings, and `valuation_worker.py:279` excludes `is_listing IS TRUE`, so mined
+rows are browsable and searchable but carry no comps until eBay Marketplace
+Insights is approved (`ebay_caller.py:387 sold_comps()` is still stubbed).
+Growing the catalogue and growing price coverage are separate problems — see
+[[learning_coverage_in_price_rows_is_not_coverage_in_offers]].
+
+**It does not resolve brand aliases.** Bvlgari/Bulgari, Hermes/Hermès,
+Christian Dior/Dior and S.T.Dupont/ST Dupont are each two brands to the miner.
+Dedup is exact-match after prefix-stripping, so aliases produce near-duplicate
+rows that no key check catches. Open.
+
+### Duplicate checks must compare titles, not keys
+
+Two batches shipped duplicates past a key-uniqueness check, because a key is
+generated from the title and any wording difference makes a fresh one. The
+second batch still missed two exact Cartier duplicates: house-brand titles
+(Cartier, Van Cleef & Arpels) don't repeat the brand in the title the way
+`Rolex Submariner` does, so the comparison has to strip the brand prefix before
+matching. Compare normalised titles both ways or you are not checking anything.

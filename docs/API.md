@@ -235,6 +235,23 @@ listings from €2.59 to €216.54. `value_summary.deal_savings` therefore count
 **only keyed mandates** — a free-text mandate's deals are counted but contribute
 €0, because a category average must never be shown to a user as money saved.
 
+**Who sends it (2026-08-12):** `app/purchase/create-mandate.tsx` — a "value
+against" block that calls `/catalog/match` with the name the user typed and
+lets them pick. Optional by design: skipping it creates a free-text mandate,
+which still works, just without money figures.
+
+Two rules that screen has to honour, both learned by getting them wrong:
+
+- **A picked key belongs to the name it was picked for.** The screen stores
+  that name alongside the key and drops both if the name is edited afterwards.
+  Without this a user picks "Rolex Submariner", retypes the name, and the
+  mandate silently values against the Rolex forever — the precise failure the
+  picker was built to prevent.
+- **Send `null`, don't omit.** Clearing the key means transmitting an explicit
+  `null`; a field left out of the PATCH body reads as "unchanged". The screen
+  detects intent via `model_fields_set`, because the server's
+  `model_dump(exclude_none=True)` cannot tell the two apart.
+
 ## Catalog Browser
 
 | Method | Path | Auth | Description |
