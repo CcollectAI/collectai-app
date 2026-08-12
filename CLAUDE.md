@@ -293,9 +293,19 @@ silently empty. **Nothing ever errored** — an empty join is a valid result.
 | `price_predictions.item_ref` | **namespaced** always (0 bare rows in 1.7M) | `pokemon:sm10-sm10-101` |
 | `price_prediction_daily.item_ref` | **namespaced** always | `pokemon:sm10-sm10-101` |
 | `market_hits.item_ref` | **namespaced** always | `pokemon:ex8-ex8-13` |
+| `purchase_mandates.canonical_ref` | **namespaced**, nullable (2026-08-12) | `pokemon:base1-base1-1` |
 
 Rules:
 - Join predictions/market_hits with **`items.canonical_ref`**, never `canonical_key`.
+- **A mandate stores ONLY the namespaced form.** `purchase_mandates` joins
+  `price_predictions.item_ref` and nothing else, so it needs one column, not the
+  bare/namespaced pair `items` carries. The API takes a BARE `canonical_key`
+  from the picker and builds the ref from the item's own `category_items` row —
+  never from the request body and never from the mandate's `category` field,
+  because a ref with the wrong prefix matches zero rows and returns an empty
+  join instead of an error. NULL = a free-text mandate, valued by an
+  ILIKE-on-query fallback that is deliberately **not** trusted for money:
+  `value_summary.deal_savings` counts keyed mandates only.
 - Join the catalog with **`items.canonical_key`** — `v_category_summaries_v1`
   depends on the bare form. Do NOT "normalise" canonical_key to namespaced.
 - `ItemCreateRequest.canonical_key` documents a namespaced *example* but

@@ -126,6 +126,35 @@ Near-static ~200k. No action.
 ### `market_hits_archive` (the bucket we create tonight)
 Becomes the seed for the Parquet lake in month 2. Don't add indexes to it, don't query it online — it's a holding pen until S3 export.
 
+### Deal discovery scales in CAPACITY but not in FRESHNESS (measured 2026-08-12)
+
+`deal_discovery` is capped at `MAX_MANDATES_PER_CYCLE = 50` on a 30-minute
+interval — a hard ceiling of **2,400 mandate-scans/day**, ordered
+`last_scan_at ASC NULLS FIRST` so no user starves. Nothing errors past that
+point; scans just get rarer. At Pro's 10 mandates/user:
+
+| Paying users | Mandates | Each scanned every |
+|---|---|---|
+| 5 | 50 | 30 min |
+| 50 | 500 | ~5 hours |
+| 500 | 5,000 | ~2 days |
+
+**A deal alert on a live marketplace listing that arrives two days late is
+worthless**, and nothing reports that: the worker returns `ok`, the silent-writer
+probe sees writes. The scaling lever is the cap and the interval, and the metric
+to watch is `now() - last_scan_at`, which nothing currently alerts on.
+
+Three secondary limits: `deal_discovery` shares one global `_HEAVY_LOCK` with
+the marketplace scraper (a 167.5s wait for the gate was observed on 08-12); the
+5s per-adapter budget is a latency guard, not a rate guard; and
+`source_rate_limits` holds exactly one row (`reverb`) — **no eBay entry** — so
+2,400 searches/day × adapters is unguarded against a third-party quota
+([[learning_third_party_rate_bans_and_schedule_drift]]).
+
+The `market_hits` feed is NOT a scaling risk: it dedupes on
+`(provider, listing_id)` with `WHERE NOT EXISTS`, so re-scans of the same query
+add nothing.
+
 ## 6. Governance rules (to prevent R50m from repeating)
 
 These are the rules we didn't have that caused 24 indexes on one table:

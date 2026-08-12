@@ -205,6 +205,36 @@ entry point. Until then, leave all three alone.
 | POST | `/purchase/deals/{deal_id}/decline` | JWT | Dismiss deal |
 | GET | `/purchase/stats` | JWT | Agent stats |
 
+### `canonical_key` — what a mandate is VALUED against (2026-08-12)
+
+`POST` and `PATCH /purchase/mandates` accept an optional **`canonical_key`**,
+the **BARE** catalogue key that `/catalog/match` and the catalogue screens
+already return (`base1-base1-1`, not `pokemon:base1-base1-1`). **Do not
+namespace it** — the server derives the prefix from the item's own
+`category_items` row and stores the result in `canonical_ref`. Sending an
+already-namespaced key is tolerated (the bare tail is taken) but is not the
+contract.
+
+```jsonc
+POST  /purchase/mandates   { "name": "...", "search_query": "charizard",
+                             "max_price": 120, "canonical_key": "base1-base1-1" }
+PATCH /purchase/mandates/:id { "canonical_key": null }   // clears → free-text
+```
+
+| | |
+|---|---|
+| **It does not replace `search_query`** | The query is what we send to marketplaces; the key is what we value the results against. Two jobs. Keep the query editable so a user can narrow it ("PSA 10") without breaking valuation. |
+| **It overwrites `category`** | The mandate takes the picked item's category. `canonical_ref` and `category` disagreeing would mean the mandate reads as one thing and values as another. |
+| **Unknown key → `400 UNKNOWN_CANONICAL_KEY`** | The key is looked up at write time, so a typo fails immediately instead of creating a mandate that silently values nothing forever. |
+| **`MandateResponse.canonical_ref`** | Namespaced, or `null` for a free-text mandate — read it to show keyed vs unkeyed without a second call. |
+
+**Why it exists:** without a key, the deal agent values every result by
+`item_ref ILIKE '<search_query>'`, which returns ONE prediction for the whole
+query. Measured on a live mandate: 27 deals sharing `q50 = €1.08` against
+listings from €2.59 to €216.54. `value_summary.deal_savings` therefore counts
+**only keyed mandates** — a free-text mandate's deals are counted but contribute
+€0, because a category average must never be shown to a user as money saved.
+
 ## Catalog Browser
 
 | Method | Path | Auth | Description |
