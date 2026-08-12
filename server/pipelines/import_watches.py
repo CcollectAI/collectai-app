@@ -4150,6 +4150,85 @@ def _citizen_expansion2_watches() -> list[tuple]:
 # Assemble full catalog
 # ---------------------------------------------------------------------------
 
+def _haute_horlogerie_depth_watches() -> list[tuple]:
+    """Depth for the haute-horlogerie maisons that were thin (2026-08-12).
+
+    The catalogue was strong at the top of the mainstream — Omega 88, Rolex 77,
+    Cartier 62, Patek 49 — while several of the most collected high-end houses
+    sat in single digits: Piaget 5, Richard Mille 5, F.P. Journe 5, Chopard 7,
+    H. Moser 9, Blancpain 11, Breguet 12. Those are exactly the references a
+    Chrono24 or Catawiki buyer searches for, and the ones the new price-gated
+    "where to buy" routing sends there.
+
+    Every reference here is checked against the rows already in the catalogue —
+    `get_curated_catalog()` deduplicates by REFERENCE and keeps the first
+    occurrence, so a repeat would be dropped in silence rather than flagged.
+
+    Same standing caveat as the jewellery seeds: curated from knowledge, not
+    from a source feed. A wrong reference is invisible to every gate in this
+    repo — that check is a human one.
+    """
+    return [
+        # --- Piaget: Altiplano (ultra-thin) and Polo -------------------------
+        ("Piaget", "Altiplano 38mm Ultra-Thin White Gold", "G0A29112",
+         "Manual Cal. 430P", "18k White Gold", "Current Production", 21000),
+        ("Piaget", "Altiplano Moonphase 36mm", "G0A44051",
+         "Automatic Cal. 580P", "18k Rose Gold", "Current Production", 29000),
+        ("Piaget", "Polo Perpetual Calendar Ultra-Thin", "G0A48002",
+         "Automatic Cal. 1255P", "18k White Gold", "Limited Edition", 78000),
+        ("Piaget", "Limelight Gala 32mm", "G0A38160",
+         "Quartz Cal. 690P", "18k Rose Gold", "Current Production", 24000),
+        # --- Richard Mille ---------------------------------------------------
+        ("Richard Mille", "RM 010 Automatic", "RM 010",
+         "Automatic Cal. RMAS7", "Titanium", "Discontinued Classic", 120000),
+        ("Richard Mille", "RM 029 Automatic Big Date", "RM 029",
+         "Automatic Cal. RMAS7", "Titanium", "Current Production", 110000),
+        ("Richard Mille", "RM 030 Declutchable Rotor", "RM 030",
+         "Automatic Cal. RMAR2", "Titanium", "Current Production", 145000),
+        ("Richard Mille", "RM 07-01 Ladies Automatic", "RM 07-01",
+         "Automatic Cal. CRMA2", "Ceramic", "Current Production", 165000),
+        # --- F.P. Journe ------------------------------------------------------
+        ("F.P. Journe", "Chronometre a Resonance 2020", "CR",
+         "Manual Cal. 1520", "Platinum", "Current Production", 340000),
+        ("F.P. Journe", "Octa Divine", "OD",
+         "Automatic Cal. 1300.3", "18k Rose Gold", "Current Production", 62000),
+        ("F.P. Journe", "Octa Lune", "OL",
+         "Automatic Cal. 1300.3", "Platinum", "Current Production", 95000),
+        ("F.P. Journe", "Elegante 48", "EL48",
+         "Quartz Cal. 1210", "Titanium", "Current Production", 22000),
+        # --- Chopard: L.U.C and Alpine Eagle ---------------------------------
+        ("Chopard", "L.U.C Quattro 43mm", "161926-5004",
+         "Manual Cal. L.U.C 98.01-L", "18k Rose Gold", "Current Production", 26000),
+        ("Chopard", "L.U.C Lunar One Perpetual Calendar", "161927-5001",
+         "Automatic Cal. L.U.C 96.13-L", "Platinum", "Limited Edition", 78000),
+        ("Chopard", "Alpine Eagle Chrono 44mm", "298609-3001",
+         "Automatic Cal. 03.05-C", "Lucent Steel", "Current Production", 18500),
+        ("Chopard", "Mille Miglia GTS Chrono", "168571-3001",
+         "Automatic Cal. 03.05-C", "Stainless Steel", "Current Production", 8200),
+        # --- H. Moser & Cie ---------------------------------------------------
+        ("H. Moser & Cie", "Streamliner Perpetual Calendar", "6812-1200",
+         "Automatic Cal. HMC 812", "Stainless Steel", "Limited Edition", 95000),
+        ("H. Moser & Cie", "Endeavour Tourbillon Concept", "1804-0501",
+         "Automatic Cal. HMC 804", "18k White Gold", "Limited Edition", 82000),
+        ("H. Moser & Cie", "Pioneer Perpetual Calendar", "3810-1200",
+         "Automatic Cal. HMC 800", "Stainless Steel", "Current Production", 58000),
+        # --- Blancpain --------------------------------------------------------
+        ("Blancpain", "Fifty Fathoms Bathyscaphe Chronographe Flyback", "5200-1110-B52A",
+         "Automatic Cal. F385", "Stainless Steel", "Current Production", 19500),
+        ("Blancpain", "Villeret Quantieme Complet 40mm", "6654-1127-55B",
+         "Automatic Cal. 6654", "Stainless Steel", "Current Production", 14500),
+        ("Blancpain", "Le Brassus Carrousel Repetition Minutes", "00232-3631-55B",
+         "Manual Cal. 2322", "Platinum", "Limited Edition", 320000),
+        # --- Breguet ----------------------------------------------------------
+        ("Breguet", "Classique Double Tourbillon 5345", "5345PT/1S/7XU",
+         "Manual Cal. 588N", "Platinum", "Limited Edition", 480000),
+        ("Breguet", "Reine de Naples 8918", "8918BB/58/964/D00D",
+         "Automatic Cal. 537/3", "18k White Gold", "Current Production", 38000),
+        ("Breguet", "Marine Hora Mundi 5557", "5557ST/2A/5WV",
+         "Automatic Cal. 77F0", "Stainless Steel", "Current Production", 32000),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Return the full curated watch catalog as a list of dicts.
 
@@ -4259,6 +4338,7 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_casio_expansion2_watches())
     all_tuples.extend(_timex_expansion2_watches())
     all_tuples.extend(_citizen_expansion2_watches())
+    all_tuples.extend(_haute_horlogerie_depth_watches())
 
     catalog: list[dict] = []
     for brand, model, reference, movement, material, watch_type, price_eur in all_tuples:
