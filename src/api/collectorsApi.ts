@@ -92,6 +92,7 @@ export const collectorsApi = {
   getPriceEvidence: predictApi.getPriceEvidence,
 
   // Photo upload
+  matchCatalog: itemsApi.matchCatalog,
   uploadPhoto: itemsApi.uploadPhoto,
   getPresignedUploadUrl: itemsApi.getPresignedUploadUrl,
   deletePhoto: itemsApi.deletePhoto,

@@ -38,6 +38,18 @@ function camelizeDeep<T>(input: unknown): T {
 export const createMandate = (payload: {
   name: string;
   search_query: string;
+  /**
+   * BARE catalogue key from `/catalog/match` — do NOT namespace it, the server
+   * derives the prefix from the item's own category_items row.
+   *
+   * It does not replace `search_query`: the query is what we send to
+   * marketplaces, this is what we VALUE the results against. Without it the
+   * agent prices every deal off an ILIKE on the search string, which returns
+   * ONE prediction for the whole query — measured at q50 EUR 1.08 against
+   * listings from EUR 2.59 to EUR 216.54 — and `value_summary.deal_savings`
+   * therefore counts keyed mandates only.
+   */
+  canonical_key?: string | null;
   category?: string | null;
   condition_filter?: string[];
   min_trust_score?: number;

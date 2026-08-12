@@ -34,6 +34,7 @@ import { SelectField, type SelectOption } from '@/components/form/SelectField';
 
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 import { safeGoBack } from '@/lib/goBack';
+import type { CatalogMatchHit } from '@/api/itemsApi';
 
 const CATEGORY_OPTIONS: SelectOption[] = [
   { label: 'Any', value: '' },
@@ -90,6 +91,15 @@ function CreateMandateScreen() {
   const [region, setRegion] = useState("");
   const [status, setStatus] = useState<"active" | "paused">("active");
 
+  // The catalogue item this search is VALUED against — the bare key from
+  // /catalog/match. Optional: without it the mandate still runs and still finds
+  // deals, it just cannot report savings, because the agent falls back to an
+  // ILIKE on the search string which returns one prediction for the whole query.
+  const [canonicalKey, setCanonicalKey] = useState<string | null>(null);
+  const [matchTitle, setMatchTitle] = useState<string | null>(null);
+  const [matches, setMatches] = useState<CatalogMatchHit[] | null>(null);
+  const [matching, setMatching] = useState(false);
+
   // Load existing mandate
   useEffect(() => {
     if (!params.id) return;
@@ -101,7 +111,7 @@ function CreateMandateScreen() {
         // undefined the moment that mapping landed — opening a search to edit
         // showed a blank max price and silently reset trust to the 0.6 default,
         // then saved those over the user's real settings. Fixed same day.
-        const m = await collectorsApi.getMandate(params.id!) as { name?: string; category?: string; maxPrice?: number; minTrustScore?: number; allowedSources?: string[]; region?: string; status?: string };
+        const m = await collectorsApi.getMandate(params.id!) as { name?: string; category?: string; maxPrice?: number; minTrustScore?: number; allowedSources?: string[]; region?: string; status?: string; canonicalRef?: string | null };
         nameField.setValue(m.name ?? '');
         setCategory(m.category ?? null);
         maxPriceField.setValue(m.maxPrice != null ? String(m.maxPrice) : '');
@@ -109,6 +119,15 @@ function CreateMandateScreen() {
         setSelectedSources(m.allowedSources ?? []);
         setRegion(m.region ?? "");
         setStatus(m.status === "paused" ? "paused" : "active");
+        // The API stores the NAMESPACED ref ("pokemon:base1-base1-1"); the
+        // picker and the write path both speak the BARE key, so strip the
+        // prefix back off. Sending the namespaced form back would be
+        // double-prefixed by the resolver.
+        if (m.canonicalRef) {
+          const bare = m.canonicalRef.includes(':') ? m.canonicalRef.split(':').slice(1).join(':') : m.canonicalRef;
+          setCanonicalKey(bare);
+          setMatchTitle(bare);
+        }
       } catch {
         showToast({ message: "Failed to load search", type: "error" });
       } finally {
@@ -140,6 +159,9 @@ function CreateMandateScreen() {
 
     setSaving(true);
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    // Explicit null on edit CLEARS the key server-side; undefined would be
+    // dropped by model_dump(exclude_none=True) and read as "not sent".
+    const keyPayload = canonicalKey ?? null;
 
     try {
       if (isEdit && params.id) {
@@ -151,6 +173,7 @@ function CreateMandateScreen() {
           min_trust_score: minTrust,
           allowed_sources: selectedSources.length ? selectedSources : undefined,
           region: region || undefined,
+          canonical_key: keyPayload,
         });
         showToast({ message: "Search updated", type: "success" });
       } else {
@@ -162,6 +185,7 @@ function CreateMandateScreen() {
           min_trust_score: minTrust,
           allowed_sources: selectedSources.length ? selectedSources : undefined,
           region: region || undefined,
+          canonical_key: keyPayload,
         });
         showToast({ message: "Search activated", type: "success" });
       }
@@ -172,7 +196,32 @@ function CreateMandateScreen() {
     } finally {
       setSaving(false);
     }
-  }, [nameField, maxPriceField, minTrust, selectedSources, region, category, status, isEdit, params.id]);
+  }, [nameField, maxPriceField, minTrust, selectedSources, region, category, status, isEdit, params.id, canonicalKey]);
+
+  // Look the typed name up in the catalogue. Requires a category: /catalog/match
+  // scopes by it, and an unscoped match would return a Pokemon card for
+  // "Daytona". Best + alternatives are shown rather than auto-picking, because
+  // a wrong key silently values the mandate against the wrong item.
+  const runMatch = useCallback(async () => {
+    const q = nameField.value.trim();
+    if (!q || !category) {
+      showToast({ message: "Add a name and a category first", type: "error" });
+      return;
+    }
+    setMatching(true);
+    try {
+      const res = await collectorsApi.matchCatalog(q, category);
+      const hits = [res?.best, ...(res?.alternatives ?? [])].filter(
+        (h): h is CatalogMatchHit => !!h && !!h.item_key,
+      );
+      setMatches(hits);
+      if (!hits.length) showToast({ message: "No catalogue match — the search still works without one" });
+    } catch {
+      showToast({ message: "Catalogue lookup failed", type: "error" });
+    } finally {
+      setMatching(false);
+    }
+  }, [nameField.value, category, showToast]);
 
   if (loading) {
     return (
@@ -222,6 +271,75 @@ function CreateMandateScreen() {
           onChange={handleCategoryChange}
           placeholder="Any"
         />
+
+        {/* Value against a catalogue item — optional, and honest about why.
+            A mandate without one still finds deals; it just cannot report what
+            it saved, because the agent prices every result off an ILIKE on the
+            search string. */}
+        <Text style={[styles.label, { color: colors.muted }]}>VALUE AGAINST (OPTIONAL)</Text>
+        {canonicalKey ? (
+          <View style={[styles.matchPicked, { backgroundColor: colors.card, borderColor: colors.accent }]}>
+            <Ionicons name="pricetag" size={15} color={colors.accent} />
+            <Text style={[styles.matchPickedText, { color: colors.text }]} numberOfLines={2}>
+              {matchTitle ?? canonicalKey}
+            </Text>
+            <AnimatedPressable
+              onPress={() => { setCanonicalKey(null); setMatchTitle(null); setMatches(null); }}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Remove catalogue match"
+            >
+              <Ionicons name="close-circle" size={18} color={colors.muted} />
+            </AnimatedPressable>
+          </View>
+        ) : (
+          <>
+            <AnimatedPressable
+              onPress={runMatch}
+              disabled={matching}
+              style={[styles.matchBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+              accessibilityRole="button"
+              accessibilityLabel="Find this item in the catalogue"
+            >
+              {matching
+                ? <ActivityIndicator size="small" color={colors.accent} />
+                : <Ionicons name="search" size={15} color={colors.accent} />}
+              <Text style={[styles.matchBtnText, { color: colors.accent }]}>
+                {matching ? "Searching the catalogue…" : "Find this item in the catalogue"}
+              </Text>
+            </AnimatedPressable>
+            <Text style={[styles.matchHint, { color: colors.muted }]}>
+              Links the search to a known item so we can show what a deal saved you.
+              Leave it out and the search still runs.
+            </Text>
+          </>
+        )}
+
+        {matches && !canonicalKey ? (
+          <View style={styles.matchList}>
+            {matches.slice(0, 5).map((h) => (
+              <AnimatedPressable
+                key={h.item_key!}
+                onPress={() => {
+                  setCanonicalKey(h.item_key!);
+                  setMatchTitle(h.title ?? h.item_key!);
+                  setMatches(null);
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                }}
+                style={[styles.matchRow, { borderColor: colors.border }]}
+                accessibilityRole="button"
+                accessibilityLabel={`Value against ${h.title ?? h.item_key}`}
+              >
+                <Text style={[styles.matchRowTitle, { color: colors.text }]} numberOfLines={1}>
+                  {h.title ?? h.item_key}
+                </Text>
+                {h.brand ? (
+                  <Text style={[styles.matchRowMeta, { color: colors.muted }]}>{h.brand}</Text>
+                ) : null}
+              </AnimatedPressable>
+            ))}
+          </View>
+        ) : null}
 
         {/* Max Price */}
         <Text style={[styles.label, { color: colors.muted }]}>MAX PRICE PER ITEM ({settings.currency})</Text>
@@ -401,5 +519,25 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   deleteBtnText: { fontSize: 14, fontWeight: "600" },
+  matchBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 11, marginTop: 6,
+  },
+  matchBtnText: { fontSize: 14, fontWeight: '600' },
+  matchHint: { fontSize: 11, lineHeight: 15, marginTop: 6 },
+  matchPicked: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderWidth: 1, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 11, marginTop: 6,
+  },
+  matchPickedText: { flex: 1, fontSize: 14, fontWeight: '600' },
+  matchList: { marginTop: 8, gap: 6 },
+  matchRow: {
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
+  matchRowTitle: { fontSize: 14, fontWeight: '500' },
+  matchRowMeta: { fontSize: 11, marginTop: 2 },
   fieldError: { fontSize: 12, marginTop: 4, marginLeft: 4 },
 });
