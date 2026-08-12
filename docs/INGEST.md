@@ -121,6 +121,11 @@ row because it lacked the 2026-07-25 `attributes_json` fix (662 rejected writes
 per night, `category_items_attrs_is_object`). The pipeline reported success
 throughout: it logs the rows it *attempted*, not the rows Postgres accepted.
 
+**Confirmed unchanged on 2026-08-12** (680 rejections in 24h). The reason it
+never resolved: `schedule:` workflows run the repo's **default branch**, and the
+default branch *is* `feature/all-enhancements`. See the expanded section in
+`docs/DEPLOYMENT.md` for the two ways out.
+
 Before trusting a fix to a pipeline in this directory:
 
 ```bash

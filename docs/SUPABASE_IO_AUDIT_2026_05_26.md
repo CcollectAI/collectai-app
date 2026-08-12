@@ -370,6 +370,64 @@ effort for the queries measured.
 
 ---
 
+## Job 16 outgrew the timeout, and was fixed (2026-08-12)
+
+`hourly_refresh_best_comp` was **failing 18 of 24 runs/day** with "canceling
+statement due to statement timeout". Not a stall — it grew into the ceiling:
+
+| | Duration |
+|---|---|
+| 2026-05-26 (this audit) | 56.7 s |
+| 2026-08-12 measured | **140.5 s** |
+| DB `statement_timeout` | 120 s |
+
+Successful runs took 116–120 s and failures died at exactly 121 s, which is what
+identifies a timeout rather than an error. The matview is **72 kB** — all of the
+cost is the query behind it.
+
+The cause is the shape this audit already described (§"Two corrections"): a
+LATERAL per item over `v_market_hits_canon`, where `canonical_category` was a
+**correlated subquery evaluated per market_hits row**. 5 rows in
+`v_items_canon` × 1,444,719 rows in `market_hits` ≈ 7.2M correlated lookups per
+refresh, with no time filter, on a computed predicate no index can serve.
+
+**Applied:** `20260812_speed_up_market_hits_canon.sql` replaces the correlated
+subquery with a LEFT JOIN. `category_map.raw_category_lower` is the PRIMARY KEY
+(72 rows / 72 distinct, verified), so the join returns at most one row and is
+exactly equivalent — proven per-row over all 1,444,926 rows in a single snapshot:
+**0 mismatches**. `CREATE OR REPLACE VIEW`, so all 7 dependents and every grant
+survive untouched; `mv_daily_median_price` (job 17) reads the same view and gets
+the same relief. `preflight_schema_lock` still PASSes (views aren't in the lock).
+
+    140.5 s -> 72.7 s   (measured REFRESH on the live DB)
+
+**This is relief, not the cure.** 72.7 s against a 120 s ceiling is a 47 s margin
+on a table that went 56.7 s → 140.5 s in under three months. The durable fix is
+to stop scanning `market_hits` once per item and aggregate it ONCE:
+
+```sql
+SELECT i.id AS item_id, b.hit_id
+FROM v_items_canon i
+JOIN (SELECT COALESCE(m.canonical_category, lower(mh.category)) AS canonical_category,
+             max(mh.id) AS hit_id
+      FROM market_hits mh
+      LEFT JOIN category_map m ON m.raw_category_lower = lower(mh.category)
+      WHERE mh.category IS NOT NULL AND btrim(mh.category) <> ''
+      GROUP BY 1) b ON b.canonical_category = i.canonical_category
+```
+
+Measured **5.7 s (~25x)**, with an `EXCEPT` diff of **0 rows in both
+directions** against the current definition. It is not applied because it
+changes `mv_item_best_comp_canon` itself, and a matview cannot be replaced in
+place — `DROP … CASCADE` would take `v_category_comp_coverage`,
+`v_category_comp_coverage_canon` and `v_item_best_comp_full` with it, and those
+carry **96 grants** between them. The safe route, when someone wants the other
+20x: build `mv_item_best_comp_canon_v2` alongside, `CREATE OR REPLACE VIEW` the
+three dependents onto it (in place, so grants survive), `cron.alter_job(16, …)`,
+then drop the old one. Each step is independently reversible.
+
+---
+
 ## Cross-references
 
 - `docs/PHASE_3_QUERY_REWRITES.md` — the queued rewrite plan (gates this work)

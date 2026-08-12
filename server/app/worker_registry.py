@@ -11,12 +11,24 @@ and also tracked in-memory for fast access.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import socket
 import time
 from datetime import datetime, timezone
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+# The machine that recorded the run. `worker_runs` is a PROD table reached over
+# the direct DSN, so a worker started by hand on a laptop writes into it exactly
+# like the server does — and the watchdog then reports those rows as production
+# failures. On 2026-08-12 five local runs of calibration_worker and
+# partition_drop_worker (gaierror Errno 8 = Darwin's EAI_NONAME; boto3 not
+# installed) paged as two `high` findings while prod's own runs were all `ok`.
+# Stamping the origin is what lets the watchdog tell those apart — see the
+# worker-health check in server/scripts/watchdog.py.
+_HOST = socket.gethostname()
 
 # Cooldown tracking for overdue alerts (epoch timestamp of last alert sent)
 _last_overdue_alert_at: float = 0.0
@@ -185,6 +197,19 @@ def record_run(
         logger.debug("[worker_registry] Failed to trigger DB persist for %s", worker_name)
 
 
+def last_recorded_at(worker_name: str) -> float:
+    """Epoch seconds of this worker's most recent `record_run()`, or 0.0.
+
+    Exists so a caller can ask "did this worker already record the cycle I just
+    ran?" before recording it a second time. `run_once()` bodies that record
+    their own outcome (partition_drop_worker.py:278, calibration_worker.py:250)
+    are invoked by an orchestrator that also records — two rows ~1ms apart for
+    one cycle, which inflates run counts and skews the watchdog's failure
+    ratio. One cycle = one worker_runs row.
+    """
+    return float((_registry.get(worker_name) or {}).get("last_run") or 0.0)
+
+
 # Track fire-and-forget persist tasks so the GC doesn't drop them mid-flight
 # (learning 2026-04-20: create_task without holding a reference lets Python
 # drop the task before the INSERT completes, silently losing worker_runs rows
@@ -243,26 +268,22 @@ async def _async_persist_run(
     When error_repr is provided, writes it into metadata.error_repr so the
     cause of a 'loud-but-empty' error stays visible in worker_runs.
     """
+    # `host` on EVERY row, not just error rows: the watchdog scopes the
+    # prod failure ratio to rows this machine recorded, and a row with no
+    # host at all is indistinguishable from a legacy row.
+    meta: dict = {"host": _HOST}
+    if error_repr:
+        meta["error_repr"] = error_repr
     async with pool.acquire() as conn:
-        if error_repr:
-            await conn.execute(
-                """
-                INSERT INTO public.worker_runs (worker_name, status, metadata)
-                VALUES ($1, $2, jsonb_build_object('error_repr', $3::text))
-                """,
-                worker_name,
-                status,
-                error_repr,
-            )
-        else:
-            await conn.execute(
-                """
-                INSERT INTO public.worker_runs (worker_name, status)
-                VALUES ($1, $2)
-                """,
-                worker_name,
-                status,
-            )
+        await conn.execute(
+            """
+            INSERT INTO public.worker_runs (worker_name, status, metadata)
+            VALUES ($1, $2, $3::jsonb)
+            """,
+            worker_name,
+            status,
+            json.dumps(meta),
+        )
 
 
 def get_worker_health() -> dict:

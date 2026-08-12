@@ -486,6 +486,38 @@ catalog row, nightly, for weeks.
 > contain** means the writer is not the app. Check GitHub Actions next — and
 > check *which ref* the workflow runs, not just that it ran.
 
+**Still live on 2026-08-12 — 680 rejections/day, two weeks later.** Re-verified
+end to end:
+
+```bash
+gh repo view --json defaultBranchRef        # -> feature/all-enhancements
+gh run list --workflow=nightly-ingest.yml   # -> ran feature/all-enhancements, "success", 04:41Z
+git show origin/feature/all-enhancements:server/pipelines/import_common.py | grep attributes_json
+#   284:  row["attributes_json"] = json.dumps(self.attributes_json)   <- pre-fix
+grep -n attributes_json server/pipelines/import_common.py
+#   300:  row["attributes_json"] = self.attributes_json               <- fixed here
+```
+
+**The root cause is one repo setting, not a stale checkout.** GitHub runs
+`schedule:` workflows from the **default branch**, and this repo's default
+branch *is* `feature/all-enhancements`. So the nightly pipeline does not lag
+behind the default branch — it faithfully runs it, and the default branch has
+been the stale one since 2026-07-02. Nothing merged into `main` or into a
+working branch can ever reach the nightly ingest while that is true, and the
+workflow will keep reporting **success** because it logs rows attempted, not
+rows Postgres accepted.
+
+Two ways out, both requiring a decision rather than a deploy:
+
+1. **Point the default branch at current code** (repo Settings → Branches).
+   Fixes every scheduled workflow at once; also changes the default PR base.
+2. **Merge the fix into `feature/all-enhancements`** and keep it as default.
+   Fixes tonight's run; the drift returns with the next fix.
+
+Until one is done, treat `category_items_attrs_is_object` in the watchdog as
+**expected daily noise from a known cause** — which is its own hazard, and the
+reason this is written down rather than muted.
+
 After merging a server fix, ask: does this need to reach EC2 (rsync), the
 scheduled pipelines (branch), or both?
 

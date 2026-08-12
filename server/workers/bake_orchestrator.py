@@ -482,7 +482,30 @@ async def _run_worker_loop(
     needs_db_dsn: bool,
 ) -> None:
     """Run a single worker's run_once() in a loop with sleep(interval)."""
-    from app.worker_registry import record_run
+    from app.worker_registry import last_recorded_at, record_run
+
+    def _already_recorded(since_wall: float) -> bool:
+        """Did this worker's own run_once() already record this cycle?
+
+        ONE CYCLE = ONE `worker_runs` ROW. Some run_once() bodies record their
+        own outcome before returning (partition_drop_worker.py:278,
+        calibration_worker.py:250) — and this orchestrator recorded again the
+        moment the await returned, so those workers wrote TWO rows ~1ms apart
+        per cycle (observed 22:09:19.751556 and .753306 on 2026-08-11).
+
+        That is not cosmetic. The watchdog pages when errors/total >= 0.5, and
+        partition_drop_worker's run_once() returns NORMALLY after recording
+        `error` for an unexported partition — so the pair became one error row
+        plus one ok row: a permanent 50% error rate sitting exactly on the
+        paging threshold while the orchestrator considers the cycle fine.
+
+        USED ON THE SUCCESS PATH ONLY. There the suppressed row is an exact
+        duplicate ("ok", no error_repr) and dropping it loses nothing. On the
+        error paths the orchestrator's row is the RICHER one — it carries
+        error_repr, which calibration_worker's `finally` does not — so those
+        stay unguarded rather than trade a duplicate row for a lost cause.
+        """
+        return last_recorded_at(name) > since_wall
 
     # Check DB_DSN requirement
     if needs_db_dsn and not os.getenv("DB_DSN"):
@@ -552,6 +575,10 @@ async def _run_worker_loop(
         # duration measures actual work, not queue wait.
         async with _heavy_gate(name):
             t0 = time.monotonic()
+            # Wall-clock twin of t0. `record_run` stamps the in-memory registry
+            # with time.time(), so comparing against a monotonic value would
+            # never match. Used by _already_recorded() below.
+            t0_wall = time.time()
             _in_flight.add(name)
             try:
                 # Some run_once() functions accept keyword args — call with no args
@@ -563,7 +590,8 @@ async def _run_worker_loop(
                 await asyncio.wait_for(_coro, timeout=_cap)
 
                 duration = time.monotonic() - t0
-                record_run(name, "ok", duration_s=duration)
+                if not _already_recorded(t0_wall):
+                    record_run(name, "ok", duration_s=duration)
                 _worker_last_ok[name] = time.time()
                 _worker_errors.pop(name, None)
                 _worker_first_error_at.pop(name, None)
@@ -585,6 +613,12 @@ async def _run_worker_loop(
                     _worker_first_error_at[name] = time.time()
                 error_repr = f"TimeoutError: cycle exceeded {_cap}s — killed, retry next interval"
                 try:
+                    # NOT gated on _already_recorded: see its docstring. On the
+                    # error paths this row is the one carrying error_repr —
+                    # calibration_worker.py:250 records a bare status from a
+                    # `finally`, with no cause attached — so suppressing it
+                    # would trade a duplicate row for a lost reason, which is
+                    # the opposite of what the watchdog needs.
                     record_run(name, "error", duration_s=duration, error_repr=error_repr)
                 except Exception:
                     pass
@@ -617,6 +651,9 @@ async def _run_worker_loop(
                 )
                 error_repr = f"{type(e).__name__}: {e!s}{frame_str}"[:500]
                 try:
+                    # Deliberately unguarded — this row carries error_repr and
+                    # the worker's own `finally` row does not. See the timeout
+                    # path above.
                     record_run(name, "error", duration_s=duration, error_repr=error_repr)
                 except Exception:
                     pass

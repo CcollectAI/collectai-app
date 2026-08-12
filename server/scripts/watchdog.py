@@ -33,9 +33,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import json
 import os
 import re
+import socket
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -160,6 +162,24 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
         bugs.append({"severity": sev, "title": title, "detail": detail,
                      "link": link, "verify": verify, "suggested_fix": fix})
 
+    @contextlib.contextmanager
+    def guard(check_name: str, sev: str = "medium"):
+        """Run a check; if it throws, SAY so instead of swallowing it.
+
+        Every health check here was wrapped in `except Exception: pass`, so a
+        renamed column or a revoked grant would delete the check from the
+        report entirely — and a report with no finding is exactly what a
+        healthy day looks like. This is the same failure the DAC7 section of
+        docs/WATCHDOG.md calls out ("the check itself errors -> medium;
+        reporting nothing must never look like all-clear"), which was applied
+        to that one check and to none of the others.
+        """
+        try:
+            yield
+        except Exception as e:
+            bug(sev, "%s check could not run" % check_name,
+                "%s: %s" % (type(e).__name__, str(e)[:200]))
+
     # --- CHECK constraints narrower than the code (bit twice on 2026-07-25) ---
     try:
         dm = (SERVER_ROOT / "app" / "features" / "data_moat.py").read_text(errors="ignore")
@@ -183,7 +203,7 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
         bug("info", "constraint-vs-code check could not run", str(e)[:200])
 
     # --- tables the code reads that nothing writes ---
-    try:
+    with guard("RLS coverage"):
         rows = await c.fetch("""
             SELECT c.relname tbl, (SELECT COUNT(*) FROM pg_policy p WHERE p.polrelid=c.oid) pols
             FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
@@ -197,43 +217,97 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
             # deny-all is defence in depth rather than a dead feature.
             #   dac7_seller_year -> GET /p2p/dac7/me (tax counters; a member must
             #   not be able to query other members' rows even by accident)
-            if r["tbl"] in ("subscription_events", "dac7_seller_year"):
+            #   notification_{impressions,interactions,outcomes} -> POST
+            #   /notifications/feedback/{impression,interaction,outcome}.
+            #   Verified 2026-08-12 rather than assumed: all three writers are
+            #   `pool.acquire()` + raw INSERT in
+            #   app/features/notification_feedback_router.py (lines 63-127), so
+            #   every access is asyncpg on the direct DSN and PostgREST is never
+            #   in the path. Nothing in the app or the RPCs reads them.
+            #   Checked against the failure this doc records: the RLS
+            #   justification list previously accepted "served through
+            #   /notifications" for user_notifications, which read a DIFFERENT
+            #   table. The claim to test is not "an endpoint exists" but "this
+            #   table's own reader and writer bypass RLS".
+            if r["tbl"] in ("subscription_events", "dac7_seller_year",
+                            "notification_impressions", "notification_interactions",
+                            "notification_outcomes"):
                 continue
             bug("medium", "RLS enabled with no policy: %s" % r["tbl"],
                 "Users can neither read nor write this table; any feature on it is silently empty.",
                 tbl_link(r["tbl"]),
                 "SELECT relrowsecurity FROM pg_class WHERE relname='%s';" % r["tbl"])
-    except Exception:
-        pass
 
     # --- worker health ---
+    #
+    # Scoped to runs THIS machine recorded. `worker_runs` is a prod table on the
+    # direct DSN, so a worker started by hand on a laptop writes into it too: on
+    # 2026-08-12 five local runs each of calibration_worker and
+    # partition_drop_worker (Darwin gaierror; no boto3) produced two `high`
+    # findings while every run prod itself made was `ok`. Rows written before
+    # metadata.host existed have no host and are counted as ours — a legacy row
+    # must fail toward alerting, never toward silence.
+    #
+    # The detail carries the actual error, per this doc's own rule: a failing
+    # worker must say WHY, not just that it failed. Had it done so, the two
+    # findings above would have read "ModuleNotFoundError: No module named
+    # 'boto3'" and been recognised as a laptop in one glance.
     try:
+        host = socket.gethostname()
         rows = await c.fetch("""
             SELECT worker_name,
-                   COUNT(*) FILTER (WHERE status='ok') ok,
-                   COUNT(*) FILTER (WHERE status<>'ok') err,
-                   MAX(started_at) last_run
-            FROM worker_runs WHERE started_at > %s
-            GROUP BY worker_name ORDER BY err DESC, worker_name""" % since)
+                   COUNT(*) FILTER (WHERE status='ok'  AND mine) ok,
+                   COUNT(*) FILTER (WHERE status<>'ok' AND mine) err,
+                   COUNT(*) FILTER (WHERE status<>'ok' AND NOT mine) foreign_err,
+                   MAX(started_at) last_run,
+                   (ARRAY_AGG(metadata->>'error_repr' ORDER BY started_at DESC)
+                      FILTER (WHERE status<>'ok' AND mine))[1] last_err,
+                   (ARRAY_AGG(DISTINCT metadata->>'host')
+                      FILTER (WHERE status<>'ok' AND NOT mine)) foreign_hosts
+            FROM (
+              SELECT *, COALESCE(metadata->>'host', $1) = $1 AS mine
+              FROM worker_runs WHERE started_at > %s
+            ) w
+            GROUP BY worker_name ORDER BY err DESC, worker_name""" % since, host)
         for r in rows:
             total = r["ok"] + r["err"]
             if r["err"] and total and r["err"] / total >= 0.5:
                 bug("high", "worker failing: %s" % r["worker_name"],
-                    "%d errors / %d runs in %dh" % (r["err"], total, hours),
+                    "%d errors / %d runs in %dh — last error: %s"
+                    % (r["err"], total, hours, r["last_err"] or "(no error_repr recorded)"),
                     tbl_link("worker_runs"),
                     "SELECT status, metadata, started_at FROM worker_runs WHERE worker_name='%s' ORDER BY started_at DESC LIMIT 5;" % r["worker_name"])
             elif r["ok"]:
                 healthy.append({"check": "worker %s" % r["worker_name"],
                                 "detail": "%d ok / %d err" % (r["ok"], r["err"])})
-    except Exception:
-        pass
+            # Named, never dropped: a run failing on someone's laptop is not a
+            # prod incident, but silently discarding it is how a real second
+            # host would go unnoticed.
+            if r["foreign_err"]:
+                bug("info", "worker %s failed on another host" % r["worker_name"],
+                    "%d error run(s) recorded by %s, not by this server (%s). "
+                    "Not counted toward the prod failure rate."
+                    % (r["foreign_err"],
+                       ", ".join([h for h in (r["foreign_hosts"] or []) if h]) or "an unnamed host",
+                       host),
+                    tbl_link("worker_runs"),
+                    "SELECT started_at, status, metadata->>'host' host, metadata->>'error_repr' err FROM worker_runs WHERE worker_name='%s' ORDER BY started_at DESC LIMIT 10;" % r["worker_name"])
+    except Exception as e:
+        # This check going quiet must not read as "all workers healthy".
+        bug("medium", "worker-health check could not run", str(e)[:200])
 
     # --- pg_cron health ---
-    try:
+    with guard("pg_cron health"):
         rows = await c.fetch("""
             SELECT j.jobname,
                    COUNT(d.*) FILTER (WHERE d.status='succeeded') ok,
-                   COUNT(d.*) FILTER (WHERE d.status<>'succeeded') bad
+                   COUNT(d.*) FILTER (WHERE d.status<>'succeeded') bad,
+                   -- The reason, not just the count. "13 failures / 24 runs"
+                   -- costs an SSH round trip to learn what every one of those
+                   -- runs already recorded: "canceling statement due to
+                   -- statement timeout".
+                   (ARRAY_AGG(d.return_message ORDER BY d.start_time DESC)
+                      FILTER (WHERE d.status<>'succeeded'))[1] last_msg
             FROM cron.job j
             LEFT JOIN cron.job_run_details d ON d.jobid=j.jobid AND d.start_time > %s
             WHERE j.active GROUP BY j.jobname""" % since)
@@ -241,10 +315,11 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
             tot = r["ok"] + r["bad"]
             if r["bad"] and tot and r["bad"] / tot >= 0.5:
                 bug("high", "cron job failing: %s" % r["jobname"],
-                    "%d failures / %d runs" % (r["bad"], tot), sql_link(),
+                    "%d failures / %d runs — last message: %s"
+                    % (r["bad"], tot,
+                       " ".join((r["last_msg"] or "(none recorded)").split())[:200]),
+                    sql_link(),
                     "SELECT status, return_message, start_time FROM cron.job_run_details d JOIN cron.job j USING (jobid) WHERE j.jobname='%s' ORDER BY start_time DESC LIMIT 5;" % r["jobname"])
-    except Exception:
-        pass
 
     # --- ingest freshness: the pipeline that feeds every price ---
     try:
@@ -784,7 +859,25 @@ def collect_supabase_logs(hours: int) -> dict:
     start = (now - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
     end = now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    def query(sql: str):
+    # Which sub-queries we could not ask. NOT the same thing as "asked, and the
+    # answer was zero" — see the `failed` handling below.
+    failed: list = []
+
+    def query(sql: str, label: str):
+        """Run one Logflare query. Returns rows, or None when we could not ask.
+
+        `None` and `[]` mean different things and the difference is the whole
+        point of this function. Until 2026-08-12 every failure path here —
+        curl non-zero, a timeout, an HTTP error body with no `result` key, a
+        revoked PAT — returned `[]`, which then summed to `"postgres_errors": 0`
+        and rendered as a green day. It was wrong on five of the last nine days:
+        08-04/05/06 reported 0 Postgres errors AND 0 API calls, and 08-11
+        reported 0 Postgres errors, while every neighbouring day logged 600-760
+        rejected writes. Three days of "clean" were three days of blind.
+
+        docs/WATCHDOG.md already states the rule this now obeys, for the DAC7
+        check: *reporting nothing must never look like all-clear.*
+        """
         url = ("https://api.supabase.com/v1/projects/%s/analytics/endpoints/logs.all"
                "?sql=%s&iso_timestamp_start=%s&iso_timestamp_end=%s"
                % (PROJECT_REF, urllib.parse.quote(sql), start, end))
@@ -792,43 +885,67 @@ def collect_supabase_logs(hours: int) -> dict:
             r = subprocess.run(["curl", "-s", "--max-time", "45",
                                 "-H", "Authorization: Bearer %s" % tok, url],
                                capture_output=True, text=True, timeout=60)
-            return (json.loads(r.stdout or "{}") or {}).get("result") or []
-        except Exception:
-            return []
+            if r.returncode != 0:
+                failed.append("%s: curl exit %d" % (label, r.returncode))
+                return None
+            payload = json.loads(r.stdout or "{}") or {}
+            if not isinstance(payload, dict) or "result" not in payload:
+                # Management API errors arrive as 200-with-a-body or 4xx JSON;
+                # either way there is no `result` key and we learned nothing.
+                detail = (payload.get("message") or payload.get("error")
+                          or (r.stdout or "")[:120] or "empty response")
+                failed.append("%s: %s" % (label, str(detail)[:160]))
+                return None
+            return payload.get("result") or []
+        except Exception as e:
+            failed.append("%s: %r" % (label, e))
+            return None
 
-    out["available"] = True
     out["window"] = {"start": start, "end": end}
 
-    out["postgres_errors"] = [
-        {"message": (r.get("msg") or "")[:220], "count": r.get("n")}
-        for r in query(
-            'select event_message as msg, count(*) as n from postgres_logs '
-            'cross join unnest(metadata) m cross join unnest(m.parsed) p '
-            'where p.error_severity = "ERROR" group by msg order by n desc limit 10')
-    ]
-    out["api_status_codes"] = [
-        {"code": r.get("code"), "count": r.get("n")}
-        for r in query(
-            'select cast(r.status_code as string) as code, count(*) as n from edge_logs '
-            'cross join unnest(metadata) m cross join unnest(m.response) r '
-            'group by code order by n desc')
-    ]
-    out["api_failing_paths"] = [
-        {"path": r.get("path"), "code": r.get("code"), "count": r.get("n")}
-        for r in query(
-            'select rq.path as path, cast(rs.status_code as string) as code, count(*) as n '
-            'from edge_logs cross join unnest(metadata) m '
-            'cross join unnest(m.request) rq cross join unnest(m.response) rs '
-            'where rs.status_code >= 400 group by path, code order by n desc limit 10')
-    ]
-    errs = sum(e["count"] or 0 for e in out["postgres_errors"])
+    pg_rows = query(
+        'select event_message as msg, count(*) as n from postgres_logs '
+        'cross join unnest(metadata) m cross join unnest(m.parsed) p '
+        'where p.error_severity = "ERROR" group by msg order by n desc limit 10',
+        "postgres_errors")
+    code_rows = query(
+        'select cast(r.status_code as string) as code, count(*) as n from edge_logs '
+        'cross join unnest(metadata) m cross join unnest(m.response) r '
+        'group by code order by n desc',
+        "api_status_codes")
+    path_rows = query(
+        'select rq.path as path, cast(rs.status_code as string) as code, count(*) as n '
+        'from edge_logs cross join unnest(metadata) m '
+        'cross join unnest(m.request) rq cross join unnest(m.response) rs '
+        'where rs.status_code >= 400 group by path, code order by n desc limit 10',
+        "api_failing_paths")
+
+    out["postgres_errors"] = [{"message": (r.get("msg") or "")[:220], "count": r.get("n")}
+                              for r in (pg_rows or [])]
+    out["api_status_codes"] = [{"code": r.get("code"), "count": r.get("n")}
+                               for r in (code_rows or [])]
+    out["api_failing_paths"] = [{"path": r.get("path"), "code": r.get("code"), "count": r.get("n")}
+                                for r in (path_rows or [])]
+
+    # A total is only a number when the query behind it actually answered.
+    # `None` renders as "unknown" and, unlike 0, cannot be mistaken for calm.
     codes = {c["code"]: c["count"] for c in out["api_status_codes"]}
     out["totals"] = {
-        "postgres_errors": errs,
-        "api_5xx": sum(v for k, v in codes.items() if str(k).startswith("5")),
-        "api_4xx": sum(v for k, v in codes.items() if str(k).startswith("4")),
-        "api_ok": sum(v for k, v in codes.items() if str(k).startswith("2")),
+        "postgres_errors": (sum(e["count"] or 0 for e in out["postgres_errors"])
+                            if pg_rows is not None else None),
+        "api_5xx": (sum(v for k, v in codes.items() if str(k).startswith("5"))
+                    if code_rows is not None else None),
+        "api_4xx": (sum(v for k, v in codes.items() if str(k).startswith("4"))
+                    if code_rows is not None else None),
+        "api_ok": (sum(v for k, v in codes.items() if str(k).startswith("2"))
+                   if code_rows is not None else None),
     }
+    # `available` is now earned, not assumed: it used to be set to True before
+    # the first query ran, so a totally unreachable Logflare still reported
+    # `"available": true` with zeros under it.
+    out["available"] = pg_rows is not None
+    if failed:
+        out["unavailable"] = failed
     out["links"] = {
         "postgres_logs": "https://supabase.com/dashboard/project/%s/logs/postgres-logs" % PROJECT_REF,
         "api_logs": "https://supabase.com/dashboard/project/%s/logs/edge-logs" % PROJECT_REF,
@@ -914,7 +1031,20 @@ async def main() -> int:
                          "link": (sblogs.get("links") or {}).get("postgres_logs", ""),
                          "verify": "Supabase > Logs > Postgres, filter error_severity=ERROR",
                          "suggested_fix": ""})
-    if (sblogs.get("totals") or {}).get("api_5xx", 0) >= 10:
+    # Blind is a finding. Without this the report simply omits whatever the
+    # failed query would have said, and a day we could not see reads exactly
+    # like a day with nothing to see — which is how 08-04/05/06 passed as green
+    # while catalog ingest was losing every attribute-bearing row.
+    if sblogs.get("unavailable"):
+        bugs.append({"severity": "medium",
+                     "title": "watchdog could not read part of the Supabase logs",
+                     "detail": ("This report is INCOMPLETE — the counts below are missing, "
+                                "not zero: %s" % "; ".join(sblogs["unavailable"])[:400]),
+                     "link": (sblogs.get("links") or {}).get("postgres_logs", ""),
+                     "verify": ("PAT: head -c8 ~/.supabase/access-token (must start sbp_); "
+                                "mint at https://supabase.com/dashboard/account/tokens"),
+                     "suggested_fix": "Refresh the Management API PAT, then re-run with --hours 24 --summary"})
+    if ((sblogs.get("totals") or {}).get("api_5xx") or 0) >= 10:
         bugs.append({"severity": "high", "title": "API returning 5xx",
                      "detail": "%d 5xx responses in %dh" % (sblogs["totals"]["api_5xx"], args.hours),
                      "link": (sblogs.get("links") or {}).get("api_logs", ""),
@@ -1068,22 +1198,34 @@ async def main() -> int:
             sb = report.get("supabase_logs") or {}
             if sb.get("available"):
                 t = sb.get("totals") or {}
-                ok, e4, e5 = t.get("api_ok", 0), t.get("api_4xx", 0), t.get("api_5xx", 0)
-                tot = ok + e4 + e5
-                rate = (100.0 * (e4 + e5) / tot) if tot else 0.0
                 body += "\n\n<b>\U0001f6f0 Supabase (API + DB)</b>"
-                body += "\n<b>{:,}</b> requests".format(tot)
-                body += "\n  {:,} succeeded".format(ok)
-                body += "\n  <b>{:,}</b> client errors (4xx)".format(e4)
-                body += "\n  <b>{:,}</b> server errors (5xx)".format(e5)
-                body += "\n  <b>{:.1f}%</b> of all requests failed".format(rate)
+                # A total is None when its query could not be asked, and the
+                # API and Postgres queries fail INDEPENDENTLY — 08-09 and 08-12
+                # both returned Postgres rows with no API rows at all. Note
+                # `t.get("api_ok", 0)` cannot be used to defend this: the key
+                # exists and holds None, so the default never applies and the
+                # arithmetic below would raise TypeError and kill the digest.
+                if None in (t.get("api_ok"), t.get("api_4xx"), t.get("api_5xx")):
+                    body += "\n<i>API request counts unavailable this run</i>"
+                else:
+                    ok, e4, e5 = t["api_ok"], t["api_4xx"], t["api_5xx"]
+                    tot = ok + e4 + e5
+                    rate = (100.0 * (e4 + e5) / tot) if tot else 0.0
+                    body += "\n<b>{:,}</b> requests".format(tot)
+                    body += "\n  {:,} succeeded".format(ok)
+                    body += "\n  <b>{:,}</b> client errors (4xx)".format(e4)
+                    body += "\n  <b>{:,}</b> server errors (5xx)".format(e5)
+                    body += "\n  <b>{:.1f}%</b> of all requests failed".format(rate)
                 paths = (sb.get("api_failing_paths") or [])[:3]
                 if paths:
                     body += "\n\n<b>Failing endpoints</b>"
                     for p in paths:
                         body += "\n  <b>{:,}</b> failed with {} — {}".format(
                             p["count"] or 0, esc(p["code"]), esc(p["path"]))
-                body += "\n\n<b>{:,}</b> Postgres errors".format(t.get("postgres_errors", 0) or 0)
+                if t.get("postgres_errors") is None:
+                    body += "\n\n<i>Postgres error counts unavailable this run</i>"
+                else:
+                    body += "\n\n<b>{:,}</b> Postgres errors".format(t["postgres_errors"])
                 for e in (sb.get("postgres_errors") or [])[:3]:
                     body += "\n  <b>{:,}</b> — {}".format(e["count"] or 0, esc(e["message"][:100]))
                 links = sb.get("links") or {}
@@ -1092,8 +1234,10 @@ async def main() -> int:
                     a_href(links.get("api_logs", ""), "api logs"),
                     a_href(links.get("auth_logs", ""), "auth logs")] if x)
             else:
-                body += "\n\n<b>\U0001f6f0 Supabase logs</b>\n<i>%s</i>" % esc(
-                    (sb.get("error") or "unavailable")[:180])
+                # Name the reason. "unavailable" alone is what let three blind
+                # days pass unexamined.
+                why = sb.get("error") or "; ".join(sb.get("unavailable") or []) or "unavailable"
+                body += "\n\n<b>\U0001f6f0 Supabase logs</b>\n<i>%s</i>" % esc(why[:250])
 
             body += "\n\n<b>\U0001f4dc App journal (EC2)</b>"
             body += "\n{:,} lines · {:,} error patterns · {:,} tracebacks".format(

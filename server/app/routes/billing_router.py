@@ -20,6 +20,7 @@ from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import asyncpg
 from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import JSONResponse
 
@@ -301,21 +302,46 @@ async def _get_subscription(user_id: str) -> dict | None:
 
 
 async def _ensure_subscription_row(user_id: str) -> dict:
-    """Return existing sub row or create a free-tier one."""
+    """Return existing sub row or create a free-tier one.
+
+    `subscriptions.user_id` is `REFERENCES auth.users(id) ON DELETE CASCADE`, so
+    this INSERT raises for a token naming a user that does not exist. On
+    2026-08-12 that happened 21 times in 24h, all for the synthetic uid
+    `00000000-0000-0000-0000-0000000000aa`, reaching us through
+    `GET /billing/status`. Every one of them landed in the Postgres log as an
+    ERROR and NONE of them appeared in ours — which is precisely the diagnostic
+    in docs/DEPLOYMENT.md ("an error Postgres reports that your application log
+    does not contain"), except here the writer IS the app and the cause was
+    simply never logged on this path.
+
+    A subscription row cannot be created for a user that does not exist, and
+    retrying will never help. Degrade to the free-tier default the caller would
+    have got anyway, and log it ONCE at error level with the uid so the next
+    person sees the responsible id in `bake.log` instead of inferring it from
+    Supabase's Postgres logs.
+    """
     sub = await _get_subscription(user_id)
     if sub:
         return sub
     pool = get_pool()
     if pool is None:
         return {"plan": "free", "status": "active"}
-    row = await pool.fetchrow(
-        "INSERT INTO subscriptions (user_id, plan, status) "
-        "VALUES ($1, 'free', 'active') "
-        "ON CONFLICT (user_id) DO UPDATE SET updated_at = now() "
-        "RETURNING plan, status, current_period_end, cancel_at_period_end, "
-        "stripe_customer_id, stripe_subscription_id",
-        user_id,
-    )
+    try:
+        row = await pool.fetchrow(
+            "INSERT INTO subscriptions (user_id, plan, status) "
+            "VALUES ($1, 'free', 'active') "
+            "ON CONFLICT (user_id) DO UPDATE SET updated_at = now() "
+            "RETURNING plan, status, current_period_end, cancel_at_period_end, "
+            "stripe_customer_id, stripe_subscription_id",
+            user_id,
+        )
+    except asyncpg.ForeignKeyViolationError:
+        _log.error(
+            "[billing] no auth.users row for %s — serving free tier without "
+            "persisting. A token naming a deleted or synthetic user.",
+            user_id,
+        )
+        return {"plan": "free", "status": "active"}
     return dict(row) if row else {"plan": "free", "status": "active"}
 
 

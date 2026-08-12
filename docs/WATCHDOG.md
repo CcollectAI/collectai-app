@@ -78,6 +78,101 @@ a window in which Supabase logged **680**, including:
 **When a screen looks empty, check whether its writes are being REJECTED before
 concluding the feature is unused.**
 
+### An empty answer is not a zero (2026-08-12)
+
+`collect_supabase_logs.query()` returned `[]` on **every** failure path — curl
+non-zero, timeout, revoked PAT, an HTTP error body with no `result` key — and
+`out["available"] = True` was set *before the first query ran*. A source we
+could not read therefore summed to `"postgres_errors": 0` and rendered as a
+calm day.
+
+It was wrong on five of the last nine days:
+
+| Day | Reported | Actually |
+|---|---|---|
+| 08-04, 08-05, 08-06 | 0 Postgres errors, 0 API requests | neighbouring days logged 628–725/day |
+| 08-09, 08-12 | Postgres rows present, all API counts 0 | the `edge_logs` query alone had failed |
+| 08-11 | 0 Postgres errors | 761 the next morning, same constraint |
+
+Three consecutive "green" days were three blind days, while catalog ingest was
+losing every attribute-bearing row (see below).
+
+Now: `query()` returns `None` (could not ask) as distinct from `[]` (asked,
+nothing there); a total whose query failed is `None`, never `0`; `available`
+is earned from the result; and a blind run raises its own `medium` finding
+naming each failed sub-query. **Proved by pointing the collector at an invalid
+project ref** — `available: false`, totals `None`, three named failures, the
+finding present, where the identical input previously produced a green report.
+
+Watch the seam this created: `available` is true when Postgres answered even if
+the API query did not, so the digest must treat each total independently.
+`t.get("api_ok", 0)` does **not** defend against this — the key exists holding
+`None`, so the default never applies and `ok + e4 + e5` raises `TypeError`.
+That exception is caught by the digest's own `except`, which prints to stderr
+and sends nothing: the daily report would have vanished silently on exactly the
+days the logs were partly blind. The renderer now prints *"counts unavailable
+this run"* per section instead.
+
+### `worker_runs` is a prod table, and a laptop can write to it (2026-08-12)
+
+Two `high` findings — `calibration_worker` and `partition_drop_worker`, 5
+errors / 9 runs each. Neither worker was broken. All five errors per worker came
+from a **local machine**: `gaierror: [Errno 8] nodename nor servname provided`
+(Errno 8 is Darwin's `EAI_NONAME`; Linux says `[Errno -2] Name or service not
+known`) and `ModuleNotFoundError: No module named 'boto3'`. Every run prod made
+in the same window was `ok`.
+
+`record_run()` writes over the direct DSN, so a worker started by hand on a
+laptop lands in the same table the health check reads, and poisons it for 24h.
+
+- `worker_registry._async_persist_run` now stamps `metadata.host` on **every**
+  row, not just error rows.
+- The check counts only rows this machine recorded. Rows with no host (legacy)
+  count as ours — **a legacy row must fail toward alerting, never toward
+  silence.**
+- A failure from another host is reported as `info`, naming the host, rather
+  than dropped: a second real server must not become invisible.
+
+**A failing worker must say WHY** (the rule this doc already sets for tcgcsv)
+was not being applied by the generic check — the finding said only "5 errors / 9
+runs". It now carries `metadata.error_repr`, and the pg_cron finding carries the
+last `return_message`. Both new findings identify themselves at a glance:
+
+```
+worker failing: partition_drop_worker
+  5 errors / 9 runs in 24h — last error: ModuleNotFoundError: No module named 'boto3'
+cron job failing: hourly_refresh_best_comp
+  18 failures / 24 runs — last message: ERROR: canceling statement due to statement timeout
+```
+
+### One cycle = one `worker_runs` row (2026-08-12)
+
+Every prod run wrote **two** rows ~1ms apart (`22:09:19.751556` and
+`.753306`). `bake_orchestrator` records when `run_fn()` returns, and some
+`run_once()` bodies record their own outcome first
+(`partition_drop_worker.py:278`, `calibration_worker.py:250`).
+
+Not cosmetic: `partition_drop_worker.run_once()` records `error` for an
+unexported partition and then returns **normally**, so the pair became one
+`error` + one `ok` — a permanent 50% error rate sitting exactly on the
+`>= 0.5` paging threshold, while the orchestrator considered the cycle fine.
+
+The orchestrator now skips its own record when the worker already recorded
+during this cycle — **on the success path only.** On the error paths the
+orchestrator's row is the richer one (it carries `error_repr`;
+`calibration_worker`'s `finally` records a bare status), so suppressing it
+would trade a duplicate row for a lost cause.
+
+### Checks that go quiet (2026-08-12)
+
+The RLS, worker and pg_cron checks were each wrapped in `except Exception:
+pass`. A renamed column or a revoked grant would delete the check from the
+report — and a report with no finding is what a healthy day looks like. They
+now run inside a `guard()` helper that turns any exception into a `medium`
+finding. **Still unconverted** (lower stakes, display-only or already
+reporting): the activity collectors and the ingest-freshness, partition-runway,
+`mv_supply_trend` and `schema.lock` checks.
+
 ### Management API credential
 
 The PAT lives where the Supabase CLI puts it:
@@ -197,11 +292,64 @@ from what the terms say in writing.
 **Proven before shipping** by inserting each scenario inside a transaction and
 rolling it back, so prod kept its zero rows — all four tiers fired.
 
+`notification_impressions`, `notification_interactions` and
+`notification_outcomes` joined the allowlist on 2026-08-12, having been flagged
+`medium` every day. Verified rather than assumed: all three are written by
+`pool.acquire()` + raw `INSERT` in
+`app/features/notification_feedback_router.py:63-127`, so every access is
+asyncpg on the direct DSN and PostgREST is never in the path. The test applied
+was the one this list previously failed — `user_notifications` was justified as
+"served through /notifications", which reads a *different* table — so the claim
+checked was not "an endpoint exists" but "**this table's own** reader and writer
+bypass RLS".
+
 `dac7_seller_year` is also on the RLS allowlist next to `subscription_events`:
 RLS-on with no policy denies ALL client access, which is the intent (the table is
 read only through `GET /p2p/dac7/me` on the direct DSN, never PostgREST). Without
 that entry the RLS check flagged it daily, which is the false-alarm pattern this
 doc already warns about.
+
+## Two FK findings, two different causes (2026-08-12)
+
+Both reported identically — "Postgres rejecting writes repeatedly" — and the
+message alone was not enough to tell them apart. **The `detail` field is**: it
+names the failing key, and Logflare has it even though the watchdog's summary
+does not.
+
+```sql
+select p.detail, count(*) from postgres_logs
+cross join unnest(metadata) m cross join unnest(m.parsed) p
+where p.error_severity = 'ERROR' and event_message like '%_user_id_fkey%'
+group by 1 order by 2 desc
+```
+
+| Finding | Failing key | Cause |
+|---|---|---|
+| `user_presence_user_id_fkey` ×30 | `92416ed4-…` — one uid, all 30 | a **deleted account** whose client is still signed in and heart-beating |
+| `subscriptions_user_id_fkey` ×21 | `00000000-…-0000000000aa` | a **synthetic uid** reaching `GET /billing/status` |
+
+The uid in the first exists in no table — not `auth.users`, not `profiles`, not
+`items`. Both columns are `REFERENCES auth.users(id) ON DELETE CASCADE`, so the
+row vanished with the account and every heartbeat since was rejected. **A JWT
+outlives the account it names**, and the device cannot know until something
+fails.
+
+Fixed as two separate things, because they are two separate things:
+
+- `20260812_heartbeat_tolerates_deleted_user.sql` — `rpc_heartbeat_v1` no-ops
+  when `auth.uid()` is absent from `auth.users`. Presence is a cosmetic online
+  dot; one stale device must not write 30 ERROR lines/day that are
+  indistinguishable from a real constraint bug.
+- `billing_router._ensure_subscription_row` — catches `ForeignKeyViolationError`
+  and serves the free tier without persisting. Note what this one really
+  exposed: the writer **was** our own app, and 21 daily errors appeared in the
+  Postgres log and **nowhere in `bake.log`**. The DEPLOYMENT.md diagnostic
+  ("an error Postgres reports that your application log does not contain means
+  the writer is not the app") has a second reading — it can also mean the app
+  never logged that path. It now logs the uid.
+
+Neither is silenced in the watchdog. Both stop happening at the source, which is
+the only kind of fix that leaves the check honest.
 
 ## Related audits
 
