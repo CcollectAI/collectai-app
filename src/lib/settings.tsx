@@ -5,6 +5,7 @@ import { updateFxCache, getFxRates } from '@/lib/fx';
 import type { CurrencyCode } from '@/data/types';
 import logger from '@/utils/logger';
 import i18n, { SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n';
+import { setActiveNumberLocale } from '@/lib/format';
 
 export type ChartRange = '1D'|'7D'|'30D';
 /** @deprecated Use CurrencyCode from '@/data/types' for new code */
@@ -143,6 +144,22 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       return next;
     });
   }, []);
+
+  // Publish the user's chosen number locale to the formatters.
+  //
+  // NOT derived from the UI language. docs/ARCHITECTURE.md is explicit —
+  // "`user_settings.locale` is the number-format locale. The UI language is a
+  // different set (en,nl,de,fr,es,ja,ko). Don't merge them." The column is also
+  // CHECK-constrained to exactly six NumberLocale values, so deriving fr-FR or
+  // es-ES from a French or Spanish UI would 23514 on save and hand the user the
+  // generic 500 that section already documents happening to Korean users.
+  //
+  // What this fixes instead: 148 of the 164 formatPrice call sites pass no
+  // locale, so they fell through to CURRENCY_LOCALE — nl-NL for EUR — and
+  // ignored the user's setting entirely. Now they follow it.
+  useEffect(() => {
+    setActiveNumberLocale(settings.numberLocale ?? null);
+  }, [settings.numberLocale]);
 
   const value = useMemo(() => ({ settings, updateSettings, ready }), [settings, updateSettings, ready]);
   return <SettingsCtx.Provider value={value}>{children}</SettingsCtx.Provider>;

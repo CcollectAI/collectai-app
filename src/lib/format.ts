@@ -18,12 +18,41 @@ export function getCurrencySymbol(currency: Currency): string {
 }
 
 /** Locale lookup for each currency */
+/**
+ * The number locale that matches the UI LANGUAGE, pushed in by SettingsProvider.
+ *
+ * Grouping separators are a property of the language you are reading, not of the
+ * currency you are reading about. EUR was mapped to `nl-NL` below, so a
+ * EUR 184,194 watch rendered as **"€184.194"** to an English reader — which
+ * parses as one hundred and eighty-four euros. The same string is correct in
+ * Dutch. 148 of the 164 `formatPrice` call sites pass no locale at all, so this
+ * was the default path for almost every price in the app, not one screen.
+ *
+ * Set here rather than threaded through 148 call sites: one chokepoint, and no
+ * sweep to get out of date. `null` until the provider mounts, which only
+ * affects module-init-time formatting (there is none).
+ */
+let _activeNumberLocale: NumberLocale | null = null;
+
+/** Called by SettingsProvider whenever the resolved UI language changes. */
+export function setActiveNumberLocale(locale: NumberLocale | null): void {
+  _activeNumberLocale = locale;
+}
+
+/**
+ * Kept ONLY as a last-resort fallback for a currency when no UI language is
+ * known. It no longer decides symbol placement — `money()` always leads with
+ * the symbol — so its sole remaining effect is grouping, which is why EUR must
+ * not sit on a Dutch locale here.
+ */
 const CURRENCY_LOCALE: Record<Currency, NumberLocale> = {
   // Used for NUMBER formatting only — grouping and decimal separators. The
   // currency symbol is no longer positioned by the locale: `money()` below
   // always leads with it. This entry used to be nl-NL specifically to get the
-  // euro on the left, which worked until a caller passed its own locale.
-  EUR: 'nl-NL',
+  // euro on the left, which worked until a caller passed its own locale — and
+  // once symbol placement moved into money(), the Dutch grouping it dragged
+  // along became a bug for every non-Dutch reader (see _activeNumberLocale).
+  EUR: 'en-US',
   USD: 'en-US',
   JPY: 'ja-JP',
   GBP: 'en-US',
@@ -100,7 +129,10 @@ export function fmtCurrency(amountEUR: number, s: Pick<Settings,'currency'|'numb
  */
 export function formatPrice(amount: number | null | undefined, currency: Currency = 'EUR', locale?: NumberLocale): string {
   if (amount == null || !Number.isFinite(amount)) return '—';
-  const loc = locale ?? CURRENCY_LOCALE[currency] ?? 'en-US';
+  // Explicit argument wins, then the UI language, then the currency's own
+  // fallback. The middle step is what makes the 148 call sites that pass no
+  // locale render in the language the user is actually reading.
+  const loc = locale ?? _activeNumberLocale ?? CURRENCY_LOCALE[currency] ?? 'en-US';
   try {
     return money(amount, currency, loc);
   } catch (e) {
