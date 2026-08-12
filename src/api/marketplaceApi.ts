@@ -50,6 +50,13 @@ export const getAffiliateLinks = (
   region?: string,
   maxPrice?: number | null,
   maxPriceCurrency?: string,
+  // The ITEM's own estimated value in EUR — not the buyer's ceiling. Above
+  // EUR 1000 the server routes watches/jewellery/pens to authenticated
+  // specialists (Chrono24, Catawiki) instead of general classifieds, because a
+  // six-figure watch is not credibly bought from a classifieds search. Omit it
+  // and the normal sources come back, so a caller that cannot know the value
+  // degrades to today's behaviour rather than to a wrong one.
+  itemValueEur?: number | null,
 ) =>
   get<{
     links: {
@@ -64,7 +71,8 @@ export const getAffiliateLinks = (
       `&limit=${limit}` +
       `${region ? `&region=${encodeURIComponent(region)}` : ""}` +
       `${maxPrice && maxPrice > 0 ? `&max_price=${encodeURIComponent(String(maxPrice))}` : ""}` +
-      `${maxPrice && maxPrice > 0 && maxPriceCurrency ? `&max_price_currency=${encodeURIComponent(maxPriceCurrency)}` : ""}`,
+      `${maxPrice && maxPrice > 0 && maxPriceCurrency ? `&max_price_currency=${encodeURIComponent(maxPriceCurrency)}` : ""}` +
+      `${itemValueEur && itemValueEur > 0 ? `&item_value_eur=${encodeURIComponent(String(itemValueEur))}` : ""}`,
   );
 
 export const tagAffiliateUrl = (url: string, source: string) =>

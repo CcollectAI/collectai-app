@@ -87,7 +87,13 @@ function CatalogItemMuseumScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await collectorsApi.getAffiliateLinks(title, category, 8, settings.region);
+        // estPrice is the item's own market estimate, and it is what decides
+        // whether this is a EUR 45 Casio or a EUR 184,194 Daytona. Without it
+        // the server cannot tell them apart and correctly falls back to the
+        // general marketplaces for both.
+        const res = await collectorsApi.getAffiliateLinks(
+          title, category, 8, settings.region, null, undefined, estPrice ?? null,
+        );
         const data = res as { links?: AffiliateLink[] } | undefined;
         if (!cancelled) setLinks(data?.links ?? []);
       } catch (e) {
@@ -97,7 +103,15 @@ function CatalogItemMuseumScreen() {
       }
     })();
     return () => { cancelled = true; };
-  }, [title, category, settings.region]);
+    // `estPrice` MUST be here. It starts as the route param (often null) and is
+    // refined by the price-detail fetch below, so without it in the deps the
+    // links are built once with no value and the high-value routing never
+    // fires — the Daytona would keep showing eBay because the request went out
+    // before its price arrived. Safe to depend on: this effect READS estPrice,
+    // it does not write it (the price-detail effect does), so it cannot tear
+    // itself down the way scripts/check-self-cancelling-effects.mjs guards
+    // against.
+  }, [title, category, settings.region, estPrice]);
 
   // "From this set" — sibling catalog items sharing set_code (catalog-only).
   useEffect(() => {
