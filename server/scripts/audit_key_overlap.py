@@ -103,6 +103,21 @@ PAIRS = [
         "expect_partial": True,
     },
     {
+        "left": ("purchase_mandates", "canonical_ref"),
+        "right": ("price_predictions", "item_ref"),
+        "note": (
+            "Added 2026-08-12. What a keyed mandate is VALUED against, and the only "
+            "thing value_summary.deal_savings will count. NAMESPACED on both sides — "
+            "the API builds the ref from the item's own category_items row, never "
+            "from the caller. A wrong namespace here returns an empty join, not an "
+            "error, and would silently zero the savings number."
+        ),
+        # Most mandates are free-text and have NULL canonical_ref; the audit
+        # only compares non-null keys, so partial overlap is expected while the
+        # item picker is not shipped.
+        "expect_partial": True,
+    },
+    {
         "left": ("watchlist_items", "item_id"),
         "right": ("category_items", "item_key"),
         "note": "Watchlist rows added from a catalog screen carry the catalog key.",

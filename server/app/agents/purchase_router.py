@@ -37,9 +37,54 @@ _mandate_write_limit = per_user_rate_limit(10, window_seconds=60, scope="mandate
 # Pydantic Models
 # ---------------------------------------------------------------------------
 
+async def _resolve_canonical_ref(conn, canonical_key: Optional[str]) -> tuple[Optional[str], Optional[str]]:
+    """Bare catalogue key -> (namespaced canonical_ref, the item's own category).
+
+    Returns (None, None) when no key was supplied — a free-text mandate, which
+    stays valid.
+
+    THE NAMESPACE COMES FROM THE ITEM, NOT THE CALLER. `canonical_ref` has one
+    job: match `price_predictions.item_ref` exactly. That column is namespaced
+    always (CLAUDE.md "Identifier formats"), and a ref built with the wrong
+    prefix matches zero rows and returns an empty join rather than an error —
+    the 2026-07-25 bug that silently emptied 44 sites for four months. So the
+    prefix is read from `category_items` (whose `item_key` is the BARE form,
+    the same shape the caller sends) instead of being taken on trust from the
+    request or from the mandate's own `category` field.
+
+    Looking it up also validates the key exists, so a typo is a 400 at create
+    time rather than a mandate that silently values nothing forever.
+    """
+    if not canonical_key:
+        return None, None
+    key = canonical_key.strip()
+    if not key:
+        return None, None
+    # Defensive: accept an already-namespaced key by taking the bare tail, so a
+    # caller that sends `pokemon:sm10-...` cannot produce `pokemon:pokemon:...`.
+    bare = key.split(":", 1)[1] if ":" in key else key
+    row = await conn.fetchrow(
+        "SELECT category FROM public.category_items WHERE item_key = $1 LIMIT 1",
+        bare,
+    )
+    if not row or not row["category"]:
+        raise error_response(
+            400,
+            f"Unknown catalogue key '{bare}' — cannot value a mandate against an item that is not in the catalogue.",
+            code="UNKNOWN_CANONICAL_KEY",
+        )
+    return f"{row['category']}:{bare}", row["category"]
+
+
 class MandateCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     search_query: str = Field(..., min_length=1, max_length=500)
+    # BARE catalogue key (what `/catalog/match` returns), optional. Supplied by
+    # the item picker. It does NOT replace `search_query`: the query is what we
+    # send to marketplaces, this is what we VALUE the results against. Two jobs,
+    # two fields — keeping the query editable is what lets a user narrow a
+    # search ("PSA 10") without breaking the valuation.
+    canonical_key: Optional[str] = Field(None, max_length=200)
     category: Optional[str] = None
     condition_filter: List[str] = Field(default_factory=list)
     min_trust_score: float = Field(default=0.60, ge=0.0, le=1.0)
@@ -55,6 +100,9 @@ class MandateCreate(BaseModel):
 class MandateUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     status: Optional[Literal["active", "paused"]] = None
+    # Bare catalogue key. Send explicitly as null to clear it and return the
+    # mandate to free-text valuation.
+    canonical_key: Optional[str] = Field(None, max_length=200)
     category: Optional[str] = None
     condition_filter: Optional[List[str]] = None
     min_trust_score: Optional[float] = Field(None, ge=0.0, le=1.0)
@@ -72,6 +120,10 @@ class MandateResponse(BaseModel):
     name: str
     status: str
     search_query: str
+    # Namespaced (`category:bare_key`) or null for a free-text mandate. Exposed
+    # so the picker can show what the mandate is valued against, and so the FE
+    # can tell a keyed mandate from an unkeyed one without a second call.
+    canonical_ref: Optional[str] = None
     category: Optional[str] = None
     condition_filter: List[str] = Field(default_factory=list)
     min_trust_score: float = 0.60
@@ -154,6 +206,9 @@ _UPDATABLE_MANDATE_COLUMNS = frozenset({
     "name", "status", "category", "condition_filter", "min_trust_score",
     "max_price", "max_total_budget", "cooldown_hours", "allowed_sources",
     "exclude_keywords", "region", "expires_at",
+    # Settable ONLY via the resolver in update_mandate, which derives it from a
+    # bare `canonical_key`. Never accepted raw from a request body.
+    "canonical_ref",
 })
 
 # Allowed deal status values for filtering
@@ -166,7 +221,7 @@ _MANDATE_COLUMNS = (
     "id, user_id, name, status, search_query, category, condition_filter, "
     "min_trust_score, max_price, max_total_budget, spent_total, cooldown_hours, "
     "allowed_sources, exclude_keywords, region, expires_at, last_scan_at, "
-    "last_deal_at, deals_found, deals_purchased, created_at, updated_at"
+    "last_deal_at, deals_found, deals_purchased, created_at, updated_at, canonical_ref"
 )
 _DEAL_COLUMNS = (
     "id, mandate_id, user_id, status, listing_source, listing_url, affiliate_url, "
@@ -324,20 +379,28 @@ async def create_mandate(
             except ValueError:
                 raise error_response(400, "Invalid expires_at format")
 
+        # A keyed mandate takes the ITEM's category, overwriting whatever the
+        # caller sent. The namespace in canonical_ref and the mandate's own
+        # category must agree, or the mandate reads as one thing and values as
+        # another.
+        canonical_ref, item_category = await _resolve_canonical_ref(conn, body.canonical_key)
+        category = item_category or body.category
+
         row = await conn.fetchrow(
             """
             INSERT INTO public.purchase_mandates (
                 user_id, name, search_query, category,
                 condition_filter, min_trust_score,
                 max_price, max_total_budget, cooldown_hours,
-                allowed_sources, exclude_keywords, region, expires_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                allowed_sources, exclude_keywords, region, expires_at,
+                canonical_ref
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING """ + _MANDATE_COLUMNS + """
             """,
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
             body.name,
             body.search_query,
-            body.category,
+            category,
             body.condition_filter,
             body.min_trust_score,
             body.max_price,
@@ -347,6 +410,7 @@ async def create_mandate(
             body.exclude_keywords,
             body.region,
             expires_at,
+            canonical_ref,
         )
 
     # Record demand signal with geo enrichment (best-effort, non-blocking)
@@ -436,10 +500,28 @@ async def update_mandate(
     if not updates:
         raise error_response(400, "No fields to update")
 
+    # `canonical_key` is not a column — it is the BARE key the picker sends, and
+    # it resolves into `canonical_ref` + `category` exactly as it does on create.
+    # It is deliberately kept out of _UPDATABLE_MANDATE_COLUMNS so a caller can
+    # never PATCH a raw `canonical_ref` straight in: a hand-written namespace is
+    # how you get a ref that matches zero prediction rows and fails silently.
+    # Sending `canonical_key: null` explicitly clears the key, turning a keyed
+    # mandate back into a free-text one.
+    canonical_key_sent = "canonical_key" in updates
+    canonical_key_val = updates.pop("canonical_key", None)
+
     # Reject any keys not in the whitelist
     bad_keys = set(updates.keys()) - _UPDATABLE_MANDATE_COLUMNS
     if bad_keys:
         raise error_response(400, f"Cannot update fields: {bad_keys}")
+
+    if canonical_key_sent:
+        async with get_conn() as _c:
+            new_ref, item_category = await _resolve_canonical_ref(_c, canonical_key_val)
+        updates["canonical_ref"] = new_ref
+        if item_category:
+            # Same rule as create: the item's category wins.
+            updates["category"] = item_category
 
     # Handle expires_at parsing
     if "expires_at" in updates and updates["expires_at"]:

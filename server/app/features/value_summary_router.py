@@ -51,7 +51,7 @@ class ValueSummaryResponse(BaseModel):
     hours_saved: float = 0.0
 
     # Money saved
-    deal_savings: float = 0.0          # Always 0 today — mandate deals have no per-listing valuation to measure against. See the query.
+    deal_savings: float = 0.0          # (per-item q50 - price paid) on PURCHASED deals of KEYED mandates only. EUR, never negative.
     deal_count: int = 0
     smart_buy_savings: float = 0.0     # Sum of (market_value - purchase_price) where purchase < market
     smart_buy_count: int = 0
@@ -175,25 +175,46 @@ async def get_value_summary(
         # identity. mandate_deals has no canonical key column, so no per-listing
         # valuation exists to join on today.
         #
-        # TO LIGHT THIS UP: give mandate_deals a canonical key (match the
-        # listing to a catalogue item the way the scrape path does), predict on
-        # THAT, and then this becomes the same shape as smart_buy_savings —
-        # GREATEST(q50 - COALESCE(confirmed_price, listing_price), 0), EUR only
-        # while fx_rates_v1 holds just EUR=1.0. Until then the honest number is
-        # zero, and deal_count still tells the user how many deals they bought.
+        # LIT UP 2026-08-12, but ONLY for mandates that target a known item.
+        # `purchase_mandates.canonical_ref` is a namespaced catalogue key
+        # matching `price_predictions.item_ref` exactly, so a deal from a keyed
+        # mandate carries a per-ITEM `predicted_q50` and the subtraction below
+        # means something. A free-text mandate still gets a q50 — from an ILIKE
+        # on its search string — and that one is a category average, so those
+        # deals are counted but contribute ZERO savings. That is the whole
+        # reason for the join: it is what keeps a category average from being
+        # sold to a user as money we saved them.
+        #
+        # Same shape as smart_buy_savings below, deliberately, so one banner
+        # never adds two different meanings of "saved":
+        #   `confirmed_price` over `listing_price` — what they actually paid.
+        #   `GREATEST(…, 0)` — buying ABOVE market is not a negative saving;
+        #     summing signed deltas would let one bad buy cancel real ones.
+        #   EUR only — q50 is EUR (valuation_worker trains on
+        #     COALESCE(price_eur, price)) while listing_price is in
+        #     listing_currency, and fx_rates_v1 holds a single row (EUR=1.0),
+        #     so a non-EUR deal cannot be converted honestly. Undercounting is
+        #     the only safe direction for a number shown as money saved.
         deals_row = await conn.fetchrow(
             """
             SELECT
                 COUNT(*) AS deal_count,
-                0::numeric AS total_savings
-            FROM mandate_deals
-            WHERE user_id = $1
+                COALESCE(SUM(
+                    GREATEST(d.predicted_q50 - COALESCE(d.confirmed_price, d.listing_price), 0)
+                ) FILTER (
+                    WHERE m.canonical_ref IS NOT NULL
+                      AND d.predicted_q50 IS NOT NULL
+                      AND d.listing_currency = 'EUR'
+                ), 0)::numeric AS total_savings
+            FROM mandate_deals d
+            JOIN purchase_mandates m ON m.id = d.mandate_id
+            WHERE d.user_id = $1
               -- 'completed' is NOT in the mandate_deals status CHECK
               -- (discovered, notified, clicked, purchased, declined, expired),
               -- so this counted a value that can never exist and reported 0
               -- deals forever. A read, so it never errored. 'purchased' is the
               -- terminal state. Found by check-constraint-drift.mjs 2026-07-25.
-              AND status = 'purchased'
+              AND d.status = 'purchased'
             """,
             user_id,
         )

@@ -114,7 +114,9 @@ class DealDiscoveryAgent:
                 hit["shipping_estimated"] = True
 
         # 2. Fetch price prediction (if available)
-        prediction = await self._get_prediction(conn, query, category)
+        prediction = await self._get_prediction(
+            conn, query, category, canonical_ref=mandate.get("canonical_ref"),
+        )
 
         # 3. Get existing deal URLs for dedup (mandate-level + user-level cooldown)
         existing_urls = await self._get_existing_urls(conn, mandate_id)
@@ -369,12 +371,58 @@ class DealDiscoveryAgent:
         return filtered
 
     async def _get_prediction(
-        self, conn, query: str, category: Optional[str]
+        self, conn, query: str, category: Optional[str],
+        canonical_ref: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
-        """Try to fetch a price prediction for the mandate's search query.
+        """Price prediction for a mandate: by ITEM when it has one, else by query.
 
-        Falls back to category median if no direct match is found.
+        `canonical_ref` is the exact, namespaced catalogue key the mandate
+        targets. When present it is the only honest source: it matches
+        `price_predictions.item_ref` one-to-one, so q50 is the market estimate
+        for THAT item and `deal_savings` can be computed from it.
+
+        The ILIKE-on-query path below is the legacy fallback for free-text
+        mandates and is deliberately NOT good enough to value against. Measured
+        2026-08-12: a "charizard"/pokemon mandate returned one prediction —
+        q50 EUR 1.08, q90 EUR 21.79 — for 27 deals spanning EUR 2.59 to
+        EUR 216.54. It is a category-shaped hint used to score and rank deals,
+        which is fine; `value_summary_router` counts savings only for keyed
+        mandates precisely because this path cannot support a money claim.
         """
+        if canonical_ref:
+            try:
+                row = await conn.fetchrow(
+                    """
+                    SELECT q10, q50, q90
+                    FROM public.price_predictions
+                    WHERE item_ref = $1
+                      -- Partition prune via generated_at, as below.
+                      AND generated_at > now() - interval '60 days'
+                    ORDER BY generated_at DESC
+                    LIMIT 1
+                    """,
+                    canonical_ref,
+                )
+                if row and row["q50"] is not None:
+                    return {
+                        "q10": float(row["q10"]) if row["q10"] else None,
+                        "q50": float(row["q50"]),
+                        "q90": float(row["q90"]) if row["q90"] else None,
+                        "per_item": True,
+                    }
+                # No prediction for a known item is normal (new or thin
+                # catalogue rows). Fall through to the query path so deals are
+                # still SCORED; savings stay excluded because the exact match
+                # is what deal_savings keys on.
+                logger.info(
+                    "[DealDiscovery] No prediction for %s — scoring on the query fallback",
+                    canonical_ref,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "[DealDiscovery] Per-item prediction lookup failed for %s: %s",
+                    canonical_ref, exc,
+                )
         try:
             # Escape ILIKE special chars to prevent wildcard injection
             escaped_q = query[:50].replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
