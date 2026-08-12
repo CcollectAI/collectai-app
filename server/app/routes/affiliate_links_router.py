@@ -77,9 +77,15 @@ _JP_CATEGORIES = {
 # listing URLs, which is what deal discovery hands it — there is no way to deep-link
 # a search on them yet. Do not name a source here without adding its builder, or
 # it silently drops out of the response.
+# The final allowlist: `get_affiliate_links` intersects eligibility with this,
+# so a source missing here is silently dropped from the response no matter what
+# _eligible_sources or a category profile says. Adding a source in three places
+# and forgetting the fourth returns an EMPTY rail, not an error — which is
+# exactly what watches and jewellery did until this line was updated.
 _SEARCHABLE_SOURCES = frozenset({
     "ebay", "tcgplayer", "cardmarket", "mercari", "discogs",
     "stockx", "bricklink", "yahoo_auctions_jp", "amiami",
+    "chrono24", "catawiki", "google",
 })
 
 _DEFAULT_SOURCES = ("ebay", "mercari")
