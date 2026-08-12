@@ -344,7 +344,22 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
             placeholderTextColor={colors.muted}
             value={query}
             onChangeText={handleQueryChange}
-            autoFocus
+            // Focus only when the user arrived here TO TYPE.
+            //
+            // Bare `autoFocus` raised the keyboard the instant the Search TAB
+            // opened, covering the browse-by-category grid that is the tab's
+            // whole idle state — the categories are the reason to open the tab
+            // without a query, and they were hidden before they could be read.
+            // Same reasoning as the back chevron and QuickNavBar above: a tab
+            // is somewhere you land, a pushed screen is somewhere you chose to
+            // go.
+            //
+            // Also suppressed when arriving with `?q=` (item detail's "view all
+            // marketplace results" pushes /search?q=): the query is already
+            // filled and the results are what you came to read, so opening the
+            // keyboard over them helps nobody. Tapping the bar still focuses in
+            // every case.
+            autoFocus={!asTab && !initialQuery}
             returnKeyType="search"
             accessibilityLabel={t('search.input_a11y')}
           />

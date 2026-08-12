@@ -33,6 +33,12 @@ _TCG_CATEGORIES = {"pokemon", "mtg", "yugioh", "lorcana", "digimon", "one_piece_
 _VINYL_MUSIC_CATEGORIES = {"vinyl_records", "anime_soundtrack", "anime_ost_vinyl", "city_pop_vinyl"}
 _SNEAKER_STREETWEAR_CATEGORIES = {"sneakers", "designer_toys"}
 _LEGO_CATEGORIES = {"lego"}
+
+# High-value categories where a general classifieds listing is not a credible
+# place to buy, and recommending one damages trust more than an empty rail
+# would. See _eligible_sources for the reasoning per category.
+_LUXURY_NO_GENERAL_MARKETPLACE = {"watches", "jewellery"}
+_LUXURY_EBAY_ONLY = {"pens"}
 _FIGURE_CATEGORIES = {"anime_figures", "hot_toys", "gunpla", "bandai_premium", "one_piece", "ghibli", "vtuber"}
 _JP_CATEGORIES = {
     "anime_figures", "hot_toys", "gunpla", "bandai_premium", "one_piece",
@@ -147,12 +153,18 @@ _CATEGORY_PROFILES: dict[str, _CategoryProfile] = {
     "theme_park": _CategoryProfile(ebay_sacat="1369"),
     "loungefly": _CategoryProfile(ebay_sacat="169291", suffix="Loungefly"),
     # --- Lifestyle ----------------------------------------------------------
-    "watches": _CategoryProfile(ebay_sacat="31387"),
+    # Luxury: specialist first, and no general classifieds at all. The
+    # ebay_sacat is kept for reference but eBay is not eligible here, so it is
+    # never used — see _LUXURY_NO_GENERAL_MARKETPLACE.
+    "watches": _CategoryProfile(ebay_sacat="31387", sources=("chrono24", "catawiki", "google")),
+    "jewellery": _CategoryProfile(sources=("catawiki", "google")),
     "vintage_cameras": _CategoryProfile(ebay_sacat="15230"),
     "whiskey": _CategoryProfile(ebay_sacat="13916"),
     "fragrances": _CategoryProfile(ebay_sacat="180345"),
     "sneakers": _CategoryProfile(ebay_sacat="15709", sources=("stockx", "ebay", "mercari")),
-    "pens": _CategoryProfile(ebay_sacat="966"),
+    # eBay stays for pens (a EUR 400-900 Montblanc genuinely trades there),
+    # Catawiki leads for the vintage/limited end, Mercari is dropped.
+    "pens": _CategoryProfile(ebay_sacat="966", sources=("catawiki", "ebay")),
 }
 
 _FALLBACK_PROFILE = _CategoryProfile()
@@ -266,6 +278,28 @@ def _build_amiami_search_url(query: str) -> str:
     return f"https://www.amiami.com/eng/search/list/?s_keywords={quote_plus(query)}"
 
 
+def _build_chrono24_search_url(query: str) -> str:
+    return f"https://www.chrono24.com/search/index.htm?query={quote_plus(query)}"
+
+
+def _build_catawiki_search_url(query: str) -> str:
+    return f"https://www.catawiki.com/en/s?q={quote_plus(query)}"
+
+
+def _build_google_shopping_search_url(query: str) -> str:
+    """Last-resort pointer for high-value categories with no trusted marketplace.
+
+    Not an affiliate link and not a marketplace — it is the honest answer to
+    "where do I buy a EUR 180k Daytona", which is: not from a general
+    classifieds site. Google surfaces the brand and the authorised dealers,
+    which is where that purchase actually happens.
+
+    It exists so removing eBay and Mercari from luxury categories cannot leave
+    the "WHERE TO BUY" rail rendering as an empty section.
+    """
+    return f"https://www.google.com/search?tbm=shop&q={quote_plus(query)}"
+
+
 def _qualify(query: str, suffix: str) -> str:
     """Append the category's disambiguating words, unless already present."""
     q = query.strip()
@@ -313,12 +347,43 @@ _SOURCE_LABELS = {
     "bricklink": "BrickLink",
     "yahoo_auctions_jp": "Yahoo Auctions JP",
     "amiami": "AmiAmi",
+    "chrono24": "Chrono24",
+    "catawiki": "Catawiki",
+    "google": "Search the web",
 }
 
 
 def _eligible_sources(cat: str, rgn: str) -> set[str]:
-    """Which marketplaces make sense at all for this category/region."""
-    eligible = {"ebay", "mercari"}
+    """Which marketplaces make sense at all for this category/region.
+
+    eBay and Mercari are the floor for MOST categories, not all of them. A
+    EUR 184,194 Rolex Cosmograph Daytona Le Mans is not sold on a general
+    classifieds site, and offering one as "where to buy" is worse than offering
+    nothing: it attaches our recommendation to the venue where that price point
+    is least verifiable. High-value goods are exactly where a marketplace's
+    authentication guarantee IS the product.
+
+    So the floor is conditional:
+      watches, jewellery -> neither. Chrono24 (watch-specialist, escrow) and
+                            Catawiki (curated auction house, expert-vetted)
+                            replace them, with Google as the pointer to the
+                            brand and its authorised dealers.
+      pens              -> eBay stays, Mercari goes. A Montblanc 149 at
+                            EUR 400-900 is genuinely traded on eBay; Mercari
+                            adds nothing at that price and carries the same
+                            authentication gap.
+
+    Both replacements already have taggers in app/lib/affiliate.py
+    (CATAWIKI_AFFILIATE_ID ~7-10%, CHRONO24_AFFILIATE_ID), so this is not a
+    revenue sacrifice — an unset env var emits the link untagged and working,
+    per docs/AFFILIATE_SWITCH_ON.md.
+    """
+    if cat in _LUXURY_NO_GENERAL_MARKETPLACE:
+        return {"chrono24", "catawiki", "google"} if cat == "watches" else {"catawiki", "google"}
+
+    eligible = {"ebay"} if cat in _LUXURY_EBAY_ONLY else {"ebay", "mercari"}
+    if cat in _LUXURY_EBAY_ONLY:
+        eligible.add("catawiki")
     if cat in _TCG_CATEGORIES:
         eligible.add("cardmarket")
         if rgn != "japan":
@@ -383,6 +448,9 @@ async def get_affiliate_links(
         "bricklink": lambda: _build_bricklink_search_url(q),
         "yahoo_auctions_jp": lambda: _build_yahoo_auctions_jp_search_url(q),
         "amiami": lambda: _build_amiami_search_url(q),
+        "chrono24": lambda: _build_chrono24_search_url(q),
+        "catawiki": lambda: _build_catawiki_search_url(q),
+        "google": lambda: _build_google_shopping_search_url(q),
     }
 
     # Category preference first, then anything else eligible, so a category with
