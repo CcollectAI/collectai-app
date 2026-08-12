@@ -51,7 +51,7 @@ class ValueSummaryResponse(BaseModel):
     hours_saved: float = 0.0
 
     # Money saved
-    deal_savings: float = 0.0          # Sum of (predicted_q50 - price paid) on PURCHASED deals, EUR only, never negative
+    deal_savings: float = 0.0          # Always 0 today — mandate deals have no per-listing valuation to measure against. See the query.
     deal_count: int = 0
     smart_buy_savings: float = 0.0     # Sum of (market_value - purchase_price) where purchase < market
     smart_buy_count: int = 0
@@ -146,54 +146,54 @@ async def get_value_summary(
         )
         duplicates_prevented = dupes_row["cnt"] if dupes_row else 0
 
-        # -- Deal savings: market median vs what you actually paid --
+        # -- Deal savings: still 0, and now for the RIGHT reason --
         #
-        # This returned a hardcoded `0::numeric` until 2026-08-12, on the
-        # grounds that "mandate_deals tracks listing_price only — no
-        # negotiation delta". That stopped being true: the table now carries
-        # `predicted_q50`, `price_vs_q50_pct` and `confirmed_price`, so the
-        # saving on a purchased deal is measurable without any offer flow.
-        # Every user reading "Sparrow saved you X" was getting the smart-buy
-        # half only, with the deal half silently contributing zero.
+        # The old comment said mandate_deals "tracks listing_price only — no
+        # negotiation delta", which stopped being true: the table carries
+        # `predicted_q50` and `confirmed_price`. So `q50 - paid` looks like a
+        # ready-made saving. It is not, and this was measured on real data
+        # 2026-08-12 before shipping it:
         #
-        # The definition is deliberately the SAME shape as smart_buy_savings
-        # below — market q50 minus what you paid — so one banner never adds two
-        # different meanings of "saved" together:
+        #   mandate "charizard"/pokemon -> 27 deals, ONE prediction for all of
+        #   them: q50 EUR 1.08, q90 EUR 21.79, against listings from EUR 2.59 to
+        #   EUR 216.54 (median EUR 41.03). `price_vs_q50_pct` was NULL on every
+        #   row and `deal_score` a constant 0.520.
         #
-        #   `confirmed_price` over `listing_price` — what they actually paid
-        #     beats the asking price; falls back when unconfirmed.
-        #   `GREATEST(…, 0)` — buying ABOVE market is not a negative saving.
-        #     Summing signed deltas would let one bad buy silently cancel out
-        #     real savings and quietly understate the total.
-        #   `predicted_q50 IS NOT NULL` — no model estimate, no claim.
-        #   EUR only — `q50` is EUR (valuation_worker trains on
-        #     `COALESCE(price_eur, price)`, and the smart-buy query below
-        #     already compares it against `purchase_price_eur`), while
-        #     `listing_price` is in `listing_currency`. `fx_rates_v1` holds a
-        #     single row, EUR=1.0, so a non-EUR deal cannot be converted
-        #     honestly today. Undercounting is the only safe direction for a
-        #     number shown to a user as money we saved them.
+        # `_get_prediction(conn, query, category)` is keyed on the mandate's
+        # SEARCH STRING, not on the listing. "charizard" spans a EUR 2 common
+        # and a EUR 200 sealed box, so q50 is a category average, not the market
+        # value of the thing someone bought. Subtracting a specific price from
+        # it is not a saving in either direction — and the dangerous direction
+        # is a mandate for one expensive card, where a high q50 would let any
+        # cheaper listing report "saved EUR X" against an estimate that never
+        # identified that listing. A fabricated money claim shown to a user is
+        # the failure this repo already shipped once (the invented
+        # EUR 1200->2050 portfolio curve).
+        #
+        # `smart_buy_savings` below is safe precisely because it is PER ITEM:
+        # it joins price_predictions on `i.canonical_ref`, the item's own
+        # identity. mandate_deals has no canonical key column, so no per-listing
+        # valuation exists to join on today.
+        #
+        # TO LIGHT THIS UP: give mandate_deals a canonical key (match the
+        # listing to a catalogue item the way the scrape path does), predict on
+        # THAT, and then this becomes the same shape as smart_buy_savings —
+        # GREATEST(q50 - COALESCE(confirmed_price, listing_price), 0), EUR only
+        # while fx_rates_v1 holds just EUR=1.0. Until then the honest number is
+        # zero, and deal_count still tells the user how many deals they bought.
         deals_row = await conn.fetchrow(
             """
             SELECT
                 COUNT(*) AS deal_count,
-                COALESCE(SUM(
-                    GREATEST(
-                        d.predicted_q50 - COALESCE(d.confirmed_price, d.listing_price),
-                        0
-                    )
-                ) FILTER (
-                    WHERE d.predicted_q50 IS NOT NULL
-                      AND d.listing_currency = 'EUR'
-                ), 0)::numeric AS total_savings
-            FROM mandate_deals d
-            WHERE d.user_id = $1
+                0::numeric AS total_savings
+            FROM mandate_deals
+            WHERE user_id = $1
               -- 'completed' is NOT in the mandate_deals status CHECK
               -- (discovered, notified, clicked, purchased, declined, expired),
               -- so this counted a value that can never exist and reported 0
               -- deals forever. A read, so it never errored. 'purchased' is the
               -- terminal state. Found by check-constraint-drift.mjs 2026-07-25.
-              AND d.status = 'purchased'
+              AND status = 'purchased'
             """,
             user_id,
         )

@@ -287,8 +287,24 @@ async def run_once():
         _record_run("error")
         return
 
-    # Use a connection pool instead of a single raw connection
-    pool = await asyncpg.create_pool(DSN, min_size=2, max_size=5)
+    # `init=_init_conn` is REQUIRED, not decoration. It registers the jsonb
+    # codec (`encoder=json.dumps`) that `app/db.py` puts on every pooled
+    # connection the API uses, and shared helpers are written against that
+    # assumption: `app/push.py` deliberately passes the DICT to `$5::jsonb`
+    # because the codec encodes it — a fix made 2026-08-09 after json.dumps()
+    # here double-encoded and left `data->>'kind'` reading NULL.
+    #
+    # This pool had no init, so on 2026-08-12 every deal notification died with
+    # `invalid input for query argument $5: {...} (expected str, got dict)`.
+    # The cycle reported "23 new deals, 0 notified": the deals were found and
+    # persisted, and not one user was ever told — which is the entire product.
+    #
+    # A pool whose connections behave differently from the app's is a trap for
+    # every helper shared between them. If another worker grows its own pool,
+    # it gets this init too.
+    from app.db import _init_conn
+
+    pool = await asyncpg.create_pool(DSN, min_size=2, max_size=5, init=_init_conn)
     logger.info("Connected to DB pool — starting deal discovery cycle")
 
     status = "ok"
