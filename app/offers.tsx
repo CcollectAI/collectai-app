@@ -307,7 +307,15 @@ function OffersScreen() {
     // not have to read the pill on every card. Same two semantic colours as the
     // pill — the treatment reads as one system, not two signals.
     return (
-      <View style={[
+      // The whole card opens the listing, which is what the "View listing" link
+      // at the bottom used to do from its own dedicated row — a full row of
+      // vertical space spent on a link that duplicated the obvious gesture.
+      // Action buttons are nested Pressables and still win their own taps.
+      <AnimatedPressable
+        onPress={() => router.push({ pathname: '/listing/[id]', params: { id: o.listing_id } } as unknown as Href)}
+        accessibilityRole="button"
+        accessibilityLabel={`${o.listing_title || 'Listing'}, ${formatPrice(o.amount, settings.currency, settings.numberLocale)}. Opens the listing`}
+        style={[
         styles.card,
         {
           backgroundColor: colors.card,
@@ -329,9 +337,15 @@ function OffersScreen() {
         },
       ]}>
         <View style={styles.rowTop}>
-          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
             {o.listing_title || 'Listing'}
           </Text>
+          {/* Amount and its percentage STACK. They used to sit beside the title
+              as two more siblings in this row, and "+5% of EUR 37 asking" is
+              long enough that the title lost half its width to it — every card
+              read "LEGO Ferguson…", "He's Got A Swor…". A column caps the right
+              side and lets the title have two full lines. */}
+          <View style={styles.amountCol}>
           <Text style={[styles.amount, { color: colors.text }]}>
             {formatPrice(o.amount, settings.currency, settings.numberLocale)}
           </Text>
@@ -351,6 +365,7 @@ function OffersScreen() {
               })()}
             </Text>
           ) : null}
+          </View>
         </View>
 
         <View style={styles.metaRow}>
@@ -593,14 +608,7 @@ function OffersScreen() {
           ) : null}
         </View>
 
-        <AnimatedPressable
-          onPress={() => router.push({ pathname: '/listing/[id]', params: { id: o.listing_id } } as unknown as Href)}
-          accessibilityRole="link"
-          accessibilityLabel="View the listing"
-        >
-          <Text style={[styles.viewLink, { color: colors.accent }]}>View listing</Text>
-        </AnimatedPressable>
-      </View>
+      </AnimatedPressable>
     );
     // `settings.hapticsEnabled` is in here because the Decline confirmation
     // fires a haptic directly. Without it a member who turns haptics off keeps
@@ -920,7 +928,7 @@ const styles = StyleSheet.create({
   // belong to each other.
   card: {
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg,
-    padding: 16, marginBottom: 12, gap: 10,
+    padding: 14, marginBottom: 10, gap: 8,
     ...shadow.card,
   },
   // History, not a live negotiation: flat, and one step back. Kept above 0.6
@@ -931,7 +939,11 @@ const styles = StyleSheet.create({
     fontSize: textToken.md, fontWeight: fontWeight.bold,
     paddingHorizontal: 16, paddingBottom: 8, marginTop: -4,
   },
-  rowTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  rowTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  // Caps the right side so the title keeps its width. `flexShrink: 0` because
+  // a price must never wrap or ellipsize — the one number on the card that has
+  // to be read exactly.
+  amountCol: { alignItems: 'flex-end', flexShrink: 0, maxWidth: '46%' },
   title: { flex: 1, fontSize: textToken.lg, fontWeight: fontWeight.semibold, lineHeight: 22 },
   // `lg`, not `xl` (2026-08-11). At 20/extrabold the figure dominated the card
   // — reported as "the numbers are too big" — and with the percentage line now
@@ -939,7 +951,7 @@ const styles = StyleSheet.create({
   // Still the lead: nothing else on the card is 16/extrabold.
   amount: { fontSize: textToken.lg, fontWeight: fontWeight.extrabold, letterSpacing: -0.2 },
   // Caption level: it qualifies the amount above it, it does not compete.
-  amountDelta: { fontSize: textToken.sm, marginTop: 1 },
+  amountDelta: { fontSize: textToken.sm, marginTop: 1, textAlign: 'right' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   // A pill is a LABEL beside body text, not body text. At md/bold it was the
   // same size as the status it sits next to and competed with the title; `pill`
@@ -1008,5 +1020,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 13, fontSize: textToken.lg,
   },
   sheetSave: { marginTop: 8, alignItems: 'center', paddingVertical: 13 },
-  viewLink: { fontSize: textToken.md, fontWeight: fontWeight.bold, marginTop: 2 },
 });
