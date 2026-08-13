@@ -608,3 +608,50 @@ See `.env.example` for full documentation. Key vars:
 - `EXPO_PUBLIC_SUPABASE_MODE` - "mock" or "real"
 - `API_SHARED_SECRET` - Backend API authentication
 - `DB_ENABLED` - Database connectivity toggle
+
+### A second HTTP client is a second auth story (2026-08-13)
+
+The bound-on-the-client fix above (point 4) covers `supabase` and `httpClient`.
+It did not cover `src/services/collectorsClient.ts`, an undocumented third
+client that built its own requests: `X-API-Key` (empty — `EXPO_PUBLIC_API_KEY`
+is unset), **no `Authorization` header**, and a bare `fetch` with no timeout and
+no AbortController.
+
+Every `/portfolio/*` route takes `Depends(get_current_user_id)`, so every call
+it made 401'd. Each loader in `portfolioAnalyticsStore` catches and returns
+null, so the failure was silent and portfolio analytics computed an empty
+portfolio for every user, forever.
+
+**The tell is in the access log, not the code.** Same endpoint, two clients:
+
+```
+193 GET /portfolio/overview 200   <- httpClient callers
+  4 GET /portfolio/items    401   <- collectorsClient, and never a 200
+```
+
+An endpoint that 200s for one caller and 401s for another is not a server
+problem. Before debugging a screen that shows no data, count status codes per
+path in `/opt/collectors/bake.log` — if a path has never returned 200 in
+production, the caller is the bug.
+
+**Rules:**
+
+1. **One client.** `src/api/httpClient.ts` is it (ARCHITECTURE.md says `src/api/`
+   is the API client). It owns the bearer, the single-flight 401 refresh and
+   `REQUEST_TIMEOUT_MS`. Anything else calling `fetch` directly re-opens all
+   three holes at once.
+2. **Fix the chokepoint, not the callers.** Deleting the duplicate and
+   repointing its callers looked right until tsc found `categoriesClient.ts`
+   importing it as `'./collectorsClient'` — a RELATIVE path that a grep for
+   `services/collectorsClient` does not match. One shared `request()` covers
+   both callers and every future one. See
+   [[learning_enumerate_mechanically_never_triage_by_judgment]].
+3. **A silent-null loader hides the whole class.** Every loader here was
+   `try { ... } catch { return null }`, which is why a 100%-failing endpoint
+   produced no error, no empty state and no log for months.
+
+**Verifying an authenticated endpoint without an app session:** mint a JWT with
+`SUPABASE_JWT_SECRET` — HS256, and it needs `aud: "authenticated"` *and*
+`iss: $SUPABASE_JWT_ISSUER`, or `get_current_user_id` rejects it. Then call
+`http://127.0.0.1:8000` on the box with `Host: api.sparrowcollect.com`. This is
+read-only; do not reset a user's password to get a token.
