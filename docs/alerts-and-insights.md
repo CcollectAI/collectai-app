@@ -1219,3 +1219,50 @@ which needs an expo-router **path** — a `sparrow://` URL resolves to nothing.
 Both were corrected to path form (`/events/{id}`, `/legal/marketplace-terms`).
 The pre-existing one had been shipped in `billing_router` and is exactly the
 dead-button class: a paid-tier sponsored-event push whose tap went nowhere.
+
+## The push tap went nowhere — two payloads, four key names (2026-08-13)
+
+Target Hit fired correctly and pushed correctly, and **tapping the notification
+did nothing at all**: the app opened wherever it already was. For the one alert
+whose entire value is reaching a live listing before it sells, that is the
+notification-with-no-action the 2026-08-06 consolidation deleted three workers
+to stop.
+
+The cause is that one alert has **two** payloads, and they use different names
+for the same thing:
+
+| Payload | Written by | Keys | Read by |
+|---|---|---|---|
+| `alert_trigger_history.trigger_value` | `deal_discovery_worker` | `listing_url`, `affiliate_url` | the notifications SCREEN |
+| Expo push `data` | same worker | `url` | `usePushNotifications` tap handler |
+
+The tap handler read `affiliate_url` / `listing_url` — the *first* payload's
+names — against the *second* payload. Nothing matched, so `directUrl` was
+undefined and the tap fell through every branch to the bottom of the chain.
+
+**And `deep_link` never reached the device.** `notify_user(deep_link=…)` looked
+like the answer and every reader assumed it was: `send_push_to_user` persisted
+it to `notification_history.deep_link` (which is what makes the in-app rows
+tappable) and merged only `notification_id` into the outgoing `data`. The
+destination existed at every layer except the one the phone receives.
+
+**Fixed in two places, chokepoint first:**
+
+1. `app/push.py` merges `deep_link` into the outgoing `data` when a caller set
+   one and did not already put a destination there. Every worker that computes
+   a destination now gets a working tap — `catalog_learning_worker`,
+   `p2p_offers_router`, `billing_router` all pass `deep_link` and were equally
+   dead.
+2. `usePushNotifications` resolves the first non-empty of `affiliate_url`,
+   `listing_url`, `deep_link`, `url`, so pushes already in flight work and no
+   future sender has to guess the client's preferred spelling.
+
+Routing after that is unchanged and already correct: `inAppListingHref` sends
+our OWN listings to `/listing/[id]` in-app, and anything else goes to the
+browser through the `http:`/`https:` scheme allowlist — affiliate-tagged, so
+the click is attributable.
+
+**The lesson is the house one.** A writer and a reader named the same value
+differently and nothing failed loudly — no error, no log, just a notification
+that did nothing when tapped. Before trusting a push destination, check what
+arrives on the DEVICE, not what the worker computed.

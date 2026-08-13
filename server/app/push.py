@@ -182,11 +182,18 @@ async def send_push_to_user(
     # Add notification_id to the payload so the RN client can echo it back
     # in feedback calls (impression/interaction). Don't mutate the caller's
     # dict — copy.
+    send_data = dict(data or {})
     if notification_id:
-        send_data = dict(data or {})
         send_data["notification_id"] = notification_id
-    else:
-        send_data = data
+
+    # `deep_link` was persisted to notification_history and never sent to the
+    # DEVICE, so a push arrived with no destination in its payload and the tap
+    # handler had nothing to route on. Every caller that bothers to compute a
+    # destination now gets a working tap, instead of each worker having to
+    # remember to duplicate it into `data` under a key the client happens to
+    # read. Not overwritten if a caller already put one in `data`.
+    if deep_link and "deep_link" not in send_data:
+        send_data["deep_link"] = deep_link
 
     sent = 0
     for row in rows:

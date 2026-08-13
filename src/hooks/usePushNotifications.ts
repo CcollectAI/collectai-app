@@ -195,9 +195,27 @@ export function usePushNotifications(userId: string | null) {
 
         if (!data) return;
 
-        // Direct-to-marketplace: if the notification includes a listing URL, open it directly
-        const directUrl = (typeof data.affiliate_url === "string" && data.affiliate_url)
-          || (typeof data.listing_url === "string" && data.listing_url);
+        // Direct-to-marketplace: if the notification carries a destination,
+        // open it directly.
+        //
+        // FOUR keys, because senders disagreed and the mismatch made Target Hit
+        // a dead tap. `deal_discovery_worker` writes `affiliate_url` /
+        // `listing_url` into `trigger_value` — the DB row the notifications
+        // SCREEN reads — but its push `data` carries the destination as `url`,
+        // and `deep_link` was persisted server-side without ever being sent to
+        // the device (fixed in app/push.py). So a Target Hit push arrived with
+        // a URL under a key nothing here read, fell through every branch below,
+        // and tapping it did nothing at all: the app opened wherever it already
+        // was, for the one alert whose entire value is reaching a live listing
+        // before it sells.
+        const firstString = (...vals: unknown[]) =>
+          vals.find((v): v is string => typeof v === "string" && v.length > 0);
+        const directUrl = firstString(
+          data.affiliate_url,
+          data.listing_url,
+          data.deep_link,
+          data.url,
+        );
         if (directUrl) {
           // Our OWN listings resolve to a screen in this app, so route rather
           // than hand them to the browser — a member Target Hit otherwise left
