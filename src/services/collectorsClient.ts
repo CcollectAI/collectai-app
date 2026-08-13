@@ -1,4 +1,10 @@
-import { API_BASE_URL, API_KEY } from '@/config/api';
+import {
+  get as httpGet,
+  post as httpPost,
+  put as httpPut,
+  patch as httpPatch,
+  del as httpDel,
+} from '@/api/httpClient';
 import type { CurrencyCode } from '@/data/types';
 import { logger } from '@/lib/logger';
 
@@ -88,39 +94,50 @@ export interface HealthStatus {
   [key: string]: unknown;
 }
 
+/**
+ * Delegates to `httpClient` — it does NOT talk to `fetch` itself.
+ *
+ * It used to. This function built its own request with `Content-Type` and an
+ * `X-API-Key` (which is `EXPO_PUBLIC_API_KEY ?? ''`, so usually absent) and
+ * **no `Authorization` header at all**, then awaited a bare `fetch` with no
+ * timeout and no AbortController. Every route it reaches requires a bearer
+ * token, so every call 401'd, and each caller's try/catch turned that into a
+ * silent null. Prod bake.log, 2026-08-13: `/portfolio/items` had 4 requests and
+ * 4 × 401 with not one 200, while `/portfolio/overview` — the SAME endpoint —
+ * showed 193 × 200 from the httpClient callers. The portfolio analytics
+ * snapshot had therefore never loaded real data for anyone.
+ *
+ * Fixed here rather than at the call sites because this is the chokepoint:
+ * `categoriesClient.ts` imports it too, by relative path, which a grep for
+ * "services/collectorsClient" does not find. One fix covers both, and any
+ * caller added later.
+ *
+ * `httpClient` supplies the bearer, the single-flight 401 refresh and
+ * REQUEST_TIMEOUT_MS. ARCHITECTURE.md names `src/api/` as THE API client;
+ * prefer importing from there directly in new code.
+ */
 export async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${path}`;
+  const method = (options.method ?? 'GET').toUpperCase();
+  const body =
+    typeof options.body === 'string'
+      ? (JSON.parse(options.body) as Record<string, unknown>)
+      : ((options.body as Record<string, unknown> | undefined) ?? {});
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> | undefined),
-  };
-
-  if (API_KEY) {
-    headers['X-API-Key'] = API_KEY;
+  switch (method) {
+    case 'POST':
+      return httpPost<T>(path, body);
+    case 'PUT':
+      return httpPut<T>(path, body);
+    case 'PATCH':
+      return httpPatch<T>(path, body);
+    case 'DELETE':
+      return httpDel<T>(path);
+    default:
+      return httpGet<T>(path);
   }
-
-  const res = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  if (!res.ok) {
-    let message = `Request failed with status ${res.status}`;
-    try {
-      const text = await res.text();
-      if (text) message = text;
-    } catch (e) {
-      logger.error('[silent-catch] collectorsClient.ts:99:', e);
-      // ignore
-    }
-    throw new Error(message);
-  }
-
-  return (await res.json()) as T;
 }
 
 export function getPortfolioOverview(): Promise<PortfolioOverview> {

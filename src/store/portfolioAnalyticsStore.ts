@@ -26,8 +26,12 @@ import {
   type TimeSeriesPoint,
 } from '@/analytics/portfolioMetrics';
 import { logger } from '@/lib/logger';
+import {
+  getPortfolioItems,
+  getPortfolioOverviewRaw,
+  getPortfolioTimeseries,
+} from '@/api/portfolioApi';
 import type {
-  CollectorsClient,
   RawPortfolioTimeseriesPoint,
   RawPortfolioItem,
   RawPortfolioSet,
@@ -138,22 +142,24 @@ const DEMO_SETS = [
 ];
 
 /**
- * Optional: collectors-merge API client.
- * We only import if the module exists; if not, the fallback will be used.
+ * Portfolio reads go through the app's ONE authenticated client.
+ *
+ * They used to go through `src/services/collectorsClient.ts`, reached by a
+ * guarded `require`. That module is a second HTTP client: it sends `X-API-Key`
+ * (which is `EXPO_PUBLIC_API_KEY ?? ''`, i.e. empty) and **no Authorization
+ * header at all**, and its bare `fetch` has no timeout and no AbortController.
+ *
+ * Every `/portfolio/*` route requires a bearer token, so those calls 401'd —
+ * always, for every user. Prod bake.log: `/portfolio/items` had 4 requests and
+ * 4 × 401 with not one 200, while `/portfolio/overview` showed 193 × 200 from
+ * the httpClient callers on the very same endpoint. Each loader below catches
+ * and returns null, so the failure was silent and analytics simply computed an
+ * empty portfolio for everyone.
+ *
+ * `httpClient` supplies the bearer, the single-flight 401 refresh and
+ * REQUEST_TIMEOUT_MS — the three things the duplicate lacked. ARCHITECTURE.md
+ * names `src/api/` as the API client; `collectorsClient` is documented nowhere.
  */
-let client: CollectorsClient | null = null;
-
-try {
-  // Dynamic require to avoid bundling issues if the client path changes.
-   
-  client = require('@/services/collectorsClient');
-} catch (_e) {
-  // best-effort: optional module. If it is absent every loader below returns
-  // null/[] and the UI shows its empty state -- it no longer falls back to
-  // fabricated demo data in production, so this is safe to swallow.
-  client = null;
-}
-
 /**
  * Normalize whatever /portfolio/timeseries returns into TimeSeriesPoint[].
  *
@@ -162,12 +168,10 @@ try {
  *  - [{ t: '...', v: 123 }, ...]
  */
 async function loadSeriesFromBackend(): Promise<TimeSeriesPoint[] | null> {
-  if (!client || typeof client.getPortfolioTimeseries !== 'function') {
-    return null;
-  }
-
   try {
-    const raw = await client.getPortfolioTimeseries!();
+    // A range is REQUIRED: the old call passed none, so the duplicate client
+    // built `?range=undefined`.
+    const raw = await getPortfolioTimeseries('30d');
 
     if (!raw) return null;
 
@@ -200,12 +204,8 @@ async function loadSeriesFromBackend(): Promise<TimeSeriesPoint[] | null> {
  * - change_1d_pct, change_7d_pct, liquidity_score, rarity_score, fraud_risk_score
  */
 async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
-  if (!client || typeof client.getPortfolioItems !== 'function') {
-    return null;
-  }
-
   try {
-    const raw = await client.getPortfolioItems!();
+    const raw = await getPortfolioItems();
 
     const rawObj = raw as Record<string, unknown> | null;
     const items: RawPortfolioItem[] = Array.isArray(rawObj?.items)
@@ -279,12 +279,10 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
 async function loadSetsFromBackend(): Promise<
   { setId: string; setName: string; ownedCount: number; totalCount: number }[]
 > {
-  if (!client || typeof client.getPortfolioOverview !== 'function') {
-    return __DEV__ ? DEMO_SETS : [];
-  }
-
   try {
-    const raw = await client.getPortfolioOverview!();
+    // RAW, not the typed getter: PortfolioSnapshotSchema has no `sets` key, so
+    // zod would strip exactly what this function exists to read.
+    const raw = (await getPortfolioOverviewRaw()) as { sets?: RawPortfolioSet[]; set_completion?: RawPortfolioSet[] } | null;
     const sets: RawPortfolioSet[] = Array.isArray(raw?.sets)
       ? raw.sets
       : Array.isArray(raw?.set_completion)

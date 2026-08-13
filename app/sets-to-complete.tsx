@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { getPortfolioItems, type PortfolioItem } from '@/services/collectorsClient';
+import { getPortfolioItems } from '@/api/portfolioApi';
+import type { RawPortfolioItem, RawPortfolioItemsResponse } from '@/../types/api';
 import {
   CollectionStatusInput,
   computeCollectionStatusScores,
@@ -56,7 +57,17 @@ const SetsToCompleteScreen: React.FC = () => {
         const raw = await getPortfolioItems();
         if (cancelled) return;
 
-        const mapped: CollectionStatusInput[] = (raw || []).map((it: PortfolioItem) => ({
+        // `/portfolio/items` returns `{ items: [...] }`, NOT a bare array. The
+        // old client typed it as `PortfolioItem[]`, so `(raw || []).map` was a
+        // TypeError on a response that had made it that far — which none ever
+        // did, because that client sent no Authorization header and the route
+        // 401'd every time. Array form is still accepted in case the endpoint
+        // is ever unwrapped.
+        const list: RawPortfolioItem[] = Array.isArray(raw)
+          ? (raw as RawPortfolioItem[])
+          : ((raw as RawPortfolioItemsResponse | null)?.items ?? []);
+
+        const mapped: CollectionStatusInput[] = list.map((it: RawPortfolioItem) => ({
           id: it.id ?? (it.item_id as string | undefined) ?? undefined,
           name: it.name ?? (it.title as string | null) ?? null,
           title: (it.title as string | null) ?? it.name ?? null,
