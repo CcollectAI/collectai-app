@@ -20,6 +20,7 @@ import { ProfileEditSection } from '@/components/settings/ProfileEditSection';
 import { DevForcePlanSection } from '@/components/settings/DevForcePlanSection';
 import { DevSentryCrashSection } from '@/components/settings/DevSentryCrashSection';
 import { MarketplaceConnectionsSection } from '@/components/settings/MarketplaceConnectionsSection';
+import { PaymentHandlesSection } from '@/components/settings/PaymentHandlesSection';
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -77,6 +78,12 @@ export default function Settings() {
           "Sign in with your eBay account to list items directly", and there is
           no eBay OAuth behind it. */}
       {SELLING_ENABLED && <MarketplaceConnectionsSection />}
+
+      {/* Producer for the settle-up prefill on P2P trades. Deliberately NOT
+          behind SELLING_ENABLED: that flag gates the external-marketplace
+          (eBay) integration, while P2P trading is live — gating this would
+          leave the buyer's prefilled-link path with nothing feeding it. */}
+      <PaymentHandlesSection />
 
       {/* Dev-only: Force subscription tier (for previewing paid views) */}
       <DevForcePlanSection />

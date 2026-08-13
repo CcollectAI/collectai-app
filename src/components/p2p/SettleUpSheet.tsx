@@ -62,6 +62,9 @@ type Props = {
   mode: 'pay' | 'ship';
   /** Already formatted — this component never formats money. */
   amountLabel: string;
+  /** The trade being settled. Passing it lets the server resolve the SELLER's
+   *  handle and return a link with the amount already in it. */
+  offerId?: string;
   colors: SheetColors;
 };
 
@@ -78,7 +81,7 @@ function openUrl(url: string) {
   }
 }
 
-export function SettleUpSheet({ visible, onClose, mode, amountLabel, colors }: Props) {
+export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, colors }: Props) {
   // The payment side resolves region SERVER-side from user_settings; the
   // carrier list is one flat table, so the filtering happens here. Same region
   // value either way.
@@ -96,7 +99,7 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, colors }: P
     let cancelled = false;
     setState('loading');
     const load = mode === 'pay'
-      ? collectorsApi.p2pListPaymentRails().then((res) => {
+      ? collectorsApi.p2pListPaymentRails({ offerId }).then((res) => {
           if (cancelled) return;
           setRails(res?.rails ?? []);
           setDisclaimer(res?.disclaimer ?? '');
@@ -125,7 +128,7 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, colors }: P
         if (!cancelled) setState('error');
       });
     return () => { cancelled = true; };
-  }, [visible, mode, retryNonce, settings.region]);
+  }, [visible, mode, retryNonce, settings.region, offerId]);
 
   const reversibilityLabel = useCallback((r: P2PPaymentRail): string => {
     if (r.reversible === true) return 'Has a dispute route';
@@ -185,7 +188,10 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, colors }: P
               key={r.key}
               onPress={() => {
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-                openUrl(r.url);
+                // Prefilled link when the seller gave a handle, the rail's own
+                // site otherwise. Never a half-substituted URL — the server
+                // sends null rather than a link containing "{handle}".
+                openUrl(r.pay_url || r.url);
               }}
               style={[styles.row, { borderColor: colors.border }]}
               accessibilityRole="link"
@@ -195,6 +201,7 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, colors }: P
                 <Text style={[styles.rowTitle, { color: colors.text }]}>{r.label}</Text>
                 <Text style={[styles.rowMeta, { color: colors.muted }]}>
                   {r.coverage} · {reversibilityLabel(r)}
+                  {r.pay_url ? ' · amount filled in' : ''}
                 </Text>
                 {r.note ? (
                   <Text style={[styles.rowNote, { color: colors.muted }]}>{r.note}</Text>

@@ -8,7 +8,7 @@
  * returns exactly these keys. Do not camelise here; map at the screen boundary
  * if a screen wants camelCase, the way dataProvider does elsewhere.
  */
-import { get, post, patch } from './httpClient';
+import { get, post, patch, put } from './httpClient';
 
 /** Listing lifecycle. MUST match marketplace_listings_status_check, which
  *  allows draft | active | sold | expired | delisted | error. 'withdrawn' is
@@ -367,7 +367,16 @@ export type P2PPaymentRail = {
    *  comparison §5a permits us to make. */
   reversible?: boolean | null;
   note?: string | null;
+  /** What to ask the SELLER for. Null = this rail has no public identifier we
+   *  can build a link from, so no handle is collected for it. */
+  handle_label?: string | null;
+  /** The rail's own URL with the agreed amount already in it, built server-side
+   *  from the seller's handle. Null whenever one could not be built — fall back
+   *  to `url`. A half-substituted link is never sent. */
+  pay_url?: string | null;
 };
+
+export type P2PPaymentHandle = { rail_key: string; handle: string };
 
 export type P2PPaymentRailsResponse = {
   region: string;
@@ -412,10 +421,23 @@ export const listCarriers = () => get<P2PCarrier[]>('/p2p/carriers');
 
 /** Region comes from `user_settings` server-side unless overridden, so two
  *  members cannot see different lists because one has a stale build. */
-export const listPaymentRails = (region?: string) =>
-  get<P2PPaymentRailsResponse>(
-    `/p2p/payment-rails${region ? `?region=${encodeURIComponent(region)}` : ''}`,
-  );
+export const listPaymentRails = (opts?: { region?: string; offerId?: string }) => {
+  const sp = new URLSearchParams();
+  if (opts?.region) sp.set('region', opts.region);
+  // Passing the offer is what turns the directory into a prefilled handoff:
+  // the server resolves the SELLER's handle and returns `pay_url` per rail.
+  if (opts?.offerId) sp.set('offer_id', opts.offerId);
+  const qs = sp.toString();
+  return get<P2PPaymentRailsResponse>(`/p2p/payment-rails${qs ? `?${qs}` : ''}`);
+};
+
+/** The caller's OWN handles. There is deliberately no endpoint that returns
+ *  someone else's — the server reads a seller's handle only to build a link. */
+export const listPaymentHandles = () => get<P2PPaymentHandle[]>('/p2p/payment-handles');
+
+/** Empty `handle` clears it. */
+export const setPaymentHandle = (railKey: string, handle: string) =>
+  put<P2PPaymentHandle[]>('/p2p/payment-handles', { rail_key: railKey, handle });
 
 /**
  * Attach a shipment reference. Seller only, while `accepted` or `shipped`.

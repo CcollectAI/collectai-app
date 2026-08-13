@@ -36,13 +36,13 @@ Three consequences for the code below:
    bank transfer or a Friends-and-Family send has no chargeback, and a member
    who does not know that learns it by losing money.
 
-3. **No amount prefill yet, and the code must not pretend otherwise.** Prefill
-   needs the SELLER's handle (`paypal.me/<handle>/<amount>`,
-   `venmo.com/<handle>?amount=`), and no column holds one — verified against the
-   live schema 2026-08-14, where the only handle columns are display names. The
-   honest interim is to open the rail and show the amount as selectable text.
-   When a handle column lands, add `deep_link_template` here and NOT at the call
-   sites.
+3. **Amount prefill is per-rail and opt-in.** `deep_link_template` is set only
+   for rails with a documented public link format that carries the amount. A
+   rail without one is not broken — the buyer opens it and types the figure,
+   which is what everyone did before. The seller's handle comes from
+   `user_payment_handles` (migration 20260814) and is only ever resolved for the
+   COUNTERPARTY of an accepted trade, server-side; the table itself is
+   owner-only under RLS.
 
 Apple: physical goods shipped between members are outside IAP — spec §5,
 "Must not use IAP for this — that is the rule, not a loophole."
@@ -73,6 +73,13 @@ class PaymentRail(BaseModel):
     reversible: Optional[bool] = None
     #: Shown verbatim next to the rail. Facts only — never advice.
     note: Optional[str] = None
+    #: What to ask the SELLER for, e.g. "PayPal.Me name". None = this rail has
+    #: no public identifier we can build a link from, so no handle is collected.
+    handle_label: Optional[str] = None
+    #: `{handle}`, `{amount}`, `{currency}` are substituted server-side. Present
+    #: only where the rail documents a public URL that carries an amount —
+    #: guessing a format produces a link that 404s at the worst moment.
+    deep_link_template: Optional[str] = None
 
 
 # Global rails, offered everywhere. Kept separate so a region list stays short
@@ -88,6 +95,8 @@ _GLOBAL: list[PaymentRail] = [
         # and is the standard way people get burned on a marketplace.
         reversible=None,
         note="Goods & Services is covered by PayPal's buyer protection. Friends & Family is not.",
+        handle_label="PayPal.Me name",
+        deep_link_template="https://www.paypal.com/paypalme/{handle}/{amount}{currency}",
     ),
     PaymentRail(
         key="wise",
@@ -96,6 +105,10 @@ _GLOBAL: list[PaymentRail] = [
         coverage="Most countries",
         reversible=False,
         note="A transfer, not a card payment — there is no chargeback.",
+        handle_label="Wise link name",
+        # Wise's public pay-me link carries no amount, so the buyer still types
+        # it. Listed anyway: landing on the right person is most of the value.
+        deep_link_template="https://wise.com/pay/me/{handle}",
     ),
 ]
 
@@ -107,7 +120,9 @@ _BY_REGION: dict[str, list[PaymentRail]] = {
         PaymentRail(key="bizum", label="Bizum", url="https://bizum.es/",
                     coverage="Spain", reversible=False),
         PaymentRail(key="revolut", label="Revolut", url="https://www.revolut.com/",
-                    coverage="EEA and UK", reversible=False),
+                    coverage="EEA and UK", reversible=False,
+                    handle_label="Revolut tag (without @)",
+                    deep_link_template="https://revolut.me/{handle}/{amount}{currency}"),
         PaymentRail(key="swish", label="Swish", url="https://www.swish.nu/",
                     coverage="Sweden", reversible=False),
         PaymentRail(key="tikkie", label="Tikkie", url="https://www.tikkie.me/",
@@ -116,13 +131,19 @@ _BY_REGION: dict[str, list[PaymentRail]] = {
     ],
     "americas": [
         PaymentRail(key="cashapp", label="Cash App", url="https://cash.app/",
-                    coverage="United States, United Kingdom", reversible=False),
+                    coverage="United States, United Kingdom", reversible=False,
+                    handle_label="$Cashtag (without $)",
+                    deep_link_template="https://cash.app/${handle}/{amount}"),
         PaymentRail(key="interac", label="Interac e-Transfer", url="https://www.interac.ca/",
                     coverage="Canada", reversible=False),
         PaymentRail(key="revolut", label="Revolut", url="https://www.revolut.com/",
-                    coverage="United States and EEA", reversible=False),
+                    coverage="United States and EEA", reversible=False,
+                    handle_label="Revolut tag (without @)",
+                    deep_link_template="https://revolut.me/{handle}/{amount}{currency}"),
         PaymentRail(key="venmo", label="Venmo", url="https://venmo.com/",
-                    coverage="United States", reversible=False),
+                    coverage="United States", reversible=False,
+                    handle_label="Venmo username (without @)",
+                    deep_link_template="https://venmo.com/{handle}?txn=pay&amount={amount}"),
         PaymentRail(key="zelle", label="Zelle", url="https://www.zellepay.com/",
                     coverage="United States", reversible=False,
                     note="Bank-to-bank. Treated as cash — there is no dispute route."),
@@ -166,3 +187,62 @@ DISCLAIMER = (
     "directly through your own provider, and any dispute is handled by that "
     "provider, not by Sparrow."
 )
+
+
+#: A handle goes straight into a URL path, so it is bounded to characters that
+#: cannot change what the URL MEANS. `merle/../../evil` or a handle carrying
+#: `?`/`#` would retarget the link the buyer taps — and the buyer taps it
+#: believing Sparrow built it. Letters, digits, dot, dash and underscore cover
+#: every format the rails above document.
+_HANDLE_OK = set(
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789.-_"
+)
+
+
+def clean_handle(raw: Optional[str]) -> Optional[str]:
+    """Normalise a member-supplied handle, or None if it cannot be trusted.
+
+    Rejects rather than strips: a handle that contained a slash is not a handle
+    with a typo, it is someone trying to build a different URL, and silently
+    repairing it would hide that.
+    """
+    if raw is None:
+        return None
+    h = raw.strip().lstrip("@$")
+    if not (2 <= len(h) <= 64):
+        return None
+    if any(c not in _HANDLE_OK for c in h):
+        return None
+    return h
+
+
+def build_deep_link(
+    rail: PaymentRail,
+    handle: Optional[str],
+    amount: float,
+    currency: str,
+) -> Optional[str]:
+    """The rail's own URL with the amount already in it, or None.
+
+    None means "we could not build one" — no template, no handle, or a handle
+    that failed `clean_handle`. Callers must fall back to `rail.url`, never to a
+    half-substituted string: a link containing a literal `{handle}` is worse
+    than no link, because it looks tappable.
+
+    Amount is formatted to two decimals and the currency upper-cased, because
+    `paypal.me/x/25.5EUR` and `paypal.me/x/25.50eur` do not both resolve.
+    """
+    if not rail.deep_link_template:
+        return None
+    clean = clean_handle(handle)
+    if not clean:
+        return None
+    if amount <= 0:
+        return None
+    return rail.deep_link_template.format(
+        handle=clean,
+        amount=f"{amount:.2f}",
+        currency=(currency or "EUR").upper(),
+    )

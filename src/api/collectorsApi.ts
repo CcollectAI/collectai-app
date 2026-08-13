@@ -159,6 +159,8 @@ export const collectorsApi = {
   p2pSetOfferTracking: p2pApi.setOfferTracking,
   p2pListCarriers: p2pApi.listCarriers,
   p2pListPaymentRails: p2pApi.listPaymentRails,
+  p2pListPaymentHandles: p2pApi.listPaymentHandles,
+  p2pSetPaymentHandle: p2pApi.setPaymentHandle,
   p2pDac7Status: p2pApi.getDac7Status,
   p2pGradeCounterparty: p2pApi.gradeCounterparty,
   p2pMemberReputation: p2pApi.getMemberReputation,

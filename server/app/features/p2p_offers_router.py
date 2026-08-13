@@ -40,6 +40,8 @@ from app.lib.payment_rails import (
     DISCLAIMER as PAYMENT_DISCLAIMER,
     REGIONS,
     PaymentRail,
+    build_deep_link,
+    clean_handle,
     rails_for_region,
 )
 from app.rate_limit import per_user_rate_limit
@@ -1214,11 +1216,99 @@ async def list_carriers() -> List[CarrierOut]:
     ]
 
 
+class PaymentRailOut(PaymentRail):
+    #: The rail's own URL with the amount already in it, built from the SELLER's
+    #: handle. Null whenever we could not build one — no template, no handle, or
+    #: a handle that failed validation. Callers fall back to `url`; a
+    #: half-substituted link is never returned.
+    pay_url: Optional[str] = None
+
+
 class PaymentRailsOut(BaseModel):
     region: str
-    rails: List[PaymentRail]
+    rails: List[PaymentRailOut]
     #: Rendered with the list every time, not once at onboarding.
     disclaimer: str
+
+
+class PaymentHandleIn(BaseModel):
+    rail_key: str = Field(..., min_length=2, max_length=32)
+    #: Empty string deletes. A member removing their PayPal handle should not
+    #: need a second endpoint, and DELETE-with-a-body is a bad time.
+    handle: str = Field("", max_length=64)
+
+
+class PaymentHandleOut(BaseModel):
+    rail_key: str
+    handle: str
+
+
+@router.get("/payment-handles", response_model=List[PaymentHandleOut],
+            summary="The caller's own payment handles")
+async def list_payment_handles(
+    user_id: str = Depends(get_current_user_id),
+) -> List[PaymentHandleOut]:
+    """Owner-only. The counterparty never reads this — see `set_payment_handle`."""
+    pool = get_db_pool()
+    if pool is None:
+        return []
+    rows = await pool.fetch(
+        "SELECT rail_key, handle FROM public.user_payment_handles "
+        "WHERE user_id = $1::uuid ORDER BY rail_key",
+        user_id,
+    )
+    return [PaymentHandleOut(rail_key=r["rail_key"], handle=r["handle"]) for r in rows]
+
+
+@router.put("/payment-handles", response_model=List[PaymentHandleOut],
+            summary="Set or clear one of the caller's payment handles")
+async def set_payment_handle(
+    payload: PaymentHandleIn,
+    user_id: str = Depends(get_current_user_id),
+) -> List[PaymentHandleOut]:
+    """Store a PUBLIC identifier a buyer could already be given in chat.
+
+    Validated with the same `clean_handle` that builds the link, so a handle
+    that would be rejected at link time is rejected at write time instead —
+    otherwise a member saves something, sees no error, and their buyers
+    silently get the un-prefilled fallback forever.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+
+    rail_key = payload.rail_key.strip().lower()
+    known = {r.key for r in rails_for_region(None)} | {
+        r.key for reg in REGIONS for r in rails_for_region(reg)
+    }
+    if rail_key not in known:
+        raise error_response(400, "Unknown payment rail", code="UNKNOWN_RAIL")
+
+    raw = (payload.handle or "").strip()
+    if not raw:
+        await pool.execute(
+            "DELETE FROM public.user_payment_handles WHERE user_id = $1::uuid AND rail_key = $2",
+            user_id, rail_key,
+        )
+    else:
+        cleaned = clean_handle(raw)
+        if not cleaned:
+            raise error_response(
+                400,
+                "That handle contains characters we cannot put in a link. "
+                "Use letters, numbers, dots, dashes or underscores.",
+                code="INVALID_HANDLE",
+            )
+        await pool.execute(
+            """
+            INSERT INTO public.user_payment_handles (user_id, rail_key, handle)
+            VALUES ($1::uuid, $2, $3)
+            ON CONFLICT (user_id, rail_key)
+            DO UPDATE SET handle = EXCLUDED.handle, updated_at = now()
+            """,
+            user_id, rail_key, cleaned,
+        )
+    return await list_payment_handles(user_id)
 
 
 @router.get("/payment-rails", response_model=PaymentRailsOut,
@@ -1228,6 +1318,14 @@ async def list_payment_rails(
         None,
         max_length=32,
         description="Override the caller's stored region. Omit to use user_settings.region.",
+    ),
+    offer_id: Optional[str] = Query(
+        None,
+        description=(
+            "An ACCEPTED offer the caller is the BUYER of. Supplying it resolves "
+            "the seller's handles and returns `pay_url` per rail, prefilled with "
+            "the agreed amount."
+        ),
     ),
     user_id: str = Depends(get_current_user_id),
 ) -> PaymentRailsOut:
@@ -1256,9 +1354,46 @@ async def list_payment_rails(
         # Unknown or unset falls back to the global rails only. Showing a Dutch
         # member Zelle is worse than showing them fewer options.
         resolved = "other"
+    rails = [PaymentRailOut(**r.model_dump()) for r in rails_for_region(resolved)]
+
+    # Prefill, but only for the buyer of a live trade with THIS seller. The
+    # handle table is owner-only under RLS and is never exposed directly: this
+    # is the one path that reads someone else's handle, and it reads it to build
+    # a link rather than to return the handle itself.
+    if offer_id:
+        pool = get_db_pool()
+        if pool is not None:
+            offer = await pool.fetchrow(
+                """
+                SELECT seller_id, buyer_id, amount, currency, status
+                FROM public.p2p_offers WHERE id = $1::uuid
+                """,
+                offer_id,
+            )
+            # Silent no-prefill rather than a 403 on every mismatch: the rail
+            # list is still correct and useful, and a seller opening their own
+            # trade is not an error worth failing the screen for.
+            if (
+                offer is not None
+                and str(offer["buyer_id"]) == str(user_id)
+                and offer["status"] in ("accepted", "shipped")
+            ):
+                handles = {
+                    r["rail_key"]: r["handle"]
+                    for r in await pool.fetch(
+                        "SELECT rail_key, handle FROM public.user_payment_handles "
+                        "WHERE user_id = $1::uuid",
+                        str(offer["seller_id"]),
+                    )
+                }
+                amount = float(offer["amount"] or 0)
+                currency = offer["currency"] or "EUR"
+                for r in rails:
+                    r.pay_url = build_deep_link(r, handles.get(r.key), amount, currency)
+
     return PaymentRailsOut(
         region=resolved,
-        rails=rails_for_region(resolved),
+        rails=rails,
         disclaimer=PAYMENT_DISCLAIMER,
     )
 

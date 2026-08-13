@@ -896,6 +896,7 @@ function OffersScreen() {
           onClose={() => setSettleFor(null)}
           mode={settleFor.i_am_buyer ? 'pay' : 'ship'}
           amountLabel={formatPrice(settleFor.amount, settings.currency, settings.numberLocale)}
+          offerId={settleFor.id}
           colors={colors}
         />
       ) : null}
