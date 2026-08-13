@@ -31,6 +31,51 @@ type Direction = 'gainers' | 'losers';
 type MetricWindow = '7d' | '30d';
 type Scope = 'followed' | 'all';
 
+/**
+ * Secondary filter group — content-width, not full-bleed.
+ *
+ * The screen used to stack THREE identical full-width segmented controls
+ * (direction, window, scope), ~150pt of chrome before the first row of data,
+ * every one of them styled the same weight. Three equal controls read as three
+ * equally important decisions; in fact only the first changes what the list
+ * MEANS — gainers and losers are different questions — while window and scope
+ * refine the same answer.
+ *
+ * So the primary keeps the full-width segmented treatment and these two shrink
+ * to chips that sit together on one row. Same component API, so nothing about
+ * the state wiring changed.
+ */
+function MiniSegmented<T extends string>(props: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  const { colors } = useAppTheme();
+  return (
+    <View style={[styles.miniGroup, { borderColor: colors.border }]}>
+      {props.options.map((o) => {
+        const active = o.value === props.value;
+        return (
+          <AnimatedPressable
+            key={o.value}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+              props.onChange(o.value);
+            }}
+            style={[styles.miniBtn, active && { backgroundColor: colors.accent + '1A' }]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+          >
+            <Text style={[styles.miniText, { color: active ? colors.accent : colors.muted }]}>
+              {o.label}
+            </Text>
+          </AnimatedPressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function Segmented<T extends string>(props: {
   options: { value: T; label: string; color?: string }[];
   value: T;
@@ -69,6 +114,13 @@ function MarketMoversScreen() {
   const [scope, setScope] = useState<Scope>('followed');
   const [movers, setMovers] = useState<TopMover[]>([]);
   const [loading, setLoading] = useState(true);
+  // "Could not ask" is not "nothing to show". A failed fetch used to set
+  // movers=[] and fall into the empty state, so the screen calmly reported
+  // that the market had no movers — a claim it had no basis for. Retry nonce
+  // rather than a state the effect reads, so the effect never depends on a
+  // value it writes (npm run check:effects).
+  const [failed, setFailed] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   const followedList = useMemo(() => Array.from(followed), [followed]);
   const hasFollowed = followedList.length > 0;
@@ -76,6 +128,7 @@ function MarketMoversScreen() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setFailed(false);
     const categories = scope === 'followed' && hasFollowed ? followedList : undefined;
     collectorsApi
       .getTopMovers({ direction, window: metricWindow, categories, limit: 50 })
@@ -83,8 +136,13 @@ function MarketMoversScreen() {
         if (!cancelled) setMovers(res?.movers ?? []);
       })
       .catch((err) => {
-        logger.warn('[MarketMovers] fetch failed', err);
-        if (!cancelled) setMovers([]);
+        // logger.error, not warn: warn is stripped in release builds, which is
+        // exactly where a silently empty screen would be invisible.
+        logger.error('[MarketMovers] fetch failed', err);
+        if (!cancelled) {
+          setMovers([]);
+          setFailed(true);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -92,7 +150,7 @@ function MarketMoversScreen() {
     return () => {
       cancelled = true;
     };
-  }, [direction, metricWindow, scope, hasFollowed, followedList]);
+  }, [direction, metricWindow, scope, hasFollowed, followedList, retryNonce]);
 
   const openItem = useCallback(
     (m: TopMover) => {
@@ -175,6 +233,7 @@ function MarketMoversScreen() {
       />
 
       <View style={styles.controls}>
+        {/* Primary: gainers and losers are different questions, not a refinement. */}
         <Segmented<Direction>
           value={direction}
           onChange={setDirection}
@@ -183,28 +242,50 @@ function MarketMoversScreen() {
             { value: 'losers', label: 'Losers', color: colors.danger },
           ]}
         />
-        <Segmented<MetricWindow>
-          value={metricWindow}
-          onChange={setMetricWindow}
-          options={[
-            { value: '7d', label: '7 days' },
-            { value: '30d', label: '30 days' },
-          ]}
-        />
-        {hasFollowed && (
-          <Segmented<Scope>
-            value={scope}
-            onChange={setScope}
+        {/* Secondary: both refine the same answer, so they share one row and
+            size to their own content instead of each claiming a full bar. */}
+        <View style={styles.filterRow}>
+          <MiniSegmented<MetricWindow>
+            value={metricWindow}
+            onChange={setMetricWindow}
             options={[
-              { value: 'followed', label: 'My categories' },
-              { value: 'all', label: 'All' },
+              { value: '7d', label: '7 days' },
+              { value: '30d', label: '30 days' },
             ]}
           />
-        )}
+          {hasFollowed && (
+            <MiniSegmented<Scope>
+              value={scope}
+              onChange={setScope}
+              options={[
+                { value: 'followed', label: 'My categories' },
+                { value: 'all', label: 'All' },
+              ]}
+            />
+          )}
+        </View>
       </View>
 
       {loading ? (
         <ActivityIndicator style={styles.loader} size="large" color={colors.accent} />
+      ) : failed ? (
+        <View style={styles.empty}>
+          <Ionicons name="cloud-offline-outline" size={40} color={colors.muted} />
+          <Text style={[styles.emptyText, { color: colors.muted }]}>
+            Couldn&apos;t load market movers.
+          </Text>
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+              setRetryNonce((n) => n + 1);
+            }}
+            style={[styles.retryBtn, { backgroundColor: colors.accent }]}
+            accessibilityRole="button"
+            accessibilityLabel="Try loading market movers again"
+          >
+            <Text style={[styles.retryText, { color: colors.accentText }]}>Try again</Text>
+          </AnimatedPressable>
+        </View>
       ) : movers.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="trending-up-outline" size={40} color={colors.muted} />
@@ -235,10 +316,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   controls: {
-    gap: 8,
+    gap: 10,
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 8,
+    paddingBottom: 10,
   },
   segment: {
     flexDirection: 'row',
@@ -253,9 +334,43 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   segmentText: {
+    // `md`, not `sm`: this is the screen's primary control and the playbook's
+    // floor for anything a user reads is 12 — a 12pt primary control next to
+    // 12pt secondary chips is why all three bars read as one undifferentiated
+    // block.
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
+  },
+  // Secondary filters share one row and size to content.
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  miniGroup: {
+    flexDirection: 'row',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.pill,
+    padding: 2,
+  },
+  // No `flex: 1` — that is the whole difference from `segmentBtn`. These size
+  // to their labels so two groups fit one row.
+  miniBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  miniText: {
     fontSize: text.sm,
     fontWeight: fontWeight.semibold,
   },
+  retryBtn: {
+    marginTop: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+  },
+  retryText: { fontSize: text.md, fontWeight: fontWeight.bold },
   loader: {
     marginTop: 40,
   },

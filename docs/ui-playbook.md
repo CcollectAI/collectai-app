@@ -578,3 +578,48 @@ converted to the viewer's currency (a listing can be in any of the 7, and
 sending "€8000" for a ¥8000 card is the bug `ListingCard` converts to avoid);
 the Items tab passes `null` when `isUnpriced`, because "€0" would state a
 valuation the app elsewhere refuses to show.
+
+## Three equal controls read as three equal decisions (2026-08-13)
+
+`app/market-movers.tsx` stacked three identical full-width segmented controls —
+direction, window, scope — about 150pt of chrome before the first row of data.
+Reported as *"there are like 3 filters, this is visually messy and
+unprofessional"*, and the mess was hierarchy, not spacing: every control had the
+same width, the same weight and the same type size, so nothing said which one
+mattered.
+
+**They are not the same kind of control.** Gainers and losers are different
+questions — the list means something different depending on which is selected.
+Window and scope only refine the same answer. Give the primary the full-width
+segmented treatment and let the refinements shrink to content-width chips that
+share one row:
+
+```tsx
+<Segmented value={direction} … />          // full width, `md` type
+<View style={styles.filterRow}>            // one row, gap 8, wraps
+  <MiniSegmented value={metricWindow} … /> // sized to its labels
+  <MiniSegmented value={scope} … />
+</View>
+```
+
+`MiniSegmented` differs from `Segmented` in one property: its buttons have no
+`flex: 1`. That is the whole trick — without it a group sizes to its labels and
+two fit on one line.
+
+Also bump the primary to `md` while you are there. A 12pt primary next to 12pt
+secondaries is the other half of why the three bars read as one undifferentiated
+block.
+
+### While you are in a screen like this, check what it says when the fetch fails
+
+The same screen caught a `.catch` that set `movers = []` and fell through to
+the empty state, so a failed request rendered **"No movers to show right
+now."** — a confident claim about the market made on the strength of a request
+that never came back. And it logged with `logger.warn`, which release builds
+strip, so there was nothing to find afterwards either.
+
+`None` is not `[]`: could-not-ask and asked-and-got-nothing are different
+answers and must render differently
+([[learning_empty_answer_rendered_as_zero]]). Failure now gets its own state
+with a retry, driven by a nonce so the effect never depends on a value it
+writes.
