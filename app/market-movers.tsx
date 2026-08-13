@@ -24,12 +24,15 @@ import { formatPrice } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
-import { moverKey, moverTitle } from '@/components/marketplace/MarketMoversSection';
+import { moverKey, moverTitle, PCT_MIN_PRICE_EUR } from '@/components/marketplace/moverFormat';
 import logger from '@/utils/logger';
 
 type Direction = 'gainers' | 'losers';
 type MetricWindow = '7d' | '30d';
 type Scope = 'followed' | 'all';
+type Rank = 'pct' | 'abs';
+
+
 
 /**
  * Secondary filter group — content-width, not full-bleed.
@@ -112,6 +115,7 @@ function MarketMoversScreen() {
   const [direction, setDirection] = useState<Direction>('gainers');
   const [metricWindow, setMetricWindow] = useState<MetricWindow>('7d');
   const [scope, setScope] = useState<Scope>('followed');
+  const [rank, setRank] = useState<Rank>('pct');
   const [movers, setMovers] = useState<TopMover[]>([]);
   const [loading, setLoading] = useState(true);
   // "Could not ask" is not "nothing to show". A failed fetch used to set
@@ -131,7 +135,14 @@ function MarketMoversScreen() {
     setFailed(false);
     const categories = scope === 'followed' && hasFollowed ? followedList : undefined;
     collectorsApi
-      .getTopMovers({ direction, window: metricWindow, categories, limit: 50 })
+      .getTopMovers({
+        direction,
+        window: metricWindow,
+        categories,
+        limit: 50,
+        rank,
+        minPriceEur: rank === 'pct' ? PCT_MIN_PRICE_EUR : undefined,
+      })
       .then((res) => {
         if (!cancelled) setMovers(res?.movers ?? []);
       })
@@ -150,7 +161,7 @@ function MarketMoversScreen() {
     return () => {
       cancelled = true;
     };
-  }, [direction, metricWindow, scope, hasFollowed, followedList, retryNonce]);
+  }, [direction, metricWindow, scope, hasFollowed, followedList, retryNonce, rank]);
 
   const openItem = useCallback(
     (m: TopMover) => {
@@ -174,6 +185,10 @@ function MarketMoversScreen() {
   const renderItem = useCallback(
     ({ item: m }: { item: TopMover }) => {
       const delta = (metricWindow === '7d' ? m.delta_pct_7d : m.delta_pct_30d) ?? 0;
+      // Server-computed, from the same columns the percentage uses. Null-safe
+      // rather than derived here: see TopMover.delta_eur_* on why this must not
+      // be recomputed client-side.
+      const deltaEur = metricWindow === '7d' ? m.delta_eur_7d : m.delta_eur_30d;
       const up = delta >= 0;
       const c = up ? colors.success : colors.danger;
       return (
@@ -193,14 +208,27 @@ function MarketMoversScreen() {
               {m.category} · {formatPrice(m.last_price)} · {m.comps_30d} comps
             </Text>
           </View>
-          <Text style={[styles.delta, { color: c }]}>
-            {up ? '+' : ''}
-            {delta.toFixed(1)}%
-          </Text>
+          {/* Both figures, because neither is the whole answer: "+96.7%" hides
+              that the move was EUR 1.77, and "+EUR 570" hides that it was 44%
+              of the item's value. The percentage leads when ranking by
+              percentage and the money leads when ranking by money, so the
+              number the list is sorted on is the one that reads first. */}
+          <View style={styles.deltaCol}>
+            <Text style={[rank === 'pct' ? styles.delta : styles.deltaSub, { color: c }]}>
+              {up ? '+' : ''}
+              {delta.toFixed(1)}%
+            </Text>
+            {typeof deltaEur === 'number' ? (
+              <Text style={[rank === 'pct' ? styles.deltaSub : styles.delta, { color: c }]}>
+                {deltaEur >= 0 ? '+' : '−'}
+                {formatPrice(Math.abs(deltaEur))}
+              </Text>
+            ) : null}
+          </View>
         </AnimatedPressable>
       );
     },
-    [metricWindow, colors, openItem],
+    [metricWindow, colors, openItem, rank],
   );
 
   // The section on the Market tab shows a locked preview to non-Pro members,
@@ -253,6 +281,14 @@ function MarketMoversScreen() {
               { value: '30d', label: '30 days' },
             ]}
           />
+          <MiniSegmented<Rank>
+            value={rank}
+            onChange={setRank}
+            options={[
+              { value: 'pct', label: '%' },
+              { value: 'abs', label: '€' },
+            ]}
+          />
           {hasFollowed && (
             <MiniSegmented<Scope>
               value={scope}
@@ -264,6 +300,16 @@ function MarketMoversScreen() {
             />
           )}
         </View>
+
+        {/* Says what the list IS and what it leaves out. A price floor nobody
+            can see reads as "this is everything", which is the silent-cap
+            failure the playbook bans — and it would be this screen's second
+            offence, after a failed fetch rendering as "no movers". */}
+        <Text style={[styles.caption, { color: colors.muted }]}>
+          {rank === 'pct'
+            ? `Ranked by percentage change · items under ${formatPrice(PCT_MIN_PRICE_EUR)} hidden`
+            : 'Ranked by change in value · all prices'}
+        </Text>
       </View>
 
       {loading ? (
@@ -341,6 +387,7 @@ const styles = StyleSheet.create({
     fontSize: text.md,
     fontWeight: fontWeight.semibold,
   },
+  caption: { fontSize: text.sm, lineHeight: 16 },
   // Secondary filters share one row and size to content.
   filterRow: {
     flexDirection: 'row',
@@ -413,8 +460,21 @@ const styles = StyleSheet.create({
     fontSize: text.sm,
     marginTop: 2,
   },
+  // Right column holds both figures. Right-aligned so the two stack cleanly
+  // against the screen edge whichever one is leading.
+  deltaCol: {
+    alignItems: 'flex-end',
+    minWidth: 88,
+  },
   delta: {
     fontSize: text.lg,
     fontWeight: fontWeight.bold,
+  },
+  // The supporting figure. Same colour, one step down and lighter — it
+  // qualifies the number above it rather than competing with it.
+  deltaSub: {
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
+    marginTop: 1,
   },
 });

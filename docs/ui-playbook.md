@@ -623,3 +623,40 @@ answers and must render differently
 ([[learning_empty_answer_rendered_as_zero]]). Failure now gets its own state
 with a retry, driven by a nonce so the effect never depends on a value it
 writes.
+
+### …and check what the ranking actually surfaces (2026-08-13)
+
+Fixing the filters made the screen tidy and left it saying something silly.
+Measured on prod, the top-20 gainers ranked by percentage:
+
+| price | 7d % | actual move | rank |
+|---|---|---|---|
+| €3.60 | +96.7% | **€1.77** | 1st |
+| €2.00 | +75.4% | **€0.86** | 2nd |
+| €1,862 | +44.1% | **€569.71** | 13th |
+| €1.24 | +37.2% | **€0.34** | 19th |
+
+An 86-cent move outranked a €570 one, and 11 of the top 20 were under €10 — as
+the headline of a **paid** feature. Not thin data either: `comps_30d` ran 12–78,
+so those are real moves. They are just economically nothing, because a
+percentage on a cheap item is mostly rounding.
+
+Three changes, and the first is the one that matters:
+
+- **Show the money next to the percentage.** `+96.7%` and `+€1.77` together are
+  honest; either alone is not. Computed SERVER-side from the same two columns
+  the percentage comes from — never recomputed on the client, because two
+  derivations of one number drift and a row whose € and % disagree is worse
+  than a row with neither.
+- **Let the member choose the axis.** `rank=pct|abs` on `/catalog/top-movers`.
+  Ranking by euros returns a completely different and far more useful list:
+  €569, €123, €58, €56 on €166–€1,990 items.
+- **Floor the percentage list** at €5 (`PCT_MIN_PRICE_EUR`, shared by the widget
+  and the screen so they cannot answer the same question differently). Not
+  applied to the euro ranking, where trivial moves sort themselves to the
+  bottom and a floor would hide data for nothing.
+
+**Say what you hid.** The caption reads "Ranked by percentage change · items
+under €5 hidden". A filter nobody can see reads as "this is everything" — the
+same silent-cap failure as a screen that renders a failed fetch as an empty
+state.

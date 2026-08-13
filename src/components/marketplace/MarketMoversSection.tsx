@@ -33,7 +33,7 @@ type Direction = 'gainers' | 'losers';
 // RevenueCat SDK behind useBillingLimits — into a jest module registry that
 // cannot parse it.
 export { moverKey, moverTitle, humaniseMoverKey } from './moverFormat';
-import { moverKey, moverTitle } from './moverFormat';
+import { moverKey, moverTitle, PCT_MIN_PRICE_EUR } from './moverFormat';
 
 function MarketMoversSectionInner() {
   const { colors } = useAppTheme();
@@ -60,7 +60,15 @@ function MarketMoversSectionInner() {
     let cancelled = false;
     setLoading(true);
     collectorsApi
-      .getTopMovers({ direction, window: '7d', categories, limit: 5 })
+      .getTopMovers({
+        direction,
+        window: '7d',
+        categories,
+        limit: 5,
+        // Same floor as the full screen (moverFormat), so the widget and the
+        // screen behind its "See all" answer the same question.
+        minPriceEur: PCT_MIN_PRICE_EUR,
+      })
       .then((res) => {
         if (!cancelled) setMovers(res?.movers ?? []);
       })
@@ -199,6 +207,9 @@ function MarketMoversSectionInner() {
       ) : (
         movers.map((m) => {
           const delta = m.delta_pct_7d ?? 0;
+          // Server-computed from the same columns as the percentage — never
+          // recomputed here (see TopMover.delta_eur_*).
+          const deltaEur = m.delta_eur_7d;
           const up = delta >= 0;
           const c = up ? colors.success : colors.danger;
           return (
@@ -222,10 +233,20 @@ function MarketMoversSectionInner() {
                   {m.category} · {formatPrice(m.last_price)}
                 </Text>
               </View>
-              <Text style={[styles.delta, { color: c }]}>
-                {up ? '+' : ''}
-                {delta.toFixed(1)}%
-              </Text>
+              {/* Percentage leads, money qualifies it: "+96.7%" alone hides
+                  that the move was EUR 1.77. */}
+              <View style={styles.deltaCol}>
+                <Text style={[styles.delta, { color: c }]}>
+                  {up ? '+' : ''}
+                  {delta.toFixed(1)}%
+                </Text>
+                {typeof deltaEur === 'number' ? (
+                  <Text style={[styles.deltaSub, { color: c }]}>
+                    {deltaEur >= 0 ? '+' : '−'}
+                    {formatPrice(Math.abs(deltaEur))}
+                  </Text>
+                ) : null}
+              </View>
             </AnimatedPressable>
           );
         })
@@ -328,8 +349,11 @@ const styles = StyleSheet.create({
     paddingVertical: 11, alignItems: 'center',
   },
   upgradeBtnText: { fontSize: text.md, fontWeight: fontWeight.bold },
+  deltaCol: { alignItems: 'flex-end', minWidth: 76 },
   delta: {
     fontSize: text.md,
     fontWeight: fontWeight.bold,
   },
+  // Qualifies the percentage above it — same colour, one step down.
+  deltaSub: { fontSize: text.sm, fontWeight: fontWeight.semibold, marginTop: 1 },
 });

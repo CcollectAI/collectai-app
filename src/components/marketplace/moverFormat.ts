@@ -15,6 +15,23 @@
  */
 import type { TopMover } from '@/api/dataMoatApi';
 
+/**
+ * Price floor for the PERCENTAGE ranking, shared by the Market tab widget and
+ * the full screen so the two cannot show different lists for the same question.
+ *
+ * `mv_market_top_movers` already drops thin data (comps_30d >= 5, days_30d >= 3,
+ * a 5x outlier cap) but its only price floor is `med_30d >= 1`, so a EUR 1 card
+ * competes in a list about where the market moved. Measured on prod
+ * 2026-08-13: the top-20 gainers by percentage were led by a EUR 1.77 move on a
+ * EUR 3.60 card and 11 of 20 were under EUR 10, while a EUR 569.71 move ranked
+ * 13th.
+ *
+ * Percentage ranking only. Ranking by euros already sorts trivial moves to the
+ * bottom, so a floor there would hide data for nothing. Anything hidden is
+ * stated on screen — a silent filter reads as "this is everything".
+ */
+export const PCT_MIN_PRICE_EUR = 5;
+
 /** Catalog item_key for deep-linking (strip the `category:` prefix when unmatched). */
 export function moverKey(m: TopMover): string {
   return m.item_key ?? m.item_ref.split(':').slice(1).join(':');

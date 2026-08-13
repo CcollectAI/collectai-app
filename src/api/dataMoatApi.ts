@@ -65,6 +65,12 @@ export type TopMover = {
   med_30d?: number | null;
   delta_pct_7d?: number | null;
   delta_pct_30d?: number | null;
+  /** The same move in euros, computed server-side from the same two columns
+   *  the percentage comes from. Do NOT recompute it from `last_price - med_Nd`
+   *  here: two derivations of one number drift, and a row showing "+96.7%"
+   *  beside a euro figure that disagrees is worse than showing neither. */
+  delta_eur_7d?: number | null;
+  delta_eur_30d?: number | null;
   comps_30d: number;
   in_catalog: boolean;
 };
@@ -73,6 +79,10 @@ export type TopMoversResponse = {
   movers: TopMover[];
   direction: "gainers" | "losers";
   window: "7d" | "30d";
+  /** Echoed back so a screen can render what it actually asked for rather than
+   *  what it believes it asked for. */
+  rank?: "pct" | "abs";
+  min_price_eur?: number;
 };
 
 export const getTopMovers = (opts?: {
@@ -80,12 +90,21 @@ export const getTopMovers = (opts?: {
   window?: "7d" | "30d";
   categories?: string[];
   limit?: number;
+  /** `pct` = biggest percentage move (the historic default), `abs` = biggest
+   *  move in euros. Percentage alone is dominated by cheap items: measured on
+   *  prod 2026-08-13 the top-20 gainers were led by a EUR 1.77 move on a
+   *  EUR 3.60 card, while a EUR 569.71 move ranked 13th. */
+  rank?: "pct" | "abs";
+  /** Drop items priced below this. The MV's own floor is `med_30d >= 1`. */
+  minPriceEur?: number;
 }) => {
   const sp = new URLSearchParams();
   if (opts?.direction) sp.set("direction", opts.direction);
   if (opts?.window) sp.set("window", opts.window);
   if (opts?.categories?.length) sp.set("categories", opts.categories.join(","));
   if (opts?.limit) sp.set("limit", String(opts.limit));
+  if (opts?.rank) sp.set("rank", opts.rank);
+  if (opts?.minPriceEur) sp.set("min_price_eur", String(opts.minPriceEur));
   const qs = sp.toString();
   return get<TopMoversResponse>(`/catalog/top-movers${qs ? `?${qs}` : ""}`);
 };

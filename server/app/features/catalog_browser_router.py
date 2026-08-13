@@ -562,6 +562,12 @@ class TopMoverItem(BaseModel):
     med_30d: Optional[float] = None
     delta_pct_7d: Optional[float] = None
     delta_pct_30d: Optional[float] = None
+    # The same move in money. Computed in SQL from the same two columns the
+    # percentage is computed from (`last_price - med_Nd`), NOT on the client:
+    # two derivations of one number drift, and a screen showing "+96.7%" beside
+    # a euro figure that disagrees is worse than showing neither.
+    delta_eur_7d: Optional[float] = None
+    delta_eur_30d: Optional[float] = None
     comps_30d: int = 0
     in_catalog: bool = False
 
@@ -570,6 +576,8 @@ class TopMoversResponse(BaseModel):
     movers: list[TopMoverItem]
     direction: str
     window: str
+    rank: str = "pct"
+    min_price_eur: float = 0.0
 
 
 @router.get(
@@ -596,6 +604,25 @@ async def get_top_movers(
             "app's followed-categories default; omit for a whole-catalog list."
         ),
     ),
+    rank: str = Query(
+        "pct",
+        pattern=r"^(pct|abs)$",
+        description=(
+            "Ranking axis. `pct` = biggest percentage move, `abs` = biggest move "
+            "in euros. Percentage alone is dominated by cheap items: measured on "
+            "prod 2026-08-13, the top-20 gainers were led by a EUR 1.77 move on a "
+            "EUR 3.60 card, while a EUR 569.71 move ranked 13th."
+        ),
+    ),
+    min_price_eur: float = Query(
+        0.0,
+        ge=0,
+        description=(
+            "Drop items whose latest price is below this. The MV's own floor is "
+            "`med_30d >= 1`, so without this a EUR 1 card qualifies for a list "
+            "meant to show where the market moved."
+        ),
+    ),
     limit: int = Query(20, ge=1, le=100),
 ):
     """Ranked market movers, served from the `mv_market_top_movers` MV.
@@ -616,8 +643,17 @@ async def get_top_movers(
     else:
         order, sign = "ASC", "<"
 
+    med_col = "med_7d" if window == "7d" else "med_30d"
+    # Rank in the SAME direction the caller asked for. `abs` orders by the euro
+    # move, which for losers is the most NEGATIVE — so it reuses `order`/`sign`
+    # rather than assuming DESC.
+    rank_expr = delta_col if rank == "pct" else f"(last_price - {med_col})"
+
     where = [f"{delta_col} IS NOT NULL", f"{delta_col} {sign} 0"]
     params: list[Any] = []
+    if min_price_eur > 0:
+        params.append(min_price_eur)
+        where.append(f"last_price >= ${len(params)}")
     if categories:
         cats = [c.strip().lower() for c in categories.split(",") if c.strip()]
         if cats:
@@ -628,10 +664,12 @@ async def get_top_movers(
     sql = f"""
         SELECT item_ref, category, item_key, title, brand, set_code, image_url,
                last_price, med_7d, med_30d, delta_pct_7d, delta_pct_30d,
+               round((last_price - med_7d)::numeric, 2)  AS delta_eur_7d,
+               round((last_price - med_30d)::numeric, 2) AS delta_eur_30d,
                comps_30d, in_catalog
         FROM mv_market_top_movers
         WHERE {' AND '.join(where)}
-        ORDER BY {delta_col} {order}
+        ORDER BY {rank_expr} {order}
         LIMIT ${len(params)}
     """
     rows = await pool.fetch(sql, *params)
@@ -653,12 +691,17 @@ async def get_top_movers(
             med_30d=_f(r["med_30d"]),
             delta_pct_7d=_f(r["delta_pct_7d"]),
             delta_pct_30d=_f(r["delta_pct_30d"]),
+            delta_eur_7d=_f(r["delta_eur_7d"]),
+            delta_eur_30d=_f(r["delta_eur_30d"]),
             comps_30d=int(r["comps_30d"]) if r["comps_30d"] is not None else 0,
             in_catalog=bool(r["in_catalog"]),
         )
         for r in rows
     ]
-    return TopMoversResponse(movers=movers, direction=direction, window=window)
+    return TopMoversResponse(
+        movers=movers, direction=direction, window=window,
+        rank=rank, min_price_eur=min_price_eur,
+    )
 
 
 # ---------------------------------------------------------------------------
