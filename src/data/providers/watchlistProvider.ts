@@ -116,7 +116,11 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
     const data = await collectorsApi.post<Record<string, unknown>>('/watchlist/mine', {
       name: input.title,
       category: input.category,
-      currency: 'EUR',
+      // NOT hardcoded 'EUR'. The target is whatever number the caller watched
+      // — usually a listing's asking price, which can be in any of the 7
+      // currencies a seller may price in — and the alert converts using this
+      // column. Stamping every row EUR made the conversion a no-op.
+      currency: (input.targetPriceCurrency || 'EUR').toUpperCase(),
       target_price: input.targetPrice ?? null,
       priority: input.priority ?? 'medium',
       notes: input.notes ?? null,
@@ -159,9 +163,18 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
   };
 }
 
-export async function updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem> {
+export async function updateWatchlistItem(id: string, updates: { targetPrice?: number | null; targetPriceCurrency?: string | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem> {
   const updatePayload: Record<string, unknown> = {};
   if (updates.targetPrice !== undefined) updatePayload.target_price = updates.targetPrice;
+  // Currency travels WITH the number, and only with it. A member who set a
+  // target in EUR and later switched their display currency to JPY types the
+  // new target in JPY — writing the number without re-stamping the currency
+  // would relabel it EUR and hand Target Hit a figure ~164x off. Writing the
+  // currency ALONE is worse still: it silently reinterprets a number the
+  // member never touched.
+  if (updates.targetPrice !== undefined && updates.targetPriceCurrency) {
+    updatePayload.currency = updates.targetPriceCurrency.toUpperCase();
+  }
   if (updates.notes !== undefined) updatePayload.notes = updates.notes;
   // `sort_order` was dropped here because the column did not exist, which made
   // watchlist-builder's move up/down buttons fail EVERY time: the payload came

@@ -83,7 +83,7 @@ export interface DataProvider {
    * @param id - Watchlist item ID
    * @param updates - Fields to update
    */
-  updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem>;
+  updateWatchlistItem(id: string, updates: { targetPrice?: number | null; targetPriceCurrency?: string | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem>;
 
   /**
    * Remove an item from the watchlist.

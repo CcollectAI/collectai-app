@@ -124,6 +124,16 @@ export type CreateWatchlistInput = {
   title: string;
   category: string;
   targetPrice?: number | null;
+  /**
+   * The currency `targetPrice` is expressed in. Defaults to EUR when omitted.
+   *
+   * It has to travel WITH the number. `watchlist_items.currency` exists and the
+   * server has always accepted it, but `addWatchlistItem` hardcoded 'EUR' — so
+   * watching a JPY 8000 listing stored `target_price = 8000, currency = 'EUR'`
+   * and Target Hit compared 8000 EUR, ~164x too generous, firing on almost
+   * anything in the category.
+   */
+  targetPriceCurrency?: string | null;
   notes?: string;
   priority?: 'high' | 'medium' | 'low';
   /**

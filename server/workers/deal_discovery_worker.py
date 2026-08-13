@@ -108,18 +108,32 @@ async def _check_watchlist_snipes(conn) -> int:
 
     Returns number of notifications sent.
     """
+    # Deferred, like the other app.* imports here: this worker must stay
+    # importable standalone, and app.* pulls in config/DB at import time.
+    from app.lib.fx_service import fx_arrays as _fx_arrays
+
     rows = await conn.fetch(
         """
         SELECT w.id AS watchlist_id, w.user_id, w.title, w.category,
                w.target_price, w.currency,
+               -- target_price is stored in the MEMBER's display currency while
+               -- mh.price_eur is EUR, so the raw comparison below treated a
+               -- JPY 100 target as EUR 100 — ~164x too generous, i.e. firing
+               -- on listings the member cannot afford. Converted with the same
+               -- rate source and the same unnest-array pattern
+               -- `/p2p/watchlist-matches` uses (never jsonb — app/db.py's codec
+               -- double-encodes it and every rate silently becomes NULL).
+               w.target_price * COALESCE(fxw.rate, 1) AS target_price_eur,
                mh.title AS listing_title, mh.price_eur AS listing_price,
                mh.url AS listing_url, mh.provider
         FROM public.watchlist_items w
+        LEFT JOIN unnest($3::text[], $4::numeric[]) AS fxw(code, rate)
+               ON fxw.code = w.currency
         JOIN public.market_hits mh
           ON mh.seen_at > now() - interval '30 minutes'
           AND mh.price_eur IS NOT NULL
           AND mh.price_eur > 0
-          AND mh.price_eur <= w.target_price
+          AND mh.price_eur <= w.target_price * COALESCE(fxw.rate, 1)
           -- Buyable, not merely observed: a price row is not an offer.
           AND mh.url IS NOT NULL
           AND mh.is_listing IS TRUE
@@ -151,6 +165,7 @@ async def _check_watchlist_snipes(conn) -> int:
         """,
         _TITLE_MATCH_THRESHOLD,
         list(_UNUSABLE_TITLES),
+        *(await _fx_arrays()),
     )
 
     if not rows:
@@ -184,7 +199,10 @@ async def _check_watchlist_snipes(conn) -> int:
 
         listing_title = row["listing_title"] or "Item"
         listing_price = float(row["listing_price"])
-        target_price = float(row["target_price"])
+        # EUR, to match listing_price. The message renders this with a EUR
+        # sign, so using the member's raw number would print "target of EUR 100"
+        # for a JPY 100 target.
+        target_price = float(row["target_price_eur"])
         discount_pct = ((target_price - listing_price) / target_price) * 100
         provider = row["provider"] or "Marketplace"
 

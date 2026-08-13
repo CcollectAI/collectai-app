@@ -11,6 +11,7 @@ Covers:
 
 from __future__ import annotations
 
+import json
 import os
 import uuid
 from contextlib import asynccontextmanager
@@ -308,6 +309,10 @@ class TestWatchlistSnipePayload:
             "category": "mtg",
             "target_price": 8015.00,
             "currency": "EUR",
+            # EUR-converted target, computed in SQL by joining the member's
+            # currency against the shared fx arrays. Equal to target_price only
+            # because this fixture is a EUR row.
+            "target_price_eur": 8015.00,
             "listing_title": "Bayou Revised NM",
             "listing_price": 6200.00,
             "listing_url": "https://www.ebay.com/itm/123",
@@ -401,3 +406,54 @@ class TestWatchlistSnipeDeepLink:
             await mod._check_watchlist_snipes(conn)
 
         assert notify.await_args.kwargs["deep_link"] is None
+
+
+class TestWatchlistSnipeCurrency:
+    """`target_price` is stored in the MEMBER's currency; the comparison is EUR.
+
+    Watching a JPY 8000 listing wrote `target_price = 8000, currency = 'EUR'`
+    and Target Hit then read 8000 as euros — ~164x too generous, firing on
+    listings the member could not afford. The query now converts, and the worker
+    must consume the CONVERTED column, not the raw one.
+    """
+
+    @pytest.mark.asyncio
+    async def test_worker_reads_the_converted_target(self, _patch_retry):
+        """The message and the discount are EUR, so they must use the EUR half.
+
+        Pinning this because both columns are on the row and picking the wrong
+        one is silent: `target_price` alone still produces a plausible-looking
+        alert, just one whose percentage and euro figure are nonsense.
+        """
+        mod = _patch_retry
+        row = TestWatchlistSnipePayload._row(
+            target_price=8000.00,      # what the member typed, in JPY
+            currency="JPY",
+            target_price_eur=48.80,    # what it is worth
+            listing_price=40.00,       # EUR — under the real target
+        )
+        _, conn = _build_pool_and_conn()
+        conn.fetch = AsyncMock(return_value=[row])
+        conn.fetchrow = AsyncMock(side_effect=[{"cnt": 0}, {"plan": "pro"}])
+        with patch("app.lib.notify.notify_user", AsyncMock()):
+            assert await mod._check_watchlist_snipes(conn) == 1
+
+        payload = json.loads(conn.execute.await_args.args[3])
+        # 40 against a real target of 48.80 is ~18% below; against the raw 8000
+        # it would read as 99% below, which is the tell that the wrong column
+        # was used.
+        assert 15 <= payload["discount_pct"] <= 20, payload["discount_pct"]
+
+    @pytest.mark.asyncio
+    async def test_query_converts_with_the_members_currency(self, _patch_retry):
+        """The SQL must join fx on the WATCHLIST currency, not the listing's."""
+        mod = _patch_retry
+        _, conn = _build_pool_and_conn()
+        conn.fetch = AsyncMock(return_value=[])
+        await mod._check_watchlist_snipes(conn)
+        sql = conn.fetch.await_args.args[0]
+        assert "fxw.code = w.currency" in sql
+        assert "mh.price_eur <= w.target_price * COALESCE(fxw.rate, 1)" in sql
+        # Never jsonb: app/db.py's codec double-encodes it and every rate
+        # silently becomes NULL (see fx_service.fx_arrays).
+        assert "::jsonb" not in sql

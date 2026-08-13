@@ -300,6 +300,11 @@ function WatchlistTabScreen() {
         title: formTitle.trim(),
         category: categorySlug,
         targetPrice,
+        // The member typed this into a field labelled in their own currency —
+        // the confirmation toast below formats it with settings.currency — so
+        // that is the currency it is stored in. Without this every row was
+        // stamped EUR and the alert compared a JPY figure as euros.
+        targetPriceCurrency: settings.currency,
         notes: formNotes.trim() || undefined,
       });
 
@@ -383,6 +388,7 @@ function WatchlistTabScreen() {
 
       await dataProvider.updateWatchlistItem(editTargetItem.id, {
         targetPrice: newTarget && !isNaN(newTarget) ? newTarget : null,
+        targetPriceCurrency: settings.currency,
       });
 
       // No `user_price_alerts` rule is created here either — see the

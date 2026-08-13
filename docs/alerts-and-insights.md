@@ -1266,3 +1266,42 @@ the click is attributable.
 differently and nothing failed loudly — no error, no log, just a notification
 that did nothing when tapped. Before trusting a push destination, check what
 arrives on the DEVICE, not what the worker computed.
+
+## The cross-currency target gap is closed — and the writer was the bug (2026-08-13)
+
+The known gap recorded above ("that comparison treats `target_price` as EUR,
+while the column is written in the member's display currency") was real, but the
+comparison was only half of it. **The writer discarded the currency entirely.**
+
+`watchlistProvider.addWatchlistItem` sent `currency: 'EUR'` as a hard-coded
+literal on every write, while `FavoriteWatchButtons` passed
+`targetPrice: listing.price` — the listing's asking price **in the seller's
+currency**, which can be any of the 7. So watching a ¥8000 listing stored
+`target_price = 8000, currency = 'EUR'`, and Target Hit compared 8000 as euros:
+~164x too generous, firing on nearly anything in the category.
+
+Fixing only the comparison would have achieved nothing. The join is on
+`w.currency`, and every row said EUR, so the conversion would have been a no-op
+at rate 1.0 — a fix that passes review, ships, and changes no behaviour at all.
+
+**All four parts were required:**
+
+| Part | Change |
+|---|---|
+| The number's currency travels with it | `CreateWatchlistInput.targetPriceCurrency`; `FavoriteWatchButtons` passes the LISTING's currency, the wishlist passes `settings.currency` (the member typed it into a field labelled in their own money) |
+| Writer stops lying | `addWatchlistItem` sends the real currency instead of `'EUR'` |
+| Edits re-stamp it | `updateWatchlistItem` writes `currency` **only** alongside a new `target_price`. A member who set a EUR target, switched to JPY, then edited would otherwise store a JPY number labelled EUR. Writing currency ALONE is worse — it silently reinterprets a number the member never touched |
+| Both readers convert | `deal_discovery_worker` and `/p2p/watchlist-matches`, in the same change, because fixing either alone creates the screen/alert disagreement §10 exists to prevent |
+
+`fx_arrays()` moved to `app/lib/fx_service.py` so both readers share one rate
+source. Two copies would be two sources, which is the same disagreement wearing
+a different hat. Arrays, never jsonb — `app/db.py`'s codec double-encodes a
+serialised dict and every rate silently becomes NULL.
+
+**Proved against prod** with the real SQL: a ¥8000 target (€48.80) against a €60
+listing fired under the old comparison and does not under the new one, while an
+€8000 EUR row is unchanged — so no existing EUR row changes behaviour.
+
+**Not backfilled.** Every one of the 18 live rows already reads `currency='EUR'`,
+and there is no way to tell which were written from a non-EUR listing, so their
+stored numbers cannot be recovered — only re-set by the member.

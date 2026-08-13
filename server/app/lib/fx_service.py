@@ -131,3 +131,33 @@ def convert_to_eur_sync(amount: float, currency: str) -> float:
         logger.warning("[fx_service] Unknown currency %s, returning amount as-is", currency)
         return amount
     return round(amount * rate, 2)
+
+
+async def fx_arrays() -> "tuple[list[str], list]":
+    """FX rates as two parallel ARRAYS, for `unnest($n::text[], $m::numeric[])`.
+
+    Shared by `/p2p/watchlist-matches` and `deal_discovery_worker`, which must
+    convert with the SAME rates: one is the screen showing a member what meets
+    their target, the other is the alert firing on it, and if they disagreed one
+    of them would be calling the member a liar about their own number.
+
+    NOT a jsonb map, which looks equivalent and is not. `app/db.py` registers a
+    jsonb codec with `encoder=json.dumps`, so an already-serialised dict gets
+    double-encoded into a JSON *string*, `->> 'JPY'` returns NULL, and
+    `COALESCE(rate, 1)` then silently leaves every foreign amount unconverted.
+    That shipped once and passed a direct-connection probe, because a raw
+    asyncpg connection has no such codec — only a call through the real pool
+    showed it. Arrays have no custom codec on either path.
+
+    Decimal via `str`: `Decimal(float)` would carry the float's binary error
+    into a numeric comparison
+    (learning_guard_must_match_constraint_type_space).
+    """
+    from decimal import Decimal
+
+    rate_map: dict[str, Decimal] = {"EUR": Decimal("1")}
+    for cur, rate in (await get_rates()).items():
+        if rate and rate > 0:
+            rate_map[cur.upper()] = Decimal(str(rate))
+    codes = list(rate_map.keys())
+    return codes, [rate_map[c] for c in codes]

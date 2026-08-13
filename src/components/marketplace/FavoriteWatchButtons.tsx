@@ -109,6 +109,9 @@ export function FavoriteWatchButtons({
         category,
         // THE POINT OF THIS CONTROL. Without it the row never fires.
         targetPrice: price,
+        // `price` is the LISTING's asking price in the SELLER's currency, so
+        // the currency has to go with it — see CreateWatchlistInput.
+        targetPriceCurrency: currency ?? 'EUR',
         // Bare canonical key. Nullable: a listing with no catalogue match still
         // gets a row, it just falls to the fuzzy title arm instead of the exact
         // one — which is why `title` above must be real, never '(unnamed)'.

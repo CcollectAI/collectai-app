@@ -221,7 +221,7 @@ export class CachedDataProvider implements DataProvider {
     return result;
   }
 
-  async updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem> {
+  async updateWatchlistItem(id: string, updates: { targetPrice?: number | null; targetPriceCurrency?: string | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem> {
     const result = await this.inner.updateWatchlistItem(id, updates);
     await cacheClear(CK.WATCHLIST);
     return result;

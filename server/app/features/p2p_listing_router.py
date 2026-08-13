@@ -1434,28 +1434,12 @@ async def get_listing(
 
 
 async def _fx_arrays() -> tuple[list[str], list[Decimal]]:
-    """FX rates as two parallel ARRAYS, for `unnest(...) AS fx(code, rate)`.
-
-    Extracted so the second caller cannot re-derive the trap the first one
-    documents: passing the rate map as **jsonb** looks equivalent and is not.
-    `app/db.py` registers a jsonb codec with `encoder=json.dumps`, so an
-    already-serialised string gets double-encoded into a JSON *string*,
-    `->> 'JPY'` returns NULL, and `COALESCE(..., 1)` then silently leaves every
-    foreign price unconverted. That shipped, and passed a direct-connection
-    probe — a raw asyncpg connection has no such codec, so only a request
-    through the real pool showed it. Arrays have no custom codec on either.
-
-    Decimal via `str`: `Decimal(float)` would carry the float's binary error
-    into a numeric comparison
-    (learning_guard_must_match_constraint_type_space).
-    """
-    from app.lib.fx_service import get_rates
-    rate_map: dict[str, Decimal] = {"EUR": Decimal("1")}
-    for cur, rate in (await get_rates()).items():
-        if rate and rate > 0:
-            rate_map[cur.upper()] = Decimal(str(rate))
-    codes = list(rate_map.keys())
-    return codes, [rate_map[c] for c in codes]
+    """Thin alias — the implementation moved to `app.lib.fx_service.fx_arrays`
+    when `deal_discovery_worker` needed the same rates for the same comparison.
+    Two copies would be two rate sources, which is exactly the screen/alert
+    disagreement this endpoint's `meets_target` comment exists to prevent."""
+    from app.lib.fx_service import fx_arrays
+    return await fx_arrays()
 
 
 class WatchlistMatch(BaseModel):
@@ -1518,6 +1502,12 @@ async def watchlist_matches(
             """
             SELECT DISTINCT ON (w.id)
                    w.id AS watchlist_id, w.target_price,
+                   -- The target is stored in the MEMBER's display currency, so
+                   -- it needs the same trip to EUR the listing price takes two
+                   -- lines down. Joined on w.currency, not l.currency: a
+                   -- Japanese buyer's JPY target against a EUR listing is the
+                   -- whole point.
+                   w.target_price * COALESCE(fxw.rate, 1) AS target_price_eur,
                    l.id AS listing_id, l.listing_title, l.price, l.currency,
                    l.condition_label,
                    COALESCE(i.image_url, ci.image_url) AS image_url,
@@ -1535,6 +1525,8 @@ async def watchlist_matches(
              AND l.delisted_at IS NULL
             LEFT JOIN unnest($4::text[], $5::numeric[]) AS fx(code, rate)
                    ON fx.code = l.currency
+            LEFT JOIN unnest($4::text[], $5::numeric[]) AS fxw(code, rate)
+                   ON fxw.code = w.currency
             LEFT JOIN public.items i ON i.id = l.item_id
             LEFT JOIN public.category_items ci
                    ON ci.item_key = l.canonical_key AND ci.category = l.category
@@ -1573,15 +1565,17 @@ async def watchlist_matches(
             # listing meets a target, one of them would be calling the user a
             # liar about their own number.
             #
-            # It does mean both treat target_price as EUR while the column is
-            # written in the member's display currency. That is a real
-            # cross-currency gap, but it belongs to the alert, not to this
-            # endpoint — fixing it HERE alone would create the disagreement this
-            # comment exists to prevent. Recorded in docs/alerts-and-insights.md.
+            # Both sides are now EUR. `target_price` is stored in the member's
+            # display currency, so comparing it raw against `price_eur` made a
+            # JPY 100 target identical to a EUR 100 one — off by ~164x, in the
+            # direction that fires on things the member cannot afford. Fixed in
+            # the same change as the worker's copy of this comparison, because
+            # fixing either alone is what would make the screen and the alert
+            # disagree about the member's own number.
             meets_target=(
-                r["target_price"] is not None
+                r["target_price_eur"] is not None
                 and r["price_eur"] is not None
-                and float(r["price_eur"]) <= float(r["target_price"])
+                and float(r["price_eur"]) <= float(r["target_price_eur"])
             ),
         )
         for r in rows

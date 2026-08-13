@@ -35,7 +35,7 @@ export async function addWatchlistItem(input: CreateWatchlistInput): Promise<Wat
   return newItem;
 }
 
-export async function updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem> {
+export async function updateWatchlistItem(id: string, updates: { targetPrice?: number | null; targetPriceCurrency?: string | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem> {
   const item = mockWatchlistItems.find((i) => i.id === id);
   if (!item) throw new Error('Watchlist item not found');
   if (updates.targetPrice !== undefined) item.targetPrice = updates.targetPrice;
