@@ -11,7 +11,12 @@
  * cases are the real `item_ref`s from that response. The QA checklist requires
  * movers show readable names, "not raw keys like base6-base6-8"; this pins it.
  */
-import { moverKey, moverTitle, humaniseMoverKey } from '@/components/marketplace/MarketMoversSection';
+// The PURE module, not the component. Importing these from
+// MarketMoversSection executed that component's imports — and once it started
+// reading useBillingLimits for the Pro gate, that meant loading the RevenueCat
+// SDK, which jest cannot parse. The suite then fails to RUN, which looks like
+// config noise rather than a broken test.
+import { moverKey, moverTitle, humaniseMoverKey } from '@/components/marketplace/moverFormat';
 import type { TopMover } from '@/api/dataMoatApi';
 
 /** An uncatalogued row, exactly as the endpoint returns it. */

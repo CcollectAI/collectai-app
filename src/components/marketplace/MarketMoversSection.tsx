@@ -20,6 +20,7 @@ import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import type { TopMover } from '@/api/dataMoatApi';
 import { useFollowedCategories } from '@/hooks/useFollowedCategories';
+import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { formatPrice } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { radius, text, fontWeight } from '@/theme/tokens';
@@ -27,54 +28,19 @@ import logger from '@/utils/logger';
 
 type Direction = 'gainers' | 'losers';
 
-/** Catalog item_key for deep-linking (strip the `category:` prefix when unmatched). */
-export function moverKey(m: TopMover): string {
-  return m.item_key ?? m.item_ref.split(':').slice(1).join(':');
-}
-
-// Words kept lowercase inside a title (never as the first word).
-const MINOR_WORDS = new Set(['of', 'the', 'and', 'a', 'an', 'to', 'in', 'on', 'for', 'from', 'with']);
-
-/**
- * Turn a catalog slug into something readable.
- *
- * 7 of the 20 rows GET /catalog/top-movers returns have `title: null` and
- * `in_catalog: false` — price data exists for an item_ref the catalog has no
- * row for. That is the known catalog-reachability gap (CLAUDE.md, "The catalog
- * ↔ price crosswalk": mtg and yugioh refs that no tcgcsv-derived catalog row
- * covers), and closing it is a data problem, not a display one.
- *
- * Until then the fallback showed the raw slug, so a third of the Market Movers
- * feed read `95486586-elemental-hero-core`. The slug already contains the name,
- * so derive it: drop a leading numeric id (yugioh passcode) or a set-code +
- * collector-number pair (mtg `tle-246`), then title-case the rest.
- *
- * Deliberately conservative — if nothing is left after stripping, fall back to
- * the original key rather than invent a name.
- */
-export function humaniseMoverKey(key: string): string {
-  const parts = key.split('-').filter(Boolean);
-  let i = 0;
-  // Leading numeric id: yugioh passcode, e.g. `95486586-elemental-hero-core`.
-  while (i < parts.length && /^\d+$/.test(parts[i])) i += 1;
-  // Set code + collector number, e.g. `tle-246-zuko-avatar-hunter`.
-  if (i === 0 && parts.length > 2 && /^[a-z0-9]{2,5}$/.test(parts[0]) && /^\d+$/.test(parts[1])) {
-    i = 2;
-  }
-  const words = parts.slice(i);
-  if (!words.length) return key;
-  return words
-    .map((w, idx) => (idx > 0 && MINOR_WORDS.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)))
-    .join(' ');
-}
-
-/** Display name — catalog title, or a readable form of the key when uncatalogued. */
-export function moverTitle(m: TopMover): string {
-  return m.title ?? humaniseMoverKey(moverKey(m));
-}
+// Display helpers live in ./moverFormat (pure, no hooks) so tests can import
+// them without dragging this component's dependency graph — including the
+// RevenueCat SDK behind useBillingLimits — into a jest module registry that
+// cannot parse it.
+export { moverKey, moverTitle, humaniseMoverKey } from './moverFormat';
+import { moverKey, moverTitle } from './moverFormat';
 
 function MarketMoversSectionInner() {
   const { colors } = useAppTheme();
+  // Same key app/analytics.tsx gates every Pro section on, so movers cannot
+  // drift out of step with the rest of the paywall.
+  const { limits } = useBillingLimits();
+  const locked = !limits.advanced_analytics;
   const router = useRouter();
   const { followed } = useFollowedCategories();
   const [direction, setDirection] = useState<Direction>('gainers');
@@ -84,6 +50,13 @@ function MarketMoversSectionInner() {
   const categories = useMemo(() => Array.from(followed), [followed]);
 
   useEffect(() => {
+    // Locked members never fetch. The preview below is drawn from nothing, so
+    // the paid figures are not sitting in memory (or in a network log) on a
+    // device that has not paid for them — and the tab makes one less request.
+    if (locked) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     collectorsApi
@@ -101,7 +74,7 @@ function MarketMoversSectionInner() {
     return () => {
       cancelled = true;
     };
-  }, [direction, categories]);
+  }, [direction, categories, locked]);
 
   const openItem = useCallback(
     (m: TopMover) => {
@@ -122,8 +95,59 @@ function MarketMoversSectionInner() {
     [router],
   );
 
-  // Hide the whole card when there's nothing to show (never render an empty shell).
-  if (!loading && movers.length === 0) return null;
+  // Hide the whole card when there's nothing to show (never render an empty
+  // shell) — but NOT when locked, where having no rows is the point.
+  if (!locked && !loading && movers.length === 0) return null;
+
+  if (locked) {
+    return (
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.text }]}>Market Movers</Text>
+          <View style={[styles.proPill, { backgroundColor: colors.accent + '1E' }]}>
+            <Ionicons name="lock-closed" size={11} color={colors.accent} />
+            <Text style={[styles.proPillText, { color: colors.accent }]}>PRO</Text>
+          </View>
+        </View>
+
+        <Text style={[styles.lockedBlurb, { color: colors.muted }]}>
+          The biggest 7-day price moves across your categories — what is climbing,
+          what is falling, and by how much.
+        </Text>
+
+        {/* Three masked rows. The SHAPE of the feature is the pitch; the
+            numbers are the product. Grey bars rather than blurred real data,
+            because a blur is a rendering trick over values that were still
+            fetched and can still be read off the wire. */}
+        {[0, 1, 2].map((i) => (
+          <View key={i} style={[styles.row, { borderBottomColor: colors.border }]}>
+            <View style={[styles.thumb, styles.thumbPlaceholder, { backgroundColor: colors.border }]}>
+              <Ionicons name="pricetag-outline" size={16} color={colors.muted} />
+            </View>
+            <View style={styles.lockedTextCol}>
+              <View style={[styles.lockedBar, { backgroundColor: colors.border, width: `${72 - i * 12}%` }]} />
+              <View style={[styles.lockedBarSm, { backgroundColor: colors.border, width: `${44 - i * 8}%` }]} />
+            </View>
+            <View style={[styles.lockedDelta, { backgroundColor: colors.border }]} />
+          </View>
+        ))}
+
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+            router.push('/settings' as Href);
+          }}
+          style={[styles.upgradeBtn, { backgroundColor: colors.accent }]}
+          accessibilityRole="button"
+          accessibilityLabel="Upgrade to Pro to see Market Movers"
+        >
+          <Text style={[styles.upgradeBtnText, { color: colors.accentText }]}>
+            Upgrade to see
+          </Text>
+        </AnimatedPressable>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -286,6 +310,24 @@ const styles = StyleSheet.create({
     fontSize: text.sm,
     marginTop: 2,
   },
+  // ── Locked (non-Pro) preview ──────────────────────────────────────────
+  proPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill,
+  },
+  proPillText: { fontSize: text.sm, fontWeight: fontWeight.extrabold, letterSpacing: 0.4 },
+  lockedBlurb: { fontSize: text.md, lineHeight: 19, marginBottom: 10 },
+  lockedTextCol: { flex: 1, gap: 6, marginLeft: 10 },
+  // Masked values. Rounded bars read as "content withheld"; a blur would read
+  // as a rendering fault, and would also mean the real numbers were fetched.
+  lockedBar: { height: 10, borderRadius: 5 },
+  lockedBarSm: { height: 8, borderRadius: 4 },
+  lockedDelta: { width: 52, height: 12, borderRadius: 6 },
+  upgradeBtn: {
+    marginTop: 12, borderRadius: radius.md,
+    paddingVertical: 11, alignItems: 'center',
+  },
+  upgradeBtnText: { fontSize: text.md, fontWeight: fontWeight.bold },
   delta: {
     fontSize: text.md,
     fontWeight: fontWeight.bold,

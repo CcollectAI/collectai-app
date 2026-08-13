@@ -14,6 +14,8 @@ import { Image } from 'expo-image';
 import { Stack, useRouter, type Href } from 'expo-router';
 
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useBillingLimits } from '@/hooks/useBillingLimits';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import type { TopMover } from '@/api/dataMoatApi';
@@ -59,6 +61,7 @@ function Segmented<T extends string>(props: {
 
 function MarketMoversScreen() {
   const { colors } = useAppTheme();
+  const { limits } = useBillingLimits();
   const router = useRouter();
   const { followed } = useFollowedCategories();
   const [direction, setDirection] = useState<Direction>('gainers');
@@ -141,6 +144,25 @@ function MarketMoversScreen() {
     },
     [metricWindow, colors, openItem],
   );
+
+  // The section on the Market tab shows a locked preview to non-Pro members,
+  // and its "See all" sends them to /settings instead of here. This is the
+  // second lock, for the route itself: a paywall that only exists on the
+  // control that opens a screen is one deep link from being no paywall at all.
+  if (!limits.advanced_analytics) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Stack.Screen
+          options={{
+            headerTitle: 'Market Movers',
+            headerTintColor: colors.text,
+            headerStyle: { backgroundColor: colors.background },
+          }}
+        />
+        <UpgradePrompt feature="Market Movers" requiredPlan="Pro" />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
