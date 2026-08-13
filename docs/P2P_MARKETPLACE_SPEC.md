@@ -1310,3 +1310,56 @@ buttons, and Decline fired instantly.
 
 `OfferAmountSheet` was NOT rebuilt — it already does percentage+money presets
 with a bounded custom field.
+
+## 5c. Settle-up handoff — payment and carriage, by region (2026-08-14)
+
+Both halves of finishing a trade now link OUT. Sparrow is a directory in each
+and a participant in neither, which is what keeps §5a's line intact.
+
+**Payment** — `server/app/lib/payment_rails.py`, `GET /p2p/payment-rails`.
+Region resolves from `user_settings` server-side (not the client, so two members
+cannot see different lists because one has a stale build), falling back to the
+global rails when unset or unknown — showing a Dutch member Zelle is worse than
+showing them fewer options.
+
+| region | rails |
+|---|---|
+| europe | Bank transfer (SEPA), Bizum, PayPal, Revolut, Swish, Tikkie, Wise |
+| americas | Cash App, Interac e-Transfer, PayPal, Revolut, Venmo, Wise, Zelle |
+| japan / korea / oceania | local bank transfer or PayID, plus PayPal and Wise |
+| other | PayPal, Wise |
+
+Three properties are load-bearing, not styling:
+
+1. **Alphabetical order.** A pinned or preferred first entry is a representation
+   about a payment provider. `rails_for_region` sorts and the client renders in
+   the order it is given; a test would be worth adding if anyone reorders.
+2. **`reversible` is the only comparison we make**, and §5a names it explicitly.
+   PayPal is the one `null` — Goods & Services carries buyer protection,
+   Friends & Family does not, and that difference is how people get burned.
+3. **The disclaimer renders with every list**, not once at onboarding.
+
+**Carriage** — `_CARRIER_BOOKING` beside `_CARRIER_TRACKING`, same keys, exposed
+on `GET /p2p/carriers` as `book_url` + `regions`. The link opens the carrier's
+own flow; the seller buys carriage in their own name and pays the carrier
+directly. europe gets 10 carriers, americas 5, the rest the global integrators.
+
+### What is deliberately NOT built
+
+- **No amount prefill.** `paypal.me/<handle>/<amount>` needs the seller's
+  handle and no column holds one — the only handle columns in the live schema
+  are display names. The amount renders `selectable` instead. §5a permits the
+  prefilled deep link, so this is a missing column, not a missing permission.
+- **No payment state.** Sparrow never learns whether money moved. Completion
+  stays the two-sided human confirm; a "paid" flag we did not witness would be
+  a representation.
+- **No labels under a Sparrow account, no insurance, no auto-complete on
+  carrier status.** Those are the three lines in §5a, and each is one API call
+  away from being crossed by someone trying to be helpful.
+
+### The deploy-order trap
+
+`book_url` is new. Until the server ships, `GET /p2p/carriers` returns rows
+without it, the client filters every one out, and the ship sheet renders its
+empty state. That is honest but reads as a bug — deploy the server before the
+build that shows this sheet.

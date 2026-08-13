@@ -346,6 +346,33 @@ export type P2PCarrier = {
   label: string;
   /** False => no code-only tracking URL exists, so show a copyable code. */
   linkable: boolean;
+  /** The carrier's OWN "send a parcel" page. The seller books and pays there,
+   *  in their own name — Sparrow never contracts for carriage, which would make
+   *  us the carrier's counterparty (docs/P2P_MARKETPLACE_SPEC.md §5a). Null =
+   *  no public consumer booking page to link to. */
+  book_url?: string | null;
+  /** Regions the carrier serves, for filtering the booking list. */
+  regions?: string[];
+};
+
+/** A way for two members to settle up. Sparrow is a directory here, never a
+ *  payment service — see server/app/lib/payment_rails.py. */
+export type P2PPaymentRail = {
+  key: string;
+  label: string;
+  url: string;
+  coverage: string;
+  /** true = a formal chargeback route exists; false = once sent it is gone;
+   *  null = depends how the payer sends it (PayPal G&S vs F&F). The ONE
+   *  comparison §5a permits us to make. */
+  reversible?: boolean | null;
+  note?: string | null;
+};
+
+export type P2PPaymentRailsResponse = {
+  region: string;
+  rails: P2PPaymentRail[];
+  disclaimer: string;
 };
 
 /** One calendar year of DAC7 counters for the signed-in member. */
@@ -382,6 +409,13 @@ export const getDac7Status = () => get<Dac7Status>('/p2p/dac7/me');
 /** Carriers the seller may pick. Served from the server's `_CARRIER_TRACKING`
  *  so the picker cannot drift from the URL table that resolves the link. */
 export const listCarriers = () => get<P2PCarrier[]>('/p2p/carriers');
+
+/** Region comes from `user_settings` server-side unless overridden, so two
+ *  members cannot see different lists because one has a stale build. */
+export const listPaymentRails = (region?: string) =>
+  get<P2PPaymentRailsResponse>(
+    `/p2p/payment-rails${region ? `?region=${encodeURIComponent(region)}` : ''}`,
+  );
 
 /**
  * Attach a shipment reference. Seller only, while `accepted` or `shipped`.

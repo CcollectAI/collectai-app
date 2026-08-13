@@ -26,6 +26,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '@/components/ScreenHeader';
 import { BottomSheetModal } from '@/components/BottomSheetModal';
 import { OfferAmountSheet } from '@/components/p2p/OfferAmountSheet';
+import { SettleUpSheet } from '@/components/p2p/SettleUpSheet';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { EmptyState } from '@/components/EmptyState';
@@ -154,6 +155,11 @@ function OffersScreen() {
   // row), and the sheet's label says which basis is in use rather than showing
   // an unexplained percentage.
   const [counterFor, setCounterFor] = useState<P2POffer | null>(null);
+
+  // Settling up, once a trade is live. Buyer sees payment rails, seller sees
+  // where to book the parcel — Sparrow links out to both and participates in
+  // neither (docs/P2P_MARKETPLACE_SPEC.md §5a).
+  const [settleFor, setSettleFor] = useState<P2POffer | null>(null);
 
   const onCounter = useCallback((o: P2POffer) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -573,6 +579,25 @@ function OffersScreen() {
             </AnimatedPressable>
           ) : null}
 
+          {/* Only while the trade is live: before `accepted` there is nothing
+              to settle, and after `completed` it is history. */}
+          {live ? (
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                setSettleFor(o);
+              }}
+              disabled={busy}
+              style={[styles.btn, styles.btnGhost, { borderColor: colors.accent }]}
+              accessibilityRole="button"
+              accessibilityLabel={o.i_am_buyer ? 'How to pay the seller' : 'Book the parcel'}
+            >
+              <Text style={[styles.btnText, { color: colors.accent }]}>
+                {o.i_am_buyer ? 'How to pay' : 'Book shipping'}
+              </Text>
+            </AnimatedPressable>
+          ) : null}
+
           {live ? (
             <AnimatedPressable
               // Labelled "Delete" because that is what a member is doing —
@@ -862,6 +887,16 @@ function OffersScreen() {
           colors={colors}
           hapticsEnabled={settings.hapticsEnabled}
           onSubmit={submitCounter}
+        />
+      ) : null}
+
+      {settleFor ? (
+        <SettleUpSheet
+          visible={settleFor !== null}
+          onClose={() => setSettleFor(null)}
+          mode={settleFor.i_am_buyer ? 'pay' : 'ship'}
+          amountLabel={formatPrice(settleFor.amount, settings.currency, settings.numberLocale)}
+          colors={colors}
         />
       ) : null}
 

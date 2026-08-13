@@ -36,6 +36,12 @@ from app.errors import error_response
 from app.features.pagination import pagination_params
 from app.lib.blocks import raise_if_blocked
 from app.lib.db_helpers import get_db_pool
+from app.lib.payment_rails import (
+    DISCLAIMER as PAYMENT_DISCLAIMER,
+    REGIONS,
+    PaymentRail,
+    rails_for_region,
+)
 from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
@@ -108,6 +114,45 @@ _CARRIER_TRACKING: dict[str, tuple[str, Optional[str]]] = {
     "ups":         ("UPS", "https://www.ups.com/track?tracknum={code}"),
     "fedex":       ("FedEx", "https://www.fedex.com/fedextrack/?trknbr={code}"),
     "other":       ("Other carrier", None),
+    # Added 2026-08-14 with the regional handoff. Tracking URLs are the
+    # carrier's OWN public pages; keys are new, so no stored
+    # `p2p_offers.tracking_carrier` value changes meaning.
+    "royal_mail":  ("Royal Mail", "https://www.royalmail.com/track-your-item#/tracking-results/{code}"),
+    "colissimo":   ("Colissimo", "https://www.laposte.fr/outils/suivre-vos-envois?code={code}"),
+    "usps":        ("USPS", "https://tools.usps.com/go/TrackConfirmAction?tLabels={code}"),
+    "canada_post": ("Canada Post", "https://www.canadapost-postescanada.ca/track-reperage/en#/search?searchFor={code}"),
+    "auspost":     ("Australia Post", "https://auspost.com.au/mypost/track/#/details/{code}"),
+    "japan_post":  ("Japan Post", "https://trackings.post.japanpost.jp/services/srv/search/direct?reqCodeNo1={code}&searchKind=S002&locale=en"),
+    "cj_logistics": ("CJ Logistics", None),   # no stable code-only public URL
+}
+
+# Where the SELLER books the shipment, and which regions each carrier serves.
+#
+# The booking link opens the CARRIER's own flow. The seller buys carriage in
+# their own name, from their own account, and pays the carrier directly — which
+# is the whole compliance point. Spec §5a: generating labels under a Sparrow
+# carrier account "makes us the contracting party for carriage", and arranging
+# insurance would be insurance distribution under IDD. A hyperlink is neither.
+#
+# Regions mirror `Region` in src/lib/settings.tsx. A carrier may appear in more
+# than one; `other` gets the global integrators only.
+_CARRIER_BOOKING: dict[str, tuple[Optional[str], tuple[str, ...]]] = {
+    "postnl":       ("https://www.postnl.nl/en/send-a-parcel/", ("europe",)),
+    "dpd":          ("https://www.dpd.com/", ("europe",)),
+    "gls":          ("https://gls-group.com/", ("europe",)),
+    "bpost":        ("https://www.bpost.be/en/send-parcel", ("europe",)),
+    "royal_mail":   ("https://www.royalmail.com/sending", ("europe",)),
+    "colissimo":    ("https://www.laposte.fr/envoi-colis", ("europe",)),
+    "dhl_de":       ("https://www.dhl.de/en/privatkunden/pakete-versenden.html", ("europe",)),
+    "dhl":          ("https://www.dhl.com/", ("europe", "americas", "japan", "korea", "oceania", "other")),
+    "ups":          ("https://www.ups.com/ship", ("europe", "americas", "japan", "korea", "oceania", "other")),
+    "fedex":        ("https://www.fedex.com/en-us/shipping.html", ("europe", "americas", "japan", "korea", "oceania", "other")),
+    "usps":         ("https://www.usps.com/ship/", ("americas",)),
+    "canada_post":  ("https://www.canadapost-postescanada.ca/cpc/en/personal/sending/", ("americas",)),
+    "auspost":      ("https://auspost.com.au/sending", ("oceania",)),
+    "japan_post":   ("https://www.post.japanpost.jp/int/index_en.html", ("japan",)),
+    "cj_logistics": ("https://www.cjlogistics.com/en/main", ("korea",)),
+    "other":        (None, ("europe", "americas", "japan", "korea", "oceania", "other")),
 }
 
 
@@ -1037,6 +1082,12 @@ class CarrierOut(BaseModel):
     # must render a copyable code instead of a button. Sent rather than inferred
     # so the client never has to know WHY (postcode, no public URL, …).
     linkable: bool
+    #: The carrier's OWN "send a parcel" page. The seller contracts with them
+    #: directly — Sparrow never books carriage (spec §5a). Null = no public
+    #: consumer booking page we can link to.
+    book_url: Optional[str] = None
+    #: Regions this carrier serves, for filtering the booking list.
+    regions: List[str] = []
 
 
 class Dac7YearOut(BaseModel):
@@ -1152,9 +1203,64 @@ async def list_carriers() -> List[CarrierOut]:
     table. A hardcoded client list would let a seller choose a carrier the
     server does not know, which silently degrades to a code with no link."""
     return [
-        CarrierOut(key=k, label=label, linkable=url is not None)
+        CarrierOut(
+            key=k,
+            label=label,
+            linkable=url is not None,
+            book_url=_CARRIER_BOOKING.get(k, (None, ()))[0],
+            regions=list(_CARRIER_BOOKING.get(k, (None, ()))[1]),
+        )
         for k, (label, url) in _CARRIER_TRACKING.items()
     ]
+
+
+class PaymentRailsOut(BaseModel):
+    region: str
+    rails: List[PaymentRail]
+    #: Rendered with the list every time, not once at onboarding.
+    disclaimer: str
+
+
+@router.get("/payment-rails", response_model=PaymentRailsOut,
+            summary="Payment rails the two members can settle up on, by region")
+async def list_payment_rails(
+    region: Optional[str] = Query(
+        None,
+        max_length=32,
+        description="Override the caller's stored region. Omit to use user_settings.region.",
+    ),
+    user_id: str = Depends(get_current_user_id),
+) -> PaymentRailsOut:
+    """A DIRECTORY, not a payment service.
+
+    Sparrow never touches the money: this returns names, coverage, whether each
+    rail is reversible, and a link to the rail's own site. The members transact
+    there under their own accounts. See `app/lib/payment_rails.py` for the §5a
+    rules this is bound by — in particular that the order is alphabetical
+    because any other order is a representation about a payment provider.
+
+    Region comes from `user_settings` rather than the client so two members
+    reading the same screen cannot be shown different lists because one of them
+    has a stale build.
+    """
+    resolved = (region or "").strip().lower()
+    if not resolved:
+        pool = get_db_pool()
+        if pool is not None:
+            row = await pool.fetchrow(
+                "SELECT region FROM public.user_settings WHERE user_id = $1::uuid",
+                user_id,
+            )
+            resolved = ((row or {}).get("region") or "").strip().lower()
+    if resolved not in REGIONS:
+        # Unknown or unset falls back to the global rails only. Showing a Dutch
+        # member Zelle is worse than showing them fewer options.
+        resolved = "other"
+    return PaymentRailsOut(
+        region=resolved,
+        rails=rails_for_region(resolved),
+        disclaimer=PAYMENT_DISCLAIMER,
+    )
 
 
 @router.post("/offers/{offer_id}/tracking", response_model=OfferOut,
