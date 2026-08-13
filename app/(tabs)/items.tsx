@@ -55,6 +55,8 @@ import { AdBanner } from '@/components/ads/AdBanner';
 // here. formatCategoryName stays: the section headers and row pills use it.
 import { exportItemsOverview } from '@/api/miscApi';
 import { formatCategoryName } from '@/constants/categories';
+import { formatPrice, isUnpriced } from '@/lib/format';
+import { ShareToChatSheet, type SharePayload } from '@/components/share/ShareToChatSheet';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import {
   ItemsGridHeader,
@@ -244,6 +246,29 @@ const ItemsScreen: React.FC = () => {
   // Single-item versions used by swipe-to-archive / swipe-to-delete in the row
   const optimisticArchive = useOptimisticArchive(setProviderItems, stableReload);
   const optimisticDelete = useOptimisticDelete(setProviderItems, stableReload);
+
+  // Share target. Null = sheet closed. The item drives the sheet, so the
+  // preview cannot disagree with what is actually sent.
+  const [shareFor, setShareFor] = useState<{ id: string; name: string; value: number; imageUrl?: string } | null>(null);
+  const handleShareItem = useCallback(
+    (item: { id: string; name: string; value: number; imageUrl?: string }) => setShareFor(item),
+    [],
+  );
+  const sharePayload = useMemo<SharePayload | null>(
+    () =>
+      shareFor
+        ? {
+            title: shareFor.name,
+            // `isUnpriced` rather than a truthiness check: a missing or zero
+            // value means "we could not price this", and sending "EUR 0" would
+            // state a valuation the app itself refuses to display.
+            priceLabel: isUnpriced(shareFor.value) ? null : formatPrice(shareFor.value),
+            route: `item/${shareFor.id}`,
+            imageUrl: shareFor.imageUrl ?? null,
+          }
+        : null,
+    [shareFor],
+  );
 
   const handleSwipeArchive = useCallback(async (id: string) => {
     try {
@@ -695,7 +720,12 @@ const ItemsScreen: React.FC = () => {
           <View style={{ flex: 1, justifyContent: 'center' }}>
             <ItemsEmptyState />
           </View>
-        </SafeAreaView>
+          <ShareToChatSheet
+        visible={shareFor !== null}
+        onClose={() => setShareFor(null)}
+        payload={sharePayload}
+      />
+    </SafeAreaView>
       );
     }
     return <ItemsLoadingState viewMode={viewMode} isSlow={isSlow} isVerySlow={isVerySlow} />;
@@ -974,6 +1004,7 @@ const ItemsScreen: React.FC = () => {
               onLongPress={handleLongPress}
               onArchive={handleSwipeArchive}
               onDelete={handleSwipeDelete}
+              onShare={handleShareItem}
             />
           )}
           renderSectionFooter={({ section }) => (

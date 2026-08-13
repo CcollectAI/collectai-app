@@ -48,6 +48,8 @@ interface ItemsListItemProps {
   /** Optional swipe-action callbacks. When omitted the row isn't swipeable. */
   onArchive?: (itemId: string) => void;
   onDelete?: (itemId: string) => void;
+  /** Omitted → no share affordance, rather than a button that does nothing. */
+  onShare?: (item: Item) => void;
 }
 
 export const ItemsListItem = React.memo(function ItemsListItem({
@@ -59,6 +61,7 @@ export const ItemsListItem = React.memo(function ItemsListItem({
   onLongPress,
   onArchive,
   onDelete,
+  onShare,
 }: ItemsListItemProps) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -157,6 +160,27 @@ export const ItemsListItem = React.memo(function ItemsListItem({
           ) : null}
         </View>
         <View style={styles.itemRight}>
+          {/* Top of the right column = the top-right corner of the row. Not
+              absolutely positioned: this row is only ~56pt tall and centres its
+              children, so an overlay would land on the value. In flow it costs
+              nothing in most rows either — a flex row is as tall as its tallest
+              child, and the name/meta/detail column is usually taller than the
+              value stack. Hidden in multi-select, where every tap belongs to
+              selection. */}
+          {onShare && !isMultiSelectMode ? (
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                onShare(item);
+              }}
+              hitSlop={10}
+              style={styles.shareBtn}
+              accessibilityRole="button"
+              accessibilityLabel={`Send ${item.name} to a chat`}
+            >
+              <Ionicons name="paper-plane-outline" size={16} color={colors.muted} />
+            </AnimatedPressable>
+          ) : null}
           <Text
             style={[
               styles.itemValue,
@@ -285,6 +309,12 @@ const styles = StyleSheet.create({
   itemRight: {
     marginLeft: 12,
     alignItems: 'flex-end',
+  },
+  // 16pt glyph in a 24pt box; `hitSlop` carries the rest of the touch target
+  // up to the 44pt minimum without the box pushing the row taller.
+  shareBtn: {
+    width: 24, height: 24, marginBottom: 2,
+    alignItems: 'flex-end', justifyContent: 'center',
   },
   itemValue: {
     fontSize: 13,

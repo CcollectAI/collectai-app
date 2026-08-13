@@ -537,3 +537,44 @@ identical, and one of them is alarming. A labelled `ActivityIndicator` in the
 action row says which it is. The awaits are bounded by httpClient's request
 timeout, per the "Loading states" rule above — a spinner that can outlive its
 call is the bug that rule exists for.
+
+## Share to chat lives on the card, top-right (2026-08-13)
+
+`src/components/share/ShareToChatSheet.tsx`, wired into the marketplace tile
+(`app/listings.tsx`) and the collection row (`ItemsListItem`).
+
+A member spots something and wants one specific person to see it. The only
+existing route was the OS share sheet, which leaves the app and hands the
+recipient a bare link. This sends the item into a Sparrow DM instead, through
+`sendChatMessage` (EC2) — **not** the equivalent Supabase RPC, which writes the
+row but skips `_notify_new_message`, so the recipient would get a message with
+no push.
+
+**Placement.** The heart/eye cluster owns the bottom-right of the tile body (see
+"Grid cards are already equal height"), so share takes the opposite corner. On
+the tile it is `position: absolute`, so it costs the body no vertical space and
+cannot fight `cardActions`' `marginTop: 'auto'`.
+
+**On a row, "top right" is not an overlay.** `ItemsListItem` is ~56pt tall and
+centres its children, so an absolutely-positioned button lands on the value.
+Putting it at the top of the right-hand column gets the same corner, and on a
+flex row it usually costs no height at all — the row is as tall as its tallest
+child, and the name/meta/detail column is normally taller than the value stack.
+Hidden in multi-select, where every tap belongs to selection.
+
+**Only accepted threads.** `listInboxThreads` reads `v_chat_inbox_v1`, which has
+no pending rows. DM requests exist so a stranger cannot put content in your
+inbox; a share picker that could reach non-accepted threads would be a hole
+straight through that rule. Nothing here needs to filter — the view already did.
+
+**No empty shelf.** A member with no chats gets a sentence saying why and what
+to do, plus the OS share as the route that does work — the same objection that
+removed the Browse/My-offers segment (P2P spec §10a): do not show someone a
+control for something they do not have.
+
+**Formatting stays with the caller.** The sheet takes `priceLabel`, already
+formatted, and never touches money itself. The marketplace passes a price
+converted to the viewer's currency (a listing can be in any of the 7, and
+sending "€8000" for a ¥8000 card is the bug `ListingCard` converts to avoid);
+the Items tab passes `null` when `isUnpriced`, because "€0" would state a
+valuation the app elsewhere refuses to show.

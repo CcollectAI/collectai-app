@@ -42,6 +42,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '@/components/ScreenHeader';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { ShareToChatSheet, type SharePayload } from '@/components/share/ShareToChatSheet';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { EmptyState } from '@/components/EmptyState';
 import { FilterSheet, type FilterConfig } from '@/components/FilterSheet';
@@ -141,12 +142,16 @@ const SORT_SUMMARY: Record<P2PSort, string> = {
 function ListingCard({
   listing,
   onPress,
+  onShare,
   currency,
   fxRates,
   numberLocale,
 }: {
   listing: P2PListing;
   onPress: () => void;
+  /** Omitted → no share affordance. Keeps the card usable anywhere the sheet
+   *  is not mounted, rather than rendering a button that does nothing. */
+  onShare?: () => void;
   currency: CurrencyCode;
   fxRates: Settings['fxRates'];
   numberLocale?: NumberLocale;
@@ -203,6 +208,21 @@ function ListingCard({
           <Ionicons name="image-outline" size={26} color={colors.muted} />
         </View>
       )}
+      {/* Top-right, over the image. The heart/eye cluster owns the bottom-right
+          of the body (see `cardActions`), so share takes the opposite corner
+          rather than crowding a control set that is already aligned. Absolute
+          over the photo, so it costs the body no vertical space. */}
+      {onShare ? (
+        <AnimatedPressable
+          onPress={onShare}
+          style={[styles.shareBtn, { backgroundColor: colors.background + 'E6' }]}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Send ${listing.title} to a chat`}
+        >
+          <Ionicons name="paper-plane-outline" size={16} color={colors.text} />
+        </AnimatedPressable>
+      ) : null}
       <View style={styles.cardBody}>
         <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={2}>
           {listing.title}
@@ -630,6 +650,39 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
     [router, settings.hapticsEnabled],
   );
 
+  // Share target. Null = sheet closed; the listing itself drives the sheet, so
+  // the preview can never disagree with what gets sent.
+  const [shareFor, setShareFor] = useState<P2PListing | null>(null);
+  const onShareListing = useCallback((listing: P2PListing) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setShareFor(listing);
+  }, [settings.hapticsEnabled]);
+
+  const sharePayload = useMemo<SharePayload | null>(
+    () =>
+      shareFor
+        ? {
+            title: shareFor.title,
+            // Formatted in the VIEWER's currency, the same conversion the tile
+            // does — sending "€8000" for a ¥8000 listing would be the exact bug
+            // ListingCard converts to avoid.
+            priceLabel: formatPrice(
+              convertCurrency(
+                shareFor.price,
+                (shareFor.currency as CurrencyCode) || 'EUR',
+                settings.currency,
+                settings.fxRates,
+              ),
+              settings.currency,
+              settings.numberLocale,
+            ),
+            route: `listing/${shareFor.id}`,
+            imageUrl: shareFor.image_url ?? null,
+          }
+        : null,
+    [shareFor, settings.currency, settings.fxRates, settings.numberLocale],
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: P2PListing }) => (
       <ListingCard
@@ -638,12 +691,13 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
         fxRates={settings.fxRates}
         numberLocale={settings.numberLocale}
         onPress={() => openListing(item.id)}
+        onShare={() => onShareListing(item)}
       />
     ),
     // fxRates belongs here: SettingsProvider swaps it in when live rates
     // arrive, and without the dep every tile would keep formatting against the
     // rates that happened to be loaded when the screen mounted.
-    [openListing, settings.currency, settings.fxRates, settings.numberLocale],
+    [openListing, onShareListing, settings.currency, settings.fxRates, settings.numberLocale],
   );
 
   return (
@@ -1269,6 +1323,14 @@ const styles = StyleSheet.create({
   // with the text's 11pt gutter instead of sitting ~6pt inboard of it — the
   // touch target itself is untouched, and hitSlop still extends past it.
   cardActions: { marginTop: 'auto', alignSelf: 'flex-end', paddingTop: 2, marginRight: -5 },
+  // Absolute so it does not participate in the tile's vertical stack — the
+  // body claims the leftover height for `cardActions`, and a share button in
+  // that flow would fight it.
+  shareBtn: {
+    position: 'absolute', top: 6, right: 6, zIndex: 2,
+    width: 30, height: 30, borderRadius: 15,
+    alignItems: 'center', justifyContent: 'center',
+  },
   youPill: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: radius.xs },
   youPillText: { fontSize: textToken.xs, fontWeight: fontWeight.bold },
   empty: { alignItems: 'center', paddingHorizontal: 32, paddingTop: 56, gap: 10 },
