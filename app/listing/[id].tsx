@@ -808,7 +808,16 @@ const styles = StyleSheet.create({
   reportText: { fontSize: textToken.xs },
   primaryBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    marginTop: 16, paddingVertical: 13, borderRadius: radius.md,
+    // `paddingHorizontal` was missing entirely — only the vertical was set. On
+    // the full-width sticky CTAs that is invisible, because the width comes
+    // from the parent. On the EmptyState retry it is content-sized, so the
+    // label sat flush against the fill with no colour around it: reported as
+    // "the padding around the border does not match the rest of the app".
+    //
+    // 20 rather than the app's usual 16 because this button is taller than the
+    // standard one (13pt vertical against 9) — matching the horizontal value of
+    // a shorter button would leave it looking pinched at the sides.
+    marginTop: 16, paddingVertical: 13, paddingHorizontal: 20, borderRadius: radius.md,
   },
   primaryBtnText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
 });
