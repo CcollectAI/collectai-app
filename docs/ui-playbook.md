@@ -660,3 +660,41 @@ Three changes, and the first is the one that matters:
 under €5 hidden". A filter nobody can see reads as "this is everything" — the
 same silent-cap failure as a screen that renders a failed fetch as an empty
 state.
+
+## Back buttons: every pushed screen already has one — and now a gate says so (2026-08-14)
+
+Asked to "add back buttons on all screens, or logically where they belong". The
+audit says they are already there:
+
+```
+[back-affordance] PASS — 61 pushed screen(s): 59 inherit the native header,
+                         2 suppress it and provide their own back control.
+```
+
+`app/_layout.tsx` sets `headerShown: true` globally, so a pushed route gets the
+native chevron for free. The only two that turn it off — `category-browse.tsx`
+and `categories/[categoryId].tsx` — replace it with `<ScreenHeader />`, whose
+`showBack` defaults to true. They do that on purpose: the flat header keeps the
+back/chat/settings icons out of the iOS 26 glass capsules.
+
+**Tab roots have none, and should not.** There is nothing to pop from a tab, and
+a chevron there would be the only one of its kind —
+`app/(tabs)/marketplace.tsx` passes `asTab` to `/listings` specifically to
+suppress it, while the same screen reached as a pushed route *does* show back.
+So "the Marketplace screen is missing a back button" is the tab root, and it is
+consistent with Items, Events and Search rather than out of step with them.
+
+`npm run check:back-affordance` encodes exactly that distinction: a screen fails
+only if it hides the header AND provides no `ScreenHeader`, `safeGoBack`,
+`headerLeft` or back icon. Tab roots, auth screens and layouts are exempt.
+
+**Proving it fails.** The first attempt removed `<ScreenHeader>` from
+`category-browse.tsx` and the gate still passed — which looked like a false
+negative and was not: that file has a second `arrow-back` control at line 401,
+so it genuinely was not a dead end. A synthetic screen with `headerShown: false`
+and nothing else does fail it. Pick a proof subject with NO other affordance, or
+you learn nothing about the gate.
+
+Two gates, different questions: `check:back` asks whether a back handler is
+SAFE (`safeGoBack`, never a bare `router.back()`); this one asks whether one
+EXISTS.
