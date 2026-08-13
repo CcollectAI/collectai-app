@@ -87,8 +87,8 @@ function OffersScreen() {
     async () => (await collectorsApi.p2pListOffers(role))?.offers ?? [],
     [role],
   );
-  // Ordered, not raw. `/listings` badges "N offers need you" and this is the
-  // screen that badge opens — it used to hand over an undifferentiated list, so
+  // Ordered, not raw. `/listings` badges the same count on its "Open bids" pill
+  // and this is the screen that pill opens — it used to hand over an undifferentiated list, so
   // the user was told a number and then had to read every card's status line to
   // find which ones it meant. `offerNeedsMyAction` is the SAME helper the badge
   // counts with (src/api/p2pApi.ts), deliberately, so the two cannot disagree
@@ -610,7 +610,7 @@ function OffersScreen() {
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title="Offers" />
+      <ScreenHeader title="Open bids" />
 
       <Animated.View style={[styles.segmentWrap, animatedStyle]}>
         <View style={[styles.segment, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -662,7 +662,7 @@ function OffersScreen() {
           untrustworthy; this is the same count, from the same helper. */}
       {!loading && !error && needsAction > 0 ? (
         <Text style={[styles.needsLine, { color: colors.accent }]}>
-          {needsAction} {needsAction === 1 ? 'offer needs' : 'offers need'} you
+          {needsAction} {needsAction === 1 ? 'open bid needs' : 'open bids need'} you
         </Text>
       ) : null}
 
@@ -694,11 +694,11 @@ function OffersScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="swap-horizontal-outline"
-              title={role === 'selling' ? 'No offers received yet' : 'No offers yet'}
+              title={role === 'selling' ? 'No bids received yet' : 'No open bids yet'}
               subtitle={
                 role === 'selling'
-                  ? 'When someone offers on your listings, it appears here.'
-                  : 'Find something on the marketplace and make an offer.'
+                  ? 'When someone bids on your listings, it appears here.'
+                  : 'Find something on the marketplace and place a bid.'
               }
               colors={colors}
               action={

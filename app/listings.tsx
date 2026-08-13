@@ -835,9 +835,12 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
 
           <View style={styles.grow} />
 
-          {/* Offers, beside Sell: the two things you DO on a marketplace sit
+          {/* Open bids, beside Sell: the two things you DO on a marketplace sit
               together, and the row that was a lone Sell button is now the
-              screen's action row. */}
+              screen's action row. Labelled "Open bids" rather than "Offers" —
+              the route, the API and the table stay `offers`; only the word the
+              member reads changed, the same split Target Hit made over
+              `watchlist_snipe`. */}
           <AnimatedPressable
             onPress={() => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -850,7 +853,9 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
             ]}
             accessibilityRole="button"
             accessibilityLabel={
-              offersToAction > 0 ? `Your offers, ${offersToAction} waiting for you` : 'Your offers'
+              offersToAction > 0
+                ? `Your open bids, ${offersToAction} waiting for you`
+                : 'Your open bids'
             }
           >
             <Ionicons
@@ -858,8 +863,11 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
               size={15}
               color={offersToAction > 0 ? colors.accent : colors.text}
             />
-            <Text style={[styles.offersBtnText, { color: offersToAction > 0 ? colors.accent : colors.text }]}>
-              Offers
+            <Text
+              style={[styles.offersBtnText, { color: offersToAction > 0 ? colors.accent : colors.text }]}
+              numberOfLines={1}
+            >
+              Open bids
             </Text>
             {offersToAction > 0 ? (
               <View style={[styles.badge, { backgroundColor: colors.accent, borderColor: colors.background }]}>
@@ -1185,7 +1193,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   // Overrides the square icon box: a labelled pill needs to grow with its word,
-  // and `width: 40` would clip "Offers" to a sliver.
+  // and `width: 40` would clip the label to a sliver. No fixed width, so
+  // "Open bids" (longer than the old "Offers") sizes itself; the flexible
+  // spacer to its left absorbs the difference.
   offersBtn: {
     flexDirection: 'row',
     alignItems: 'center',
