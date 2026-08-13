@@ -42,7 +42,10 @@ const LIGHT_COLORS = {
   toastSuccess: "#1B5E20",
   toastError: "#B71C1C",
   toastWarning: "#E65100",
-  toastInfo: "#0D47A1",
+  // Deep teal, not cobalt: an info toast is the most common one a user
+  // sees ("Watching — we'll alert you…") and a blue banner reads as some
+  // other app's. Same ink as brand.lighter in the dark palette.
+  toastInfo: "#1E3A3A",
   // Semantic surface colors for badges/pills
   successBg: "#DCFCE7",
   warningBg: "#FEF3C7",
@@ -98,7 +101,10 @@ const DARK_COLORS = {
   toastSuccess: "#1B5E20",
   toastError: "#B71C1C",
   toastWarning: "#E65100",
-  toastInfo: "#0D47A1",
+  // Deep teal, not cobalt: an info toast is the most common one a user
+  // sees ("Watching — we'll alert you…") and a blue banner reads as some
+  // other app's. Same ink as brand.lighter in the dark palette.
+  toastInfo: "#1E3A3A",
   // Semantic surface colors for badges/pills
   successBg: "#064E3B",
   warningBg: "#78350F",

@@ -29,6 +29,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DURATION } from '@/motion/tokens';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 // --------------- Types ---------------
 
@@ -57,14 +58,26 @@ const ToastCtx = createContext<ToastContextValue>({
 
 // --------------- Style config ---------------
 
-const TYPE_ICONS: Record<
-  ToastType,
-  { icon: keyof typeof Ionicons.glyphMap; iconColor: string }
-> = {
-  success: { icon: 'checkmark-circle', iconColor: '#34D399' },
-  error: { icon: 'alert-circle', iconColor: '#F87171' },
-  warning: { icon: 'warning', iconColor: '#FBBF24' },
-  info: { icon: 'information-circle', iconColor: '#60A5FA' },
+/**
+ * Icons only. The COLOURS come from the theme at render time.
+ *
+ * They used to live here as literals — `#34D399`, `#F87171`, `#FBBF24`,
+ * `#60A5FA` — straight off the Tailwind palette, on a hardcoded `#1E293B`
+ * slate surface. Two consequences:
+ *
+ *  1. The toast belonged to no theme. `colors.toastSuccess/Error/Warning/Info`
+ *     have existed in the light palette, the dark palette AND
+ *     `src/theme/highContrast.ts` the whole time with **no reader**, so a user
+ *     on high contrast got the same low-contrast toast as everyone else —
+ *     an accessibility mode that silently did nothing here.
+ *  2. The most common toast in the app ("Watching — we'll alert you…") was a
+ *     blue banner with a blue glyph, which is not this app's colour.
+ */
+const TYPE_ICONS: Record<ToastType, keyof typeof Ionicons.glyphMap> = {
+  success: 'checkmark-circle',
+  error: 'alert-circle',
+  warning: 'warning',
+  info: 'information-circle',
 };
 
 const HAPTIC_MAP: Record<ToastType, HapticIntent> = {
@@ -81,6 +94,9 @@ let nextId = 0;
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   const { settings } = useSettings();
+  // Safe here: ToastProvider is mounted INSIDE SettingsProvider
+  // (app/_layout.tsx), and useAppTheme reads nothing else.
+  const { colors } = useAppTheme();
   const [toast, setToast] = useState<ToastState | null>(null);
   const translateY = useRef(new Animated.Value(-120)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -152,7 +168,40 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [showToast, dismiss],
   );
 
-  const cfg = toast ? TYPE_ICONS[toast.type] : null;
+  // The toast is an INVERSE surface: `colors.toastSuccess/Error/Warning/Info`
+  // are dark in the light palette, the dark palette and both high-contrast
+  // palettes. So the surface is themed, but the glyph is not — and that is
+  // deliberate, not an oversight of the "never hardcode a colour on a themed
+  // background" rule.
+  //
+  // Sourcing the glyph from the palette is actively WRONG here, because those
+  // tokens are built for a LIGHT background and go dark-on-dark on this one:
+  // `success` is #059669 in the light palette and #006600 in high-contrast
+  // light, against a #1B5E20 / #003300 surface. `brand.light` is worse — it
+  // INVERTS to #003D99 in high-contrast dark. Both are unreadable.
+  //
+  // These four are the on-dark set. Any new one must be light enough to sit on
+  // the darkest toast surface in `highContrast.ts`.
+  const cfg = toast
+    ? {
+        icon: TYPE_ICONS[toast.type],
+        surface: {
+          success: colors.toastSuccess,
+          error: colors.toastError,
+          warning: colors.toastWarning,
+          info: colors.toastInfo,
+        }[toast.type],
+        iconColor: {
+          success: '#34D399',
+          error: '#F87171',
+          warning: '#FBBF24',
+          // Tiffany light, replacing a Tailwind blue. Info is the most common
+          // toast in the app ("Watching — we'll alert you…"), so it is the one
+          // that most needs to look like Sparrow.
+          info: '#AEE6E1',
+        }[toast.type],
+      }
+    : null;
 
   return (
     <ToastCtx.Provider value={value}>
@@ -174,7 +223,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         >
           <Pressable
             onPress={dismiss}
-            style={[styles.toast, { borderLeftColor: cfg.iconColor }]}
+            style={[styles.toast, { backgroundColor: cfg.surface, borderLeftColor: cfg.iconColor }]}
             accessibilityRole="alert"
             accessibilityLabel={toast.message}
           >
@@ -213,7 +262,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 14,
     borderLeftWidth: 4,
-    backgroundColor: '#1E293B',
+    // backgroundColor comes from the theme per type — see TYPE_ICONS above.
     minHeight: 48,
     maxWidth: 420,
     width: '100%',
