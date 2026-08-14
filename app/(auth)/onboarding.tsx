@@ -27,12 +27,11 @@ import { AnimatedPressable } from '@/motion';
 import { useStaggerReveal } from '@/motion/useStaggerReveal';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
-import { useSettings, REGION_DEFAULTS } from '@/lib/settings';
-import type { Region } from '@/lib/settings';
+import { useSettings, REGION_DEFAULTS, type Region, type SkillLevel } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { collectorsApi, logActivity } from '@/api/collectorsApi';
-import { updateUserSettings } from '@/api/settingsApi';
+import { updateUserSettings, saveFollowedCategories } from '@/api/settingsApi';
 import { supabase } from '@/lib/supabase';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { CATEGORY_VISUAL, type CategoryId } from '@/data/categories';
@@ -46,6 +45,15 @@ const ONBOARDING_KEY = '@sparrowcollect/onboarding_complete';
 
 type Slide = {
   id: string;
+  /**
+   * What this slide IS, so the renderer never keys off position.
+   *
+   * The region block used to render on `index === 3`, with a comment warning
+   * that "dropping a slide above it silently shifts every index below" — which
+   * is exactly what adding the categories and skill steps would have done. An
+   * identity cannot shift.
+   */
+  kind: 'value' | 'scan' | 'categories' | 'skill' | 'region';
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
@@ -54,30 +62,67 @@ type Slide = {
 const SLIDES: Slide[] = [
   {
     id: '1',
+    kind: 'value',
     icon: 'diamond-outline',
     title: 'Track Your Collection',
     subtitle: 'Organize all your collectibles in one place. Cards, figures, games — everything.',
   },
   {
     id: '2',
+    kind: 'scan',
     icon: 'camera-outline',
     title: 'Snap a Photo, We Do the Rest',
     subtitle: 'Our AI identifies your items, suggests categories, and fills in the details automatically.',
   },
   {
     id: '3',
+    kind: 'value',
     icon: 'trending-up-outline',
     title: 'Know What It\'s Worth',
     subtitle: 'Get real-time valuations powered by marketplace data. Track your portfolio over time.',
   },
   {
-    // Was id '5'. The category-picker step (old id '4') was removed
-    // 2026-08-11 — see the note above the slides array.
+    // Restored 2026-08-14. The picker was removed on 2026-08-11, which left
+    // NOTHING seeding followed categories at signup — the preference was still
+    // read by quickscan, market movers, events and purchase, so every new
+    // member started unpersonalised and those five features had no signal to
+    // work with.
     id: '4',
+    kind: 'categories',
+    icon: 'heart-outline',
+    title: 'What Do You Collect?',
+    subtitle: 'Pick a few. We put these first in search, events and scanning — you can change them any time.',
+  },
+  {
+    id: '5',
+    kind: 'skill',
+    icon: 'school-outline',
+    title: 'How Long Have You Been Collecting?',
+    subtitle: 'This only changes what we show you first. Nothing is locked behind it.',
+  },
+  {
+    // Was id '5'; renumbered when the category and skill steps landed. Its
+    // renderer keys off `kind`, not this position.
+    id: '6',
+    kind: 'region',
     icon: 'globe-outline',
     title: 'Set Your Region',
     subtitle: 'We\'ll show prices in your local currency and prioritize nearby marketplaces.',
   },
+];
+
+/** Copy is deliberately about TIME SPENT, not self-assessed expertise: people
+ *  under-rate themselves when asked how good they are, and the app only needs
+ *  to know whether to offer the basics. */
+const SKILL_OPTIONS: {
+  value: SkillLevel;
+  label: string;
+  blurb: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { value: 'beginner', label: 'Just starting', blurb: 'New to this — show me how it works', icon: 'leaf-outline' },
+  { value: 'intermediate', label: 'A while now', blurb: 'I know the basics, still learning the market', icon: 'trending-up-outline' },
+  { value: 'advanced', label: 'Years of it', blurb: 'I know what I am doing — skip the basics', icon: 'ribbon-outline' },
 ];
 
 const REGION_OPTIONS: { value: Region; label: string }[] = [
@@ -209,13 +254,18 @@ function OnboardingScreen() {
   const [detectedRegion, setDetectedRegion] = useState<Region>('europe');
   const [detecting, setDetecting] = useState(false);
   const [regionPickerVisible, setRegionPickerVisible] = useState(false);
+  // Both steps are OPTIONAL. Skipping leaves followed categories empty and
+  // skill level null, which is exactly the state every member was in before
+  // these steps existed — no feature depends on an answer.
+  const [pickedCategories, setPickedCategories] = useState<Set<string>>(new Set());
+  const [pickedSkill, setPickedSkill] = useState<SkillLevel | null>(null);
   const { showToast } = useToast();
 
-  // Animated dot widths (5 dots)
+  // Animated dot widths, one per slide (derived, so adding a slide adds a dot)
   const dotWidths = useRef(SLIDES.map((_, i) => new Animated.Value(i === 0 ? 24 : 8))).current;
 
   // Stagger for category pills (first 20)
-  const { getItemStyle: getCategoryStyle } = useStaggerReveal({
+  const { getItemStyle: getCategoryStyle, reveal: startCategoryReveal } = useStaggerReveal({
     count: 20,
     staggerMs: 30,
     autoStart: false,
@@ -245,6 +295,35 @@ function OnboardingScreen() {
       .finally(() => { if (!cancelled) setDetecting(false); });
     return () => { cancelled = true; };
   }, []);
+
+  /**
+   * Persist the two optional answers. Local FIRST, server fire-and-forget.
+   *
+   * That order is the scar on this screen: the completion handler used to sync
+   * before writing its local flag, so one hung request meant the flag never
+   * landed and the gate looped new users back into onboarding forever
+   * (reported 2026-06-11). Anything here that can hang must not sit between
+   * the user tapping and the app letting them in.
+   */
+  const persistPicks = useCallback(() => {
+    if (pickedSkill) {
+      // Local write is synchronous and is what every reader uses.
+      updateSettings({ skillLevel: pickedSkill });
+      // Typed as SkillLevel, so the value cannot drift from VALID_SKILL_LEVELS
+      // and the CHECK behind it — the currency/region/locale 23514 story.
+      updateUserSettings({ skill_level: pickedSkill }).catch((e) =>
+        logger.error('[onboarding] skill level persist failed:', e),
+      );
+    }
+    if (pickedCategories.size > 0) {
+      // saveFollowedCategories diffs against the server's current set and
+      // converges; it is NOT part of PUT /settings, which silently dropped
+      // `followed_categories` and is why the old picker saved nothing.
+      saveFollowedCategories(Array.from(pickedCategories)).catch((e) =>
+        logger.error('[onboarding] followed categories persist failed:', e),
+      );
+    }
+  }, [pickedSkill, pickedCategories, updateSettings]);
 
   const confirmRegion = useCallback(async (region: Region) => {
     const defaults = REGION_DEFAULTS[region];
@@ -302,11 +381,13 @@ function OnboardingScreen() {
     // reached the flag write, so the gate looped new users back into onboarding
     // forever (reported 2026-06-11). Local writes can't hang the user.
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    // The onboarding category picker was removed 2026-08-11, so nothing seeds
-    // '@sparrowcollect/followed_categories' at signup any more. The preference
-    // is still WRITTEN by follow/unfollow on app/categories/[categoryId].tsx and
-    // still READ by quickscan, market-movers, (tabs)/events and purchase — they
-    // simply start unpersonalised instead of pre-seeded.
+    // The category picker is back (2026-08-14) and seeds
+    // '@sparrowcollect/followed_categories' again, so quickscan, market movers,
+    // events and purchase have a signal from the first session instead of
+    // starting unpersonalised. Skill level rides along the same way.
+    // `persistPicks` writes locally and fires its network calls without await,
+    // for the same reason the flag above is written first.
+    persistPicks();
 
     // Fire-and-forget the server syncs — they must never block leaving onboarding.
     // (confirmRegion applies region/currency locally and synchronously before its fetch.)
@@ -332,16 +413,25 @@ function OnboardingScreen() {
   }
 
   const isLast = currentIndex === SLIDES.length - 1;
-  const showSkip = currentIndex <= 2;
+  // Skip stays available through the two OPTIONAL steps. It used to vanish
+  // after slide index 2, which was fine when everything after it was the
+  // region auto-detect — but categories and skill are questions, and a
+  // question you cannot decline is not optional. Hidden only on the last
+  // slide, where the primary button already says "Get Started".
+  const showSkip = currentIndex < SLIDES.length - 1;
 
   const handleSkip = useCallback(async () => {
     track({ name: 'onboarding_skipped', properties: { skip_slide: currentIndex } });
     // Persist completion LOCALLY first; confirmRegion's network PUT has no timeout
     // and must never block the user from leaving onboarding (same trap as complete).
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    // Skipping still keeps whatever was picked before the skip. Someone who
+    // chose three categories on slide 4 and then hit Skip meant to skip the
+    // REST, not to discard the answer they already gave.
+    persistPicks();
     confirmRegion(detectedRegion).catch(() => {});
     router.replace('/(tabs)/add');
-  }, [currentIndex, confirmRegion, detectedRegion, router]);
+  }, [currentIndex, confirmRegion, detectedRegion, router, persistPicks]);
 
   // Slide text entrance animations
   const slideOpacities = useRef(SLIDES.map(() => new Animated.Value(0))).current;
@@ -354,11 +444,15 @@ function OnboardingScreen() {
       Animated.timing(slideTranslates[currentIndex], { toValue: 0, duration: 300, useNativeDriver: true }),
     ]).start();
 
-    // Trigger category stagger on slide 4
-    if (currentIndex === 3 && !categoryRevealTriggered.current) {
+    // Trigger the category stagger when the CATEGORIES slide arrives. Was
+    // `currentIndex === 3`, which pointed at the region slide after the picker
+    // was removed — so the stagger it exists to drive fired on a screen with
+    // no pills on it.
+    if (SLIDES[currentIndex]?.kind === 'categories' && !categoryRevealTriggered.current) {
       categoryRevealTriggered.current = true;
+      startCategoryReveal();
     }
-  }, [currentIndex]);
+  }, [currentIndex, startCategoryReveal]);
 
   return (
     <GradientBackground>
@@ -387,7 +481,7 @@ function OnboardingScreen() {
           viewabilityConfig={viewabilityConfig}
           renderItem={({ item, index }) => (
             <View style={[styles.slide, { width }]}>
-              {index === 1 ? (
+              {item.kind === 'scan' ? (
                 <ScanAnimation colors={colors} />
               ) : (
                 <Animated.View
@@ -425,10 +519,103 @@ function OnboardingScreen() {
                 </Text>
               </Animated.View>
 
-              {/* Region detection UI — slide 4 (index 3) since the category
-                  picker was removed. This conditional is POSITIONAL: dropping a
-                  slide above it silently shifts every index below. */}
-              {index === 3 && (
+              {item.kind === 'categories' && (
+                <View style={styles.categoryWrap}>
+                  <ScrollView
+                    style={styles.categoryScrollView}
+                    contentContainerStyle={styles.categoryGrid}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {ALL_CATEGORIES.map((c, i) => {
+                      const on = pickedCategories.has(c.slug);
+                      return (
+                        <Animated.View key={c.slug} style={getCategoryStyle(i)}>
+                          <TouchableOpacity
+                            onPress={() => {
+                              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, {
+                                enabled: settings.hapticsEnabled,
+                              });
+                              setPickedCategories((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(c.slug)) next.delete(c.slug);
+                                else next.add(c.slug);
+                                return next;
+                              });
+                            }}
+                            style={[
+                              styles.categoryPill,
+                              {
+                                backgroundColor: on ? c.tint + '30' : colors.card,
+                                borderColor: on ? c.tint : colors.border,
+                              },
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: on }}
+                            accessibilityLabel={c.name}
+                          >
+                            <Text
+                              style={[styles.categoryPillText, { color: on ? colors.text : colors.muted }]}
+                              numberOfLines={1}
+                            >
+                              {c.name}
+                            </Text>
+                          </TouchableOpacity>
+                        </Animated.View>
+                      );
+                    })}
+                  </ScrollView>
+                  <Text style={[styles.categoryCountText, { color: colors.muted }]}>
+                    {pickedCategories.size === 0
+                      ? 'Optional — skip if you are still deciding'
+                      : `${pickedCategories.size} selected`}
+                  </Text>
+                </View>
+              )}
+
+              {item.kind === 'skill' && (
+                <View style={styles.skillWrap}>
+                  {SKILL_OPTIONS.map((opt) => {
+                    const on = pickedSkill === opt.value;
+                    return (
+                      <TouchableOpacity
+                        key={opt.value}
+                        onPress={() => {
+                          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, {
+                            enabled: settings.hapticsEnabled,
+                          });
+                          // Tapping the selected one clears it — the answer is
+                          // optional, and a picker you cannot un-answer forces
+                          // a claim out of someone who would rather not make one.
+                          setPickedSkill((prev) => (prev === opt.value ? null : opt.value));
+                        }}
+                        style={[
+                          styles.skillCard,
+                          {
+                            backgroundColor: on ? colors.brand.base + '20' : colors.card,
+                            borderColor: on ? colors.brand.dark : colors.border,
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: on }}
+                        accessibilityLabel={`${opt.label}. ${opt.blurb}`}
+                      >
+                        <Ionicons
+                          name={opt.icon}
+                          size={22}
+                          color={on ? colors.brand.dark : colors.muted}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.skillLabel, { color: colors.text }]}>{opt.label}</Text>
+                          <Text style={[styles.skillBlurb, { color: colors.muted }]}>{opt.blurb}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Keyed on `kind`, not on position — see the Slide type. */}
+              {item.kind === 'region' && (
                 <View style={styles.regionContainer}>
                   {detecting ? (
                     <ActivityIndicator size="small" color={colors.brand.base} style={{ marginTop: 24 }} />
@@ -687,6 +874,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  // Wrapper the old picker never had: its ScrollView sat directly in the slide.
+  categoryWrap: { width: '100%', alignItems: 'center' },
+  skillWrap: { width: '100%', marginTop: 20, gap: 10, paddingHorizontal: 4 },
+  skillCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
+  skillLabel: { fontSize: 15, fontWeight: '700' },
+  skillBlurb: { fontSize: 13, marginTop: 2 },
   categoryScrollView: {
     marginTop: 20,
     maxHeight: 260,
