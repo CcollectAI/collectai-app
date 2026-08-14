@@ -129,11 +129,13 @@ function AppearanceSectionInner() {
 
   return (
     <>
-      {/* Region & Currency */}
+      {/* Collecting — about the member, not their money or their map. This row
+          sat inside "Region & Currency" under a globe icon, which is where a
+          reader would never look for it. */}
       <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.sectionHeader}>
-          <Ionicons name="globe-outline" size={18} color={colors.accent} />
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.region_currency')}</Text>
+          <Ionicons name="school-outline" size={18} color={colors.accent} />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Collecting</Text>
         </View>
 
         <AnimatedPressable
@@ -154,7 +156,14 @@ function AppearanceSectionInner() {
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
 
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+      </View>
+
+      {/* Region & Currency */}
+      <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="globe-outline" size={18} color={colors.accent} />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.region_currency')}</Text>
+        </View>
 
         <AnimatedPressable
           style={styles.settingRow}

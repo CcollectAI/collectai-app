@@ -78,25 +78,33 @@ export function StartCollectingCard() {
 
   const name = getCategoryById(target)?.name ?? 'collecting';
 
+  // Card is a View with TWO sibling pressables, not a pressable containing
+  // another. React Native has no event bubbling, but responder negotiation
+  // between a parent and child pressable is genuinely ambiguous — and the
+  // failure mode here is the worst kind: tapping the X navigates instead of
+  // dismissing, so the control that means "stop showing me this" does the
+  // opposite. Siblings cannot be ambiguous.
   return (
-    <AnimatedPressable
-      onPress={() => {
-        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-        router.push({ pathname: '/guide/[categoryId]', params: { categoryId: target } } as unknown as Href);
-      }}
-      style={[styles.card, { backgroundColor: colors.accent + '12', borderColor: colors.accent + '3A' }]}
-      accessibilityRole="button"
-      accessibilityLabel={`Start collecting ${name}: read the beginner guide`}
-    >
-      <View style={[styles.icon, { backgroundColor: colors.accent + '22' }]}>
-        <Ionicons name="school-outline" size={22} color={colors.accent} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.title, { color: colors.text }]}>New to this? Start here</Text>
-        <Text style={[styles.sub, { color: colors.muted }]} numberOfLines={2}>
-          A short guide to {name} — the words, what to avoid, and what to buy first.
-        </Text>
-      </View>
+    <View style={[styles.card, { backgroundColor: colors.accent + '12', borderColor: colors.accent + '3A' }]}>
+      <AnimatedPressable
+        onPress={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          router.push({ pathname: '/guide/[categoryId]', params: { categoryId: target } } as unknown as Href);
+        }}
+        style={styles.cardBody}
+        accessibilityRole="button"
+        accessibilityLabel={`Start collecting ${name}: read the beginner guide`}
+      >
+        <View style={[styles.icon, { backgroundColor: colors.accent + '22' }]}>
+          <Ionicons name="school-outline" size={22} color={colors.accent} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.title, { color: colors.text }]}>New to this? Start here</Text>
+          <Text style={[styles.sub, { color: colors.muted }]} numberOfLines={2}>
+            A short guide to {name} — the words, what to avoid, and what to buy first.
+          </Text>
+        </View>
+      </AnimatedPressable>
       <AnimatedPressable
         onPress={dismiss}
         hitSlop={10}
@@ -106,7 +114,7 @@ export function StartCollectingCard() {
       >
         <Ionicons name="close" size={18} color={colors.muted} />
       </AnimatedPressable>
-    </AnimatedPressable>
+    </View>
   );
 }
 
@@ -114,13 +122,15 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
     marginHorizontal: 16,
     marginBottom: 12,
-    padding: 12,
+    paddingRight: 8,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
   },
+  // The tappable region. Padding lives here rather than on the card so the
+  // touch target covers the padding too.
+  cardBody: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
   icon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: textToken.md, fontWeight: fontWeight.bold },
   sub: { fontSize: textToken.sm, lineHeight: 17, marginTop: 2 },
