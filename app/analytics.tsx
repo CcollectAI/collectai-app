@@ -52,7 +52,6 @@ import logger from "@/utils/logger";
 import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
 import { CategoryPerformanceSection } from '@/components/CategoryPerformanceSection';
 import { PortfolioTierBadge } from '@/components/analytics/PortfolioTierBadge';
-import { WinnersLosersSection } from '@/components/analytics/WinnersLosersSection';
 import { PredictionAccuracySection } from '@/components/analytics/PredictionAccuracySection';
 import { DemandHeatSection } from '@/components/home/DemandHeatSection';
 
@@ -276,7 +275,7 @@ function AnalyticsScreen() {
   const isPreview = effectiveSnapshot === MOCK_SNAPSHOT;
 
   // M4: Memoize derived snapshot data to avoid recomputing on every render
-  const { pl, allocations, winnersLosers, tierSummary, items } = useMemo(() => effectiveSnapshot ?? {
+  const { pl, allocations, tierSummary, items } = useMemo(() => effectiveSnapshot ?? {
     pl: null,
     allocations: [],
     winnersLosers: { winners: [], losers: [], neutral: [] },
@@ -285,6 +284,14 @@ function AnalyticsScreen() {
   }, [effectiveSnapshot]);
 
   const isPositive = useMemo(() => (pl?.deltaPct ?? 0) >= 0, [pl?.deltaPct]);
+
+  // How many holdings have a real purchase price behind their P/L. See the
+  // note on the Performance card: without one the server uses the earliest
+  // prediction as cost basis, so the "gain" is model drift.
+  const pricedCount = useMemo(
+    () => items.filter((i) => i.hasPurchasePrice).length,
+    [items],
+  );
 
   // Category colors for allocation bars
   const categoryColors = useMemo(() => {
@@ -356,17 +363,19 @@ function AnalyticsScreen() {
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
 
-        {/* Upgrade prompt for free-tier users */}
+        {/* ONE upgrade prompt for the whole screen.
+            There used to be five — "Advanced Analytics", "Hot Right Now",
+            "Category Performance", "Holdings Breakdown" and "Collection
+            Completeness" — so a free member scrolled past five near-identical
+            cards asking for the same upgrade to the same plan. Repetition does
+            not add persuasion; it reads as a screen that is mostly advertising.
+            The gated sections below now simply render nothing. */}
         {!limits.advanced_analytics && (
           <UpgradePrompt feature="Advanced Analytics" requiredPlan="Pro" />
         )}
 
         {/* Hot Right Now (moved from home 2026-04-18, Pro-gated) */}
-        {limits.advanced_analytics ? (
-          <DemandHeatSection />
-        ) : (
-          <UpgradePrompt feature="Hot Right Now" requiredPlan="Pro" />
-        )}
+        {limits.advanced_analytics ? <DemandHeatSection /> : null}
 
         {/* Preview banner when the dev plan override is active and we're
             falling back to mock analytics data (real fetch failed/empty). */}
@@ -408,6 +417,22 @@ function AnalyticsScreen() {
                 </Text>
               </View>
             </View>
+
+            {/* What the P/L above is actually BASED on.
+                `cost_basis` falls back to the earliest prediction when an item
+                has no purchase price, so its "profit" is really model drift —
+                and it arrives as the same number, in the same field, looking
+                identical. A trader reading a gain has to know how much of their
+                portfolio it can possibly apply to. */}
+            {items.length > 0 ? (
+              <Text style={[styles.plBasis, { color: colors.muted }]}>
+                {pricedCount === items.length
+                  ? `Based on what you paid for all ${items.length} items.`
+                  : pricedCount === 0
+                    ? `No purchase prices on file, so this tracks how our valuation has moved — not profit. Add what you paid to track that.`
+                    : `Based on what you paid for ${pricedCount} of ${items.length} items. The other ${items.length - pricedCount} track our valuation instead.`}
+              </Text>
+            ) : null}
 
             <View style={styles.metricsGrid}>
               <View style={styles.metricItem}>
@@ -515,22 +540,22 @@ function AnalyticsScreen() {
         {/* H1: Category Statistics Dashboard (Pro+) */}
         {limits.advanced_analytics ? (
           <CategoryPerformanceSection categoryStats={categoryStats} categoryHealth={categoryHealth} />
-        ) : (
-          <UpgradePrompt feature="Category Performance" requiredPlan="Pro" />
-        )}
+        ) : null}
 
-        {/* Winners & Losers (Pro+) */}
-        {limits.advanced_analytics && (
-          <WinnersLosersSection
-            winners={winnersLosers.winners}
-            losers={winnersLosers.losers}
-          />
-        )}
+        {/* The "Movers" card was REMOVED here on 2026-08-14.
+            It rendered per-item 24h winners and losers off `change1dPct` — and
+            `/portfolio/items` has never returned `change_1d_pct`. Every item
+            therefore mapped to undefined, `computeWinnersAndLosers` pushed all
+            of them into `neutral`, winners and losers came back empty, and the
+            component returned null. It has never drawn a single row.
+            Verified against prod: the endpoint returns exactly category,
+            cost_basis, current_value, id, name, q10, q90, unrealized_pl.
+            Its job — what is moving and by how much — is already done properly
+            by CategoryPerformanceSection directly above, on real 7d data with a
+            trend direction and a median. Two cards for one question, one of
+            which could never answer it. */}
 
         {/* Items Summary (Pro+) */}
-        {!limits.advanced_analytics && items.length > 0 && (
-          <UpgradePrompt feature="Holdings Breakdown" requiredPlan="Pro" />
-        )}
         {limits.advanced_analytics && items.length > 0 && (
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
@@ -568,9 +593,6 @@ function AnalyticsScreen() {
         )}
 
         {/* Collection Completeness (Pro+) */}
-        {!limits.advanced_analytics && activeCategories.length > 0 && (
-          <UpgradePrompt feature="Collection Completeness" requiredPlan="Pro" />
-        )}
         {limits.advanced_analytics && activeCategories.length > 0 && (
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
@@ -707,6 +729,7 @@ export default function AnalyticsScreenWithBoundary() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  plBasis: { fontSize: 12, lineHeight: 17, marginBottom: 10 },
   safe: {
     flex: 1,
     // backgroundColor set inline via colors.background

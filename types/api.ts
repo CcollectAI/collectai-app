@@ -115,6 +115,8 @@ export interface RawPortfolioItem {
   cost_basis?: number;
   realized_pl?: number;
   unrealized_pl?: number;
+  /** False => unrealized_pl is model drift, not profit. */
+  has_purchase_price?: boolean;
   change_1d_pct?: number;
   change_7d_pct?: number;
   liquidity_score?: number;

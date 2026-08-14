@@ -414,7 +414,14 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     -- The EUR half is the right one: current_value is q50,
                     -- which is EUR, so summing raw purchase_price here would
                     -- mix currencies on the same axis.
-                    COALESCE(i.purchase_price_eur, e.first_q50, 0) AS cost_basis
+                    COALESCE(i.purchase_price_eur, e.first_q50, 0) AS cost_basis,
+                    -- Which SIDE of that COALESCE was used. Without this the
+                    -- client cannot tell profit from model drift: for an item
+                    -- with no purchase price, cost_basis is the earliest
+                    -- prediction, so unrealized_pl measures how far the MODEL
+                    -- moved, not what the member made. Both arrive as a number
+                    -- called "unrealized_pl" and look identical.
+                    (i.purchase_price_eur IS NOT NULL) AS has_purchase_price
                 FROM items i
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN earliest e ON e.item_ref = i.canonical_ref
@@ -435,6 +442,9 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     "current_value": round(cv, 2),
                     "cost_basis": round(cb, 2),
                     "unrealized_pl": round(cv - cb, 2),
+                    # False => unrealized_pl is model drift, not profit. Callers
+                    # must not sum it into a headline P/L figure.
+                    "has_purchase_price": bool(r["has_purchase_price"]),
                     "q10": round(float(r["q10"] or 0), 2),
                     "q90": round(float(r["q90"] or 0), 2),
                 })

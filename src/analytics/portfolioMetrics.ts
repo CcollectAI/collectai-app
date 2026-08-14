@@ -28,6 +28,10 @@ export interface CategoryAllocation {
 }
 
 export interface PortfolioItemSnapshot {
+  /** False => `unrealizedPL` is model drift rather than profit: the server used
+   *  the earliest prediction as cost basis for want of a purchase price. Never
+   *  sum P/L across items without checking this. */
+  hasPurchasePrice?: boolean;
   id: string;
   name: string;
   category: string;

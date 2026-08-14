@@ -240,6 +240,11 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
         typeof it.unrealized_pl === 'number'
           ? it.unrealized_pl
           : undefined,
+      // FALSE means `unrealizedPL` is model drift, not profit — the server
+      // falls back to the earliest prediction as cost basis when no purchase
+      // price is on file. Anything summing P/L into a headline must exclude
+      // these, or it reports a number the member never earned.
+      hasPurchasePrice: it.has_purchase_price === true,
       change1dPct:
         typeof it.change_1d_pct === 'number'
           ? it.change_1d_pct
