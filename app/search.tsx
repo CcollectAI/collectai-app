@@ -21,6 +21,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { dataProvider } from '@/data';
 import { getCategoryById, CATEGORIES } from '@/data/categories';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useFollowedCategories } from '@/hooks/useFollowedCategories';
+import { rankSearchResults } from '@/data/searchRanking';
 import { AnimatedPressable } from '@/motion';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
@@ -228,7 +230,15 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
   // marketplace screen already uses for its own `?q=`.
   const { q: initialQuery } = useLocalSearchParams<{ q?: string }>();
   const [query, setQuery] = useState(() => (typeof initialQuery === 'string' ? initialQuery : ''));
-  const [results, setResults] = useState<SearchResults | null>(null);
+  const [rawResults, setRawResults] = useState<SearchResults | null>(null);
+  // Followed categories rank the results — see src/data/searchRanking.ts. This
+  // was the last surface that never read them: the add flow, scan classifier,
+  // market movers, events and deal discovery all did.
+  const { followed } = useFollowedCategories();
+  const results = useMemo(
+    () => rankSearchResults(rawResults, followed),
+    [rawResults, followed],
+  );
   const [loading, setLoading] = useState(false);
   const { isSlow, isVerySlow } = useSlowLoad(loading);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -243,7 +253,7 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
 
   const doSearch = useCallback(async (q: string) => {
     if (!q.trim()) {
-      setResults(null);
+      setRawResults(null);
       setError(false);
       return;
     }
@@ -251,14 +261,14 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
     setError(false);
     try {
       const res = await dataProvider.unifiedSearch(q.trim());
-      setResults(res ?? null);
+      setRawResults(res ?? null);
     } catch (e) {
       // logger.error, not warn: info/warn are stripped from release builds, so
       // a failed search would have left no trace on exactly the builds where
       // "search found nothing" gets reported. The error STATE was already
       // rendered — this only makes the cause recoverable from getRecentLogs().
       logger.error('[search] unified search failed:', e);
-      setResults(null);
+      setRawResults(null);
       setError(true);
     } finally {
       setLoading(false);
@@ -364,7 +374,7 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
             accessibilityLabel={t('search.input_a11y')}
           />
           {query.length > 0 && (
-            <AnimatedPressable onPress={() => { setQuery(''); setResults(null); }} accessibilityRole="button" accessibilityLabel={t('common.clear_search')}>
+            <AnimatedPressable onPress={() => { setQuery(''); setRawResults(null); }} accessibilityRole="button" accessibilityLabel={t('common.clear_search')}>
               <Ionicons name="close-circle" size={18} color={colors.muted} />
             </AnimatedPressable>
           )}

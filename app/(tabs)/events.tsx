@@ -29,6 +29,7 @@ import type { CollectorsEvent } from '@/data/events';
 import { useOptimisticRsvpList } from '@/hooks/useOptimisticRsvp';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
 import { useFollowedCategories } from '@/hooks/useFollowedCategories';
+import { partitionByFollowed } from '@/data/searchRanking';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
@@ -137,6 +138,25 @@ function EventsScreen() {
     [events, searchQuery, kindFilter, followedFilterActive, followedCategoryIds],
   );
 
+  // Followed categories now ORDER the list as well as (optionally) filtering
+  // it. The toggle is a blunt instrument: turning it on hides everything else,
+  // which is why it defaults off. Ordering gives the same benefit with nothing
+  // hidden — a member sees their categories first and still finds the rest by
+  // scrolling.
+  //
+  // Applied only when the filter is OFF, because with it on every remaining
+  // event is followed and a partition would be a no-op pass over the list.
+  // `partitionByFollowed` keys on `category`, and an event's slug lives on
+  // `categoryId`, so the mapping is explicit rather than relying on a shared
+  // field name that these two types do not have.
+  const ordered = useMemo(() => {
+    if (followedFilterActive || followedCategoryIds.size === 0) return searchFiltered;
+    return partitionByFollowed(
+      searchFiltered.map((e) => ({ ...e, category: e.categoryId })),
+      followedCategoryIds,
+    );
+  }, [searchFiltered, followedFilterActive, followedCategoryIds]);
+
   // Unique event kinds for filter chips
   const availableKinds = useMemo(
     () => Array.from(new Set(events.map((e) => e.kind))).filter(Boolean),
@@ -144,12 +164,14 @@ function EventsScreen() {
   );
 
   const filteredUpcoming = useMemo(
-    () => searchFiltered.filter((e) => parseEventDate(e.date, e.time) >= now),
-    [searchFiltered, now],
+    () => ordered.filter((e) => parseEventDate(e.date, e.time) >= now),
+    [ordered, now],
   );
+  // Past events are ordered too, so the two lists agree about what comes
+  // first. Ordering one and not the other reads as a bug.
   const filteredPast = useMemo(
-    () => searchFiltered.filter((e) => parseEventDate(e.date, e.time) < now),
-    [searchFiltered, now],
+    () => ordered.filter((e) => parseEventDate(e.date, e.time) < now),
+    [ordered, now],
   );
 
   const handleRefresh = useCallback(async () => {
