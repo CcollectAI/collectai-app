@@ -46,6 +46,7 @@ import { getCategoryByName, getCategoryById } from "@/data/categories";
 import { type ItemRow } from "@/components/home/TopItemsList";
 import { usePortfolioInsights } from "@/hooks/usePortfolioInsights";
 import { useHasEverHadItems } from "@/hooks/useHasEverHadItems";
+import { StartCollectingCard } from "@/components/home/StartCollectingCard";
 import { useAlertsFeed } from "@/hooks/useAlertsFeed";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
@@ -615,6 +616,12 @@ function PortfolioScreen() {
             </AnimatedPressable>
           </View>
         </View>
+
+        {/* Beginner entry point. Renders itself away unless skill_level is
+            literally 'beginner' and a guide exists to open — see the component.
+            Above the first-item hero because "what should I even buy" comes
+            before "photograph the thing you bought". */}
+        <StartCollectingCard />
 
         {/* First-item hero ONLY for a genuinely-new collection (confirmed never
             had items), else the Collection value + chart. Keyed on the persisted

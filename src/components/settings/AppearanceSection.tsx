@@ -15,7 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings, REGION_DEFAULTS } from '@/lib/settings';
-import type { Region, Currency, LanguagePreference } from '@/lib/settings';
+import type { Region, Currency, LanguagePreference, SkillLevel } from '@/lib/settings';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { AnimatedPressable } from '@/motion';
 import { updateUserSettings } from '@/api/settingsApi';
@@ -23,6 +23,15 @@ import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import { useTranslation } from 'react-i18next';
+
+/** Same three values as the onboarding step, VALID_SKILL_LEVELS on the server,
+ *  and the CHECK behind it. Labels talk about TIME SPENT rather than expertise
+ *  — people under-rate themselves when asked how good they are. */
+const SKILL_OPTIONS: { value: SkillLevel; label: string }[] = [
+  { value: 'beginner', label: 'Just starting' },
+  { value: 'intermediate', label: 'A while now' },
+  { value: 'advanced', label: 'Years of it' },
+];
 
 const REGION_OPTIONS: { value: Region; label: string }[] = [
   { value: 'americas', label: 'Americas' },
@@ -53,8 +62,29 @@ function AppearanceSectionInner() {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation();
   const [regionPickerVisible, setRegionPickerVisible] = useState(false);
+  const [skillPickerVisible, setSkillPickerVisible] = useState(false);
   const [currencyPickerVisible, setCurrencyPickerVisible] = useState(false);
   const [languagePickerVisible, setLanguagePickerVisible] = useState(false);
+
+  /**
+   * Skill level was answerable exactly once, at onboarding, and read nowhere
+   * else — so a member who picked "just starting" carried a beginner banner on
+   * their home screen with no way to say they had moved on. Same local-first,
+   * fire-and-forget shape as region.
+   */
+  const handleSkillChange = async (level: SkillLevel) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    updateSettings({ skillLevel: level });
+    setSkillPickerVisible(false);
+    try {
+      const auth = await supabase.auth.getSession();
+      if (auth.data?.session) {
+        await updateUserSettings({ skill_level: level });
+      }
+    } catch (e) {
+      logger.error('[settings] skill level persist failed:', e);
+    }
+  };
 
   const handleRegionChange = async (region: Region) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -105,6 +135,26 @@ function AppearanceSectionInner() {
           <Ionicons name="globe-outline" size={18} color={colors.accent} />
           <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.region_currency')}</Text>
         </View>
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => setSkillPickerVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Change how long you have been collecting"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Collecting experience</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>
+              {/* "Not set" is honest for the null case — it means never asked,
+                  and calling that "Just starting" would put words in the mouth
+                  of every member who onboarded before the question existed. */}
+              {SKILL_OPTIONS.find((o) => o.value === settings.skillLevel)?.label ?? 'Not set'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         <AnimatedPressable
           style={styles.settingRow}
@@ -216,6 +266,45 @@ function AppearanceSectionInner() {
           />
         </View>
       </View>
+
+      {/* Skill Picker Modal — mirrors the region one, including onRequestClose,
+          which Android's back button needs (a Modal without it is uncloseable
+          there; docs/ui-playbook.md). */}
+      <Modal
+        visible={skillPickerVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSkillPickerVisible(false)}
+      >
+        <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+            <TouchableOpacity onPress={() => setSkillPickerVisible(false)} accessibilityLabel="Close">
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>How long have you been collecting?</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          {SKILL_OPTIONS.map((opt) => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[
+                styles.pickerRow,
+                { borderBottomColor: colors.border },
+                opt.value === settings.skillLevel && { backgroundColor: colors.accent + '15' },
+              ]}
+              onPress={() => handleSkillChange(opt.value)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: opt.value === settings.skillLevel }}
+              accessibilityLabel={opt.label}
+            >
+              <Text style={[styles.pickerRowText, { color: colors.text }]}>{opt.label}</Text>
+              {opt.value === settings.skillLevel && (
+                <Ionicons name="checkmark" size={20} color={colors.accent} />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Modal>
 
       {/* Region Picker Modal */}
       <Modal
