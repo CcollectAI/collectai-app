@@ -88,7 +88,15 @@ _OFFER_COLUMNS = """
             -- offer, where "-5%" means "less than they already offered" — a
             -- button no seller would ever press. The client must not guess a
             -- reference price it does not hold.
-            l.price AS listing_price
+            l.price AS listing_price,
+            -- Recipient postcode + country, for the carriers whose tracking URL
+            -- needs them (PostNL). NULL until the buyer supplies an address, and
+            -- `_tracking_url` then returns None rather than a half-built link,
+            -- which is the same copyable-code fallback as before addresses
+            -- existed. Every query using this list joins p2p_offer_addresses —
+            -- verified, all four — so adding it here cannot orphan a caller.
+            a.postcode AS delivery_postcode,
+            a.country AS delivery_country
 """
 
 # Carrier key -> (display label, tracking URL template or None).
@@ -107,7 +115,13 @@ _OFFER_COLUMNS = """
 # docs/P2P_MARKETPLACE_SPEC.md.
 _CARRIER_TRACKING: dict[str, tuple[str, Optional[str]]] = {
     # NL/BE first — that is where ships_from concentrates.
-    "postnl":      ("PostNL", None),          # needs recipient postcode
+    # PostNL's public page takes barcode-COUNTRY-POSTCODE. It was `None` for as
+    # long as we held no address; `_tracking_url` now passes one when the buyer
+    # has supplied it, and still falls back to a copyable code when they have
+    # not. DPD stays None: its consumer URL also wants a postcode but the format
+    # is not documented well enough to guess, and a guessed link 404s at the
+    # worst possible moment.
+    "postnl":      ("PostNL", "https://jouw.postnl.nl/track-and-trace/{code}-{country}-{postcode}"),
     "dpd":         ("DPD", None),             # needs recipient postcode
     "gls":         ("GLS", None),             # no stable code-only public URL
     "bpost":       ("bpost", None),
@@ -158,19 +172,38 @@ _CARRIER_BOOKING: dict[str, tuple[Optional[str], tuple[str, ...]]] = {
 }
 
 
-def _tracking_url(carrier: Optional[str], code: Optional[str]) -> Optional[str]:
-    """Resolve a carrier + code to the CARRIER's own tracking page, or None.
+def _tracking_url(
+    carrier: Optional[str],
+    code: Optional[str],
+    *,
+    postcode: Optional[str] = None,
+    country: Optional[str] = None,
+) -> Optional[str]:
+    """The carrier's own tracking page, or None when we cannot build a real one.
 
-    Returns None for an unknown carrier as well as a known-but-unlinkable one,
-    so a carrier key that predates a registry entry degrades to a copyable code
-    rather than to a broken link.
+    Some carriers need the RECIPIENT's postcode in the URL. Those templates
+    carry `{postcode}`/`{country}` and are only usable once the buyer has given
+    a delivery address for this trade — before that we return None, and the
+    client renders a copyable code with "search this on the carrier's site",
+    exactly as it did when we held no addresses at all.
+
+    Returning a half-built URL would be the worse failure: it looks tappable and
+    lands on a 404, which reads as "Sparrow lost my parcel".
     """
     if not carrier or not code:
         return None
     entry = _CARRIER_TRACKING.get(carrier)
     if entry is None or entry[1] is None:
         return None
-    return entry[1].format(code=quote(code, safe=""))
+    template = entry[1]
+    needs_postcode = "{postcode}" in template
+    if needs_postcode and not (postcode and country):
+        return None
+    return template.format(
+        code=quote(code, safe=""),
+        postcode=quote((postcode or "").replace(" ", ""), safe=""),
+        country=quote((country or "").upper(), safe=""),
+    )
 
 
 def _carrier_label(carrier: Optional[str]) -> Optional[str]:
@@ -739,7 +772,17 @@ def _row_to_offer(r, me: str) -> OfferOut:
         tracking_carrier_label=_carrier_label(r["tracking_carrier"]),
         tracking_code=r["tracking_code"],
         tracking_set_at=r["tracking_set_at"],
-        tracking_url=_tracking_url(r["tracking_carrier"], r["tracking_code"]),
+        # Address columns are read OPTIONALLY: a query that joins
+        # p2p_offer_addresses yields a real PostNL link, one that does not
+        # yields None and the client shows a copyable code. That is the same
+        # fallback that existed when we held no addresses at all, so no query
+        # becomes wrong by not joining — it just gets the older behaviour.
+        tracking_url=_tracking_url(
+            r["tracking_carrier"],
+            r["tracking_code"],
+            postcode=_row_opt(r, "delivery_postcode"),
+            country=_row_opt(r, "delivery_country"),
+        ),
         i_am_buyer=is_buyer,
         # You may confirm once accepted and until you personally have.
         can_confirm=r["status"] in (_ACCEPTED, _SHIPPED) and mine_confirmed is None,
@@ -871,6 +914,7 @@ async def list_offers(
                    ) AS already_graded
             FROM public.p2p_offers o
             LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
+            LEFT JOIN public.p2p_offer_addresses a ON a.offer_id = o.id
             WHERE (o.buyer_id = $1::uuid OR o.seller_id = $1::uuid)
               AND ($2 = 'all'
                    OR ($2 = 'buying'  AND o.buyer_id  = $1::uuid)
@@ -945,9 +989,11 @@ async def respond_to_offer(
     async with pool.acquire() as conn:
         o = await conn.fetchrow(
             """
-            SELECT o.*, l.listing_title
+            SELECT o.*, l.listing_title,
+                   a.postcode AS delivery_postcode, a.country AS delivery_country
             FROM public.p2p_offers o
             LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
+            LEFT JOIN public.p2p_offer_addresses a ON a.offer_id = o.id
             WHERE o.id = $1::uuid
             """,
             offer_id,
@@ -1042,6 +1088,7 @@ async def respond_to_offer(
             SELECT {_OFFER_COLUMNS}
             FROM public.p2p_offers o
             LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
+            LEFT JOIN public.p2p_offer_addresses a ON a.offer_id = o.id
             WHERE o.id = $1::uuid
             """,
             offer_id,
@@ -1231,6 +1278,33 @@ class PaymentRailsOut(BaseModel):
     disclaimer: str
 
 
+class DeliveryAddressIn(BaseModel):
+    """Where the parcel goes. Supplied by the BUYER, for one trade.
+
+    Built for Europe and the US, which differ in one field: `state` is required
+    for US addresses and absent from most European ones. Validated in the
+    router rather than as a CHECK, because baking one country's postal grammar
+    into the schema is how the next country becomes a migration.
+    """
+    recipient_name: str = Field(..., min_length=2, max_length=120)
+    line1: str = Field(..., min_length=2, max_length=200)
+    line2: Optional[str] = Field(None, max_length=200)
+    postcode: str = Field(..., min_length=2, max_length=16)
+    city: str = Field(..., min_length=1, max_length=120)
+    state: Optional[str] = Field(None, max_length=64)
+    country: str = Field(..., min_length=2, max_length=2, pattern=r"^[A-Za-z]{2}$")
+
+
+class DeliveryAddressOut(BaseModel):
+    recipient_name: str
+    line1: str
+    line2: Optional[str] = None
+    postcode: str
+    city: str
+    state: Optional[str] = None
+    country: str
+
+
 class PaymentHandleIn(BaseModel):
     rail_key: str = Field(..., min_length=2, max_length=32)
     #: Empty string deletes. A member removing their PayPal handle should not
@@ -1241,6 +1315,108 @@ class PaymentHandleIn(BaseModel):
 class PaymentHandleOut(BaseModel):
     rail_key: str
     handle: str
+
+
+async def _offer_for_address(pool, offer_id: str):
+    return await pool.fetchrow(
+        "SELECT buyer_id, seller_id, status FROM public.p2p_offers WHERE id = $1::uuid",
+        offer_id,
+    )
+
+
+@router.put("/offers/{offer_id}/address", response_model=DeliveryAddressOut,
+            summary="Buyer supplies the delivery address for an accepted trade")
+async def set_delivery_address(
+    offer_id: str,
+    payload: DeliveryAddressIn,
+    user_id: str = Depends(get_current_user_id),
+) -> DeliveryAddressOut:
+    """Buyer-only, and only once the trade is live.
+
+    Gated on `accepted`/`shipped` deliberately: §5a permits handing addresses
+    between parties **after `accepted`**, and collecting one earlier would mean
+    holding a home address for a trade that may never happen. A pending offer is
+    a conversation, not a shipment.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+
+    offer = await _offer_for_address(pool, offer_id)
+    if offer is None:
+        raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
+    if str(offer["buyer_id"]) != str(user_id):
+        # The SELLER cannot write the buyer's address. Obvious, and worth
+        # enforcing: this is the one endpoint where the wrong actor writing
+        # would send someone else's parcel somewhere.
+        raise error_response(403, "Only the buyer sets the delivery address", code="NOT_BUYER")
+    if offer["status"] not in (_ACCEPTED, _SHIPPED):
+        raise error_response(
+            409,
+            "Add the delivery address once the seller has accepted.",
+            code="OFFER_NOT_LIVE",
+        )
+
+    country = payload.country.upper()
+    state = (payload.state or "").strip() or None
+    if country == "US" and not state:
+        # A US parcel without a state is undeliverable. Rejecting here beats a
+        # carrier rejecting it after the seller has paid for postage.
+        raise error_response(400, "US addresses need a state.", code="STATE_REQUIRED")
+
+    row = await pool.fetchrow(
+        """
+        INSERT INTO public.p2p_offer_addresses
+            (offer_id, buyer_id, recipient_name, line1, line2, postcode, city, state, country)
+        VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9)
+        ON CONFLICT (offer_id) DO UPDATE SET
+            recipient_name = EXCLUDED.recipient_name,
+            line1 = EXCLUDED.line1, line2 = EXCLUDED.line2,
+            postcode = EXCLUDED.postcode, city = EXCLUDED.city,
+            state = EXCLUDED.state, country = EXCLUDED.country,
+            updated_at = now()
+        RETURNING recipient_name, line1, line2, postcode, city, state, country
+        """,
+        offer_id, user_id, payload.recipient_name.strip(), payload.line1.strip(),
+        (payload.line2 or "").strip() or None, payload.postcode.strip(),
+        payload.city.strip(), state, country,
+    )
+    return DeliveryAddressOut(**dict(row))
+
+
+@router.get("/offers/{offer_id}/address", response_model=Optional[DeliveryAddressOut],
+            summary="The delivery address for a trade — buyer or seller")
+async def get_delivery_address(
+    offer_id: str,
+    user_id: str = Depends(get_current_user_id),
+) -> Optional[DeliveryAddressOut]:
+    """Both parties of a LIVE trade, nobody else.
+
+    This is the only path by which a seller sees the address: the table is
+    buyer-only under RLS. Returns null rather than 404 when none has been
+    supplied yet — "not given" is a normal state the seller has to be able to
+    see, so they know to ask.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return None
+    offer = await _offer_for_address(pool, offer_id)
+    if offer is None:
+        raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
+    me = str(user_id)
+    if me not in (str(offer["buyer_id"]), str(offer["seller_id"])):
+        raise error_response(403, "Not your trade", code="NOT_A_PARTY")
+    # The SELLER only sees it once the trade is live. The buyer always sees
+    # their own, so they can review what they gave.
+    if me == str(offer["seller_id"]) and offer["status"] not in (_ACCEPTED, _SHIPPED):
+        raise error_response(403, "Not your trade", code="NOT_A_PARTY")
+
+    row = await pool.fetchrow(
+        "SELECT recipient_name, line1, line2, postcode, city, state, country "
+        "FROM public.p2p_offer_addresses WHERE offer_id = $1::uuid",
+        offer_id,
+    )
+    return DeliveryAddressOut(**dict(row)) if row else None
 
 
 @router.get("/payment-handles", response_model=List[PaymentHandleOut],
@@ -1460,6 +1636,7 @@ async def set_tracking(
             SELECT {_OFFER_COLUMNS}
             FROM public.p2p_offers o
             LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
+            LEFT JOIN public.p2p_offer_addresses a ON a.offer_id = o.id
             WHERE o.id = $1::uuid
             """,
             offer_id,
@@ -1512,6 +1689,7 @@ async def confirm_exchange(
             SELECT {_OFFER_COLUMNS}
             FROM public.p2p_offers o
             LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
+            LEFT JOIN public.p2p_offer_addresses a ON a.offer_id = o.id
             WHERE o.id = $1::uuid
             """,
             offer_id,

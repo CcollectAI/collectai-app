@@ -378,6 +378,19 @@ export type P2PPaymentRail = {
 
 export type P2PPaymentHandle = { rail_key: string; handle: string };
 
+/** Where the parcel goes, for ONE trade. Built for Europe and the US: `state`
+ *  is required for US addresses and absent from most European ones. */
+export type P2PDeliveryAddress = {
+  recipient_name: string;
+  line1: string;
+  line2?: string | null;
+  postcode: string;
+  city: string;
+  state?: string | null;
+  /** ISO 3166-1 alpha-2. */
+  country: string;
+};
+
 export type P2PPaymentRailsResponse = {
   region: string;
   rails: P2PPaymentRail[];
@@ -434,6 +447,21 @@ export const listPaymentRails = (opts?: { region?: string; offerId?: string }) =
 /** The caller's OWN handles. There is deliberately no endpoint that returns
  *  someone else's — the server reads a seller's handle only to build a link. */
 export const listPaymentHandles = () => get<P2PPaymentHandle[]>('/p2p/payment-handles');
+
+/** Buyer only, and only once the seller has accepted — §5a permits handing
+ *  addresses over AFTER `accepted`, and collecting one earlier would mean
+ *  holding a home address for a trade that may never happen. */
+export const setDeliveryAddress = (offerId: string, address: P2PDeliveryAddress) =>
+  put<P2PDeliveryAddress>(
+    `/p2p/offers/${encodeURIComponent(offerId)}/address`,
+    address as unknown as Record<string, unknown>,
+  );
+
+/** Either party of a live trade. Resolves to null when none has been given —
+ *  "not supplied yet" is a state the seller must be able to see, so they know
+ *  to ask, and is deliberately not a 404. */
+export const getDeliveryAddress = (offerId: string) =>
+  get<P2PDeliveryAddress | null>(`/p2p/offers/${encodeURIComponent(offerId)}/address`);
 
 /** Empty `handle` clears it. */
 export const setPaymentHandle = (railKey: string, handle: string) =>

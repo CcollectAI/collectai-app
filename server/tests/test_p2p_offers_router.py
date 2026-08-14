@@ -22,10 +22,15 @@ only asserting the fixed state.
 """
 import inspect
 import os
+import re
 import sys
 from pathlib import Path
 
 import pytest
+
+#: The literal that ends an inline SQL block, named so this file can talk
+#: about it without nesting quote styles.
+TRIPLE_QUOTE = chr(34) * 3
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -115,7 +120,15 @@ def test_every_p2p_offers_query_feeding_the_serializer_has_tracking():
     src = _code_only(inspect.getsource(p2p))
     offenders = []
     seen_centralised = 0
-    for chunk in src.split("await conn."):
+    # Split on BOTH accessors. Splitting only on `await conn.` left every
+    # `await pool.` query unchunked, so its text bled into whichever
+    # conn-chunk happened to surround it — and a chunk carrying `p2p_offers`
+    # from one query and `RETURNING` from an unrelated neighbour was reported
+    # as an offender that did not exist. Found when the delivery-address
+    # endpoints (pool-based, and against p2p_offer_addresses) made the DAC7
+    # chunk fail. Splitting on both isolates each query, which makes this
+    # sweep stricter, not looser.
+    for chunk in re.split(r"await (?:conn|pool)\.", src):
         if "p2p_offers" not in chunk:
             continue
         # Interpolates the shared list — its contents are pinned by
@@ -127,6 +140,21 @@ def test_every_p2p_offers_query_feeding_the_serializer_has_tracking():
         # SELECT * / o.* carry every column already; the narrow guard queries
         # (SELECT 1, SELECT seller_id …) never reach the serializer.
         if "SELECT *" in chunk or "SELECT o.*" in chunk or "RETURNING" not in chunk:
+            continue
+        # A RETURNING that does not include `id` CANNOT feed the serializer —
+        # `_row_to_offer` opens with `str(r["id"])`, so such a row would fail on
+        # its first line, loudly, in any test that touched it.
+        #
+        # This is why the sweep was red on a false positive: the auto-decline of
+        # rival offers does `RETURNING buyer_id, amount, currency` and its result
+        # is consumed by a notify loop reading exactly those three. Demanding
+        # tracking columns there would add five columns nothing reads. Narrowing
+        # on `id` keeps every real serializer feed in scope, because each one
+        # selects it.
+        returning = chunk.split("RETURNING", 1)[1]
+        head = returning.split(TRIPLE_QUOTE)[0]
+        cols = {c.strip().split(".")[-1] for c in head.split(",")}
+        if "id" not in cols:
             continue
         if not all(c in chunk for c in TRACKING_COLUMNS):
             offenders.append(chunk.strip()[:120])

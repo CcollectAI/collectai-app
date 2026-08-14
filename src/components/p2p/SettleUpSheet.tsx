@@ -28,7 +28,7 @@
  * package is a silent no-op on both platforms.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Linking, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { BottomSheetModal } from '@/components/BottomSheetModal';
@@ -36,7 +36,8 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { collectorsApi } from '@/api/collectorsApi';
 import { useSettings } from '@/lib/settings';
-import type { P2PCarrier, P2PPaymentRail } from '@/api/p2pApi';
+import { useToast } from '@/components/Toast';
+import type { P2PCarrier, P2PPaymentRail, P2PDeliveryAddress } from '@/api/p2pApi';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import { logger } from '@/lib/logger';
 
@@ -54,12 +55,27 @@ type SheetColors = {
   [key: string]: unknown;
 };
 
+/** A blank address, so the first keystroke in any field has a shape to land in
+ *  rather than spreading over undefined. */
+const EMPTY_ADDRESS: P2PDeliveryAddress = {
+  recipient_name: '',
+  line1: '',
+  line2: null,
+  postcode: '',
+  city: '',
+  state: null,
+  country: '',
+};
+
 type Props = {
   visible: boolean;
   onClose: () => void;
   /** Buyers get rails, sellers get carriers. A member is usually both across
    *  trades, but never on the same one. */
   mode: 'pay' | 'ship';
+  /** `ship` mode shows the seller where the parcel goes; `pay` mode lets the
+   *  buyer supply it. Same sheet, opposite sides of one handover. */
+  isBuyer?: boolean;
   /** Already formatted — this component never formats money. */
   amountLabel: string;
   /** The trade being settled. Passing it lets the server resolve the SELLER's
@@ -81,11 +97,12 @@ function openUrl(url: string) {
   }
 }
 
-export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, colors }: Props) {
+export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, isBuyer, colors }: Props) {
   // The payment side resolves region SERVER-side from user_settings; the
   // carrier list is one flat table, so the filtering happens here. Same region
   // value either way.
   const { settings } = useSettings();
+  const { showToast } = useToast();
   const [rails, setRails] = useState<P2PPaymentRail[] | null>(null);
   const [carriers, setCarriers] = useState<P2PCarrier[] | null>(null);
   const [disclaimer, setDisclaimer] = useState<string>('');
@@ -93,6 +110,13 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, co
   // only track the array (docs/ui-playbook.md).
   const [state, setState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
   const [retryNonce, setRetryNonce] = useState(0);
+
+  // The delivery address. Buyer edits it, seller reads it. Null = not supplied
+  // yet, which the seller has to be able to SEE so they know to ask — hence a
+  // null result rather than a 404 from the endpoint.
+  const [address, setAddress] = useState<P2PDeliveryAddress | null>(null);
+  const [draft, setDraft] = useState<P2PDeliveryAddress | null>(null);
+  const [savingAddress, setSavingAddress] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -130,6 +154,63 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, co
     return () => { cancelled = true; };
   }, [visible, mode, retryNonce, settings.region, offerId]);
 
+  // Address is fetched for BOTH modes: the seller needs to read it, the buyer
+  // needs to see what they already gave rather than retyping it.
+  useEffect(() => {
+    if (!visible || !offerId) return;
+    let cancelled = false;
+    collectorsApi
+      .p2pGetDeliveryAddress(offerId)
+      .then((a) => {
+        if (cancelled) return;
+        setAddress(a ?? null);
+        setDraft(a ?? null);
+      })
+      .catch((e) => {
+        // Not fatal: the rest of the sheet still works. logger.error because
+        // warn is stripped in release.
+        logger.error('[settleUp] address load failed:', e);
+      });
+    return () => { cancelled = true; };
+  }, [visible, offerId]);
+
+  const saveAddress = useCallback(async () => {
+    if (!offerId || !draft) return;
+    setSavingAddress(true);
+    try {
+      const saved = await collectorsApi.p2pSetDeliveryAddress(offerId, draft);
+      setAddress(saved);
+      setDraft(saved);
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: true });
+      showToast({ message: 'Delivery address saved', type: 'success' });
+    } catch (e: unknown) {
+      // Surface the server's message — "US addresses need a state" is
+      // actionable in a way a generic failure is not.
+      logger.error('[settleUp] address save failed:', e);
+      showToast({ message: (e as Error)?.message || "Couldn't save that", type: 'error' });
+    } finally {
+      setSavingAddress(false);
+    }
+  }, [offerId, draft, showToast]);
+
+  const field = useCallback(
+    (key: keyof P2PDeliveryAddress, placeholder: string, extra?: object) => (
+      <TextInput
+        key={key}
+        value={(draft?.[key] as string) ?? ''}
+        onChangeText={(v) =>
+          setDraft((prev) => ({ ...(prev ?? EMPTY_ADDRESS), [key]: v }))
+        }
+        placeholder={placeholder}
+        placeholderTextColor={colors.muted}
+        style={[styles.addrInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
+        accessibilityLabel={placeholder}
+        {...extra}
+      />
+    ),
+    [draft, colors],
+  );
+
   const reversibilityLabel = useCallback((r: P2PPaymentRail): string => {
     if (r.reversible === true) return 'Has a dispute route';
     if (r.reversible === false) return 'No chargeback once sent';
@@ -157,6 +238,65 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, co
             <Text selectable style={[styles.amountValue, { color: colors.text }]}>
               {amountLabel}
             </Text>
+          </View>
+        ) : null}
+
+        {mode === 'ship' ? (
+          <View style={[styles.addrBox, { borderColor: colors.border }]}>
+            <Text style={[styles.addrCaption, { color: colors.muted }]}>Deliver to</Text>
+            {address ? (
+              // Selectable so it can be pasted into the carrier's own booking
+              // form — expo-clipboard is not installed, and a guarded require
+              // of a missing package no-ops silently on both platforms.
+              <Text selectable style={[styles.addrText, { color: colors.text }]}>
+                {[
+                  address.recipient_name,
+                  address.line1,
+                  address.line2,
+                  [address.postcode, address.city].filter(Boolean).join(' '),
+                  address.state,
+                  address.country,
+                ].filter(Boolean).join('\n')}
+              </Text>
+            ) : (
+              // "Not given yet" is a real state, not an error — say so, so the
+              // seller knows to ask rather than assuming the app lost it.
+              <Text style={[styles.hint, { color: colors.muted }]}>
+                The buyer hasn&apos;t added a delivery address yet. Ask them in chat —
+                you need it before you can book.
+              </Text>
+            )}
+          </View>
+        ) : null}
+
+        {mode === 'pay' && isBuyer && offerId ? (
+          <View style={[styles.addrBox, { borderColor: colors.border }]}>
+            <Text style={[styles.addrCaption, { color: colors.muted }]}>Delivery address</Text>
+            <Text style={[styles.hint, { color: colors.muted }]}>
+              Shared with this seller only, for this trade. Sparrow doesn&apos;t book
+              or insure the shipment.
+            </Text>
+            {field('recipient_name', 'Full name')}
+            {field('line1', 'Address')}
+            {field('line2', 'Apartment, floor (optional)')}
+            {field('postcode', 'Postcode / ZIP', { autoCapitalize: 'characters' })}
+            {field('city', 'City')}
+            {/* Shown always, required only for the US — the server rejects a US
+                address without one, because a US parcel without a state is
+                undeliverable. */}
+            {field('state', 'State / province (US: required)')}
+            {field('country', 'Country code, e.g. NL or US', { autoCapitalize: 'characters', maxLength: 2 })}
+            <AnimatedPressable
+              onPress={saveAddress}
+              disabled={savingAddress}
+              style={[styles.addrSave, { backgroundColor: colors.accent }]}
+              accessibilityRole="button"
+              accessibilityLabel="Save the delivery address"
+            >
+              <Text style={[styles.addrSaveText, { color: colors.accentText }]}>
+                {savingAddress ? 'Saving…' : address ? 'Update address' : 'Save address'}
+              </Text>
+            </AnimatedPressable>
           </View>
         ) : null}
 
@@ -262,6 +402,26 @@ const styles = StyleSheet.create({
   },
   amountValue: { fontSize: textToken.xl, fontWeight: fontWeight.extrabold, marginTop: 2 },
   hint: { fontSize: textToken.md, lineHeight: 20 },
+  addrBox: {
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
+    padding: 12, gap: 8,
+  },
+  addrCaption: {
+    fontSize: textToken.sm, fontWeight: fontWeight.bold,
+    textTransform: 'uppercase', letterSpacing: 0.6,
+  },
+  addrText: { fontSize: textToken.md, lineHeight: 21 },
+  addrInput: {
+    borderWidth: 1, borderRadius: radius.sm,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: textToken.md,
+  },
+  // paddingHorizontal is not optional on a content-sized button — see the
+  // listing screen's primaryBtn, where omitting it put the label flush.
+  addrSave: {
+    marginTop: 2, paddingHorizontal: 20, paddingVertical: 11,
+    borderRadius: radius.md, alignItems: 'center',
+  },
+  addrSaveText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
   link: { fontSize: textToken.md, fontWeight: fontWeight.bold },
   errorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   row: {

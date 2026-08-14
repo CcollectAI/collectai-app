@@ -1363,3 +1363,64 @@ directly. europe gets 10 carriers, americas 5, the rest the global integrators.
 without it, the client filters every one out, and the ship sheet renders its
 empty state. That is honest but reads as a bug — deploy the server before the
 build that shows this sheet.
+
+## 5d. The logistics half — delivery address, EU and US (2026-08-14)
+
+The counterpart of the payment handle. Payments needed the seller's handle
+before a link could carry the amount; carriage needs the buyer's address before
+a shipment can be booked at all.
+
+`p2p_offer_addresses` (migration 20260814b), **per offer, not per user**. An
+address is given for one trade with one person and dies with it: cascade from
+`p2p_offers` on trade deletion, cascade from `auth.users` on account deletion.
+A reusable address book would keep home addresses alive indefinitely for a
+feature that needs them for a week. Before this table the app held no postal
+address anywhere — the only address-shaped column in `public` was
+`beta_signups.ip_address`.
+
+| Endpoint | Who |
+|---|---|
+| `PUT /p2p/offers/{id}/address` | **Buyer only**, and only once `accepted` — §5a permits handing addresses over *after* acceptance, and collecting one earlier means holding a home address for a trade that may never happen |
+| `GET /p2p/offers/{id}/address` | Either party of a live trade. This is the ONLY path by which a seller sees it; the table is buyer-only under RLS |
+
+**EU and US differ in exactly one field.** `state` is required for the US and
+absent from most of Europe, enforced in the router rather than as a CHECK —
+baking one country's postal grammar into the schema is how the next country
+becomes a migration. A US address without a state is rejected at write time,
+because a carrier rejecting it after the seller has bought postage is worse.
+
+### What this unlocks: PostNL tracking
+
+`_CARRIER_TRACKING["postnl"]` was `None` for one reason — its public page takes
+`barcode-COUNTRY-POSTCODE` and we held no postcode. With an address, the link
+builds. `_tracking_url` takes optional `postcode`/`country` and returns **None**
+when a template needs them and they are absent, so the client falls back to the
+copyable code exactly as before. A half-built URL is the worse failure: it looks
+tappable and 404s, which reads as "Sparrow lost my parcel".
+
+DPD stays `None` deliberately — it also wants a postcode, but its consumer URL
+format is not documented well enough to guess, and the payment-rails rule
+applies: a guessed format 404s at the worst possible moment.
+
+Every query feeding `_row_to_offer` now joins the address and selects
+`delivery_postcode` / `delivery_country` through the shared `_OFFER_COLUMNS`
+chokepoint — verified that all four users of that constant carry the join, so
+adding the columns there could not orphan a caller.
+
+### The sweep that had been red for months was a false positive
+
+`test_every_p2p_offers_query_feeding_the_serializer_has_tracking` failed on the
+rival-offer auto-decline: `RETURNING buyer_id, amount, currency`, consumed by a
+notify loop reading exactly those three. It never reaches the serializer, so
+demanding five tracking columns there would have added columns nothing reads.
+
+Two fixes, both making the sweep stricter:
+
+- **Split on `await conn.` AND `await pool.`.** Only conn was split, so every
+  pool query's text bled into a neighbouring chunk — which is how the new
+  address endpoints made an unrelated DAC7 chunk "fail".
+- **A `RETURNING` without `id` cannot feed `_row_to_offer`**, which opens with
+  `str(r["id"])`. Every real feed selects it.
+
+Proved by breaking it: dropping `tracking_set_at` from `_OFFER_COLUMNS` fails
+immediately.
