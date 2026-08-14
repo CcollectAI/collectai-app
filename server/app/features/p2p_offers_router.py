@@ -41,6 +41,7 @@ from app.lib.payment_rails import (
     REGIONS,
     PaymentRail,
     build_deep_link,
+    carries_amount,
     clean_handle,
     rails_for_region,
 )
@@ -1247,10 +1248,51 @@ async def dac7_status(
 
 @router.get("/carriers", response_model=List[CarrierOut],
             summary="Carriers the seller can pick when attaching tracking")
-async def list_carriers() -> List[CarrierOut]:
+async def list_carriers(
+    region: Optional[str] = Query(
+        None,
+        max_length=32,
+        description=(
+            "Filter to carriers serving a region. Omit to use the caller's "
+            "`user_settings.region`; pass `all` for the unfiltered list."
+        ),
+    ),
+    user_id: str = Depends(get_current_user_id),
+) -> List[CarrierOut]:
     """Served from `_CARRIER_TRACKING` so the picker cannot drift from the URL
     table. A hardcoded client list would let a seller choose a carrier the
-    server does not know, which silently degrades to a code with no link."""
+    server does not know, which silently degrades to a code with no link.
+
+    **Region resolves HERE, from `user_settings`.** The booking list used to be
+    filtered on the client against the DEVICE's settings, while
+    `/p2p/payment-rails` resolved region from the database — two sources for one
+    question, which drift the moment a member changes region on another device.
+    One source, server-side, for both halves of settle-up.
+
+    `region=all` is the escape hatch, and the tracking picker uses it: a seller
+    may legitimately ship with a carrier outside their own region, and hiding it
+    there would leave them unable to record a code they are holding.
+    """
+    resolved = (region or "").strip().lower()
+    if resolved != "all":
+        if not resolved:
+            pool = get_db_pool()
+            if pool is not None:
+                row = await pool.fetchrow(
+                    "SELECT region FROM public.user_settings WHERE user_id = $1::uuid",
+                    user_id,
+                )
+                resolved = ((row or {}).get("region") or "").strip().lower()
+        if resolved not in REGIONS:
+            # Unknown region filters nothing rather than everything. An empty
+            # carrier list reads as "Sparrow does not ship where I live".
+            resolved = "all"
+
+    def serves(key: str) -> bool:
+        if resolved == "all":
+            return True
+        return resolved in _CARRIER_BOOKING.get(key, (None, ()))[1]
+
     return [
         CarrierOut(
             key=k,
@@ -1260,6 +1302,7 @@ async def list_carriers() -> List[CarrierOut]:
             regions=list(_CARRIER_BOOKING.get(k, (None, ()))[1]),
         )
         for k, (label, url) in _CARRIER_TRACKING.items()
+        if serves(k)
     ]
 
 
@@ -1330,6 +1373,7 @@ async def set_delivery_address(
     offer_id: str,
     payload: DeliveryAddressIn,
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_offer_limit),
 ) -> DeliveryAddressOut:
     """Buyer-only, and only once the trade is live.
 
@@ -1441,6 +1485,10 @@ async def list_payment_handles(
 async def set_payment_handle(
     payload: PaymentHandleIn,
     user_id: str = Depends(get_current_user_id),
+    # Every other write in this router carries a limit; these two shipped
+    # without one. A handle write is cheap, but an unbounded write endpoint is
+    # a free amplifier and the inconsistency is the kind that survives review.
+    _rl=Depends(_offer_limit),
 ) -> List[PaymentHandleOut]:
     """Store a PUBLIC identifier a buyer could already be given in chat.
 
@@ -1564,8 +1612,15 @@ async def list_payment_rails(
                 }
                 amount = float(offer["amount"] or 0)
                 currency = offer["currency"] or "EUR"
+                # A reference the seller can recognise. Short, and it names the
+                # item rather than the offer id, because the seller reads this
+                # in their banking app next to two other payments.
+                note = f"Sparrow {str(offer_id)[:8]}"
                 for r in rails:
-                    r.pay_url = build_deep_link(r, handles.get(r.key), amount, currency)
+                    r.pay_url = build_deep_link(
+                        r, handles.get(r.key), amount, currency, note=note,
+                    )
+                    r.pay_url_has_amount = bool(r.pay_url) and carries_amount(r)
 
     return PaymentRailsOut(
         region=resolved,

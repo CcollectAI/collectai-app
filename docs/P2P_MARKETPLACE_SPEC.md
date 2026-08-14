@@ -1311,7 +1311,7 @@ buttons, and Decline fired instantly.
 `OfferAmountSheet` was NOT rebuilt — it already does percentage+money presets
 with a bounded custom field.
 
-## 5c. Settle-up handoff — payment and carriage, by region (2026-08-14)
+## 5e. Settle-up handoff — payment and carriage, by region (2026-08-14)
 
 Both halves of finishing a trade now link OUT. Sparrow is a directory in each
 and a participant in neither, which is what keeps §5a's line intact.
@@ -1364,7 +1364,7 @@ without it, the client filters every one out, and the ship sheet renders its
 empty state. That is honest but reads as a bug — deploy the server before the
 build that shows this sheet.
 
-## 5d. The logistics half — delivery address, EU and US (2026-08-14)
+## 5f. The logistics half — delivery address, EU and US (2026-08-14)
 
 The counterpart of the payment handle. Payments needed the seller's handle
 before a link could carry the amount; carriage needs the buyer's address before
@@ -1424,3 +1424,51 @@ Two fixes, both making the sweep stricter:
 
 Proved by breaking it: dropping `tracking_set_at` from `_OFFER_COLUMNS` fails
 immediately.
+
+### 5e-bis. Two of the five payment links were invented (corrected 2026-08-14)
+
+The rails module's own rule — *"guessing a format produces a link that 404s at
+the worst moment"* — was written in the same commit that broke it. Checked
+against the providers' documentation afterwards:
+
+| Rail | What shipped | What is actually documented |
+|---|---|---|
+| PayPal | `paypal.com/paypalme/<h>/<amt><CUR>` | ✅ format right; `paypal.me` is the canonical domain |
+| Venmo | `venmo.com/<h>?txn=pay&amount=` | ✅ documented — **and `audience` defaults to PUBLIC** |
+| Revolut | `revolut.me/<h>/<amt><CUR>` | ❌ **invented.** Only `revolut.me/<tag>` exists; links are generated in-app |
+| Cash App | `cash.app/$<h>/<amt>` | ❌ **invented.** Only `cash.app/$<cashtag>` |
+| Wise | `wise.com/pay/me/<h>` | ✅ no amount, as documented |
+
+Revolut and Cash App now link to the person and nothing more. The buyer types
+the figure, which is what they did before any of this existed.
+
+**`audience=private` on Venmo is the find that matters.** Venmo posts payments
+to a social feed and defaults to public, so a prefilled link would have
+broadcast to the buyer's followers what they bought and from whom. A marketplace
+has no business making that public by omission.
+
+Three more corrections in the same pass:
+
+- **`pay_url_has_amount`**, because the client said "amount filled in" beside
+  every built link. For Revolut and Cash App that sent a buyer looking for a
+  figure that was never there.
+- **Zero-decimal currencies.** `f"{amount:.2f}"` renders JPY 1000 as `1000.00`,
+  which is a different number to a provider parsing the path. JPY and KRW —
+  exactly the two zero-decimal currencies the app supports — now format without
+  minor units.
+- **Rate limits.** Both new write endpoints shipped without the
+  `_rl=Depends(_offer_limit)` that every other write in the router carries.
+
+### 5f-bis. One question, one source: carrier region moved server-side
+
+`/p2p/payment-rails` resolved region from `user_settings` while the booking list
+was filtered on the CLIENT against device settings. Two sources for the same
+question, which diverge the moment a member changes region on another device.
+
+`/p2p/carriers` now takes `?region=`, defaults to `user_settings.region`, and
+filters server-side. An unknown region filters NOTHING rather than everything —
+an empty carrier list reads as "Sparrow does not ship where I live".
+
+`region=all` is the escape hatch and the tracking picker uses it: recording a
+code is a fact being entered, not a choice being made, and a seller who shipped
+with a carrier outside their region must still be able to type its number in.

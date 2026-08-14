@@ -210,7 +210,13 @@ function OffersScreen() {
     let settled = false;
     setCarriersState('loading');
     collectorsApi
-      .p2pListCarriers()
+      // 'all', deliberately: this is the picker for recording a code the
+      // seller is already holding. A member in the Netherlands may well have
+      // shipped with a carrier outside their region, and filtering here would
+      // leave them unable to enter the tracking they have in their hand. The
+      // BOOKING list is the one that filters, because that is a choice being
+      // made rather than a fact being recorded.
+      .p2pListCarriers('all')
       .then((list) => {
         settled = true;
         if (cancelled) return;

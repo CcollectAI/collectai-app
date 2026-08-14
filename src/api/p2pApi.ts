@@ -370,10 +370,15 @@ export type P2PPaymentRail = {
   /** What to ask the SELLER for. Null = this rail has no public identifier we
    *  can build a link from, so no handle is collected for it. */
   handle_label?: string | null;
-  /** The rail's own URL with the agreed amount already in it, built server-side
-   *  from the seller's handle. Null whenever one could not be built — fall back
-   *  to `url`. A half-substituted link is never sent. */
+  /** The rail's own URL, built server-side from the seller's handle. Null
+   *  whenever one could not be built — fall back to `url`. A half-substituted
+   *  link is never sent. */
   pay_url?: string | null;
+  /** True only when `pay_url` actually carries the figure. PayPal and Venmo
+   *  publish an amount-carrying format; Revolut and Cash App do not, so their
+   *  links land on the right person and the buyer types the amount. Never
+   *  promise "amount filled in" without this. */
+  pay_url_has_amount?: boolean;
 };
 
 export type P2PPaymentHandle = { rail_key: string; handle: string };
@@ -430,7 +435,12 @@ export const getDac7Status = () => get<Dac7Status>('/p2p/dac7/me');
 
 /** Carriers the seller may pick. Served from the server's `_CARRIER_TRACKING`
  *  so the picker cannot drift from the URL table that resolves the link. */
-export const listCarriers = () => get<P2PCarrier[]>('/p2p/carriers');
+/** Region is resolved SERVER-side from user_settings — do not filter the result
+ *  against device settings, which is a second source for the same question.
+ *  Pass 'all' for the tracking picker: a seller may ship with a carrier outside
+ *  their region and must still be able to record its code. */
+export const listCarriers = (region?: string) =>
+  get<P2PCarrier[]>(`/p2p/carriers${region ? `?region=${encodeURIComponent(region)}` : ''}`);
 
 /** Region comes from `user_settings` server-side unless overridden, so two
  *  members cannot see different lists because one has a stale build. */

@@ -130,18 +130,12 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
         })
       : collectorsApi.p2pListCarriers().then((list) => {
           if (cancelled) return;
-          // Two filters, and the region one is easy to forget: the server sends
-          // every carrier it knows, so without it a seller in the Netherlands
-          // is offered Australia Post. `regions` absent (an older server that
-          // predates the booking table) means we cannot tell — show it rather
-          // than hide a carrier that may be right.
-          setCarriers(
-            (list ?? []).filter(
-              (c) =>
-                !!c.book_url &&
-                (!c.regions?.length || c.regions.includes(settings.region)),
-            ),
-          );
+          // Region filtering happens SERVER-side now, from user_settings. It
+          // used to happen here against the DEVICE's settings, which is a
+          // second source for the same question and drifts the moment a member
+          // changes region on another device. All that is left is dropping
+          // carriers with no booking page — a row that cannot be acted on.
+          setCarriers((list ?? []).filter((c) => !!c.book_url));
         });
     load
       .then(() => { if (!cancelled) setState('ok'); })
@@ -152,7 +146,7 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
         if (!cancelled) setState('error');
       });
     return () => { cancelled = true; };
-  }, [visible, mode, retryNonce, settings.region, offerId]);
+  }, [visible, mode, retryNonce, offerId]);
 
   // Address is fetched for BOTH modes: the seller needs to read it, the buyer
   // needs to see what they already gave rather than retyping it.
@@ -341,7 +335,11 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
                 <Text style={[styles.rowTitle, { color: colors.text }]}>{r.label}</Text>
                 <Text style={[styles.rowMeta, { color: colors.muted }]}>
                   {r.coverage} · {reversibilityLabel(r)}
-                  {r.pay_url ? ' · amount filled in' : ''}
+                  {/* Only where the rail publishes an amount-carrying URL.
+                      Revolut and Cash App links open the right person and
+                      nothing more, and saying otherwise sends a buyer looking
+                      for a figure that was never there. */}
+                  {r.pay_url_has_amount ? ' · amount filled in' : ''}
                 </Text>
                 {r.note ? (
                   <Text style={[styles.rowNote, { color: colors.muted }]}>{r.note}</Text>

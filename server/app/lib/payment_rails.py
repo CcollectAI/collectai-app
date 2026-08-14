@@ -51,6 +51,7 @@ Apple: physical goods shipped between members are outside IAP — spec §5,
 from __future__ import annotations
 
 from typing import Optional
+from urllib.parse import quote_plus
 
 from pydantic import BaseModel
 
@@ -96,7 +97,9 @@ _GLOBAL: list[PaymentRail] = [
         reversible=None,
         note="Goods & Services is covered by PayPal's buyer protection. Friends & Family is not.",
         handle_label="PayPal.Me name",
-        deep_link_template="https://www.paypal.com/paypalme/{handle}/{amount}{currency}",
+        # DOCUMENTED: paypal.me/<user>/<amount><CUR> — PayPal's own help gives
+        # "PayPal.Me/DiaRusso/25AUD". The short domain is the canonical one.
+        deep_link_template="https://paypal.me/{handle}/{amount}{currency}",
     ),
     PaymentRail(
         key="wise",
@@ -122,7 +125,12 @@ _BY_REGION: dict[str, list[PaymentRail]] = {
         PaymentRail(key="revolut", label="Revolut", url="https://www.revolut.com/",
                     coverage="EEA and UK", reversible=False,
                     handle_label="Revolut tag (without @)",
-                    deep_link_template="https://revolut.me/{handle}/{amount}{currency}"),
+                    # revolut.me/<tag> is documented; an amount-carrying form is
+                    # NOT. Revolut generates payment links inside the app, so a
+                    # URL pattern is ours to guess — and this module's rule is
+                    # that a guessed format 404s at the worst moment. Lands on
+                    # the right person; the buyer types the figure.
+                    deep_link_template="https://revolut.me/{handle}"),
         PaymentRail(key="swish", label="Swish", url="https://www.swish.nu/",
                     coverage="Sweden", reversible=False),
         PaymentRail(key="tikkie", label="Tikkie", url="https://www.tikkie.me/",
@@ -133,17 +141,30 @@ _BY_REGION: dict[str, list[PaymentRail]] = {
         PaymentRail(key="cashapp", label="Cash App", url="https://cash.app/",
                     coverage="United States, United Kingdom", reversible=False,
                     handle_label="$Cashtag (without $)",
-                    deep_link_template="https://cash.app/${handle}/{amount}"),
+                    # cash.app/$<cashtag> is documented; the amount-in-path form
+                    # is not. Cash App generates request links in-app.
+                    deep_link_template="https://cash.app/${handle}"),
         PaymentRail(key="interac", label="Interac e-Transfer", url="https://www.interac.ca/",
                     coverage="Canada", reversible=False),
         PaymentRail(key="revolut", label="Revolut", url="https://www.revolut.com/",
                     coverage="United States and EEA", reversible=False,
                     handle_label="Revolut tag (without @)",
-                    deep_link_template="https://revolut.me/{handle}/{amount}{currency}"),
+                    # See the europe entry: no documented amount-carrying form.
+                    deep_link_template="https://revolut.me/{handle}"),
         PaymentRail(key="venmo", label="Venmo", url="https://venmo.com/",
                     coverage="United States", reversible=False,
                     handle_label="Venmo username (without @)",
-                    deep_link_template="https://venmo.com/{handle}?txn=pay&amount={amount}"),
+                    # DOCUMENTED: txn=pay, amount, note, audience.
+                    #
+                    # `audience=private` is NOT decoration. Venmo posts payments
+                    # to a social feed and defaults to public — without this,
+                    # buying a collectible broadcasts to the payer's followers
+                    # that they bought it, and from whom. A marketplace has no
+                    # business making that public by omission.
+                    deep_link_template=(
+                        "https://venmo.com/{handle}"
+                        "?txn=pay&amount={amount}&audience=private&note={note}"
+                    )),
         PaymentRail(key="zelle", label="Zelle", url="https://www.zellepay.com/",
                     coverage="United States", reversible=False,
                     note="Bank-to-bank. Treated as cash — there is no dispute route."),
@@ -218,11 +239,24 @@ def clean_handle(raw: Optional[str]) -> Optional[str]:
     return h
 
 
+#: Currencies with no minor unit. Formatting JPY 1000 as "1000.00" is not a
+#: cosmetic slip — it is a different number to a payment provider that parses
+#: the path, and the two we support are exactly the two the app offers.
+_ZERO_DECIMAL = {"JPY", "KRW"}
+
+
+def format_amount(amount: float, currency: str) -> str:
+    """Amount as the rail expects to read it."""
+    return f"{amount:.0f}" if (currency or "").upper() in _ZERO_DECIMAL else f"{amount:.2f}"
+
+
 def build_deep_link(
     rail: PaymentRail,
     handle: Optional[str],
     amount: float,
     currency: str,
+    *,
+    note: str = "",
 ) -> Optional[str]:
     """The rail's own URL with the amount already in it, or None.
 
@@ -231,8 +265,12 @@ def build_deep_link(
     half-substituted string: a link containing a literal `{handle}` is worse
     than no link, because it looks tappable.
 
-    Amount is formatted to two decimals and the currency upper-cased, because
-    `paypal.me/x/25.5EUR` and `paypal.me/x/25.50eur` do not both resolve.
+    Amount uses the currency's own precision — JPY and KRW have no minor unit,
+    and "1000.00" is a different number to a provider parsing the path.
+
+    `note` is URL-escaped and only reaches rails whose template asks for it
+    (Venmo). It carries a trade reference so the seller can tell which of three
+    outstanding trades a payment settles.
     """
     if not rail.deep_link_template:
         return None
@@ -243,6 +281,20 @@ def build_deep_link(
         return None
     return rail.deep_link_template.format(
         handle=clean,
-        amount=f"{amount:.2f}",
+        amount=format_amount(amount, currency),
         currency=(currency or "EUR").upper(),
+        # quote_plus, not quote: this lands in a QUERY string, where a space
+        # must be "+" or "%20" and never a raw space.
+        note=quote_plus(note or ""),
     )
+
+
+def carries_amount(rail: PaymentRail) -> bool:
+    """Does this rail's link actually contain the figure?
+
+    The client says "amount filled in" next to a rail, and that must not be
+    said of `revolut.me/<tag>` or `cash.app/$<tag>`, which land on the right
+    person and nothing more. Neither publishes an amount-carrying URL format,
+    and inventing one is how a buyer taps a link that 404s.
+    """
+    return bool(rail.deep_link_template and "{amount}" in rail.deep_link_template)
