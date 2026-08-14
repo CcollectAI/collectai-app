@@ -36,6 +36,12 @@ _settings_user_limit = per_user_rate_limit(30, scope="settings")
 VALID_CURRENCIES = {"EUR", "USD", "JPY", "GBP", "KRW", "AUD", "CAD"}
 VALID_REGIONS = {"americas", "europe", "japan", "korea", "oceania", "other"}
 VALID_LOCALES = {"en-US", "de-DE", "ja-JP", "nl-NL", "ko-KR", "en-AU"}
+# ONE CONTRACT IN TWO FILES. This set and the CHECK in migration
+# 20260814c_user_settings_skill_level.sql must always agree. Changing either
+# alone is the exact bug docs/ARCHITECTURE.md records for currency/region/
+# locale: the handler accepts a value, the INSERT raises 23514, and the user
+# gets a generic 500 on a value the app itself offered them.
+VALID_SKILL_LEVELS = {"beginner", "intermediate", "advanced"}
 
 # Defaults (match the DB column defaults)
 DEFAULT_CURRENCY = "EUR"
@@ -51,6 +57,9 @@ class UserSettingsResponse(BaseModel):
     currency: str = Field(DEFAULT_CURRENCY, description="Preferred currency code")
     region: str = Field(DEFAULT_REGION, description="Preferred marketplace region")
     locale: str = Field(DEFAULT_LOCALE, description="Preferred locale for formatting")
+    #: None means NEVER ASKED, and is not the same as "beginner". Members who
+    #: onboarded before this existed must not be shown first-timer surfaces.
+    skill_level: str | None = Field(None, description="beginner | intermediate | advanced")
 
 
 class UserSettingsUpdateRequest(BaseModel):
@@ -66,6 +75,10 @@ class UserSettingsUpdateRequest(BaseModel):
     locale: str | None = Field(
         None,
         description=f"Display locale. Valid: {', '.join(sorted(VALID_LOCALES))}",
+    )
+    skill_level: str | None = Field(
+        None,
+        description=f"Collecting experience. Valid: {', '.join(sorted(VALID_SKILL_LEVELS))}",
     )
 
 
@@ -96,7 +109,7 @@ async def get_user_settings(user_id: str = Depends(get_current_user_id)):
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
                 """
-                SELECT currency, region, locale
+                SELECT currency, region, locale, skill_level
                 FROM user_settings
                 WHERE user_id = $1
                 """,
@@ -110,6 +123,7 @@ async def get_user_settings(user_id: str = Depends(get_current_user_id)):
             currency=row["currency"],
             region=row["region"],
             locale=row["locale"],
+            skill_level=row["skill_level"],
         )
 
     except asyncpg.PostgresError as e:
@@ -148,9 +162,20 @@ async def update_user_settings(
             f"Invalid locale. Valid: {', '.join(sorted(VALID_LOCALES))}",
             code="VALIDATION_ERROR",
         )
+    if request.skill_level is not None and request.skill_level not in VALID_SKILL_LEVELS:
+        raise error_response(
+            400,
+            f"Invalid skill level. Valid: {', '.join(sorted(VALID_SKILL_LEVELS))}",
+            code="VALIDATION_ERROR",
+        )
 
     # At least one field must be provided
-    if request.currency is None and request.region is None and request.locale is None:
+    if (
+        request.currency is None
+        and request.region is None
+        and request.locale is None
+        and request.skill_level is None
+    ):
         raise error_response(
             400,
             "At least one setting field must be provided",
@@ -167,6 +192,7 @@ async def update_user_settings(
                 currency=request.currency or DEFAULT_CURRENCY,
                 region=request.region or DEFAULT_REGION,
                 locale=request.locale or DEFAULT_LOCALE,
+                skill_level=request.skill_level,
             ),
         )
 
@@ -177,20 +203,25 @@ async def update_user_settings(
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
                 """
-                INSERT INTO user_settings (user_id, currency, region, locale, updated_at)
-                VALUES ($1, COALESCE($2, 'EUR'), COALESCE($3, 'europe'), COALESCE($4, 'de-DE'), $5)
+                INSERT INTO user_settings (user_id, currency, region, locale, skill_level, updated_at)
+                VALUES ($1, COALESCE($2, 'EUR'), COALESCE($3, 'europe'), COALESCE($4, 'de-DE'), $6, $5)
                 ON CONFLICT (user_id) DO UPDATE SET
-                    currency   = COALESCE($2, user_settings.currency),
-                    region     = COALESCE($3, user_settings.region),
-                    locale     = COALESCE($4, user_settings.locale),
-                    updated_at = $5
-                RETURNING currency, region, locale
+                    currency    = COALESCE($2, user_settings.currency),
+                    region      = COALESCE($3, user_settings.region),
+                    locale      = COALESCE($4, user_settings.locale),
+                    -- COALESCE, so a settings save that does not mention skill
+                    -- level cannot silently erase it. NULL from the client means
+                    -- "not part of this update", never "clear it".
+                    skill_level = COALESCE($6, user_settings.skill_level),
+                    updated_at  = $5
+                RETURNING currency, region, locale, skill_level
                 """,
                 user_id,
                 request.currency,
                 request.region,
                 request.locale,
                 now,
+                request.skill_level,
             )
 
         logger.info(
@@ -204,6 +235,7 @@ async def update_user_settings(
                 currency=row["currency"],
                 region=row["region"],
                 locale=row["locale"],
+                skill_level=row["skill_level"],
             ),
         )
 

@@ -15,12 +15,26 @@ import { followedCategoriesStore } from "@/data/followedCategoriesStore";
  * constraints (fixed 2026-07-30) and the app reported nothing at all.
  *
  * `put` throws on a non-2xx, so callers' existing catch blocks now work.
- * Server contract: `user_settings_router.py` accepts only these three keys.
+ * Server contract: `user_settings_router.py`.
  */
 export const updateUserSettings = (payload: {
   currency?: string;
   region?: string;
   locale?: string;
+  /**
+   * 'beginner' | 'intermediate' | 'advanced'. Omit to leave it untouched — the
+   * server COALESCEs, so a settings save that does not mention skill level
+   * cannot erase it. There is deliberately NO way to clear it back to null from
+   * the client: null means "never asked", and once asked, that is no longer
+   * true.
+   *
+   * The value set here must exist in VALID_SKILL_LEVELS
+   * (user_settings_router.py) AND in the CHECK from migration 20260814c. Those
+   * two are one contract; sending a fourth value gets a 400, and would have
+   * been a 500 if only the code had been widened — see the currency/region/
+   * locale incident in docs/ARCHITECTURE.md.
+   */
+  skill_level?: string;
 }) => put<{ success: boolean; settings: Record<string, unknown> }>('/settings', payload);
 
 /**
@@ -33,7 +47,7 @@ export const updateProfile = (payload: { username?: string; bio?: string }) =>
   patch<Record<string, unknown>>('/settings/profile', payload);
 
 // Onboarding / category-follow state.
-// PUT /settings only accepts {currency, region, locale} (user_settings_router.py)
+// PUT /settings accepts {currency, region, locale, skill_level} (user_settings_router.py)
 // — `followed_categories` was silently dropped, so onboarding's "save my picks"
 // did nothing and the home tab showed no follows. Wire to /events/categories/*
 // which is the real follow store. Fanned-out PUT-style helper so the

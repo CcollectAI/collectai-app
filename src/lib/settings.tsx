@@ -12,6 +12,9 @@ export type ChartRange = '1D'|'7D'|'30D';
 export type Currency = CurrencyCode;
 export type NumberLocale = 'en-US'|'de-DE'|'ja-JP'|'nl-NL'|'ko-KR'|'en-AU';
 export type Region = 'americas'|'europe'|'japan'|'korea'|'oceania'|'other';
+/** Must match VALID_SKILL_LEVELS (user_settings_router.py) and the CHECK in
+ *  migration 20260814c — one contract, three files. */
+export type SkillLevel = 'beginner' | 'intermediate' | 'advanced';
 /** UI language override. 'auto' = use device locale (detected at app boot). */
 export type LanguagePreference = 'auto' | SupportedLocale;
 
@@ -24,6 +27,12 @@ export type Settings = {
   fxRates: { USD: number; GBP: number; JPY: number; KRW: number; AUD: number; CAD: number };
   /** User region (geolocation opt-in) — drives default currency + market pricing */
   region: Region;
+  /**
+   * How experienced the member says they are. `null` means NEVER ASKED, which
+   * is not the same as 'beginner' — someone who onboarded before this existed
+   * must not be shown first-time-collector surfaces. Read it as a tri-state.
+   */
+  skillLevel: SkillLevel | null;
   /** Dark mode toggle */
   isDark: boolean;
   /** Haptic feedback toggle */
@@ -51,6 +60,7 @@ const DEFAULTS: Settings = {
   defaultRange: '7D',
   fxRates: { USD: 1.08, GBP: 0.86, JPY: 164.0, KRW: 1490, AUD: 1.67, CAD: 1.52 },
   region: 'europe',
+  skillLevel: null,
   isDark: false,
   hapticsEnabled: true,
   animationsEnabled: true,
