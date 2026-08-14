@@ -437,6 +437,14 @@ function AnalyticsScreen() {
               </Text>
             ) : null}
 
+            {!pl.hasBaseline ? (
+              <Text style={[styles.plBasis, { color: colors.muted }]}>
+                Everything you own was added inside this window, so there is no
+                earlier value to compare against yet. Performance appears once
+                your portfolio has history behind it.
+              </Text>
+            ) : null}
+
             {/* What the P/L above is actually BASED on.
                 `cost_basis` falls back to the earliest prediction when an item
                 has no purchase price, so its "profit" is really model drift —

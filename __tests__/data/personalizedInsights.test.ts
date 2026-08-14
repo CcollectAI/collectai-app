@@ -11,6 +11,7 @@
  * Backend contract: server/app/features/insights_router.py:32-54.
  */
 import {
+  humaniseInsight,
   mapRiskNotes,
   mapTrendingCategories,
   type RawPersonalizedInsights,
@@ -38,19 +39,59 @@ function makeRaw(overrides: Partial<RawPersonalizedInsights> = {}): RawPersonali
 }
 
 describe('mapRiskNotes — concentration + diversification pass-through', () => {
-  it('surfaces every overexposed category and every suggestion', () => {
+  it('says each concentration fact ONCE — the exposure adopts its suggestion', () => {
+    // This test used to assert 4 notes and pin the bug. On screen that read:
+    //   "pokemon is 82% of your collection."
+    //   "Your entire portfolio is in 'pokemon'. Consider diversifying..."
+    // — one fact, printed twice, back to back.
     const notes = mapRiskNotes(makeRaw());
-    // 2 exposures + 2 suggestions must all reach the screen.
-    expect(notes).toHaveLength(4);
+    expect(notes).toHaveLength(2);
 
     const texts = notes.map((n) => n.text);
-    expect(texts.some((t) => t.includes('pokemon') && t.includes('82%'))).toBe(true);
-    expect(texts).toContain(
-      "Your entire portfolio is in 'pokemon'. Consider diversifying into other categories to reduce risk.",
+    // The server sentence survives (it carries the action); ours does not.
+    expect(texts.some((t) => t.includes('Consider diversifying'))).toBe(true);
+    expect(texts.some((t) => /^pokemon is 82%/.test(t))).toBe(false);
+  });
+
+  it('keeps the exposure LEVEL when it adopts a suggestion', () => {
+    // The reason this merges instead of dropping our half: every suggestion is
+    // `info`, so discarding the exposure would demote a HIGH concentration
+    // warning to a grey line and lose sharePct with it.
+    const notes = mapRiskNotes(makeRaw());
+    const pokemon = notes.find((n) => n.category === 'pokemon')!;
+    expect(pokemon.level).toBe('high');
+    expect(pokemon.sharePct).toBe(0.82);
+  });
+
+  it('prints display names, never raw slugs', () => {
+    const notes = mapRiskNotes({
+      overexposed_categories: [{ category: 'lorcana', share_pct: 0.4, risk_level: 'high' }],
+    });
+    expect(notes[0].text).toBe('Disney Lorcana is 40% of your collection.');
+    expect(notes[0].text).not.toMatch(/lorcana/);
+  });
+
+  it('an unmatched suggestion is still shown', () => {
+    const notes = mapRiskNotes(
+      makeRaw({ diversification_suggestions: ['Spread out a bit.'] }),
     );
-    expect(texts).toContain(
-      "Consider growing your 'funko' collection -- it is currently your smallest category.",
-    );
+    // 2 exposures, neither named by the suggestion, plus the suggestion itself.
+    expect(notes).toHaveLength(3);
+    expect(notes.map((n) => n.text)).toContain('Spread out a bit.');
+  });
+
+  it('does not let two exposures claim the same sentence', () => {
+    // 'pokemon' and 'pokemon_cards' both substring-match a sentence about
+    // pokemon. Without claiming, both would adopt it and the SAME text would
+    // render twice — the exact bug this fix exists to remove.
+    const notes = mapRiskNotes({
+      overexposed_categories: [
+        { category: 'pokemon', share_pct: 0.5, risk_level: 'high' },
+        { category: 'pokemon_cards', share_pct: 0.3, risk_level: 'medium' },
+      ],
+      diversification_suggestions: ["Your entire portfolio is in 'pokemon'."],
+    });
+    expect(new Set(notes.map((n) => n.text)).size).toBe(notes.length);
   });
 
   it('treats share_pct as a fraction, not an already-multiplied percentage', () => {
@@ -74,6 +115,8 @@ describe('mapRiskNotes — concentration + diversification pass-through', () => 
     );
     expect(notes.map((n) => n.level)).toEqual(['high', 'medium', 'info']);
     expect(notes[0].category).toBe('pokemon');
+    // The suggestion names no category, so it stays a standalone info note.
+    expect(notes[2].text).toBe('Spread out a bit.');
   });
 
   it('survives nulls, empties and a missing payload without throwing', () => {
@@ -97,6 +140,32 @@ describe('mapRiskNotes — concentration + diversification pass-through', () => 
   it('produces unique keys so the list can render without collisions', () => {
     const notes = mapRiskNotes(makeRaw());
     expect(new Set(notes.map((n) => n.id)).size).toBe(notes.length);
+  });
+});
+
+describe('humaniseInsight — backend f-string artefacts', () => {
+  it('replaces a quoted slug with the display name', () => {
+    expect(humaniseInsight("Your 'lorcana' exposure is 40% of your portfolio.")).toBe(
+      'Your Disney Lorcana exposure is 40% of your portfolio.',
+    );
+  });
+
+  it('turns a double hyphen into an em dash', () => {
+    expect(humaniseInsight('Grow it -- it is your smallest.')).toBe(
+      'Grow it \u2014 it is your smallest.',
+    );
+  });
+
+  it('leaves ordinary quoted prose alone', () => {
+    // 'value' is not a category. Rewriting it to "Value" would be the mapper
+    // inventing emphasis the backend never wrote.
+    expect(humaniseInsight("Watch the 'value' column.")).toBe("Watch the 'value' column.");
+  });
+
+  it('does not mangle an apostrophe in ordinary text', () => {
+    expect(humaniseInsight("A collector's set, don't sell it.")).toBe(
+      "A collector's set, don't sell it.",
+    );
   });
 });
 
