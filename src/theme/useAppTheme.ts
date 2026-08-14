@@ -39,9 +39,22 @@ const LIGHT_COLORS = {
   chartFill: "#E0F2F1",
   chartDot: "#14B8A6",
   // Toast backgrounds (intentionally dark for readability)
-  toastSuccess: "#1B5E20",
-  toastError: "#B71C1C",
-  toastWarning: "#E65100",
+  // ONE brand surface for every toast. These were Material Design 900s —
+  // #1B5E20 green, #B71C1C red, #E65100 orange — which is another product's
+  // palette wearing our chrome, and a success toast is the most-seen toast in
+  // the app ("Offer sent", "Saved", "Tracking added").
+  //
+  // Semantics do NOT live in the fill. The toast already draws a 4px left
+  // stripe and a glyph in the type's colour, so success still reads as success
+  // — it just does so on Sparrow's deep teal instead of Google's green.
+  //
+  // Four tokens rather than one, deliberately: src/theme/highContrast.ts DOES
+  // differentiate the fills (#003300 / #660000 / #663300 / #002266), because at
+  // that contrast level the stripe alone is not enough. Collapsing these to a
+  // single token would take that away.
+  toastSuccess: "#1E3A3A",
+  toastError: "#1E3A3A",
+  toastWarning: "#1E3A3A",
   // Deep teal, not cobalt: an info toast is the most common one a user
   // sees ("Watching — we'll alert you…") and a blue banner reads as some
   // other app's. Same ink as brand.lighter in the dark palette.
@@ -98,9 +111,10 @@ const DARK_COLORS = {
   chartFill: "#1E3A3A",
   chartDot: "#14B8A6",
   // Toast backgrounds
-  toastSuccess: "#1B5E20",
-  toastError: "#B71C1C",
-  toastWarning: "#E65100",
+  // Same brand surface as the light palette — see the note there.
+  toastSuccess: "#1E3A3A",
+  toastError: "#1E3A3A",
+  toastWarning: "#1E3A3A",
   // Deep teal, not cobalt: an info toast is the most common one a user
   // sees ("Watching — we'll alert you…") and a blue banner reads as some
   // other app's. Same ink as brand.lighter in the dark palette.

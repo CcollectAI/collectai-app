@@ -87,6 +87,13 @@ export interface PortfolioPLSummary {
   deltaPct: number;
   /** Maximum drawdown from peak value (negative number; -0.30 = -30%) */
   maxDrawdownPct: number;
+  /**
+   * False when the series starts at zero — i.e. the member acquired everything
+   * inside the window, so there is nothing to measure performance AGAINST.
+   * Callers must not present `deltaAbs`/`deltaPct` as a gain when this is
+   * false; there is no gain, only an acquisition.
+   */
+  hasBaseline: boolean;
 }
 
 export interface WinnersLosersBucket {
@@ -129,6 +136,7 @@ export function computePLFromSeries(series: TimeSeriesPoint[]): PortfolioPLSumma
       deltaAbs: 0,
       deltaPct: 0,
       maxDrawdownPct: 0,
+      hasBaseline: false,
     };
   }
 
@@ -138,8 +146,24 @@ export function computePLFromSeries(series: TimeSeriesPoint[]): PortfolioPLSumma
 
   const startValue = sorted[0].v;
   const currentValue = sorted[sorted.length - 1].v;
-  const deltaAbs = currentValue - startValue;
-  const deltaPct = startValue > EPSILON ? deltaAbs / startValue : 0;
+
+  /**
+   * A portfolio whose series STARTS at zero has no baseline to measure against.
+   * That is the normal state for anyone who added their items inside the
+   * window — the series begins before they owned anything.
+   *
+   * Reporting it as performance produced a card that contradicted itself:
+   * `deltaAbs` became the entire portfolio ("+EUR 8,070 gain") while `deltaPct`
+   * fell to 0 because of the guard below ("0.00%"). Seen on a real account.
+   * Neither number was wrong in isolation; together they told a member they had
+   * made money they had merely ADDED.
+   */
+  const hasBaseline = startValue > EPSILON;
+  // Zero rather than currentValue when there is no baseline. A "gain" equal to
+  // everything you own is not a gain, and a trader acting on it is acting on
+  // nothing.
+  const deltaAbs = hasBaseline ? currentValue - startValue : 0;
+  const deltaPct = hasBaseline ? deltaAbs / startValue : 0;
 
   let peak = startValue;
   let maxDrawdownPct = 0;
@@ -162,6 +186,7 @@ export function computePLFromSeries(series: TimeSeriesPoint[]): PortfolioPLSumma
     deltaAbs,
     deltaPct,
     maxDrawdownPct,
+    hasBaseline,
   };
 }
 

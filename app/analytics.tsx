@@ -411,12 +411,31 @@ function AnalyticsScreen() {
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
               <Text style={[styles.cardTitle, { color: colors.text }]}>Performance</Text>
-              <View style={[styles.badge, { backgroundColor: isPositive ? colors.successBg : colors.dangerBg }]}>
-                <Text style={[styles.badgeText, { color: isPositive ? colors.success : colors.danger }]}>
-                  {formatPct(pl.deltaPct)}
-                </Text>
-              </View>
+              {/* No badge without a baseline. "0.00%" beside "+EUR 8,070"
+                  was the card contradicting itself on a real account. */}
+              {pl.hasBaseline ? (
+                <View style={[styles.badge, { backgroundColor: isPositive ? colors.successBg : colors.dangerBg }]}>
+                  <Text style={[styles.badgeText, { color: isPositive ? colors.success : colors.danger }]}>
+                    {formatPct(pl.deltaPct)}
+                  </Text>
+                </View>
+              ) : null}
             </View>
+
+            {!pl.hasBaseline ? (
+              <Text style={[styles.plBasis, { color: colors.muted }]}>
+                Everything you own was added inside this window, so there is no
+                earlier value to measure against yet. Performance appears once
+                your portfolio has history behind it.
+              </Text>
+            ) : null}
+
+            {!pl.hasBaseline ? (
+              <Text style={[styles.plBasis, { color: colors.muted }]}>
+                Everything you own was added inside this window, so there is no
+                earlier value to measure against yet.
+              </Text>
+            ) : null}
 
             {/* What the P/L above is actually BASED on.
                 `cost_basis` falls back to the earliest prediction when an item
@@ -441,12 +460,21 @@ function AnalyticsScreen() {
               </View>
               <View style={styles.metricItem}>
                 <Text style={[styles.metricLabel, { color: colors.muted }]}>Starting Value</Text>
-                <Text style={[styles.metricValueMuted, { color: colors.muted }]}>{formatPrice(pl.startValue, settings.currency ?? 'EUR')}</Text>
+                <Text style={[styles.metricValueMuted, { color: colors.muted }]}>
+                  {pl.hasBaseline ? formatPrice(pl.startValue, settings.currency ?? 'EUR') : '—'}
+                </Text>
               </View>
               <View style={styles.metricItem}>
                 <Text style={[styles.metricLabel, { color: colors.muted }]}>Total Gain/Loss</Text>
-                <Text style={[styles.metricValue, { color: isPositive ? colors.success : colors.danger }]}>
-                  {pl.deltaAbs >= 0 ? "+" : ""}{formatPrice(pl.deltaAbs, settings.currency ?? 'EUR')}
+                <Text
+                  style={[
+                    styles.metricValue,
+                    { color: pl.hasBaseline ? (isPositive ? colors.success : colors.danger) : colors.muted },
+                  ]}
+                >
+                  {pl.hasBaseline
+                    ? `${pl.deltaAbs >= 0 ? '+' : ''}${formatPrice(pl.deltaAbs, settings.currency ?? 'EUR')}`
+                    : '—'}
                 </Text>
               </View>
               <View style={styles.metricItem}>

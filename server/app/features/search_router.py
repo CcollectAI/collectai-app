@@ -171,7 +171,12 @@ async def unified_search(
             # Search catalog items (category_items — public catalog)
             # R50k: image_url kept backend-only; API returns has_reference_image only
             # price_eur comes from mv_catalog_item_price — the SAME source the
-            # catalog detail page reads (catalog_browser_router). Deliberately not
+            # catalog detail page reads (catalog_browser_router), and since
+            # 2026-08-15 the same STATISTIC too. It used to be the latest single
+            # market hit while the detail page showed a median, so a Rolex
+            # Day-Date 40 read EUR 697 in search and EUR 41,978 when tapped —
+            # exactly the disagreement the rest of this comment warns about.
+            # Deliberately not
             # price_predictions: the two disagree (yugioh is dense in predictions
             # and sparse in market hits), and a row that says EUR 12 in search and
             # EUR 30 when tapped is worse than a row with no price.
