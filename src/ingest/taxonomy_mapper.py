@@ -81,6 +81,21 @@ CATEGORY_PATTERNS = {
         r'scale\s*model|model\s*kit|plastic\s*model',
         r'1/72|1/48|1/35|1/350',
     ],
+    # Dungeons & Dragons, added 2026-08-14 with the category itself. Without a
+    # pattern here the ingest pipeline can never assign `dnd`, so the category
+    # page would sit permanently empty — a category reachable from nowhere.
+    #
+    # Deliberately NOT bare `dice`, `d20` or `polyhedral`: those appear in
+    # Warhammer, board-game and generic-accessory listings, and a pattern that
+    # steals another category's items is worse than one that misses a few
+    # (learning_keyword_filters_need_per_category_false_positive_audit). Every
+    # alternative below names D&D or a D&D-specific product line.
+    'dnd': [
+        r'dungeons\s*(&|and)\s*dragons|\bd&d\b|\bdnd\b',
+        r'players\s*handbook|dungeon\s*master.?s?\s*guide|monster\s*manual',
+        r'\btsr\b.*(d&d|dungeons)|(d&d|dungeons).*\btsr\b',
+        r'nolzur.?s|icons\s*of\s*the\s*realms',
+    ],
     'warhammer': [
         r'warhammer|40k|40,?000|age\s*of\s*sigmar|aos',
         r'space\s*marine|primarch|forge\s*world|games\s*workshop',
