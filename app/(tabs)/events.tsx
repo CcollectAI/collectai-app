@@ -146,15 +146,13 @@ function EventsScreen() {
   //
   // Applied only when the filter is OFF, because with it on every remaining
   // event is followed and a partition would be a no-op pass over the list.
-  // `partitionByFollowed` keys on `category`, and an event's slug lives on
-  // `categoryId`, so the mapping is explicit rather than relying on a shared
-  // field name that these two types do not have.
+  // An event's slug is `categoryId`, so the accessor points at it. This used
+  // to map `{...e, category: e.categoryId}`, which allocated a new object per
+  // event to rename one field and left a `category` property on an Event that
+  // its type never declared.
   const ordered = useMemo(() => {
     if (followedFilterActive || followedCategoryIds.size === 0) return searchFiltered;
-    return partitionByFollowed(
-      searchFiltered.map((e) => ({ ...e, category: e.categoryId })),
-      followedCategoryIds,
-    );
+    return partitionByFollowed(searchFiltered, followedCategoryIds, (e) => e.categoryId);
   }, [searchFiltered, followedFilterActive, followedCategoryIds]);
 
   // Unique event kinds for filter chips

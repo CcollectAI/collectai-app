@@ -91,3 +91,20 @@ describe('rankSearchResults', () => {
     expect(rankSearchResults(null, new Set(['pokemon']))).toBeNull();
   });
 });
+
+describe('the category accessor', () => {
+  it('reads a differently-named field without copying rows', () => {
+    // Events carry `categoryId`, not `category`. The caller used to bridge that
+    // with {...e, category: e.categoryId} — one new object per event, to rename
+    // one field, leaving a property the Event type never declared.
+    const events = [
+      { id: 'e1', categoryId: 'mtg' },
+      { id: 'e2', categoryId: 'pokemon' },
+    ];
+    const out = partitionByFollowed(events, new Set(['pokemon']), (e) => e.categoryId);
+    expect(out.map((e) => e.id)).toEqual(['e2', 'e1']);
+    // Identity preserved: the same objects come back, not copies.
+    expect(out[0]).toBe(events[1]);
+    expect(out[1]).toBe(events[0]);
+  });
+});

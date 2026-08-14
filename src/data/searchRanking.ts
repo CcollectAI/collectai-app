@@ -30,6 +30,15 @@
 /** Anything with a category slug on it. `users` have none and are never ranked. */
 type Categorised = { category?: string | null };
 
+/** Where the slug lives on a given row. Defaults to `category`.
+ *
+ *  Exists because an Event's slug is `categoryId`, and the caller was mapping
+ *  `{...e, category: e.categoryId}` to bridge that — allocating a new object per
+ *  event purely to rename a field, and leaving a `category` property on an
+ *  Event that its own type never declared. An accessor renames nothing and
+ *  allocates nothing. */
+type CategoryOf<T> = (row: T) => string | null | undefined;
+
 /**
  * Stable partition: entries whose category is followed, then the rest, each
  * keeping the order they arrived in.
@@ -39,15 +48,17 @@ type Categorised = { category?: string | null };
  * future edit to add a tiebreak and quietly re-order the server's relevance.
  * Two passes say the intent out loud.
  */
-export function partitionByFollowed<T extends Categorised>(
+export function partitionByFollowed<T>(
   rows: readonly T[],
   followed: ReadonlySet<string>,
+  getCategory: CategoryOf<T> = (row) => (row as Categorised).category,
 ): T[] {
   if (!rows.length || followed.size === 0) return [...rows];
   const inside: T[] = [];
   const outside: T[] = [];
   for (const row of rows) {
-    if (row.category && followed.has(row.category)) inside.push(row);
+    const cat = getCategory(row);
+    if (cat && followed.has(cat)) inside.push(row);
     else outside.push(row);
   }
   return [...inside, ...outside];
