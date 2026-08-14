@@ -20,6 +20,7 @@ export const CATEGORIES: Category[] = [
   { slug: 'funko', name: 'Funko Pop', tint: '#00B2A9' },
   { slug: 'lego', name: 'LEGO', tint: '#DA291C' },
   { slug: 'warhammer', name: 'Warhammer', tint: '#8B0000' },
+  { slug: 'dnd', name: 'Dungeons & Dragons', tint: '#7A1F2B' },
   { slug: 'retro_games', name: 'Retro Games', tint: '#FF6347' },
   { slug: 'manga', name: 'Manga', tint: '#FF69B4' },
   { slug: 'sportscards', name: 'Sports Cards', tint: '#228B22' },

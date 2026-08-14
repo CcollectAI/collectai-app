@@ -35,6 +35,7 @@ const WAVE2: CategoryMeta[] = [
   { slug: 'anime_figures', label: 'Anime Figures', wave: 'wave2', active: true },
   { slug: 'hot_toys', label: 'Hot Toys', wave: 'wave2', active: true },
   { slug: 'gunpla', label: 'Gunpla', wave: 'wave2', active: true },
+  { slug: 'dnd', label: 'Dungeons & Dragons', wave: 'wave2', active: true },
   { slug: 'scale_models', label: 'Scale Models', wave: 'wave2', active: true },
   { slug: 'keycaps', label: 'Artisan Keycaps', wave: 'wave2', active: true },
   { slug: 'bluray_steelbook', label: 'Blu-ray Steelbooks', wave: 'wave2', active: true },

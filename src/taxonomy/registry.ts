@@ -205,6 +205,21 @@ const PHASE2_CATEGORIES: CategoryDefinition[] = [
     ],
   },
   {
+    id: 'dnd',
+    name: 'Dungeons & Dragons',
+    wave: 'phase2',
+    // Deliberately NOT bare 'dice' or 'd20': both appear in Warhammer and board
+    // game listings, and a keyword that steals another category's items is
+    // worse than one that misses a few (learning_keyword_filters_need_per_
+    // category_false_positive_audit).
+    keywords: ['dungeons & dragons', 'dungeons and dragons', 'd&d', 'ttrpg', 'tsr'],
+    subtypes: [
+      { id: 'dnd_rulebook', name: 'Rulebooks', keywords: ['players handbook', 'dungeon master', 'monster manual', 'rulebook'] },
+      { id: 'dnd_dice', name: 'Dice Sets', keywords: ['polyhedral', 'dice set', 'd20 set'] },
+      { id: 'dnd_minis', name: 'Miniatures', keywords: ['nolzur', 'icons of the realms', 'campaign miniature'] },
+    ],
+  },
+  {
     id: 'gunpla',
     name: 'Gunpla / Model Kits',
     wave: 'phase2',

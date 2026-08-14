@@ -12,6 +12,7 @@ export type CategoryId =
   | 'marvel_legends'
   | 'lego'
   | 'gunpla'
+  | 'dnd'
   | 'scale_models'
   | 'warhammer'
   | 'retro_games'
@@ -102,6 +103,7 @@ export const CATEGORY_VISUAL: Record<CategoryId, { accentColor: string; iconName
   marvel_legends: { accentColor: '#ED1D24', iconName: 'shield-half' },
   lego: { accentColor: '#FFC107', iconName: 'cube' },
   gunpla: { accentColor: '#1E88E5', iconName: 'rocket' },
+  dnd: { accentColor: '#7A1F2B', iconName: 'dice' },
   scale_models: { accentColor: '#607D8B', iconName: 'car-sport' },
   warhammer: { accentColor: '#8D0226', iconName: 'skull' },
   retro_games: { accentColor: '#9C27B0', iconName: 'game-controller' },
@@ -497,6 +499,23 @@ export const CATEGORIES: Category[] = [
       },
     ],
     relatedCategoryIds: ['gunpla', 'scale_models', 'disney'],
+  },
+  {
+    id: 'dnd',
+    name: 'Dungeons & Dragons',
+    tagline: 'Rulebooks, artisan dice and campaign miniatures.',
+    bannerImageUrl:
+      'https://images.pexels.com/photos/4691567/pexels-photo-4691567.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    accentColor: '#7A1F2B',
+    iconName: 'dice',
+    collections: [
+      { id: 'dnd-rulebooks', name: 'Rulebooks', itemCount: 0 },
+      { id: 'dnd-dice', name: 'Dice Sets', itemCount: 0 },
+    ],
+    externalMarketplaces: [
+      { id: 'ebay', label: 'eBay', url: 'https://www.ebay.com' },
+    ],
+    relatedCategoryIds: ['warhammer', 'oop_board_games', 'comic_books'],
   },
   {
     id: 'gunpla',
@@ -1816,6 +1835,7 @@ export const CATEGORY_GROUPS: { label: string; ids: CategoryId[] }[] = [
   { label: 'Trading Card Games', ids: ['pokemon', 'mtg', 'yugioh', 'lorcana', 'digimon', 'one_piece_tcg'] },
   { label: 'Toys & Figures', ids: ['funko', 'designer_toys', 'anime_figures', 'hot_toys', 'action_figures', 'vintage_toys', 'marvel_legends'] },
   { label: 'Building & Models', ids: ['lego', 'gunpla', 'scale_models', 'warhammer'] },
+  { label: 'Tabletop', ids: ['dnd', 'oop_board_games'] },
   { label: 'Gaming & Board Games', ids: ['retro_games', 'oop_board_games'] },
   { label: 'Media', ids: ['manga', 'comic_books', 'bluray_steelbook', 'anime_bluray', 'anime_soundtrack', 'anime_ost_vinyl'] },
   { label: 'Music & Fandom', ids: ['kpop_merch', 'taylor_swift', 'pop_fandom', 'kpop_lightsticks'] },
