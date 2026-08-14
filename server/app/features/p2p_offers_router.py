@@ -1306,12 +1306,33 @@ async def list_carriers(
     ]
 
 
-class PaymentRailOut(PaymentRail):
-    #: The rail's own URL with the amount already in it, built from the SELLER's
-    #: handle. Null whenever we could not build one — no template, no handle, or
-    #: a handle that failed validation. Callers fall back to `url`; a
-    #: half-substituted link is never returned.
+class PaymentRailOut(BaseModel):
+    """The PUBLIC shape of a rail.
+
+    Deliberately NOT `PaymentRail` subclassed. Inheriting shipped
+    `deep_link_template` to every client — an internal format string that
+    invites a client to build its own links, which is precisely where the two
+    invented Revolut and Cash App URLs came from. The server builds links; the
+    client is handed finished ones.
+    """
+    key: str
+    label: str
+    url: str
+    coverage: str
+    reversible: Optional[bool] = None
+    note: Optional[str] = None
+    #: What to ask the SELLER for. The settings screen reads this, so it stays.
+    handle_label: Optional[str] = None
+    #: The rail's own URL built from the SELLER's handle. Null whenever one
+    #: could not be built — no template, no handle, or a handle that failed
+    #: validation. Callers fall back to `url`; a half-substituted link is never
+    #: returned.
     pay_url: Optional[str] = None
+    #: True only when `pay_url` actually contains the figure. PayPal and Venmo
+    #: publish an amount-carrying format; Revolut and Cash App do not, so their
+    #: links land on the right person and the buyer types the amount. Without
+    #: this the client promised "amount filled in" for all of them.
+    pay_url_has_amount: bool = False
 
 
 class PaymentRailsOut(BaseModel):
@@ -1578,7 +1599,21 @@ async def list_payment_rails(
         # Unknown or unset falls back to the global rails only. Showing a Dutch
         # member Zelle is worse than showing them fewer options.
         resolved = "other"
-    rails = [PaymentRailOut(**r.model_dump()) for r in rails_for_region(resolved)]
+    # The SOURCE rails keep their templates; the public objects never see them.
+    # Keyed so the prefill loop below can reach a source rail to build from —
+    # `build_deep_link` reads `deep_link_template`, which PaymentRailOut
+    # deliberately does not carry, so passing a public object would silently
+    # return None for every rail.
+    source = {r.key: r for r in rails_for_region(resolved)}
+    # Explicit field pick, not **model_dump(): a splat would have to be trusted
+    # to keep omitting the template as either model grows.
+    rails = [
+        PaymentRailOut(
+            key=r.key, label=r.label, url=r.url, coverage=r.coverage,
+            reversible=r.reversible, note=r.note, handle_label=r.handle_label,
+        )
+        for r in source.values()
+    ]
 
     # Prefill, but only for the buyer of a live trade with THIS seller. The
     # handle table is owner-only under RLS and is never exposed directly: this
@@ -1617,10 +1652,11 @@ async def list_payment_rails(
                 # in their banking app next to two other payments.
                 note = f"Sparrow {str(offer_id)[:8]}"
                 for r in rails:
+                    src = source[r.key]
                     r.pay_url = build_deep_link(
-                        r, handles.get(r.key), amount, currency, note=note,
+                        src, handles.get(r.key), amount, currency, note=note,
                     )
-                    r.pay_url_has_amount = bool(r.pay_url) and carries_amount(r)
+                    r.pay_url_has_amount = bool(r.pay_url) and carries_amount(src)
 
     return PaymentRailsOut(
         region=resolved,
