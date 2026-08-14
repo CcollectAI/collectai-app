@@ -46,7 +46,8 @@
     "check:item-values": "node scripts/check-item-value-source.mjs",
     "check:serialization": "node scripts/check-duck-typed-serialization.mjs",
     "check:reachable": "node scripts/check-unreachable-screens.mjs",
-    "check:back-affordance": "node scripts/check-back-affordance.mjs"
+    "check:back-affordance": "node scripts/check-back-affordance.mjs",
+    "build:ios:internal": "eas build --platform ios --profile internal --local --non-interactive --output ./builds/sparrow-ios-internal.ipa"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
