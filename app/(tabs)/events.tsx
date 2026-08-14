@@ -33,6 +33,7 @@ import { partitionByFollowed } from '@/data/searchRanking';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { TabBackButton } from '@/components/TabBackButton';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
@@ -492,6 +493,7 @@ function EventsScreen() {
     <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
       {/* Header */}
       <View style={styles.headerRow}>
+        <TabBackButton />
         <View style={styles.headerLeft}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>
             Events

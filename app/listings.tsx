@@ -706,7 +706,10 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
     // double-pad the top — the playbook's SafeAreaView rule is for screens
     // WITHOUT this header.
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title="Marketplace" showBack={!asTab} />
+      {/* showBack unconditionally (2026-08-14, by request). ScreenHeader's back
+          routes through canGoBack() and falls back to the Portfolio tab, so on a
+          tab root — where there is nothing to pop — it still goes somewhere. */}
+      <ScreenHeader title="Marketplace" />
 
       {/*
         REDESIGNED 2026-08-07 after a UX review. The previous version stacked

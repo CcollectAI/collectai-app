@@ -240,6 +240,36 @@ function CategoryStoreScreen() {
           </AnimatedPressable>
         ) : null}
 
+        {/* 2c. Sets you are close to finishing, scoped to THIS category.
+            app/sets-to-complete.tsx has been a complete 14KB feature reachable
+            from nowhere — registered as a route, pushed to by nothing, so a
+            repo-wide search for a link returned zero hits. This is its entry
+            point. It shows nothing useful until you own 2+ items from one set,
+            which is why it lives below the guide rather than at the top. */}
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push({
+              pathname: '/sets-to-complete',
+              params: { categoryId },
+            } as unknown as Href);
+          }}
+          style={[styles.setsRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+          accessibilityRole="button"
+          accessibilityLabel={`Sets you are close to completing in ${categoryMeta.name}`}
+        >
+          <View style={[styles.guideIcon, { backgroundColor: colors.success + '1E' }]}>
+            <Ionicons name="albums-outline" size={20} color={colors.success} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.guideTitle, { color: colors.text }]}>Finish a set</Text>
+            <Text style={[styles.guideSub, { color: colors.muted }]} numberOfLines={2}>
+              What you are still missing from sets you have already started.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+        </AnimatedPressable>
+
         {/* 3a. Page-level sort chips (mockup `.chips` — gradient active pill). */}
         <CategorySortChips
           sort={catalogSort}
@@ -333,6 +363,16 @@ export default function CategoryStoreScreenWithBoundary() {
 }
 
 const styles = StyleSheet.create({
+  setsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 16,
+    marginTop: 10,
+    padding: 12,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   guideBanner: {
     flexDirection: 'row',
     alignItems: 'center',

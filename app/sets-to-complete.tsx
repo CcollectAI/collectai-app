@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getPortfolioItems } from '@/api/portfolioApi';
 import type { RawPortfolioItem, RawPortfolioItemsResponse } from '@/../types/api';
 import {
@@ -40,6 +40,16 @@ type Bucket = {
 
 const SetsToCompleteScreen: React.FC = () => {
   const { colors } = useAppTheme();
+  /**
+   * Optional category scope. The screen was global — every unfinished set in
+   * the whole portfolio — and reachable from nowhere. Its entry point is now
+   * the CATEGORY page, where "what am I still missing" means "in this
+   * category", so it accepts a slug and filters to it.
+   *
+   * Optional, not required: the global view is still valid and still the
+   * behaviour on a bare /sets-to-complete deep link.
+   */
+  const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
   const { limits } = useBillingLimits();
   const { settings } = useSettings();
   const router = useRouter();
@@ -116,6 +126,11 @@ const SetsToCompleteScreen: React.FC = () => {
     return scores
       .filter(
         (s) =>
+          // Category scope, when one was passed. A set whose category is null
+          // is dropped from a scoped view rather than kept: "unknown" is not
+          // "this one", and showing it under a category heading would assert
+          // something we do not know.
+          (!categoryId || s.category === categoryId) &&
           s.completenessRatio >= MIN_COMPLETENESS &&
           s.completenessRatio <= MAX_COMPLETENESS &&
           s.expectedCount > 0,
@@ -125,7 +140,7 @@ const SetsToCompleteScreen: React.FC = () => {
           b.completenessRatio - a.completenessRatio ||
           b.valueTotal - a.valueTotal,
       );
-  }, [items]);
+  }, [items, categoryId]);
 
   const summary = useMemo(
     () => ({

@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { TabBackButton } from '@/components/TabBackButton';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type WatchlistItem } from '@/data';
@@ -774,6 +775,14 @@ function WatchlistTabScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right', 'top']}>
       <Animated.View style={[{ flex: 1 }, animatedStyle]}>
+        {/* This tab had no header row at all — it opened straight into the Deal
+            Agent banner — so there was nowhere for a back control to live. A
+            minimal row, rather than a full ScreenHeader, because the tab bar
+            already names the screen and a title here would just repeat it. */}
+        <View style={styles.tabHeaderRow}>
+          <TabBackButton />
+        </View>
+
         {/* Deal Agent — OUTSIDE the FlashList on purpose. FlashList v2 positions
             every cell including ListHeaderComponent absolutely, and a tall
             interactive header overflows its measured container and stops being
@@ -1133,6 +1142,7 @@ function WatchlistTabScreen() {
 }
 
 const styles = StyleSheet.create({
+  tabHeaderRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 4 },
   safe: {
     flex: 1,
   },

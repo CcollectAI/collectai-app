@@ -341,11 +341,19 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Search Header */}
       <View style={styles.header}>
-        {!asTab && (
-          <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back')}>
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-        )}
+        {/* Rendered on the TAB too, by request (2026-08-14). The tab had none
+            because a tab root has nothing to pop — `safeGoBack` finds an empty
+            stack and falls back to Portfolio, which is a real destination and
+            not a dead end. That fallback is what makes this safe to show
+            everywhere: the control always does something. */}
+        <AnimatedPressable
+          onPress={() => safeGoBack(router)}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.go_back')}
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        </AnimatedPressable>
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Ionicons name="search" size={18} color={colors.muted} />
           <TextInput

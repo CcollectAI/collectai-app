@@ -8,6 +8,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { TabBackButton } from '@/components/TabBackButton';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
@@ -25,6 +26,7 @@ export const ItemsGridHeader = React.memo(function ItemsGridHeader({
 
   return (
     <View style={styles.headerRow}>
+      <TabBackButton />
       <View style={styles.headerLeft}>
         <Text style={[styles.title, { color: colors.text }]}>Items</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>

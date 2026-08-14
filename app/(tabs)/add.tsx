@@ -28,6 +28,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { useTranslation } from "react-i18next";
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
+import { TabBackButton } from '@/components/TabBackButton';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 
@@ -192,6 +193,7 @@ return (
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
         {/* Header */}
         <View style={styles.headerRow}>
+          <TabBackButton />
           <View style={styles.headerLeft}>
             <Text style={[styles.title, { color: colors.text }]}>Add</Text>
             <Text style={[styles.subtitle, { color: colors.muted }]}>{t('add_tab.subtitle')}</Text>
