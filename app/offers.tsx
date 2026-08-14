@@ -17,10 +17,11 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View, Text, FlatList, StyleSheet, RefreshControl, Alert, Animated,
+  View, Text, SectionList, StyleSheet, RefreshControl, Alert, Animated,
   Linking, TextInput, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '@/components/ScreenHeader';
@@ -111,6 +112,43 @@ function OffersScreen() {
 
   const needsAction = useMemo(
     () => offers.reduce((n, o) => (offerNeedsMyAction(o) ? n + 1 : n), 0),
+    [offers],
+  );
+
+  /**
+   * Three sections instead of one flat list.
+   *
+   * The ranking has been correct since 2026-08-13 — your move first, then live
+   * trades, then finished — but it was INVISIBLE: five cards in a row with no
+   * boundary between "act on this now" and "this ended a week ago". Testers
+   * read it as an undifferentiated list, which is exactly what it looked like.
+   *
+   * Material's rule for lists is to organise by priority and label the groups;
+   * Kalshi's blotter does the same thing for resting orders. The headers do the
+   * work the sort order alone could not.
+   */
+  const sections = useMemo(() => {
+    const mine: P2POffer[] = [];
+    const live: P2POffer[] = [];
+    const done: P2POffer[] = [];
+    for (const o of offers) {
+      if (offerNeedsMyAction(o)) mine.push(o);
+      else if (o.status === 'accepted' || o.status === 'shipped'
+               || o.status === 'pending' || o.status === 'countered') live.push(o);
+      else done.push(o);
+    }
+    return [
+      { key: 'mine', title: 'Needs you', data: mine },
+      { key: 'live', title: 'Waiting on them', data: live },
+      { key: 'done', title: 'Closed', data: done },
+    ].filter((sec) => sec.data.length > 0);
+  }, [offers]);
+
+  /** What is actually at stake, the way a blotter opens with a total. */
+  const committed = useMemo(
+    () => offers
+      .filter((o) => o.status === 'accepted' || o.status === 'shipped')
+      .reduce((sum, o) => sum + (o.amount || 0), 0),
     [offers],
   );
 
@@ -349,6 +387,17 @@ function OffersScreen() {
         },
       ]}>
         <View style={styles.rowTop}>
+          {/* Supporting visual FIRST. A stacked list of pure text is what made
+              this read as a spreadsheet; a thumbnail is what makes it scannable
+              (Mobbin / Eleken on stacked lists). Falls back to a tinted glyph
+              rather than a blank box — an empty square reads as a broken image. */}
+          {o.listing_image_url ? (
+            <Image source={{ uri: o.listing_image_url }} style={styles.thumb} contentFit="cover" transition={120} />
+          ) : (
+            <View style={[styles.thumb, styles.thumbEmpty, { backgroundColor: colors.accent + '12' }]}>
+              <Ionicons name="pricetag-outline" size={18} color={colors.muted} />
+            </View>
+          )}
           <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
             {o.listing_title || 'Listing'}
           </Text>
@@ -699,10 +748,24 @@ function OffersScreen() {
       {/* Reconciles with the marketplace badge. Tapping "3" and landing on a
           screen that never says three again is what made the badge feel
           untrustworthy; this is the same count, from the same helper. */}
-      {!loading && !error && needsAction > 0 ? (
-        <Text style={[styles.needsLine, { color: colors.accent }]}>
-          {needsAction} {needsAction === 1 ? 'open bid needs' : 'open bids need'} you
-        </Text>
+      {/* Opens with what is at stake, the way a blotter does — Kalshi's
+          portfolio leads with committed value rather than with rows. */}
+      {!loading && !error && offers.length > 0 ? (
+        <View style={styles.summary}>
+          {needsAction > 0 ? (
+            <Text style={[styles.summaryStrong, { color: colors.accent }]}>
+              {needsAction} needs you
+            </Text>
+          ) : null}
+          {needsAction > 0 && committed > 0 ? (
+            <Text style={[styles.summaryText, { color: colors.muted }]}>·</Text>
+          ) : null}
+          {committed > 0 ? (
+            <Text style={[styles.summaryText, { color: colors.muted }]}>
+              {formatPrice(committed, settings.currency, settings.numberLocale)} committed
+            </Text>
+          ) : null}
+        </View>
       ) : null}
 
       {loading && !refreshing ? (
@@ -723,10 +786,16 @@ function OffersScreen() {
           }
         />
       ) : (
-        <FlatList
-          data={offers}
+        <SectionList
+          sections={sections}
           keyExtractor={(o) => o.id}
           renderItem={renderOffer}
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section }) => (
+            <Text style={[styles.sectionHeader, { color: colors.muted }]}>
+              {section.title} · {section.data.length}
+            </Text>
+          )}
           contentContainerStyle={[styles.list, { paddingBottom: bottomInset }]}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
@@ -983,6 +1052,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingBottom: 8, marginTop: -4,
   },
   rowTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  thumb: { width: 44, height: 44, borderRadius: radius.sm },
+  thumbEmpty: { alignItems: 'center', justifyContent: 'center' },
+  // Section headers do the work the sort order could not.
+  sectionHeader: {
+    fontSize: textToken.sm, fontWeight: fontWeight.extrabold,
+    letterSpacing: 0.6, textTransform: 'uppercase',
+    paddingHorizontal: 2, paddingTop: 14, paddingBottom: 6,
+  },
+  summary: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 16, paddingBottom: 8,
+  },
+  summaryText: { fontSize: textToken.md },
+  summaryStrong: { fontSize: textToken.md, fontWeight: fontWeight.bold },
   // Caps the right side so the title keeps its width. `flexShrink: 0` because
   // a price must never wrap or ellipsize — the one number on the card that has
   // to be read exactly.

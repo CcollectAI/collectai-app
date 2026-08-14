@@ -309,6 +309,10 @@ export type P2POffer = {
    *  Null when the listing row is gone — callers must fall back and SAY they
    *  did, never show a percentage off an unstated basis. */
   listing_price: number | null;
+  /** The listing photo. Every row was text, which is what made a screen of
+   *  live negotiations read as a spreadsheet — a thumbnail is the single
+   *  change that makes a stacked list scannable. */
+  listing_image_url?: string | null;
   /** pending | countered | accepted | declined | cancelled | expired |
    *  shipped | completed. Mirrors p2p_offers_status_check. */
   status: string;

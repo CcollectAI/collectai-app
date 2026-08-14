@@ -90,6 +90,11 @@ _OFFER_COLUMNS = """
             -- button no seller would ever press. The client must not guess a
             -- reference price it does not hold.
             l.price AS listing_price,
+            -- The listing photo. Every row on app/offers.tsx was text, which is
+            -- what made a screen of negotiations read as a spreadsheet — a
+            -- thumbnail is the single change that makes a stacked list
+            -- scannable.
+            l.image_url AS listing_image_url,
             -- Recipient postcode + country, for the carriers whose tracking URL
             -- needs them (PostNL). NULL until the buyer supplies an address, and
             -- `_tracking_url` then returns None rather than a half-built link,
@@ -230,6 +235,7 @@ class OfferOut(BaseModel):
     # falls back to the offer amount and says so, rather than showing a
     # percentage computed from nothing.
     listing_price: Optional[float] = None
+    listing_image_url: Optional[str] = None
     buyer_id: str
     seller_id: str
     amount: float
@@ -759,6 +765,7 @@ def _row_to_offer(r, me: str) -> OfferOut:
         # the tracking columns document at that RETURNING. create_offer sets it
         # from the listing row it already fetched.
         listing_price=_row_opt_float(r, "listing_price"),
+        listing_image_url=_row_opt(r, "listing_image_url"),
         buyer_id=str(r["buyer_id"]),
         seller_id=str(r["seller_id"]),
         amount=float(r["amount"]),
