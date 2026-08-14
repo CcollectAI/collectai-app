@@ -1,0 +1,32 @@
+-- The analytics category summary was timing out. This index is why.
+--
+-- `v_category_summaries_v1` joins the member's items to the catalogue on
+-- `ci.item_key = i.canonical_key`, with no category predicate — canonical_key
+-- is BARE, and the member's row does not know which category the catalogue
+-- filed it under.
+--
+-- The only index covering item_key was `category_items_category_item_key_key`
+-- on (category, item_key). A composite index cannot serve a lookup on its
+-- SECOND column, so the planner fell back to hashing all 225,737 catalogue rows
+-- to match a member who owns 8 items:
+--
+--   Hash Join
+--     -> Seq Scan on category_items ci_1  (rows=225737, 157ms)
+--     -> Hash -> Index Scan on items i    (rows=8)
+--
+-- Measured on prod before the fix, for a real member with 8 items:
+--   totals CTE (user-independent):  413ms cold / 108ms warm
+--   owned  CTE (the join):        3,491ms
+--   whole view via PostgREST:     8.76s -> HTTP 500, 57014 statement timeout
+--
+-- docs/ANDROID_LAUNCH.md records this same 57014 as FIXED on 2026-08-02
+-- (5029ms -> 105ms). That fix removed a per-row nested loop; it did not give
+-- the join an index, so the cost came back as the catalogue grew.
+--
+-- item_key LEADS deliberately. `(item_key, category)` also serves the grouping
+-- that follows the join, so one index covers both halves.
+--
+-- CONCURRENTLY: 225k rows on a live table. This cannot run inside a
+-- transaction block, so it is deliberately the only statement in this file.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_category_items_item_key
+  ON public.category_items (item_key, category);

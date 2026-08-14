@@ -459,3 +459,81 @@ nothing reaches the public store without promoting it in Play Console.
 
 > Do not run `eas build` without `--local`; cloud builds are billable and the
 > project is on the free plan. Both npm scripts above already pass `--local`.
+
+### The 57014 came back — and the 2026-08-02 fix was only half of it (2026-08-14)
+
+Reported as "analytics takes way too much time to load". Measured before
+touching anything: every API endpoint the screen calls is fast (0.09s–1.19s),
+so the API was never the problem. The gate is `listCategorySummaries`, which
+goes through **PostgREST**, not the API:
+
+```
+attempt 1: 8.76s -> HTTP 500 {"code":"57014","message":"canceling statement due to statement timeout"}
+attempt 2: 8.47s -> HTTP 500
+attempt 3: 3.79s -> 200
+```
+
+**The missing index, not the aggregate.** Splitting the view in half found the
+cost was not where the 2026-08-02 note assumed:
+
+| CTE | cold | warm |
+|---|---|---|
+| `totals` (user-independent, 225,737 rows) | 413ms | 108ms |
+| `owned` (the join, for a member owning **8 items**) | — | **3,491ms** |
+
+The view joins `ci.item_key = i.canonical_key` with no category predicate —
+`canonical_key` is BARE and the member's row does not know which category the
+catalogue filed it under. The only index covering `item_key` was
+`category_items_category_item_key_key` on **(category, item_key)**, and a
+composite index cannot serve a lookup on its SECOND column. So the planner
+hashed all 225k catalogue rows to match 8:
+
+```
+Hash Join
+  -> Seq Scan on category_items ci_1  (rows=225737, 157ms)
+  -> Hash -> Index Scan on items i    (rows=8)
+```
+
+`idx_category_items_item_key (item_key, category)` — built CONCURRENTLY in 6s —
+took the join from **3,491ms to 59ms**. The 2026-08-02 fix removed a per-row
+nested loop, which is why it helped; it never gave the join an index, so the
+cost returned as the catalogue grew.
+
+**Then the totals.** With the join fixed, cold was still 7.58s: the
+user-independent aggregate over 225k rows, recomputed per request to produce 55
+numbers identical for every member on earth. `mv_category_totals` materialises
+it, refreshed every 15 minutes.
+
+Final, same member, via PostgREST as `authenticated`:
+**8.76s / 500 → 0.67s cold, 0.23s warm.**
+
+Equivalence was proven before the swap: `set_config(…, FALSE)` (false, or the
+setting is transaction-local and both snapshots trivially match on
+`auth.uid() = NULL`), a member owning rows in 6 of 55 categories, EXCEPT in both
+directions — 55 rows each side, zero diff.
+
+### `refresh_core_mvs()` had been a no-op for months
+
+Found while scheduling the new matview's refresh. The function ran:
+
+```sql
+refresh materialized view concurrently if exists public.mv_daily_median_price
+```
+
+**There is no `IF EXISTS` clause on `REFRESH MATERIALIZED VIEW`.** Every call
+raised `syntax error at or near "exists"`, and every call was wrapped in
+`exception when others then null`. The cron job fired every 15 minutes, 96 times
+a day, refreshed nothing, and reported success throughout.
+
+`mv_daily_median_price` was frozen at **2026-05-02 — 104 days** — while its
+source was current to today. `mv_item_best_comp_canon` escaped only because a
+separate hourly job refreshes it with valid syntax.
+
+Fixed: correct syntax, and a failed refresh now `RAISE WARNING`s instead of
+vanishing — warnings reach the Postgres log, which is the layer the daily
+watchdog reads. Each refresh keeps its own exception block so one failure cannot
+stop the others.
+
+After the first real refresh, row count went 146 → 56. That is correct, not
+loss: `market_hits` has one-month partition retention, so the May snapshot was
+frozen holding days whose partitions have since been dropped.
