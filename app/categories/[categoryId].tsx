@@ -36,6 +36,9 @@ import { dataProvider, type CategoryStoreData } from '@/data';
 import { getCategoryById, getRelatedCategories } from '@/data/categories';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
+import { guideFor } from '@/data/collectingGuides';
 import logger from '@/utils/logger';
 import { logAuthState, logLoad, startTimer } from '@/utils/diagnostics';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -58,12 +61,16 @@ import { safeGoBack } from '@/lib/goBack';
 function CategoryStoreScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
   const router = useRouter();
+  const { settings } = useSettings();
   const { colors } = useAppTheme();
   const { showToast } = useToast();
 
   // Category identity is LOCAL data — render the page shell immediately.
   const categoryMeta = categoryId ? getCategoryById(categoryId) : undefined;
   const relatedCategories = categoryMeta ? getRelatedCategories(categoryMeta) : [];
+  // null for most categories, and that is the normal case — see
+  // src/data/collectingGuides.ts. The banner below branches on it.
+  const guide = guideFor(categoryId);
   const accentColor = colors.accent;
 
   const [following, setFollowing] = useState(false);
@@ -200,6 +207,39 @@ function CategoryStoreScreen() {
           colors={colors}
         />
 
+        {/* 2b. "New to this?" — ONLY where a guide exists. Most of the 56
+            categories have none, and a banner promising a guide that opens an
+            empty page is the dead-end this codebase keeps paying for. It sits
+            above the catalogue because someone who does not know what a holo is
+            cannot use a sort control yet. */}
+        {guide ? (
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.push({
+                pathname: '/guide/[categoryId]',
+                params: { categoryId },
+              } as unknown as Href);
+            }}
+            style={[styles.guideBanner, { backgroundColor: colors.accent + '14', borderColor: colors.accent + '40' }]}
+            accessibilityRole="button"
+            accessibilityLabel={`How to start collecting ${categoryMeta.name}`}
+          >
+            <View style={[styles.guideIcon, { backgroundColor: colors.accent + '22' }]}>
+              <Ionicons name="school-outline" size={20} color={colors.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.guideTitle, { color: colors.text }]}>
+                New to {categoryMeta.name}?
+              </Text>
+              <Text style={[styles.guideSub, { color: colors.muted }]} numberOfLines={2}>
+                The words, what to look after, what to avoid, and where to start.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </AnimatedPressable>
+        ) : null}
+
         {/* 3a. Page-level sort chips (mockup `.chips` — gradient active pill). */}
         <CategorySortChips
           sort={catalogSort}
@@ -293,6 +333,22 @@ export default function CategoryStoreScreenWithBoundary() {
 }
 
 const styles = StyleSheet.create({
+  guideBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 12,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  guideIcon: {
+    width: 38, height: 38, borderRadius: 19,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  guideTitle: { fontSize: text.md, fontWeight: fontWeight.bold },
+  guideSub: { fontSize: text.sm, lineHeight: 17, marginTop: 2 },
   safe: {
     flex: 1,
   },

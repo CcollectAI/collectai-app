@@ -475,6 +475,9 @@ function RootStack() {
         <Stack.Screen name="condition-guide" options={iconOnlyHeader} />
         <Stack.Screen name="leaderboard" options={iconOnlyHeader} />
         <Stack.Screen name="sets-to-complete" options={iconOnlyHeader} />
+        {/* iconOnlyHeader, so back routes through safeGoBack — a guide is
+            reachable by deep link, where router.back() is a silent no-op. */}
+        <Stack.Screen name="guide/[categoryId]" options={iconOnlyHeader} />
         <Stack.Screen name="twitch-leaderboard" options={iconOnlyHeader} />
 
         {/* Legal screens — no header (custom header inside) */}
