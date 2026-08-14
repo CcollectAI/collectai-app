@@ -1067,7 +1067,19 @@ async def respond_to_offer(
                 offer_id, new_status, amount,
             )
         else:  # withdraw
-            if status not in (_ACCEPTED, _SHIPPED):
+            # PENDING and COUNTERED included since 2026-08-15. Before that a
+            # buyer could not retract an offer the seller had not answered:
+            # `withdraw` required accepted/shipped, `decline` and `accept` are
+            # the seller's, and `counter` raises your own bid. A five-day-old
+            # "Awaiting seller" was a resting bid with no cancel — money
+            # notionally committed with no way out but for the other side to
+            # act. That is the one thing every order book lets you do.
+            #
+            # Either party, deliberately: a seller who countered may want to
+            # retract that counter for the same reason. `withdrawn_by` already
+            # records WHO walked, which is the only honest sanction we apply,
+            # and it works the same from any of these states.
+            if status not in (_PENDING, _COUNTERED, _ACCEPTED, _SHIPPED):
                 raise error_response(409, "Nothing to withdraw from",
                                      code="NOT_WITHDRAWABLE")
             # 'withdrawn' is NOT a legal status (p2p_offers_status_check). Record the

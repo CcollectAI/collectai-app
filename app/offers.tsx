@@ -653,7 +653,12 @@ function OffersScreen() {
             </AnimatedPressable>
           ) : null}
 
-          {live ? (
+          {/* `open || live`, not `live`. Gated on `live` alone this never
+              appeared on a pending offer — the exact state 4 of 5 rows sit in —
+              so a buyer had no way to retract a bid the seller had not
+              answered. An order you cannot cancel is not an order, it is a
+              trap. Server widened to match (p2p_offers_router). */}
+          {open || live ? (
             <AnimatedPressable
               // Labelled "Delete" because that is what a member is doing —
               // taking their offer off the table. The API action stays
@@ -1069,7 +1074,11 @@ const styles = StyleSheet.create({
   // Caps the right side so the title keeps its width. `flexShrink: 0` because
   // a price must never wrap or ellipsize — the one number on the card that has
   // to be read exactly.
-  amountCol: { alignItems: 'flex-end', flexShrink: 0, maxWidth: '46%' },
+  // 38%, down from 46%: the row gained a 44pt thumbnail, and at the old cap a
+  // two-line title like "He's Got A Sword! [1] (Cold Foil)" was left about
+  // 140pt to wrap in. The delta line under the amount is the flexible part —
+  // it can wrap; the price itself still cannot (flexShrink: 0).
+  amountCol: { alignItems: 'flex-end', flexShrink: 0, maxWidth: '38%' },
   title: { flex: 1, fontSize: textToken.lg, fontWeight: fontWeight.semibold, lineHeight: 22 },
   // `lg`, not `xl` (2026-08-11). At 20/extrabold the figure dominated the card
   // — reported as "the numbers are too big" — and with the percentage line now
