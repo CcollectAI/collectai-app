@@ -212,6 +212,40 @@ ssh collectai 'curl -s -H "Host: api.sparrowcollect.com" http://127.0.0.1:8000/h
 # it works, only that it started.
 ```
 
+### 0b-bis. The gates caught a file that would have taken prod down (2026-08-19)
+
+A worked example of why §0b is "run them by hand BEFORE restarting" rather than
+advice.
+
+Deploying the value-source work, the hash-diff found **12** server files
+differing from the box — not the 1 or 2 a `HEAD~1` diff would have produced,
+because prod drifts behind the repo (`learning_prod_code_drifts_behind_repo`).
+Two of the twelve were older uncommitted work that had never shipped, and one
+of those — `workers/silent_sleepers_worker.py` — reads `cron.job`.
+
+`preflight_router_drift` reports that as `TABLE_MISSING: cron`, because the
+auditor's schema snapshot covers `public` and `cron` is **pg_cron's own
+schema**. Valid SQL, failing gate. And that gate is one of the NINE BLOCKING
+`ExecStartPre=` entries, so restarting with the file staged would have left the
+unit unable to come up — taking the API *and* every worker down, since the bake
+serves both.
+
+Sequence that saved it, in order:
+
+1. `rsync` staged the files (the running process is unaffected — it has already
+   loaded its modules).
+2. The nine gates ran against the staged code: **eight PASS, router_drift FAIL**.
+3. The offending file was pulled off the box; gates re-run, all nine PASS.
+4. Only then `systemctl restart`.
+
+The file is now allowlisted with its reason
+(`scripts/router_drift_allowlist.txt`) and proven to pass with the file back in
+place, so the next deploy carries it without repeating this.
+
+**The lesson is the ORDER, not the file.** Had the restart come first, the
+symptom would have been a dead API with a stack trace about a table nobody had
+touched, hours after the change that caused it.
+
 ### 0c. A committed query is not a tested query (2026-08-15)
 
 `p2p_offers_router.py` selected `l.image_url`, where `l` is

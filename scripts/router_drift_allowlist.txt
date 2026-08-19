@@ -45,3 +45,19 @@ workers/vision_ingest_worker.py:TABLE_MISSING:vision_queue
 # workers/vision_ingest_worker.py: see TABLE_MISSING above; column ref
 # is on the same dormant table.
 workers/vision_ingest_worker.py:BARE_COLUMN_MISSING:vision_predict_log.image_url
+
+# workers/silent_sleepers_worker.py — `cron.job`, added 2026-08-19.
+#
+# NOT broken drift: `cron` is pg_cron's OWN SCHEMA, and the auditor's schema
+# snapshot covers `public`, so a perfectly valid `cron.job` read reads as a
+# missing table. audit_orphan_stores.py queries the same table for the same
+# reason.
+#
+# This blocked a deploy rather than a build, which is the expensive way to find
+# it: `preflight_router_drift` is one of NINE BLOCKING ExecStartPre gates, so a
+# restart with this file staged takes the API and every worker down — the bake
+# serves both. Caught on 2026-08-19 only because the gates were run by hand
+# BEFORE restarting, exactly as docs/DEPLOYMENT.md §0b instructs. The file was
+# pulled from the box to ship that deploy; these entries are what let it go out
+# with the next one.
+workers/silent_sleepers_worker.py:TABLE_MISSING:cron
