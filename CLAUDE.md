@@ -4,6 +4,45 @@
 
 ## Current state (2026-08-19)
 
+### Offers screen, category vocabulary, and a chart that was wrong by 100x (2026-08-19, later)
+
+**A unit mismatch at a SEAM, wrong by a factor of 100, on a chart that had just
+been proven correct.** `/analytics/portfolio/category-breakdown` returns
+`pct_of_portfolio` as a FRACTION (`round(val / total_value, 4)`, its own server
+test pins `== 0.625`). Home assigned it straight into `percentage`, which the
+section renders both as `.toFixed(0)}%` and as a bar `width: ${percentage}%`.
+Measured on prod: pokemon at **51.6%** of the portfolio drew **"1%"**,
+one_piece_tcg at 48.4% drew **"0%"**, and every bar collapsed to its 2% floor.
+
+Both sides were self-consistent and both were tested; only the join was wrong,
+so no test on either side could see it. The mapper moved to
+`src/lib/categoryBreakdown.ts` specifically so the seam has one.
+**`npm run check:percent-units`** now classifies every server-side ratio field
+and requires each client read of a fraction to scale it — the same suffix means
+BOTH units across this API (`change_1d_pct` and `change_7d_pct` sit in the same
+router with different units). No second live instance; `gain_pct`, `error_pct`,
+`mae_pct` and the whole category deep-dive have **no client consumer at all**.
+
+**Two vocabularies for one column.** `items.category` stores a SLUG; every
+picker is built from display NAMES. Reading: seven surfaces printed the raw
+slug, so a Magic card's badge said *"mtg"*. Writing: `updateItem` wrote the
+picker's display name verbatim into the slug column, which would have made that
+item vanish from its own category page while still looking correct on its own
+screen. Prod measured first — 9 values, all slugs, 0 display names, so latent
+rather than live. Normalised at the single write chokepoint. See docs/TAXONOMY.md.
+
+**Offers screen, second pass** (docs/P2P_MARKETPLACE_SPEC.md §11b): competing
+bids grouped, rival bids marked `superseded` (§1d keeps them ALIVE on purpose —
+accept is an agreement, not a lock — they just stop claiming YOUR MOVE), a
+silent 50-row cap admitted, closed trades collapsed to reference rows,
+staleness instead of a countdown on a deadline we do not enforce, counters
+capped at 5, swipe-to-decline, and "N bids need you" on Home.
+
+**A category page now shows YOUR items** (`YourItemsRail`), reversing part of
+the museum redesign. `getCategoryStore`'s items query — running on every
+category open since 2026-08-11 with nothing rendering it, and a mapper
+hardcoding `price: 0` — was deleted rather than reused.
+
 ### ⛔ Check your own new code BEFORE calling it done (2026-08-19)
 
 Asked for after an audit found **three bugs in code written the same hour**, one
