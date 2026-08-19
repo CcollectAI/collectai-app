@@ -534,6 +534,20 @@ export const createOffer = (payload: {
  * construction. 200 is the server's ceiling (`pagination_params`); `total` is
  * what lets the screen admit it when even that was not enough.
  */
+/**
+ * ONE trade, for `/offer/[offerId]`.
+ *
+ * The action endpoints all RETURN an offer, but until 2026-08-19 nothing could
+ * LOAD one — the only route was fetching the whole list and searching it, which
+ * misses any trade older than the 200-row page and costs a full list read (plus
+ * its per-item price-sanity aggregate) to render a single row.
+ *
+ * Same server mapper as the list, so `superseded`, `can_confirm`, `can_grade`
+ * and `already_graded` cannot disagree between the two screens.
+ */
+export const getOffer = (offerId: string) =>
+  get<P2POffer>(`/p2p/offers/${encodeURIComponent(offerId)}`);
+
 export const listOffers = (role: 'all' | 'buying' | 'selling' = 'all', limit = 200) =>
   get<{ offers: P2POffer[]; total?: number }>(`/p2p/offers?role=${role}&limit=${limit}`);
 

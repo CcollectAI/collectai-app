@@ -480,6 +480,14 @@ async def _notify_trade(conn, user_id: str, title: str, body: str, offer_id: str
             # `offerId` and opens that card (npm run check:params covers the
             # in-app pushes to this route; a server deep link is the same
             # contract arriving from outside).
+            #
+            # STAYS on `/offers?offerId=` until the build carrying
+            # `/offer/[offerId]` is live. Repointing it now is §5e's
+            # deploy-order trap: the server ships in minutes, an app build
+            # takes a day, and in between every trade push would land on a
+            # route that does not exist. Repoint in the deploy AFTER that
+            # build. `test_trade_pushes_deep_link_to_the_offer_not_the_list`
+            # holds it here.
             deep_link=f"/offers?offerId={offer_id}",
             urgent=True,
         )
@@ -1124,6 +1132,117 @@ async def list_offers(
             )
 
     return OfferListResponse(offers=offers, total=int(total or 0))
+
+
+@router.get("/offers/{offer_id}", response_model=OfferOut,
+            summary="One offer, for the trade screen")
+async def get_offer(
+    offer_id: str,
+    user_id: str = Depends(get_current_user_id),
+) -> OfferOut:
+    """A single trade, for `/offer/[offerId]`.
+
+    Added 2026-08-19 with the trade screen. Every action endpoint already
+    RETURNS an OfferOut, but nothing could LOAD one — the client could only
+    fetch the whole list and search it, which breaks on a trade older than the
+    200-row page and costs a full list read (plus its market_hits price-sanity
+    aggregate) to render one row.
+
+    Uses `_OFFER_COLUMNS` and `_row_to_offer`, so this row is identical to the
+    one the list returns — `superseded`, the tracking URL, the price verdict
+    and the two confirm flags all follow the same rules. A second hand-rolled
+    mapper here is exactly how the list and the detail screen would come to
+    disagree about whether a trade needs you.
+
+    `already_graded` is selected the same way the list does it. Without it
+    `_row_to_offer` defaults the flag to False, and the screen would offer
+    "Rate the seller" on a trade you had already rated.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    async with pool.acquire() as conn:
+        r = await conn.fetchrow(
+            f"""
+            SELECT {_OFFER_COLUMNS},
+                   EXISTS (
+                       SELECT 1 FROM public.member_grades g
+                       WHERE g.offer_id = o.id AND g.rater_id = $2::uuid
+                   ) AS already_graded
+            FROM public.p2p_offers o
+            LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
+            LEFT JOIN public.p2p_offer_addresses a ON a.offer_id = o.id
+            WHERE o.id = $1::uuid
+            """,
+            offer_id, user_id,
+        )
+        if r is None:
+            raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
+        # A trade is private to its two parties. 404, not 403: telling a
+        # stranger "that offer exists but is not yours" confirms the id.
+        if str(r["buyer_id"]) != user_id and str(r["seller_id"]) != user_id:
+            raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
+
+    return _row_to_offer(r, user_id)
+
+
+@router.get("/offers/{offer_id}", response_model=OfferOut,
+            summary="One offer, for the trade screen")
+async def get_offer(
+    offer_id: str,
+    user_id: str = Depends(get_current_user_id),
+) -> OfferOut:
+    """A single trade, for `/offer/[offerId]`.
+
+    Added 2026-08-19 with the trade screen. Every action endpoint already
+    RETURNS an OfferOut, but nothing could LOAD one — the client could only
+    fetch the whole list and search it, which breaks for a trade older than the
+    200-row page and costs a full list read (plus its per-item `market_hits`
+    price-sanity aggregate) to render a single row.
+
+    Built on `_OFFER_COLUMNS` + `_row_to_offer`, so this row is IDENTICAL to
+    the one the list returns: `superseded`, the resolved tracking URL, the
+    price verdict and both confirm flags follow the same rules. A second
+    hand-rolled mapper here is precisely how the list and the trade screen
+    would come to disagree about whether a trade needs you.
+
+    `already_graded` is selected the same way the list selects it. Without it
+    `_row_to_offer` defaults the flag to False and the screen would offer
+    "Rate the seller" on a trade the member had already rated.
+
+    NOTE: the trade pushes still deep-link to `/offers?offerId=…`, NOT here.
+    §5e's deploy-order trap — repointing them before the build carrying
+    `/offer/[offerId]` is live would land every trade push on a route that
+    does not exist. Repoint them in the deploy AFTER that build ships.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    async with pool.acquire() as conn:
+        r = await conn.fetchrow(
+            f"""
+            SELECT {_OFFER_COLUMNS},
+                   EXISTS (
+                       SELECT 1 FROM public.member_grades g
+                       WHERE g.offer_id = o.id AND g.rater_id = $2::uuid
+                   ) AS already_graded
+            FROM public.p2p_offers o
+            LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
+            LEFT JOIN public.p2p_offer_addresses a ON a.offer_id = o.id
+            WHERE o.id = $1::uuid
+            """,
+            offer_id, user_id,
+        )
+        if r is None:
+            raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
+        # A trade is private to its two parties. 404 rather than 403: telling a
+        # stranger "that offer exists but is not yours" confirms the id.
+        if str(r["buyer_id"]) != user_id and str(r["seller_id"]) != user_id:
+            raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
+
+    return _row_to_offer(r, user_id)
 
 
 @router.post("/offers/{offer_id}/respond", response_model=OfferOut,

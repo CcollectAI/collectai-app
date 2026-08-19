@@ -677,7 +677,13 @@ function OffersScreen() {
         enableHaptics={settings.hapticsEnabled}
       >
       <AnimatedPressable
-        onPress={() => router.push({ pathname: '/listing/[id]', params: { id: o.listing_id } } as unknown as Href)}
+        // Opens the TRADE, not the listing (2026-08-19). It used to push
+        // `/listing/[id]`, which answers "what is this item" when the question
+        // a member has on this screen is "what do I do about this trade" —
+        // reported as "this is not what you need to edit/manage".
+        // `/offer/[offerId]` owns the whole flow in order; the listing is a
+        // link at the bottom of it.
+        onPress={() => router.push(`/offer/${encodeURIComponent(o.id)}` as Href)}
         accessibilityRole="button"
         /* The two facts that decide whether this card matters — does it need
            me, and what state is it in — were BOTH absent from the label. A

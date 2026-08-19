@@ -1527,6 +1527,49 @@ rest:
   `useEffect` — Home stays mounted, and the first version would have kept
   advertising bids you had already answered.
 
+### 11c. The trade screen — `/offer/[offerId]` (2026-08-19)
+
+Reported: *"if you press on the bids/offers then it goes straight to the item
+listing. this is not what you need to edit/manage… it needs to be one seamless
+flow."*
+
+Every capability already existed — respond, settle up, address, carriage,
+tracking, two-sided confirm, rating — but they were buttons and sheets
+scattered across a list card in no stated order, and tapping the card navigated
+AWAY to the listing. **Nothing owned a trade.** The listing answers "what is
+this item"; the question on this screen is "what do I do about this trade".
+
+`/offer/[offerId]` owns it, as a five-step ladder: **Respond → Pay/Ship →
+Add tracking → Confirm → Rate**, each marked done / now / later. Steps you have
+passed stay visible and ticked, because *"did I already confirm?"* is a real
+question. The listing is now a link at the BOTTOM of the trade.
+
+Three things about it that must not be "simplified":
+
+1. **The state machine is still the server's.** `can_confirm`, `can_grade`,
+   `already_graded`, `can_add_tracking` and `superseded` are rendered as given.
+   The ladder derives only PRESENTATION from them and never decides what is
+   legal — which is what makes it safe for the list AND this screen to carry
+   actions. They are two views of one machine, not two machines.
+2. **`GET /p2p/offers/{offer_id}` was added to load one trade.** Every action
+   endpoint already RETURNED an offer; nothing could LOAD one, so the client
+   would have had to fetch the 200-row list and search it — missing any older
+   trade and paying for a per-item `market_hits` aggregate to render one row.
+   It reuses `_OFFER_COLUMNS` + `_row_to_offer`, so the row is identical to the
+   list's, and selects `already_graded` the same way (without it the flag
+   defaults False and the screen would offer to re-rate a rated trade). 404,
+   not 403, for a trade that is not yours: 403 confirms the id exists.
+3. **The trade pushes still deep-link to `/offers?offerId=…`.** §5e's
+   deploy-order trap — the server ships in minutes, a build takes a day, and
+   repointing `_notify_trade` first would land every trade push on a route that
+   does not exist. `test_trade_pushes_deep_link_to_the_offer_not_the_list`
+   holds it there. **Repoint it in the deploy AFTER the build carrying this
+   route is live** — that is the one follow-up this section leaves open.
+
+Tracking capture and the rating sheet still live on the offers list, and the
+trade screen links across to them rather than carrying a second copy of the
+carrier picker. One picker, one place it can go wrong.
+
 **Known cost, stated rather than discovered:** Home and `/listings` each call
 `GET /p2p/offers` purely to count, and that endpoint runs a `market_hits`
 aggregate per distinct item for `price_verdict`, which neither caller uses —

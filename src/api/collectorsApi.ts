@@ -154,6 +154,7 @@ export const collectorsApi = {
   // hit at the DB layer.
   p2pCreateOffer: p2pApi.createOffer,
   p2pListOffers: p2pApi.listOffers,
+  p2pGetOffer: p2pApi.getOffer,
   p2pRespondToOffer: p2pApi.respondToOffer,
   p2pConfirmExchange: p2pApi.confirmExchange,
   p2pSetOfferTracking: p2pApi.setOfferTracking,
