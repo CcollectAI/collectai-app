@@ -505,11 +505,58 @@ catalogue figure (34.4291 → 34.4981, 0.0500 → 0.0400), and nothing else
 changed. Confirmed through the API afterwards: `Rocket's Scyther` serves 34.5
 `catalog_model`.
 
-**Still open (Stage 2):** those endpoints now AGREE with the view but still
-retype the chain rather than reading it. Reading it is not currently possible
-server-side — the view ends `WHERE user_id = auth.uid()` and the pool has no
-auth context — so closing this properly means a shared SQL function both the
-view and the routers call, not a repoint.
+##### Stage 2 — CLOSED 2026-08-19: `public.item_value_v1(items)`
+
+The chain lived in five places, made to agree by tests. Agreement held by tests
+is not one definition, and this chain had already drifted twice (the missing
+catalogue link, the snapshot-vs-live order).
+
+"Have the routers read the view" is impossible — the view ends
+`WHERE user_id = auth.uid()` and the server pool has no auth context, which is
+why the chain was copied in the first place. A **function** has no such scoping,
+so both sides call it:
+
+```
+v_item_values_v1              -> LEFT JOIN LATERAL public.item_value_v1(i)
+/portfolio/items              -> same
+/portfolio/overview (×2)      -> same
+/analytics/.../category-breakdown -> same
+leaderboard                   -> same, + the market rule as a FILTER on its label
+```
+
+The leaderboard is the nicest consequence: it no longer keeps a truncated copy
+of the chain, it counts `iv.value_eur` only when `iv.value_source` is
+comp-backed. The catalogue step that went missing on 2026-08-17 cannot go
+missing again, because it is not written there at all.
+
+**Two traps, both load-bearing:**
+
+- **`SECURITY DEFINER` is not decoration.** `price_predictions` grants SELECT to
+  `authenticated` and denies every row by RLS. The view could read it only
+  because a view runs with its OWNER's rights; a `SECURITY INVOKER` function
+  would re-check as the caller and **succeed while returning nothing**, so every
+  catalogue-priced item would silently fall back to the member's estimate.
+  Proven as the `authenticated` role after the change: a direct read of
+  `price_predictions` returns **0 rows**, the view returns **7 rows, 3
+  `catalog_model`**.
+- **Call it with `LATERAL`, never `(f(i)).value_eur`.** Postgres expands the
+  field-access form into one call PER FIELD, doubling every subquery inside.
+
+**A regression this caught, worth repeating:** the `LEFT JOIN LATERAL` was first
+placed between `ON i.user_id = p.user_id` and its `AND i.category = $1`, which
+re-parented the category filter onto the lateral's `ON TRUE`. Because a LEFT
+JOIN keeps the row when its condition fails, the filter **stopped filtering
+instead of erroring** — `item_count` went 1 → 8 and a member appeared on a board
+they hold nothing in. Found by diffing each endpoint's JSON against its
+pre-refactor capture, which is the only check that would have seen it.
+
+**Proof of no behaviour change:** all four endpoints byte-identical before and
+after; the value E2E 12/12; the reminder E2E 10/10; the parity test PASS across
+74 items and 7 members; `schema.lock` regen 0 lines; 66 server tests green.
+**Cost:** `/portfolio/items` median **54ms** over 8 warm calls, against 55-60ms
+before — unchanged. (An early 3-call sample read 120-190ms; that was cold cache
+right after the restart, and measuring properly is what stopped a
+non-existent regression being "fixed".)
 
 ##### The Home curve must value the whole collection
 

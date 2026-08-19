@@ -367,17 +367,16 @@ async def get_portfolio_category_breakdown(
                         -- Measured before the switch: of 74 live items, 3 had
                         -- both and 2 disagreed, in both cases the live price
                         -- being the newer one.
-                        COALESCE(
-                            (SELECT pp.q50 FROM price_predictions pp
-                              WHERE pp.item_ref = i.canonical_ref
-                              ORDER BY pp.generated_at DESC LIMIT 1),
-                            lq.q50_eur,
-                            i.predicted_price_eur, i.estimated_value, 0)
+                        iv.value_eur
                     ), 0) AS total_value,
                     COALESCE(SUM(
                         COALESCE(eq.first_q50, i.predicted_price_eur, i.estimated_value, 0)
                     ), 0) AS first_total
                 FROM items i
+                -- One definition (Stage 2, 2026-08-19) — the same function
+                -- v_item_values_v1 wraps. LATERAL, not `(f(i)).field`, which
+                -- Postgres expands into one call per field.
+                LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
                 LEFT JOIN latest_qp lq ON lq.item_id = i.id
                 LEFT JOIN earliest_qp eq ON eq.item_id = i.id
                 WHERE i.user_id = $1

@@ -229,11 +229,13 @@ async def portfolio_timeseries(
                         WHERE i.user_id = $1
                         ORDER BY pp.item_ref, pp.generated_at DESC
                     )
-                    SELECT COALESCE(SUM(
-                        COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0)
-                    ), 0)
+                    -- One definition (Stage 2, 2026-08-19): the same
+                    -- function v_item_values_v1 wraps. `latest` is no longer
+                    -- needed for the value — the function does that join
+                    -- itself — but it stays for the q10/q90 band elsewhere.
+                    SELECT COALESCE(SUM(iv.value_eur), 0)
                     FROM items i
-                    LEFT JOIN latest l ON l.item_ref = i.canonical_ref
+                    LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
                     WHERE i.user_id = $1 AND NOT i.archived
                     """,
                     user_id,
@@ -303,13 +305,19 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
                     -- fallback, hand-added items with no price_predictions row
                     -- valued at 0 here while the Items tab showed their stored
                     -- price — Home's "COLLECTION VALUE" read €0 vs €55 elsewhere.
-                    COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0) AS current_value,
+                    iv.value_eur AS current_value,
+                    -- `prev_value` is deliberately NOT the function: it answers
+                    -- "what was this worth BEFORE", and the function only knows
+                    -- the current chain. Left as its own expression rather than
+                    -- forced through a shared definition that does not mean the
+                    -- same thing.
                     COALESCE(p.prev_q50, l.q50, i.predicted_price_eur, i.estimated_value, 0) AS prev_value
                 FROM items i
+                LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN prev p ON p.item_ref = i.canonical_ref
                 WHERE i.user_id = $1 AND NOT i.archived
-                ORDER BY COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0) DESC
+                ORDER BY iv.value_eur DESC
                 """,
                 user_id,
             )
@@ -399,7 +407,16 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     -- this sibling was not, so the SAME portfolio read EUR 55
                     -- in the header and EUR 0 on every row -- verified on a
                     -- live account whose 3 items have zero price_predictions.
-                    COALESCE(l.q50, (SELECT qp.q50_eur FROM quick_predictions qp WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1), i.predicted_price_eur, i.estimated_value, 0) AS current_value,
+                    -- ONE DEFINITION (2026-08-19, Stage 2). `public.item_value_v1`
+                    -- is the same function `v_item_values_v1` wraps, so this
+                    -- endpoint and the app can no longer drift — they were
+                    -- copies held in step by tests, and this chain had already
+                    -- drifted twice.
+                    --
+                    -- Joined LATERALLY, never as `(item_value_v1(i)).value_eur`:
+                    -- Postgres expands that form into one call PER FIELD, which
+                    -- would double every subquery inside the function.
+                    iv.value_eur AS current_value,
                     COALESCE(l.q10, 0) AS q10,
                     COALESCE(l.q90, 0) AS q90,
                     -- What the user actually PAID, falling back to the earliest
@@ -422,54 +439,9 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     -- moved, not what the member made. Both arrive as a number
                     -- called "unrealized_pl" and look identical.
                     (i.purchase_price_eur IS NOT NULL) AS has_purchase_price,
-                    -- WHICH LINK OF THE CHAIN PRODUCED current_value.
-                    --
-                    -- Same idea as has_purchase_price above: without it the
-                    -- client cannot tell a comp-backed number from one a
-                    -- member typed, and analytics would keep presenting both
-                    -- as "market value". Added 2026-08-19 alongside
-                    -- v_item_values_v1.value_source.
-                    --
-                    -- ⚠️ The order below mirrors THIS query's COALESCE
-                    -- (catalog first, then quick), which is NOT the view's
-                    -- order (quick first, then catalog). That divergence is
-                    -- pre-existing and documented in docs/ARCHITECTURE.md; the
-                    -- label must say which link actually answered HERE, so it
-                    -- follows this query rather than the view's.
-                    --
-                    -- `predicted_price_eur` is a member's typed number despite
-                    -- its name — its only writer was add-manual's "Estimated
-                    -- value" field. Labelling it as a model figure is the
-                    -- confusion this column exists to end.
-                    --
-                    -- COST, measured rather than assumed (DATA_SCALING_PLAN
-                    -- governance rule 2): this adds TWO correlated subqueries
-                    -- on quick_predictions per row, to a query that has no
-                    -- LIMIT. Warm end-to-end on prod after the change: 55-60ms
-                    -- for a 42-item collection (first call 267ms cold). Both
-                    -- subqueries hit `quick_predictions (item_id)` and stop at
-                    -- LIMIT 1.
-                    --
-                    -- Revisit if a collection an order of magnitude larger
-                    -- shows up: the fix is one LATERAL join feeding both the
-                    -- value and the label, not more indexes.
-                    CASE
-                        WHEN l.q50 IS NOT NULL THEN 'catalog_model'
-                        WHEN (SELECT qp.q50_eur FROM quick_predictions qp
-                               WHERE qp.item_id = i.id
-                            ORDER BY qp.created_at DESC LIMIT 1) IS NOT NULL
-                            THEN COALESCE(
-                                (SELECT NULLIF(qp.raw->>'source', '')
-                                   FROM quick_predictions qp
-                                  WHERE qp.item_id = i.id
-                               ORDER BY qp.created_at DESC LIMIT 1),
-                                'quick_scan')
-                        WHEN i.predicted_price_eur IS NOT NULL THEN 'user_estimate'
-                        WHEN i.estimated_value IS NOT NULL THEN
-                            CASE WHEN i.attrs->>'value_entry' = 'app'
-                                 THEN 'app_estimate' ELSE 'user_estimate' END
-                        ELSE 'none'
-                    END AS value_source,
+                    -- Provenance from the SAME call, so the label can never
+                    -- describe a number the caller did not use.
+                    iv.value_source,
                     -- WHICH SET THIS ITEM BELONGS TO, AND HOW BIG THAT SET IS.
                     --
                     -- app/sets-to-complete.tsx has always mapped `collection`,
@@ -489,6 +461,7 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     i.collection_name,
                     s.total_items AS set_size
                 FROM items i
+                LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN earliest e ON e.item_ref = i.canonical_ref
                 -- LEFT, and case-insensitive: an item may name a set we hold no

@@ -38,6 +38,27 @@ single habit:
 7. Measure the cost you added (DATA_SCALING_PLAN rule 2) instead of assuming it
    is small.
 
+### Stage 2 closed — one definition of item value
+
+`public.item_value_v1(items)` is now THE chain; `v_item_values_v1` is a thin
+wrapper over it and every server surface calls the same function
+(`/portfolio/items`, `/portfolio/overview`, category-breakdown, the
+leaderboard). The leaderboard expresses market-truth as a FILTER on the
+function's own label rather than keeping a truncated copy — so the catalogue
+step that went missing on 2026-08-17 cannot go missing again.
+
+Two traps, both load-bearing: **SECURITY DEFINER** (as INVOKER the
+`price_predictions` read returns an empty set SILENTLY and every catalogue
+price falls back to the member's estimate — proven as the `authenticated` role:
+direct read 0 rows, view 7 rows / 3 catalog_model), and **call it via LATERAL**
+(`(f(i)).field` is expanded into one call per field).
+
+All four endpoints came back byte-identical. One regression on the way:
+the LATERAL was placed between a join condition and its `AND i.category = $1`,
+re-parenting the filter onto the lateral's `ON TRUE` — and a LEFT JOIN keeps the
+row when its condition fails, so the filter stopped filtering instead of
+erroring (item_count 1 → 8). Only the endpoint JSON diff would have caught it.
+
 ### E2E: the two chains that had never actually run
 
 `server/tests/e2e_value_provenance.py` (12 checks) and

@@ -466,36 +466,38 @@ async def get_category_leaderboard(
                         -- The parity test asserts this is the market-backed
                         -- SUBSET of v_item_values_v1's chain, not a different
                         -- chain: same two expressions, same order, truncated.
+                        -- ONE DEFINITION (Stage 2, 2026-08-19) — the same
+                        -- `public.item_value_v1` the view wraps — and the
+                        -- market-truth rule expressed on TOP of it rather than
+                        -- as a second, truncated copy of the chain.
+                        --
+                        -- The function labels every value; the board counts a
+                        -- value only when that label is comp-backed. So an
+                        -- estimate contributes 0 and cannot be inflated by
+                        -- typing a bigger number, while the catalogue step
+                        -- that was MISSING until 2026-08-17 (8 of 74 items
+                        -- differed; one member read EUR 78.90 here against EUR
+                        -- 185.15 in their own portfolio) cannot go missing
+                        -- again — it is not written here at all.
                         COALESCE(SUM(
-                            COALESCE(
-                                -- CATALOGUE-FIRST since 2026-08-19: the live
-                                -- model output outranks the snapshot frozen
-                                -- into quick_predictions at add/revalue time.
-                                -- Same order as v_item_values_v1 and
-                                -- /portfolio/items, which is what the parity
-                                -- test checks.
-                                (SELECT pp.q50 FROM public.price_predictions pp
-                                  WHERE pp.item_ref = i.canonical_ref
-                               ORDER BY pp.generated_at DESC LIMIT 1),
-                                -- The catalogue step was MISSING until
-                                -- 2026-08-17 and the board quoted numbers no
-                                -- other screen agreed with: 8 of 74 live items
-                                -- differed, one member reading EUR 78.90 here
-                                -- against EUR 185.15 in their own portfolio.
-                                -- Measured by setting request.jwt.claim.sub per
-                                -- user and diffing against v_item_values_v1
-                                -- item by item.
-                                (SELECT qp.q50_eur FROM public.quick_predictions qp
-                                  WHERE qp.item_id = i.id
-                               ORDER BY qp.created_at DESC LIMIT 1),
-                                0
-                            )
+                            CASE WHEN iv.value_source IN
+                                    ('catalog_daily', 'catalog_model', 'quick_scan')
+                                 THEN iv.value_eur ELSE 0 END
                         ), 0)::float8 AS total_value
                     FROM public.user_public_profiles p
                     JOIN public.items i
                       ON i.user_id = p.user_id
                      AND i.category = $1
                      AND COALESCE(i.archived, FALSE) = FALSE
+                    -- AFTER the item join is fully closed. Slipping this
+                    -- between `ON i.user_id = ...` and its `AND i.category`
+                    -- re-parented the category filter onto this LEFT JOIN's
+                    -- ON TRUE — and because a LEFT JOIN keeps the row when its
+                    -- condition fails, the filter stopped filtering instead of
+                    -- erroring: item_count went 1 -> 8 and a member appeared on
+                    -- a board they hold nothing in. Caught by diffing the
+                    -- endpoint against its pre-refactor response.
+                    LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
                     LEFT JOIN public.user_privacy_settings ps
                       ON ps.user_id = p.user_id
                     WHERE COALESCE(ps.show_item_count, TRUE) IS TRUE

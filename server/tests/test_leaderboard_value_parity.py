@@ -73,14 +73,13 @@ import asyncpg
 
 # The chain as the router computes it. Kept as one string so the test fails if
 # somebody edits the router without editing here — which is the point.
+# What the board computes, expressed the way the router now computes it: the
+# shared function, with the market-truth rule as a filter on ITS label. If this
+# and the router ever disagree the value checks below fail, which is the point.
 ROUTER_VALUE_EXPR = """
-    COALESCE(
-        (SELECT pp.q50 FROM public.price_predictions pp
-          WHERE pp.item_ref = i.canonical_ref ORDER BY pp.generated_at DESC LIMIT 1),
-        (SELECT qp.q50_eur FROM public.quick_predictions qp
-          WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1),
-        0
-    )::float8
+    (CASE WHEN (public.item_value_v1(i)).value_source
+               IN ('catalog_daily', 'catalog_model', 'quick_scan')
+          THEN (public.item_value_v1(i)).value_eur ELSE 0 END)::float8
 """
 
 # `v_item_values_v1.value_source` values that rest on market data. Must match
@@ -119,28 +118,33 @@ async def main() -> int:
         # 1. The router still asks for every step. A structural check, because a
         #    dropped step is precisely how this broke and it is cheap to catch
         #    before touching the database at all.
+        # STAGE 2 (2026-08-19): the router no longer OWNS a chain — it calls
+        # `public.item_value_v1`, the same function `v_item_values_v1` wraps.
+        # So the structural half stops asking "does the copy still have every
+        # step" and asks "is there still only one definition".
         src = open(ROUTER_PATH).read()
-        for needle, label in [
-            ("quick_predictions", "quick_predictions.q50_eur"),
-            ("price_predictions", "price_predictions.q50"),
-            ("canonical_ref", "joined on items.canonical_ref"),
-        ]:
-            chk(f"router value chain still includes {label}", needle in src)
-
-        # And the member-supplied columns are NOT summed into the board.
-        # Scoped to the leaderboard SUM rather than the whole file, because
-        # both names legitimately appear elsewhere in it.
-        sum_block = ""
-        if "AS total_value" in src:
-            end = src.index("AS total_value")
-            sum_block = src[src.rindex("COALESCE(SUM(", 0, end):end]
+        end = src.index("AS total_value")
+        sum_block = src[src.rindex("COALESCE(SUM(", 0, end):end]
         chk("the board SUM was located", bool(sum_block))
-        for needle in ("predicted_price_eur", "estimated_value"):
+
+        chk(
+            "the board calls the shared function",
+            "item_value_v1" in src,
+            "a second copy of the chain has appeared",
+        )
+        for needle in ("price_predictions", "quick_predictions",
+                       "predicted_price_eur", "estimated_value"):
             chk(
-                f"board does NOT rank on member-supplied {needle}",
+                f"the board does not re-implement the chain ({needle})",
                 needle not in sum_block,
-                "a member could top a category by typing a bigger number",
+                "duplicating it is what drifted twice already",
             )
+        chk(
+            "market truth is expressed as a FILTER on the label",
+            "value_source IN" in sum_block or "value_source in" in sum_block,
+            "the board must exclude estimates by their label, not by truncating "
+            "a copy of the chain",
+        )
 
         # 2. The chain equals the canonical view, item by item, under a real
         #    auth context for each member who actually holds something.
