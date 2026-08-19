@@ -11,11 +11,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
 import { AnimatedPressable } from '@/motion';
-import { CategoryPill } from '@/components/CategoryPill';
 import { formatPrice, UNPRICED_LABEL, isUnpriced } from '@/lib/format';
 import { ValueSourceChip } from '@/components/ValueSourceChip';
 import { fireHaptic, HapticIntent } from '@/haptics';
-import { GRADING_ELIGIBLE_CATEGORIES, formatCategoryName } from '@/constants/categories';
+import { GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
 import { SwipeableRow, SwipeActions, type SwipeAction } from '@/components/SwipeableRow';
 
 interface Item {
@@ -125,10 +124,17 @@ export const ItemsListItem = React.memo(function ItemsListItem({
           <Text style={[styles.itemName, { color: colors.text }]}>
             {item.name}
           </Text>
-          <Text style={[styles.itemMeta, { color: colors.muted }]}>
-            <CategoryPill id={item.category} label={formatCategoryName(item.category)} />
-            {item.collectionName ? ` – ${item.collectionName}` : ''}
-          </Text>
+          {/* The category PILL was here (removed 2026-08-19). The list is
+              grouped BY category and the section heading directly above every
+              row already names it — and that heading is now the tap target, so
+              the pill was the same word twice plus a second touch target
+              competing with the row's own tap. Only the collection survives,
+              as plain text; it is the one thing the heading does not say. */}
+          {item.collectionName ? (
+            <Text style={[styles.itemMeta, { color: colors.muted }]} numberOfLines={1}>
+              {item.collectionName}
+            </Text>
+          ) : null}
           {/* Rich detail subtitle: brand · year · series · edition. Series is
               dropped when it duplicates the collection name shown above. */}
           {(() => {

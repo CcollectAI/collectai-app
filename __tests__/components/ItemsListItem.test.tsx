@@ -206,15 +206,26 @@ describe('ItemsListItem — enrichment surface', () => {
     expect(screen.getByText('PSA 9')).toBeTruthy();
   });
 
-  it('shows a clean meta line (no dangling dash) when there is no collection', () => {
+  it('renders no meta line at all when there is no collection', () => {
     render(<ItemsListItem item={makeItem({ collectionName: '' })} {...baseProps} />);
-    // The bug rendered "pokemon – " with a trailing separator on every row.
-    expect(screen.queryByText(/–\s*$/)).toBeNull();
+    // Was "pokemon – " with a dangling separator, then "[pill] – Base Set".
+    // The category pill left the row on 2026-08-19 (the section heading above
+    // every row already names the category, and that heading is now the tap
+    // target), so there is no separator left to dangle and nothing to render
+    // when the collection is empty.
+    expect(screen.queryByText(/–/)).toBeNull();
   });
 
-  it('shows the collection with a separator when present', () => {
+  it('shows the collection on its own, with no separator in front of it', () => {
     render(<ItemsListItem item={makeItem({ collectionName: 'Base Set' })} {...baseProps} />);
-    expect(screen.getByText(/– Base Set/)).toBeTruthy();
+    expect(screen.getByText('Base Set')).toBeTruthy();
+    expect(screen.queryByText(/– Base Set/)).toBeNull();
+  });
+
+  it('does not render the category on the row — the section heading owns it', () => {
+    render(<ItemsListItem item={makeItem({ category: 'mtg' })} {...baseProps} />);
+    expect(screen.queryByText('Magic: The Gathering')).toBeNull();
+    expect(screen.queryByLabelText(/View .* category/)).toBeNull();
   });
 
   it('omits the detail line entirely for a sparse item', () => {

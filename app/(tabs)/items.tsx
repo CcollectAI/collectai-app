@@ -22,7 +22,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect, type Href } from "expo-router";
 import { dataProvider, type Item as DataItem } from "@/data";
 import { mapDataItemToScreenItem, type ScreenItem } from "@/data/screenItem";
 import * as FileSystem from 'expo-file-system/legacy';
@@ -965,12 +965,27 @@ const ItemsScreen: React.FC = () => {
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.id}
+          // The category TITLE is the tap target, not a pill on every row.
+          // Sections are grouped BY category (`title: group.category`), so a
+          // pill per row repeated the heading directly above it — once per
+          // item — and put N touch targets where the group needs one. Moving
+          // it here also stops the pill competing with the row's own tap,
+          // which opens the item.
           renderSectionHeader={({ section }) => (
-            <View style={[styles.categoryBlock, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                router.push(`/categories/${encodeURIComponent(section.title)}` as Href);
+              }}
+              style={[styles.categoryBlock, { borderTopColor: colors.border, backgroundColor: colors.background }]}
+              accessibilityRole="button"
+              accessibilityLabel={`${formatCategoryName(section.title)} category. Opens the category page`}
+            >
               <Text style={[styles.categoryTitle, { color: colors.text }]}>
                 {formatCategoryName(section.title)}
               </Text>
-            </View>
+              <Ionicons name="chevron-forward" size={15} color={colors.muted} />
+            </AnimatedPressable>
           )}
           renderItem={({ item }) => (
             <ItemsListItem
@@ -1057,6 +1072,11 @@ const styles = StyleSheet.create({
   // (filterSummaryRow, filterSummaryText, filterChipsRow, filterChip, filterChipText, filterClearButton, filterClearText, itemCount moved to ItemsFilterSummary)
   // emptyText, emptyContainer, emptyCtaBtn styles moved to ItemsEmptyState
   categoryBlock: {
+    // A row now, so the chevron can sit at the far end and the whole strip is
+    // one comfortable touch target rather than just the words.
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: 10,
     paddingVertical: 8,
     paddingHorizontal: 4,
