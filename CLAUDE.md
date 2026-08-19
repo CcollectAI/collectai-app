@@ -4,6 +4,33 @@
 
 ## Current state (2026-08-19)
 
+### Value provenance — what a number on screen is allowed to claim
+
+`v_item_values_v1` now returns **`value_source`** beside `value_eur` (applied
+to prod, schema.lock regenerated, preflight PASS). The app renders it as a chip
+on item detail and the items list; the leaderboard ranks on the **market-backed
+subset only**. Full detail: docs/ARCHITECTURE.md.
+
+**The finding that drove it: the column names lie.**
+
+| column | name suggests | actual only writer |
+|---|---|---|
+| `quick_predictions` | QuickScan output | `write_quick_valuation` — the daily catalogue rollup. **Comp-backed** |
+| `items.predicted_price_eur` | model output | add-manual's **"Estimated value" text field** |
+
+So the chain's link 3 was a hand-typed guess ranked ABOVE `estimated_value`,
+where every other writer puts one — a later correction could be outranked by
+the original and never show. `estimated_value` is now THE user-estimate column;
+`predicted_price_eur` is read-only legacy.
+
+Three write-path defects fixed with it: `updateItem` accepted `price` and
+mapped it to nothing (a trap for the offline queue, which replays queued args
+verbatim); `persistQuickscanDraft` posted four fields and dropped the scan's
+estimate and condition, so a scanned item saved with no value; and
+`app/item/[id].tsx` derived a THIRD value chain that skipped both prediction
+tables.
+
+
 **Trade ratings are now READ somewhere.** Two-sided rating has existed since
 Stage 2 (`member_grades`, either party, anchored to a completed offer). What
 was missing was every surface that should show it. Full writeup:

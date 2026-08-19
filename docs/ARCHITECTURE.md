@@ -307,13 +307,81 @@ shows. Group on `COALESCE(NULLIF(category, ''), 'uncategorized')` instead
 | table | what it is | joined by | historically read by |
 |-------|-----------|-----------|----------------------|
 | `price_predictions` | catalog-model output, partitioned | `items.canonical_ref = item_ref` | `/portfolio/overview`, `/portfolio/items`, `/portfolio/timeseries` |
-| `quick_predictions` | per-item QuickScan output | `item_id = items.id` | `/analytics/portfolio/category-breakdown`, **and the Items tab** (`itemsProvider.mapItemRow`) |
+| `quick_predictions` | ~~per-item QuickScan output~~ **catalogue valuation, see below** | `item_id = items.id` | `/analytics/portfolio/category-breakdown`, **and the Items tab** (`itemsProvider.mapItemRow`) |
 
 An item priced in one but not the other counted on some Home surfaces and read
 **zero** on others. Measured 2026-07-29 across 11 live items: 1 had a quick
 prediction, 2 had a catalog one — **neither source dominates**, so picking
 either alone loses real value. Every value site must COALESCE over *both*
 before falling back to `predicted_price_eur` / `estimated_value`.
+
+###### CORRECTION 2026-08-19 — the column names lie, and this table did too
+
+`quick_predictions` is **not** QuickScan output. It has exactly ONE writer in
+the codebase — `write_quick_valuation` (`items_router.py`), which reads
+`price_prediction_daily.q50` and stamps `raw.source = 'catalog_daily'`. It is
+**comp-backed**, and calling it "the scan's number" understates it.
+
+`items.predicted_price_eur` sounds like model output. Its only writer was
+`app/add-manual.tsx` — the **"Estimated value" text field**. So link 3 of the
+chain held a hand-typed guess, one rank ABOVE `estimated_value` where every
+other writer puts one. Two member-supplied columns at different ranks meant a
+later correction could be outranked by the original and never show.
+
+**Normalised 2026-08-19: `estimated_value` is THE user-estimate column.**
+`add-manual` writes it, `updateItem` writes it (it had accepted `price` and
+mapped it to nothing — a trap for the offline queue, which replays queued args
+verbatim), and QuickScan drafts write it too. `predicted_price_eur` is legacy:
+still read, no longer written.
+
+So the four links are two comp/model-backed and two member-supplied:
+
+| link | column / table | backed by |
+|---|---|---|
+| 1 | `quick_predictions.q50_eur` | the daily catalogue rollup |
+| 2 | `price_predictions.q50` via `canonical_ref` | the catalogue model |
+| 3 | `items.predicted_price_eur` | **a member typed it** (legacy writes only) |
+| 4 | `items.estimated_value` | **a member or a scan** — `attrs.value_entry` says which |
+
+##### `value_source` — the app must say which of those answered
+
+`v_item_values_v1` returns `value_source` alongside `value_eur` (migration
+`20260819_v_item_values_v1_value_source.sql`, applied to prod). Same CASE the
+COALESCE already walks, so no storage and no backfill:
+
+```
+catalog_daily | quick_scan | catalog_model   -> comp/model-backed
+user_estimate | app_estimate                 -> nobody checked it
+none                                         -> nothing answered; value is 0
+```
+
+Before this, a EUR 185 backed by twelve sold comps and a EUR 185 someone typed
+were the same pixels. That is hardest to see exactly where it matters most: in
+the 40+ categories with **no sold-comp source**, the displayed value IS the
+member's own guess wearing the app's authority.
+
+- **FE:** `ValueSourceChip` renders it on item detail and the items list.
+  Unknown source renders **nothing** — guessing a provenance is worse than
+  showing none. `MARKET_SOURCES` there must match the server's list.
+- **The leaderboard ranks on the market-backed subset only** (2026-08-19). It
+  is the one number that ranks members in public, so it stops after link 2 —
+  otherwise anyone tops a category by typing a bigger number into their own
+  item. An item with no comps contributes 0, and in the 40+ uncomped categories
+  that is every item, so those are ranked by `metric=items`.
+  `server/tests/test_leaderboard_value_parity.py` pins the relationship
+  (market-backed → equal; estimate-backed → 0) and is verified against live
+  prod from EC2, not from a laptop — the direct DSN does not resolve there
+  (`[Errno 8] nodename nor servname` is the tell).
+- **`app/item/[id].tsx` no longer derives its own value** — it reads the view
+  via `fetchItemValueById`, which reuses `fetchItemValues`. It had been the
+  third chain (`predicted_price_eur ?? estimated_value`, skipping both
+  prediction tables), and once manual adds stopped writing
+  `predicted_price_eur` a new item would have shown a value in the list and
+  nothing on its own screen.
+
+**Still open (Stage 2, unchanged):** `/portfolio/items`,
+`/analytics/portfolio/category-breakdown` and `/portfolio/overview` still retype
+the chain server-side rather than reading the view.
 
 ##### The Home curve must value the whole collection
 
