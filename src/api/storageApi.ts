@@ -1,4 +1,5 @@
 import { API_BASE } from "./config";
+import { getAuthHeaders } from "./httpClient";
 import { logger } from '@/lib/logger';
 
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -16,16 +17,28 @@ async function fetchWithTimeout(
   }
 }
 
+// ⚠️ EVERY call here needs a bearer.
+//
+// `/storage/objects` is `Depends(get_current_user_id)` on the server
+// (storage_router.py:170, :256) and these three helpers sent no Authorization
+// header at all — so every one of them would have returned 401. It has never
+// shown up because NOTHING CALLS `storageApi`; it is wired to no screen. That
+// makes it the same defect as the CSV import found on 2026-08-19, minus the
+// user report, and it would have surfaced on the day someone connected it.
+//
+// Caught by `npm run check:authed-fetch`, written for the import bug.
 async function get(path: string) {
-  const res = await fetchWithTimeout(`${API_BASE}${path}`);
+  const auth = await getAuthHeaders();
+  const res = await fetchWithTimeout(`${API_BASE}${path}`, { headers: { ...auth } });
   if (!res.ok) throw new Error(`GET ${path} failed (${res.status})`);
   return res.json();
 }
 
 async function post(path: string, body: Record<string, unknown> = {}) {
+  const auth = await getAuthHeaders();
   const res = await fetchWithTimeout(`${API_BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`POST ${path} failed (${res.status})`);
@@ -33,8 +46,10 @@ async function post(path: string, body: Record<string, unknown> = {}) {
 }
 
 async function del(path: string) {
+  const auth = await getAuthHeaders();
   const res = await fetchWithTimeout(`${API_BASE}${path}`, {
     method: "DELETE",
+    headers: { ...auth },
   });
   if (!res.ok) {
     let message = `DELETE ${path} failed (${res.status})`;

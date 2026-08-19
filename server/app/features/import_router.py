@@ -288,7 +288,32 @@ async def import_collection(
             else None
         )
 
-        est_val = _num(r.get("estimated_value") or r.get("price") or r.get("value"))
+        # ⚠️ `estimated_value` IS A EUR COLUMN, and the template invites a
+        # currency beside it.
+        #
+        # The template's own header is
+        # `... estimated_value,currency,notes`, and its third example row is a
+        # Rolex bought in USD. Until 2026-08-19 `purchase_price` was converted
+        # through `convert_to_eur` and `estimated_value` was stored RAW — so a
+        # row saying "9800 USD" became `estimated_value = 9800`, and the whole
+        # value chain reads that column as EUR (`item_value_v1` returns it as
+        # `value_eur`). Proven on prod with a real import: 100 USD purchase
+        # stored 86.39 EUR correctly, while a 200 USD estimate stored 200.
+        #
+        # The error scales with the currency: ~16% for USD, ~170x for JPY —
+        # straight into the portfolio total, the analytics split and the
+        # leaderboard, all of which present it as a market-comparable figure.
+        #
+        # `currency` is the estimate's currency; `purchase_currency` is the
+        # purchase's. They are separate columns in the template and a row may
+        # legitimately use both (bought in USD, valued in EUR).
+        value_currency = str(r.get("currency", "") or "").strip().upper() or None
+        est_val_raw = _num(r.get("estimated_value") or r.get("price") or r.get("value"))
+        est_val = (
+            await convert_to_eur(est_val_raw, value_currency or "EUR")
+            if est_val_raw is not None
+            else None
+        )
         notes = r.get("notes")
         notes_str = str(notes).strip() if notes else None
 

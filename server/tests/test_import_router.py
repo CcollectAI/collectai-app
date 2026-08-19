@@ -245,3 +245,98 @@ class TestImportCollectionEdgeCases:
         )
         assert resp.status_code == 200
         assert resp.json()["inserted_count"] == 1
+
+
+class TestImportedValuesAreEUR:
+    """`items.estimated_value` is a EUR column, and the template invites a
+    currency beside it.
+
+    The template header ends `... estimated_value,currency,notes` and its third
+    example row is a Rolex bought in USD. Until 2026-08-19 `purchase_price` was
+    converted through `convert_to_eur` and `estimated_value` was stored RAW, so
+    "9800 USD" became `estimated_value = 9800` — and the whole value chain reads
+    that column as EUR (`item_value_v1` returns it as `value_eur`).
+
+    Proven on prod with a real authenticated import before the fix: a 100 USD
+    purchase stored 86.39 EUR correctly while a 200 USD estimate stored 200.
+    The error scales with the currency — ~16% for USD, ~170x for JPY — straight
+    into the portfolio total, the analytics split and the leaderboard.
+    """
+
+    def setup_method(self):
+        _auth_override()
+
+    def teardown_method(self):
+        _clear_overrides()
+
+    def _capture_fx(self, monkeypatch):
+        """Record every (amount, currency) the router asks FX to convert."""
+        calls = []
+
+        async def fake_convert(amount, currency):
+            calls.append((amount, currency))
+            return round(amount * 0.9, 2) if currency.upper() != "EUR" else amount
+
+        monkeypatch.setattr(
+            "app.features.import_router.convert_to_eur", fake_convert, raising=True)
+        return calls
+
+    def test_a_usd_estimate_is_converted(self, monkeypatch):
+        calls = self._capture_fx(monkeypatch)
+        csv_data = (
+            "name,category,purchase_price,purchase_currency,estimated_value,currency\n"
+            "Rolex Submariner,watches,7200.00,USD,9800.00,USD\n"
+        )
+        resp = client.post(
+            "/api/imports/collection",
+            files={"file": ("usd.csv", io.BytesIO(csv_data.encode()), "text/csv")},
+        )
+        assert resp.status_code == 200
+        assert (9800.00, "USD") in calls, \
+            f"the ESTIMATE was never converted; FX only saw {calls}"
+
+    def test_the_two_currencies_are_read_from_their_own_columns(self, monkeypatch):
+        """A row may legitimately be bought in one currency and valued in
+        another — they are separate columns in the template, and reusing
+        `purchase_currency` for the estimate would silently mis-convert it."""
+        calls = self._capture_fx(monkeypatch)
+        csv_data = (
+            "name,category,purchase_price,purchase_currency,estimated_value,currency\n"
+            "Split currency,mtg,100.00,USD,200.00,GBP\n"
+        )
+        resp = client.post(
+            "/api/imports/collection",
+            files={"file": ("split.csv", io.BytesIO(csv_data.encode()), "text/csv")},
+        )
+        assert resp.status_code == 200
+        assert (100.00, "USD") in calls
+        assert (200.00, "GBP") in calls
+
+    def test_a_missing_currency_defaults_to_eur_not_to_a_skip(self, monkeypatch):
+        """Most rows will not name a currency. That must mean EUR, not a
+        dropped value — `convert_to_eur(x, 'EUR')` returns x unchanged."""
+        calls = self._capture_fx(monkeypatch)
+        csv_data = (
+            "name,category,estimated_value\n"
+            "Plain row,pokemon,350.00\n"
+        )
+        resp = client.post(
+            "/api/imports/collection",
+            files={"file": ("plain.csv", io.BytesIO(csv_data.encode()), "text/csv")},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["inserted_count"] == 1
+        assert (350.00, "EUR") in calls
+
+    def test_a_row_with_no_estimate_asks_FX_nothing(self, monkeypatch):
+        """`convert_to_eur(None, ...)` would raise inside the FX helper, so the
+        guard has to stay a None-check and not a truthiness test."""
+        calls = self._capture_fx(monkeypatch)
+        csv_data = "name,category,estimated_value\nNo value,pokemon,\n"
+        resp = client.post(
+            "/api/imports/collection",
+            files={"file": ("novalue.csv", io.BytesIO(csv_data.encode()), "text/csv")},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["inserted_count"] == 1
+        assert calls == []

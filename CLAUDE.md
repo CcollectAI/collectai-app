@@ -4,6 +4,40 @@
 
 ## Current state (2026-08-19)
 
+### CSV import had never inserted a row — and four real fixes had missed it (2026-08-19)
+
+`POST /api/imports/collection` is `Depends(get_current_user_id)`.
+`app/(tabs)/add.tsx` uploaded with a bare `fetch` sending only
+`Accept: application/json`. Probed against prod with exactly the request the
+app sends: **HTTP 401 `{"detail":"Authentication required"}`**.
+
+**Why it survived four rounds of repair — this is the part worth keeping.** The
+importer had been fixed repeatedly and every fix was real: `734993b` Excel via
+openpyxl, `498c063` the canonical 12-column schema, `43e9d8b` unpriceable
+imported rows, `33047ee` the paired columns. All four are SERVER-side,
+downstream of a request that never arrived. And `test_import_router.py` is
+green at 16 tests because TestClient calls the endpoint with
+`_auth_override()` — **the suite injects the very user the client fails to
+send.** Both halves were tested. The seam between them was not. Identical shape
+to the `pct_of_portfolio` bug found the same day.
+
+Fixed by routing through `postMultipart` (bearer + single-flight refresh +
+60s upload timeout). **`npm run check:authed-fetch`** now fails any
+`fetch(\`${API_BASE}…\`)` without `getAuthHeaders` nearby, allowlist entries
+requiring a written reason. Proven red against the original line. It
+immediately found a second instance — `src/api/storageApi.ts`, three unauthed
+calls to an authed router, invisible only because nothing calls it.
+
+**Then the import was run end to end with a real token** (sim account, rows
+deleted afterwards and the deletion verified): 5 rows → 4 inserted, 1 correctly
+skipped for a missing name, all four visible to the user's own PostgREST read.
+That run exposed the next one: **`estimated_value` was stored RAW while
+`purchase_price` was converted.** A 100 USD purchase stored €86.39 correctly; a
+200 USD estimate stored 200. `estimated_value` is a EUR column — the value
+chain returns it as `value_eur` — and the template offers a `currency` field
+beside it. ~16% wrong for USD, ~170x for JPY, straight into the portfolio
+total and the leaderboard. Fixed and pinned by 4 tests, proven red first.
+
 ### Offers screen, category vocabulary, and a chart that was wrong by 100x (2026-08-19, later)
 
 **A unit mismatch at a SEAM, wrong by a factor of 100, on a chart that had just

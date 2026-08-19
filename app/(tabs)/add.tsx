@@ -16,6 +16,7 @@ import * as Sharing from 'expo-sharing';
 import { router } from 'expo-router';
 import { AddImportCard } from '@/components/AddImportCard';
 import { API_BASE } from '@/api/config';
+import { postMultipart } from '@/api/httpClient';
 import { pickDocument } from '@/lib/documentPicker';
 import React from "react";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
@@ -149,27 +150,30 @@ const handleImportCollectionFile = async () => {
         type: mimeType,
       } as unknown as Blob);
 
-      const res = await fetch(`${API_BASE}/api/imports/collection`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-        },
-        body: formData,
-      });
+      // ⚠️ `postMultipart`, NOT a bare `fetch`.
+      //
+      // This was a bare fetch sending only `Accept: application/json` — no
+      // Authorization header — while `POST /api/imports/collection` has
+      // `Depends(get_current_user_id)`. Probed against prod 2026-08-19: the
+      // exact request the app sent returns **HTTP 401
+      // {"detail":"Authentication required"}**. CSV/Excel import could never
+      // have inserted a single row, and the screen reported it by printing
+      // that raw JSON into the error slot.
+      //
+      // It is the same shape as project_2026_07_14_401_root_cause_tokenless:
+      // a request that never carried a token. `postMultipart` is the app's
+      // upload path — it attaches the bearer via `getAuthHeaders`, retries
+      // through the single-flight refresh on a cold-start 401, applies
+      // UPLOAD_TIMEOUT_MS (60s, so a large spreadsheet is not cut off at the
+      // 5s default), and deliberately does NOT set Content-Type so fetch can
+      // generate the multipart boundary.
+      const json = await postMultipart<{
+        total_rows?: number;
+        inserted_count?: number;
+        skipped_count?: number;
+        errors?: { row: number; message: string }[];
+      }>("/api/imports/collection", formData);
 
-      if (!res.ok) {
-        const text = await res.text();
-        logger.error("[Add] import error response", res.status, text);
-        setImportSummary({
-          total: 0,
-          inserted: 0,
-          skipped: 0,
-          error: text || "Import failed",
-        });
-        return;
-      }
-
-      const json = await res.json();
       logger.info("[Add] import summary", json);
       setImportSummary({
         total: json.total_rows ?? 0,
@@ -181,7 +185,17 @@ const handleImportCollectionFile = async () => {
       setImportBusy(false);
     }
     } catch (e) {
+      // A thrown request has to REACH THE SCREEN. `postMultipart` throws an
+      // ApiError on a non-2xx instead of returning it, and the previous
+      // catch only logged — so a failed import would have left the card
+      // showing nothing at all, which reads as "the button does nothing".
       logger.error('[Add] import collection file error', e);
+      setImportSummary({
+        total: 0,
+        inserted: 0,
+        skipped: 0,
+        error: e instanceof Error ? e.message : 'Import failed',
+      });
     }
   };
 
