@@ -32,11 +32,10 @@ interface Item {
   year?: number;
   series?: string;
   editionLabel?: string;
-  // Purchase data — surfaced 2026-05-01. null = item has no purchase price
-  // recorded (most QuickScan-only items); undefined = field not on the row
-  // (older callers that haven't been updated). Either case → suppress display.
-  purchasePriceEur?: number | null;
-  purchasedAt?: string | null;
+  // `purchasePriceEur` / `purchasedAt` were read here for the Paid + P/L
+  // lines, removed 2026-08-19. They stay off this interface deliberately: a
+  // prop nothing renders is how a dead path survives a cleanup. Both numbers
+  // live on the item's own screen.
   /** `v_item_values_v1.value_source`. Undefined on callers that map their own
    *  item shape — the chip renders nothing rather than guessing. */
   valueSource?: string | null;
@@ -52,8 +51,6 @@ interface ItemsListItemProps {
   /** Optional swipe-action callbacks. When omitted the row isn't swipeable. */
   onArchive?: (itemId: string) => void;
   onDelete?: (itemId: string) => void;
-  /** Omitted → no share affordance, rather than a button that does nothing. */
-  onShare?: (item: Item) => void;
 }
 
 export const ItemsListItem = React.memo(function ItemsListItem({
@@ -65,7 +62,6 @@ export const ItemsListItem = React.memo(function ItemsListItem({
   onLongPress,
   onArchive,
   onDelete,
-  onShare,
 }: ItemsListItemProps) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -164,27 +160,13 @@ export const ItemsListItem = React.memo(function ItemsListItem({
           ) : null}
         </View>
         <View style={styles.itemRight}>
-          {/* Top of the right column = the top-right corner of the row. Not
-              absolutely positioned: this row is only ~56pt tall and centres its
-              children, so an overlay would land on the value. In flow it costs
-              nothing in most rows either — a flex row is as tall as its tallest
-              child, and the name/meta/detail column is usually taller than the
-              value stack. Hidden in multi-select, where every tap belongs to
-              selection. */}
-          {onShare && !isMultiSelectMode ? (
-            <AnimatedPressable
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                onShare(item);
-              }}
-              hitSlop={10}
-              style={styles.shareBtn}
-              accessibilityRole="button"
-              accessibilityLabel={`Send ${item.name} to a chat`}
-            >
-              <Ionicons name="paper-plane-outline" size={16} color={colors.muted} />
-            </AnimatedPressable>
-          ) : null}
+          {/* The send-to-chat button was here (added 2026-08-13, removed
+              2026-08-19). It was DEAD: `app/(tabs)/items.tsx` rendered
+              <ShareToChatSheet> only inside the first-run loading branch, so
+              the sheet did not exist on any screen where a row — and therefore
+              the button — was visible. Tapping it set state and opened nothing.
+              Removed on request rather than repaired; sharing a listing still
+              lives on the marketplace tile (docs/ui-playbook.md). */}
           <Text
             style={[
               styles.itemValue,
@@ -201,34 +183,14 @@ export const ItemsListItem = React.memo(function ItemsListItem({
               the item is unpriced — "Not priced yet" beside the unpriced label
               would say the same thing twice. */}
           {!unpriced ? <ValueSourceChip source={item.valueSource} inline /> : null}
-          {/* Paid-for line + P/L delta. Hidden when no purchase data, when
-              the user added the item without a price, or when the predicted
-              price is 0 (no model available yet — comparison is meaningless). */}
-          {typeof item.purchasePriceEur === 'number' && item.purchasePriceEur > 0 ? (
-            <>
-              <Text style={[styles.itemPaid, { color: colors.muted }]} numberOfLines={1}>
-                Paid {formatPrice(item.purchasePriceEur)}
-              </Text>
-              {item.value > 0 ? (
-                (() => {
-                  const delta = item.value - item.purchasePriceEur;
-                  const pct = (delta / item.purchasePriceEur) * 100;
-                  const positive = delta >= 0;
-                  const sign = positive ? '+' : '−';
-                  const color = positive ? colors.success : colors.danger;
-                  return (
-                    <Text
-                      style={[styles.itemPL, { color }]}
-                      numberOfLines={1}
-                      accessibilityLabel={`${positive ? 'Up' : 'Down'} ${Math.abs(pct).toFixed(0)} percent versus purchase price`}
-                    >
-                      {sign}{formatPrice(Math.abs(delta))} ({sign}{Math.abs(pct).toFixed(0)}%)
-                    </Text>
-                  );
-                })()
-              ) : null}
-            </>
-          ) : null}
+          {/* "Paid EUR X" and the profit/loss delta were here (removed
+              2026-08-19, reported as clutter). A four-line right column —
+              value, source chip, paid, P/L — on a ~56pt row is a wall of
+              figures per item, and this is a REFERENCE ROW, not a position
+              blotter (docs/ui-playbook.md, "a list card is a reference row").
+              Both numbers are still on the item's own screen, where there is
+              room to read them, and the portfolio-wide P/L still has its own
+              surface in analytics. */}
         </View>
       </AnimatedPressable>
   );
@@ -321,22 +283,9 @@ const styles = StyleSheet.create({
   },
   // 16pt glyph in a 24pt box; `hitSlop` carries the rest of the touch target
   // up to the 44pt minimum without the box pushing the row taller.
-  shareBtn: {
-    width: 24, height: 24, marginBottom: 2,
-    alignItems: 'flex-end', justifyContent: 'center',
-  },
   itemValue: {
     fontSize: 13,
     fontWeight: '700',
-  },
-  itemPaid: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  itemPL: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 1,
   },
   checkboxContainer: {
     marginRight: 12,

@@ -96,51 +96,57 @@ const baseProps = {
   onLongPress: jest.fn(),
 };
 
-describe('ItemsListItem — paid-price + P/L surface', () => {
-  it('hides the paid line when no purchase data is present', () => {
+describe('ItemsListItem — the row shows NO purchase figures', () => {
+  /**
+   * "Paid EUR X" and the profit/loss delta were removed 2026-08-19, reported
+   * as clutter: a ~56pt row carrying value, source chip, paid AND P/L is four
+   * figures per item, and this is a REFERENCE ROW, not a position blotter
+   * (docs/ui-playbook.md, "a list card is a reference row, not a call to
+   * action" — the same rule that took two buttons off the watchlist card).
+   *
+   * Seven tests pinned the old behaviour. They are replaced rather than
+   * deleted, because the useful half of a test that pins a removed feature is
+   * the guard against it coming back
+   * (learning_a_red_test_is_often_evidence_the_fix_landed — the DECISION
+   * decides, not the test). Both numbers still live on the item's own screen.
+   */
+  it('never renders a Paid line, whatever the purchase data says', () => {
+    for (const purchasePriceEur of [undefined, null, 0, 100]) {
+      const { unmount } = render(
+        <ItemsListItem item={makeItem({ value: 150, purchasePriceEur })} {...baseProps} />);
+      expect(screen.queryByText(/Paid /)).toBeNull();
+      unmount();
+    }
+  });
+
+  it('never renders a P/L delta, in either direction', () => {
+    // 150 vs 100 was "+EUR 50 (+50%)"; 60 vs 100 was "−EUR 40 (−40%)".
+    for (const value of [150, 60]) {
+      const { unmount } = render(
+        <ItemsListItem item={makeItem({ value, purchasePriceEur: 100 })} {...baseProps} />);
+      expect(screen.queryByText(/\(\+\d+%\)/)).toBeNull();
+      expect(screen.queryByText(/\(−\d+%\)/)).toBeNull();
+      unmount();
+    }
+  });
+
+  it('drops the P/L screen-reader label with the line it described', () => {
+    render(<ItemsListItem item={makeItem({ value: 150, purchasePriceEur: 100 })} {...baseProps} />);
+    expect(screen.queryByLabelText(/percent versus purchase price/)).toBeNull();
+  });
+
+  it('still renders the item value — only the purchase figures went', () => {
+    render(<ItemsListItem item={makeItem({ value: 150, purchasePriceEur: 100 })} {...baseProps} />);
+    expect(screen.getByText(/150/)).toBeTruthy();
+  });
+
+  it('has no send-to-chat button', () => {
+    // The paper-plane button was DEAD: app/(tabs)/items.tsx rendered
+    // <ShareToChatSheet> only inside the first-run loading branch, so on every
+    // screen where a row was visible the sheet did not exist. Tapping it set
+    // state and opened nothing. Removed with its whole chain 2026-08-19.
     render(<ItemsListItem item={makeItem()} {...baseProps} />);
-    expect(screen.queryByText(/Paid /)).toBeNull();
-    // Predicted value still renders.
-    expect(screen.getByText(/100/)).toBeTruthy();
-  });
-
-  it('hides the paid line when purchasePriceEur is explicitly null (item has no record)', () => {
-    render(<ItemsListItem item={makeItem({ purchasePriceEur: null })} {...baseProps} />);
-    expect(screen.queryByText(/Paid /)).toBeNull();
-  });
-
-  it('hides the paid line when purchasePriceEur is 0 (treated as not set)', () => {
-    // 0 is not a meaningful "amount paid" — surface treats it as no data
-    // rather than rendering "Paid €0" + a misleading +infinity% delta.
-    render(<ItemsListItem item={makeItem({ purchasePriceEur: 0 })} {...baseProps} />);
-    expect(screen.queryByText(/Paid /)).toBeNull();
-  });
-
-  it('renders the paid line and a positive P/L delta when value > purchase price', () => {
-    render(<ItemsListItem item={makeItem({ value: 150, purchasePriceEur: 100 })} {...baseProps} />);
-    expect(screen.getByText(/Paid /)).toBeTruthy();
-    // Positive delta uses + sign and integer percent.
-    expect(screen.getByText(/\+.*\(\+50%\)/)).toBeTruthy();
-  });
-
-  it('renders a negative P/L delta when value < purchase price', () => {
-    render(<ItemsListItem item={makeItem({ value: 60, purchasePriceEur: 100 })} {...baseProps} />);
-    expect(screen.getByText(/Paid /)).toBeTruthy();
-    // Negative delta uses Unicode minus and integer percent.
-    expect(screen.getByText(/−.*\(−40%\)/)).toBeTruthy();
-  });
-
-  it('hides the P/L delta when predicted value is 0 (no model — comparison meaningless)', () => {
-    render(<ItemsListItem item={makeItem({ value: 0, purchasePriceEur: 100 })} {...baseProps} />);
-    // Paid line is still useful even without a prediction.
-    expect(screen.getByText(/Paid /)).toBeTruthy();
-    // No P/L delta renders.
-    expect(screen.queryByText(/[+−]/)).toBeNull();
-  });
-
-  it('exposes a P/L accessibility label so screen readers announce direction + magnitude', () => {
-    render(<ItemsListItem item={makeItem({ value: 150, purchasePriceEur: 100 })} {...baseProps} />);
-    expect(screen.getByLabelText(/Up 50 percent versus purchase price/)).toBeTruthy();
+    expect(screen.queryByLabelText(/Send .* to a chat/)).toBeNull();
   });
 });
 
@@ -172,11 +178,13 @@ describe('ItemsListItem — unpriced items', () => {
     expect(screen.getByText(/100/)).toBeTruthy();
   });
 
-  it('keeps the paid line while showing the unpriced label', () => {
-    // Unpriced prediction must not suppress data we DO have.
+  it('shows the unpriced label alone — there is no paid line to keep', () => {
+    // This asserted the opposite until 2026-08-19 ("unpriced must not suppress
+    // data we DO have"). True at the time; the paid line has since been
+    // removed from the row entirely, so the unpriced label now stands alone.
     render(<ItemsListItem item={makeItem({ value: 0, purchasePriceEur: 100 })} {...baseProps} />);
     expect(screen.getByText('Cannot estimate value')).toBeTruthy();
-    expect(screen.getByText(/Paid /)).toBeTruthy();
+    expect(screen.queryByText(/Paid /)).toBeNull();
   });
 });
 

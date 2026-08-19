@@ -544,6 +544,35 @@ action row says which it is. The awaits are bounded by httpClient's request
 timeout, per the "Loading states" rule above — a spinner that can outlive its
 call is the bug that rule exists for.
 
+## The collection row lost its share button and its purchase figures (2026-08-19)
+
+Reported as *"the items page has a little listing send button that doesn't
+work"* and *"the item is very cluttered"*. Both were right, and the first was
+worse than clutter.
+
+**The send button was DEAD.** `app/(tabs)/items.tsx` rendered
+`<ShareToChatSheet>` **only inside the first-run `if (loading &&
+hasEverHadItems !== true)` branch** — the empty/hero state. On every screen
+where a row is actually visible, the sheet does not exist, so tapping the
+paper-plane set `shareFor` and opened nothing. Not a broken handler: a correct
+handler whose sheet was mounted under a condition that excludes the only screen
+the button appears on. The section below still describes share-to-chat on the
+**marketplace tile**, which works and stays.
+
+Removed with its whole chain — button, `onShare` prop, `handleShareItem`,
+`shareFor`, `sharePayload`, the sheet and the import — because a handler with
+no button is how a dead path survives a cleanup.
+
+**And the row carried four figures.** Value, source chip, `Paid EUR X`, and a
+P/L delta, stacked in a right column on a ~56pt row. That is a position
+blotter, not a reference row — the same rule that took two full-width buttons
+off the watchlist card. Both numbers live on the item's own screen, where there
+is room to read them, and portfolio-wide P/L has its own surface in analytics.
+
+Seven tests pinned the removed behaviour. They were **replaced, not deleted**:
+the useful half of a test for a removed feature is the guard against it coming
+back.
+
 ## Share to chat lives on the card, top-right (2026-08-13)
 
 `src/components/share/ShareToChatSheet.tsx`, wired into the marketplace tile
