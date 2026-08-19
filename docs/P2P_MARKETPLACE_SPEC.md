@@ -294,14 +294,49 @@ is written by nothing in `server/app/`, and no worker expires anything. The
 somebody acts on it. If a deadline is wanted it needs a writer AND a worker —
 the column alone changes nothing.
 
-**A seller cannot compare competing bids.** The data model allows many offers
-per listing, but `app/offers.tsx` is a flat list across ALL your listings ranked
-by "needs you" then recency, so two bids on the same item can be far apart with
-unrelated trades between them. The offer ladder described in §1d was never built
-(`app/listing/[id].tsx` still says "Stage 1 deliberately stops here: no
-offers"). Note also that comparing on *distance* is impossible by construction:
-addresses are only collectable after `accepted` (§5a), so at decision time the
-seller has price and nothing else.
+**A seller cannot compare competing bids — CLOSED 2026-08-19, in the offers
+list.** The data model allows many offers per listing, and `app/offers.tsx` was
+a flat list across ALL your listings ranked by "needs you" then recency, so two
+bids on the same item could sit ten cards apart with unrelated trades between
+them. `src/lib/offerGrouping.ts` now pulls them adjacent **inside** a section
+and draws one banner above the group: *"3 bids on this listing · €28 – €41"*.
+
+Three things about that fix are load-bearing and must not be "simplified":
+
+1. **Grouping happens inside a section, never as a section of its own.** The
+   three sections (needs you / waiting on them / closed) are a PRIORITY order.
+   A listing-scoped section would outrank that order and sink a member's own
+   move below a listing nobody is asking them about.
+2. **A group takes the position of its FIRST member**, not of its highest bid,
+   for the same reason. Inside the group the highest bid comes first.
+3. **The banner carries count and spread, and nothing else.** That is all a
+   seller HAS: comparing on *distance* is impossible by construction, since
+   addresses are only collectable after `accepted` (§5a).
+4. **The count describes the LISTING, not the section.** A seller who counters
+   one of three bids splits that listing across two sections — the countered
+   bid is "waiting on them" while the other two still need an answer. Counted
+   per section the banner said *"2 bids"* while three were live, which is a
+   wrong number stated to someone in the middle of choosing. Both calls are
+   handed the same population (every active offer); `done` is excluded, since
+   a declined bid is not something anyone is still choosing between.
+
+All four are pinned by `__tests__/lib/offerGrouping.test.ts`, which runs in
+`verify:prebuild`. The seller framing of the copy is safe by construction: a
+buyer sees only their own offers and the server allows one open offer per buyer
+per listing (409), so a group can only ever be bids a seller is choosing
+between — and all bids on one listing share its currency, so the spread is a
+real range.
+
+The offer ladder described in §1d is still not built (`app/listing/[id].tsx`
+still says "Stage 1 deliberately stops here: no offers") — the comparison now
+happens in the offers list rather than on the listing.
+
+**The offers list dates a card off `updated_at`, not `created_at`** (same
+change). Every state transition in `p2p_offers_router.py` already set
+`updated_at = now()`; nothing read it, so a haggle opened three weeks ago and
+countered yesterday read *"3 weeks ago"* — backwards for the judgement that line
+exists to support. `updated_at` is optional on the FE type, so an older server
+build falls back to `created_at` rather than rendering blank.
 
 
 **"Grade" is the stored concept, "rate" is the word on screen.** The table is

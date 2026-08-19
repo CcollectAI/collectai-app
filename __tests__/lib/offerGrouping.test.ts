@@ -51,6 +51,44 @@ describe('groupCompetingOffers', () => {
     expect([...solo.values()][0].isFirst).toBe(false);
   });
 
+  describe('a listing split across two sections', () => {
+    // A seller with three bids who counters ONE splits that listing: the
+    // countered bid is "waiting on them", the other two still need an answer.
+    const all = [o('a', 'L1', 28), o('b', 'L1', 41), o('countered', 'L1', 33)];
+    const needsYou = [all[0], all[1]];
+    const waiting = [all[2]];
+
+    it('counts the whole listing, not the section', () => {
+      // Counted per section this said "2 bids" while three were live — a
+      // number stated to a seller who is choosing, and simply wrong.
+      const { meta } = groupCompetingOffers(needsYou, all);
+      expect(meta.get('b')).toMatchObject({ size: 3, low: 28, high: 41 });
+    });
+
+    it('still says what a lone card is one of', () => {
+      const { meta } = groupCompetingOffers(waiting, all);
+      expect(meta.get('countered')).toMatchObject({ size: 3, isFirst: true, low: 28, high: 41 });
+    });
+
+    it('draws the banner once per section the listing appears in', () => {
+      expect([...groupCompetingOffers(needsYou, all).meta.values()]
+        .filter((m) => m.isFirst)).toHaveLength(1);
+      expect([...groupCompetingOffers(waiting, all).meta.values()]
+        .filter((m) => m.isFirst)).toHaveLength(1);
+    });
+
+    it('orders by the section it was given, not by the population', () => {
+      const { ordered } = groupCompetingOffers(needsYou, all);
+      expect(ordered.map((x) => x.id)).toEqual(['b', 'a']);
+    });
+
+    it('falls back to the card itself when the population omits it', () => {
+      // A caller that passes the wrong population must not render a €0 bid.
+      const { meta } = groupCompetingOffers([o('orphan', 'L9', 55)], all);
+      expect(meta.get('orphan')).toMatchObject({ size: 1, low: 55, high: 55, isFirst: false });
+    });
+  });
+
   it('reports the spread a seller is choosing across', () => {
     const { meta } = groupCompetingOffers([o('a', 'L1', 28), o('b', 'L1', 41), o('c', 'L1', 33)]);
     const m = meta.get('b')!;

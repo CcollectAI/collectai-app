@@ -201,8 +201,16 @@ function OffersScreen() {
     // Grouped INSIDE each section, never as a section of its own — the three
     // sections are a PRIORITY order, and a listing-scoped section would outrank
     // it, sinking a member's own move below a listing nobody is asking about.
-    const groupedMine = groupCompetingOffers(mine);
-    const groupedLive = groupCompetingOffers(live);
+    //
+    // The count and spread describe the LISTING, so both calls are handed the
+    // same population: every offer still in play. A seller who counters one of
+    // three bids splits that listing across two sections, and a per-section
+    // count would tell them "2 bids" while three were live.
+    // `done` is excluded on purpose — a declined or expired bid is not
+    // something the seller is still choosing between.
+    const active = [...mine, ...live];
+    const groupedMine = groupCompetingOffers(mine, active);
+    const groupedLive = groupCompetingOffers(live, active);
     const groupMeta = new Map([...groupedMine.meta, ...groupedLive.meta]);
 
     return {
@@ -463,14 +471,21 @@ function OffersScreen() {
       {/* Competing bids, announced once above the group. Count and spread are
           all a seller HAS at this point — the spec records that comparing on
           distance is impossible by construction, since addresses are only
-          collectable after `accepted`. */}
+          collectable after `accepted`.
+
+          The seller framing is safe: a buyer sees only their OWN offers, and
+          the server allows one open offer per buyer per listing (409 "You
+          already have an open offer on this listing"), so a group can only
+          ever be bids a seller is choosing between. All bids on one listing
+          share its currency, so the spread is a real range. */}
       {group?.isFirst ? (
         <View style={styles.groupHeader}>
           <Ionicons name="layers-outline" size={13} color={colors.accent} />
           <Text style={[styles.groupHeaderText, { color: colors.accent }]}>
             {group.size} bids on this listing · {formatPrice(group.low, settings.currency, settings.numberLocale)}
-            {' – '}
-            {formatPrice(group.high, settings.currency, settings.numberLocale)}
+            {group.low === group.high
+              ? ''
+              : ` – ${formatPrice(group.high, settings.currency, settings.numberLocale)}`}
           </Text>
         </View>
       ) : null}
