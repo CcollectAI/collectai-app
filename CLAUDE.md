@@ -4,6 +4,32 @@
 
 ## Current state (2026-08-19)
 
+### The offers screen, finally walked on a device (2026-08-19)
+
+The simulator turned out to be usable after all — the app is signed in as
+`simcheck@sparrowcollect.test` and the dev client loads from Metro, so the
+day's JS is testable without waiting for a build. **Seeded a demo trade scene**
+(6 listings / 10 offers, every row titled `DEMO …`) because that account had no
+offers, which is also why the offers page looked empty and was CORRECT to.
+
+Two bugs no gate could have found:
+
+- **"Del ete".** Four buttons in a `nowrap`, shrink-to-fit action row squeezed
+  the last label until the word broke. Shrinking is right for three and wrong
+  for four; the fix is fewer buttons. Two moved to the trade screen.
+- **A dead sheet created in the same edit.** Removing the "Book shipping"
+  button left `SettleUpSheet` on the list with nothing able to open it —
+  `setSettleFor` surviving only inside its own `onClose`. The house bug class,
+  self-inflicted in one commit.
+
+**`All` is now a compressed scan view** (requested): keeps everything that
+helps you judge, drops everything that acts, one line saying "Tap to manage
+this trade". 3½ cards where 2 fit. `Buying`/`Selling` keep inline controls.
+
+⚠️ **The `DEMO …` rows are still in prod** — delete with
+`DELETE FROM p2p_offers/marketplace_listings/items WHERE listing_title LIKE
+'DEMO %'` (and the matching items) once the walkthrough is done.
+
 ### Branding sweep + the seller flow, read end to end (2026-08-19)
 
 **Branding: 858 hex literals, 470 legitimate** (the four palettes, 54 category

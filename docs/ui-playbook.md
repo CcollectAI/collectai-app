@@ -872,6 +872,28 @@ on the row, `flexShrink: 1` and tighter horizontal padding on the button,
 `textAlign: 'center'` on the label. **Leave `minHeight` alone** — the row is
 what shrinks, never the touch target.
 
+### …and shrinking is the right rule for THREE buttons, not four (2026-08-19)
+
+The rule above (`nowrap` + `flexShrink: 1`) held for three. `app/offers.tsx`
+grew a fourth on a live trade — Mark sent · Add tracking · Book shipping ·
+Delete — and the last button squeezed until the WORD broke, rendering as
+**"Del ete"**. Not the row wrapping: the LABEL wrapping inside a button that had
+run out of width.
+
+**The fix is fewer buttons, not a wrapping row.** Two of the four were steps of
+a flow that now has its own screen, so they moved there. A row of four actions
+on a list card is a sign the card is doing a screen's job.
+
+Seen on the simulator against seeded data — invisible to tsc, to every gate,
+and to reading the code, because the width only runs out at a real font on a
+real device.
+
+**Removing a button can strand its sheet.** The same edit left `SettleUpSheet`
+mounted on the list with nothing able to open it: `setSettleFor` survived only
+inside its own `onClose`. When you delete the last opener of a modal, grep the
+setter — if its only remaining call is the close handler, the whole thing is
+dead.
+
 ## The screen title had no spec, so it drifted eight ways (2026-08-15)
 
 Reported as *"all screens have different size title and alignment"*, and a sweep
