@@ -197,6 +197,7 @@ async function loadItemsFromCollection(): Promise<ItemRow[]> {
         category: it.category || undefined,
         value: Number(it.price ?? 0),
         changePct: undefined,
+        valueSource: it.valueSource ?? undefined,
       }))
       .filter((r) => Number.isFinite(r.value));
   } catch (e) {
@@ -237,6 +238,18 @@ function PortfolioScreen() {
   // series on this screen is a transport failure, not absent data.
   const [seriesFailed, setSeriesFailed] = useState(false);
   const [items, setItems] = useState<ItemRow[]>([]);
+  /**
+   * How much of the headline is NOT comp-backed (decided 2026-08-19:
+   * include-and-mark, never hide).
+   *
+   * ⚠️ CAPPED-AGGREGATE GUARD. `loadItemsFromCollection` asks for 50 items, so
+   * on a larger collection this list is a PAGE, not the portfolio. Printing a
+   * money figure from it would report a partial number as the whole truth —
+   * the exact class `npm run verify:silent` names. So the caption renders only
+   * when we can prove we hold everything: fewer rows came back than we asked
+   * for. At exactly 50 there may be a 51st, and we say nothing.
+   */
+  const HOME_ITEMS_PAGE = 50;
   // Persisted "has ever had items" flag. Drives the first-item hero: it shows
   // ONLY for a genuinely-new collection and is replaced by the graph the moment
   // the first item is added — and never comes back, even if a later portfolio
@@ -487,6 +500,22 @@ function PortfolioScreen() {
   // Determine if positive or negative
   const isPositive = deltaPct >= 0;
 
+  // The not-comp-backed share of the collection. See HOME_ITEMS_PAGE above for
+  // why this is suppressed on a collection larger than one page.
+  const estimatedShare = useMemo(() => {
+    if (items.length === 0 || items.length >= HOME_ITEMS_PAGE) return null;
+    const MARKET = new Set(['catalog_daily', 'catalog_model', 'quick_scan']);
+    let total = 0;
+    let count = 0;
+    for (const it of items) {
+      if (MARKET.has(it.valueSource ?? '')) continue;
+      total += Number(it.value ?? 0);
+      count += 1;
+    }
+    if (count === 0 || total <= 0) return null;
+    return { total, count };
+  }, [items]);
+
   const rangeButtons: RangeKey[] = ["1D", "7D", "30D", "90D", "1Y", "ALL"];
 
   // Navigation handlers (useCallback to prevent re-renders in child components)
@@ -673,6 +702,19 @@ function PortfolioScreen() {
               animationsEnabled={settings.animationsEnabled && !scrubPoint}
               tier={tierSummary?.tier}
             />
+
+            {/* Include AND mark. The headline sums comp-backed values and
+                members' own estimates together, which is right — for the 40+
+                categories with no sold-comp source the estimate is all anyone
+                has, and dropping it would show a collection worth less than
+                the member knows it is. What was missing was saying so. */}
+            {estimatedShare ? (
+              <Text style={[styles.estimatedNote, { color: colors.muted }]}>
+                {formatPrice(estimatedShare.total, settings.currency)} of this is
+                estimated — {estimatedShare.count} item
+                {estimatedShare.count === 1 ? '' : 's'} we have no market comps for
+              </Text>
+            ) : null}
 
             {/* Range Toggles */}
             <ChartRangeSelector
@@ -934,6 +976,14 @@ const styles = StyleSheet.create({
   chartAnalyticsBtnText: {
     fontSize: text.sm,
     fontWeight: fontWeight.bold,
+  },
+  // Caption under the headline, not a card: it qualifies the number above it
+  // and a bordered block would read as a separate fact.
+  estimatedNote: {
+    fontSize: 12,
+    paddingHorizontal: 16,
+    marginTop: -4,
+    marginBottom: 8,
   },
   chartCard: {
     borderWidth: 1,

@@ -123,6 +123,9 @@ export interface RawPortfolioItem {
   unrealized_pl?: number;
   /** False => unrealized_pl is model drift, not profit. */
   has_purchase_price?: boolean;
+  /** Which link of the value chain produced `current_value` (2026-08-19).
+   *  Absent from older server builds — undefined means unknown, never market. */
+  value_source?: string;
   change_1d_pct?: number;
   change_7d_pct?: number;
   liquidity_score?: number;

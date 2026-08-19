@@ -20,6 +20,10 @@ export type ItemRow = {
   category?: string;
   value: number;
   changePct?: number;
+  /** `v_item_values_v1.value_source` — carried so Home can say how much of the
+   *  headline rests on a number nobody checked. Undefined = unknown, which the
+   *  caller must treat as an estimate rather than as market. */
+  valueSource?: string;
 };
 
 // ── Props ──────────────────────────────────────────────────────────────

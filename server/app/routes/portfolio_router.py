@@ -422,6 +422,42 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     -- moved, not what the member made. Both arrive as a number
                     -- called "unrealized_pl" and look identical.
                     (i.purchase_price_eur IS NOT NULL) AS has_purchase_price,
+                    -- WHICH LINK OF THE CHAIN PRODUCED current_value.
+                    --
+                    -- Same idea as has_purchase_price above: without it the
+                    -- client cannot tell a comp-backed number from one a
+                    -- member typed, and analytics would keep presenting both
+                    -- as "market value". Added 2026-08-19 alongside
+                    -- v_item_values_v1.value_source.
+                    --
+                    -- ⚠️ The order below mirrors THIS query's COALESCE
+                    -- (catalog first, then quick), which is NOT the view's
+                    -- order (quick first, then catalog). That divergence is
+                    -- pre-existing and documented in docs/ARCHITECTURE.md; the
+                    -- label must say which link actually answered HERE, so it
+                    -- follows this query rather than the view's.
+                    --
+                    -- `predicted_price_eur` is a member's typed number despite
+                    -- its name — its only writer was add-manual's "Estimated
+                    -- value" field. Labelling it as a model figure is the
+                    -- confusion this column exists to end.
+                    CASE
+                        WHEN l.q50 IS NOT NULL THEN 'catalog_model'
+                        WHEN (SELECT qp.q50_eur FROM quick_predictions qp
+                               WHERE qp.item_id = i.id
+                            ORDER BY qp.created_at DESC LIMIT 1) IS NOT NULL
+                            THEN COALESCE(
+                                (SELECT NULLIF(qp.raw->>'source', '')
+                                   FROM quick_predictions qp
+                                  WHERE qp.item_id = i.id
+                               ORDER BY qp.created_at DESC LIMIT 1),
+                                'quick_scan')
+                        WHEN i.predicted_price_eur IS NOT NULL THEN 'user_estimate'
+                        WHEN i.estimated_value IS NOT NULL THEN
+                            CASE WHEN i.attrs->>'value_entry' = 'app'
+                                 THEN 'app_estimate' ELSE 'user_estimate' END
+                        ELSE 'none'
+                    END AS value_source,
                     -- WHICH SET THIS ITEM BELONGS TO, AND HOW BIG THAT SET IS.
                     --
                     -- app/sets-to-complete.tsx has always mapped `collection`,
@@ -469,6 +505,11 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     # False => unrealized_pl is model drift, not profit. Callers
                     # must not sum it into a headline P/L figure.
                     "has_purchase_price": bool(r["has_purchase_price"]),
+                    # Which link produced current_value. 'user_estimate' /
+                    # 'app_estimate' mean nobody checked the number, so a
+                    # caller must not add it to a figure it calls "market
+                    # value" — see docs/ARCHITECTURE.md value-sources.
+                    "value_source": r["value_source"],
                     "q10": round(float(r["q10"] or 0), 2),
                     "q90": round(float(r["q90"] or 0), 2),
                     # Nullable on purpose, both of them. `null` means "this item

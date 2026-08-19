@@ -32,6 +32,16 @@ export interface PortfolioItemSnapshot {
    *  the earliest prediction as cost basis for want of a purchase price. Never
    *  sum P/L across items without checking this. */
   hasPurchasePrice?: boolean;
+  /** Which link of the value chain produced `currentValue` —
+   *  `catalog_daily` | `quick_scan` | `catalog_model` are comp/model-backed;
+   *  `user_estimate` | `app_estimate` are numbers nobody checked; `none` means
+   *  nothing answered and the value is 0.
+   *
+   *  Analytics splits its totals on this: calling a member's own typed figure
+   *  "market value" is the thing `value_source` exists to stop. Undefined on
+   *  demo rows and on any caller predating 2026-08-19 — treat as unknown, not
+   *  as market. */
+  valueSource?: string;
   id: string;
   name: string;
   category: string;

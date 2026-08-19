@@ -245,6 +245,8 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
       // price is on file. Anything summing P/L into a headline must exclude
       // these, or it reports a number the member never earned.
       hasPurchasePrice: it.has_purchase_price === true,
+      valueSource:
+        typeof it.value_source === 'string' ? it.value_source : undefined,
       change1dPct:
         typeof it.change_1d_pct === 'number'
           ? it.change_1d_pct

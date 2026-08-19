@@ -34,6 +34,7 @@ import {
   type RawPersonalizedInsights,
 } from "@/data/personalizedInsights";
 import { ItemsEmptyState } from "@/components/items";
+import { splitPortfolioByValueSource } from '@/lib/portfolioAnalytics';
 import { formatPrice } from "@/lib/format";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useAsync } from "@/hooks/useAsync";
@@ -294,6 +295,18 @@ function AnalyticsScreen() {
   );
 
   /**
+   * The three numbers a collection actually has (decided 2026-08-19).
+   *
+   * They are not three versions of one figure: what you PAID is a fact about
+   * your past, what the MARKET says is a claim we can back with comps, and an
+   * ESTIMATE is somebody's opinion — the member's own, or a vision scan's.
+   * Presenting the third as the second is what this whole change exists to
+   * stop, and collapsing the first two is how `unrealized_pl` came to measure
+   * model drift instead of profit.
+   */
+  const valueSplit = useMemo(() => splitPortfolioByValueSource(items), [items]);
+
+  /**
    * Split the personalized-insights notes into the two things they actually
    * are, because rendering them as one list said the same fact twice.
    *
@@ -459,6 +472,51 @@ function AnalyticsScreen() {
                 earlier value to measure against yet. Performance appears once
                 your portfolio has history behind it.
               </Text>
+            ) : null}
+
+            {/* The three numbers, before the P/L that compares two of them.
+                Rendered only when there is something to split; a card of three
+                zeroes on an empty account is chrome. */}
+            {items.length > 0 ? (
+              <View style={styles.metricsGrid}>
+                <View style={styles.metricItem}>
+                  <Text style={[styles.metricLabel, { color: colors.muted }]}>You paid</Text>
+                  <Text style={[styles.metricValue, { color: colors.text }]}>
+                    {valueSplit.purchaseCount > 0
+                      ? formatPrice(valueSplit.purchaseTotal, settings.currency ?? 'EUR')
+                      : '—'}
+                  </Text>
+                  <Text style={[styles.metricLabel, { color: colors.muted }]}>
+                    {valueSplit.purchaseCount} of {items.length} items
+                  </Text>
+                </View>
+                <View style={styles.metricItem}>
+                  <Text style={[styles.metricLabel, { color: colors.muted }]}>Market value</Text>
+                  <Text style={[styles.metricValue, { color: colors.text }]}>
+                    {valueSplit.marketCount > 0
+                      ? formatPrice(valueSplit.marketTotal, settings.currency ?? 'EUR')
+                      : '—'}
+                  </Text>
+                  <Text style={[styles.metricLabel, { color: colors.muted }]}>
+                    {valueSplit.marketCount} priced by comps
+                  </Text>
+                </View>
+                <View style={styles.metricItem}>
+                  <Text style={[styles.metricLabel, { color: colors.muted }]}>Estimated</Text>
+                  <Text style={[styles.metricValueMuted, { color: colors.muted }]}>
+                    {valueSplit.estimateCount > 0
+                      ? formatPrice(valueSplit.estimateTotal, settings.currency ?? 'EUR')
+                      : '—'}
+                  </Text>
+                  {/* Named as an estimate, not hidden. For the 40+ categories
+                      with no sold-comp source this is the ONLY number a member
+                      has, and dropping it would show them a collection worth
+                      less than they know it is. */}
+                  <Text style={[styles.metricLabel, { color: colors.muted }]}>
+                    {valueSplit.estimateCount} not comp-backed
+                  </Text>
+                </View>
+              </View>
             ) : null}
 
             {/* What the P/L above is actually BASED on.
