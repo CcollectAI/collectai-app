@@ -544,6 +544,36 @@ action row says which it is. The awaits are bounded by httpClient's request
 timeout, per the "Loading states" rule above — a spinner that can outlive its
 call is the bug that rule exists for.
 
+## A profile that opens with three card idioms in a row (2026-08-19)
+
+Reported as *"the profile has a very cluttered format… the trading section is
+not well integrated… the collects is stacked on top of each other."* All three
+are the same underlying problem, and none of them is spacing.
+
+**Three visual languages before the first CTA.** `UserStatsSection` drew a
+bordered stats box; `TradeReputationSection` drew *another* bordered box with a
+small muted "Trading" label; `UserCategoriesSection` opened with a 16/700
+section heading. Same screen, three ways of saying "here is a block".
+
+- **Trading is now a STRIP under the stats row** — no border, no fill, no
+  heading. It answers the same question the stats row does ("who is this
+  collector"), so it reads as the last line *of* that block instead of the
+  first line of a new one. One card fewer, and the integration complaint goes
+  with it.
+- **Collects is ONE frame with hairline-separated rows.** Every category had
+  been rendering its own `borderWidth: 1, borderRadius: 12` box with an 8pt
+  gap, so a collector in six categories got six stacked outlines — literally
+  "stacked on top of each other". Same failure the watchlist card had: a list
+  of framed boxes reads as a wall, not a list. Separators go BETWEEN rows only;
+  a trailing hairline reads as a row that never arrives.
+
+Two type violations went with it, both found by re-reading the type-scale
+section while in there: `catMeta` at 11pt and `selfNote` at `xs` (10pt).
+
+**The generalisable bit:** "cluttered" almost never means "needs more padding".
+Here it meant *three different frames competing to be the page's first block* —
+count the borders on a screen before reaching for spacing.
+
 ## The collection row lost its share button and its purchase figures (2026-08-19)
 
 Reported as *"the items page has a little listing send button that doesn't

@@ -24,7 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useAsync } from '@/hooks/useAsync';
 import { collectorsApi } from '@/api/collectorsApi';
-import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
+import { text as textToken, fontWeight as fw } from '@/theme/tokens';
 
 interface TradeReputationSectionProps {
   userId: string;
@@ -62,8 +62,7 @@ export const TradeReputationSection = React.memo(function TradeReputationSection
   const tradeLabel = `${trades} completed trade${trades === 1 ? '' : 's'}`;
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
-      <Text style={[styles.header, { color: colors.muted }]}>Trading</Text>
+    <View style={styles.strip}>
 
       {pct != null ? (
         <View style={styles.figureRow}>
@@ -110,23 +109,32 @@ export const TradeReputationSection = React.memo(function TradeReputationSection
 });
 
 const styles = StyleSheet.create({
-  card: {
+  /**
+   * A STRIP under the stats row, not a card of its own — reported 2026-08-19
+   * as *"the trading section is not well integrated"*, and it was: the profile
+   * opened with three different card idioms in a row. `UserStatsSection`'s
+   * bordered stats box, then this bordered box with a small muted "Trading"
+   * label, then "Collects" as a 16/700 section heading. Three visual languages
+   * before the first CTA.
+   *
+   * Trading belongs to the same question the stats row answers — who is this
+   * collector — so it now reads as the last line OF that block rather than as
+   * the first line of a new one. No border, no fill, no heading of its own:
+   * the numbers are the content, and the row above already frames them.
+   */
+  strip: {
     marginHorizontal: 16,   // the screen gutter, same as every other block here
-    marginTop: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    gap: 6,
+    marginTop: 10,
+    gap: 4,
   },
-  // Sentence case, no tracked-out caps: this is a label on a card, and wide
-  // tracking exists to make CAPS legible.
-  header: { fontSize: textToken.sm, fontWeight: fw.semibold },
   // flexWrap, so a long percentage plus trade count on a narrow phone wraps
   // instead of truncating the half that carries the credibility.
   figureRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   figure: { fontSize: textToken.md, fontWeight: fw.bold },
   sub: { fontSize: textToken.sm },
-  selfNote: { fontSize: textToken.xs, fontStyle: 'italic' },
+  // `sm`, not `xs`: 10pt is banned for anything a user reads (ui-playbook,
+  // "Type scale"). Italic already marks it as an aside.
+  selfNote: { fontSize: textToken.sm, lineHeight: 17, fontStyle: 'italic' },
 });
 
 export default TradeReputationSection;

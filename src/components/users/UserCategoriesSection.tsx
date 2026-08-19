@@ -107,7 +107,9 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
       ) : rows === null ? (
         <ActivityIndicator style={{ marginTop: 12 }} color={colors.accent} />
       ) : (
-        rows.map((r) => {
+        // ONE container, hairline-separated rows — see `group`/`row` below.
+        <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {rows.map((r, i) => {
           const name = getCategoryById(r.category_id)?.name ?? r.category_id;
           const ranked = r.rank !== null && r.total_ranked !== null;
           return (
@@ -117,7 +119,13 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 router.push(`/leaderboard?categoryId=${encodeURIComponent(r.category_id)}` as Href);
               }}
-              style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}
+              style={[
+                styles.row,
+                // Separator BETWEEN rows only — a trailing hairline under the
+                // last row would read as the start of another row that never
+                // arrives.
+                i < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+              ]}
               accessibilityRole="button"
               accessibilityLabel={
                 `${name}, ${r.item_count} ${r.item_count === 1 ? 'item' : 'items'}` +
@@ -153,7 +161,8 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
               <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </AnimatedPressable>
           );
-        })
+        })}
+        </View>
       )}
 
       {/* Only on your own profile, and only when something is actually being
@@ -172,19 +181,36 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
 const styles = StyleSheet.create({
   section: { marginTop: 20, paddingHorizontal: 16 },
   heading: { fontSize: 16, fontWeight: '700', marginBottom: 10 },
+  /**
+   * ONE bordered container holding hairline-separated rows.
+   *
+   * Reported 2026-08-19 as *"the collects is stacked on top of each other"*,
+   * and that is exactly what it was: every category rendered its OWN
+   * `borderWidth: 1, borderRadius: 12` box with an 8pt gap, so a collector in
+   * six categories got six stacked outlines. Same failure the watchlist card
+   * had — a list of framed boxes reads as a wall, not as a list
+   * (docs/ui-playbook.md, "a list card is a reference row").
+   *
+   * One frame, N rows, separators between them. Each row is still tappable and
+   * still opens that category's leaderboard.
+   */
+  group: {
+    borderWidth: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 10,
+    paddingVertical: 11,
     paddingHorizontal: 12,
-    marginBottom: 8,
   },
   rowMain: { flex: 1 },
   catName: { fontSize: 14, fontWeight: '600' },
-  catMeta: { fontSize: 11, marginTop: 2 },
+  // 12, not 11: docs/ui-playbook.md puts captions at `sm` and bans anything
+  // below it for text a user reads.
+  catMeta: { fontSize: 12, lineHeight: 16, marginTop: 2 },
   rankPill: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -313,26 +313,16 @@ function AnalyticsScreen() {
    * `concentration` — the note carrying a share + level. Its NUMBER duplicates
    * the Allocations bar, so only its level and category are used, inline in
    * that card.
-   * `actionableNotes` — the rest: suggestions that tell you to do something.
-   *
-   * A suggestion naming "uncategorized" is dropped. That bucket is items with
-   * a NULL category, so "grow your uncategorized collection" is advice to buy
-   * more of a non-category — it read as a bug because it is one.
+   * `actionableNotes` is GONE (2026-08-19) with the "Ways to balance it" card
+   * it fed — a memo with no reader is how a dead path survives a cleanup. It
+   * had also needed a filter for suggestions naming "uncategorized", a bucket
+   * of NULL-category items, because "grow your uncategorized collection" is
+   * advice to buy more of a non-category.
    */
   const concentration = useMemo(
     () => riskNotes.find((n) => n.sharePct != null && n.category) ?? null,
     [riskNotes],
   );
-  const actionableNotes = useMemo(
-    () =>
-      riskNotes.filter(
-        (n) =>
-          n.sharePct == null &&
-          !/uncategori[sz]ed/i.test(n.text),
-      ),
-    [riskNotes],
-  );
-
   // Category colors for allocation bars
   const categoryColors = useMemo(() => {
     const colors = [BRAND_COLORS.tiffany, BRAND_COLORS.tiffanyDark, "#44A9A1", "#2D8A84", "#1F6B66"];
@@ -660,34 +650,13 @@ function AnalyticsScreen() {
           </View>
         )}
 
-        {/* Diversification SUGGESTIONS only — the concentration figure itself
-            now lives in the Allocations card above. */}
-        {actionableNotes.length > 0 && (
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="shield-outline" size={18} color={colors.accent} />
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Ways to balance it</Text>
-            </View>
-            {actionableNotes.map((note) => (
-              <View key={note.id} style={styles.riskRow}>
-                <View
-                  style={[
-                    styles.riskDot,
-                    {
-                      backgroundColor:
-                        note.level === 'high'
-                          ? colors.danger
-                          : note.level === 'medium'
-                            ? colors.accent
-                            : colors.muted,
-                    },
-                  ]}
-                />
-                <Text style={[styles.riskText, { color: colors.text }]}>{note.text}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        {/* "Ways to balance it" was here — REMOVED 2026-08-19 on request.
+            It rendered `actionableNotes`: the diversification suggestions left
+            over once the concentration figure moved into the Allocations card
+            above (which it duplicated). What remained was generic advice about
+            a collection, on a screen whose job is reporting what the collection
+            IS. The concentration VERDICT survives inside the Allocations card,
+            where it sits next to the distribution it describes. */}
 
         {/* H1: Category Statistics Dashboard (Pro+) */}
         {limits.advanced_analytics ? (
@@ -1225,12 +1194,6 @@ const styles = StyleSheet.create({
   },
 
   // Diversification suggestions
-  riskRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    marginTop: 10,
-  },
   riskDot: {
     width: 8,
     height: 8,
@@ -1238,13 +1201,6 @@ const styles = StyleSheet.create({
     // Nudge down so the dot optically centres on the first line of text.
     marginTop: 6,
   },
-  riskText: {
-    flex: 1,
-    fontSize: text.sm,
-    lineHeight: 20,
-  },
-
-  // DCA Cost Basis (M3)
   dcaRow: {
     flexDirection: "row",
     justifyContent: "space-between",
