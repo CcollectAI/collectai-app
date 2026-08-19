@@ -12,6 +12,7 @@ import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
+import { formatCategoryName } from '@/constants/categories';
 
 type HeatItem = {
   item_key: string;
@@ -95,14 +96,16 @@ export const DemandHeatSection = React.memo(function DemandHeatSection() {
           onPress={() => router.push(`/(tabs)/marketplace`)}
           style={[styles.row, i < items.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}
           accessibilityRole="button"
-          accessibilityLabel={`Trending item ${i + 1}: ${item.title || item.item_key.replace(/-/g, ' ')}, ${item.category}, ${item.search_count} searches`}
+          accessibilityLabel={`Trending item ${i + 1}: ${item.title || item.item_key.replace(/-/g, ' ')}, ${formatCategoryName(item.category)}, ${item.search_count} searches`}
         >
           <View style={[styles.rank, { backgroundColor: i < 3 ? colors.warning + '20' : colors.border + '40' }]}>
             <Text style={[styles.rankText, { color: i < 3 ? colors.warning : colors.muted }]}>#{i + 1}</Text>
           </View>
           <View style={styles.info}>
             <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{item.title || item.item_key.replace(/-/g, ' ')}</Text>
-            <Text style={[styles.meta, { color: colors.muted }]}>{item.category} · {item.search_count} searches</Text>
+            <Text style={[styles.meta, { color: colors.muted }]}>
+              {formatCategoryName(item.category)} · {item.search_count} searches
+            </Text>
           </View>
           <Ionicons name="trending-up" size={16} color={colors.success} />
         </AnimatedPressable>

@@ -3,7 +3,6 @@
  */
 
 import type {
-  Item,
   CategoryStoreData,
   CategorySummary,
   CategoryMissingItem,
@@ -14,7 +13,6 @@ import { getCategoryById, CATEGORIES } from '../categories';
 import { EVENTS } from '../events';
 import { logger } from '@/lib/logger';
 import { mockFollowedCategories, ownedCategoryItems } from './mockState';
-import * as mockItemsProvider from './mockItemsProvider';
 
 export async function getCategoryStore(categoryId: string): Promise<CategoryStoreData | null> {
   const category = getCategoryById(categoryId);
@@ -42,31 +40,12 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
     },
   ];
 
-  const allItems = await mockItemsProvider.listItems();
-  const categoryItems = allItems.filter(
-    (item) => item.category.toLowerCase().includes(category.name.toLowerCase().split(' ')[0].toLowerCase())
-  );
-
-  const items: Item[] = categoryItems.length > 0 ? categoryItems : [
-    {
-      id: `${categoryId}-item-1`,
-      name: `${category.name} - Rare Find #1`,
-      category: category.name,
-      price: 450,
-    },
-    {
-      id: `${categoryId}-item-2`,
-      name: `${category.name} - Premium Edition`,
-      category: category.name,
-      price: 890,
-    },
-    {
-      id: `${categoryId}-item-3`,
-      name: `${category.name} - Vintage Classic`,
-      category: category.name,
-      price: 320,
-    },
-  ];
+  // The `items` block was here — a filter over the mock collection falling
+  // back to three INVENTED rows ("Rare Find #1", EUR 450) when it matched
+  // nothing. Removed 2026-08-19 with the `CategoryStoreData.items` field it
+  // fed: nothing had rendered that field since the 2026-08-11 museum redesign,
+  // and fabricated rows standing in for the user's own collection are the
+  // `ungated-demo-data` class by construction.
 
   const upcomingEvents = EVENTS
     .filter((e) => e.categoryId === categoryId)
@@ -102,7 +81,6 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
     categoryTagline: category.tagline,
     bannerImageUrl: category.bannerImageUrl,
     spotlightSlides,
-    items,
     upcomingEvents,
     friendsWhoFollow,
   };

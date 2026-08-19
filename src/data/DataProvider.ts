@@ -52,7 +52,16 @@ export interface DataProvider {
    * List items in the user's collection.
    * Supports optional pagination (limit/offset).
    */
-  listItems(pagination?: PaginationParams): Promise<Item[]>;
+  /**
+   * Your active collection, newest first.
+   *
+   * `category` narrows to ONE category by SLUG ('mtg'), for the category
+   * page's "your items" rail. Filtered inside the one provider read rather
+   * than by a second reader, because `mapItemRow` — and with it the whole
+   * value chain — must keep a single call site
+   * (`npm run check:item-value-source`).
+   */
+  listItems(pagination?: PaginationParams & { category?: string }): Promise<Item[]>;
 
   /**
    * List the user's ARCHIVED items — what `listItems` hides.

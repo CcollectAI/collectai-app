@@ -16,6 +16,7 @@ import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import type { CurrencyCode } from '@/data/types';
 import { BRAND_COLORS } from '@/constants/colors';
+import { formatCategoryName } from '@/constants/categories';
 
 const TIFFANY = BRAND_COLORS.tiffany;
 const TIFFANY_DARK = BRAND_COLORS.tiffanyDark;
@@ -95,7 +96,7 @@ function BatchSummaryScreenInner({
                 {item.name}
               </Text>
               <Text style={[styles.summaryItemCategory, { color: colors.muted }]} numberOfLines={1}>
-                {item.category} -- {item.condition}
+                {formatCategoryName(item.category)} -- {item.condition}
               </Text>
             </View>
             <Text style={[styles.summaryItemPrice, { color: TIFFANY_DARK }]}>

@@ -16,5 +16,6 @@ export { default as CrossCategorySection } from './CrossCategorySection';
 export { default as CategoryGradingGuide } from './CategoryGradingGuide';
 export { default as NewReleasesSection } from './NewReleasesSection';
 export { default as CategoryOverviewRail } from './CategoryOverviewRail';
+export { default as YourItemsRail } from './YourItemsRail';
 export { default as CategoryBrandHeader } from './CategoryBrandHeader';
 export { default as CategorySortChips } from './CategorySortChips';

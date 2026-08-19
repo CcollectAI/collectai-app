@@ -4,7 +4,6 @@
  */
 
 import type {
-  Item,
   CategoryStoreData,
   CategorySummary,
   CategoryMissingItem,
@@ -25,35 +24,23 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
   // earlier query referenced a nonexistent `images` array, which made
   // PostgREST 400 with column-not-found and the catch silently returned
   // [] — categories opened to an empty store every time.
-  type CatItemRow = { id: string; name?: string | null; title?: string | null; category?: string | null; updated_at?: string | null; image_url?: string | null };
   type EventRow = { id: string; title: string; kind: string; date: string; time?: string };
 
   // The two queries are independent — fire them in parallel so cellular
   // round-trip latency stacks once, not twice. Each keeps its own timeout
   // and treats a TimeoutError as "return null" (the same semantics as the
   // previous sequential version). Non-timeout errors still propagate.
-  const itemsP = (async (): Promise<CatItemRow[] | null> => {
-    try {
-      const res = await withTimeout(
-        supabase
-          .from('items')
-          .select('id, name, title, category, updated_at, image_url')
-          .eq('archived', false)
-          .eq('category', categoryId)
-          .order('updated_at', { ascending: false })
-          .limit(20),
-        SUPABASE_READ_TIMEOUT_MS,
-        'getCategoryStore.items',
-      );
-      return res.data as CatItemRow[] | null;
-    } catch (e) {
-      if (e instanceof TimeoutError) {
-        logger.error('[SupabaseDataProvider] getCategoryStore.items timed out');
-        return null;
-      }
-      throw e;
-    }
-  })();
+  // ── The items query lived HERE and is gone (2026-08-19) ──────────────
+  // It selected your items in this category on EVERY category open, and
+  // nothing had rendered them since the 2026-08-11 museum redesign removed
+  // "Items-in-Category" — a round trip per open, for a value nobody read.
+  //
+  // Its mapper also hardcoded `price: 0`, so anyone who wired it back up
+  // would have priced the whole shelf at zero (unknown-as-zero, the house bug
+  // class). The category page's "YOUR COLLECTION" rail deliberately does NOT
+  // use this: it reads `dataProvider.listItems({ category })`, which goes
+  // through the single `mapItemRow` call site and therefore shows the same
+  // number as the Items tab and the portfolio total.
 
   // Strict category-relevant: ONLY events tagged to THIS category. Categories
   // with none show "No upcoming events" rather than filling the section with
@@ -83,16 +70,8 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
     }
   })();
 
-  const [itemsData, eventsData] = await Promise.all([itemsP, eventsP]);
+  const eventsData = await eventsP;
 
-  const items: Item[] = (itemsData ?? []).map((r) => ({
-    id: r.id,
-    name: r.name ?? r.title ?? 'Untitled',
-    category: r.category ?? categoryId,
-    price: 0,
-    imageUrl: r.image_url ?? undefined,
-    updatedAt: r.updated_at ?? new Date().toISOString(),
-  }));
 
   const upcomingEvents = (eventsData ?? []).map((e) => ({
     id: e.id,
@@ -112,7 +91,6 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
     categoryTagline: category.tagline,
     bannerImageUrl: category.bannerImageUrl,
     spotlightSlides,
-    items,
     upcomingEvents,
     friendsWhoFollow: [],
   };

@@ -113,10 +113,25 @@ export class CachedDataProvider implements DataProvider {
     return swr(CK.PORTFOLIO_SUMMARY, () => this.inner.getPortfolioSummary(), TTL_SHORT);
   }
 
-  listItems(pagination?: PaginationParams): Promise<Item[]> {
+  listItems(pagination?: PaginationParams & { category?: string }): Promise<Item[]> {
     // Skip cache for paginated requests beyond the first page
     if (pagination && (pagination.offset ?? 0) > 0) {
       return this.inner.listItems(pagination);
+    }
+    // ⚠️ THE CATEGORY IS PART OF THE KEY.
+    // `CK.ITEMS_LIST` is one key for "your collection". Serving a
+    // category-filtered read from it would poison the whole-collection cache
+    // with one category's rows — the Items tab would then show only your
+    // Magic cards, from a cache hit, with no error anywhere. The invalidations
+    // below clear `CK.ITEMS_LIST`; a namespaced key is a sibling of it, so a
+    // stale per-category rail simply expires on TTL rather than lying after a
+    // write.
+    if (pagination?.category) {
+      return swr(
+        `${CK.ITEMS_LIST}:cat:${pagination.category}`,
+        () => this.inner.listItems(pagination),
+        TTL_SHORT,
+      );
     }
     return swr(CK.ITEMS_LIST, () => this.inner.listItems(pagination), TTL_MEDIUM);
   }

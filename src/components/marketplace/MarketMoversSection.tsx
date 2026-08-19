@@ -34,6 +34,7 @@ type Direction = 'gainers' | 'losers';
 // cannot parse it.
 export { moverKey, moverTitle, humaniseMoverKey } from './moverFormat';
 import { moverKey, moverTitle, PCT_MIN_PRICE_EUR } from './moverFormat';
+import { formatCategoryName } from '@/constants/categories';
 
 function MarketMoversSectionInner() {
   const { colors } = useAppTheme();
@@ -243,7 +244,7 @@ function MarketMoversSectionInner() {
                   {moverTitle(m)}
                 </Text>
                 <Text style={[styles.sub, { color: colors.muted }]} numberOfLines={1}>
-                  {m.category} · {formatPrice(m.last_price)}
+                  {formatCategoryName(m.category)} · {formatPrice(m.last_price)}
                 </Text>
               </View>
               {/* Percentage leads, money qualifies it: "+96.7%" alone hides

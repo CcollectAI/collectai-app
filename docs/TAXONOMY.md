@@ -73,6 +73,42 @@ const category = getCategoryById('warhammer');
 const subtype = getSubtypeById('warhammer_books');
 ```
 
+## Two vocabularies, and the one place they must meet (2026-08-19)
+
+`items.category` stores a **SLUG** (`mtg`). Every picker in the app is built
+from **display NAMES** (`Magic: The Gathering`). Both directions had a defect:
+
+**Reading.** Cards printed `item.category` straight, so a Magic card's badge
+said *"mtg"*. `formatCategoryName` (`src/constants/categories.ts`) is the one
+resolver — curated name where the registry has one, title-cased otherwise, `''`
+for null. It was already used by `ItemsListItem` and `WatchlistItemCard`; the
+item **grid** card, the **detail** screen, search results, the Home movers,
+QuickScan batch results, market movers and demand heat all printed the raw
+value. All now resolve, and the grid badge is a real `CategoryPill` — the same
+component the list card uses, so it also carries the category tint and taps
+through to `/categories/[id]`.
+
+**Writing.** `app/item/[id].tsx` builds its picker from `CATEGORY_OPTIONS`,
+which are display names, and `updateItem` wrote the value **verbatim** into the
+slug column. An edit would have stored `Magic: The Gathering`, and that item
+would then have vanished from `/categories/mtg`, from the category page's
+"YOUR COLLECTION" rail and from `getCategoryStore` — while still looking
+perfectly correct on its own screen
+(`learning_join_vocabulary_slug_vs_display_name`).
+
+**Measured on prod before fixing: 9 distinct values, all slugs, 0 display
+names.** Latent, not live — which is exactly when it is cheap to close.
+`updateItem` now normalises through `CATEGORY_NAME_TO_SLUG` at the single write
+chokepoint (normalising at the call site would leave the next caller exposed),
+and `__tests__/lib/categoryVocabulary.test.ts` pins both directions plus the
+round-trip, so a duplicate display name across two slugs — which would silently
+merge two categories on write — fails the build.
+
+One live value, `books`, is **not** in the registry and title-cases to "Books".
+That is fine and the test asserts readability rather than registry membership:
+categories can also be user-typed (`CUSTOM_CATEGORY_SENTINEL`), so membership is
+not a property the app can promise. "Never shows a raw slug" is.
+
 ## Mapping Rules
 
 ### Warhammer Books vs Miniatures

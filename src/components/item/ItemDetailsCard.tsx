@@ -12,6 +12,7 @@ import { ValueSourceChip } from '@/components/ValueSourceChip';
 import { formatPrice, getCurrencySymbol, UNPRICED_LABEL, isUnpriced, toPriceNum } from '@/lib/format';
 import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { CategorySpecificSection } from '@/components/CategorySpecificSection';
+import { formatCategoryName } from '@/constants/categories';
 import { Skeleton, SkeletonList } from '@/components/Skeleton';
 import { radius, text, fontWeight } from '@/theme/tokens';
 
@@ -99,7 +100,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
       )}
 
       {/* Category row */}
-      <View style={styles.row} accessibilityLabel={`Category: ${editableCategory}`}>
+      <View style={styles.row} accessibilityLabel={`Category: ${formatCategoryName(editableCategory)}`}>
         <Text style={[styles.label, { color: theme.muted }]}>Category</Text>
         {isDraft || isEditing ? (
           <Pressable
@@ -121,9 +122,14 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
             }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
             accessibilityRole="link"
-            accessibilityLabel={`View ${editableCategory} category`}
+            accessibilityLabel={`View ${formatCategoryName(editableCategory)} category`}
           >
-            <Text style={[styles.value, { color: theme.accent }]}>{editableCategory}</Text>
+            {/* The curated NAME, while navigation still uses the slug below.
+                `editableCategory` holds whatever `items.category` stores, which
+                is a slug — so this row read "mtg" on every Magic card. */}
+            <Text style={[styles.value, { color: theme.accent }]}>
+              {formatCategoryName(editableCategory)}
+            </Text>
             <Ionicons name="chevron-forward" size={14} color={theme.accent} />
           </Pressable>
         )}

@@ -15,6 +15,8 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { formatPrice } from '@/lib/format';
+import { formatCategoryName } from '@/constants/categories';
+import { CategoryPill } from '@/components/CategoryPill';
 
 interface GalleryItem {
   id: string;
@@ -105,7 +107,9 @@ export function ItemGalleryGrid({
 
             <View style={styles.lightboxInfo}>
               <Text style={[styles.lightboxName, { color: colors.accentText }]}>{selectedItem.name}</Text>
-              <Text style={[styles.lightboxCategory, { color: colors.muted }]}>{selectedItem.category}</Text>
+              <Text style={[styles.lightboxCategory, { color: colors.muted }]}>
+                {formatCategoryName(selectedItem.category)}
+              </Text>
               <Text style={[styles.lightboxPrice, { color: colors.brand.base }]}>
                 {formatPrice(selectedItem.value)}
               </Text>
@@ -153,7 +157,7 @@ export function ItemGalleryGrid({
                 ]}
                 onPress={() => handleItemPress(item)}
                 accessibilityRole="button"
-                accessibilityLabel={`${item.name}, ${item.category}, ${formatPrice(item.value)}`}
+                accessibilityLabel={`${item.name}, ${formatCategoryName(item.category)}, ${formatPrice(item.value)}`}
               >
                 {item.imageUrl ? (
                   <Image
@@ -182,11 +186,27 @@ export function ItemGalleryGrid({
                   ) : null}
                 </View>
 
-                <View style={[styles.categoryBadge, { backgroundColor: colors.accent }]}>
-                  <Text style={styles.categoryText} numberOfLines={1}>
-                    {item.category}
-                  </Text>
-                </View>
+                {/* `CategoryPill`, not a static badge: it carries the curated
+                    name ('mtg' -> 'Magic: The Gathering' — 'mtg' is not a word
+                    a reader recognises), the category's own tint, and a tap
+                    through to /categories/[id]. The items LIST card has used
+                    it since it was written; the grid card had a hand-rolled
+                    copy that did neither.
+
+                    A nested Pressable inside the card's Pressable: RN gives
+                    the touch to the innermost, so the badge opens the category
+                    and everywhere else on the card still opens the item. */}
+                {/* No `textStyle` override: CategoryPill's own 11pt/600/white
+                    is what the items LIST card shows, and the badge's old
+                    `fontSize: 10` is the size docs/ui-playbook.md bans for
+                    anything a user reads. Forcing it back down here would
+                    reintroduce the violation through a component that had
+                    already got it right. */}
+                <CategoryPill
+                  id={item.category}
+                  label={formatCategoryName(item.category)}
+                  style={styles.categoryBadge}
+                />
               </Pressable>
             ))}
             {/* Fill empty slots in the last row */}
@@ -263,11 +283,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
-  },
-  categoryText: {
-    color: '#FFFFFF', // Badge text on colored background — always white
-    fontSize: 10,
-    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,

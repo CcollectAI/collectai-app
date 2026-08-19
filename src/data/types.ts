@@ -399,7 +399,12 @@ export type CategoryStoreData = {
   categoryTagline: string;
   bannerImageUrl?: string;
   spotlightSlides: SpotlightSlide[];
-  items: Item[];
+  // `items` was here. It carried YOUR items in the category, was selected on
+  // every category open, and had rendered nowhere since the 2026-08-11 museum
+  // redesign. The category page's "YOUR COLLECTION" rail reads
+  // `dataProvider.listItems({ category })` instead, so the values come from
+  // the one `mapItemRow` call site rather than from a mapper that hardcoded
+  // `price: 0`. Removed 2026-08-19.
   upcomingEvents: {
     id: string;
     title: string;

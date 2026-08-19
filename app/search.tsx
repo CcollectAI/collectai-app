@@ -38,6 +38,7 @@ import { useTranslation } from 'react-i18next';
 import { fmtCurrency } from '@/lib/format';
 import { useSettings } from '@/lib/settings';
 import { safeGoBack } from '@/lib/goBack';
+import { formatCategoryName } from '@/constants/categories';
 
 // Recent searches removed 2026-08-07. The AsyncStorage key
 // '@sparrowcollect/recent_searches' is deliberately cleared once on mount
@@ -72,7 +73,11 @@ const ItemSearchResult = React.memo(function ItemSearchResult({ item, colors, on
       )}
       <View style={resultStyles.resultInfo}>
         <Text style={[resultStyles.resultTitle, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
-        <Text style={[resultStyles.resultSubtitle, { color: colors.muted }]}>{item.category}</Text>
+        {/* The curated name, never the stored slug — 'mtg' is not a word a
+            reader recognises. */}
+        <Text style={[resultStyles.resultSubtitle, { color: colors.muted }]}>
+          {formatCategoryName(item.category)}
+        </Text>
       </View>
       <Ionicons name="chevron-forward" size={16} color={colors.muted} />
     </AnimatedPressable>
@@ -96,7 +101,9 @@ const CatalogSearchResult = React.memo(function CatalogSearchResult({ item, colo
       <View style={resultStyles.resultInfo}>
         <Text style={[resultStyles.resultTitle, { color: colors.text }]} numberOfLines={1}>{item.title}</Text>
         <Text style={[resultStyles.resultSubtitle, { color: colors.muted }]}>
-          {item.brand ? `${item.brand} · ${item.category}` : item.category}
+          {item.brand
+            ? `${item.brand} · ${formatCategoryName(item.category)}`
+            : formatCategoryName(item.category)}
         </Text>
       </View>
       {/* Absent price is stated, never blank. A silent gap reads as a loading

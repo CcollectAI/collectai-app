@@ -13,6 +13,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { formatPrice } from '@/lib/format';
 import { ProgressRing } from '@/components/ProgressRing';
+import { formatCategoryName } from '@/constants/categories';
 
 const TIER_COLORS: Record<string, string> = {
   Diamond: '#A78BFA',
@@ -49,7 +50,7 @@ function MoverItem({ item, colors }: { item: ItemMover; colors: ThemeColors }) {
           {item.name}
         </Text>
         <Text style={[styles.moverCategory, { color: colors.muted }]}>
-          {item.category}
+          {formatCategoryName(item.category)}
         </Text>
       </View>
       <View style={styles.moverValue}>

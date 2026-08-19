@@ -12,10 +12,17 @@
  *   5. Upcoming events (category-tagged first, then the events-tab pool)
  *   6. Related categories
  *
- * Everything else the old page stacked (Spotlight, Items-in-Category,
- * Featured Collections, Browse Catalog, Tips, Grading Guide, Missing Items,
- * Build Projects, External Marketplaces, Cross-Category, Leaderboard) is
- * deliberately GONE — merged into or funneled through the single rail.
+ * Everything else the old page stacked (Spotlight, Featured Collections,
+ * Browse Catalog, Tips, Grading Guide, Missing Items, Build Projects, External
+ * Marketplaces, Cross-Category, Leaderboard) is deliberately GONE — merged
+ * into or funneled through the single rail.
+ *
+ * ITEMS-IN-CATEGORY CAME BACK (2026-08-19), by request, as `YourItemsRail` at
+ * the top. The redesign's argument was about five CATALOG rails competing to
+ * answer "what exists"; your own collection answers "what do I already have",
+ * which is a different question and the one a collector opens the app for.
+ * Your shelf before the shop. It renders NOTHING when you own nothing in the
+ * category, so it costs the other 50-odd categories no height.
  *
  * Perf: the page renders instantly from local category metadata
  * (getCategoryById is synchronous) — there is NO full-screen skeleton and no
@@ -54,6 +61,7 @@ import {
   CategoryBrandHeader,
   CategorySortChips,
   FeaturedCollectionsSection,
+  YourItemsRail,
 } from '@/components/category';
 import type { CatalogSortKey } from '@/components/category/CategorySortChips';
 import { safeGoBack } from '@/lib/goBack';
@@ -98,7 +106,6 @@ function CategoryStoreScreen() {
       }
       logLoad(`category:${categoryId}`, {
         events: storeResult?.upcomingEvents.length ?? 'null-store',
-        items: storeResult?.items.length ?? 'null-store',
         ms: elapsed(),
       });
     } catch (err: unknown) {
@@ -270,6 +277,32 @@ function CategoryStoreScreen() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />
         </AnimatedPressable>
+
+        {/* 3-zero. YOUR shelf, before the shop.
+            Added 2026-08-19 by request, and a deliberate partial reversal of
+            the museum redesign's "Items-in-Category is GONE" — see the file
+            header. That removal was about five CATALOG rails competing to
+            answer "what exists"; this answers "what do I already have", which
+            is a different question and the one a collector opens the app for.
+            Third rail, not a replacement, and first because your own
+            collection outranks the shop.
+
+            Renders NOTHING when you own nothing here — the normal state for
+            most of the 54 categories — rather than an empty frame that reads
+            as a component which failed to load. */}
+        <YourItemsRail
+          categoryId={String(categoryId)}
+          accentColor={accentColor}
+          colors={colors}
+          onItemPress={(it) => router.push({
+            pathname: '/item/[id]',
+            params: { id: it.id },
+          } as unknown as Href)}
+          onSeeAll={() => router.push({
+            pathname: '/(tabs)/items',
+            params: { category: String(categoryId) },
+          } as unknown as Href)}
+        />
 
         {/* 3a. Page-level sort chips (mockup `.chips` — gradient active pill). */}
         <CategorySortChips

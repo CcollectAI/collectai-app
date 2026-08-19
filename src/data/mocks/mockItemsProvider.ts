@@ -14,7 +14,9 @@ import { MOCK_TOP_MOVERS } from '../../mockData';
 import { logger } from '@/lib/logger';
 import { mockCreatedItems } from './mockState';
 
-export async function listItems(pagination?: PaginationParams): Promise<Item[]> {
+export async function listItems(
+  pagination?: PaginationParams & { category?: string },
+): Promise<Item[]> {
   const mockItems: Item[] = MOCK_TOP_MOVERS.map((m) => ({
     id: m.id,
     name: m.name,
@@ -24,7 +26,16 @@ export async function listItems(pagination?: PaginationParams): Promise<Item[]> 
     updatedAt: undefined,
   }));
 
-  const all = [...mockItems, ...mockCreatedItems];
+  // The `category` filter must be honoured HERE too. TypeScript accepts the
+  // wider argument structurally, so a mock that ignored it would compile, run,
+  // and quietly hand the category page the WHOLE collection — a filter that
+  // silently does nothing, which is the house failure mode rather than a
+  // cosmetic mock gap.
+  const filtered = pagination?.category
+    ? [...mockItems, ...mockCreatedItems].filter((i) => i.category === pagination.category)
+    : [...mockItems, ...mockCreatedItems];
+
+  const all = filtered;
   if (pagination) {
     const offset = pagination.offset ?? 0;
     const limit = pagination.limit ?? all.length;

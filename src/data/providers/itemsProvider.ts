@@ -3,6 +3,7 @@
  */
 
 import { API_LIMITS } from '@/constants/apiLimits';
+import { CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 import type {
   CurrencyCode,
   PaginationParams,
@@ -274,22 +275,45 @@ async function mapRowsWithValues(data: unknown): Promise<Item[]> {
 
 const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, condition, brand, year, series, edition_label, estimated_value, predicted_price_eur, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
 
-export async function listItems(pagination?: PaginationParams): Promise<Item[]> {
+/**
+ * Your active collection, optionally narrowed to ONE category.
+ *
+ * The `category` filter is applied HERE rather than in a second reader, because
+ * `mapItemRow` (and with it the whole value chain) is required to have exactly
+ * one call site — `npm run check:item-value-source` enforces that, and the
+ * chain has already drifted twice when it was copied.
+ *
+ * The alternative that was NOT taken: `categoryProvider.getCategoryStore`
+ * already selects this exact set, but its own mapper hardcodes `price: 0`, so
+ * every row would render as EUR 0 — unknown-as-zero, the house bug class.
+ */
+export async function listItems(
+  pagination?: PaginationParams & { category?: string },
+): Promise<Item[]> {
   const limit = pagination?.limit ?? API_LIMITS.ITEMS_DEFAULT;
   const offset = pagination?.offset ?? 0;
   let data: unknown;
   let error: unknown;
   try {
+    let query = supabase
+      .from('items')
+      .select(ITEMS_SELECT)
+      // Your ACTIVE collection. The bulk-archive dialog promises "archived
+      // items will be hidden from your active collection" and, until
+      // 2026-08-09, nothing honoured it: the optimistic update removed the
+      // row and the next refresh brought it straight back. Restore lives on
+      // /archived.
+      .eq('archived', false);
+
+    // SLUG to SLUG. `items.category` stores the slug ('mtg') and the category
+    // route param is the same slug, so this compares like with like. A display
+    // name here ('Magic: The Gathering') would match nothing and return an
+    // empty rail that reads as "you own none of these"
+    // (learning_join_vocabulary_slug_vs_display_name).
+    if (pagination?.category) query = query.eq('category', pagination.category);
+
     const res = await withTimeout(
-      supabase
-        .from('items')
-        .select(ITEMS_SELECT)
-        // Your ACTIVE collection. The bulk-archive dialog promises "archived
-        // items will be hidden from your active collection" and, until
-        // 2026-08-09, nothing honoured it: the optimistic update removed the
-        // row and the next refresh brought it straight back. Restore lives on
-        // /archived.
-        .eq('archived', false)
+      query
         .order('updated_at', { ascending: false })
         .range(offset, offset + limit - 1),
       ITEMS_READ_TIMEOUT_MS,
@@ -407,7 +431,23 @@ export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name
     updatePayload.title = patch.name;
     updatePayload.name = patch.name;
   }
-  if (patch.category !== undefined) updatePayload.category = patch.category;
+  // ⚠️ NORMALISE TO THE SLUG. `items.category` is a SLUG column ('mtg'), but
+  // the item-detail picker is built from CATEGORY_OPTIONS, which are display
+  // NAMES ('Magic: The Gathering') — so an edit would write a display name
+  // into a slug column and the item would silently vanish from
+  // /categories/mtg, from the category rail, and from `getCategoryStore`,
+  // while still looking correct on its own screen
+  // (learning_join_vocabulary_slug_vs_display_name).
+  //
+  // Measured on prod 2026-08-19 BEFORE fixing: 9 distinct values, all slugs,
+  // 0 display names — so this is latent, not live, and the fix is cheap
+  // insurance rather than a repair. Done HERE because this is the one write
+  // chokepoint; normalising at the call site leaves the next caller exposed.
+  if (patch.category !== undefined) {
+    updatePayload.category = patch.category
+      ? (CATEGORY_NAME_TO_SLUG[patch.category] ?? patch.category)
+      : patch.category;
+  }
   // items has `image_url` (singular text), not `images` (array). The earlier
   // shape wrote `images: [url]` which silently failed on every save.
   if (patch.imageUrl !== undefined) updatePayload.image_url = patch.imageUrl ?? null;
