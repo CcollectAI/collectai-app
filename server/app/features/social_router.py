@@ -387,6 +387,30 @@ async def get_category_leaderboard(
                         p.handle,
                         p.avatar_url,
                         COUNT(i.id) AS item_count,
+                        -- MARKET TRUTH ONLY (2026-08-19). This is the one
+                        -- number in the app that ranks members against each
+                        -- other in public, so it may not rest on anything a
+                        -- member typed about their own collection.
+                        --
+                        -- The chain stops after the two comp/model links. It
+                        -- deliberately does NOT fall through to
+                        -- `i.predicted_price_eur` / `i.estimated_value` the way
+                        -- `v_item_values_v1` does: both are member-supplied
+                        -- (predicted_price_eur's only writer is add-manual's
+                        -- "Estimated value" field, despite the name), so
+                        -- including them would let anyone top a category by
+                        -- typing a bigger number into their own item.
+                        --
+                        -- Consequence, stated rather than discovered later: an
+                        -- item with no comps contributes 0, and in the 40+
+                        -- categories with no sold-comp source that is EVERY
+                        -- item. Those categories are ranked by `metric=items`,
+                        -- not by value — see docs/P2P_MARKETPLACE_SPEC.md and
+                        -- the leaderboard section of MONETIZATION.md.
+                        --
+                        -- The parity test asserts this is the market-backed
+                        -- SUBSET of v_item_values_v1's chain, not a different
+                        -- chain: same two expressions, same order, truncated.
                         COALESCE(SUM(
                             COALESCE(
                                 (SELECT qp.q50_eur FROM public.quick_predictions qp
@@ -402,8 +426,6 @@ async def get_category_leaderboard(
                                 (SELECT pp.q50 FROM public.price_predictions pp
                                   WHERE pp.item_ref = i.canonical_ref
                                ORDER BY pp.generated_at DESC LIMIT 1),
-                                i.predicted_price_eur,
-                                i.estimated_value,
                                 0
                             )
                         ), 0)::float8 AS total_value

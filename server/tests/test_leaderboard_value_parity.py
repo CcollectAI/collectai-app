@@ -1,4 +1,27 @@
-"""The category leaderboard's value column must equal the canonical item value.
+"""The category leaderboard's value column must be the MARKET-BACKED SUBSET of
+the canonical item value.
+
+CHANGED 2026-08-19 - read this before "restoring" the old equality
+------------------------------------------------------------------
+This test used to assert the board equalled `v_item_values_v1` item for item.
+It must not, any more. The board is the one number in the app that ranks
+members against each other in public, and the canonical chain ends in two
+member-supplied columns:
+
+  * `items.estimated_value` - typed by the member, or by a CSV import
+  * `items.predicted_price_eur` - despite the name, its ONLY writer is
+    add-manual's "Estimated value" text field
+
+Ranking on those means anyone can top a category by typing a bigger number
+into their own item. So the board stops after the two comp/model links, and
+this test pins the exact relationship instead of equality:
+
+    value_source is market-backed  ->  board value == canonical value
+    value_source is an estimate    ->  board value == 0
+
+checkable precisely because `v_item_values_v1` gained `value_source` the same
+day.
+
 
 WHAT WENT WRONG (2026-08-16, found 2026-08-17)
 ----------------------------------------------
@@ -56,11 +79,16 @@ ROUTER_VALUE_EXPR = """
           WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1),
         (SELECT pp.q50 FROM public.price_predictions pp
           WHERE pp.item_ref = i.canonical_ref ORDER BY pp.generated_at DESC LIMIT 1),
-        i.predicted_price_eur,
-        i.estimated_value,
         0
     )::float8
 """
+
+# `v_item_values_v1.value_source` values that rest on market data. Must match
+# MARKET_SOURCES in src/components/ValueSourceChip.tsx - the FE decides what to
+# LABEL a market estimate and this decides what to RANK on; the two disagreeing
+# would mean the app calls a number market-backed on one screen and refuses to
+# rank it on another.
+MARKET_SOURCES = ('catalog_daily', 'quick_scan', 'catalog_model')
 
 ROUTER_PATH = os.path.join(os.path.dirname(__file__), "..", "app", "features", "social_router.py")
 
@@ -96,10 +124,23 @@ async def main() -> int:
             ("quick_predictions", "quick_predictions.q50_eur"),
             ("price_predictions", "price_predictions.q50"),
             ("canonical_ref", "joined on items.canonical_ref"),
-            ("predicted_price_eur", "items.predicted_price_eur"),
-            ("estimated_value", "items.estimated_value"),
         ]:
             chk(f"router value chain still includes {label}", needle in src)
+
+        # And the member-supplied columns are NOT summed into the board.
+        # Scoped to the leaderboard SUM rather than the whole file, because
+        # both names legitimately appear elsewhere in it.
+        sum_block = ""
+        if "AS total_value" in src:
+            end = src.index("AS total_value")
+            sum_block = src[src.rindex("COALESCE(SUM(", 0, end):end]
+        chk("the board SUM was located", bool(sum_block))
+        for needle in ("predicted_price_eur", "estimated_value"):
+            chk(
+                f"board does NOT rank on member-supplied {needle}",
+                needle not in sum_block,
+                "a member could top a category by typing a bigger number",
+            )
 
         # 2. The chain equals the canonical view, item by item, under a real
         #    auth context for each member who actually holds something.
@@ -118,13 +159,20 @@ async def main() -> int:
             r = await conn.fetchrow(
                 f"""
                 SELECT count(*) AS n,
-                       count(*) FILTER (WHERE router IS DISTINCT FROM canonical) AS n_diff,
+                       count(*) FILTER (
+                         WHERE src = ANY($2::text[]) AND router IS DISTINCT FROM canonical
+                       ) AS n_diff,
+                       count(*) FILTER (
+                         WHERE NOT (src = ANY($2::text[])) AND router <> 0
+                       ) AS n_leaked,
+                       count(*) FILTER (WHERE src = ANY($2::text[])) AS n_market,
                        round(sum(router)::numeric, 2)    AS sum_router,
                        round(sum(canonical)::numeric, 2) AS sum_canonical
                   FROM (
                     SELECT i.id,
                            {ROUTER_VALUE_EXPR} AS router,
-                           COALESCE(v.value_eur, 0)::float8 AS canonical
+                           COALESCE(v.value_eur, 0)::float8 AS canonical,
+                           COALESCE(v.value_source, 'none') AS src
                       FROM public.items i
                       LEFT JOIN public.v_item_values_v1 v ON v.item_id = i.id
                      WHERE i.user_id = $1::uuid
@@ -132,18 +180,24 @@ async def main() -> int:
                   ) t
                 """,
                 uid,
+                list(MARKET_SOURCES),
             )
             total_items += r["n"]
-            total_diff += r["n_diff"]
+            total_diff += r["n_diff"] + r["n_leaked"]
             chk(
-                f"member {uid[:8]}: leaderboard value == portfolio value",
+                f"member {uid[:8]}: market-backed items agree with the portfolio",
                 r["n_diff"] == 0,
-                f"{r['n_diff']}/{r['n']} item(s) differ; "
+                f"{r['n_diff']}/{r['n_market']} market item(s) differ; "
                 f"router={r['sum_router']} canonical={r['sum_canonical']}",
+            )
+            chk(
+                f"member {uid[:8]}: no self-reported value reaches the board",
+                r["n_leaked"] == 0,
+                f"{r['n_leaked']} estimate-backed item(s) contributed a non-zero value",
             )
 
         chk(
-            "no item anywhere values differently on the two surfaces",
+            "no item anywhere breaks the market-backed-subset rule",
             total_diff == 0,
             f"{total_diff}/{total_items} item(s)",
         )
