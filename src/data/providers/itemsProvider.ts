@@ -241,6 +241,27 @@ function mapItemRow(r: ItemRow, resolvedValue?: number, valueSource?: string | n
  * old, wrong chain — with no error and no failing test, because an item priced
  * at 0 is a valid item. Prefer one chokepoint over N call sites.
  */
+/**
+ * The canonical value + provenance for ONE item.
+ *
+ * Exists so the item-detail screen stops deriving its own value. It read
+ * `predicted_price_eur ?? estimated_value` straight off the row — the same
+ * short chain that made 15 of 34 items (44%) render EUR 0 in the app while the
+ * server held a value, and which `v_item_values_v1` was created to end. The
+ * list was repointed at the view in 2026-08-11; the detail screen was not, so
+ * one item could show two different numbers one tap apart.
+ *
+ * Reuses `fetchItemValues`, deliberately: one reader of the view, not two that
+ * drift. Returns null when the view cannot answer, so callers degrade to their
+ * own fallback rather than rendering a zero.
+ */
+export async function fetchItemValueById(
+  itemId: string,
+): Promise<{ valueEur: number | null; source: string | null } | null> {
+  const values = await fetchItemValues([itemId]);
+  return values.get(itemId) ?? null;
+}
+
 async function mapRowsWithValues(data: unknown): Promise<Item[]> {
   const rows = (data ?? []) as ItemRow[];
   if (rows.length === 0) return [];

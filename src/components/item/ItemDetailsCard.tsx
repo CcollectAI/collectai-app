@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
+import { ValueSourceChip } from '@/components/ValueSourceChip';
 import { formatPrice, getCurrencySymbol, UNPRICED_LABEL, isUnpriced, toPriceNum } from '@/lib/format';
 import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { CategorySpecificSection } from '@/components/CategorySpecificSection';
@@ -23,6 +24,10 @@ interface ItemDetailsCardProps {
   editableCollection: string;
   editableCondition: string;
   editableValue: string;
+  /** `v_item_values_v1.value_source` — where the figure beside it came from.
+   *  Undefined while the row loads, or when the view could not answer; the
+   *  chip renders nothing rather than claiming a provenance. */
+  valueSource?: string | null;
   isGradingEligible: boolean;
   categorySlug: string;
   categoryIdMap: Record<string, string>;
@@ -58,7 +63,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
   const {
     loading,
     isDraft, isEditing,
-    editableName, editableCategory, editableCollection, editableCondition, editableValue,
+    editableName, editableCategory, editableCollection, editableCondition, editableValue, valueSource,
     isGradingEligible, categorySlug, categoryIdMap,
     itemAttributes, taxonomyVersion, subtypeId, itemCollections,
     itemId, itemSizeValue, sizeSystem, sizeSaving, notes,
@@ -213,6 +218,17 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
         )}
       </View>
 
+      {/* WHERE that number came from. Not decoration: for the 40+ categories
+          with no sold-comp source the figure above IS somebody's guess, and
+          until 2026-08-19 it was rendered exactly like a comp-backed price.
+          Hidden while editing — the member is replacing the number, so its
+          old provenance is about to stop being true. */}
+      {!isDraft && !isEditing && !isUnpriced(editableValue) && valueSource ? (
+        <View style={styles.sourceRow}>
+          <ValueSourceChip source={valueSource} />
+        </View>
+      ) : null}
+
       {/* Item Attributes Section */}
       <ItemAttributesSection
         attributes={itemAttributes}
@@ -262,6 +278,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 6,
+  },
+  // Right-aligned under the figure it describes, so the eye reads
+  // number-then-provenance rather than treating it as a separate field.
+  sourceRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 4,
   },
   label: {
     fontSize: text.md,

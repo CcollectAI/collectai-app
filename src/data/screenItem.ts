@@ -31,6 +31,11 @@ export type ScreenItem = {
   isManual?: boolean;
   purchasePriceEur?: number | null;
   purchasedAt?: string | null;
+  /** `v_item_values_v1.value_source` — carried so the row can say whether the
+   *  figure is comp-backed or somebody's estimate. Dropping it here would make
+   *  the chip render nothing on the one screen that shows twenty values at
+   *  once, which is exactly where the distinction earns its keep. */
+  valueSource?: string | null;
 };
 
 /**
@@ -59,5 +64,6 @@ export function mapDataItemToScreenItem(it: DataItem): ScreenItem {
     isManual: source === 'manual' && !it.priceBand,
     purchasePriceEur: it.purchasePriceEur ?? null,
     purchasedAt: it.purchasedAt ?? null,
+    valueSource: it.valueSource ?? null,
   };
 }

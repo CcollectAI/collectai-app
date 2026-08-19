@@ -28,6 +28,7 @@ import { useSettings } from "@/lib/settings";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/components/Toast";
 import { dataProvider } from "@/data";
+import { fetchItemValueById } from "@/data/providers/itemsProvider";
 import { ImageZoomModal } from "@/components/ImageZoomModal";
 import { PriceExplanationSheet } from "@/components/PriceExplanationSheet";
 import {
@@ -213,6 +214,7 @@ function ItemDetailScreen() {
   const [savedCore, setSavedCore] = useState<{
     name?: string | null; category?: string | null; condition?: string | null;
     value?: number | null; imageUrl?: string | null; notes?: string | null;
+    valueSource?: string | null;
   } | null>(null);
   useEffect(() => {
     if (isDraft || !id) return;
@@ -230,13 +232,42 @@ function ItemDetailScreen() {
         estimated_value?: number | null; predicted_price_eur?: number | null; image_url?: string | null;
         notes?: string | null;
       };
+      // THE value, from the one definition of it — not this screen's own
+      // guess at the chain. Reading `predicted_price_eur ?? estimated_value`
+      // off the row skips BOTH prediction tables, which is exactly the defect
+      // `v_item_values_v1` was created to end: 15 of 34 items (44%) rendered
+      // EUR 0 in the app while the server held a value. The list was repointed
+      // 2026-08-11 and this screen was not, so the same item could show two
+      // different numbers one tap apart — and since manual adds stopped
+      // writing `predicted_price_eur` (2026-08-19), a newly added item would
+      // have shown its value in the list and nothing here.
+      //
+      // Bounded by construction: installRequestTimeouts() wraps every .from()
+      // at the client. Degrades to the row's own columns when the view cannot
+      // answer, in the view's OWN rank order — a different order here would be
+      // a fifth definition of value.
+      let viewValue: { valueEur: number | null; source: string | null } | null = null;
+      try {
+        viewValue = await fetchItemValueById(id);
+      } catch (e) {
+        // logger.error, not warn: warn is stripped in release builds and this
+        // degradation is invisible by nature.
+        logger.error('[ItemDetail] value view read failed:', e);
+      }
+      if (cancelled) return;
+
       setSavedCore({
         // name and title are the two halves of the same pair — see the
         // paired-columns note in docs/ARCHITECTURE.md.
         name: row.name || row.title || null,
         category: row.category ?? null,
         condition: row.condition ?? null,
-        value: row.predicted_price_eur ?? row.estimated_value ?? null,
+        value:
+          viewValue?.valueEur ??
+          row.predicted_price_eur ??
+          row.estimated_value ??
+          null,
+        valueSource: viewValue?.source ?? null,
         imageUrl: row.image_url ?? null,
         notes: row.notes ?? null,
       });
@@ -864,6 +895,7 @@ function ItemDetailScreen() {
             editableCollection={editableCollection}
             editableCondition={editableCondition}
             editableValue={editableValue}
+            valueSource={savedCore?.valueSource ?? null}
             isGradingEligible={isGradingEligible}
             categorySlug={categorySlug}
             categoryIdMap={CATEGORY_ID_MAP}

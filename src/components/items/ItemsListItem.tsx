@@ -13,6 +13,7 @@ import { useSettings } from '@/lib/settings';
 import { AnimatedPressable } from '@/motion';
 import { CategoryPill } from '@/components/CategoryPill';
 import { formatPrice, UNPRICED_LABEL, isUnpriced } from '@/lib/format';
+import { ValueSourceChip } from '@/components/ValueSourceChip';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { GRADING_ELIGIBLE_CATEGORIES, formatCategoryName } from '@/constants/categories';
 import { SwipeableRow, SwipeActions, type SwipeAction } from '@/components/SwipeableRow';
@@ -36,6 +37,9 @@ interface Item {
   // (older callers that haven't been updated). Either case → suppress display.
   purchasePriceEur?: number | null;
   purchasedAt?: string | null;
+  /** `v_item_values_v1.value_source`. Undefined on callers that map their own
+   *  item shape — the chip renders nothing rather than guessing. */
+  valueSource?: string | null;
 }
 
 interface ItemsListItemProps {
@@ -192,6 +196,11 @@ export const ItemsListItem = React.memo(function ItemsListItem({
           >
             {valueLabel}
           </Text>
+          {/* Inline, not a pill: a list row is a reference row, and a bordered
+              chip per row is a wall of colour (ui-playbook). Suppressed when
+              the item is unpriced — "Not priced yet" beside the unpriced label
+              would say the same thing twice. */}
+          {!unpriced ? <ValueSourceChip source={item.valueSource} inline /> : null}
           {/* Paid-for line + P/L delta. Hidden when no purchase data, when
               the user added the item without a price, or when the predicted
               price is 0 (no model available yet — comparison is meaningless). */}
