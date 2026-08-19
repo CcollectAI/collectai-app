@@ -38,6 +38,20 @@ single habit:
 7. Measure the cost you added (DATA_SCALING_PLAN rule 2) instead of assuming it
    is small.
 
+### E2E: the two chains that had never actually run
+
+`server/tests/e2e_value_provenance.py` (12 checks) and
+`server/tests/e2e_grade_reminder.py` (10 checks) — both against prod, both
+self-cleaning. They exist because neither chain is reachable from a unit test:
+the value view is `auth.uid()`-scoped and reads a table RLS denies to clients,
+and `grade_reminder_worker` had **never sent a notification** (prod holds no
+trade completed over 24h ago, so every cycle correctly did nothing).
+
+The value E2E failed on its first run and BOTH failures were the test:
+`items.canonical_ref` is trigger-derived so setting it directly is silently
+overwritten, and asyncpg returns `id` as a UUID object so a string-keyed lookup
+missed every row. Details in docs/ARCHITECTURE.md.
+
 ### Value provenance — what a number on screen is allowed to claim
 
 `v_item_values_v1` now returns **`value_source`** beside `value_eur` (applied

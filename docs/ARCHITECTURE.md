@@ -823,3 +823,32 @@ Intake Miss (barcode/photo/url/manual) → catalog_suggestions → Worker (30min
 - SQL injection prevention via identifier whitelists
 - Non-root Docker container
 - Hostname-based DEV_MODE guard (localhost/127.* only)
+
+#### E2E for the value chain and the reminder — what unit tests cannot reach
+
+Two chains shipped in 2026-08-19 that no unit test can exercise, because both
+depend on state a mock cannot fake:
+
+| script | proves |
+|---|---|
+| `server/tests/e2e_value_provenance.py` | the label follows the value at every branch: typed → `user_estimate`, scan (`attrs.value_entry='app'`) → `app_estimate`, catalogue-linked → `catalog_model` OUTRANKS the estimate, `value_choice='mine'` → the member's number wins and withdrawing it hands the model back. Plus: `/portfolio/items` agrees with the view item by item, and an estimate contributes 0.00 to the board |
+| `server/tests/e2e_grade_reminder.py` | one reminder per party 24h after completion, a second run sends NOTHING, a party who already rated is skipped, a trade completed 2h ago is untouched, and the deep link carries the offer |
+
+Both run **from EC2** (the direct DSN does not resolve from a laptop) and delete
+everything they seed, with a final check asserting that.
+
+**The value E2E failed on its first run, and both failures were the TEST.** They
+are worth knowing before writing another one:
+
+- **`items.canonical_ref` is trigger-derived** (`trg_items_canonical_ref`, from
+  `category || ':' || canonical_key`). Setting it directly in an INSERT is
+  silently overwritten, so the catalogue join found nothing and the item read
+  as `user_estimate`. Seed the two halves and let the trigger build the ref —
+  the script now asserts it resolved.
+- **asyncpg returns `id` as a UUID object**, so a dict keyed on seeded string
+  ids missed every row and the endpoint looked like it had dropped them.
+  `str()` both sides.
+
+`grade_reminder_worker` had never sent a single notification before this — prod
+holds no completed trade older than 24h, so every cycle correctly did nothing.
+A worker that has only ever run on an empty set is a worker nobody has tested.
