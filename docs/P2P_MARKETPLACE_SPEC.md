@@ -1568,7 +1568,37 @@ Three things about it that must not be "simplified":
 
 Tracking capture and the rating sheet still live on the offers list, and the
 trade screen links across to them rather than carrying a second copy of the
-carrier picker. One picker, one place it can go wrong.
+carrier picker. One picker, one place it can go wrong. **Both handoffs open on
+arrival** — the rating prompt has since 2026-08-18, and `action=track` was
+added with this screen so "Add tracking" does not drop the member on a
+highlighted card and leave them hunting for the button.
+
+#### The bug the audit caught an hour later — and it is instructive
+
+The first version gated the Respond step on **`offerNeedsMyAction`**, and that
+helper returns FALSE for a `superseded` bid *on purpose*: it drives the badge
+and the "needs you" section, and a rival on a listing you have already promised
+is not urgent.
+
+But §1d keeps that bid alive **specifically so it can be accepted when the
+first buyer ghosts.** So Accept / Counter / Decline disappeared from the one
+screen that owns the trade, while `app/offers.tsx` — gating on
+`isSeller && open` — still showed them. **Two screens disagreeing about what is
+legal**, which is precisely the failure the "server owns the state machine" rule
+above exists to prevent. The rule was followed for the *flags* and broken by
+reaching for a helper that answers a different question.
+
+> **"Does this need me?" is not "may I answer this?"**
+> The first is about urgency and drives badges. The second is about legality and
+> drives controls. `superseded` separates them, and it is the only case where
+> they diverge — which is exactly why the mistake was easy to make and invisible
+> in every other state.
+
+The screen now derives `mayRespond` from §1d-bis's table directly (pending → the
+seller, countered → the buyer). `__tests__/lib/offerNeedsMyAction.test.ts` pins
+the distinction with an assertion that the two predicates **must disagree** for
+a superseded bid; if they ever agree again, the fallback is unanswerable again
+and the build goes red.
 
 **Known cost, stated rather than discovered:** Home and `/listings` each call
 `GET /p2p/offers` purely to count, and that endpoint runs a `market_hits`

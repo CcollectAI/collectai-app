@@ -4,6 +4,40 @@
 
 ## Current state (2026-08-19)
 
+### A trade screen, and "does this need me" is not "may I answer this" (2026-08-19)
+
+`/offer/[offerId]` now owns a trade — a five-step ladder (Respond → Pay/Ship →
+Add tracking → Confirm → Rate), each marked done / now / later. Reported as
+*"pressing a bid goes straight to the item listing… this is not what you need
+to edit/manage… it needs to be one seamless flow."* Every capability already
+existed; none of them was owned by a screen. See
+docs/P2P_MARKETPLACE_SPEC.md §11c.
+
+**The audit an hour later caught the interesting bug.** The Respond step was
+gated on `offerNeedsMyAction`, which returns FALSE for a `superseded` bid on
+purpose — it drives the badge, and a rival on a listing you already promised is
+not urgent. But §1d keeps that bid alive *specifically* so it can be accepted
+when the first buyer ghosts, so Accept/Counter/Decline vanished from the trade
+screen while the offers list still showed them. **Two screens disagreeing about
+what is legal** — the exact failure the "server owns the state machine" rule
+prevents, reintroduced by reaching for a helper that answers a DIFFERENT
+question.
+
+> "Does this need me?" is about urgency and drives badges.
+> "May I answer this?" is about legality and drives controls.
+> `superseded` is the only state where they diverge — which is why the mistake
+> was easy to make and invisible everywhere else.
+
+Pinned by an assertion that the two predicates must DISAGREE for a superseded
+bid. Also fixed: a declined trade rendered step 1 as dimmed "later", and "Add
+tracking" dropped the member on a list to hunt for the button (`action=track`
+now opens the sheet on arrival, as the rating prompt already did).
+
+**Two follow-ups left open, both written into the spec:** repoint
+`_notify_trade`'s deep link to `/offer/{id}` in the deploy AFTER the build
+carrying that route ships (§5e's deploy-order trap), and the `price_verdict`
+cost on the two count-only callers.
+
 ### CSV import had never inserted a row — and four real fixes had missed it (2026-08-19)
 
 `POST /api/imports/collection` is `Depends(get_current_user_id)`.

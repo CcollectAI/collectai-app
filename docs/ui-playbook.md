@@ -603,6 +603,21 @@ Seven tests pinned the removed behaviour. They were **replaced, not deleted**:
 the useful half of a test for a removed feature is the guard against it coming
 back.
 
+### …and then the category pill went too (same day)
+
+The row also carried a `CategoryPill`. The list is grouped BY category and the
+section heading sits directly above every row, so the pill repeated that
+heading **once per item** — and put N touch targets where the group needs one,
+each competing with the row's own tap, which opens the item.
+
+**The heading is the tap target now**, with a chevron, opening
+`/categories/[slug]`. Only the collection name survives on the row, as plain
+text: it is the one thing the heading does not already say.
+
+Generalisable: **a grouped list should not repeat its group key in every
+member.** If a row's metadata is identical to the header above it, the header
+is the place for it — including the affordance.
+
 ## Share to chat lives on the card, top-right (2026-08-13)
 
 `src/components/share/ShareToChatSheet.tsx`, wired into the marketplace tile
