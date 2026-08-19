@@ -319,6 +319,12 @@ export type P2POffer = {
   message: string | null;
   counter_count: number;
   created_at: string | null;
+  /** LAST activity on the trade, not when it opened. The offers list dates
+   *  every card off this: a haggle opened three weeks ago and countered
+   *  yesterday is a live trade, and `created_at` alone said "3 weeks ago" —
+   *  backwards for the judgement that line supports. Optional so an older
+   *  server build falls back to `created_at` rather than rendering blank. */
+  updated_at?: string | null;
   seller_confirmed_at: string | null;
   buyer_confirmed_at: string | null;
   /** Shipment visibility. DISPLAY ONLY — nothing may derive completion from

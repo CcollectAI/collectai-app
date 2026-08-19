@@ -43,6 +43,7 @@ import { formatPrice } from '@/lib/format';
 import { collectorsApi } from '@/api/collectorsApi';
 import { offerNeedsMyAction, type P2POffer, type P2PCarrier } from '@/api/p2pApi';
 import { timeAgo } from '@/lib/timeAgo';
+import { groupCompetingOffers } from '@/lib/offerGrouping';
 import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import logger from '@/utils/logger';
 
@@ -183,7 +184,7 @@ function OffersScreen() {
    * Kalshi's blotter does the same thing for resting orders. The headers do the
    * work the sort order alone could not.
    */
-  const sections = useMemo(() => {
+  const { sections, groupMeta } = useMemo(() => {
     const mine: P2POffer[] = [];
     const live: P2POffer[] = [];
     const done: P2POffer[] = [];
@@ -193,11 +194,26 @@ function OffersScreen() {
                || o.status === 'pending' || o.status === 'countered') live.push(o);
       else done.push(o);
     }
-    return [
-      { key: 'mine', title: 'Needs you', data: mine },
-      { key: 'live', title: 'Waiting on them', data: live },
-      { key: 'done', title: 'Closed', data: done },
-    ].filter((sec) => sec.data.length > 0);
+    // Competing bids, side by side. The spec names this as a gap: two bids on
+    // the same item could sit ten cards apart with unrelated trades between
+    // them, and choosing between them is the commonest thing a seller does.
+    //
+    // Grouped INSIDE each section, never as a section of its own — the three
+    // sections are a PRIORITY order, and a listing-scoped section would outrank
+    // it, sinking a member's own move below a listing nobody is asking about.
+    const groupedMine = groupCompetingOffers(mine);
+    const groupedLive = groupCompetingOffers(live);
+    const groupMeta = new Map([...groupedMine.meta, ...groupedLive.meta]);
+
+    return {
+      sections: [
+        { key: 'mine', title: 'Needs you', data: groupedMine.ordered },
+        { key: 'live', title: 'Waiting on them', data: groupedLive.ordered },
+        // Closed is history: grouping it would imply a choice that is over.
+        { key: 'done', title: 'Closed', data: done },
+      ].filter((sec) => sec.data.length > 0),
+      groupMeta,
+    };
   }, [offers]);
 
   /** What is actually at stake, the way a blotter opens with a total. */
@@ -440,18 +456,47 @@ function OffersScreen() {
     // both things at once.
     const done = !open && !live && !mine;
 
-    // Left edge stripe carries the role at a glance while scanning, so you do
-    // not have to read the pill on every card. Same two semantic colours as the
-    // pill — the treatment reads as one system, not two signals.
+    const group = groupMeta.get(o.id);
+
     return (
-      // The whole card opens the listing, which is what the "View listing" link
-      // at the bottom used to do from its own dedicated row — a full row of
-      // vertical space spent on a link that duplicated the obvious gesture.
-      // Action buttons are nested Pressables and still win their own taps.
+      <>
+      {/* Competing bids, announced once above the group. Count and spread are
+          all a seller HAS at this point — the spec records that comparing on
+          distance is impossible by construction, since addresses are only
+          collectable after `accepted`. */}
+      {group?.isFirst ? (
+        <View style={styles.groupHeader}>
+          <Ionicons name="layers-outline" size={13} color={colors.accent} />
+          <Text style={[styles.groupHeaderText, { color: colors.accent }]}>
+            {group.size} bids on this listing · {formatPrice(group.low, settings.currency, settings.numberLocale)}
+            {' – '}
+            {formatPrice(group.high, settings.currency, settings.numberLocale)}
+          </Text>
+        </View>
+      ) : null}
+      {/* The whole card opens the listing, which is what the "View listing" link
+          at the bottom used to do from its own dedicated row — a full row of
+          vertical space spent on a link that duplicated the obvious gesture.
+          Action buttons are nested Pressables and still win their own taps. */}
       <AnimatedPressable
         onPress={() => router.push({ pathname: '/listing/[id]', params: { id: o.listing_id } } as unknown as Href)}
         accessibilityRole="button"
-        accessibilityLabel={`${o.listing_title || 'Listing'}, ${formatPrice(o.amount, settings.currency, settings.numberLocale)}. Opens the listing`}
+        /* The two facts that decide whether this card matters — does it need
+           me, and what state is it in — were BOTH absent from the label. A
+           screen-reader user heard the price of every trade and could not tell
+           which one was waiting on them, on a screen whose entire job is
+           answering that. */
+        accessibilityLabel={[
+          mine ? 'Needs you.' : null,
+          o.listing_title || 'Listing',
+          formatPrice(o.amount, settings.currency, settings.numberLocale),
+          statusLabel(o.status, o.i_am_buyer, o.i_withdrew),
+          group && group.size > 1 ? `One of ${group.size} bids on this listing.` : null,
+          'Opens the listing',
+        ].filter(Boolean).join('. ')}
+        // Left edge stripe carries the role at a glance while scanning, so you
+        // do not have to read the pill on every card. Same two semantic colours
+        // as the pill — the treatment reads as one system, not two signals.
         style={[
         styles.card,
         {
@@ -569,7 +614,14 @@ function OffersScreen() {
                 very differently at two hours than at three weeks, and the
                 server has sent `created_at` all along without anything
                 rendering it. Guarded — the field is nullable. */}
-            {o.created_at ? ` · ${timeAgo(o.created_at)}` : ''}
+            {/* LAST ACTIVITY, not when it opened. `created_at` made a haggle
+                opened three weeks ago and countered yesterday read "3 weeks
+                ago" — backwards for the judgement this line exists to support.
+                Falls back to created_at for an older server build, which is
+                the previous behaviour rather than a blank. */}
+            {o.updated_at || o.created_at
+              ? ` · ${timeAgo(o.updated_at || o.created_at!)}`
+              : ''}
           </Text>
         </View>
 
@@ -859,11 +911,12 @@ function OffersScreen() {
         </View>
 
       </AnimatedPressable>
+      </>
     );
     // `settings.hapticsEnabled` is in here because the Decline confirmation
     // fires a haptic directly. Without it a member who turns haptics off keeps
     // feeling that one tap until something else re-renders the row.
-  }, [act, busyId, colors, deepLinkOfferId, onCounter, onGrade, openTracking, router,
+  }, [act, busyId, colors, deepLinkOfferId, groupMeta, onCounter, onGrade, openTracking, router,
       settings.currency, settings.numberLocale, settings.hapticsEnabled]);
 
   return (
@@ -1218,6 +1271,17 @@ const styles = StyleSheet.create({
   // as a dense list row rather than a document about one negotiation. The
   // shadow is the same token the marketplace tiles use, so the two screens
   // belong to each other.
+  // Sits directly above the first card of a group and shares its gutter, so
+  // the banner reads as a lid on those cards rather than as a row of its own.
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    marginBottom: -2,
+    paddingHorizontal: 4,
+  },
+  groupHeaderText: { fontSize: textToken.xs, fontWeight: fontWeight.bold },
   card: {
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg,
     padding: 14, marginBottom: 10, gap: 8,

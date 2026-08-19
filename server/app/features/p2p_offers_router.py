@@ -105,7 +105,15 @@ _MIN_GRADES_TO_SHOW = 3
 _OFFER_COLUMNS = """
             o.id, o.listing_id, o.buyer_id, o.seller_id, o.amount,
             o.currency, o.status, o.message, o.counter_count,
-            o.created_at, o.seller_confirmed_at, o.buyer_confirmed_at,
+            o.created_at,
+            -- LAST ACTIVITY, added 2026-08-19. The card showed `created_at` as
+            -- the offer's age, so a haggle opened three weeks ago and countered
+            -- yesterday read "3 weeks ago" — exactly backwards for judging
+            -- whether a bid has gone stale, which is the judgement that line
+            -- exists to support. Every respond/confirm/tracking write already
+            -- touches `updated_at`; nothing was reading it.
+            o.updated_at,
+            o.seller_confirmed_at, o.buyer_confirmed_at,
             o.withdrawn_by,
             o.tracking_carrier, o.tracking_code, o.tracking_set_at,
             l.listing_title,
@@ -286,6 +294,10 @@ class OfferOut(BaseModel):
     message: Optional[str] = None
     counter_count: int = 0
     created_at: Optional[datetime] = None
+    #: Last activity — a counter, a confirmation, a tracking code. The card
+    #: judges staleness on this; `created_at` answers "when did this start",
+    #: which is a different question and was being used for both.
+    updated_at: Optional[datetime] = None
     seller_confirmed_at: Optional[datetime] = None
     buyer_confirmed_at: Optional[datetime] = None
     # Shipment visibility. DISPLAY ONLY — no completion may be derived from it;
@@ -842,6 +854,11 @@ def _row_to_offer(r, me: str) -> OfferOut:
             else str(_row_opt(r, "withdrawn_by")) == me
         ),
         created_at=r["created_at"],
+        # `_row_opt`: create_offer's INSERT ... RETURNING cannot join the
+        # listing and does not select this, and reading a missing key directly
+        # is a 500 on that path only — the exact shape that broke the primary
+        # Stage 2 entry point once already.
+        updated_at=_row_opt(r, "updated_at"),
         seller_confirmed_at=r["seller_confirmed_at"],
         buyer_confirmed_at=r["buyer_confirmed_at"],
         tracking_carrier=r["tracking_carrier"],
