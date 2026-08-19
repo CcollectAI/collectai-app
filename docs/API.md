@@ -36,8 +36,22 @@ In `DEV_MODE=true`, JWT auth falls back to `DEV_USER_ID` without a token.
 |--------|------|------|-------------|
 | GET | `/portfolio/summary` | No | Lightweight portfolio summary |
 | GET | `/portfolio/overview` | API Key | Portfolio overview (Signals proxy) |
-| GET | `/portfolio/items` | API Key | Portfolio items (Signals proxy) |
+| GET | `/portfolio/items` | API Key | Portfolio items (Signals proxy) — see the value fields below |
 | GET | `/portfolio/timeseries` | API Key | Portfolio timeseries (Signals proxy) |
+
+### `/portfolio/items` — the value fields tell you what they are worth trusting
+
+Three fields on each row exist so a caller cannot mistake one kind of number
+for another (added 2026-07-28 and 2026-08-19):
+
+| field | meaning |
+|---|---|
+| `current_value` | the canonical chain: catalog model → quick valuation → the member's own numbers |
+| `has_purchase_price` | **false ⇒ `unrealized_pl` is model drift, not profit.** The server falls back to the earliest prediction as cost basis when no purchase price is on file. Never sum P/L across items without checking it |
+| `value_source` | which link produced `current_value`: `catalog_model` / `catalog_daily` / `quick_scan` are comp-backed; `user_estimate` / `app_estimate` are numbers nobody checked; `none` means nothing answered |
+
+An **absent** `value_source` (an older server build) must be read as *unknown*,
+never as market — the conservative side is the one that under-claims.
 
 ## Barcode & Intake
 

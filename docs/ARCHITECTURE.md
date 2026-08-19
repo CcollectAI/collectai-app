@@ -379,6 +379,50 @@ member's own guess wearing the app's authority.
   `predicted_price_eur` a new item would have shown a value in the list and
   nothing on its own screen.
 
+**Who consumes `value_source`, and the rule each one follows:**
+
+| surface | rule |
+|---|---|
+| item detail, items list | `ValueSourceChip` — labels it; unknown claims nothing |
+| **leaderboard** | ranks on the market-backed subset ONLY |
+| **analytics** | splits into THREE numbers: paid / market / estimated |
+| **Home headline** | includes the estimate and **says how much** of the total it is |
+
+`/portfolio/items` returns it per item (2026-08-19), the same way it already
+returned `has_purchase_price` — a flag saying which side of the COALESCE
+answered. ⚠️ Its CASE mirrors **that query's** order (catalog first, then
+quick), NOT the view's (quick first): the label has to name the link that
+actually answered there, and the two orders diverge (see above).
+
+##### The three numbers, and why they are not one number
+
+Decided 2026-08-19. What you **paid** is a fact about your past; what the
+**market** says is a claim we can back with comps; an **estimate** is an
+opinion — the member's own, or a vision scan's. Collapsing the first two is how
+`unrealized_pl` came to measure model drift instead of profit; presenting the
+third as the second is what `value_source` exists to stop.
+
+`splitPortfolioByValueSource` (`src/lib/portfolioAnalytics.ts`) is the single
+implementation. Two rules inside it are judgment calls worth keeping:
+
+- **An unknown `value_source` counts as an ESTIMATE, not as market.** Older
+  server builds send none, and defaulting the other way makes the app assert
+  comps it does not have.
+- **Only a real purchase price sums into "you paid".** Without
+  `has_purchase_price` the server falls back to the earliest prediction as cost
+  basis, so summing it reports money the member never spent.
+
+The estimated portion is **included and marked, never hidden**: for the 40+
+categories with no sold-comp source it is all a member has, and dropping it
+would show a collection worth less than they know it is.
+
+> **Capped-aggregate guard on Home.** The headline caption is computed from the
+> items Home loaded, and Home loads a PAGE of 50. A money figure summed from a
+> page reports a partial number as the whole truth (`verify:silent`'s
+> `capped-aggregate`), so the caption renders **only** when fewer rows came back
+> than were requested — which proves the whole collection is in hand. At exactly
+> 50 it says nothing.
+
 **Still open (Stage 2, unchanged):** `/portfolio/items`,
 `/analytics/portfolio/category-breakdown` and `/portfolio/overview` still retype
 the chain server-side rather than reading the view.

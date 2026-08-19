@@ -23,6 +23,12 @@ where every other writer puts one — a later correction could be outranked by
 the original and never show. `estimated_value` is now THE user-estimate column;
 `predicted_price_eur` is read-only legacy.
 
+It is now READ by four surfaces, each with its own rule: the chip labels it,
+the **leaderboard ranks on the market-backed subset only**, **analytics splits
+into three numbers** (paid / market / estimated), and **Home includes the
+estimate and says how much of the headline it is**. An unknown source counts as
+an estimate everywhere — the side that under-claims.
+
 Three write-path defects fixed with it: `updateItem` accepted `price` and
 mapped it to nothing (a trap for the offline queue, which replays queued args
 verbatim); `persistQuickscanDraft` posted four fields and dropped the scan's
