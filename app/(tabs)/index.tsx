@@ -38,6 +38,7 @@ import { AlertsCard } from "@/components/home/AlertsCard";
 import { PortfolioValueHeader } from "@/components/home/PortfolioValueHeader";
 import { ChartRangeSelector } from "@/components/home/ChartRangeSelector";
 import { CategoryBreakdownSection, type CategoryBreakdownItem } from "@/components/home/CategoryBreakdownSection";
+import { mapCategoryBreakdown } from "@/lib/categoryBreakdown";
 import { OpenBidsRow } from "@/components/home/OpenBidsRow";
 import { formatCategoryName } from "@/constants/categories";
 import { getCategoryByName, getCategoryById } from "@/data/categories";
@@ -443,18 +444,7 @@ function PortfolioScreen() {
     setBreakdownLoading(true);
     try {
       const res: unknown = await collectorsApi.getPortfolioCategoryBreakdown();
-      const data = res as Record<string, unknown>;
-      // Backend returns "breakdown", also check "categories" for compat
-      const cats = Array.isArray(data?.breakdown)
-        ? (data.breakdown as Record<string, unknown>[]).map((b) => ({
-            category: String(b.category ?? ''),
-            item_count: Number(b.item_count ?? 0),
-            total_value: Number(b.total_value ?? 0),
-            percentage: Number(b.pct_of_portfolio ?? b.percentage ?? 0),
-          }))
-        : Array.isArray(data?.categories)
-        ? (data.categories as CategoryBreakdownItem[])
-        : [];
+      const cats = mapCategoryBreakdown(res);
       setCategoryBreakdown(cats);
     } catch (err: unknown) {
       // logger.error, not warn — warn is stripped in release builds, so this

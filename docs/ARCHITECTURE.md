@@ -505,6 +505,37 @@ catalogue figure (34.4291 → 34.4981, 0.0500 → 0.0400), and nothing else
 changed. Confirmed through the API afterwards: `Rocket's Scyther` serves 34.5
 `catalog_model`.
 
+##### `pct_of_portfolio` is a FRACTION — the seam that got it wrong (2026-08-19)
+
+`/analytics/portfolio/category-breakdown` returns
+`pct_of_portfolio = round(val / total_value, 4)`, i.e. **0–1**, and
+`test_trends_and_deepdive_router.py` pins `== 0.625` for a category worth 62.5%.
+Home's loader assigned it straight into `percentage`, which
+`CategoryBreakdownSection` renders BOTH as `percentage.toFixed(0)}%` and as a
+bar `width: ${percentage}%`.
+
+Measured on prod, the account with the most items:
+
+| category | value | share | drew | bar |
+|---|---|---|---|---|
+| pokemon | €79.80 | 51.6% | **"1%"** | 2% (the floor) |
+| one_piece_tcg | €74.80 | 48.4% | **"0%"** | 2% (the floor) |
+
+So the chart read as flat and empty while every number behind it was right —
+the value chain below had just been proven correct end to end, and the display
+of it was wrong by a factor of 100.
+
+**Both sides were self-consistent and both were tested.** The server has a test
+pinning the fraction; the component renders whatever it is handed. Only the
+JOIN was wrong, which is why nothing caught it
+(`learning_verify_the_display_seam_not_isolated_units`). The mapper is now
+`src/lib/categoryBreakdown.ts` — extracted from the loader specifically so the
+seam has a test — pinned by `__tests__/screens/categoryBreakdownMapper.test.ts`
+with the real prod numbers, and proven to fail without the ×100.
+
+**If you add another consumer of this endpoint, multiply.** The unit is not
+stated in the field name, which is the whole reason this happened.
+
 ##### Stage 2 — CLOSED 2026-08-19: `public.item_value_v1(items)`
 
 The chain lived in five places, made to agree by tests. Agreement held by tests
