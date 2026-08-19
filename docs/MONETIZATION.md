@@ -71,7 +71,7 @@ change looking plausible; it is `test_free_user_gets_0`.
 | Deal discovery | No | Yes |
 | Dossier PDF export | No | Yes |
 | Condition Grading (item card) | No | Yes |
-| Set Completion (sets-to-complete) | No | Yes |
+| Set Completion — **trading-card sets only**, see note | No | Yes |
 | Advanced analytics (price trend, history, market prices) | No | Yes |
 | Basic valuation | Yes | Yes |
 | Community events | Yes | Yes |
@@ -96,8 +96,30 @@ change looking plausible; it is `test_free_user_gets_0`.
 >   `FORCED_LIMITS.pro` (useBillingLimits.ts) say 10; only this table said
 >   "Unlimited". Corrected here rather than in code — raise both if you want it
 >   to be truly unlimited.
-> * **Set Completion works**, despite `sets`, `set_items` and `set_registry`
->   all being EMPTY. It is served by `GET /sets/auto-progress`, which computes
+> * **Set Completion is trading-card only, and there are TWO implementations
+>   (measured 2026-08-19).** `category_items.set_name` coverage is 71-100%
+>   across the six TCG categories and **0.0% — zero rows — in all 50 others**,
+>   and every non-TCG catalogue row is `source='seed'` (no importer has ever
+>   run for them). So completion is not computable outside trading cards, and
+>   the paywall/store copy now says so.
+>
+>   The two implementations do not share a source, which is why this looked
+>   fine for so long:
+>
+>   | surface | source | reality on prod |
+>   |---|---|---|
+>   | Home `AutoSetProgressList` | `GET /sets/auto-progress` — catalogue-derived, `attrs.set_name` vs `category_items` | works for TCG; needs 2+ owned from one set |
+>   | **The PAID screen** `app/sets-to-complete.tsx` | `GET /portfolio/items` → `sets.total_items` joined on `collection_name` | `sets` holds **3 hand-seeded Pokemon rows**; `set_items` and `set_registry` are empty |
+>
+>   So the screen a user pays for is backed by three seeded sets, while the
+>   free Home rail uses the catalogue. Repointing the paid screen at
+>   `/sets/auto-progress` would collapse them to one implementation and is the
+>   obvious next step — it changes what a paid screen shows, so it is a
+>   deliberate decision, not a refactor.
+>
+> * The original note, kept because its mechanism is still correct:
+>   **Set Completion works**, despite `sets`, `set_items` and `set_registry`
+>   being effectively EMPTY. It is served by `GET /sets/auto-progress`, which computes
 >   completion from `items.attrs->>'set_name'` against
 >   `category_items.attributes_json->>'set_name'` (165,243 catalog rows carry
 >   one) — it never reads those tables. Verified end to end: an account with 2

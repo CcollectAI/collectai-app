@@ -281,7 +281,14 @@ function SubscriptionScreen() {
     'Unlimited deal alerts',
     'Deal discovery',
     'Condition grading',
-    'Set completion tracker',
+    // Qualified 2026-08-19. Measured on prod: `category_items.set_name`
+    // coverage is 71-100% across the six TCG categories and **0.0%** in all 50
+    // others (zero rows, not sparse), and every non-TCG catalogue row is
+    // `source='seed'`. So completion is not computable outside trading cards,
+    // and an unqualified claim sells a Pro feature that cannot work for a
+    // whiskey or LEGO collector. Keep the words "set completion" — the plan-card
+    // test matches on them.
+    'Set completion tracker (trading-card sets)',
     'Advanced analytics',
     'Dossier PDF export',
     'No ads',

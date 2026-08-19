@@ -373,6 +373,16 @@ const ManualAddScreen: React.FC = () => {
         const v = cf.value.trim();
         if (k && v) mergedAttrs[k] = v;
       }
+      // Provenance for the estimate, read by v_item_values_v1's `value_source`.
+      // `estimated_value` is written by this screen, by the CSV importer and by
+      // POST /items (QuickScan drafts), and none of them sets `items.source`,
+      // so the column alone cannot say whether a person or a vision model
+      // produced the number. Stamped here as the member's own; the scan path
+      // stamps 'app'. Absent on rows written before 2026-08-19, where the view
+      // falls back to 'user_estimate' — the conservative reading.
+      if (!Number.isNaN(estimated as number) && estimated != null) {
+        mergedAttrs.value_entry = 'user';
+      }
 
       const qty = parseInt(quantity, 10);
 
@@ -431,7 +441,14 @@ const ManualAddScreen: React.FC = () => {
           // Same amount normalized to EUR so analytics can sum across
           // currencies without re-deriving the rate.
           purchase_price_eur: purchaseEur,
-          predicted_price_eur: Number.isNaN(estimated as number) ? null : estimated,
+          // `estimated_value`, not `predicted_price_eur` (2026-08-19). This
+          // field is the member's own guess, and it used to land in a column
+          // whose NAME says model output — link 3 of the value chain, ABOVE
+          // `estimated_value` at link 4, which every other writer uses. Two
+          // user-estimate columns at different ranks meant a later correction
+          // could be outranked by the original typed number and never show.
+          // One column, one rank; `value_source` reads it as `user_estimate`.
+          estimated_value: Number.isNaN(estimated as number) ? null : estimated,
           purchase_currency: settings.currency,
           // Field is entered as DD-MM-YYYY; the backend expects ISO YYYY-MM-DD.
           purchased_at: purchasedIso,

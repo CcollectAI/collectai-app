@@ -26,6 +26,10 @@ import { formatPrice } from "@/lib/format";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
 import { useSettings } from "@/lib/settings";
+import {
+  SET_TRACKING_CATEGORY_LABELS,
+  unsupportedSetCategories,
+} from "@/constants/setTracking";
 import { ProgressRing } from "@/components/ProgressRing";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { AnimatedPressable } from "@/motion";
@@ -135,6 +139,26 @@ const SetsToCompleteScreen: React.FC = () => {
       cancelled = true;
     };
   }, []);
+
+  /**
+   * Categories the member owns that set tracking cannot cover.
+   *
+   * Drives the empty state. Without this the screen told a whiskey or LEGO
+   * collector to "add more items", which is false instruction — their
+   * catalogue carries no set names (measured 0.0%, zero rows), so no amount of
+   * adding can ever produce a set. They are also PAYING for this screen, which
+   * is what makes a vague empty state a broken promise rather than a rough
+   * edge (learning_a_written_promise_to_users_is_a_spec).
+   */
+  const uncoveredCategories = useMemo(
+    () => unsupportedSetCategories(items),
+    [items],
+  );
+  const hasOnlyUncovered =
+    items.length > 0 && uncoveredCategories.length > 0 &&
+    items.every((it) => !it.category || uncoveredCategories.includes(
+      it.category.trim().toLowerCase(),
+    ));
 
   const candidates: SizedCollectionScore[] = useMemo(() => {
     if (!items.length) return [];
@@ -305,11 +329,17 @@ const SetsToCompleteScreen: React.FC = () => {
             <View style={styles.emptyCard}>
               <Ionicons name="cube-outline" size={36} color={colors.muted} />
               <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                No sets near completion yet
+                {hasOnlyUncovered
+                  ? "Set tracking doesn't cover these categories yet"
+                  : "No sets near completion yet"}
               </Text>
               <Text style={[styles.empty, { color: colors.muted }]}>
-                Scan or add more items to start tracking which collections
-                you&apos;re close to finishing.
+                {hasOnlyUncovered
+                  ? `Progress needs a set list — how many pieces make a full set — and we only have those for ${SET_TRACKING_CATEGORY_LABELS} today. Your ${uncoveredCategories
+                      .slice(0, 3)
+                      .map((c) => c.replace(/_/g, " "))
+                      .join(", ")} items aren't covered, so adding more won't change this screen.`
+                  : "Scan or add more items to start tracking which collections you're close to finishing."}
               </Text>
             </View>
           )}

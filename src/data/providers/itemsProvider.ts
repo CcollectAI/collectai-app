@@ -110,14 +110,19 @@ type ItemRow = {
  * of this read is ~0.55ms per item (EXPLAIN ANALYZE, per-partition
  * `item_ref` indexes), so a 20-item page costs ~11ms.
  */
-async function fetchItemValues(ids: string[]): Promise<Map<string, number>> {
+type ItemValue = { valueEur: number | null; source: string | null };
+
+async function fetchItemValues(ids: string[]): Promise<Map<string, ItemValue>> {
   if (ids.length === 0) return new Map();
   try {
     // Bounded by construction: installRequestTimeouts() in src/lib/supabase.ts
     // wraps every .from() at the client, so this cannot hang the list.
     const { data, error } = await supabase
       .from('v_item_values_v1')
-      .select('item_id, value_eur')
+      // `value_source` added 2026-08-19: the same CASE the view's COALESCE
+      // already walks, so it costs nothing extra and is the only way the app
+      // can tell a comp-backed number from a typed one.
+      .select('item_id, value_eur, value_source')
       .in('item_id', ids);
     if (error) {
       // best-effort: values degrade to the client-side chain below, which is
@@ -127,9 +132,13 @@ async function fetchItemValues(ids: string[]): Promise<Map<string, number>> {
       logger.error('[SupabaseDataProvider] item values read failed:', error);
       return new Map();
     }
-    const out = new Map<string, number>();
-    for (const row of (data ?? []) as { item_id: string; value_eur: number | null }[]) {
-      if (typeof row.value_eur === 'number') out.set(row.item_id, row.value_eur);
+    const out = new Map<string, ItemValue>();
+    for (const row of (data ?? []) as {
+      item_id: string; value_eur: number | null; value_source?: string | null;
+    }[]) {
+      if (typeof row.value_eur === 'number') {
+        out.set(row.item_id, { valueEur: row.value_eur, source: row.value_source ?? null });
+      }
     }
     return out;
   } catch (e) {
@@ -148,7 +157,7 @@ async function fetchItemValues(ids: string[]): Promise<Map<string, number>> {
   }
 }
 
-function mapItemRow(r: ItemRow, resolvedValue?: number): Item {
+function mapItemRow(r: ItemRow, resolvedValue?: number, valueSource?: string | null): Item {
   // Prefer the most recently generated quick_prediction. created_at is an
   // ISO string so a string compare gives the right order.
   const preds = (r.quick_predictions ?? []).sort(
@@ -187,6 +196,11 @@ function mapItemRow(r: ItemRow, resolvedValue?: number): Item {
     collections,
     attributesJson: attrs,
     price: cardValue,
+    // Only meaningful when the value came FROM the view. When the view read
+    // failed we fall back to the client-side chain below, and claiming a source
+    // for a number the view did not produce would be a guess about provenance —
+    // which is the one thing this field exists to stop.
+    valueSource: resolvedValue !== undefined ? (valueSource ?? null) : null,
     // quick_predictions only stores a single point estimate (q50_eur), not
     // a quantile band. Synthesize a degenerate band from q50 alone so
     // downstream consumers that check `priceBand?.confidence` still work.
@@ -231,7 +245,10 @@ async function mapRowsWithValues(data: unknown): Promise<Item[]> {
   const rows = (data ?? []) as ItemRow[];
   if (rows.length === 0) return [];
   const values = await fetchItemValues(rows.map((r) => r.id));
-  return rows.map((r) => mapItemRow(r, values.get(r.id)));
+  return rows.map((r) => {
+    const v = values.get(r.id);
+    return mapItemRow(r, v?.valueEur ?? undefined, v?.source);
+  });
 }
 
 const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, condition, brand, year, series, edition_label, estimated_value, predicted_price_eur, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
@@ -379,6 +396,22 @@ export async function updateItem(itemId: string, patch: Partial<Pick<Item, 'name
   // Empty string is stored as NULL so "cleared" and "never set" are the same
   // state rather than two.
   if (patch.notes !== undefined) updatePayload.notes = patch.notes?.trim() ? patch.notes : null;
+  // `price` was in this signature from the start and mapped to NOTHING — an
+  // accepted-and-discarded field, so any caller passing it (the offline queue
+  // replays whatever was queued, verbatim) lost the edit with no error. The
+  // item-detail screen happens to write `estimated_value` by a second path, so
+  // this never surfaced; that makes it a trap rather than a live bug.
+  //
+  // `estimated_value` is THE user-estimate column as of 2026-08-19. It used to
+  // be split: add-manual wrote `predicted_price_eur` (link 3 of the value
+  // chain) while everything else wrote `estimated_value` (link 4), so an older
+  // typed number outranked a newer one and a correction did not show. One
+  // column, one rank. Null clears it rather than writing 0, because "no
+  // estimate" and "worth nothing" are different claims.
+  if (patch.price !== undefined) {
+    updatePayload.estimated_value =
+      typeof patch.price === 'number' && !Number.isNaN(patch.price) ? patch.price : null;
+  }
 
   const { data, error } = await supabase
     .from('items')
@@ -499,6 +532,20 @@ export async function persistQuickscanDraft(input: QuickscanDraft): Promise<Pers
       category: input.categoryId ?? 'uncategorized',
       notes: input.notes ?? null,
       canonical_key: input.canonicalKey ?? null,
+      // Everything the scan knew used to stop here: it posted four fields and
+      // dropped the estimate and the condition on the floor, so a scanned item
+      // landed with NO value at all and the member had to retype what the app
+      // had just told them (found 2026-08-19).
+      //
+      // `estimated_value` is link 4 — the bottom — of the value chain, which is
+      // exactly right: when the scan identifies a product, `canonical_key`
+      // resolves and the catalogue model at link 2 outranks this number
+      // automatically. The scan's guess only shows when we have nothing better.
+      estimated_value:
+        typeof input.estimatedValue === 'number' && !Number.isNaN(input.estimatedValue)
+          ? input.estimatedValue
+          : undefined,
+      condition: input.condition ?? undefined,
     });
   } catch (e) {
     logger.error('[SupabaseDataProvider] persistQuickscanDraft error:', e);
@@ -508,10 +555,21 @@ export async function persistQuickscanDraft(input: QuickscanDraft): Promise<Pers
 
   // Land any captured attributes onto items.attrs via the PATCH
   // endpoint (the server's POST /items doesn't accept attrs).
-  if (input.attributes && Object.keys(input.attributes).length > 0) {
+  // `value_entry` and the scan band ride along with the attributes so the whole
+  // scan survives in one write. `value_entry: 'app'` is what lets the UI say
+  // "app estimate" instead of "your estimate" — the column cannot tell them
+  // apart, since POST /items sets no `items.source`.
+  const scanAttrs: Record<string, unknown> = { ...(input.attributes ?? {}) };
+  if (typeof input.estimatedValue === 'number' && !Number.isNaN(input.estimatedValue)) {
+    scanAttrs.value_entry = 'app';
+  }
+  if (input.scanBand && Object.values(input.scanBand).some((v) => v != null)) {
+    scanAttrs.scan = input.scanBand;
+  }
+  if (Object.keys(scanAttrs).length > 0) {
     try {
       await collectorsApi.patch(`/items/${encodeURIComponent(itemId)}/attributes`, {
-        attributes: input.attributes,
+        attributes: scanAttrs,
       });
     } catch (e) {
       logger.error('[SupabaseDataProvider] persistQuickscanDraft attrs PATCH failed (non-fatal):', e);

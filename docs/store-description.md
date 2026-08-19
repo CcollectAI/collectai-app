@@ -34,7 +34,7 @@ Welcome to Sparrow Collect — the smartest way to manage your collection.
 - Barcode scanning for instant item lookup
 - Photo-based condition scoring
 - Deal discovery agent with custom purchase mandates
-- Set completion tracking
+- Set completion tracking for trading-card sets (Pokemon, Magic, Yu-Gi-Oh, Lorcana, Digimon, One Piece)
 - Price trend analysis with 30 and 90-day history
 - Events and meetups near you
 - Portfolio analytics dashboard

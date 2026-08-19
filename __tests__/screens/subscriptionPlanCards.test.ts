@@ -121,6 +121,17 @@ describe('subscription plan cards match the limits they sell', () => {
     }
   });
 
+  it('the set-completion claim names its scope', () => {
+    // Measured on prod 2026-08-19: set_name coverage is 0.0% — zero rows — in
+    // all 50 non-TCG categories, and their catalogue is entirely `source='seed'`.
+    // An unqualified "Set completion tracker" therefore sells a Pro feature
+    // that cannot work for a whiskey, watch or LEGO collector. If coverage
+    // genuinely widens, widen the wording — do not delete the qualifier.
+    const claim = proCard.find((f) => /set completion/i.test(f));
+    expect(claim).toBeDefined();
+    expect(claim).toMatch(/trading[- ]card|tcg/i);
+  });
+
   it('the Pro card promises nothing the app does not implement', () => {
     // "Priority support" sat here until 2026-08-16 with nothing behind it. A
     // written promise to a paying user is a requirement, not copy.

@@ -16864,6 +16864,10 @@
       "nullable": true,
       "type": "float8"
     },
+    "v_item_values_v1.value_source": {
+      "nullable": true,
+      "type": "text"
+    },
     "v_item_volatility_7d.avg7": {
       "nullable": true,
       "type": "numeric"
@@ -24901,7 +24905,8 @@
     ],
     "v_item_values_v1": [
       "item_id",
-      "value_eur"
+      "value_eur",
+      "value_source"
     ],
     "v_item_volatility_7d": [
       "item_ref_uuid",

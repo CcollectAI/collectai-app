@@ -54,6 +54,13 @@ interface UseItemDetailParams {
   imageUri: string | undefined;
   categorySlug: string;
   q50: string | undefined;
+  /** The rest of the scan's prediction band. Persisted into `attrs.scan` on
+   *  save so the evidence survives — deliberately NOT into quick_predictions,
+   *  which is link 1 of the value chain and would let a vision guess outrank
+   *  the catalogue model for an identified product. */
+  q10?: string;
+  q90?: string;
+  confidence?: string;
   /** Structured attributes extracted by QuickScan vision pipeline */
   initialAttributes?: Record<string, unknown> | null;
   /** Catalog match key from QuickScan (intake.catalog_match_key). When set,
@@ -66,6 +73,7 @@ export function useItemDetail(params: UseItemDetailParams) {
   const {
     id, isDraft, initialName, initialCategory, initialCollection,
     initialCondition, initialValue, initialNotes, imageUri, categorySlug, q50,
+    q10, q90, confidence,
     initialAttributes, catalogKey,
   } = params;
 
@@ -235,6 +243,16 @@ export function useItemDetail(params: UseItemDetailParams) {
     setSavingDraft(true);
     setSaveError(null);
     try {
+      // The scan's own numbers go WITH the draft. Until 2026-08-19 this call
+      // sent four fields and the estimate and condition were simply lost, so a
+      // scanned item was saved with no value and the member had to retype the
+      // figure the app had just shown them.
+      const num = (v: string | undefined) => {
+        if (v === undefined || v === '') return null;
+        const n = parseFloat(v);
+        return Number.isNaN(n) ? null : n;
+      };
+      const scanValue = num(editableValue) ?? num(q50) ?? num(initialValue);
       const persisted = await dataProvider.persistQuickscanDraft({
         photoUri: imageUri || '',
         categoryId: editableCategory,
@@ -242,6 +260,19 @@ export function useItemDetail(params: UseItemDetailParams) {
         notes: notes || undefined,
         attributes: initialAttributes ?? undefined,
         canonicalKey: catalogKey ?? null,
+        estimatedValue: scanValue,
+        condition:
+          editableCondition && editableCondition !== 'Not set'
+            ? editableCondition
+            : null,
+        scanBand: {
+          q10: num(q10),
+          q50: num(q50),
+          q90: num(q90),
+          // Stored as the 0-1 fraction the pipeline produced, not the rounded
+          // percentage the screen displays.
+          confidence: num(confidence) != null ? num(confidence)! / 100 : null,
+        },
       });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Item saved to collection', type: 'success' });
@@ -264,7 +295,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     } finally {
       setSavingDraft(false);
     }
-  }, [isDraft, imageUri, editableCategory, editableName, notes, editableCollection, editableCondition, editableValue, q50, initialValue, settings.hapticsEnabled, showToast, initialAttributes, catalogKey]);
+  }, [isDraft, imageUri, editableCategory, editableName, notes, editableCollection, editableCondition, editableValue, q50, q10, q90, confidence, initialValue, settings.hapticsEnabled, showToast, initialAttributes, catalogKey]);
 
   // ── Save edits handler ─────────────────────────────────────────────────
   const onSaveEdits = useCallback(async () => {

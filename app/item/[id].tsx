@@ -272,6 +272,7 @@ function ItemDetailScreen() {
     initialName: name, initialCategory: category, initialCollection: collection,
     initialCondition: condition, initialValue: value, initialNotes: initialNotes,
     imageUri, categorySlug: categorySlugRaw, q50,
+    q10, q90, confidence,
     initialAttributes,
     catalogKey,
   });

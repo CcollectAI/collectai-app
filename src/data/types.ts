@@ -83,6 +83,22 @@ export type Item = {
   attributesJson?: Record<string, unknown>;  // Category-specific attributes (condition, grade, etc.)
   price: number;
   priceBand?: PriceBand;        // q10/q50/q90 price estimates
+  /**
+   * WHERE `price` came from — `v_item_values_v1.value_source`.
+   *
+   *   catalog_daily | quick_scan | catalog_model  → comp/model-backed
+   *   user_estimate | app_estimate                → nobody checked it
+   *   none                                        → we do not know
+   *
+   * The app rendered all of these identically until 2026-08-19, so a EUR 185
+   * backed by twelve sold comps and a EUR 185 someone typed were the same
+   * pixels. That matters most in the 40+ categories with no sold-comp source,
+   * where the displayed value IS the member's own guess.
+   *
+   * Undefined when the view read failed or the row was mapped without it —
+   * treat as "unknown" and show no claim, never as "market".
+   */
+  valueSource?: string | null;
   imageUrl?: string;
   updatedAt?: string;
   // Rich detail surfaced on the collection card (POST /items enrichment,
@@ -539,6 +555,17 @@ export type QuickscanDraft = {
   // matched catalog row. Without this, every Premium feature that JOINs
   // items → catalog returns empty for paid users. Added 2026-05-02.
   canonicalKey?: string | null;
+  /** The scan's own estimate (q50). Persisted to `items.estimated_value` and
+   *  stamped `attrs.value_entry = 'app'`, so the app can say "app estimate"
+   *  rather than passing a vision guess off as the member's own number. */
+  estimatedValue?: number | null;
+  /** Condition the scan guessed. Was dropped entirely before 2026-08-19. */
+  condition?: string | null;
+  /** The prediction band + confidence. Kept in `attrs.scan` for evidence, NOT
+   *  written to `quick_predictions` — that table is link 1 of the value chain
+   *  and outranks the catalogue model, so a vision guess there would beat a
+   *  comp-backed price for an identified product (the opposite of the rule). */
+  scanBand?: { q10?: number | null; q50?: number | null; q90?: number | null; confidence?: number | null } | null;
 };
 
 /**
