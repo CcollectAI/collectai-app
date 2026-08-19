@@ -97,7 +97,10 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
             color: colors.muted,
           }}
         >
-          {score.category} · {score.ownedCount}/{score.expectedCount} items
+          {/* "12/? items" when we hold no catalogue row for the set. Rendering
+              "12/null" or quietly printing "12/12" would both state a set size
+              we do not have. */}
+          {score.category} · {score.ownedCount}/{score.expectedCount ?? '?'} items
         </Text>
       </View>
       <View style={{ marginHorizontal: 8 }}>
@@ -120,7 +123,9 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
           }}
         >
           R {Math.round(score.rarityScore * 100)} · C{' '}
-          {Math.round(score.completenessRatio * 100)}
+          {score.completenessRatio === null
+            ? '—'
+            : Math.round(score.completenessRatio * 100)}
         </Text>
       </View>
     </View>

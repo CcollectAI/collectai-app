@@ -462,7 +462,30 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
     # nobody noticed. Thresholds are deliberately far below current levels so
     # this pages on a COLLAPSE, not on normal drift.
     try:
-        canaries = [("mtg", 80.0), ("pokemon", 80.0), ("yugioh", 60.0)]
+        # EVERY category with a real catalogue, not a hand-kept list of three.
+        # The hardcoded [mtg, pokemon, yugioh] could not see that lorcana
+        # (6,967 rows), digimon (9,762) and one_piece_tcg (7,675) had fallen to
+        # ZERO priceable rows after tcgcsv was 403-blocked on 2026-07-29 — the
+        # single largest pricing outage to date, invisible to its own canary
+        # because nobody had added those categories to the list. A monitor that
+        # only watches what you remembered to name is not a monitor.
+        no_source: list[tuple[str, int]] = []
+        FLOOR_DEFAULT = 60.0
+        FLOOR_OVERRIDE = {"mtg": 80.0, "pokemon": 80.0}
+        MIN_CATALOG_ROWS = 500
+        canary_rows = await c.fetch(
+            """
+            SELECT category, count(*) AS n FROM category_items
+            WHERE category IS NOT NULL
+            GROUP BY category HAVING count(*) >= $1
+            ORDER BY 2 DESC
+            """,
+            MIN_CATALOG_ROWS,
+        )
+        canaries = [
+            (r["category"], FLOOR_OVERRIDE.get(r["category"], FLOOR_DEFAULT))
+            for r in canary_rows
+        ]
         SAMPLE = 300
         for cat, floor in canaries:
             total = await c.fetchval(
@@ -493,8 +516,17 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
                 hit = await c.fetchval(
                     """
                     WITH s AS (
+                        -- ORDER BY random(): a bare LIMIT returns the OLDEST
+                        -- PHYSICAL ROWS, and stratifying by source did not fix
+                        -- that — it just applied the same bias once per source.
+                        -- Pokémon has one dominant source, so the canary kept
+                        -- reading the same unpriceable head of the table and
+                        -- reported 21.3% against a true 96.1%. A canary that
+                        -- cries wolf on your healthiest category gets muted,
+                        -- and then it cannot warn you about a real one.
                         SELECT category, item_key FROM category_items
-                        WHERE category = $1 AND source IS NOT DISTINCT FROM $2 LIMIT $3
+                        WHERE category = $1 AND source IS NOT DISTINCT FROM $2
+                        ORDER BY random() LIMIT $3
                     )
                     SELECT count(*) FROM s
                     WHERE EXISTS (SELECT 1 FROM price_predictions p
@@ -507,17 +539,79 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
                 priced += (hit / took) * n_src if took else 0
                 sampled += n_src
             pct = 100.0 * priced / sampled if sampled else 0.0
-            if pct < floor:
+            if pct >= floor:
+                healthy.append({"check": "pricing coverage %s" % cat,
+                                "detail": "%.1f%% priceable of %d rows (source-stratified)" % (pct, sampled)})
+                continue
+
+            # BELOW FLOOR — but "broken" and "never had a source" are different
+            # findings and must not page the same way. Valuation only consumes
+            # SOLD comps (valuation_worker excludes is_listing), so the presence
+            # of sold comps is what separates them:
+            #
+            #   sold now                  -> the pipeline is broken. HIGH.
+            #   sold before, none now     -> the SOURCE died. HIGH, and the most
+            #                                actionable alert this file can emit.
+            #   never any sold            -> the known structural gap (eBay
+            #                                sold_comps is stubbed). Collected
+            #                                into ONE finding below, because 40
+            #                                identical HIGHs a day for a
+            #                                permanent condition is how a
+            #                                monitor gets muted.
+            sold_now = await c.fetchval(
+                """
+                SELECT count(*) FROM market_hits
+                WHERE split_part(item_ref, ':', 1) = $1
+                  AND NOT is_listing AND seen_at > now() - interval '30 days'
+                """, cat) or 0
+            sold_before = await c.fetchval(
+                """
+                SELECT count(*) FROM market_hits
+                WHERE split_part(item_ref, ':', 1) = $1
+                  AND NOT is_listing
+                  AND seen_at BETWEEN now() - interval '90 days' AND now() - interval '30 days'
+                """, cat) or 0
+
+            if sold_now > 0:
                 bug("high", "pricing coverage collapsed for %s: %.1f%%" % (cat, pct),
                     "%.0f of %d catalog rows can reach a price (floor %.0f%%), estimated from a "
-                    "source-stratified sample. Users in this category will see 0.00 everywhere "
-                    "while every endpoint still returns 200." % (priced, sampled, floor),
+                    "source-stratified sample, while %d sold comps DID arrive in the last 30 days. "
+                    "The data is there and the catalogue cannot reach it — a keying or crosswalk "
+                    "fault, not a sourcing one." % (priced, sampled, floor, sold_now),
                     src_link("server/pipelines/build_catalog_price_crosswalk.py"),
                     "python3 scripts/audit_key_overlap.py",
                     "Rebuild the crosswalk, or check whether items.canonical_ref resolution broke")
+            elif sold_before > 0:
+                bug("high", "sold-comp source DIED for %s (%.1f%% priceable)" % (cat, pct),
+                    "%d sold comps in the 30-90d window and ZERO in the last 30 days. The category "
+                    "still collects listings, but valuation ignores listings, so every item here "
+                    "has silently stopped being priced. This is a regression with a date, not a "
+                    "standing gap." % sold_before,
+                    src_link("server/app/agents/marketplace_routing.py"),
+                    "SELECT provider, count(*) FILTER (WHERE NOT is_listing) FROM market_hits "
+                    "WHERE item_ref LIKE '%s:%%%%' AND seen_at > now() - interval '90 days' "
+                    "GROUP BY 1;" % cat,
+                    "Find which provider stopped: a blocked adapter, an expired key, or a 403")
             else:
-                healthy.append({"check": "pricing coverage %s" % cat,
-                                "detail": "%.1f%% priceable of %d rows (source-stratified)" % (pct, sampled)})
+                no_source.append((cat, sampled))
+        # ONE finding for every category that has never had a sold comp, with
+        # the totals — so the scale is visible without 40 separate pages.
+        if no_source:
+            total_rows = sum(n for _, n in no_source)
+            names = ", ".join(c for c, _ in sorted(no_source, key=lambda t: -t[1])[:8])
+            bug("medium",
+                "%d categories have NO sold-comp source (%d catalog rows unpriceable)"
+                % (len(no_source), total_rows),
+                "Listings arrive for these, but valuation_worker excludes is_listing, so nothing "
+                "is ever priced. Structural, not a regression: %s%s. Root cause is "
+                "ebay_caller.sold_comps() returning [] — it needs eBay Marketplace Insights "
+                "access. Reported as ONE finding on purpose; as one-per-category it drowned every "
+                "other bug in this report."
+                % (names, " and more" if len(no_source) > 8 else ""),
+                src_link("server/app/agents/adapters/ebay_caller.py"),
+                "SELECT split_part(item_ref,':',1) cat, count(*) FILTER (WHERE NOT is_listing) sold "
+                "FROM market_hits WHERE seen_at > now() - interval '30 days' GROUP BY 1 ORDER BY 2;",
+                "Apply for eBay Marketplace Insights, or label these as asking-price estimates")
     except Exception as e:
         bug("info", "pricing coverage canary could not run", str(e)[:200])
 

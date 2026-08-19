@@ -476,11 +476,17 @@ Two defects the flat pass left behind, both worth grepping for elsewhere:
 - **Two controls in one form must be one size.** The carrier picker rendered at
   14 with the tracking input directly beneath it at 16.
 
-**Open divergence, not yet fixed:** `app/listings.tsx` still carries raw
-`fontSize: 9`, `10` and `11` literals plus `xs` card meta, which is the very
-thing rule 1 bans. Offers was brought up to the floor; listings has not been.
-Until it is, "match the rest of the app" points in two directions on these two
-screens.
+**CLOSED 2026-08-16.** `app/listings.tsx` carried raw `fontSize: 9`, `10` and
+`11` literals — the very thing rule 1 bans — for as long as this section had
+said so. All four (`badgeText`, `stockTagText`, `watchText`, `cardSellerName`)
+are now `text.sm` with `lineHeight: 17`, so the two screens finally point the
+same way.
+
+Worth noting how it was found: not by reading the screen, but by **checking
+whether the open items this playbook records were still open.** A doc that
+lists known divergences is only useful if something periodically re-runs them —
+`grep -cE "fontSize: (9|10|11)\b" app/listings.tsx` took a second and the
+answer was still 4.
 
 ## A count in a badge is a promise the destination has to keep (2026-08-13)
 
@@ -698,3 +704,378 @@ you learn nothing about the gate.
 Two gates, different questions: `check:back` asks whether a back handler is
 SAFE (`safeGoBack`, never a bare `router.back()`); this one asks whether one
 EXISTS.
+
+## Prose pages: hierarchy comes from the sections, not from icons (2026-08-15)
+
+`app/guide/[categoryId].tsx` and `app/help/*` are the app's two long-prose
+screens, and they were built the same way twice, so the lessons are shared.
+
+**Six identical boxes read as six equally important things.** The collecting
+guide rendered every section in the same card, distinguished only by the icon
+colour — including the one section whose entire job is to stop a beginner
+losing money. That is the "three equal controls read as three equal decisions"
+problem in prose form. Three levels, not one:
+
+| level | treatment | what belongs there |
+|---|---|---|
+| reference | `colors.card` + hairline border | glossary, care, value drivers |
+| pick | tone tint + 3pt left rule | the grail, the entry point |
+| alert | tone tint + tone border | the one warning |
+
+The tint is always `tone + '12'` and the border `tone + '40'` — **an alpha of
+the tone, never the tone itself**, so every glyph and letter stays on a theme
+colour and nothing can go invisible when the palette swaps.
+
+**No decorative icon beside every heading.** The first pass put each section
+glyph in a tinted disc. Reported as *"remove the very Claude design like icons
+next to the section titles"* — and the objection is structural, not a matter of
+taste: an icon on all six headings decorates them identically and so
+distinguishes none of them, while the tint and the left rule already do that
+job properly. The heading is the heading.
+
+**Sentence case, not tracked-out caps.** `BACKGROUND` / `WORDS YOU WILL SEE` at
+`sm` with `letterSpacing: 0.5` read as system labels. These pages exist to sound
+like a person explaining something, so headings are `lg`, `bold`, sentence case,
+`letterSpacing: 0.1`. Wide tracking exists to make caps legible; in sentence
+case it just looks stretched.
+
+**A hero, not a bare `<Text>` heading.** Both pages open with a tinted panel
+carrying an eyebrow (*"Need a helping hand?"*), the title and the intro. The
+guide's tint is the CATEGORY's own `CATEGORY_VISUAL.accentColor` at 14%, so a
+Pokémon guide and a Warhammer guide do not look like the same page.
+
+**Validate icon names against the glyph map, don't just cast.**
+`CATEGORY_VISUAL` contained `'vinyl'` and `'logo-nintendo'`, neither of which is
+an Ionicons glyph. A bad name renders an **empty box** rather than throwing, so
+it stays invisible until somebody looks at that one category. Both are fixed
+(`disc`, `game-controller`), and all 112 names are now verified:
+
+```bash
+node -e "const g=require('@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/Ionicons.json');
+const s=require('fs').readFileSync('src/data/categories.ts','utf8');
+const bad=[...s.matchAll(/iconName:\s*'([^']+)'/g)].map(m=>m[1]).filter(n=>!(n in g));
+console.log(bad.length?bad:'all valid')"
+```
+
+## `flexWrap: 'wrap'` on an action row strands the third button (2026-08-15)
+
+`app/offers.tsx` gained a third action on countered bids (Accept bid / Turn it
+down / Delete) and the row wrapped, dropping Delete onto its own line,
+right-aligned under the others. A button on its own line reads as a separate
+decision rather than the third option in a set.
+
+**Let the buttons shrink instead of letting the row wrap:** `flexWrap: 'nowrap'`
+on the row, `flexShrink: 1` and tighter horizontal padding on the button,
+`textAlign: 'center'` on the label. **Leave `minHeight` alone** — the row is
+what shrinks, never the touch target.
+
+## The screen title had no spec, so it drifted eight ways (2026-08-15)
+
+Reported as *"all screens have different size title and alignment"*, and a sweep
+of every route confirmed it: **8 sizes (14–28), 4 weights, 5 different top
+paddings** across 41 screens with an in-body heading.
+
+**The spec, taken from the help/guide pages:**
+
+| property | value |
+|---|---|
+| fontSize | `text['2xl']` (24) |
+| fontWeight | `fontWeight.extrabold` (`'800'`) |
+| lineHeight | 30 |
+| textAlign | left |
+| gutter / top padding | 16 (the screen gutter, unchanged) |
+
+Applied to the six screens whose heading is genuinely a page title:
+`(tabs)/add`, `catalog-item/[key]`, `purchase/create-mandate`,
+`sell/ebay-defaults`, `sets-to-complete`, `listing/[id]`.
+
+**Three categories are deliberately NOT normalised, and the first sweep tried to
+change all three — check before touching a style called `title`:**
+
+1. **Card / list-row titles.** `archived.tsx` and `favorites.tsx` use
+   `styles.title` at 14pt for a row title, and `offers.tsx` at `lg` with
+   `flex: 1`. Bumping those to 24 wrecks the cell. Tells: `flex: 1` in the
+   style, a `fontSize` under 18, or the `<Text>` sitting inside a `render*`
+   function.
+2. **Section headings inside a document.** `legal/*.tsx` use `styles.heading`
+   **10–29 times** per file — it is an `<h2>`, not the page title.
+3. **Deliberate heroes.** `(auth)/*`, `subscription.tsx` and `mfa-setup.tsx` sit
+   at 28 on purpose; `chat/[threadId]` centres its title because it acts as a
+   nav bar.
+
+**Do not "fix" this with prettier.** There is no `.prettierrc` in this repo, so
+`npx prettier --write` reformats whole files to ITS defaults (double quotes) —
+one run produced **3,000 lines of churn across 7 files** for 11 lines of real
+change. To separate a real edit from formatting noise afterwards: format the
+`HEAD` copy with the same prettier and diff that against the working file.
+
+## A bottom sheet must take only the BOTTOM safe-area inset (2026-08-15)
+
+`SafeAreaView` with no `edges` prop applies **all four** insets. On a sheet
+pinned to the bottom (`justifyContent: 'flex-end'`) that adds the 47–59pt
+status-bar inset to the TOP of the sheet, pushing the body down inside a
+`maxHeight: '90%'` box with `overflow: 'hidden'` — so the bottom of the content,
+usually the primary button, is silently clipped. Reported as *"the listing change
+price screen is half cut off"*.
+
+```tsx
+<SafeAreaView edges={['bottom']} style={[styles.container, { maxHeight }]}>
+```
+
+**Scrolling is opt-IN (`scrollable`), not the default.** The sheet clips, so tall
+content needs a scroller — but most sheets already bring their own
+(`SettleUpSheet`, `ShareToChatSheet`) or their own `FlatList`
+(`app/create-event.tsx`), and nesting two vertical scrollers breaks the inner
+one. Defaulting it to true fixes one sheet and regresses several; only
+`listing/[id]`'s "Change price" opts in.
+
+## A paywall CTA that routes to Settings sells nothing (2026-08-15)
+
+`UpgradePrompt.tsx` — the banner on every Pro gate (set completion, analytics,
+market movers, item detail) — called `router.push('/settings' as Href)`, as did
+the "Upgrade to see" button in `MarketMoversSection.tsx`. **Hitting a gate could
+not reach the paywall from anywhere.**
+
+The `as Href` cast is what hid it: `/settings` is a real route, so TypeScript had
+no complaint. Any cast to `Href` turns a routing question into a typing
+formality — when you write one, the destination is unverified by definition.
+
+Sweep for it by pairing intent with destination: every `router.push` in a file
+mentioning upgrade/paywall/locked/requiredPlan should land on `/subscription`.
+
+## Four stacked header blocks is what "messy" means (2026-08-15)
+
+`app/(tabs)/wishlist.tsx` opened with **four full-width blocks before a single
+watched item**: a title row, a full-width action row (Inbox pill + Add pill), a
+bordered stats card with four icons and three dividers, and the Deal Agent
+banner. Each was individually reasonable; stacked they spent the first screen on
+chrome. Reported simply as *"visually very messy"*.
+
+**Collapsed to one header block plus the banner:**
+
+- Title, Inbox and Add share ONE row — `flex: 1` on the title pins the controls
+  to the right edge.
+- Inbox lost its text label and became an icon button. It was the only pill
+  labelling an action its icon already states, and it competed visually with
+  Add, which is the primary action.
+- The stats card became a caption line — `4 items · 3 categories · €454 target`
+  — at `sm`, directly under the title. These are reference numbers, not
+  controls; a border and four icons asserted otherwise.
+- The header row sat at `paddingHorizontal: 12` while `listContent` used 16, so
+  the title hung 4pt left of every card beneath it. Both are 16 now.
+
+**The general rule: count the full-width blocks above the fold.** More than two
+before real content and the screen reads as chrome, however clean each block is
+on its own.
+
+## Never ship "coming soon" on a screen that can reach the App Store (2026-08-15)
+
+`app/subscription.tsx` rendered *"Coming soon — we're finishing the Pro tier
+setup"* whenever RevenueCat returned no offering. That is a pre-launch message
+on a shipping screen: an Apple reviewer opening the paywall reads the product as
+unfinished, and a real customer whose plans failed to load once is told the
+feature does not exist rather than to retry.
+
+Both underlying failures — no offering from StoreKit, or a thrown fetch — are
+retryable, so they now share one honest state ("Plans couldn't load" + a **Try
+again** button), with the specific cause going to `logger.error` instead of into
+the copy. Restore Purchases renders outside that branch, so someone who has
+already paid is never stranded.
+
+**Plan feature lists are a spec, not marketing.** The Pro card omitted two real
+entitlements (unlimited watchlist, unlimited deal alerts) and claimed "Priority
+support", which nothing implements. Keep the lists in step with `FORCED_LIMITS`
+/ `DEFAULT_LIMITS` in `src/hooks/useBillingLimits.ts` — this is the screen that
+takes money, and a written promise to a paying user is a requirement.
+
+### The title sweep missed two whole classes (2026-08-16)
+
+The 2026-08-15 pass only found screens rendering their own `styles.title` text,
+so it declared the job done while two obvious offenders were untouched — caught
+immediately in use: *"marketplace is still aligned center as a title, search
+page still doesnt have a title"*.
+
+1. **`ScreenHeader.tsx` centred its title at 18pt**, and that ONE component is
+   the header for **13 screens** (Market/`listings`, `offers`, `favorites`,
+   `catalog-item`, `categories/[categoryId]`, `tax-reporting`, `sell/pick`,
+   `category-browse`, `listing/[id]`, …). Now left, 24, extrabold — the same
+   spec as an in-body title. The equal-width side boxes existed only to keep a
+   CENTRED title centred, so `sideLeft` lost its `minWidth` (the title now sits
+   beside the chevron rather than 76pt away) while `sideRight` kept it, which is
+   what pins the gear to the screen edge when `InboxHeaderButton` renders null.
+2. **`app/search.tsx` had no title at all** — the tab opened straight onto a
+   search field. Title and back control now share a row, with the field
+   full-width beneath at the 16 gutter.
+
+**The lesson for the next sweep: a screen's title is not always a `Text` in that
+screen's file.** Grep for the shared header components too, and check a tab
+root's rendered output, not just its source.
+
+## Two label languages in one form (2026-08-16)
+
+`app/purchase/create-mandate.tsx` rendered its own labels for NAME, VALUE
+AGAINST and MAX PRICE (11pt, uppercase, `letterSpacing: 0.5`, `colors.muted`)
+while CATEGORY and MIN TRUST came from `SelectField` (12pt, semibold,
+`colors.text`). Reading down the form the label style alternated on every other
+field, which is what "the alignment is off" meant.
+
+Worse: **`SelectField` carries `marginBottom` but no `marginTop`**, so its label
+sat flush against the input above it while every hand-written label had
+`marginTop: 16`. A select placed after a text input therefore collided with it.
+
+Fix: one label spec for the screen (12 / semibold / `colors.text`), and each
+`SelectField` wrapped in a 16pt top-margin view. **When a screen mixes a shared
+field component with hand-rolled fields, the hand-rolled ones must copy the
+component's label spec — not the other way round.**
+
+## A list card is a reference row, not a call to action (2026-08-16)
+
+The watchlist card carried a priority dot, title, a filled-circle remove X, a
+category pill, target + edit, notes, an "Added <date>" line, and **two
+half-width buttons**. Five rows of that is a wall of teal, and only two and a
+half cards fit on screen.
+
+- **Dropped "Added <date>."** Nobody acts on it; it cost a full line per card.
+  (Its `formatDate` helper went with it — an unused helper left behind is how a
+  dead path survives a cleanup.)
+- **Actions became compact pills on one right-aligned row.** Same two actions,
+  same touch targets, a third of the height.
+- **The edit pencil went 12pt muted → 16pt accent.** At 12pt grey beside the
+  target it read as decoration, not a control, which is why it got reported as
+  "the edit button doesn't work".
+- **The summary line was removed entirely** on request, and
+  `WishlistStatsBar.tsx` deleted with it — it had exactly one caller.
+
+Four cards now fit where two and a half did.
+
+## `headerTitleAlign: 'left'` does NOTHING on iOS (2026-08-16)
+
+Reported as "marketplace is still aligned center as a title". The fix for
+`ScreenHeader` was real, but a second class of screen sets a **native** header
+title via `<Stack.Screen options={{ headerTitle: … }} />`, and
+`@react-navigation/native-stack` **ignores `headerTitleAlign` on iOS** — the
+native bar always centres. Setting it is harmless and helps Android; it is not
+the iOS fix.
+
+**And it produced a false verification.** I screenshotted `/guide/comic_books`,
+saw "Comic Books & Graphic Novels" starting hard against the chevron, and called
+it fixed. It was still centred — the title was simply long enough to fill the
+bar. The short one (`Help`) made that obvious immediately. **Verify alignment
+with a SHORT string; a long one looks left-aligned no matter what.**
+
+The real fix on iOS is to not set a native title at all where the screen already
+renders its own heading. `guide/[categoryId]` and `help/*` open with a hero
+carrying the page title, so the bar title was a duplicate as well as a
+misalignment. Both now pass `headerTitle: ''` and keep the chevron and gear.
+
+## The newest screens keep shipping without the nav bar (2026-08-16)
+
+`QuickNavBar` is the bottom bar for screens OUTSIDE the `(tabs)` group. The
+three most recently built screens — `help/index`, `help/[topicId]` and
+`guide/[categoryId]` — all shipped without it, so a reader who arrived from
+search had only a back chevron.
+
+An enumeration of all 78 route files found 41 with it and 37 without. Most of
+those 37 are correct: `(auth)/*` (no navigation before login), `(tabs)/*` (they
+have the real tab bar), the camera screens, chat compose, `+not-found` and
+`index`. The genuine omissions were the three new ones.
+
+Two details worth keeping:
+
+- **It reserves its own space.** `QuickNavBar` is a normal flex row with a top
+  border, NOT `position: absolute` like `ExternalTabBar` — so adding it needs no
+  inset and no `useTabBarInset()`. Render it as the sibling after the scroller
+  inside a `flex: 1` container.
+- **Cover every return branch.** The first pass added it to each screen's main
+  render but not to its `if (!guide)` / not-found branch, so a bad deep link
+  still stranded you. A screen with early returns needs the bar in all of them.
+
+## An always-rendered card is an empty grey box when its field is null (2026-08-17)
+
+`EventHeroSection` rendered the description card unconditionally. Most scraped
+events have no description — Ticketmaster feeds give a title, a date and a venue
+and nothing else — so the event screen showed a bordered card with nothing in
+it, directly under the location. Reported by pointing at it in a screenshot.
+
+A bordered card with no content does not read as "this field is empty". It reads
+as **a component that failed to load**, which is worse than the information
+being absent. Guard on the content, and guard with `.trim()` — a whitespace-only
+string is the same nothing, and `{event.description && ...}` would still render
+the card for `" "`.
+
+Sweep-worthy: any `<View style={styles.someCard}>` whose only child is a single
+`{optionalField}` has this bug waiting.
+
+## Two stacked rows of pill buttons are one row (2026-08-17)
+
+The event screen rendered `EventActionBar` (Open link / Share) and then
+`EventRsvpSection` (Going / Interested) as siblings, each with its own row. Two
+rows of identical pills, stacked — reported as wanting them "all aligned".
+
+They were built weeks apart, and each was reasonable alone. The fix is
+structural rather than cosmetic: **one component owns the row**, and the other
+returns a FRAGMENT of buttons passed in as `leadingActions`. Two components each
+drawing their own row can never align, because neither knows about the other's
+padding.
+
+Three things this turned up that are easy to get wrong:
+
+1. **`flex: 1` on the primary button.** Fine on its own row, fatal in a shared
+   one — it eats the whole line and pushes everything else onto a second row,
+   which is the bug you were fixing. `flexShrink: 1` + `textAlign: 'center'`.
+2. **The metrics have to be copied deliberately.** The share button was
+   `paddingVertical: 12, borderRadius: 24`, the RSVP buttons `10` and `20`. In
+   separate rows nobody noticed; side by side it reads as ragged.
+3. **Render `leadingActions` in EVERY branch.** `EventRsvpSection` has a
+   past-event branch that shows an "Attended" badge instead of the buttons.
+   Putting the new prop only in the upcoming branch silently deletes Share from
+   every past event — the "one branch got the fix" bug this repo keeps paying
+   for.
+
+Row is `flexWrap: 'nowrap'` per the rule above it: with four pills, wrapping
+strands the last one on its own line.
+
+## Two boards ranking the same idea should be the same object (2026-08-17)
+
+`app/leaderboard.tsx` holds two boards — the XP board and the per-category one
+added on 2026-08-16 — and they looked nothing alike. The category rows were bare
+bordered strips: no card fill, no medal colours, no trophy on the top three, no
+handle, no second stat, and **not tappable**, so the one board where you would
+actually want to look someone up was the one you could not. The XP board had all
+five. Reported as "match the analytics leaderboard UI".
+
+Both now use `styles.card` / `rankCol` / `infoCol` / `valueCol`, the same medal
+colours, the same stagger, and both push `/users/{id}`.
+
+Two differences are deliberate and must survive:
+
+- **The category board ranks by `r.rank` from the server, not by array index.**
+  Ranks can TIE — two collectors with nine items are both #4 — and renumbering
+  by position invents an ordering the data does not have. The XP board's
+  `index + 1` is safe only because that endpoint returns a strict order.
+- **`is_you` keeps its accent fill.** "Where am I" is the first question anyone
+  asks of a board they might be on.
+
+Also: `handle` is nullable on the category endpoint and derived on the XP one.
+Rendering `@` with nothing after it looks like a truncation bug — branch on it.
+
+## A profile that lists totals says nothing about the collector (2026-08-17)
+
+The public profile showed stats and achievements, so two members with completely
+different collections read almost identically — same badges, different numbers.
+`UserCategoriesSection` now lists what they actually collect, most-held first,
+with their rank in each category and a tap through to that board.
+
+**The null rank is the whole design.** `rank === null` means not ranked, which
+is NOT last place, and it is the COMMON case because discovery is off by
+default. It renders as "Not ranked" — never as a number, never as the row
+position, never as "#— of —". Falling back to any of those states a placement
+the server deliberately refused to compute.
+
+Same for money: a hidden value arrives as `0` with `value_visible: false`. "EUR
+0.00" is a claim about a collection and "value hidden" is a statement about a
+setting; they are different sentences and the component picks between them.
+
+The "turn on Allow discovery to be ranked" hint renders **only on your own
+profile**. On someone else's it would be reporting their privacy settings to a
+stranger.

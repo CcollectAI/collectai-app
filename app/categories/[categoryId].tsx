@@ -200,6 +200,7 @@ function CategoryStoreScreen() {
 
         {/* 2. Organic category header + Follow */}
         <CategoryHeaderCard
+          categoryId={categoryMeta.id}
           categoryName={categoryMeta.name}
           categoryTagline={categoryMeta.tagline}
           following={following}

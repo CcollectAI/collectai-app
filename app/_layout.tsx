@@ -378,6 +378,14 @@ function RootStack() {
         screenOptions={{
           headerShown: true,
           headerTitle: '',
+          // ANDROID ONLY. @react-navigation/native-stack ignores
+          // headerTitleAlign on iOS — the native bar always centres its title.
+          // Verified the hard way: a long title ("Comic Books & Graphic
+          // Novels") fills the bar and LOOKS left-aligned, while a short one
+          // ("Help") is obviously still centred. The iOS fix is not this
+          // option, it is not setting a native title at all on screens that
+          // already show their own heading in the body. 2026-08-16.
+          headerTitleAlign: 'left' as const,
           headerBackTitle: '',
           headerBackButtonDisplayMode: 'minimal',
           headerRight: () => <HeaderRight />,
@@ -478,6 +486,12 @@ function RootStack() {
         {/* iconOnlyHeader, so back routes through safeGoBack — a guide is
             reachable by deep link, where router.back() is a silent no-op. */}
         <Stack.Screen name="guide/[categoryId]" options={iconOnlyHeader} />
+        {/* Help — the "how do I use the app" pair. Same iconOnlyHeader as the
+            collecting guide, so both get the safeGoBack-backed chevron: these
+            are the two screens most likely to be opened from a deep link with
+            nothing beneath them on the stack. */}
+        <Stack.Screen name="help/index" options={iconOnlyHeader} />
+        <Stack.Screen name="help/[topicId]" options={iconOnlyHeader} />
         <Stack.Screen name="twitch-leaderboard" options={iconOnlyHeader} />
 
         {/* Legal screens — no header (custom header inside) */}

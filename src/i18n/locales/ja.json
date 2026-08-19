@@ -84,7 +84,8 @@
     "close_target_edit_a11y": "目標価格エディターを閉じる",
     "target_price_input_a11y": "目標価格",
     "save_target_a11y": "目標価格を保存",
-    "save_target_button": "目標価格を保存"
+    "save_target_button": "目標価格を保存",
+    "title": "ウォッチリスト"
   },
   "events": {
     "reminder_a11y": "イベントのリマインダーを設定",
@@ -115,7 +116,8 @@
     "retry_a11y": "検索を再試行",
     "no_results": "結果が見つかりません",
     "no_price_yet": "価格はまだありません",
-    "browse_by_category": "カテゴリから探す"
+    "browse_by_category": "カテゴリから探す",
+    "title": "検索"
   },
   "item_detail": {
     "valuation_a11y": "アイテムの評価と詳細",
@@ -299,7 +301,7 @@
     "marketplace": "マーケット",
     "market": "マーケット",
     "wishlist": "ウォッチリスト",
-    "search": "検索",
+    "explore": "さがす",
     "settings": "設定",
     "profile": "プロフィール"
   },

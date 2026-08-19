@@ -753,7 +753,9 @@ export const CATEGORIES: Category[] = [
     bannerImageUrl:
       'https://images.pexels.com/photos/164853/pexels-photo-164853.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#AB47BC',
-    iconName: 'vinyl',
+    // 'vinyl' is not an Ionicons glyph; it rendered as an empty box wherever
+    // CATEGORY_VISUAL drives an icon. `disc` is the closest real one.
+    iconName: 'disc',
     collections: [
       { id: 'aov-ghibli', name: 'Ghibli Pressings', itemCount: 0 },
       { id: 'aov-modern', name: 'Modern Anime Vinyl', itemCount: 0 },
@@ -1064,7 +1066,9 @@ export const CATEGORIES: Category[] = [
     bannerImageUrl:
       'https://images.pexels.com/photos/17122728/pexels-photo-17122728.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#E53935',
-    iconName: 'logo-nintendo',
+    // Ionicons has no Nintendo logo (it was never in the set) — this rendered
+    // as nothing. `game-controller` is the honest substitute.
+    iconName: 'game-controller',
     collections: [
       { id: 'nm-amiibo', name: 'Amiibo', itemCount: 0 },
       { id: 'nm-club-nintendo', name: 'Club Nintendo Rewards', itemCount: 0 },

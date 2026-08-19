@@ -22,12 +22,13 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useAuthContext } from '@/providers/useAuthContext';
+import { logger } from '@/lib/logger';
 import {
   getOfferings,
   purchasePackage,
   restorePurchases,
   planFromCustomerInfo,
-  isPurchasesAvailable,
+  purchasesStatus,
 } from '@/lib/purchases';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
 import type { PurchasesPackage } from 'react-native-purchases';
@@ -132,7 +133,35 @@ function SubscriptionScreen() {
     setLoading(true);
     setFetchError(null);
     setIapUnavailable(false);
-    if (!isPurchasesAvailable()) {
+    // Two very different failures rendered the SAME "coming soon" screen, so
+    // "the paywall is empty" could not be triaged without a rebuild:
+    //   no-key      → RevenueCat never configured (our bug: env var missing)
+    //   no-offering → RC configured fine, but StoreKit returned no products,
+    //                 so the SDK drops the offering. That is Apple's side:
+    //                 Paid Applications Agreement not active, subscriptions
+    //                 still in Missing Metadata, or running on the Simulator
+    //                 (StoreKit serves no products there at all).
+    // logger.error, not warn — info/warn are stripped in release builds, which
+    // is exactly where this matters (docs/ui-playbook.md).
+    const status = purchasesStatus();
+    if (status !== 'ready') {
+      // Was a single `reason=no-key` line for both of these. On 2026-08-17 the
+      // screen was reported broken, that line was believed, and the hunt went
+      // to EAS env vars and the Apple dashboards — when the truth was that the
+      // app under test was a DEV-CLIENT build, whose eas.json `development`
+      // profile carries no RevenueCat key at all. The paywall cannot work on
+      // one, and no amount of App Store Connect configuration changes that.
+      logger.error(
+        status === 'configure-failed'
+          ? '[subscription] iapUnavailable reason=configure-failed — a RevenueCat ' +
+              'key IS present in this build but Purchases.configure() threw. Ours to ' +
+              'fix; nothing to do with Apple.'
+          : '[subscription] iapUnavailable reason=no-key — no RevenueCat key in this ' +
+              'build. EXPECTED on a dev-client/simulator build (the eas.json ' +
+              '"development" profile sets no EXPO_PUBLIC_REVENUECAT_IOS_KEY). On a ' +
+              'store/TestFlight build it means the key is missing from the production ' +
+              'EAS environment.',
+      );
       setIapUnavailable(true);
       setLoading(false);
       return;
@@ -140,6 +169,13 @@ function SubscriptionScreen() {
     getOfferings()
       .then((data) => {
         if (!data?.current) {
+          logger.error(
+            '[subscription] iapUnavailable reason=no-offering — RevenueCat is ' +
+              'configured but returned no current offering. StoreKit gave the SDK ' +
+              'no products: check the Paid Applications Agreement is Active and ' +
+              'that sparrow_pro_monthly/sparrow_pro_yearly are Ready to Submit. ' +
+              'Always empty on the iOS Simulator.',
+          );
           setIapUnavailable(true);
         } else {
           setOfferings(data);
@@ -232,16 +268,49 @@ function SubscriptionScreen() {
   const isPaid = currentPlan !== 'free';
   const screenLoading = loading || planLoading;
 
+  /* Kept in step with FORCED_LIMITS.pro / DEFAULT_LIMITS in
+     src/hooks/useBillingLimits.ts — this list is what the customer is paying
+     for, so anything here has to be a limit the app actually enforces.
+     Two real Pro benefits were missing (unlimited watchlist, unlimited daily
+     alerts), so the page under-sold the tier, and "Priority support" was a
+     support promise nothing implements — a written promise to a paying user is
+     a spec, not copy. */
   const PRO_FEATURES = [
     '10 purchase mandates',
+    'Unlimited watchlist',
+    'Unlimited deal alerts',
     'Deal discovery',
-    'Dossier PDF export',
     'Condition grading',
     'Set completion tracker',
     'Advanced analytics',
+    'Dossier PDF export',
     'No ads',
-    'Priority support',
   ];
+
+  const FREE_FEATURES = [
+    '25 watchlist items',
+    '1 deal alert a day',
+    '1 price alert a week',
+    'Basic valuation',
+    'Community access',
+  ];
+
+  // Named the three causes apart so the __DEV__ hint below can say which one
+  // this is. Computed at render rather than stored, because `fetchOfferings`
+  // can flip the status on a retry.
+  const devDiagnostic =
+    purchasesStatus() === 'no-key'
+      ? 'DEV: no RevenueCat key in this build — the "development" eas.json profile ' +
+        'sets none, so the paywall cannot load here. Build the "store" profile and ' +
+        'test on a device via TestFlight.'
+      : purchasesStatus() === 'configure-failed'
+        ? 'DEV: a key is present but Purchases.configure() threw. This one is ours — ' +
+          'see the [purchases] configure failed line in the log.'
+        : fetchError
+          ? `DEV: getOfferings() threw — ${fetchError}`
+          : 'DEV: RevenueCat is configured, but StoreKit returned no products. Always ' +
+            'true on the Simulator. On a device, check the Paid Applications Agreement ' +
+            'is Active and both subscriptions are out of Missing Metadata.';
 
   const monthlyPriceLabel = monthlyPkg?.product.priceString ?? `${settings.currency} 4.99/mo`;
   const yearlyPriceLabel = yearlyPkg?.product.priceString ?? `${settings.currency} 39.99/yr`;
@@ -262,44 +331,67 @@ function SubscriptionScreen() {
               <Ionicons name="sparkles-outline" size={40} color={colors.accent} />
             </View>
             <Text style={[styles.comingSoonTitle, { color: colors.text }]}>
-              You're in the Sparrow beta
+              You&apos;re in the Sparrow beta
             </Text>
             <Text style={[styles.comingSoonText, { color: colors.muted }]}>
-              Every Pro feature is unlocked for free while we're testing.
-              Pricing arrives after the beta — you'll get a heads-up before
+              Every Pro feature is unlocked for free while we&apos;re testing.
+              Pricing arrives after the beta — you&apos;ll get a heads-up before
               anything changes.
             </Text>
           </View>
-        ) : iapUnavailable ? (
+        ) : iapUnavailable || fetchError ? (
+          /* This used to say "Coming soon — we're finishing the Pro tier
+             setup". That is a pre-launch message on a screen that ships to the
+             App Store: an Apple reviewer opening it reads the product as
+             unfinished, and a real customer whose plans failed to load once is
+             told the feature does not exist yet rather than to try again.
+             Both failures behind it (no offering from StoreKit, or a thrown
+             fetch) are things a RETRY can resolve, so they share one honest
+             state. The specific cause is in the logs, not in the copy — see
+             the logger.error calls in fetchOfferings and docs/MONETIZATION.md.
+             Restore Purchases renders below this branch, so someone who has
+             already paid is never stranded here. */
           <View style={styles.comingSoonSection}>
-            <View style={[styles.comingSoonIcon, { backgroundColor: colors.accent + '15' }]}>
-              <Ionicons name="rocket-outline" size={40} color={colors.accent} />
+            <View style={[styles.comingSoonIcon, { backgroundColor: colors.warning + '15' }]}>
+              <Ionicons name="cloud-offline-outline" size={40} color={colors.warning} />
             </View>
             <Text style={[styles.comingSoonTitle, { color: colors.text }]}>
-              {t('subscription.coming_soon')}
+              Plans couldn&apos;t load
             </Text>
             <Text style={[styles.comingSoonText, { color: colors.muted }]}>
-              We're finishing the Pro tier setup. Check back shortly!
+              We couldn&apos;t reach the App Store for the subscription options.
+              Check your connection and try again. Already subscribed? Use
+              Restore Purchases below.
             </Text>
-          </View>
-        ) : fetchError ? (
-          <>
-            <View style={[styles.warningBanner, { backgroundColor: colors.warning + '15' }]}>
-              <Ionicons name="warning-outline" size={18} color={colors.warning} />
-              <Text style={[styles.warningText, { color: colors.text }]}>
-                Couldn't load plans.{' '}
-                <Text style={{ color: colors.accent }} onPress={fetchOfferings}>
-                  Retry
-                </Text>
+            <AnimatedPressable
+              onPress={fetchOfferings}
+              style={[styles.retryBtn, { backgroundColor: colors.accent }]}
+              accessibilityRole="button"
+              accessibilityLabel="Try loading the plans again"
+            >
+              <Text style={[styles.retryBtnText, { color: colors.accentText }]}>
+                Try again
               </Text>
-            </View>
-          </>
+            </AnimatedPressable>
+            {/* __DEV__ only, so no customer and no App Store reviewer ever sees
+                it. "Check your connection and try again" is the right thing to
+                tell a customer and the WRONG thing to tell whoever is building
+                the app: on a dev-client or Simulator run this screen cannot
+                work, and retrying forever is the trap it set. Says which of the
+                three causes it is, in the place the person who needs it is
+                already looking. */}
+            {__DEV__ ? (
+              <Text style={[styles.devHint, { color: colors.muted }]}>
+                {devDiagnostic}
+              </Text>
+            ) : null}
+          </View>
         ) : (
           <View style={styles.plans}>
             <PlanCard
               name="Free"
               price={`${settings.currency} 0/mo`}
-              features={['3 purchase mandates', 'Basic valuation', 'Community access']}
+              features={FREE_FEATURES}
               current={currentPlan === 'free'}
               colors={colors}
             />
@@ -532,6 +624,23 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 20,
     textAlign: 'center',
+  },
+  retryBtn: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 12,
+  },
+  retryBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  devHint: {
+    marginTop: 20,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   comingSoonSection: {
     alignItems: 'center',

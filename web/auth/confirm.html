@@ -46,10 +46,15 @@
       </svg>
     </div>
     <div class="brand">Sparrow&nbsp;Collect</div>
-    <h1>You&rsquo;re verified</h1>
-    <p>Opening the Sparrow Collect app to finish&hellip; If it doesn&rsquo;t open automatically, tap below.</p>
+    <!-- Copy is set by the script below from the link's `type`. This ONE page
+         serves both Supabase emails — signup confirmation and password
+         recovery — and it used to say "You're verified" for both, so anyone
+         resetting a password was told their email was verified instead.
+         Defaults to the signup wording; recovery overrides it. -->
+    <h1 id="headline">You&rsquo;re verified</h1>
+    <p id="blurb">Opening the Sparrow Collect app to finish&hellip; If it doesn&rsquo;t open automatically, tap below.</p>
     <a class="btn" id="openApp" href="sparrow://">Open Sparrow Collect</a>
-    <p class="hint">If the app doesn&rsquo;t open, switch back to it manually to continue.</p>
+    <p class="hint" id="hint">If the app doesn&rsquo;t open, switch back to it manually to continue.</p>
     <div class="foot">
       <a href="https://sparrowcollect.com">sparrowcollect.com</a> &middot; <a href="mailto:support@sparrowcollect.com">support@sparrowcollect.com</a>
     </div>
@@ -62,6 +67,24 @@
         var hash = window.location.hash || '';
         var link = document.getElementById('openApp');
         if (hash && hash.length > 1) link.href = 'sparrow://' + hash;
+
+        // Which email did this come from? Supabase puts `type=recovery` in the
+        // fragment for a password reset and `type=signup` for a confirmation.
+        // Also accept it from the query string, because the PKCE flow puts it
+        // there instead.
+        var isRecovery =
+          /(^|[#&?])type=recovery(&|$)/.test(hash) ||
+          /(^|[&?])type=recovery(&|$)/.test(window.location.search || '');
+
+        if (isRecovery) {
+          document.getElementById('headline').textContent = 'Reset your password';
+          document.getElementById('blurb').textContent =
+            'Opening Sparrow Collect so you can choose a new password… If it doesn’t open automatically, tap below.';
+          document.getElementById('openApp').textContent = 'Set a new password';
+          document.getElementById('hint').textContent =
+            'This link works once and expires shortly. If it has expired, request a new one from Forgot password.';
+          document.title = 'Reset your password · Sparrow Collect';
+        }
         // Best-effort auto-open on mobile (user gesture not always required for same-origin scheme).
         if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
           setTimeout(function () { window.location.href = link.href; }, 600);

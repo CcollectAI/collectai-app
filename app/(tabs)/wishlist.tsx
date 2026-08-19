@@ -43,7 +43,6 @@ import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
 import { collectorsApi } from '@/api/collectorsApi';
 import type { P2PWatchlistMatch } from '@/api/p2pApi';
 import type { CurrencyCode } from '@/data/types';
-import { WishlistStatsBar } from '@/components/wishlist/WishlistStatsBar';
 import { WishlistSortControls } from '@/components/wishlist/WishlistSortControls';
 
 // Pull from single source of truth — all 36 categories + "Other"
@@ -54,11 +53,6 @@ const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as con
 const CATEGORIES = [...ALL_CATS.map((c) => c.name), 'Other'];
 
 
-function formatDate(dateStr: string | undefined): string {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 
 function WatchlistTabScreen() {
   const router = useRouter();
@@ -575,7 +569,7 @@ function WatchlistTabScreen() {
                 Set target price
               </Text>
             )}
-            <Ionicons name="pencil-outline" size={12} color={colors.muted} />
+            <Ionicons name="pencil-outline" size={16} color={colors.accent} />
           </AnimatedPressable>
         </View>
 
@@ -643,11 +637,10 @@ function WatchlistTabScreen() {
           </Text>
         )}
 
-        {item.createdAt && (
-          <Text style={[styles.dateAdded, { color: colors.muted }]}>
-            Added {formatDate(item.createdAt)}
-          </Text>
-        )}
+        {/* "Added <date>" removed 2026-08-16. It took a full line on every
+            card and nobody acts on it — the row's job is title, target and the
+            two things you can do about it. Dropping it plus the shorter action
+            row fits four cards on screen instead of two and a half. */}
 
         {/* Action buttons */}
         <View style={styles.cardActions}>
@@ -755,11 +748,13 @@ function WatchlistTabScreen() {
     openModal();
   }, [settings.hapticsEnabled, openModal]);
 
-  const renderHeader = () => (
-    <>
-      <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} />
-      <WishlistStatsBar items={items} currency={settings.currency} />
-    </>
+  /* Rendered ABOVE the list rather than as ListHeaderComponent — same reason
+     the Deal Agent banner is outside it (FlashList v2 absolutely-positions
+     header cells and interactive ones stop being hit-tested). Keeping Add and
+     Alerts out here also means they stay put while the list scrolls, which is
+     what you want from the two controls that create work. */
+  const renderTopControls = () => (
+    <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} />
   );
 
   if (loading) {
@@ -776,14 +771,28 @@ function WatchlistTabScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right', 'top']}>
       <Animated.View style={[{ flex: 1 }, animatedStyle]}>
         {/* This tab had no header row at all — it opened straight into the Deal
-            Agent banner — so there was nowhere for a back control to live. A
-            minimal row, rather than a full ScreenHeader, because the tab bar
-            already names the screen and a title here would just repeat it. */}
+            Agent banner — so there was nowhere for a back control to live.
+            The title was left off on the theory that the tab bar already names
+            the screen; in use it just read as an untitled page, so it is here
+            now. Still not a full ScreenHeader: this is a tab root, so there is
+            no pushed-screen chrome to match. */}
+        {/* ONE header block (2026-08-15). This was four stacked blocks — title
+            row, a full-width action row, a bordered stats card, then the Deal
+            Agent banner — so the tab spent most of the first screen on chrome
+            before showing a single watched item. Title and the two controls
+            now share a row, and the stats are a caption line beneath it. */}
         <View style={styles.tabHeaderRow}>
           <TabBackButton />
+          <Text style={[styles.tabTitle, { color: colors.text }]} numberOfLines={1}>
+            {t('wishlist.title')}
+          </Text>
+          {renderTopControls()}
         </View>
 
-        {/* Deal Agent — OUTSIDE the FlashList on purpose. FlashList v2 positions
+        {/* Deal Agent — BELOW the stats summary as of 2026-08-15. It used to be
+            the first thing on the tab, which put a paid upsell above the two
+            controls the screen exists for (Add and Alerts) and above the
+            member's own numbers. Still OUTSIDE the FlashList on purpose. FlashList v2 positions
             every cell including ListHeaderComponent absolutely, and a tall
             interactive header overflows its measured container and stops being
             hit-tested on iOS: it renders perfectly and takes no taps
@@ -816,7 +825,6 @@ function WatchlistTabScreen() {
           data={sortedItems}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          ListHeaderComponent={renderHeader}
           contentContainerStyle={[
             styles.listContent,
             sortedItems.length === 0 && styles.listContentEmpty,
@@ -1142,7 +1150,24 @@ function WatchlistTabScreen() {
 }
 
 const styles = StyleSheet.create({
-  tabHeaderRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 4 },
+  // 16 = the screen gutter (listContent uses padding 16). This row sat at 12,
+  // so the title hung 4pt left of every card beneath it.
+  tabHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingTop: 4,
+  },
+  // `xl`, matching the other tab titles — this is the screen's lead, and the
+  // playbook's type scale puts a lead at xl/lg, never at body size.
+  // flex: 1 so the title takes the slack and pins Inbox/Add to the right edge.
+  tabTitle: {
+    flex: 1,
+    fontSize: text['2xl'],
+    fontWeight: fontWeight.extrabold,
+    lineHeight: 30,
+  },
   safe: {
     flex: 1,
   },
@@ -1392,16 +1417,16 @@ const styles = StyleSheet.create({
   // Action button row
   cardActions: {
     flexDirection: 'row',
-    marginTop: 12,
+    justifyContent: 'flex-end',
+    marginTop: 10,
     gap: 8,
   },
   shopBtn: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: radius.pill,
     borderWidth: 1,
     gap: 6,
@@ -1411,12 +1436,11 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
   gotItBtn: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: radius.pill,
     gap: 6,
   },

@@ -48,7 +48,12 @@ export const UpgradePrompt = React.memo(function UpgradePrompt({ feature, requir
         </View>
       </View>
       <AnimatedPressable
-        onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push('/settings' as Href); }}
+        // Goes to the PAYWALL, not Settings. This read `/settings` until
+        // 2026-08-15: every Pro gate in the app (set completion, analytics,
+        // market movers, item detail) dead-ended on the settings screen, so
+        // there was no route from hitting a gate to actually subscribing.
+        // The `as Href` cast is what let a valid-but-wrong route through.
+        onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push('/subscription' as Href); }}
         style={[styles.btn, { backgroundColor: colors.accent }]}
         accessibilityRole="button"
         accessibilityLabel={t('billing.upgrade_to_plan', { plan: requiredPlan })}

@@ -84,7 +84,8 @@
     "close_target_edit_a11y": "목표 가격 편집기 닫기",
     "target_price_input_a11y": "목표 가격",
     "save_target_a11y": "목표 가격 저장",
-    "save_target_button": "목표 가격 저장"
+    "save_target_button": "목표 가격 저장",
+    "title": "관심 목록"
   },
   "events": {
     "reminder_a11y": "이벤트 알림 설정",
@@ -115,7 +116,8 @@
     "retry_a11y": "검색 다시 시도",
     "no_results": "결과를 찾을 수 없습니다",
     "no_price_yet": "아직 가격 없음",
-    "browse_by_category": "카테고리별 둘러보기"
+    "browse_by_category": "카테고리별 둘러보기",
+    "title": "검색"
   },
   "item_detail": {
     "valuation_a11y": "아이템 감정 및 세부정보",
@@ -299,7 +301,7 @@
     "marketplace": "마켓플레이스",
     "market": "마켓",
     "wishlist": "워치리스트",
-    "search": "검색",
+    "explore": "둘러보기",
     "settings": "설정",
     "profile": "프로필"
   },

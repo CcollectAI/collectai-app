@@ -420,7 +420,7 @@ function EventDetailScreen() {
           <Ionicons name="calendar-outline" size={48} color={colors.muted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('event_detail.not_found')}</Text>
           <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-            This event doesn't exist yet. Try opening it from the Events tab again.
+            This event doesn&apos;t exist yet. Try opening it from the Events tab again.
           </Text>
           <AnimatedPressable
             onPress={() => safeGoBack(router)}
@@ -477,9 +477,13 @@ function EventDetailScreen() {
           </AnimatedPressable>
         )}
 
-        <EventActionBar event={event} hapticsEnabled={settings.hapticsEnabled} />
-
+        {/* Share/Open link render INSIDE the RSVP row (2026-08-17). They used
+            to be a row of their own directly above Going / Interested, so the
+            screen showed two stacked rows of pills. */}
         <EventRsvpSection
+          leadingActions={
+            <EventActionBar event={event} hapticsEnabled={settings.hapticsEnabled} />
+          }
           event={event}
           rsvpStatus={rsvpStatus}
           isPastEvent={isPastEvent}

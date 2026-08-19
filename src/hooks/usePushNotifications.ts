@@ -217,6 +217,18 @@ export function usePushNotifications(userId: string | null) {
           data.url,
         );
         if (directUrl) {
+          // A RELATIVE deep link is an in-app ROUTE, not a URL. Every
+          // `deep_link` the server sends is one — `/offers?offerId=…`,
+          // `/my-suggestions`, `/legal/marketplace-terms`, `/events/<id>` —
+          // and `new URL()` below throws on all of them, into a catch that
+          // logs and returns. So each of those pushes arrived, was tapped,
+          // and did nothing (found 2026-08-18 while wiring the post-trade
+          // rating push). Exactly the alert_id → Unmatched shape called out
+          // below: the send side was right and the tap was dead.
+          if (directUrl.startsWith("/")) {
+            router.push(directUrl as Href);
+            return;
+          }
           // Our OWN listings resolve to a screen in this app, so route rather
           // than hand them to the browser — a member Target Hit otherwise left
           // the app for a URL that 404s. Checked first: the scheme validation

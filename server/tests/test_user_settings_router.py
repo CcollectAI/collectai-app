@@ -94,7 +94,17 @@ class TestGetSettingsWithDB:
 
     def test_returns_stored_values_when_row_exists(self):
         """If a user_settings row exists, return its values."""
-        stored = {"currency": "USD", "region": "americas", "locale": "en-US"}
+        # `skill_level` is in the SELECT and read unconditionally, so a fake
+        # row without it is a KeyError -> 500, on this path only. It was
+        # missing here for as long as the column has existed (added by
+        # 20260814c_user_settings_skill_level.sql).
+        #
+        # NULL deliberately: None means NEVER ASKED and is not the same as
+        # "beginner" — members who onboarded before the column existed must
+        # not be shown first-timer surfaces. That is the case a stored row is
+        # most likely to be in, so it is the one this test covers.
+        stored = {"currency": "USD", "region": "americas", "locale": "en-US",
+                  "skill_level": None}
         mock_pool, _conn = _mock_pool(fetchrow_return=stored)
         with patch("app.routes.user_settings_router.get_db_pool", return_value=mock_pool):
             r = client.get("/settings")
@@ -103,10 +113,14 @@ class TestGetSettingsWithDB:
         assert data["currency"] == "USD"
         assert data["region"] == "americas"
         assert data["locale"] == "en-US"
+        assert data["skill_level"] is None
 
     def test_returns_stored_jpy_japan(self):
         """Verify non-default stored values (JPY / japan / ja-JP) round-trip."""
-        stored = {"currency": "JPY", "region": "japan", "locale": "ja-JP"}
+        # A real skill_level here, NULL in the test above: both halves of the
+        # "None means never asked" distinction are covered.
+        stored = {"currency": "JPY", "region": "japan", "locale": "ja-JP",
+                  "skill_level": "advanced"}
         mock_pool, _conn = _mock_pool(fetchrow_return=stored)
         with patch("app.routes.user_settings_router.get_db_pool", return_value=mock_pool):
             r = client.get("/settings")
@@ -115,6 +129,7 @@ class TestGetSettingsWithDB:
         assert data["currency"] == "JPY"
         assert data["region"] == "japan"
         assert data["locale"] == "ja-JP"
+        assert data["skill_level"] == "advanced"
 
     def test_handles_postgres_error_with_500(self):
         """asyncpg.PostgresError during fetch should return 500."""
@@ -213,7 +228,8 @@ class TestPutSettingsWithDB:
 
     def test_upsert_valid_currency_region_locale(self):
         """Full upsert with all three fields returns the upserted row."""
-        returned_row = {"currency": "USD", "region": "americas", "locale": "en-US"}
+        returned_row = {"currency": "USD", "region": "americas", "locale": "en-US",
+                        "skill_level": None}
         mock_pool, mock_conn = _mock_pool(fetchrow_return=returned_row)
         with patch("app.routes.user_settings_router.get_db_pool", return_value=mock_pool):
             r = client.put("/settings", json={
@@ -237,7 +253,8 @@ class TestPutSettingsWithDB:
         """When only currency is provided, region/locale come from COALESCE
         on the DB side. The returned row should reflect the merge."""
         # The DB returns the merged row (existing region/locale preserved)
-        returned_row = {"currency": "GBP", "region": "europe", "locale": "de-DE"}
+        returned_row = {"currency": "GBP", "region": "europe", "locale": "de-DE",
+                        "skill_level": "beginner"}
         mock_pool, mock_conn = _mock_pool(fetchrow_return=returned_row)
         with patch("app.routes.user_settings_router.get_db_pool", return_value=mock_pool):
             r = client.put("/settings", json={"currency": "GBP"})
@@ -246,6 +263,9 @@ class TestPutSettingsWithDB:
         assert data["settings"]["currency"] == "GBP"
         assert data["settings"]["region"] == "europe"
         assert data["settings"]["locale"] == "de-DE"
+        # The merge covers skill_level too — the UPSERT COALESCEs $6 onto the
+        # existing value, so a currency-only PUT must not blank it.
+        assert data["settings"]["skill_level"] == "beginner"
 
         # Verify COALESCE is used in SQL so NULL params preserve existing
         sql = mock_conn.fetchrow.call_args[0][0]

@@ -261,7 +261,7 @@ function CreateMandateScreen() {
         </Text>
 
         {/* Name */}
-        <Text style={[styles.label, { color: colors.muted }]}>NAME</Text>
+        <Text style={[styles.label, { color: colors.text }]}>NAME</Text>
         <TextInput
           style={[styles.input, { backgroundColor: colors.card, borderColor: nameField.touched && nameField.error ? colors.danger : colors.border, color: colors.text }]}
           placeholder="e.g. Pokemon Grails under 200"
@@ -283,19 +283,21 @@ function CreateMandateScreen() {
         {nameField.touched && nameField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{nameField.error}</Text>}
 
         {/* Category */}
-        <SelectField
-          label="CATEGORY (OPTIONAL)"
-          value={category ?? ''}
-          options={CATEGORY_OPTIONS}
-          onChange={handleCategoryChange}
-          placeholder="Any"
-        />
+        <View style={styles.selectGap}>
+          <SelectField
+            label="CATEGORY (OPTIONAL)"
+            value={category ?? ''}
+            options={CATEGORY_OPTIONS}
+            onChange={handleCategoryChange}
+            placeholder="Any"
+          />
+        </View>
 
         {/* Value against a catalogue item — optional, and honest about why.
             A mandate without one still finds deals; it just cannot report what
             it saved, because the agent prices every result off an ILIKE on the
             search string. */}
-        <Text style={[styles.label, { color: colors.muted }]}>VALUE AGAINST (OPTIONAL)</Text>
+        <Text style={[styles.label, { color: colors.text }]}>VALUE AGAINST (OPTIONAL)</Text>
         {canonicalKey ? (
           <View style={[styles.matchPicked, { backgroundColor: colors.card, borderColor: colors.accent }]}>
             <Ionicons name="pricetag" size={15} color={colors.accent} />
@@ -362,7 +364,7 @@ function CreateMandateScreen() {
         ) : null}
 
         {/* Max Price */}
-        <Text style={[styles.label, { color: colors.muted }]}>MAX PRICE PER ITEM ({settings.currency})</Text>
+        <Text style={[styles.label, { color: colors.text }]}>MAX PRICE PER ITEM ({settings.currency})</Text>
         <TextInput
           style={[styles.input, { backgroundColor: colors.card, borderColor: maxPriceField.touched && maxPriceField.error ? colors.danger : colors.border, color: colors.text }]}
           placeholder="e.g. 400"
@@ -376,18 +378,20 @@ function CreateMandateScreen() {
         {maxPriceField.touched && maxPriceField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{maxPriceField.error}</Text>}
 
         {/* Min Trust Score */}
-        <SelectField
-          label={`MIN TRUST SCORE: ${minTrust.toFixed(2)}`}
-          value={minTrust.toFixed(1)}
-          options={TRUST_OPTIONS}
-          onChange={handleTrustChange}
-        />
+        <View style={styles.selectGap}>
+          <SelectField
+            label={`MIN TRUST SCORE: ${minTrust.toFixed(2)}`}
+            value={minTrust.toFixed(1)}
+            options={TRUST_OPTIONS}
+            onChange={handleTrustChange}
+          />
+        </View>
         <Text style={[styles.hint, { color: colors.muted }]}>
           Higher = stricter seller/listing quality filter.
         </Text>
 
         {/* Marketplace Sources — toggle switches */}
-        <Text style={[styles.label, { color: colors.muted }]}>MARKETPLACES</Text>
+        <Text style={[styles.label, { color: colors.text }]}>MARKETPLACES</Text>
         {SOURCES.map((s) => {
           const active = selectedSources.includes(s);
           return (
@@ -407,13 +411,15 @@ function CreateMandateScreen() {
         </Text>
 
         {/* Region */}
-        <SelectField
-          label="REGION"
-          value={region}
-          options={REGION_OPTIONS}
-          onChange={handleRegionChange}
-          placeholder="Any Region"
-        />
+        <View style={styles.selectGap}>
+          <SelectField
+            label="REGION"
+            value={region}
+            options={REGION_OPTIONS}
+            onChange={handleRegionChange}
+            placeholder="Any Region"
+          />
+        </View>
 
         {/* Status toggle (edit mode) */}
         {isEdit && (
@@ -480,12 +486,19 @@ const styles = StyleSheet.create({
   container: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
   loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
 
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: '800', marginBottom: 20, lineHeight: 30},
+  // Matches SelectField's label exactly (12 / semibold / colors.text). It was
+  // 11pt uppercase letter-spaced in colors.muted, so NAME and MAX PRICE read as
+  // faint micro-labels while CATEGORY and MIN TRUST — rendered by SelectField —
+  // were darker and larger. Two label languages alternating down one form.
+  // SelectField brings no top margin, so its label sat flush against the
+  // input above it. This is the same 16 the other field labels use.
+  selectGap: {
+    marginTop: 16,
+  },
   label: {
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    fontSize: 12,
+    fontWeight: "600",
     marginBottom: 6,
     marginTop: 16,
   },

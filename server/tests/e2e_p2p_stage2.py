@@ -56,10 +56,18 @@ async def main():
     chk('counter recorded', ctr.status=='countered' and ctr.amount==27.0, f'{ctr.status} {ctr.amount}')
     chk('BUYER notified of the counter', await notif_count(BUYER) == n_buyer0 + 1,
         await latest_notif(BUYER))
-    acc = await respond_to_offer(o.id, action='accept', amount=None, user_id=SELLER)
-    chk('accepted', acc.status=='accepted')
-    chk('BUYER notified of the acceptance', await notif_count(BUYER) == n_buyer0 + 2,
-        await latest_notif(BUYER))
+    # A COUNTER IS THE BUYER'S TO ANSWER (changed 2026-08-15, see
+    # P2P_MARKETPLACE_SPEC.md "The buyer answers a counter"). This test still
+    # had the SELLER accepting their own counter and had not been run since, so
+    # it failed with BUYER_ONLY — the test pinned the old contract, the server
+    # was right. Assert the guard too, so the direction cannot silently flip
+    # back.
+    chk('seller cannot accept their OWN counter',
+        await err(respond_to_offer(o.id, action='accept', amount=None, user_id=SELLER), 'BUYER_ONLY'))
+    acc = await respond_to_offer(o.id, action='accept', amount=None, user_id=BUYER)
+    chk('buyer accepts the counter', acc.status=='accepted', acc.status)
+    chk('SELLER notified of the acceptance', await notif_count(SELLER) >= n_seller0 + 2,
+        await latest_notif(SELLER))
     res = await c.fetchval('SELECT reserved_offer_id FROM marketplace_listings WHERE id=$1::uuid', L.id)
     chk('listing soft-reserved', str(res)==o.id)
     still = await c.fetchval("SELECT count(*) FROM marketplace_listings WHERE id=$1::uuid AND status='active' AND delisted_at IS NULL", L.id)
@@ -69,7 +77,10 @@ async def main():
     s1 = await confirm_exchange(o.id, user_id=SELLER)
     chk('seller confirmed', s1.seller_confirmed_at is not None)
     chk('not complete on one side', s1.status!='completed', s1.status)
-    chk('BUYER told the seller confirmed', await notif_count(BUYER) == n_buyer0 + 3,
+    # +2, not +3: the buyer gets the counter and the seller's confirmation. The
+    # acceptance notice now goes to the SELLER, because the buyer is the one who
+    # accepted it — see the notification fix in p2p_offers_router.py.
+    chk('BUYER told the seller confirmed', await notif_count(BUYER) == n_buyer0 + 2,
         await latest_notif(BUYER))
     chk('grading still blocked', await err(grade_counterparty(o.id, GradeCreate(verdict='positive'), user_id=SELLER),'TRADE_NOT_COMPLETE'))
     chk('cannot double-confirm', await err(confirm_exchange(o.id, user_id=SELLER),'ALREADY_CONFIRMED'))
@@ -77,7 +88,7 @@ async def main():
     chk('completed on both sides', s2.status=='completed', s2.status)
     chk('can_grade now true', s2.can_grade is True)
     chk('BOTH told the trade completed',
-        await notif_count(SELLER) == n_seller0 + 2 and await notif_count(BUYER) == n_buyer0 + 4,
+        await notif_count(SELLER) == n_seller0 + 3 and await notif_count(BUYER) == n_buyer0 + 3,
         f'seller {await notif_count(SELLER)} (was {n_seller0}), buyer {await notif_count(BUYER)} (was {n_buyer0})')
     # SETTLEMENT — the object must move, not just the paperwork.
     seller_item = await c.fetchrow(

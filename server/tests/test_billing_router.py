@@ -273,20 +273,45 @@ class TestPlanLimits:
     """Verify PLAN_LIMITS structure."""
 
     def test_free_limits(self):
+        """docs/MONETIZATION.md is the source; this only pins it.
+
+        `max_mandates` is **0**, not 3, since 2026-07-31. Deal discovery is
+        Pro-only — the worker skips free users' mandates entirely — so a
+        mandate on the free plan can never produce a deal. The 3 it asserted
+        were unreachable through the UI and inert if reached by deep link, and
+        `/purchase/*` IS a Universal Link path.
+
+        This assertion outlived the change by ~3 weeks. Anyone who "fixes" it
+        by putting 3 back into PLAN_LIMITS reopens that hole and makes the
+        paywall advertise a feature the buyer gets none of.
+        """
         from app.routes.billing_router import PLAN_LIMITS
         free = PLAN_LIMITS["free"]
-        assert free["max_mandates"] == 3
+        assert free["max_mandates"] == 0
         assert free["deal_discovery"] is False
         assert free["dossier_pdf"] is False
         assert free["advanced_analytics"] is False
 
     def test_pro_limits(self):
+        """`advanced_analytics` is **True** for Pro since 2026-07-28.
+
+        False was a leftover from the three-tier model, where it was
+        Premium-only. Premium folded into Pro and is no longer purchasable
+        (RevenueCat sells only the `pro` entitlement), so while this stayed
+        False NO user could ever be granted it. On the fallback path — no
+        RevenueCat key, or RC reporting free — a paying Pro user was told
+        advanced_analytics=False and Home's "Extended Portfolio Insights"
+        button sent them to the paywall instead of /analytics.
+
+        docs/MONETIZATION.md's plan table says Pro: Yes. The test was the last
+        thing still claiming otherwise.
+        """
         from app.routes.billing_router import PLAN_LIMITS
         pro = PLAN_LIMITS["pro"]
         assert pro["max_mandates"] == 10
         assert pro["deal_discovery"] is True
         assert pro["dossier_pdf"] is True
-        assert pro["advanced_analytics"] is False
+        assert pro["advanced_analytics"] is True
 
     def test_premium_limits(self):
         from app.routes.billing_router import PLAN_LIMITS

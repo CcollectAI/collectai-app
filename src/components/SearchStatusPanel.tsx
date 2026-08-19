@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { View, Text } from 'react-native';
 import {
   CollectionStatusInput,
-  CollectionStatusScore,
+  SizedCollectionScore,
+  hasKnownSetSize,
 } from '@/utils/statusScoring';
 import { useCollectionStatus } from '@/hooks/useCollectionStatus';
 import { LeaderboardRow } from '@/components/StatusBadge';
@@ -16,14 +17,19 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
   const { scores, tier } = useCollectionStatus(items);
   const { colors } = useAppTheme();
 
-  const nearComplete: CollectionStatusScore[] = useMemo(
+  // Same 0.4..0.95 band as app/sets-to-complete.tsx — a second copy of that
+  // predicate, and it was dead for the same reason: with no catalogue set size
+  // every score came back at exactly 1.0 and fell outside the band. Sets whose
+  // size we do not know are excluded up front now, rather than being given an
+  // invented denominator (see hasKnownSetSize).
+  const nearComplete: SizedCollectionScore[] = useMemo(
     () =>
       scores
+        .filter(hasKnownSetSize)
         .filter(
           (s) =>
             s.completenessRatio >= 0.4 &&
-            s.completenessRatio < 0.95 &&
-            s.expectedCount > 0,
+            s.completenessRatio < 0.95,
         )
         .sort(
           (a, b) =>

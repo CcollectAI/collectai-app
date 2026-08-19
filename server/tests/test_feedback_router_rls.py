@@ -11,6 +11,7 @@ basic DB mock scenarios. These tests specifically verify:
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from datetime import datetime, timezone
@@ -138,8 +139,21 @@ class TestFeedbackSubmitOwnership:
         # Only one acquire call (the submit query), no provenance event
         assert mock_pool.acquire.call_count == 1
 
-    def test_submit_label_format_sale_price(self):
-        """Sale price feedback produces label 'sale_price:{value}'."""
+    def test_submit_writes_the_price_into_value_json(self):
+        """The write target moved, so the LABEL is no longer what is stored.
+
+        Until 2026-07-21 submit wrote a `label` string to the `feedback`
+        table — which has none of these columns, so every submit 500'd
+        (migration 20260721_user_feedback_events_reconcile.sql). It now writes
+        `user_feedback_events_v1`, and the training readers
+        (pipelines/export_feedback.py, pipelines/train_price.py) pull the
+        number out of `value_json["price"]`.
+
+        These tests kept asserting positional arg $2 was the old label; $2 is
+        now the item id, so they compared a UUID to "sale_price:42.50". What
+        matters — that a reported sale price reaches the column the model
+        trains on — was never asserted at all.
+        """
         mock_pool, mock_conn = _mock_pool_with_conn()
         mock_conn.fetchval = AsyncMock(return_value=1)
         mock_conn.fetchrow = AsyncMock(return_value={"id": str(uuid4())})
@@ -152,13 +166,19 @@ class TestFeedbackSubmitOwnership:
             })
 
         assert resp.status_code == 200
-        # Verify the INSERT call included the correct label
-        insert_call = mock_conn.fetchrow.call_args
-        label_arg = insert_call[0][2]  # positional arg $2 = label
-        assert label_arg == "sale_price:42.50"
+        # (sql, $1 user_id, $2 item_id, $3 feedback_type, $4 value_json, $5 ts)
+        args = mock_conn.fetchrow.call_args[0]
+        assert args[3] == "sale_price"
+        # A float, not the raw string: the price-training filter reads a number.
+        assert json.loads(args[4])["price"] == 42.50
 
-    def test_submit_label_format_disagree(self):
-        """Disagree feedback without value produces label 'disagree:inaccurate'."""
+    def test_submit_disagree_carries_no_price(self):
+        """A qualitative signal must not land in the price column.
+
+        `disagree` has no number, so `value_json` must carry no `price` key —
+        the price-training filter would otherwise have to guess, and a
+        disagreement is not a sale.
+        """
         mock_pool, mock_conn = _mock_pool_with_conn()
         mock_conn.fetchval = AsyncMock(return_value=1)
         mock_conn.fetchrow = AsyncMock(return_value={"id": str(uuid4())})
@@ -170,9 +190,9 @@ class TestFeedbackSubmitOwnership:
             })
 
         assert resp.status_code == 200
-        insert_call = mock_conn.fetchrow.call_args
-        label_arg = insert_call[0][2]
-        assert label_arg == "disagree:inaccurate"
+        args = mock_conn.fetchrow.call_args[0]
+        assert args[3] == "disagree"
+        assert "price" not in json.loads(args[4])
 
 
 # ---------------------------------------------------------------------------

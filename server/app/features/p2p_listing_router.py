@@ -1036,7 +1036,15 @@ async def browse_listings(
                    -- missed and only on that path
                    -- (learning_duplicate_impl_silently_drops_the_fix).
                    EXISTS (SELECT 1 FROM public.user_public_profiles up
-                            WHERE up.user_id = l.user_id) AS seller_profile_public
+                            WHERE up.user_id = l.user_id) AS seller_profile_public,
+"""
+            + _SELLER_REPUTATION_SQL.rstrip().rstrip(",")
+            + """
+            -- archived-exempt: a LISTING browse. `items` is joined only for the
+            -- photo; what makes a listing visible is its own status. Restated
+            -- here because splitting the query around the shared reputation SQL
+            -- makes this a separate string literal, and check:archived reads
+            -- the marker per literal.
             FROM public.marketplace_listings l
             -- Rate lookup as a join over two parallel arrays. LEFT JOIN, so an
             -- unknown currency keeps the row at rate 1 (wrong by a few percent)
@@ -1109,12 +1117,77 @@ async def browse_listings(
             watchers=int(r["watchers"] or 0),
             seller_name=r["display_name"] or r["username"],
             seller_profile_public=bool(_row_get(r, "seller_profile_public")),
+            # Reputation on the TILE, same rule as the detail screen. A buyer
+            # who only meets it after tapping cannot use it to decide whether
+            # to tap — the same argument that put `watchers` here.
+            **_reputation_fields(r),
             status=r["status"], created_at=r["created_at"],
             reaches_target_hit=_reaches_target_hit(r["canonical_key"], r["category"]),
             is_mine=str(r["user_id"]) == user_id,
         )
         for r in rows
     ])
+
+
+# ── Seller trade reputation — ONE definition, both listing queries ──────────
+#
+# Browse and detail both render it, and until 2026-08-18 only the DETAIL query
+# selected these columns. `ListingOut` defaults them to 0/None, so the browse
+# response cheerfully reported "0 completed trades" for every seller on the
+# platform — a Pydantic default standing in for a question the query never
+# asked, which is this codebase's house failure mode wearing a number
+# (learning_silent_fallbacks_hide_dead_features, `unknown-as-zero`).
+#
+# Kept as a module constant rather than pasted into both queries because a
+# reputation rule that exists twice is a reputation rule that drifts
+# (learning_duplicate_impl_silently_drops_the_fix). It is concatenated, not
+# f-string-interpolated: the surrounding SQL carries `{}` and `{id}` inside
+# comments, which an f-string would eat or raise on.
+#
+# Correlated scalar subqueries rather than a GROUP BY join, for the same reason
+# the detail query gives: joining offers and grades in one statement multiplies
+# rows and inflates every count. Both are index-backed —
+# `idx_p2p_offers_seller (seller_id, status, …)` / `idx_p2p_offers_buyer` for
+# the OR, `idx_member_grades_ratee (ratee_id, …)` for the grades.
+_SELLER_REPUTATION_SQL = """
+                   (SELECT count(*) FROM public.p2p_offers so
+                     WHERE so.status = 'completed'
+                       AND (so.seller_id = l.user_id OR so.buyer_id = l.user_id)
+                   ) AS seller_completed_trades,
+                   (SELECT count(*) FROM public.member_grades mg
+                     WHERE mg.ratee_id = l.user_id) AS seller_total_grades,
+                   (SELECT count(*) FROM public.member_grades mg
+                     WHERE mg.ratee_id = l.user_id
+                       AND mg.verdict = 'positive') AS seller_positive_grades,
+"""
+
+
+def _reputation_fields(r) -> dict:
+    """Map the reputation columns for either listing query.
+
+    The hiding rule lives here and nowhere else. `_MIN_GRADES_TO_SHOW` is
+    imported from the offers router rather than redefined, so the browse tile,
+    the listing screen and `/p2p/members/{id}/reputation` cannot disagree about
+    when a percentage is publishable. Showing "0% positive" off one grade is a
+    smear; "100%" off one is not credibility.
+
+    Uses `_row_get`, so a query that has not selected these columns maps to the
+    honest zero rather than raising a KeyError on one code path only.
+    """
+    from app.features.p2p_offers_router import _MIN_GRADES_TO_SHOW
+
+    total = int(_row_get(r, "seller_total_grades") or 0)
+    positive = int(_row_get(r, "seller_positive_grades") or 0)
+    return {
+        "seller_completed_trades": int(_row_get(r, "seller_completed_trades") or 0),
+        "seller_total_grades": total,
+        "seller_positive_grades": positive,
+        # Rounded to a whole number: a decimal on a sample of four grades is
+        # false precision.
+        "seller_positive_pct": (
+            round(100.0 * positive / total) if total >= _MIN_GRADES_TO_SHOW else None
+        ),
+    }
 
 
 class CategoryFacet(BaseModel):
@@ -1323,7 +1396,17 @@ async def get_listing(
                    -- Scalar subqueries, not GROUP BY: joining items and
                    -- listings in one query would multiply rows and inflate
                    -- both counts. Cheap here because it is a single listing.
-                   (SELECT count(*) FROM public.items si WHERE si.user_id = l.user_id) AS seller_items,
+                   -- `archived IS NOT TRUE`, added 2026-08-18. This count is
+                   -- social proof — "a 400-item collection is hard to fake
+                   -- cheaply" — and settlement ARCHIVES the seller's item when
+                   -- a trade completes, so counting archived rows would credit
+                   -- a seller for everything they have already sold. The gate
+                   -- could not see this read before: the query's `WHERE l.id =
+                   -- $1` made check:archived treat the whole literal as a
+                   -- by-id lookup, and splitting the SQL is what exposed it.
+                   (SELECT count(*) FROM public.items si
+                     WHERE si.user_id = l.user_id
+                       AND si.archived IS NOT TRUE) AS seller_items,
                    (SELECT count(*) FROM public.marketplace_listings sl
                      WHERE sl.user_id = l.user_id AND sl.status = 'active'
                        AND sl.delisted_at IS NULL) AS seller_listings,
@@ -1345,15 +1428,14 @@ async def get_listing(
                    -- consent (learning_prove_view_equivalence_with_real_auth_context).
                    EXISTS (SELECT 1 FROM public.user_public_profiles up
                             WHERE up.user_id = l.user_id) AS seller_profile_public,
-                   (SELECT count(*) FROM public.p2p_offers so
-                     WHERE so.status = 'completed'
-                       AND (so.seller_id = l.user_id OR so.buyer_id = l.user_id)
-                   ) AS seller_completed_trades,
-                   (SELECT count(*) FROM public.member_grades mg
-                     WHERE mg.ratee_id = l.user_id) AS seller_total_grades,
-                   (SELECT count(*) FROM public.member_grades mg
-                     WHERE mg.ratee_id = l.user_id
-                       AND mg.verdict = 'positive') AS seller_positive_grades,
+"""
+            + _SELLER_REPUTATION_SQL
+            + """
+                   -- archived-exempt: ONE listing, addressed by its own id.
+                   -- `items` supplies the photo and the seller's collection
+                   -- size; an archived item the member still owns still counts
+                   -- toward tenure. Restated for the same literal-splitting
+                   -- reason as the browse query above.
                    -- Demand. watchlist_items.item_id holds a BARE canonical
                    -- key, same vocabulary as marketplace_listings.canonical_key
                    -- — this joins directly, unlike market_hits.item_ref which
@@ -1392,13 +1474,6 @@ async def get_listing(
     if r is None:
         raise error_response(404, "Listing not found", code="LISTING_NOT_FOUND")
 
-    # Imported from the offers router rather than redefined, so the listing
-    # screen's "enough grades to show a percentage" rule is the SAME constant the
-    # reputation endpoint uses. Two copies of a threshold drift.
-    from app.features.p2p_offers_router import _MIN_GRADES_TO_SHOW
-
-    _total_grades = int(r["seller_total_grades"] or 0)
-
     return ListingOut(
         id=str(r["id"]), user_id=str(r["user_id"]),
         item_id=str(r["item_id"]) if r["item_id"] else None,
@@ -1414,15 +1489,9 @@ async def get_listing(
         seller_since=r["seller_since"],
         seller_collection_size=int(r["seller_items"] or 0),
         seller_active_listings=int(r["seller_listings"] or 0),
-        seller_completed_trades=int(r["seller_completed_trades"] or 0),
-        seller_total_grades=_total_grades,
-        seller_positive_grades=int(r["seller_positive_grades"] or 0),
-        # None below the shared threshold. Rounded to a whole number: a decimal
-        # on a sample of four grades is false precision.
-        seller_positive_pct=(
-            round(100.0 * int(r["seller_positive_grades"] or 0) / _total_grades)
-            if _total_grades >= _MIN_GRADES_TO_SHOW else None
-        ),
+        # Same helper as the browse mapper — the threshold and the rounding are
+        # defined once, so the tile and this screen cannot disagree.
+        **_reputation_fields(r),
         watchers=int(r["watchers"] or 0),
         watchers_above_price=int(r["watchers_above"] or 0),
         # A delisted row keeps its stored status ('sold'/'delisted'), so the

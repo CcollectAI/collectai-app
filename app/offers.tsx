@@ -20,7 +20,7 @@ import {
   View, Text, SectionList, StyleSheet, RefreshControl, Alert, Animated,
   Linking, TextInput, ScrollView, ActivityIndicator,
 } from 'react-native';
-import { useRouter, type Href } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -48,17 +48,57 @@ import logger from '@/utils/logger';
 
 type Role = 'all' | 'buying' | 'selling';
 
-/** Status → human label + tone. Keys mirror p2p_offers_status_check. */
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'Awaiting seller',
-  countered: 'Countered',
-  accepted: 'Agreed — arrange the exchange',
-  declined: 'Declined',
-  cancelled: 'Withdrawn',
-  expired: 'Expired',
-  shipped: 'Sent',
-  completed: 'Completed',
-};
+/**
+ * Status → what it means TO YOU. Keys mirror p2p_offers_status_check.
+ *
+ * Every label is written from the reader's side of the trade, because the same
+ * status means opposite things to the two people looking at it: `countered` is
+ * "your call" to one of them and "waiting on them" to the other, and a single
+ * neutral word ("Countered") made the member work that out from the role pill.
+ * Reported as *"'countered, 1 counter' is just not very easy to follow"*.
+ *
+ * The spec's original wording is in docs/P2P_MARKETPLACE_SPEC.md §1d-bis; that
+ * table has been updated alongside this, so the doc and the screen still agree.
+ */
+function statusLabel(status: string, iAmBuyer: boolean, iWithdrew?: boolean | null): string {
+  switch (status) {
+    case 'pending':
+      return iAmBuyer ? 'Waiting for the seller to reply' : 'Waiting for your reply';
+    case 'countered':
+      // The counter always travels toward the other party, so whoever is NOT
+      // the one who sent it is the one who has to answer.
+      return iAmBuyer ? 'Seller countered — your call' : 'You countered — waiting on the buyer';
+    case 'accepted':
+      // "Agreed — arrange the exchange" left both sides asking what "arrange"
+      // meant. Sparrow handles neither payment nor delivery (§5a), so the
+      // honest version of this status is the instruction itself.
+      return iAmBuyer
+        ? 'Agreed — pay the seller and share your address'
+        : 'Agreed — take payment, then send the item';
+    case 'shipped':
+      return iAmBuyer ? 'On its way — confirm when it arrives' : 'You marked it sent';
+    case 'completed':
+      return 'Trade complete';
+    case 'declined':
+      return iAmBuyer ? 'Seller declined' : 'You declined';
+    case 'cancelled':
+      // EITHER side may withdraw — a seller can retract a counter — so the
+      // actor cannot be inferred from your role. `i_withdrew` is server-derived
+      // from `withdrawn_by`; when it is absent (an older build) say only what
+      // is certainly true rather than guessing an actor.
+      // `== null`, NOT `=== undefined`. The server sends JSON `null` for "no
+      // one is recorded as having walked", which arrives as `null` and is
+      // falsy — so a `=== undefined` check fell straight through to the else
+      // and asserted "the other side withdrew" on precisely the unknown case
+      // this branch exists to protect.
+      if (iWithdrew == null) return 'Withdrawn';
+      return iWithdrew ? 'You withdrew this' : 'The other side withdrew';
+    case 'expired':
+      return 'Expired';
+    default:
+      return status;
+  }
+}
 
 function OffersScreen() {
   const router = useRouter();
@@ -67,6 +107,22 @@ function OffersScreen() {
   const { showToast } = useToast();
   const bottomInset = useTabBarInset();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+
+  /**
+   * The offer a push was about.
+   *
+   * Every trade notification deep-links to `/offers?offerId=<id>` rather than
+   * to this screen bare — being told "rate your trade" and handed a list of
+   * six is a search task, not a link. The param is READ here and used twice
+   * below: the card is highlighted, and if the push was the rating ask, the
+   * rating prompt opens on arrival.
+   *
+   * `npm run check:params` compares a push target against the params the
+   * destination FILE declares, so this line is what makes that contract
+   * checkable — a param nothing reads is silently dropped and legal TS
+   * (learning_route_params_are_an_unchecked_contract).
+   */
+  const { offerId: deepLinkOfferId } = useLocalSearchParams<{ offerId?: string }>();
 
   const [role, setRole] = useState<Role>('all');
   const [refreshing, setRefreshing] = useState(false);
@@ -170,6 +226,14 @@ function OffersScreen() {
         // ("already confirmed", "offer is already declined"), not failures.
         logger.error('[offers] action failed:', e);
         showToast({ message: (e as Error)?.message || 'That didn\'t work', type: 'error' });
+        // Resync even on failure. A client-side timeout does NOT mean the write
+        // failed: POST /confirm took 26.5s server-side and returned 200 while
+        // this screen had already given up, kept rendering the trade as live,
+        // and let the buyer open the address form on a trade that had in fact
+        // completed — which the server then refused with a 409 the member had
+        // no way to make sense of. After an error we know the least about the
+        // server's state, which is exactly when to go and ask.
+        retry();
       } finally {
         setBusyId(null);
       }
@@ -337,6 +401,29 @@ function OffersScreen() {
     );
   }, [act]);
 
+  /**
+   * Arriving from the "how did it go?" push opens the rating prompt.
+   *
+   * Guarded by a REF, not by state: an effect that writes a state it also
+   * lists as a dep tears itself down mid-flight, which is the class
+   * `npm run check:effects` exists for. The ref is invisible to the dep array,
+   * so this fires exactly once per offer id even though `offers` changes
+   * identity on every refetch.
+   *
+   * Silent when the offer is already graded or not gradable — the deep link
+   * still highlights the card, which is the honest outcome for "you already
+   * did this".
+   */
+  const gradePromptedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!deepLinkOfferId || loading) return;
+    if (gradePromptedRef.current === deepLinkOfferId) return;
+    const target = offers.find((o) => o.id === deepLinkOfferId);
+    if (!target) return;
+    gradePromptedRef.current = deepLinkOfferId;
+    if (target.can_grade && !target.already_graded) onGrade(target);
+  }, [deepLinkOfferId, loading, offers, onGrade]);
+
   const renderOffer = useCallback(({ item: o }: { item: P2POffer }) => {
     const busy = busyId === o.id;
     const isSeller = !o.i_am_buyer;
@@ -383,6 +470,17 @@ function OffersScreen() {
           // one here would erase the buying/selling signal on exactly the cards
           // a user looks at hardest.
           borderLeftColor: o.i_am_buyer ? colors.info : colors.success,
+          ...shadow.card,
+        },
+        // Arrived from a push about THIS trade. Last in the array so it wins
+        // over `done`'s dimming — a closed trade you were just asked to rate
+        // is the one card on screen you were sent here for. Same re-assertion
+        // of the left edge, for the same reason.
+        o.id === deepLinkOfferId && {
+          borderColor: colors.accent,
+          borderWidth: 2,
+          borderLeftColor: o.i_am_buyer ? colors.info : colors.success,
+          opacity: 1,
           ...shadow.card,
         },
       ]}>
@@ -454,12 +552,19 @@ function OffersScreen() {
               styles.rolePillText,
               { color: o.i_am_buyer ? colors.info : colors.success },
             ]}>
-              {o.i_am_buyer ? 'Buying' : 'Selling'}
+              {/* "Buying" alone reads as a category, not as a fact about you —
+                  *"i don't get 'buying', is this the user is buying?"*. The
+                  pronoun is the whole fix. */}
+              {o.i_am_buyer ? 'You buy' : 'You sell'}
             </Text>
           </View>
           <Text style={[styles.status, { color: colors.muted }]}>
-            {STATUS_LABEL[o.status] ?? o.status}
-            {o.counter_count > 0 ? ` · ${o.counter_count} counter${o.counter_count === 1 ? '' : 's'}` : ''}
+            {statusLabel(o.status, o.i_am_buyer, o.i_withdrew)}
+            {/* Only from the SECOND counter on. At one, the status line already
+                says a counter happened, and "Countered · 1 counter" said it
+                twice. Past one, the number is the new information: how far this
+                haggle has actually gone. */}
+            {o.counter_count > 1 ? ` · ${o.counter_count} rounds` : ''}
             {/* An offer with no age can't be judged: "Awaiting seller" reads
                 very differently at two hours than at three weeks, and the
                 server has sent `created_at` all along without anything
@@ -546,6 +651,57 @@ function OffersScreen() {
               <ActivityIndicator size="small" color={colors.accent} />
               <Text style={[styles.workingText, { color: colors.muted }]}>Working…</Text>
             </View>
+          ) : null}
+
+          {/* The buyer answers a counter. A counter replaces `amount` with the
+              seller's figure, so what the buyer is looking at is the seller's
+              offer — and `offerNeedsMyAction` has always agreed, stamping YOUR
+              MOVE on this exact card. It just had no button under it. */}
+          {o.i_am_buyer && o.status === 'countered' ? (
+            <>
+              <AnimatedPressable
+                onPress={() => act(
+                  () => collectorsApi.p2pRespondToOffer(o.id, 'accept'),
+                  o.id,
+                  'Bid accepted',
+                )}
+                disabled={busy}
+                style={[styles.btn, { backgroundColor: colors.accent }]}
+                accessibilityRole="button"
+                accessibilityLabel="Accept this bid"
+              >
+                <Text style={[styles.btnText, { color: colors.accentText }]}>Accept bid</Text>
+              </AnimatedPressable>
+              {/* Confirmed, like the seller's Decline: this ends the
+                  negotiation and the buyer has to start a new offer. */}
+              <AnimatedPressable
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  Alert.alert(
+                    'Turn down this counter?',
+                    'The seller will be told. You can make a new offer, but this one is gone.',
+                    [
+                      { text: 'Keep it', style: 'cancel' },
+                      {
+                        text: 'Turn it down',
+                        style: 'destructive',
+                        onPress: () => act(
+                          () => collectorsApi.p2pRespondToOffer(o.id, 'decline'),
+                          o.id,
+                          'Counter turned down',
+                        ),
+                      },
+                    ],
+                  );
+                }}
+                disabled={busy}
+                style={[styles.btn, styles.btnQuiet]}
+                accessibilityRole="button"
+                accessibilityLabel="Turn down the seller's counter"
+              >
+                <Text style={[styles.btnText, { color: colors.danger }]}>Turn it down</Text>
+              </AnimatedPressable>
+            </>
           ) : null}
 
           {/* Seller decides on an open offer. */}
@@ -676,20 +832,29 @@ function OffersScreen() {
             </AnimatedPressable>
           ) : null}
 
+          {/* "Rate the seller" / "Rate the buyer", not "Grade trade". You are
+              not scoring the transaction, you are scoring the person on the
+              other side of it — and which person that is depends on which side
+              you were on. "Grade" also collides with condition grading, which
+              is a different thing this app does to cards. */}
           {o.can_grade && !o.already_graded ? (
             <AnimatedPressable
               onPress={() => onGrade(o)}
               disabled={busy}
               style={[styles.btn, { backgroundColor: colors.accent }]}
               accessibilityRole="button"
-              accessibilityLabel="Grade the other member"
+              accessibilityLabel={o.i_am_buyer ? 'Rate the seller' : 'Rate the buyer'}
             >
-              <Text style={[styles.btnText, { color: colors.accentText }]}>Grade trade</Text>
+              <Text style={[styles.btnText, { color: colors.accentText }]}>
+                {o.i_am_buyer ? 'Rate the seller' : 'Rate the buyer'}
+              </Text>
             </AnimatedPressable>
           ) : null}
 
           {o.already_graded ? (
-            <Text style={[styles.graded, { color: colors.muted }]}>You graded this trade</Text>
+            <Text style={[styles.graded, { color: colors.muted }]}>
+              {o.i_am_buyer ? 'You rated the seller' : 'You rated the buyer'}
+            </Text>
           ) : null}
         </View>
 
@@ -698,7 +863,7 @@ function OffersScreen() {
     // `settings.hapticsEnabled` is in here because the Decline confirmation
     // fires a haptic directly. Without it a member who turns haptics off keeps
     // feeling that one tap until something else re-renders the row.
-  }, [act, busyId, colors, onCounter, onGrade, openTracking, router,
+  }, [act, busyId, colors, deepLinkOfferId, onCounter, onGrade, openTracking, router,
       settings.currency, settings.numberLocale, settings.hapticsEnabled]);
 
   return (
@@ -757,9 +922,12 @@ function OffersScreen() {
           portfolio leads with committed value rather than with rows. */}
       {!loading && !error && offers.length > 0 ? (
         <View style={styles.summary}>
+          {/* "2 needs you" was a number agreeing with nothing — reported as
+              making no sense, and it doesn't: the noun it counts was missing.
+              Name it, and make the verb agree. */}
           {needsAction > 0 ? (
             <Text style={[styles.summaryStrong, { color: colors.accent }]}>
-              {needsAction} needs you
+              {needsAction === 1 ? '1 bid needs you' : `${needsAction} bids need you`}
             </Text>
           ) : null}
           {needsAction > 0 && committed > 0 ? (
@@ -796,10 +964,17 @@ function OffersScreen() {
           keyExtractor={(o) => o.id}
           renderItem={renderOffer}
           stickySectionHeadersEnabled={false}
+          // The first section carries no header. "NEEDS YOU · 2" sat one line
+          // under "2 bids need you" and repeated it in a quieter voice — the
+          // summary IS this group's heading, and the cards below it are the
+          // only ones stamped YOUR MOVE. The later groups still need naming,
+          // because nothing above them says what they are.
           renderSectionHeader={({ section }) => (
-            <Text style={[styles.sectionHeader, { color: colors.muted }]}>
-              {section.title} · {section.data.length}
-            </Text>
+            section.key === 'mine' ? null : (
+              <Text style={[styles.sectionHeader, { color: colors.muted }]}>
+                {section.title} · {section.data.length}
+              </Text>
+            )
           )}
           contentContainerStyle={[styles.list, { paddingBottom: bottomInset }]}
           showsVerticalScrollIndicator={false}
@@ -1105,20 +1280,32 @@ const styles = StyleSheet.create({
   // Right-aligned and divided off the body. Actions floating left under a
   // paragraph read as more content; on the right of a ruled row they read as
   // the decision. Empty rows collapse — `gap` on an empty View adds nothing.
+  // ONE row. `flexWrap: 'wrap'` let a third button drop onto its own line —
+  // reported on a countered bid, where Accept / Turn it down / Delete rendered
+  // as two rows with Delete stranded underneath, which reads as a separate
+  // decision rather than the third option in a set.
+  //
+  // The buttons shrink instead: `flexShrink` on `btn` plus tighter horizontal
+  // padding keeps all three on the line at the widest label we ship, and
+  // `minHeight: 38` is untouched so the touch targets do not shrink with them.
   actions: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 8,
+    flexDirection: 'row', flexWrap: 'nowrap', gap: 8,
     justifyContent: 'flex-end', alignItems: 'center',
     marginTop: 2,
   },
   // Left of the right-aligned buttons, so it explains the dimming beside it.
   working: { flexDirection: 'row', alignItems: 'center', gap: 7, marginRight: 'auto' },
   workingText: { fontSize: textToken.sm },
-  btn: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 9, borderRadius: radius.md },
+  btn: {
+    minHeight: 38, justifyContent: 'center', alignItems: 'center',
+    paddingHorizontal: 12, paddingVertical: 9, borderRadius: radius.md,
+    flexShrink: 1,
+  },
   btnGhost: { borderWidth: 1, backgroundColor: 'transparent' },
   // No border and no fill: the third action should read as the way out, not as
   // a third equal choice. Accept fills, Counter outlines, Decline recedes.
   btnQuiet: { backgroundColor: 'transparent' },
-  btnText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
+  btnText: { fontSize: textToken.md, fontWeight: fontWeight.bold, textAlign: 'center' },
   graded: { fontSize: textToken.sm, paddingVertical: 9 },
   // Tracking — display-only shipment reference on the card.
   tracking: {

@@ -314,9 +314,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
-  },
+    fontSize: 24,
+    fontWeight: '800', lineHeight: 30},
   subtitle: {
     fontSize: 12,
     marginTop: 4,

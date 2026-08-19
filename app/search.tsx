@@ -10,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Image,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, type Href } from 'expo-router';
@@ -20,6 +21,7 @@ import { Image as ExpoImage } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { dataProvider } from '@/data';
 import { getCategoryById, CATEGORIES } from '@/data/categories';
+import { searchAppHelp } from '@/data/appHelp';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useFollowedCategories } from '@/hooks/useFollowedCategories';
 import { rankSearchResults } from '@/data/searchRanking';
@@ -328,6 +330,17 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
     [results],
   );
 
+  /**
+   * Help topics matching the query.
+   *
+   * Local, and deliberately NOT part of `results`: `/search/unified` is a
+   * network read, and "how do I add an item" is exactly the question somebody
+   * asks when something is not working. Help that needs a working connection
+   * to be found is help you cannot reach when you most need it — so this is
+   * computed from the bundled module and survives the fetch failing.
+   */
+  const helpMatches = useMemo(() => searchAppHelp(query).slice(0, 3), [query]);
+
   // Counts what is RENDERED, not what arrived: an unroutable category row is
   // filtered out above, and counting it here would leave a query whose only
   // hits were unroutable showing an empty screen with no "no results" state.
@@ -335,7 +348,10 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
     ? results.items.length + results.catalog.length + results.users.length + results.events.length + routableCategories.length
     : 0;
 
-  const hasResults = results && totalResults > 0;
+  // `|| helpMatches.length > 0` — a query that ONLY matches help must not show
+  // "no results" above the help section it did find. The empty state and the
+  // rendered sections have to agree, or the screen contradicts itself.
+  const hasResults = (results && totalResults > 0) || helpMatches.length > 0;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -354,6 +370,16 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
         >
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
+        {/* The tab had no title at all — it opened straight onto a search
+            field, so the page never said what it was. Same spec as every other
+            screen title (left, 24, extrabold — docs/ui-playbook.md), sharing
+            the row with the back control the way the Watchlist header does. */}
+        <Text style={[styles.screenTitle, { color: colors.text }]} numberOfLines={1}>
+          {t('search.title')}
+        </Text>
+      </View>
+
+      <View style={styles.searchRow}>
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Ionicons name="search" size={18} color={colors.muted} />
           <TextInput
@@ -379,6 +405,12 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
             // every case.
             autoFocus={!asTab && !initialQuery}
             returnKeyType="search"
+            // `returnKeyType="search"` shipped without a submit handler, so the
+            // Search key on the keyboard did nothing at all — the keyboard just
+            // sat over the results the query had produced. Results are already
+            // live (the query is debounced on change), so submitting means only
+            // one thing: get out of the way.
+            onSubmitEditing={Keyboard.dismiss}
             accessibilityLabel={t('search.input_a11y')}
           />
           {query.length > 0 && (
@@ -389,12 +421,44 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset }]} keyboardShouldPersistTaps="handled">
+      {/* `keyboardDismissMode="on-drag"`: scrolling the results puts the
+          keyboard away. Without it the iOS keyboard covered the results
+          permanently once you had typed — there was no gesture and no button
+          that closed it. `keyboardShouldPersistTaps="handled"` stays so the
+          first tap on a result still opens it rather than being eaten by the
+          dismiss. */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset }]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         {/* Idle state: no query typed. A search screen with an empty body is a
             dead end — the taxonomy gives somewhere to go. Hidden the moment a
             query exists so it never competes with results. */}
         {!loading && query.trim().length === 0 && (
           <View style={styles.browseSection}>
+            {/* Above the grid, because someone who opens Search and types
+                nothing is more often lost than browsing. `npm run
+                check:reachable` flagged /help as a screen that existed and
+                could not be reached — this is its entry point, and the reason
+                it is HERE is that search is where a stuck member goes. */}
+            <AnimatedPressable
+              onPress={() => router.push('/help' as Href)}
+              style={[styles.helpBanner, { backgroundColor: colors.accent + '14', borderColor: colors.accent + '33' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Help with using the app"
+            >
+              <Ionicons name="help-buoy-outline" size={20} color={colors.accent} />
+              <View style={styles.helpRowText}>
+                <Text style={[styles.helpRowTitle, { color: colors.text }]}>Need a helping hand?</Text>
+                <Text style={[styles.helpRowSummary, { color: colors.muted }]} numberOfLines={2}>
+                  Short answers on adding items, selling, alerts and what Pro gets you.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+            </AnimatedPressable>
+
             <Text style={[styles.browseTitle, { color: colors.text }]}>
               {t('search.browse_by_category')}
             </Text>
@@ -459,6 +523,38 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
           <View style={styles.emptyContainer}>
             <Ionicons name="search-outline" size={48} color={colors.muted} />
             <Text style={[styles.emptyText, { color: colors.muted }]}>{t('search.no_results')}</Text>
+          </View>
+        )}
+
+        {/* Help Section — FIRST, and deliberately.
+            Somebody typing "how do I sell" wants the instructions, not a
+            listing whose title happens to contain "sell". A how-to question is
+            unambiguous about what kind of answer it wants, so when one matches
+            it leads. It also renders when the unified-search fetch failed,
+            because it is computed locally. */}
+        {helpMatches.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.muted }]} accessibilityRole="header">HELP</Text>
+            {helpMatches.map((topic) => (
+              <AnimatedPressable
+                key={topic.id}
+                onPress={() => router.push(`/help/${topic.id}` as Href)}
+                style={[styles.helpRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+                accessibilityRole="button"
+                accessibilityLabel={topic.title}
+              >
+                <Ionicons name="help-circle-outline" size={20} color={colors.accent} />
+                <View style={styles.helpRowText}>
+                  <Text style={[styles.helpRowTitle, { color: colors.text }]} numberOfLines={2}>
+                    {topic.title}
+                  </Text>
+                  <Text style={[styles.helpRowSummary, { color: colors.muted }]} numberOfLines={2}>
+                    {topic.summary}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+              </AnimatedPressable>
+            ))}
           </View>
         )}
 
@@ -573,8 +669,33 @@ export default function SearchScreenWithBoundary({ asTab }: { asTab?: boolean } 
 }
 
 const styles = StyleSheet.create({
+  helpBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.lg,
+    padding: 14,
+    marginBottom: 20,
+  },
+  helpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.md,
+    padding: 12,
+    marginBottom: 8,
+  },
+  helpRowText: { flex: 1, gap: 2 },
+  helpRowTitle: { fontSize: text.md, fontWeight: fontWeight.semibold, lineHeight: 19 },
+  helpRowSummary: { fontSize: text.sm, lineHeight: 17 },
   safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 8, gap: 8 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingTop: 8, paddingBottom: 2, gap: 4 },
+  // Search field now sits on its own row under the title, full width, at the
+  // 16 screen gutter rather than the header's 8.
+  searchRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
+  screenTitle: { flex: 1, fontSize: 24, fontWeight: '800', lineHeight: 30 },
   backBtn: { padding: 8 },
   searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: radius.md, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
   searchInput: { flex: 1, fontSize: text.lg, padding: 0 },

@@ -36,7 +36,9 @@ import useAuth from '@/hooks/useAuth';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
 import { UserStatsSection } from '@/components/users/UserStatsSection';
+import { TradeReputationSection } from '@/components/users/TradeReputationSection';
 import { UserAchievementsSection } from '@/components/users/UserAchievementsSection';
+import { UserCategoriesSection } from '@/components/users/UserCategoriesSection';
 import { UserCollectionPreview } from '@/components/users/UserCollectionPreview';
 import { safeGoBack } from '@/lib/goBack';
 
@@ -345,7 +347,7 @@ function UserProfileScreen() {
             {error || 'Collector not found'}
           </Text>
           <Text style={[styles.errorSubtitle, { color: colors.muted }]}>
-            This profile doesn't exist or couldn't be loaded.
+            This profile doesn&apos;t exist or couldn&apos;t be loaded.
           </Text>
           <AnimatedPressable
             style={[styles.retryBtn, { borderColor: colors.border }]}
@@ -425,6 +427,22 @@ function UserProfileScreen() {
           </View>
 
           <UserStatsSection profile={profile} gamProfile={gamProfile} />
+
+          {/* Can I trade with this person? Directly under the stats and above
+              the categories: "who is this collector" is answered by the row
+              above, and this is the next question anyone browsing from a
+              listing actually has. Renders nothing until they have traded, so
+              it costs no space on a profile with no history. */}
+          {userId && !isUserBlocked ? (
+            <TradeReputationSection userId={userId} isSelf={userId === currentUser?.id} />
+          ) : null}
+
+          {/* What they actually collect, and where they place in each category
+              (2026-08-17). Above the CTA row on purpose: the answer to "who is
+              this collector" should come before "message / follow them". */}
+          {userId && !isUserBlocked ? (
+            <UserCategoriesSection userId={userId} isSelf={userId === currentUser?.id} />
+          ) : null}
 
           {/* CTA Row */}
           {!isUserBlocked && (

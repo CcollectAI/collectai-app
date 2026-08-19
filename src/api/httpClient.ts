@@ -7,6 +7,7 @@ import { API_BASE } from "./config";
 import { supabase } from "@/lib/supabase";
 import { popSellerAgeGate } from "./sellerAgeGate";
 import logger from "@/utils/logger";
+import { TimeoutError } from '../lib/withTimeout';
 
 // Guarded Sentry — telemetry for the auth-refresh failure path so the actual
 // reason (refresh-token revoked / network / timeout) is visible in prod rather
@@ -145,17 +146,53 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Timeouts here raise the app's ONE `TimeoutError`, from src/lib/withTimeout.
+ *
+ * A second class of the same name was the first version of this fix, and it
+ * would have been the bug: `usePaginatedList` does `e instanceof TimeoutError`
+ * against the withTimeout one, so a fetch timeout carrying a look-alike class
+ * would have failed that check while reading identically in every log and
+ * stack trace. Same name, different identity, silent miss — the shape of
+ * learning_duplicate_impl_silently_drops_the_fix.
+ *
+ * Why it needs distinguishing at all: `fetch` reports a timeout and a caller's
+ * cancellation as the same `AbortError`, and the retry loop below refused to
+ * retry `AbortError` on the grounds it meant "the caller cancelled" — while the
+ * only thing that ever produced one here was this file's own timer. The retry
+ * the loop documents had never run, and the user-facing message was the
+ * DOMException's own text: a toast reading "Aborted" on a P2P offer action.
+ */
 export async function fetchWithTimeout(
   input: RequestInfo,
   init?: RequestInit,
   timeoutMs: number = REQUEST_TIMEOUT_MS,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
+  // A caller's own signal used to be dropped on the floor: `{...init, signal}`
+  // overwrites it. Forward it instead, so a genuine cancellation still aborts
+  // and stays distinguishable from the timeout above.
+  const callerSignal = init?.signal;
+  const onCallerAbort = () => controller.abort();
+  // Already aborted before we started: `addEventListener` would never fire for
+  // an event that has already happened, so the request would go out anyway.
+  if (callerSignal?.aborted) controller.abort();
+  callerSignal?.addEventListener('abort', onCallerAbort);
+
   try {
     return await fetch(input, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (timedOut) throw new TimeoutError(timeoutMs, 'http');
+    throw err;
   } finally {
     clearTimeout(timer);
+    callerSignal?.removeEventListener('abort', onCallerAbort);
   }
 }
 
@@ -177,8 +214,20 @@ export async function fetchWithRetry(
       return res;
     } catch (err: unknown) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      // Retry on network/timeout errors, not on abort by caller
-      if (attempt < MAX_RETRIES && (err instanceof Error ? err.name : '') !== "AbortError") {
+      // Retry network errors AND timeouts; never retry a caller's cancellation.
+      // The old test was `name !== 'AbortError'`, which excluded the timeout as
+      // well — every AbortError reaching here came from our own timer, so this
+      // branch was dead and a slow request failed on the first attempt.
+      const name = err instanceof Error ? err.name : '';
+      const cancelledByCaller = name === 'AbortError';
+      // A timed-out WRITE may already have been applied — POST
+      // /p2p/offers/{id}/confirm took 26.5s server-side, returned 200, and the
+      // client had given up at 5s. Re-sending that is a second confirm, not a
+      // retry. Only replay methods that are safe to replay.
+      const method = (init?.method ?? 'GET').toUpperCase();
+      const replayable = method === 'GET' || method === 'HEAD';
+      const retriable = replayable || !(err instanceof TimeoutError);
+      if (attempt < MAX_RETRIES && !cancelledByCaller && retriable) {
         await sleep(RETRY_BASE_MS * 2 ** attempt);
         continue;
       }

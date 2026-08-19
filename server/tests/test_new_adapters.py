@@ -172,8 +172,39 @@ class TestPriceChartingCaller:
         assert caller.configured is True
 
     @pytest.mark.asyncio
-    async def test_search_unconfigured_returns_empty(self, unconfigured):
-        result = await unconfigured.search("super mario world")
+    async def test_search_without_a_key_uses_the_public_website(self, unconfigured):
+        """No API key means SCRAPE, not nothing — since 2026-07-22.
+
+        The keyless path is why pricecharting is a live adapter again: it
+        reads the free public site (loose/CIB/new/graded) and landed the first
+        sold comps for retro_games / retro_handhelds, which had zero
+        price_predictions. Asserting `== []` here pinned the state from before
+        that change, and would have gone green again if the fallback were
+        deleted — the opposite of what anyone wants to know.
+
+        ⚠️ The keyless fallback needs `_is_relevant` in front of it: the
+        public search returns the closest products across ALL PriceCharting
+        databases, so an unguarded query silently yields cross-category junk
+        (a funko query returning a Pokémon card). See
+        learning_keyless_pricecharting_needs_console_guard.
+        """
+        with patch.object(
+            type(unconfigured), "_search_web", new_callable=AsyncMock,
+            return_value=[{"title": "Super Mario World", "price": 25.0}],
+        ) as web:
+            result = await unconfigured.search("super mario world")
+
+        web.assert_awaited_once()
+        assert result and result[0]["title"] == "Super Mario World"
+
+    @pytest.mark.asyncio
+    async def test_search_without_a_key_never_calls_the_api(self, unconfigured):
+        """The fallback must not reach the paid endpoint on an empty key."""
+        with patch.object(
+            type(unconfigured), "_search_web", new_callable=AsyncMock, return_value=[],
+        ):
+            result = await unconfigured.search("super mario world")
+        # A scrape that finds nothing is still an honest empty list.
         assert result == []
 
     @pytest.mark.asyncio

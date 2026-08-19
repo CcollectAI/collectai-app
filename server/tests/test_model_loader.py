@@ -19,12 +19,22 @@ import app.ml.model_loader as ml
 
 @pytest.fixture(autouse=True)
 def _clear_caches():
-    """Clear model caches before and after each test."""
+    """Clear model caches before and after each test.
+
+    `_REGISTRY_SCHEMA_OK` is reset too: it is a MODULE GLOBAL memoising one
+    `information_schema` probe, so the first test whose mock conn cannot
+    answer that probe pins it False for the entire session — every later test
+    then gets None out of `_fetch_model_registry_entry` regardless of what it
+    mocked. Two tests in this file were passing for exactly that reason
+    rather than for the reason they claim.
+    """
     ml._model_cache.clear()
     ml._canary_cache.clear()
+    ml._REGISTRY_SCHEMA_OK = None
     yield
     ml._model_cache.clear()
     ml._canary_cache.clear()
+    ml._REGISTRY_SCHEMA_OK = None
 
 
 def _make_registry_entry(
@@ -149,13 +159,43 @@ class TestFetchModelRegistryEntry:
         mock_pool.acquire.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
         mock_pool.acquire.return_value.__aexit__ = AsyncMock(return_value=False)
 
-        with patch.object(ml, "get_db_pool", return_value=mock_pool):
+        # `_schema_is_compatible` runs BEFORE the SELECT and guards it. The
+        # mock conn cannot answer its information_schema probe, so without
+        # this patch the function returns None and the test reads as "no row"
+        # — which is what it had been doing.
+        with patch.object(ml, "get_db_pool", return_value=mock_pool), \
+             patch.object(ml, "_schema_is_compatible", new_callable=AsyncMock,
+                          return_value=True):
             # Mock fetchrow to return a dict-like object
             mock_conn.fetchrow = AsyncMock(return_value=row)
             result = await ml._fetch_model_registry_entry("watches", is_canary=False)
 
         assert result is not None
         assert result["category"] == "watches"
+
+    @pytest.mark.asyncio
+    async def test_incompatible_schema_skips_the_lookup_entirely(self):
+        """The guard's whole purpose: degrade instead of erroring.
+
+        When `model_registry` lacks the columns this loader needs, DB-side
+        lookups are skipped and valuation falls back to disk/empirical rather
+        than raising. Pinned because the two "returns None" tests below cannot
+        tell this path apart from a genuine miss.
+        """
+        row = _make_registry_entry()
+        mock_conn = AsyncMock()
+        mock_conn.fetchrow = AsyncMock(return_value=row)
+        mock_pool = MagicMock()
+        mock_pool.acquire.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_pool.acquire.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        with patch.object(ml, "get_db_pool", return_value=mock_pool), \
+             patch.object(ml, "_schema_is_compatible", new_callable=AsyncMock,
+                          return_value=False):
+            result = await ml._fetch_model_registry_entry("watches")
+
+        assert result is None
+        mock_conn.fetchrow.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_returns_none_when_no_row(self):
@@ -189,7 +229,9 @@ class TestFetchModelRegistryEntry:
         mock_pool.acquire.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
         mock_pool.acquire.return_value.__aexit__ = AsyncMock(return_value=False)
 
-        with patch.object(ml, "get_db_pool", return_value=mock_pool):
+        with patch.object(ml, "get_db_pool", return_value=mock_pool), \
+             patch.object(ml, "_schema_is_compatible", new_callable=AsyncMock,
+                          return_value=True):
             result = await ml._fetch_model_registry_entry("watches", is_canary=True)
 
         assert result is not None
@@ -316,12 +358,37 @@ class TestLoadModelEntry:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_returns_none_when_both_inline_and_s3_fail(self):
+    async def test_returns_none_when_inline_s3_and_disk_all_fail(self):
+        """THREE sources, not two — disk was added after this test was written.
+
+        `_load_model_entry` falls back to `artifacts/{category}/{slot}/model.json`
+        when the registry yields nothing usable, which is the path that keeps
+        valuation alive while the registry schema is incompatible. The test
+        left it unpatched and got a real on-disk model back.
+        """
         entry = _make_registry_entry(artifact_json="{{invalid json", s3_key="bad/key")
         with patch.object(ml, "_fetch_model_registry_entry", new_callable=AsyncMock, return_value=entry), \
-             patch.object(ml, "_load_artifact_from_s3", return_value=None):
+             patch.object(ml, "_load_artifact_from_s3", return_value=None), \
+             patch.object(ml, "_load_artifact_from_disk", return_value=None):
             result = await ml._load_model_entry("watches")
         assert result is None
+
+    @pytest.mark.asyncio
+    async def test_disk_fallback_is_used_and_labelled(self):
+        """The fallback that actually runs in production today.
+
+        `_loaded_from` is how a caller tells a registry-backed model from a
+        disk one; without it a silently-stale on-disk artifact is
+        indistinguishable from the live model.
+        """
+        entry = _make_registry_entry(artifact_json="{{invalid json", s3_key="bad/key")
+        with patch.object(ml, "_fetch_model_registry_entry", new_callable=AsyncMock, return_value=entry), \
+             patch.object(ml, "_load_artifact_from_s3", return_value=None), \
+             patch.object(ml, "_load_artifact_from_disk", return_value={**SAMPLE_ARTIFACT}):
+            result = await ml._load_model_entry("watches")
+
+        assert result is not None
+        assert result["_loaded_from"] == "disk:active"
 
     @pytest.mark.asyncio
     async def test_caches_after_load(self):

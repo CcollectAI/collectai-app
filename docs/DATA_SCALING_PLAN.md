@@ -397,3 +397,171 @@ second batch still missed two exact Cartier duplicates: house-brand titles
 (Cartier, Van Cleef & Arpels) don't repeat the brand in the title the way
 `Rolex Submariner` does, so the comparison has to strip the brand prefix before
 matching. Compare normalised titles both ways or you are not checking anything.
+
+---
+
+## What this actually costs, and what it costs at 1M users (appended 2026-08-15)
+
+Measured, not estimated: on 2026-08-15 the DB was **4,949 MB** on a **Micro**
+instance (`shared_buffers` 256 MB, 60 connections) and the dashboard read
+**76% memory, 67% CPU, 76% compute — with no users on the app**. Disk was 30%
+(5.14 GB of 18 GB provisioned). So the binding constraint was never disk; it
+was RAM and IO.
+
+The symptom that exposed it: `SELECT count(*) FROM category_items` (225k rows,
+253 MB) took **over 60 seconds**, and a 200-row PostgREST upsert into that
+table died on the pooler's 30 s statement timeout — 11 batches attempted, 0
+written. Small tables (`items`, 75 rows) answered instantly. That pattern —
+"anything that must leave cache crawls" — is the signature of a working set
+larger than `shared_buffers`.
+
+### Compute prices (from the project dashboard, 2026-08-15)
+
+| Size | $/hour | ≈$/month | RAM | Direct conns |
+|---|---|---|---|---|
+| Micro | $0.01344 | $9.81 | 1 GB | 60 |
+| **Small** | $0.0206 | **$15.04** | 2 GB | 90 |
+| Medium | $0.0822 | $60.01 | 4 GB | 120 |
+| Large | $0.1517 | $110.74 | 8 GB | 160 |
+| XL | $0.2877 | $210.02 | 16 GB | 240 |
+
+Pro ($25/mo) includes 8 GB disk and a **$10 credit that covers one Micro**, so
+the step from Micro to Small costs about **$5/month net**.
+
+**Why Small specifically:** `category_items` is 253 MB (125 MB heap + 128 MB
+indexes). Micro's 256 MB of shared buffers cannot hold it alongside anything
+else; Small's ~512 MB can. That is a targeted fix for the table that actually
+timed out, not a general "bigger is better".
+
+### The rule for choosing a size
+
+Pick on evidence, not feel. Upgrade when any of these is true:
+
+- dashboard **memory > 70% sustained** (it was 76% at idle),
+- **connections > 70% of max** (25 of 60 were used at idle by the bake alone),
+- `canceling statement due to statement timeout` appears in `bake.log`,
+- a table in the hot path exceeds `shared_buffers`.
+
+### Cost at 1,000,000 MAU
+
+Supabase Pro rates, August 2026. The dominant term is **MAU billing**, which is
+linear and unavoidable:
+
+| Line | Rate | At 1M MAU | Notes |
+|---|---|---|---|
+| **MAU** | 100k included, then **$0.00325** | **$2,925** | 900k billable. The single biggest line |
+| **Egress** | 250 GB, then **$0.09/GB** | **~$1,780** | assumes 20 MB/user/month of API + image traffic |
+| Compute | XL–2XL + replica | $400–1,000 | 1M MAU is not a single-instance workload |
+| File storage | 100 GB, then $0.0213/GB | ~$210 | assumes ~10 MB of photos per user |
+| Realtime | 500 conns, then $10/1k; 5M msgs, then $2.50/M | ~$330 | chat + presence |
+| Disk | 8 GB, then $0.125/GB | ~$12 | **negligible, always** |
+| | | **≈ $5,700/mo** | ~$12k if images/egress run heavy |
+
+**The shape of that number matters more than the number.** Two thirds of it is
+MAU + egress, both of which are *per user* and neither of which is affected by
+anything in this document. The ingestion pipeline — every partition, rollup and
+retention rule here — sits in the **$12/month disk line**.
+
+So: the database work in this file is not what gets expensive at scale. It is
+what makes the app *usable on a small instance today*. Do not let a 5 GB
+ingestion pipeline force an XL instance while you have 30 users; tighten
+retention instead, which is free.
+
+For context, 1M MAU at 3% conversion on €4.99/mo is ~€150k/month of revenue, so
+~$6k of infrastructure is around 4% of it. Apple's 15–30% cut is an order of
+magnitude larger than every line above combined.
+
+### Retention tightened (2026-08-15)
+
+Both rollups had windows longer than the data had ever been, so neither had
+ever deleted a row:
+
+| table | was | now | steady-state cap |
+|---|---|---|---|
+| `price_prediction_daily` | 180d | **90d** | 3.0 GB → **1.5 GB** |
+| `market_hits_daily` | 400d | **180d** | 4.4 GB → **2.0 GB** |
+
+Changed via `cron.alter_job(36, …)` and `cron.alter_job(40, …)`. Projected
+steady state drops from **~11.6 GB to ~5.6 GB**. Older history remains readable
+from the S3 cold tier through `warm_tier` (predict_router Tier 3).
+
+Note that `DELETE` does not return space to the OS — it only makes it
+reusable. `price_prediction_daily` also carries ~1.17M dead tuples (15.8%) that
+autovacuum will not touch, because the trigger is 20%. Reclaiming that needs a
+`VACUUM FULL`, which takes an exclusive lock.
+
+---
+
+## Lorcana: three keyspaces, one price source (appended 2026-08-15)
+
+`lorcana` was **0% priceable** — 6,967 catalogue rows, zero predictions — while
+17,095 eBay hits a month arrived and were discarded, because valuation excludes
+`is_listing`. Two bugs, both silent:
+
+1. **`api.lorcanajson.org` now answers with a self-signed certificate.** Every
+   fetch failed `CERTIFICATE_VERIFY_FAILED`, and `import_lorcana.py` caught it
+   and fell back to 795 hand-curated cards — then logged "Import Complete" with
+   row counts. Failure was indistinguishable from success. The fallback is gone;
+   the importer now raises rather than pretending.
+2. **It imported `MarketHit` and never constructed one.** Even against a working
+   API it could not have written a price. It now writes them.
+
+Source is **Lorcast** (`api.lorcast.com/v0`), which carries `prices`
+(usd/usd_foil), `set.code`, `collector_number`, `rarity` AND `tcgplayer_id` —
+catalogue and price from one source, so
+`category_items.category||':'||item_key == market_hits.item_ref` holds by
+construction.
+
+### The three keyspaces, and how each reaches a price
+
+| source | rows | item_key shape | how it prices | coverage |
+|---|---|---|---|---|
+| tcgcsv | 6,172 | `tcgplayer:<id>:<variant>` | crosswalk on **tcgplayer_id** | **100%** |
+| lorcast | 2,847 | `<set>-<number>` | direct, by construction | 97.8% |
+| seed | 795 | `<set>-<name-slug>` | incidental eBay hits only | 55.8% |
+
+Overall **0% → 95.8%** (9,401 of 9,814).
+
+**Why a crosswalk is legitimate here and was not before.** §"lorcana/digimon/
+one_piece — SOLVED, but NOT by a crosswalk" records name matching as measured
+and rejected: 224/226 ambiguous, 0/795 with a set tiebreak. **This is not name
+matching.** The tcgcsv key literally contains the TCGplayer product id and
+Lorcast publishes `tcgplayer_id`: an exact integer join, nothing scored, no tie
+broken. 5,416 of 6,172 matched; the other 756 are skipped, never guessed.
+
+Deleting the old rows was considered and rejected — **3 of the 5 real lorcana
+items members hold sit on tcgcsv keys**, and 2 more on seed keys. Retiring a
+keyspace users are standing on is not a cleanup.
+
+### Base and foil are separate refs
+
+`tcgplayer:<id>:cold_foil` maps to `lorcana:<set>-<num>-foil`, not to the base
+ref. On Lorcana that gap is not cosmetic: P1 promos run to $1,250 foil with no
+base price at all. Writing both finishes under one `item_ref` makes the daily
+rollup take a median *across* them — a price of nothing, and the same "per card,
+not per printing" error the yugioh passcode crosswalk was retired for.
+
+### `ON CONFLICT DO NOTHING` cannot dedupe market_hits
+
+`market_hits`' primary key is **`(id, seen_at)` with a generated `id`**, so the
+conflict clause never fires and a re-run inserts a second copy of every row.
+A compute resize interrupted the first load and the retry produced 8,420 rows
+where 5,420 were expected; 3,000 had to be deleted by hand.
+
+`load_lorcana_direct.py` is therefore idempotent **by construction**: it deletes
+its own provider's rows for the current day before inserting, scoped to
+`provider='lorcast' AND seen_at::date = current_date` so it can never touch
+another provider or an earlier day. Verified by running it twice: 5,420 → 5,420.
+
+**Generalise:** any importer writing to `market_hits` needs this. The conflict
+clause is decoration there.
+
+### Still true afterwards
+
+- 62 Lorcast cards carry no price at all.
+- 756 tcgcsv product ids are absent from Lorcast.
+- Prices reaching `mv_catalog_item_price` are **not filtered by `is_listing`**,
+  so a catalogue price can be an eBay asking price rather than a sold comp. Two
+  of the five user items above price that way (€50.00, €167.00). That is
+  pre-existing behaviour for every category, not specific to lorcana, but it
+  means "catalogue price" and "valuation" do not mean the same thing.

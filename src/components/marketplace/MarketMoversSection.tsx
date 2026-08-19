@@ -143,7 +143,9 @@ function MarketMoversSectionInner() {
         <AnimatedPressable
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-            router.push('/settings' as Href);
+            // Paywall, not Settings — same defect as UpgradePrompt.tsx, fixed
+            // 2026-08-15. Swept for with the accessibilityLabel/onPress pair.
+            router.push('/subscription' as Href);
           }}
           style={[styles.upgradeBtn, { backgroundColor: colors.accent }]}
           accessibilityRole="button"
@@ -160,7 +162,12 @@ function MarketMoversSectionInner() {
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Market Movers</Text>
+        <View style={styles.titleWrap}>
+          <Text style={[styles.title, { color: colors.text }]}>Market Movers</Text>
+          {/* The window belongs to the heading, not to a label floating at the
+              end of the filter row. Same information, one less thing to scan. */}
+          <Text style={[styles.window, { color: colors.muted }]}>7d</Text>
+        </View>
         <AnimatedPressable
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
@@ -199,13 +206,12 @@ function MarketMoversSectionInner() {
             </AnimatedPressable>
           );
         })}
-        <Text style={[styles.window, { color: colors.muted }]}>7d change</Text>
       </View>
 
       {loading ? (
         <ActivityIndicator style={styles.loader} color={colors.muted} />
       ) : (
-        movers.map((m) => {
+        movers.map((m, idx) => {
           const delta = m.delta_pct_7d ?? 0;
           // Server-computed from the same columns as the percentage — never
           // recomputed here (see TopMover.delta_eur_*).
@@ -216,7 +222,14 @@ function MarketMoversSectionInner() {
             <AnimatedPressable
               key={m.item_ref}
               onPress={() => openItem(m)}
-              style={[styles.row, { borderBottomColor: colors.border }]}
+              style={[
+                styles.row,
+                // No hairline under the last row: it would sit directly above
+                // the card's own bottom padding, drawing a line to nothing.
+                idx === movers.length - 1
+                  ? styles.rowLast
+                  : { borderBottomColor: colors.border },
+              ]}
             >
               {m.image_url ? (
                 <Image source={{ uri: m.image_url }} style={styles.thumb} contentFit="contain" transition={120} />
@@ -261,15 +274,16 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.md,
     borderWidth: 1,
-    padding: 16,
-    marginBottom: 16,
+    padding: 12,
+    marginBottom: 12,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
+  titleWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   title: {
     fontSize: text.lg,
     fontWeight: fontWeight.bold,
@@ -282,14 +296,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
     borderRadius: radius.pill,
     borderWidth: 1,
   },
@@ -298,8 +312,8 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
   window: {
-    marginLeft: 'auto',
     fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
   },
   loader: {
     marginVertical: 16,
@@ -307,13 +321,16 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 7,
     borderBottomWidth: 1,
-    gap: 12,
+    gap: 10,
   },
+  // Keeps the row's height identical to its neighbours — setting borderWidth to
+  // 0 instead would make the last row 1pt shorter than the rest.
+  rowLast: { borderBottomColor: 'transparent' },
   thumb: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: radius.sm,
   },
   thumbPlaceholder: {
@@ -329,7 +346,7 @@ const styles = StyleSheet.create({
   },
   sub: {
     fontSize: text.sm,
-    marginTop: 2,
+    marginTop: 1,
   },
   // ── Locked (non-Pro) preview ──────────────────────────────────────────
   proPill: {
@@ -337,7 +354,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill,
   },
   proPillText: { fontSize: text.sm, fontWeight: fontWeight.extrabold, letterSpacing: 0.4 },
-  lockedBlurb: { fontSize: text.md, lineHeight: 19, marginBottom: 10 },
+  lockedBlurb: { fontSize: text.md, lineHeight: 19, marginBottom: 8 },
   lockedTextCol: { flex: 1, gap: 6, marginLeft: 10 },
   // Masked values. Rounded bars read as "content withheld"; a blur would read
   // as a rendering fault, and would also mean the real numbers were fetched.
@@ -345,8 +362,8 @@ const styles = StyleSheet.create({
   lockedBarSm: { height: 8, borderRadius: 4 },
   lockedDelta: { width: 52, height: 12, borderRadius: 6 },
   upgradeBtn: {
-    marginTop: 12, borderRadius: radius.md,
-    paddingVertical: 11, alignItems: 'center',
+    marginTop: 10, borderRadius: radius.md,
+    paddingVertical: 10, alignItems: 'center',
   },
   upgradeBtnText: { fontSize: text.md, fontWeight: fontWeight.bold },
   deltaCol: { alignItems: 'flex-end', minWidth: 76 },

@@ -336,6 +336,10 @@ export type P2POffer = {
    *  button that 404s. */
   tracking_url: string | null;
   i_am_buyer: boolean;
+  /** True when YOU were the one who walked away. Either side may
+   *  withdraw (a seller can retract a counter), so `status:'cancelled'`
+   *  alone never says who — server-derived from `withdrawn_by`. */
+  i_withdrew?: boolean | null;
   /** Server-computed so the client never re-derives the state machine. */
   can_confirm: boolean;
   can_grade: boolean;

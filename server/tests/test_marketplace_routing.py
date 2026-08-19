@@ -149,6 +149,14 @@ class TestAdapterServesCategory:
         ("cardmarket", "pokemon"),
         ("reverb", "vinyl_records"),
         ("grailed", "sneakers"),
+        # RE-ENABLED 2026-07-22: the caller scrapes the free public website
+        # (loose/CIB/new/graded) when there is no API key, which landed sold
+        # comps for retro_games / retro_handhelds / etc. — categories that had
+        # ZERO price_predictions before it. It sat in the disabled list below
+        # for a month after that, so the suite asserted the opposite of the
+        # routing table it was testing.
+        ("pricecharting", "retro_games"),
+        ("pricecharting", "retro_handhelds"),
     ])
     def test_known_true_pairs(self, adapter, category):
         assert adapter_serves_category(adapter, category) is True
@@ -163,7 +171,6 @@ class TestAdapterServesCategory:
         ("keh", "vintage_cameras"),
         ("whisky_auctioneer", "whiskey"),
         ("masterofmalt", "whiskey"),
-        ("pricecharting", "retro_games"),
         ("stockx", "sneakers"),
         ("comc", "sportscards"),
         # 2026-05-10: catawiki Akamai WAF (HTTP 403),

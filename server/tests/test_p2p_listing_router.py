@@ -248,3 +248,92 @@ class TestItemInheritance:
                      "payload.description,"):
             assert dead not in binds, \
                 f"INSERT binds {dead} again instead of the inherited value"
+
+
+class TestSellerReputationReachesBrowse:
+    """The browse tile shows a seller's record, and it must be QUERIED.
+
+    Written to fail against the pre-2026-08-18 code: `ListingOut` has carried
+    `seller_completed_trades` / `seller_positive_pct` since Stage 2, but only
+    the DETAIL query selected the underlying columns. The browse response
+    therefore served the Pydantic DEFAULTS — "0 completed trades" for every
+    seller on the platform — with nothing erroring anywhere. Same shape as
+    `unknown-as-zero`: a default standing in for a question never asked.
+    """
+
+    def test_both_listing_queries_select_the_reputation_columns(self):
+        for fn in (p2p.browse_listings, p2p.get_listing):
+            src = _code_only(inspect.getsource(fn))
+            assert "_SELLER_REPUTATION_SQL" in src, (
+                f"{fn.__name__} no longer includes the shared reputation SQL — "
+                "the response would fall back to ListingOut's zero defaults"
+            )
+
+    def test_the_reputation_sql_counts_trades_on_both_sides(self):
+        sql = p2p._SELLER_REPUTATION_SQL
+        assert "seller_completed_trades" in sql
+        assert "seller_total_grades" in sql
+        assert "seller_positive_grades" in sql
+        # A member is usually both buyer and seller; counting one side only
+        # would under-report every trade they bought.
+        assert "so.seller_id = l.user_id OR so.buyer_id = l.user_id" in sql
+        assert "status = 'completed'" in sql, \
+            "an unanchored grade is the farmable rating this design prevents"
+
+    def test_both_mappers_go_through_the_shared_helper(self):
+        for fn in (p2p.browse_listings, p2p.get_listing):
+            src = _code_only(inspect.getsource(fn))
+            assert "_reputation_fields(r)" in src, (
+                f"{fn.__name__} maps reputation by hand again — two copies of "
+                "the threshold drift apart"
+            )
+
+
+class TestReputationHidingRule:
+    """`positive_pct` is None below the shared threshold, and that is the
+    product decision: '0% positive' off one grade is a smear, '100%' off one
+    is not credibility."""
+
+    @staticmethod
+    def _row(**kw):
+        base = {
+            "seller_completed_trades": 0,
+            "seller_total_grades": 0,
+            "seller_positive_grades": 0,
+        }
+        base.update(kw)
+        return base
+
+    def test_below_threshold_hides_the_percentage(self):
+        from app.features.p2p_offers_router import _MIN_GRADES_TO_SHOW
+
+        n = _MIN_GRADES_TO_SHOW - 1
+        out = p2p._reputation_fields(self._row(
+            seller_completed_trades=n, seller_total_grades=n, seller_positive_grades=n,
+        ))
+        assert out["seller_positive_pct"] is None
+        # The COUNT is still published — a fact, meaningful at n=1.
+        assert out["seller_completed_trades"] == n
+        assert out["seller_total_grades"] == n
+
+    def test_at_threshold_publishes_a_rounded_percentage(self):
+        from app.features.p2p_offers_router import _MIN_GRADES_TO_SHOW
+
+        total = _MIN_GRADES_TO_SHOW
+        out = p2p._reputation_fields(self._row(
+            seller_completed_trades=total,
+            seller_total_grades=total,
+            seller_positive_grades=total - 1,
+        ))
+        assert out["seller_positive_pct"] == round(100.0 * (total - 1) / total)
+
+    def test_a_query_that_selects_none_of_it_maps_to_zero_not_a_crash(self):
+        # `_row_get` exists so a third query can be added without a KeyError on
+        # one code path only.
+        out = p2p._reputation_fields({})
+        assert out == {
+            "seller_completed_trades": 0,
+            "seller_total_grades": 0,
+            "seller_positive_grades": 0,
+            "seller_positive_pct": None,
+        }

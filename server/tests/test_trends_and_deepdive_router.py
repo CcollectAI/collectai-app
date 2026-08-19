@@ -527,22 +527,31 @@ class TestCategoryDeepDiveMockedDB:
             {"day": NOW, "avg_price": 25.50, "cnt": 100, "grand_count": 200, "overall_avg": 28.0},
             {"day": datetime(2026, 3, 2, tzinfo=timezone.utc), "avg_price": 30.0, "cnt": 100, "grand_count": 200, "overall_avg": 28.0},
         ]
+        # Two rows, not one carrying both ranks. The query is a UNION ALL of a
+        # trade-ranked branch (`NULL::bigint AS mover_rank`) and a mover-ranked
+        # branch (`NULL::bigint AS trade_rank`), so a single row with both set
+        # is a shape the database cannot return — and the mapper filters on
+        # exactly those NULLs.
         combo_rows = [
             {
-                "normalized_key": "pokemon:charizard",
-                "name": "Charizard Holo",
-                "trades": 50,
-                "first_price": 20.0,
-                "last_price": 30.0,
-                "price_cnt": 5,
-                "change_pct": 0.5,
-                "trade_rank": 1,
-                "mover_rank": 1,
+                "normalized_key": "pokemon:charizard", "name": "Charizard Holo",
+                "trades": 50, "change_pct": 0.5,
+                "trade_rank": 1, "mover_rank": None,
+            },
+            {
+                "normalized_key": "pokemon:charizard", "name": "Charizard Holo",
+                "trades": 50, "change_pct": 0.5,
+                "trade_rank": None, "mover_rank": 1,
             },
         ]
         conn.fetch = AsyncMock(side_effect=[daily_rows, combo_rows])
 
-        resp = client.get("/analytics/categories/pokemon/deep-dive?days=30")
+        # `include_rankings` — the rankings pass is OFF by default (it is a
+        # second GROUP BY with percentile_cont over the whole window, ~12s of
+        # mtg's ~17s, and no FE screen consumes it). Without the flag the
+        # endpoint never runs that query and both lists are correctly empty,
+        # which is what these assertions were reading as a failure.
+        resp = client.get("/analytics/categories/pokemon/deep-dive?days=30&include_rankings=true")
         assert resp.status_code == 200
         data = resp.json()
         assert data["category"] == "pokemon"
@@ -627,13 +636,14 @@ class TestCategoryDeepDiveMockedDB:
         daily_rows = [
             {"day": NOW, "avg_price": 10.0, "cnt": 50, "grand_count": 50, "overall_avg": 10.0},
         ]
+        # trade-ranked branch only: mover_rank is NULL on every row it emits.
         combo_rows = [
-            {"normalized_key": "k1", "name": "Item A", "trades": 20, "first_price": 10.0, "last_price": 15.0, "price_cnt": 3, "change_pct": 0.5, "trade_rank": 2, "mover_rank": 5},
-            {"normalized_key": "k2", "name": "Item B", "trades": 50, "first_price": 10.0, "last_price": 12.0, "price_cnt": 3, "change_pct": 0.2, "trade_rank": 1, "mover_rank": 8},
+            {"normalized_key": "k1", "name": "Item A", "trades": 20, "change_pct": 0.5, "trade_rank": 2, "mover_rank": None},
+            {"normalized_key": "k2", "name": "Item B", "trades": 50, "change_pct": 0.2, "trade_rank": 1, "mover_rank": None},
         ]
         conn.fetch = AsyncMock(side_effect=[daily_rows, combo_rows])
 
-        resp = client.get("/analytics/categories/pokemon/deep-dive?days=30")
+        resp = client.get("/analytics/categories/pokemon/deep-dive?days=30&include_rankings=true")
         data = resp.json()
         assert data["top_traded_items"][0]["trades"] == 50
         assert data["top_traded_items"][1]["trades"] == 20
@@ -647,13 +657,14 @@ class TestCategoryDeepDiveMockedDB:
         daily_rows = [
             {"day": NOW, "avg_price": 10.0, "cnt": 50, "grand_count": 50, "overall_avg": 10.0},
         ]
+        # mover-ranked branch only: trade_rank is NULL on every row it emits.
         combo_rows = [
-            {"normalized_key": "k1", "name": "Gainer", "trades": 5, "first_price": 10.0, "last_price": 15.0, "price_cnt": 3, "change_pct": 0.5, "trade_rank": 15, "mover_rank": 2},
-            {"normalized_key": "k2", "name": "Big Loser", "trades": 3, "first_price": 10.0, "last_price": 2.0, "price_cnt": 3, "change_pct": -0.8, "trade_rank": 20, "mover_rank": 1},
+            {"normalized_key": "k1", "name": "Gainer", "trades": 5, "change_pct": 0.5, "trade_rank": None, "mover_rank": 2},
+            {"normalized_key": "k2", "name": "Big Loser", "trades": 3, "change_pct": -0.8, "trade_rank": None, "mover_rank": 1},
         ]
         conn.fetch = AsyncMock(side_effect=[daily_rows, combo_rows])
 
-        resp = client.get("/analytics/categories/mtg/deep-dive?days=30")
+        resp = client.get("/analytics/categories/mtg/deep-dive?days=30&include_rankings=true")
         data = resp.json()
         # Sorted by abs(change_pct): 0.8 > 0.5
         assert abs(data["top_movers"][0]["change_pct"]) >= abs(data["top_movers"][1]["change_pct"])

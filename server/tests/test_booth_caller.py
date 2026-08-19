@@ -59,23 +59,37 @@ def _fake_response(status_code: int = 200, text: str = "", headers: dict | None 
 # Sample HTML for parsing tests
 # ---------------------------------------------------------------------------
 
+# Booth's real search markup: each result is a `<li class="item-card">` carrying
+# `data-product-*` attributes, with the canonical URL on the inner
+# `.item-card__title-anchor`. Mirrors `_parse_search_page`'s docstring, which is
+# written from the live page.
+#
+# The previous fixture was `<div class="item-card">` with `.item-card__title`
+# and a `<span class="price">` — a shape Booth does not emit and the parser
+# stopped selecting when it was rewritten to read the attributes.
+# `soup.select("li.item-card")` matched nothing, so the test drove the parser
+# with markup no live response could produce.
 SAMPLE_BOOTH_HTML = """
 <html>
 <body>
-<div class="item-card">
-  <a href="/en/items/1234567">
-    <div class="item-card__title">Hololive Acrylic Stand Pekora</div>
-    <img src="https://s2.booth.pm/images/hololive-pekora.jpg" />
-    <span class="price">¥2,500</span>
-  </a>
-</div>
-<div class="item-card">
-  <a href="/en/items/7654321">
-    <div class="item-card__title">Nijisanji Fan Art Print Set</div>
-    <img src="https://s2.booth.pm/images/nijisanji-print.jpg" />
-    <span class="price">¥1,800</span>
-  </a>
-</div>
+<ul>
+<li class="item-card"
+    data-product-id="1234567"
+    data-product-name="Hololive Acrylic Stand Pekora"
+    data-product-price="2500"
+    data-product-brand="pekoshop">
+  <a class="item-card__title-anchor" href="/en/items/1234567">Hololive Acrylic Stand Pekora</a>
+  <img src="https://s2.booth.pm/images/hololive-pekora.jpg" />
+</li>
+<li class="item-card"
+    data-product-id="7654321"
+    data-product-name="Nijisanji Fan Art Print Set"
+    data-product-price="1800"
+    data-product-brand="nijiart">
+  <a class="item-card__title-anchor" href="/en/items/7654321">Nijisanji Fan Art Print Set</a>
+  <img src="https://s2.booth.pm/images/nijisanji-print.jpg" />
+</li>
+</ul>
 </body>
 </html>
 """
@@ -132,6 +146,21 @@ class TestBoothCallerSearch:
 
     @pytest.mark.asyncio
     async def test_search_parses_html_results(self, caller):
+        # TWO undeclared dependencies, and they fail differently:
+        #   * bs4 missing  -> `_parse_search_page` logs a warning, returns []
+        #   * lxml missing -> `BeautifulSoup(html, "lxml")` raises
+        #     FeatureNotFound, which `search`'s `except Exception` turns into a
+        #     circuit-breaker failure and []
+        # Both look exactly like "the parser is broken" from here, and neither
+        # is declared: booth, suruga_ya and yahoo_auctions import bs4 directly
+        # while requirements.txt names neither bs4 nor lxml — they arrive
+        # transitively through crawl4ai. suruga_ya and yahoo_auctions are LIVE
+        # (not in DISABLED_ADAPTERS), and both failure paths degrade to "0
+        # hits" rather than erroring, so losing that transitive dependency
+        # would read as two sources quietly going dry.
+        pytest.importorskip("bs4", reason="booth parsing needs BeautifulSoup")
+        pytest.importorskip("lxml", reason="_parse_search_page asks for the lxml tree builder")
+
         mock_client = AsyncMock(spec=httpx.AsyncClient)
         mock_client.get = AsyncMock(return_value=_fake_response(200, text=SAMPLE_BOOTH_HTML))
         mock_client.is_closed = False
@@ -148,6 +177,12 @@ class TestBoothCallerSearch:
         assert hit["source_currency"] == "JPY"
         assert hit["is_sold"] is False
         assert hit["sold_at"] is None
+        # Both cards parsed, and the values come from the data-product-*
+        # attributes — a selector matching the wrapper but not the attributes
+        # would still return two objects full of blanks.
+        assert len(results) == 2
+        assert hit["title"] == "Hololive Acrylic Stand Pekora"
+        assert hit["source_price"] == 2500.0
 
     @pytest.mark.asyncio
     async def test_search_non_200_records_failure(self, caller):

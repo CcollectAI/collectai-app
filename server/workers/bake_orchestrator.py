@@ -93,6 +93,13 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     ("deal_discovery",          "workers.deal_discovery_worker",      "run_once", True),
     # Daily portfolio/item value-change notifications.
     ("value_change_worker",     "workers.value_change_worker",        "run_once", True),
+    # One "rate your trade" reminder per party, 24h after a completed P2P trade
+    # that is still ungraded. ON pre-launch, unlike the other user-facing
+    # workers: it does nothing at all until a real two-sided trade completes
+    # (prod holds zero), and ratings are the trust model the marketplace runs
+    # on — a reminder that ships after the first trades happen misses exactly
+    # the trades that needed it. Sends at most once per party per trade, ever.
+    ("grade_reminder_worker",   "workers.grade_reminder_worker",      "run_once", True),
 
     # ── Events — RE-ENABLED 2026-06-09 ──
     # Ingestion was off since the 2026-05-04 pre-launch manifest cut; events

@@ -202,8 +202,10 @@ def _make_mock_conn(
 ):
     """Create a mocked asyncpg connection with configurable return values."""
     conn = AsyncMock()
+    calls: list[tuple[str, tuple]] = []
 
     async def mock_fetchrow(sql, *args):
+        calls.append((sql, args))
         sql_lower = sql.lower()
         if "public.items" in sql_lower:
             return item_row
@@ -212,6 +214,7 @@ def _make_mock_conn(
         return None
 
     async def mock_fetch(sql, *args):
+        calls.append((sql, args))
         sql_lower = sql.lower()
         if "item_provenance_events" in sql_lower:
             return prov_rows or []
@@ -225,6 +228,13 @@ def _make_mock_conn(
 
     conn.fetchrow = mock_fetchrow
     conn.fetch = mock_fetch
+    # The helper routes on SQL TEXT, so it answers `price_predictions`
+    # identically no matter which key was bound — which is why binding the
+    # bare `canonical_key` against the namespaced `item_ref` was invisible
+    # here for months. Recording every (sql, args) lets a test assert the
+    # VALUE, which is the only thing that separates the two vocabularies
+    # (learning_validate_values_not_just_structure).
+    conn.recorded_calls = calls
     return conn
 
 
@@ -240,6 +250,46 @@ class TestGenerateDossier:
             await generate_dossier("item-id", "user-id", conn)
 
     @pytest.mark.asyncio
+    async def test_price_lookups_bind_the_namespaced_ref(self):
+        """The identifier-format rule, enforced where it is actually broken.
+
+        `items.canonical_key` is BARE (`base1-base1-4`);
+        `price_predictions.item_ref` and `price_prediction_daily.item_ref` are
+        ALWAYS namespaced (`pokemon:base1-base1-4` — 0 bare rows in 1.7M). The
+        agent bound the bare key, so BOTH price lookups matched zero rows for
+        every item and every user: a dossier — a Pro feature — carried no
+        valuation and no 90-day chart, silently, because an empty join is a
+        valid result.
+
+        Structure could never catch this. The table, the column and the SQL
+        were all correct; only the VALUE was from the wrong vocabulary.
+        """
+        from app.agents.dossier_agent import generate_dossier
+
+        item_row = {
+            "id": "i", "user_id": "u", "title": "T", "category": "pokemon",
+            "condition": None, "attributes_json": None, "condition_grade": None,
+            "canonical_key": "base1-base1-4",
+            "canonical_ref": "pokemon:base1-base1-4",
+            "created_at": None, "image_url": None,
+            "cost_basis": None, "purchase_price": None,
+            "purchase_currency": None, "purchased_at": None,
+        }
+        conn = _make_mock_conn(item_row=item_row)
+        await generate_dossier("i", "u", conn)
+
+        priced = [
+            (sql, args) for sql, args in conn.recorded_calls
+            if "item_ref = $1" in sql
+        ]
+        assert priced, "neither price lookup ran — the ref was never resolved"
+        for sql, args in priced:
+            assert args[0] == "pokemon:base1-base1-4", (
+                "bound the BARE canonical_key against item_ref; this matches "
+                "zero rows and returns an empty dossier rather than an error"
+            )
+
+    @pytest.mark.asyncio
     async def test_basic_dossier_generation(self):
         from app.agents.dossier_agent import generate_dossier
 
@@ -249,14 +299,31 @@ class TestGenerateDossier:
             "title": "Charizard Base Set Holo",
             "category": "pokemon",
             "condition": "Near Mint",
-            "grade": "PSA 9",
-            "graded_by": "PSA",
-            "sealed": False,
-            "attributes_json": '{"set": "Base Set", "rarity": "Holo Rare"}',
+            # `condition_grade` is the COLUMN grade lives in — the importer
+            # writes it (import_router.py:249) and the exporter reads it
+            # (items_export_router.py:193). This row used to carry a
+            # top-level "grade", a column `items` does not have, so it
+            # asserted a shape the database cannot produce. That is what hid
+            # the agent reading attrs["grade"], which nothing writes.
+            "condition_grade": "PSA 9",
+            # BOTH keys, and they are not interchangeable: `canonical_key` is
+            # bare, `canonical_ref` is namespaced, and the price lookups bind
+            # the ref. The old row carried NEITHER, so `canonical_key` was
+            # None, both price queries were skipped entirely, and the q50
+            # assertion below could never have run — it sat behind an earlier
+            # failing assertion for long enough that nobody saw it.
+            "canonical_key": "base1-base1-4",
+            "canonical_ref": "pokemon:base1-base1-4",
+            # graded_by and sealed DO live in attrs — same split the importer
+            # applies, so this row now matches one real SELECT.
+            "attributes_json": '{"set": "Base Set", "rarity": "Holo Rare", '
+                               '"graded_by": "PSA", "sealed": false}',
             "taxonomy_version": "v1.0",
             "subtype_id": "holo_rare",
-            "collections": '["Kanto Collection"]',
-            "images": '["https://img.example.com/char.jpg"]',
+            # `image_url` (single text column), not an `images` array —
+            # `items` has no such column. The agent reads image_url and adds
+            # any object_pointers rows on top.
+            "image_url": "https://img.example.com/char.jpg",
             "created_at": datetime(2026, 1, 1, tzinfo=timezone.utc),
             "updated_at": datetime(2026, 1, 10, tzinfo=timezone.utc),
         }
@@ -316,6 +383,8 @@ class TestGenerateDossier:
         assert dossier.identity["name"] == "Charizard Base Set Holo"
         assert dossier.identity["category"] == "pokemon"
         assert dossier.identity["grade"] == "PSA 9"
+        assert dossier.identity["graded_by"] == "PSA"
+        assert dossier.identity["canonical_key"] == "base1-base1-4"
         assert dossier.valuation["q50"] == 250.0
         assert dossier.valuation["confidence_score"] == 0.85
         assert len(dossier.provenance) == 2
@@ -323,7 +392,11 @@ class TestGenerateDossier:
         assert len(dossier.market_comps) == 1
         assert dossier.market_comps[0]["price"] == 350.0
         assert len(dossier.photos) >= 1
-        assert "Kanto Collection" in dossier.collections
+        # Empty, like the dedicated collections test below: `items` has no
+        # `collections` column, so the agent hardcodes []. The row used to
+        # carry one and this asserted it came back — a shape the database
+        # cannot produce. The real column (`collection_name`) is noted there.
+        assert dossier.collections == []
 
         # Authenticity signals from purchase + graded + receipt
         assert "purchase_recorded" in dossier.authenticity_signals
@@ -384,7 +457,6 @@ class TestGenerateDossier:
             "attributes_json": None,
             "taxonomy_version": None,
             "subtype_id": None,
-            "collections": ["Col A", "Col B"],
             "images": None,
             "created_at": None,
             "updated_at": None,
@@ -392,7 +464,16 @@ class TestGenerateDossier:
 
         conn = _make_mock_conn(item_row=item_row)
         dossier = await generate_dossier("id", "uid", conn)
-        assert dossier.collections == ["Col A", "Col B"]
+        # ALWAYS empty, and this pins that rather than a wish. `items` has no
+        # `collections` column, so `generate_dossier` hardcodes []; the test
+        # fed a column that does not exist and asserted it came back.
+        #
+        # ⚠️ There IS a real column it could use — `items.collection_name`
+        # (singular), which `/items-export/full` already surfaces. Wiring it
+        # changes what the dossier PDF prints, so it is Merle's call, not a
+        # side effect of a test-triage pass. Until then the field is dead and
+        # says so here.
+        assert dossier.collections == []
 
 
 # ---------------------------------------------------------------------------

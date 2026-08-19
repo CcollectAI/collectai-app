@@ -136,10 +136,25 @@ const styles = StyleSheet.create({
   // the ~30pt gear inside a 76pt row with default flex-start — leaving ~46pt of
   // dead space to its right, and the gear no longer lined up with the screen
   // edge (or with the back chevron on the left).
-  side: { flexDirection: 'row', alignItems: 'center', minWidth: 76 },
+  // The equal-width trick above only matters while the title is CENTRED. It is
+  // left-aligned as of 2026-08-16, so only the RIGHT side still needs its fixed
+  // box (to keep the gear pinned to the screen edge when InboxHeaderButton
+  // renders nothing). The left side now hugs the chevron, so the title sits
+  // beside it instead of 76pt away.
+  side: { flexDirection: 'row', alignItems: 'center' },
   sideLeft: { justifyContent: 'flex-start' },
-  sideRight: { justifyContent: 'flex-end' },
+  sideRight: { justifyContent: 'flex-end', minWidth: 76 },
   flex: { flex: 1 },
-  title: { flex: 1, fontSize: 18, fontWeight: '800', textAlign: 'center' },
+  // Left, 24, extrabold — the same spec as every in-body screen title
+  // (docs/ui-playbook.md). It was centred at 18, which is why the Market tab
+  // read as a different app from the screens either side of it.
+  title: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 30,
+    textAlign: 'left',
+    marginLeft: 4,
+  },
   iconBtn: { padding: 4 },
 });

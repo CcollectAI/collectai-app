@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   container: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  heading: { fontSize: 22, fontWeight: '800', marginBottom: 6 },
+  heading: { fontSize: 24, fontWeight: '800', marginBottom: 6, lineHeight: 30},
   intro: { fontSize: 13, lineHeight: 19, marginBottom: 20 },
 
   fieldGroup: { marginBottom: 16 },

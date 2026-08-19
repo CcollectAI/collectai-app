@@ -293,6 +293,33 @@ function AnalyticsScreen() {
     [items],
   );
 
+  /**
+   * Split the personalized-insights notes into the two things they actually
+   * are, because rendering them as one list said the same fact twice.
+   *
+   * `concentration` — the note carrying a share + level. Its NUMBER duplicates
+   * the Allocations bar, so only its level and category are used, inline in
+   * that card.
+   * `actionableNotes` — the rest: suggestions that tell you to do something.
+   *
+   * A suggestion naming "uncategorized" is dropped. That bucket is items with
+   * a NULL category, so "grow your uncategorized collection" is advice to buy
+   * more of a non-category — it read as a bug because it is one.
+   */
+  const concentration = useMemo(
+    () => riskNotes.find((n) => n.sharePct != null && n.category) ?? null,
+    [riskNotes],
+  );
+  const actionableNotes = useMemo(
+    () =>
+      riskNotes.filter(
+        (n) =>
+          n.sharePct == null &&
+          !/uncategori[sz]ed/i.test(n.text),
+      ),
+    [riskNotes],
+  );
+
   // Category colors for allocation bars
   const categoryColors = useMemo(() => {
     const colors = [BRAND_COLORS.tiffany, BRAND_COLORS.tiffanyDark, "#44A9A1", "#2D8A84", "#1F6B66"];
@@ -422,25 +449,14 @@ function AnalyticsScreen() {
               ) : null}
             </View>
 
+            {/* ONE explanation, once. This block was written three times over —
+                same condition, same sentence in three near-identical wordings —
+                and shipped as a card that says the same thing three times. If
+                this needs rewording again, EDIT it; do not add another. */}
             {!pl.hasBaseline ? (
               <Text style={[styles.plBasis, { color: colors.muted }]}>
                 Everything you own was added inside this window, so there is no
                 earlier value to measure against yet. Performance appears once
-                your portfolio has history behind it.
-              </Text>
-            ) : null}
-
-            {!pl.hasBaseline ? (
-              <Text style={[styles.plBasis, { color: colors.muted }]}>
-                Everything you own was added inside this window, so there is no
-                earlier value to measure against yet.
-              </Text>
-            ) : null}
-
-            {!pl.hasBaseline ? (
-              <Text style={[styles.plBasis, { color: colors.muted }]}>
-                Everything you own was added inside this window, so there is no
-                earlier value to compare against yet. Performance appears once
                 your portfolio has history behind it.
               </Text>
             ) : null}
@@ -487,8 +503,16 @@ function AnalyticsScreen() {
               </View>
               <View style={styles.metricItem}>
                 <Text style={[styles.metricLabel, { color: colors.muted }]}>Max Drawdown</Text>
-                <Text style={[styles.metricValue, { color: colors.danger }]}>
-                  {formatPct(pl.maxDrawdownPct, false)}
+                {/* Same rule as Starting Value and Gain/Loss directly above: with
+                    no earlier value there is no series to draw down FROM, and a
+                    red 0.00% is a measured number rather than an absent one. */}
+                <Text
+                  style={[
+                    styles.metricValue,
+                    { color: pl.hasBaseline ? colors.danger : colors.muted },
+                  ]}
+                >
+                  {pl.hasBaseline ? formatPct(pl.maxDrawdownPct, false) : '—'}
                 </Text>
               </View>
             </View>
@@ -539,20 +563,54 @@ function AnalyticsScreen() {
                 </View>
               ))}
             </View>
+
+            {/* The concentration VERDICT, inside the card that shows the
+                distribution — not a second card below it.
+
+                "Concentration & Balance" used to be its own section and its
+                lead line read "Your 'pokemon' exposure is 93% of your
+                portfolio", directly under an allocation bar already showing
+                pokemon at 93%. Reported as "seems like the exact same as
+                allocations", and it was: the same fact, twice, adjacent. Only
+                the RISK LEVEL was new information, so only that survives here.
+                Rendered from `sharePct`/`level`, never from the server's
+                sentence, so it cannot drift back into restating the number. */}
+            {concentration && (
+              <View style={[styles.concentrationRow, { borderTopColor: colors.border }]}>
+                <View
+                  style={[
+                    styles.riskDot,
+                    {
+                      backgroundColor:
+                        concentration.level === 'high'
+                          ? colors.danger
+                          : concentration.level === 'medium'
+                            ? colors.accent
+                            : colors.muted,
+                    },
+                  ]}
+                />
+                <Text style={[styles.concentrationText, { color: colors.muted }]}>
+                  {concentration.level === 'high'
+                    ? `High concentration — ${concentration.category} carries most of your value`
+                    : concentration.level === 'medium'
+                      ? `Moderately concentrated in ${concentration.category}`
+                      : `Reasonably spread across ${allocations.length} categories`}
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
-        {/* Concentration risk & diversification (from /insights/personalized).
-            Sits directly under Category Allocations because it explains the
-            allocation bar the user just looked at. Renders nothing when the
-            backend has no notes — no empty-state card. */}
-        {riskNotes.length > 0 && (
+        {/* Diversification SUGGESTIONS only — the concentration figure itself
+            now lives in the Allocations card above. */}
+        {actionableNotes.length > 0 && (
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
               <Ionicons name="shield-outline" size={18} color={colors.accent} />
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Concentration & Balance</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Ways to balance it</Text>
             </View>
-            {riskNotes.map((note) => (
+            {actionableNotes.map((note) => (
               <View key={note.id} style={styles.riskRow}>
                 <View
                   style={[
@@ -1091,7 +1149,24 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
 
-  // Concentration & Balance notes
+  // The concentration verdict, inline at the foot of the Allocations card.
+  // Separated from the list above by a hairline so it reads as a conclusion
+  // drawn FROM the distribution rather than another row of it.
+  concentrationRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  concentrationText: {
+    flex: 1,
+    fontSize: text.sm,
+    lineHeight: 18,
+  },
+
+  // Diversification suggestions
   riskRow: {
     flexDirection: "row",
     alignItems: "flex-start",

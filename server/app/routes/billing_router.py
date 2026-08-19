@@ -131,20 +131,26 @@ def _resolve_price_id(plan: str, interval: str = "monthly") -> str | None:
 # DEFAULT_LIMITS / FORCED_LIMITS shape exactly.
 #
 # Tier breakdown (mirrors FORCED_LIMITS in src/hooks/useBillingLimits.ts):
-#   free     : caps at 3 mandates, ads on, no premium features
-#   pro      : 10 mandates, dossier_pdf, deal_discovery, condition_grading,
-#              set_completion, detailed_valuation, no ads.
+#   free     : 0 mandates (deal discovery is Pro-only), 25 watchlist slots,
+#              1 Target Hit/day, 1 price alert/week, ads on
+#   pro      : 10 mandates, unlimited watchlist + alerts, dossier_pdf,
+#              deal_discovery, condition_grading, set_completion, no ads.
 #   premium  : 50 mandates + everything Pro has + advanced_analytics.
 #
 # Flag semantics:
-#   detailed_valuation : Trend chart, item history, dossier display, market
-#                        prices. The "consumer-pricing-app" feature pack.
-#                        Pro+. Pre-2026-05-02 these gated on advanced_analytics
-#                        (Premium-only) which made Pro feel underwater since
-#                        the marketing copy said "with Pro".
-#   advanced_analytics : True predictive features — sell timing, future
-#                        per-cat calibration depth, model-version history.
-#                        Premium-only.
+#   advanced_analytics : the trend chart, item history and market prices on
+#                        catalog-item, plus the analytics screen. Despite the
+#                        name this is the PRO gate and always has been in code —
+#                        `detailed_valuation` was the flag this block used to
+#                        describe, and nothing ever read it (removed
+#                        2026-08-16).
+# NOTE (2026-08-16): `detailed_valuation` was removed from every plan. Nothing
+# read it — not the server, not the client, and the FE limits tables never
+# defined it. The q10/q50/q90 bands on catalog-item have always been gated by
+# `advanced_analytics`; a comment claiming otherwise was corrected on
+# 2026-07-28 but the dead key stayed in the payload, so /billing/status shipped
+# a gate that gated nothing. Found by auditing every PLAN_LIMITS key for an
+# enforcement site.
 PLAN_LIMITS = {
     "free": {
         # 0, not 3. Deal discovery is Pro-only (the worker skips free users'
@@ -165,7 +171,6 @@ PLAN_LIMITS = {
         "max_alerts_per_week": 1,
         "deal_discovery": False,
         "dossier_pdf": False,
-        "detailed_valuation": False,
         "advanced_analytics": False,
         "condition_grading": False,
         "set_completion": False,
@@ -178,7 +183,6 @@ PLAN_LIMITS = {
         "max_alerts_per_week": None,
         "deal_discovery": True,
         "dossier_pdf": True,
-        "detailed_valuation": True,
         # True since 2026-07-28. This was False, a leftover from the old
         # three-tier model where advanced_analytics was Premium-only. Premium
         # was folded into Pro (docs/MONETIZATION.md) and is no longer
@@ -209,7 +213,6 @@ PLAN_LIMITS = {
         "max_alerts_per_week": None,
         "deal_discovery": True,
         "dossier_pdf": True,
-        "detailed_valuation": True,
         "advanced_analytics": True,
         "condition_grading": True,
         "set_completion": True,

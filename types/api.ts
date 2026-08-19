@@ -108,6 +108,12 @@ export interface RawPortfolioItem {
   category_slug?: string;
   collection?: string;
   set_name?: string;
+  /** `items.collection_name` — the set this item belongs to, by NAME. The same
+   *  string as `sets.name`; see the join note in portfolio_router.py. */
+  collection_name?: string | null;
+  /** `sets.total_items` for that set. **null means we hold no catalogue row**,
+   *  which is not the same as a set of size 0 — see `hasKnownSetSize`. */
+  set_size?: number | null;
   quantity?: number;
   current_value?: number;
   estimated_value?: number;

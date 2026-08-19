@@ -13,31 +13,39 @@
  * implied guarantee is the fastest way to inherit liability we deliberately
  * scoped out.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from "react";
 import {
-  View, Text, ScrollView, StyleSheet, Animated, Alert, TextInput, ActivityIndicator,
-  type StyleProp, type ViewStyle,
-} from 'react-native';
-import { useToast } from '@/components/Toast';
-import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Animated,
+  Alert,
+  TextInput,
+  ActivityIndicator,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
+import { useToast } from "@/components/Toast";
+import { Image } from "expo-image";
+import { useLocalSearchParams, useRouter, type Href } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
-import ScreenHeader from '@/components/ScreenHeader';
-import BottomSheetModal from '@/components/BottomSheetModal';
-import { OfferAmountSheet } from '@/components/p2p/OfferAmountSheet';
-import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
-import { EmptyState } from '@/components/EmptyState';
-import { AnimatedPressable, useEnterReveal } from '@/motion';
-import { fireHaptic, HapticIntent } from '@/haptics';
-import { useAppTheme } from '@/hooks/useAppTheme';
-import { useAsync } from '@/hooks/useAsync';
-import { useSettings } from '@/lib/settings';
-import { formatPrice } from '@/lib/format';
-import { collectorsApi } from '@/api/collectorsApi';
-import { CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
-import { radius, text as textToken, fontWeight } from '@/theme/tokens';
-import logger from '@/utils/logger';
+import ScreenHeader from "@/components/ScreenHeader";
+import BottomSheetModal from "@/components/BottomSheetModal";
+import { OfferAmountSheet } from "@/components/p2p/OfferAmountSheet";
+import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
+import { EmptyState } from "@/components/EmptyState";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useAppTheme } from "@/hooks/useAppTheme";
+import { useAsync } from "@/hooks/useAsync";
+import { useSettings } from "@/lib/settings";
+import { formatPrice } from "@/lib/format";
+import { collectorsApi } from "@/api/collectorsApi";
+import { CATEGORY_SLUG_TO_NAME } from "@/constants/categories";
+import { radius, text as textToken, fontWeight } from "@/theme/tokens";
+import logger from "@/utils/logger";
 
 /**
  * The seller row: a plain View, or an AnimatedPressable when the seller's
@@ -50,7 +58,11 @@ import logger from '@/utils/logger';
  * TouchableOpacity, per docs/ui-playbook.md.
  */
 function SellerBlockContainer({
-  pressable, onPress, style, label, children,
+  pressable,
+  onPress,
+  style,
+  label,
+  children,
 }: {
   pressable: boolean;
   onPress: () => void;
@@ -78,27 +90,31 @@ function ListingDetailScreen() {
   const { settings } = useSettings();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
-  const { data: listing, loading, error, retry } = useAsync(
-    async () => (id ? collectorsApi.getP2PListing(id) : null),
-    [id],
-  );
+  const {
+    data: listing,
+    loading,
+    error,
+    retry,
+  } = useAsync(async () => (id ? collectorsApi.getP2PListing(id) : null), [id]);
 
   const handleMessage = useCallback(() => {
     if (!listing) return;
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, {
+      enabled: settings.hapticsEnabled,
+    });
     // toUserId is REQUIRED — chat/new calls dataProvider.requestDm(toUserId,…)
     // and without it the send fails. Passing the title too so the seller sees
     // what is being asked about instead of a bare "hi" from a stranger.
     // Stage 1 deliberately stops here: no offers, no checkout.
     router.push({
-      pathname: '/chat/new',
+      pathname: "/chat/new",
       params: { toUserId: listing.user_id, contextListingTitle: listing.title },
     });
   }, [listing, router, settings.hapticsEnabled]);
 
   const [reported, setReported] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
-  const [priceDraft, setPriceDraft] = useState('');
+  const [priceDraft, setPriceDraft] = useState("");
   const [savingPrice, setSavingPrice] = useState(false);
   const [offered, setOffered] = useState(false);
   const { showToast } = useToast();
@@ -117,31 +133,44 @@ function ListingDetailScreen() {
 
   const handleOffer = useCallback(() => {
     if (!listing) return;
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, {
+      enabled: settings.hapticsEnabled,
+    });
     setOfferOpen(true);
   }, [listing, settings.hapticsEnabled]);
 
-  const submitOffer = useCallback(async (amount: number) => {
-    if (!listing) return;
-    setOfferBusy(true);
-    try {
-      await collectorsApi.p2pCreateOffer({
-        listing_id: listing.id, amount, currency: listing.currency,
-      });
-      setOfferOpen(false);
-      setOffered(true);
-      showToast({ message: 'Offer sent — the seller will be notified', type: 'success' });
-    } catch (e: unknown) {
-      // Sheet stays OPEN on failure, with the amount still in it. 409
-      // OFFER_EXISTS and a blocked-member rejection are both actionable, and
-      // closing the sheet would make the seller's own message disappear along
-      // with the number they typed.
-      logger.error('[listing] offer failed:', e);
-      showToast({ message: (e as Error)?.message || 'Could not send the offer', type: 'error' });
-    } finally {
-      setOfferBusy(false);
-    }
-  }, [listing, showToast]);
+  const submitOffer = useCallback(
+    async (amount: number) => {
+      if (!listing) return;
+      setOfferBusy(true);
+      try {
+        await collectorsApi.p2pCreateOffer({
+          listing_id: listing.id,
+          amount,
+          currency: listing.currency,
+        });
+        setOfferOpen(false);
+        setOffered(true);
+        showToast({
+          message: "Offer sent — the seller will be notified",
+          type: "success",
+        });
+      } catch (e: unknown) {
+        // Sheet stays OPEN on failure, with the amount still in it. 409
+        // OFFER_EXISTS and a blocked-member rejection are both actionable, and
+        // closing the sheet would make the seller's own message disappear along
+        // with the number they typed.
+        logger.error("[listing] offer failed:", e);
+        showToast({
+          message: (e as Error)?.message || "Could not send the offer",
+          type: "error",
+        });
+      } finally {
+        setOfferBusy(false);
+      }
+    },
+    [listing, showToast],
+  );
 
   // DSA notice-and-action. The micro-enterprise exemption does NOT cover this
   // obligation, so a report path ships in Stage 1 rather than later. Reasons
@@ -151,14 +180,14 @@ function ListingDetailScreen() {
   const handleReport = useCallback(() => {
     if (!listing) return;
     const reasons = [
-      'Counterfeit or replica',
-      'Prohibited item',
-      'Misleading description',
-      'Suspected scam',
+      "Counterfeit or replica",
+      "Prohibited item",
+      "Misleading description",
+      "Suspected scam",
     ];
     Alert.alert(
-      'Report this listing',
-      'Tell us what is wrong. We review reports and act on them.',
+      "Report this listing",
+      "Tell us what is wrong. We review reports and act on them.",
       [
         ...reasons.map((reason) => ({
           text: reason,
@@ -167,11 +196,11 @@ function ListingDetailScreen() {
               await collectorsApi.reportListing(listing.id, reason);
               setReported(true);
             } catch (e) {
-              logger.error('[listing] report failed:', e);
+              logger.error("[listing] report failed:", e);
             }
           },
         })),
-        { text: 'Cancel', style: 'cancel' as const },
+        { text: "Cancel", style: "cancel" as const },
       ],
     );
   }, [listing]);
@@ -194,12 +223,14 @@ function ListingDetailScreen() {
     // Accept a comma decimal separator: the app ships in 7 currencies and most
     // of Europe types "12,50". Without this the field silently rejects the way
     // half the target market writes money.
-    const n = parseFloat(priceDraft.replace(',', '.'));
+    const n = parseFloat(priceDraft.replace(",", "."));
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [priceDraft]);
 
-  const priceChanged = parsedNewPrice !== null && listing !== null
-    && parsedNewPrice !== listing.price;
+  const priceChanged =
+    parsedNewPrice !== null &&
+    listing !== null &&
+    parsedNewPrice !== listing.price;
 
   const handleSavePrice = useCallback(async () => {
     if (!listing || parsedNewPrice === null || savingPrice) return;
@@ -207,36 +238,51 @@ function ListingDetailScreen() {
     setSavingPrice(true);
     try {
       await collectorsApi.updateListingPrice(listing.id, parsedNewPrice);
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, {
+        enabled: settings.hapticsEnabled,
+      });
       setPriceOpen(false);
       // Say what actually happened. Promising alerts on a RISE would be a lie
       // — the server deliberately does not re-enter the alert window for one —
       // and promising them on a listing with no canonical identity would be a
       // lie too, which is what reaches_target_hit records.
       showToast({
-        message: dropped && listing.reaches_target_hit
-          ? 'Price updated — members watching this at or above your new price have been alerted.'
-          : 'Price updated.',
-        type: 'success',
+        message:
+          dropped && listing.reaches_target_hit
+            ? "Price updated — members watching this at or above your new price have been alerted."
+            : "Price updated.",
+        type: "success",
       });
       retry();
     } catch (e) {
-      logger.error('[listing] price update failed:', e);
-      const detail = e instanceof Error && e.message ? ` (${e.message})` : '';
-      showToast({ message: `Couldn't update the price${detail}`, type: 'error' });
+      logger.error("[listing] price update failed:", e);
+      const detail = e instanceof Error && e.message ? ` (${e.message})` : "";
+      showToast({
+        message: `Couldn't update the price${detail}`,
+        type: "error",
+      });
     } finally {
       setSavingPrice(false);
     }
-  }, [listing, parsedNewPrice, savingPrice, retry, settings.hapticsEnabled, showToast]);
+  }, [
+    listing,
+    parsedNewPrice,
+    savingPrice,
+    retry,
+    settings.hapticsEnabled,
+    showToast,
+  ]);
 
   const handleDelist = useCallback(async () => {
     if (!listing) return;
     try {
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      await collectorsApi.delistListing(listing.id, 'sold');
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, {
+        enabled: settings.hapticsEnabled,
+      });
+      await collectorsApi.delistListing(listing.id, "sold");
       retry();
     } catch (e) {
-      logger.error('[listing] delist failed:', e);
+      logger.error("[listing] delist failed:", e);
     }
   }, [listing, retry, settings.hapticsEnabled]);
 
@@ -267,7 +313,11 @@ function ListingDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel="Try again"
             >
-              <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>Try again</Text>
+              <Text
+                style={[styles.primaryBtnText, { color: colors.accentText }]}
+              >
+                Try again
+              </Text>
             </AnimatedPressable>
           }
         />
@@ -278,16 +328,24 @@ function ListingDetailScreen() {
   // A sold listing resolves 200 with status 'sold' rather than 404, so the
   // buyer learns the item went instead of seeing an error. Surface that
   // clearly — a Target Hit that lands here should explain itself.
-  const isGone = listing.status !== 'active';
+  const isGone = listing.status !== "active";
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader title="Listing" />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View style={animatedStyle}>
           {listing.image_url ? (
             <View>
-              <Image source={{ uri: listing.image_url }} style={styles.hero} contentFit="cover" transition={150} />
+              <Image
+                source={{ uri: listing.image_url }}
+                style={styles.hero}
+                contentFit="cover"
+                transition={150}
+              />
               {/* The grid (app/listings.tsx) labelled this and the DETAIL screen
                   did not — the wrong way round. This is where a buyer studies
                   the item before messaging or making an offer, so an unlabelled
@@ -297,7 +355,12 @@ function ListingDetailScreen() {
                   second-hand buyer needs to see". Found by walking a listing
                   whose seller had no photo of their own. */}
               {listing.image_is_catalog ? (
-                <View style={[styles.stockTag, { backgroundColor: colors.background + 'E6' }]}>
+                <View
+                  style={[
+                    styles.stockTag,
+                    { backgroundColor: colors.background + "E6" },
+                  ]}
+                >
                   <Text style={[styles.stockTagText, { color: colors.muted }]}>
                     Catalog photo — not the seller&apos;s item
                   </Text>
@@ -305,23 +368,41 @@ function ListingDetailScreen() {
               ) : null}
             </View>
           ) : (
-            <View style={[styles.hero, styles.heroEmpty, { backgroundColor: colors.accent + '12' }]}>
+            <View
+              style={[
+                styles.hero,
+                styles.heroEmpty,
+                { backgroundColor: colors.accent + "12" },
+              ]}
+            >
               <Ionicons name="image-outline" size={40} color={colors.muted} />
             </View>
           )}
 
           {isGone ? (
-            <View style={[styles.banner, { backgroundColor: colors.muted + '1E' }]}>
-              <Ionicons name="checkmark-done-outline" size={16} color={colors.muted} />
+            <View
+              style={[styles.banner, { backgroundColor: colors.muted + "1E" }]}
+            >
+              <Ionicons
+                name="checkmark-done-outline"
+                size={16}
+                color={colors.muted}
+              />
               <Text style={[styles.bannerText, { color: colors.muted }]}>
                 This listing is no longer available ({listing.status}).
               </Text>
             </View>
           ) : null}
 
-          <Text style={[styles.title, { color: colors.text }]}>{listing.title}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>
+            {listing.title}
+          </Text>
           <Text style={[styles.price, { color: colors.text }]}>
-            {formatPrice(listing.price, settings.currency, settings.numberLocale)}
+            {formatPrice(
+              listing.price,
+              settings.currency,
+              settings.numberLocale,
+            )}
           </Text>
           {/* All-in price. `shipping_cost` is NULLABLE and null means "the
               seller didn't say", which is NOT zero — rendering it as "free
@@ -343,7 +424,7 @@ function ListingDetailScreen() {
                   // deliberately NOT rendered alongside it: any second money
                   // number here re-creates the sum the reader will check.
                   `${formatPrice(listing.price + listing.shipping_cost, settings.currency, settings.numberLocale)} total incl. shipping`
-                : 'Free shipping'}
+                : "Free shipping"}
             </Text>
           ) : (
             <Text style={[styles.allIn, { color: colors.muted }]}>
@@ -353,27 +434,52 @@ function ListingDetailScreen() {
 
           <View style={styles.metaRow}>
             {listing.condition_label ? (
-              <View style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[styles.pillText, { color: colors.text }]}>{listing.condition_label}</Text>
+              <View
+                style={[
+                  styles.pill,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+              >
+                <Text style={[styles.pillText, { color: colors.text }]}>
+                  {listing.condition_label}
+                </Text>
               </View>
             ) : null}
             {listing.category ? (
-              <View style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View
+                style={[
+                  styles.pill,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+              >
                 <Text style={[styles.pillText, { color: colors.text }]}>
                   {CATEGORY_SLUG_TO_NAME[listing.category] ?? listing.category}
                 </Text>
               </View>
             ) : null}
             {listing.ships_from ? (
-              <View style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Ionicons name="location-outline" size={12} color={colors.muted} />
-                <Text style={[styles.pillText, { color: colors.text }]}>{listing.ships_from}</Text>
+              <View
+                style={[
+                  styles.pill,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+              >
+                <Ionicons
+                  name="location-outline"
+                  size={12}
+                  color={colors.muted}
+                />
+                <Text style={[styles.pillText, { color: colors.text }]}>
+                  {listing.ships_from}
+                </Text>
               </View>
             ) : null}
           </View>
 
           {listing.description ? (
-            <Text style={[styles.body, { color: colors.text }]}>{listing.description}</Text>
+            <Text style={[styles.body, { color: colors.text }]}>
+              {listing.description}
+            </Text>
           ) : null}
 
           {/* Only the seller, and only when it matters. A listing with no
@@ -385,14 +491,23 @@ function ListingDetailScreen() {
               Deliberately not shown to buyers: it says nothing about the item. */}
           {listing.is_mine && !listing.reaches_target_hit && !isGone ? (
             <View style={[styles.notice, { borderColor: colors.border }]}>
-              <Ionicons name="notifications-off-outline" size={16} color={colors.muted} />
+              <Ionicons
+                name="notifications-off-outline"
+                size={16}
+                color={colors.muted}
+              />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.noticeText, { color: colors.muted }]}>
-                  This listing won&apos;t alert members watching for this item — it
-                  isn&apos;t matched to a catalogue entry. It still shows in browse
-                  and search.
+                  This listing won&apos;t alert members watching for this item —
+                  it isn&apos;t matched to a catalogue entry. It still shows in
+                  browse and search.
                 </Text>
-                <Text style={[styles.noticeText, { color: colors.muted, marginTop: 4 }]}>
+                <Text
+                  style={[
+                    styles.noticeText,
+                    { color: colors.muted, marginTop: 4 },
+                  ]}
+                >
                   Match the item in your collection to a catalogue entry, then
                   relist, and everyone watching it gets a Target Hit.
                 </Text>
@@ -401,10 +516,16 @@ function ListingDetailScreen() {
           ) : null}
 
           {listing.watchers > 0 ? (
-            <View style={[styles.demandRow, { backgroundColor: colors.accent + '12' }]}>
+            <View
+              style={[
+                styles.demandRow,
+                { backgroundColor: colors.accent + "12" },
+              ]}
+            >
               <Ionicons name="eye-outline" size={14} color={colors.accent} />
               <Text style={[styles.demandText, { color: colors.text }]}>
-                {listing.watchers} other member{listing.watchers === 1 ? '' : 's'} watching this item
+                {listing.watchers} other member
+                {listing.watchers === 1 ? "" : "s"} watching this item
               </Text>
             </View>
           ) : null}
@@ -428,22 +549,35 @@ function ListingDetailScreen() {
           <SellerBlockContainer
             pressable={!listing.is_mine && listing.seller_profile_public}
             onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              router.push({ pathname: '/users/[userId]', params: { userId: listing.user_id } });
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, {
+                enabled: settings.hapticsEnabled,
+              });
+              router.push({
+                pathname: "/users/[userId]",
+                params: { userId: listing.user_id },
+              });
             }}
             style={[styles.seller, { borderColor: colors.border }]}
-            label={`View ${listing.seller_name || 'this member'}'s profile`}
+            label={`View ${listing.seller_name || "this member"}'s profile`}
           >
-            <View style={[styles.sellerAvatar, { backgroundColor: colors.accent + '18' }]}>
+            <View
+              style={[
+                styles.sellerAvatar,
+                { backgroundColor: colors.accent + "18" },
+              ]}
+            >
               <Ionicons name="person-outline" size={16} color={colors.accent} />
             </View>
             <View style={styles.sellerText}>
               {/* Name and reputation on one line, so the credibility signal is
                   read WITH the identity rather than as a separate stat. */}
               <View style={styles.sellerNameRow}>
-                <Text style={[styles.sellerName, { color: colors.text }]} numberOfLines={1}>
-                  {listing.seller_name || 'Sparrow member'}
-                  {listing.is_mine ? ' (you)' : ''}
+                <Text
+                  style={[styles.sellerName, { color: colors.text }]}
+                  numberOfLines={1}
+                >
+                  {listing.seller_name || "Sparrow member"}
+                  {listing.is_mine ? " (you)" : ""}
                 </Text>
                 {/* Gated on having completed a trade. A "no rating yet" badge on
                     every listing in a young marketplace reads as a warning and
@@ -451,20 +585,27 @@ function ListingDetailScreen() {
                     collection line underneath is the honest signal, and it
                     already renders. */}
                 {listing.seller_completed_trades > 0 ? (
-                  <View style={[styles.repPill, { backgroundColor: colors.accent + '18' }]}>
+                  <View
+                    style={[
+                      styles.repPill,
+                      { backgroundColor: colors.accent + "18" },
+                    ]}
+                  >
                     <Ionicons
                       name="checkmark-circle"
                       size={12}
                       color={colors.accent}
                     />
-                    <Text style={[styles.repPillText, { color: colors.accent }]}>
+                    <Text
+                      style={[styles.repPillText, { color: colors.accent }]}
+                    >
                       {/* Percentage only once the server says the sample is big
                           enough (seller_positive_pct is null until then). The
                           trade count leads because it is a fact at n=1, whereas
                           "100% positive" off one grade is not credibility. */}
                       {listing.seller_positive_pct !== null
-                        ? `${listing.seller_positive_pct}% positive · ${listing.seller_completed_trades} trade${listing.seller_completed_trades === 1 ? '' : 's'}`
-                        : `${listing.seller_completed_trades} completed trade${listing.seller_completed_trades === 1 ? '' : 's'}`}
+                        ? `${listing.seller_positive_pct}% positive · ${listing.seller_completed_trades} trade${listing.seller_completed_trades === 1 ? "" : "s"}`
+                        : `${listing.seller_completed_trades} completed trade${listing.seller_completed_trades === 1 ? "" : "s"}`}
                     </Text>
                   </View>
                 ) : null}
@@ -472,17 +613,17 @@ function ListingDetailScreen() {
               <Text style={[styles.sellerMeta, { color: colors.muted }]}>
                 {[
                   listing.seller_since
-                    ? `Member since ${new Date(listing.seller_since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`
+                    ? `Member since ${new Date(listing.seller_since).toLocaleDateString(undefined, { month: "short", year: "numeric" })}`
                     : null,
                   listing.seller_collection_size > 0
-                    ? `${listing.seller_collection_size} item${listing.seller_collection_size === 1 ? '' : 's'} tracked`
+                    ? `${listing.seller_collection_size} item${listing.seller_collection_size === 1 ? "" : "s"} tracked`
                     : null,
                   listing.seller_active_listings > 1
                     ? `${listing.seller_active_listings} listings`
                     : null,
                 ]
                   .filter(Boolean)
-                  .join(' · ')}
+                  .join(" · ")}
               </Text>
             </View>
             {/* A row that navigates must LOOK like it navigates — the same
@@ -500,22 +641,43 @@ function ListingDetailScreen() {
                     the thing you do afterwards. */}
                 <AnimatedPressable
                   onPress={openPriceSheet}
-                  style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+                  style={[
+                    styles.primaryBtn,
+                    { backgroundColor: colors.accent },
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel="Change your asking price"
                 >
-                  <Ionicons name="pricetag-outline" size={16} color={colors.accentText} />
-                  <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>
+                  <Ionicons
+                    name="pricetag-outline"
+                    size={16}
+                    color={colors.accentText}
+                  />
+                  <Text
+                    style={[
+                      styles.primaryBtnText,
+                      { color: colors.accentText },
+                    ]}
+                  >
                     Change price
                   </Text>
                 </AnimatedPressable>
                 <AnimatedPressable
                   onPress={handleDelist}
-                  style={[styles.primaryBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                  style={[
+                    styles.primaryBtn,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                      borderWidth: 1,
+                    },
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel="Mark as sold"
                 >
-                  <Text style={[styles.primaryBtnText, { color: colors.text }]}>Mark as sold</Text>
+                  <Text style={[styles.primaryBtnText, { color: colors.text }]}>
+                    Mark as sold
+                  </Text>
                 </AnimatedPressable>
               </>
             ) : null
@@ -526,21 +688,33 @@ function ListingDetailScreen() {
                 disabled={offered}
                 style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
                 accessibilityRole="button"
-                accessibilityLabel={offered ? 'Offer sent' : 'Make an offer'}
+                accessibilityLabel={offered ? "Offer sent" : "Make an offer"}
               >
-                <Ionicons name="pricetag-outline" size={16} color={colors.accentText} />
-                <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>
-                  {offered ? 'Offer sent' : 'Make an offer'}
+                <Ionicons
+                  name="pricetag-outline"
+                  size={16}
+                  color={colors.accentText}
+                />
+                <Text
+                  style={[styles.primaryBtnText, { color: colors.accentText }]}
+                >
+                  {offered ? "Offer sent" : "Make an offer"}
                 </Text>
               </AnimatedPressable>
               <AnimatedPressable
                 onPress={handleMessage}
-              style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
-              accessibilityRole="button"
-              accessibilityLabel="Message the seller"
-            >
-              <Ionicons name="chatbubble-outline" size={16} color={colors.accentText} />
-                <Text style={[styles.primaryBtnText, { color: colors.text }]}>Message seller</Text>
+                style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+                accessibilityRole="button"
+                accessibilityLabel="Message the seller"
+              >
+                <Ionicons
+                  name="chatbubble-outline"
+                  size={16}
+                  color={colors.accentText}
+                />
+                <Text style={[styles.primaryBtnText, { color: colors.text }]}>
+                  Message seller
+                </Text>
               </AnimatedPressable>
             </>
           ) : null}
@@ -552,15 +726,17 @@ function ListingDetailScreen() {
               disabled={reported}
               style={styles.reportRow}
               accessibilityRole="button"
-              accessibilityLabel={reported ? 'Listing reported' : 'Report this listing'}
+              accessibilityLabel={
+                reported ? "Listing reported" : "Report this listing"
+              }
             >
               <Ionicons
-                name={reported ? 'checkmark-circle-outline' : 'flag-outline'}
+                name={reported ? "checkmark-circle-outline" : "flag-outline"}
                 size={14}
                 color={colors.muted}
               />
               <Text style={[styles.reportText, { color: colors.muted }]}>
-                {reported ? 'Reported — thank you' : 'Report this listing'}
+                {reported ? "Reported — thank you" : "Report this listing"}
               </Text>
             </AnimatedPressable>
           ) : null}
@@ -576,18 +752,25 @@ function ListingDetailScreen() {
               Above the buttons it pushed the primary action down the screen and
               read as a warning about THIS seller, which it is not. */}
           <View style={[styles.notice, { borderColor: colors.border }]}>
-            <Ionicons name="information-circle-outline" size={16} color={colors.muted} />
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color={colors.muted}
+            />
             <View style={{ flex: 1 }}>
               <Text style={[styles.noticeText, { color: colors.muted }]}>
-                Sparrow doesn&apos;t handle payment or delivery. You arrange those
-                directly with the seller, and there is no buyer protection.
+                Sparrow doesn&apos;t handle payment or delivery. You arrange
+                those directly with the seller, and there is no buyer
+                protection.
               </Text>
               <AnimatedPressable
-                onPress={() => router.push('/legal/marketplace-terms' as Href)}
+                onPress={() => router.push("/legal/marketplace-terms" as Href)}
                 accessibilityRole="link"
                 accessibilityLabel="Read the marketplace terms"
               >
-                <Text style={[styles.noticeLink, { color: colors.accent }]}>Marketplace terms</Text>
+                <Text style={[styles.noticeLink, { color: colors.accent }]}>
+                  Marketplace terms
+                </Text>
               </AnimatedPressable>
             </View>
           </View>
@@ -598,13 +781,26 @@ function ListingDetailScreen() {
         visible={priceOpen}
         onClose={() => setPriceOpen(false)}
         title="Change price"
+        // Plain View body + autoFocus keyboard: this is the sheet that was
+        // clipped, so it opts in to the wrapper's scroller.
+        scrollable
         colors={colors}
       >
         <View style={styles.sheetBody}>
           <Text style={[styles.sheetLabel, { color: colors.muted }]}>
-            Currently {formatPrice(listing.price, settings.currency, settings.numberLocale)}
+            Currently{" "}
+            {formatPrice(
+              listing.price,
+              settings.currency,
+              settings.numberLocale,
+            )}
           </Text>
-          <View style={[styles.priceField, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View
+            style={[
+              styles.priceField,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
             <Text style={[styles.priceCurrency, { color: colors.muted }]}>
               {listing.currency}
             </Text>
@@ -624,7 +820,9 @@ function ListingDetailScreen() {
               style={[styles.priceInput, { color: colors.text }]}
               accessibilityLabel="New asking price"
               returnKeyType="done"
-              onSubmitEditing={() => { if (priceChanged) handleSavePrice(); }}
+              onSubmitEditing={() => {
+                if (priceChanged) handleSavePrice();
+              }}
             />
           </View>
 
@@ -637,7 +835,7 @@ function ListingDetailScreen() {
             listing.reaches_target_hit ? (
               <Text style={[styles.sheetNote, { color: colors.accent }]}>
                 {listing.watchers > 0
-                  ? `We'll alert the ${listing.watchers === 1 ? 'member' : 'members'} watching this whose target your new price meets.`
+                  ? `We'll alert the ${listing.watchers === 1 ? "member" : "members"} watching this whose target your new price meets.`
                   : "Members watching this item will be alerted if your new price meets their target."}
               </Text>
             ) : (
@@ -645,8 +843,9 @@ function ListingDetailScreen() {
               // row exists and no alert can fire. Promising one here would be
               // the silent-dead-feature pattern with a confident label on top.
               <Text style={[styles.sheetNote, { color: colors.muted }]}>
-                This listing isn&apos;t matched to a catalogue item, so it can&apos;t
-                alert watchers. The new price still shows in the marketplace.
+                This listing isn&apos;t matched to a catalogue item, so it
+                can&apos;t alert watchers. The new price still shows in the
+                marketplace.
               </Text>
             )
           ) : parsedNewPrice !== null && parsedNewPrice > listing.price ? (
@@ -661,7 +860,8 @@ function ListingDetailScreen() {
             style={[
               styles.primaryBtn,
               {
-                backgroundColor: priceChanged && !savingPrice ? colors.accent : colors.border,
+                backgroundColor:
+                  priceChanged && !savingPrice ? colors.accent : colors.border,
                 marginTop: 16,
               },
             ]}
@@ -719,60 +919,101 @@ export default function ListingDetailScreenWithBoundary() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
   muted: { fontSize: textToken.md },
   content: { padding: 16, paddingBottom: 48, gap: 10 },
-  hero: { width: '100%', aspectRatio: 1, borderRadius: radius.md },
+  hero: { width: "100%", aspectRatio: 1, borderRadius: radius.md },
   // Same treatment as the grid tile in app/listings.tsx, sized up for a
   // full-width hero so it is legible rather than decorative.
   stockTag: {
-    position: 'absolute', left: 10, bottom: 10,
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: radius.xs,
+    position: "absolute",
+    left: 10,
+    bottom: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.xs,
   },
   stockTagText: { fontSize: 11, fontWeight: fontWeight.semibold },
-  heroEmpty: { alignItems: 'center', justifyContent: 'center' },
+  heroEmpty: { alignItems: "center", justifyContent: "center" },
   banner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    padding: 10, borderRadius: radius.sm, marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 10,
+    borderRadius: radius.sm,
+    marginTop: 10,
   },
   bannerText: { fontSize: textToken.sm, flex: 1 },
-  title: { fontSize: textToken.xl, fontWeight: fontWeight.bold, marginTop: 12 },
+  title: {
+    fontSize: textToken["2xl"],
+    fontWeight: fontWeight.extrabold,
+    marginTop: 12,
+    lineHeight: 30,
+  },
   price: { fontSize: textToken.xl, fontWeight: fontWeight.extrabold },
   allIn: { fontSize: textToken.xs, marginTop: 2 },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
   pill: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    borderWidth: 1, borderRadius: radius.sm,
-    paddingHorizontal: 10, paddingVertical: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   pillText: { fontSize: textToken.xs },
   body: { fontSize: textToken.md, lineHeight: 21, marginTop: 6 },
   demandRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 7,
-    paddingHorizontal: 10, paddingVertical: 8,
-    borderRadius: radius.sm, marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: radius.sm,
+    marginTop: 12,
   },
   demandText: { fontSize: textToken.xs, fontWeight: fontWeight.semibold },
-  secondaryBtn: { backgroundColor: 'transparent', borderWidth: 1 },
+  secondaryBtn: { backgroundColor: "transparent", borderWidth: 1 },
   seller: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
-    padding: 11, marginTop: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.sm,
+    padding: 11,
+    marginTop: 14,
   },
   sellerAvatar: {
-    width: 34, height: 34, borderRadius: 17,
-    alignItems: 'center', justifyContent: 'center',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
   },
   sellerText: { flex: 1, gap: 2 },
   // Name + reputation share a row. `flexWrap` so a long display name and a long
   // pill drop to a second line instead of the pill being squeezed to nothing,
   // and the name gets flexShrink so it truncates before the pill does — the
   // reputation is the part a buyer cannot infer from anywhere else on screen.
-  sellerNameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
-  sellerName: { fontSize: textToken.md, fontWeight: fontWeight.semibold, flexShrink: 1 },
+  sellerNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  sellerName: {
+    fontSize: textToken.md,
+    fontWeight: fontWeight.semibold,
+    flexShrink: 1,
+  },
   repPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
   },
   repPillText: { fontSize: 11, fontWeight: fontWeight.bold },
   sellerMeta: { fontSize: textToken.xs, lineHeight: 16 },
@@ -781,33 +1022,57 @@ const styles = StyleSheet.create({
   sheetBody: { paddingHorizontal: 16, paddingBottom: 16, gap: 10 },
   sheetLabel: { fontSize: textToken.sm },
   priceField: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md,
-    paddingHorizontal: 14, height: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    height: 56,
   },
   priceCurrency: { fontSize: textToken.md, fontWeight: fontWeight.bold },
   // Large because it is the only input in the sheet and the figure is the
   // decision — a 15pt field for the number that sells the item reads as an
   // afterthought.
-  priceInput: { flex: 1, fontSize: 24, fontWeight: fontWeight.bold, padding: 0 },
+  priceInput: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: fontWeight.bold,
+    padding: 0,
+  },
   sheetNote: { fontSize: textToken.xs, lineHeight: 17 },
   notice: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.sm,
     // 20 rather than the old 12: as a footer it needs to read as separated from
     // the actions above it, and it has to hold that in the `is_mine` branch too,
     // where the report row (which carried its own marginTop) is not rendered.
-    padding: 10, marginTop: 20,
+    padding: 10,
+    marginTop: 20,
   },
   noticeText: { fontSize: textToken.xs, lineHeight: 17 },
-  noticeLink: { fontSize: textToken.xs, fontWeight: fontWeight.bold, marginTop: 5 },
+  noticeLink: {
+    fontSize: textToken.xs,
+    fontWeight: fontWeight.bold,
+    marginTop: 5,
+  },
   reportRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, marginTop: 22, paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 22,
+    paddingVertical: 10,
   },
   reportText: { fontSize: textToken.xs },
   primaryBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     // `paddingHorizontal` was missing entirely — only the vertical was set. On
     // the full-width sticky CTAs that is invisible, because the width comes
     // from the parent. On the EmptyState retry it is content-sized, so the
@@ -817,7 +1082,10 @@ const styles = StyleSheet.create({
     // 20 rather than the app's usual 16 because this button is taller than the
     // standard one (13pt vertical against 9) — matching the horizontal value of
     // a shorter button would leave it looking pinched at the sides.
-    marginTop: 16, paddingVertical: 13, paddingHorizontal: 20, borderRadius: radius.md,
+    marginTop: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 20,
+    borderRadius: radius.md,
   },
   primaryBtnText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
 });

@@ -7,6 +7,7 @@ import React, { useCallback } from 'react';
 import { View, Text, Image, StyleSheet, Share } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { inviteMessage } from '@/constants/storeLinks';
 import { AnimatedPressable } from '@/motion';
 import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
 import type { MiniUserProfile } from '@/data';
@@ -23,9 +24,7 @@ type Props = {
 const FriendsCtaRow: React.FC<{ colors: AppTheme['colors'] }> = ({ colors }) => {
   const router = useRouter();
   const onInvite = useCallback(() => {
-    Share.share({
-      message: 'Track and value your collection with me on Sparrow Collect — https://sparrowcollect.com',
-    }).catch(() => {});
+    Share.share({ message: inviteMessage() }).catch(() => {});
   }, []);
   const onFind = useCallback(() => {
     // The collector search lives on the marketplace tab ("Find Collectors").
@@ -64,7 +63,7 @@ const FriendAvatar: React.FC<{
   onPress: () => void;
   accentColor: string;
   textColor: string;
-}> = React.memo(({ profile, onPress, accentColor, textColor }) => {
+}> = React.memo(function FriendAvatar({ profile, onPress, accentColor, textColor }) {
   const initials = profile.displayName
     .split(' ')
     .map((p) => p[0])

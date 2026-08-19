@@ -13,6 +13,8 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { inviteMessage } from '@/constants/storeLinks';
 import { AnimatedPressable } from '@/motion';
 import { colors as tokens } from '@/theme/tokens';
 import { COMMUNITY_GATED, CATEGORY_FOLLOW_ENABLED } from '@/config/featureFlags';
@@ -20,6 +22,8 @@ import type { AppTheme } from '@/hooks/useAppTheme';
 import CategoryCollectorSearch from './CategoryCollectorSearch';
 
 type Props = {
+  /** Slug. Needed for the per-category leaderboard route, not just display. */
+  categoryId: string;
   categoryName: string;
   categoryTagline: string;
   following: boolean;
@@ -28,6 +32,7 @@ type Props = {
 };
 
 const CategoryHeaderCard: React.FC<Props> = ({
+  categoryId,
   categoryName,
   categoryTagline,
   following,
@@ -35,11 +40,10 @@ const CategoryHeaderCard: React.FC<Props> = ({
   colors,
 }) => {
   const [searchOpen, setSearchOpen] = useState(false);
+  const router = useRouter();
 
   const onInvite = useCallback(() => {
-    Share.share({
-      message: 'Track and value your collection with me on Sparrow Collect — https://sparrowcollect.com',
-    }).catch(() => {});
+    Share.share({ message: inviteMessage() }).catch(() => {});
   }, []);
 
   // Inline collector search drops down in place instead of leaving for the
@@ -88,6 +92,19 @@ const CategoryHeaderCard: React.FC<Props> = ({
         >
           <Ionicons name="share-outline" size={15} color="#fff" />
           <Text style={styles.pillText}>Invite friends</Text>
+        </AnimatedPressable>
+        {/* Per-category leaderboard. Ranks the collectors of THIS category by
+            items owned or value held — not the XP board, which has no category
+            dimension and is gated off. Sits beside Invite friends because both
+            are "who else is here" actions. */}
+        <AnimatedPressable
+          style={styles.pill}
+          onPress={() => router.push(`/leaderboard?categoryId=${encodeURIComponent(categoryId)}`)}
+          accessibilityRole="button"
+          accessibilityLabel={`See the ${categoryName} leaderboard`}
+        >
+          <Ionicons name="trophy-outline" size={15} color="#fff" />
+          <Text style={styles.pillText}>Leaderboard</Text>
         </AnimatedPressable>
         {!COMMUNITY_GATED && (
           <AnimatedPressable

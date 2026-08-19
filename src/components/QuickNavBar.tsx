@@ -37,7 +37,8 @@ const TABS: TabDef[] = [
   { route: '/(tabs)/marketplace', label: 'Market', icon: 'storefront-outline', iconFocused: 'storefront', matchPrefix: '/marketplace' },
   { route: '/(tabs)/add', label: 'Add', icon: 'add-circle-outline', iconFocused: 'add-circle', matchPrefix: '/add' },
   { route: '/(tabs)/events', label: 'Events', icon: 'calendar-outline', iconFocused: 'calendar', matchPrefix: '/events' },
-  { route: '/(tabs)/search', label: 'Search', icon: 'search-outline', iconFocused: 'search', matchPrefix: '/search' },
+  // Labelled "Explore" since 2026-08-18; the route stays `search`.
+  { route: '/(tabs)/search', label: 'Explore', icon: 'search-outline', iconFocused: 'search', matchPrefix: '/search' },
 ];
 
 export function QuickNavBar() {

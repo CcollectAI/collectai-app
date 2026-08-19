@@ -12,6 +12,17 @@ import { AnimatedPressable } from '@/motion';
 import type { CollectorsEvent } from '@/data/events';
 
 interface EventRsvpSectionProps {
+  /**
+   * Buttons rendered at the START of the action row — in practice
+   * `<EventActionBar />` (Open link / Share). They live here rather than in a
+   * row of their own because Share stacked above Going / Interested read as two
+   * separate decisions instead of one set of actions.
+   *
+   * Rendered in BOTH branches below. Putting it only in the upcoming-event
+   * branch would silently delete Share from every past event, which is the kind
+   * of "one branch got the fix" bug this repo keeps paying for.
+   */
+  leadingActions?: React.ReactNode;
   event: CollectorsEvent;
   rsvpStatus: string | undefined;
   isPastEvent: boolean;
@@ -26,6 +37,7 @@ interface EventRsvpSectionProps {
 }
 
 export const EventRsvpSection = React.memo(function EventRsvpSection({
+  leadingActions,
   event,
   rsvpStatus,
   isPastEvent,
@@ -60,19 +72,23 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
   return (
     <>
       {isPastEvent ? (
-        rsvpStatus === 'going' ? (
-          <View style={[styles.attendedBadge, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}>
-            <Ionicons name="checkmark-circle" size={16} color={colors.accent} style={{ marginRight: 6 }} />
-            <Text style={[styles.attendedBadgeText, { color: colors.accent }]}>Attended</Text>
-          </View>
-        ) : rsvpStatus === 'interested' ? (
-          <View style={[styles.attendedBadge, { backgroundColor: colors.border + '40', borderColor: colors.border }]}>
-            <Ionicons name="star" size={16} color={colors.muted} style={{ marginRight: 6 }} />
-            <Text style={[styles.attendedBadgeText, { color: colors.muted }]}>Was interested</Text>
-          </View>
-        ) : null
+        <View style={styles.actionsRow}>
+          {leadingActions}
+          {rsvpStatus === 'going' ? (
+            <View style={[styles.attendedBadge, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+              <Text style={[styles.attendedBadgeText, { color: colors.accent }]}>Attended</Text>
+            </View>
+          ) : rsvpStatus === 'interested' ? (
+            <View style={[styles.attendedBadge, { backgroundColor: colors.border + '40', borderColor: colors.border }]}>
+              <Ionicons name="star" size={16} color={colors.muted} style={{ marginRight: 6 }} />
+              <Text style={[styles.attendedBadgeText, { color: colors.muted }]}>Was interested</Text>
+            </View>
+          ) : null}
+        </View>
       ) : (
         <View style={styles.actionsRow}>
+          {leadingActions}
           {isDrop && (
             <AnimatedPressable
               onPress={onToggleDropAlert}
@@ -256,13 +272,21 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
 const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+    // 'nowrap', not 'wrap': this row can hold four pills (Open link, Share,
+    // Going, Interested) and wrapping strands the last one on its own line,
+    // where it reads as a separate decision rather than the fourth option in a
+    // set. Let the BUTTONS shrink instead — see "flexWrap: 'wrap' on an action
+    // row strands the third button" in docs/ui-playbook.md.
+    flexWrap: 'nowrap',
+    alignItems: 'center',
+    gap: 8,
     marginBottom: 8,
   },
   actionBtn: {
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 20,
@@ -271,16 +295,16 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontSize: 13,
     fontWeight: '500',
+    textAlign: 'center',
   },
   attendedBadge: {
-    alignSelf: 'flex-start',
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    marginBottom: 8,
   },
   attendedBadgeText: {
     fontSize: 13,

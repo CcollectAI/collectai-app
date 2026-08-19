@@ -117,12 +117,19 @@ export const EventHeroSection = React.memo(function EventHeroSection({
         </View>
       )}
 
-      {/* Description */}
-      <View style={[styles.descriptionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.descriptionText, { color: colors.text }]}>
-          {event.description}
-        </Text>
-      </View>
+      {/* Description — only when there IS one. Rendered unconditionally, this
+          card was an empty grey rectangle on every event without a description,
+          which is most scraped ones (Ticketmaster feeds give us a title, a date
+          and a venue and nothing else). A bordered card with no content reads as
+          a component that failed to load, not as an absent optional field.
+          `.trim()` because a whitespace-only string is the same nothing. */}
+      {event.description?.trim() ? (
+        <View style={[styles.descriptionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.descriptionText, { color: colors.text }]}>
+            {event.description}
+          </Text>
+        </View>
+      ) : null}
     </>
   );
 });

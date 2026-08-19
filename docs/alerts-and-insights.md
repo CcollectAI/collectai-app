@@ -1305,3 +1305,58 @@ listing fired under the old comparison and does not under the new one, while an
 **Not backfilled.** Every one of the 18 live rows already reads `currency='EUR'`,
 and there is no way to tell which were written from a non-EUR listing, so their
 stored numbers cannot be recovered — only re-set by the member.
+
+## The post-sale review push, and a deep-link class that was dead (2026-08-18)
+
+Built with the ratings work in `docs/P2P_MARKETPLACE_SPEC.md` §12.
+
+### One push at completion, and it ASKS
+
+Completion already notified both parties — `"Trade completed … you can now
+grade each other in Open bids"` — a receipt whose last sentence mentioned
+grading. It now **is** the ask: *"Trade complete — how did it go?"* / *"Rate the
+{seller|buyer} so other members know what to expect."*, naming the other side's
+role because who you rate depends on which side you were on.
+
+Still **one** push per party. A receipt plus a rating prompt for one event is
+two notifications, and the second is the one that gets muted.
+
+### `grade_reminder_worker` — one nudge, 24h later, then never again
+
+| property | value | why |
+|---|---|---|
+| schedule | hourly (`SCHEDULES`) | the 24h boundary is in the QUERY; the interval only decides latency |
+| window | completed 24h–7d ago | the upper bound is what stops the first run against a live DB nudging every trade ever completed |
+| idempotency | `notification_history.data->>'kind' = 'p2p_grade_reminder'` + `->>'offer_id'` | **no DDL**, so no schema.lock regen and no restart-time bomb |
+| completion time | `GREATEST(seller_confirmed_at, buyer_confirmed_at)` | `updated_at` moves on any later touch and would silently reset the clock |
+| `urgent` | **False**, unlike every other trade push | transactional news must beat the daily cap; a reminder is what the cap is for |
+| category | `account` | a fact about a trade you are party to, not a discovery alert |
+
+It is **ON in the pre-launch manifest**, unlike the other user-facing workers:
+it does nothing at all until a real two-sided trade completes (prod holds zero),
+and ratings are the trust model the marketplace runs on. Registered in all three
+places that matter — `_WORKER_MANIFEST`, `SCHEDULES`, and `WORKER_OUTPUTS` with
+an `input_exists_sql` gate, because its honest steady state is "nothing to send"
+and without the gate the silent-writer probe would page for correct behaviour.
+
+`server/tests/test_grade_reminder_worker.py` pins the registration, both
+NOT EXISTS guards, and that the kind it writes is the kind it reads back — if
+those two strings drift, every run re-sends and nothing errors.
+
+### Every server-sent deep link was a dead tap
+
+Found while wiring the above. `usePushNotifications` treats `data.deep_link` as
+a **URL**: it hands anything non-listing to `new URL()`, which **throws on a
+relative path**, into a catch that logs and returns.
+
+Every `deep_link` the server sends is a relative in-app route — `/offers`,
+`/my-suggestions`, `/legal/marketplace-terms`, `/events/<id>` — so **all six
+senders produced a notification that arrived, was tapped, and did nothing.**
+Exactly the `alert_id` → Unmatched-route shape already recorded in that file:
+the send side was right and the tap was dead. A relative link now routes
+in-app before the URL parsing is reached.
+
+The trade pushes additionally carry the offer: `/offers?offerId=<id>`, and
+`app/offers.tsx` READS it — highlights that card and opens the rating prompt on
+arrival. Reading it is what makes the contract checkable by `check:params`; a
+param nothing reads is legal TS and silently dropped.

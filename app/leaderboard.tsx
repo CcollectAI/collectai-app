@@ -3,10 +3,12 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { View, Text, ScrollView, StyleSheet, Animated, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { USER_PROFILES } from '@/data/users';
 import { collectorsApi } from '@/api/collectorsApi';
+import { getCategoryLeaderboard, type CategoryLeaderboardEntry } from '@/api/socialApi';
+import { getCategoryById } from '@/data/categories';
 import { AnimatedPressable, useEnterReveal, useStaggerReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings, type NumberLocale } from '@/lib/settings';
@@ -15,7 +17,205 @@ import logger from '@/utils/logger';
 import { MEDAL_COLORS, TWITCH_PURPLE } from '@/constants/colors';
 import { BETA_MODE, COMMUNITY_GATED } from '@/config/featureFlags';
 
-const AvatarCircle = React.memo<{ name: string; color: string }>(({ name, color }) => {
+/**
+ * Category mode. `/leaderboard?categoryId=mtg` ranks the collectors of ONE
+ * category; with no param the screen keeps its existing XP board.
+ *
+ * Ranked on real data (items owned, or value held) rather than XP, because XP
+ * has no category dimension and its UI is gated off. The server drops anyone
+ * who turned off "Allow discovery" or "Show item count", and the value board
+ * additionally drops "Show collection value" — so a SHORT board is a correct
+ * board and is never padded.
+ */
+function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
+  const { colors } = useAppTheme();
+  const { settings } = useSettings();
+  const router = useRouter();
+  const [metric, setMetric] = useState<'items' | 'value'>('items');
+  // Bumping this re-runs the fetch effect. The failure copy tells people to
+  // pull down, so a pull MUST actually retry — otherwise the screen promises a
+  // gesture it does not implement.
+  const [reloadKey, setReloadKey] = useState(0);
+  const [rows, setRows] = useState<CategoryLeaderboardEntry[] | null>(null);
+  const [yourRank, setYourRank] = useState<number | null>(null);
+  const [totalRanked, setTotalRanked] = useState(0);
+  const [failed, setFailed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const categoryName = getCategoryById(categoryId)?.name ?? categoryId;
+
+  const doRefresh = useCallback(() => {
+    setRefreshing(true);
+    setReloadKey((k) => k + 1);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setRows(null);
+    setFailed(false);
+    getCategoryLeaderboard(categoryId, 25, metric)
+      .then((d) => {
+        if (cancelled) return;
+        setRows(d?.leaderboard ?? []);
+        setYourRank(d?.your_rank ?? null);
+        setTotalRanked(d?.total_ranked ?? 0);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        logger.error('[Leaderboard] category fetch failed:', e);
+        setFailed(true);
+      })
+      .finally(() => { if (!cancelled) setRefreshing(false); });
+    return () => { cancelled = true; };
+  }, [categoryId, metric, reloadKey]);
+
+  // An empty board and a failed request are different facts and must not share
+  // a rendering: "nobody qualifies yet" is true, "we could not ask" is not.
+  const valuedRows = rows?.filter((r) => r.value_eur > 0) ?? [];
+  const allZeroValue = metric === 'value' && (rows?.length ?? 0) > 0 && valuedRows.length === 0;
+
+  // Same entrance as the XP board. Declared here, above every early return in
+  // the JSX, because the hook has to run on every render regardless of whether
+  // the board is loading, empty or failed.
+  const { getItemStyle: getCatItemStyle } = useStaggerReveal({
+    count: rows?.length ?? 0,
+    staggerMs: 60,
+    enabled: settings.animationsEnabled,
+  });
+
+  return (
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={styles.catWrap}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={doRefresh} tintColor={colors.accent} />
+      }
+    >
+      <Text style={[styles.catTitle, { color: colors.text }]}>{categoryName} leaderboard</Text>
+      <Text style={[styles.catSubtitle, { color: colors.muted }]}>
+        Collectors who chose to be discoverable, ranked by what they hold in this category.
+      </Text>
+
+      <View style={styles.catToggle}>
+        {(['items', 'value'] as const).map((m) => (
+          <AnimatedPressable
+            key={m}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              setMetric(m);
+            }}
+            style={[
+              styles.catChip,
+              { borderColor: colors.border },
+              metric === m && { backgroundColor: colors.accent, borderColor: colors.accent },
+            ]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: metric === m }}
+            accessibilityLabel={m === 'items' ? 'Rank by items owned' : 'Rank by value held'}
+          >
+            <Text style={[styles.catChipText, { color: metric === m ? colors.accentText : colors.text }]}>
+              {m === 'items' ? 'Items' : 'Value'}
+            </Text>
+          </AnimatedPressable>
+        ))}
+      </View>
+
+      {yourRank != null && totalRanked > 0 && !rows?.some((r) => r.is_you && r.rank <= 25) ? (
+        <Text style={[styles.catYou, { color: colors.muted }]}>
+          You are #{yourRank} of {totalRanked}
+        </Text>
+      ) : null}
+
+      {failed ? (
+        <Text style={[styles.catEmpty, { color: colors.muted }]}>
+          Couldn&apos;t load the leaderboard. Pull down to try again.
+        </Text>
+      ) : !rows ? (
+        <ActivityIndicator style={{ marginTop: 24 }} color={colors.accent} />
+      ) : rows.length === 0 ? (
+        <Text style={[styles.catEmpty, { color: colors.muted }]}>
+          Nobody is ranked in {categoryName} yet. Collectors appear here once they own
+          something in this category and allow discovery in Settings → Privacy.
+        </Text>
+      ) : allZeroValue ? (
+        <Text style={[styles.catEmpty, { color: colors.muted }]}>
+          No valuations yet for {categoryName}, so there is nothing to rank by value.
+          Switch to Items, or check back once these collections have been priced.
+        </Text>
+      ) : (
+        /* Same card as the XP board below — reported 2026-08-17 as wanting the
+           two boards to look alike, and they were built weeks apart: this one
+           was a bare bordered strip with no card fill, no medals, no handle, no
+           second stat and no way into a profile, while the XP board had all
+           five. Ranking is the same idea on both, so it gets the same object.
+
+           Two things stay different ON PURPOSE. The rank is `r.rank` from the
+           server, NOT the array index the XP board uses — ranks here can TIE
+           (two collectors with nine items are both #4), and renumbering by
+           position would silently invent an order the data does not have. And
+           `is_you` keeps its accent fill, because "where am I" is the first
+           question anyone asks of a board they might be on. */
+        rows.map((r, index) => {
+          const medalColor = getMedalColor(r.rank - 1, colors.muted);
+          const stat =
+            metric === 'value'
+              ? formatPrice(r.value_eur, settings.currency, settings.numberLocale)
+              : `${formatNumber(r.item_count, settings.numberLocale)} ${r.item_count === 1 ? 'item' : 'items'}`;
+          const secondary =
+            metric === 'value'
+              ? `${formatNumber(r.item_count, settings.numberLocale)} ${r.item_count === 1 ? 'item' : 'items'}`
+              : formatPrice(r.value_eur, settings.currency, settings.numberLocale);
+          return (
+            <Animated.View key={r.user_id} style={getCatItemStyle(index)}>
+              <AnimatedPressable
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  router.push(`/users/${encodeURIComponent(r.user_id)}`);
+                }}
+                style={[
+                  styles.card,
+                  { borderColor: colors.border, backgroundColor: colors.card },
+                  r.is_you && { backgroundColor: colors.accent + '12', borderColor: colors.accent },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Rank ${r.rank}, ${r.display_name}${r.is_you ? ', you' : ''}, ${stat}, ${secondary}`}
+                accessibilityHint="Double tap to view collector profile"
+              >
+                <View style={styles.rankCol}>
+                  <Text style={[styles.rankText, { color: medalColor }]}>#{r.rank}</Text>
+                  {r.rank <= 3 && <Ionicons name="trophy-outline" size={14} color={medalColor} />}
+                </View>
+
+                <AvatarCircle name={r.display_name} color={colors.accent} />
+                <View style={styles.infoCol}>
+                  <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
+                    {r.display_name}{r.is_you ? ' (you)' : ''}
+                  </Text>
+                  {/* `handle` is nullable on this endpoint, unlike the XP board
+                      where it is derived from the name. Rendering `@` alone
+                      would look like a truncation bug. */}
+                  {r.handle ? (
+                    <Text style={[styles.userHandle, { color: colors.muted }]} numberOfLines={1}>
+                      @{r.handle}
+                    </Text>
+                  ) : null}
+                </View>
+
+                <View style={styles.valueCol}>
+                  <Text style={[styles.valueText, { color: colors.text }]}>{stat}</Text>
+                  <Text style={[styles.rarityText, { color: colors.muted }]}>{secondary}</Text>
+                </View>
+              </AnimatedPressable>
+            </Animated.View>
+          );
+        })
+      )}
+    </ScrollView>
+  );
+}
+
+const AvatarCircle = React.memo<{ name: string; color: string }>(function AvatarCircle({ name, color }) {
   const initials =
     name
       .split(' ')
@@ -83,6 +283,8 @@ const LeaderboardScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  // `/leaderboard?categoryId=mtg` switches this screen into category mode.
+  const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
 
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -184,6 +386,24 @@ const LeaderboardScreen: React.FC = () => {
     enabled: settings.animationsEnabled,
   });
 
+  // Category mode. Placed AFTER every hook above so hook order never changes
+  // between renders — an early return before them would break the rules of
+  // hooks the moment a param appeared.
+  if (categoryId) {
+    return (
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
+        {/* No native title in category mode: CategoryLeaderboard renders
+            "<Category> leaderboard" as its own heading, so a bar title is a
+            duplicate — and on iOS a CENTRED duplicate, since native-stack
+            ignores headerTitleAlign there. The global XP mode below keeps its
+            native title because it has no in-body heading. */}
+        <Stack.Screen options={{ headerTitle: '' }} />
+        <CategoryLeaderboard categoryId={categoryId} />
+        <QuickNavBar />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerTitle: 'Leaderboard' }} />
@@ -273,6 +493,14 @@ const LeaderboardScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  catWrap: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 },
+  catTitle: { fontSize: 24, fontWeight: '800', lineHeight: 30 },
+  catSubtitle: { fontSize: 13, marginTop: 4, lineHeight: 18 },
+  catToggle: { flexDirection: 'row', gap: 8, marginTop: 14, marginBottom: 12 },
+  catChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
+  catChipText: { fontSize: 14, fontWeight: '600' },
+  catEmpty: { fontSize: 14, lineHeight: 20, marginTop: 20 },
+  catYou: { fontSize: 13, marginBottom: 10 },
   safe: {
     flex: 1,
   },

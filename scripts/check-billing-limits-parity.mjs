@@ -30,7 +30,10 @@
  * reads):
  *   1. X exists in the FE's DEFAULT_LIMITS and FORCED_LIMITS.{pro,premium}
  *   2. X exists in the BE's PLAN_LIMITS.{free,pro,premium}
- *   3. the FE and BE values AGREE for pro and premium
+ *   3. the FE and BE values AGREE for free, pro AND premium
+ *   4. every NUMERIC cap both tables declare agrees, even when the FE never
+ *      reads it as `limits.X` (that exemption is how free.max_mandates
+ *      diverged 3 vs 0 unnoticed)
  *
  * Exits non-zero on any mismatch.
  */
@@ -132,12 +135,38 @@ for (const key of readKeys) {
       fail.push(`BE PLAN_LIMITS["${plan}"] is missing "${key}" (FE reads it off /billing/status)`);
     }
   }
-  for (const [plan, feObj] of [['pro', fePro], ['premium', fePremium]]) {
+  for (const [plan, feObj] of [['free', feDefault], ['pro', fePro], ['premium', fePremium]]) {
     if (!feObj || !bePlans[plan]) continue;
     const fv = norm(feObj[key]);
     const bv = norm(bePlans[plan][key]);
     if (fv !== undefined && bv !== undefined && fv !== bv) {
       fail.push(`MISMATCH ${plan}.${key}: FE=${fv} BE=${bv} — the same user is told different things depending on whether RevenueCat or /billing/status resolved first`);
+    }
+  }
+}
+
+// EVERY numeric limit both tables declare, not only the ones the FE reads as
+// `limits.X`. Added 2026-08-16 after free.max_mandates sat at FE=3 / BE=0 for
+// weeks: the server dropped free mandates to 0 on 2026-07-31 (deal discovery is
+// Pro-only), the client kept saying 3, and this gate could not see it — free was
+// excluded from the value comparison AND max_mandates is not read as `limits.X`
+// anywhere. The paywall then advertised "3 purchase mandates" to free users who
+// get none.
+const numericKeys = new Set();
+for (const t of [feDefault, fePro, fePremium, ...Object.values(bePlans)]) {
+  for (const [k, v] of Object.entries(t || {})) {
+    const n = norm(v);
+    if (n !== undefined && /^-?\d+(\.\d+)?$/.test(String(n))) numericKeys.add(k);
+  }
+}
+for (const key of numericKeys) {
+  if (readKeys.includes(key)) continue; // already compared above
+  for (const [plan, feObj] of [['free', feDefault], ['pro', fePro], ['premium', fePremium]]) {
+    if (!feObj || !bePlans[plan]) continue;
+    const fv = norm(feObj[key]);
+    const bv = norm(bePlans[plan][key]);
+    if (fv !== undefined && bv !== undefined && fv !== bv) {
+      fail.push(`MISMATCH ${plan}.${key}: FE=${fv} BE=${bv} — a numeric cap the FE shows but never reads through limits.X`);
     }
   }
 }

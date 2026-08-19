@@ -77,11 +77,19 @@ class TestGetUserMandateLimit:
     """get_user_mandate_limit() returns correct limits per plan."""
 
     @pytest.mark.asyncio
-    async def test_free_user_gets_3(self):
+    async def test_free_user_gets_0(self):
+        """0 since 2026-07-31 — see docs/MONETIZATION.md and the note on
+        TestPlanLimits.test_free_limits. `get_user_mandate_limit` reads
+        PLAN_LIMITS rather than declaring its own number, so there is one
+        source of truth and this is a pin, not a second one.
+
+        The old name encoded the number, which is why it survived the change
+        looking plausible.
+        """
         with patch("app.subscription.get_user_plan", new_callable=AsyncMock, return_value="free"):
             from app.subscription import get_user_mandate_limit
             limit = await get_user_mandate_limit("user-123")
-            assert limit == 3
+            assert limit == 0
 
     @pytest.mark.asyncio
     async def test_pro_user_gets_10(self):

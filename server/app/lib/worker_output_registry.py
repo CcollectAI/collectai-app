@@ -182,6 +182,33 @@ WORKER_OUTPUTS: dict[str, WorkerOutput] = {
     # into category_items.attributes_json.market_observed — the check
     # extracts it via ->>'_last_aggregated_at'. Added 2026-04-20 along with
     # the watermark field so the worker is actually observable.
+    # The reminder's output IS its own idempotency record: one
+    # notification_history row per (party, offer), scoped by `data->>'kind'`.
+    # `input_exists_sql` is the whole point here — the honest steady state of
+    # this worker is "nothing to send", and without the gate it would page for
+    # doing exactly what it should. It counts trades that are actually OWED a
+    # reminder, using the same three predicates as the worker's own query, so
+    # "input present, output stale" can only mean the worker stopped writing.
+    "grade_reminder_worker": WorkerOutput(
+        table="notification_history",
+        timestamp_column="created_at",
+        max_staleness_hours=48.0,  # hourly schedule; 48h tolerates a quiet day
+        where_clause="data->>'kind' = 'p2p_grade_reminder'",
+        input_exists_sql=(
+            "SELECT COUNT(*) AS cnt FROM public.p2p_offers o "
+            "WHERE o.status = 'completed' "
+            "  AND o.seller_confirmed_at IS NOT NULL "
+            "  AND o.buyer_confirmed_at IS NOT NULL "
+            "  AND GREATEST(o.seller_confirmed_at, o.buyer_confirmed_at) "
+            "      <= now() - interval '24 hours' "
+            "  AND GREATEST(o.seller_confirmed_at, o.buyer_confirmed_at) "
+            "      >  now() - interval '7 days' "
+            "  AND (NOT EXISTS (SELECT 1 FROM public.member_grades g "
+            "                    WHERE g.offer_id = o.id AND g.rater_id = o.buyer_id) "
+            "    OR NOT EXISTS (SELECT 1 FROM public.member_grades g "
+            "                    WHERE g.offer_id = o.id AND g.rater_id = o.seller_id))"
+        ),
+    ),
     "aggregate_catalog_attributes": WorkerOutput(
         table="category_items",
         timestamp_column=(

@@ -204,53 +204,56 @@ class TestEbayCallerSoldComps:
         return EbayCaller(client_id="test-id", client_secret="test-secret")
 
     @pytest.mark.asyncio
-    async def test_sold_comps_normalizes_finding_item(self, caller):
+    async def test_sold_comps_is_stubbed_and_makes_no_request(self, caller):
+        """`sold_comps` returns [] BY DESIGN, and the emptiness is the feature.
+
+        eBay revoked our Finding API access on 2026-04-26 — verified by a
+        direct OAuth probe: Browse returns 200 with the same credentials while
+        Finding returns HTTP 500 / errorId 11002 "Invalid Application". The
+        method short-circuits so the circuit breaker stops flapping and the
+        orchestrator stops spending cycle time on doomed calls. The Browse
+        `search()` path for active listings is unaffected.
+
+        docs/MARKET_DATA.md records the same thing from the caller's side: the
+        TCG listings pass uses `aggregate_search`, NOT `find_sold_comps`,
+        "because eBay's sold path needs the Marketplace Insights API we do not
+        have". It is also the whole of CLAUDE.md's 62,000-item price gap.
+
+        The two tests that used to live here drove the parser BELOW that
+        `return []` — dead code kept for the migration — so they could only
+        ever fail. Asserting the dead state instead of allowlisting it means
+        this goes red the day someone re-enables the path, which is exactly
+        when the parsing tests should come back
+        (learning_dont_allowlist_dead_assert_dead).
+        """
         mock_client = AsyncMock(spec=httpx.AsyncClient)
-        finding_resp = _fake_response(200, {
-            "findCompletedItemsResponse": [{
-                "searchResult": [{
-                    "item": [{
-                        "itemId": ["999"],
-                        "title": ["Sold Card"],
-                        "sellingStatus": [{"currentPrice": [{"__value__": "50.0", "@currencyId": "USD"}]}],
-                        "listingInfo": [{"endTime": ["2026-01-15T12:00:00Z"]}],
-                        "condition": [{"conditionDisplayName": ["Used"]}],
-                        "galleryURL": ["https://img.ebay.com/999.jpg"],
-                        "viewItemURL": ["https://ebay.com/itm/999"],
-                    }]
-                }]
-            }]
-        })
-        mock_client.get = AsyncMock(return_value=finding_resp)
+        mock_client.get = AsyncMock()
         mock_client.is_closed = False
         caller._http = mock_client
 
         results = await caller.sold_comps("Sold Card")
 
-        assert len(results) == 1
-        hit = results[0]
-        assert hit["source"] == "ebay"
-        assert hit["is_sold"] is True
-        assert hit["raw_id"] == "999"
-        assert hit["title"] == "Sold Card"
-        assert hit["sold_at"] == "2026-01-15T12:00:00Z"
-        assert hit["condition"] == "Used"
-        assert hit["source_price"] == 50.0
-        assert hit["source_currency"] == "USD"
+        assert results == []
+        mock_client.get.assert_not_called(), "the stub is supposed to cost nothing"
 
     @pytest.mark.asyncio
-    async def test_sold_comps_429_records_failure(self, caller):
+    async def test_sold_comps_never_touches_the_circuit_breaker(self, caller):
+        """A doomed call must not spend the breaker.
+
+        The breaker is shared with the Browse path, which WORKS. Recording
+        failures from a dead endpoint would trip it and take active-listing
+        search down with it — the flapping this stub was introduced to stop.
+        """
         mock_client = AsyncMock(spec=httpx.AsyncClient)
-        rate_limited = _fake_response(429)
-        mock_client.get = AsyncMock(return_value=rate_limited)
+        mock_client.get = AsyncMock(return_value=_fake_response(429))
         mock_client.is_closed = False
         caller._http = mock_client
 
         with patch("workers.circuit_breaker.ebay_circuit.record_failure") as mock_fail:
             result = await caller.sold_comps("test")
 
-        mock_fail.assert_called_once()
         assert result == []
+        mock_fail.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   heroEmpty: { alignItems: 'center', justifyContent: 'center' },
   comingSoon: { fontSize: 13, fontWeight: '600', marginTop: 8 },
   body: { padding: 16 },
-  title: { fontSize: 22, fontWeight: '800', marginBottom: 8 },
+  title: { fontSize: 24, fontWeight: '800', marginBottom: 8, lineHeight: 30},
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   badgeText: { fontSize: 12, fontWeight: '600' },

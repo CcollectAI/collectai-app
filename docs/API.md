@@ -368,6 +368,103 @@ All endpoints are available at both unversioned paths (`/items`, `/alerts/mine`,
 | Intake endpoints | 30 req/min per user (shared) |
 | Catalog suggestions | 10 req/hr per user |
 
+## Social
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/social/users/search?q=&limit=` | JWT | Search public profiles by name/handle |
+| POST | `/social/block/{user_id}` | JWT | Block a user |
+| DELETE | `/social/block/{user_id}` | JWT | Unblock a user |
+| GET | `/social/blocked` | JWT | List blocked users |
+| GET | `/social/leaderboard/category/{category_id}?metric=&limit=` | JWT | Top collectors in ONE category |
+| GET | `/social/users/{user_id}/categories?limit=` | JWT | What a collector collects + their rank in each |
+
+### `GET /social/leaderboard/category/{category_id}` (2026-08-16)
+
+Ranks the collectors of a single category. `metric=items` (default) ranks by
+items owned; `metric=value` ranks by value held.
+
+**This is not the XP leaderboard.** `GET /gamification/leaderboard` ranks by
+`user_gamification.weekly_xp | monthly_xp | total_xp`, which has **no category
+dimension at all**, and its UI is gated off behind `GAMIFICATION_UI_ENABLED`
+because the number is not meaningful. A per-category board therefore had to be
+built on real data.
+
+**Privacy is the design, not a filter bolted on.** Settings → Privacy has
+"Allow discovery" and "Show item count", and the help text promises both do
+something, so:
+
+- the base is `user_public_profiles`, which already excludes members who turned
+  discovery off;
+- anyone with `show_item_count = false` is excluded outright — a board of item
+  counts is exactly the disclosure that switch refuses;
+- `metric=value` **additionally** excludes `show_collection_value = false`, so
+  it is a strictly shorter board than `metric=items`.
+
+Missing `user_privacy_settings` rows default to TRUE, matching the table
+defaults and the client.
+
+`value_eur` uses the app's canonical valuation expression, which is
+`public.v_item_values_v1`:
+
+    quick_predictions.q50_eur (latest by created_at)
+      -> price_predictions.q50 via items.canonical_ref (latest by generated_at)
+      -> items.predicted_price_eur
+      -> items.estimated_value
+      -> 0
+
+**The second step was missing until 2026-08-17** and the board quoted numbers no
+other screen agreed with — 8 of 74 live items differed, one member reading
+EUR 78.90 here against EUR 185.15 in their own portfolio. Nothing failed; a
+leaderboard of plausible wrong numbers looks exactly like a correct one.
+
+The chain is written out in SQL rather than selected `FROM v_item_values_v1`
+because that view ends `WHERE user_id = auth.uid()` — it answers "what is MY
+collection worth" and returns nothing when aggregating across members. That
+duplication is why it drifted, so `server/tests/test_leaderboard_value_parity.py`
+now diffs both copies against the view per user, under a real auth context
+(`set_config(..., FALSE)`; TRUE is transaction-local and makes the two sides
+agree trivially). **Change one copy, change both, and run that test.**
+
+`npm run check:item-value-source` does NOT cover this — it checks the FE
+provider and `mapItemRow`, and cannot see SQL inside a Python string.
+
+**A short board is a correct board** — do not pad it, and do not treat a small
+row count as an error. On prod today `mtg` returns 3 ranked collectors, all with
+`value_eur = 0` because those items carry no valuation yet; the client says so
+explicitly rather than rendering a ranking of zeros.
+
+### `GET /social/users/{user_id}/categories` (2026-08-17)
+
+What a collector collects, most-held first, with their standing in each. The
+profile previously showed totals and achievements only, so two members with
+completely different collections read almost identically.
+
+Returns `{user_id, categories: [{category_id, item_count, value_eur, rank,
+total_ranked}], value_visible}`.
+
+**`rank` is nullable and null means NOT RANKED — not last place.** It is null
+when the member is not in `user_public_profiles` (discovery off) or hides their
+item count, and that is the COMMON case because discovery is off by default. A
+rank is a statement about a count, so hiding the count withholds the rank too:
+"#2 of 40" hands back exactly the ordering the switch refused. The client
+renders this as its own state and never as a number.
+
+The same three switches as the leaderboard, and they are not interchangeable:
+
+| switch off | effect |
+|---|---|
+| not in `user_public_profiles` | empty list — not a 404, which would confirm the account exists |
+| `show_item_count` | categories still listed, `item_count` 0, **no rank** |
+| `show_collection_value` | `value_eur` 0 **and** `value_visible: false`, so the client can say "hidden" rather than "EUR 0" |
+
+Viewing your OWN profile bypasses all three — hiding your collection from
+yourself is not a privacy feature.
+
+Ranking is computed in the SAME statement as the totals, restricted to the
+categories that member holds. Calling the leaderboard endpoint once per category
+would be 12 HTTP round trips to our own API to render one screen.
+
 ## Error Response Format
 
 All errors use a consistent format via `error_response()`:

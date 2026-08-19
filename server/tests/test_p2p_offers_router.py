@@ -292,3 +292,82 @@ def test_carrier_length_caps_match_the_db_constraint():
                for m in fields["tracking_carrier"].metadata)
     assert any(getattr(m, "max_length", None) == 64
                for m in fields["tracking_code"].metadata)
+
+
+# ── Who answers the offer on the table ────────────────────────────────────
+#
+# These exist because 30 green tests in this file did not catch a buyer being
+# unable to accept a seller's counter. Everything above inspects SOURCE; the
+# role rule was an `if` inside the request handler, so nothing could call it
+# and nothing did. `who_may_respond` is that rule, extracted to be callable.
+
+
+@pytest.mark.parametrize(
+    "action,status,expected",
+    [
+        # A pending offer is the BUYER's number — the seller answers it.
+        ("accept", "pending", "seller"),
+        ("decline", "pending", "seller"),
+        # A counter overwrites `amount` with the SELLER's number, so the buyer
+        # is the one who answers. This is the case that was broken: all three
+        # actions were seller-only, so a buyer facing a counter had no accept
+        # and no decline while the card said YOUR MOVE.
+        ("accept", "countered", "buyer"),
+        ("decline", "countered", "buyer"),
+        # Countering is the seller's move in both states. A buyer raising their
+        # own bid is a new offer, not a counter.
+        ("counter", "pending", "seller"),
+        ("counter", "countered", "seller"),
+    ],
+)
+def test_who_may_respond(action, status, expected):
+    assert p2p.who_may_respond(action, status) == expected
+
+
+def test_the_side_that_set_the_number_is_never_the_side_that_answers_it():
+    """The invariant behind every row above, stated once.
+
+    `accept`/`decline` must always fall to the party who did NOT put the
+    current amount on the table — seller for a pending (buyer's) offer, buyer
+    for a countered (seller's) one. A rule that returned the same side for both
+    states is the bug this pins: it cannot be right for both.
+    """
+    for action in ("accept", "decline"):
+        assert (
+            p2p.who_may_respond(action, p2p._PENDING)
+            != p2p.who_may_respond(action, p2p._COUNTERED)
+        ), f"{action} answers the same side in both states — one of them is wrong"
+
+
+class TestCompletionAsksForTheRating:
+    """Completion is the only moment both members still care about the trade.
+
+    Before 2026-08-18 the one push it sent was a receipt whose last sentence
+    mentioned grading, and its deep link was the bare `/offers` list. A member
+    with six open trades who is told "you can now grade each other" and handed
+    a list has been given a search task.
+    """
+
+    def test_the_completion_push_asks_and_names_the_other_side(self):
+        src = inspect.getsource(p2p.confirm_exchange)
+        assert "how did it go?" in src.lower(), \
+            "the completion push no longer asks for a rating"
+        # Who you rate depends on which side you were on — the same rule
+        # statusLabel(status, iAmBuyer) follows on screen.
+        assert '(str(fresh["buyer_id"]), "seller")' in src
+        assert '(str(fresh["seller_id"]), "buyer")' in src
+        assert 'kind="p2p_grade_request"' in src
+
+    def test_one_push_per_party_on_completion(self):
+        """A receipt AND a rating prompt for one event is two notifications,
+        and the second is the one that gets muted."""
+        src = inspect.getsource(p2p.confirm_exchange)
+        both_sided = src.split("BOTH sides", 1)[1].split("elif not both", 1)[0]
+        assert both_sided.count("await _notify_trade(") == 1, \
+            "completion sends more than one notification per party"
+
+    def test_trade_pushes_deep_link_to_the_offer_not_the_list(self):
+        src = inspect.getsource(p2p._notify_trade)
+        assert 'deep_link=f"/offers?offerId={offer_id}"' in src, \
+            "trade pushes land on the flat list again"
+        assert 'deep_link="/offers"' not in src

@@ -18,17 +18,24 @@ import {
 // accessible way through in web dev mode.
 const FORCE_PLAN_KEY = '@collectai/force_plan';
 
-const ENV_FORCE_PLAN = (
-  (typeof process !== 'undefined' && (process as { env?: Record<string, string | undefined> }).env?.EXPO_PUBLIC_FORCE_PLAN) || ''
-).toLowerCase();
+// NOTE: both of these MUST be written as a bare `process.env.EXPO_PUBLIC_X`
+// member expression. Expo's babel plugin replaces that exact shape with a
+// string literal at build time; it does NOT match a guarded/optional-chained
+// read like `(process as {...}).env?.EXPO_PUBLIC_X`. The guarded form compiles
+// to a real runtime lookup on `process.env`, which is empty in a release
+// bundle — so the flag silently read '' in every built app and beta unlock
+// never turned on (set completion stayed gated on TestFlight).
+// Proof: in builds/sparrow-ios-internal.ipa the string
+// "EXPO_PUBLIC_REVENUECAT_IOS_KEY" is absent (inlined, value baked in) while
+// "EXPO_PUBLIC_BETA_UNLOCK_ALL" survives in the Hermes string table.
+const ENV_FORCE_PLAN = (process.env.EXPO_PUBLIC_FORCE_PLAN || '').toLowerCase();
 
 // Beta-unlock mode — distinct from FORCE_PLAN. When set, every user gets Pro
 // limits and the subscription UI advertises beta access instead of paid plans.
 // Flip with EXPO_PUBLIC_BETA_UNLOCK_ALL=true in EAS env. Off-switch is a single
 // env var change + rebuild — no code edits needed when monetisation goes live.
-export const BETA_UNLOCK_ALL = (
-  (typeof process !== 'undefined' && (process as { env?: Record<string, string | undefined> }).env?.EXPO_PUBLIC_BETA_UNLOCK_ALL) || ''
-).toLowerCase() === 'true';
+export const BETA_UNLOCK_ALL =
+  (process.env.EXPO_PUBLIC_BETA_UNLOCK_ALL || '').toLowerCase() === 'true';
 
 function getWebLocalStorageOverride(): string {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -43,7 +50,12 @@ function getWebLocalStorageOverride(): string {
 }
 
 const DEFAULT_LIMITS: BillingStatus['limits'] = {
-  max_mandates: 3,
+  // 0, matching PLAN_LIMITS['free'] on the server. Deal discovery is Pro-only
+  // and the worker skips free users' mandates entirely, so a free mandate can
+  // never produce a deal. This said 3 from before the 2026-07-31 server change
+  // until 2026-08-16 — long enough that the paywall copy was written from it
+  // and advertised "3 purchase mandates" to people who get none.
+  max_mandates: 0,
   max_watchlist_items: 25,
   max_daily_deal_alerts: 1,
   deal_discovery: false,
@@ -84,6 +96,15 @@ const FORCED_LIMITS: Record<'pro' | 'premium', BillingStatus['limits']> = {
  * Returns safe defaults (free tier) while loading or on error.
  */
 function resolveForced(envVal: string, storageVal: string, webVal: string): 'pro' | 'premium' | null {
+  // DEV ONLY. All three sources are a developer convenience, and all three
+  // outlive the session that set them: `@collectai/force_plan` sat in a
+  // simulator's AsyncStorage reporting Pro long after the session that wrote
+  // it, which read as a paywall leak on the Market tab. In a release build the
+  // paywall must come from RevenueCat or the billing endpoint and nowhere else
+  // — the same failure eas.json pins EXPO_PUBLIC_BETA_UNLOCK_ALL='false' to
+  // prevent, except FORCE_PLAN was pinned by nothing.
+  // BETA_UNLOCK_ALL is deliberately NOT gated here: it is a shipped beta mode.
+  if (!__DEV__) return null;
   for (const v of [storageVal, webVal, envVal]) {
     if (v === 'pro' || v === 'premium') return v;
   }

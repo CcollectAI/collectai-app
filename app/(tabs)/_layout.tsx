@@ -239,10 +239,15 @@ export default function TabsLayout() {
              ONE query across items, catalogue, collectors, events and
              categories. It spent its life as a hidden route reachable only by
              submitting the market screen's search bar — while the tab that
-             said "Search" opened the marketplace instead. */
-          title: t("nav.search"),
-          tabBarLabel: t("nav.search"),
-          tabBarAccessibilityLabel: t("nav.search"),
+             said "Search" opened the marketplace instead.
+
+             The tab is LABELLED "Explore" (2026-08-18) while the route,
+             the file and every deep link stay `search` — the screen is a
+             search box whose idle state is browse-by-category, and
+             "Explore" describes both halves. Key: `nav.explore`. */
+          title: t("nav.explore"),
+          tabBarLabel: t("nav.explore"),
+          tabBarAccessibilityLabel: t("nav.explore"),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "search" : "search-outline"}

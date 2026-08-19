@@ -127,6 +127,110 @@ removed the parallel `/opt/collectors/{app,workers,tests}/` trees
 (backed up to `/tmp/duplicate_trees_20260502_173101.tar.gz` on EC2 in
 case revert is needed).
 
+### 0b. Run the NINE preflight gates BY HAND before restarting (2026-08-15, corrected 2026-08-17)
+
+`collectai-bake.service` has **nine** blocking `ExecStartPre=` gates:
+
+```
+preflight_deps · preflight_env · preflight_worker_imports
+schema_drift_check · preflight_rls_check · preflight_models
+preflight_router_drift · preflight_schema_lock · preflight_rpc_lock
+```
+
+This section said **six** until 2026-08-17 and omitted the first three, so
+following it verbatim left `preflight_deps`, `preflight_env` and
+`preflight_worker_imports` untested before a restart — exactly the gates that
+catch a missing dependency or an unset env var, which are the ones most likely
+to break after a deploy. **Read the list off the unit, not off this file:**
+
+```bash
+ssh collectai 'systemctl cat collectai-bake.service | grep ExecStartPre'
+```
+
+A blocking `ExecStartPre` that exits non-zero means the unit **does not come
+up**. Since the bake serves the API *and* every worker, discovering a failing
+gate during a restart takes production down rather than merely failing a
+deploy. Run them first, while the old process is still serving:
+
+```bash
+ssh collectai 'cd /opt/collectors/server && set -a; . /opt/collectors/.env; set +a
+for s in preflight_deps preflight_env preflight_worker_imports \
+         schema_drift_check preflight_rls_check preflight_models \
+         preflight_router_drift preflight_schema_lock preflight_rpc_lock; do
+  printf "%s: " "$s"
+  /opt/collectors/.venv/bin/python /opt/collectors/scripts/$s.py >/tmp/pf.log 2>&1 \
+    && echo PASS || { echo FAIL; tail -12 /tmp/pf.log; }
+done'
+```
+
+**This is not theoretical.** On 2026-08-15 a commit redefined
+`mv_catalog_item_price` to use `percentile_cont`, which changes `price_eur`
+from `numeric` to `double precision`. The DDL was applied to prod;
+`schema.lock.json` was not regenerated. The bake kept serving happily —
+**because the lock only bites on the next restart** — so for about an hour the
+service was in a state where any restart, reboot or OOM kill would have failed
+to come back up, with nothing in any dashboard saying so.
+
+**After any DDL, regenerate the lock and DIFF it — do not just regenerate:**
+
+```bash
+ssh collectai 'cd /opt/collectors && cp scripts/schema.lock.json /tmp/lock.before.json
+  set -a; . .env; set +a; .venv/bin/python scripts/regen_schema_lock.py'
+# then diff tables / column_meta / uniques / checks between the two files
+```
+
+A regen blesses whatever is live. The one on 2026-08-15 picked up 6 tables,
+34 columns, 11 uniques and 12 checks that had accumulated since 2026-08-09 —
+all of them legitimate, but you only know that by *reading the diff*. Copy the
+regenerated lock back into the repo (`scripts/schema.lock.json`) or the next
+person starts from a stale one.
+
+**Order matters: rsync FIRST, then run the gates, then restart.** The gates
+import from `/opt/collectors/server/`, so running them before the rsync tests
+the code you are replacing rather than the code you are shipping. Staging the
+files does not disturb the running process — it has already loaded its modules
+into memory and is unaffected until the restart.
+
+Worked example (2026-08-17, the `/social/users/{id}/categories` deploy):
+
+```bash
+scripts/deploy_to_ec2.sh --files list.txt --dirty     # stage, no restart
+ssh collectai '...nine gates...'                       # all PASS
+ssh collectai 'sudo systemctl restart collectai-bake.service'
+ssh collectai 'curl -s -H "Host: api.sparrowcollect.com" http://127.0.0.1:8000/healthz'
+# then a real authed request against the NEW endpoint — is-active is not proof
+# it works, only that it started.
+```
+
+### 0c. A committed query is not a tested query (2026-08-15)
+
+`p2p_offers_router.py` selected `l.image_url`, where `l` is
+`marketplace_listings`. **That column has never existed** and no migration ever
+added it. It passed review, `tsc`, `jest` and the router's own 30 tests — all
+of which read SQL as *text* — and sat in `main` looking fine because the router
+had not been deployed. The first deploy after that turned every
+`GET /p2p/offers` into a 500 and took the Open bids screen down.
+
+The gate that closes this is **`npm run check:sql-columns`**
+(`server/scripts/check_sql_columns.py`, wired into `verify:prebuild`). It maps
+`FROM|JOIN <table> <alias>` to `alias.column` references and checks each one
+against `scripts/schema.lock.json`.
+
+Two false-greens were found while writing it, both worth knowing because they
+are the same mistake in different clothes:
+
+1. **Alias scope.** Aliases were first resolved per SQL string. `_OFFER_COLUMNS`
+   is a bare column list with no `FROM` in it, so `l` resolved to nothing and
+   the reference was skipped as unresolvable. Aliases are now resolved
+   **per file** (an alias bound to two tables in one file is skipped as
+   ambiguous rather than guessed at).
+2. **Block filter.** Blocks were first filtered to "contains SELECT/INSERT/
+   UPDATE/DELETE". `_OFFER_COLUMNS` contains none of those words — so the one
+   block holding the bug was the one block skipped.
+
+Both versions reported a clean bill of health on the very bug they were written
+for. **Prove a new gate fails on the real defect before trusting it.**
+
 ### 1. HTTPS Setup with nginx
 
 The backend runs behind nginx with SSL termination via Let's Encrypt.

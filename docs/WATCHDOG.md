@@ -361,6 +361,47 @@ Fixed as two separate things, because they are two separate things:
 Neither is silenced in the watchdog. Both stop happening at the source, which is
 the only kind of fix that leaves the check honest.
 
+## The coverage canary was wrong in both directions (2026-08-15)
+
+It reported **pokemon at 21.3%** against a true **96.1%**, and said nothing at
+all about **lorcana, digimon and one_piece_tcg sitting at 0%** — roughly 24,400
+catalogue rows with no price. A monitor that pages on your healthiest category
+and stays silent on your broken ones is worse than no monitor: the false HIGH
+teaches you to ignore it, and then it cannot warn you about the real one.
+
+Three defects, all in ~40 lines:
+
+**1. The sample was still biased.** Stratifying by `source` was added to fix an
+unordered-`LIMIT` bias, but the inner query kept `LIMIT $3` with **no
+`ORDER BY`** — so it applied the same "oldest physical rows" bias once per
+source instead of removing it. Pokémon has one dominant source, so it kept
+reading the same unpriceable head of the table. Now `ORDER BY random()`.
+
+**2. The category list was hand-maintained.** `[("mtg",80),("pokemon",80),
+("yugioh",60)]` could not see a category nobody had remembered to add — which
+is exactly what happened when tcgcsv was 403-blocked on 2026-07-29 and took
+lorcana/digimon/one_piece to zero. The list is now derived: every category with
+≥500 catalogue rows, floor 60% (80% for mtg/pokemon).
+
+**3. Below-floor is three different findings.** Deriving the list produced **54
+HIGHs**, ~40 of them the known structural gap where no sold-comp source exists
+at all. Paging daily on a permanent condition mutes the monitor just as
+effectively. Valuation only consumes SOLD comps, so their presence is the
+discriminator:
+
+| condition | meaning | severity |
+|---|---|---|
+| sold comps arriving now, coverage low | keying/crosswalk fault — the data is there and the catalogue cannot reach it | **HIGH** |
+| sold comps in the 30–90d window, none now | **the source died** — a regression with a date | **HIGH** |
+| never any sold comps | structural: `ebay_caller.sold_comps()` returns `[]` | **ONE aggregated MEDIUM** with the totals |
+
+That last row is now a single finding naming 46 categories and 68,181 rows,
+rather than 46 separate pages. Nothing is hidden — the scale is stated once.
+
+**Verification:** re-run against live and compare to a direct measurement.
+Pokémon must come back ~96%, lorcana ~0%. A canary is a measurement; check it
+against the thing it claims to measure before trusting it.
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes

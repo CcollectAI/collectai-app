@@ -84,7 +84,8 @@
     "close_target_edit_a11y": "Close target price editor",
     "target_price_input_a11y": "Target price",
     "save_target_a11y": "Save target price",
-    "save_target_button": "Save target"
+    "save_target_button": "Save target",
+    "title": "Watchlist"
   },
   "events": {
     "reminder_a11y": "Set reminder for event",
@@ -115,7 +116,8 @@
     "retry_a11y": "Retry search",
     "no_results": "No results found",
     "no_price_yet": "No price yet",
-    "browse_by_category": "Browse by category"
+    "browse_by_category": "Browse by category",
+    "title": "Search"
   },
   "item_detail": {
     "valuation_a11y": "Item valuation and details",
@@ -299,7 +301,7 @@
     "marketplace": "Marketplace",
     "market": "Market",
     "wishlist": "Watchlist",
-    "search": "Search",
+    "explore": "Explore",
     "settings": "Settings",
     "profile": "Profile"
   },

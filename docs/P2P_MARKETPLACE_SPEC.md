@@ -220,11 +220,94 @@ prod.
 
 | Stage | What the screen shows |
 |---|---|
-| offer received | `Selling` · "Awaiting seller" · Accept / Counter / Decline |
-| accepted | "Agreed — arrange the exchange" · `○ Seller sent` `○ Buyer received` · Mark sent / Add tracking / Withdraw |
+| offer received | `You sell` · "Waiting for your reply" · Accept / Counter / Decline |
+| accepted | "Agreed — take payment, then send the item" (seller) / "Agreed — pay the seller and share your address" (buyer) · `○ Seller sent` `○ Buyer received` · Mark sent / Add tracking / Withdraw |
 | seller confirmed + tracking | `✓ Seller sent` `○ Buyer received` · PostNL block · **Mark sent replaced by Edit tracking** |
-| completed | "Completed" · **Grade trade** appears |
+| completed | "Trade complete" · **Rate the seller / Rate the buyer** appears |
 | sold listing | "This listing is no longer available (sold)" · **"1 completed trade"** on the seller card |
+
+**Every status line is written from the reader's side (2026-08-15).** The
+neutral wording above was reported as unreadable: *"i don't get 'buying', is
+this the user is buying?"*, *"what is 'arrange the exchange'"*, *"'2 needs you'
+makes no sense"*, *"'countered, 1 counter' is just not very easy to follow"*.
+One status is two different instructions depending on which side you are on, so
+`statusLabel(status, iAmBuyer)` in `app/offers.tsx` is the single place that
+decides, and the role pill says `You buy` / `You sell` rather than naming a
+category. Counter count renders only from the second round on — at one, the
+status line has already said it.
+
+### The buyer answers a counter (fixed 2026-08-15)
+
+`counter` overwrites `p2p_offers.amount` with the seller's figure, so a
+`countered` offer is **the seller's offer sitting in front of the buyer**. All
+three of `accept` / `decline` / `counter` were nonetheless seller-only, which
+left a buyer facing a counter with no accept and no decline — `withdraw` was
+their only move. The app already disagreed: `offerNeedsMyAction` returns true
+for a buyer on a countered offer, so the card was stamped `YOUR MOVE` and
+counted in the badge while the only control rendered was Delete. Reported as
+*"where is the accept button for example / or reject"*.
+
+**One rule, in `who_may_respond(action, status)`:** whoever did not set the
+current number is the one who answers it.
+
+| status | whose number | accept / decline | counter |
+|---|---|---|---|
+| `pending` | the buyer's | **seller** | seller |
+| `countered` | the seller's | **buyer** | seller |
+
+`counter` stays seller-only in both: a buyer raising their own bid is just a new
+offer, and letting both sides write `amount` makes "whose number is this?"
+unanswerable.
+
+It lives in a named function rather than inside the request handler because the
+30 tests around this router inspect SOURCE TEXT — nothing could call the rule,
+so nothing checked it, and it stayed wrong through every green run. The tests
+now call `who_may_respond` directly, and were confirmed to FAIL against the old
+seller-only rule before being kept.
+
+The buyer's controls are **Accept bid** and **Turn it down** (confirmed, like
+the seller's Decline — turning a counter down ends the negotiation).
+
+### `i_withdrew` — who walked, as a tri-state
+
+Either side may `withdraw` (a seller may retract a counter), so `status:
+'cancelled'` alone never says who. `withdrawn_by` had been written since Stage 2
+and returned to nobody; `app/offers.tsx` briefly asserted the buyer always
+walked.
+
+`OfferOut.i_withdrew` is `Optional[bool]`, **not `bool`**: `None` means nobody
+is recorded as having walked (a row cancelled before that column was written).
+Sending `False` there would let the client say "the other side withdrew" on the
+strength of a missing value. The client must test `== null`, not `=== undefined`
+— it arrives as JSON `null`, which is falsy and otherwise falls straight through
+to the wrong branch.
+
+It is read with `_row_opt`, because `create_offer`'s `INSERT ... RETURNING`
+cannot join and does not select it — reading it directly would be a 500 on the
+primary Stage 2 entry point only.
+
+### Two gaps, stated rather than left to be discovered
+
+**Offers never expire.** `p2p_offers.expires_at` exists, is `NULL` on every row,
+is written by nothing in `server/app/`, and no worker expires anything. The
+`expired` status is legal and has never been produced. A bid rests until
+somebody acts on it. If a deadline is wanted it needs a writer AND a worker —
+the column alone changes nothing.
+
+**A seller cannot compare competing bids.** The data model allows many offers
+per listing, but `app/offers.tsx` is a flat list across ALL your listings ranked
+by "needs you" then recency, so two bids on the same item can be far apart with
+unrelated trades between them. The offer ladder described in §1d was never built
+(`app/listing/[id].tsx` still says "Stage 1 deliberately stops here: no
+offers"). Note also that comparing on *distance* is impossible by construction:
+addresses are only collectable after `accepted` (§5a), so at decision time the
+seller has price and nothing else.
+
+
+**"Grade" is the stored concept, "rate" is the word on screen.** The table is
+`member_grades` and the server flags stay `can_grade` / `already_graded`; only
+the label changed, because a member is rating the *person* on the other side,
+and "grade" already means condition grading elsewhere in this app.
 
 **No bugs found.** Recording that as a fact rather than a shrug: three things
 were confirmed that no test asserts.
@@ -1472,3 +1555,77 @@ an empty carrier list reads as "Sparrow does not ship where I live".
 `region=all` is the escape hatch and the tracking picker uses it: recording a
 code is a fact being entered, not a choice being made, and a seller who shipped
 with a carrier outside their region must still be able to type its number in.
+
+---
+
+## 12. Ratings reach the profile and the tile (2026-08-18)
+
+Asked for as *"i want it possible to have your trade rating visible on your
+profile and the same should be reflected when you are offering products for
+sale on the marketplace… just like uber you need to be able to be rated and
+hand out ratings as both the buyer and seller"*.
+
+**The two-sided half already existed.** `member_grades` takes a grade from
+EITHER party of a completed trade, anchored to `offer_id` and unique per rater
+(§1d), and `app/offers.tsx` renders "Rate the seller" / "Rate the buyer" off the
+server's `can_grade`. That is the Uber shape minus the stars, and the stars stay
+off deliberately: completion is two self-confirmations, not a settled payment,
+so a 4.7/5 would imply a precision the data cannot carry (§8e). Confirmed with
+Merle before building — **thumbs stay, `positive_pct` stays hidden below 3
+grades.**
+
+What was missing was everywhere the rating was supposed to be READ.
+
+| surface | before | after |
+|---|---|---|
+| listing DETAIL | "92% positive · 12 trades" | unchanged |
+| member PROFILE (`/users/[userId]`) | nothing | `TradeReputationSection` |
+| marketplace TILE (`/listings`) | seller name only | name · 92% (or · N trades) |
+| `GET /p2p/members/{id}/reputation` | **zero callers** | the profile section |
+
+### The endpoint had been built and reached from nowhere
+
+`getMemberReputation` shipped with Stage 2, was exported through
+`collectorsApi.p2pMemberReputation`, and had **no call site in the app**. The
+listing screen showed the same numbers by a different query, so a rating you
+left appeared on the seller's *items* and never on the *seller*
+([[learning_complete_feature_reachable_from_nowhere]]).
+
+### The tile was worse than empty — it was ready to lie
+
+`ListingOut` has carried `seller_completed_trades` / `seller_positive_pct`
+since Stage 2, and **only the detail query selected the underlying columns**.
+The browse response therefore served Pydantic's defaults. Rendering the field
+on the tile without touching the query would have printed **"0 trades" for
+every seller on the platform**, with nothing erroring anywhere — `unknown-as-zero`
+wearing a reputation.
+
+Both queries now share `_SELLER_REPUTATION_SQL` and both mappers go through
+`_reputation_fields(r)`, so the threshold and the rounding are defined once.
+`server/tests/test_p2p_listing_router.py::TestSellerReputationReachesBrowse`
+pins it and was **proven to fail against the old browse query** before being
+kept.
+
+### Splitting the SQL exposed a read the gate had never seen
+
+Concatenating the shared fragment turned one string literal into three, and
+`check:archived` reports per literal. The detail query had been passing only
+because its `WHERE l.id = $1` made the whole literal look like a by-id lookup —
+so `seller_collection_size` had been counting **archived** items all along.
+Settlement archives the seller's item when a trade completes, so that number
+credited a seller for everything they had already sold. Now
+`AND si.archived IS NOT TRUE`. The gate found a real bug by being made able to
+see the query, which is the argument for keeping gates literal-scoped.
+
+### What is still deliberately not shown
+
+- **No stars, no score, no "verified seller".** §5b's right-hand column is
+  unchanged; the profile section renders `completed_trades` and a percentage
+  and nothing else.
+- **No client-side percentage.** The FE must never divide
+  `positive_grades / total_grades` to fill the gap below the threshold — that
+  re-derives a rule the server owns and publishes exactly what the threshold
+  exists to withhold.
+- **Nothing renders at zero.** `TradeReputationSection` returns null until the
+  member has a trade or a grade: on a pre-launch marketplace an
+  always-rendered card would be an empty grey box on every profile in the app.

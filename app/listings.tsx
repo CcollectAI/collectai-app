@@ -251,6 +251,27 @@ function ListingCard({
             <Text style={[styles.cardSellerName, { color: colors.muted }]} numberOfLines={1}>
               {listing.seller_name}
             </Text>
+            {/* The seller's record travels WITH their listing, which is the
+                whole point of a two-sided rating: it has to be where the
+                decision is made. It was on the detail screen only, so it could
+                not influence whether a buyer tapped in the first place — the
+                same argument that put `watchers` on this tile.
+
+                `seller_positive_pct` is null until the server's 3-grade
+                threshold, and below it the trade COUNT is shown instead: a
+                fact, meaningful at n=1. Both come from the browse query as of
+                2026-08-18; before that this field existed on the response with
+                a Pydantic default of 0 and would have printed "0 trades" for
+                every seller on the platform. */}
+            {listing.seller_positive_pct != null ? (
+              <Text style={[styles.cardSellerName, { color: colors.success }]} numberOfLines={1}>
+                · {listing.seller_positive_pct}%
+              </Text>
+            ) : listing.seller_completed_trades > 0 ? (
+              <Text style={[styles.cardSellerName, { color: colors.muted }]} numberOfLines={1}>
+                · {listing.seller_completed_trades} trade{listing.seller_completed_trades === 1 ? '' : 's'}
+              </Text>
+            ) : null}
           </View>
         ) : null}
 
@@ -1178,6 +1199,10 @@ export default function MemberMarketplaceScreenWithBoundary({ asTab }: { asTab?:
   );
 }
 
+// Type floor (2026-08-16): the four raw 9/10/11pt literals here were the
+// 'open divergence' docs/ui-playbook.md recorded but never closed — the same
+// doc bans `xs` (10pt) for anything a user reads and asks for line-height at
+// >=1.35x. All four are now `sm` (12) with matching line-heights.
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   pad: { paddingHorizontal: 16, paddingTop: 12 },
@@ -1218,7 +1243,7 @@ const styles = StyleSheet.create({
     minWidth: 17, height: 17, borderRadius: 9, borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3,
   },
-  badgeText: { fontSize: 10, fontWeight: fontWeight.bold, lineHeight: 13 },
+  badgeText: { fontSize: textToken.sm, fontWeight: fontWeight.bold, lineHeight: 17 },
   chipsWrap: {
     flexDirection: 'row', flexWrap: 'wrap', gap: 8,
     paddingHorizontal: 16, marginTop: 10,
@@ -1312,7 +1337,7 @@ const styles = StyleSheet.create({
     position: 'absolute', left: 6, bottom: 6,
     paddingHorizontal: 6, paddingVertical: 3, borderRadius: radius.xs,
   },
-  stockTagText: { fontSize: 9, fontWeight: fontWeight.semibold },
+  stockTagText: { fontSize: textToken.sm, fontWeight: fontWeight.semibold, lineHeight: 17 },
   // `flex: 1` is what gives the action cluster below a floor to sit on. A
   // FlatList `columnWrapperStyle` row is `alignItems: 'stretch'` by default, so
   // the two tiles in a row are ALREADY the same height — the shorter one just
@@ -1324,9 +1349,9 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: textToken.sm, fontWeight: fontWeight.medium, lineHeight: 16 },
   cardPrice: { fontSize: textToken.lg, fontWeight: fontWeight.extrabold, letterSpacing: -0.3 },
   watchRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  watchText: { fontSize: 10, fontWeight: fontWeight.bold },
+  watchText: { fontSize: textToken.sm, fontWeight: fontWeight.bold, lineHeight: 17 },
   cardSeller: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
-  cardSellerName: { flex: 1, fontSize: 11 },
+  cardSellerName: { flex: 1, fontSize: textToken.sm, lineHeight: 17 },
   cardMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
   cardMeta: { fontSize: textToken.xs, flexShrink: 1, letterSpacing: 0.2 },
   // Bottom-right, on every tile, regardless of what the tile says above.
@@ -1351,8 +1376,12 @@ const styles = StyleSheet.create({
   emptyBody: { fontSize: textToken.sm, textAlign: 'center', lineHeight: 19 },
   cta: { marginTop: 8, paddingHorizontal: 20, paddingVertical: 11, borderRadius: radius.md },
   ctaText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
-  footerWrap: { alignItems: 'center', paddingBottom: 8 },
-  footerLink: { fontSize: textToken.xs, fontWeight: fontWeight.bold, paddingVertical: 8 },
+  // `stretch`, NOT `center`. Centring shrink-wraps every child to its own
+  // intrinsic width, and MarketMoversSection has no width of its own — it
+  // rendered at roughly half the grid's width with every item name ellipsised
+  // ("Girati…", "pokem…"). The notes below it centre their own text.
+  footerWrap: { alignItems: 'stretch', paddingBottom: 8 },
+  footerLink: { fontSize: textToken.xs, fontWeight: fontWeight.bold, paddingVertical: 8, textAlign: 'center' },
   footerNote: {
     fontSize: textToken.xs, textAlign: 'center',
     paddingVertical: 20, paddingHorizontal: 24, lineHeight: 16,

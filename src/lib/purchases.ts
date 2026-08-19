@@ -28,23 +28,48 @@ export type PlanTier = 'free' | 'pro' | 'premium';
 const iosKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '';
 const androidKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? '';
 
-let configured = false;
+/**
+ * Why RevenueCat is or is not usable. `isPurchasesAvailable()` used to be the
+ * only answer available and it is a BOOLEAN, so `app/subscription.tsx` logged
+ * "reason=no-key — EXPO_PUBLIC_REVENUECAT_IOS_KEY missing from this build" for
+ * every false — including the case where the key was present and
+ * `Purchases.configure()` THREW. A diagnostic that names the wrong cause is
+ * worse than none: it sends you to check EAS env vars that were never the
+ * problem. (Found 2026-08-17 while triaging "plans couldn't load" on a build
+ * that was never capable of selling anything.)
+ *
+ *   ready              configure() succeeded; the SDK can be asked for products
+ *   no-key             no key for this platform in this build. NORMAL for the
+ *                      `development` / dev-client profile, whose eas.json env
+ *                      block sets only EXPO_PUBLIC_SUPABASE_MODE — the paywall
+ *                      cannot work on a dev build no matter what Apple does
+ *   configure-failed   key present, the SDK rejected it or the native module is
+ *                      missing. OURS to fix, and nothing to do with Apple
+ */
+export type PurchasesStatus = 'ready' | 'no-key' | 'configure-failed';
+
+let status: PurchasesStatus = 'no-key';
 
 function getApiKey(): string {
   return Platform.OS === 'ios' ? iosKey : androidKey;
 }
 
+export function purchasesStatus(): PurchasesStatus {
+  return status;
+}
+
 export function isPurchasesAvailable(): boolean {
-  return configured;
+  return status === 'ready';
 }
 
 export function initPurchases(): void {
-  if (configured) return;
+  if (status === 'ready') return;
   const apiKey = getApiKey();
   if (!apiKey) {
+    status = 'no-key';
     // logger.warn is stripped in release builds, so this uses .error — a
     // missing key is exactly the thing you need visible on a store build.
-    // app/subscription.tsx checks isPurchasesAvailable() and renders its
+    // app/subscription.tsx reads purchasesStatus() and renders its
     // "unavailable" state rather than dead Subscribe buttons, so this is a
     // silent no-revenue failure unless something says so out loud.
     logger.error(
@@ -57,14 +82,15 @@ export function initPurchases(): void {
   try {
     Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
     Purchases.configure({ apiKey });
-    configured = true;
+    status = 'ready';
   } catch (e) {
-    logger.error('[purchases] configure failed:', e);
+    status = 'configure-failed';
+    logger.error('[purchases] configure failed — a key IS present, so this is ours, not Apple:', e);
   }
 }
 
 export async function identifyUser(userId: string | null): Promise<void> {
-  if (!configured) return;
+  if (status !== 'ready') return;
   try {
     if (userId) {
       await Purchases.logIn(userId);
@@ -85,7 +111,7 @@ export async function identifyUser(userId: string | null): Promise<void> {
  * pass undefined. AuthProvider calls this once the profile resolves.
  */
 export async function setReferralAttribute(referralCode: string | null | undefined): Promise<void> {
-  if (!configured || !referralCode) return;
+  if (status !== 'ready' || !referralCode) return;
   try {
     await Purchases.setAttributes({ affiliate_code: referralCode });
   } catch (e) {
@@ -102,7 +128,7 @@ export function planFromCustomerInfo(info: CustomerInfo | null | undefined): Pla
 }
 
 export async function getCustomerInfo(): Promise<CustomerInfo | null> {
-  if (!configured) return null;
+  if (status !== 'ready') return null;
   try {
     return await Purchases.getCustomerInfo();
   } catch (e) {
@@ -112,7 +138,7 @@ export async function getCustomerInfo(): Promise<CustomerInfo | null> {
 }
 
 export async function getOfferings(): Promise<PurchasesOfferings | null> {
-  if (!configured) return null;
+  if (status !== 'ready') return null;
   try {
     return await Purchases.getOfferings();
   } catch (e) {
@@ -127,7 +153,7 @@ export type PurchaseResult =
   | { ok: false; cancelled: false; message: string };
 
 export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseResult> {
-  if (!configured) {
+  if (status !== 'ready') {
     return { ok: false, cancelled: false, message: 'Purchases not configured' };
   }
   try {
@@ -146,7 +172,7 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
 }
 
 export async function restorePurchases(): Promise<CustomerInfo | null> {
-  if (!configured) return null;
+  if (status !== 'ready') return null;
   try {
     return await Purchases.restorePurchases();
   } catch (e) {
@@ -158,7 +184,7 @@ export async function restorePurchases(): Promise<CustomerInfo | null> {
 export type CustomerInfoListener = (info: CustomerInfo) => void;
 
 export function addCustomerInfoUpdateListener(listener: CustomerInfoListener): () => void {
-  if (!configured) {
+  if (status !== 'ready') {
     return () => {};
   }
   Purchases.addCustomerInfoUpdateListener(listener);

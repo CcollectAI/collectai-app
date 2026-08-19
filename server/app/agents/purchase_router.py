@@ -278,6 +278,14 @@ def _row_to_mandate(row) -> dict:
         deals_purchased=int(row.get("deals_purchased") or 0),
         created_at=_ts(row["created_at"]) or "",
         updated_at=_ts(row["updated_at"]) or "",
+        # Was omitted entirely until 2026-08-16, so EVERY mandate response —
+        # create, list, get, patch — reported canonical_ref = None no matter what
+        # was stored. The write path was correct all along; the row simply never
+        # reached the model. docs/API.md promises this field so the client can
+        # show keyed vs free-text "without a second call", and it could not.
+        # Nothing failed: None is a legal value for a free-text mandate, which is
+        # why a keyed one reporting None looked ordinary.
+        canonical_ref=row.get("canonical_ref"),
     ).model_dump()
 
 

@@ -68,6 +68,30 @@ _PENDING, _COUNTERED, _ACCEPTED = "pending", "countered", "accepted"
 _DECLINED, _CANCELLED, _EXPIRED = "declined", "cancelled", "expired"
 _SHIPPED, _COMPLETED = "shipped", "completed"
 
+
+def who_may_respond(action: str, status: str) -> str:
+    """Which side may take `action` on an offer in `status` — "buyer" or "seller".
+
+    ONE RULE: whoever did not set the current number is the one who answers it.
+
+    A `counter` overwrites `p2p_offers.amount` with the seller's figure, so a
+    `countered` offer is the SELLER's offer sitting in front of the BUYER, and
+    the buyer is the one who accepts or declines it. A `pending` offer is the
+    buyer's, so the seller answers that one.
+
+    `counter` is seller-only in both states: a buyer raising their own bid is
+    just a new offer, and letting both sides write `amount` makes "whose number
+    is this?" unanswerable.
+
+    Extracted 2026-08-15. All three actions used to be unconditionally
+    seller-only, which left a buyer facing a counter with no accept and no
+    decline — while the app's own `offerNeedsMyAction` stamped YOUR MOVE on
+    exactly that card. Caller checks membership; this decides the side.
+    """
+    if action == "counter":
+        return "seller"
+    return "buyer" if status == _COUNTERED else "seller"
+
 # Below this many grades a member's score is hidden rather than shown. One bad
 # grade out of one is not a reputation, it is a coin flip, and presenting it as
 # a percentage would be actively misleading.
@@ -82,6 +106,7 @@ _OFFER_COLUMNS = """
             o.id, o.listing_id, o.buyer_id, o.seller_id, o.amount,
             o.currency, o.status, o.message, o.counter_count,
             o.created_at, o.seller_confirmed_at, o.buyer_confirmed_at,
+            o.withdrawn_by,
             o.tracking_carrier, o.tracking_code, o.tracking_set_at,
             l.listing_title,
             -- The ASKING price, so a counter can be expressed as a percentage of
@@ -94,7 +119,24 @@ _OFFER_COLUMNS = """
             -- what made a screen of negotiations read as a spreadsheet — a
             -- thumbnail is the single change that makes a stacked list
             -- scannable.
-            l.image_url AS listing_image_url,
+            --
+            -- Sourced from `item_images`, NOT from `marketplace_listings`. This
+            -- read `l.image_url` from 2026-08-15 (commit e6f5f32) until the
+            -- same day: that column has never existed on that table, and no
+            -- migration ever added it. The router simply had not been deployed,
+            -- so the query was never executed until it was — and then every
+            -- /p2p/offers call 500'd with UndefinedColumnError. A committed
+            -- query against a column that does not exist is undeployable code
+            -- sitting in main, which only a live call can catch.
+            --
+            -- A correlated subquery rather than a JOIN because _OFFER_COLUMNS
+            -- is shared by five queries and each would otherwise need the same
+            -- join added by hand — one of them would eventually be missed.
+            (SELECT ii.image_url
+               FROM public.item_images ii
+              WHERE ii.item_id = l.item_id
+              ORDER BY ii.position NULLS LAST, ii.created_at
+              LIMIT 1) AS listing_image_url,
             -- Recipient postcode + country, for the carriers whose tracking URL
             -- needs them (PostNL). NULL until the buyer supplies an address, and
             -- `_tracking_url` then returns None rather than a half-built link,
@@ -258,6 +300,18 @@ class OfferOut(BaseModel):
     tracking_url: Optional[str] = None
     # Convenience for the client so it does not re-derive the rules below.
     i_am_buyer: bool = False
+    # Who walked away, reduced to the only question the reader has.
+    # `withdraw` is available to EITHER side (a seller may retract a
+    # counter), so a client that only knows `status='cancelled'` cannot
+    # say who did it — and app/offers.tsx briefly claimed the buyer always
+    # had. The row has carried `withdrawn_by` since Stage 2; nothing
+    # returned it.
+    # Optional[bool], NOT bool. `None` = nobody is recorded as having
+    # walked (withdrawn_by IS NULL, e.g. a row cancelled before that
+    # column was written). Sending False there would let the client say
+    # "the other side withdrew" on the strength of a missing value —
+    # learning_empty_answer_rendered_as_zero, in boolean form.
+    i_withdrew: Optional[bool] = None
     can_confirm: bool = False
     can_grade: bool = False
     already_graded: bool = False
@@ -358,7 +412,8 @@ def dac7_reportable(sales_count: int, gross_eur: float) -> bool:
 #     already at their cap must still learn their offer was accepted. Volume is
 #     naturally bounded: one live offer per buyer per listing, and the rest are
 #     responses to it.
-async def _notify_trade(conn, user_id: str, title: str, body: str, offer_id: str) -> None:
+async def _notify_trade(conn, user_id: str, title: str, body: str, offer_id: str,
+                        kind: str = "p2p_offer") -> None:
     """Tell one party about a trade event. NEVER raises.
 
     A notification that fails must not roll back or 500 a trade that already
@@ -375,8 +430,14 @@ async def _notify_trade(conn, user_id: str, title: str, body: str, offer_id: str
             title,
             body,
             category="account",
-            data={"kind": "p2p_offer", "offer_id": offer_id},
-            deep_link="/offers",
+            data={"kind": kind, "offer_id": offer_id},
+            # The specific offer, not the list. A member with six trades open
+            # who is told "rate your trade" and lands on a flat list has been
+            # handed a search task, not a link. `app/offers.tsx` reads
+            # `offerId` and opens that card (npm run check:params covers the
+            # in-app pushes to this route; a server deep link is the same
+            # contract arriving from outside).
+            deep_link=f"/offers?offerId={offer_id}",
             urgent=True,
         )
     except Exception as exc:  # best-effort: the trade already succeeded
@@ -773,6 +834,13 @@ def _row_to_offer(r, me: str) -> OfferOut:
         status=r["status"],
         message=r["message"],
         counter_count=int(r["counter_count"] or 0),
+        # `_row_opt`, not `r[...]`: create_offer's INSERT ... RETURNING does
+        # not select this, and a direct read would be a 500 on the primary
+        # Stage 2 entry point only — the trap this file's tests pin.
+        i_withdrew=(
+            None if _row_opt(r, "withdrawn_by") is None
+            else str(_row_opt(r, "withdrawn_by")) == me
+        ),
         created_at=r["created_at"],
         seller_confirmed_at=r["seller_confirmed_at"],
         buyer_confirmed_at=r["buyer_confirmed_at"],
@@ -1017,14 +1085,44 @@ async def respond_to_offer(
         status = o["status"]
 
         if action in ("accept", "decline", "counter"):
-            # Only the seller decides on a live offer. A buyer countering
-            # their own offer is just a new offer.
-            if not is_seller:
-                raise error_response(403, "Only the seller can respond to an offer",
-                                     code="SELLER_ONLY")
             if status not in (_PENDING, _COUNTERED):
                 raise error_response(409, f"Offer is already {status}",
                                      code="OFFER_NOT_OPEN")
+
+            # WHOEVER DID NOT SET THE CURRENT NUMBER IS THE ONE WHO ANSWERS IT.
+            #
+            # `counter` overwrites `amount` with the seller's figure (see the
+            # counter branch below), so a countered offer is the SELLER's offer
+            # sitting in front of the BUYER. Until 2026-08-15 all three actions
+            # were seller-only, which meant a buyer looking at a counter had no
+            # accept and no decline — only `withdraw`. The app knew better and
+            # said so: `offerNeedsMyAction` returns true for a buyer on a
+            # countered offer, so the card was stamped YOUR MOVE and the badge
+            # counted it, while the only control rendered was Delete. Reported
+            # as *"where is the accept button for example / or reject"*.
+            #
+            # `counter` itself stays seller-only: a buyer raising their own bid
+            # is just a new offer, and letting both sides write `amount` makes
+            # "whose number is this?" unanswerable.
+            #
+            # The rule lives in `who_may_respond` rather than in this branch so
+            # it can be tested as a rule. The tests around this router inspect
+            # SOURCE, which is why the seller-only bug survived 30 green tests:
+            # nothing could call the decision, so nothing checked it.
+            side = who_may_respond(action, status)
+            if side == "buyer" and not is_buyer:
+                raise error_response(
+                    403,
+                    "The counter is yours to answer — the buyer accepts or declines it",
+                    code="BUYER_ONLY",
+                )
+            if side == "seller" and not is_seller:
+                raise error_response(
+                    403,
+                    "Only the seller can counter an offer" if action == "counter"
+                    else "Only the seller can respond to an offer",
+                    code="SELLER_ONLY",
+                )
 
         if action == "counter" and amount is None:
             raise error_response(400, "A counter needs an amount", code="AMOUNT_REQUIRED")
@@ -1120,9 +1218,23 @@ async def respond_to_offer(
         title_ = fresh["listing_title"] or "your item"
         amt = f"{fresh['currency']} {float(fresh['amount']):.2f}"
         if action == "accept":
-            other, subject, body = str(o["buyer_id"]), "Your offer was accepted", (
-                f"The seller accepted {amt} for \"{title_}\". Arrange the exchange in Open bids."
-            )
+            # WHO accepted decides who is told. Since 2026-08-15 a COUNTER is the
+            # buyer's to answer, so this branch fires for both directions — and
+            # until 2026-08-16 it always notified the buyer with "The seller
+            # accepted", which meant a buyer accepting a counter got a message
+            # about their own tap while the SELLER, who now has to post the item,
+            # was told nothing at all. Found by the Stage 2 E2E, which had been
+            # left un-run since the permission change: the guard was updated,
+            # the notification beside it was not.
+            accepter_is_buyer = user_id == str(o["buyer_id"])
+            if accepter_is_buyer:
+                other, subject, body = str(o["seller_id"]), "Your counter was accepted", (
+                    f"The buyer accepted {amt} for \"{title_}\". Arrange the exchange in Open bids."
+                )
+            else:
+                other, subject, body = str(o["buyer_id"]), "Your offer was accepted", (
+                    f"The seller accepted {amt} for \"{title_}\". Arrange the exchange in Open bids."
+                )
         elif action == "decline":
             other, subject, body = str(o["buyer_id"]), "Your offer was declined", (
                 f"Your {amt} offer on \"{title_}\" was declined. You can make another one."
@@ -1868,13 +1980,30 @@ async def confirm_exchange(
 
             # BOTH sides, because completion unlocks grading for both and each
             # needs to know the other confirmed.
+            #
+            # This is the REVIEW ASK, not a receipt. Completion is the only
+            # moment both members are still thinking about the trade, and a
+            # rating asked for later is a rating not left — so the one push
+            # completion sends is the one that asks for it, rather than a
+            # "Trade completed" whose last sentence happens to mention grading.
+            # Still ONE push per party: a receipt plus a rating prompt fired
+            # together is two notifications for one event, and the second is
+            # what gets muted.
+            #
+            # The wording names the OTHER side's role, because who you rate
+            # depends on which side you were on — the same rule
+            # `statusLabel(status, iAmBuyer)` follows on screen.
             title_ = fresh["listing_title"] or "your item"
-            for party in (str(fresh["buyer_id"]), str(fresh["seller_id"])):
+            for party, other_role in (
+                (str(fresh["buyer_id"]), "seller"),
+                (str(fresh["seller_id"]), "buyer"),
+            ):
                 await _notify_trade(
-                    conn, party, "Trade completed",
+                    conn, party, "Trade complete — how did it go?",
                     f"You both confirmed the exchange of \"{title_}\". "
-                    "You can now grade each other in Open bids.",
+                    f"Rate the {other_role} so other members know what to expect.",
                     offer_id,
+                    kind="p2p_grade_request",
                 )
         elif not both:
             # ONE side has confirmed. The other must be told, or the trade stalls

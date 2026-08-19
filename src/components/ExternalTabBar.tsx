@@ -83,8 +83,9 @@ export function ExternalTabBar() {
       // for: one query across items, catalogue, collectors, events and
       // categories. It was `href: null` while the slot that SAID Search opened
       // the marketplace instead.
+      // Labelled "Explore" since 2026-08-18; the ROUTE stays `search`.
       key: "search",
-      label: t("nav.search"),
+      label: t("nav.explore"),
       icon: "search-outline",
       iconFocused: "search",
       href: "/(tabs)/search",

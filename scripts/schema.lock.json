@@ -136,6 +136,27 @@
     "member_grades.verdict": [
       "CHECK ((verdict = ANY (ARRAY['positive'::text, 'negative'::text])))"
     ],
+    "p2p_offer_addresses.city": [
+      "CHECK (((length(btrim(city)) >= 1) AND (length(btrim(city)) <= 120)))"
+    ],
+    "p2p_offer_addresses.country": [
+      "CHECK ((country ~ '^[A-Z]{2}$'::text))"
+    ],
+    "p2p_offer_addresses.line1": [
+      "CHECK (((length(btrim(line1)) >= 2) AND (length(btrim(line1)) <= 200)))"
+    ],
+    "p2p_offer_addresses.line2": [
+      "CHECK (((line2 IS NULL) OR (length(btrim(line2)) <= 200)))"
+    ],
+    "p2p_offer_addresses.postcode": [
+      "CHECK (((length(btrim(postcode)) >= 2) AND (length(btrim(postcode)) <= 16)))"
+    ],
+    "p2p_offer_addresses.recipient_name": [
+      "CHECK (((length(btrim(recipient_name)) >= 2) AND (length(btrim(recipient_name)) <= 120)))"
+    ],
+    "p2p_offer_addresses.state": [
+      "CHECK (((state IS NULL) OR ((length(btrim(state)) >= 2) AND (length(btrim(state)) <= 64))))"
+    ],
     "p2p_offers.amount": [
       "CHECK ((amount > (0)::numeric))"
     ],
@@ -235,6 +256,12 @@
     "user_checklist_state.state": [
       "CHECK ((state = ANY (ARRAY['own'::text, 'want'::text])))"
     ],
+    "user_payment_handles.handle": [
+      "CHECK (((length(btrim(handle)) >= 2) AND (length(btrim(handle)) <= 64)))"
+    ],
+    "user_payment_handles.rail_key": [
+      "CHECK (((rail_key = lower(rail_key)) AND ((length(rail_key) >= 2) AND (length(rail_key) <= 32))))"
+    ],
     "user_price_alerts.direction": [
       "CHECK (((direction IS NULL) OR (direction = ANY (ARRAY['up'::text, 'down'::text]))))"
     ],
@@ -250,6 +277,9 @@
     "user_settings.region": [
       "CHECK ((region = ANY (ARRAY['americas'::text, 'europe'::text, 'japan'::text, 'korea'::text, 'oceania'::text, 'other'::text])))"
     ],
+    "user_settings.skill_level": [
+      "CHECK (((skill_level IS NULL) OR (skill_level = ANY (ARRAY['beginner'::text, 'intermediate'::text, 'advanced'::text]))))"
+    ],
     "verified_sales.currency": [
       "CHECK ((currency = ANY (ARRAY['EUR'::text, 'USD'::text, 'GBP'::text, 'JPY'::text])))"
     ],
@@ -261,6 +291,30 @@
     ]
   },
   "column_meta": {
+    "_cat_sum_before.completion_pct": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "_cat_sum_before.id": {
+      "nullable": true,
+      "type": "text"
+    },
+    "_cat_sum_before.missing_count": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "_cat_sum_before.name": {
+      "nullable": true,
+      "type": "text"
+    },
+    "_cat_sum_before.owned_count": {
+      "nullable": true,
+      "type": "int8"
+    },
+    "_cat_sum_before.total_count": {
+      "nullable": true,
+      "type": "int8"
+    },
     "_diag_user_price_card_v1.asof": {
       "nullable": true,
       "type": "timestamptz"
@@ -8899,7 +8953,7 @@
     },
     "mv_catalog_item_price.price_eur": {
       "nullable": true,
-      "type": "numeric"
+      "type": "float8"
     },
     "mv_category_summaries_v1.category": {
       "nullable": true,
@@ -8948,6 +9002,14 @@
     "mv_category_top_value.seen_at": {
       "nullable": true,
       "type": "timestamptz"
+    },
+    "mv_category_totals.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "mv_category_totals.total_count": {
+      "nullable": true,
+      "type": "int8"
     },
     "mv_daily_median_price.canonical_category": {
       "nullable": true,
@@ -9535,6 +9597,52 @@
     "ops_drift_heartbeat_v1.median_cap_pct": {
       "nullable": true,
       "type": "numeric"
+    },
+    "p2p_offer_addresses.buyer_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "p2p_offer_addresses.city": {
+      "nullable": false,
+      "type": "text"
+    },
+    "p2p_offer_addresses.country": {
+      "nullable": false,
+      "type": "text"
+    },
+    "p2p_offer_addresses.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "p2p_offer_addresses.line1": {
+      "nullable": false,
+      "type": "text"
+    },
+    "p2p_offer_addresses.line2": {
+      "nullable": true,
+      "type": "text"
+    },
+    "p2p_offer_addresses.offer_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
+    "p2p_offer_addresses.postcode": {
+      "nullable": false,
+      "type": "text"
+    },
+    "p2p_offer_addresses.recipient_name": {
+      "nullable": false,
+      "type": "text"
+    },
+    "p2p_offer_addresses.state": {
+      "nullable": true,
+      "type": "text"
+    },
+    "p2p_offer_addresses.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
     },
     "p2p_offers.amount": {
       "nullable": false,
@@ -11283,6 +11391,10 @@
       "default": "'{}'::text[]",
       "nullable": true,
       "type": "_text"
+    },
+    "purchase_mandates.canonical_ref": {
+      "nullable": true,
+      "type": "text"
     },
     "purchase_mandates.category": {
       "nullable": true,
@@ -14299,6 +14411,28 @@
       "nullable": false,
       "type": "int4"
     },
+    "user_payment_handles.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "user_payment_handles.handle": {
+      "nullable": false,
+      "type": "text"
+    },
+    "user_payment_handles.rail_key": {
+      "nullable": false,
+      "type": "text"
+    },
+    "user_payment_handles.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "user_payment_handles.user_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
     "user_presence.is_online": {
       "default": "false",
       "nullable": false,
@@ -14704,6 +14838,10 @@
     "user_settings.region": {
       "default": "'europe'::text",
       "nullable": false,
+      "type": "text"
+    },
+    "user_settings.skill_level": {
+      "nullable": true,
       "type": "text"
     },
     "user_settings.subscription_tier": {
@@ -19975,6 +20113,14 @@
     }
   },
   "tables": {
+    "_cat_sum_before": [
+      "id",
+      "name",
+      "total_count",
+      "owned_count",
+      "missing_count",
+      "completion_pct"
+    ],
     "_diag_user_price_card_v1": [
       "user_id",
       "item_id",
@@ -22488,6 +22634,10 @@
       "seen_at",
       "rn"
     ],
+    "mv_category_totals": [
+      "category",
+      "total_count"
+    ],
     "mv_daily_median_price": [
       "wave",
       "canonical_category",
@@ -22661,6 +22811,19 @@
       "heartbeat_status",
       "heartbeat_note",
       "heartbeat_ts"
+    ],
+    "p2p_offer_addresses": [
+      "offer_id",
+      "buyer_id",
+      "recipient_name",
+      "line1",
+      "line2",
+      "postcode",
+      "city",
+      "state",
+      "country",
+      "created_at",
+      "updated_at"
     ],
     "p2p_offers": [
       "id",
@@ -23188,7 +23351,8 @@
       "deals_purchased",
       "created_at",
       "updated_at",
-      "exclude_keywords"
+      "exclude_keywords",
+      "canonical_ref"
     ],
     "push_outbox_v1": [
       "id",
@@ -23988,6 +24152,13 @@
       "monthly_xp",
       "updated_at"
     ],
+    "user_payment_handles": [
+      "user_id",
+      "rail_key",
+      "handle",
+      "created_at",
+      "updated_at"
+    ],
     "user_presence": [
       "user_id",
       "last_seen_at",
@@ -24104,7 +24275,8 @@
       "created_at",
       "updated_at",
       "notification_preferences",
-      "subscription_tier"
+      "subscription_tier",
+      "skill_level"
     ],
     "user_webhooks": [
       "id",
@@ -26761,6 +26933,11 @@
         "rn"
       ]
     ],
+    "mv_category_totals": [
+      [
+        "category"
+      ]
+    ],
     "mv_daily_median_price": [
       [
         "wave",
@@ -26776,9 +26953,6 @@
       ]
     ],
     "mv_item_best_comp_canon": [
-      [
-        "item_id"
-      ],
       [
         "item_id"
       ]
@@ -26847,6 +27021,11 @@
     "on_demand_lookups_audit": [
       [
         "id"
+      ]
+    ],
+    "p2p_offer_addresses": [
+      [
+        "offer_id"
       ]
     ],
     "p2p_offers": [
@@ -27149,6 +27328,9 @@
       ]
     ],
     "sets": [
+      [
+        "category_id"
+      ],
       [
         "id"
       ]
@@ -27492,6 +27674,12 @@
     "user_gamification": [
       [
         "user_id"
+      ]
+    ],
+    "user_payment_handles": [
+      [
+        "user_id",
+        "rail_key"
       ]
     ],
     "user_presence": [

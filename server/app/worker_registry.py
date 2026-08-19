@@ -77,6 +77,10 @@ SCHEDULES = {
     "vision_quality_worker": 6 * 3600,           # 2026-04-25 — recomputes vision_category_quality from scan_corrections (6h; was hourly but no data → no signal until users accrue scan_corrections)
     "vision_reclassifier_worker": 7 * 24 * 3600, # 2026-04-25 — trains TF-IDF + LogReg text reclassifier on scan_corrections (weekly; gated on n>=1000)
     "vision_regret_worker": 6 * 3600,            # 2026-04-26 — per-category regret rate (deletes within 7d of AI-add); was hourly, dropped to 6h until items.source signals accrue
+    "grade_reminder_worker": 3600,             # 2026-08-18 — one "rate your trade" nudge
+                                              # per party per completed trade, 24h after
+                                              # completion. The 24h boundary is in the
+                                              # QUERY; this interval only decides latency.
     "event_engagement_worker": 1800,             # 2026-04-26 — recomputes events.engagement_score from views+follows+RSVPs+ticket_clicks (every 30 min)
 }
 

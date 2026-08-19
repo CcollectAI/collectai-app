@@ -1,9 +1,17 @@
 /**
  * EventActionBar — External link button + share button.
+ *
+ * Returns the buttons as a FRAGMENT, not a row of its own. Share used to sit on
+ * its own line directly above Going / Interested, so the event screen showed two
+ * rows of pill buttons stacked on top of each other — reported 2026-08-17 as
+ * wanting them "all aligned". `EventRsvpSection` now owns the single action row
+ * and takes these as `leadingActions`, which is also why the metrics here match
+ * `actionBtn` there exactly: two components drawing buttons into one row have to
+ * agree on padding and radius or the row looks ragged.
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Linking, Share } from 'react-native';
+import { Text, StyleSheet, Linking, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
@@ -54,7 +62,7 @@ export const EventActionBar = React.memo(function EventActionBar({
   };
 
   return (
-    <View style={styles.actionRow}>
+    <>
       {event.onlineUrl && (
         <AnimatedPressable
           onPress={openExternal}
@@ -86,41 +94,44 @@ export const EventActionBar = React.memo(function EventActionBar({
         <Ionicons name="share-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
         <Text style={[styles.shareBtnText, { color: colors.accent }]}>Share</Text>
       </AnimatedPressable>
-    </View>
+    </>
   );
 });
 
+// Padding, radius and label size are deliberately identical to `actionBtn` in
+// EventRsvpSection — these buttons render inside THAT row. `flex: 1` used to
+// stretch the primary button across its own row; in a shared row it would eat
+// the whole line and push Going / Interested onto a second one, which is the
+// bug being fixed. `flexShrink` + centred labels instead, per "flexWrap: 'wrap'
+// on an action row strands the third button" in docs/ui-playbook.md.
 const styles = StyleSheet.create({
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
-  },
   primaryBtn: {
-    flex: 1,
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
   },
   primaryBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
+    textAlign: 'center',
   },
   shareBtn: {
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
     borderWidth: 1,
   },
   shareBtnText: {
     fontSize: 13,
     fontWeight: '600',
+    textAlign: 'center',
   },
 });

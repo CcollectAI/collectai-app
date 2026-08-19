@@ -153,7 +153,31 @@ async def generate_dossier(
     item_row = await conn.fetchrow(
         """
         SELECT id, user_id, title, category, condition, attrs AS attributes_json,
-               canonical_key, created_at, image_url,
+               canonical_key,
+               -- canonical_ref, added 2026-08-19. The two price lookups below
+               -- bind this against `item_ref`, and the vocabularies differ:
+               -- `items.canonical_key` is the BARE catalog key
+               -- (`sm10-sm10-101`) while `price_predictions.item_ref` /
+               -- `price_prediction_daily.item_ref` are ALWAYS namespaced
+               -- (`pokemon:sm10-sm10-101` — 0 bare rows in 1.7M). Binding the
+               -- bare form matched zero rows for every item and every user,
+               -- so a dossier carried NO valuation and NO 90-day chart —
+               -- silently, because an empty join is a valid result. This is
+               -- the identifier-format rule in CLAUDE.md, and the same class
+               -- as the 44-site incident of 2026-07-25.
+               canonical_ref,
+               created_at, image_url,
+               -- condition_grade, added 2026-08-19. `grade` was read from
+               -- attrs, which NO writer writes: the CSV importer maps the
+               -- `grade` column to `items.condition_grade`
+               -- (import_router.py:249) and the exporter reads it back from
+               -- there (items_export_router.py:193). Only `graded_by` and
+               -- `sealed` live in attrs. So a dossier — a PRO feature, and
+               -- the artefact a collector shows an insurer — printed no grade
+               -- for a graded item, which for a collectible is the single
+               -- most value-relevant field. Reader and writer never met and
+               -- the failure was an empty field, not an error.
+               condition_grade,
                cost_basis, purchase_price, purchase_currency, purchased_at
         FROM public.items
         WHERE id = $1::uuid AND user_id = $2::uuid
@@ -165,7 +189,15 @@ async def generate_dossier(
     if item_row is None:
         raise ValueError("Item not found or not owned by user")
 
+    # Kept in the SELECT and read here because `identity` is where a reader
+    # looks for the catalogue key; it is deliberately NOT what the price
+    # lookups bind. See the note in the query above.
     canonical_key: Optional[str] = item_row.get("canonical_key")
+    # The resolved price ref, maintained by trg_items_canonical_ref (it prefers
+    # the printing-exact key and falls back to the crosswalk). No fallback to
+    # canonical_key when it is NULL: a bare key matches no `item_ref` by
+    # construction, so falling back would only be dead code that looks careful.
+    canonical_ref: Optional[str] = item_row.get("canonical_ref")
 
     attributes = _parse_json_field(item_row["attributes_json"])
     collections_list: List[Any] = []  # `collections` column not present on items; left empty
@@ -206,11 +238,15 @@ async def generate_dossier(
         "name": item_row["title"],
         "category": item_row["category"],
         "condition": item_row["condition"],
-        "grade": attrs_dict.get("grade"),
+        # The column first; attrs only as a fallback for any legacy row that
+        # stashed it there before the importer existed. Never the reverse —
+        # the column is what import writes and export reads.
+        "grade": item_row.get("condition_grade") or attrs_dict.get("grade"),
         "graded_by": attrs_dict.get("graded_by"),
         "sealed": attrs_dict.get("sealed"),
         "subtype_id": attrs_dict.get("subtype_id"),
         "taxonomy_version": attrs_dict.get("taxonomy_version"),
+        "canonical_key": canonical_key,
         "attributes": attributes or {},
         "image_url": first_image_url,
         "purchase": purchase_block,
@@ -257,8 +293,8 @@ async def generate_dossier(
             ORDER BY generated_at DESC
             LIMIT 1
             """,
-            canonical_key,
-        ) if canonical_key else None
+            canonical_ref,
+        ) if canonical_ref else None
         if pred_row:
             valuation = {
                 "q10": float(pred_row["q10"]) if pred_row["q10"] is not None else None,
@@ -321,8 +357,8 @@ async def generate_dossier(
               AND day > (current_date - interval '90 days')
             ORDER BY day ASC
             """,
-            canonical_key,
-        ) if canonical_key else []
+            canonical_ref,
+        ) if canonical_ref else []
         for row in ph_rows:
             price_history.append({
                 "price": float(row["price_q50"]) if row["price_q50"] is not None else None,

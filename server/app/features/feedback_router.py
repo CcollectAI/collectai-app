@@ -246,11 +246,16 @@ async def submit_feedback(
     - accurate: User confirms prediction was accurate
     - custom: Custom feedback with notes
 
-    The feedback is stored in the `feedback` table with label format:
-    - For sale_price: "sale_price:123.45"
-    - For disagree: "disagree:inaccurate"
-    - For accurate: "accurate:confirmed"
-    - For custom: "custom:{notes}"
+    Stored in `user_feedback_events_v1` as (feedback_type, value_json) — NOT
+    in `feedback`, and not as a label string. That table lacks these columns,
+    so writing to it 500'd on every submit until
+    20260721_user_feedback_events_reconcile.sql moved the write.
+
+    `value_json["price"]` is the field the training readers parse
+    (pipelines/export_feedback.py, pipelines/train_price.py); qualitative
+    signals carry `value` / `notes` instead and are ignored by the price
+    filter. The `label` built below survives for the LOG LINE only — nothing
+    persists it.
     """
     pool = get_db_pool()
 

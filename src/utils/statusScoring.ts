@@ -24,8 +24,11 @@ export interface CollectionStatusScore {
   category: string;
   itemCount: number;
   ownedCount: number;
-  expectedCount: number;
-  completenessRatio: number;   // 0–1
+  /** From `sets.total_items`. **null when we have no catalogue row for this
+   *  set** — callers must branch rather than treat it as 0 or as owned. */
+  expectedCount: number | null;
+  /** 0–1, or **null** when `expectedCount` is unknown. */
+  completenessRatio: number | null;
   rarityScore: number;         // 0–1 (normalized)
   valueTotal: number;
   points: number;              // final score for leaderboard
@@ -48,34 +51,62 @@ function collectionKey(item: CollectionStatusInput): string {
 }
 
 /**
- * Heuristic expected set size per key.
- * Extend/override as you add real metadata.
+ * WHY THERE ARE NO SET-SIZE HINTS HERE ANY MORE (2026-08-15)
+ * ---------------------------------------------------------
+ * There used to be two tables of invented sizes — `EXPECTED_SET_SIZE_HINTS`
+ * ('Pokémon – Base Set': 15) and `CATEGORY_DEFAULT_SET_SIZE` ({ Pokemon: 15,
+ * Lorcana: 12, … }) — and a final fallback of "expected = however many you
+ * own". Three things were wrong with that, and together they made
+ * app/sets-to-complete.tsx render nothing at all for every account:
+ *
+ *   1. Both tables were keyed on DISPLAY names while `items.category` holds
+ *      SLUGS ('pokemon', 'lorcana'), so no lookup ever hit
+ *      (learning_join_vocabulary_slug_vs_display_name).
+ *   2. The fallback therefore always won, making expected === owned, so every
+ *      set computed as exactly 100% complete — and the screen's 0.4..0.95 band
+ *      filtered all of them out.
+ *   3. Even had the keys matched, 15 is not the size of Base Set (it is 102).
+ *      A guessed denominator produces a confident, wrong percentage, which is
+ *      worse than no percentage.
+ *
+ * The size now comes from `sets.total_items` via `/portfolio/items`, and when
+ * we do not have it, `expectedCount` is **null** rather than a guess. Callers
+ * must branch on that: a set of unknown size is not a set of size zero.
  */
-const EXPECTED_SET_SIZE_HINTS: Record<string, number> = {
-  'Pokémon – Base Set': 15,
-  'MTG – Alpha': 25,
-};
-
-const CATEGORY_DEFAULT_SET_SIZE: Record<string, number> = {
-  Pokemon: 15,
-  'Magic: The Gathering': 20,
-  Lorcana: 12,
-  Warhammer: 10,
-  Gunpla: 8,
-  'Designer/Art Toys': 6,
-};
 
 /**
  * Simple rarity weights by category if no explicit rarity_score is present.
+ * Keyed on SLUGS, matching `items.category` — these were display names, so
+ * every lookup missed and every category silently scored the 0.5 fallback.
  */
 const CATEGORY_RARITY_WEIGHT: Record<string, number> = {
-  Pokemon: 0.8,
-  'Magic: The Gathering': 0.85,
-  Lorcana: 0.75,
-  Warhammer: 0.7,
-  Gunpla: 0.7,
-  'Designer/Art Toys': 0.9,
+  pokemon: 0.8,
+  mtg: 0.85,
+  lorcana: 0.75,
+  yugioh: 0.8,
+  warhammer: 0.7,
+  gunpla: 0.7,
+  designer_toys: 0.9,
 };
+
+/** A score whose set size we actually know, so a percentage can be shown. */
+export type SizedCollectionScore = CollectionStatusScore & {
+  expectedCount: number;
+  completenessRatio: number;
+};
+
+/**
+ * Narrowing guard: do we know how big this set is?
+ *
+ * Use this rather than `?? 0` at each call site. Defaulting a null
+ * completeness to 0 turns "we have no catalogue row for this set" into "you
+ * own none of it", which is a claim about the member's collection that we
+ * cannot support — and it would put every uncatalogued pile into the
+ * "Getting started" bucket of app/sets-to-complete.tsx.
+ */
+export function hasKnownSetSize(s: CollectionStatusScore): s is SizedCollectionScore {
+  return s.expectedCount !== null && s.completenessRatio !== null;
+}
 
 const EPS = 1e-6;
 
@@ -180,12 +211,9 @@ export function computeCollectionStatusScores(
 
     const ownedCount = groupItems.length;
 
-    // Use per-item set_size if present, else hints, else ownedCount.
-    const hintedSetSize =
-      EXPECTED_SET_SIZE_HINTS[key] ??
-      CATEGORY_DEFAULT_SET_SIZE[category] ??
-      ownedCount;
-
+    // The catalogue's number, or nothing. `set_size` arrives from
+    // `sets.total_items`; an item whose set we hold no catalogue row for sends
+    // null, and a group of only those has no known size.
     const maxSetSizeFromItems = groupItems.reduce(
       (acc, item) =>
         item.set_size != null
@@ -194,15 +222,14 @@ export function computeCollectionStatusScores(
       0,
     );
 
-    const expectedCount =
-      maxSetSizeFromItems > 0
-        ? maxSetSizeFromItems
-        : hintedSetSize;
+    const expectedCount: number | null =
+      maxSetSizeFromItems > 0 ? maxSetSizeFromItems : null;
 
-    const completenessRatio =
-      expectedCount > 0
-        ? Math.min(1, ownedCount / expectedCount)
-        : 0;
+    // null, not 0. "We do not know how complete this is" and "this is 0%
+    // complete" are different answers and must render differently
+    // (learning_empty_answer_rendered_as_zero).
+    const completenessRatio: number | null =
+      expectedCount === null ? null : Math.min(1, ownedCount / expectedCount);
 
     const rarityRaw = rarityPerKey[key] ?? 0.5;
     const rarityNorm = normalize01(rarityRaw, minRarity, maxRarity);
@@ -211,8 +238,13 @@ export function computeCollectionStatusScores(
 
     // Weighting:
     // completeness is king, then rarity, then value.
+    //
+    // An unknown completeness scores 0 on that axis rather than being treated
+    // as complete. It used to be the reverse — unknown size meant expected ===
+    // owned meant ratio 1.0 — so every uncatalogued pile collected the full 60
+    // points and outranked genuinely finished sets.
     const points =
-      completenessRatio * 60 +
+      (completenessRatio ?? 0) * 60 +
       rarityNorm * 25 +
       valueNorm * 15;
 

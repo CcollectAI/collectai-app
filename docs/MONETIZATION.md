@@ -30,6 +30,24 @@ If the intent were ever the opposite — free users setting up mandates that
 activate on upgrade — the change is to set `max_mandates` back and open the
 screen with discovery disabled, **not** to leave the two sides disagreeing.
 
+**They disagreed anyway, for two and a half weeks (found 2026-08-16).** The
+server went to 0 on 2026-07-31; `DEFAULT_LIMITS` in `useBillingLimits.ts` kept
+saying **3**. Two things follow, and both are worth more than the fix:
+
+1. **This table was correct the whole time. The code drifted, not the doc.**
+   The paywall copy written on 2026-08-16 said "3 purchase mandates" because it
+   was written from the client table instead of from here — so a screen that
+   takes money advertised a feature the buyer gets none of.
+2. **`check:billing-limits-parity` could not see it.** It compared FE/BE values
+   for `pro` and `premium` only — free was deliberately out of scope — and only
+   for keys the FE reads as `limits.X`. `max_mandates` is neither, so the gate
+   passed every day of those weeks.
+
+Both holes are closed: the gate now compares **free** as well and checks **every
+numeric cap both tables declare**, and `__tests__/screens/subscriptionPlanCards.test.ts`
+pins the plan-card copy to the limits, so a card can no longer name a number
+that no plan grants.
+
 ### Plans
 
 | | Free | Pro (€4.99/mo or €39.99/yr) |
@@ -84,6 +102,118 @@ screen with discovery disabled, **not** to leave the two sides disagreeing.
 - Offering: **`default`** with packages `$rc_monthly` (linked to `sparrow_pro_monthly`) and `$rc_annual` (linked to `sparrow_pro_yearly`). `app/subscription.tsx:151` reads these exact identifiers — other names produce a "Coming soon" UI.
 - **FE source of truth: `Purchases.getCustomerInfo()`** from `react-native-purchases`. Backend `/billing/status` endpoint is vestigial for iOS — kept for future web/Android.
 - Beta override: `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` (set on `production` build profile) bypasses RC entirely for TestFlight testing. The `store` build profile sets it `false` for App Store submission.
+
+### Verified live state (2026-08-15) — measured, not assumed
+
+Probed with the real production RC key against the RevenueCat API, and by
+unzipping the shipped `.ipa` and reading the Hermes bundle:
+
+| Thing | How it was checked | Result |
+|---|---|---|
+| RC offering + packages | `GET /v1/subscribers/<probe>/offerings` with the live `appl_…` key | ✅ `current_offering_id: default`; `$rc_monthly` → `sparrow_pro_monthly`, `$rc_annual` → `sparrow_pro_yearly` |
+| RC key reaches the binary | `grep appl_ main.jsbundle` in `builds/sparrow-ios-internal.ipa` and `build116.ipa` | ✅ inlined in both |
+| EAS env plumbing | `eas env:list --environment production` | ✅ key lives in the `production` environment; profiles with no `environment` field still resolve it (EAS auto-assigns) |
+| Beta unlock flag | same bundle grep | ❌ **was broken — see below** |
+| ASC product state / Paid Apps agreement | not checkable from here | ⬜ needs the ASC Issuer ID (the local `AuthKey_LAU7D8HU29.p8` has none recorded) |
+
+**So the "IAP doesn't work" symptom is NOT a RevenueCat misconfiguration.** RC and
+the app binary are both correct. What remains can only fail on Apple's side or on
+the test setup — see "If the paywall shows no products" below.
+
+#### The env-inlining trap (fixed 2026-08-15)
+
+`useBillingLimits.ts` read the flag as
+`(typeof process !== 'undefined' && (process as {...}).env?.EXPO_PUBLIC_BETA_UNLOCK_ALL)`.
+Expo's babel plugin only replaces the **exact** `process.env.EXPO_PUBLIC_X`
+member expression with a literal; a guarded/optional-chained read compiles to a
+runtime lookup on `process.env`, which is empty in a release bundle. The flag
+read `''` in every built app — **beta unlock never turned on, so paid features
+stayed gated on TestFlight** while `eas.json` looked correct.
+
+The tell is in the binary: an inlined var's *name* is absent from the bundle;
+a runtime lookup leaves the name in the Hermes string table.
+
+```bash
+unzip -p builds/<app>.ipa 'Payload/*/main.jsbundle' | strings | grep EXPO_PUBLIC_
+# anything printed here is read at runtime => undefined on device
+```
+
+Gated by `npm run check:env-inlining` (in `verify:prebuild`). Proven to fail on
+the bad shape before being wired in.
+
+#### "Coming soon" on the subscription screen — what it actually means
+
+Reported on build 137 (TestFlight, 2026-08-15). That copy is the
+`iapUnavailable` branch of `app/subscription.tsx`, and until 2026-08-15 **two
+unrelated failures rendered it identically**, so it could not be triaged without
+a rebuild. Both now log a distinguishing line via `logger.error` (info/warn are
+stripped in release):
+
+| log line | meaning | whose problem |
+|---|---|---|
+| `reason=no-key` | no RevenueCat key in this build at all | **the build**: normal on a dev-client, wrong on a store build |
+| `reason=configure-failed` | a key IS present and `Purchases.configure()` threw | **ours** |
+| `reason=no-offering` | RC configured, but `getOfferings()` returned no `current` | **Apple's**: StoreKit handed the SDK no products |
+
+### The diagnostic itself was wrong until 2026-08-17 — read this before triaging
+
+`isPurchasesAvailable()` is a BOOLEAN, and the screen turned every `false` into
+the single line *"reason=no-key — EXPO_PUBLIC_REVENUECAT_IOS_KEY missing from
+this build"*. That sentence is an assertion about the build, and it was emitted
+in a case where it is simply untrue: when the key is present and
+`Purchases.configure()` throws, `configured` stayed false and the screen blamed
+a missing env var. **A wrong diagnostic is worse than none, because it is
+believed.**
+
+`src/lib/purchases.ts` now exports `purchasesStatus(): 'ready' | 'no-key' |
+'configure-failed'` and the screen branches on it.
+`__tests__/lib/purchasesStatus.test.ts` pins all three and also asserts the
+screen does not go back to reading the boolean.
+
+**And the answer to "plans couldn't load", asked across several sessions, was
+none of the Apple items below.** The app under test was the **dev-client build
+on the Simulator**. The `development` profile in `eas.json` sets only
+`EXPO_PUBLIC_SUPABASE_MODE` — it carries **no RevenueCat key** — so
+`initPurchases()` returns early and the paywall renders its unavailable state.
+It cannot work on that build no matter what App Store Connect is configured to
+do, and StoreKit serves no products on the Simulator either way. Two independent
+reasons, neither fixable in code.
+
+Verified for build 141 (2026-08-16), so these are NOT open questions:
+
+| checked | how | result |
+|---|---|---|
+| key reaches the binary | `strings main.jsbundle \| grep appl_` on the shipped IPA | ✅ `appl_tfjQ…` inlined |
+| RC serves the offering | `GET /v1/subscribers/<probe>/offerings` with that key | ✅ `default`, `$rc_monthly` → `sparrow_pro_monthly`, `$rc_annual` → `sparrow_pro_yearly` |
+| the store profile locks the flag | build log | ✅ `EXPO_PUBLIC_BETA_UNLOCK_ALL=false` overrides the EAS production `true` |
+
+**To actually test IAP: install build 141+ from TestFlight on a physical
+device.** Anything observed on the Simulator or a dev build is not evidence.
+
+For build 137 it can only be `no-offering`: the `appl_…` key is provably inlined
+in that binary and the RC dashboard serves a `default` offering with both
+packages. **The RevenueCat side is not the problem.** The SDK drops an offering
+whose packages resolve to no StoreKit product, which happens when:
+
+#### If the paywall shows no products
+
+In order of likelihood, none of which the code can fix:
+
+1. **Testing on the iOS Simulator.** StoreKit returns no products there, so
+   `getOfferings()` yields an offering with zero `availablePackages` and
+   `app/subscription.tsx` renders its unavailable state. IAP must be tested on a
+   physical device via TestFlight.
+2. **Paid Applications Agreement not signed** (ASC → Business). Until it is
+   active, StoreKit returns no products anywhere, sandbox included.
+3. **Subscriptions not in a purchasable state** — each needs price, a
+   localization, and a review screenshot before it leaves *Missing Metadata*.
+4. **No sandbox tester signed in** on the device (Settings → App Store → Sandbox
+   Account), or signed in with a real Apple ID.
+5. **RC ↔ Apple server credential missing** — the In-App Purchase `.p8` (or app
+   shared secret) in RC → Apps → iOS. Without it a purchase can complete at
+   StoreKit and still not grant the `pro` entitlement, because RC cannot verify
+   the transaction. `docs/ASC_API_KEY.md` records this key as never created;
+   confirm in the RC dashboard before believing it.
 
 ### What's Built
 

@@ -14,6 +14,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import sys
 from pathlib import Path
 
@@ -31,24 +32,72 @@ from pipelines.import_common import (
 
 CATEGORY = "lorcana"
 # Community API for Lorcana card data
-API_BASE = "https://api.lorcanajson.org"
+# Lorcast, NOT lorcanajson. `api.lorcanajson.org` stopped resolving to anything
+# we can trust — it now answers with a SELF-SIGNED certificate, so every fetch
+# fails `CERTIFICATE_VERIFY_FAILED` and this importer silently fell back to 795
+# hand-curated cards with no prices. Those 795 rows are precisely the
+# `source='seed'` lorcana catalogue that has never been priceable.
+#
+# Lorcast carries what the fallback never did: `prices` (usd / usd_foil),
+# `set.code`, `collector_number` and `rarity` — i.e. a catalogue AND a price
+# from ONE source, which is the property that makes
+#   category_items.category || ':' || item_key == market_hits.normalized_key
+# true by construction rather than by matching (see the crosswalk note in
+# docs/DATA_SCALING_PLAN.md — derive, do not match).
+API_BASE = "https://api.lorcast.com/v0"
 
 
 def fetch_all_cards() -> list[dict]:
-    """Fetch all Lorcana cards from the community API."""
-    try:
-        data = fetch_json(f"{API_BASE}/cards")
-        if isinstance(data, list):
-            cards = data
-        elif isinstance(data, dict):
-            cards = data.get("data", data.get("cards", []))
-        else:
-            cards = []
-        log_progress(CATEGORY, "cards fetched", len(cards))
-        return cards
-    except Exception as e:
-        logger.info(f"API fetch failed ({e}), using curated seed data...")
-        return _curated_seed_cards()
+    """Fetch every Lorcana card from Lorcast, set by set.
+
+    Returns cards normalised onto the key names the mappers below already use
+    (`set_code`, `number`, `price_eur`, …) so the transform stays in one place.
+    """
+    sets = fetch_json(f"{API_BASE}/sets") or {}
+    set_list = sets.get("results", sets if isinstance(sets, list) else [])
+    if not set_list:
+        raise RuntimeError(
+            "Lorcast returned no sets — refusing to continue. A silent fallback "
+            "to curated data is what hid this importer being broken for weeks."
+        )
+
+    cards: list[dict] = []
+    for s in set_list:
+        code = s.get("code")
+        if not code:
+            continue
+        payload = fetch_json(f"{API_BASE}/cards/search?q=set%3A{code}") or {}
+        for c in payload.get("results", []):
+            prices = c.get("prices") or {}
+            usd = prices.get("usd")
+            usd_foil = prices.get("usd_foil")
+            img = ((c.get("image_uris") or {}).get("digital") or {}).get("normal", "")
+            cards.append({
+                "name": c.get("name", ""),
+                "version": c.get("version", ""),
+                "set_code": code,
+                "set_name": s.get("name", ""),
+                "number": c.get("collector_number", ""),
+                "rarity": c.get("rarity", ""),
+                "color": (c.get("inks") or [c.get("ink")] or [""])[0] or "",
+                "image": img,
+                "lorcast_id": c.get("id", ""),
+                # The join key to the 6,172 tcgcsv-derived rows, whose item_key
+                # is literally `tcgplayer:<id>:<variant>`. Dropping this is what
+                # would force name matching, which was measured at 0/795 for
+                # lorcana and rejected (docs/DATA_SCALING_PLAN.md).
+                "tcgplayer_id": c.get("tcgplayer_id"),
+                # to_eur so the whole table stays in one currency — mixing USD
+                # into a EUR column is the bug the valuation side cannot see.
+                "price_eur": to_eur(float(usd), "USD") if usd else None,
+                "price_eur_foil": to_eur(float(usd_foil), "USD") if usd_foil else None,
+            })
+        log_progress(CATEGORY, f"  set {code}", len(payload.get("results", [])))
+
+    log_progress(CATEGORY, "cards fetched", len(cards))
+    if not cards:
+        raise RuntimeError("Lorcast returned sets but no cards — refusing to continue.")
+    return cards
 
 
 def _curated_seed_cards() -> list[dict]:
@@ -1071,6 +1120,55 @@ def card_to_price_observation(card: dict) -> PriceObservation | None:
     )
 
 
+def card_to_market_hits(card: dict) -> list[MarketHit]:
+    """Prices → market_hits, which this importer never wrote.
+
+    It imported `MarketHit` and never constructed one, so even on a working API
+    Lorcana produced a catalogue with no prices behind it — 6,967 rows at 0%
+    priceable. `normalized_key` MUST equal the catalogue `item_key`, or the two
+    halves land in different namespaces and the join is empty for every user.
+
+    `sold_at` is set: valuation_worker excludes `is_listing`, and is_listing is
+    derived as `sold_at IS NULL`. A price guide left unstamped would be filed as
+    an active listing and thrown away by the very worker it exists to feed.
+    """
+    nkey = slugify(f"{card.get('set_code', '')}-{card.get('number') or card.get('name', '')}")
+    stamped = _dt.datetime.now(_dt.timezone.utc).isoformat()
+    hits: list[MarketHit] = []
+
+    # SEPARATE refs for base and foil. Writing both finishes under one
+    # item_ref makes the daily rollup take a median across them, which on a
+    # card whose foil is worth 100x the base is not a price of anything —
+    # the same "per card, not per printing" error the yugioh passcode
+    # crosswalk was retired for.
+    for price_key, variant, label in (
+        ("price_eur", "normal", ""),
+        ("price_eur_foil", "foil", " (Foil)"),
+    ):
+        price = card.get(price_key)
+        if not price:
+            continue
+        try:
+            price_f = float(price)
+        except (ValueError, TypeError):
+            continue
+        if price_f <= 0:
+            continue
+        ref = nkey if variant == "normal" else f"{nkey}-foil"
+        hits.append(MarketHit(
+            provider="lorcast",
+            listing_id=f"{card.get('lorcast_id', nkey)}-{variant}",
+            title=f"{card.get('name', '')}{(' - ' + card['version']) if card.get('version') else ''}{label}",
+            price=price_f,
+            currency="EUR",
+            condition="NM",
+            normalized_key=ref,
+            category=CATEGORY,
+            sold_at=stamped,
+        ))
+    return hits
+
+
 def main():
     parser = argparse.ArgumentParser(description="Import Lorcana catalog + prices")
     parser.add_argument("--dry-run", action="store_true")
@@ -1086,6 +1184,7 @@ def main():
 
     all_items = [card_to_catalog_item(c) for c in cards]
     all_observations = [obs for c in cards if (obs := card_to_price_observation(c))]
+    all_hits = [h for c in cards for h in card_to_market_hits(c)]
 
     # Deduplicate
     seen = set()
@@ -1106,12 +1205,15 @@ def main():
     if ingest.enabled:
         inserted = ingest.upsert_catalog(all_items)
         log_progress(CATEGORY, "catalog upserted", inserted)
+        hits_upserted = ingest.upsert_market_hits(all_hits)
+        log_progress(CATEGORY, "market hits upserted", hits_upserted)
 
     ingest.close()
 
     logger.info(f"\n=== Lorcana Import Complete ===")
     logger.info(f"  Catalog items:      {len(all_items)}")
     logger.info(f"  Price observations: {len(all_observations)}")
+    logger.info(f"  Market hits:        {len(all_hits)}")
 
 
 if __name__ == "__main__":

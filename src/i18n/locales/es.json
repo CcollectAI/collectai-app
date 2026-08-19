@@ -84,7 +84,8 @@
     "close_target_edit_a11y": "Cerrar editor de precio objetivo",
     "target_price_input_a11y": "Precio objetivo",
     "save_target_a11y": "Guardar precio objetivo",
-    "save_target_button": "Guardar precio objetivo"
+    "save_target_button": "Guardar precio objetivo",
+    "title": "Lista de seguimiento"
   },
   "events": {
     "reminder_a11y": "Fijar recordatorio para evento",
@@ -115,7 +116,8 @@
     "retry_a11y": "Reintentar búsqueda",
     "no_results": "No se encontraron resultados",
     "no_price_yet": "Sin precio aún",
-    "browse_by_category": "Explorar por categoría"
+    "browse_by_category": "Explorar por categoría",
+    "title": "Buscar"
   },
   "item_detail": {
     "valuation_a11y": "Valoración y detalles del artículo",
@@ -299,7 +301,7 @@
     "marketplace": "Marketplace",
     "market": "Mercado",
     "wishlist": "Lista de seguimiento",
-    "search": "Buscar",
+    "explore": "Explorar",
     "settings": "Ajustes",
     "profile": "Perfil"
   },

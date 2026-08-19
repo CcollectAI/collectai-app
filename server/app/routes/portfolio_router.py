@@ -421,10 +421,34 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     -- prediction, so unrealized_pl measures how far the MODEL
                     -- moved, not what the member made. Both arrive as a number
                     -- called "unrealized_pl" and look identical.
-                    (i.purchase_price_eur IS NOT NULL) AS has_purchase_price
+                    (i.purchase_price_eur IS NOT NULL) AS has_purchase_price,
+                    -- WHICH SET THIS ITEM BELONGS TO, AND HOW BIG THAT SET IS.
+                    --
+                    -- app/sets-to-complete.tsx has always mapped `collection`,
+                    -- `collection_name`, `set_code` and `set_size` off this
+                    -- response, and this SELECT returned none of them, so every
+                    -- one read null. With no set size the client fell back to
+                    -- "expected = what you own", every set computed as exactly
+                    -- 100% complete, and its 0.4..0.95 band filtered all of them
+                    -- away: the screen was empty for every account, always.
+                    --
+                    -- VOCABULARY: `sets.name` and `items.collection_name` are
+                    -- the SAME STRING, and `sets.category_id` and `i.category`
+                    -- are both SLUGS ('pokemon', not 'Pokemon'). Joining a slug
+                    -- to a display name is how 44 joins matched nothing for four
+                    -- months (learning_join_vocabulary_slug_vs_display_name), so
+                    -- it is stated here rather than left to be rediscovered.
+                    i.collection_name,
+                    s.total_items AS set_size
                 FROM items i
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN earliest e ON e.item_ref = i.canonical_ref
+                -- LEFT, and case-insensitive: an item may name a set we hold no
+                -- catalogue row for, and that item must still come back. It
+                -- simply arrives with set_size NULL and counts toward nothing.
+                LEFT JOIN public.sets s
+                       ON s.category_id = i.category
+                      AND lower(s.name) = lower(i.collection_name)
                 WHERE i.user_id = $1 AND NOT i.archived
                 ORDER BY COALESCE(l.q50, 0) DESC
                 """,
@@ -447,6 +471,13 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     "has_purchase_price": bool(r["has_purchase_price"]),
                     "q10": round(float(r["q10"] or 0), 2),
                     "q90": round(float(r["q90"] or 0), 2),
+                    # Nullable on purpose, both of them. `null` means "this item
+                    # names no set" / "we hold no catalogue row for that set" —
+                    # which is NOT the same as a set of size 0, and the client
+                    # must be able to tell those apart before it claims a
+                    # completeness percentage (learning_empty_answer_rendered_as_zero).
+                    "collection_name": r["collection_name"],
+                    "set_size": int(r["set_size"]) if r["set_size"] is not None else None,
                 })
 
             return {"items": items}
