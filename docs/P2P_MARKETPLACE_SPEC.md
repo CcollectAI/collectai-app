@@ -1573,6 +1573,37 @@ arrival** — the rating prompt has since 2026-08-18, and `action=track` was
 added with this screen so "Add tracking" does not drop the member on a
 highlighted card and leave them hunting for the button.
 
+#### ALL scans, Buying/Selling do — seen on a device (2026-08-19)
+
+Walked on the simulator against seeded data, which is the only reason the next
+two things were found.
+
+**"Del ete".** A live trade put FOUR buttons in the card's action row — Mark
+sent · Add tracking · Book shipping · Delete — and that row is
+`flexWrap: 'nowrap'` with shrinking buttons on purpose (ui-playbook,
+2026-08-15). At four, the last button squeezed until the WORD broke and it
+rendered as *"Del ete"*. Shrinking is the right rule for three buttons and the
+wrong one for four: **the fix is fewer buttons, not a wrapping row.** Add
+tracking and Book shipping are steps 2–3 of the trade screen the card now
+opens, so they moved there.
+
+**And that removal created a dead sheet in the same edit** — `SettleUpSheet`
+was left on the list with nothing able to open it, `setSettleFor` surviving
+only in its own `onClose`. Removed. Worth noting how fast it happens: one
+commit deleted the only opener and left the openee behind.
+
+**ALL is now compressed.** Requested as *"can the all tab have a compressed
+version without all the functionalities?"* — and it is the right split. `All`
+answers "what is going on across both sides"; `Buying` / `Selling` are where
+you work through one side. In `All` the card keeps everything that helps you
+JUDGE (thumbnail, title, amount, % of asking, YOUR MOVE, role, status, age, the
+competing-bids banner) and drops everything that ACTS, replaced by one line:
+*"Tap to manage this trade"*. Nothing becomes unreachable — the whole card
+already opens `/offer/[offerId]`. **3½ cards now fit where 2 did.**
+
+`role` is in the render callback's dependency list: it decides `compact`, and
+omitting it would keep drawing compressed cards after switching to Selling.
+
 #### The bug the audit caught an hour later — and it is instructive
 
 The first version gated the Respond step on **`offerNeedsMyAction`**, and that

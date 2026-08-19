@@ -27,7 +27,6 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '@/components/ScreenHeader';
 import { BottomSheetModal } from '@/components/BottomSheetModal';
 import { OfferAmountSheet } from '@/components/p2p/OfferAmountSheet';
-import { SettleUpSheet } from '@/components/p2p/SettleUpSheet';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { EmptyState } from '@/components/EmptyState';
@@ -330,7 +329,11 @@ function OffersScreen() {
   // Settling up, once a trade is live. Buyer sees payment rails, seller sees
   // where to book the parcel — Sparrow links out to both and participates in
   // neither (docs/P2P_MARKETPLACE_SPEC.md §5a).
-  const [settleFor, setSettleFor] = useState<P2POffer | null>(null);
+  // `settleFor` / <SettleUpSheet> were removed 2026-08-19 with the "Book
+  // shipping" button that was their only opener. A sheet nothing can open is
+  // the dead-path class this repo keeps finding — and it was created in the
+  // same edit that removed the button, which is exactly how they appear.
+  // Settling now happens on `/offer/[offerId]` step 2, which has its own.
 
   const onCounter = useCallback((o: P2POffer) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -549,6 +552,27 @@ function OffersScreen() {
     const onHold = o.superseded === true;
 
     const group = groupMeta.get(o.id);
+
+    /**
+     * ALL is for SCANNING; Buying and Selling are for DOING.
+     *
+     * Requested 2026-08-19: *"can the all tab have a compressed version
+     * without all the functionalities?"* — and it is the right split. "All" is
+     * where you look to see what is going on across both sides of every trade,
+     * and a card carrying four buttons, two confirm ticks and a tracking block
+     * makes that a wall. Two cards fit on a screen; you cannot scan two cards.
+     *
+     * So in ALL the card keeps everything that helps you JUDGE — thumbnail,
+     * title, amount, percentage of asking, YOUR MOVE, role, status, age, the
+     * competing-bids banner — and drops everything that ACTS. The whole card
+     * already opens `/offer/[offerId]`, which owns every one of those actions
+     * in order, so nothing is unreachable: it is one tap further away, on a
+     * screen built to do it.
+     *
+     * Buying and Selling keep the inline controls, because there you have
+     * already narrowed to one side and are working through them.
+     */
+    const compact = role === 'all';
 
     // ── Finished trades are a REFERENCE ROW, not a card ────────────────────
     // A closed offer rendered the full card: thumbnail, title, amount, the
@@ -873,7 +897,7 @@ function OffersScreen() {
 
         {/* Two-sided completion, made legible. A seller who has confirmed but
             is waiting on the buyer should SEE that, not wonder if it worked. */}
-        {live ? (
+        {live && !compact ? (
           <View style={styles.confirmRow}>
             <Ionicons
               name={o.seller_confirmed_at ? 'checkmark-circle' : 'ellipse-outline'}
@@ -892,7 +916,7 @@ function OffersScreen() {
 
         {/* Shipment visibility. DISPLAY ONLY — this never advances the trade.
             Completion stays the two ticks above, which only a human sets. */}
-        {o.tracking_code ? (
+        {o.tracking_code && !compact ? (
           <View style={[styles.tracking, { borderColor: colors.border }]}>
             <Ionicons name="cube-outline" size={14} color={colors.muted} />
             <View style={{ flex: 1 }}>
@@ -932,6 +956,14 @@ function OffersScreen() {
           </View>
         ) : null}
 
+        {compact ? (
+          // One quiet line instead of a row of buttons: the card is still
+          // tappable, and saying where the controls went beats a card that
+          // simply looks like it lost them.
+          <Text style={[styles.compactHint, { color: colors.muted }]}>
+            Tap to manage this trade
+          </Text>
+        ) : (
         <View style={styles.actions}>
           {/* Every action here is a round trip plus a refetch of the whole
               list. Until now the only feedback was `disabled` dimming each
@@ -1061,40 +1093,19 @@ function OffersScreen() {
             </AnimatedPressable>
           ) : null}
 
-          {/* can_add_tracking is server-computed (seller, and trade live). It is
-              a hint only — the endpoint enforces both independently. */}
-          {o.can_add_tracking ? (
-            <AnimatedPressable
-              onPress={() => openTracking(o)}
-              disabled={busy}
-              style={[styles.btn, styles.btnGhost, { borderColor: colors.border }]}
-              accessibilityRole="button"
-              accessibilityLabel={o.tracking_code ? 'Edit tracking details' : 'Add tracking details'}
-            >
-              <Text style={[styles.btnText, { color: colors.text }]}>
-                {o.tracking_code ? 'Edit tracking' : 'Add tracking'}
-              </Text>
-            </AnimatedPressable>
-          ) : null}
+          {/* "Add tracking" and "Book shipping" / "How to pay" WERE here.
+              Removed 2026-08-19 after seeing it on a device: a live trade put
+              FOUR buttons in this row — Mark sent · Add tracking · Book
+              shipping · Delete — and the row is `flexWrap: 'nowrap'` with
+              shrinking buttons on purpose (playbook, 2026-08-15), so the last
+              label squeezed until the WORD broke and it rendered as "Del ete".
+              Shrinking is the right rule for three buttons and the wrong one
+              for four; the fix is fewer buttons, not a wrapping row.
 
-          {/* Only while the trade is live: before `accepted` there is nothing
-              to settle, and after `completed` it is history. */}
-          {live ? (
-            <AnimatedPressable
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                setSettleFor(o);
-              }}
-              disabled={busy}
-              style={[styles.btn, styles.btnGhost, { borderColor: colors.accent }]}
-              accessibilityRole="button"
-              accessibilityLabel={o.i_am_buyer ? 'How to pay the seller' : 'Book the parcel'}
-            >
-              <Text style={[styles.btnText, { color: colors.accent }]}>
-                {o.i_am_buyer ? 'How to pay' : 'Book shipping'}
-              </Text>
-            </AnimatedPressable>
-          ) : null}
+              They are not lost: both are steps 2 and 3 of `/offer/[offerId]`,
+              which the whole card now opens, and which shows them in the order
+              they happen. This card keeps the PRIMARY move only — which is
+              what a list row is for. */}
 
           {/* `open || live`, not `live`. Gated on `live` alone this never
               appeared on a pending offer — the exact state 4 of 5 rows sit in —
@@ -1143,13 +1154,14 @@ function OffersScreen() {
               it now always returns above — leaving the block here would be a
               dead path surviving a cleanup. */}
         </View>
+        )}
 
         {/* Why the Counter button is not there. AFTER the actions row, not
             inside it: that row is `flexWrap: 'nowrap'` on purpose (playbook,
             2026-08-15), so a sentence in it would squeeze Accept and Decline
             rather than wrap. Without this the button simply vanishes at the
             cap, which reads as a bug rather than as a rule. */}
-        {isSeller && open && o.counter_count >= MAX_COUNTERS ? (
+        {isSeller && open && !compact && o.counter_count >= MAX_COUNTERS ? (
           <Text style={[styles.capNote, { color: colors.muted }]}>
             Countered {MAX_COUNTERS} times — accept it or decline it
           </Text>
@@ -1162,8 +1174,10 @@ function OffersScreen() {
     // `settings.hapticsEnabled` is in here because the Decline confirmation
     // fires a haptic directly. Without it a member who turns haptics off keeps
     // feeling that one tap until something else re-renders the row.
+    // `role` IS a dependency: it decides `compact`, so leaving it out would
+    // keep rendering the compressed card after a switch to Buying/Selling.
   }, [act, busyId, colors, confirmDecline, deepLinkOfferId, groupMeta, onCounter, onGrade,
-      openTracking, router,
+      openTracking, role, router,
       settings.currency, settings.numberLocale, settings.hapticsEnabled]);
 
   return (
@@ -1462,17 +1476,6 @@ function OffersScreen() {
         />
       ) : null}
 
-      {settleFor ? (
-        <SettleUpSheet
-          visible={settleFor !== null}
-          onClose={() => setSettleFor(null)}
-          mode={settleFor.i_am_buyer ? 'pay' : 'ship'}
-          isBuyer={settleFor.i_am_buyer}
-          amountLabel={formatPrice(settleFor.amount, settings.currency, settings.numberLocale)}
-          offerId={settleFor.id}
-          colors={colors}
-        />
-      ) : null}
 
       <QuickNavBar />
     </View>
@@ -1583,6 +1586,7 @@ const styles = StyleSheet.create({
   // squeeze Accept and Decline instead of wrapping — the row shrinks, and the
   // row is made of touch targets.
   capNote: { fontSize: textToken.sm, lineHeight: 17, textAlign: 'right', marginTop: 2 },
+  compactHint: { fontSize: textToken.sm, lineHeight: 17, marginTop: 2 },
   // One line, hairline-separated rather than carded: history is a reference
   // list, and giving it borders and shadows makes it compete with the
   // negotiations above it for exactly the attention it does not want.
