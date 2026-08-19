@@ -4,6 +4,40 @@
 
 ## Current state (2026-08-19)
 
+### ⛔ Check your own new code BEFORE calling it done (2026-08-19)
+
+Asked for after an audit found **three bugs in code written the same hour**, one
+already deployed. Five real defects landed that day and **not one was caught
+while writing** — gates or an explicit audit caught them all. The cause is a
+single habit:
+
+> The happy path is verified against data that CANNOT DISCRIMINATE.
+
+| defect | why the check passed |
+|---|---|
+| `ORDER BY documented_pct, documented_count DESC` — DESC binds to the LAST column, so the percentage sorted ASCENDING and the least-documented member ranked #1 | every member was at 0%; everything tied, so direction was unobservable |
+| `Math.abs(50.01 - 50) >= 0.01` is **false** — a real one-cent difference never prompted | tested €62 vs €50, nowhere near the boundary |
+| `setMetric` inside the effect that lists `metric` as a dep (self-cancelling) | only tears down on a dep change, never on first render |
+| stale `attrs` spread into a **merge** endpoint (lost update) | one edit per session looks correct |
+| Home would have called a whole portfolio "estimated" when no item carried a provenance | prod data had provenance, so the empty case never rendered |
+
+**The pass to run before writing "done":**
+
+1. Ask *what data would make this look right while being wrong* — uniform,
+   empty, all-zero, single-row, exactly-at-the-boundary — then test that.
+2. **A sort direction, threshold or comparison cannot be proven on uniform
+   data.** A 3-row `VALUES` list against prod costs nothing and settled the
+   ranking bug in one query.
+3. Money in **cents**, never an epsilon.
+4. Read the endpoint before assuming merge vs replace, then send the minimum
+   payload.
+5. Two literals that must agree is a bug waiting (a page size and the guard
+   that reads it) — collapse them.
+6. "We don't know" must never render as a claim: no provenance is not "all
+   estimated", no comps is not "worth 0".
+7. Measure the cost you added (DATA_SCALING_PLAN rule 2) instead of assuming it
+   is small.
+
 ### Value provenance — what a number on screen is allowed to claim
 
 `v_item_values_v1` now returns **`value_source`** beside `value_eur` (applied

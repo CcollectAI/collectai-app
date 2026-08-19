@@ -454,6 +454,26 @@ is the difference between a question and nagging. And it cannot inflate
 anything public: the leaderboard ranks on market-backed sources only, and a
 chosen number reports as `user_estimate`.
 
+##### The leaderboard's second axis, for categories value cannot rank
+
+40+ categories have no sold-comp source, and the board sums market-backed value
+only — so a value ranking there sorts a column of zeros. Those categories rank
+by **unit count** and by **documented share**: items carrying a photo, a
+condition AND a purchase price. All three, so the bar is unambiguous, and
+because it is the one metric that pays the platform back — count rewards adding
+rows, documented share rewards adding the photos and purchase prices the
+catalogue and the comp gap are starved of.
+
+`value_ranking_available` is MEASURED off the board rather than a hardcoded
+category list, so a category that gains a price source starts offering the value
+board by itself. The value chip is hidden, not disabled, where it cannot work.
+
+> ⚠️ **A sort direction cannot be tested on a uniform board.** The first
+> version ranked backwards — `ORDER BY documented_pct, documented_count DESC`
+> applies DESC to the LAST column only — and every live member being at 0% hid
+> it completely. Each metric now carries its own directions and the template
+> appends none; `TestLeaderboardOrderDirections` pins that.
+
 **Still open (Stage 2, unchanged):** `/portfolio/items`,
 `/analytics/portfolio/category-breakdown` and `/portfolio/overview` still retype
 the chain server-side rather than reading the view.
