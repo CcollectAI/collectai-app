@@ -72,6 +72,7 @@ import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { LockedPreviewSection } from '@/components/LockedPreviewSection';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { ItemDetailsCard } from '@/components/item/ItemDetailsCard';
+import { MarketCompPrompt, shouldOfferComp } from '@/components/item/MarketCompPrompt';
 import { ItemQuickActionsRow } from '@/components/item/ItemQuickActionsRow';
 import { ItemShopSection } from '@/components/item/ItemShopSection';
 import { ItemRefreshBar } from '@/components/item/ItemRefreshBar';
@@ -215,6 +216,8 @@ function ItemDetailScreen() {
     name?: string | null; category?: string | null; condition?: string | null;
     value?: number | null; imageUrl?: string | null; notes?: string | null;
     valueSource?: string | null;
+    /** What the member typed — needed to offer "keep mine" against the comp. */
+    userEstimate?: number | null;
   } | null>(null);
   useEffect(() => {
     if (isDraft || !id) return;
@@ -268,6 +271,7 @@ function ItemDetailScreen() {
           row.estimated_value ??
           null,
         valueSource: viewValue?.source ?? null,
+        userEstimate: row.estimated_value ?? row.predicted_price_eur ?? null,
         imageUrl: row.image_url ?? null,
         notes: row.notes ?? null,
       });
@@ -491,6 +495,48 @@ function ItemDetailScreen() {
   const { width: screenWidth, height: windowHeight } = useWindowDimensions();
   const GALLERY_WIDTH = screenWidth - 32; // 16px padding on each side
 
+
+  /**
+   * The member answers "use the market price, or keep yours?".
+   *
+   * Recorded in `attrs.value_choice`, which `v_item_values_v1` reads: 'mine'
+   * puts their number above the model. Recording 'market' changes no value —
+   * it only stops us asking again, which is the difference between a question
+   * and nagging.
+   */
+  const [compBusy, setCompBusy] = useState(false);
+  const onChooseValue = useCallback(async (choice: 'market' | 'mine') => {
+    if (!id) return;
+    setCompBusy(true);
+    try {
+      // The PATCH replaces the attributes it is given, so the existing ones
+      // are spread back in — sending only `value_choice` would drop every
+      // category attribute the item carries.
+      await collectorsApi.updateItemAttributes(id, {
+        ...(savedAttrs ?? {}),
+        value_choice: choice,
+      });
+      setSavedAttrs((prev) => ({ ...(prev ?? {}), value_choice: choice }));
+      if (choice === 'mine' && savedCore?.userEstimate != null) {
+        // Reflect it immediately rather than waiting for a refetch: the view
+        // will now return their number, and the screen should not keep showing
+        // ours after they said no.
+        setSavedCore((prev) =>
+          prev ? { ...prev, value: savedCore.userEstimate, valueSource: 'user_estimate' } : prev,
+        );
+        detail.setEditableValue(String(savedCore.userEstimate));
+      }
+      showToast({
+        message: choice === 'mine' ? 'Keeping your estimate' : 'Using the market price',
+        type: 'success',
+      });
+    } catch (e) {
+      logger.error('[ItemDetail] value choice failed:', e);
+      showToast({ message: 'Could not save that choice', type: 'error' });
+    } finally {
+      setCompBusy(false);
+    }
+  }, [id, savedAttrs, savedCore?.userEstimate, showToast, detail]);
 
   // Multi-marketplace listing modal
   const listForSaleHook = useListForSale({
@@ -917,6 +963,26 @@ function ItemDetailScreen() {
             onSizeSystemChange={setSizeSystem}
             onSizeValueChange={setItemSizeValue}
           />
+
+          {/* Asked AFTER the save, never as a modal over it. See
+              MarketCompPrompt for why "keep mine" needs the view's choice
+              branch to be an honest option at all. */}
+          {shouldOfferComp({
+            valueSource: savedCore?.valueSource,
+            currentValue: savedCore?.value,
+            userEstimate: savedCore?.userEstimate,
+            existingChoice:
+              typeof savedAttrs?.value_choice === 'string'
+                ? savedAttrs.value_choice
+                : null,
+          }) ? (
+            <MarketCompPrompt
+              marketValue={savedCore?.value as number}
+              userEstimate={savedCore?.userEstimate as number}
+              onChoose={onChooseValue}
+              busy={compBusy}
+            />
+          ) : null}
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]} accessibilityRole="summary" accessibilityLabel={t('item_detail.valuation_a11y')}>
             {/* Price display — PriceCard, legacy bands, confidence, explanation, scarcity, comps */}

@@ -423,6 +423,37 @@ would show a collection worth less than they know it is.
 > than were requested — which proves the whole collection is in hand. At exactly
 > 50 it says nothing.
 
+##### A member may override the model, and it has to actually win
+
+Manual add already replaced the member's number silently: it saves what they
+typed, then `revalueItem` writes a catalogue valuation into `quick_predictions`
+— the TOP of the chain — so a catalogue-linked item started showing our figure
+while theirs sat unseen in `estimated_value`.
+
+The item screen now ASKS (`MarketCompPrompt`, added 2026-08-19), after the save
+and never as a modal over it. `shouldOfferComp` gates the question on all four
+of: the shown value is comp-backed, the member typed something, they have not
+already answered, and the two numbers differ **in cents** (`Math.abs(50.01 -
+50) >= 0.01` is FALSE in floating point — money is compared as integer cents).
+
+**The answer is honoured by the view**, migration
+`20260819b_v_item_values_v1_member_choice.sql`: `attrs.value_choice = 'mine'`
+sits ABOVE the model in the COALESCE, and reports as `user_estimate`. Without
+that branch the question would be dishonest — both prediction tables outrank
+`estimated_value`, and the catalogue model cannot be deleted out of the way
+because it is global data, not the member's row.
+
+Proven on prod before and after: with no member having chosen, the value and
+source distribution was **byte-identical** (38 user_estimate / 2 catalog_model
+/ 2 none), and a probe row flipped 74.80 `catalog_model` → 12.34
+`user_estimate` and back. The lock was regenerated and diffed: column list
+unchanged, 0 tables differing from a fresh live regen.
+
+Recording 'market' changes no value — it only stops the app asking again, which
+is the difference between a question and nagging. And it cannot inflate
+anything public: the leaderboard ranks on market-backed sources only, and a
+chosen number reports as `user_estimate`.
+
 **Still open (Stage 2, unchanged):** `/portfolio/items`,
 `/analytics/portfolio/category-breakdown` and `/portfolio/overview` still retype
 the chain server-side rather than reading the view.
