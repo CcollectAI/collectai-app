@@ -468,19 +468,26 @@ async def get_category_leaderboard(
                         -- chain: same two expressions, same order, truncated.
                         COALESCE(SUM(
                             COALESCE(
-                                (SELECT qp.q50_eur FROM public.quick_predictions qp
-                                  WHERE qp.item_id = i.id
-                               ORDER BY qp.created_at DESC LIMIT 1),
-                                -- This step was MISSING until 2026-08-17 and the
-                                -- board quoted numbers no other screen agreed
-                                -- with: 8 of 74 live items differed, one member
-                                -- reading EUR 78.90 here against EUR 185.15 in
-                                -- their own portfolio. Measured by setting
-                                -- request.jwt.claim.sub per user and diffing
-                                -- against v_item_values_v1 item by item.
+                                -- CATALOGUE-FIRST since 2026-08-19: the live
+                                -- model output outranks the snapshot frozen
+                                -- into quick_predictions at add/revalue time.
+                                -- Same order as v_item_values_v1 and
+                                -- /portfolio/items, which is what the parity
+                                -- test checks.
                                 (SELECT pp.q50 FROM public.price_predictions pp
                                   WHERE pp.item_ref = i.canonical_ref
                                ORDER BY pp.generated_at DESC LIMIT 1),
+                                -- The catalogue step was MISSING until
+                                -- 2026-08-17 and the board quoted numbers no
+                                -- other screen agreed with: 8 of 74 live items
+                                -- differed, one member reading EUR 78.90 here
+                                -- against EUR 185.15 in their own portfolio.
+                                -- Measured by setting request.jwt.claim.sub per
+                                -- user and diffing against v_item_values_v1
+                                -- item by item.
+                                (SELECT qp.q50_eur FROM public.quick_predictions qp
+                                  WHERE qp.item_id = i.id
+                               ORDER BY qp.created_at DESC LIMIT 1),
                                 0
                             )
                         ), 0)::float8 AS total_value

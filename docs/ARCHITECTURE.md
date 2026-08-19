@@ -474,9 +474,42 @@ board by itself. The value chip is hidden, not disabled, where it cannot work.
 > it completely. Each metric now carries its own directions and the template
 > appends none; `TestLeaderboardOrderDirections` pins that.
 
-**Still open (Stage 2, unchanged):** `/portfolio/items`,
-`/analytics/portfolio/category-breakdown` and `/portfolio/overview` still retype
-the chain server-side rather than reading the view.
+##### CATALOGUE-FIRST — one order, everywhere (2026-08-19)
+
+The two comp-backed sources are **not** interchangeable, and the difference is
+freshness, not trust:
+
+| source | what it is |
+|---|---|
+| `price_predictions.q50` | the catalogue model's **current** output, recomputed as sales arrive |
+| `quick_predictions.q50_eur` | a **copy** of that price, frozen into the row by `write_quick_valuation` when the item was added or revalued |
+
+The view preferred the frozen copy; `/portfolio/items` preferred the live one.
+So an item added in July kept quoting July's price on some screens while the app
+labelled it "Market estimate".
+
+**This section previously called that "latent, not live — only 2 items have both
+and they agree". That was measured in July and had gone stale.** Re-measured
+2026-08-19: 74 active items, 4 with a snapshot, 11 with a live price, **3 with
+both — and 2 of them disagreed**, the live price being newer in both cases.
+
+Everything now orders **member choice → live catalogue → frozen snapshot →
+`predicted_price_eur` → `estimated_value`**: `v_item_values_v1` (migration
+`20260819c`), `/portfolio/items`, `/portfolio/overview`,
+`/analytics/portfolio/category-breakdown` and the leaderboard's market-only
+subset. `test_leaderboard_value_parity.py` holds the router to it.
+
+Proven the way a value change has to be: every item's value captured before and
+after the migration and diffed — **exactly 2 of 76 moved**, both to the live
+catalogue figure (34.4291 → 34.4981, 0.0500 → 0.0400), and nothing else
+changed. Confirmed through the API afterwards: `Rocket's Scyther` serves 34.5
+`catalog_model`.
+
+**Still open (Stage 2):** those endpoints now AGREE with the view but still
+retype the chain rather than reading it. Reading it is not currently possible
+server-side — the view ends `WHERE user_id = auth.uid()` and the pool has no
+auth context — so closing this properly means a shared SQL function both the
+view and the routers call, not a repoint.
 
 ##### The Home curve must value the whole collection
 

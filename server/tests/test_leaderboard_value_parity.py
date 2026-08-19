@@ -75,10 +75,10 @@ import asyncpg
 # somebody edits the router without editing here — which is the point.
 ROUTER_VALUE_EXPR = """
     COALESCE(
-        (SELECT qp.q50_eur FROM public.quick_predictions qp
-          WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1),
         (SELECT pp.q50 FROM public.price_predictions pp
           WHERE pp.item_ref = i.canonical_ref ORDER BY pp.generated_at DESC LIMIT 1),
+        (SELECT qp.q50_eur FROM public.quick_predictions qp
+          WHERE qp.item_id = i.id ORDER BY qp.created_at DESC LIMIT 1),
         0
     )::float8
 """

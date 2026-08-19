@@ -357,11 +357,21 @@ async def get_portfolio_category_breakdown(
                         -- QuickScan output; an item priced in one but not the
                         -- other counted on some Home surfaces and read 0 here.
                         -- Measured: the headline said 340 while this said 120.
+                        -- CATALOGUE-FIRST since 2026-08-19, matching
+                        -- v_item_values_v1 and /portfolio/items. `lq.q50_eur`
+                        -- is a SNAPSHOT of the catalogue price frozen when the
+                        -- item was added or revalued; `price_predictions` is
+                        -- the model's current output. Preferring the snapshot
+                        -- meant an item added in July kept quoting July's
+                        -- price while the app called it a market estimate.
+                        -- Measured before the switch: of 74 live items, 3 had
+                        -- both and 2 disagreed, in both cases the live price
+                        -- being the newer one.
                         COALESCE(
-                            lq.q50_eur,
                             (SELECT pp.q50 FROM price_predictions pp
                               WHERE pp.item_ref = i.canonical_ref
                               ORDER BY pp.generated_at DESC LIMIT 1),
+                            lq.q50_eur,
                             i.predicted_price_eur, i.estimated_value, 0)
                     ), 0) AS total_value,
                     COALESCE(SUM(

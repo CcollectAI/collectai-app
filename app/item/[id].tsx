@@ -267,6 +267,10 @@ function ItemDetailScreen() {
         condition: row.condition ?? null,
         value:
           viewValue?.valueEur ??
+          // Mirrors the view's TAIL (predicted_price_eur then estimated_value).
+          // The two prediction tables cannot be read from here at all — RLS
+          // denies price_predictions to the client — so a fallback can only
+          // ever cover the stored columns.
           row.predicted_price_eur ??
           row.estimated_value ??
           null,
