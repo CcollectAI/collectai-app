@@ -318,10 +318,16 @@ lxml missing  -> BeautifulSoup(html, "lxml") raises FeatureNotFound,
 ```
 
 So a lost transitive dependency reads as "two live sources found nothing
-today", not as an error. Declare `beautifulsoup4` and `lxml` explicitly, pinned
-to the versions already on the box. Found 2026-08-19 while fixing the booth
-parser test, which had been failing on the ABSENT DEPENDENCY while looking
-exactly like a broken parser.
+today", not as an error. Found 2026-08-19 while fixing the booth parser test,
+which had been failing on the ABSENT DEPENDENCY while looking exactly like a
+broken parser.
+
+**CLOSED 2026-08-19.** `beautifulsoup4==4.14.3` and `lxml==5.4.0` are now
+declared in `requirements.txt` AND `constraints.txt` (the two are updated
+together, per that file's own header). The versions were read off the box with
+`importlib.metadata` rather than picked — this file describes the environment
+that is known to work, not the newest release. `preflight_deps` PASS after
+shipping them.
 
 ## Stop Conditions
 

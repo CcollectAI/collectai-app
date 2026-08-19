@@ -133,7 +133,12 @@ Two mechanisms worth keeping:
   never have caught a bare-vs-namespaced key
   (`learning_validate_values_not_just_structure`).
 
-⚠️ **Undeclared parsing dependencies.** `booth`, `suruga_ya` and
+✅ **Parsing dependencies declared (2026-08-19)** — `beautifulsoup4==4.14.3`
+and `lxml==5.4.0` in `requirements.txt` + `constraints.txt`, pinned to what is
+installed on the box. The note below is kept because the FAILURE SHAPE is the
+lesson:
+
+⚠️ **Undeclared parsing dependencies (the original finding).** `booth`, `suruga_ya` and
 `yahoo_auctions` `from bs4 import BeautifulSoup` and ask for the **lxml** tree
 builder; `requirements.txt` declares **neither** — both arrive transitively via
 `crawl4ai`. `suruga_ya` and `yahoo_auctions` are LIVE, and both failure modes

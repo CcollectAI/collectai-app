@@ -54,6 +54,27 @@ alembic>=1.13.0
 # Monitoring
 sentry-sdk[fastapi]==2.22.0
 
+# HTML parsing for the scraping adapters — DECLARED 2026-08-19.
+#
+# `booth_caller`, `suruga_ya_caller` and `yahoo_auctions_caller` all
+# `from bs4 import BeautifulSoup`, and `_parse_search_page` asks for the
+# **lxml** tree builder. Neither was in this file: both arrived transitively
+# through crawl4ai, so the imports were one dependency resolution away from
+# vanishing. suruga_ya and yahoo_auctions are LIVE (not in DISABLED_ADAPTERS).
+#
+# Both failure modes are SILENT and they differ:
+#   bs4 missing  -> logger.warning, return []      ("0 hits")
+#   lxml missing -> BeautifulSoup(html, "lxml") raises FeatureNotFound, which
+#                   search()'s `except Exception` turns into a circuit-breaker
+#                   failure and []   ("0 hits")
+# So a lost transitive dep reads as two live sources quietly going dry.
+#
+# Pinned to what is INSTALLED ON THE BOX today (verified via
+# importlib.metadata on /opt/collectors/.venv), not to latest — this file
+# describes the environment that is known to work.
+beautifulsoup4==4.14.3
+lxml==5.4.0
+
 # Excel (.xlsx) collection import — openpyxl only, NOT pandas (too heavy for t3.medium).
 # import_router.py:/import/collection depends on this; without it every .xlsx upload 500s.
 openpyxl==3.1.5

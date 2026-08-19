@@ -9,6 +9,10 @@ fastapi>=0.110,<1
 uvicorn>=0.30,<1
 asyncpg>=0.29,<1
 
+# HTML parsing (see requirements.txt for why these are declared, not implied).
+beautifulsoup4==4.14.3
+lxml==5.4.0
+
 # Test deps
 pytest>=8.2,<9
 pytest-asyncio>=0.23,<1.1
