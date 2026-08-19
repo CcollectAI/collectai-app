@@ -104,3 +104,56 @@ describe('offerNeedsMyAction', () => {
     expect(offerNeedsMyAction(o)).toBe(true);
   });
 });
+
+/**
+ * "Does this need me?" and "may I answer this?" are DIFFERENT questions, and
+ * conflating them was a real bug on the trade screen (2026-08-19).
+ *
+ * `offerNeedsMyAction` answers the first — it drives the badge, the Home row
+ * and the "needs you" section — and it deliberately returns FALSE for a
+ * `superseded` bid, because a rival on a listing you already promised is not
+ * urgent.
+ *
+ * `app/offer/[offerId].tsx` used it to gate Accept / Counter / Decline, which
+ * removed those controls from a bid §1d keeps alive SPECIFICALLY so it can be
+ * accepted when the first buyer ghosts. `app/offers.tsx` gates on
+ * `isSeller && open` and still showed them, so the two screens disagreed about
+ * what was legal.
+ *
+ * The trade screen now derives `mayRespond` from §1d-bis's table directly.
+ * This pins the distinction the bug erased.
+ */
+describe('needs-me vs may-answer', () => {
+  const rival = offer({ status: 'pending', i_am_buyer: false, superseded: true });
+
+  it('a superseded bid does NOT need you — it is not urgent', () => {
+    expect(offerNeedsMyAction(rival)).toBe(false);
+  });
+
+  it('...but the SELLER may still answer it, which is the whole point of §1d', () => {
+    // The rule the trade screen applies: pending -> the seller answers.
+    const mayRespond = (o: P2POffer) =>
+      (o.status === 'pending' || o.status === 'countered')
+      && (o.i_am_buyer ? o.status === 'countered' : o.status === 'pending');
+
+    expect(mayRespond(rival)).toBe(true);
+    // If these two ever agree for a superseded bid, the fallback is
+    // unanswerable again.
+    expect(mayRespond(rival)).not.toBe(offerNeedsMyAction(rival));
+  });
+
+  it('may-answer follows §1d-bis: pending is the seller, countered is the buyer', () => {
+    const mayRespond = (o: P2POffer) =>
+      (o.status === 'pending' || o.status === 'countered')
+      && (o.i_am_buyer ? o.status === 'countered' : o.status === 'pending');
+
+    expect(mayRespond(offer({ status: 'pending', i_am_buyer: false }))).toBe(true);
+    expect(mayRespond(offer({ status: 'pending', i_am_buyer: true }))).toBe(false);
+    expect(mayRespond(offer({ status: 'countered', i_am_buyer: true }))).toBe(true);
+    expect(mayRespond(offer({ status: 'countered', i_am_buyer: false }))).toBe(false);
+    // A settled trade is answerable by nobody.
+    for (const status of ['accepted', 'completed', 'declined', 'cancelled']) {
+      expect(mayRespond(offer({ status, i_am_buyer: false }))).toBe(false);
+    }
+  });
+});

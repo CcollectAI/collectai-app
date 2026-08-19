@@ -143,7 +143,8 @@ function OffersScreen() {
    * checkable — a param nothing reads is silently dropped and legal TS
    * (learning_route_params_are_an_unchecked_contract).
    */
-  const { offerId: deepLinkOfferId } = useLocalSearchParams<{ offerId?: string }>();
+  const { offerId: deepLinkOfferId, action: deepLinkAction } =
+    useLocalSearchParams<{ offerId?: string; action?: string }>();
 
   const [role, setRole] = useState<Role>('all');
   const [refreshing, setRefreshing] = useState(false);
@@ -489,8 +490,18 @@ function OffersScreen() {
     const target = offers.find((o) => o.id === deepLinkOfferId);
     if (!target) return;
     gradePromptedRef.current = deepLinkOfferId;
+    // `action=track` comes from the trade screen (`/offer/[offerId]`), whose
+    // "Add tracking" step lives here because this screen owns the carrier
+    // sheet. Without it that step dropped the member on a highlighted card and
+    // left them to find the button — a seam in the one flow built to remove
+    // seams. The grade prompt has auto-opened on arrival since 2026-08-18;
+    // this is the same courtesy for the other borrowed step.
+    if (deepLinkAction === 'track' && target.can_add_tracking) {
+      openTracking(target);
+      return;
+    }
     if (target.can_grade && !target.already_graded) onGrade(target);
-  }, [deepLinkOfferId, loading, offers, onGrade]);
+  }, [deepLinkOfferId, deepLinkAction, loading, offers, onGrade, openTracking]);
 
   /**
    * Decline, confirmed — used by BOTH the button and the swipe gesture.

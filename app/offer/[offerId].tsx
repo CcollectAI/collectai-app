@@ -55,7 +55,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { formatPrice } from '@/lib/format';
 import { timeAgo } from '@/lib/timeAgo';
 import { collectorsApi } from '@/api/collectorsApi';
-import { offerNeedsMyAction, type P2POffer } from '@/api/p2pApi';
+import type { P2POffer } from '@/api/p2pApi';
 import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import logger from '@/utils/logger';
 
@@ -134,7 +134,28 @@ function TradeScreen() {
     const live = offer.status === 'accepted' || offer.status === 'shipped';
     const done = offer.status === 'completed';
     const dead = !open && !live && !done;   // declined / cancelled / expired
-    const mine = offerNeedsMyAction(offer);
+
+    /**
+     * ⚠️ MAY I ANSWER THIS — which is NOT the same question as "does this need
+     * me", and gating the Respond step on the latter was a real bug.
+     *
+     * `offerNeedsMyAction` returns FALSE for a `superseded` offer on purpose:
+     * it drives the badge and the "needs you" section, and a rival bid on a
+     * listing you already promised is not urgent. But §1d keeps that bid ALIVE
+     * precisely so it can be accepted if the buyer ghosts — and gating on
+     * urgency removed Accept/Counter/Decline from the one screen that owns the
+     * trade, while `app/offers.tsx` (which gates on `isSeller && open`) still
+     * showed them. Two screens disagreeing about what is legal.
+     *
+     * This is §1d-bis's table and nothing else: whoever did not set the current
+     * number is the one who answers it.
+     *
+     *   pending   -> the buyer's number  -> the SELLER answers
+     *   countered -> the seller's number -> the BUYER answers
+     */
+    const mayRespond = open && (offer.i_am_buyer
+      ? offer.status === 'countered'
+      : offer.status === 'pending');
 
     const state = (isDone: boolean, isNow: boolean): StepState =>
       isDone ? 'done' : isNow ? 'now' : 'later';
@@ -143,13 +164,14 @@ function TradeScreen() {
       {
         key: 'respond',
         title: 'Respond',
-        // A dead trade never got past step 1, and marking it "done" would read
-        // as progress. It is shown as the step that ended.
-        state: state(live || done, open && mine && !offer.superseded),
+        // `dead` counts as settled, not as "later": a declined trade ENDED at
+        // this step, and rendering it dimmed-and-upcoming said the opposite of
+        // what happened. `mayRespond`, not `mine` — see above.
+        state: state(live || done || dead, mayRespond),
         detail: dead
           ? 'This trade ended here.'
           : open
-            ? (mine ? 'Your call.' : 'Waiting on them.')
+            ? (mayRespond ? 'Your call.' : 'Waiting on them.')
             : 'Agreed.',
       },
       {
@@ -417,7 +439,14 @@ function TradeScreen() {
               {s.key === 'ship' && s.state === 'now' ? (
                 <View style={styles.actions}>
                   <AnimatedPressable
-                    onPress={() => router.push(`/offers?offerId=${encodeURIComponent(offer.id)}` as Href)}
+                    // `action=track` so the offers list OPENS the carrier
+                    // sheet on arrival instead of just highlighting the card.
+                    // The sheet lives there because that screen owns the
+                    // carrier picker — one picker, one place it can go wrong —
+                    // but landing on a list and hunting for the button is the
+                    // seam this whole screen exists to remove.
+                    onPress={() => router.push(
+                      `/offers?offerId=${encodeURIComponent(offer.id)}&action=track` as Href)}
                     style={[styles.btn, styles.btnGhost, { borderColor: colors.accent }]}
                     accessibilityRole="button"
                     accessibilityLabel="Add tracking for this parcel"
