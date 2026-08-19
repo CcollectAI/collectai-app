@@ -362,7 +362,14 @@ it leaves the badge, leaves the Home row and leaves the "Needs you" section; the
 card recedes to `opacity: 0.72` and says `YOU ACCEPTED ANOTHER BID`. The flag is
 checked BELOW `can_confirm` / `can_grade`, or it would silence the confirm
 prompt on the accepted trade itself. Pinned by
-`__tests__/lib/offerNeedsMyAction.test.ts` and six server tests. The seller framing of the copy is safe by construction: a
+`__tests__/lib/offerNeedsMyAction.test.ts` and six server tests.
+
+**One imprecision left in deliberately:** a superseded bid is not "needs you",
+so it falls into the **Waiting on them** section — and strictly nobody is
+waiting on the other side either; the seller has moved on. A fourth section
+would cost more than it fixes, and the card carries the truth in its own words
+(`YOU ACCEPTED ANOTHER BID` / `ANOTHER BID ACCEPTED`), which is louder than a
+section header. Recorded so it reads as a decision rather than an oversight. The seller framing of the copy is safe by construction: a
 buyer sees only their own offers and the server allows one open offer per buyer
 per listing (409), so a group can only ever be bids a seller is choosing
 between — and all bids on one listing share its currency, so the spread is a
