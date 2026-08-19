@@ -1079,3 +1079,36 @@ setting; they are different sentences and the component picks between them.
 The "turn on Allow discovery to be ranked" hint renders **only on your own
 profile**. On someone else's it would be reporting their privacy settings to a
 stranger.
+
+## A tab's LABEL and its ROUTE are different things (2026-08-19)
+
+The fifth tab is labelled **Explore** and its route is still `search`
+(`app/(tabs)/search.tsx`, `/search`, every deep link). That split is
+deliberate: the screen is a search box whose idle state is browse-by-category,
+so "Explore" describes both halves, while renaming the route would break deep
+links, `check:params` handoffs and the one-line re-export that keeps
+`/search` and the tab rendering the SAME component.
+
+The rule the P2P spec §11 states — *the word on the bar must describe the
+screen it produces* — is about the LABEL. It is not a reason to rename files.
+
+**One label, three components.** `ExternalTabBar`, `QuickNavBar` and
+`app/(tabs)/_layout.tsx` all render this bar, and a screen shows whichever it
+mounts. A rename that touches one of them leaves the app calling the same tab
+two different names depending on where you are:
+
+| component | where it renders | label source |
+|---|---|---|
+| `ExternalTabBar` | `(tabs)` screens, at RootStack level | `t("nav.explore")` |
+| `app/(tabs)/_layout.tsx` | the navigator's own `Tabs.Screen` | `t("nav.explore")` |
+| `QuickNavBar` | the 38 screens OUTSIDE `(tabs)` | **plain English literal** |
+
+`QuickNavBar`'s `TABS` array is deliberately untranslated (the whole array is,
+rather than half of it), so it needs the same edit by hand — it was the one
+that still said "Search".
+
+**And the label leaks into prose.** `src/data/appHelp.ts` told users to "Open
+the Search tab". Copy naming a tab is a fourth place to change, and no gate
+looks for it: `i18n:parity` compares keys across locale files and
+`check:reachable` walks routes, so neither can see an English sentence naming a
+control. Grep the label string, not just the components.

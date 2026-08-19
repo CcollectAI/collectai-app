@@ -1,6 +1,74 @@
 # Sparrow Collect - Project Memory
 
-> Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-10
+> Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-19
+
+## Current state (2026-08-19)
+
+**Trade ratings are now READ somewhere.** Two-sided rating has existed since
+Stage 2 (`member_grades`, either party, anchored to a completed offer). What
+was missing was every surface that should show it. Full writeup:
+`docs/P2P_MARKETPLACE_SPEC.md` §12 and `docs/alerts-and-insights.md`.
+
+Four bugs found while wiring it, **all four instances of classes this file
+already names** — which is the point of naming them.
+
+| What | Class | Where |
+|---|---|---|
+| Dossier valuation + 90-day chart empty for EVERY item, every user — bound the **bare** `canonical_key` against the namespaced `item_ref` | identifier formats (below) | `dossier_agent.py` |
+| Dossier printed **no grade for a graded item** — read `attrs["grade"]`, which no writer writes | reader/writer never met | `dossier_agent.py` |
+| Every server-sent `deep_link` is RELATIVE; `new URL()` throws on those into a catch that logs and returns — **6 senders, all with a dead tap** | dead-by-wiring | `usePushNotifications.ts` |
+| `seller_collection_size` counted **archived** items, crediting a seller for what they had already sold | archived-as-owned | `p2p_listing_router.py` |
+
+The first two are in `dossier_pdf`, a **Pro** feature. The third is the reverse
+of the usual shape: the SEND side was correct and the RECEIVE side dropped it,
+so nothing server-side looked wrong and the notification visibly arrived.
+
+**The fourth was found BY a gate that had been blind to the query.** Splitting
+the listing SQL around a shared fragment turned one string literal into three,
+and `check:archived` reports per literal — the detail query had been passing
+only because its `WHERE l.id = $1` made the whole literal read as a by-id
+lookup. Keeping gates literal-scoped is what made it visible.
+
+### The server test suite was 31-red, and it was mostly EVIDENCE
+
+31 failures → **7** (3,763 passing). Almost none was a broken product; they
+were stale *pins*, and several were pinning behaviour that had been
+deliberately changed. **The doc decides, not the test** — "fixing" the code
+until the suite went green would have reopened real bugs:
+
+| pinned | truth | if you had believed the test |
+|---|---|---|
+| free `max_mandates == 3` | **0** since 2026-07-31 | reopens the deep-link bypass and makes the paywall advertise mandates the buyer gets none of |
+| pro `advanced_analytics is False` | **True** since 2026-07-28 | sends a paying Pro user to the paywall instead of `/analytics` |
+| `/items-export/overview` header `id,title,…` | the 12-col round-trip schema | breaks export → edit → re-import |
+| pricecharting is disabled | **re-enabled 2026-07-22** (keyless public-site scrape) | drops the only sold comps retro_games has |
+| eBay `sold_comps` parses a Finding response | **stubbed `return []`** since 2026-04-26 | resurrects a revoked API and flaps the breaker shared with Browse |
+
+Two mechanisms worth keeping:
+
+- **`items_export` now pins `EXPORT_COLUMNS == IMPORT_COLUMNS`.** They are two
+  lists in two files kept in step by a *comment*; nothing enforced it, so a
+  column added to one side would silently make every exported file
+  un-importable.
+- **A mock that routes on SQL TEXT cannot see which VALUE was bound.** The
+  `canonical_ref` fix passed its first mutation test for that reason. The mock
+  now records `(sql, args)` and the test asserts the ref — structure could
+  never have caught a bare-vs-namespaced key
+  (`learning_validate_values_not_just_structure`).
+
+⚠️ **Undeclared parsing dependencies.** `booth`, `suruga_ya` and
+`yahoo_auctions` `from bs4 import BeautifulSoup` and ask for the **lxml** tree
+builder; `requirements.txt` declares **neither** — both arrive transitively via
+`crawl4ai`. `suruga_ya` and `yahoo_auctions` are LIVE, and both failure modes
+degrade to "0 hits" (bs4 missing → warning + `[]`; lxml missing →
+`FeatureNotFound` swallowed by `except Exception`). If that transitive
+dependency moves, two sources go quietly dry with nothing red. Declare both,
+pinned to what the box already has.
+
+**Not deployed, not device-walked.** The server half needs
+`scripts/deploy_to_ec2.sh` + the 9 preflight stages run manually, and the whole
+chain — completed trade → push → tap → rate → the number on the tile and the
+profile — has not been walked on a device.
 
 ## Current state (2026-08-10)
 

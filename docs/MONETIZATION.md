@@ -48,6 +48,19 @@ numeric cap both tables declare**, and `__tests__/screens/subscriptionPlanCards.
 pins the plan-card copy to the limits, so a card can no longer name a number
 that no plan grants.
 
+**The server tests were the last thing still saying 3 (fixed 2026-08-19).**
+`test_billing_router.py::TestPlanLimits::test_free_limits` and
+`test_subscription.py::TestGetUserMandateLimit` both asserted `max_mandates == 3`
+and had been red since the change — and `test_pro_limits` asserted
+`advanced_analytics is False`, the pre-2026-07-28 three-tier value. A red test is
+not automatically a bug in the code: making those three pass by editing
+`PLAN_LIMITS` would have reopened the deep-link bypass this section exists to
+describe, and re-broken analytics for paying users on the RevenueCat fallback
+path. They now pin **0** and **True**, each with the reason inline, and each was
+mutation-tested (put the old value back → red). The old name
+`test_free_user_gets_3` encoded the number, which is exactly why it survived the
+change looking plausible; it is `test_free_user_gets_0`.
+
 ### Plans
 
 | | Free | Pro (€4.99/mo or €39.99/yr) |

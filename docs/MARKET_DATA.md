@@ -274,9 +274,59 @@ EXPO_PUBLIC_MARKET_TCGPLAYER_KEY=     # TCGPlayer API key
 EXPO_PUBLIC_MARKET_DISCOGS_TOKEN=     # Discogs personal token
 ```
 
+## ⚠️ The stop conditions below disagree with what actually runs (2026-08-19)
+
+Recorded rather than quietly rewritten, because "no scraping" is a posture
+decision and not mine to change. **Read this before citing the list below as
+policy.**
+
+`"No scraping: All providers must use official APIs or partner agreements"` is
+not what the code does today, and the divergences were each deliberate and
+documented at the time:
+
+| adapter | what it does | when |
+|---|---|---|
+| `pricecharting` | keyless fallback scrapes the **free public website** (loose/CIB/new/graded) when no API key is set | RE-ENABLED 2026-07-22 — it landed the first sold comps for retro_games / retro_handhelds, which had **zero** `price_predictions` |
+| `booth` | parses the search page HTML (`li.item-card[data-product-*]`) | in `DISABLED_ADAPTERS` |
+| `suruga_ya`, `yahoo_auctions` | same, via BeautifulSoup | **live** |
+| `crawl4ai` sources | static markdown extraction | live for warhammer et al. |
+
+Either the stop condition should say "official APIs, partner agreements, or
+public pages with a relevance guard", or those adapters should go. Leaving the
+two in disagreement is how the next reader gets a wrong answer from a document
+that sounds authoritative — the same shape as
+`learning_copy_written_from_code_not_from_the_doc`, one level up.
+
+Note the keyless PriceCharting path is **only** safe with its guards: the
+public search returns the closest products across ALL PriceCharting databases,
+so an unguarded query silently yields cross-category junk (a funko query
+returning a Pokémon card at €1997). See
+`learning_keyless_pricecharting_needs_console_guard`.
+
+### The parsing dependencies are undeclared
+
+`booth`, `suruga_ya` and `yahoo_auctions` `from bs4 import BeautifulSoup`, and
+`_parse_search_page` asks for the **lxml** tree builder. `requirements.txt`
+names **neither** — both arrive transitively through `crawl4ai`.
+
+Both failure modes are silent, and they differ:
+
+```
+bs4 missing   -> logger.warning("BeautifulSoup not available"), return []
+lxml missing  -> BeautifulSoup(html, "lxml") raises FeatureNotFound,
+                 caught by search()'s `except Exception` -> record_failure(), return []
+```
+
+So a lost transitive dependency reads as "two live sources found nothing
+today", not as an error. Declare `beautifulsoup4` and `lxml` explicitly, pinned
+to the versions already on the box. Found 2026-08-19 while fixing the booth
+parser test, which had been failing on the ABSENT DEPENDENCY while looking
+exactly like a broken parser.
+
 ## Stop Conditions
 
 - **No scraping**: All providers must use official APIs or partner agreements
+  — ⚠️ **superseded in practice; see the section above before relying on this**
 - **ToS compliance**: Never violate provider terms of service
 - **Rate limiting**: Respect provider rate limits
 - **No mobile API keys**: Backend handles all API calls; mobile app uses presigned URLs

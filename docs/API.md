@@ -150,6 +150,28 @@ entry point. Until then, leave all three alone.
 | GET | `/dossier/{item_id}/summary` | JWT | Lightweight dossier summary |
 | GET | `/dossier/{item_id}/export` | JWT | Export dossier as HTML |
 
+### What the dossier can and cannot fill in (2026-08-19)
+
+Two fields were empty for **every** item until 2026-08-19, both silently:
+
+- **`valuation` and the 90-day `price_history`** — the two lookups bound
+  `items.canonical_key` (BARE) against `price_predictions.item_ref` /
+  `price_prediction_daily.item_ref` (ALWAYS namespaced). Zero rows matched, for
+  every item and every user. They now bind `items.canonical_ref`, the
+  trigger-maintained resolved ref. An item whose `canonical_ref` is NULL has no
+  price ref at all and correctly gets no valuation — there is deliberately no
+  fallback to the bare key, which matches nothing by construction.
+- **`identity.grade`** — read `attrs["grade"]`, a key no writer writes. Grade
+  lives in `items.condition_grade` (the CSV importer writes it there and
+  `/items-export` reads it back from there); only `graded_by` and `sealed` are
+  in `attrs`.
+
+Still empty, deliberately: **`collections` is always `[]`.** `items` has no
+`collections` column, so `generate_dossier` hardcodes it. There IS a usable
+column — `items.collection_name` (singular), which `/items-export/full` already
+surfaces — but wiring it changes what the Pro PDF prints, so it is an open
+product decision rather than a bug.
+
 ## Events
 
 | Method | Path | Auth | Description |

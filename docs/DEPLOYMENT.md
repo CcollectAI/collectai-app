@@ -49,6 +49,16 @@ cp .env.example .env
 | `DEAL_DISCOVERY_ENABLED` | `false` | Enable deal discovery worker |
 | `SENTRY_DSN` | — | Sentry error tracking DSN |
 | `SENTRY_ENV` | `development` | Sentry environment tag |
+| `GRADE_REMIND_AFTER_HOURS` | `24` | How long after a completed P2P trade the "rate your trade" reminder waits |
+| `GRADE_REMIND_UNTIL_DAYS` | `7` | Upper bound on the reminder window. **Do not raise it casually** — on the first run against a database holding old completed trades, this is what stops a reminder going out for every trade ever completed |
+| `GRADE_REMIND_MAX_PER_CYCLE` | `200` | Reminders per hourly cycle. The remainder waits for the next run rather than being dropped |
+
+`grade_reminder_worker` needs no enable flag: it is in the bake manifest and
+does nothing at all until a two-sided trade completes and stays ungraded for
+24h. It sends **at most one reminder per party per trade, ever** — idempotency
+lives in `notification_history` (`data->>'kind' = 'p2p_grade_reminder'` plus
+`data->>'offer_id'`), so there is no column to migrate and nothing to reset.
+See `docs/alerts-and-insights.md`.
 
 ## Local Development
 
