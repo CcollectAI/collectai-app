@@ -123,6 +123,21 @@ _OFFER_COLUMNS = """
             -- button no seller would ever press. The client must not guess a
             -- reference price it does not hold.
             l.price AS listing_price,
+            -- WHICH offer this listing is reserved for, if any (2026-08-19).
+            -- §1d is explicit that accept is an AGREEMENT, NOT A LOCK: the
+            -- listing stays live and browsable, and the rival offers stay
+            -- `pending` on purpose, because with no payment rail a hard reserve
+            -- is unenforceable and killing the fallback bids would leave a
+            -- seller with nothing if the accepted buyer ghosts.
+            --
+            -- The cost was borne on the seller's screen. `offerNeedsMyAction`
+            -- returns true for any pending offer you received, so every rival
+            -- bid kept stamping YOUR MOVE for an object already promised to
+            -- somebody — and `_settle_completed_trade` only closes them at
+            -- COMPLETION, which can be a week of shipping later. The bids must
+            -- stay actionable (that is the whole point) and stop being urgent.
+            -- The client cannot infer this: it never saw the reservation.
+            l.reserved_offer_id,
             -- The listing photo. Every row on app/offers.tsx was text, which is
             -- what made a screen of negotiations read as a spreadsheet — a
             -- thumbnail is the single change that makes a stacked list
@@ -324,6 +339,17 @@ class OfferOut(BaseModel):
     # "the other side withdrew" on the strength of a missing value —
     # learning_empty_answer_rendered_as_zero, in boolean form.
     i_withdrew: Optional[bool] = None
+    # This listing has ACCEPTED a different offer (2026-08-19).
+    #
+    # Not "this offer is dead" — §1d keeps rival bids alive on purpose, because
+    # accept is an agreement and not a lock, and a seller whose buyer ghosts
+    # needs their fallbacks. It means "not your move right now": the client
+    # stops stamping YOUR MOVE on it and stops counting it in the badge, while
+    # every control stays exactly where it was.
+    #
+    # False, never None: this is computed from a column the server always has,
+    # so "we could not tell" is not a state that exists here.
+    superseded: bool = False
     can_confirm: bool = False
     can_grade: bool = False
     already_graded: bool = False
@@ -378,6 +404,11 @@ MIN_PRICE_SAMPLE = 5
 # AND at most EUR 2,000), so crossing EITHER makes them reportable. The `or`
 # below is the whole rule and the easiest thing to get backwards: `and` would
 # miss a member with 40 sales of EUR 20 each.
+#: How many times ONE offer may be countered before the ladder is closed.
+#: Only the seller may counter (`who_may_respond`), so this counts the whole
+#: ladder rather than one side of it. eBay's equivalent is 5 per side.
+MAX_COUNTERS = 5
+
 DAC7_SALES_LIMIT = 30
 DAC7_GROSS_EUR_LIMIT = 2000.0
 
@@ -786,6 +817,16 @@ class TrackingIn(BaseModel):
 
 class OfferListResponse(BaseModel):
     offers: List[OfferOut]
+    #: How many offers match `role` in TOTAL, before limit/offset.
+    #:
+    #: The client sent no limit, so `pagination_params` defaulted to 50 and the
+    #: query is `ORDER BY o.created_at DESC LIMIT 50` — the 50 NEWEST. An active
+    #: seller with fifty newer trades silently lost an older-but-live bid off
+    #: the bottom, and "needs you" includes ungraded completed trades, which are
+    #: old by construction. Nothing on screen said anything had been dropped:
+    #: a truncation that reads as completeness. The screen can now say
+    #: "showing 50 of 73" instead of quietly lying.
+    total: int = 0
 
 
 class GradeCreate(BaseModel):
@@ -877,6 +918,17 @@ def _row_to_offer(r, me: str) -> OfferOut:
             country=_row_opt(r, "delivery_country"),
         ),
         i_am_buyer=is_buyer,
+        # A live bid on a listing that has already accepted a DIFFERENT one.
+        # `_row_opt` because create_offer's INSERT..RETURNING cannot join the
+        # listing — the same trap the tracking columns document there. Bidding
+        # on a reserved listing IS allowed (that is the point of a soft
+        # reserve), so False on that one path is a display default rather than
+        # a claim, and the next list call corrects it.
+        superseded=(
+            _row_opt(r, "reserved_offer_id") is not None
+            and str(_row_opt(r, "reserved_offer_id")) != str(r["id"])
+            and r["status"] in (_PENDING, _COUNTERED)
+        ),
         # You may confirm once accepted and until you personally have.
         can_confirm=r["status"] in (_ACCEPTED, _SHIPPED) and mine_confirmed is None,
         # Grading unlocks ONLY on two-sided completion.
@@ -997,6 +1049,21 @@ async def list_offers(
         return OfferListResponse(offers=[])
 
     async with pool.acquire() as conn:
+        # Counted in the SAME acquire and with the SAME predicate as the page
+        # below it. A second helper spelling out "mine, filtered by role" is
+        # how the count and the page drift apart, and a total that disagrees
+        # with the list is worse than no total at all.
+        total = await conn.fetchval(
+            """
+            SELECT count(*)
+            FROM public.p2p_offers o
+            WHERE (o.buyer_id = $1::uuid OR o.seller_id = $1::uuid)
+              AND ($2 = 'all'
+                   OR ($2 = 'buying'  AND o.buyer_id  = $1::uuid)
+                   OR ($2 = 'selling' AND o.seller_id = $1::uuid))
+            """,
+            user_id, role,
+        )
         rows = await conn.fetch(
             f"""
             SELECT {_OFFER_COLUMNS},
@@ -1056,7 +1123,7 @@ async def list_offers(
                 stat, float(off.amount)
             )
 
-    return OfferListResponse(offers=offers)
+    return OfferListResponse(offers=offers, total=int(total or 0))
 
 
 @router.post("/offers/{offer_id}/respond", response_model=OfferOut,
@@ -1143,6 +1210,23 @@ async def respond_to_offer(
 
         if action == "counter" and amount is None:
             raise error_response(400, "A counter needs an amount", code="AMOUNT_REQUIRED")
+
+        # A haggle has to end somewhere. `counter` was uncapped, so two people
+        # could ping-pong an offer forever — and every round rewrites `amount`,
+        # so there is no history to look back on, just a number that keeps
+        # moving. eBay stops at five counters per side for the same reason.
+        #
+        # Only the seller may counter (`who_may_respond`), so `counter_count`
+        # counts seller counters and MAX_COUNTERS is the whole ladder. Checked
+        # before the write, not after, so the cap is the last legal counter
+        # rather than the first illegal one.
+        if action == "counter" and int(o["counter_count"] or 0) >= MAX_COUNTERS:
+            raise error_response(
+                409,
+                f"This offer has been countered {MAX_COUNTERS} times — accept it, "
+                "decline it, or let the buyer make a fresh offer",
+                code="COUNTER_LIMIT",
+            )
 
         if action == "accept":
             new_status = _ACCEPTED

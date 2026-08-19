@@ -32,6 +32,7 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { EmptyState } from '@/components/EmptyState';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { SwipeableRow } from '@/components/SwipeableRow';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
@@ -48,6 +49,25 @@ import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import logger from '@/utils/logger';
 
 type Role = 'all' | 'buying' | 'selling';
+
+/**
+ * When a bid waiting on YOU starts being called out as old.
+ *
+ * Three days, not one: a hobby marketplace is not a trading desk, and a bid
+ * that arrived on Friday should not be shamed on Saturday. Not a deadline —
+ * nothing expires — just the point at which "somebody is still waiting" is
+ * worth saying out loud.
+ */
+const STALE_AFTER_DAYS = 3;
+
+/**
+ * How many times one offer may be countered. MUST match `MAX_COUNTERS` in
+ * server/app/features/p2p_offers_router.py — the server is the enforcer and
+ * returns 409 `COUNTER_LIMIT`; this only decides whether to render a button
+ * that is going to be refused. A client that offers a control the server will
+ * reject is the dead-button failure Stage 1 bug 0 was fixed to avoid.
+ */
+const MAX_COUNTERS = 5;
 
 /**
  * Status → what it means TO YOU. Keys mirror p2p_offers_status_check.
@@ -143,7 +163,10 @@ function OffersScreen() {
   const [carrierRetry, setCarrierRetry] = useState(0);
 
   const { data, loading, error, retry } = useAsync(
-    async () => (await collectorsApi.p2pListOffers(role))?.offers ?? [],
+    async () => {
+      const res = await collectorsApi.p2pListOffers(role);
+      return { offers: res?.offers ?? [], total: res?.total };
+    },
     [role],
   );
   // Ordered, not raw. `/listings` badges the same count on its "Open bids" pill
@@ -163,9 +186,30 @@ function OffersScreen() {
       if (o.status === 'pending' || o.status === 'countered') return 2;
       return 3;
     };
-    const at = (o: P2POffer) => (o.created_at ? Date.parse(o.created_at) : 0);
-    return [...(data ?? [])].sort((a, b) => rank(a) - rank(b) || at(b) - at(a));
+    // Last ACTIVITY, matching the date the card prints. Sorting on
+    // `created_at` while displaying `updated_at` puts a card dated "2 hours
+    // ago" underneath one dated "3 weeks ago" and looks like a broken sort.
+    const at = (o: P2POffer) =>
+      (o.updated_at || o.created_at) ? Date.parse((o.updated_at || o.created_at)!) : 0;
+    return [...(data?.offers ?? [])].sort((a, b) => rank(a) - rank(b) || at(b) - at(a));
   }, [data]);
+
+  /**
+   * How many offers the server holds that this page could not show.
+   *
+   * The client used to send no limit at all, so the server applied its own
+   * default of 50 and returned the 50 NEWEST — and said nothing. A truncation
+   * that reads as completeness is the worst kind: "needs you" includes
+   * ungraded completed trades, which are old by construction, so the row most
+   * likely to fall off the bottom is one that still wants something from you.
+   * The request now asks for the server's ceiling and the screen states the
+   * shortfall rather than implying there isn't one.
+   */
+  const hiddenCount = useMemo(() => {
+    const total = data?.total;
+    if (typeof total !== 'number') return 0;   // older server build: claim nothing
+    return Math.max(0, total - offers.length);
+  }, [data, offers.length]);
 
   const needsAction = useMemo(
     () => offers.reduce((n, o) => (offerNeedsMyAction(o) ? n + 1 : n), 0),
@@ -448,6 +492,30 @@ function OffersScreen() {
     if (target.can_grade && !target.already_graded) onGrade(target);
   }, [deepLinkOfferId, loading, offers, onGrade]);
 
+  /**
+   * Decline, confirmed — used by BOTH the button and the swipe gesture.
+   *
+   * One function, deliberately. A gesture that ran its own copy of the confirm
+   * is how the two drift, and the copy that drifts is always the one nobody
+   * looks at (learning_duplicate_impl_silently_drops_the_fix). Declining cannot
+   * be undone on that offer: the buyer has to make a new one.
+   */
+  const confirmDecline = useCallback((o: P2POffer) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    Alert.alert(
+      'Decline this offer?',
+      'The buyer will be told. They can send a new offer, but this one is gone.',
+      [
+        { text: 'Keep it', style: 'cancel' },
+        {
+          text: 'Decline',
+          style: 'destructive',
+          onPress: () => act(() => collectorsApi.p2pRespondToOffer(o.id, 'decline'), o.id, 'Declined'),
+        },
+      ],
+    );
+  }, [act, settings.hapticsEnabled]);
+
   const renderOffer = useCallback(({ item: o }: { item: P2POffer }) => {
     const busy = busyId === o.id;
     const isSeller = !o.i_am_buyer;
@@ -463,8 +531,100 @@ function OffersScreen() {
     // but still needs you, and dimming it while stamping YOUR MOVE on it says
     // both things at once.
     const done = !open && !live && !mine;
+    // The seller accepted a DIFFERENT bid on this listing. §1d keeps this one
+    // alive on purpose — accept is an agreement, not a lock, and if the
+    // accepted buyer ghosts this is the fallback. So it recedes and says why;
+    // it does not disappear and every control below stays exactly where it is.
+    const onHold = o.superseded === true;
 
     const group = groupMeta.get(o.id);
+
+    // ── Finished trades are a REFERENCE ROW, not a card ────────────────────
+    // A closed offer rendered the full card: thumbnail, title, amount, the
+    // percentage of asking, two pills, status, the quoted message, and the
+    // tracking block — all of it de-emphasised, none of it actionable. Five
+    // rows of history for something nobody can act on, sitting at the same
+    // physical size as a live negotiation.
+    //
+    // docs/ui-playbook.md, "a list card is a reference row, not a call to
+    // action": the watchlist card lost two full-width buttons and an "Added
+    // <date>" line, and four cards fit where two and a half did. Same move.
+    // The card is kept for anything still in play; history collapses to one
+    // line and still opens the listing.
+    if (done) {
+      return (
+        <AnimatedPressable
+          onPress={() => router.push({ pathname: '/listing/[id]', params: { id: o.listing_id } } as unknown as Href)}
+          accessibilityRole="button"
+          accessibilityLabel={[
+            o.listing_title || 'Listing',
+            formatPrice(o.amount, settings.currency, settings.numberLocale),
+            statusLabel(o.status, o.i_am_buyer, o.i_withdrew),
+            'Opens the listing',
+          ].join('. ')}
+          style={[
+            styles.historyRow,
+            { borderColor: colors.border },
+            // The deep link exists so a push lands you on THE trade rather
+            // than on a list of six. Once you have rated it the card collapses
+            // to this row — and without this, the one thing the push was about
+            // arrived looking like every other line of history.
+            o.id === deepLinkOfferId && {
+              backgroundColor: colors.accent + '12',
+              borderRadius: radius.sm,
+            },
+          ]}
+        >
+          {o.listing_image_url ? (
+            <Image source={{ uri: o.listing_image_url }} style={styles.historyThumb} contentFit="cover" transition={120} />
+          ) : (
+            <View style={[styles.historyThumb, styles.thumbEmpty, { backgroundColor: colors.accent + '12' }]}>
+              <Ionicons name="pricetag-outline" size={13} color={colors.muted} />
+            </View>
+          )}
+          <View style={styles.historyBody}>
+            <Text style={[styles.historyTitle, { color: colors.text }]} numberOfLines={1}>
+              {o.listing_title || 'Listing'}
+            </Text>
+            <Text style={[styles.historyMeta, { color: colors.muted }]} numberOfLines={1}>
+              {statusLabel(o.status, o.i_am_buyer, o.i_withdrew)}
+              {o.updated_at || o.created_at
+                ? ` · ${timeAgo(o.updated_at || o.created_at!)}`
+                : ''}
+              {/* The one fact worth keeping from the old card's dimmed body:
+                  whether you still owe the other side a rating is settled by
+                  `mine`, so a row that reaches here has nothing outstanding —
+                  but "you rated them" is a thing people look for afterwards. */}
+              {o.already_graded ? (o.i_am_buyer ? ' · you rated the seller' : ' · you rated the buyer') : ''}
+            </Text>
+          </View>
+          <Text style={[styles.historyAmount, { color: colors.muted }]}>
+            {formatPrice(o.amount, settings.currency, settings.numberLocale)}
+          </Text>
+        </AnimatedPressable>
+      );
+    }
+
+    // `p2p_offers.expires_at` exists, is NULL on every row and is written by
+    // nothing — the spec records this as an open gap. So a bid rests until
+    // somebody acts, and "Needs you" never drains on its own.
+    //
+    // The honest pressure is the age we ALREADY hold, escalated. A countdown
+    // would be a deadline we do not enforce, which is the pattern the FTC
+    // named in its 2022 dark-patterns report: a timer on a fake deadline. This
+    // says only what is true — that somebody has been waiting this long.
+    //
+    // NOT gated on `mine`. The first version was, which excluded the exact
+    // case this is for: a buyer whose bid has sat with a seller for three
+    // weeks is not the one who has to move, and is the person most in the
+    // dark. Terminal offers cannot reach here — they returned above — so this
+    // is "anything still in play that nobody has touched".
+    const stale = !onHold && (() => {
+      const t = o.updated_at || o.created_at;
+      if (!t) return false;
+      const days = (Date.now() - Date.parse(t)) / 86_400_000;
+      return Number.isFinite(days) && days >= STALE_AFTER_DAYS;
+    })();
 
     return (
       <>
@@ -493,6 +653,29 @@ function OffersScreen() {
           at the bottom used to do from its own dedicated row — a full row of
           vertical space spent on a link that duplicated the obvious gesture.
           Action buttons are nested Pressables and still win their own taps. */}
+      {/* Swipe left to decline — for the seller sweeping a stack of bids, which
+          is the case the whole grouping change above exists to serve. Right
+          side only, and DECLINE only: eBay's own API allows declining many
+          offers in one call and never accepting many, because a decline is a
+          sweep and an accept is a commitment. A gesture must not be able to
+          sell something.
+
+          docs/gesture-navigation.md: destructive actions confirm (it shares
+          `confirmDecline` with the button), and every gesture needs a
+          non-gesture equivalent — the Decline button is still right there,
+          which is also what iOS HIG asks for. Only offered where the button
+          is: an open offer the seller may answer. */}
+      <SwipeableRow
+        rightActions={isSeller && open && !busy ? [{
+          key: 'decline',
+          label: 'Decline',
+          icon: 'close-circle-outline',
+          color: colors.danger,
+          onPress: () => confirmDecline(o),
+        }] : []}
+        disabled={!(isSeller && open) || busy}
+        enableHaptics={settings.hapticsEnabled}
+      >
       <AnimatedPressable
         onPress={() => router.push({ pathname: '/listing/[id]', params: { id: o.listing_id } } as unknown as Href)}
         accessibilityRole="button"
@@ -503,6 +686,8 @@ function OffersScreen() {
            answering that. */
         accessibilityLabel={[
           mine ? 'Needs you.' : null,
+          onHold ? 'On hold, another bid was accepted.' : null,
+          stale ? 'Still waiting.' : null,
           o.listing_title || 'Listing',
           formatPrice(o.amount, settings.currency, settings.numberLocale),
           statusLabel(o.status, o.i_am_buyer, o.i_withdrew),
@@ -523,7 +708,15 @@ function OffersScreen() {
         // Emphasis by shadow and opacity, not by colour: the stripe still has
         // to read as the same role token, and dropping the card's elevation is
         // what actually makes the live ones sit forward.
-        done && styles.cardDone,
+        // `done && styles.cardDone` was here. Terminal offers no longer reach
+        // this card at all — they render as history rows above — so the style
+        // and its condition both went with them.
+        //
+        // A bid on hold recedes for a RELATED but different reason: it is not
+        // what you should be reading right now. It is not finished, every
+        // button is still there, so this is opacity alone and it keeps its
+        // elevation and its role stripe.
+        onHold && styles.cardOnHold,
         mine && {
           borderColor: colors.accent,
           // Re-asserted: `borderColor` sets all four edges, and losing the left
@@ -604,6 +797,17 @@ function OffersScreen() {
               <Text style={[styles.movePillText, { color: colors.accentText }]}>YOUR MOVE</Text>
             </View>
           ) : null}
+          {/* Takes the slot YOUR MOVE used to occupy on exactly these cards,
+              and says the thing the member would otherwise have to work out:
+              the item is promised, but this bid is still yours to fall back
+              on. Muted fill, not danger — nothing has gone wrong here. */}
+          {onHold ? (
+            <View style={[styles.holdPill, { backgroundColor: colors.border }]}>
+              <Text style={[styles.holdPillText, { color: colors.muted }]}>
+                {o.i_am_buyer ? 'ANOTHER BID ACCEPTED' : 'YOU ACCEPTED ANOTHER BID'}
+              </Text>
+            </View>
+          ) : null}
           <View style={[
             styles.rolePill,
             { backgroundColor: o.i_am_buyer ? colors.infoBg : colors.successBg },
@@ -638,6 +842,12 @@ function OffersScreen() {
               ? ` · ${timeAgo(o.updated_at || o.created_at!)}`
               : ''}
           </Text>
+          {stale ? (
+            <View style={styles.staleTag}>
+              <Ionicons name="hourglass-outline" size={11} color={colors.warning} />
+              <Text style={[styles.staleText, { color: colors.warning }]}>Still waiting</Text>
+            </View>
+          ) : null}
         </View>
 
         {o.message ? (
@@ -783,35 +993,28 @@ function OffersScreen() {
               >
                 <Text style={[styles.btnText, { color: colors.accentText }]}>Accept</Text>
               </AnimatedPressable>
-              <AnimatedPressable
-                onPress={() => onCounter(o)}
-                disabled={busy}
-                style={[styles.btn, styles.btnGhost, { borderColor: colors.accent }]}
-                accessibilityRole="button"
-                accessibilityLabel="Counter this offer"
-              >
-                <Text style={[styles.btnText, { color: colors.accent }]}>Counter</Text>
-              </AnimatedPressable>
+              {/* Gone at the cap rather than rendered and refused. The server
+                  returns 409 COUNTER_LIMIT, so leaving the button here would
+                  be a control whose only outcome is an error toast — the
+                  dead-button failure Stage 1 bug 0 was fixed to avoid. Accept
+                  and Decline stay, so a capped haggle is never stranded. */}
+              {o.counter_count < MAX_COUNTERS ? (
+                <AnimatedPressable
+                  onPress={() => onCounter(o)}
+                  disabled={busy}
+                  style={[styles.btn, styles.btnGhost, { borderColor: colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Counter this offer"
+                >
+                  <Text style={[styles.btnText, { color: colors.accent }]}>Counter</Text>
+                </AnimatedPressable>
+              ) : null}
               {/* Tertiary, and CONFIRMED. Declining cannot be undone on that
                   offer — the buyer has to make a new one — and it sat here as
                   a same-size button beside Accept, one mis-tap from killing a
                   sale. docs/ui-playbook.md: confirm destructive actions. */}
               <AnimatedPressable
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  Alert.alert(
-                    'Decline this offer?',
-                    'The buyer will be told. They can send a new offer, but this one is gone.',
-                    [
-                      { text: 'Keep it', style: 'cancel' },
-                      {
-                        text: 'Decline',
-                        style: 'destructive',
-                        onPress: () => act(() => collectorsApi.p2pRespondToOffer(o.id, 'decline'), o.id, 'Declined'),
-                      },
-                    ],
-                  );
-                }}
+                onPress={() => confirmDecline(o)}
                 disabled={busy}
                 style={[styles.btn, styles.btnQuiet]}
                 accessibilityRole="button"
@@ -918,20 +1121,32 @@ function OffersScreen() {
             </AnimatedPressable>
           ) : null}
 
-          {o.already_graded ? (
-            <Text style={[styles.graded, { color: colors.muted }]}>
-              {o.i_am_buyer ? 'You rated the seller' : 'You rated the buyer'}
-            </Text>
-          ) : null}
+          {/* "You rated the seller" moved to the history row. `already_graded`
+              implies a COMPLETED trade, which is terminal and not `mine`, so
+              it now always returns above — leaving the block here would be a
+              dead path surviving a cleanup. */}
         </View>
 
+        {/* Why the Counter button is not there. AFTER the actions row, not
+            inside it: that row is `flexWrap: 'nowrap'` on purpose (playbook,
+            2026-08-15), so a sentence in it would squeeze Accept and Decline
+            rather than wrap. Without this the button simply vanishes at the
+            cap, which reads as a bug rather than as a rule. */}
+        {isSeller && open && o.counter_count >= MAX_COUNTERS ? (
+          <Text style={[styles.capNote, { color: colors.muted }]}>
+            Countered {MAX_COUNTERS} times — accept it or decline it
+          </Text>
+        ) : null}
+
       </AnimatedPressable>
+      </SwipeableRow>
       </>
     );
     // `settings.hapticsEnabled` is in here because the Decline confirmation
     // fires a haptic directly. Without it a member who turns haptics off keeps
     // feeling that one tap until something else re-renders the row.
-  }, [act, busyId, colors, deepLinkOfferId, groupMeta, onCounter, onGrade, openTracking, router,
+  }, [act, busyId, colors, confirmDecline, deepLinkOfferId, groupMeta, onCounter, onGrade,
+      openTracking, router,
       settings.currency, settings.numberLocale, settings.hapticsEnabled]);
 
   return (
@@ -1047,6 +1262,23 @@ function OffersScreen() {
           contentContainerStyle={[styles.list, { paddingBottom: bottomInset }]}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
+          // Stated at the bottom, not the top: a banner above the list would
+          // be a warning about something the reader has not looked at yet.
+          // Rendered only when the server actually sent a total AND it exceeds
+          // what arrived — an older build sends nothing and this claims
+          // nothing, rather than treating a missing number as zero.
+          ListFooterComponent={
+            hiddenCount > 0 ? (
+              <View style={styles.truncation}>
+                <Ionicons name="information-circle-outline" size={14} color={colors.muted} />
+                <Text style={[styles.truncationText, { color: colors.muted }]}>
+                  Showing your {offers.length} most recent
+                  {hiddenCount === 1 ? ' — 1 older trade isn\u2019t listed'
+                                     : ` — ${hiddenCount} older trades aren\u2019t listed`}
+                </Text>
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <EmptyState
               icon="swap-horizontal-outline"
@@ -1296,7 +1528,14 @@ const styles = StyleSheet.create({
     marginBottom: -2,
     paddingHorizontal: 4,
   },
-  groupHeaderText: { fontSize: textToken.xs, fontWeight: fontWeight.bold },
+  // `sm`, not `xs`. docs/ui-playbook.md, "Type scale": xs is 10pt, below
+  // Apple's ~11pt floor, and BANNED for anything a user reads — this screen is
+  // the one that got reported as "very small letters" in the first place. sm
+  // is also what movePillText and rolePillText use, so the banner sits at the
+  // same caption level as the pills below it instead of inventing a level.
+  groupHeaderText: {
+    fontSize: textToken.sm, fontWeight: fontWeight.bold, lineHeight: 17, flexShrink: 1,
+  },
   card: {
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg,
     padding: 14, marginBottom: 10, gap: 8,
@@ -1305,7 +1544,52 @@ const styles = StyleSheet.create({
   // History, not a live negotiation: flat, and one step back. Kept above 0.6
   // so the text stays legible against the card — this is de-emphasis, not a
   // disabled state, and the card is still readable and still scrolls.
-  cardDone: { opacity: 0.68, shadowOpacity: 0, elevation: 0 },
+  // Opacity ONLY, and no `cardDone` beside it any more: terminal offers render
+  // as history rows and never reach the card. A bid on hold IS still live and
+  // still answerable, so it keeps its elevation and its role stripe and only
+  // stops competing for attention.
+  cardOnHold: { opacity: 0.72 },
+  holdPill: {
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill,
+  },
+  // Matches rolePillText exactly — it stands in the same row and takes the
+  // slot YOUR MOVE would have occupied, so a different size would read as a
+  // different KIND of thing.
+  holdPillText: {
+    fontSize: textToken.sm, fontWeight: fontWeight.bold, letterSpacing: 0.3,
+  },
+  staleTag: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  staleText: { fontSize: textToken.sm, fontWeight: fontWeight.semibold },
+  // Its OWN line, not a cell in the actions row. That row is
+  // `flexWrap: 'nowrap'` on purpose (playbook, 2026-08-15: a wrapped third
+  // button reads as a separate decision), so a sentence dropped into it would
+  // squeeze Accept and Decline instead of wrapping — the row shrinks, and the
+  // row is made of touch targets.
+  capNote: { fontSize: textToken.sm, lineHeight: 17, textAlign: 'right', marginTop: 2 },
+  // One line, hairline-separated rather than carded: history is a reference
+  // list, and giving it borders and shadows makes it compete with the
+  // negotiations above it for exactly the attention it does not want.
+  historyRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 9, paddingHorizontal: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  historyThumb: { width: 32, height: 32, borderRadius: radius.xs },
+  historyBody: { flex: 1, gap: 1 },
+  // Three levels inside one row, per the playbook's lead/body/caption table:
+  // the title leads at `md`, the meta recedes to `sm`, and neither touches the
+  // banned `xs`. The amount matches the title so the row reads left-to-right
+  // as one statement rather than as a title with a footnote.
+  historyTitle: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
+  historyMeta: { fontSize: textToken.sm, lineHeight: 17 },
+  historyAmount: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
+  // Sits at the END of the list, where a reader arrives having seen everything
+  // this page holds — which is the only honest moment to say there is more.
+  truncation: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingTop: 14, paddingHorizontal: 16,
+  },
+  truncationText: { fontSize: textToken.sm, lineHeight: 17, textAlign: 'center', flexShrink: 1 },
   needsLine: {
     fontSize: textToken.md, fontWeight: fontWeight.bold,
     paddingHorizontal: 16, paddingBottom: 8, marginTop: -4,
@@ -1385,7 +1669,6 @@ const styles = StyleSheet.create({
   // a third equal choice. Accept fills, Counter outlines, Decline recedes.
   btnQuiet: { backgroundColor: 'transparent' },
   btnText: { fontSize: textToken.md, fontWeight: fontWeight.bold, textAlign: 'center' },
-  graded: { fontSize: textToken.sm, paddingVertical: 9 },
   // Tracking — display-only shipment reference on the card.
   tracking: {
     flexDirection: 'row', alignItems: 'center', gap: 8,

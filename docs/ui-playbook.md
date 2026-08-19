@@ -1080,6 +1080,33 @@ The "turn on Allow discovery to be ranked" hint renders **only on your own
 profile**. On someone else's it would be reporting their privacy settings to a
 stranger.
 
+## Three rules I broke in one screen, all already written here (2026-08-19)
+
+A pass over `app/offers.tsx` added five new text styles, and the
+post-completion audit caught the same three rules this document already states.
+Worth recording because none of them were subtle — they were skipped by writing
+new styles instead of reading the neighbours:
+
+1. **Five of five new styles were `xs`.** The type-scale section above bans 10pt
+   for anything a user reads, and names THIS SCREEN as where it was reported
+   ("that screen is very small letters"). The existing pills on the same row
+   are `sm`. Copying the neighbouring style would have got it right for free.
+2. **A sentence was dropped into a `flexWrap: 'nowrap'` action row.** That row
+   is nowrap deliberately (2026-08-15, above) so a third button shrinks rather
+   than wrapping onto its own line — which means a paragraph in it squeezes the
+   touch targets instead of wrapping. Explanatory copy goes AFTER the row.
+   I then wrote the comment saying so and left the code inside the row anyway;
+   the fix is not done until the code moves.
+3. **A count on a tab screen used `useEffect`, not `useFocusEffect`.**
+   `app/listings.tsx` had already solved this for the same number, with the
+   reason in a comment: a tab stays mounted, so a mount-only count keeps
+   advertising work the user has already done.
+
+**The pattern: a new component beside an old one should be written by reading
+the old one, not by writing from scratch and checking afterwards.** All three
+were caught by the audit — but the audit is a net, and the neighbouring file
+was a spec.
+
 ## A tab's LABEL and its ROUTE are different things (2026-08-19)
 
 The fifth tab is labelled **Explore** and its route is still `search`

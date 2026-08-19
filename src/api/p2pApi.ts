@@ -347,6 +347,17 @@ export type P2POffer = {
    *  alone never says who — server-derived from `withdrawn_by`. */
   i_withdrew?: boolean | null;
   /** Server-computed so the client never re-derives the state machine. */
+  /** This listing has ACCEPTED a different bid.
+   *
+   *  NOT "this bid is dead". P2P spec §1d keeps rival bids alive deliberately —
+   *  accept is an agreement, not a lock, and a seller whose buyer ghosts needs
+   *  the fallbacks. It means "not your move right now", so the card stops
+   *  claiming YOUR MOVE and stops counting in the badge while every control
+   *  stays exactly where it was.
+   *
+   *  Optional: an older server build simply doesn't send it, and the screen
+   *  then behaves as it did before rather than treating undefined as true. */
+  superseded?: boolean;
   can_confirm: boolean;
   can_grade: boolean;
   already_graded: boolean;
@@ -515,8 +526,16 @@ export const createOffer = (payload: {
   message?: string;
 }) => post<P2POffer>('/p2p/offers', payload);
 
-export const listOffers = (role: 'all' | 'buying' | 'selling' = 'all') =>
-  get<{ offers: P2POffer[] }>(`/p2p/offers?role=${role}`);
+/**
+ * `limit` is sent EXPLICITLY. It used to be omitted, so the server applied its
+ * own default of 50 and returned the 50 NEWEST offers — an active seller with
+ * fifty newer trades silently lost an older-but-live bid off the bottom, and
+ * "needs you" includes ungraded completed trades, which are old by
+ * construction. 200 is the server's ceiling (`pagination_params`); `total` is
+ * what lets the screen admit it when even that was not enough.
+ */
+export const listOffers = (role: 'all' | 'buying' | 'selling' = 'all', limit = 200) =>
+  get<{ offers: P2POffer[]; total?: number }>(`/p2p/offers?role=${role}&limit=${limit}`);
 
 /**
  * Does this offer need something from ME right now?
@@ -534,6 +553,13 @@ export const listOffers = (role: 'all' | 'buying' | 'selling' = 'all') =>
 export function offerNeedsMyAction(o: P2POffer): boolean {
   if (o.can_confirm) return true;
   if (o.can_grade && !o.already_graded) return true;
+  // The seller has already accepted a DIFFERENT bid on this listing. The bid
+  // is still live and still answerable — §1d keeps it that way on purpose —
+  // but it is not what the seller should be looking at, and until 2026-08-19
+  // every rival kept stamping YOUR MOVE and inflating the badge for an object
+  // already promised to somebody else. Placed BELOW can_confirm/can_grade:
+  // those describe the accepted trade, which genuinely does need you.
+  if (o.superseded) return false;
   if (o.status === 'pending') return !o.i_am_buyer;
   if (o.status === 'countered') return o.i_am_buyer;
   return false;

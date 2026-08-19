@@ -294,6 +294,29 @@ is written by nothing in `server/app/`, and no worker expires anything. The
 somebody acts on it. If a deadline is wanted it needs a writer AND a worker —
 the column alone changes nothing.
 
+**What the offers screen does about that instead (2026-08-19): nothing that
+implies a deadline.** A bid still in play whose last activity is more than
+`STALE_AFTER_DAYS` (3) ago carries a *"Still waiting"* marker in
+`colors.warning`. That is a real fact about a real timestamp. A countdown would
+not be: the FTC's September 2022 dark-patterns report names fake countdown
+timers specifically, and a timer on a deadline we do not enforce is exactly
+that. **If expiry is ever built, the countdown becomes legitimate and this
+marker should be replaced — not kept alongside it.**
+
+Three days, not one: a hobby marketplace is not a trading desk, and a bid that
+arrived on Friday should not be shamed on Saturday. It is NOT gated on "needs
+you" — a buyer whose bid has sat with a seller for three weeks is not the one
+who has to move and is the person most in the dark.
+
+**Counters are capped at five** (`MAX_COUNTERS`, both sides of the wire).
+`counter` was uncapped, and every round REWRITES `amount`, so an endless haggle
+leaves no history to look back on — just a number that keeps moving. The server
+returns 409 `COUNTER_LIMIT`; the client hides the Counter button at the cap and
+says why, and leaves Accept and Decline reachable so a capped offer is never
+stranded. The two constants are pinned against each other by
+`__tests__/lib/counterCapParity.test.ts`, because a comment saying "must match"
+is not a gate.
+
 **A seller cannot compare competing bids — CLOSED 2026-08-19, in the offers
 list.** The data model allows many offers per listing, and `app/offers.tsx` was
 a flat list across ALL your listings ranked by "needs you" then recency, so two
@@ -321,7 +344,25 @@ Three things about that fix are load-bearing and must not be "simplified":
    a declined bid is not something anyone is still choosing between.
 
 All four are pinned by `__tests__/lib/offerGrouping.test.ts`, which runs in
-`verify:prebuild`. The seller framing of the copy is safe by construction: a
+`verify:prebuild`.
+
+**And grouping is what made the next bug visible.** With three bids stacked
+under one banner, one accepted and two still stamped `YOUR MOVE`, the screen
+was plainly asking the seller to answer bids for an object they had already
+promised. §1d is deliberate that **accept is an agreement, not a lock** — the
+listing stays live, the rivals stay `pending`, and `_settle_completed_trade`
+only closes them at COMPLETION, which can be a week of shipping later. So the
+rivals must NOT be auto-declined on accept; killing the fallbacks would leave a
+seller with nothing if the accepted buyer ghosts.
+
+`OfferOut.superseded` splits the two claims that had been fused: the bid is
+still live and still answerable (every control stays exactly where it was), and
+it is **not your move right now**. `offerNeedsMyAction` returns false for it, so
+it leaves the badge, leaves the Home row and leaves the "Needs you" section; the
+card recedes to `opacity: 0.72` and says `YOU ACCEPTED ANOTHER BID`. The flag is
+checked BELOW `can_confirm` / `can_grade`, or it would silence the confirm
+prompt on the accepted trade itself. Pinned by
+`__tests__/lib/offerNeedsMyAction.test.ts` and six server tests. The seller framing of the copy is safe by construction: a
 buyer sees only their own offers and the server allows one open offer per buyer
 per listing (409), so a group can only ever be bids a seller is choosing
 between — and all bids on one listing share its currency, so the spread is a
@@ -1428,6 +1469,63 @@ buttons, and Decline fired instantly.
 
 `OfferAmountSheet` was NOT rebuilt — it already does percentage+money presets
 with a bounded custom field.
+
+### 11b. The offers screen, second pass (2026-08-19)
+
+Driven by published practice rather than taste — eBay's Seller Hub offers page,
+Mercari and Depop's offer tabs, NN/g on card-vs-list, NN/g on progressive
+disclosure, Apple's HIG on swipe actions, and the FTC's dark-patterns report.
+Grouping, `superseded`, staleness and the counter cap are documented above; the
+rest:
+
+- **Finished trades collapse to a reference row.** A closed offer used to render
+  the full card — thumbnail, title, amount, percentage of asking, two pills,
+  status, quoted message, tracking block — all de-emphasised and none of it
+  actionable. docs/ui-playbook.md, "a list card is a reference row, not a call
+  to action". One line now: thumbnail, title, outcome, age, amount, still
+  opening the listing. The card is kept for anything still in play.
+  - Two paths died with it and were REMOVED rather than left: `styles.cardDone`
+    and the card's `already_graded` line. `already_graded` implies a completed
+    trade, which is terminal and not `mine`, so it can no longer reach the card
+    — an unused branch left behind is how a dead path survives a cleanup.
+  - The `offerId` deep-link highlight was re-applied to the history row. A push
+    asking you to rate a trade lands you on that trade; once rated, the card
+    collapses, and without this the one row the push was about arrived looking
+    like every other line of history.
+
+- **A truncated list says so.** The client sent no `limit`, so the server
+  defaulted to 50 and returned the 50 NEWEST — with nothing on screen admitting
+  it. "Needs you" includes ungraded completed trades, which are old by
+  construction, so the row most likely to fall off the bottom was one that still
+  wanted something. The client now asks for the server's ceiling (200) and
+  `OfferListResponse.total` lets the footer state the shortfall. The count is
+  computed in the same `acquire()` with the **same predicate** as the page — a
+  total that disagrees with the list is worse than no total.
+
+- **Swipe left to decline**, seller-side, on an open offer only. eBay's API
+  allows declining many offers in one call and never accepting many, because a
+  decline is a sweep and an accept is a commitment: **a gesture must not be able
+  to sell something.** It shares `confirmDecline` with the button rather than
+  carrying its own copy of the confirm, and the button remains as the
+  non-gesture equivalent that both docs/gesture-navigation.md and the HIG
+  require.
+
+- **"N bids need you" on Home** (`src/components/home/OpenBidsRow.tsx`).
+  `countOffersNeedingAction` had exactly one caller — the marketplace badge — so
+  a bid waiting on an answer was invisible unless you opened that tab or caught
+  the push. A ROW, not a card: Home has twice shed accreted cards on purpose
+  (Deal Agent moved out 2026-08-11, the Insights CTA deleted), and this renders
+  `null` when nothing is waiting. Above the chart, not at the bottom of the
+  scroll, where set progress and the ad slot live. `useFocusEffect`, not
+  `useEffect` — Home stays mounted, and the first version would have kept
+  advertising bids you had already answered.
+
+**Known cost, stated rather than discovered:** Home and `/listings` each call
+`GET /p2p/offers` purely to count, and that endpoint runs a `market_hits`
+aggregate per distinct item for `price_verdict`, which neither caller uses —
+now over up to 200 rows rather than 50. Harmless at current volume and worth a
+`?price_sanity=false` branch before it isn't. Not fixed by having the counters
+request fewer rows: a count from a truncated page is the bug above.
 
 ## 5e. Settle-up handoff — payment and carriage, by region (2026-08-14)
 

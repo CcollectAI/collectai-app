@@ -371,3 +371,110 @@ class TestCompletionAsksForTheRating:
         assert 'deep_link=f"/offers?offerId={offer_id}"' in src, \
             "trade pushes land on the flat list again"
         assert 'deep_link="/offers"' not in src
+
+
+class TestARivalBidStopsBeingUrgentWithoutDying:
+    """§1d: accept is an AGREEMENT, NOT A LOCK.
+
+    The listing stays live and the rival bids stay `pending` on purpose — with
+    no payment rail a hard reserve is unenforceable, and killing the fallbacks
+    would leave a seller with nothing if the accepted buyer ghosts.
+    `_settle_completed_trade` closes them only at COMPLETION, which can be a
+    week of shipping later.
+
+    The cost landed on the seller's screen: `offerNeedsMyAction` returns true
+    for any pending offer you received, so every rival kept stamping YOUR MOVE
+    for an object already promised. `superseded` says "not your move right now"
+    WITHOUT saying "dead" — the distinction this whole design rests on.
+    """
+
+    OTHER = "99999999-9999-9999-9999-999999999999"
+
+    def test_a_rival_pending_bid_is_superseded(self):
+        o = p2p._row_to_offer(
+            _row(status="pending", reserved_offer_id=self.OTHER),
+            _row()["seller_id"])
+        assert o.superseded is True
+
+    def test_the_accepted_bid_itself_is_not_superseded(self):
+        """The reservation points AT this offer. Reading `reserved_offer_id
+        IS NOT NULL` alone would grey out the winner."""
+        row = _row(status="accepted")
+        o = p2p._row_to_offer(_row(status="accepted", reserved_offer_id=row["id"]),
+                              row["seller_id"])
+        assert o.superseded is False
+
+    def test_an_unreserved_listing_supersedes_nothing(self):
+        o = p2p._row_to_offer(_row(status="pending", reserved_offer_id=None),
+                              _row()["seller_id"])
+        assert o.superseded is False
+
+    def test_a_terminal_offer_is_never_superseded(self):
+        """`superseded` means "wait, do not act yet". A declined offer is not
+        waiting for anything, and dimming it twice for two different reasons
+        says two things about one card."""
+        for status in ("declined", "cancelled", "completed", "expired"):
+            o = p2p._row_to_offer(_row(status=status, reserved_offer_id=self.OTHER),
+                                  _row()["seller_id"])
+            assert o.superseded is False, f"{status} was marked superseded"
+
+    def test_the_create_path_tolerates_a_missing_reservation(self):
+        """create_offer's INSERT..RETURNING cannot join the listing — reading
+        the key directly would 500 the primary Stage 2 entry point, which is
+        the trap the tracking columns already document at that RETURNING."""
+        o = p2p._row_to_offer(_row(status="pending"), _row()["seller_id"])
+        assert o.superseded is False
+
+    def test_the_listing_query_actually_selects_the_reservation(self):
+        """The flag is computed from a column; if the column stops being
+        selected every rival silently reverts to YOUR MOVE."""
+        assert "l.reserved_offer_id" in p2p._OFFER_COLUMNS
+
+
+class TestTheHaggleEnds:
+    """`counter` was uncapped, and every round REWRITES `amount` — so there is
+    no history to look back on, just a number that keeps moving. eBay stops at
+    five per side."""
+
+    def test_the_cap_is_checked_before_the_write(self):
+        src = _code_only(inspect.getsource(p2p.respond_to_offer))
+        cap = src.index("MAX_COUNTERS")
+        write = src.index("counter_count = counter_count + 1")
+        assert cap < write, "the cap is applied after the counter it should stop"
+
+    def test_the_cap_returns_a_conflict_not_a_bad_request(self):
+        src = inspect.getsource(p2p.respond_to_offer)
+        assert 'code="COUNTER_LIMIT"' in src
+        assert "409" in src.split("COUNTER_LIMIT")[0][-400:]
+
+    def test_the_cap_leaves_accept_and_decline_reachable(self):
+        """A capped ladder must not strand the offer: the guard is on
+        `action == "counter"` only, or a haggle at the limit becomes a row
+        neither side can close."""
+        src = _code_only(inspect.getsource(p2p.respond_to_offer))
+        guard = src.split("COUNTER_LIMIT")[0]
+        assert 'if action == "counter" and int(o["counter_count"]' in guard
+
+
+class TestATruncatedListSaysSo:
+    """The client sent no limit, so `pagination_params` defaulted to 50 and the
+    query took the 50 NEWEST. An active seller with fifty newer trades lost an
+    older-but-live bid off the bottom with nothing on screen saying so."""
+
+    def test_the_response_carries_a_total(self):
+        assert "total" in p2p.OfferListResponse.model_fields
+
+    def test_the_count_uses_the_same_predicate_as_the_page(self):
+        """A count with its own spelling of "mine, filtered by role" drifts
+        from the page it describes, and a total that disagrees with the list
+        is worse than no total."""
+        src = _code_only(inspect.getsource(p2p.list_offers))
+        role_filter = """AND ($2 = 'all'
+                   OR ($2 = 'buying'  AND o.buyer_id  = $1::uuid)
+                   OR ($2 = 'selling' AND o.seller_id = $1::uuid))"""
+        assert src.count(role_filter) == 2, \
+            "the count and the page no longer filter identically"
+
+    def test_the_total_is_returned_not_just_computed(self):
+        src = inspect.getsource(p2p.list_offers)
+        assert "OfferListResponse(offers=offers, total=" in src

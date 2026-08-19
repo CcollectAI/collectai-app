@@ -38,6 +38,7 @@ import { AlertsCard } from "@/components/home/AlertsCard";
 import { PortfolioValueHeader } from "@/components/home/PortfolioValueHeader";
 import { ChartRangeSelector } from "@/components/home/ChartRangeSelector";
 import { CategoryBreakdownSection, type CategoryBreakdownItem } from "@/components/home/CategoryBreakdownSection";
+import { OpenBidsRow } from "@/components/home/OpenBidsRow";
 import { formatCategoryName } from "@/constants/categories";
 import { getCategoryByName, getCategoryById } from "@/data/categories";
 // The Collection block (header + Top Movers list) was removed from Portfolio
@@ -656,6 +657,17 @@ function PortfolioScreen() {
             </AnimatedPressable>
           </View>
         </View>
+
+        {/* "3 bids need you →", and nothing at all otherwise.
+
+            `countOffersNeedingAction` had ONE caller — the badge on
+            app/listings.tsx — so a bid waiting on an answer was invisible
+            unless you opened the Marketplace tab. It sits ABOVE the chart
+            rather than at the bottom of the scroll: the bottom of Home is
+            where the set-progress list and the ad slot live, and the most
+            time-sensitive thing in the app does not belong where nobody
+            scrolls. See the component for why it is a row and not a card. */}
+        <OpenBidsRow />
 
         {/* Beginner entry point. Renders itself away unless skill_level is
             literally 'beginner' and a guide exists to open — see the component.
