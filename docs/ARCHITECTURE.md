@@ -536,6 +536,48 @@ with the real prod numbers, and proven to fail without the ×100.
 **If you add another consumer of this endpoint, multiply.** The unit is not
 stated in the field name, which is the whole reason this happened.
 
+###### The sweep, and the gate — `npm run check:percent-units`
+
+Enumerated mechanically rather than eyeballed, because the same suffix means
+both things across this API — `change_1d_pct` and `change_7d_pct` sit in the
+**same router** with **different units**:
+
+| FRACTION (0–1) | PERCENT (0–100) |
+|---|---|
+| `pct_of_portfolio` (trends) | `pct_of_total` (grading) |
+| `share_pct` (insights) | `positive_pct` (p2p) |
+| `change_1d_pct` (portfolio) | `change_7d_pct` (portfolio) |
+| `change_pct` (insights, `/100.0`) | `completion_pct` (set/collections) |
+| `gain_pct`, `error_pct` (unread) | `pct_change`, `pct_diff`, `signup_to_paid_pct` |
+
+Every other client read was traced and is correct — `share_pct`, `change_pct`
+and `change_1d_pct` each scale explicitly with a comment saying why;
+`change_7d_pct`, `pct_of_total`, `positive_pct` and `completion_pct` are
+percents on both sides; the confidence gauges normalise either form.
+`gain_pct`, `error_pct`, `mae_pct`, `band_hit_rate`, `demand_growth_pct` and
+the whole category deep-dive have **no client consumer at all** — no screen
+calls `getCategoryDeepDive`.
+
+`scripts/check-percent-units.mjs` classifies each server-side assignment and
+requires every client read of a FRACTION to scale it. Three things it got wrong
+first, all worth keeping in mind for the next checker:
+
+1. **A bare `pct` matched a Telegram f-string** and then substring-matched the
+   whole client — 130 findings, all noise. Names must be qualified and client
+   reads must match on a word boundary. This repo had already measured and
+   rejected a sweep for exactly that noise.
+2. **"contains 100 ⇒ percent" is backwards for division.**
+   `round(delta_pct_7d / 100.0, 4)` is what turns a percent INTO a fraction.
+3. **Unclassifiable fields were dropped on the floor**, which lost `share_pct`
+   and `change_1d_pct` — two of the fields that DO need scaling. They are now
+   reported by name in the PASS line, because "4 fields checked" with no
+   denominator reads as full coverage when it is really a regex that stopped
+   matching.
+
+Proven by deleting the ×100 and watching it go red. The allowlist is
+deliberately EMPTY: the first draft exempted `pct_of_portfolio` itself, which
+would have hidden a regression on the one field the gate exists for.
+
 ##### Stage 2 — CLOSED 2026-08-19: `public.item_value_v1(items)`
 
 The chain lived in five places, made to agree by tests. Agreement held by tests
