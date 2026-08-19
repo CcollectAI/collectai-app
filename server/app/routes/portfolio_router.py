@@ -441,6 +441,18 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     -- its name — its only writer was add-manual's "Estimated
                     -- value" field. Labelling it as a model figure is the
                     -- confusion this column exists to end.
+                    --
+                    -- COST, measured rather than assumed (DATA_SCALING_PLAN
+                    -- governance rule 2): this adds TWO correlated subqueries
+                    -- on quick_predictions per row, to a query that has no
+                    -- LIMIT. Warm end-to-end on prod after the change: 55-60ms
+                    -- for a 42-item collection (first call 267ms cold). Both
+                    -- subqueries hit `quick_predictions (item_id)` and stop at
+                    -- LIMIT 1.
+                    --
+                    -- Revisit if a collection an order of magnitude larger
+                    -- shows up: the fix is one LATERAL join feeding both the
+                    -- value and the label, not more indexes.
                     CASE
                         WHEN l.q50 IS NOT NULL THEN 'catalog_model'
                         WHEN (SELECT qp.q50_eur FROM quick_predictions qp

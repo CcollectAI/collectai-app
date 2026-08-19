@@ -36,6 +36,11 @@ export type CategoryLeaderboardEntry = {
   avatar_url: string | null;
   item_count: number;
   value_eur: number;
+  /** Items carrying a photo, a condition AND a purchase price — all three.
+   *  The second ranking axis for the 40+ categories that have no sold-comp
+   *  source and therefore no meaningful value board. */
+  documented_count: number;
+  documented_pct: number;
   is_you: boolean;
 };
 
@@ -54,7 +59,7 @@ export type CategoryLeaderboardEntry = {
 export const getCategoryLeaderboard = (
   categoryId: string,
   limit = 25,
-  metric: 'items' | 'value' = 'items',
+  metric: 'items' | 'value' | 'documented' = 'items',
 ) =>
   get<{
     category: string;
@@ -62,6 +67,10 @@ export const getCategoryLeaderboard = (
     leaderboard: CategoryLeaderboardEntry[];
     your_rank: number | null;
     total_ranked: number;
+    /** FALSE => nobody on this board holds a comp-backed item, so a value
+     *  ranking would sort a column of zeros. Server-MEASURED, not a category
+     *  list, so it self-heals when a category gains or loses a price source. */
+    value_ranking_available: boolean;
   }>(
     `/social/leaderboard/category/${encodeURIComponent(categoryId)}` +
       `?limit=${limit}&metric=${metric}`,

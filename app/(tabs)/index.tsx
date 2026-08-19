@@ -187,9 +187,14 @@ function extractItems(raw: unknown): ItemRow[] {
  * `listItems` is already withTimeout-bounded internally (itemsProvider.ts:144),
  * so this cannot hang the screen.
  */
+/** The page Home reads. ONE constant, because the estimated-share caption is
+ *  only honest while this many rows is the whole collection — two literals
+ *  that must agree is how a capped aggregate comes back. */
+export const HOME_ITEMS_PAGE = 50;
+
 async function loadItemsFromCollection(): Promise<ItemRow[]> {
   try {
-    const items = await dataProvider.listItems({ limit: 50, offset: 0 });
+    const items = await dataProvider.listItems({ limit: HOME_ITEMS_PAGE, offset: 0 });
     return (items ?? [])
       .map((it) => ({
         id: String(it.id),
@@ -247,9 +252,8 @@ function PortfolioScreen() {
    * money figure from it would report a partial number as the whole truth —
    * the exact class `npm run verify:silent` names. So the caption renders only
    * when we can prove we hold everything: fewer rows came back than we asked
-   * for. At exactly 50 there may be a 51st, and we say nothing.
+   * for. At exactly the page size there may be one more, and we say nothing.
    */
-  const HOME_ITEMS_PAGE = 50;
   // Persisted "has ever had items" flag. Drives the first-item hero: it shows
   // ONLY for a genuinely-new collection and is replaced by the graph the moment
   // the first item is added — and never comes back, even if a later portfolio
@@ -504,6 +508,13 @@ function PortfolioScreen() {
   // why this is suppressed on a collection larger than one page.
   const estimatedShare = useMemo(() => {
     if (items.length === 0 || items.length >= HOME_ITEMS_PAGE) return null;
+    // "We do not know" is not "it is all estimated". If NOT ONE item carries a
+    // provenance — the view read failed, or a caller mapped its own item shape
+    // — every row would look unbacked and the caption would claim the whole
+    // portfolio is guesswork. Say nothing instead.
+    if (!items.some((it) => typeof it.valueSource === 'string' && it.valueSource)) {
+      return null;
+    }
     const MARKET = new Set(['catalog_daily', 'catalog_model', 'quick_scan']);
     let total = 0;
     let count = 0;

@@ -509,13 +509,13 @@ function ItemDetailScreen() {
     if (!id) return;
     setCompBusy(true);
     try {
-      // The PATCH replaces the attributes it is given, so the existing ones
-      // are spread back in — sending only `value_choice` would drop every
-      // category attribute the item carries.
-      await collectorsApi.updateItemAttributes(id, {
-        ...(savedAttrs ?? {}),
-        value_choice: choice,
-      });
+      // ONLY the key being changed. The endpoint MERGES
+      // (`SET attrs = COALESCE(attrs,'{}') || $3::jsonb`), so spreading the
+      // locally-cached attrs back in would resurrect a stale copy over
+      // anything written since — the size editor on this same screen calls the
+      // same endpoint. A merge endpoint plus a client-side spread is a
+      // lost-update waiting for two edits in one session.
+      await collectorsApi.updateItemAttributes(id, { value_choice: choice });
       setSavedAttrs((prev) => ({ ...(prev ?? {}), value_choice: choice }));
       if (choice === 'mine' && savedCore?.userEstimate != null) {
         // Reflect it immediately rather than waiting for a refetch: the view
@@ -536,7 +536,7 @@ function ItemDetailScreen() {
     } finally {
       setCompBusy(false);
     }
-  }, [id, savedAttrs, savedCore?.userEstimate, showToast, detail]);
+  }, [id, savedCore?.userEstimate, showToast, detail]);
 
   // Multi-marketplace listing modal
   const listForSaleHook = useListForSale({

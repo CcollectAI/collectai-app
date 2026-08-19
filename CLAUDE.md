@@ -29,6 +29,16 @@ into three numbers** (paid / market / estimated), and **Home includes the
 estimate and says how much of the headline it is**. An unknown source counts as
 an estimate everywhere — the side that under-claims.
 
+**A member may override the model, and it actually wins.** Manual add used to
+replace their number silently (save, then `revalueItem` writes a catalogue
+valuation into the TOP of the chain). The item screen now asks, after the save,
+and `attrs.value_choice = 'mine'` sits ABOVE the model in the view — otherwise
+"keep mine" could not be honoured at all, since both prediction tables outrank
+`estimated_value` and the catalogue model is global data, not the member's row.
+Applied to prod; proven byte-identical for anyone who has not chosen, and
+proven to flip (74.80 catalog_model → 12.34 user_estimate → restored) for one
+who has.
+
 Three write-path defects fixed with it: `updateItem` accepted `price` and
 mapped it to nothing (a trap for the offline queue, which replays queued args
 verbatim); `persistQuickscanDraft` posted four fields and dropped the scan's

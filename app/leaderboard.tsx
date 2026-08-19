@@ -31,7 +31,19 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const router = useRouter();
-  const [metric, setMetric] = useState<'items' | 'value'>('items');
+  const [metric, setMetric] = useState<'items' | 'value' | 'documented'>('items');
+  /**
+   * Whether a VALUE board means anything in this category.
+   *
+   * Server-measured: the board sums market-backed value only, and 40+
+   * categories have no sold-comp source, so there every row is 0.00. Offering
+   * "Value" as a chip that sorts a column of zeros presents an ordering the
+   * data does not contain.
+   *
+   * Starts TRUE so the chip does not flicker away on first paint; the server
+   * corrects it on the first response.
+   */
+  const [valueRankingAvailable, setValueRankingAvailable] = useState(true);
   // Bumping this re-runs the fetch effect. The failure copy tells people to
   // pull down, so a pull MUST actually retry — otherwise the screen promises a
   // gesture it does not implement.
@@ -44,6 +56,19 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
 
   const categoryName = getCategoryById(categoryId)?.name ?? categoryId;
 
+  /**
+   * The metric actually used, DERIVED rather than assigned.
+   *
+   * Switching away from an impossible metric by calling `setMetric` inside the
+   * fetch effect writes a state that is also that effect's own dependency —
+   * React tears the effect down and its `.then`/`.catch` never run
+   * (`learning_effect_cancels_its_own_request`, and `npm run check:effects`
+   * caught exactly this here). Deriving it costs at most one extra fetch when
+   * a member carries `value` from a comped category into an uncomped one, and
+   * it converges immediately.
+   */
+  const effectiveMetric = !valueRankingAvailable && metric === 'value' ? 'documented' : metric;
+
   const doRefresh = useCallback(() => {
     setRefreshing(true);
     setReloadKey((k) => k + 1);
@@ -53,12 +78,16 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
     let cancelled = false;
     setRows(null);
     setFailed(false);
-    getCategoryLeaderboard(categoryId, 25, metric)
+    getCategoryLeaderboard(categoryId, 25, effectiveMetric)
       .then((d) => {
         if (cancelled) return;
         setRows(d?.leaderboard ?? []);
         setYourRank(d?.your_rank ?? null);
         setTotalRanked(d?.total_ranked ?? 0);
+        // `!== false` rather than `?? true`: an older server omits the field,
+        // and treating "absent" as "unavailable" would hide the value board
+        // everywhere until the deploy lands.
+        setValueRankingAvailable(d?.value_ranking_available !== false);
       })
       .catch((e) => {
         if (cancelled) return;
@@ -67,12 +96,12 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
       })
       .finally(() => { if (!cancelled) setRefreshing(false); });
     return () => { cancelled = true; };
-  }, [categoryId, metric, reloadKey]);
+  }, [categoryId, effectiveMetric, reloadKey]);
 
   // An empty board and a failed request are different facts and must not share
   // a rendering: "nobody qualifies yet" is true, "we could not ask" is not.
   const valuedRows = rows?.filter((r) => r.value_eur > 0) ?? [];
-  const allZeroValue = metric === 'value' && (rows?.length ?? 0) > 0 && valuedRows.length === 0;
+  const allZeroValue = effectiveMetric === 'value' && (rows?.length ?? 0) > 0 && valuedRows.length === 0;
 
   // Same entrance as the XP board. Declared here, above every early return in
   // the JSX, because the hook has to run on every render regardless of whether
@@ -98,7 +127,11 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
       </Text>
 
       <View style={styles.catToggle}>
-        {(['items', 'value'] as const).map((m) => (
+        {(['items', 'value', 'documented'] as const)
+          // The value chip is hidden, not disabled, where value cannot rank:
+          // a greyed control invites a tap that can never do anything.
+          .filter((m) => m !== 'value' || valueRankingAvailable)
+          .map((m) => (
           <AnimatedPressable
             key={m}
             onPress={() => {
@@ -112,10 +145,16 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
             ]}
             accessibilityRole="button"
             accessibilityState={{ selected: metric === m }}
-            accessibilityLabel={m === 'items' ? 'Rank by items owned' : 'Rank by value held'}
+            accessibilityLabel={
+              m === 'items'
+                ? 'Rank by items owned'
+                : m === 'value'
+                  ? 'Rank by value held'
+                  : 'Rank by how completely collections are documented'
+            }
           >
             <Text style={[styles.catChipText, { color: metric === m ? colors.accentText : colors.text }]}>
-              {m === 'items' ? 'Items' : 'Value'}
+              {m === 'items' ? 'Items' : m === 'value' ? 'Value' : 'Documented'}
             </Text>
           </AnimatedPressable>
         ))}
@@ -158,14 +197,25 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
            question anyone asks of a board they might be on. */
         rows.map((r, index) => {
           const medalColor = getMedalColor(r.rank - 1, colors.muted);
+          const itemsLabel = `${formatNumber(r.item_count, settings.numberLocale)} ${r.item_count === 1 ? 'item' : 'items'}`;
+          const documentedLabel = `${r.documented_pct ?? 0}% documented`;
           const stat =
-            metric === 'value'
+            effectiveMetric === 'value'
               ? formatPrice(r.value_eur, settings.currency, settings.numberLocale)
-              : `${formatNumber(r.item_count, settings.numberLocale)} ${r.item_count === 1 ? 'item' : 'items'}`;
+              : effectiveMetric === 'documented'
+                ? documentedLabel
+                : itemsLabel;
+          // The secondary line never repeats the primary, and in a category
+          // with no comps it must not show a EUR 0.00 that would read as
+          // "this collection is worthless" rather than "we cannot price it".
           const secondary =
-            metric === 'value'
-              ? `${formatNumber(r.item_count, settings.numberLocale)} ${r.item_count === 1 ? 'item' : 'items'}`
-              : formatPrice(r.value_eur, settings.currency, settings.numberLocale);
+            effectiveMetric === 'value'
+              ? itemsLabel
+              : effectiveMetric === 'documented'
+                ? `${formatNumber(r.documented_count ?? 0, settings.numberLocale)} of ${itemsLabel}`
+                : valueRankingAvailable
+                  ? formatPrice(r.value_eur, settings.currency, settings.numberLocale)
+                  : documentedLabel;
           return (
             <Animated.View key={r.user_id} style={getCatItemStyle(index)}>
               <AnimatedPressable

@@ -67,6 +67,17 @@ class CategoryLeaderboardItem(BaseModel):
     avatar_url: Optional[str] = None
     item_count: int
     value_eur: float = 0.0
+    # How much of this member's collection in this category is DOCUMENTED —
+    # a photo, a condition and a purchase price on the same item. Added
+    # 2026-08-19 as the second axis for categories that cannot be ranked by
+    # value: 40+ categories have no sold-comp source, so a value board there is
+    # every member at 0.00.
+    #
+    # It is also the only leaderboard metric that pays the platform back. Item
+    # COUNT rewards adding rows; documented % rewards adding the photos and
+    # purchase prices that the catalogue and the comp gap are starved of.
+    documented_count: int = 0
+    documented_pct: float = 0.0
     is_you: bool = False
 
 
@@ -76,6 +87,14 @@ class CategoryLeaderboardResponse(BaseModel):
     leaderboard: list[CategoryLeaderboardItem]
     your_rank: Optional[int] = None
     total_ranked: int = 0
+    # FALSE => nobody on this board has a single comp-backed item, so ranking
+    # by value would sort a column of zeros and present it as a standing.
+    #
+    # MEASURED, not a hardcoded category list: a category that gains a price
+    # source starts offering the value board by itself, and one that loses it
+    # stops — the same self-healing property that made deriving the catalogue
+    # from the price source the right call (CLAUDE.md, the crosswalk section).
+    value_ranking_available: bool = True
 
 
 class CollectorCategoryStanding(BaseModel):
@@ -328,7 +347,7 @@ async def list_blocked(
 @router.get("/leaderboard/category/{category_id}", response_model=CategoryLeaderboardResponse)
 async def get_category_leaderboard(
     category_id: str,
-    metric: str = Query("items", pattern="^(items|value)$"),
+    metric: str = Query("items", pattern="^(items|value|documented)$"),
     limit: int = Query(25, ge=1, le=100),
     current_user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_social_search_limit),
@@ -372,7 +391,25 @@ async def get_category_leaderboard(
             # `metric` is interpolated, never parameterised, because ORDER BY
             # takes an expression and not a bind value — so both branches are
             # fixed literals chosen by an already-regex-validated key.
-            order_expr = "total_value" if metric == "value" else "item_count"
+            # EACH BRANCH CARRIES ITS OWN DIRECTIONS, and the template below
+            # does NOT append `DESC`.
+            #
+            # It used to, and the multi-column branch was silently inverted:
+            # `ORDER BY documented_pct, documented_count DESC` applies DESC to
+            # the LAST column only, so the percentage sorted ASCENDING and the
+            # least-documented member ranked #1. Proven on prod against a
+            # synthetic three-row set — 90% ranked #3, 10% ranked #1 — and
+            # invisible in the live board because every member is at 0%
+            # today.
+            #
+            # Ranked on the SHARE, not the count, so a member with 8 of 10
+            # documented outranks one with 20 of 400. Ties break on the count,
+            # otherwise a single perfectly-documented item tops the board.
+            order_expr = (
+                "total_value DESC" if metric == "value"
+                else "documented_pct DESC, documented_count DESC" if metric == "documented"
+                else "item_count DESC"
+            )
             value_gate = (
                 "AND COALESCE(ps.show_collection_value, TRUE) IS TRUE"
                 if metric == "value"
@@ -387,6 +424,24 @@ async def get_category_leaderboard(
                         p.handle,
                         p.avatar_url,
                         COUNT(i.id) AS item_count,
+                        -- DOCUMENTED: a photo, a condition AND a purchase
+                        -- price on the same item. All three, deliberately —
+                        -- partial credit per field makes the bar ambiguous and
+                        -- rewards half-filling every row rather than
+                        -- completing any.
+                        --
+                        -- `condition` OR `condition_grade`: the two halves of
+                        -- the same idea, written by different screens (the CSV
+                        -- importer maps `grade` to condition_grade; add-manual
+                        -- writes both). Requiring one specific column would
+                        -- score identical collections differently depending on
+                        -- how they were entered.
+                        COUNT(i.id) FILTER (
+                            WHERE NULLIF(btrim(i.image_url), '') IS NOT NULL
+                              AND (NULLIF(btrim(i.condition), '') IS NOT NULL
+                                   OR NULLIF(btrim(i.condition_grade), '') IS NOT NULL)
+                              AND i.purchase_price_eur IS NOT NULL
+                        ) AS documented_count,
                         -- MARKET TRUTH ONLY (2026-08-19). This is the one
                         -- number in the app that ranks members against each
                         -- other in public, so it may not rest on anything a
@@ -447,11 +502,26 @@ async def get_category_leaderboard(
                     -- SUM that defines it is a hard error. Caught by running it.
                     SELECT
                         base.*,
-                        RANK() OVER (ORDER BY {order_expr} DESC) AS rank,
+                        -- Guarded against 0: a member on this board always has
+                        -- at least one item, but a divide-by-zero here would
+                        -- take down the whole board rather than one row.
+                        CASE WHEN item_count > 0
+                             THEN round(100.0 * documented_count / item_count, 1)
+                             ELSE 0 END AS documented_pct,
                         COUNT(*) OVER () AS total_ranked
                     FROM base
+                ),
+                ranked2 AS (
+                    -- The rank is computed AFTER documented_pct exists, since
+                    -- ordering by it is one of the three metrics. Same reason
+                    -- the original rank sits outside `base`: a window function
+                    -- cannot reference an alias from its own SELECT level.
+                    SELECT
+                        ranked.*,
+                        RANK() OVER (ORDER BY {order_expr}) AS rank
+                    FROM ranked
                 )
-                SELECT * FROM ranked
+                SELECT * FROM ranked2
                 ORDER BY rank, display_name
                 LIMIT $2
                 """,
@@ -469,6 +539,8 @@ async def get_category_leaderboard(
                 avatar_url=r["avatar_url"],
                 item_count=int(r["item_count"]),
                 value_eur=float(r["total_value"] or 0),
+                documented_count=int(r["documented_count"] or 0),
+                documented_pct=float(r["documented_pct"] or 0),
                 is_you=str(r["user_id"]) == str(current_user_id),
             )
             for r in rows
@@ -479,12 +551,25 @@ async def get_category_leaderboard(
             "[social/leaderboard] category=%s metric=%s user=%s returned=%d of %d",
             category_id, metric, current_user_id, len(board), total_ranked,
         )
+        # Can this category be ranked by value AT ALL? Measured off the board
+        # we just built rather than a hardcoded category list: 40+ categories
+        # have no sold-comp source, and since the board sums market-backed
+        # value only, every row there is 0.00. Ranking a column of zeros and
+        # presenting it as a standing is the `learning_empty_answer_rendered_as_zero`
+        # shape — the client shows unit count and documented share instead.
+        #
+        # Derived, so it self-heals: a category that gains a price source
+        # starts offering the value board on its own, and one that loses it
+        # stops.
+        value_ranking_available = any(e.value_eur > 0 for e in board)
+
         return CategoryLeaderboardResponse(
             category=category_id,
             metric=metric,
             leaderboard=board,
             your_rank=your_rank,
             total_ranked=total_ranked,
+            value_ranking_available=value_ranking_available,
         )
 
     except asyncpg.PostgresError as e:

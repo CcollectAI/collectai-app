@@ -137,3 +137,47 @@ class TestSearchUsers:
         assert resp.status_code == 422
         resp2 = client.get("/social/users/search", params={"q": "test", "limit": 100})
         assert resp2.status_code == 422
+
+
+class TestLeaderboardOrderDirections:
+    """Every ranking column must carry its OWN direction.
+
+    The template used to append `DESC` to whatever the metric contributed, and
+    a two-column metric was therefore inverted: `ORDER BY documented_pct,
+    documented_count DESC` applies DESC to the LAST column only, so the
+    percentage sorted ASCENDING and the LEAST-documented member ranked #1.
+
+    Proven on prod against a synthetic set (90% ranked #3, 10% ranked #1) and
+    invisible on the live board, where every member is at 0% and everything
+    ties. That is the shape this class exists to stop: a sort direction is not
+    something an empty or uniform dataset can test.
+    """
+
+    def _source(self) -> str:
+        import inspect
+        from app.features import social_router
+
+        return inspect.getsource(social_router.get_category_leaderboard)
+
+    def test_the_rank_template_does_not_append_a_direction(self):
+        src = self._source()
+        assert "RANK() OVER (ORDER BY {order_expr})" in src, (
+            "the template appends a direction again — a multi-column metric "
+            "will be silently inverted"
+        )
+        assert "{order_expr} DESC" not in src
+
+    def test_every_metric_states_its_own_direction(self):
+        src = self._source()
+        for expr in ("total_value DESC", "item_count DESC"):
+            assert expr in src, f"{expr} lost its direction"
+        # Both columns, both directions — the one that was wrong.
+        assert "documented_pct DESC, documented_count DESC" in src
+
+    def test_documented_ranks_on_the_share_not_the_raw_count(self):
+        """8 of 10 must beat 20 of 400. Ranking on the count would make a big
+        careless collection outrank a small meticulous one, which inverts the
+        behaviour this metric exists to reward."""
+        src = self._source()
+        assert "documented_pct DESC, documented_count DESC" in src
+        assert "documented_count DESC, documented_pct" not in src
