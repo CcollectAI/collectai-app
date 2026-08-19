@@ -189,6 +189,35 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 `scripts/preflight_android.mjs` fails the build on any `SafeAreaView` imported
 from `react-native`, so this cannot come back.
 
+### The branding sweep, and the gate — `npm run check:brand-colors` (2026-08-19)
+
+Measured rather than guessed: **858 hex literals**, of which **470** sit in
+files that legitimately DEFINE colour (the four palettes, the 54 category
+tints, franchise colours). Flagging the other 388 would have been noise — most
+are on fixed scrims, camera overlays and photo gradients, where nothing
+inverts.
+
+The gate checks the ONE pattern that actually breaks: a hardcoded `color:` /
+`tintColor:` near-white or near-black, sitting on a `backgroundColor` taken
+from a THEME token. **Three live instances, all fixed** — `app/chat/new.tsx`,
+`src/components/PriceFeedbackSection.tsx` (whose comment literally read *"Button
+text on brand background"* while doing the thing this rule forbids), and the
+vestigial `src/app/+not-found.tsx`.
+
+**The fourth was correctly left alone, and it is the one to remember.**
+`Button.tsx`'s `danger` variant hardcodes white on `colors.danger` — and that
+is RIGHT: danger is red in all four palettes, while `accentText` is `#000000`
+in high-contrast dark, so "fixing" it would put **black on red**. The rule is
+about a fill that *inverts*; danger does not. It is allowlisted with that
+argument, because the next sweep will find it again.
+
+**And the gate itself was wrong first.** Written with a ±6-line window, it went
+GREEN when the defect was reintroduced under a 4-line explanatory comment —
+the comment pushed the `backgroundColor` out of range. A gate that passes on
+the exact defect it was written for is worse than no gate, because it is
+trusted. Widened, then proven red. *Always reintroduce the bug and watch it
+fail.*
+
 ## `accessibilityRole` — an iOS-only value CRASHES Android
 
 Most iOS-only props no-op on Android. `accessibilityRole` does not: react-native

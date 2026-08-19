@@ -270,7 +270,11 @@ const NewChatScreen: React.FC = () => {
               accessibilityRole="button"
               accessibilityLabel="Go to inbox"
             >
-              <Text style={[styles.emptyBtnText, { color: '#ffffff' }]}>Go to Inbox</Text>
+              {/* `accentText`, never '#ffffff'. In high-contrast dark the accent
+                  is a LIGHT blue (#4DA6FF) and accentText is #000000, so
+                  hardcoded white here is the invisible-CTA bug the playbook
+                  documents against subscription.tsx. */}
+              <Text style={[styles.emptyBtnText, { color: colors.accentText }]}>Go to Inbox</Text>
             </AnimatedPressable>
           }
         />

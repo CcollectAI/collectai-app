@@ -76,6 +76,13 @@ export const Button = React.memo(function Button({
           iconColor: colors.accent,
         };
       case 'danger':
+        // ⚠️ DELIBERATELY hardcoded, and NOT a case for `accentText`.
+        // `danger` is red in all four palettes (#EF4444 / #CC0000 / #FF4444),
+        // so white always has contrast on it — while `accentText` is #000000
+        // in high-contrast dark, which would put BLACK ON RED and make this
+        // worse. The playbook's rule is about a fill that INVERTS with the
+        // palette; this one does not. Checked 2026-08-19 during the branding
+        // sweep; leave it.
         return {
           container: { backgroundColor: colors.danger },
           text: { color: '#FFFFFF', fontWeight: '600' },

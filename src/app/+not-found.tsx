@@ -36,7 +36,7 @@ export default function NotFoundScreen() {
             backgroundColor: colors.accent,
           }}
         >
-          <Text style={{ color: "#FFFFFF", fontWeight: "600" }}>
+          <Text style={{ color: colors.accentText, fontWeight: "600" }}>
             Go to Portfolio
           </Text>
         </Pressable>

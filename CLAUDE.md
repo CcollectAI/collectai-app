@@ -4,6 +4,24 @@
 
 ## Current state (2026-08-19)
 
+### Branding sweep + the seller flow, read end to end (2026-08-19)
+
+**Branding: 858 hex literals, 470 legitimate** (the four palettes, 54 category
+tints, franchise colours). Three live violations fixed, one correctly left
+alone: `Button.tsx`'s `danger` variant hardcodes white on red, and `accentText`
+is #000000 in high-contrast dark — the naive fix would put BLACK ON RED.
+`npm run check:brand-colors` gates the pattern that actually breaks. It was
+wrong first (a ±6-line window went green when the bug was reintroduced under a
+comment) — widened, then proven red.
+
+**Seller flow, read rather than assumed.** Listing creation is already lean:
+from the collection it needs only a PRICE (the server supplies the title from
+the item); from scratch, title + price. `sell/pick` and `sell/new` were both
+rebuilt on 2026-08-07/08 after a dead-end report and are in good shape. The
+post-bid half is what changed this week (offers → trade screen → settle). **The
+real gap is `/sell/dashboard`: it exists, compiles, and nothing navigates to
+it** — `check:reachable` names it alongside `/franchise/[id]` and `/twitch`.
+
 ### A trade screen, and "does this need me" is not "may I answer this" (2026-08-19)
 
 `/offer/[offerId]` now owns a trade — a five-step ladder (Respond → Pay/Ship →

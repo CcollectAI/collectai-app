@@ -17,6 +17,11 @@ interface PriceFeedbackSectionProps {
     text: string;
     muted: string;
     accent: string;
+    /** The label colour for anything sitting ON `accent`. Required, not
+     *  optional: the whole point is that it is #000000 in high-contrast dark,
+     *  so a component that falls back to white reintroduces the bug it was
+     *  added to fix. `app/item/[id].tsx` passes the full theme object. */
+    accentText: string;
     border: string;
     background: string;
     card: string;
@@ -89,7 +94,12 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
             accessibilityRole="button"
             accessibilityLabel={t('price_feedback.submit_a11y')}
           >
-            <Text style={[s.feedbackBtnText, { color: "#FFFFFF" }]}>{/* Button text on brand background */}
+            {/* `accentText`, not "#FFFFFF" — the comment that used to sit here
+                said "Button text on brand background", which is exactly the
+                case the playbook says NOT to hardcode: in high-contrast dark
+                the accent is light (#4DA6FF) and accentText is #000000, so
+                white was invisible on the primary action. */}
+            <Text style={[s.feedbackBtnText, { color: theme.accentText }]}>
               {submittingFeedback ? "..." : "Submit"}
             </Text>
           </Pressable>
