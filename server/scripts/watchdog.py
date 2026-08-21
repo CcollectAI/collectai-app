@@ -25,7 +25,8 @@ anything: it is read-only by construction.
 Usage:
     python3 scripts/watchdog.py                     # JSON to stdout
     python3 scripts/watchdog.py --out /tmp/wd.json  # write to a file
-    python3 scripts/watchdog.py --hours 168         # 7-day window
+    python3 scripts/watchdog.py --hours 24          # window; keep <=24, Logflare
+                                                    # answers longer ones PARTIALLY
     python3 scripts/watchdog.py --summary           # human-readable digest
     python3 scripts/watchdog.py --telegram          # page if severity>=high
 """
@@ -72,6 +73,46 @@ def tbl_link(table: str) -> str:
     if not PROJECT_REF:
         return ""
     return "https://supabase.com/dashboard/project/%s/editor?schema=public&table=%s" % (PROJECT_REF, table)
+
+
+_TRUNC_NOTE = "\n\n… digest truncated — full JSON on the box."
+
+
+def _trim_html(body: str, limit: int) -> str:
+    """Trim an HTML digest to `limit` chars WITHOUT splitting a tag.
+
+    `body[:3800]` was a raw character cut on MARKUP. When it landed between
+    `<code>` and `</code>`, Telegram rejected the entire message:
+
+        400 ... can't parse entities: Can't find end tag corresponding to
+        start tag "code"
+
+    and the whole daily report was lost — silently (the send is inside a
+    `try/except` that prints to stderr), and preferentially on the days the
+    report was LONGEST, i.e. the days with the most bugs. A monitor whose
+    delivery fails in proportion to how much it has to say is worse than no
+    monitor, which is the same failure this file's own docstring warns about
+    for `[]`-vs-`None`.
+
+    Cut on a line boundary, then close whatever tags are still open.
+    """
+    if len(body) <= limit:
+        return body
+    budget = limit - len(_TRUNC_NOTE)
+    kept: list[str] = []
+    used = 0
+    for line in body.split("\n"):
+        if used + len(line) + 1 > budget:
+            break
+        kept.append(line)
+        used += len(line) + 1
+    out = "\n".join(kept)
+    # Balance the inline tags this digest emits. `"</code>".count("<code")` is
+    # 0 because the char after `<` is `/`, so these counts are open-minus-close.
+    for tag in ("code", "b", "a"):
+        unclosed = out.count("<%s" % tag) - out.count("</%s>" % tag)
+        out += ("</%s>" % tag) * max(0, unclosed)
+    return out + _TRUNC_NOTE
 
 
 def sql_link() -> str:
@@ -470,6 +511,7 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
         # because nobody had added those categories to the list. A monitor that
         # only watches what you remembered to name is not a monitor.
         no_source: list[tuple[str, int]] = []
+        thin_source: list[tuple] = []
         FLOOR_DEFAULT = 60.0
         FLOOR_OVERRIDE = {"mtg": 80.0, "pokemon": 80.0}
         MIN_CATALOG_ROWS = 500
@@ -571,17 +613,71 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
                   AND NOT is_listing
                   AND seen_at BETWEEN now() - interval '90 days' AND now() - interval '30 days'
                 """, cat) or 0
+            # The discriminator is NOT `sold_now > 0`. That counted ROWS, so
+            # one_piece_tcg — ONE sold comp against 7,675 catalogue rows —
+            # landed in the same bucket as a real pipeline fault and was told
+            # "the data is there and the catalogue cannot reach it". On
+            # 2026-08-21 that produced FIVE false HIGHs out of eight, which is
+            # the false-alarm pattern this file is repeatedly warned about.
+            #
+            # Measured that morning, distinct items with a sold comp vs items
+            # actually priced: funko 60/60, retro_games 58/58, nintendo_merch
+            # 32/32, retro_handhelds 4/4, one_piece_tcg 1/1. EVERY comp that
+            # arrived was already used. Nothing was broken; there were simply
+            # almost no comps.
+            #
+            # "The catalogue cannot reach the data" is only true when comps
+            # arrive FOR CATALOGUE ROWS THAT STAY UNPRICED. Count that, and
+            # nothing else. (Same window and definition of "priceable" as the
+            # canary above, so the two numbers cannot disagree.)
+            # Two numbers, one pass. They answer different questions and only
+            # the first is a pipeline fault:
+            #   orphaned  - comps land ON a catalogue row that stays unpriced
+            #               -> the crosswalk is broken
+            #   unmatched - comps land for a key with NO catalogue row at all
+            #               -> the CATALOGUE is missing the item (yugioh: 13,838
+            #                  of 14,054 on 2026-08-21), which is a sourcing or
+            #                  keying question, not a broken crosswalk
+            _cov = await c.fetchrow(
+                """
+                WITH sold AS (
+                    SELECT DISTINCT split_part(item_ref, ':', 2) AS item_key
+                    FROM market_hits
+                    WHERE NOT is_listing
+                      AND seen_at > now() - interval '30 days'
+                      AND split_part(item_ref, ':', 1) = $1
+                )
+                SELECT
+                  count(*) FILTER (
+                    WHERE ci.item_key IS NOT NULL
+                      AND NOT EXISTS (SELECT 1 FROM catalog_price_refs x
+                                       WHERE x.category = $1 AND x.item_key = s.item_key)
+                      AND NOT EXISTS (SELECT 1 FROM price_predictions p
+                                       WHERE p.item_ref = $1 || ':' || s.item_key
+                                         AND p.generated_at >= now() - interval '30 days')
+                  ) AS orphaned,
+                  count(*) FILTER (WHERE ci.item_key IS NULL) AS unmatched
+                FROM sold s
+                LEFT JOIN category_items ci
+                  ON ci.category = $1 AND ci.item_key = s.item_key
+                """, cat)
+            orphaned = (_cov["orphaned"] if _cov else 0) or 0
+            unmatched = (_cov["unmatched"] if _cov else 0) or 0
 
-            if sold_now > 0:
+            # Page only when the orphaned set is big enough to actually move
+            # coverage: a handful of stragglers is normal churn between the
+            # comp landing and the next valuation cycle.
+            orphan_floor = max(50, int(0.01 * sampled))
+            if orphaned >= orphan_floor:
                 bug("high", "pricing coverage collapsed for %s: %.1f%%" % (cat, pct),
-                    "%.0f of %d catalog rows can reach a price (floor %.0f%%), estimated from a "
-                    "source-stratified sample, while %d sold comps DID arrive in the last 30 days. "
-                    "The data is there and the catalogue cannot reach it — a keying or crosswalk "
-                    "fault, not a sourcing one." % (priced, sampled, floor, sold_now),
+                    "%.0f of %d catalog rows can reach a price (floor %.0f%%), and %d catalogue "
+                    "items have a SOLD COMP from the last 30 days yet are still unpriced. The data "
+                    "is there and the catalogue cannot reach it — a keying or crosswalk fault, not "
+                    "a sourcing one." % (priced, sampled, floor, orphaned),
                     src_link("server/pipelines/build_catalog_price_crosswalk.py"),
                     "python3 scripts/audit_key_overlap.py",
                     "Rebuild the crosswalk, or check whether items.canonical_ref resolution broke")
-            elif sold_before > 0:
+            elif sold_before > 0 and sold_now == 0:
                 bug("high", "sold-comp source DIED for %s (%.1f%% priceable)" % (cat, pct),
                     "%d sold comps in the 30-90d window and ZERO in the last 30 days. The category "
                     "still collects listings, but valuation ignores listings, so every item here "
@@ -592,10 +688,35 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
                     "WHERE item_ref LIKE '%s:%%%%' AND seen_at > now() - interval '90 days' "
                     "GROUP BY 1;" % cat,
                     "Find which provider stopped: a blocked adapter, an expired key, or a 403")
+            elif sold_now > 0:
+                # Comps arrive, and every one of them is already priced. The
+                # pipeline is provably working; the volume is simply too thin
+                # to lift coverage. Aggregated below, never paged.
+                thin_source.append((cat, sampled, pct, unmatched))
             else:
                 no_source.append((cat, sampled))
         # ONE finding for every category that has never had a sold comp, with
         # the totals — so the scale is visible without 40 separate pages.
+        # Below floor, comps arriving, NOTHING orphaned — the pipeline works and
+        # the volume is thin. One info line with the scale, never a page.
+        if thin_source:
+            names = ", ".join(
+                "%s %.0f%% (%s)" % (c, p,
+                                    ("%d comps for items not in the catalogue" % u) if u
+                                    else "too few comps")
+                for c, _n, p, u in sorted(thin_source, key=lambda t: t[2])[:8])
+            bug("info",
+                "%d categories are below the coverage floor with the crosswalk INTACT"
+                % len(thin_source),
+                "Every catalogue item that has a sold comp in these categories is already "
+                "priced — zero orphaned items — so the crosswalk is working. Coverage is "
+                "limited either by comps arriving for keys with no catalogue row, or by there "
+                "being too few comps at all: %s. Previously these paged as \"coverage "
+                "collapsed\", which was five false HIGHs out of eight on 2026-08-21." % names,
+                src_link("server/app/agents/adapters/ebay_caller.py"),
+                "See the orphaned-item query in the pricing coverage canary",
+                "Same remedy as the no-sold-comp gap: more sold-comp sources")
+
         if no_source:
             total_rows = sum(n for _, n in no_source)
             names = ", ".join(c for c, _ in sorted(no_source, key=lambda t: -t[1])[:8])
@@ -997,6 +1118,21 @@ def collect_supabase_logs(hours: int) -> dict:
 
     out["window"] = {"start": start, "end": end}
 
+    # Logflare's analytics endpoint silently returns PARTIAL data for long
+    # windows. Measured 2026-08-21, same query, three windows:
+    #   6h  -> 15 "ON CONFLICT" errors
+    #   24h -> 15   (consistent: all 15 fell in the last 6h)
+    #   72h -> 14   <- fewer than its own 6h subset, and user_blocks/
+    #                 settings_json/shipping vanished entirely
+    # A superset window returning fewer rows than its subset is proof the
+    # answer is truncated, not smaller. docs/WATCHDOG.md advertises
+    # `--hours 168`, which therefore produces a confidently wrong report.
+    # Say so in the report rather than letting the numbers pass as facts.
+    if hours > 24:
+        failed.append(
+            "window=%gh exceeds the ~24h range Logflare answers completely; "
+            "counts below are PARTIAL and must not be read as totals" % hours)
+
     pg_rows = query(
         'select event_message as msg, count(*) as n from postgres_logs '
         'cross join unnest(metadata) m cross join unnest(m.parsed) p '
@@ -1368,7 +1504,7 @@ async def main() -> int:
                 body += "\nfull JSON: <code>%s</code>" % esc(args.out)
 
             # Green days go through silently; only real findings buzz.
-            await send_ops_alert(body[:3800], title=title, silent=green)
+            await send_ops_alert(_trim_html(body, 3800), title=title, silent=green)
             print("digest sent to telegram")
         except Exception as e:
             print("telegram digest failed: %s" % e, file=sys.stderr)

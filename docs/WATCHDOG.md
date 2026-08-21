@@ -41,7 +41,7 @@ PYTHONPATH=/opt/collectors/server /opt/collectors/.venv/bin/python scripts/watch
 
 | Flag | Effect |
 |---|---|
-| `--hours N` | window (default 24) |
+| `--hours N` | window (default 24). **Keep it ≤24** — Logflare answers longer windows partially; >24 self-declares the counts as partial |
 | `--out FILE` | write the full JSON report |
 | `--summary` | human-readable digest to stdout |
 | `--digest` | always send the Telegram summary, even when green |
@@ -401,6 +401,111 @@ rather than 46 separate pages. Nothing is hidden — the scale is stated once.
 **Verification:** re-run against live and compare to a direct measurement.
 Pokémon must come back ~96%, lorcana ~0%. A canary is a measurement; check it
 against the thing it claims to measure before trusting it.
+
+## `sold_now > 0` is not evidence the crosswalk is broken (2026-08-21)
+
+The canary classified any below-floor category with at least ONE sold comp as
+*"the data is there and the catalogue cannot reach it — a keying or crosswalk
+fault"*. On 2026-08-21 that produced **five false HIGHs out of eight**.
+
+The measurement that settled it — distinct items with a sold comp in 30d, next
+to items actually priced:
+
+| category | catalogue | priced | distinct items with a comp |
+|---|---|---|---|
+| funko | 940 | 60 | **60** |
+| retro_games | 1,114 | 58 | **58** |
+| nintendo_merch | 1,115 | 32 | **32** |
+| retro_handhelds | 1,111 | 4 | **4** |
+| one_piece_tcg | 7,675 | 1 | **1** |
+
+Every one of those is an exact match. **Every comp that arrived was already
+used.** Nothing was broken; there were simply almost no comps. one_piece_tcg
+was paging daily on the strength of a single sold comp against 7,675
+catalogue rows.
+
+The claim only holds when comps arrive **for catalogue rows that stay
+unpriced**, so that is now what gets counted — with the same window and the
+same definition of "priceable" as the coverage number above, so the two cannot
+disagree:
+
+| condition | meaning | severity |
+|---|---|---|
+| `orphaned >= max(50, 1% of catalogue)` | comps land ON catalogue rows that stay unpriced — crosswalk fault | **high** |
+| sold comps in 30–90d, none now | the source died | **high** |
+| below floor, `orphaned == 0` | crosswalk INTACT — aggregated | **one info** |
+| never any sold comps | structural gap | **one medium** |
+
+`orphaned` and `unmatched` are different findings and the info line says which:
+
+- **orphaned** — a comp landed on a catalogue row and it is still unpriced.
+  This is the crosswalk fault. lorcana: **2,671** items, and it correctly
+  remains the one HIGH.
+- **unmatched** — a comp landed for a key with **no catalogue row at all**.
+  yugioh: **13,838 of 14,054**. The crosswalk is fine; the *catalogue* is
+  missing the items. Calling that "too few comps" would have been a false
+  sentence about a category with 587,276 of them.
+
+Result on the same window: `bugs_high` 8 → 2, and the surviving two are real.
+
+## A digest that fails to send is worse than a digest that says nothing
+
+`send_ops_alert(body[:3800])` was a raw character cut applied to **markup**.
+When the cut landed between `<code>` and `</code>` Telegram rejected the whole
+message:
+
+```
+400 ... can't parse entities: Can't find end tag corresponding to start tag "code"
+```
+
+and the entire daily report was lost. Silently — the send sits inside a
+`try/except` that prints to stderr, which nothing reads.
+
+Note *when* it fails: the longer the report, the likelier the cut lands inside
+a tag. **Delivery failed in proportion to how much the watchdog had to say.**
+
+Two defences, because either alone still loses reports:
+
+- `_trim_html()` cuts on a line boundary and closes whatever tags are still
+  open. Pinned by `server/tests/test_watchdog_digest_trim.py`, which includes a
+  test asserting the **old** slice really does leave `<code>` unbalanced — a
+  fixture that stops reproducing the bug fails the suite.
+- `telegram_ops.send_ops_alert()` retries once as **plain text** on a
+  `parse entities` rejection. A digest with the tags stripped beats no digest.
+
+## Logflare answers long windows PARTIALLY, and says nothing about it
+
+The same query, three windows, on 2026-08-21:
+
+| window | `ON CONFLICT` errors | other findings |
+|---|---|---|
+| 6h | 15 | deal_ratings |
+| 24h | 15 | user_blocks ×15, settings_json ×6, shipping ×6, … |
+| **72h** | **14** | **none of the above** |
+
+A superset window returning **fewer** rows than its own subset is proof the
+answer is truncated, not smaller. `docs/WATCHDOG.md` advertised `--hours 168`,
+which therefore produced a confidently wrong report.
+
+`--hours > 24` now adds an entry to the `unavailable` list saying the counts
+are partial. It does not silently pass them off as totals — the same rule this
+doc already sets for `[]` vs `None`.
+
+**Use ≤24h for anything you intend to act on.**
+
+## A probe must not manufacture the alarm it detects
+
+`audit_orphan_tables.py` ran `SELECT COUNT(*) FROM public."<tbl>"` over table
+names harvested from source. `deal_ratings` was dropped with the Deal Desk on
+2026-08-09 but survives in a **comment** in `p2p_offers_router.py`, so the
+audit probed it every run. The local `except` swallowed the error; Postgres
+still logged an `ERROR`, which the watchdog then reported as a rejected write.
+
+Now guarded with `to_regclass`, which returns NULL instead of raising — and
+keeps "missing" (`None`) distinguishable from "empty" (`0`).
+
+This is the same defect class as the `check-unrendered` gate counting a
+component named only in a `//` comment: **a comment is not a reference.**
 
 ## Related audits
 

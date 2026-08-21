@@ -13,6 +13,7 @@ Env vars:
 
 from __future__ import annotations
 
+import re
 import logging
 from typing import Optional
 
@@ -66,7 +67,25 @@ async def send_ops_alert(
             if resp.status_code == 200:
                 logger.info("Telegram ops alert sent")
                 return True
-            logger.warning("Telegram API returned %d: %s", resp.status_code, resp.text[:200])
+            body_text = resp.text or ""
+            logger.warning("Telegram API returned %d: %s", resp.status_code, body_text[:200])
+            # A malformed-HTML rejection must not cost us the MESSAGE. The
+            # watchdog digest is the only daily channel, and it failed exactly
+            # this way on 2026-08-19 ("Can't find end tag corresponding to
+            # start tag \"code\"") — losing the whole report, silently. Retry
+            # once as plain text: a readable digest with the tags stripped
+            # beats no digest at all.
+            if resp.status_code == 400 and "parse entities" in body_text:
+                plain = dict(payload)
+                plain.pop("parse_mode", None)
+                plain["text"] = re.sub(r"<[^>]+>", "", payload["text"])
+                retry = await client.post(url, json=plain)
+                if retry.status_code == 200:
+                    logger.warning("Telegram ops alert sent as PLAIN TEXT "
+                                   "after an HTML parse rejection")
+                    return True
+                logger.warning("Telegram plain-text retry also failed: %d %s",
+                               retry.status_code, (retry.text or "")[:200])
             return False
     except Exception as exc:
         logger.warning("Telegram ops alert failed: %s", exc)

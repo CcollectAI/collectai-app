@@ -263,10 +263,24 @@ async def main() -> int:
             live_dbw = [x for x in dbw if "UNCALLED" not in x]
             if w or live_dbw:
                 continue
-            try:
-                n = await conn.fetchval('SELECT COUNT(*) FROM public."%s"' % tbl)
-            except Exception:
-                n = None
+            # Ask whether the table EXISTS before counting it. The table
+            # names here are harvested from source, and a name that survives
+            # only in a comment (`deal_ratings`, dropped with the Deal Desk on
+            # 2026-08-09, still named in a comment in p2p_offers_router.py)
+            # produced `SELECT COUNT(*) FROM public."deal_ratings"` every run.
+            # The `except` swallowed it locally, but Postgres still logged an
+            # ERROR the watchdog then reported as a rejected write — a probe
+            # manufacturing the alarm it is meant to detect. `to_regclass`
+            # returns NULL instead of raising, and keeps "missing" (None)
+            # distinguishable from "empty" (0), which is the rule this repo
+            # already applies to `[]` vs `None`.
+            n = None
+            if await conn.fetchval("SELECT to_regclass($1) IS NOT NULL",
+                                   'public."%s"' % tbl):
+                try:
+                    n = await conn.fetchval('SELECT COUNT(*) FROM public."%s"' % tbl)
+                except Exception:
+                    n = None
             # Confidence. A table with rows was written by SOMETHING even if
             # this script can't see what (a seed script, a migration, a manual
             # backfill) -- that's worth a look but it is not proof of a dead

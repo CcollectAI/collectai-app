@@ -74,13 +74,19 @@ async def marketplace_search(
         try:
             async with get_conn() as conn:
                 row = await conn.fetchval(
-                    "SELECT settings_json->>'region' FROM user_settings WHERE user_id = $1",
+                    "SELECT region FROM user_settings WHERE user_id = $1",
                     user_id,
                 )
                 if row:
                     region = row
-        except Exception:
-            logger.debug("Could not look up user region from DB")
+        except Exception as exc:
+            # WARNING, not debug. This swallow is *why* the wrong column name
+            # survived: `settings_json` has never existed on user_settings (the
+            # column is `region`, as app/features/data_moat.py already reads),
+            # so region resolved to None for every user and regional
+            # marketplace routing was silently off — 6 rejected queries a day,
+            # visible in the Postgres log and in nothing the app ever printed.
+            logger.warning("Could not look up user region from DB: %s", exc)
 
     agent = MarketplaceAgent()
     try:
@@ -215,13 +221,19 @@ async def marketplace_comps(
         try:
             async with get_conn() as conn:
                 row = await conn.fetchval(
-                    "SELECT settings_json->>'region' FROM user_settings WHERE user_id = $1",
+                    "SELECT region FROM user_settings WHERE user_id = $1",
                     user_id,
                 )
                 if row:
                     region = row
-        except Exception:
-            logger.debug("Could not look up user region from DB")
+        except Exception as exc:
+            # WARNING, not debug. This swallow is *why* the wrong column name
+            # survived: `settings_json` has never existed on user_settings (the
+            # column is `region`, as app/features/data_moat.py already reads),
+            # so region resolved to None for every user and regional
+            # marketplace routing was silently off — 6 rejected queries a day,
+            # visible in the Postgres log and in nothing the app ever printed.
+            logger.warning("Could not look up user region from DB: %s", exc)
 
     agent = MarketplaceAgent()
     try:
@@ -353,8 +365,19 @@ async def _persist_hits(scored_hits: list, user_id: str) -> None:
         async with conn.transaction():
             for sh in scored_hits[:50]:  # cap to 50 per request
                 h = sh.hit
-                shipping_json = {
-                    "cost": h.get("shipping_cost"),
+                # `market_hits.shipping` is DOUBLE PRECISION and holds the cost
+                # only — deal_discovery_agent.py binds it `$11::double precision`
+                # and is correct. Binding the whole descriptor dict as `::jsonb`
+                # made Postgres reject every row this path wrote:
+                #   column "shipping" is of type double precision but expression
+                #   is of type jsonb
+                # 6 times a day, in the Postgres log and NOWHERE in bake.log,
+                # because the write is inside a best-effort block. The
+                # descriptive fields go to features_json, which really is jsonb.
+                shipping_cost = h.get("shipping_cost")
+                features_json = {
+                    "image_url": h.get("image_url"),
+                    "user_id": user_id,
                     "ships_from": h.get("ships_from"),
                     "domestic_only": bool(h.get("domestic_only", False)),
                 }
@@ -377,7 +400,7 @@ async def _persist_hits(scored_hits: list, user_id: str) -> None:
                          condition, ended_at, url, normalized_key, features_json,
                          shipping)
                     SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb,
-                           $11::jsonb
+                           $11::double precision
                     WHERE NOT EXISTS (
                         SELECT 1 FROM public.market_hits
                          WHERE provider = $1 AND listing_id = $2
@@ -392,6 +415,6 @@ async def _persist_hits(scored_hits: list, user_id: str) -> None:
                     h.get("sold_at") or h.get("ended_at"),
                     (h.get("url", "") or "")[:1000],
                     (h.get("normalized_key", "") or "")[:255],
-                    json.dumps({"image_url": h.get("image_url"), "user_id": user_id}),
-                    json.dumps(shipping_json),
+                    json.dumps(features_json),
+                    float(shipping_cost) if shipping_cost is not None else None,
                 )
