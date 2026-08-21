@@ -1153,6 +1153,68 @@ half cards fit on screen.
 
 Four cards now fit where two and a half did.
 
+### …and the card still could not answer its own question (2026-08-21)
+
+The 08-16 pass made the watchlist card SHORTER. It did not make it say more,
+and a visual sweep a week later found the gap: **a watchlist card showed your
+target and never the current price**, so the one question the screen exists to
+answer — *how close am I?* — had no answer on it.
+
+The data was half-built across three layers, which is why nobody saw it:
+
+| layer | state |
+|---|---|
+| `watchlist_items` | `last_market_price`, `price_trend`, `market_hit_count`, `image_url`, `predicted_value` all exist |
+| provider `.select()` | **omitted every one of them** |
+| `WatchlistItem` type | `lastMarketPrice` / `priceTrend` declared, referenced NOWHERE |
+
+Three changes:
+
+- **The gap line.** `Now €62 · €12 over target`, with a trend arrow. Measured
+  on prod first: 5 of 20 rows carry a price, so the ABSENT case is the common
+  one and gets a sentence, never a `0` — an unpriced item is not a worthless
+  one, and this list feeds the paid alert. That sentence renders only when a
+  target is set: otherwise it would be a line on 15 of 20 cards saying nothing
+  actionable, and the card already prompts "Set target price".
+- **The priority dot became a left edge STRIPE.** An 8pt colour-only dot
+  encoded the field at a size you had to look for. A 3pt rule reads scrolling,
+  and it is what `app/offers.tsx` already does for the buying/selling role.
+  `paddingLeft` drops 14 → 12 so the text gutter is unchanged.
+- **"I Got It!" stopped being a filled accent block.** Four cards on screen
+  meant four teal buttons down the right edge, and that PERMANENT button was
+  louder than the conditional "Target met" row above it — the only urgent thing
+  on the card. Accent is now reserved for that row.
+
+**Four defects the post-completion audit caught in this very change**, all of
+them mine:
+
+1. **An outline button with no `borderWidth`.** `gotItBtn` had none — it never
+   needed one as a filled block — so passing `borderColor` alone would have
+   shipped a button with no visible edge.
+2. **A 1pt "stripe" is a tint.** `itemCard` has `borderWidth: 1`, so
+   `borderLeftColor` alone gave a 1pt edge nobody would notice — the dot's
+   problem in a new shape. It needs an explicit `borderLeftWidth: 3`.
+3. **`borderColor` is a four-edge shorthand** and the `highlighted` style set
+   it, erasing the stripe on exactly the card an alert had just pointed at.
+   Re-asserted in the same object — the trap this playbook already records for
+   the offers role stripe.
+4. **Two prices on one card in two currencies.** `formatPrice` FORMATS and
+   never converts, so the existing `Target:` line rendered a stored EUR value
+   labelled with the VIEWER's currency. Pre-existing, and invisible until a
+   market price and a gap were rendered beside it in the row's real currency.
+   Both now use `item.currency`, matching the member-listing row, which had the
+   comment explaining this all along.
+
+**The generalisable bit: "improve the UI" is not always a styling job.** Every
+style on this card already followed the playbook. What was wrong is that the
+screen had three columns of relevant data in the database and selected none of
+them — so the sweep worth doing was a `.select()`, not a `StyleSheet`.
+
+**Still open:** `image_url` is on the table, mapped by the provider on create,
+and **0 of 20 rows are populated**, so a thumbnail would give every card a
+placeholder — "a bordered card with no content reads as a component that failed
+to load". It needs a writer before it needs a renderer.
+
 ## `headerTitleAlign: 'left'` does NOTHING on iOS (2026-08-16)
 
 Reported as "marketplace is still aligned center as a title". The fix for

@@ -29,7 +29,14 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     const res = await withTimeout(
       supabase
         .from('watchlist_items')
-        .select('id,title,priority,owned,target_price,currency,category,notes,created_at,sort_order'),
+        // last_market_price / price_trend / last_checked_at added 2026-08-21.
+        // They existed in the table and in the WatchlistItem type and were
+        // selected by nothing, so `lastMarketPrice` was permanently undefined
+        // and the card could show a target with no way to tell how close it
+        // was — the one question a watchlist exists to answer. Measured on
+        // prod: 5 of 20 rows carry a market price, so the CARD must render
+        // "no price yet" rather than a zero (an absent price is not €0).
+        .select('id,title,priority,owned,target_price,currency,category,notes,created_at,sort_order,last_market_price,price_trend,last_checked_at'),
       SUPABASE_READ_TIMEOUT_MS,
       'listWatchlist',
     );
@@ -78,6 +85,9 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     notes?: string | null;
     created_at?: string | null;
     sort_order?: number | null;
+    last_market_price?: number | null;
+    price_trend?: string | null;
+    last_checked_at?: string | null;
   }[];
 
   return rows.map((r) => ({
@@ -93,6 +103,14 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     // Real column since 2026-07-31. NULL means the user has never reordered, so
     // 0 keeps them in the pre-existing priority-based ordering.
     sortOrder: typeof r.sort_order === 'number' ? r.sort_order : 0,
+    // `null` and `undefined` both mean "we have never priced this", which the
+    // card renders as a sentence. Never coerce to 0: a zero is a claim that
+    // the item is worthless, and this screen feeds the paid alert.
+    lastMarketPrice: typeof r.last_market_price === 'number' ? r.last_market_price : null,
+    priceTrend: (r.price_trend === 'up' || r.price_trend === 'down' || r.price_trend === 'stable')
+      ? r.price_trend
+      : null,
+    lastCheckedAt: r.last_checked_at ?? null,
   }));
 }
 

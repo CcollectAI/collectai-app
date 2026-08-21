@@ -527,30 +527,42 @@ function WatchlistTabScreen() {
 
     return (
       <View
+        // Priority is a LEFT EDGE STRIPE, not an 8pt dot. The dot encoded the
+        // field in colour alone at a size you had to look for; a 3pt rule down
+        // the card reads at a glance scrolling the list, and it is the pattern
+        // app/offers.tsx already uses for the buying/selling role.
+        //
+        // `borderColor` below is a FOUR-EDGE shorthand and would overwrite this,
+        // so borderLeftColor is re-asserted in the same object — the exact trap
+        // recorded in the offers section of docs/ui-playbook.md.
         style={[
           styles.itemCard,
-          { backgroundColor: colors.card, borderColor: colors.border },
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            borderLeftColor: priorityColor,
+          },
           // Border + tint only, no scroll-to. FlashList's scrollToIndex on a
           // freshly-mounted list races its own layout pass, and a mis-scroll is
           // worse than no scroll; the accent edge is enough to find the row.
-          highlighted && { borderColor: colors.accent, backgroundColor: colors.accent + '12' },
+          highlighted && {
+            borderColor: colors.accent,
+            // re-assert: borderColor above is a four-edge shorthand
+            borderLeftColor: priorityColor,
+            backgroundColor: colors.accent + '12',
+          },
         ]}
       >
         <View style={styles.itemHeader}>
           <View style={styles.itemTitleRow}>
-            {/* Priority is encoded in COLOUR ONLY — an 8pt dot with no label.
-                A bare <View> is invisible to a screen reader, so the field the
-                member set was announced nowhere, and it is unreadable to anyone
-                who cannot separate the danger/warning/success hues. `image` is
-                on the Android-supported role list; an iOS-only value here would
-                be a fatal exception, not a no-op. */}
-            <View
-              style={[styles.priorityDot, { backgroundColor: priorityColor }]}
-              accessible
-              accessibilityRole="image"
-              accessibilityLabel={`${item.priority} priority`}
-            />
-            <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={1}>
+            <Text
+              style={[styles.itemTitle, { color: colors.text }]}
+              numberOfLines={1}
+              // The stripe is decoration to a screen reader, so priority rides
+              // on the title — otherwise removing the dot would delete the
+              // only announcement of a field the member set.
+              accessibilityLabel={`${item.title}, ${item.priority} priority`}
+            >
               {item.title}
             </Text>
           </View>
@@ -569,11 +581,17 @@ function WatchlistTabScreen() {
             onPress={() => handleEditTarget(item)}
             style={styles.targetPressable}
             accessibilityRole="button"
-            accessibilityLabel={item.targetPrice !== null ? `Target: ${formatPrice(item.targetPrice, settings.currency)}. Tap to edit` : 'Set target price'}
+            accessibilityLabel={item.targetPrice !== null ? `Target: ${formatPrice(item.targetPrice, item.currency)}. Tap to edit` : 'Set target price'}
           >
             {item.targetPrice !== null ? (
               <Text style={[styles.targetPrice, { color: colors.text }]}>
-                Target: {formatPrice(item.targetPrice, settings.currency)}
+                {/* The ROW's own currency, not the viewer's. formatPrice
+                    FORMATS and never converts, so passing settings.currency
+                    relabels a stored EUR target as "$50" for a USD member —
+                    the same defect the member-listing row below already avoids,
+                    and it became visible the moment a market price and a gap
+                    were rendered beside it in the row's real currency. */}
+                Target: {formatPrice(item.targetPrice, item.currency)}
               </Text>
             ) : (
               <Text style={[styles.setTargetText, { color: colors.accent }]}>
@@ -583,6 +601,59 @@ function WatchlistTabScreen() {
             <Ionicons name="pencil-outline" size={16} color={colors.accent} />
           </AnimatedPressable>
         </View>
+
+        {/* HOW CLOSE AM I — the question a watchlist exists to answer, and the
+            card could not answer it: it showed a target and never a current
+            price. `last_market_price` was in the table and in the type and
+            selected by nothing (fixed 2026-08-21, watchlistProvider).
+
+            Measured on prod: 5 of 20 rows carry a price, so the absent case is
+            the COMMON one and gets a sentence, never a zero — an unpriced item
+            is not a worthless one, and this list feeds the paid alert. */}
+        {item.lastMarketPrice != null ? (
+          <View style={styles.marketRow}>
+            {item.priceTrend && item.priceTrend !== 'stable' ? (
+              <Ionicons
+                name={item.priceTrend === 'up' ? 'trending-up' : 'trending-down'}
+                size={14}
+                // Direction is NOT good/bad: for a buyer a falling price is
+                // good news, so the arrow carries the fact and the colour is
+                // left to the gap, which is the part with a judgment in it.
+                color={colors.muted}
+              />
+            ) : null}
+            <Text style={[styles.marketNow, { color: colors.text }]}>
+              Now {formatPrice(item.lastMarketPrice, item.currency)}
+            </Text>
+            {item.targetPrice != null ? (
+              <Text
+                style={[
+                  styles.marketGap,
+                  {
+                    color: item.lastMarketPrice <= item.targetPrice
+                      ? colors.success
+                      : colors.muted,
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {item.lastMarketPrice === item.targetPrice
+                  ? '· at your target'
+                  : item.lastMarketPrice < item.targetPrice
+                    ? `· ${formatPrice(item.targetPrice - item.lastMarketPrice, item.currency)} under target`
+                    : `· ${formatPrice(item.lastMarketPrice - item.targetPrice, item.currency)} over target`}
+              </Text>
+            ) : null}
+          </View>
+        ) : item.targetPrice != null ? (
+          // Only when a target IS set. Then the member is waiting on a number
+          // and "why has this not alerted me?" is a real question this answers.
+          // With no target it would be a line on 15 of 20 cards saying nothing
+          // actionable — the card already prompts "Set target price" above.
+          <Text style={[styles.marketNone, { color: colors.muted }]}>
+            No market price yet
+          </Text>
+        ) : null}
 
         {/* A MEMBER is selling this, right now.
             The marketplace and the watchlist were built separately and never
@@ -664,14 +735,21 @@ function WatchlistTabScreen() {
             <Ionicons name="cart-outline" size={16} color={colors.accent} />
             <Text style={[styles.shopBtnText, { color: colors.accent }]}>Shop</Text>
           </AnimatedPressable>
+          {/* Outline, not a filled accent block. Four cards on screen meant
+              four teal buttons down the right edge — the "wall of teal" the
+              2026-08-16 card pass was fighting — and worse, that PERMANENT
+              button was louder than the conditional "Target met" row above it,
+              which is the only thing on this card that is actually urgent.
+              Accent is now reserved for that row. Same two actions, same touch
+              targets; only the fill changed. */}
           <AnimatedPressable
-            style={[styles.gotItBtn, { backgroundColor: colors.accent }]}
+            style={[styles.gotItBtn, { borderColor: colors.accent }]}
             onPress={() => handleGotIt(item)}
             accessibilityRole="button"
             accessibilityLabel={`Mark ${item.title} as acquired`}
           >
-            <Ionicons name="checkmark-circle" size={18} color={colors.accentText} />
-            <Text style={[styles.gotItBtnText, { color: colors.accentText }]}>I Got It!</Text>
+            <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
+            <Text style={[styles.gotItBtnText, { color: colors.accent }]}>I Got It!</Text>
           </AnimatedPressable>
         </View>
       </View>
@@ -1214,7 +1292,14 @@ const styles = StyleSheet.create({
   itemCard: {
     borderRadius: radius.md,
     padding: 14,
+    // paddingLeft compensates for the 3pt stripe so the text gutter is
+    // identical to a card without one — 14 total either way.
+    paddingLeft: 12,
     borderWidth: 1,
+    // The priority stripe. 3pt reads as a rule; at the inherited 1pt it would
+    // have been a tint on the edge nobody notices, which is the dot's problem
+    // again in a different shape.
+    borderLeftWidth: 3,
     ...shadow.card,
   },
   itemHeader: {
@@ -1228,12 +1313,12 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
+  marketRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
+  marketNow: { fontSize: text.md, fontWeight: fontWeight.semibold },
+  // `flexShrink` so a long gap string truncates instead of pushing the price
+  // off the card.
+  marketGap: { fontSize: text.md, flexShrink: 1 },
+  marketNone: { fontSize: text.sm, marginTop: 6 },
   itemTitle: {
     fontSize: text.lg,
     fontWeight: fontWeight.semibold,
@@ -1460,6 +1545,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: radius.pill,
+    // Was a filled accent block, so it never needed a border. Now that it is
+    // an outline pill it does — `borderColor` alone draws nothing, which would
+    // have shipped a button with no visible edge at all.
+    borderWidth: 1,
     gap: 6,
   },
   gotItBtnText: {
