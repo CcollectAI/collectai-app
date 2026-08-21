@@ -1256,6 +1256,88 @@ type error was the only thing standing between that and a broken modal.
   `item_id`, so it would be a dead tap on 65% of the list — the
   `as Href`-hides-a-wrong-destination shape, arrived at from the data instead.
 
+## The item screen: the money had the least emphasis on it (2026-08-22)
+
+Reported as cluttered, too much grey space, colours pulling attention, and a
+hierarchy that does not follow monetary value. All four were right, and none of
+them was fixed by spacing.
+
+**The €6 was row 4 of a spec table** — the only MONETARY fact on the screen,
+at the same weight as "Condition" — while the card asking *"Price seems off?"*
+rendered no number at all. `ItemPriceSection` draws its price card only when
+`priceEstimate` is truthy, and for a catalogue-sourced value it is null, so
+that card collapsed to a bare data-collection prompt about a figure four rows
+above it in a DIFFERENT card.
+
+The value and its provenance chip now lead the valuation card. One card answers
+both halves of *"what is it worth, and is that right?"*. The chip moved rather
+than being copied — its own docstring is the reason: *"one component, so the
+item card and the detail screen cannot end up describing the same number two
+ways."* In EDIT mode the value stays in the details card, because there it is a
+form field among form fields.
+
+⚠️ Moving it meant widening the card's gate with `!isUnpriced(editableValue)`.
+A card that leads with a figure must render whenever there IS one, and the old
+gate only fired on an ML band — which this item does not have.
+
+**Sell was buried and Share had the slot.** The action row is Edit / Share /
+List for Sale, and the third is gated by `SELLING_ENABLED = false` — it lists to
+EXTERNAL marketplaces. The LIVE P2P sell sat near the bottom, below the price
+feedback: a data-collection ask outranking the thing that makes money. Now
+**Edit · Sell**, and Share is a 30×30 icon overlaid top-right on the gallery
+with the marketplace tile's exact metrics.
+
+**Share could not go in the nav header**, which is the obvious place: that
+cluster is bell/bubble/gear, and a fourth icon stops reading as a cluster and
+starts reading as a toolbar — the reason the avatar was removed from it.
+
+### 48 accent usages is why nothing read as primary
+
+Counted across the screen and its components. Teal had become the default
+decoration rather than a signal, which is "three equal controls read as three
+equal decisions" in colour form. One tier per job:
+
+| tier | treatment | what gets it |
+|---|---|---|
+| primary | filled accent | **Sell** — one per screen |
+| secondary | outline / accent text | Edit, "I sold it for…", catalogue fill |
+| tertiary | muted | Share, Refresh, the feedback heading |
+
+**The feedback heading was a `text`-coloured 14/600 header** — the title of the
+card — which is how a request for help ended up outranking the figure it is
+about. Muted, and it now follows the number instead of introducing it.
+
+### Two bugs found while doing it
+
+**A destructuring default cannot express "or blank".** `condition = "Not set"`
+fires only on `undefined`, so a route param arriving as `""` kept the empty
+string and rendered a label with NOTHING beside it — while Collection one row
+above looked fine, because its picker writes the literal "Not set". The backfill
+compared against `"Not set"` too, so `""` never recovered. Normalised once, for
+all four params.
+
+**`feedbackBtnTextWhite` was still `#FFFFFF`, with the comment "Button text on
+brand background"** — verbatim the defect this playbook records as FIXED in
+this exact file on 2026-08-19. One instance in the file was fixed (the
+sale-price submit, now `accentText`); this second one was missed.
+`check:brand-colors` passes on it because the fill and the colour live in
+different objects, outside its ±window — the same false negative that section
+already describes the gate having, in the same file. **When a gate is widened
+after a miss, re-run it against every instance in the file it missed, not just
+the one you fixed.**
+
+### And two in my own diff
+
+1. **A `useCallback` spliced into the body of a `useEffect`.** The insertion
+   anchor matched inside an effect, so a hook ended up inside a callback — a
+   rules-of-hooks violation `tsc` cannot see. It surfaced only as "cannot find
+   name" at the JSX, several steps later.
+2. **A dead-style detector that reported everything as dead.** `//.*` compiled
+   with `re.S` makes `.` match newlines, so stripping line comments ate the rest
+   of each file. It "found" 13 dead styles in a file with one. A checker written
+   in a hurry is a checker that lies — the same lesson as the `check:unrendered`
+   gate being wrong in both directions.
+
 ## `headerTitleAlign: 'left'` does NOTHING on iOS (2026-08-16)
 
 Reported as "marketplace is still aligned center as a title". The fix for

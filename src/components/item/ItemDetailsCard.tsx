@@ -8,7 +8,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
-import { ValueSourceChip } from '@/components/ValueSourceChip';
 import { formatPrice, getCurrencySymbol, UNPRICED_LABEL, isUnpriced, toPriceNum } from '@/lib/format';
 import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { CategorySpecificSection } from '@/components/CategorySpecificSection';
@@ -28,7 +27,6 @@ interface ItemDetailsCardProps {
   /** `v_item_values_v1.value_source` — where the figure beside it came from.
    *  Undefined while the row loads, or when the view could not answer; the
    *  chip renders nothing rather than claiming a provenance. */
-  valueSource?: string | null;
   isGradingEligible: boolean;
   categorySlug: string;
   categoryIdMap: Record<string, string>;
@@ -68,7 +66,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
   const {
     loading,
     isDraft, isEditing,
-    editableName, editableCategory, editableCollection, editableCondition, editableValue, valueSource,
+    editableName, editableCategory, editableCollection, editableCondition, editableValue,
     isGradingEligible, categorySlug, categoryIdMap,
     itemAttributes, taxonomyVersion, subtypeId, itemCollections,
     itemId, itemSizeValue, sizeSystem, sizeSaving, notes,
@@ -182,7 +180,16 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
         )}
       </View>
 
-      {/* Value row */}
+      {/* Value row — EDIT MODE ONLY.
+          In read mode the figure moved to the valuation card below, where the
+          "Help improve our estimates" prompt lives. It used to sit here, four
+          rows into a spec table at label/value weight, while the card asking
+          whether it was wrong rendered it nowhere — so "Price seems off"
+          referred to a number in a different card. It is also the only
+          MONETARY fact on the screen and had the least emphasis of anything on
+          it. Editing is different: there it is a form field among the other
+          form fields, and belongs with them. */}
+      {isDraft || isEditing ? (
       <View
         style={styles.row}
         accessibilityLabel={
@@ -228,17 +235,12 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
           </Text>
         )}
       </View>
-
-      {/* WHERE that number came from. Not decoration: for the 40+ categories
-          with no sold-comp source the figure above IS somebody's guess, and
-          until 2026-08-19 it was rendered exactly like a comp-backed price.
-          Hidden while editing — the member is replacing the number, so its
-          old provenance is about to stop being true. */}
-      {!isDraft && !isEditing && !isUnpriced(editableValue) && valueSource ? (
-        <View style={styles.sourceRow}>
-          <ValueSourceChip source={valueSource} />
-        </View>
       ) : null}
+
+      {/* The provenance chip moved WITH the number to the valuation card.
+          Its own docstring is the reason: "one component, so the item card and
+          the detail screen cannot end up describing the same number two ways"
+          — leaving a copy here would have been exactly that. */}
 
       {/* Everything captured about the item, as rows in THIS card, directly
           under the value. The screen used to render this component again
@@ -309,11 +311,6 @@ const styles = StyleSheet.create({
   },
   // Right-aligned under the figure it describes, so the eye reads
   // number-then-provenance rather than treating it as a separate field.
-  sourceRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 4,
-  },
   label: {
     fontSize: text.md,
   },

@@ -55,7 +55,12 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
   const { t } = useTranslation();
   return (
     <View style={[s.feedbackBlock, { borderTopColor: theme.border }]}>
-      <Text style={[s.feedbackHeader, { color: theme.text }]} accessibilityRole="header">
+      {/* Muted and small: the VALUE is now directly above this, so this line
+          is a follow-up question about that number rather than the title of a
+          section. As a `text`-coloured 14/600 header it read as the heading of
+          the whole card, which is how a request for help ended up outranking
+          the figure it is about. */}
+      <Text style={[s.feedbackHeader, { color: theme.muted }]} accessibilityRole="header">
         Help improve our estimates
       </Text>
 
@@ -116,13 +121,24 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
         </View>
       ) : (
         <View style={s.feedbackButtonsRow}>
+          {/* Outline, not a filled accent block. This screen has ONE primary
+              action — Sell — and a filled data-collection button beside it made
+              two. Same target, same label, one tier down.
+
+              It also retires `feedbackBtnTextWhite`, a hardcoded `#FFFFFF`
+              whose own comment read "Button text on brand background" — the
+              exact defect docs/ui-playbook.md records as fixed in THIS file on
+              2026-08-19. One instance was fixed (the sale-price submit, which
+              uses `accentText`); this second one was missed, and
+              `check:brand-colors` cannot see it because the fill and the colour
+              sit in different objects, outside its window. */}
           <Pressable
             onPress={() => onShowSalePriceInput(true)}
-            style={[s.feedbackBtn, { backgroundColor: theme.accent }]}
+            style={[s.feedbackBtn, { borderWidth: 1, borderColor: theme.accent }]}
             accessibilityRole="button"
             accessibilityLabel={t('price_feedback.report_a11y')}
           >
-            <Text style={s.feedbackBtnTextWhite}>I sold it for...</Text>
+            <Text style={[s.feedbackBtnText, { color: theme.accent }]}>I sold it for...</Text>
           </Pressable>
           <Pressable
             onPress={onPriceDisagree}
@@ -176,11 +192,6 @@ const s = StyleSheet.create({
   feedbackBtnText: {
     fontSize: 13,
     fontWeight: "500",
-  },
-  feedbackBtnTextWhite: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#FFFFFF", // Button text on brand background
   },
   salePriceInputRow: {
     flexDirection: "row",

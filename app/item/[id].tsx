@@ -43,7 +43,8 @@ import { radius, text, fontWeight, gap, shadow } from "@/theme/tokens";
 import { collectorsApi } from "@/api/collectorsApi";
 import { enrichOnDemand } from "@/api/marketplaceApi";
 import logger from "@/utils/logger";
-import { formatPrice, getCurrencySymbol } from "@/lib/format";
+import { formatPrice, getCurrencySymbol, isUnpriced, UNPRICED_LABEL } from "@/lib/format";
+import { ValueSourceChip } from "@/components/ValueSourceChip";
 import type { CurrencyCode } from "@/data/types";
 import { AnimatedPressable } from "@/motion";
 import { isBuildableCategory } from "@/constants/buildStepTemplates";
@@ -1062,7 +1063,6 @@ function ItemDetailScreen() {
             editableCollection={editableCollection}
             editableCondition={editableCondition}
             editableValue={editableValue}
-            valueSource={savedCore?.valueSource ?? null}
             isGradingEligible={isGradingEligible}
             categorySlug={categorySlug}
             categoryIdMap={CATEGORY_ID_MAP}
@@ -1171,8 +1171,38 @@ function ItemDetailScreen() {
               (docs/ui-playbook.md, 2026-08-17). The feedback prompt and the
               refresh bar count as content — they answer the same "what is this
               worth" question — which is why a saved item still gets the card. */}
-          {(priceEstimate || q10 || q50 || q90 || confidence || (!isDraft && id)) ? (
+          {/* `!isUnpriced(editableValue)` added 2026-08-22: the card now leads
+              with the figure, so a priced item must get the card even when the
+              ML band is absent — which is the common case (this item shows a
+              catalogue-sourced EUR 6 and no band). */}
+          {(priceEstimate || q10 || q50 || q90 || confidence || !isUnpriced(editableValue) || (!isDraft && id)) ? (
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]} accessibilityRole="summary" accessibilityLabel={t('item_detail.valuation_a11y')}>
+            {/* THE figure, and the card's lead.
+                It used to be row 4 of the spec table above at label/value
+                weight — the only MONETARY fact on the screen with the least
+                emphasis on it — while THIS card asked "Price seems off?" about
+                a number it did not render. One card now answers both halves of
+                "what is it worth, and is that right?".
+                The provenance chip comes with it, never a second copy: for the
+                40+ categories with no sold-comp source the figure IS somebody's
+                guess, and the chip is what says so. */}
+            {!isDraft && !isEditing ? (
+              <View style={styles.valuationLead}>
+                {isUnpriced(editableValue) ? (
+                  <Text style={[styles.valuationUnpriced, { color: theme.muted }]}>
+                    {UNPRICED_LABEL}
+                  </Text>
+                ) : (
+                  <>
+                    <Text style={[styles.valuationAmount, { color: theme.text }]}>
+                      {formatPrice(toNum(editableValue), settings.currency)}
+                    </Text>
+                    {savedCore?.valueSource ? <ValueSourceChip source={savedCore.valueSource} /> : null}
+                  </>
+                )}
+              </View>
+            ) : null}
+
             {/* Price display — PriceCard, legacy bands, confidence, explanation, scarcity, comps */}
             <ItemPriceSection
               priceEstimate={priceEstimate}
@@ -1533,6 +1563,14 @@ export default function ItemDetailScreenWithBoundary() {
 }
 
 const styles = StyleSheet.create({
+  valuationLead: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
+  // The money leads. 2xl/extrabold is the page-title spec, used here because
+  // this figure is what the screen is about — the item's NAME is the title,
+  // and its VALUE is the headline.
+  valuationAmount: { fontSize: text['2xl'], fontWeight: fontWeight.extrabold, lineHeight: 30 },
+  // An absence of data is not a headline: muted and body-sized, so "Not yet
+  // priced" does not shout the way a real figure should.
+  valuationUnpriced: { fontSize: text.md, fontWeight: fontWeight.semibold },
   // Same metrics as app/listings.tsx `shareBtn`, so the affordance is in the
   // same place and the same size wherever a member meets it.
   galleryShareBtn: {
