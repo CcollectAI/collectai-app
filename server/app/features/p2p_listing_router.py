@@ -163,6 +163,23 @@ class ListingCreate(BaseModel):
     )
 
 
+def _gallery(hero: Optional[str], gallery: Optional[list]) -> List[str]:
+    """Hero-first, de-duplicated, never containing a NULL.
+
+    `image_url` and the gallery come from different expressions, so the hero is
+    not guaranteed to be the first `item_images` row (an item whose own
+    `image_url` is set outranks it). Prepending and then filtering keeps one
+    ordering that both readers agree on.
+    """
+    out: List[str] = []
+    if hero:
+        out.append(hero)
+    for u in gallery or []:
+        if u and u != hero:
+            out.append(u)
+    return out
+
+
 class ListingOut(BaseModel):
     id: str
     user_id: str
@@ -191,6 +208,12 @@ class ListingOut(BaseModel):
     # convenience becomes a misrepresentation. TCGplayer/Cardmarket show
     # catalog scans openly; they never imply it is the seller's copy.
     image_is_catalog: bool = False
+    # The buyer-facing gallery, hero FIRST. Sourced from `item_images` ordered
+    # by `position`, which is the order the seller uploaded in (§8d: 4+ photos
+    # sell ~3.5x faster). Always contains `image_url` as element 0 when there
+    # is one, so a caller that only knows about `image_url` and a caller that
+    # reads the gallery can never disagree about the cover photo.
+    image_urls: List[str] = Field(default_factory=list)
     # ── Seller credibility ────────────────────────────────────────────────
     # Tenure and collection size: meaningful in a collector community, because a
     # 400-item collection maintained over a year is hard to fake cheaply. These
@@ -1390,8 +1413,29 @@ async def get_listing(
                    l.condition_label, l.category, l.canonical_key,
                    l.ships_from, l.shipping_cost, l.status, l.created_at,
                    l.delisted_at,
-                   COALESCE(i.image_url, ci.image_url) AS image_url,
-                   (i.image_url IS NULL AND ci.image_url IS NOT NULL) AS image_is_catalog,
+                   -- item_images sits BETWEEN the item thumbnail and the
+                   -- catalogue. POST /items/{id}/images does not write
+                   -- items.image_url, so without this a seller who uploaded
+                   -- photos still got the catalogue stock shot on their own
+                   -- listing, labelled "Stock photo" — the exact
+                   -- misrepresentation §1h says to avoid, caused by us.
+                   COALESCE(
+                     i.image_url,
+                     (SELECT im.image_url FROM public.item_images im
+                       WHERE im.item_id = l.item_id
+                       ORDER BY im.position, im.created_at LIMIT 1),
+                     ci.image_url
+                   ) AS image_url,
+                   (i.image_url IS NULL
+                    AND NOT EXISTS (SELECT 1 FROM public.item_images im
+                                     WHERE im.item_id = l.item_id)
+                    AND ci.image_url IS NOT NULL) AS image_is_catalog,
+                   COALESCE(
+                     (SELECT array_agg(im.image_url ORDER BY im.position, im.created_at)
+                        FROM public.item_images im
+                       WHERE im.item_id = l.item_id AND im.image_url IS NOT NULL),
+                     ARRAY[]::text[]
+                   ) AS gallery_urls,
                    p.display_name, p.username, p.created_at AS seller_since,
                    -- Scalar subqueries, not GROUP BY: joining items and
                    -- listings in one query would multiply rows and inflate
@@ -1483,6 +1527,13 @@ async def get_listing(
         canonical_key=r["canonical_key"], ships_from=r["ships_from"],
         shipping_cost=float(r["shipping_cost"]) if r["shipping_cost"] is not None else None,
         image_url=r["image_url"],
+        # Hero FIRST, then the rest of the gallery with the hero removed so it
+        # cannot appear twice. Built here rather than in SQL because the hero
+        # has its own COALESCE precedence (item thumbnail > item_images >
+        # catalogue) and re-deriving that in an aggregate is how the two
+        # numbers drift. Falls back to [image_url] so a listing with no
+        # item_images row still returns a one-frame gallery instead of [].
+        image_urls=_gallery(r["image_url"], r["gallery_urls"]),
         image_is_catalog=bool(r["image_is_catalog"]),
         seller_name=r["display_name"] or r["username"],
         seller_profile_public=bool(_row_get(r, "seller_profile_public")),

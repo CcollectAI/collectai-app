@@ -39,6 +39,11 @@ export type P2PListing = {
    *  Must be labelled in the UI — a stock photo passed off as the actual item
    *  hides condition, which is the one thing a second-hand buyer needs. */
   image_is_catalog: boolean;
+  /** Buyer gallery, hero first. Server guarantees image_url is element 0 when
+   *  there is one, so this and `image_url` can never disagree about the cover.
+   *  Optional on the type because an older build's cached response has no such
+   *  field — read it with a fallback, never assume length >= 1. */
+  image_urls?: string[];
   /** Seller credibility. No transactions exist in Stage 1, so these are the
    *  signals we genuinely have — deliberately NOT ratings, which would be
    *  gameable without a payment record and would imply vetting we don't do.

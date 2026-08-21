@@ -23,6 +23,7 @@ import {
   Alert,
   TextInput,
   ActivityIndicator,
+  FlatList,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
@@ -128,6 +129,9 @@ function ListingDetailScreen() {
   // `Alert.prompt` is iOS-only, so a free-text amount was impossible inside an
   // Alert. Moving to a sheet is what makes "-10%" legible AND lets a buyer
   // stray from the presets.
+  // Gallery. Width is measured (onLayout) rather than derived from the gutter.
+  const [galleryWidth, setGalleryWidth] = useState(0);
+  const [galleryIndex, setGalleryIndex] = useState(0);
   const [offerOpen, setOfferOpen] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
 
@@ -218,6 +222,16 @@ function ListingDetailScreen() {
     setPriceDraft(String(listing.price));
     setPriceOpen(true);
   }, [listing]);
+
+  // Hero first, and never empty when there is any image at all. The server
+  // already guarantees that ordering; the `image_url` fallback is for a
+  // response cached by a build that predates `image_urls`, where reading only
+  // the array would blank a listing that has a perfectly good photo.
+  const photos = useMemo<string[]>(() => {
+    const many = listing?.image_urls?.filter(Boolean) ?? [];
+    if (many.length > 0) return many;
+    return listing?.image_url ? [listing.image_url] : [];
+  }, [listing?.image_urls, listing?.image_url]);
 
   const parsedNewPrice = useMemo(() => {
     // Accept a comma decimal separator: the app ships in 7 currencies and most
@@ -338,10 +352,96 @@ function ListingDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={animatedStyle}>
-          {listing.image_url ? (
+          {/* GALLERY. `image_urls` is hero-first and de-duplicated server-side;
+              the fallback keeps this working against an older cached response
+              that only carried `image_url`. Never assume length >= 1. */}
+          {photos.length > 1 ? (
+            <View onLayout={(e) => setGalleryWidth(e.nativeEvent.layout.width)}>
+              {/* Overlays (counter, stock tag) are absolutely positioned and
+                  `stockTag` anchors to `bottom`. They must sit inside a box
+                  that is EXACTLY the image, or the dots row below pushes the
+                  wrapper taller and the tag lands on the dots instead of the
+                  photo. */}
+              <View>
+              {galleryWidth > 0 ? (
+                <FlatList
+                  data={photos}
+                  keyExtractor={(uri, idx) => `${uri}-${idx}`}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  // Width is MEASURED, not derived from the 16pt gutter: a
+                  // hand-picked page width is right until someone changes the
+                  // padding, and a paging list whose page width is off by a
+                  // few points drifts a little further out of alignment on
+                  // every swipe.
+                  getItemLayout={(_, index) => ({
+                    length: galleryWidth,
+                    offset: galleryWidth * index,
+                    index,
+                  })}
+                  onMomentumScrollEnd={(e) => {
+                    const idx = Math.round(e.nativeEvent.contentOffset.x / galleryWidth);
+                    setGalleryIndex(Math.max(0, Math.min(idx, photos.length - 1)));
+                  }}
+                  renderItem={({ item: uri }) => (
+                    <Image
+                      source={{ uri }}
+                      style={[styles.hero, { width: galleryWidth }]}
+                      contentFit="cover"
+                      transition={150}
+                    />
+                  )}
+                />
+              ) : (
+                // First pass, before onLayout has reported: render the hero at
+                // full width so the screen never flashes an empty box.
+                <Image
+                  source={{ uri: photos[0] }}
+                  style={styles.hero}
+                  contentFit="cover"
+                  transition={150}
+                />
+              )}
+
+              <View style={[styles.galleryCount, { backgroundColor: colors.background + "E6" }]}>
+                <Text style={[styles.galleryCountText, { color: colors.text }]}>
+                  {galleryIndex + 1}/{photos.length}
+                </Text>
+              </View>
+
+              {listing.image_is_catalog ? (
+                <View style={[styles.stockTag, { backgroundColor: colors.background + "E6" }]}>
+                  <Text style={[styles.stockTagText, { color: colors.muted }]}>
+                    Catalog photo — not the seller&apos;s item
+                  </Text>
+                </View>
+              ) : null}
+              </View>
+
+              <View style={styles.galleryDots} accessibilityRole="text"
+                    accessibilityLabel={`Photo ${galleryIndex + 1} of ${photos.length}`}>
+                {photos.map((uri, idx) => (
+                  <View
+                    key={`dot-${uri}-${idx}`}
+                    style={[
+                      styles.galleryDot,
+                      {
+                        backgroundColor: idx === galleryIndex ? colors.accent : colors.border,
+                        // The active dot is WIDER as well as tinted: colour
+                        // alone is the encoding the watchlist priority dot got
+                        // wrong, and it fails the same way here.
+                        width: idx === galleryIndex ? 18 : 6,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+            </View>
+          ) : photos.length === 1 ? (
             <View>
               <Image
-                source={{ uri: listing.image_url }}
+                source={{ uri: photos[0] }}
                 style={styles.hero}
                 contentFit="cover"
                 transition={150}
@@ -352,8 +452,7 @@ function ListingDetailScreen() {
                   stock photo here is the one that actually misleads. Per
                   ListingOut.image_is_catalog: "a stock photo passed off as the
                   actual item hides condition, which is the one thing a
-                  second-hand buyer needs to see". Found by walking a listing
-                  whose seller had no photo of their own. */}
+                  second-hand buyer needs to see". */}
               {listing.image_is_catalog ? (
                 <View
                   style={[
@@ -923,6 +1022,24 @@ const styles = StyleSheet.create({
   muted: { fontSize: textToken.md },
   content: { padding: 16, paddingBottom: 48, gap: 10 },
   hero: { width: "100%", aspectRatio: 1, borderRadius: radius.md },
+  galleryCount: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+  },
+  // `sm`, not `xs` — 10pt is banned for anything a user reads.
+  galleryCountText: { fontSize: textToken.sm, fontWeight: fontWeight.semibold },
+  galleryDots: {
+    flexDirection: "row",
+    alignSelf: "center",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 8,
+  },
+  galleryDot: { height: 6, borderRadius: 3 },
   // Same treatment as the grid tile in app/listings.tsx, sized up for a
   // full-width hero so it is legible rather than decorative.
   stockTag: {
@@ -933,7 +1050,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radius.xs,
   },
-  stockTagText: { fontSize: 11, fontWeight: fontWeight.semibold },
+  stockTagText: { fontSize: textToken.sm, lineHeight: 17, fontWeight: fontWeight.semibold },
   heroEmpty: { alignItems: "center", justifyContent: "center" },
   banner: {
     flexDirection: "row",

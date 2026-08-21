@@ -51,6 +51,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
+/** Buyer-facing gallery cap. See the photoUris comment for why 8. */
+const MAX_PHOTOS = 8;
+
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { showActionSheet } from '@/hooks/useActionSheetPicker';
@@ -115,8 +118,17 @@ function SellNewScreen() {
     () => (fromCollection && itemCondition ? itemCondition : null),
   );
   const [description, setDescription] = useState('');
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  // The item's existing photo. NOT copied into `photoUri`: that one means "a
+  // Up to MAX_PHOTOS local files to upload after the listing exists.
+  //
+  // §8d: listings with 4+ photos sell ~3.5x faster than single-photo ones, and
+  // the single `photoUri` this replaced was named there as the CLIENT limit —
+  // `item_images` has taken many since 20260801_fix_item_images_schema.sql
+  // (§1f: shape, RLS and a probe INSERT all verified; the 0 rows were only
+  // because nothing had ever uploaded). 8 sits past the 4+ threshold that
+  // drives the number without turning the flow into work on a phone, and well
+  // inside the server's 30-uploads/hour rate limit.
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
+  // The item's existing photo. NOT copied into `photoUris`: those mean "new
   // new local file to upload after creation", and re-uploading a photo the item
   // already has would duplicate the row in `item_images`. The listing inherits
   // this image from the item server-side (`P2PListing.image_url`), so here it
@@ -196,15 +208,26 @@ function SellNewScreen() {
     // muscle memory rather than a new decision on a new screen.
     showActionSheet('Add Photo', ['Take Photo', 'Choose from Library'], async (index) => {
       try {
+        const remaining = MAX_PHOTOS - photoUris.length;
+        if (remaining <= 0) return;
         // Not `as const` — ImagePickerOptions wants a MUTABLE MediaType[].
         const opts: ImagePicker.ImagePickerOptions = {
           mediaTypes: ['images'], quality: 0.9, allowsEditing: false,
         };
+        // The camera returns one shot; the library takes several at once and
+        // is capped to what is still free, so the picker cannot hand back more
+        // than the strip will keep.
         const res = index === 0
           ? await ImagePicker.launchCameraAsync(opts)
-          : await ImagePicker.launchImageLibraryAsync(opts);
-        if (res.canceled || !res.assets?.[0]?.uri) return;
-        setPhotoUri(res.assets[0].uri);
+          : await ImagePicker.launchImageLibraryAsync({
+              ...opts,
+              allowsMultipleSelection: true,
+              selectionLimit: remaining,
+            });
+        if (res.canceled || !res.assets?.length) return;
+        const picked = res.assets.map((a) => a.uri).filter(Boolean).slice(0, remaining);
+        if (!picked.length) return;
+        setPhotoUris((prev) => [...prev, ...picked].slice(0, MAX_PHOTOS));
       } catch (e) {
         // logger.error, not warn — warn is stripped in release builds, which is
         // where a silently missing photo would matter most.
@@ -212,7 +235,7 @@ function SellNewScreen() {
         showToast({ message: 'Could not open the camera or library.', type: 'error' });
       }
     });
-  }, [settings.hapticsEnabled, showToast]);
+  }, [settings.hapticsEnabled, showToast, photoUris.length]);
 
   const pickCategory = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -254,19 +277,38 @@ function SellNewScreen() {
         currency: settings.currency,
         condition_label: condition ?? undefined,
         description: description.trim() || undefined,
-        photo_catalogue_consent: photoUri ? consent : false,
+        photo_catalogue_consent: photoUris.length > 0 ? consent : false,
       });
 
       // Uploaded after creation because that is when item_id exists. A failure
       // here must NOT read as "listing failed" — the listing is live either
       // way, so it degrades to a warning naming what to do next.
-      if (photoUri && listing.item_id) {
-        try {
-          await collectorsApi.uploadItemImage(listing.item_id, photoUri, 'front');
-        } catch (e) {
-          logger.error('[sell/new] photo upload failed:', e);
+      if (photoUris.length > 0 && listing.item_id) {
+        // SEQUENTIAL, deliberately — not Promise.all. `item_images.position` is
+        // assigned server-side by append order, and that order IS the buyer's
+        // gallery order, so racing the uploads would shuffle the seller's
+        // photos. A gallery whose first photo is arbitrary is worse than one
+        // photo, because the first frame is what the buyer judges the item on.
+        let uploaded = 0;
+        for (let i = 0; i < photoUris.length; i += 1) {
+          try {
+            // Only the first is labelled `front`; it is the one the listing
+            // thumbnail and every existing single-image reader falls back to.
+            await collectorsApi.uploadItemImage(
+              listing.item_id, photoUris[i], i === 0 ? 'front' : undefined,
+            );
+            uploaded += 1;
+          } catch (e) {
+            // Keep going. One failed frame must not cost the others — the
+            // listing is already live either way.
+            logger.error('[sell/new] photo upload failed (index %s):', i, e);
+          }
+        }
+        if (uploaded < photoUris.length) {
           showToast({
-            message: 'Listed, but the photo did not upload. Add it from the listing.',
+            message: uploaded === 0
+              ? 'Listed, but the photos did not upload. Add them from the listing.'
+              : `Listed with ${uploaded} of ${photoUris.length} photos. Add the rest from the listing.`,
             type: 'warning',
           });
         }
@@ -289,7 +331,7 @@ function SellNewScreen() {
     } finally {
       setSaving(false);
     }
-  }, [canList, parsedPrice, title, categorySlug, condition, description, photoUri,
+  }, [canList, parsedPrice, title, categorySlug, condition, description, photoUris,
       consent, settings.currency, settings.hapticsEnabled, showToast, router]);
 
   /** A tappable field that opens an action sheet. Same visual weight as the
@@ -376,59 +418,97 @@ function SellNewScreen() {
               what the listing carries, so this section stops demanding one and
               becomes "use a different shot if you want". */}
           <Text style={[styles.label, { color: colors.text }]}>Photo</Text>
-          {!photoUri && inheritedImage ? (
+          {photoUris.length === 0 && inheritedImage ? (
             <View>
               <Image source={{ uri: inheritedImage }} style={styles.photo} resizeMode="cover" />
               <View style={styles.photoActions}>
                 <AnimatedPressable
                   onPress={pickPhoto}
                   accessibilityRole="button"
-                  accessibilityLabel="Use a different photo for this listing"
+                  accessibilityLabel="Add your own photos for this listing"
                 >
-                  <Text style={[styles.link, { color: colors.accent }]}>Use a different photo</Text>
+                  <Text style={[styles.link, { color: colors.accent }]}>Add your own photos</Text>
                 </AnimatedPressable>
               </View>
               <Text style={[styles.fine, { color: colors.muted }]}>
-                Your item&apos;s photo. The listing uses this unless you pick another.
+                Your item&apos;s photo. The listing uses this unless you add your own.
               </Text>
             </View>
-          ) : photoUri ? (
+          ) : photoUris.length > 0 ? (
             <View>
-              <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
-              <View style={styles.photoActions}>
-                <AnimatedPressable
-                  onPress={pickPhoto}
-                  accessibilityRole="button"
-                  accessibilityLabel="Choose a different photo"
-                >
-                  <Text style={[styles.link, { color: colors.accent }]}>Change</Text>
-                </AnimatedPressable>
-                <AnimatedPressable
-                  onPress={() => { setPhotoUri(null); setConsent(false); }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Remove the photo"
-                >
-                  <Text style={[styles.link, { color: colors.muted }]}>Remove</Text>
-                </AnimatedPressable>
-              </View>
+              {/* The FIRST photo is the hero: it is the listing thumbnail and
+                  the frame a buyer judges the item on, so it gets the size. */}
+              <Image source={{ uri: photoUris[0] }} style={styles.photo} resizeMode="cover" />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.photoStrip}
+              >
+                {photoUris.map((uri, idx) => (
+                  <View key={`${uri}-${idx}`} style={styles.thumbWrap}>
+                    <Image source={{ uri }} style={styles.thumb} resizeMode="cover" />
+                    {idx === 0 ? (
+                      <View style={[styles.thumbBadge, { backgroundColor: colors.accent }]}>
+                        <Text style={[styles.thumbBadgeText, { color: colors.accentText }]}>
+                          Cover
+                        </Text>
+                      </View>
+                    ) : null}
+                    <AnimatedPressable
+                      onPress={() => {
+                        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                        // Computed OUTSIDE the updater. A state updater has to
+                        // be pure — React may invoke it twice (StrictMode) —
+                        // and calling setConsent from inside one is how you get
+                        // a double-fired side effect that only misbehaves in
+                        // dev, or only in prod.
+                        const next = photoUris.filter((_, k) => k !== idx);
+                        setPhotoUris(next);
+                        // Consent is about photos the seller supplied; with
+                        // none left there is nothing to consent about.
+                        if (next.length === 0) setConsent(false);
+                      }}
+                      style={styles.thumbRemove}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove photo ${idx + 1} of ${photoUris.length}`}
+                    >
+                      <Ionicons name="close-circle" size={20} color={colors.text} />
+                    </AnimatedPressable>
+                  </View>
+                ))}
+                {photoUris.length < MAX_PHOTOS ? (
+                  <AnimatedPressable
+                    onPress={pickPhoto}
+                    style={[styles.addTile, { borderColor: colors.border, backgroundColor: colors.card }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add another photo. ${photoUris.length} of ${MAX_PHOTOS} added`}
+                  >
+                    <Ionicons name="add" size={22} color={colors.accent} />
+                  </AnimatedPressable>
+                ) : null}
+              </ScrollView>
+              <Text style={[styles.fine, { color: colors.muted }]}>
+                {photoUris.length} of {MAX_PHOTOS} photos. The first is the cover.
+              </Text>
             </View>
           ) : (
             <AnimatedPressable
               onPress={pickPhoto}
               style={[styles.photoEmpty, { borderColor: colors.border, backgroundColor: colors.card }]}
               accessibilityRole="button"
-              accessibilityLabel="Add a photo of the item"
+              accessibilityLabel="Add photos of the item"
             >
               <Ionicons name="camera-outline" size={22} color={colors.muted} />
               <Text style={[styles.photoEmptyText, { color: colors.muted }]}>
-                Add a photo of the actual item
+                Add photos of the actual item
               </Text>
             </AnimatedPressable>
           )}
 
           {/* Only once there IS a photo — asking about catalogue reuse before
               one exists is asking about nothing. */}
-          {photoUri ? (
+          {photoUris.length > 0 ? (
             <AnimatedPressable
               onPress={() => {
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -437,7 +517,7 @@ function SellNewScreen() {
               style={[styles.consent, { borderColor: colors.border }]}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: consent }}
-              accessibilityLabel="Allow this photo to be used as a catalogue reference picture"
+              accessibilityLabel="Allow your cover photo to be used as a catalogue reference picture"
             >
               <Ionicons
                 name={consent ? 'checkbox' : 'square-outline'}
@@ -445,8 +525,9 @@ function SellNewScreen() {
                 color={consent ? colors.accent : colors.muted}
               />
               <Text style={[styles.consentText, { color: colors.muted }]}>
-                Let Sparrow use this photo as a reference picture for this product,
-                shown to other members. Optional, and you can turn it off later.
+                Let Sparrow use your cover photo as a reference picture for this
+                product, shown to other members. Optional, and you can turn it
+                off later.
               </Text>
             </AnimatedPressable>
           ) : null}
@@ -648,6 +729,26 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 34,
   },
   photoEmptyText: { fontSize: textToken.sm },
+  // Horizontal strip under the hero. A horizontal scroller nested in the
+  // screen's vertical one is fine — different axes, no gesture conflict.
+  photoStrip: { flexDirection: 'row', gap: 8, marginTop: 8, paddingRight: 4 },
+  thumbWrap: { width: 64, height: 64 },
+  thumb: { width: 64, height: 64, borderRadius: radius.sm },
+  // The remove control sits ON the thumbnail, so it needs hitSlop rather than
+  // padding: padding would shrink the visible glyph inside a 64pt tile.
+  thumbRemove: { position: 'absolute', top: -6, right: -6 },
+  thumbBadge: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    borderBottomLeftRadius: radius.sm, borderBottomRightRadius: radius.sm,
+    alignItems: 'center', paddingVertical: 2,
+  },
+  // `sm`, not `xs`: 10pt is banned for anything a user reads (ui-playbook).
+  thumbBadgeText: { fontSize: textToken.sm, fontWeight: fontWeight.semibold },
+  addTile: {
+    width: 64, height: 64, borderRadius: radius.sm,
+    borderWidth: 1, borderStyle: 'dashed',
+    alignItems: 'center', justifyContent: 'center',
+  },
   link: { fontSize: textToken.sm, fontWeight: fontWeight.semibold },
   consent: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,

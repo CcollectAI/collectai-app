@@ -1136,9 +1136,36 @@ Two numbers worth designing against:
 - listings with **4+ photos sell ~3.5× faster** than single-photo listings
 - **complete** listings get **3–4× more views** than incomplete ones
 
-`app/sell/new.tsx` holds a single `photoUri: string | null` — **one photo, no
-more.** `item_images` supports many (it is keyed on the item, and takes a
-`label`), so this is a client limit, not a schema one.
+~~`app/sell/new.tsx` holds a single `photoUri: string | null` — **one photo, no
+more.**~~ **DONE 2026-08-21**: `photoUris: string[]`, capped at **8**
+(`MAX_PHOTOS`), multi-select from the library, hero + removable thumbnail strip,
+and the buyer gets a paged swipeable gallery on `app/listing/[id].tsx`.
+
+Three things that came out of building it:
+
+- **Uploads are SEQUENTIAL, not `Promise.all`.** `item_images.position` is
+  assigned server-side by append order, and that order IS the buyer's gallery
+  order — racing the uploads shuffles the seller's photos, and the first frame
+  is the one a buyer judges the item on.
+- **A seller's own photos were invisible to their own listing.** This was live,
+  not introduced here. `POST /items/{id}/images` does **not** write
+  `items.image_url`, and both listing queries read only
+  `COALESCE(i.image_url, ci.image_url)` — so an uploaded photo sat in
+  `item_images` while the listing showed the **catalogue** shot, labelled
+  "Stock photo". §1h calls passing stock art off as the seller's item the thing
+  to avoid, and we were doing it to ourselves. `item_images` now sits between
+  the two in the COALESCE, and `image_is_catalog` is false when any
+  `item_images` row exists. Nobody had noticed because the table has 0 rows.
+- **The gallery and the hero are two derivations of one fact**, so they are
+  reconciled in exactly one place — `_gallery()`, pinned by
+  `server/tests/test_listing_gallery.py`. The hero has its own precedence
+  (`items.image_url` > first `item_images` > catalogue) and is therefore NOT
+  guaranteed to be the first gallery element; prepending and de-duplicating is
+  what stops the tile and the detail screen disagreeing about the cover.
+
+`ListingOut.image_urls` is served by the DETAIL endpoint only — a browse tile
+shows one image, and aggregating a gallery per row across the whole grid would
+be paid for on every scroll for something nothing renders.
 
 The Sparrow-specific twist: the field that matters most here is not one Vinted
 has. **`canonical_key` is what decides whether a listing can reach Target Hit at
@@ -1179,7 +1206,10 @@ the box turns up empty.
    the price rail built, this is what decides how many listings can use it.
    `sell/new.tsx` never sends a `canonical_key`, and the item-id path inherits
    from the item, which usually has none either — measured 4 of 16.
-3. **Multi-photo listing** in `sell/new.tsx` (§8d). Client-side only.
+3. ~~**Multi-photo listing** in `sell/new.tsx` (§8d). Client-side only.~~ —
+   **DONE 2026-08-21**, and it was *not* client-side only: the server had to
+   start reading `item_images` at all (see §8d), because a seller's uploaded
+   photo never reached their own listing.
 4. Never meter or charge for listing; close §7's open question as "always free"
    (§8a).
 5. Explicitly **not doing**: paid bumps (§8c), buyer protection (§8e), anything
