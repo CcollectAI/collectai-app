@@ -438,7 +438,38 @@ class SupabaseIngest:
         """Upsert catalog items into category_items table. Returns count inserted."""
         if not self.enabled:
             return 0
-        rows = [item.to_row() for item in items]
+        # Deduplicate by the conflict key BEFORE batching.
+        #
+        # The URL below sets on_conflict=category,item_key and the request
+        # carries Prefer: resolution=merge-duplicates, so PostgREST compiles
+        # each batch into a single INSERT ... ON CONFLICT (category, item_key)
+        # DO UPDATE. If one batch contains the same (category, item_key) twice,
+        # Postgres aborts the WHOLE statement with
+        #   ON CONFLICT DO UPDATE command cannot affect row a second time
+        # and all `batch_size` rows are lost, not just the duplicate.
+        #
+        # This branch is the one that matters: nightly-ingest.yml (cron
+        # 0 3 * * *) runs the repo DEFAULT branch, not what deploy_to_ec2.sh
+        # rsyncs to EC2, so a fix made on a working branch never reaches the
+        # pipeline that actually runs. Measured on 2026-08-21: 15 aborted
+        # batches in the nightly window, every one of them reported as success
+        # by the pipeline, which logs rows attempted rather than rows Postgres
+        # accepted.
+        #
+        # Pipelines legitimately emit repeats (pagination overlap, retries, the
+        # same card in two sets), so dedupe here rather than trusting callers.
+        # Last occurrence wins, so later/fresher data overwrites.
+        deduped: dict[tuple, dict] = {}
+        for item in items:
+            row = item.to_row()
+            deduped[(row.get("category"), row.get("item_key"))] = row
+        dropped = len(items) - len(deduped)
+        if dropped:
+            logger.info(
+                "[catalog] dropped %d within-batch duplicate row(s) before upsert "
+                "(same category+item_key)", dropped,
+            )
+        rows = list(deduped.values())
         total = 0
         # PostgREST requires ?on_conflict=<columns> AND Prefer: resolution=merge-duplicates
         # for UPSERT behavior. Without this, unique constraint violations return 409.
