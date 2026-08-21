@@ -1,6 +1,112 @@
 # Sparrow Collect - Project Memory
 
-> Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-19
+> Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-21
+
+## Current state (2026-08-21)
+
+### The watchdog was wrong about itself, twice
+
+Worked the daily report end to end. Of 8 HIGH findings, **five were false**: the
+coverage canary treated `sold_now > 0` as proof of a crosswalk fault, so
+one_piece_tcg — ONE sold comp against 7,675 catalogue rows — was told "the data
+is there and the catalogue cannot reach it". Distinct items with a comp vs items
+priced: funko 60/60, retro_games 58/58, nintendo_merch 32/32, retro_handhelds
+4/4, one_piece 1/1. Every comp that arrived was already used. It now counts
+comps landing on catalogue rows that stay UNPRICED, which is the only thing that
+claim can mean. `bugs_high` 8 → 2, and lorcana (2,671 orphaned) correctly stays.
+
+**And the digest deleted itself on the days it mattered most.**
+`send_ops_alert(body[:3800])` cut MARKUP on a character boundary; landing inside
+`<code>` made Telegram reject the whole message, silently. The longer the
+report, the likelier the cut splits a tag — delivery failed in proportion to how
+much there was to say. Fixed at both ends, pinned by a test that fails against
+the old slice.
+
+Two real rejected writes, both invisible in `bake.log`: `user_settings` has no
+`settings_json` column (it is `region`) so regional routing was silently off for
+everyone, and `market_hits.shipping` is DOUBLE PRECISION and was bound
+`::jsonb`. Both proven in both directions against prod, in rolled-back
+transactions.
+
+**Logflare answers long windows PARTIALLY.** 6h → 15 errors, 24h → 15, 72h → 14
+— fewer than its own subset. `--hours 168` was documented and produced a
+confidently wrong report. Use ≤24h.
+
+### The nightly ingest runs a branch nobody was looking at
+
+GitHub cron runs the repo DEFAULT branch — `feature/all-enhancements`, 119
+commits behind — and `origin/main` **is deleted**. The within-batch dedupe had
+been on a working branch since 2026-07-29 and never reached the pipeline that
+runs, losing up to 3,000 catalogue rows a night. Attribution came from client IP
+in `edge_logs`: `4.149.x.x` is Azure (an Actions runner), not EC2
+(`51.21.210.195`). PR #4.
+
+### The paywall was never our code
+
+`docs/MONETIZATION.md` carried "not checkable from here" for a week. The answer
+was a screenshot: **the Apple account has no Paid Applications Agreement** —
+only Free Apps. Until it exists Apple returns zero StoreKit products in every
+environment, which is the whole of `reason=no-offering`. RevenueCat, the inlined
+key and the `store` profile were all verified correct throughout. Agreements are
+not in the ASC API at all — do not try to script it.
+
+**The diagnostic that was supposed to settle this could not be read.**
+`logger.error` wrote to console and nowhere else: Sentry was initialised the
+whole time and never received a line, and `getRecentLogs()` had no consumer —
+its own comment named a "diagnostics screen" that did not exist. Now Settings →
+Diagnostics (works offline, which matters when the network is what is broken)
+plus a Sentry sink. ⚠️ That sink is re-entrant BY CONSTRUCTION — Sentry's
+`beforeSend` and `beforeBreadcrumb` both call `logger.error` from their catch
+blocks — so it needs the `inSink` latch, proven by removing it and watching the
+stack blow.
+
+### Titles were not in the same font, on one platform
+
+A native-stack `headerTitle` is drawn by UIKit, not by an RN `<Text>`, so the
+`Text.render` monkey-patch that puts Roboto on everything else never reached
+it — and there was no `headerTitleStyle` anywhere. 26 screens rendered San
+Francisco over a Roboto body on iOS. Invisible on Android, where the system font
+IS Roboto. One line in the global `screenOptions`. **Still open: 25 of those 26
+titles are hardcoded English** — `check:i18n-parity` cannot see them because the
+failure is a missing KEY, not a missing translation.
+
+### "Find collectors" opened a listings feed
+
+Both `app/inbox.tsx` and `FriendsFollowSection` pushed the marketplace, the
+second under a comment asserting the collector search lived there. It does not —
+that tab is a listings feed. This is the 2026-08-10 bug in a second place; that
+one was the Search TAB redirecting to the marketplace, fixed by making the tab
+real, and these survived because the fix looked at the tab and never asked who
+ELSE pushed to it expecting a search.
+
+### The marketplace takes 8 photos, and the ones it had were invisible
+
+`item_images` supported many all along; `sell/new.tsx` held one `photoUri`.
+Now 8, uploaded SEQUENTIALLY because `position` is assigned by append order and
+that order is the buyer's gallery order. `ListingOut.image_urls` + a paged
+swipeable gallery.
+
+**The bug underneath was live:** `POST /items/{id}/images` does not write
+`items.image_url`, and both listing queries read only
+`COALESCE(i.image_url, ci.image_url)` — so a seller's uploaded photo sat in
+`item_images` while the listing showed the CATALOGUE shot labelled "Stock
+photo". Nobody noticed because that table has 0 rows.
+
+### "Improve the UI" was a `.select()`, not a StyleSheet
+
+The watchlist card showed a target and never a current price — the one question
+the screen exists to answer. `watchlist_items` carries `last_market_price`,
+`price_trend`, `image_url` and `predicted_value`; the provider selected none of
+them and the TS type declared two that were referenced nowhere. Every style on
+that card already followed the playbook.
+
+Then, asked whether it needed decluttering: the priority stripe added that
+morning was the DEFAULT on 13 of 20 rows — a signal identical on two thirds of a
+list is decoration. It now marks only a priority someone chose.
+
+**Measure the data before restyling the thing that renders it.** `image_url` is
+0 of 20 populated, so a thumbnail would give every card a placeholder; a
+tappable card was rejected because only 7 of 20 rows carry an `item_id`.
 
 ## Current state (2026-08-20)
 
