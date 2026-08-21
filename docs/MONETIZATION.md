@@ -297,6 +297,68 @@ ASC remains unqueryable from here: the local `AuthKey_LAU7D8HU29.p8` lives in
 `~/.appstoreconnect/private_keys/` and **its Issuer ID is recorded nowhere**,
 so items 2 and 3 still need a human in the ASC UI.
 
+### ANSWERED 2026-08-21: there is no Paid Applications Agreement
+
+Screenshotted from ASC → Business. The Agreements table contains exactly one
+row:
+
+| type | countries | effective | status |
+|---|---|---|---|
+| **Free Apps Agreement** | All | 9 jul 2026 – 7 mei 2027 | Active (New Agreement Available) |
+
+**There is no Paid Applications row at all** — it has never been requested, so
+it is not "pending", it does not exist. Until it does, StoreKit returns **zero
+products in every environment**, sandbox and TestFlight included. That is the
+whole of `reason=no-offering`, and it is why every RC-side check kept coming
+back healthy: RevenueCat was right, the binary was right, and Apple had nothing
+to sell.
+
+This closes the question the doc had been carrying as *"not checkable from
+here"* since 2026-08-15. It was never an API question — the ASC API does not
+expose agreements at all — it was a screenshot.
+
+**Two other things are visible on the same page and both matter:**
+
+- ⚠️ **The Apple Developer Program License Agreement has been updated and is
+  unaccepted.** Apple's banner: *"In order to update your existing apps and
+  submit new apps, the Account Holder must review and accept the updated
+  agreement."* This gates app submission, and Apple generally will not let you
+  start a new agreement while it is outstanding — **accept it first**.
+- **Digital Services Act compliance is `In Review`** (27 countries). EU trader
+  status; it gates EU distribution, not IAP.
+
+### The subscriptions cannot be submitted yet either (same day)
+
+The Draft Submission modal refuses with:
+
+> **Unable to Submit for Review**
+> - New subscription groups must be submitted with an auto-renewable
+>   subscription from within that group.
+> - To submit your items for review, add an app version for the selected
+>   platform.
+
+and lists only **"Pro — Subscription Group"** under *Item Ready to Submit*.
+
+Read that carefully: the GROUP is ready, and **no subscription inside it is**.
+`sparrow_pro_monthly` and `sparrow_pro_yearly` exist (RevenueCat resolves both
+product ids), so they are present but not in a submittable state — i.e. still
+missing price, a localization, or the review screenshot. So item 3 of the list
+below is ALSO true, independently of the agreement.
+
+**Order matters, and it is not the order in the list below:**
+
+1. Accept the updated **Developer Program License Agreement** (account holder).
+2. Request the **Paid Applications Agreement** and complete contact, **bank
+   account** and **tax forms** (individual, not company — the account is
+   registered to a person at an Amsterdam address). Apple verifies the bank
+   account, so this is the step with a **multi-day tail**.
+3. Take both subscriptions out of Missing Metadata, then add **a subscription**
+   (not just the group) plus **an app version** to the draft submission.
+
+Nothing in the app changes. There is no code fix for any of this, which is
+exactly what the three-way diagnostic was built to tell us — and what six days
+of chasing RevenueCat could not.
+
 #### If the paywall shows no products
 
 In order of likelihood, none of which the code can fix:
