@@ -98,6 +98,7 @@ try {
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
 import { scrubSentryEvent, scrubSentryBreadcrumb } from '@/lib/sentryScrub';
 import { logger, setLogSink } from '@/lib/logger';
+import { fonts } from '@/theme/tokens';
 import { safeGoBack } from '@/lib/goBack';
 
 let Sentry: {
@@ -403,6 +404,15 @@ function RootStack() {
           // option, it is not setting a native title at all on screens that
           // already show their own heading in the body. 2026-08-16.
           headerTitleAlign: 'left' as const,
+          // The native bar draws its title with UIKit, NOT with an RN <Text>,
+          // so the `Text.render` monkey-patch at the top of this file — which
+          // is what puts Roboto on every other string in the app — never
+          // reaches it. With no headerTitleStyle anywhere, 26 screens rendered
+          // their title in San Francisco on iOS while the body beneath them was
+          // Roboto. Invisible on Android, where the system font IS Roboto,
+          // which is exactly why it survived a title sweep that fixed size,
+          // weight and alignment. Measured 2026-08-21.
+          headerTitleStyle: { fontFamily: fonts.bold },
           headerBackTitle: '',
           headerBackButtonDisplayMode: 'minimal',
           headerRight: () => <HeaderRight />,

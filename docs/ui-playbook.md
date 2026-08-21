@@ -934,6 +934,86 @@ one run produced **3,000 lines of churn across 7 files** for 11 lines of real
 change. To separate a real edit from formatting noise afterwards: format the
 `HEAD` copy with the same prettier and diff that against the working file.
 
+### …and the title sweep never checked the FONT (2026-08-21)
+
+Both earlier passes normalised **size, weight and alignment** and neither looked
+at `fontFamily`. Asked "is the title in the same font on every page?", the
+answer was **no**, and the split is invisible on the platform most of the work
+happens on.
+
+There are two title-rendering paths:
+
+| path | screens | iOS | Android |
+|---|---|---|---|
+| RN `<Text>` — in-body titles + `ScreenHeader` | ~15 | **Roboto** | Roboto |
+| native-stack `headerTitle` string | **26** | **SF Pro** | Roboto |
+
+`app/_layout.tsx` monkey-patches `Text.render` to inject
+`fontFamily: "Roboto_400Regular"` into every RN `<Text>`. A native-stack
+`headerTitle` is drawn by **UIKit, not by an RN `<Text>`**, so the patch cannot
+reach it — the same fact the `headerTitleAlign` comment in that file already
+records. And there was **no `headerTitleStyle` anywhere in the repo**: zero hits
+across `app/` and `src/`.
+
+So 26 screens showed a San Francisco title above a Roboto body on iOS. On
+Android the system font *is* Roboto, so it matched by accident — which is why a
+sweep that fixed everything else about the title never saw it.
+
+Fixed globally in one place rather than 26:
+
+```tsx
+// app/_layout.tsx, Stack screenOptions
+headerTitleStyle: { fontFamily: fonts.bold },
+```
+
+⚠️ **Check it on a device.** Setting `fontFamily` on iOS changes how
+`fontWeight` resolves — the family carries the weight, so a numeric
+`fontWeight` alongside it can be ignored or double-applied.
+
+**The related gap, NOT fixed here:** of those 26 native titles, **25 are
+hardcoded English** — `"Archived"`, `"Scan Barcode"`, `"Analytics"` — never
+passed through `t()`. `check:i18n-parity` cannot see them, because the failure
+is not a missing translation but a missing KEY. That is the blind spot beside
+`learning_i18n_missing_key_renders_english`, and it needs a gate of its own
+before it is worth translating 25 strings into 7 locales.
+
+## A "find people" button that opens the marketplace (2026-08-21)
+
+Reported as *"find collectors links to the marketplace, which is not correct —
+it should link to a search bar"*, and it was right twice:
+
+- `app/inbox.tsx` — the "No messages yet" empty state, **"Find collectors"** →
+  `router.push('/marketplace')`
+- `src/components/category/FriendsFollowSection.tsx` — **"Find friends"** →
+  `router.push('/(tabs)/marketplace' as Href)`, under a comment asserting *"the
+  collector search lives on the marketplace tab"*
+
+That comment was false. The marketplace tab is `<MemberMarketplace asTab />` —
+`app/listings.tsx`, a **listings feed**. It has no person search of any kind, so
+neither button could do what its label said. Both now push `/search`
+(`app/search.tsx`), the unified search over items, catalogue, **collectors**,
+events and categories.
+
+**This is the 2026-08-10 bug in a second place.** That one was the Search TAB
+redirecting to the marketplace; it was fixed on 08-11 by making the tab real.
+These two survived because the fix looked at the tab and never asked *who else
+pushes to the marketplace expecting a search*. The sweep that finds it is the
+one this playbook already prescribes for the paywall CTA: **pair intent with
+destination** — every push in a file whose copy says find/collector/friend
+should land on a search, not a feed.
+
+Two details worth keeping:
+
+- Push **`/search`, never `/(tabs)/search`**. `check:params` resolves a push
+  target to its route FILE, and the tab wrapper has no `useLocalSearchParams`,
+  so pushing there reports "that route reads: (none)" and the `?q=` contract
+  stops being checkable.
+- **No `type=users` param was added.** `app/search.tsx` reads only `q`, and a
+  param the destination never reads is silently dropped
+  (`learning_route_params_are_an_unchecked_contract`). "Find collectors"
+  therefore lands on a general search rather than a filtered one — the correct
+  destination, not yet the ideal one.
+
 ## A bottom sheet must take only the BOTTOM safe-area inset (2026-08-15)
 
 `SafeAreaView` with no `edges` prop applies **all four** insets. On a sheet

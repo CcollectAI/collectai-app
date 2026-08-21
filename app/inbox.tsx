@@ -517,7 +517,7 @@ function InboxScreen() {
             action={
               <View style={styles.emptyActions}>
                 <AnimatedPressable
-                  onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/marketplace'); }}
+                  onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/search'); }}
                   style={[styles.emptyActionPrimary, { backgroundColor: colors.accent }]}
                   accessibilityRole="button"
                   accessibilityLabel="Find collectors to message"

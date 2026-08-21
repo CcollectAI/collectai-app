@@ -5,7 +5,7 @@
 
 import React, { useCallback } from 'react';
 import { View, Text, Image, StyleSheet, Share } from 'react-native';
-import { useRouter, type Href } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { inviteMessage } from '@/constants/storeLinks';
 import { AnimatedPressable } from '@/motion';
@@ -27,8 +27,18 @@ const FriendsCtaRow: React.FC<{ colors: AppTheme['colors'] }> = ({ colors }) => 
     Share.share({ message: inviteMessage() }).catch(() => {});
   }, []);
   const onFind = useCallback(() => {
-    // The collector search lives on the marketplace tab ("Find Collectors").
-    router.push('/(tabs)/marketplace' as Href);
+    // /search, NOT the marketplace tab. That tab renders <MemberMarketplace
+    // asTab /> — a LISTINGS feed with no way to search for a person — so this
+    // button could not do what it says. app/search.tsx is the unified search
+    // over items, catalogue, COLLECTORS, events and categories.
+    //
+    // This is the 2026-08-10 bug in a second place: a search affordance that
+    // opened the marketplace. The tab was fixed on 08-11 and these two CTAs
+    // were missed, because the sweep looked at the tab, not at who pushed to
+    // it. Push `/search`, never `/(tabs)/search`: check:params resolves a
+    // target to its route FILE, and the tab wrapper has no
+    // useLocalSearchParams, so pushing there makes the contract uncheckable.
+    router.push('/search');
   }, [router]);
   return (
     <View style={styles.ctaRow}>
