@@ -199,7 +199,11 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
         }
       >
         <Text style={[styles.label, { color: theme.muted }]}>Estimated value</Text>
-        {isDraft || isEditing ? (
+        {/* Always the input: this whole row is already gated on
+            isDraft || isEditing above, so the read-mode display that
+            used to be the `else` of a second, identical ternary was
+            unreachable. The read-mode figure lives in the valuation
+            card now. */}
           <View style={styles.editableValueRow}>
             <Text style={[styles.currencySymbol, { color: theme.muted }]}>{getCurrencySymbol(settings.currency)}</Text>
             <TextInput
@@ -213,27 +217,6 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
               accessibilityLabel={`Estimated value in ${settings.currency}`}
             />
           </View>
-        ) : (
-          <Text
-            style={[
-              styles.valueHighlight,
-              // Muted + smaller: it's an absence of data, not a headline figure.
-              isUnpriced(editableValue)
-                ? { color: theme.muted, fontSize: 15 }
-                : { color: theme.text },
-            ]}
-            accessibilityRole="text"
-            accessibilityLabel={
-              isUnpriced(editableValue)
-                ? `Estimated value: ${UNPRICED_LABEL}`
-                : `Estimated value: ${formatPrice(toNum(editableValue), settings.currency)}`
-            }
-          >
-            {isUnpriced(editableValue)
-              ? UNPRICED_LABEL
-              : formatPrice(toNum(editableValue), settings.currency)}
-          </Text>
-        )}
       </View>
       ) : null}
 
@@ -317,11 +300,6 @@ const styles = StyleSheet.create({
   value: {
     fontSize: text.md,
     fontWeight: fontWeight.medium,
-  },
-  valueHighlight: {
-    fontSize: text.xl,
-    fontWeight: fontWeight.extrabold,
-    letterSpacing: -0.2,
   },
   dropdownFieldRow: {
     flexDirection: 'row',

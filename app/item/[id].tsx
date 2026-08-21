@@ -1175,7 +1175,17 @@ function ItemDetailScreen() {
               with the figure, so a priced item must get the card even when the
               ML band is absent — which is the common case (this item shows a
               catalogue-sourced EUR 6 and no band). */}
-          {(priceEstimate || q10 || q50 || q90 || confidence || !isUnpriced(editableValue) || (!isDraft && id)) ? (
+          {(priceEstimate || q10 || q50 || q90 || confidence
+            // The term MUST match the lead's own render condition exactly.
+            // `!isUnpriced(...)` alone opened the card for a DRAFT with a
+            // value: the lead is `!isDraft && !isEditing`, the feedback is
+            // `!isDraft && id`, and with no ML band ItemPriceSection draws
+            // nothing — so the card rendered bordered and completely empty,
+            // which reads as a component that failed to load rather than as
+            // "no data". A gate that admits content the body then declines to
+            // draw is the same bug in reverse.
+            || (!isDraft && !isEditing && !isUnpriced(editableValue))
+            || (!isDraft && id)) ? (
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]} accessibilityRole="summary" accessibilityLabel={t('item_detail.valuation_a11y')}>
             {/* THE figure, and the card's lead.
                 It used to be row 4 of the spec table above at label/value

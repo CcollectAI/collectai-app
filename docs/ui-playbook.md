@@ -1326,6 +1326,36 @@ already describes the gate having, in the same file. **When a gate is widened
 after a miss, re-run it against every instance in the file it missed, not just
 the one you fixed.**
 
+### A gate must admit exactly what the body will draw (2026-08-22)
+
+The audit pass after the sweep above found the sweep's own worst bug.
+
+Widening the valuation card's gate with `!isUnpriced(editableValue)` looked
+right — the card leads with the figure, so it must open whenever there is one.
+But the LEAD renders on `!isDraft && !isEditing`, and the feedback below it on
+`!isDraft && id`. So a **draft with a value and no ML band** satisfied the gate,
+drew no lead, no feedback, and nothing from `ItemPriceSection` — **a bordered
+card, completely empty**. That is the 2026-08-17 "always-rendered card is an
+empty grey box" bug, arrived at from the opposite direction: not a card that
+forgot to guard its content, but a guard that admitted content the body then
+declined to draw.
+
+The gate term now matches the lead's own condition exactly —
+`(!isDraft && !isEditing && !isUnpriced(editableValue))`. **When you widen a
+gate for a new child, copy that child's condition rather than paraphrasing it.**
+
+### An unreachable branch hides inside a nested identical ternary
+
+Making the value row edit-only was done by wrapping it in
+`{isDraft || isEditing ? … : null}` — but the row ALREADY branched on
+`isDraft || isEditing` internally. The inner `else`, twenty lines of read-mode
+display, became unreachable and `tsc` said nothing: both branches type-check,
+and dead JSX is legal. It surfaced only by counting the guards in the block.
+
+Removing it orphaned `valueHighlight`, which the corrected dead-style pass then
+found. **After wrapping an existing block in a condition, grep that block for
+the same condition** — if it is already there, one of the branches just died.
+
 ### And two in my own diff
 
 1. **A `useCallback` spliced into the body of a `useEffect`.** The insertion
