@@ -111,6 +111,98 @@ The 1-attendee edge case the user called out → **low-confidence banner**. Do n
   route does not depend on it — the tier is a property of the route, not of a string.
 - ⬜ Creator needs 1 successful event (≥3 saves, no reports) before their 2nd auto-posts; else admin queue.
 
+## The events feed is ~95 upcoming rows, and one source explains why (2026-08-22)
+
+Measured before deciding what to fix:
+
+| source | total | **upcoming** | avg lead time at ingest |
+|---|---|---|---|
+| limitless_tcg | 1,986 | **0** | **-12.3 hours** |
+| ticketmaster | 555 | 14 | +62 days |
+| seatgeek | 176 | 81 | +56 days |
+| musicbrainz | 120 | 5 | — |
+| newsletter | 17 | 8 | +45 days |
+
+**2,859 events; 108 upcoming.** The feature is effectively SeatGeek plus a bit
+of Ticketmaster.
+
+### limitless_tcg: the docstring and the code disagreed
+
+`limitless_tcg_events.py` has always said *"Only upcoming tournaments (date >=
+now)"*. The code said:
+
+```python
+if (now - dt).total_seconds() > 3 * 86400: return None   # "not too stale"
+```
+
+That admits anything that happened in the last three days and **never requires
+the future**. Every one of the 1,986 rows it has written was already past at
+insert time — average −12.3 hours, zero even a day ahead.
+
+**Fixing the filter admits nothing, and that is the honest result.** Limitless
+is a RESULTS feed, not a schedule: `/api/tournaments` returned 60 rows with 0
+future, and `?upcoming=true`, `?status=upcoming` and `?type=upcoming` each
+returned 20 rows with 0 future. There is no upcoming endpoint. The pipeline is
+left wired with a note to DELETE it if it is still writing zero rows in a month,
+rather than carry a source that cannot serve the feature.
+
+The rows are untouched — all past, so already invisible to the feed, and
+deleting prod data is a separate decision.
+
+### The newsletter source had no newsletters
+
+The 17 `source='newsletter'` rows were never a parser problem in the way the
+2026-07-27 note assumed. The configured inbox (`ccollect.ai@gmail.com`) holds
+**949 messages since April and not one collectibles newsletter** — the recent
+ones are entirely GitHub CI failure notifications plus Google and Vercel service
+mail. "Site Navigation", "Performance Cookies" and "Stay Connected" are what you
+get when a newsletter parser is pointed at service email.
+
+So the extractor was being blamed for output it could not have produced well.
+Both are true: the extractor is weak AND it was fed nothing to extract.
+
+⚠️ That mailbox also reports **"Your Gmail storage is full"**, so it can no
+longer receive mail at all. Subscribing publishers to it will silently do
+nothing until that is cleared.
+
+### The replacement extractor, and why the GATE is the deliverable
+
+`pipelines/newsletter_llm_extract.py` — LLM extraction with a deterministic
+gate in front of it. §"NOT in scope" below still says no ML model for spam
+CLASSIFICATION, and that stands. This is a different job: turning prose into
+fields at all, which rules have now failed at twice.
+
+**An LLM's failure mode is the inverse of the regex's.** The regex emitted
+obvious garbage — `ic/media/pcenLogo` as a venue — which is exactly what
+`event_quality.score_event`'s penalties catch (`markup_in_title`,
+`location_not_place_shaped`). A model emits CLEAN, PLAUSIBLE fields, so every
+one of those penalties scores a hallucinated event as fine. Swapping the
+extractor without a new gate trades visible junk for invisible junk.
+
+So the model is never trusted for content; it is asked to POINT AT text:
+
+| gate | rejects |
+|---|---|
+| grounding | `evidence` not present verbatim in the email |
+| title-in-source | a summarised headline nobody sent |
+| **date grounding** | the YEAR of `starts_at` absent from the evidence span |
+| chrome | a denylist built only from rows that actually shipped |
+| date sanity | unparseable, past, or >800 days out |
+| confidence | last and lowest-weight — it may reject, never rescue |
+
+Date grounding was added by auditing the gate against itself: steps 1–2 ground
+the PROSE and say nothing about `starts_at`, which the model composes rather
+than copies. Demonstrated before fixing — real title, verbatim evidence,
+invented date — **accepted, zero reasons**. It is the field with the highest
+cost of being wrong, because it is the one that makes somebody travel.
+
+`extract()` returns **None for could-not-ask** and a list for asked; collapsing
+both to `[]` would score a dead API as a perfect precision run.
+
+**Nothing is wired in and the source-level quarantine stays ON** until a dry run
+over a real inbox is measured. The 2026-07-27 version shipped 9 junk rows into
+the live feed; the number comes before the wiring this time.
+
 ## What's intentionally NOT in scope
 
 - No ML model for spam classification — overkill for current scale. Rule-based beats a tiny model at <1k events/day.

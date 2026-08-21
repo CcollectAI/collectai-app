@@ -2,6 +2,37 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-22
 
+## The events feed is ~95 rows, and the newsletter had no newsletters (2026-08-22)
+
+Measured before fixing anything. 2,859 events, **108 upcoming** — the feature is
+effectively SeatGeek plus a little Ticketmaster.
+
+**`limitless_tcg` is 70% of the table and has never produced an upcoming row.**
+Its docstring says "only upcoming tournaments (date >= now)"; the code said "not
+more than 3 days stale" and never required the future. All 1,986 rows were
+already past at insert — average −12.3 hours — against +62 days for
+ticketmaster. Fixing the filter admits NOTHING, which is the honest outcome:
+Limitless is a results feed, and `?upcoming=`, `?status=`, `?type=` all return
+0 future rows. Left wired with a note to delete it if it writes nothing for a
+month.
+
+**The newsletter source had no newsletters.** 949 messages in that inbox since
+April, not one from a publisher — the recent ones are GitHub CI notifications
+and Google/Vercel service mail. "Site Navigation" and "Performance Cookies" are
+what a newsletter parser produces when pointed at service email. The extractor
+IS weak, and it was also fed nothing to extract; both are true and only the
+first was recorded before today. That mailbox is also **full**, so subscribing
+publishers to it does nothing until cleared.
+
+**The replacement is a GATE, not a model.** `newsletter_llm_extract.py` asks the
+model to POINT AT text and then verifies deterministically that the text exists:
+evidence verbatim in the email, title in the email, and — added by auditing the
+gate against itself — the YEAR of `starts_at` present in the evidence span. That
+last one was found by constructing the case: real title, verbatim evidence,
+invented date → accepted with zero reasons. An LLM's failure mode is the inverse
+of a regex's, so none of `event_quality`'s existing penalties would have caught
+it. Nothing is wired in; the quarantine stays on until a dry run is measured.
+
 ## What actually catches a defect I just wrote (2026-08-22)
 
 A post-completion audit now runs after every change, and it keeps finding real

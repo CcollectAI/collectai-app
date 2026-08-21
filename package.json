@@ -49,6 +49,7 @@
     "check:search-categories": "node scripts/check-search-category-ids.mjs",
     "check:item-values": "node scripts/check-item-value-source.mjs",
     "check:unrendered": "node scripts/check-unrendered-components.mjs",
+    "check:native-header-titles": "node scripts/check-native-header-titles.mjs",
     "check:serialization": "node scripts/check-duck-typed-serialization.mjs",
     "check:reachable": "node scripts/check-unreachable-screens.mjs",
     "check:back-affordance": "node scripts/check-back-affordance.mjs",

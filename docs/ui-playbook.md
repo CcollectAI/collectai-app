@@ -457,6 +457,41 @@ node scripts/preflight_android.mjs
 against it — the same false positive `check:unrendered` had to be fixed for. A
 comment is neither a reference nor a declaration, including in your own checks.
 
+## A native header title is invisible to both i18n gates (2026-08-22)
+
+The font sweep found that 26 native `headerTitle` strings were hardcoded
+English. What matters is WHY no gate saw it:
+
+- `check-i18n-parity` compares KEYS across locale files, so it can only report a
+  string that already HAS a key. These have none.
+- `check-i18n-strings` finds user-visible strings in JSX never wrapped in `t()`.
+  A value inside `<Stack.Screen options={{ … }}` is not JSX text.
+
+So a Dutch device showed an English bar title over a fully translated screen and
+every gate stayed green. **The failure is a missing KEY, not a missing
+translation** — the blind spot beside
+`learning_i18n_missing_key_renders_english`.
+
+`npm run check:native-header-titles` covers `headerTitle` AND `headerBackTitle`
+(an English "Items" under a translated title is the same bug). Proven red first:
+**26 across 20 screens**, two more than a hand grep found. `''` still passes —
+it is the documented iOS fix for a screen that renders its own in-body heading.
+
+**The keys are their own, not reuses.** Ten of these strings already existed —
+`settings.condition_guide`, `settings.my_suggestions`, `home.analytics` — but
+those are SETTINGS ROW labels and a nav item. "A tab's label and its title are a
+third thing"; reusing them couples two questions that can diverge. Each
+`screen_titles.*` key was instead SEEDED with the existing key's value per
+locale, so the wording cannot drift while the identities stay separate — the
+resolution `search.title` got when it took `nav.explore`'s value verbatim.
+
+⚠️ **Not yet wired into `verify:prebuild`, because it is still red.** The 26
+call sites need `useTranslation()` in 17 files whose component shapes differ
+(arrow components, function declarations, nested components), and hook placement
+is what produced a `useCallback` spliced into a `useEffect` body the same day. A
+red gate that is not wired documents the debt honestly; wiring it before the
+debt is paid would just break the build.
+
 ## Component Checklist
 
 Before shipping a screen, verify:
