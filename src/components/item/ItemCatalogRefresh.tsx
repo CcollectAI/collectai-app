@@ -181,7 +181,12 @@ export const ItemCatalogRefresh = React.memo(function ItemCatalogRefresh({
         <Ionicons name="link-outline" size={14} color={theme.accent} />
       )}
       <Text style={[styles.btnText, { color: theme.accent }]}>
-        {matching ? 'Matching…' : 'Match against catalog'}
+        {/* Says what it DOES, not what it is called internally. Reported
+            2026-08-20: "match against catalog" names an implementation, and a
+            member has no idea what a catalogue is or what the tap will change.
+            It fills in the fields directly above it — brand, set, rarity —
+            from the live catalogue, so the label says exactly that. */}
+        {matching ? 'Checking the catalogue…' : 'Fill in details from catalogue'}
       </Text>
     </Pressable>
   );
@@ -196,10 +201,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 14,
-    marginTop: 8,
-    marginBottom: 4,
+    // Sits INSIDE the details card now, directly under the attribute rows it
+    // fills in — so it needs the small top gap of a related control, not the
+    // margins of a standalone block that used to float between two cards.
+    marginTop: 10,
   },
   btnText: {
+    // `sm` (12) is the caption floor; xs is banned for anything read.
     fontSize: 12,
     fontWeight: '600',
   },

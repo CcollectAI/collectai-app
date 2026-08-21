@@ -103,3 +103,26 @@ export function inAppListingHref(url: string | null | undefined): Href | null {
   if (!m || !isUuid(m[1])) return null;
   return { pathname: '/listing/[id]', params: { id: m[1] } } as Href;
 }
+
+/**
+ * The PUBLIC url for one of our marketplace listings — the same shape
+ * `_publish_supply_hook` writes into `market_hits.url`, and the only shape
+ * `inAppListingHref` above turns back into a route.
+ *
+ * Written as a builder rather than interpolated at the call site so the two
+ * halves cannot drift: a share that emitted `/listing/<id>` would be a link
+ * this module refuses to recognise on the way back in, and nothing would fail
+ * — it would simply open a browser instead of the app.
+ *
+ * https, never `sparrow://`: a custom scheme pasted into WhatsApp or iMessage
+ * is not tappable, and `build_affiliate_url` rejects it outright.
+ *
+ * NOTE (verified 2026-08-20): `web/` carries the `/l/*` AASA path and the
+ * `/l/:id` rewrite, but production serves neither — the live AASA lists seven
+ * paths and `/l/<uuid>` returns 404. Both are a `web/` Vercel deploy away; see
+ * docs/AUTH_AND_WEB_DEPLOY.md, "A deep link needs FOUR things to agree".
+ */
+export function publicListingUrl(id: string | null | undefined): string | null {
+  if (!isUuid(id)) return null;
+  return `https://sparrowcollect.com/l/${id}`;
+}

@@ -11,6 +11,30 @@ Run the gate rather than reading this list:
 npm run preflight:android      # exit 0 = ready to build and submit
 ```
 
+## Status check — 2026-08-20 (re-verified, nothing has moved)
+
+Checked while preparing an iOS submission. **All three console blockers are
+still open, and they are still a chain**, so none can be skipped:
+
+```
+Play enrolment ($25, browser) → service account JSON → { RevenueCat Android key, FCM }
+```
+
+Evidence, not memory:
+
+- `node scripts/preflight_android.mjs` → **3 blocker(s) — not ready for Google Play.**
+- `./sparrow-play-service-account.json` — **absent from the repo**, and
+  `eas.json`'s submit profile points at exactly that path, so
+  `eas submit --platform android` cannot run.
+- `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` unset → `initPurchases()` returns early
+  → the subscription screen shows its unavailable state. **An Android build
+  that cannot take money is not submittable**, whatever else is green.
+
+So the current split is: **iOS can be built and submitted today; Android cannot
+be submitted at all until the enrolment happens.** An Android AAB can still be
+built locally (`npm run build:android:local`) for sideload testing — that path
+does not depend on any of the three.
+
 ## The shape of the problem
 
 Every Android gap found on 2026-07-31 was **silent**. No crash, no failed build,

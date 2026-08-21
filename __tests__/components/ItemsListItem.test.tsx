@@ -65,6 +65,7 @@ jest.mock('../../src/motion', () => {
 });
 
 import { ItemsListItem } from '../../src/components/items/ItemsListItem';
+import { UNPRICED_LABEL } from '../../src/lib/format';
 
 type MakeItemOverrides = {
   value?: number;
@@ -160,7 +161,7 @@ describe('ItemsListItem — unpriced items', () => {
 
   it('renders the unpriced label instead of a zero price when value is 0', () => {
     render(<ItemsListItem item={makeItem({ value: 0 })} {...baseProps} />);
-    expect(screen.getByText('Cannot estimate value')).toBeTruthy();
+    expect(screen.getByText(UNPRICED_LABEL)).toBeTruthy();
     // No formatted zero anywhere in the row.
     expect(screen.queryByText(/^\D*0\D*$/)).toBeNull();
   });
@@ -168,13 +169,13 @@ describe('ItemsListItem — unpriced items', () => {
   it('announces the unpriced state to screen readers rather than "0"', () => {
     render(<ItemsListItem item={makeItem({ value: 0 })} {...baseProps} />);
     expect(
-      screen.getByLabelText('Charizard 1st Edition, Cannot estimate value'),
+      screen.getByLabelText(`Charizard 1st Edition, ${UNPRICED_LABEL}`),
     ).toBeTruthy();
   });
 
   it('still renders a real price when the item IS priced', () => {
     render(<ItemsListItem item={makeItem({ value: 100 })} {...baseProps} />);
-    expect(screen.queryByText('Cannot estimate value')).toBeNull();
+    expect(screen.queryByText(UNPRICED_LABEL)).toBeNull();
     expect(screen.getByText(/100/)).toBeTruthy();
   });
 
@@ -183,7 +184,7 @@ describe('ItemsListItem — unpriced items', () => {
     // data we DO have"). True at the time; the paid line has since been
     // removed from the row entirely, so the unpriced label now stands alone.
     render(<ItemsListItem item={makeItem({ value: 0, purchasePriceEur: 100 })} {...baseProps} />);
-    expect(screen.getByText('Cannot estimate value')).toBeTruthy();
+    expect(screen.getByText(UNPRICED_LABEL)).toBeTruthy();
     expect(screen.queryByText(/Paid /)).toBeNull();
   });
 });

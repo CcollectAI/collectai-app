@@ -117,7 +117,7 @@
     "no_results": "No se encontraron resultados",
     "no_price_yet": "Sin precio aún",
     "browse_by_category": "Explorar por categoría",
-    "title": "Buscar"
+    "title": "Explorar"
   },
   "item_detail": {
     "valuation_a11y": "Valoración y detalles del artículo",
@@ -678,6 +678,7 @@
     "edit_profile": "Editar perfil",
     "edit_profile_desc": "Cambia tu nombre de usuario y bio",
     "edit_profile_a11y": "Editar perfil",
+    "view_public_profile_a11y": "Ver perfil público",
     "change_password": "Cambiar contraseña",
     "change_password_desc": "Actualiza la contraseña de tu cuenta",
     "change_password_a11y": "Cambiar contraseña",

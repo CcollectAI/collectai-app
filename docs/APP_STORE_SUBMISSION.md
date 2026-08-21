@@ -34,22 +34,45 @@ eas secret:create --name EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID --value <google-ios-cl
 eas secret:create --name EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID --value <google-android-client-id>
 ```
 
-### Build for production
+### Build for production — LOCAL ONLY
+
+> ⛔ **Never run `eas build` without `--local`.** The Expo account is on the
+> **Free** plan; a cloud build is a paid service and there is no budget line for
+> it. This section used to read `eas build --platform ios --profile production`
+> — following it verbatim queues a cloud build. Corrected 2026-08-20.
+>
+> The profile is **`store`**, not `production`. `production` exists in
+> `eas.json` but the shipping scripts use `store`, and the two are different
+> entries.
+
+Use the npm scripts — they carry the profile, `--local`, `--non-interactive`
+and the output path, and the Android one carries the whole JDK/SDK environment:
 
 ```bash
-# iOS
-eas build --platform ios --profile production
-
-# Android
-eas build --platform android --profile production
-
-# Both at once
-eas build --platform all --profile production
+npm run build:ios:local        # -> ./builds/sparrow-ios-local.ipa
+npm run build:android:local    # -> ./builds/sparrow-android-local.aab
+npm run build:android:apk      # -> ./builds/sparrow-android-apk.apk (sideload/testing)
 ```
 
-EAS will walk through certificate/provisioning setup on first build:
-- **iOS**: Creates Distribution Certificate + Provisioning Profile (let EAS manage)
-- **Android**: Generates upload keystore (EAS stores it securely)
+A local iOS build takes **25–45 minutes**, most of it compiling pods.
+
+**Before building, run the gates:** `npm run verify:prebuild` (20 checks, tsc,
+and the pinned jest suites). A build is the wrong place to discover a red gate.
+
+**The build number is EAS-REMOTE.** `ios.buildNumber` in `app.json` is ignored
+(`appVersionSource: remote`) and EAS prints exactly that warning on every run.
+To see what the next build will be:
+
+```bash
+eas build:version:get --platform ios     # e.g. "iOS buildNumber - 146" -> next is 147
+```
+
+Do not "fix" the number in `app.json`; read the real one out of the IPA
+(`CFBundleVersion`) if you need to prove what shipped.
+
+Certificates are already provisioned (Apple Team `3DX8FBF7S6`, individual
+account). EAS reports "All credentials are ready to build" at the start of a
+local build — if it starts asking questions, something changed upstream.
 
 ## 2. Screenshot Requirements
 
@@ -232,17 +255,38 @@ undefined-table-skipped, DB error 500, V1 endpoint, **missing-confirm 400**,
 
 ## 7. Submit to Stores
 
-```bash
-# Submit iOS build to App Store Connect
-eas submit --platform ios --profile production
+The build is LOCAL, so `eas submit` has to be pointed at the artefact on disk —
+there is no cloud build for it to fetch. The npm script carries the path:
 
-# Submit Android build to Google Play
-eas submit --platform android --profile production
+```bash
+npm run submit:ios
+# = eas submit --platform ios --profile store --path ./builds/sparrow-ios-local.ipa
 ```
 
-**Important for Android:** The first AAB upload MUST be done manually via Play Console.
-Download the AAB from EAS (`eas build:list`) and upload to the internal testing track.
-Subsequent submissions can use `eas submit`.
+The `store` submit profile already holds the Apple id, `ascAppId` 6767359453 and
+team `3DX8FBF7S6` (`eas.json`), so it does not prompt.
+
+> ⚠️ **`FINISHED` is not "on TestFlight".** The submit profile sets
+> `skip_waiting_for_build_processing`, so a FINISHED submission means only that
+> **Apple accepted the bytes**. The build then goes through processing, and it is
+> not installable until that completes and (for external testers) review passes.
+> Confirm in App Store Connect — or by the TestFlight email — before telling
+> anyone it is available. This has been reported as "the build never arrived"
+> when it had simply not finished processing.
+
+**Verify what you actually shipped.** `app.json`'s `buildNumber` is ignored, so
+read the number out of the artefact rather than the config:
+
+```bash
+unzip -p ./builds/sparrow-ios-local.ipa 'Payload/*.app/Info.plist' \
+  | plutil -extract CFBundleVersion raw -o - -
+```
+
+**Android:** the first AAB upload MUST be done manually in the Play Console —
+`eas submit` cannot create the app entry. After that, `eas submit --platform
+android --profile store` works, but note it expects
+`./sparrow-play-service-account.json`, which is **not in the repo** (see
+`docs/ANDROID_LAUNCH.md` for the blocker chain).
 
 ## 8. Post-Submission
 

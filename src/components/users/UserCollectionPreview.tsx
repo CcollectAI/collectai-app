@@ -22,7 +22,7 @@ const SectionCard = React.memo(function SectionCard({ title, icon, children }: {
   const { colors } = useAppTheme();
 
   return (
-    <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={styles.sectionCard}>
       <View style={styles.sectionHeader}>
         {icon && <Ionicons name={icon} size={16} color={colors.accent} />}
         <Text style={[styles.sectionTitle, { color: colors.muted }]}>{title}</Text>
@@ -78,11 +78,16 @@ export const UserCollectionPreview = React.memo(function UserCollectionPreview({
 
 const styles = StyleSheet.create({
   // Section card
+  // A SECTION, not a card (2026-08-20). The profile stacked three bordered
+  // panels down the screen — the person, then achievements, then bio — each
+  // with its own fill, border and radius, so nothing led and the page read as
+  // a pile. The card belongs to the PERSON; everything after it is a labelled
+  // section under a heading, which is the same call the profile pass made for
+  // the trading strip (docs/ui-playbook.md, "A profile that opens with three
+  // card idioms in a row").
   sectionCard: {
-    borderRadius: radius.md,
-    borderWidth: 1,
-    padding: 16,
-    marginTop: 16,
+    paddingHorizontal: 4,
+    marginTop: 24,
   },
   sectionHeader: {
     flexDirection: 'row',

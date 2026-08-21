@@ -123,7 +123,12 @@ const styles = StyleSheet.create({
    * the numbers are the content, and the row above already frames them.
    */
   strip: {
-    marginHorizontal: 16,   // the screen gutter, same as every other block here
+    // NO horizontal margin. This renders INSIDE `profileCard`, which owns the
+    // gutter with its own padding; the 16 that used to be here was a screen
+    // gutter applied inside a padded card, so the strip sat 16pt to the right
+    // of the name, the stats and the CTA row above and below it. Same defect
+    // the wishlist header had at 12-vs-16 (docs/ui-playbook.md, "Four stacked
+    // header blocks"): one edge, or the block reads as a different block.
     marginTop: 10,
     gap: 4,
   },

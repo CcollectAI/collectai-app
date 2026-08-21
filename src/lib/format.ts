@@ -156,7 +156,18 @@ export function formatPrice(amount: number | null | undefined, currency: Currenc
  * ("Collection total", "Portfolio total") of zero genuinely is zero and must
  * keep rendering "€ 0".
  */
-export const UNPRICED_LABEL = 'Cannot estimate value';
+/**
+ * Reworded 2026-08-20 (was "Cannot estimate value"). "Cannot" is a claim about
+ * our ability and reads as permanent — the member's reasonable reading is that
+ * this item will never carry a value. The truth is narrower: no sold comp has
+ * reached this row YET, and for the 40+ categories with no comp source that is
+ * a data-coverage fact, not a verdict on the item.
+ *
+ * "Not yet priced" is also the wording the server side already uses for the
+ * same absence at category level (CLAUDE.md, "An unpriced item is not a
+ * zero-euro item"), so the app now says one thing about one fact.
+ */
+export const UNPRICED_LABEL = 'Not yet priced';
 
 /** Coerce a string|number value to a finite number, or undefined. */
 export function toPriceNum(value: string | number | undefined | null): number | undefined {

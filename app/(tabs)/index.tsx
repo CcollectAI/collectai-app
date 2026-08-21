@@ -27,7 +27,7 @@ import { useAuthContext } from "@/providers/useAuthContext";
 import { PortfolioLineChart, type TimeSeriesPoint } from "@/components/PortfolioLineChart";
 import { SkeletonPortfolioHeader } from "@/components/Skeleton";
 import { dataProvider } from "@/data";
-import { InboxHeaderButton } from "@/components/InboxHeaderButton";
+import { HeaderActions } from '@/components/HeaderActions';
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useTabBarInset } from "@/hooks/useTabBarInset";
 import { featureFlags } from "@/config/featureFlags";
@@ -57,7 +57,7 @@ import { useTranslation } from "react-i18next";
 import { formatPrice } from "@/lib/format";
 import { useToast } from "@/components/Toast";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
-import { collectorsApi, getNotificationHistory } from "@/api/collectorsApi";
+import { collectorsApi } from "@/api/collectorsApi";
 import logger from "@/utils/logger";
 import { useStoreReview } from "@/hooks/useStoreReview";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -287,15 +287,6 @@ function PortfolioScreen() {
   // header falls back to the portfolio total.
   const [scrubPoint, setScrubPoint] = useState<TimeSeriesPoint | null>(null);
 
-  // Notification unread badge
-  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
-  useEffect(() => {
-    let cancelled = false;
-    getNotificationHistory({ limit: 1, offset: 0 })
-      .then((data) => { if (!cancelled) setUnreadNotifCount(data.unread_count); })
-      .catch((err) => logger.warn('[Home] notification count fetch error:', err));
-    return () => { cancelled = true; };
-  }, []);
 
   // Data insights & alerts (feature flagged). `insights` still feeds
   // <InsightsCard/> below; only the duplicate CTA that also read it is gone.
@@ -521,10 +512,6 @@ function PortfolioScreen() {
   const rangeButtons: RangeKey[] = ["1D", "7D", "30D", "90D", "1Y", "ALL"];
 
   // Navigation handlers (useCallback to prevent re-renders in child components)
-  const handleOpenNotifications = useCallback(() => {
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push('/notifications');
-  }, [router, settings.hapticsEnabled]);
 
   const handleOpenSettings = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -619,33 +606,7 @@ function PortfolioScreen() {
             <Text style={[styles.headerTitle, { color: colors.text }]}>{t('home.portfolio_title')}</Text>
             <Text style={[styles.headerSubtitle, { color: colors.muted }]}>{t('home.portfolio_subtitle')}</Text>
           </View>
-          <View style={styles.headerIcons}>
-            <AnimatedPressable
-              onPress={handleOpenNotifications}
-              style={styles.iconBtnRelative}
-              accessibilityRole="button"
-              accessibilityLabel={`Notifications${unreadNotifCount > 0 ? `, ${unreadNotifCount} unread` : ''}`}
-            >
-              <Ionicons name="notifications-outline" size={22} color={colors.text} />
-              {unreadNotifCount > 0 && (
-                <View style={[styles.notifBadge, { backgroundColor: colors.error }]}>
-                  <Text style={[styles.notifBadgeText, { color: colors.accentText }]}>
-                    {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
-                  </Text>
-                </View>
-              )}
-            </AnimatedPressable>
-            <InboxHeaderButton color={colors.text} size={22} />
-            <AnimatedPressable
-              testID="open-settings-btn"
-              onPress={handleOpenSettings}
-              style={styles.iconBtn}
-              accessibilityRole="button"
-              accessibilityLabel={t('home.open_settings_a11y')}
-            >
-              <Ionicons name="settings-outline" size={22} color={colors.text} />
-            </AnimatedPressable>
-          </View>
+          <HeaderActions />
         </View>
 
         {/* "3 bids need you →", and nothing at all otherwise.
@@ -956,26 +917,6 @@ const styles = StyleSheet.create({
     fontSize: text.sm,
     marginTop: 4,
   },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  notifBadge: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    borderRadius: radius.xs,
-    minWidth: 16,
-    height: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 3,
-  },
-  notifBadgeText: {
-    fontSize: 9,
-    fontWeight: fontWeight.bold,
-  },
   // Chart card
   chartAnalyticsBtn: {
     flexDirection: 'row',
@@ -1253,13 +1194,6 @@ const styles = StyleSheet.create({
   },
 
   // Extracted inline styles
-  iconBtn: {
-    padding: 4,
-  },
-  iconBtnRelative: {
-    padding: 4,
-    position: "relative",
-  },
   iconMarginRight: {
     marginRight: 8,
   },

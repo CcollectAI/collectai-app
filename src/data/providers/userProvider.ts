@@ -70,9 +70,31 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
   const profile: PublicUserProfile = {
     id: (row.user_id ?? userId) as string,
     displayName: (row.display_handle ?? 'Unknown') as string,
-    handle: (row.display_handle ?? null) as string | null,
+    /**
+     * NULL, not the display name again.
+     *
+     * `user_public_profile_v1` exposes ONE identity column, `display_handle`,
+     * and this mapper used to put it in both fields — so every profile
+     * rendered the same string twice, once as the name and once as
+     * "@Lena V." with an at-sign in front of a name that has a space and a
+     * full stop in it. Seen on the sim 2026-08-20.
+     *
+     * The screen already branches on `handle` being null (a bare "@" reads as
+     * a truncation bug, docs/ui-playbook.md), and that branch could never be
+     * false while this line existed. Null is the honest answer: the view does
+     * not carry a handle. Restore this the day the view exposes one.
+     */
+    handle: null,
     avatarUrl: (row.avatar_url ?? null) as string | null,
     bio: null,
+    /**
+     * NULL means NOT ASKED — and the caller must not render it as zero.
+     * `user_public_profile_v1` carries no interests column, so this has always
+     * been null here, while `UserStatsSection` rendered
+     * `interests?.length ?? 0` as a hard "0 Categories" directly above a
+     * Collects list showing six of them ([[learning_empty_answer_rendered_as_zero]]).
+     * The stat now reads the same source that list does.
+     */
     interests: null,
     collectionCount: (row.collection_count ?? null) as number | null,
     collectionValueEur: (row.collection_value_eur ?? null) as number | null,

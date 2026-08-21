@@ -66,7 +66,25 @@ export const ValueSourceChip = React.memo(function ValueSourceChip({
   const d = describeValueSource(source);
   if (!d) return null;
 
-  const tint = d.tone === 'market' ? colors.accent : colors.muted;
+  /**
+   * ONE treatment for every source (2026-08-20).
+   *
+   * The tone used to pick the colour — accent for market-backed, muted for an
+   * estimate — so the same chip was teal on one item and grey on the next.
+   * Reported by putting two item cards side by side: *"the label color, format
+   * and size should be the same across all items."*
+   *
+   * The colour was a SECOND encoding of what the word already says. "Market
+   * estimate", "Your estimate", "App estimate" and "Not priced yet" are four
+   * different sentences; painting them two different colours adds nothing a
+   * reader did not already have, and it cost the screen its consistency. The
+   * provenance signal is not lost — it is in the label, where it is readable
+   * rather than inferred, and where a colour-blind member gets it too.
+   *
+   * `tone` is still returned by `describeValueSource` and still used by the
+   * analytics split; it just no longer decides how this chip looks.
+   */
+  const tint = colors.muted;
 
   if (inline) {
     return (
@@ -98,8 +116,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.xs,
     borderWidth: 1,
   },
-  chipText: { fontSize: textToken.xs, fontWeight: fw.semibold },
-  inline: { fontSize: textToken.xs, fontWeight: fw.semibold },
+  // `sm` (12), not `xs` (10). The type scale bans 10pt for anything a user
+  // reads, and this chip is the only thing on the card that says where the
+  // number came from — the one line that must not be squinted at.
+  chipText: { fontSize: textToken.sm, fontWeight: fw.semibold },
+  inline: { fontSize: textToken.sm, fontWeight: fw.semibold },
 });
 
 export default ValueSourceChip;

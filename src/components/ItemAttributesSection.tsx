@@ -1,14 +1,38 @@
 /**
- * ItemAttributesSection Component
- * Displays item attributes_json data as a clean key-value list.
- * Renders nothing if attributes are null or empty.
+ * ItemAttributesSection — the captured `items.attrs` as label/value rows.
+ *
+ * ONE renderer, ONE mount (2026-08-20). This used to be mounted TWICE on the
+ * item screen — once inside `ItemDetailsCard`, once again standalone from
+ * `app/item/[id].tsx` — each fed by its own fetch of the same row, so a
+ * Pokemon card showed "Item Details" twice with different data underneath.
+ * The two copies were not even equivalent:
+ *
+ *   - the inner one was passed `editableCategory`, a DISPLAY NAME, into
+ *     `getCategoryFields`, which is keyed by SLUG (docs/TAXONOMY.md, "Two
+ *     vocabularies"). It therefore lost category ordering and labels silently.
+ *   - the outer one had the saved-row `subtypeId` and collections the inner
+ *     one never received.
+ *
+ * The surviving mount is inside the details card, directly under Estimated
+ * value, fed by the screen's saved-row state. It renders as ROWS IN THAT CARD
+ * — no border, no icon header — because a bordered card nested inside a
+ * bordered card is what "messy" means (docs/ui-playbook.md, "A profile that
+ * opens with three card idioms in a row").
+ *
+ * `CategorySpecificSection` no longer renders plain attribute rows either
+ * (same date): every one of its 71 rows read a key out of the same `attrs`
+ * this component already lists, so "Card Details" was a third rendering of the
+ * same facts. It keeps only what this cannot say — badges (Foil, 1st Edition,
+ * Vaulted) and controls (size, build progress, authentication links).
+ *
+ * Renders nothing if there is nothing captured.
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { getCategoryFields } from '@/constants/categoryFields';
+import { text, fontWeight } from '@/theme/tokens';
 
 type ItemAttributesSectionProps = {
   attributes: Record<string, unknown> | null;
@@ -16,6 +40,18 @@ type ItemAttributesSectionProps = {
   taxonomyVersion?: string;
   subtypeId?: string;
   collections?: string[];
+  /**
+   * Edit mode. Reported 2026-08-20: *"brand/rarity/set code are not
+   * editable"* — and they were not, on any screen. The item card could edit
+   * name, value, category, collection, condition and size; every captured
+   * attribute was display-only, and `updateItem` accepted no path to them.
+   *
+   * The rows become inputs here rather than in a separate form so there is one
+   * place a member reads an attribute and one place they change it.
+   */
+  editable?: boolean;
+  /** Called per keystroke with the attribute key and its new string value. */
+  onChangeAttribute?: (key: string, value: string) => void;
 };
 
 /**
@@ -92,6 +128,8 @@ export function ItemAttributesSection({
   taxonomyVersion,
   subtypeId,
   collections,
+  editable = false,
+  onChangeAttribute,
 }: ItemAttributesSectionProps) {
   const { colors } = useAppTheme();
 
@@ -127,16 +165,26 @@ export function ItemAttributesSection({
     return a.localeCompare(b);
   });
 
+  /**
+   * In EDIT mode, offer the category's declared fields even when they are
+   * empty. Read mode lists only what exists — an empty row is noise. But edit
+   * mode listing only what exists means **a missing rarity can never be
+   * added**: the row that would hold it is exactly the row that is absent.
+   * That is the difference between "display the data" and "edit the record".
+   */
+  const editableEntries = editable
+    ? (() => {
+        const present = new Map(attributeEntries);
+        for (const key of fieldOrder) if (!present.has(key)) present.set(key, '');
+        return Array.from(present.entries());
+      })()
+    : attributeEntries;
+
   // If after filtering we still have nothing, bail out
-  if (attributeEntries.length === 0 && !hasCollections && !hasSubtype) return null;
+  if (editableEntries.length === 0 && !hasCollections && !hasSubtype) return null;
 
   return (
-    <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      {/* Header */}
-      <View style={styles.sectionHeader}>
-        <Ionicons name="document-text-outline" size={20} color={colors.accent} />
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Item Details</Text>
-      </View>
+    <View style={[styles.section, { borderTopColor: colors.border }]}>
 
       {/* Subtype row */}
       {hasSubtype && (
@@ -152,17 +200,31 @@ export function ItemAttributesSection({
       )}
 
       {/* Attribute rows */}
-      {attributeEntries.map(([key, val]) => (
+      {editableEntries.map(([key, val]) => (
         <View key={key} style={styles.attributeRow}>
           <Text style={[styles.attributeLabel, { color: colors.muted }]}>
             {formatLabel(key, categoryLabels)}
           </Text>
-          <Text
-            style={[styles.attributeValue, { color: colors.text }]}
-            numberOfLines={2}
-          >
-            {formatValue(val)}
-          </Text>
+          {editable ? (
+            <TextInput
+              style={[styles.attributeInput, { color: colors.text, borderBottomColor: colors.border }]}
+              defaultValue={formatValue(val) === '-' ? '' : formatValue(val)}
+              onChangeText={(t) => onChangeAttribute?.(key, t)}
+              placeholder="—"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              accessibilityLabel={`${formatLabel(key, categoryLabels)} value`}
+            />
+          ) : (
+            <Text
+              style={[styles.attributeValue, { color: colors.text }]}
+              numberOfLines={2}
+            >
+              {formatValue(val)}
+            </Text>
+          )}
         </View>
       ))}
 
@@ -201,36 +263,43 @@ export function ItemAttributesSection({
 }
 
 const styles = StyleSheet.create({
+  // Rows in the details card, not a card of their own: a hairline above them
+  // and nothing else. The metrics below deliberately COPY `ItemDetailsCard`'s
+  // `row` / `label` / `value` — two components drawing the same kind of row at
+  // two type sizes is what made the old nested card read as a different app
+  // (docs/ui-playbook.md, "Two label languages in one form").
   section: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 10,
+    paddingTop: 8,
   },
   attributeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 6,
+    marginTop: 6,
+    gap: 12,
   },
   attributeLabel: {
-    fontSize: 13,
-    flex: 1,
+    fontSize: text.md,
+    flexShrink: 1,
+  },
+  // Same metrics as `attributeValue` plus the underline every other editable
+  // field on this card uses — two controls in one form must be one size
+  // (docs/ui-playbook.md).
+  attributeInput: {
+    fontSize: text.md,
+    fontWeight: fontWeight.medium,
+    flexShrink: 1,
+    minWidth: 120,
+    textAlign: 'right',
+    paddingVertical: 2,
+    borderBottomWidth: 1,
   },
   attributeValue: {
-    fontSize: 13,
-    fontWeight: '500',
-    flex: 1,
+    fontSize: text.md,
+    fontWeight: fontWeight.medium,
+    flexShrink: 1,
     textAlign: 'right',
   },
   collectionsBlock: {
@@ -251,7 +320,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   taxonomyFooter: {
-    fontSize: 11,
+    // `sm`, not the 11pt literal it carried: the type scale bans anything
+    // below 12 for text a user reads (docs/ui-playbook.md).
+    fontSize: text.sm,
     marginTop: 12,
     textAlign: 'right',
     fontStyle: 'italic',

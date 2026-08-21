@@ -17,7 +17,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type PublicUserProfile } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -223,9 +223,24 @@ function UserProfileScreen() {
   // Recent achievements (for "New!" badges)
   const [recentAchievementIds, setRecentAchievementIds] = useState<Set<string>>(new Set());
 
+  /**
+   * Is this me?
+   *
+   * Computed ONCE here because it now decides what renders, not just what is
+   * fetched. It used to live inside a single effect while three render sites
+   * recomputed `userId === currentUser?.id` inline — fine while nothing could
+   * navigate here, and wrong the moment Settings → "View public profile"
+   * existed (2026-08-20): the CTA row offered Message and Follow, so you could
+   * open a DM with yourself and follow yourself.
+   */
+  // `!!userId &&` first: with no param AND no session both sides are
+  // `undefined`, `undefined === undefined` is TRUE, and the screen would hide
+  // the CTA row and claim a stranger's profile was your own.
+  const isSelf = !!userId && userId === currentUser?.id;
+
   useEffect(() => {
     if (!userId) return;
-    const isOwnProfile = userId === currentUser?.id;
+    const isOwnProfile = isSelf;
 
     if (isOwnProfile) {
       // Fetch full gamification data for authenticated user
@@ -284,7 +299,7 @@ function UserProfileScreen() {
         })
         .catch((err) => logger.info('[UserProfile] Public gamification fallback:', err));
     }
-  }, [userId, currentUser?.id]);
+  }, [userId, isSelf]);
 
   const profileBadges = useMemo(() => {
     // Use real backend data if available
@@ -339,6 +354,54 @@ function UserProfileScreen() {
 
   // Error / Not found state
   if (error || !profile) {
+    /**
+     * YOUR OWN profile missing is a different fact, and it has a cause.
+     *
+     * `user_public_profile_v1` ends in
+     * `WHERE COALESCE(NULLIF(display_name,''), NULLIF(username,'')) IS NOT NULL`
+     * — a member who has never set a display name or a username has NO ROW in
+     * the view, so the read returns nothing. Verified on prod 2026-08-20: the
+     * sim account (display_name NULL) has 0 rows, Lena V. has 1.
+     *
+     * Telling that member "this profile doesn't exist" is telling them they do
+     * not exist, and the Settings → View public profile row added the same day
+     * would walk them straight into it — a door that leads to an error page,
+     * for exactly the accounts least likely to have filled anything in. So the
+     * self branch says what is actually true and what fixes it.
+     */
+    if (isSelf && !error) {
+      return (
+        <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+          <View style={styles.centerContainer}>
+            <Ionicons name="person-circle-outline" size={48} color={colors.muted} />
+            <Text style={[styles.errorTitle, { color: colors.text }]}>
+              Your public profile isn&apos;t set up yet
+            </Text>
+            <Text style={[styles.errorSubtitle, { color: colors.muted }]}>
+              Add a display name so other collectors can find you and see what
+              you collect.
+            </Text>
+            <AnimatedPressable
+              style={[styles.retryBtn, { borderColor: colors.accent, backgroundColor: colors.accent }]}
+              onPress={() => router.push('/settings' as Href)}
+              accessibilityRole="button"
+              accessibilityLabel="Open settings to add a display name"
+            >
+              <Text style={[styles.retryBtnText, { color: colors.accentText }]}>Add a display name</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={styles.plainBackBtn}
+              onPress={() => safeGoBack(router)}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.go_back_a11y')}
+            >
+              <Text style={[styles.retryBtnText, { color: colors.muted }]}>{t('common.go_back')}</Text>
+            </AnimatedPressable>
+          </View>
+        </SafeAreaView>
+      );
+    }
+
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.centerContainer}>
@@ -398,32 +461,44 @@ function UserProfileScreen() {
         {/* ═══════════════════════════════════════════════════════════════════
             A) Profile Header Card
         ═══════════════════════════════════════════════════════════════════ */}
+        {/* The identity block, rebuilt 2026-08-20.
+
+            It used to open with an 80pt accent banner, a 60pt top pad and a
+            ringed 80pt avatar hanging into it, then centre the name, the
+            handle and the presence dot — roughly 140pt of decoration before
+            the first fact about the collector, and a centre axis that nothing
+            below it shared (stats were centred, collects and trading are
+            left-aligned rows). Reported as the card that had not changed while
+            everything around it had.
+
+            One row now: avatar, then name / handle / presence stacked beside
+            it, on the SAME left edge as every section under it. The accent
+            survives as the avatar ring — a colour cue costs nothing; an 80pt
+            band costs the fold. */}
         <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {/* Accent banner at top */}
-          <View style={[styles.profileBanner, { backgroundColor: colors.accent + '20' }]} />
-
-          {/* Avatar with accent ring */}
-          <View style={[styles.avatarRing, { borderColor: colors.accent + '40', backgroundColor: colors.card }]}>
-            <AvatarCircle name={profile.displayName} size={80} />
-          </View>
-
-          <View style={styles.profileInfo}>
-            <View style={styles.nameRow}>
-              <Text style={[styles.displayName, { color: colors.text }]}>
-                {profile.displayName}
-              </Text>
-              {profile.collectionCount != null && profile.collectionCount > 50 && (
-                <View style={[styles.verifiedBadge, { backgroundColor: colors.accent }]}>
-                  <Ionicons name="checkmark" size={10} color={colors.accentText} />
-                </View>
-              )}
+          <View style={styles.identityRow}>
+            <View style={[styles.avatarRing, { borderColor: colors.accent + '40' }]}>
+              <AvatarCircle name={profile.displayName} size={56} />
             </View>
-            {profile.handle && (
-              <Text style={[styles.handle, { color: colors.muted }]}>
-                @{profile.handle}
-              </Text>
-            )}
-            {userId && <PresenceIndicator userId={userId} size={8} showLabel />}
+
+            <View style={styles.profileInfo}>
+              <View style={styles.nameRow}>
+                <Text style={[styles.displayName, { color: colors.text }]} numberOfLines={1}>
+                  {profile.displayName}
+                </Text>
+                {profile.collectionCount != null && profile.collectionCount > 50 && (
+                  <View style={[styles.verifiedBadge, { backgroundColor: colors.accent }]}>
+                    <Ionicons name="checkmark" size={10} color={colors.accentText} />
+                  </View>
+                )}
+              </View>
+              {profile.handle && (
+                <Text style={[styles.handle, { color: colors.muted }]} numberOfLines={1}>
+                  @{profile.handle}
+                </Text>
+              )}
+              {userId && <PresenceIndicator userId={userId} size={8} showLabel />}
+            </View>
           </View>
 
           <UserStatsSection profile={profile} gamProfile={gamProfile} />
@@ -434,18 +509,29 @@ function UserProfileScreen() {
               listing actually has. Renders nothing until they have traded, so
               it costs no space on a profile with no history. */}
           {userId && !isUserBlocked ? (
-            <TradeReputationSection userId={userId} isSelf={userId === currentUser?.id} />
+            <TradeReputationSection userId={userId} isSelf={isSelf} />
           ) : null}
 
           {/* What they actually collect, and where they place in each category
               (2026-08-17). Above the CTA row on purpose: the answer to "who is
               this collector" should come before "message / follow them". */}
           {userId && !isUserBlocked ? (
-            <UserCategoriesSection userId={userId} isSelf={userId === currentUser?.id} />
+            <UserCategoriesSection userId={userId} isSelf={isSelf} />
           ) : null}
 
-          {/* CTA Row */}
-          {!isUserBlocked && (
+          {/* 4. On your own profile the card ends with what it IS, rather than
+                 with two controls aimed at somebody else. Without this line a
+                 member arriving from Settings sees their own face above a
+                 "Message" button and reasonably reads it as broken. */}
+          {isSelf ? (
+            <Text style={[styles.selfNote, { color: colors.muted }]}>
+              This is what other collectors see.
+            </Text>
+          ) : null}
+
+          {/* CTA Row — never on your own profile (3): "Message" would open a
+              DM with yourself and "Follow" would follow yourself. */}
+          {!isUserBlocked && !isSelf && (
             <View style={styles.ctaRow}>
               <AnimatedPressable
                 style={[
@@ -635,24 +721,18 @@ const styles = StyleSheet.create({
   profileCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    alignItems: 'center',
+    padding: 20,
     overflow: 'hidden',
   },
-  profileBanner: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 80,
+  identityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
   avatarRing: {
-    padding: 4,
+    padding: 3,
     borderRadius: radius.pill,
-    borderWidth: 3,
-    marginTop: -20,
+    borderWidth: 2,
   },
   nameRow: {
     flexDirection: 'row',
@@ -674,16 +754,28 @@ const styles = StyleSheet.create({
     fontWeight: fw.bold,
   },
   profileInfo: {
-    alignItems: 'center',
-    marginTop: 16,
+    flex: 1,
+    // `flex: 1` and nothing else: the column claims the rest of the row so a
+    // long display name truncates against the card edge instead of pushing
+    // the layout wider than the card.
+    gap: 2,
   },
   displayName: {
-    fontSize: textToken['2xl'],
+    fontSize: textToken.xl,
     fontWeight: fw.bold,
   },
   handle: {
-    fontSize: textToken.lg,
-    marginTop: 4,
+    fontSize: textToken.md,
+  },
+  plainBackBtn: {
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  selfNote: {
+    fontSize: textToken.sm,
+    lineHeight: 17,
+    marginTop: 16,
   },
   ctaRow: {
     flexDirection: 'row',

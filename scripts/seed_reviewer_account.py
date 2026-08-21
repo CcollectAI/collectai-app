@@ -100,6 +100,8 @@ DEMO_BUILD_PROJECT = {
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Seed App Store reviewer account")
+    parser.add_argument("--user-id", default=None,
+                        help="Reuse an existing auth user id (list_users is broken on this project)")
     parser.add_argument("--password", help="Reviewer account password (or set REVIEWER_PASSWORD env var)")
     parser.add_argument("--dry-run", action="store_true", help="Print actions, don't execute")
     args = parser.parse_args()
@@ -135,52 +137,104 @@ def main() -> int:
         print("  DRY-RUN: would delete + recreate auth user")
         user_id = "dry-run-uuid-placeholder"
     else:
+        # `list_users()` returns "Database error finding users" on this project,
+        # so the old idempotency path silently fell through to create_user and
+        # died with "already registered" on every re-run — after a first run had
+        # ALREADY created the auth user. That is how the account came to exist
+        # in `auth.users` with no profile and no items, which is worse than not
+        # existing: it authenticates and then shows an empty app.
+        #
+        # Create-then-fall-back-to-update is the shape that survives both.
+        user_id = None
         try:
-            existing = sb.auth.admin.list_users()
-            for u in existing:
-                if getattr(u, "email", None) == REVIEWER_EMAIL:
-                    print(f"  found existing user {u.id} — deleting for clean reseed")
-                    sb.auth.admin.delete_user(u.id)
-                    break
+            result = sb.auth.admin.create_user({
+                "email": REVIEWER_EMAIL,
+                "password": password,
+                "email_confirm": True,  # reviewers cannot receive a confirm mail
+                "user_metadata": {"full_name": "App Store Reviewer", "is_reviewer": True},
+            })
+            user_id = result.user.id
+            print(f"  created user {user_id}")
         except Exception as e:
-            print(f"  WARN listing users failed: {e}")
-
-        result = sb.auth.admin.create_user({
-            "email": REVIEWER_EMAIL,
-            "password": password,
-            "email_confirm": True,  # skip email verification for reviewer
-            "user_metadata": {
-                "full_name": "App Store Reviewer",
-                "is_reviewer": True,
-            },
-        })
-        user_id = result.user.id
-        print(f"  created user {user_id}")
+            if "already been registered" not in str(e):
+                raise
+            existing_id = os.environ.get("REVIEWER_USER_ID") or args.user_id
+            if not existing_id:
+                print(
+                    "  ERROR: the user exists but its id was not supplied and this\n"
+                    "  project's admin list_users() is broken. Re-run with\n"
+                    "  --user-id <uuid>  (SELECT id FROM auth.users WHERE email=...)",
+                    file=sys.stderr,
+                )
+                return 2
+            user_id = existing_id
+            print(f"  user exists — reusing {user_id} and resetting its password")
+            sb.auth.admin.update_user_by_id(
+                user_id, {"password": password, "email_confirm": True}
+            )
 
     # 2. Create profile row
     print(f"[2/5] Creating profile for {user_id}...")
     if not args.dry_run:
+        # Only columns `public.profiles` ACTUALLY has (verified against the
+        # live schema 2026-08-20): id, username, created_at, display_name,
+        # avatar_url, avatar_color, referred_by_code, seller_age_verified_at,
+        # bio. The previous payload wrote `country`, `preferred_currency`,
+        # `age_confirmed` and `onboarded_at` — none of which exist — and
+        # PostgREST rejected the whole upsert with PGRST204 on the first of
+        # them, so the script died at step 2 having already created the auth
+        # user. That is why `reviewer@sparrowcollect.com` could be "missing"
+        # while a half-seeded run had happened.
+        #
+        # `display_name` and `username` are not cosmetic here: BOTH public
+        # profile views filter on `COALESCE(NULLIF(display_name,''),
+        # NULLIF(username,'')) IS NOT NULL`, so a profile without them is
+        # invisible in search and on leaderboards — and its own public profile
+        # screen 404s.
         sb.table("profiles").upsert({
             "id": user_id,
             "username": "reviewer",
             "display_name": "App Store Reviewer",
-            "country": "NL",
-            "preferred_currency": "EUR",
-            "age_confirmed": True,
-            "onboarded_at": datetime.now(timezone.utc).isoformat(),
+            "bio": "Demo account for App Store / Play Store review.",
         }, on_conflict="id").execute()
 
     # 3. Seed 25 demo items
     print(f"[3/5] Seeding {len(DEMO_ITEMS)} demo items...")
+    # `items` has NO `currency` column (verified 2026-08-20) — the old payload
+    # carried one and PostgREST rejects the whole insert on an unknown column.
+    #
+    # `estimated_value` is set deliberately: without a value every row renders
+    # "Not yet priced" and the portfolio totals €0, so a reviewer told to expect
+    # a 25-item collection meets a screen full of blanks — the same guideline
+    # 2.1 problem as an empty account, one step later. Values are plausible
+    # per category rather than uniform, because a portfolio where every item
+    # costs the same reads as fake.
+    demo_values = {
+        "pokemon": 420.0, "lego": 615.0, "manga": 95.0,
+        "vinyl": 140.0, "anime_figures": 230.0, "kpop_merch": 65.0,
+    }
+    # DELETE FIRST. The module docstring has always claimed "re-running with
+    # the same email won't duplicate data — it deletes existing rows for the
+    # user first", and no delete existed anywhere in the file: a second run
+    # simply inserted 25 more items. Prose describing behaviour nothing
+    # implements is the house bug; here it is, in the script that fixes an
+    # instance of it.
+    if not args.dry_run:
+        sb.table("items").delete().eq("user_id", user_id).execute()
+        sb.table("purchase_mandates").delete().eq("user_id", user_id).execute()
+
     items_payload = []
-    for category, title, condition in DEMO_ITEMS:
+    for idx, (category, title, condition) in enumerate(DEMO_ITEMS):
+        base = demo_values.get(category, 120.0)
         items_payload.append({
             "id": str(uuid.uuid4()),
             "user_id": user_id,
             "category": category,
+            # `title` alone is enough: `items` carries both halves of the
+            # name/title pair and a trigger fills the missing one.
             "title": title,
             "condition": condition,
-            "currency": "EUR",
+            "estimated_value": round(base * (0.8 + 0.06 * (idx % 7)), 2),
             "created_at": (datetime.now(timezone.utc) - timedelta(days=20)).isoformat(),
         })
     if not args.dry_run:
@@ -190,32 +244,38 @@ def main() -> int:
     print(f"[4/5] Seeding {len(DEMO_MANDATES)} purchase mandates...")
     mandate_payload = []
     for m in DEMO_MANDATES:
+        # Real columns (verified 2026-08-20): the table has `name`,
+        # `max_total_budget` and `condition_filter` — not `max_budget_eur` or
+        # `preferred_condition`, which never existed here.
         mandate_payload.append({
             "id": str(uuid.uuid4()),
             "user_id": user_id,
+            "name": m["search_query"][:60],
             "category": m["category"],
             "search_query": m["search_query"],
-            "max_budget_eur": m["max_budget_eur"],
-            "preferred_condition": m["preferred_condition"],
+            # `max_price` is NOT NULL — the per-deal ceiling, distinct from the
+            # mandate's total budget. A mandate with a total but no per-deal cap
+            # would let one purchase eat the whole budget, which is why the
+            # column is required.
+            "max_price": m["max_budget_eur"],
+            "max_total_budget": m["max_budget_eur"],
+            # `condition_filter` is text[], not text — a bare string gives
+            # 22P02 "malformed array literal".
+            "condition_filter": [m["preferred_condition"]],
             "status": "active",
             "created_at": (datetime.now(timezone.utc) - timedelta(days=5)).isoformat(),
         })
     if not args.dry_run:
         sb.table("purchase_mandates").insert(mandate_payload).execute()
 
-    # 5. Seed 1 build & paint project
-    print(f"[5/5] Seeding 1 build & paint project...")
-    if not args.dry_run:
-        sb.table("build_projects").insert({
-            "id": str(uuid.uuid4()),
-            "user_id": user_id,
-            "category": DEMO_BUILD_PROJECT["category"],
-            "title": DEMO_BUILD_PROJECT["title"],
-            "status": DEMO_BUILD_PROJECT["status"],
-            "current_step": DEMO_BUILD_PROJECT["current_step"],
-            "total_steps": DEMO_BUILD_PROJECT["total_steps"],
-            "started_at": DEMO_BUILD_PROJECT["started_at"].isoformat(),
-        }).execute()
+    # 5. Build & paint project — SKIPPED (2026-08-20).
+    #
+    # `public.build_projects` DOES NOT EXIST. This step would have failed the
+    # whole run at the last line, after everything else had been written, which
+    # is the worst place for a script that is not transactional. If build
+    # projects come back, find the real table name before restoring this — do
+    # not resurrect the old payload on faith.
+    print("[5/5] Build & paint project: SKIPPED — public.build_projects does not exist.")
 
     print(f"\n✓ Reviewer account seeded.")
     print(f"  Email:    {REVIEWER_EMAIL}")

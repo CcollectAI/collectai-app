@@ -117,7 +117,7 @@
     "no_results": "Geen resultaten gevonden",
     "no_price_yet": "Nog geen prijs",
     "browse_by_category": "Blader per categorie",
-    "title": "Zoeken"
+    "title": "Ontdek"
   },
   "item_detail": {
     "valuation_a11y": "Item-taxatie en details",
@@ -678,6 +678,7 @@
     "edit_profile": "Profiel bewerken",
     "edit_profile_desc": "Wijzig je gebruikersnaam en bio",
     "edit_profile_a11y": "Profiel bewerken",
+    "view_public_profile_a11y": "Openbaar profiel bekijken",
     "change_password": "Wachtwoord wijzigen",
     "change_password_desc": "Werk je accountwachtwoord bij",
     "change_password_a11y": "Wachtwoord wijzigen",

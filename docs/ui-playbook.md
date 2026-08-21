@@ -1264,3 +1264,183 @@ the Search tab". Copy naming a tab is a fourth place to change, and no gate
 looks for it: `i18n:parity` compares keys across locale files and
 `check:reachable` walks routes, so neither can see an English sentence naming a
 control. Grep the label string, not just the components.
+
+## A component can be imported, wired, and never in the tree (2026-08-20)
+
+`app/listings.tsx` imported `ShareToChatSheet`, held a `shareFor` state, drew a
+paper-plane on every tile and computed a `sharePayload` memo — and the element
+was **never rendered**. Tapping share set state that nothing read. Reported as
+*"the send button on marketplace does not work"*.
+
+`tsc` is happy (an unused binding is legal), `check:reachable` asks about ROUTE
+edges and a component has none, and `check-dead-nav` asks whether a route file
+exists. eslint *did* say `'ShareToChatSheet' is defined but never used` — as a
+**warning**, in a repo with dozens, and `verify:prebuild` does not run lint.
+
+**`npm run check:unrendered`** (`scripts/check-unrendered-components.mjs`) now
+fails the build for a PascalCase import from a `components/` path that appears
+nowhere else in the file. It found 7 more on its first run.
+
+**The gate was wrong in BOTH directions before it was right**, and both are
+worth remembering when writing any grep-shaped checker:
+
+- a component named only in a `//` comment ("moved to CategorySpecificSection")
+  counted as a USE, hiding a stale import;
+- a deliberately commented-out `// import { SellTimingBadge } …`, kept beside
+  the note explaining how to restore it, counted as an IMPORT and was reported
+  as unrendered.
+
+Strip comments first. A comment is neither a reference nor a declaration.
+
+## One fact, three renderers (2026-08-20)
+
+The item card showed **"Item Details" twice**, then the same attribute keys a
+third time as **"Card Details"**. Reported as *"the item card is messy"*.
+
+- `ItemAttributesSection` was mounted inside `ItemDetailsCard` **and** again
+  standalone from the screen, each with its own fetch of the same row. The
+  inner copy got `editableCategory` — a display NAME — where
+  `getCategoryFields` expects a SLUG, so it silently lost the category's field
+  order and labels.
+- `CategorySpecificSection` re-rendered the same `attrs` as 71 hand-rolled rows
+  across 25 blocks. Every one duplicated the list BY CONSTRUCTION: the list
+  renders every key present; the blocks re-render a hand-picked subset.
+
+**The rule: a kind of row has ONE renderer.** The attribute list owns key/value
+rows; the category blocks keep only what the list cannot say — badges (Foil,
+1st Edition, Vaulted) and controls (size, build progress, auth links).
+
+**And the defect that cleanup introduced:** 19 blocks were left holding nothing
+but *conditional* badges while the wrapper still carried `marginTop`,
+`paddingTop` and `borderTopWidth`, so an item that was neither foil nor 1st
+edition drew a **stray divider above 12pt of nothing**. Spacing that belongs to
+a conditional child has to live ON that child, not on a wrapper that always
+renders.
+
+## Six full-width rows is a wall; two columns is a list (2026-08-20)
+
+The profile's "Collects" block was reported as stacking three times, and each
+fix made it less bad without making it right: six framed boxes → one framed
+list → six unframed full-width rows. The last version was still ~90pt per
+category, so a collector in six categories spent a screen on them and the CTA
+row fell off the bottom.
+
+**A category is a small fact** — a name, a count, a rank. Giving it the full
+width of the phone is what forced the stack. Two columns halve the height with
+nothing hidden and no horizontal scroll (which hides half the content behind a
+gesture nobody is told about).
+
+Three things that went with it:
+
+1. **`flexGrow: 1` stretches the last tile across the full row on an ODD
+   count.** The profile under test had six — the data that cannot show the bug.
+   `flexGrow: 0` with `flexBasis: '48%'`.
+2. **The chevron per tile went.** The whole tile is the target; twelve chevrons
+   are decoration.
+3. **A bordered container inside a bordered card is a box in a box.** The card
+   already says where the group ends.
+
+## A count in a section header describes TRADES, not rows (2026-08-20)
+
+When `app/offers.tsx` started collapsing competing bids into one row, the
+header `{section.title} · {section.data.length}` began counting **rendered
+rows**: "Waiting on them · 2" over five bids, two of which had collapsed. The
+display list now carries `total` from before the collapse. Any time you filter
+what a list renders, check every number computed from that list —
+`[[learning_aggregate_over_the_wrong_population]]` is one `.length` away.
+
+## Your own empty state is a different sentence (2026-08-20)
+
+Opening your own profile rendered **"Collector not found — this profile doesn't
+exist or couldn't be loaded"**, because `user_public_profile_v1` ends in
+`WHERE COALESCE(NULLIF(display_name,''), NULLIF(username,'')) IS NOT NULL` and
+a member who never set a name has no row. Telling that member their profile
+does not exist is telling them THEY do not exist — and the Settings row added
+the same day walked them into it.
+
+**Any screen reachable for both "you" and "someone else" needs the self branch
+checked separately.** Here it says what is true and what fixes it: *"Your
+public profile isn't set up yet — add a display name so other collectors can
+find you"*, with a route to Settings.
+
+## The top-right cluster is ONE component, on every screen (2026-08-20)
+
+Reported as *"top right on portfolio there's a settings icon, notification icon
+and profile icon — this should be the same for every screen across the nav bar,
+this is not the case currently."* An audit of the five tabs found four
+different clusters and two tabs with none at all:
+
+| tab | bell | bubble | avatar | gear |
+|---|---|---|---|---|
+| Portfolio | ✓ | ✓ | ✓ | ✓ |
+| Items / Add / Events | — | ✓ | ✓ | ✓ |
+| Market / Explore | — | — | — | — |
+
+Six files hand-rolled the same row. That is the same shape as the tab LABEL
+problem (three components each rendering their own copy of the bar): **when N
+files draw one thing, they drift, and no gate can see it.** There is now one
+`HeaderActions` — bell · bubble · gear — rendered by all five tabs, by
+`ScreenHeader` (15 screens) and by the root stack.
+
+**Three icons, and identity is not one of them.** The bell, the bubble and the
+gear are things you DO; a profile is something you ARE. Four icons stop reading
+as a cluster and start reading as a toolbar. The avatar came off the header and
+identity moved to the FIRST ROW of Settings — avatar, name, chevron — which is
+the Apple-ID-row pattern, and is what Vinted does.
+
+That is deliberately not the Uber-rider burial: Uber hides the rider rating
+under Settings → Privacy → Privacy Center, and it needed CNBC and Washington
+Post how-to articles to be findable. Row one of the first settings screen,
+behind a gear that is now on every screen, is the opposite of a fourth-level
+menu.
+
+**Two defects this fixed that were not the reported one:**
+
+1. **The notification bell existed on Portfolio ONLY.** Its unread count was
+   fetched by `app/(tabs)/index.tsx`, so notifications were reachable from one
+   screen out of five. A control whose state lives in a screen ends up living
+   only on that screen.
+2. **The cluster changed SHAPE with your inbox.** `InboxHeaderButton` hid
+   itself under `COMMUNITY_GATED` unless you had unread mail — a DISCOVERY flag
+   ("flip when ~50 public profiles exist") reused for a messaging control, the
+   exact reuse `featureFlags.ts` already warns against for
+   `GAMIFICATION_UI_ENABLED`. It now has its own `MESSAGING_ENABLED`. The old
+   reuse is also what left the gear floating ~46pt from the screen edge (see
+   the iOS 26 capsule section).
+
+**Two defects the post-completion audit caught in this very change** — both
+the same shape, a rewrite that deleted a fact while adding a label:
+
+- **The account email vanished from Settings.** The identity row used to read
+  *username / email*; the rewrite put "View public profile" on the second line.
+  But the chevron already says the row goes somewhere — so the label restated
+  the affordance and deleted the only place in the app that tells you WHICH
+  account you are signed in as. The email is back and the label key is gone.
+- **The badge cache outlived the session.** Module scope survives a sign-out,
+  so the next account would have worn the previous one's unread count for up to
+  a minute. The cache is now keyed by user id and cleared when it changes.
+
+**And the cost this change ADDED, measured rather than assumed:** moving the
+badge fetch into the cluster multiplied it by every screen that renders a
+header — five tabs plus 15 `ScreenHeader` users. The count is now cached at
+module scope with a 60s TTL, so it is one request a minute at worst instead of
+one per screen opened. Any time you move a fetch from a screen into a shared
+component, ask how many mounts you just created.
+
+## A tab's label and its TITLE are a third thing (2026-08-20)
+
+The 2026-08-19 entry above records that the fifth tab's LABEL ("Explore") and
+its ROUTE (`search`) are deliberately different. What nobody checked was the
+in-body **title**, which still read "Search" — so you tapped Explore and landed
+on a page called Search, in all seven locales.
+
+`search.title` now carries each locale's own `nav.explore` value verbatim
+(Explore / Ontdek / Entdecken / Explorer / Explorar / さがす / 둘러보기) rather
+than a fresh translation, so the bar and the page cannot drift apart by
+wording. The KEY keeps its name — the route really is `search` — and it was
+edited in place rather than duplicated, because it had exactly one consumer and
+a second key would have left an orphan in seven files.
+
+**The rule: a rename has three surfaces — label, route, title — and they answer
+different questions.** Changing one and checking the other is how this survived
+a documented pass about the very same tab.

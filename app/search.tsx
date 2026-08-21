@@ -13,6 +13,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { HeaderActions } from '@/components/HeaderActions';
 import { useRouter, useLocalSearchParams, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 // react-native's Image is already imported above for the result rows; the
@@ -380,10 +381,22 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
         {/* The tab had no title at all — it opened straight onto a search
             field, so the page never said what it was. Same spec as every other
             screen title (left, 24, extrabold — docs/ui-playbook.md), sharing
-            the row with the back control the way the Watchlist header does. */}
+            the row with the back control the way the Watchlist header does.
+            The KEY is `search.title` because the ROUTE is `search` and stays
+            that way (deep links, check:params, the one-line re-export). Its
+            VALUE is the word on the bar — Explore / Ontdek / Entdecken / … —
+            identical to `nav.explore` in all 7 locales, because tapping
+            "Explore" used to land on a page headed "Search". This is the ONLY
+            consumer of `search.title`; if a second one ever means the verb,
+            give that one its own key rather than reverting this. */}
         <Text style={[styles.screenTitle, { color: colors.text }]} numberOfLines={1}>
           {t('search.title')}
         </Text>
+        {/* Explore was one of two tabs with NO top-right cluster at all
+            (2026-08-20 audit), so notifications, messages and settings were
+            unreachable from it. `flex: 1` on the title above pins this to the
+            right edge. */}
+        <HeaderActions />
       </View>
 
       <View style={styles.searchRow}>

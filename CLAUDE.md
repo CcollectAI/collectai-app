@@ -2,6 +2,197 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-19
 
+## Current state (2026-08-20)
+
+### A screen full of things that were built and never connected
+
+Five separate features on three screens were complete, correct and reachable
+from nowhere — the house failure mode, five instances in one day.
+
+- **The marketplace share button did nothing.** `app/listings.tsx` imported
+  `ShareToChatSheet`, held `shareFor` state and computed a `sharePayload`
+  memo — and never put the element in the tree. eslint said so, as a WARNING,
+  in a repo carrying dozens; `verify:prebuild` does not run lint. New gate:
+  **`npm run check:unrendered`** (`scripts/check-unrendered-components.mjs`),
+  wired into `verify:prebuild` and proven to fail on the pre-fix file. It found
+  **7 more** stale component imports on its first run.
+  The gate was WRONG IN BOTH DIRECTIONS before it was right: a component named
+  only in a `//` comment counted as used (hiding the import), and a
+  deliberately commented-out `// import { SellTimingBadge }` counted as an
+  import (reporting a phantom). Strip comments first — a comment is neither a
+  reference nor a declaration.
+- **Sharing to a DM delivered dead text.** RN does not linkify inside `<Text>`,
+  so a shared listing arrived as characters the recipient could read and not
+  follow. `src/lib/linkify.ts` + a `MessageBody` in the thread screen; our own
+  https urls route IN-APP via `inAppListingHref`, everything else to the OS.
+- **`GET /p2p/offers/{offer_id}` is not deployed.** "Couldn't load this trade"
+  is not the network: the list returns 200 and the detail 404s in **2.5ms**.
+  The box (`Aug 19 18:53`) has `/offers` and `/offers/{offer_id}/address` and
+  no `/offers/{offer_id}` — md5 `6b029…` vs repo `12e7b…`. The repo also
+  defined that handler TWICE, byte-identical; FastAPI keeps the first and the
+  second shipped as dead code. Duplicate removed; **the deploy is still owed**.
+- **Nothing could reach your own profile.** Every `/users/[userId]` edge points
+  at somebody else, so the one screen showing your trade rating was the one you
+  could not open and `TradeReputationSection`'s `isSelf` branch had never
+  rendered. Now: an avatar in the header cluster (primary) and Settings →
+  Account → View public profile (secondary). Checked against the apps that live
+  on ratings — Uber gives DRIVERS one tap and buries the RIDER rating under
+  Settings → Privacy → Privacy Center, unfindable enough that CNBC and the
+  Washington Post published how-tos; Vinted puts it on the avatar.
+- **…and that door led to an error page.** `user_public_profile_v1` ends in
+  `WHERE COALESCE(NULLIF(display_name,''), NULLIF(username,'')) IS NOT NULL`,
+  so a member who never set a name has **no row** and got "Collector not
+  found". Measured on prod: the sim account 0 rows, Lena V. 1. There is now a
+  self branch: "Your public profile isn't set up yet" + a route to Settings.
+  **Open question:** that same `WHERE` makes an unnamed member invisible in
+  search and on leaderboards. Requiring a display name at signup would close it
+  upstream.
+
+### Prod was AHEAD of HEAD, and the deploy script would have regressed it
+
+A full md5 sweep of `server/` against `/opt/collectors/server/` (585 local vs
+572 remote `.py`, 565 in common) settled a claim I had made from ONE file's
+mtime and got wrong: **there is no undeployed server code.** `app/`, `workers/`,
+`routes/` and `main.py` are byte-identical. Exactly one non-test file differs —
+`pipelines/import_watches.py`, a hand-run importer in no worker registry and no
+bake manifest. Everything else differing is `server/tests/*`, which nothing
+imports or crons.
+
+**What the sweep DID find:** commit `b422174` registered
+`GET /offers/{offer_id}` **twice** — two decorators over two identical
+`async def get_offer` bodies. FastAPI keeps the first and never dispatches to
+the second. Today's `--dirty` deploy shipped the de-duplicated version, so the
+BOX was correct and **HEAD carried the regression** — and
+`scripts/deploy_to_ec2.sh` derives its file list from `git diff HEAD~1 HEAD`
+when `--files` is omitted, so the next default deploy would have re-introduced
+it. Committed as `61e1ff9`; HEAD and the box now hash identically
+(`16c8de90…`).
+
+**Residue from the 2026-05-02 misdeploy was still on the box**:
+`server/social_router.py` and `server/portfolio_router.py`, rsync'd flat into
+the tree root at 15:14/15:19 on Aug 19 and then correctly redeployed into
+`app/`. Nothing imports them — but `WorkingDirectory=/opt/collectors/server`
+puts that directory on `sys.path`, so one future bare `import social_router`
+would have silently bound Aug-19 code. Plus an orphan `schema.lock.json` (Aug 9)
+sitting beside the live one the gates actually read. All three tarred to
+`/tmp/misdeploy_residue_20260820.tar.gz` and removed; no restart needed, and a
+restart would have been pure risk since nothing imported them.
+
+### The submission docs told you to spend money
+
+`docs/APP_STORE_SUBMISSION.md` §1 said `eas build --platform ios --profile
+production` — no `--local`. The Expo account is on the **Free** plan, so
+following the doc verbatim queues a **billable cloud build**, and the profile
+name was wrong too (the shipping scripts use `store`). Corrected to the npm
+scripts, with the EAS-remote build-number rule and the
+`FINISHED ≠ on TestFlight` warning written into §7 where the submit command is,
+rather than left in a memory file.
+
+### One header cluster, and two things hiding behind the reported one
+
+Reported as *"top right on portfolio there's a settings icon, notification icon
+and profile icon — this should be the same for every screen."* It was not: four
+different clusters across five tabs, and Market and Explore had none at all.
+Six files hand-rolled the same row.
+
+One `HeaderActions` now — **bell · bubble · gear** — on all five tabs, on
+`ScreenHeader` (15 screens) and on the root stack. The avatar came OFF: three
+utilities read as a cluster, four read as a toolbar, and identity is not a
+utility. It moved to the first row of Settings, which had been showing a
+username and an email and **was not tappable**.
+
+Two defects underneath the reported one:
+
+- **The bell lived on Portfolio only**, because its unread count was fetched by
+  `app/(tabs)/index.tsx`. A control whose state lives in a screen ends up
+  living only on that screen.
+- **The cluster changed shape with your inbox.** `InboxHeaderButton` hid itself
+  under `COMMUNITY_GATED` — a DISCOVERY flag, reused for a messaging control,
+  which is the reuse `featureFlags.ts` already warns about for
+  `GAMIFICATION_UI_ENABLED`. Now `MESSAGING_ENABLED`, on: P2P made chat part of
+  the trade loop.
+
+⚠️ **Moving a fetch into a shared component multiplies it.** The badge went
+from one request per session to one per screen with a header. Cached at module
+scope, 60s TTL, **keyed by user id** — module scope survives a sign-out, so an
+unkeyed cache would put one member's unread count on the next member's badge.
+
+### One fact, rendered three times, is what "messy" means
+
+The item card showed **"Item Details" twice and the same attributes a third
+time** as "Card Details":
+
+- `ItemAttributesSection` was mounted inside `ItemDetailsCard` AND standalone
+  from `app/item/[id].tsx`, each fed by its **own fetch of the same row**. The
+  inner copy was passed `editableCategory` — a display NAME — into
+  `getCategoryFields`, which is keyed by SLUG, so it silently lost the
+  category's field order and labels (docs/TAXONOMY.md, "Two vocabularies").
+- `CategorySpecificSection` re-rendered the same `attrs` keys as 71 hand-rolled
+  rows across 25 category blocks. Every one was a duplicate BY CONSTRUCTION:
+  the list renders every key, the blocks re-render a hand-picked subset.
+
+Now: one renderer, inside the details card, under the value it describes.
+`CategorySpecificSection` keeps only what the list cannot say — badges (Foil,
+1st Edition, Vaulted) and controls (size, build progress, auth links). ~640
+lines out, two empty blocks deleted, 19 badge-only blocks de-headered.
+
+**The defect that pass introduced, caught by the post-completion audit:** the
+19 badge-only wrappers kept `marginTop + paddingTop + borderTopWidth` while
+every remaining child was conditional, so a card that was neither foil nor 1st
+edition drew a **stray divider over 12pt of nothing**. Spacing that belongs to
+a conditional child has to sit ON that child.
+
+### Copy that states a limit comes from the DOC
+
+- **"Item Insights" → "Advanced analytics."** MONETIZATION.md sells exactly one
+  line — *"Advanced analytics (price trend, history, market prices)"* — and the
+  analytics screen's prompt already said that. The item card had invented a
+  product name that appears in no plan, no store listing and no paywall.
+- **"Cannot estimate value" → "Not yet priced."** "Cannot" is a claim about our
+  ability and reads as permanent; the truth is that no comp has reached that
+  row YET. It is also the wording the server already uses for the same absence
+  at category level. The test now pins `UNPRICED_LABEL`, not the string.
+- **Leaderboard "Documented" → "Completeness."** NOT set completion:
+  `documented_count` counts items whose RECORD is filled in (photo +
+  condition/grade + purchase price), while `completionPct` elsewhere counts how
+  much of a card SET you own. The secondary line says "N of M items" so the
+  percentage cannot be read as owning N% of a set.
+
+### Volume is a different problem from comparison
+
+`app/offers.tsx` grouped competing bids ADJACENT on 2026-08-19 and left the
+volume alone: ten listings with five bids each was still 50 cards. Groups now
+**collapse to one row** — *"DEMO Charizard Base Set Holo · 4 bids · €28 – €50"*
+— expanding in place. All four of the spec's load-bearing rules survive; see
+P2P_MARKETPLACE_SPEC §"Two gaps".
+
+Two traps in that change, both caught before shipping:
+
+1. **The stale closure.** `renderOffer` is a `useCallback`; without
+   `openGroups` in its deps it closes over the set as it was on mount, the tap
+   updates state, the list re-renders from a stale renderer, and the group
+   appears not to open. eslint's exhaustive-deps found it.
+2. **A pushed trade must not arrive collapsed.** `deepLinkOfferId` highlights
+   the card a notification points at; if that bid is not its group's head, the
+   card it was pointing at would not be rendered at all.
+
+### The profile card, finally
+
+Reported as unchanged after the 2026-08-19 pass — correctly, because that pass
+changed the sections INSIDE the card and never touched the card. It opened with
+an 80pt accent banner, a 60pt top pad and a ringed 80pt avatar hanging into it,
+then centred the name on an axis nothing below it shared. One left-aligned
+identity row now, and the stacking went with it: Collects is a **two-column
+grid** (six categories in 3 rows, not 6 full-width rows), Achievements and
+Bio/Interests stopped being bordered cards, and the two in-card sections that
+carried a *screen* gutter inside a *padded card* now inherit the card's edge.
+
+Two data defects were visible in one screenshot of it, both in
+`src/data/providers/userProvider.ts`: `display_handle` was mapped into BOTH
+`displayName` and `handle`, so every profile printed its name twice, the second
+time as "@Lena V."; and `interests: null` rendered through `?? 0` as a
+confident **"0 Categories" directly above six of them**.
+
 ## Current state (2026-08-19)
 
 ### The offers screen, finally walked on a device (2026-08-19)

@@ -107,9 +107,9 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
       ) : rows === null ? (
         <ActivityIndicator style={{ marginTop: 12 }} color={colors.accent} />
       ) : (
-        // ONE container, hairline-separated rows — see `group`/`row` below.
-        <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        {rows.map((r, i) => {
+        // TWO COLUMNS, not six stacked rows — see `grid` below.
+        <View style={styles.grid}>
+        {rows.map((r) => {
           const name = getCategoryById(r.category_id)?.name ?? r.category_id;
           const ranked = r.rank !== null && r.total_ranked !== null;
           return (
@@ -119,13 +119,7 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 router.push(`/leaderboard?categoryId=${encodeURIComponent(r.category_id)}` as Href);
               }}
-              style={[
-                styles.row,
-                // Separator BETWEEN rows only — a trailing hairline under the
-                // last row would read as the start of another row that never
-                // arrives.
-                i < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-              ]}
+              style={[styles.tile, { borderColor: colors.border }]}
               accessibilityRole="button"
               accessibilityLabel={
                 `${name}, ${r.item_count} ${r.item_count === 1 ? 'item' : 'items'}` +
@@ -133,32 +127,32 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
               }
               accessibilityHint={`Double tap to open the ${name} leaderboard`}
             >
-              <View style={styles.rowMain}>
-                <Text style={[styles.catName, { color: colors.text }]} numberOfLines={1}>
-                  {name}
-                </Text>
-                <Text style={[styles.catMeta, { color: colors.muted }]} numberOfLines={1}>
-                  {formatNumber(r.item_count, settings.numberLocale)}{' '}
-                  {r.item_count === 1 ? 'item' : 'items'}
-                  {valueVisible
-                    ? ` · ${formatPrice(r.value_eur, settings.currency, settings.numberLocale)}`
-                    : ' · value hidden'}
-                </Text>
-              </View>
-
+              <Text style={[styles.catName, { color: colors.text }]} numberOfLines={1}>
+                {name}
+              </Text>
+              <Text style={[styles.catMeta, { color: colors.muted }]} numberOfLines={1}>
+                {formatNumber(r.item_count, settings.numberLocale)}{' '}
+                {r.item_count === 1 ? 'item' : 'items'}
+                {valueVisible
+                  ? ` · ${formatPrice(r.value_eur, settings.currency, settings.numberLocale)}`
+                  : ' · value hidden'}
+              </Text>
+              {/* Rank on its own line INSIDE the tile. In a half-width tile a
+                  trailing pill plus a chevron would take the room the category
+                  name needs, and the name is what identifies the tile. The
+                  whole tile is the tap target, so the chevron is gone too — a
+                  chevron per tile, twelve times, is decoration. */}
               {ranked ? (
                 <View style={[styles.rankPill, { backgroundColor: colors.accent + '15' }]}>
-                  <Ionicons name="trophy-outline" size={13} color={colors.accent} />
-                  <Text style={[styles.rankText, { color: colors.accent }]}>
+                  <Ionicons name="trophy-outline" size={12} color={colors.accent} />
+                  <Text style={[styles.rankText, { color: colors.accent }]} numberOfLines={1}>
                     #{r.rank}
                     <Text style={[styles.rankOf, { color: colors.muted }]}> of {r.total_ranked}</Text>
                   </Text>
                 </View>
               ) : (
-                <Text style={[styles.unranked, { color: colors.muted }]}>Not ranked</Text>
+                <Text style={[styles.unranked, { color: colors.muted }]} numberOfLines={1}>Not ranked</Text>
               )}
-
-              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </AnimatedPressable>
           );
         })}
@@ -179,7 +173,10 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
 });
 
 const styles = StyleSheet.create({
-  section: { marginTop: 20, paddingHorizontal: 16 },
+  // Same as the trading strip: the card's padding IS the gutter, so this adds
+  // none of its own. It used to add 16 on top of the card's, indenting the
+  // whole collects list past everything else in the card.
+  section: { marginTop: 20 },
   heading: { fontSize: 16, fontWeight: '700', marginBottom: 10 },
   /**
    * ONE bordered container holding hairline-separated rows.
@@ -194,24 +191,51 @@ const styles = StyleSheet.create({
    * One frame, N rows, separators between them. Each row is still tappable and
    * still opens that category's leaderboard.
    */
-  group: {
-    borderWidth: 1,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  row: {
+  /**
+   * TWO COLUMNS (2026-08-20).
+   *
+   * The history of this block is a straight line of the same mistake at
+   * decreasing severity: six framed boxes → one framed list → six unframed
+   * full-width rows. Reported each time as stacking, and the last version was
+   * still ~90pt per category, so a collector in six categories spent an entire
+   * screen on them and the CTA row fell off the bottom.
+   *
+   * A category is a SMALL fact — a name, a count, a rank. It does not need the
+   * full width of the phone, and giving it that width is what forced the
+   * stack. Two columns halve the height with nothing hidden and no horizontal
+   * scroll (which would hide half of them behind a gesture nobody is told
+   * about).
+   *
+   * `flexBasis: '47%'` rather than a computed width: the card's padding is not
+   * this component's business, and a percentage of whatever width it is handed
+   * survives being moved.
+   */
+  grid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 11,
-    paddingHorizontal: 12,
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  rowMain: { flex: 1 },
+  tile: {
+    // flexGrow: 0. With `flexGrow: 1` an ODD number of categories stretched the
+    // last tile across the full width, so a collector in five categories got
+    // four half tiles and one wide one — a layout that looks like a bug. Lena
+    // V. has six, which is exactly the data that cannot show this
+    // (CLAUDE.md, "the happy path is verified against data that CANNOT
+    // DISCRIMINATE"). 48% + the 8pt gap fills the row without growing.
+    flexGrow: 0,
+    flexBasis: '48%',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    gap: 3,
+  },
   catName: { fontSize: 14, fontWeight: '600' },
   // 12, not 11: docs/ui-playbook.md puts captions at `sm` and bans anything
   // below it for text a user reads.
   catMeta: { fontSize: 12, lineHeight: 16, marginTop: 2 },
   rankPill: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,

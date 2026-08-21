@@ -14,7 +14,7 @@ import {
 } from "@expo-google-fonts/roboto";
 import { SettingsProvider } from "@/lib/settings";
 import { ToastProvider } from "@/components/Toast";
-import { InboxHeaderButton } from "@/components/InboxHeaderButton";
+import { HeaderActions } from '@/components/HeaderActions';
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { usePresenceHeartbeat } from "@/hooks/usePresenceHeartbeat";
@@ -177,22 +177,6 @@ const HEADER_BTN = {
 // would move the capsule too — see docs/ui-playbook.md.
 const BACK_CHEVRON_OPTICAL = { transform: [{ translateX: -1.5 }] };
 
-function SettingsHeaderButton({ color }: { color?: string }) {
-  const router = useRouter();
-  const { colors } = useAppTheme();
-  return (
-    <Pressable
-      onPress={() => router.push('/settings')}
-      // Same square frame as the back button — see HEADER_BTN. A previous
-      // `marginRight: 4` here pushed the gear 4pt off the capsule's centre.
-      style={HEADER_BTN}
-      accessibilityRole="button"
-      accessibilityLabel="Open settings"
-    >
-      <Ionicons name="settings-outline" size={22} color={color ?? colors.text} />
-    </Pressable>
-  );
-}
 
 /** Native-header back button that cannot dead-end. See `iconOnlyHeader`. */
 function HeaderBackButton({ color }: { color?: string } = {}) {
@@ -224,10 +208,7 @@ function HeaderBackButton({ color }: { color?: string } = {}) {
  *  where the default `colors.text` is near-invisible in light mode. */
 function HeaderRight({ color }: { color?: string } = {}) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <InboxHeaderButton color={color} />
-      <SettingsHeaderButton color={color} />
-    </View>
+    <HeaderActions color={color} />
   );
 }
 

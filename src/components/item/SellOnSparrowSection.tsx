@@ -142,7 +142,7 @@ export function SellOnSparrowSection({
 
   if (listed) {
     return (
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={styles.card}>
         <View style={styles.row}>
           <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
           <Text style={[styles.title, { color: colors.text }]}>Listed on the marketplace</Text>
@@ -158,7 +158,7 @@ export function SellOnSparrowSection({
           fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
           setExpanded(true);
         }}
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+        style={styles.card}
         accessibilityRole="button"
         accessibilityLabel="Sell this on the Sparrow marketplace"
       >
@@ -179,7 +179,7 @@ export function SellOnSparrowSection({
   }
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={styles.card}>
       <View style={styles.row}>
         <Text style={[styles.title, { color: colors.text }]}>Sell this</Text>
         <View style={styles.grow} />
@@ -337,13 +337,29 @@ const styles = StyleSheet.create({
     padding: 11, marginTop: 14,
   },
   consentText: { flex: 1, fontSize: textToken.xs, lineHeight: 17 },
-  card: { borderWidth: 1, borderRadius: radius.md, padding: 14, marginTop: 16, gap: 8 },
+  /**
+   * A SECTION, not a card (2026-08-20).
+   *
+   * Reported as "improve the alignment/spacing of sell this and notes", and
+   * the misalignment was structural rather than a wrong number: this drew a
+   * bordered card with 14pt of inner padding while `ItemNotesEditor` right
+   * below it is a bare block at the screen gutter. Their labels therefore sat
+   * 14pt apart and no amount of margin tuning could line them up while one was
+   * boxed and the other was not.
+   *
+   * Same call as the profile pass: the frame was doing nothing the heading and
+   * the chevron were not already doing, and dropping it removes a box from a
+   * screen the member had described as one endless card.
+   */
+  card: { marginTop: 18, gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   grow: { flex: 1 },
   icon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: textToken.md, fontWeight: fontWeight.bold },
-  sub: { fontSize: textToken.xs, marginTop: 1 },
-  label: { fontSize: textToken.xs, marginTop: 6 },
+  // `sm`, not `xs`: 10pt is banned for anything a user reads, and
+  // "List it for other members to buy" is the line that explains the row.
+  sub: { fontSize: textToken.sm, marginTop: 2, lineHeight: 17 },
+  label: { fontSize: textToken.sm, marginTop: 8, lineHeight: 17 },
   priceRow: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: 10,

@@ -43,6 +43,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '@/components/ScreenHeader';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { ShareToChatSheet, type SharePayload } from '@/components/share/ShareToChatSheet';
+import { publicListingUrl } from '@/lib/ids';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { EmptyState } from '@/components/EmptyState';
 import { FilterSheet, type FilterConfig } from '@/components/FilterSheet';
@@ -698,6 +699,11 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
               settings.numberLocale,
             ),
             route: `listing/${shareFor.id}`,
+            // The public https url, built by the one function that also parses
+            // it back (`inAppListingHref`). Sent instead of `sparrow://` so the
+            // link survives WhatsApp and iMessage, where a custom scheme is
+            // untappable text.
+            webUrl: publicListingUrl(shareFor.id),
             imageUrl: shareFor.image_url ?? null,
           }
         : null,
@@ -1184,6 +1190,19 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
         // server-side, so the fields have to say which currency that is.
         priceCurrencySymbol={getCurrencySymbol(settings.currency)}
         colors={colors}
+      />
+
+      {/* The share sheet. It was IMPORTED and its payload was computed, but
+          the element itself was never in the tree — so the paper-plane on
+          every tile set `shareFor` and nothing opened. Same shape as
+          [[learning_removing_the_opener_strands_the_sheet]] the other way
+          round: an opener with no sheet. tsc cannot see it (an unused import
+          is a warning at most) and no gate looks for a component that is
+          imported but never rendered. */}
+      <ShareToChatSheet
+        visible={shareFor !== null}
+        onClose={() => setShareFor(null)}
+        payload={sharePayload}
       />
 
       {!asTab && <QuickNavBar />}

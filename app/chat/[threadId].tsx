@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
   Image,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -33,11 +34,73 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { MS_PER_DAY } from '@/constants/time';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import { safeGoBack } from '@/lib/goBack';
+import { splitTextLinks } from '@/lib/linkify';
+import { inAppListingHref } from '@/lib/ids';
 
 // Message with local status for optimistic UI
 type LocalMessage = DmMessage & {
   localStatus?: 'sending' | 'sent' | 'failed';
 };
+
+/**
+ * A message body with its links tappable.
+ *
+ * RN does not linkify inside `<Text>`, so until this existed a listing shared
+ * into a DM (`ShareToChatSheet`) arrived as characters the recipient could
+ * read and not follow — the send worked and the share did not.
+ *
+ * Our own https listing urls route INSIDE the app via `inAppListingHref`,
+ * never through `Linking.openURL`: handing an https url to the OS is what sent
+ * three other surfaces (alerts, notifications, push) out to a 404 web page for
+ * a listing the member was already holding. Everything else — an eBay link, a
+ * `sparrow://` route from an older client — goes to the OS, which knows what
+ * to do with both.
+ */
+function MessageBody({ body, color, linkColor }: { body: string; color: string; linkColor: string }) {
+  const router = useRouter();
+  const segments = splitTextLinks(body);
+
+  const open = useCallback(
+    (url: string) => {
+      const href = inAppListingHref(url);
+      if (href) {
+        router.push(href);
+        return;
+      }
+      Linking.openURL(url).catch((e) => {
+        // logger.error, not warn: warn is stripped in release, which is
+        // exactly where a link that quietly does nothing would be invisible.
+        logger.error('[chat] link open failed:', e);
+      });
+    },
+    [router],
+  );
+
+  // No link in the message is the common case — one Text, unchanged.
+  if (segments.length <= 1) {
+    return <Text style={[styles.messageText, { color }]}>{body}</Text>;
+  }
+
+  return (
+    <Text style={[styles.messageText, { color }]}>
+      {segments.map((seg, i) =>
+        seg.isLink ? (
+          <Text
+            key={`${i}-link`}
+            style={[styles.messageLink, { color: linkColor }]}
+            onPress={() => open(seg.text)}
+            accessibilityRole="link"
+            accessibilityLabel={`Open ${seg.text}`}
+          >
+            {seg.text}
+          </Text>
+        ) : (
+          <Text key={i}>{seg.text}</Text>
+        ),
+      )}
+    </Text>
+  );
+}
 
 function formatDateSeparator(dateStr: string): string {
   const date = new Date(dateStr);
@@ -391,9 +454,14 @@ function ThreadDetailScreen() {
                 : [styles.theirMessage, { backgroundColor: colors.card }],
             ]}
           >
-            <Text style={[styles.messageText, { color: isMe ? colors.accentText : colors.text }]}>
-              {item.text}
-            </Text>
+            <MessageBody
+              body={item.text}
+              color={isMe ? colors.accentText : colors.text}
+              // On the accent bubble the accent colour IS the background, so a
+              // link painted with it would be invisible; underline plus the
+              // bubble's own text colour is the only pair that holds on both.
+              linkColor={isMe ? colors.accentText : colors.accent}
+            />
             <View style={styles.messageFooter}>
               <Text style={[styles.messageTime, { color: isMe ? colors.accentText + 'B3' : colors.muted }]}>
                 {formatTime(item.createdAt)}
@@ -618,6 +686,10 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     borderBottomLeftRadius: radius.xs,
     borderWidth: 0,
+  },
+  messageLink: {
+    textDecorationLine: 'underline',
+    fontWeight: fontWeight.semibold,
   },
   messageText: {
     fontSize: text.lg,

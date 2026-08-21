@@ -4,41 +4,53 @@ Notes for Apple App Store Review and Google Play Review teams.
 
 ## Demo Account
 
-> ## ⛔ BROKEN — VERIFIED 2026-08-11. DO NOT SUBMIT UNTIL FIXED.
+> ## ✅ WORKING — VERIFIED 2026-08-20
 >
-> `reviewer@sparrowcollect.com` **does not authenticate**. Posting these exact
-> credentials to `/auth/v1/token?grant_type=password` returns:
+> Created and seeded, then **logged in with these exact credentials** against
+> `/auth/v1/token?grant_type=password`: token issued, `email_confirmed = true`,
+> and `GET /portfolio/items` as that user returns **25 items totalling
+> €6,466.00**. User id `25dadd45-fc89-404e-81d9-f66fed0a2eec`.
 >
-> ```json
-> {"code":400,"error_code":"invalid_credentials","msg":"Invalid login credentials"}
+> It had been broken since at least 2026-08-11 — absent from `auth.users`
+> entirely, which is guideline **2.1 App Completeness**: a reviewer following
+> this page could not get past the login screen. No gate catches it, because
+> credentials live in prose rather than code.
+>
+> **Re-seed with:**
+> ```bash
+> ssh collectai "cd /opt/collectors && set -a; . /opt/collectors/.env; set +a; \
+>   REVIEWER_PASSWORD='Sparrow Collect-Review-2026!' \
+>   /opt/collectors/.venv/bin/python /tmp/seed_reviewer_account.py \
+>   --user-id 25dadd45-fc89-404e-81d9-f66fed0a2eec"
 > ```
+> Run it ON THE BOX — `SUPABASE_SERVICE_KEY` lives in `/opt/collectors/.env`
+> and nowhere local. `--user-id` is required because this project's
+> `auth.admin.list_users()` returns "Database error finding users", so the
+> script cannot find an existing user by itself.
 >
-> The account is absent from `auth.users`. A reviewer following this page cannot
-> get past the login screen, which is **guideline 2.1 App Completeness** — the
-> single most common rejection reason for an app that is otherwise fine.
->
-> No gate catches this: the credentials live in prose, not code, so
-> `verify:prebuild` will stay green while submission stays blocked.
->
-> **Two things to fix, not one:**
-> 1. Recreate the account (and confirm its email — this project requires
->    confirmation, and no mail reaches that address).
-> 2. Re-seed its data, or correct the claims below. The list promises 25+ items
->    across 6 categories; a freshly created account has none, and a reviewer
->    meeting an empty portfolio after being told to expect a full one is the
->    same 2.1 problem one step later.
+> **After ANY re-seed, log in as the reviewer before submitting.** That is the
+> only check that discriminates; the account existing proves nothing.
 
 ```
 Email:    reviewer@sparrowcollect.com
 Password: Sparrow Collect-Review-2026!
 ```
 
-This account is pre-loaded with:
-- 25+ collection items across 6 categories (Pokemon, LEGO, Manga, Vinyl, Anime Figures, K-pop)
-- Portfolio value tracked over 30 days
-- 2 active purchase mandates (deal discovery)
-- 1 active build & paint project (Warhammer)
-- Connection with 2 other demo users for chat testing
+This account is pre-loaded with (**verified against the database
+2026-08-20 — do not add a line here that the seeder does not write**):
+- **25 collection items across 6 categories** (Pokemon, LEGO, Manga, Vinyl,
+  Anime Figures, K-pop), every one carrying an estimated value — €6,466 total
+- **2 active purchase mandates** (deal discovery)
+
+Three claims were removed on 2026-08-20 because nothing produced them, and a
+reviewer meeting an empty screen after being promised content is the same 2.1
+rejection as an empty account:
+
+| removed claim | why |
+|---|---|
+| "1 active build & paint project (Warhammer)" | `public.build_projects` **does not exist** |
+| "Connection with 2 other demo users for chat testing" | the seeder writes no threads; the inbox is empty |
+| "Portfolio value tracked over 30 days" | needs price history this account has none of — the chart is flat, which is honest but is not what this sentence promises |
 
 ## Feature Walkthrough
 
@@ -68,7 +80,11 @@ This account is pre-loaded with:
 
 ### 4. Deal Discovery (1 min)
 
-1. Tap **Deals** tab (or "Deal Agent" card on portfolio home)
+1. Open **Watchlist** (Portfolio → the watchlist card) and use the **Deal
+   Agent** card there. There is **no "Deals" tab** — this page said there was
+   until 2026-08-20. The five tabs are Portfolio, Market, Add, Events, Explore;
+   Deal Agent moved onto the Watchlist screen on 2026-08-11, since it acts on
+   the watchlist
 2. View existing purchase mandates
 3. Tap **Create Mandate** to set a new deal alert
 4. Set: item name, max budget, preferred condition

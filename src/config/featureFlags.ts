@@ -30,6 +30,32 @@ export const BETA_MODE = false;
 export const COMMUNITY_GATED = true;
 
 /**
+ * The messages (inbox) icon in the header cluster.
+ *
+ * **Deliberately a separate flag from `COMMUNITY_GATED`, not a reuse of it** —
+ * the same rule this file already states for `GAMIFICATION_UI_ENABLED`.
+ * `COMMUNITY_GATED` flips when ~50 public profiles exist, which is a fact about
+ * DISCOVERY (leaderboard, Find Collectors). Whether a member can reach their
+ * DMs has nothing to do with it.
+ *
+ * `InboxHeaderButton` used to hide itself under `COMMUNITY_GATED` unless you
+ * had unread mail, and that reuse cost twice:
+ *
+ *  1. the header cluster changed SHAPE depending on your inbox, which is what
+ *     "the icons are not the same on every screen" turned out to be;
+ *  2. it left the settings gear floating ~46pt from the screen edge, because
+ *     `ScreenHeader`'s right cluster is an equal-width box whose contents pin
+ *     to the outer edge (docs/ui-playbook.md, iOS 26 capsule section).
+ *
+ * ON, because P2P made chat load-bearing: a buyer messaging a seller about a
+ * listing is the trade flow, not a community extra. The inbox has its own
+ * empty state, so an inbox with no threads is a screen that explains itself —
+ * unlike a share sheet with no chats, which is a control for something you do
+ * not have.
+ */
+export const MESSAGING_ENABLED = true;
+
+/**
  * Social login (Sign in with Apple / Google) on the auth screens.
  * OFF for launch — email/password only avoids App Store guideline 4.8 (offering
  * Google requires also offering Apple) and the "broken button" rejection risk

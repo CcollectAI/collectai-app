@@ -1,5 +1,13 @@
 /**
- * UserStatsSection — quick stats row (items, value, level/categories) + streak badge.
+ * UserStatsSection — items / value / categories, as a row inside the profile
+ * card rather than a bordered box within it.
+ *
+ * De-boxed 2026-08-20. The 2026-08-19 pass took the border and fill off the
+ * TRADING section for exactly this reason — "three visual languages before the
+ * first CTA" — and left this one framed, so the card still opened with a box
+ * inside a box. The stats did not need a container to be a group: three
+ * columns and a hairline above them say the same thing with none of the
+ * chrome, and they now share an alignment with the sections below.
  */
 
 import React from 'react';
@@ -25,7 +33,7 @@ export const UserStatsSection = React.memo(function UserStatsSection({
   return (
     <>
       {/* Quick stats row */}
-      <View style={[styles.quickStatsRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
+      <View style={[styles.quickStatsRow, { borderTopColor: colors.border }]}>
         <View style={styles.quickStat}>
           <Text style={[styles.quickStatValue, { color: colors.text }]}>{profile.collectionCount ?? 0}</Text>
           <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Items</Text>
@@ -50,7 +58,12 @@ export const UserStatsSection = React.memo(function UserStatsSection({
           </Text>
           <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Value</Text>
         </View>
-        <View style={[styles.quickStatDivider, { backgroundColor: colors.border }]} />
+        {/* The divider belongs to the tile after it: with the third stat gone,
+            a hairline hanging off the right of "Value" reads as a column that
+            failed to load rather than as one that does not apply. */}
+        {(GAMIFICATION_UI_ENABLED && gamProfile && gamProfile.xp > 0) || profile.interests ? (
+          <View style={[styles.quickStatDivider, { backgroundColor: colors.border }]} />
+        ) : null}
         {/* Either they have XP or they don't. `gamProfile` exists for everyone the
             moment the row is created, so this used to show "Lv.1 / 0 XP" on a
             brand-new profile — a stat that says nothing, dressed as an
@@ -66,12 +79,19 @@ export const UserStatsSection = React.memo(function UserStatsSection({
             <Text style={[styles.quickStatValue, { color: colors.text }]}>Lv.{gamProfile.level}</Text>
             <Text style={[styles.quickStatLabel, { color: colors.muted }]}>{gamProfile.xp} XP</Text>
           </View>
-        ) : (
+        ) : profile.interests ? (
+          /* Only when `interests` is a real array. It arrives NULL from
+             `getPublicProfile` — `user_public_profile_v1` has no such column —
+             and `?? 0` turned that into a confident "0 Categories" sitting
+             directly above a Collects list naming six of them. Seen on the sim
+             2026-08-20. "We did not ask" is not "none"
+             ([[learning_empty_answer_rendered_as_zero]]); the row simply drops
+             to the two stats it can actually answer. */
           <View style={styles.quickStat}>
-            <Text style={[styles.quickStatValue, { color: colors.text }]}>{profile.interests?.length ?? 0}</Text>
+            <Text style={[styles.quickStatValue, { color: colors.text }]}>{profile.interests.length}</Text>
             <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Categories</Text>
           </View>
-        )}
+        ) : null}
       </View>
 
       {/* Streak badge */}
@@ -90,11 +110,9 @@ export const UserStatsSection = React.memo(function UserStatsSection({
 const styles = StyleSheet.create({
   quickStatsRow: {
     flexDirection: 'row',
-    marginTop: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: radius.md,
-    borderWidth: 1,
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
     width: '100%',
   },
   quickStat: {
@@ -102,8 +120,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quickStatDivider: {
-    width: 1,
-    height: 32,
+    width: StyleSheet.hairlineWidth,
+    height: 28,
+    alignSelf: 'center',
     marginHorizontal: 8,
   },
   quickStatValue: {
@@ -118,7 +137,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    alignSelf: 'center',
+    // flex-start, not center: it used to be the one centred element in a card
+    // whose every other line is left-aligned, so it read as a floating chip.
+    alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: radius.md,

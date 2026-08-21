@@ -50,7 +50,7 @@ import { dataProvider } from "@/data";
 import type { CategorySummary } from "@/data/types";
 import { collectorsApi } from "@/api/collectorsApi";
 import logger from "@/utils/logger";
-import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
+import { radius, spacing, text, fontWeight, shadow, gap } from '@/theme/tokens';
 import { CategoryPerformanceSection } from '@/components/CategoryPerformanceSection';
 import { PortfolioTierBadge } from '@/components/analytics/PortfolioTierBadge';
 import { PredictionAccuracySection } from '@/components/analytics/PredictionAccuracySection';
@@ -436,7 +436,25 @@ function AnalyticsScreen() {
           </View>
         )}
 
-        {/* P/L Summary Card */}
+        {/* Performance card — rebuilt 2026-08-20, reported as too wordy.
+
+            It had grown to SEVEN metric tiles of equal weight and THREE
+            paragraphs. What changed is the hierarchy, not the facts: every
+            number the old card showed is still here, and the two it showed
+            twice are now shown once.
+
+            - One lead. What the collection is worth today, at `2xl`. It used
+              to be a tile the same size as Max Drawdown; it is the question
+              this screen exists to answer.
+            - Gain and starting value are ONE line, not two tiles. "+EUR 1,240
+              from EUR 11,240" is the same two numbers in a form that says how
+              they relate.
+            - The three value-source numbers keep their own row — they are not
+              three versions of one figure (see `valueSplit` above) — but their
+              captions are now one grammar ("N items"), not three.
+            - Max drawdown and cost-basis coverage are a caption line. Same
+              call as the wishlist header (playbook, 2026-08-15): reference
+              numbers are not controls, so they get no tile and no border. */}
         {pl && (
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
@@ -452,118 +470,104 @@ function AnalyticsScreen() {
               ) : null}
             </View>
 
-            {/* ONE explanation, once. This block was written three times over —
-                same condition, same sentence in three near-identical wordings —
-                and shipped as a card that says the same thing three times. If
-                this needs rewording again, EDIT it; do not add another. */}
-            {!pl.hasBaseline ? (
-              <Text style={[styles.plBasis, { color: colors.muted }]}>
-                Everything you own was added inside this window, so there is no
-                earlier value to measure against yet. Performance appears once
-                your portfolio has history behind it.
-              </Text>
-            ) : null}
+            <Text style={[styles.heroLabel, { color: colors.muted }]}>Current value</Text>
+            <Text style={[styles.heroValue, { color: colors.text }]}>
+              {formatPrice(pl.currentValue, settings.currency ?? 'EUR')}
+            </Text>
 
-            {/* The three numbers, before the P/L that compares two of them.
-                Rendered only when there is something to split; a card of three
-                zeroes on an empty account is chrome. */}
+            {/* ONE explanation, once. The no-baseline case was written three
+                times over on this card — same condition, same sentence in
+                three wordings. If it needs rewording again, EDIT it; do not
+                add another. */}
+            {pl.hasBaseline ? (
+              <View style={styles.heroDeltaRow}>
+                <Text style={[styles.heroDelta, { color: isPositive ? colors.success : colors.danger }]}>
+                  {`${pl.deltaAbs >= 0 ? '+' : ''}${formatPrice(pl.deltaAbs, settings.currency ?? 'EUR')}`}
+                </Text>
+                <Text style={[styles.heroFrom, { color: colors.muted }]}>
+                  {`from ${formatPrice(pl.startValue, settings.currency ?? 'EUR')}`}
+                </Text>
+              </View>
+            ) : (
+              <Text style={[styles.heroFrom, { color: colors.muted }]}>
+                No earlier value to measure against yet — everything you own was
+                added inside this window.
+              </Text>
+            )}
+
+            {/* The three numbers, in one row under the lead. Rendered only
+                when there is something to split; a row of three dashes on an
+                empty account is chrome. */}
             {items.length > 0 ? (
-              <View style={styles.metricsGrid}>
-                <View style={styles.metricItem}>
-                  <Text style={[styles.metricLabel, { color: colors.muted }]}>You paid</Text>
-                  <Text style={[styles.metricValue, { color: colors.text }]}>
+              <View style={[styles.splitRow, { borderTopColor: colors.border }]}>
+                <View style={styles.splitCol}>
+                  <Text style={[styles.splitLabel, { color: colors.muted }]}>You paid</Text>
+                  <Text style={[styles.splitValue, { color: colors.text }]}>
                     {valueSplit.purchaseCount > 0
                       ? formatPrice(valueSplit.purchaseTotal, settings.currency ?? 'EUR')
                       : '—'}
                   </Text>
-                  <Text style={[styles.metricLabel, { color: colors.muted }]}>
+                  <Text style={[styles.splitMeta, { color: colors.muted }]}>
                     {valueSplit.purchaseCount} of {items.length} items
                   </Text>
                 </View>
-                <View style={styles.metricItem}>
-                  <Text style={[styles.metricLabel, { color: colors.muted }]}>Market value</Text>
-                  <Text style={[styles.metricValue, { color: colors.text }]}>
+                <View style={styles.splitCol}>
+                  <Text style={[styles.splitLabel, { color: colors.muted }]}>Market</Text>
+                  <Text style={[styles.splitValue, { color: colors.text }]}>
                     {valueSplit.marketCount > 0
                       ? formatPrice(valueSplit.marketTotal, settings.currency ?? 'EUR')
                       : '—'}
                   </Text>
-                  <Text style={[styles.metricLabel, { color: colors.muted }]}>
-                    {valueSplit.marketCount} priced by comps
+                  <Text style={[styles.splitMeta, { color: colors.muted }]}>
+                    {valueSplit.marketCount} comp-backed
                   </Text>
                 </View>
-                <View style={styles.metricItem}>
-                  <Text style={[styles.metricLabel, { color: colors.muted }]}>Estimated</Text>
-                  <Text style={[styles.metricValueMuted, { color: colors.muted }]}>
+                {/* Named as an estimate, not hidden. For the 40+ categories
+                    with no sold-comp source this is the ONLY number a member
+                    has, and dropping it would show them a collection worth
+                    less than they know it is. */}
+                <View style={styles.splitCol}>
+                  <Text style={[styles.splitLabel, { color: colors.muted }]}>Estimated</Text>
+                  <Text style={[styles.splitValue, { color: colors.muted }]}>
                     {valueSplit.estimateCount > 0
                       ? formatPrice(valueSplit.estimateTotal, settings.currency ?? 'EUR')
                       : '—'}
                   </Text>
-                  {/* Named as an estimate, not hidden. For the 40+ categories
-                      with no sold-comp source this is the ONLY number a member
-                      has, and dropping it would show them a collection worth
-                      less than they know it is. */}
-                  <Text style={[styles.metricLabel, { color: colors.muted }]}>
-                    {valueSplit.estimateCount} not comp-backed
+                  <Text style={[styles.splitMeta, { color: colors.muted }]}>
+                    {valueSplit.estimateCount} estimated
                   </Text>
                 </View>
               </View>
             ) : null}
 
-            {/* What the P/L above is actually BASED on.
-                `cost_basis` falls back to the earliest prediction when an item
-                has no purchase price, so its "profit" is really model drift —
-                and it arrives as the same number, in the same field, looking
-                identical. A trader reading a gain has to know how much of their
-                portfolio it can possibly apply to. */}
-            {items.length > 0 ? (
-              <Text style={[styles.plBasis, { color: colors.muted }]}>
-                {pricedCount === items.length
-                  ? `Based on what you paid for all ${items.length} items.`
-                  : pricedCount === 0
-                    ? `No purchase prices on file, so this tracks how our valuation has moved — not profit. Add what you paid to track that.`
-                    : `Based on what you paid for ${pricedCount} of ${items.length} items. The other ${items.length - pricedCount} track our valuation instead.`}
-              </Text>
-            ) : null}
-
-            <View style={styles.metricsGrid}>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.muted }]}>Current Value</Text>
-                <Text style={[styles.metricValue, { color: colors.text }]}>{formatPrice(pl.currentValue, settings.currency ?? 'EUR')}</Text>
+            {/* Reference numbers, as a caption. Guarded on having something to
+                say — a bordered strip with no text in it reads as a component
+                that failed to load (playbook, 2026-08-17). */}
+            {(pl.hasBaseline || items.length > 0) && (
+              <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
+                {pl.hasBaseline ? (
+                  <Text style={[styles.footNote, { color: colors.muted }]}>
+                    {'Max drawdown '}
+                    <Text style={{ color: colors.danger }}>{formatPct(pl.maxDrawdownPct, false)}</Text>
+                  </Text>
+                ) : null}
+                {/* What the gain above is actually BASED on. `cost_basis`
+                    falls back to the earliest prediction when an item has no
+                    purchase price, so its "profit" is really model drift — and
+                    it arrives as the same number, in the same field, looking
+                    identical. Anyone reading a gain has to know how much of
+                    their portfolio it can possibly apply to. */}
+                {items.length > 0 ? (
+                  <Text style={[styles.footNote, { color: colors.muted }]}>
+                    {pricedCount === items.length
+                      ? `Measured against what you paid for all ${items.length} items.`
+                      : pricedCount === 0
+                        ? `No purchase prices on file — this tracks our valuation, not profit.`
+                        : `Measured on the ${pricedCount} of ${items.length} items with a purchase price; the rest track our valuation.`}
+                  </Text>
+                ) : null}
               </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.muted }]}>Starting Value</Text>
-                <Text style={[styles.metricValueMuted, { color: colors.muted }]}>
-                  {pl.hasBaseline ? formatPrice(pl.startValue, settings.currency ?? 'EUR') : '—'}
-                </Text>
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.muted }]}>Total Gain/Loss</Text>
-                <Text
-                  style={[
-                    styles.metricValue,
-                    { color: pl.hasBaseline ? (isPositive ? colors.success : colors.danger) : colors.muted },
-                  ]}
-                >
-                  {pl.hasBaseline
-                    ? `${pl.deltaAbs >= 0 ? '+' : ''}${formatPrice(pl.deltaAbs, settings.currency ?? 'EUR')}`
-                    : '—'}
-                </Text>
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.muted }]}>Max Drawdown</Text>
-                {/* Same rule as Starting Value and Gain/Loss directly above: with
-                    no earlier value there is no series to draw down FROM, and a
-                    red 0.00% is a measured number rather than an absent one. */}
-                <Text
-                  style={[
-                    styles.metricValue,
-                    { color: pl.hasBaseline ? colors.danger : colors.muted },
-                  ]}
-                >
-                  {pl.hasBaseline ? formatPct(pl.maxDrawdownPct, false) : '—'}
-                </Text>
-              </View>
-            </View>
+            )}
           </View>
         )}
 
@@ -850,7 +854,6 @@ export default function AnalyticsScreenWithBoundary() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  plBasis: { fontSize: 12, lineHeight: 17, marginBottom: 10 },
   safe: {
     flex: 1,
     // backgroundColor set inline via colors.background
@@ -979,28 +982,78 @@ const styles = StyleSheet.create({
     // color set inline via colors.danger
   },
 
-  // Metrics Grid
-  metricsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  metricItem: {
-    width: "50%",
-    marginBottom: 16,
-  },
-  metricLabel: {
+  // Performance card (rebuilt 2026-08-20)
+  // Three levels only — lead `2xl`, secondary `lg`, caption `sm`. `xs` (10pt)
+  // is banned for anything a user reads (playbook, type scale).
+  heroLabel: {
     fontSize: text.sm,
+    lineHeight: 17,
+    marginBottom: 2,
     // color set inline via colors.muted
-    marginBottom: 4,
   },
-  metricValue: {
-    fontSize: text.xl,
-    fontWeight: fontWeight.bold,
+  heroValue: {
+    fontSize: text['2xl'],
+    lineHeight: 32,
+    fontWeight: fontWeight.extrabold,
     // color set inline via colors.text
   },
-  metricValueMuted: {
-    fontSize: text.xl,
+  heroDeltaRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    flexWrap: "wrap",
+    gap: gap.md,
+    marginTop: 2,
+  },
+  heroDelta: {
+    fontSize: text.lg,
+    lineHeight: 22,
     fontWeight: fontWeight.bold,
+    // color set inline via colors.success / colors.danger
+  },
+  heroFrom: {
+    fontSize: text.md,
+    lineHeight: 20,
+    // color set inline via colors.muted
+  },
+  splitRow: {
+    flexDirection: "row",
+    gap: gap['2xl'],
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    // borderTopColor set inline via colors.border
+  },
+  splitCol: {
+    flex: 1,
+  },
+  splitLabel: {
+    fontSize: text.sm,
+    lineHeight: 17,
+    marginBottom: 3,
+    // color set inline via colors.muted
+  },
+  splitValue: {
+    fontSize: text.lg,
+    lineHeight: 22,
+    fontWeight: fontWeight.bold,
+    // color set inline via colors.text / colors.muted
+  },
+  splitMeta: {
+    fontSize: text.sm,
+    lineHeight: 17,
+    marginTop: 2,
+    // color set inline via colors.muted
+  },
+  cardFooter: {
+    gap: gap.xs,
+    marginTop: 14,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    // borderTopColor set inline via colors.border
+  },
+  footNote: {
+    fontSize: text.sm,
+    lineHeight: 17,
     // color set inline via colors.muted
   },
 

@@ -19,7 +19,7 @@ import {
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
 import { useAuthContext } from '@/providers/useAuthContext';
@@ -182,17 +182,55 @@ function ProfileEditSectionInner() {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
         </View>
 
+        {/* THE IDENTITY ROW — and the way to your public profile.
+            
+            The avatar came OFF the header cluster on 2026-08-20: four icons
+            stopped reading as a group, and a profile is something you are, not
+            a utility you tap. Identity moved here instead, as the first row of
+            the first settings screen — the Apple-ID-row pattern, which is also
+            where Vinted puts it.
+            
+            It is deliberately NOT the Uber-rider burial (Settings → Privacy →
+            Privacy Center, unfindable enough to need press coverage): this is
+            row one, it carries a face and a chevron, and the gear that reaches
+            it is now on every screen.
+            
+            It used to be a dead row — name and email, not tappable, going
+            nowhere. */}
         {user && (
-          <View style={styles.settingRow}>
+          <AnimatedPressable
+            style={styles.settingRow}
+            onPress={() => router.push(`/users/${encodeURIComponent(user.id)}` as Href)}
+            accessibilityRole="button"
+            accessibilityLabel={t('account.view_public_profile_a11y')}
+          >
+            <View style={[styles.identityAvatar, { backgroundColor: colors.accent }]}>
+              <Text style={[styles.identityInitials, { color: colors.accentText }]}>
+                {(profile?.username ?? user.email ?? '?')
+                  .trim()
+                  .split(/[\s@._-]+/)
+                  .filter(Boolean)
+                  .map((part) => part[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase() || '?'}
+              </Text>
+            </View>
             <View style={styles.settingInfo}>
               <Text style={[styles.settingLabel, { color: colors.text }]}>
                 {profile?.username ?? 'User'}
               </Text>
-              <Text style={[styles.settingHint, { color: colors.muted }]}>
+              {/* The EMAIL, not "View public profile". Replacing it lost the
+                  only place in the app that says which account you are signed
+                  in as — and the chevron already says the row goes somewhere,
+                  so the label was restating the affordance while deleting the
+                  fact. Caught in the post-completion audit. */}
+              <Text style={[styles.settingHint, { color: colors.muted }]} numberOfLines={1}>
                 {user.email ?? ''}
               </Text>
             </View>
-          </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+          </AnimatedPressable>
         )}
 
         {user && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
@@ -598,6 +636,12 @@ const styles = StyleSheet.create({
     fontSize: textToken.lg,
     fontWeight: fw.semibold,
   },
+  identityAvatar: {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
+    marginRight: 12,
+  },
+  identityInitials: { fontSize: 15, fontWeight: '700' },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',

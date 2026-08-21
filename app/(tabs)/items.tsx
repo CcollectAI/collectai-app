@@ -4,7 +4,6 @@ import { useHasEverHadItems } from '@/hooks/useHasEverHadItems';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
-import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import {
   View,
   Text,

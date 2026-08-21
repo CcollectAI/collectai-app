@@ -53,6 +53,16 @@ three consumers of `market_hits.url` — `app/alerts.tsx`, `app/notifications.ts
 `usePushNotifications.ts` — treated "starts with https" as "external" and handed
 them to the browser. Route first, `Linking.openURL` only as the fallthrough.
 
+**And it has not been deployed — measured 2026-08-20.** The repo's
+`web/.well-known/apple-app-site-association` carries `/l/*` and `web/vercel.json`
+carries the `/l/:id` rewrite, as the table above says. Production carries
+neither: the live AASA lists seven paths with no `/l/*`, and
+`https://sparrowcollect.com/l/<uuid>` returns **404**. So rows 1 and 4 are
+written, committed, and not in effect — which is exactly the asymmetric failure
+this section warns about, sitting in the repo for twelve days. A share sheet
+that sends `https://sparrowcollect.com/l/<id>` (`publicListingUrl`,
+src/lib/ids.ts) is correct on this side and lands on a 404 until `web/` ships.
+
 > `web/` is a separate Vercel deploy. Changes to `vercel.json` and the AASA file
 > do **not** ship with an EAS build or an EC2 deploy — the web project has to be
 > deployed for 1 and 4 to take effect.

@@ -268,6 +268,100 @@ function OffersScreen() {
     };
   }, [offers]);
 
+  /**
+   * Which listing groups are open. Key is `${section}::${listing_id}`, not the
+   * listing alone: a listing can appear in TWO sections at once (counter one
+   * of three bids and it splits across "Needs you" and "Waiting on them"), and
+   * a listing-keyed set would open both at once from one tap.
+   *
+   * Collapsed is the DEFAULT. Reported 2026-08-20: *"if you have 10 items for
+   * sale and 5 bids, you would need to scroll through 50 listings"* — and the
+   * grouping shipped on 2026-08-19 only put competing bids next to each other,
+   * which fixes comparison and does nothing for volume.
+   */
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+  const toggleGroup = useCallback((key: string) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, [settings.hapticsEnabled]);
+
+  /**
+   * A pushed trade must never arrive collapsed.
+   *
+   * `deepLinkOfferId` highlights the card a notification points at. If that
+   * bid is not the head of its group, collapsing would hide the very card the
+   * member tapped a push to see — the screen would look like it had ignored
+   * them. Opening the group is enough; the highlight then does its job.
+   */
+  useEffect(() => {
+    if (!deepLinkOfferId) return;
+    const target = offers.find((o) => o.id === deepLinkOfferId);
+    if (!target) return;
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      next.add(`mine::${target.listing_id}`);
+      next.add(`live::${target.listing_id}`);
+      return next;
+    });
+  }, [deepLinkOfferId, offers]);
+
+  /**
+   * Collapse each listing's competing bids to ONE row until it is opened.
+   *
+   * All four load-bearing rules from docs/P2P_MARKETPLACE_SPEC.md survive:
+   *   1. grouping stays INSIDE a section — this only removes rows from a
+   *      section, it never moves one between sections;
+   *   2. the group still sits at the position of its FIRST member, because the
+   *      row it collapses to IS that member's position;
+   *   3. the row carries count and spread — plus the listing title, which is
+   *      identity rather than comparison data, and is no longer readable off
+   *      the card underneath once the card is hidden;
+   *   4. count and spread still come from `groupMeta`, computed over every
+   *      ACTIVE offer, so a listing split across two sections reports the whole
+   *      listing in both.
+   *
+   * `done` is never collapsed: the spec's reason for not grouping history is
+   * that it would imply a choice that is over, and hiding it behind a
+   * disclosure would say the same thing louder.
+   */
+  const { displaySections, groupHeadIds, sectionCounts } = useMemo(() => {
+    const headIds = new Set<string>();
+    const counts = new Map<string, number>();
+    const out = sections.map((sec) => {
+      // `total` is the number of TRADES, which is what the section header
+      // states. Counting the rendered rows would say "Waiting on them · 2"
+      // over five bids the moment two of them collapsed into one row — a
+      // count describing the slice while reading as a fact about the whole
+      // ([[learning_aggregate_over_the_wrong_population]]).
+      const total = sec.data.length;
+      if (sec.key === 'done') return { ...sec, total };
+      const byListing = new Map<string, P2POffer[]>();
+      for (const o of sec.data) {
+        const arr = byListing.get(o.listing_id);
+        if (arr) arr.push(o);
+        else byListing.set(o.listing_id, [o]);
+      }
+      const data: P2POffer[] = [];
+      for (const o of sec.data) {
+        const arr = byListing.get(o.listing_id)!;
+        const key = `${sec.key}::${o.listing_id}`;
+        counts.set(key, arr.length);
+        if (arr.length < 2) { data.push(o); continue; }
+        const isHead = arr[0].id === o.id;
+        if (isHead) headIds.add(o.id);
+        // Collapsed: only the head survives, and it renders as the group row.
+        if (isHead || openGroups.has(key)) data.push(o);
+      }
+      return { ...sec, data, total };
+    });
+    return { displaySections: out, groupHeadIds: headIds, sectionCounts: counts };
+  }, [sections, openGroups]);
+
   /** What is actually at stake, the way a blotter opens with a total. */
   const committed = useMemo(
     () => offers
@@ -530,7 +624,74 @@ function OffersScreen() {
     );
   }, [act, settings.hapticsEnabled]);
 
-  const renderOffer = useCallback(({ item: o }: { item: P2POffer }) => {
+  /**
+   * Accept, behind a confirm — which is what makes it safe to put on a swipe.
+   *
+   * The rule this screen was written to (and which stays true): **a gesture
+   * must not be able to sell something.** eBay's own API lets you decline many
+   * offers in one call and never accept many, because a decline is a sweep and
+   * an accept is a commitment.
+   *
+   * The swipe therefore does not accept. It REVEALS an Accept action whose tap
+   * opens this alert, and the trade is only agreed on the alert's second tap —
+   * the same two-step the Decline gesture already had. One accidental swipe
+   * still cannot sell a €850 item.
+   */
+  const confirmAccept = useCallback((o: P2POffer, amountLabel: string) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    Alert.alert(
+      `Accept ${amountLabel}?`,
+      // What accept ACTUALLY does, checked against p2p_offers_router: it sets
+      // the offer to accepted and stamps `reserved_offer_id` on the listing.
+      // It does NOT decline the other bids — the spec is explicit that accept
+      // is "agreement, not a lock" and the listing stays live and browsable;
+      // the other offers are declined at COMPLETION, by
+      // `_settle_completed_trade`. The first draft of this alert said they were
+      // declined immediately, which would have been the app describing a
+      // consequence that does not happen.
+      'This agrees the trade at that price and reserves the listing for this buyer. Other bids stay open until the trade is completed.',
+      [
+        { text: 'Not yet', style: 'cancel' },
+        {
+          text: 'Accept',
+          onPress: () => act(() => collectorsApi.p2pRespondToOffer(o.id, 'accept'), o.id, 'Offer accepted'),
+        },
+      ],
+    );
+  }, [act, settings.hapticsEnabled]);
+
+  /**
+   * Take your own offer off the table. The button calls this "Delete" because
+   * that is what the member is doing; the wire action stays `withdraw` and the
+   * row still reads "Withdrawn", since `'withdrawn'` is not a legal
+   * `p2p_offers` status (spec §1d) and the server writes cancelled +
+   * withdrawn_by.
+   *
+   * Confirmed because it is destructive and now reachable by a gesture
+   * (docs/gesture-navigation.md: "always show an alert before delete").
+   */
+  const confirmWithdraw = useCallback((o: P2POffer) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    Alert.alert(
+      'Delete this offer?',
+      'It comes off the table and the other side is told. You can send a new one.',
+      [
+        { text: 'Keep it', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => act(() => collectorsApi.p2pRespondToOffer(o.id, 'withdraw'), o.id, 'Deleted'),
+        },
+      ],
+    );
+  }, [act, settings.hapticsEnabled]);
+
+  const renderOffer = useCallback(({ item: o, section }: { item: P2POffer; section: { key: string } }) => {
+    // Group state for this card, in THIS section.
+    const groupKey = `${section.key}::${o.listing_id}`;
+    const inSection = sectionCounts.get(groupKey) ?? 1;
+    const isGroupHead = groupHeadIds.has(o.id);
+    const groupOpen = openGroups.has(groupKey);
     const busy = busyId === o.id;
     const isSeller = !o.i_am_buyer;
     const open = o.status === 'pending' || o.status === 'countered';
@@ -661,8 +822,58 @@ function OffersScreen() {
       return Number.isFinite(days) && days >= STALE_AFTER_DAYS;
     })();
 
+    /**
+     * THE COLLAPSED GROUP ROW.
+     *
+     * One line per listing instead of one card per bid: "Charizard · 5 bids ·
+     * €28 – €41". Ten listings with five bids each go from 50 cards to 10
+     * rows, and opening one shows only that listing's bids.
+     *
+     * The row is the HEAD card's position, so the section's priority order is
+     * untouched. Tapping toggles; it never navigates — a disclosure that also
+     * navigated would make "see the other bids" and "open this trade" the same
+     * gesture, and the whole point is choosing between them first.
+     */
+    const groupRow = isGroupHead ? (
+      <AnimatedPressable
+        onPress={() => toggleGroup(groupKey)}
+        style={[styles.groupRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: groupOpen }}
+        accessibilityLabel={
+          `${o.listing_title || 'Listing'}. ${group?.size ?? inSection} bids, ` +
+          `${formatPrice(group?.low ?? o.amount, settings.currency, settings.numberLocale)} to ` +
+          `${formatPrice(group?.high ?? o.amount, settings.currency, settings.numberLocale)}.`
+        }
+        accessibilityHint={groupOpen ? 'Double tap to collapse these bids' : 'Double tap to see these bids'}
+      >
+        <Ionicons name="layers-outline" size={16} color={colors.accent} />
+        <View style={styles.groupRowMain}>
+          <Text style={[styles.groupRowTitle, { color: colors.text }]} numberOfLines={1}>
+            {o.listing_title || 'Listing'}
+          </Text>
+          {/* Count and spread, from `groupMeta` — the LISTING's numbers, not
+              this section's. `inSection` is only the fallback for a listing
+              whose meta is missing, which cannot happen while grouping runs. */}
+          <Text style={[styles.groupRowMeta, { color: colors.muted }]} numberOfLines={1}>
+            {group?.size ?? inSection} bids · {formatPrice(group?.low ?? o.amount, settings.currency, settings.numberLocale)}
+            {(group?.low ?? o.amount) === (group?.high ?? o.amount)
+              ? ''
+              : ` – ${formatPrice(group?.high ?? o.amount, settings.currency, settings.numberLocale)}`}
+          </Text>
+        </View>
+        <Ionicons name={groupOpen ? 'chevron-up' : 'chevron-down'} size={18} color={colors.muted} />
+      </AnimatedPressable>
+    ) : null;
+
+    // Collapsed: the row IS the group. The member cards are not rendered at
+    // all rather than rendered and hidden — a zero-height card still costs the
+    // list a cell.
+    if (isGroupHead && !groupOpen) return groupRow;
+
     return (
       <>
+      {groupRow}
       {/* Competing bids, announced once above the group. Count and spread are
           all a seller HAS at this point — the spec records that comparing on
           distance is impossible by construction, since addresses are only
@@ -673,7 +884,11 @@ function OffersScreen() {
           already have an open offer on this listing"), so a group can only
           ever be bids a seller is choosing between. All bids on one listing
           share its currency, so the spread is a real range. */}
-      {group?.isFirst ? (
+      {/* The banner survives ONLY where there is no group row: a listing whose
+          other bids sit in a different section has one card here, so nothing
+          above it would otherwise say what it is one of (spec rule 4). Where
+          the row exists it already carries the same two numbers. */}
+      {group?.isFirst && inSection < 2 ? (
         <View style={styles.groupHeader}>
           <Ionicons name="layers-outline" size={13} color={colors.accent} />
           <Text style={[styles.groupHeaderText, { color: colors.accent }]}>
@@ -701,14 +916,42 @@ function OffersScreen() {
           which is also what iOS HIG asks for. Only offered where the button
           is: an open offer the seller may answer. */}
       <SwipeableRow
-        rightActions={isSeller && open && !busy ? [{
-          key: 'decline',
-          label: 'Decline',
-          icon: 'close-circle-outline',
-          color: colors.danger,
-          onPress: () => confirmDecline(o),
+        // LEFT swipe -> Accept (2026-08-20, requested). The "decline only"
+        // rule above is about COMMITMENT, not about which side the action sits
+        // on: `confirmAccept` puts an alert between the gesture and the trade,
+        // so the swipe still cannot sell anything on its own. Seller + open
+        // only, exactly where the Accept button is.
+        leftActions={isSeller && open && !busy ? [{
+          key: 'accept',
+          label: 'Accept',
+          icon: 'checkmark-circle-outline',
+          color: colors.success,
+          onPress: () => confirmAccept(o, formatPrice(o.amount, settings.currency, settings.numberLocale)),
         }] : []}
-        disabled={!(isSeller && open) || busy}
+        // RIGHT swipe -> Decline (seller, open) and Delete (either side, while
+        // the offer is still on the table). Both confirm; Delete is the
+        // `withdraw` action, and the gesture doc requires an alert before a
+        // destructive one.
+        rightActions={[
+          ...(isSeller && open && !busy ? [{
+            key: 'decline',
+            label: 'Decline',
+            icon: 'close-circle-outline' as const,
+            color: colors.danger,
+            onPress: () => confirmDecline(o),
+          }] : []),
+          ...((open || live) && !busy ? [{
+            key: 'withdraw',
+            label: 'Delete',
+            icon: 'trash-outline' as const,
+            color: colors.muted,
+            onPress: () => confirmWithdraw(o),
+          }] : []),
+        ]}
+        // Enabled whenever ANY action is offered — it used to be gated on
+        // `isSeller && open`, which left a buyer unable to swipe at all even
+        // though Delete applies to them too.
+        disabled={busy || !(open || live)}
         enableHaptics={settings.hapticsEnabled}
       >
       <AnimatedPressable
@@ -733,7 +976,12 @@ function OffersScreen() {
           formatPrice(o.amount, settings.currency, settings.numberLocale),
           statusLabel(o.status, o.i_am_buyer, o.i_withdrew),
           group && group.size > 1 ? `One of ${group.size} bids on this listing.` : null,
-          'Opens the listing',
+          // The card has pushed `/offer/[offerId]` since 2026-08-19 — the
+          // TRADE, not the listing — and the label kept promising the listing.
+          // Read off the live accessibility tree on the sim 2026-08-20. A
+          // screen-reader user was told the wrong destination on every card on
+          // the screen whose whole job is managing trades.
+          'Opens this trade',
         ].filter(Boolean).join('. ')}
         // Left edge stripe carries the role at a glance while scanning, so you
         // do not have to read the pill on every card. Same two semantic colours
@@ -1176,8 +1424,13 @@ function OffersScreen() {
     // feeling that one tap until something else re-renders the row.
     // `role` IS a dependency: it decides `compact`, so leaving it out would
     // keep rendering the compressed card after a switch to Buying/Selling.
-  }, [act, busyId, colors, confirmDecline, deepLinkOfferId, groupMeta, onCounter, onGrade,
-      openTracking, role, router,
+    // The four group values are dependencies for the same reason `role` is:
+    // they decide what this function RENDERS. `openGroups` in particular —
+    // leave it out and the callback closes over the set as it was on mount, so
+    // tapping a group row updates the state, the list re-renders from a stale
+    // renderer, and the group appears not to open at all.
+  }, [act, busyId, colors, confirmDecline, confirmAccept, confirmWithdraw, deepLinkOfferId, groupMeta, onCounter, onGrade,
+      openTracking, role, router, groupHeadIds, openGroups, sectionCounts, toggleGroup,
       settings.currency, settings.numberLocale, settings.hapticsEnabled]);
 
   return (
@@ -1274,7 +1527,7 @@ function OffersScreen() {
         />
       ) : (
         <SectionList
-          sections={sections}
+          sections={displaySections}
           keyExtractor={(o) => o.id}
           renderItem={renderOffer}
           stickySectionHeadersEnabled={false}
@@ -1286,7 +1539,7 @@ function OffersScreen() {
           renderSectionHeader={({ section }) => (
             section.key === 'mine' ? null : (
               <Text style={[styles.sectionHeader, { color: colors.muted }]}>
-                {section.title} · {section.data.length}
+                {section.title} · {section.total ?? section.data.length}
               </Text>
             )
           )}
@@ -1540,6 +1793,19 @@ const styles = StyleSheet.create({
   // belong to each other.
   // Sits directly above the first card of a group and shares its gutter, so
   // the banner reads as a lid on those cards rather than as a row of its own.
+  groupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  groupRowMain: { flex: 1, gap: 2 },
+  groupRowTitle: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
+  groupRowMeta: { fontSize: textToken.sm, lineHeight: 17 },
   groupHeader: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -117,7 +117,7 @@
     "no_results": "結果が見つかりません",
     "no_price_yet": "価格はまだありません",
     "browse_by_category": "カテゴリから探す",
-    "title": "検索"
+    "title": "さがす"
   },
   "item_detail": {
     "valuation_a11y": "アイテムの評価と詳細",
@@ -678,6 +678,7 @@
     "edit_profile": "プロフィールを編集",
     "edit_profile_desc": "ユーザー名と自己紹介を変更",
     "edit_profile_a11y": "プロフィールを編集",
+    "view_public_profile_a11y": "公開プロフィールを見る",
     "change_password": "パスワードを変更",
     "change_password_desc": "アカウントパスワードを更新",
     "change_password_a11y": "パスワードを変更",

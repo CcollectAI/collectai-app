@@ -28,7 +28,7 @@ import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { useTranslation } from "react-i18next";
-import { InboxHeaderButton } from '@/components/InboxHeaderButton';
+import { HeaderActions } from '@/components/HeaderActions';
 import { TabBackButton } from '@/components/TabBackButton';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
@@ -213,7 +213,7 @@ return (
             <Text style={[styles.subtitle, { color: colors.muted }]}>{t('add_tab.subtitle')}</Text>
           </View>
           <View style={styles.headerIcons}>
-            <InboxHeaderButton color={colors.text} size={22} />
+            <HeaderActions />
           </View>
         </View>
 

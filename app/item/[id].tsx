@@ -49,10 +49,8 @@ import { isBuildableCategory } from "@/constants/buildStepTemplates";
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { ConfettiBurst, ConfettiBurstRef } from '@/components/ConfettiBurst';
-import { Skeleton } from '@/components/Skeleton';
 import { ListForSaleModal } from '@/components/ListForSaleModal';
 import { useListForSale } from '@/hooks/useListForSale';
-import { CategorySpecificSection } from '@/components/CategorySpecificSection';
 import { ItemProgressSection } from '@/components/ItemProgressSection';
 import { GradingSection } from '@/components/GradingSection';
 import type { GradingLookupResult, PopulationReport, GradingServiceInfo } from '@/components/GradingSection';
@@ -70,7 +68,6 @@ import { BuildProjectSection } from '@/components/BuildProjectSection';
 import { track } from '@/analytics/track';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { LockedPreviewSection } from '@/components/LockedPreviewSection';
-import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { ItemDetailsCard } from '@/components/item/ItemDetailsCard';
 import { MarketCompPrompt, shouldOfferComp } from '@/components/item/MarketCompPrompt';
 import { ItemQuickActionsRow } from '@/components/item/ItemQuickActionsRow';
@@ -82,10 +79,8 @@ import { ItemEditBar } from '@/components/item/ItemEditBar';
 import { ItemPriceSection } from '@/components/item/ItemPriceSection';
 import { ItemNotesEditor } from '@/components/item/ItemNotesEditor';
 import { SellOnSparrowSection } from '@/components/item/SellOnSparrowSection';
-import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { ItemCatalogRefresh } from '@/components/item/ItemCatalogRefresh';
 import { supabase } from '@/lib/supabase';
-import { PriceTrendChart } from '@/components/PriceTrendChart';
 // SellTimingBadge hidden 2026-07-22 (see render block below) — restore both together.
 // import { SellTimingBadge } from '@/components/SellTimingBadge';
 // Pull from single source of truth — all 36 categories
@@ -368,6 +363,51 @@ function ItemDetailScreen() {
     scarcityData, marketComps,
     linkedProject, setLinkedProject,
   } = detail;
+
+  /**
+   * Attribute edits, held until Save.
+   *
+   * A ref, not state: these fields are typed into on every keystroke and none
+   * of them affects what renders, so state would re-render the whole item
+   * screen per character. The rows are uncontrolled (`defaultValue`), which is
+   * what makes that safe.
+   *
+   * Only CHANGED keys are sent. `PATCH /items/{id}/attributes` merges with
+   * `attrs || $3::jsonb` server-side, so a partial object cannot drop the keys
+   * it omits — which is also why this must not spread the whole existing attrs
+   * back in ([[learning_stale_attrs_spread_into_merge]]: a stale spread into a
+   * merge endpoint is a lost update).
+   */
+  const editedAttrsRef = React.useRef<Record<string, string>>({});
+  const onChangeAttribute = useCallback((key: string, value: string) => {
+    editedAttrsRef.current[key] = value;
+  }, []);
+
+  const saveEditsWithAttributes = useCallback(async () => {
+    const edited = editedAttrsRef.current;
+    if (id && !isDraft && Object.keys(edited).length > 0) {
+      // Empty string means "clear this field", which the jsonb merge cannot
+      // express — `{"rarity": ""}` stores an empty string rather than removing
+      // the key. That is the honest behaviour for now: the row reads blank
+      // either way, and inventing a delete protocol here would be a second
+      // contract for the same endpoint.
+      try {
+        await collectorsApi.patch(`/items/${encodeURIComponent(String(id))}/attributes`, {
+          attributes: edited,
+        });
+        // Reflect immediately: the screen reads `savedAttrs` and would
+        // otherwise show the old values until a refetch, which reads as the
+        // save having failed.
+        setSavedAttrs((prev) => ({ ...(prev ?? {}), ...edited }));
+        editedAttrsRef.current = {};
+      } catch (e) {
+        logger.error('[ItemDetail] attribute save failed:', e);
+        showToast({ message: "Couldn't save those details", type: 'error' });
+        return;
+      }
+    }
+    await onSaveEdits();
+  }, [id, isDraft, onSaveEdits, showToast]);
 
   // Photo & gallery management (extracted to useItemGallery hook)
   const gallery = useItemGallery(id, isDraft, imageUri);
@@ -903,7 +943,14 @@ function ItemDetailScreen() {
 
           {/* Save / Cancel bar — only in edit mode */}
           {!isDraft && id && isEditing && (
-            <ItemEditBar onSave={() => onSaveEdits()} onCancel={() => setIsEditing(false)} />
+            <ItemEditBar
+              onSave={() => saveEditsWithAttributes()}
+              // Cancel must DROP the pending attribute edits. Without this the
+              // ref survives the cancel, and the next unrelated save would
+              // silently write the abandoned values — an edit the member
+              // explicitly took back.
+              onCancel={() => { editedAttrsRef.current = {}; setIsEditing(false); }}
+            />
           )}
 
           {/* For-Sale status badge — shown when listed */}
@@ -949,10 +996,14 @@ function ItemDetailScreen() {
             isGradingEligible={isGradingEligible}
             categorySlug={categorySlug}
             categoryIdMap={CATEGORY_ID_MAP}
-            itemAttributes={itemAttributes}
+            // The saved-row values, not `useItemDetail`'s parallel copy: that
+            // hook skips the fetch entirely for drafts, so the draft branch had
+            // no attributes at all. `displayAttributes` covers both (route
+            // params while drafting, the fetched row after the save).
+            itemAttributes={displayAttributes ?? itemAttributes}
             taxonomyVersion={taxonomyVersion}
-            subtypeId={subtypeId}
-            itemCollections={itemCollections}
+            subtypeId={savedSubtypeId ?? subtypeId}
+            itemCollections={displayCollections ?? itemCollections}
             itemId={id}
             itemSizeValue={itemSizeValue}
             sizeSystem={sizeSystem}
@@ -966,6 +1017,37 @@ function ItemDetailScreen() {
             onSizeChange={handleSizeChange}
             onSizeSystemChange={setSizeSystem}
             onSizeValueChange={setItemSizeValue}
+            onChangeAttribute={onChangeAttribute}
+            // Rendered by the card, immediately after the attribute rows, so
+            // "fill in details from catalogue" sits with the details it fills.
+            catalogAction={
+              !isDraft && id ? (
+                <ItemCatalogRefresh
+                  itemId={id}
+                  itemTitle={editableName}
+                  itemCategory={categorySlug}
+                  currentAttrs={savedAttrs}
+                  currentCanonicalKey={savedCanonicalKey}
+                  onUpdated={() => {
+                    (async () => {
+                      const { data } = await supabase
+                        .from('items')
+                        .select('attrs, collection_name, canonical_key')
+                        .eq('id', id)
+                        .maybeSingle();
+                      const row = data as { attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null } | null;
+                      if (row) {
+                        setSavedAttrs(row.attrs ?? null);
+                        setSavedCollectionName(row.collection_name ?? null);
+                        setSavedCanonicalKey(row.canonical_key ?? null);
+                        const sub = (row.attrs as Record<string, unknown> | null | undefined)?.subtype_id;
+                        setSavedSubtypeId(typeof sub === 'string' ? sub : null);
+                      }
+                    })();
+                  }}
+                />
+              ) : null
+            }
           />
 
           {/* Asked AFTER the save, never as a modal over it. See
@@ -988,6 +1070,38 @@ function ItemDetailScreen() {
             />
           ) : null}
 
+          {/* THE VALUATION CARD — and it only renders when it has something in
+              it (2026-08-20).
+
+              Every child of `ItemPriceSection` is conditional (PriceCard needs
+              `priceEstimate`; the legacy bands need q10/q50/q90; confidence,
+              explanation, scarcity and comps each need their own data), so an
+              item with none of them produced a **bordered card containing
+              nothing** — reported as the empty box with too much padding
+              between the details and "Help improve our estimates".
+
+              That is the rule this repo already wrote down: a bordered card
+              with no content does not read as "this field is empty", it reads
+              as a component that failed to load. Guard on the CONTENT
+              (docs/ui-playbook.md, 2026-08-17).
+
+              The card survives when any of its other tenants — the feedback
+              prompt, the refresh bar — have something to show, because those
+              are the same "what is this worth" question. */}
+          {/* Rendered only when it HAS something. Every child of
+              `ItemPriceSection` is conditional — PriceCard needs
+              `priceEstimate`, the legacy bands need q10/q50/q90, and
+              confidence, explanation, scarcity and comps each need their own
+              data — so an item with none of them drew a bordered card
+              containing nothing. Reported as the empty box with too much
+              padding above "Help improve our estimates".
+
+              A bordered card with no content does not read as "this field is
+              empty"; it reads as a component that failed to load
+              (docs/ui-playbook.md, 2026-08-17). The feedback prompt and the
+              refresh bar count as content — they answer the same "what is this
+              worth" question — which is why a saved item still gets the card. */}
+          {(priceEstimate || q10 || q50 || q90 || confidence || (!isDraft && id)) ? (
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]} accessibilityRole="summary" accessibilityLabel={t('item_detail.valuation_a11y')}>
             {/* Price display — PriceCard, legacy bands, confidence, explanation, scarcity, comps */}
             <ItemPriceSection
@@ -1067,6 +1181,23 @@ function ItemDetailScreen() {
                 onRefresh={refreshAllIntelligence}
               />
             )}
+          </View>
+          ) : null}
+
+          {/* ── END OF THE VALUATION CARD ──────────────────────────────
+
+              It used to close 250 lines further down, which meant the
+              price, the feedback prompt, the refresh bar, Sell this,
+              Notes, Shop this item, reading progress AND the Pro
+              sections were all inside ONE bordered container labelled
+              "valuation". That is why the screen read as a single
+              endless card: nothing ever ended.
+
+              The sections below are self-contained components with
+              their own padding, and the scroller already owns the 16pt
+              gutter (`styles.content`), so they need no wrapper — they
+              simply stop being nested inside a card that is not about
+              them. */}
 
             {/* ═══════════════ USER-OWNED SECTIONS (top) ═══════════════ */}
             {/* Reordered 2026-04-19: things the user OWNS (notes, build project,
@@ -1074,52 +1205,15 @@ function ItemDetailScreen() {
                 paywalled sections to edit their own data. Pro-gated sections
                 moved below. */}
 
-            {/* Captured attributes — set_name / year / brand / rarity / grade / etc.
-                Was a silent capture-without-consume bug: items.attrs jsonb has
-                been populated by QuickScan + add-manual for months, but the
-                presentation component was never mounted. Renders nothing when
-                attrs is empty, so safe to always include. Uses
-                displayAttributes which switches between draft route-params
-                and the lazily-fetched saved-item row. */}
-            <ItemAttributesSection
-              attributes={displayAttributes}
-              category={categorySlug}
-              subtypeId={savedSubtypeId ?? undefined}
-              collections={displayCollections}
-            />
+            {/* The captured-attributes list used to be mounted HERE as well as
+                inside the details card above — two mounts, two fetches, one
+                "Item Details" heading rendered twice on the same screen. It now
+                lives in the card, under the value it describes. */}
 
-            {/* Re-match against catalog (post-save user-initiated). Helps
-                older items that were created before the catalog had this
-                entry, or before the canonical_key writer was wired. */}
-            {!isDraft && id && (
-              <ItemCatalogRefresh
-                itemId={id}
-                itemTitle={editableName}
-                itemCategory={categorySlug}
-                currentAttrs={savedAttrs}
-                currentCanonicalKey={savedCanonicalKey}
-                onUpdated={() => {
-                  // Re-fetch so the just-applied attrs + canonical_key render
-                  // immediately on the same screen without a navigation cycle.
-                  (async () => {
-                    const { data } = await supabase
-                      .from('items')
-                      .select('attrs, collection_name, canonical_key')
-                      .eq('id', id)
-                      .maybeSingle();
-                    const row = data as { attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null } | null;
-                    if (row) {
-                      setSavedAttrs(row.attrs ?? null);
-                      setSavedCollectionName(row.collection_name ?? null);
-                      setSavedCanonicalKey(row.canonical_key ?? null);
-                      const sub = (row.attrs as Record<string, unknown> | null | undefined)?.subtype_id;
-                      setSavedSubtypeId(typeof sub === 'string' ? sub : null);
-                    }
-                  })();
-                }}
-              />
-            )}
-
+            {/* The catalogue action moved INTO the details card (2026-08-20),
+                directly under the attribute rows it fills in. Down here it was
+                a lone pill floating between two cards — it broke the flow and
+                gave no clue which fields it changes. */}
 
             {/* Sell on the member marketplace (P2P Stage 1). Placed with the
                 other user-OWNED actions, above the paywalled sections: this is
@@ -1259,12 +1353,21 @@ function ItemDetailScreen() {
                   />
                 </>
               ) : (
+                /* The name comes from the PLAN, not from this screen.
+                   docs/MONETIZATION.md sells one line — "Advanced analytics
+                   (price trend, history, market prices)" — and the analytics
+                   screen's own prompt already says "Advanced Analytics". This
+                   card used to invent "Item Insights", a product name that
+                   appears in no plan, no store listing and no paywall, so a
+                   member could not tell whether it was the thing they were
+                   already being sold ([[learning_copy_written_from_code_not_from_the_doc]]).
+                   Sub-labels renamed to the doc's words too. */
                 <LockedPreviewSection
-                  title="Item Insights"
+                  title="Advanced analytics"
                   requiredPlan="Pro"
                   features={[
-                    { label: 'Market Prices', description: '— live listings from eBay, Mercari, Vinted & more' },
-                    { label: 'Valuation Report', description: '— full dossier with comps & confidence' },
+                    { label: 'Market prices', description: '— live listings from eBay, Mercari, Vinted & more' },
+                    { label: 'Valuation report', description: '— full dossier with comps & confidence' },
                   ]}
                 />
               )
@@ -1272,7 +1375,6 @@ function ItemDetailScreen() {
 
             {/* Bottom spacer inside card */}
 
-          </View>
         </Animated.ScrollView>
 
         {/* Sticky Save Button — appears on scroll for drafts only */}

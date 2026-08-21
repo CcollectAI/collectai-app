@@ -18,7 +18,7 @@ import { useRouter } from 'expo-router';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { InboxHeaderButton } from '@/components/InboxHeaderButton';
+import { HeaderActions } from '@/components/HeaderActions';
 
 type Props = {
   /** Centre/left title. Omit for an icon-only bar. */
@@ -89,19 +89,7 @@ export default function ScreenHeader({ title, showBack = true, showActions = tru
       <View style={[styles.side, styles.sideRight]}>
         {showActions && (
           <>
-            <InboxHeaderButton color={colors.text} size={22} />
-            <AnimatedPressable
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-                router.push('/settings');
-              }}
-              style={styles.iconBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel="Open settings"
-            >
-              <Ionicons name="settings-outline" size={22} color={colors.text} />
-            </AnimatedPressable>
+            <HeaderActions />
           </>
         )}
       </View>
@@ -132,10 +120,14 @@ const styles = StyleSheet.create({
   // to the outer edge or a cluster that doesn't fill its box drifts inward.
   //
   // That is what happened when COMMUNITY_GATED suppressed the chat icon:
-  // InboxHeaderButton returns null with 0 unread, so the right box held only
+  // InboxHeaderButton returned null with 0 unread, so the right box held only
   // the ~30pt gear inside a 76pt row with default flex-start — leaving ~46pt of
   // dead space to its right, and the gear no longer lined up with the screen
   // edge (or with the back chevron on the left).
+  //
+  // That gate is GONE (2026-08-20, MESSAGING_ENABLED): the cluster is three
+  // fixed icons on every screen, so it always overflows the 76pt minimum and
+  // `flex-end` is what does the work now.
   // The equal-width trick above only matters while the title is CENTRED. It is
   // left-aligned as of 2026-08-16, so only the RIGHT side still needs its fixed
   // box (to keep the gear pinned to the screen edge when InboxHeaderButton

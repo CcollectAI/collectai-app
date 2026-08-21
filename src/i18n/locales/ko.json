@@ -117,7 +117,7 @@
     "no_results": "결과를 찾을 수 없습니다",
     "no_price_yet": "아직 가격 없음",
     "browse_by_category": "카테고리별 둘러보기",
-    "title": "검색"
+    "title": "둘러보기"
   },
   "item_detail": {
     "valuation_a11y": "아이템 감정 및 세부정보",
@@ -678,6 +678,7 @@
     "edit_profile": "프로필 편집",
     "edit_profile_desc": "사용자 이름과 소개 변경",
     "edit_profile_a11y": "프로필 편집",
+    "view_public_profile_a11y": "공개 프로필 보기",
     "change_password": "비밀번호 변경",
     "change_password_desc": "계정 비밀번호 업데이트",
     "change_password_a11y": "비밀번호 변경",

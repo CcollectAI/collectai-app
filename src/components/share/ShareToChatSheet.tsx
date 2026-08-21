@@ -16,7 +16,7 @@
  * would be a hole straight through that rule.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Share } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, Share, Linking, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { BottomSheetModal } from '@/components/BottomSheetModal';
@@ -39,13 +39,62 @@ export type SharePayload = {
   /** Route to deep-link to, e.g. `listing/abc123` or `item/abc123`. No scheme,
    *  no leading slash — this builds the `sparrow://` URL. */
   route: string;
+  /**
+   * The PUBLIC https url, when the thing being shared has one
+   * (`publicListingUrl`, src/lib/ids.ts). Preferred over `route` in the
+   * message body, and it is the only shape that survives leaving the app: a
+   * `sparrow://` string is not tappable in WhatsApp or iMessage, and a
+   * recipient without Sparrow installed has nowhere to land.
+   *
+   * Inside the app the same url is turned back into a route by
+   * `inAppListingHref`, so a DM'd listing opens the listing screen rather than
+   * a browser. Omit it for things with no public page — an item is private.
+   */
+  webUrl?: string | null;
   imageUrl?: string | null;
 };
 
 /** The message body. Kept here so both cards produce the same shape. */
 function composeMessage(p: SharePayload): string {
   const price = p.priceLabel ? ` — ${p.priceLabel}` : '';
-  return `${p.title}${price}\nsparrow://${p.route}`;
+  // https when there is one. `sparrow://` only for things with no public page,
+  // where the recipient is by definition already a member reading it in-app.
+  const link = p.webUrl || `sparrow://${p.route}`;
+  return `${p.title}${price}\n${link}`;
+}
+
+/**
+ * Where "send it outside Sparrow" goes first.
+ *
+ * Not a preference and not a guess at what is installed: iOS `canOpenURL` on a
+ * third-party scheme answers false unless the scheme is declared in
+ * `LSApplicationQueriesSchemes`, which `app.json` does not carry — so probing
+ * would hide WhatsApp from every European member, which is the opposite of
+ * this function. Both routes are always offered; region only decides which one
+ * is on the left.
+ *
+ * `settings.region` is the app's existing signal (src/lib/settings.tsx), the
+ * same one that picks the default currency.
+ */
+function messengersFor(region: string): ('whatsapp' | 'sms')[] {
+  return region === 'americas' ? ['sms', 'whatsapp'] : ['whatsapp', 'sms'];
+}
+
+/** iMessage is an iOS product name; on Android the same intent is the SMS app. */
+const SMS_LABEL = Platform.OS === 'ios' ? 'iMessage' : 'Messages';
+
+/**
+ * `wa.me`, not `whatsapp://send`. The custom scheme throws when WhatsApp is
+ * absent (and needs the Info.plist declaration above to be probed at all);
+ * wa.me opens the app when it is installed and a web page when it is not.
+ *
+ * `sms:` takes its body after `&` on iOS and `?` on Android — the one platform
+ * split here, and getting it wrong opens Messages with an empty draft.
+ */
+function messengerUrl(target: 'whatsapp' | 'sms', body: string): string {
+  const encoded = encodeURIComponent(body);
+  if (target === 'whatsapp') return `https://wa.me/?text=${encoded}`;
+  return `sms:${Platform.OS === 'ios' ? '&' : '?'}body=${encoded}`;
 }
 
 type Props = {
@@ -120,6 +169,24 @@ export function ShareToChatSheet({ visible, onClose, payload }: Props) {
       logger.error('[ShareToChatSheet] os share failed:', e);
     }
   }, [payload, onClose]);
+
+  const openMessenger = useCallback(
+    async (target: 'whatsapp' | 'sms') => {
+      if (!payload) return;
+      try {
+        await Linking.openURL(messengerUrl(target, composeMessage(payload)));
+        onClose();
+      } catch (e) {
+        // A missing app, or a device with no SMS. Hand the member the OS sheet
+        // rather than a dead button — the same reasoning as the empty-chats
+        // branch above: never leave someone on a control that goes nowhere.
+        logger.error(`[ShareToChatSheet] ${target} open failed:`, e);
+        showToast({ message: `Couldn't open ${target === 'whatsapp' ? 'WhatsApp' : SMS_LABEL}`, type: 'error' });
+        await shareOutside();
+      }
+    },
+    [payload, onClose, showToast, shareOutside],
+  );
 
   const empty = state === 'ok' && (threads?.length ?? 0) === 0;
 
@@ -204,15 +271,46 @@ export function ShareToChatSheet({ visible, onClose, payload }: Props) {
           })
         )}
 
-        <AnimatedPressable
-          onPress={shareOutside}
-          style={[styles.outside, { borderColor: colors.border }]}
-          accessibilityRole="button"
-          accessibilityLabel="Share outside Sparrow"
-        >
-          <Ionicons name="share-outline" size={16} color={colors.muted} />
-          <Text style={[styles.outsideText, { color: colors.text }]}>Share outside Sparrow</Text>
-        </AnimatedPressable>
+        {/* Outside Sparrow. One row, ordered by region — WhatsApp leads in
+            Europe, iMessage in the Americas — with the OS sheet as the third
+            pill for everything else (Signal, Telegram, Mail, AirDrop).
+
+            `nowrap` with `flex: 1` on each pill, per docs/ui-playbook.md: a
+            wrapping action row strands the last button on its own line. */}
+        <Text style={[styles.groupLabel, { color: colors.muted }]}>Outside Sparrow</Text>
+        <View style={styles.outsideRow}>
+          {messengersFor(settings.region).map((target) => (
+            <AnimatedPressable
+              key={target}
+              onPress={() => openMessenger(target)}
+              style={[styles.outside, { borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                target === 'whatsapp' ? 'Share on WhatsApp' : `Share by ${SMS_LABEL}`
+              }
+            >
+              <Ionicons
+                name={target === 'whatsapp' ? 'logo-whatsapp' : 'chatbubble-outline'}
+                size={16}
+                color={colors.muted}
+              />
+              <Text style={[styles.outsideText, { color: colors.text }]} numberOfLines={1}>
+                {target === 'whatsapp' ? 'WhatsApp' : SMS_LABEL}
+              </Text>
+            </AnimatedPressable>
+          ))}
+          <AnimatedPressable
+            onPress={shareOutside}
+            style={[styles.outside, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Share somewhere else"
+          >
+            <Ionicons name="ellipsis-horizontal" size={16} color={colors.muted} />
+            <Text style={[styles.outsideText, { color: colors.text }]} numberOfLines={1}>
+              More
+            </Text>
+          </AnimatedPressable>
+        </View>
       </ScrollView>
     </BottomSheetModal>
   );
@@ -239,10 +337,13 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: textToken.md, fontWeight: fontWeight.bold },
   rowName: { flex: 1, fontSize: textToken.md, fontWeight: fontWeight.semibold },
   rowAction: { fontSize: textToken.md, fontWeight: fontWeight.bold },
+  groupLabel: { fontSize: textToken.sm, lineHeight: 17, marginTop: 6 },
+  outsideRow: { flexDirection: 'row', flexWrap: 'nowrap', gap: 8 },
   outside: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    flex: 1, flexShrink: 1,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md,
-    paddingVertical: 12, marginTop: 6,
+    paddingVertical: 12, paddingHorizontal: 8,
   },
-  outsideText: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
+  outsideText: { fontSize: textToken.md, fontWeight: fontWeight.semibold, flexShrink: 1, textAlign: 'center' },
 });

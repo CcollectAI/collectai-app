@@ -150,11 +150,11 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
                 ? 'Rank by items owned'
                 : m === 'value'
                   ? 'Rank by value held'
-                  : 'Rank by how completely collections are documented'
+                  : 'Rank by collection completeness'
             }
           >
             <Text style={[styles.catChipText, { color: metric === m ? colors.accentText : colors.text }]}>
-              {m === 'items' ? 'Items' : m === 'value' ? 'Value' : 'Documented'}
+              {m === 'items' ? 'Items' : m === 'value' ? 'Value' : 'Completeness'}
             </Text>
           </AnimatedPressable>
         ))}
@@ -198,7 +198,14 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
         rows.map((r, index) => {
           const medalColor = getMedalColor(r.rank - 1, colors.muted);
           const itemsLabel = `${formatNumber(r.item_count, settings.numberLocale)} ${r.item_count === 1 ? 'item' : 'items'}`;
-          const documentedLabel = `${r.documented_pct ?? 0}% documented`;
+          // "Collection completeness" (renamed 2026-08-20, was "documented").
+          // It is NOT set completion: `documented_count` counts items whose
+          // RECORD is filled in — photo + condition/grade + purchase price
+          // (social_router.py) — while `completionPct` elsewhere in the app
+          // counts how much of a trading-card SET you own. Two different
+          // ideas; the secondary line below says "N of M items" so the
+          // percentage cannot be read as owning N% of a set.
+          const documentedLabel = `${r.documented_pct ?? 0}% complete`;
           const stat =
             effectiveMetric === 'value'
               ? formatPrice(r.value_eur, settings.currency, settings.numberLocale)
@@ -212,7 +219,7 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
             effectiveMetric === 'value'
               ? itemsLabel
               : effectiveMetric === 'documented'
-                ? `${formatNumber(r.documented_count ?? 0, settings.numberLocale)} of ${itemsLabel}`
+                ? `${formatNumber(r.documented_count ?? 0, settings.numberLocale)} of ${itemsLabel} fully documented`
                 : valueRankingAvailable
                   ? formatPrice(r.value_eur, settings.currency, settings.numberLocale)
                   : documentedLabel;

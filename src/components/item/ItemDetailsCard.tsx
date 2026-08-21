@@ -47,6 +47,10 @@ interface ItemDetailsCardProps {
   onShowCollectionPicker: () => void;
   onShowConditionPicker: () => void;
   onSizeChange: (sizeVal: string, system: string) => void;
+  /** Collects edited attribute keys for the save handler. */
+  onChangeAttribute?: (key: string, value: string) => void;
+  /** Rendered under the attribute rows — the 'fill in from catalogue' action. */
+  catalogAction?: React.ReactNode;
   onSizeSystemChange: (s: 'us' | 'eu' | 'uk' | 'mm') => void;
   onSizeValueChange: (v: string) => void;
 }
@@ -70,6 +74,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
     itemId, itemSizeValue, sizeSystem, sizeSaving, notes,
     onEditableName, onEditableValue,
     onShowCategoryPicker, onShowCollectionPicker, onShowConditionPicker,
+    onChangeAttribute, catalogAction,
     onSizeChange, onSizeSystemChange, onSizeValueChange,
   } = props;
 
@@ -235,14 +240,31 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
         </View>
       ) : null}
 
-      {/* Item Attributes Section */}
+      {/* Everything captured about the item, as rows in THIS card, directly
+          under the value. The screen used to render this component again
+          below the card from its own fetch — same title, same data, twice.
+
+          `categorySlug`, not `editableCategory`: `getCategoryFields` is keyed
+          by SLUG and the editable field holds a DISPLAY NAME, so passing the
+          latter silently lost the category's field order and labels
+          (docs/TAXONOMY.md, "Two vocabularies, and the one place they meet"). */}
       <ItemAttributesSection
         attributes={itemAttributes}
-        category={editableCategory}
+        category={categorySlug}
         taxonomyVersion={taxonomyVersion}
         subtypeId={subtypeId}
         collections={itemCollections}
+        // Editable in the same edit mode as the fields above it, so brand,
+        // rarity and set code are changed where they are read (2026-08-20).
+        // Not on a draft: a draft has no row to PATCH yet.
+        editable={isEditing && !isDraft}
+        onChangeAttribute={onChangeAttribute}
       />
+
+      {/* Directly under the rows it fills in. Hidden while editing: the member
+          is already typing those fields by hand, and a button that overwrites
+          them mid-edit is a trap. */}
+      {!isEditing ? catalogAction : null}
 
       {/* Category-Specific Sections */}
       <CategorySpecificSection

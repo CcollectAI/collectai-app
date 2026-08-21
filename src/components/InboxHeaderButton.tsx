@@ -13,7 +13,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { COMMUNITY_GATED } from '@/config/featureFlags';
+import { MESSAGING_ENABLED } from '@/config/featureFlags';
 
 type Props = {
   /** Icon color — falls back to theme text color */
@@ -56,11 +56,11 @@ export const InboxHeaderButton: React.FC<Props> = ({
     };
   }, []);
 
-  // When COMMUNITY_GATED, hide the icon unless the user has unread DMs.
-  // The /inbox route stays reachable by deep link / push notification, so
-  // any real DM that arrives surfaces the icon and lets the user navigate.
-  // For solo-founder day-1, with no DMs, no inbox button appears at all.
-  if (COMMUNITY_GATED && unreadCount === 0) {
+  // Gated on MESSAGING_ENABLED, not on COMMUNITY_GATED (2026-08-20). The old
+  // reuse hid this icon whenever the inbox was empty, so the header cluster
+  // changed shape from screen to screen and the gear drifted off the edge —
+  // see the flag's comment in src/config/featureFlags.ts for both defects.
+  if (!MESSAGING_ENABLED) {
     return null;
   }
 

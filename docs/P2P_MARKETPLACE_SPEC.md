@@ -335,6 +335,42 @@ Three things about that fix are load-bearing and must not be "simplified":
 3. **The banner carries count and spread, and nothing else.** That is all a
    seller HAS: comparing on *distance* is impossible by construction, since
    addresses are only collectable after `accepted` (§5a).
+**Volume is a different problem, and it was still open — CLOSED 2026-08-20.**
+Grouping put competing bids next to each other, which fixes *comparison* and
+does nothing for *how many*. Reported: *"if you have 10 items for sale and 5
+bids, you would need to scroll through 50 listings."*
+
+A listing with two or more bids **in a section** now collapses to one row —
+*"DEMO Charizard Base Set Holo · 4 bids · €28 – €50"* — that expands in place.
+Ten listings × five bids is ten rows.
+
+All four rules above survive, by construction rather than by care:
+
+- the collapse only REMOVES rows from a section, so grouping is still inside a
+  section (1);
+- the row it collapses to is the head member's own position (2);
+- the row carries count and spread from `groupMeta` (3, 4) — plus the listing
+  title, which is identity rather than comparison data and is no longer
+  readable off a card once the card is hidden.
+
+Three things that are easy to get wrong here:
+
+- **The banner still has a job.** A listing whose other bids are in a different
+  section has ONE card here and nothing to collapse; without the banner nothing
+  would say what that card is one of. It renders only when the section holds
+  fewer than two of the listing's bids.
+- **`done` is never collapsed.** The reason history is not grouped — it would
+  imply a choice that is over — applies twice as hard to hiding it behind a
+  disclosure.
+- **A pushed trade must not arrive collapsed.** `deepLinkOfferId` highlights
+  the card a notification points at; if that bid is not its group's head, the
+  card the member tapped a push to see would not be rendered at all. The
+  group containing it is opened on arrival.
+
+The state key is `${section}::${listing_id}`, not the listing alone: a listing
+can sit in two sections at once (counter one of three bids), and a
+listing-keyed set would open both from one tap.
+
 4. **The count describes the LISTING, not the section.** A seller who counters
    one of three bids splits that listing across two sections — the countered
    bid is "waiting on them" while the other two still need an answer. Counted
