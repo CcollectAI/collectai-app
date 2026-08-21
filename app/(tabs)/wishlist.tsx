@@ -538,7 +538,18 @@ function WatchlistTabScreen() {
       >
         <View style={styles.itemHeader}>
           <View style={styles.itemTitleRow}>
-            <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
+            {/* Priority is encoded in COLOUR ONLY — an 8pt dot with no label.
+                A bare <View> is invisible to a screen reader, so the field the
+                member set was announced nowhere, and it is unreadable to anyone
+                who cannot separate the danger/warning/success hues. `image` is
+                on the Android-supported role list; an iOS-only value here would
+                be a fatal exception, not a no-op. */}
+            <View
+              style={[styles.priorityDot, { backgroundColor: priorityColor }]}
+              accessible
+              accessibilityRole="image"
+              accessibilityLabel={`${item.priority} priority`}
+            />
             <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={1}>
               {item.title}
             </Text>
@@ -1263,7 +1274,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingVertical: 10, marginBottom: 4,
   },
-  keepAddingText: { flex: 1, fontSize: text.xs, lineHeight: 17 },
+  keepAddingText: { flex: 1, fontSize: text.sm, lineHeight: 17 },
   memberListing: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
@@ -1272,15 +1283,22 @@ const styles = StyleSheet.create({
   },
   // flex: 1 so the chevron stays pinned right and the title truncates instead
   // of pushing it off the card.
-  memberListingText: { flex: 1, fontSize: text.xs, fontWeight: fontWeight.semibold },
+  // `md`, not `xs`. This is the one line on the card a member can act on right
+  // now — "Target met — EUR X" — and it is the payoff of the paid Target Hit
+  // feature, so it was the LAST thing that should have been rendering at 10pt,
+  // below the passive category badge at `sm`. The type-scale section bans `xs`
+  // for anything a user reads; `md` is the "status" level in the same table.
+  // lineHeight 19 keeps the >=1.35x rule that section also sets.
+  memberListingText: {
+    flex: 1,
+    fontSize: text.md,
+    lineHeight: 19,
+    fontWeight: fontWeight.semibold,
+  },
   notes: {
     fontSize: text.md,
     marginTop: 8,
     lineHeight: 18,
-  },
-  dateAdded: {
-    fontSize: text.sm,
-    marginTop: 6,
   },
   emptyContainer: {
     flex: 1,
