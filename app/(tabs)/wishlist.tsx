@@ -518,12 +518,13 @@ function WatchlistTabScreen() {
     // left the user to find the row themselves (found 2026-08-09 by
     // scripts/check-route-param-handoff.mjs).
     const highlighted = highlightId != null && item.id === highlightId;
-    const priorityColor =
-      item.priority === 'high'
-        ? colors.danger
-        : item.priority === 'medium'
-        ? colors.warning
-        : colors.success;
+    // Only a priority the member actually CHOSE gets a stripe. Measured on
+    // prod: 13 of 20 rows are still 'medium', the default — so striping every
+    // card painted two thirds of the list with a mark that meant "this is a
+    // card", not "you flagged this". A signal identical on most rows is
+    // decoration, which is the dot's problem one layer up.
+    const hasPriorityStripe = item.priority !== 'medium';
+    const priorityColor = item.priority === 'high' ? colors.danger : colors.success;
 
     return (
       <View
@@ -540,15 +541,25 @@ function WatchlistTabScreen() {
           {
             backgroundColor: colors.card,
             borderColor: colors.border,
+          },
+          // An unflagged card is uniform: the left edge stays the 1pt border
+          // and the 14pt padding the rest of the card uses, so only a chosen
+          // priority costs any ink.
+          hasPriorityStripe && {
             borderLeftColor: priorityColor,
+            borderLeftWidth: 3,
+            paddingLeft: 12,
           },
           // Border + tint only, no scroll-to. FlashList's scrollToIndex on a
           // freshly-mounted list races its own layout pass, and a mis-scroll is
           // worse than no scroll; the accent edge is enough to find the row.
           highlighted && {
             borderColor: colors.accent,
-            // re-assert: borderColor above is a four-edge shorthand
-            borderLeftColor: priorityColor,
+            // re-assert: borderColor above is a four-edge shorthand, so it
+            // would erase the stripe on exactly the card an alert pointed at.
+            // Only re-assert when there IS one — otherwise this would paint a
+            // stripe on a card that deliberately has none.
+            ...(hasPriorityStripe ? { borderLeftColor: priorityColor } : {}),
             backgroundColor: colors.accent + '12',
           },
         ]}
@@ -572,11 +583,16 @@ function WatchlistTabScreen() {
         </View>
 
         <View style={styles.itemMeta}>
-          {item.category && (
-            <View style={[styles.categoryBadge, { backgroundColor: colors.accent + '20' }]}>
-              <Text style={[styles.categoryText, { color: colors.accent }]}>{item.category}</Text>
-            </View>
-          )}
+          {/* Plain text, not a tinted accent chip. It was on 20 of 20 cards,
+              wearing the app's most emphatic colour to say something passive —
+              and competing with the one accent on this card that means
+              something urgent, the "Target met" row. Reference information
+              should recede; the badge said it was a control. */}
+          {item.category ? (
+            <Text style={[styles.categoryText, { color: colors.muted }]} numberOfLines={1}>
+              {item.category}
+            </Text>
+          ) : null}
           <AnimatedPressable
             onPress={() => handleEditTarget(item)}
             style={styles.targetPressable}
@@ -1292,14 +1308,7 @@ const styles = StyleSheet.create({
   itemCard: {
     borderRadius: radius.md,
     padding: 14,
-    // paddingLeft compensates for the 3pt stripe so the text gutter is
-    // identical to a card without one — 14 total either way.
-    paddingLeft: 12,
     borderWidth: 1,
-    // The priority stripe. 3pt reads as a rule; at the inherited 1pt it would
-    // have been a tint on the edge nobody notices, which is the dot's problem
-    // again in a different shape.
-    borderLeftWidth: 3,
     ...shadow.card,
   },
   itemHeader: {
@@ -1333,6 +1342,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     gap: 10,
   },
+  // Still used by the acquire and edit-target SHEETS, which show ONE item.
+  // The card dropped the chip because it repeated on 20 of 20 rows and
+  // competed with the Target Hit accent; neither is true of a modal with a
+  // single item in focus, so the chip stays there.
   categoryBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,

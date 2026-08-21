@@ -1215,6 +1215,47 @@ and **0 of 20 rows are populated**, so a thumbnail would give every card a
 placeholder — "a bordered card with no content reads as a component that failed
 to load". It needs a writer before it needs a renderer.
 
+### Decluttering means making the loud things RARE (2026-08-21)
+
+Asked "does it need decluttering?" straight after the sweep above, and the
+strongest case was against something that sweep had just added. Counted against
+the 20 live rows rather than argued:
+
+| element | on how many cards | verdict |
+|---|---|---|
+| priority stripe | 20/20 — **13 of them the untouched default** | decoration |
+| category badge | 20/20, tinted accent chip | competing with the one urgent accent |
+| notes | **2/20** | not clutter; left alone |
+| touch targets | **5 per card**, body opens nothing | real, but each does something distinct |
+
+**A signal identical on two thirds of the list is not a signal.** `medium` is
+the default priority and 13 of 20 rows still carry it, so striping every card
+marked "this is a card", not "you flagged this". The stripe is now applied only
+to a priority the member actually chose; an unflagged card keeps the uniform
+1pt border and 14pt padding, so only a decision costs ink. That is the DOT's
+problem one layer up — the fix for a weak signal is not to make it bigger.
+
+**The category badge came off the CARD and stayed in the SHEETS.** It was
+reference information wearing the app's most emphatic colour on every row,
+beside a "Target met" row that is supposed to be the only accent thing there.
+As plain muted text it says the same and stops competing.
+
+⚠️ **And the deletion of its style was caught by `tsc`, not by review.**
+`categoryBadge` had two more callers — the acquire sheet and the edit-target
+sheet — where a chip is correct: one item in focus, not repeated, nothing to
+compete with. The argument for removing it ("on 20 of 20 cards") was
+LIST-specific and did not transfer. When a shared style is dropped because of
+how it reads in one context, check the other contexts before deleting it; the
+type error was the only thing standing between that and a broken modal.
+
+**What was NOT decluttered, and why the measurement decided it:**
+
+- **Notes** render on 2 of 20 rows. Removing it saves nothing and deletes the
+  member's own words.
+- **A tappable card body** was rejected: only **7 of 20** rows carry an
+  `item_id`, so it would be a dead tap on 65% of the list — the
+  `as Href`-hides-a-wrong-destination shape, arrived at from the data instead.
+
 ## `headerTitleAlign: 'left'` does NOTHING on iOS (2026-08-16)
 
 Reported as "marketplace is still aligned center as a title". The fix for
