@@ -16,6 +16,13 @@
     "model_version",
     "raw_output"
   ],
+  "user_payment_handles": [
+    "created_at",
+    "handle",
+    "rail_key",
+    "updated_at",
+    "user_id"
+  ],
   "dm_threads": [
     "created_at",
     "id",
@@ -37,13 +44,6 @@
     "ok",
     "started_at"
   ],
-  "item_images": [
-    "created_at",
-    "id",
-    "item_id",
-    "url",
-    "user_id"
-  ],
   "collections": [
     "created_at",
     "id",
@@ -63,6 +63,16 @@
     "title",
     "url",
     "user_id"
+  ],
+  "dac7_seller_year": [
+    "details_provided_at",
+    "gross_eur",
+    "notified_at",
+    "reportable_at",
+    "sales_count",
+    "updated_at",
+    "user_id",
+    "year"
   ],
   "model_metrics": [
     "category",
@@ -186,6 +196,17 @@
     "image_url",
     "name",
     "notes",
+    "updated_at",
+    "user_id"
+  ],
+  "user_settings": [
+    "created_at",
+    "currency",
+    "locale",
+    "notification_preferences",
+    "region",
+    "skill_level",
+    "subscription_tier",
     "updated_at",
     "user_id"
   ],
@@ -711,6 +732,28 @@
     "url_hash",
     "user_id"
   ],
+  "member_grades": [
+    "created_at",
+    "id",
+    "note",
+    "offer_id",
+    "ratee_id",
+    "rater_id",
+    "verdict"
+  ],
+  "p2p_offer_addresses": [
+    "buyer_id",
+    "city",
+    "country",
+    "created_at",
+    "line1",
+    "line2",
+    "offer_id",
+    "postcode",
+    "recipient_name",
+    "state",
+    "updated_at"
+  ],
   "item_review_queue": [
     "created_at",
     "id",
@@ -764,18 +807,12 @@
     "key",
     "value"
   ],
-  "offers": [
-    "amount",
-    "buyer_id",
-    "counter_count",
+  "event_attendees": [
     "created_at",
-    "expires_at",
+    "event_id",
     "id",
-    "listing_id",
-    "message",
-    "seller_id",
     "status",
-    "updated_at"
+    "user_id"
   ],
   "api_request_log": [
     "at",
@@ -788,38 +825,6 @@
     "required",
     "signal",
     "weight"
-  ],
-  "market_hits_y2026m07": [
-    "attrs",
-    "category",
-    "condition",
-    "condition_grade",
-    "currency",
-    "ended_at",
-    "features_json",
-    "graded",
-    "id",
-    "image_url",
-    "is_listing",
-    "item_ref",
-    "listing_id",
-    "marketplace",
-    "normalized_key",
-    "observed_at",
-    "price",
-    "price_eur",
-    "processed",
-    "provider",
-    "seen_at",
-    "seller_rating",
-    "seller_score",
-    "shipping",
-    "source",
-    "title",
-    "tx_id",
-    "url",
-    "url_hash",
-    "user_id"
   ],
   "price_predictions": [
     "category",
@@ -843,6 +848,27 @@
     "source",
     "training_data_asof",
     "ts"
+  ],
+  "p2p_offers": [
+    "amount",
+    "buyer_confirmed_at",
+    "buyer_id",
+    "counter_count",
+    "created_at",
+    "currency",
+    "expires_at",
+    "id",
+    "listing_id",
+    "message",
+    "seller_confirmed_at",
+    "seller_id",
+    "status",
+    "tracking_carrier",
+    "tracking_code",
+    "tracking_set_at",
+    "updated_at",
+    "withdrawn_at",
+    "withdrawn_by"
   ],
   "watchlist_valuation": [
     "delta_pct_vs_30d",
@@ -942,28 +968,6 @@
     "source_code",
     "started_at",
     "status"
-  ],
-  "alert_delivery_queue": [
-    "alert_id",
-    "created_at",
-    "delivered_at",
-    "id",
-    "last_error",
-    "next_try_at",
-    "status",
-    "try_count"
-  ],
-  "alerts_outbox": [
-    "alert_date",
-    "baseline_price",
-    "created_at",
-    "delivered_at",
-    "id",
-    "item_ref",
-    "kind",
-    "last_price",
-    "payload",
-    "pct_change"
   ],
   "enqueue_runs": [
     "id",
@@ -1140,15 +1144,6 @@
     "subject",
     "ts"
   ],
-  "ratings": [
-    "agreement_id",
-    "comment",
-    "created_at",
-    "id",
-    "rated_id",
-    "rater_id",
-    "stars"
-  ],
   "raw_scrapes": [
     "body",
     "category",
@@ -1288,17 +1283,6 @@
     "updated_at",
     "website_url"
   ],
-  "agreements": [
-    "accepted_at_buyer",
-    "accepted_at_seller",
-    "buyer_id",
-    "created_at",
-    "id",
-    "listing_id",
-    "price_eur",
-    "seller_id",
-    "status"
-  ],
   "buyer_intents": [
     "category_slug",
     "created_at",
@@ -1314,24 +1298,6 @@
     "id",
     "is_read",
     "payload",
-    "title",
-    "type",
-    "user_id"
-  ],
-  "listings": [
-    "category_slug",
-    "condition",
-    "created_at",
-    "currency",
-    "description",
-    "external_link",
-    "id",
-    "image_url",
-    "item_id",
-    "price",
-    "quantity",
-    "seller_id",
-    "status",
     "title",
     "type",
     "user_id"
@@ -1417,13 +1383,6 @@
     "created_at",
     "drop_id",
     "id",
-    "user_id"
-  ],
-  "event_attendees": [
-    "created_at",
-    "event_id",
-    "id",
-    "status",
     "user_id"
   ],
   "price_prediction_runs": [
@@ -1780,6 +1739,14 @@
     "training_data_asof",
     "ts"
   ],
+  "notification_impressions": [
+    "client_context",
+    "first_seen_at",
+    "last_seen_at",
+    "notification_id",
+    "seen_count",
+    "user_id"
+  ],
   "chat_thread_reads_v1": [
     "last_read_at",
     "thread_id",
@@ -1809,6 +1776,25 @@
     "status",
     "title",
     "updated_at",
+    "user_id"
+  ],
+  "notification_interactions": [
+    "id",
+    "kind",
+    "meta",
+    "notification_id",
+    "occurred_at",
+    "user_id"
+  ],
+  "notification_outcomes": [
+    "acted_at",
+    "action_ref",
+    "action_type",
+    "computed_at",
+    "id",
+    "latency_seconds",
+    "notification_id",
+    "outcome",
     "user_id"
   ],
   "chat_thread_members_v1": [
@@ -1888,43 +1874,6 @@
     "title",
     "url"
   ],
-  "guidance_runs": [
-    "created_at",
-    "id",
-    "result",
-    "run_date",
-    "user_id"
-  ],
-  "notification_impressions": [
-    "client_context",
-    "first_seen_at",
-    "id",
-    "last_seen_at",
-    "notification_id",
-    "seen_count",
-    "user_id"
-  ],
-  "notification_interactions": [
-    "id",
-    "kind",
-    "meta",
-    "notification_id",
-    "occurred_at",
-    "user_id"
-  ],
-  "user_notifications": [
-    "body",
-    "created_at",
-    "dedupe_key",
-    "dismissed_at",
-    "id",
-    "kind",
-    "payload",
-    "read",
-    "read_at",
-    "title",
-    "user_id"
-  ],
   "item_extractions_v1": [
     "confidence_score",
     "created_at",
@@ -1960,17 +1909,6 @@
     "platform",
     "provider",
     "token",
-    "user_id"
-  ],
-  "notification_outcomes": [
-    "acted_at",
-    "action_ref",
-    "action_type",
-    "computed_at",
-    "id",
-    "latency_seconds",
-    "notification_id",
-    "outcome",
     "user_id"
   ],
   "prediction_events_v2": [
@@ -2103,6 +2041,14 @@
     "is_active",
     "source_url",
     "updated_at"
+  ],
+  "favorites": [
+    "canonical_key",
+    "category",
+    "created_at",
+    "id",
+    "listing_id",
+    "user_id"
   ],
   "user_feedback_events_v1": [
     "canonical_key",
@@ -2284,6 +2230,56 @@
     "trigger_type",
     "user_id"
   ],
+  "marketplace_listings": [
+    "account_id",
+    "auction_duration_days",
+    "auction_start_price",
+    "buy_it_now_price",
+    "canonical_key",
+    "category",
+    "condition_label",
+    "condition_notes",
+    "created_at",
+    "currency",
+    "delisted_at",
+    "estimated_fees",
+    "estimated_net",
+    "expires_at",
+    "external_listing_id",
+    "fee_percentage",
+    "format",
+    "id",
+    "item_id",
+    "listed_at",
+    "listing_description",
+    "listing_title",
+    "listing_url",
+    "marketplace_id",
+    "offers_count",
+    "original_price",
+    "photo_catalogue_consent",
+    "price",
+    "quantity",
+    "reports_count",
+    "reserved_at",
+    "reserved_offer_id",
+    "returns_accepted",
+    "returns_days",
+    "shipping_cost",
+    "shipping_method",
+    "ships_from",
+    "ships_from_country",
+    "ships_international",
+    "ships_to",
+    "sold_at",
+    "status",
+    "status_message",
+    "synced_at",
+    "updated_at",
+    "user_id",
+    "views_count",
+    "watchers_count"
+  ],
   "category_items": [
     "attributes_json",
     "barcode",
@@ -2292,6 +2288,9 @@
     "created_at",
     "external_id",
     "id",
+    "image_contributed_at",
+    "image_contributed_by",
+    "image_source",
     "image_url",
     "item_key",
     "last_crawled_at",
@@ -2368,6 +2367,7 @@
   ],
   "purchase_mandates": [
     "allowed_sources",
+    "canonical_ref",
     "category",
     "condition_filter",
     "cooldown_hours",
@@ -2447,6 +2447,17 @@
     "image_url",
     "title"
   ],
+  "listing_reports": [
+    "created_at",
+    "detail",
+    "id",
+    "listing_id",
+    "reason",
+    "reporter_id",
+    "resolution_note",
+    "resolved_at",
+    "status"
+  ],
   "category_candidates": [
     "admin_notes",
     "description",
@@ -2499,24 +2510,6 @@
     "created_at",
     "user_id"
   ],
-  "build_paint_notes": [
-    "content",
-    "created_at",
-    "id",
-    "project_id",
-    "user_id"
-  ],
-  "build_paint_steps": [
-    "created_at",
-    "description",
-    "id",
-    "image_url",
-    "project_id",
-    "status",
-    "step_order",
-    "title",
-    "updated_at"
-  ],
   "price_history": [
     "as_of",
     "currency",
@@ -2529,6 +2522,13 @@
     "price_q90",
     "snapshot_at",
     "source"
+  ],
+  "build_paint_notes": [
+    "content",
+    "created_at",
+    "id",
+    "project_id",
+    "user_id"
   ],
   "task_queue": [
     "attempts",
@@ -2662,16 +2662,6 @@
     "variant_key",
     "variant_type"
   ],
-  "user_settings": [
-    "created_at",
-    "currency",
-    "locale",
-    "notification_preferences",
-    "region",
-    "subscription_tier",
-    "updated_at",
-    "user_id"
-  ],
   "marketplace_accounts": [
     "connected_at",
     "created_at",
@@ -2687,46 +2677,6 @@
     "token_expires_at",
     "updated_at",
     "user_id"
-  ],
-  "marketplace_listings": [
-    "account_id",
-    "auction_duration_days",
-    "auction_start_price",
-    "buy_it_now_price",
-    "condition_label",
-    "condition_notes",
-    "created_at",
-    "currency",
-    "estimated_fees",
-    "estimated_net",
-    "expires_at",
-    "external_listing_id",
-    "fee_percentage",
-    "format",
-    "id",
-    "item_id",
-    "listed_at",
-    "listing_description",
-    "listing_title",
-    "listing_url",
-    "marketplace_id",
-    "offers_count",
-    "original_price",
-    "price",
-    "quantity",
-    "returns_accepted",
-    "returns_days",
-    "shipping_cost",
-    "shipping_method",
-    "ships_international",
-    "sold_at",
-    "status",
-    "status_message",
-    "synced_at",
-    "updated_at",
-    "user_id",
-    "views_count",
-    "watchers_count"
   ],
   "marketplace_sales": [
     "buyer_marketplace_id",
@@ -2760,26 +2710,6 @@
     "total_items",
     "updated_at"
   ],
-  "watchlist_items": [
-    "category",
-    "created_at",
-    "currency",
-    "id",
-    "image_url",
-    "item_id",
-    "last_checked_at",
-    "last_market_price",
-    "market_hit_count",
-    "notes",
-    "owned",
-    "predicted_value",
-    "price_trend",
-    "priority",
-    "target_price",
-    "title",
-    "updated_at",
-    "user_id"
-  ],
   "price_ground_truths": [
     "actual_price",
     "currency",
@@ -2797,6 +2727,27 @@
     "started_at",
     "status",
     "worker_name"
+  ],
+  "watchlist_items": [
+    "category",
+    "created_at",
+    "currency",
+    "id",
+    "image_url",
+    "item_id",
+    "last_checked_at",
+    "last_market_price",
+    "market_hit_count",
+    "notes",
+    "owned",
+    "predicted_value",
+    "price_trend",
+    "priority",
+    "sort_order",
+    "target_price",
+    "title",
+    "updated_at",
+    "user_id"
   ],
   "event_sponsor_analytics": [
     "clicks",
@@ -2861,33 +2812,6 @@
     "event_id",
     "event_type",
     "processed_at"
-  ],
-  "offer_events": [
-    "actor_id",
-    "created_at",
-    "event_type",
-    "id",
-    "message",
-    "metadata",
-    "offer_id",
-    "price"
-  ],
-  "offer_evidence": [
-    "created_at",
-    "dossier_json",
-    "id",
-    "market_comps",
-    "offer_id"
-  ],
-  "deal_ratings": [
-    "comment",
-    "created_at",
-    "id",
-    "offer_id",
-    "rated_id",
-    "rater_id",
-    "role",
-    "stars"
   ],
   "build_paint_projects": [
     "category",
@@ -3070,6 +2994,7 @@
   "profiles": [
     "avatar_color",
     "avatar_url",
+    "bio",
     "created_at",
     "display_name",
     "id",
@@ -3254,19 +3179,6 @@
     "training_data_asof",
     "ts"
   ],
-  "price_history_y2026m07": [
-    "as_of",
-    "currency",
-    "id",
-    "item_id",
-    "item_ref",
-    "price",
-    "price_q10",
-    "price_q50",
-    "price_q90",
-    "snapshot_at",
-    "source"
-  ],
   "price_history_default": [
     "as_of",
     "currency",
@@ -3292,51 +3204,13 @@
     "q50",
     "q90"
   ],
-  "price_predictions_y2026m06": [
-    "category",
-    "comps_count",
-    "conf_score",
-    "confidence",
-    "created_at",
-    "evidence_hit_ids",
-    "evidence_summary",
-    "explanation",
-    "generated_at",
-    "head",
+  "_cat_sum_before": [
+    "completion_pct",
     "id",
-    "item_ref",
-    "model_version",
-    "nk",
-    "q10",
-    "q50",
-    "q90",
-    "raw",
-    "source",
-    "training_data_asof",
-    "ts"
-  ],
-  "price_predictions_y2026m07": [
-    "category",
-    "comps_count",
-    "conf_score",
-    "confidence",
-    "created_at",
-    "evidence_hit_ids",
-    "evidence_summary",
-    "explanation",
-    "generated_at",
-    "head",
-    "id",
-    "item_ref",
-    "model_version",
-    "nk",
-    "q10",
-    "q50",
-    "q90",
-    "raw",
-    "source",
-    "training_data_asof",
-    "ts"
+    "missing_count",
+    "name",
+    "owned_count",
+    "total_count"
   ],
   "demand_signals": [
     "category",
@@ -3537,6 +3411,25 @@
     "is_filmed",
     "setup_notes",
     "shot_order"
+  ],
+  "item_images": [
+    "created_at",
+    "id",
+    "image_url",
+    "item_id",
+    "label",
+    "position"
+  ],
+  "build_paint_steps": [
+    "created_at",
+    "description",
+    "id",
+    "image_url",
+    "project_id",
+    "status",
+    "step_order",
+    "title",
+    "updated_at"
   ],
   "items": [
     "acquired_condition",
