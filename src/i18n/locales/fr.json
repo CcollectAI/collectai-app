@@ -766,5 +766,27 @@
     "entries": "{{count}} entrées",
     "empty_title": "Rien d'enregistré",
     "empty_body": "Les erreurs enregistrées pendant l'utilisation apparaissent ici. Rouvrez l'écran concerné puis revenez."
+  },
+  "screen_titles": {
+    "add_manually": "Ajouter manuellement",
+    "analytics": "Analyses",
+    "announcements": "Annonces",
+    "archived": "Archivés",
+    "back_items": "Objets",
+    "back_settings": "Paramètres",
+    "become_sponsor": "Devenir sponsor",
+    "compose_announcement": "Rédiger une annonce",
+    "condition_guide": "Guide des états",
+    "ebay_defaults": "Réglages eBay par défaut",
+    "edit_event": "Modifier l'événement",
+    "franchise": "Franchise",
+    "import_url": "Importer depuis une URL",
+    "leaderboard": "Classement",
+    "market_movers": "Mouvements du marché",
+    "my_suggestions": "Mes suggestions",
+    "notifications": "Notifications",
+    "project": "Projet",
+    "scan_barcode": "Scanner le code-barres",
+    "seller_dashboard": "Tableau de bord vendeur"
   }
 }

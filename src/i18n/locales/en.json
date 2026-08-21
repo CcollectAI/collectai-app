@@ -766,5 +766,27 @@
     "entries": "{{count}} entries",
     "empty_title": "Nothing recorded",
     "empty_body": "Errors logged while the app runs show up here. Reopen the screen that misbehaved, then come back."
+  },
+  "screen_titles": {
+    "add_manually": "Add manually",
+    "analytics": "Analytics",
+    "announcements": "Announcements",
+    "archived": "Archived",
+    "back_items": "Items",
+    "back_settings": "Settings",
+    "become_sponsor": "Become a Sponsor",
+    "compose_announcement": "Compose Announcement",
+    "condition_guide": "Condition Guide",
+    "ebay_defaults": "eBay defaults",
+    "edit_event": "Edit Event",
+    "franchise": "Franchise",
+    "import_url": "Import from URL",
+    "leaderboard": "Leaderboard",
+    "market_movers": "Market Movers",
+    "my_suggestions": "My Suggestions",
+    "notifications": "Notifications",
+    "project": "Project",
+    "scan_barcode": "Scan Barcode",
+    "seller_dashboard": "Seller Dashboard"
   }
 }

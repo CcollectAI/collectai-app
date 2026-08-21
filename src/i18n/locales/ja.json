@@ -766,5 +766,27 @@
     "entries": "{{count}} 件",
     "empty_title": "記録はありません",
     "empty_body": "アプリの使用中に記録されたエラーがここに表示されます。問題が起きた画面をもう一度開いてから戻ってください。"
+  },
+  "screen_titles": {
+    "add_manually": "手動で追加",
+    "analytics": "分析",
+    "announcements": "お知らせ",
+    "archived": "アーカイブ",
+    "back_items": "アイテム",
+    "back_settings": "設定",
+    "become_sponsor": "スポンサーになる",
+    "compose_announcement": "お知らせを作成",
+    "condition_guide": "コンディションガイド",
+    "ebay_defaults": "eBay の既定設定",
+    "edit_event": "イベントを編集",
+    "franchise": "フランチャイズ",
+    "import_url": "URLからインポート",
+    "leaderboard": "ランキング",
+    "market_movers": "値動き",
+    "my_suggestions": "自分の提案",
+    "notifications": "通知",
+    "project": "プロジェクト",
+    "scan_barcode": "バーコードをスキャン",
+    "seller_dashboard": "出品者ダッシュボード"
   }
 }

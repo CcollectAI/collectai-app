@@ -766,5 +766,27 @@
     "entries": "{{count}} Einträge",
     "empty_title": "Nichts aufgezeichnet",
     "empty_body": "Fehler, die während der Nutzung protokolliert werden, erscheinen hier. Öffne den betroffenen Bildschirm erneut und komm zurück."
+  },
+  "screen_titles": {
+    "add_manually": "Manuell hinzufügen",
+    "analytics": "Analysen",
+    "announcements": "Ankündigungen",
+    "archived": "Archiviert",
+    "back_items": "Objekte",
+    "back_settings": "Einstellungen",
+    "become_sponsor": "Sponsor werden",
+    "compose_announcement": "Ankündigung verfassen",
+    "condition_guide": "Zustands-Leitfaden",
+    "ebay_defaults": "eBay-Standardwerte",
+    "edit_event": "Veranstaltung bearbeiten",
+    "franchise": "Franchise",
+    "import_url": "Von URL importieren",
+    "leaderboard": "Bestenliste",
+    "market_movers": "Marktbeweger",
+    "my_suggestions": "Meine Vorschläge",
+    "notifications": "Benachrichtigungen",
+    "project": "Projekt",
+    "scan_barcode": "Barcode scannen",
+    "seller_dashboard": "Verkäufer-Dashboard"
   }
 }

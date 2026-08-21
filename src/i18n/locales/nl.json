@@ -766,5 +766,27 @@
     "entries": "{{count}} regels",
     "empty_title": "Niets vastgelegd",
     "empty_body": "Fouten die tijdens gebruik worden gelogd verschijnen hier. Open het scherm dat misging opnieuw en kom terug."
+  },
+  "screen_titles": {
+    "add_manually": "Handmatig toevoegen",
+    "analytics": "Analyse",
+    "announcements": "Aankondigingen",
+    "archived": "Gearchiveerd",
+    "back_items": "Items",
+    "back_settings": "Instellingen",
+    "become_sponsor": "Word sponsor",
+    "compose_announcement": "Aankondiging opstellen",
+    "condition_guide": "Conditiegids",
+    "ebay_defaults": "eBay-standaarden",
+    "edit_event": "Evenement bewerken",
+    "franchise": "Franchise",
+    "import_url": "Importeren via URL",
+    "leaderboard": "Ranglijst",
+    "market_movers": "Marktbewegers",
+    "my_suggestions": "Mijn suggesties",
+    "notifications": "Meldingen",
+    "project": "Project",
+    "scan_barcode": "Streepjescode scannen",
+    "seller_dashboard": "Verkopersdashboard"
   }
 }

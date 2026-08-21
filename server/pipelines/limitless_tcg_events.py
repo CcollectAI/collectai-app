@@ -101,6 +101,13 @@ def _tournament_to_event(tournament: dict[str, Any]) -> ScrapedEvent | None:
         dt = datetime.fromisoformat(date_raw.replace("Z", "+00:00"))
     except ValueError:
         return None
+    # Measured 2026-08-22: the API always sends `...T18:30:00.000Z`, so this is
+    # aware in practice. A DATE-ONLY string would parse naive, and comparing a
+    # naive datetime to an aware `now` raises TypeError — which would kill this
+    # row's parse rather than skip it. The previous `(now - dt)` had the same
+    # exposure; assume UTC rather than carry it forward.
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
 
     # UPCOMING ONLY — which is what the module docstring has always claimed and
     # what the code did NOT do.

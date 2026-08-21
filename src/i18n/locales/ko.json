@@ -766,5 +766,27 @@
     "entries": "{{count}}개 항목",
     "empty_title": "기록 없음",
     "empty_body": "앱 사용 중 기록된 오류가 여기에 표시됩니다. 문제가 발생한 화면을 다시 연 뒤 돌아오세요."
+  },
+  "screen_titles": {
+    "add_manually": "수동으로 추가",
+    "analytics": "분석",
+    "announcements": "공지사항",
+    "archived": "보관됨",
+    "back_items": "아이템",
+    "back_settings": "설정",
+    "become_sponsor": "스폰서 되기",
+    "compose_announcement": "공지 작성",
+    "condition_guide": "상태 가이드",
+    "ebay_defaults": "eBay 기본값",
+    "edit_event": "이벤트 편집",
+    "franchise": "프랜차이즈",
+    "import_url": "URL에서 가져오기",
+    "leaderboard": "순위표",
+    "market_movers": "시세 변동",
+    "my_suggestions": "내 제안",
+    "notifications": "알림",
+    "project": "프로젝트",
+    "scan_barcode": "바코드 스캔",
+    "seller_dashboard": "판매자 대시보드"
   }
 }
