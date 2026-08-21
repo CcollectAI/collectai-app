@@ -5,7 +5,9 @@ Returns upcoming and recent tournaments for Pokemon TCG, Pokemon Pocket, and
 potentially other TCGs.
 
 Filters:
-- Only upcoming tournaments (date >= now)
+- Only upcoming tournaments (date >= now) — enforced since 2026-08-22;
+  before that the rule was "not more than 3 days stale", and every one of the
+  1,986 rows it wrote was already in the past at insert time
 - Only tournaments with >=8 players (skip tiny local events)
 - Maps game codes to our category IDs
 
@@ -100,9 +102,32 @@ def _tournament_to_event(tournament: dict[str, Any]) -> ScrapedEvent | None:
     except ValueError:
         return None
 
-    # Skip past tournaments (older than 3 days)
+    # UPCOMING ONLY — which is what the module docstring has always claimed and
+    # what the code did NOT do.
+    #
+    # The old rule was `(now - dt) > 3 days -> skip`, i.e. "not more than three
+    # days stale". It never required the tournament to be in the FUTURE, so it
+    # admitted everything that had already happened within the window.
+    #
+    # Measured 2026-08-22 on prod: all 1,986 `source='limitless_tcg'` rows were
+    # ALREADY PAST at the moment they were inserted — average -12.3 hours, zero
+    # of them even a day ahead. That is 70% of the events table, none of it ever
+    # eligible for a "what's on" feed. For contrast, ticketmaster averages +62
+    # days of lead time, seatgeek +56, newsletter +45.
+    #
+    # ⚠️ This filter will now admit approximately NOTHING, and that is the
+    # honest outcome rather than a regression: the Limitless API is a RESULTS
+    # feed, not a schedule. Measured the same day, /api/tournaments returned
+    # 60 rows and 0 future ones, and `?upcoming=true`, `?status=upcoming` and
+    # `?type=upcoming` all returned 20 rows with 0 future. There is no upcoming
+    # endpoint to point at.
+    #
+    # Left wired rather than deleted so that the day Limitless starts
+    # publishing scheduled tournaments this picks them up — but if it is still
+    # writing zero rows in a month, delete the pipeline instead of carrying a
+    # source that cannot serve the feature.
     now = datetime.now(timezone.utc)
-    if (now - dt).total_seconds() > 3 * 86400:
+    if dt < now:
         return None
 
     date_str = dt.strftime("%Y-%m-%d")
