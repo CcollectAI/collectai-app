@@ -1,6 +1,46 @@
 # Sparrow Collect - Project Memory
 
-> Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-21
+> Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-22
+
+## What actually catches a defect I just wrote (2026-08-22)
+
+A post-completion audit now runs after every change, and it keeps finding real
+defects — about **15 across 2026-08-21/22**. What is worth recording is not the
+bugs but WHICH method found each, because it is never the obvious one.
+
+| detector | caught | blind to |
+|---|---|---|
+| `tsc` | a narrowed type, a deleted style with two other callers, dead props, a hook spliced into an effect (surfacing as "cannot find name") | dead code, unreachable branches, logic, empty renders |
+| a script / grep | orphaned styles, banned type sizes, invalid Ionicons names | anything it was not written to ask |
+| **reading the NEIGHBOURING file** | a catch clause that only caught `PostgresError`, two prices in two currencies on one card, an outline button whose base style had no `borderWidth` | — |
+| measuring the data (SQL) | a "signal" that was the untouched default on 13 of 20 rows | — |
+| **re-reading my own new lines** | **≈ nothing** | — |
+
+The reason is simple: new lines look right to the person who just wrote them
+believing they were right. **The defect is almost always in the SEAM** — what
+the caller catches, what the neighbouring row formats with, what the base style
+already sets, what the enclosing block already branches on.
+
+So the order that works:
+
+1. **Read the caller and the neighbour, not the diff.**
+2. **Run `tsc` after every structural edit**, not once at the end. It catches
+   every contract break and no semantic ones — that is exactly its job.
+3. **Count, don't skim.** "How many guards in this block" found a twenty-line
+   unreachable branch that `tsc` accepts, because dead JSX is legal.
+4. **Wrapping an existing block in a condition?** Grep that block for the same
+   condition — if it is already there, a branch just died.
+5. **Widening a gate for a new child?** Copy that child's condition; do not
+   paraphrase it. Paraphrasing is how a bordered, totally empty card shipped.
+
+⚠️ **A checker written during the audit is itself unaudited**, and mine were
+wrong twice in two days: a dead-style script used `//.*` with `re.S`, so
+stripping line comments ate the rest of every file and it reported 13 dead
+styles in a file with one; and a grep for `accessibilityRole="tabbar"` (fatal on
+Android) returned two hits that were both comments *warning against it*. Both
+would have produced a confident wrong conclusion. Sanity-check a new checker
+against a case whose answer you already know — the rule this repo already
+applies to its gates.
 
 ## Current state (2026-08-21)
 

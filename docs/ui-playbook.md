@@ -422,6 +422,41 @@ Two things worth carrying to the next card grid:
   pulls the *box* out so the *glyph* lines up with the text above it; the touch
   target and `hitSlop` are unchanged.
 
+## What actually catches a UI defect you just wrote (2026-08-22)
+
+Recorded after ~15 self-introduced defects over two days. None of them were
+found by re-reading the new JSX; they were found in the SEAM:
+
+- **the base style** — an outline button whose `borderWidth` was never set,
+  because as a filled block it never needed one; a "3pt stripe" that inherited
+  `borderWidth: 1` and rendered as a tint
+- **the neighbouring row** — a gap figure in the row's own currency beside a
+  target formatted in the VIEWER's, because `formatPrice` formats and never
+  converts
+- **the enclosing block** — a row wrapped in `isDraft || isEditing` that was
+  already branching on `isDraft || isEditing`, killing twenty lines
+- **the gate above it** — a card opened by a condition its own children then
+  declined to satisfy, rendering bordered and empty
+
+Practical checks, cheap enough to run every time:
+
+```bash
+# styles defined but never used (line comments are LINE-scoped — `//.*` with
+# re.S eats the rest of the file and reports everything as dead)
+# icon names, which render an EMPTY BOX rather than throwing when wrong
+node -e "const g=require('@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/Ionicons.json');
+  ['trending-up','flash'].forEach(n=>!(n in g)&&console.log('INVALID',n))"
+# banned type sizes
+grep -rnE "fontSize: text(Token)?\.xs|fontSize: (9|10|11)\b" app src
+# roles that are FATAL on Android, and SafeAreaView imports
+node scripts/preflight_android.mjs
+```
+
+⚠️ **A grep written for an audit is itself unaudited.** A search for
+`accessibilityRole="tabbar"` returned two hits that were both comments warning
+against it — the same false positive `check:unrendered` had to be fixed for. A
+comment is neither a reference nor a declaration, including in your own checks.
+
 ## Component Checklist
 
 Before shipping a screen, verify:
