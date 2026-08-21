@@ -322,6 +322,23 @@ async def adapter_health() -> dict:
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _as_float(v) -> float | None:
+    """Best-effort numeric coercion for a provider-supplied money field.
+
+    Adapters return shipping cost as a number, a numeric string, "" or
+    "free" depending on the marketplace. `market_hits.shipping` is DOUBLE
+    PRECISION, and this value is written on a best-effort path whose caller
+    catches only `asyncpg.PostgresError` — so a bare `float()` here would
+    turn an unparseable string into a 500. Unknown means NULL.
+    """
+    if v is None or isinstance(v, bool):
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
 async def _persist_hits_bg(scored_hits: list, user_id: str) -> None:
     """Background-task wrapper for _persist_hits: never raise into the task
     runner (any failure is best-effort and must not surface to the user)."""
@@ -357,9 +374,13 @@ async def _persist_hits(scored_hits: list, user_id: str) -> None:
 
     Schema columns: provider, listing_id, title, price, currency,
     condition, ended_at, url, normalized_key, features_json, shipping.
-    Per-listing ships_from / domestic_only / shipping_cost fold into the
-    single jsonb `shipping` column — bare ships_from / domestic_only
-    columns do not exist (same drift fixed in deal_discovery_agent).
+
+    `shipping` is DOUBLE PRECISION and carries the COST ONLY. The
+    descriptive fields (ships_from, domestic_only) go into `features_json`,
+    which is jsonb; there are no bare ships_from / domestic_only columns.
+    This docstring previously said all three folded into a "single jsonb
+    `shipping` column", which is what the code did and why Postgres rejected
+    every row it wrote.
     """
     async with get_conn() as conn:
         async with conn.transaction():
@@ -374,7 +395,12 @@ async def _persist_hits(scored_hits: list, user_id: str) -> None:
                 # 6 times a day, in the Postgres log and NOWHERE in bake.log,
                 # because the write is inside a best-effort block. The
                 # descriptive fields go to features_json, which really is jsonb.
-                shipping_cost = h.get("shipping_cost")
+                # Coerce defensively. The caller at the sold-comps path
+                # catches ONLY asyncpg.PostgresError, so a ValueError from a
+                # provider returning e.g. "free" or "" would escape as a 500
+                # on a best-effort write. A missing shipping cost is a NULL,
+                # not an error.
+                shipping_cost = _as_float(h.get("shipping_cost"))
                 features_json = {
                     "image_url": h.get("image_url"),
                     "user_id": user_id,
@@ -416,5 +442,5 @@ async def _persist_hits(scored_hits: list, user_id: str) -> None:
                     (h.get("url", "") or "")[:1000],
                     (h.get("normalized_key", "") or "")[:255],
                     json.dumps(features_json),
-                    float(shipping_cost) if shipping_cost is not None else None,
+                    shipping_cost,
                 )
